@@ -1,0 +1,2112 @@
+/*******************************************************************************
+ *                                                                             *
+ * Miscellaneous Custom Styles                                                           *
+ *                                                                             *
+ ******************************************************************************/
+.root {
+    /* Root variables */
+    background_color: #000000;
+    -var-accent_color: #0078D7;
+    dialog_background_color: background_color;
+}
+
+.callout {
+    -fx-font-family: "Consolas";
+    -fx-fill: #000000;
+    -fx-stroke: #FFFFFF;
+    -fx-stroke-width: 2;
+    -fx-font-size: 16;
+}
+
+.callout-mainTitleHBox {
+    -fx-border-color: #87CEEBEE;
+    -fx-border-width: 1;
+    -fx-background-color: #87CEEB88;
+}
+
+.callout-subTitleHBox {
+    -fx-border-color: #87CEEBEE;
+    -fx-border-width: 1;
+    /*    -fx-background-radius: 0;
+        -fx-background-insets: 0;*/
+    -fx-background-color: #87CEEB88;
+    -fx-font-size: 16;
+    /*
+        -fx-font-family: "Consolas";
+        -fx-fill: #F0F8FF88;
+        -fx-stroke: #FFFFFF;
+        -fx-stroke-width: 2;
+        -fx-font-size: 48;
+    */
+}
+
+.callout-head {
+    -fx-fill: #0000FF22;
+    -fx-stroke: #00FF0088;
+    -fx-stroke-width: 1;
+}
+
+.callout-firstLeaderLine {
+    -fx-stroke: #87CEEB44; /*skyblue*/
+    -fx-stroke-width: 2;
+}
+
+.callout-firstInnerLine {
+    -fx-stroke: #F0F8FF88; /*aliceblue*/
+    -fx-stroke-width: 0.5;
+}
+
+.callout-secondLeaderLine {
+    -fx-stroke: #87CEEB66; /*skyblue*/
+    -fx-stroke-width: 4;
+}
+
+.callout-secondInnerLine {
+    -fx-stroke: #F0F8FFAA; /*aliceblue*/
+    -fx-stroke-width: 1.0;
+}
+
+.trinity-pane {
+    -fx-background-color: radial-gradient(center 50% 50%, radius 35%, #6495ED77, #000000);
+}
+
+.zoom-grid-axes {
+    /*-fx-background-color: radial-gradient(center 50% 50% , radius 95% , #6495ED77, #000000);*/
+}
+
+.zoom-grid-axes .axis {
+    -fx-font-size: 1.4em;
+    /*#F0F8FF88 == AliceBlue with transparency*/
+    -fx-tick-label-fill: #F0F8FF88;
+    -fx-font-family: Tahoma;
+    -fx-tick-length: 5;
+    /*-fx-minor-tick-length: 5;*/
+}
+
+.zoom-grid-axes .axis-label {
+    /*#F0F8FF88 == AliceBlue with transparency*/
+    -fx-text-fill: #F0F8FF88;
+}
+
+/*******************************************************************************
+ *                                                                             *
+ * LitFX                                                                       *
+ *                                                                             *
+ ******************************************************************************/
+
+.litlog-text {
+    -fx-font-family: "Consolas";
+    -fx-fill: #00FF68;
+    -fx-stroke: lime;
+    -fx-stroke-width: 1;
+    /*    -fx-stroke-dash-array: 4 2 4 2;
+        -fx-stroke-dash-offset: 1; */
+    -fx-font-size: 16;
+}
+
+.litlog-textarea {
+    -fx-font-family: "Segoe UI Semibold";
+    /*-fx-text-fill: green;*/
+    -fx-display-caret: true;
+    -fx-highlight-fill: #00FF00;
+    -fx-highlight-text-fill: #000000;
+    -fx-background-insets: 0px;
+    -fx-font-size: 12;
+}
+
+.litlog-textarea .content {
+    -fx-background-color: transparent;
+}
+
+.litlog-textarea .scroll-pane {
+    -fx-background-color: transparent;
+    -fx-background-insets: 5 5 5 5;
+    -fx-pannable: true;
+}
+
+.litlog-textarea .scroll-pane .scroll-bar {
+    -fx-background-color: null;
+    -fx-background-radius: 0;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+    -fx-shape: null;
+    -fx-opacity: 0;
+}
+
+
+.litlog-textarea .scroll-pane .corner {
+    -fx-background-color: #000000;
+    -fx-background-radius: 0 0 0 0;
+    -fx-background-insets: 1 0 0 1;
+}
+
+.litlog-textarea .scroll-pane .viewport {
+    -fx-background-color: transparent;
+}
+
+.litlog-textarea .scroll-pane .content {
+    -fx-background-color: transparent;
+}
+
+/*******************************************************************************
+ *                                                                             *
+ * FontAwesome                                                                 *
+ *                                                                             *
+ ******************************************************************************/
+
+.root {
+    -icons-color: #0C0C0C;
+}
+
+.glyph-icon {
+    -fx-text-fill: -icons-color;
+    -fx-fill: -icons-color;
+    -glyph-size: 48px;
+}
+
+.glyph-icon:hover {
+    -fx-fill: linear-gradient(-icons-color 0%,
+    derive(-icons-color, 100%) 30%, derive(blueviolet, 30%) 85%);
+}
+
+.glyph-icon:pressed {
+    -fx-fill: linear-gradient(-icons-color 0%,
+    derive(aliceblue, 100%) 30%, derive(blueviolet, 30%) 85%);
+}
+
+/*******************************************************************************
+ *                                                                             *
+ * ControlsFX                                                                 *
+ *                                                                             *
+ ******************************************************************************/
+
+.master-detail-pane > .split-pane {
+    -fx-background-color: null;
+    -fx-background-insets: 0, 0;
+    -fx-padding: 0;
+}
+
+/*******************************************************************************
+ *                                                                             *
+ * Charts                                                                      *
+ *                                                                             *
+ ******************************************************************************/
+.chart .donut-chart {
+    -fx-text-fill: aliceblue;
+}
+
+.chart .sector-chart {
+    -fx-text-fill: aliceblue;
+}
+
+.chart {
+    -fx-background-color: transparent;
+    -fx-padding: 2px;
+}
+
+.axis {
+    -fx-font-size: 1.4em;
+    -fx-tick-label-fill: aliceblue;
+    /*    -fx-font-family: Tahoma;
+        -fx-tick-length: 20;
+        -fx-minor-tick-length: 10;*/
+}
+
+.axis-label {
+    -fx-text-fill: aliceblue;
+}
+
+.chart-plot-background {
+    -fx-background-color: transparent;
+}
+
+.chart-content {
+    -fx-padding: 0em 0.166667em 0em 0.166667em;
+}
+
+.chart-legend {
+    -fx-background-color: transparent;
+    -fx-padding: 20px;
+}
+
+.chart-alternative-row-fill {
+    -fx-fill: #D1D1D122;
+    -fx-stroke: null;
+}
+
+.chart-series-line {
+    -fx-stroke-width: 2px;
+    -fx-effect: null;
+}
+
+.default-color0.chart-series-line {
+    -fx-stroke: skyblue;
+}
+
+.chart-line-symbol {
+    -fx-background-color: aliceblue, skyblue;
+    -fx-scale-y: 0.5;
+    -fx-scale-x: 0.5;
+
+    -fx-background-insets: 0, 2;
+    -fx-background-radius: 5px;
+    -fx-padding: 5px;
+}
+
+/*.chart-bar.default-color0 {
+    The blue ish and some transparency
+    -fx-bar-fill: #328BDB99;
+    -fx-background-color:   linear-gradient(
+                                derive(-fx-bar-fill, -14%),
+                                derive(-fx-bar-fill, -1%),
+                                derive(-fx-bar-fill, 0%),
+                                derive(-fx-bar-fill, -1%),
+                                derive(-fx-bar-fill, -16%)
+                              );
+    -fx-background-insets: 0,1,2;
+    -fx-background-radius: 5 5 0 0, 4 4 0 0, 3 3 0 0;
+}
+.chart-bar.default-color1 {
+    The color tomato with an RGB value of #FF6347 and some transparency
+    -fx-bar-fill: #FF634799;
+    -fx-background-color:   linear-gradient(
+                                derive(-fx-bar-fill, -14%),
+                                derive(-fx-bar-fill, -1%),
+                                derive(-fx-bar-fill, 0%),
+                                derive(-fx-bar-fill, -1%),
+                                derive(-fx-bar-fill, -16%)
+                              );
+    -fx-background-insets: 0,1,2;
+    -fx-background-radius: 5 5 0 0, 4 4 0 0, 3 3 0 0;
+}
+.negative .chart-bar {
+    -fx-background-radius:  0 0 3 3, 0 0 4 4 , 0 0 5 5;
+   -fx-background-color: linear-gradient(to top, derive(-fx-bar-fill,-30%), derive(-fx-bar-fill,-40%)),
+                          linear-gradient(to top, derive(-fx-bar-fill, 80%), derive(-fx-bar-fill,0%)),
+                          linear-gradient(to top, derive(-fx-bar-fill,30%), derive(-fx-bar-fill,-10%));
+}
+*/
+
+/*******************************************************************************
+ *                                                                             *
+ * ColorPicker                                                                 *
+ *                                                                             *
+ ******************************************************************************/
+
+.color-palette {
+    popup_background_color: #2B2B2B;
+    popup_border_color: #767676;
+    -fx-background-radius: 0;
+    -fx-background-color: popup_background_color;
+    -fx-border-color: popup_border_color;
+}
+
+.custom-color-dialog {
+    controls_background_color: #2B2B2B;
+    controls_border_color: #767676;
+    -fx-background-color: dialog_background_color;
+}
+
+.custom-color-dialog .controls-pane .customcolor-controls-background {
+    -fx-background-color: controls_border_color, controls_background_color;
+}
+
+/* With Button styleclass */
+.color-picker.button {
+    button_background_color: #333333;
+    background_pressed_color: #666666;
+    border_hover_color: #858585;
+    text_color: white;
+    focus_ring_border_color: white;
+    -fx-border-color: transparent;
+    -fx-border-width: 2;
+    -fx-background-radius: 0;
+    -fx-background-insets: 0;
+    -fx-background-color: button_background_color;
+    -fx-font-family: "Segoe UI";
+    -fx-text-fill: text_color;
+}
+
+.color-picker.button:hover,
+.color-picker.button:focused:hover {
+    -fx-border-color: border_hover_color;
+}
+
+.color-picker.button:pressed,
+.color-picker.button:focused:pressed {
+    -fx-border-color: background_pressed_color;
+    -fx-background-color: background_pressed_color;
+}
+
+.color-picker.button:focused {
+    -fx-border-color: transparent, focus_ring_border_color;
+    -fx-border-width: 1, 1;
+    /*noinspection CssInvalidFunction*/
+    -fx-border-style: solid, segments(1, 2);
+    -fx-border-radius: 0, 0;
+    -fx-border-insets: 1 1 1 1, 0;
+}
+
+.color-picker.button:showing {
+    -fx-border-color: transparent, focus_ring_border_color;
+    -fx-background-color: background_pressed_color;
+    -fx-border-width: 1, 1;
+    /*noinspection CssInvalidFunction*/
+    -fx-border-style: solid, segments(1, 2);
+    -fx-border-radius: 0, 0;
+    -fx-border-insets: 1 1 1 1, 0;
+}
+
+/*******************************************************************************
+ *                                                                             *
+ * Radio Button                                                                *
+ *                                                                             *
+ ******************************************************************************/
+
+.radio-button {
+    text_color: white;
+    accent_color: #0078D7;
+    radio_background_color: #111111;
+    background_pressed_color: #111111;
+
+    border_color: #CCCCCC;
+    border_hover_color: white;
+
+    dot_color: #111111;
+    dot_selected_color: #55C4FE;
+    dot_selected_hover_color: white;
+
+    focus_ring_color: white;
+}
+
+.radio-button {
+    -fx-text-fill: text_color;
+}
+
+.radio-button > .radio {
+    -fx-background-color: radio_background_color;
+    -fx-background-radius: 1.0em; /* large value to make sure this remains circular */
+    -fx-background-insets: 0;
+
+    /* Two borders exist because of the focus ring, if they didn't the size of the control would change on focus
+       - The first one is the border of the control
+       - The second one is the border of the focus ring
+       */
+    /*noinspection CssInvalidFunction*/
+    -fx-border-style: solid, segments(1, 2);
+    -fx-border-radius: 1.0em, 0;
+    -fx-border-color: border_color, transparent;
+    -fx-border-insets: 0px, -2px;
+    -fx-border-width: 2px, 1px;
+
+    -fx-padding: 3px; /* 4 -- padding from outside edge to the inner black dot */
+}
+
+.radio-button > .radio > .dot {
+    -fx-background-color: dot_color;
+    -fx-background-insets: 0;
+    -fx-background-radius: 1.0em; /* large value to make sure this remains circular */
+
+    -fx-padding: 0.416667em; /* 5px -- radius of the inner black dot when selected */
+}
+
+/* hover */
+.radio-button:hover > .radio {
+    -fx-background-color: radio_background_color;
+    -fx-border-color: border_hover_color, transparent;
+}
+
+.radio-button:selected:hover > .radio > .dot {
+    -fx-background-color: dot_selected_hover_color;
+}
+
+/* selected */
+.radio-button:selected > .radio {
+    -fx-border-color: accent_color, transparent;
+}
+
+.radio-button:selected > .radio > .dot {
+    -fx-background-color: dot_selected_color;
+}
+
+/* pressed */
+.radio-button:pressed > .radio {
+    -fx-background-color: background_pressed_color;
+    -fx-border-color: #999999, transparent;
+}
+
+.radio-button:pressed:selected > .radio > .dot {
+    -fx-background-color: #999999;
+}
+
+/* focused */
+.radio-button:focused > .radio {
+    /*noinspection CssInvalidFunction*/
+    -fx-border-style: solid, segments(1, 2);
+    -fx-border-radius: 1.0em, 0;
+    -fx-border-color: border_color, focus_ring_color;
+    -fx-border-insets: 0px, -2px;
+    -fx-border-width: 2px, 1px;
+}
+
+.radio-button:focused:hover > .radio {
+    -fx-border-color: border_color, focus_ring_color;
+}
+
+.radio-button:focused:pressed > .radio, .radio-button:focused:selected:pressed > .radio {
+    -fx-border-color: #999999, focus_ring_color;
+    -fx-background-color: background_pressed_color;
+}
+
+.radio-button:focused:selected > .radio {
+    -fx-border-color: accent_color, focus_ring_color;
+}
+
+/* disabled */
+.radio-button:disabled {
+    -fx-opacity: 0.4;
+}
+
+.radio-button:disabled > .radio {
+    -fx-border-color: border_color, transparent;
+}
+
+
+/*******************************************************************************
+ *                                                                             *
+ * Button and ToggleButton                                                     *
+ *                                                                             *
+ ******************************************************************************/
+
+.button, .toggle-button {
+    -var-background_color: #333333;
+    -var-background_pressed_color: #666666;
+    -var-border_hover_color: #858585;
+    -var-text_color: white;
+    -var-default_button_text_color: white;
+    -var-focus_ring_border_color: white;
+}
+
+.button {
+    -var-border_hover_default_color: derive(-var-accent_color, 70%);
+}
+
+.toggle-button {
+    -var-border_hover_selected_color: derive(-var-accent_color, 70%);
+}
+
+.button, .toggle-button {
+    -shrink-animate-on-press: true;
+}
+
+
+.button, .toggle-button {
+    -fx-padding: 0.25em 1.666666em 0.25em 1.666666em; /*3 20 3 20*/
+
+    -fx-border-color: transparent;
+    -fx-border-width: 2;
+
+    -fx-background-radius: 0;
+    -fx-background-insets: 0;
+    -fx-background-color: -var-background_color;
+
+    -fx-font-family: "Segoe UI Semilight";
+    -fx-font-size: 1.333333em; /* 16 */
+    -fx-text-fill: -var-text_color;
+}
+
+.button:hover, .toggle-button:hover {
+    -fx-border-color: -var-border_hover_color;
+}
+
+.button:pressed, .toggle-button:pressed {
+    -fx-border-color: -var-background_pressed_color;
+    -fx-background-color: -var-background_pressed_color;
+}
+
+.button:focused, .toggle-button:focused {
+    -fx-border-color: transparent, -var-focus_ring_border_color;
+    -fx-border-width: 1, 1;
+    /*noinspection CssInvalidFunction*/
+    -fx-border-style: solid, segments(1, 2);
+    -fx-border-radius: 0, 0;
+    -fx-border-insets: 1 1 1 1, 0;
+}
+
+.button:disabled, .button:default:disabled, .toggle-button:disabled {
+    -fx-opacity: 0.4;
+    -fx-background-color: -var-background_color;
+    -fx-text-fill: -var-text_color;
+}
+
+/****************************** Button ****************************************/
+
+.button:default {
+    -fx-background-color: -var-accent_color;
+    -fx-text-fill: -var-default_button_text_color;
+}
+
+.button:default:hover {
+    -fx-border-color: -var-border_hover_default_color;
+}
+
+.button:default:pressed {
+    -fx-background-color: derive(-var-accent_color, -40%);
+}
+
+/**************************** Toggle Button ***********************************/
+
+.toggle-button:selected {
+    -fx-background-color: -var-accent_color;
+    -fx-text-fill: white;
+}
+
+.toggle-button:selected:hover {
+    -fx-border-color: -var-border_hover_selected_color;
+}
+
+.toggle-button:selected:pressed {
+    -fx-background-color: derive(-var-accent_color, -40%);
+}
+
+/*******************************************************************************
+ *                                                                             *
+ * Label                                                                       *
+ *                                                                             *
+ ******************************************************************************/
+
+.label {
+    /*-fx-font-size: 12pt;   CHANGED*/
+    -fx-font-family: "Segoe UI Semibold";
+    -fx-text-fill: aliceblue;
+    -fx-opacity: 0.75;
+}
+
+/*******************************************************************************
+ *                                                                             *
+ * TextBox (and PasswordBox)                                                   *
+ *                                                                             *
+ ******************************************************************************/
+.text-field {
+    -fx-background-color: #FFFFFF77;
+    /*-fx-background-color: darkslategray;*/
+    -fx-padding: 0em 0.166667em 0em 0.166667em; /* 0 2px 0 2px*/
+    -fx-font-family: "Segoe UI", Helvetica, Arial, sans-serif;
+    -fx-font-size: 16pt;
+    -fx-border-width: 1px;
+    -fx-border-color: #D1D1D122;
+    -fx-borders-style: solid;
+}
+
+.text-input {
+    /*-fx-background-radius: 0, 0;*/
+    -fx-background-color: darkslategray;
+    /*-fx-background-insets: 0;*/
+    -fx-prompt-text-fill: #818181;
+    -fx-highlight-fill: #008287;
+    -fx-text-fill: aliceblue;
+}
+
+.text-input:hover {
+    -fx-background-color: #55C4FE;
+    -fx-text-fill: aliceblue;
+    -fx-prompt-text-fill: aliceblue;
+}
+
+.text-input:focused {
+    -fx-background-color: #5C5C5C, white;
+    -fx-text-fill: black;
+}
+
+.text-input > Pane {
+    -fx-padding: 0.333333em 0.583em 0.333333em 0em; /*4 7 4 0 */
+}
+
+.text-input > .right-button {
+    -fx-cursor: default;
+    -fx-background-insets: -0.1666665em -0.45em -0.1666665em -0.45em; /*4 7 4 7 -> this values are subtracted by 2px in em because of the border of the textfield */
+}
+
+.text-field > .right-button > .right-button-graphic {
+    -fx-shape: "M221.738,305.873l6.135,6.16l-2.875,2.863l-6.135-6.159l-6.263,6.237l-2.864-2.875l6.263-6.238l-6.177-6.202l2.875-2.863l6.177,6.201l6.244-6.22l2.864,2.876L221.738,305.873z";
+    -fx-padding: 0.5em 0.5em; /*TODO: put the real number here 18 18 */
+    -fx-background-color: black;
+}
+
+/*******************************************************************************
+ *                                                                             *
+ * ListView                                                                    *
+ *                                                                             *
+ ******************************************************************************/
+
+.list-view {
+    -fx-text-fill: aliceblue;
+    -fx-background-color: transparent;
+    -fx-font-size: 12pt;
+}
+
+.list-cell {
+    -var-text_color: white;
+    -var-border_color: #494949;
+    /*-var-arrow_color: #6495ED;  CornflowerBlue*/
+    /*    -var-content_background_color: #6495ED88;
+        -var-content_background_odd_color: #4a9ec388;*/
+    -var-content_background_color: #6495ED22;
+    -var-content_background_odd_color: transparent;
+    -fx-background-color: -var-content_background_color;
+    -fx-text-fill: -var-text_color;
+    -fx-font-size: 12pt;
+    -fx-font-family: "Segoe UI Semibold";
+}
+
+.list-cell:odd {
+    -fx-background-color: -var-content_background_odd_color;
+}
+
+.list-cell:filled:selected:focused,
+.list-cell:filled:selected {
+    -fx-background-color: linear-gradient(#328BDB 0%, #207BCF 25%, #1973C9 75%, #0A65BF 100%);
+    /*-fx-text-fill: aliceblue;*/
+}
+
+.list-cell:filled:hover {
+    -fx-background-color: #55C4FE;
+    /*-fx-text-fill: aliceblue;*/
+}
+
+/*******************************************************************************
+ *                                                                             *
+ * Check Box                                                                   *
+ *                                                                             *
+ ******************************************************************************/
+
+.check-box {
+    -fx-text-fill: white;
+}
+
+/*unselected*/
+.check-box > .box {
+    -fx-background-color: #D1D1D1;
+    -fx-background-insets: 0;
+    -fx-background-radius: 0;
+    -fx-border-color: #D1D1D1;
+    -fx-border-width: 2px;
+    -fx-borders-style: solid;
+    -fx-padding: 1;
+}
+
+.check-box > .box > .mark {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-padding: 7px;
+    -fx-shape: "M9.005,17.766l13.759,14.739h1.716L49.02,0l10.298,8.488L25.997,50.453h-3.629L0,26.897L9.005,17.766z"
+}
+
+.check-box:hover > .box {
+    -fx-border-color: #A1E1E1;
+    -fx-background-color: #E1E1E1;
+}
+
+.check-box:focused > .box {
+    -fx-background-color: #D1D1D1;
+    -fx-background-insets: 0;
+    -fx-background-radius: 0;
+    -fx-border-color: white, #D1D1D1;
+    -fx-border-width: 1, 2;
+    -fx-border-style: segments(1, 2), solid;
+    -fx-border-insets: -3, 0;
+}
+
+.check-box:focused:hover > .box {
+    -fx-border-color: white, #E1E1E1;
+    -fx-background-color: #E1E1E1;
+}
+
+.check-box:pressed > .box {
+    -fx-border-color: white, white;
+
+}
+
+.check-box:selected > .box > .mark {
+    -fx-background-color: black;
+}
+
+.check-box:indeterminate > .box > .mark {
+    -fx-background-color: black;
+    -fx-background-insets: 2.8;
+    -fx-padding: 7px;
+    -fx-shape: null;
+}
+
+.check-box:disabled {
+    -fx-opacity: 0.4;
+}
+
+.check-box:disabled > .box {
+    -fx-border-color: white;
+    -fx-background-color: white;
+}
+
+.check-box:disabled:selected > .box > .mark {
+    -fx-background-color: #4C4C4C;
+    -fx-opacity: 0.5;
+}
+
+.check-box:armed > .box {
+    -fx-background-color: transparent, white;
+    -fx-background-insets: -1, 2;
+    -fx-background-radius: 0, 0;
+}
+
+/*******************************************************************************
+ *                                                                             *
+ * Slider                                                                      *
+ *                                                                             *
+ ******************************************************************************/
+
+.slider {
+    -var-track_hover_color: #999999;
+    -var-thumb_hover_color: #F2F2F2;
+    -var-thumb_pressed_color: #767676;
+}
+
+.slider {
+    -show-value-on-interaction: true;
+}
+
+.slider .thumb {
+    -fx-background-color: -var-accent_color;
+    -fx-background-insets: 0;
+    -fx-background-radius: 6px;
+
+    -fx-padding: 12px 4px 12px 4px;
+
+    -fx-effect: null;
+}
+
+.slider:vertical .thumb {
+    -fx-padding: 4px 12px 4px 12px;
+}
+
+.slider .track {
+    -fx-background-color: #C6C6C6;
+    -fx-background-insets: 0;
+    -fx-background-radius: 0;
+    -fx-padding: 0.083333em; /* 1 */
+
+}
+
+.slider .fill {
+    -fx-background-color: -var-accent_color;
+    -fx-padding: 0.083333em; /* 1 */
+}
+
+/* hover */
+.slider:hover .track {
+    -fx-background-color: -var-track_hover_color;
+}
+
+.slider:hover .thumb {
+    -fx-background-color: -var-thumb_hover_color;
+}
+
+/* pressed */
+.slider .thumb:pressed {
+    -fx-background-color: -var-thumb_pressed_color;
+}
+
+/* disabled */
+.slider:disabled {
+    -fx-opacity: 0.2;
+}
+
+/* Slider popup showing its value */
+.slider-popup .label {
+    -fx-background-color: #F2F2F2;
+    -fx-border-color: #CCCCCC;
+
+    -fx-text-fill: #111111;
+
+    -fx-padding: 0.5em 0.75em 0.5em 0.75em;
+}
+
+
+/*******************************************************************************
+ *                                                                             *
+ * ScrollPane                                                                  *
+ *                                                                             *
+ ******************************************************************************/
+
+.scroll-pane .corner {
+    -fx-background-color: #000000;
+    -fx-background-radius: 0 0 0 0;
+    -fx-background-insets: 1 0 0 1; /* have the square on the corner be centered*/
+}
+
+.scroll-pane > .viewport {
+    -fx-background-color: transparent;
+}
+
+.scroll-pane {
+    -fx-background-color: transparent;
+    -fx-background: transparent;
+    -fx-background-insets: 5 5 5 5; /* have the square on the corner be centered */
+}
+
+/*******************************************************************************
+ *                                                                             *
+ * ScrollBar                                                                   *
+ *                                                                             *
+ ******************************************************************************/
+
+.scroll-bar > .thumb {
+    -fx-background-color: #1E1E1E; /*#b8b8b8;*/
+    -fx-background-insets: 0;
+    -fx-background-radius: 0;
+}
+
+.scroll-bar > .thumb:hover {
+    -fx-background-color: #CACACA;
+}
+
+.scroll-bar > .thumb:pressed {
+    -fx-background-color: #CACACA; /* #1e1e1e;*/
+}
+
+.scroll-bar > .track {
+    -fx-background-color: #4A4A4A;
+    -fx-background-insets: 0 2 2 0;
+    -fx-background-radius: 0;
+}
+
+.scroll-bar > .track-background {
+    -fx-background-color: #4A4A4A;
+    -fx-background-insets: 0;
+}
+
+.scroll-bar > .increment-button,
+.scroll-bar > .decrement-button {
+    -fx-background-color: #4A4A4A;
+    -fx-background-insets: 0;
+    -fx-background-radius: 0;
+    -fx-padding: 0.25em; /* 3 */
+}
+
+.scroll-bar > .increment-button:hover,
+.scroll-bar > .decrement-button:hover {
+    -fx-background-color: #CACACA;
+}
+
+.scroll-bar > .increment-button:pressed,
+.scroll-bar > .decrement-button:pressed {
+    -fx-background-color: #1E1E1E;
+}
+
+.scroll-bar > .decrement-button > .decrement-arrow,
+.scroll-bar > .increment-button > .increment-arrow {
+    -fx-background-color: transparent, #1E1E1E;
+    -fx-background-insets: 1 0 -1 0, 0;
+    -fx-effect: null;
+}
+
+.scroll-bar > .increment-button:pressed > .increment-arrow,
+.scroll-bar > .decrement-button:pressed > .decrement-arrow {
+    -fx-background-color: transparent, white;
+    -fx-effect: null;
+}
+
+.scroll-bar:vertical > .increment-button > .increment-arrow,
+.scroll-bar:vertical > .decrement-button > .decrement-arrow {
+    -fx-padding: 0.5em 0.5em 0.5em 0.5em; /* 4 6 0 0 */
+}
+
+.scroll-bar:horizontal > .increment-button > .increment-arrow,
+.scroll-bar:horizontal > .decrement-button > .decrement-arrow {
+    -fx-padding: 0.0em 0.0em 0.5em 0.5em; /* 6 4 0 0 */
+}
+
+
+.scroll-bar:disabled {
+    -fx-opacity: 0.4;
+}
+
+.list-view > .virtual-flow > .corner,
+.table-view > .virtual-flow > .corner,
+.tree-view > .virtual-flow > .corner {
+    corner_background_color: #29292A;
+}
+
+/*******************************************************************************
+ *                                                                             *
+ * Table View                                                                  *
+ *                                                                             *
+ ******************************************************************************/
+
+.table-view {
+    table_background_color: #333333;
+    table_view_border_color: #171717;
+    alternate_row_color: #3C3C3C;
+    text_color: white;
+    hover_text_color: white;
+    selected_text_color: white;
+    selected_unfocused_text_color: white;
+    sort_arrow_color: white;
+    show_hide_image_color: sort_arrow_color;
+    cell_hover_color: #515151;
+    cell_pressed_color: #3E3E3E;
+    cell_selected_unfocused_color: cell_hover_color;
+    cell_selected_color: derive(accent_color, -35%);
+    cell_selected_hover_color: derive(accent_color, -20%);
+    cell_selected_pressed_color: derive(accent_color, 60%);
+
+    -fx-cell-focus-inner-border: cell_selected_color; /* focused */
+    -fx-background-color: transparent, transparent;
+    -fx-border-color: table_view_border_color;
+    -fx-padding: 0;
+}
+
+.table-view .column-header {
+    -fx-padding: 0em 0em 0em 1em;
+}
+
+.table-view .column-header .label {
+    -fx-padding: 0.666666em 2em 0.666666em 0; /* 8 24 8 0 */
+}
+
+.table-cell {
+    -fx-padding: 0.833333em 2em 0.5em 1em; /* 10 24 6 12 */
+}
+
+/****************************** Column Header ************************************/
+
+.table-view .column-header .label {
+    -fx-text-fill: text_color;
+    -fx-font-family: "Segoe UI SemiBold";
+    -fx-font-size: 1em; /* 12 */
+    -fx-alignment: center-left;
+}
+
+.table-view .column-header:hover {
+    -fx-background-color: cell_hover_color;
+}
+
+.table-view .column-header:hover .label {
+    -fx-text-fill: hover_text_color;
+}
+
+.table-view .column-header-background {
+    -fx-background-color: table_background_color;
+}
+
+/* Bottom border on tableview header area */
+.table-view > .column-header-background > .nested-column-header,
+.table-view > .column-header-background > .filler {
+    -fx-background-color: table_background_color;
+    -fx-border-insets: 0 0 0 0;
+    -fx-border-width: 0 0 1 0;
+    -fx-border-color: table_view_border_color;
+}
+
+.table-view .column-header {
+    -fx-background-color: table_background_color;
+}
+
+.table-view .filler {
+    -fx-background-color: transparent, table_background_color;
+    -fx-background-insets: 0 0 0 0, 1 0 1 0;
+}
+
+.table-view .column-header.table-column-selected {
+    -fx-background-color: table_background_color;
+}
+
+/* Because of Dark style we need to make these panes background color transparent */
+.table-view > .column-header-background .nested-column-header > .column-header > GridPane {
+    -fx-background-color: transparent;
+}
+
+.table-view > .column-header-background .nested-column-header > .column-header > GridPane > .sort-order-dots-container {
+    -fx-background-color: transparent;
+}
+
+/********************************** Table View "body"  *************************************/
+
+.table-cell {
+    -fx-font-family: "Segoe UI";
+    -fx-font-size: 1em; /* 12 */
+    -fx-alignment: center-left;
+
+    -fx-border-width: 0;
+}
+
+.table-cell:last-visible {
+    -fx-border-color: transparent;
+}
+
+.table-cell:filled:hover {
+    -fx-background-color: cell_hover_color;
+}
+
+.table-cell .text {
+    -fx-fill: text_color;
+}
+
+.table-cell:hover .text {
+    -fx-fill: hover_text_color;
+}
+
+/* hover row (row selection mode) */
+.table-view:row-selection > .virtual-flow > .clipped-container > .sheet > .table-row-cell:hover {
+    -fx-background-color: cell_hover_color;
+}
+
+/* Selected cells and rows */
+.table-view > .virtual-flow > .clipped-container > .sheet > .table-row-cell .table-cell:selected .text,
+.table-view > .virtual-flow > .clipped-container > .sheet > .table-row-cell:selected .table-cell .text {
+    -fx-fill: selected_text_color;
+}
+
+/* - when focused (with cell selection mode) */
+.table-view:focused > .virtual-flow > .clipped-container > .sheet > .table-row-cell .table-cell:selected,
+.table-view:focused > .virtual-flow > .clipped-container > .sheet > .table-row-cell:selected .table-cell {
+    -fx-background-color: cell_selected_color;
+    -fx-border-width: 0;
+}
+
+.table-view:focused > .virtual-flow > .clipped-container > .sheet > .table-row-cell .table-cell:selected:hover,
+.table-view:focused > .virtual-flow > .clipped-container > .sheet > .table-row-cell:selected:hover .table-cell {
+    -fx-background-color: cell_selected_hover_color;
+}
+
+.table-view:focused > .virtual-flow > .clipped-container > .sheet > .table-row-cell .table-cell:selected > .text,
+.table-view:focused > .virtual-flow > .clipped-container > .sheet > .table-row-cell:selected .table-cell > .text {
+    -fx-fill: selected_text_color;
+}
+
+/* -- when row selection mode */
+
+.table-view:focused:row-selection > .virtual-flow > .clipped-container > .sheet > .table-row-cell:selected {
+    -fx-background-color: cell_selected_color;
+}
+
+.table-view:focused:row-selection > .virtual-flow > .clipped-container > .sheet > .table-row-cell:selected:hover {
+    -fx-background-color: cell_selected_hover_color;
+}
+
+/* - when not focused */
+.table-view > .virtual-flow > .clipped-container > .sheet > .table-row-cell .table-cell:selected,
+.table-view > .virtual-flow > .clipped-container > .sheet > .table-row-cell:selected .table-cell {
+    -fx-background-color: cell_selected_unfocused_color;
+}
+
+.table-view > .virtual-flow > .clipped-container > .sheet > .table-row-cell .table-cell:selected > .text,
+.table-view > .virtual-flow > .clipped-container > .sheet > .table-row-cell:selected .table-cell > .text {
+    -fx-fill: selected_unfocused_text_color;
+}
+
+/* -- when row selection mode */
+
+.table-view:row-selection > .virtual-flow > .clipped-container > .sheet > .table-row-cell:selected {
+    -fx-background-color: cell_selected_unfocused_color;
+}
+
+.table-row-cell {
+    -fx-background-color: table_background_color;
+    -fx-background-insets: 0;
+}
+
+/*********************** Check box in Table View *****************************/
+/* Check Box Table Cell */
+.check-box-table-cell {
+    table_check_box_cell_box_background_color: transparent;
+    table_check_box_cell_box_border_color: white;
+    table_check_box_cell_mark_color: white;
+}
+
+.check-box-table-cell > .check-box {
+    -fx-opacity: 1;
+}
+
+.check-box-table-cell > .check-box > .box {
+    -fx-background-color: table_check_box_cell_box_background_color;
+    -fx-border-color: table_check_box_cell_box_border_color;
+    -fx-background-insets: 0;
+}
+
+.check-box-table-cell > .check-box:selected > .box > .mark {
+    -fx-background-color: table_check_box_cell_mark_color;
+}
+
+/********************* Table Menu Button (Plus Symbol)  **********************/
+
+.table-view > .column-header-background > .show-hide-columns-button,
+.tree-table-view > .column-header-background > .show-hide-columns-button {
+    -fx-background-color: table_background_color;
+    -fx-background-insets: 0;
+    -fx-padding: 0.166667em 0.333333em 0.166667em 0.333333em;
+}
+
+.table-view > .column-header-background > .show-hide-columns-button:hover,
+.tree-table-view > .column-header-background > .show-hide-columns-button:hover {
+    -fx-background-color: cell_hover_color;
+}
+
+.table-view .show-hide-column-image,
+.tree-table-view .show-hide-column-image {
+    -fx-background-color: show_hide_image_color;
+    -fx-padding: 0.083333em; /* 3px */
+    -fx-scale-shape: false;
+    -fx-shape: "M33.561,25.389c0,0.828-0.672,1.5-1.5,1.5s-1.5-0.672-1.5-1.5c0-0.828,0.672-1.5,1.5-1.5S33.561,24.561,33.561,25.389z M32.061,30.532c-0.828,0-1.5,0.672-1.5,1.5c0,0.828,0.672,1.5,1.5,1.5s1.5-0.672,1.5-1.5C33.561,31.204,32.889,30.532,32.061,30.532z M32,37.107c-0.828,0-1.5,0.672-1.5,1.5c0,0.828,0.672,1.5,1.5,1.5s1.5-0.672,1.5-1.5C33.5,37.779,32.828,37.107,32,37.107z";
+}
+
+/********************* TableView with column grid lines  **********************/
+
+/* Increase header bottom border "thickness" */
+.table-view.column-grid-lines > .column-header-background > * {
+    -fx-border-insets: 0 0 1 0, 0 0 0 0;
+    -fx-border-width: 0 0 1 0, 0 0 1 0;
+    -fx-border-color: table_view_border_color, derive(table_view_border_color, 20%);
+}
+
+/* table body */
+.table-view.column-grid-lines > .virtual-flow > .clipped-container > .sheet > .table-row-cell .table-cell {
+    -fx-border-color: transparent table_view_border_color transparent transparent;
+    -fx-border-width: 1px;
+    -fx-border-insets: 0px 0px 0px 0px;
+}
+
+/* Header Grid Lines */
+.table-view.column-grid-lines > .column-header-background > .nested-column-header > .nested-column-header > .column-header.table-column,
+.table-view.column-grid-lines > .column-header-background > .nested-column-header > .column-header.table-column {
+    -fx-border-color: table_view_border_color table_view_border_color transparent transparent;
+    -fx-border-width: 1px;
+    -fx-border-insets: -1 0 0 0;
+}
+
+/*******************************************************************************
+ *                                                                             *
+ * choicebox                                                                    *
+ *                                                                             *
+ ******************************************************************************/
+.choice-box {
+    -fx-background-color: transparent;
+    -fx-padding: 0em 0.166667em 0em 0.166667em; /* 0 2px 0 2px*/
+    -fx-font-family: "Segoe UI", Helvetica, Arial, sans-serif;
+    -fx-font-size: 11pt;
+    -fx-border-width: 2px;
+    -fx-borders-style: solid;
+    /*-fx-border-color: aliceblue;*/
+    -fx-border-color: darkslategray;
+}
+
+/* Text color of non-focused items in the list */
+.choice-box .menu-item > .label {
+    -fx-text-fill: skyblue;
+}
+
+/*
+.choice-box .menu-item:hover > .label { -fx-text-fill: #a1e1e1; }
+.choice-box .menu-item:selected > .label { -fx-text-fill: aliceblue; }
+*/
+.choice-box .label {
+    -fx-font-size: 12pt;
+    -fx-font-family: "Segoe UI Semibold";
+    -fx-text-fill: aliceblue;
+    -fx-opacity: 0.8;
+}
+
+.choice-box .label:hover {
+    -fx-text-fill: aliceblue;
+}
+
+.choice-box:hover {
+    -fx-background-color: transparent, transparent, transparent, transparent;
+    -fx-border-color: #A1E1E1;
+}
+
+.choice-box:focused {
+    -fx-background-color: transparent, transparent, transparent, transparent;
+    -fx-border-color: #A1E1E1
+}
+
+.choice-box:focused:hover {
+    -fx-background-color: transparent, transparent, transparent, transparent;
+    -fx-border-color: #A1E1E1
+}
+
+.choice-box:focused:hover .arrow {
+    -fx-border-color: #55C4FE;
+    -fx-background-color: #55C4FE;
+}
+
+.choice-box:hover .arrow {
+    -fx-border-color: #55C4FE;
+    -fx-background-color: #55C4FE;
+}
+
+.choice-box:disabled {
+    -fx-opacity: .4;
+}
+
+/* ------- OPEN BUTTON ------- */
+.choice-box .arrow-button {
+    -fx-background-color: transparent, transparent, transparent;
+}
+
+/* ------- ARROW* ------- */
+.choice-box .arrow {
+    -fx-padding: 0.236110875em 0.333333em 0.236110875em 0.333333em; /* (2/3 * 4.25) 4 (2/3 * 4.25) 4 */
+    -fx-shape: "M-78,640l-6-5.5v-3l6,5l0,0l6-5v3L-78,640L-78,640z";
+    -fx-background-insets: 0 0 0 0, 0;
+    -fx-background-color: silver;
+}
+
+/*******************************************************************************
+ *                                                                             *
+ * Combo Box                                                                   *
+ *                                                                             *
+ ******************************************************************************/
+
+.combo-box-base {
+    -var-border_color: #666666;
+    -var-border_hover_color: #999999;
+    -var-border_focused_color: white;
+    -var-border_pressed_color: #666666;
+    -var-background_color: #111111;
+    -var-background_pressed_color: #333333;
+    -var-arrow_color: white;
+    -var-text_color: white;
+    -var-list_cell_color: #2B2B2B;
+    -var-list_cell_hover_color: #545454;
+    -var-list_cell_border_color: #767676;
+
+    -fx-background-color: transparent, -var-border_color, transparent, -var-background_color;
+    -fx-background-radius: 0, 0, 0, 0;
+    -fx-padding: 0.166667em 0.166667em 0.166667em 0.166667em; /* 2 2px 2 2px*/
+
+    -fx-font-family: "Segoe UI";
+    -fx-font-size: 1.333333em; /* 16 */
+}
+
+.combo-box-base > .list-cell {
+    -fx-text-fill: -var-text_color;
+}
+
+.combo-box-base:hover {
+    -fx-background-color: transparent, -var-border_hover_color, transparent, -var-background_color;
+}
+
+.combo-box-base:focused {
+    -fx-background-color: transparent, -var-border_focused_color, transparent, -var-background_color;
+    -fx-background-insets: -1.4, 0, 1, 2;
+    -fx-background-radius: 0, 0, 0, 0;
+}
+
+.combo-box-base:focused:hover {
+    -fx-background-color: transparent, -var-border_hover_color, transparent, -var-background_color;
+}
+
+.combo-box-base:pressed, .combo-box-base:focused:pressed {
+    -fx-background-color: transparent, -var-border_pressed_color, transparent, -var-background_pressed_color;
+}
+
+.combo-box-base:disabled {
+    -fx-opacity: .4;
+}
+
+/* ------- OPEN BUTTON ------- */
+.combo-box-base > .arrow-button {
+    -fx-background-color: transparent, transparent, transparent;
+}
+
+/* ------- ARROW ------- */
+.combo-box-base > .arrow-button > .arrow {
+    -fx-padding: 3.5px 6px 3.5px 6px;
+    -fx-shape: "M21.361,12.736l0.527,0.527L16,19.152l-5.889-5.889l0.527-0.527L16,18.098L21.361,12.736z";
+    -fx-background-insets: 0 0 0 0, 0;
+    -fx-background-color: -var-arrow_color;
+}
+
+/* LIST (Popup)*/
+.combo-box-popup > .list-view {
+    -fx-effect: null;
+    -fx-border-color: -var-list_cell_border_color;
+}
+
+.combo-box-popup > .list-view > .virtual-flow > .clipped-container > .sheet > .list-cell {
+    -fx-font-family: "Segoe UI";
+    -fx-font-size: 11pt;
+    -fx-padding: 4 0 4 5;
+    -fx-background-color: -var-list_cell_color;
+}
+
+.combo-box-popup > .list-view > .virtual-flow > .clipped-container > .sheet > .list-cell:hover {
+    -fx-background-color: -var-list_cell_hover_color;
+    -fx-text-fill: -var-text_color;
+}
+
+.combo-box-popup > .list-view > .virtual-flow > .clipped-container > .sheet > .list-cell:filled:selected {
+    -fx-background-color: derive(-var-accent_color, 90%);
+    -fx-text-fill: #111111;
+}
+
+.combo-box-popup > .list-view > .virtual-flow > .clipped-container > .sheet > .list-cell:filled:selected:hover {
+    -fx-background-color: derive(-var-accent_color, 70%);
+}
+
+/*******************************************************************************
+ *                                                                             *
+ * Spinner                                                                     *
+ *                                                                             *
+ ******************************************************************************/
+.spinner {
+    -var-spinner_background_color: #4A4A4A;
+
+    -var-arrow_button_hover_color: #3C4145;
+    -var-arrow_button_pressed_color: #A8ABAC;
+
+    -var-arrow_color: #999999;
+    -var-arrow_pressed_color: #5E6060;
+
+    -fx-background-color: -var-spinner_background_color;
+    -fx-background-insets: 0;
+    -fx-background-radius: 0;
+    -var-text_color: white;
+}
+
+.spinner > .text-field {
+    -fx-text-fill: -var-text_color;
+    -fx-background-color: -var-spinner_background_color;
+    -fx-background-insets: 0;
+    -fx-background-radius: 0;
+}
+
+/* TODO: Below doesn't work when spinner is in SPLIT_ARROWS_HORIZONTAL and is not focused
+   however it works if you are running with Scenic View attached. Should be a bug in JavaFX 8.
+ */
+.spinner:focused > .text-field,
+.spinner:contains-focus > .text-field,
+.spinner > .text-field,
+.spinner.split-arrows-horizontal > .text-field {
+    -fx-text-fill: -var-text_color;
+}
+
+.spinner .increment-arrow-button,
+.spinner .decrement-arrow-button {
+    -fx-background-color: -var-spinner_background_color;
+    /*Change the two 0's here to -1 to get rid of the horizontal line */
+    -fx-background-insets: 0;
+    -fx-background-radius: 0;
+}
+
+.spinner .increment-arrow-button:hover,
+.spinner .decrement-arrow-button:hover {
+    -fx-background-color: -var-arrow_button_hover_color;
+}
+
+.spinner .increment-arrow-button:pressed,
+.spinner .decrement-arrow-button:pressed {
+    -fx-background-color: -var-arrow_button_pressed_color;
+}
+
+.spinner .increment-arrow-button .increment-arrow,
+.spinner .decrement-arrow-button .decrement-arrow {
+    -fx-background-color: -var-arrow_color;
+}
+
+.spinner .increment-arrow-button:pressed .increment-arrow,
+.spinner .decrement-arrow-button:pressed .decrement-arrow {
+    -fx-background-color: -var-arrow_pressed_color;
+}
+
+/*******************************************************************************
+ *                                                                             *
+ * SplitPane                                                                  *
+ *                                                                             *
+ ******************************************************************************/
+
+.split-pane *.split-pane-divider {
+
+    -fx-border-color: #A1E1E1;
+    -fx-border-width: 2;
+    -fx-background-color: transparent;
+    -fx-background-insets: 2;
+    -fx-padding: 0 2.0 0 2.0;
+}
+
+/*******************************************************************************
+ *                                                                             *
+ * GridPane                                                                  *
+ *                                                                             *
+ ******************************************************************************/
+
+.grid-pane {
+    -fx-background-color: transparent;
+}
+
+/*******************************************************************************
+ *                                                                             *
+ * Context Menu, Menus, MenuBar and MenuItem                                   *
+ *                                                                             *
+ ******************************************************************************/
+
+.context-menu {
+    menu_background_color: #2B2B2B;
+    context_menu_border_color: #777677;
+    separator_color: #555555;
+    -fx-background-color: menu_background_color;
+    -fx-background-insets: 0, 1, 2;
+    -fx-background-radius: 0 0 0 0, 0 0 0 0, 0 0 0 0;
+    -fx-padding: 0.5em 0em 0.5em 0em; /* 6 0 6 0 */
+
+    -fx-border-color: context_menu_border_color;
+    -fx-border-style: solid;
+}
+
+.context-menu StackPane {
+    -fx-background-color: transparent;
+}
+
+/* separator */
+.context-menu .separator {
+    -fx-padding: 0.58333275em 1em 0.58333275em 1em; /*7 12 7 12 */
+}
+
+.context-menu .separator:horizontal .line {
+    -fx-border-color: separator_color transparent transparent transparent;
+    -fx-border-insets: 0;
+}
+
+/********************************* Menu Bar ************************************/
+
+.menu-bar {
+    text_color: white;
+    menu_button_hover_color: #404040;
+    -fx-background-color: background_color;
+    -fx-background-insets: 0 0 0 0;
+    -fx-font-family: "Segoe UI";
+}
+
+.menu-bar > .container {
+    -fx-background-color: transparent;
+}
+
+.menu-bar > .container > .menu-button {
+    -fx-background-color: transparent;
+}
+
+.menu-bar > .container > .menu-button {
+    -fx-padding: 0.5em 1em 0.5em 0.666667em; /* 6 12 6 8 */
+    -fx-border-width: 0;
+}
+
+.menu-bar > .container > .menu-button > .arrow-button > .arrow {
+    -fx-padding: 0.167em 0 0.25em 0; /* 2 0 3 0 */
+}
+
+.menu-bar > .container > .menu-button > .label {
+    -fx-padding: 0;
+    -fx-label-padding: 0 0 0 0;
+}
+
+.menu-bar > .container > .menu > .arrow-button {
+    -fx-padding: 0.5em 0 0.5em 0; /* 6 0 6 0 */
+}
+
+.menu-bar > .container > .menu-button:hover,
+.menu-bar > .container > .menu-button:focused,
+.menu-bar > .container > .menu-button:showing {
+    -fx-background-color: menu_button_hover_color;
+
+}
+
+.menu-bar > .container > .menu-button > .label,
+.menu-bar > .container > .menu-button:hover > .label,
+.menu-bar > .container > .menu-button:focused > .label,
+.menu-bar > .container > .menu-button:showing > .label {
+    -fx-text-fill: text_color;
+}
+
+/********************************* Menu Item ***********************************/
+
+.menu-item {
+    text_color: white;
+    menu_background_color: #2B2B2B;
+    graphic_color: #AAAAAA;
+    hover_color: #404040;
+    pressed_color: #555555;
+    -fx-text-fill: text_color;
+    -fx-background-color: menu_background_color;
+    -fx-padding: 0.583333em 1em 0.583333em 1em; /*7 12 7 12 */
+}
+
+.menu-item > .right-container,
+.menu-item > .left-container {
+    -fx-background-color: menu_background_color;
+}
+
+.menu-item .label {
+    -fx-padding: 0em 1.333333em 0em 0em; /* 0 16 0 0 */
+    -fx-text-fill: text_color;
+    -fx-font-family: "Segoe UI";
+    -fx-font-size: 1.333333em; /* 16 */
+}
+
+.menu-item > .graphic-container {
+    -fx-padding: 0em 0.75em 0em 0em; /* 0 9 0 0 */
+}
+
+.radio-menu-item:checked > .left-container > .radio {
+    -fx-shape: "M17.939,5.439L7.5,15.889l-5.439-5.449l0.879-0.879L7.5,14.111 l9.561-9.551L17.939,5.439z";
+
+    -fx-padding: 0.416667em 0.583333em 0.416667em 0.583333em; /* 5 7 5 7 */
+    -fx-scale-shape: true;
+}
+
+.check-menu-item:checked > .left-container > .check {
+    -fx-shape: "M17.939,5.439L7.5,15.889l-5.439-5.449l0.879-0.879L7.5,14.111 l9.561-9.551L17.939,5.439z";
+
+    -fx-padding: 0.416667em 0.583333em 0.416667em 0.583333em;; /* 5 7 5 7 */
+    -fx-scale-shape: true;
+}
+
+.check-menu-item:checked > .left-container {
+    -fx-padding: 0em 1em 0em 0.5em; /* 0 12 0 6 */
+}
+
+.radio-menu-item:checked > .left-container {
+    -fx-padding: 0em 1em 0em 0.5em; /* 0 12 0 6 */
+}
+
+.menu > .right-container > .arrow {
+    -fx-padding: 0.458em 0.333333em 0.458em 0.333333em; /* >5 4 >5 4 */
+    -fx-shape: "M8.06,20.938L7,20l8-8L7,4l1.06-0.938L16.917,12L8.06,20.938z";
+    -fx-scale-shape: true;
+}
+
+.radio-menu-item:checked > .left-container > .radio,
+.check-menu-item:checked > .left-container > .check,
+.menu > .right-container > .arrow {
+    -fx-background-color: graphic_color;
+}
+
+/* hover */
+.menu-item:hover,
+.menu-item:focused,
+.menu-item:hover > .right-container,
+.menu-item:hover > .left-container,
+.menu-item:focused > .right-container,
+.menu-item:focused > .left-container {
+    -fx-background-color: hover_color;
+}
+
+/* pressed */
+.menu-item:pressed,
+.menu-item:pressed > .right-container,
+.menu-item:pressed > .left-container {
+    -fx-background-color: pressed_color;
+}
+
+/* disabled */
+.menu-item:disabled:hover,
+.menu-item:disabled:focused,
+.menu-item:disabled:pressed {
+    -fx-background-color: transparent;
+}
+
+
+/*******************************************************************************
+ *                                                                             *
+ * SplitMenuButton                                                             *
+ *                                                                             *
+ ******************************************************************************/
+
+.split-menu-button {
+    -button_background_color: #333333;
+    -background_pressed_color: #666666;
+    -border_hover_color: #858585;
+    -light_button_hover_color: #505050;
+    -text_color: white;
+    -focus_ring_border_color: white;
+    -arrow_color: white;
+    -fx-background-color: -button_background_color;
+    -fx-background-insets: 0;
+    -fx-background-radius: 0;
+    -fx-font-family: "Segoe UI";
+}
+
+.split-menu-button > .label {
+    -fx-border-color: transparent;
+    -fx-border-width: 2px;
+
+    -fx-text-fill: -text_color;
+
+    -fx-background-color: -button_background_color;
+    -fx-background-insets: 0;
+    -fx-background-radius: 0;
+}
+
+.split-menu-button > .arrow-button {
+    -fx-border-color: transparent;
+    -fx-border-width: 2px;
+
+    -fx-background-color: -button_background_color;
+    -fx-background-insets: 0;
+    -fx-background-radius: 0;
+}
+
+.split-menu-button > .arrow-button > .arrow {
+    -fx-padding: 0.208em 0.358em 0.208em 0.358em; /* 2.5px 4.29px 2.5px 4.29px */
+    -fx-shape: "M21.361,12.736l0.527,0.527L16,19.152l-5.889-5.889l0.527-0.527L16,18.098L21.361,12.736z";
+
+    -fx-background-color: -arrow_color;
+}
+
+/* - hover */
+.split-menu-button > .label:hover {
+    -fx-border-color: -border_hover_color;
+}
+
+.split-menu-button > .arrow-button:hover {
+    -fx-border-color: -border_hover_color;
+}
+
+/* - pressed */
+.split-menu-button > .label:pressed {
+    -fx-border-color: -background_pressed_color;
+    -fx-background-color: -background_pressed_color;
+}
+
+.split-menu-button > .arrow-button:pressed {
+    -fx-border-color: -background_pressed_color;
+    -fx-background-color: -background_pressed_color;
+}
+
+/* - focused */
+.split-menu-button:focused {
+    -fx-border-color: -focus_ring_border_color;
+    -fx-border-width: 1px;
+    -fx-border-insets: -2;
+
+    -fx-border-style: segments(1, 2) outside;
+
+    -fx-padding: 0px;
+
+    -fx-background-color: -button_background_color;
+    -fx-background-insets: 0;
+    -fx-background-radius: 0;
+}
+
+/*******************************************************************************
+ *                                                                             *
+ * TabPane                                                                     *
+ *                                                                             *
+ ******************************************************************************/
+
+.tab-pane {
+    -fx-tab-min-height: 2.0em; /* 22 */
+    -fx-tab-max-height: 2.0em; /* 22 */
+    -fx-background-color: #00000000;
+}
+
+/*
+.tab-pane > .tab-header-area > .headers-region > .tab {
+    -fx-background-insets: 0 1 1 0, 1 2 1 1, 2 3 1 2;
+    -fx-background-radius: 3 3 0 0, 2 2 0 0, 1 1 0 0;
+    -fx-padding: 0.083333em 0.5em 0.0769em 0.5em;
+    -fx-background-color: #55c4fe22;
+
+    -fx-border-width: 1, 1;
+    -fx-border-color: -fx-focus-color, -fx-faint-focus-color;
+    -fx-border-insets: -4 -4 -6 -5, -2 -2 -5 -3;
+    -fx-border-radius: 2, 1;
+
+}
+*/
+.tab-pane .tab {
+    -fx-background-color: #5C3C3C77;
+    -fx-border-color: #55C4FE77;
+}
+
+.tab-pane .tab:selected {
+    -fx-background-color: #55C4FE77;
+    -fx-border-color: #55C4FE;
+    -fx-border-insets: -4 -4 -6 -5, -2 -2 -5 -3;
+    -fx-border-radius: 2, 1;
+
+}
+
+.tab-pane > .tab-header-area > .headers-region > .tab > .tab-container > .tab-label {
+    -fx-alignment: CENTER;
+    -fx-font-size: 12pt;
+    -fx-font-family: "Segoe UI Semibold";
+    -fx-text-fill: aliceblue;
+}
+
+/*
+.tab-pane > .tab-header-area > .headers-region > .tab:top {
+    -fx-background-color: -fx-outer-border, -fx-inner-border, -fx-body-color;
+}
+
+.tab-pane > .tab-header-area > .headers-region > .tab:hover {
+    -fx-color: -fx-hover-base;
+}
+*/
+
+.tab-pane > .tab-header-area > .headers-region > .tab:selected {
+    -fx-border-width: 1, 1;
+    -fx-border-color: -fx-focus-color, -fx-faint-focus-color;
+    -fx-border-insets: -4 -4 -6 -5, -2 -2 -5 -3;
+    -fx-border-radius: 2, 1;
+}
+
+.tab-pane:focused > .tab-header-area > .headers-region > .tab:selected .focus-indicator {
+    -fx-border-width: 1, 1;
+    -fx-border-color: -fx-focus-color, -fx-faint-focus-color;
+    -fx-border-insets: -4 -4 -6 -5, -2 -2 -5 -3;
+    -fx-border-radius: 2, 1;
+}
+
+.tab-pane:showing > .tab-header-area > .headers-region > .tab {
+    -fx-border-width: 1, 1;
+    -fx-border-color: -fx-focus-color, -fx-faint-focus-color;
+    -fx-border-insets: -4 -4 -6 -5, -2 -2 -5 -3;
+    -fx-border-radius: 2, 1;
+}
+
+/*
+.tab-pane:focused > .tab-header-area > .headers-region > .tab:selected .focus-indicator {
+    -fx-border-width: 1, 1;
+    -fx-border-color: -fx-focus-color, -fx-faint-focus-color;
+    -fx-border-insets: -4 -4 -6 -5, -2 -2 -5 -3;
+    -fx-border-radius: 2, 1;  looks sharper if outer border has a tighter radius (2 instead of 3)
+}
+.tab-pane:focused > .tab-header-area > .headers-region > .tab:bottom:selected .focus-indicator {
+    -fx-border-insets: -6 -5 -4 -4, -5 -3 -2 -2;
+}
+.tab-pane > .tab-header-area > .headers-region > .tab:disabled:hover {
+    -fx-color: -fx-base;
+}
+*/
+/*
+.tab-pane > .tab-header-area > .tab-header-background {
+    -fx-background-color:
+        -fx-outer-border,
+        -fx-text-box-border,
+        linear-gradient(from 0px 0px to 0px 5px, -fx-text-box-border, derive(-fx-text-box-border, 30%));
+}
+*/
+.tab-pane:top > .tab-header-area > .tab-header-background {
+    -fx-background-insets: 0, 0 0 1 0, 1;
+    -fx-background-color: transparent;
+}
+
+.tab-pane:top > .tab-header-area {
+    -fx-padding: 0.416667em 0.166667em 0.0em 0.416667em;
+    -fx-padding: 0.416667em 5 0.0em 0.416667em;
+    -fx-background-color: transparent;
+}
+
+/*
+
+ CONTROL BUTTONS
+.tab-pane > .tab-header-area > .control-buttons-tab > .container {
+    -fx-padding: 3 0 0 0;
+}
+.tab-pane > .tab-header-area > .control-buttons-tab > .container > .tab-down-button {
+    -fx-background-color: -fx-outer-border, -fx-inner-border, -fx-body-color;
+    -fx-background-insets: -1 0 5 0, 0 1 6 1, 1 2 7 2;
+    -fx-padding: 4 4 9 4;
+    -fx-background-radius: 10;
+}
+.tab-pane:bottom > .tab-header-area > .control-buttons-tab > .container > .tab-down-button {
+    -fx-padding: -5 4 4 4;  TODO convert to ems
+}
+ FLOATING TABS CUSTOMISATION
+.tab-pane.floating > .tab-header-area > .tab-header-background {
+    -fx-background-color: null;
+}
+.tab-pane.floating > .tab-header-area {
+    -fx-background-color: null;
+}
+.tab-pane.floating > .tab-content-area {
+    -fx-background-color: -fx-outer-border, -fx-background;
+    -fx-background-insets: 0, 1;
+    -fx-background-radius: 2, 0;
+    -fx-padding: 2;
+}*/
+
+/*******************************************************************************
+*                                                                             *
+* TitledPane                                                                  *
+*                                                                             *
+******************************************************************************/
+
+.titled-pane {
+    -var-text_color: white;
+    -var-title_background_color: #1F1F1F;
+    -var-title_background_hover_color: #4A4A4A;
+    -var-border_color: #494949;
+    -var-arrow_color: #6495ED; /* CornflowerBlue */
+    -var-content_background_color: #6495ED66;
+    -fx-background-color: -var-content_background_color;
+}
+
+/* Text inside header area */
+.titled-pane > .title > .text {
+    -fx-fill: -var-text_color;
+    -fx-font-family: "Segoe UI";
+    -fx-font-size: 1.166667em; /* 14 */
+}
+
+/* Title header area */
+.titled-pane > .title {
+    -fx-background-color: -var-border_color, -var-title_background_color;
+    -fx-background-insets: 0, 1;
+    -fx-background-radius: 0;
+}
+
+.titled-pane > .title:hover {
+    -fx-background-color: -var-border_color, -var-title_background_hover_color;
+}
+
+/* Arrow (for collapsing/expanding) */
+.titled-pane > .title > .arrow-button > .arrow {
+    -fx-shape: "M 4.21875 10.78125 L 2.78125 12.21875 L 15.28125 24.71875 L 16 25.40625 L 16.71875 24.71875 L 29.21875 12.21875 L 27.78125 10.78125 L 16 22.5625 Z";
+    -fx-background-color: -var-arrow_color;
+    -fx-effect: null;
+}
+
+.titled-pane > .title > .arrow-button > .arrow,
+.titled-pane:focused > .title > .arrow-button > .arrow {
+    -fx-background-insets: 0, 0;
+}
+
+/* Content */
+.titled-pane > .content {
+    -fx-border-width: 0;
+    -fx-background-color: -var-content_background_color;
+    -fx-background-insets: -1 0 0 0, 0 1 1 1;
+}
+
+/* Disabled */
+.titled-pane:disabled,
+.titled-pane:disabled > .title,
+.titled-pane:disabled > .content {
+    -fx-opacity: 0.5;
+}
+
+/*******************************************************************************
+ *                                                                             *
+ * Tree View                                                                   *
+ *                                                                             *
+ ******************************************************************************/
+
+.tree-view, .table-view {
+    cell_hover_color: #515151;
+    cell_pressed_color: #3E3E3E;
+
+    cell_selected_unfocused_color: cell_hover_color;
+
+    cell_selected_color: derive(-var-accent_color, -35%);
+    cell_selected_hover_color: derive(-var-accent_color, -20%);
+    cell_selected_pressed_color: derive(-var-accent_color, 60%);
+
+    tree_view_background_color: #333333;
+
+    /*
+        -fx-border-color: #a1e1e1;
+        -fx-background-color: #55c4fe;
+    */
+
+    alternate_row_color: #3C3C3C;
+
+    text_color: white;
+    text_selected_color: white;
+    text_hover_color: text_color;
+
+    arrow_color: #A1E1E1;
+    arrow__hover_color: #55C4FE;
+    arrow_selected_hover_color: #55C4FE;
+
+    -fx-background-color: tree_view_background_color;
+    -fx-padding: 0;
+    -fx-background-insets: 0;
+}
+
+.tree-view .tree-cell {
+    -fx-font-size: 1em; /* 12 */
+    -fx-padding: 0.5em; /* 6 */
+    -fx-background-color: tree_view_background_color;
+    -fx-text-fill: text_color;
+}
+
+.tree-view.alternating-row-colors .tree-cell:odd {
+    -fx-background-color: alternate_row_color;
+}
+
+.tree-view .tree-cell > .tree-disclosure-node {
+    -fx-background-color: transparent;
+}
+
+/********** Label **********/
+.tree-view .tree-cell .label {
+    -fx-font-family: "Segoe UI";
+
+    -fx-padding: 0 0.25em 0 0; /* 0 3 0 0 */
+}
+
+.tree-view .tree-cell {
+    -fx-text-fill: text_color;
+}
+
+/* Hover */
+.tree-view .tree-cell:filled:hover,
+.tree-view.alternating-row-colors .tree-cell:filled:hover:odd {
+    -fx-background-color: cell_hover_color;
+
+    -fx-text-fill: text_hover_color;
+}
+
+.tree-view .tree-cell:hover > .tree-disclosure-node > .arrow {
+    -fx-background-color: arrow__hover_color;
+}
+
+/* Selected */
+.tree-view .tree-cell:filled:selected,
+.tree-view.alternating-row-colors .tree-cell:filled:selected:odd {
+    -fx-background-color: cell_selected_color;
+    -fx-table-cell-border-color: transparent;
+
+    -fx-text-fill: text_selected_color;
+}
+
+/* Selected hover */
+.tree-view .tree-cell:filled:selected:hover,
+.tree-view .tree-cell:selected:hover,
+.tree-view.alternating-row-colors .tree-cell:filled:selected:hover:odd,
+.tree-view.alternating-row-colors .tree-cell:selected:hover:odd {
+    -fx-background-color: cell_selected_hover_color;
+    -fx-text-fill: text_selected_color;
+}
+
+.tree-view .tree-cell:selected:hover > .tree-disclosure-node > .arrow {
+    -fx-background-color: arrow_selected_hover_color;
+}
+
+
+/* Pressed */
+.tree-view .tree-cell:filled:pressed,
+.tree-view .tree-cell:filled:selected:pressed,
+.tree-view .tree-cell:selected:pressed,
+.tree-view .tree-cell:pressed,
+.tree-view.alternating-row-colors .tree-cell:filled:pressed:odd,
+.tree-view.alternating-row-colors .tree-cell:filled:selected:pressed:odd,
+.tree-view.alternating-row-colors .tree-cell:selected:pressed:odd,
+.tree-view.alternating-row-colors .tree-cell:pressed:odd {
+    -fx-background-color: cell_pressed_color;
+}
+
+/*********** Expand/Collapse icon **********/
+.tree-cell > .tree-disclosure-node {
+    -fx-padding: 0.333333em 0.75em 0.333333em 0.75em; /* 4 9 4 9 */
+}
+
+.tree-cell > .tree-disclosure-node > .arrow {
+    -fx-background-color: arrow_color;
+    -fx-padding: 0.416667em 0.333333em 0.416667em 0.333333em; /* 5 4 5 4 */
+    -fx-shape: "M8.06,20.938L7,20l8-8L7,4l1.06-0.938L16.917,12L8.06,20.938z";
+}
+
+.tree-cell > .tree-disclosure-node > .arrow {
+    -fx-background-color: text_color;
+}
+
+.tree-cell:hover > .tree-disclosure-node > .arrow {
+    -fx-background-color: text_hover_color;
+}
+
+.tree-cell:selected > .tree-disclosure-node > .arrow {
+    -fx-background-color: text_selected_color;
+}
+
+.tree-cell:expanded > .tree-disclosure-node > .arrow {
+    -fx-scale-y: -1;
+    -fx-rotate: 90;
+}
+
+.tree-cell {
+    -fx-background-color: transparent;
+}
+
+/*******************************************************************************
+ *                                                                             *
+ * Progress Bar and Indicator                                                                *
+ *                                                                             *
+ ******************************************************************************/
+.progress-bar {
+    progress_background_color: #333333;
+    track_background_color: progress_background_color;
+    bar_color: -var-accent_color;
+    dot_color: -var-accent_color;
+}
+
+.progress-indicator:indeterminate > .spinner {
+    /** Applying to undo styling from .spinner, reported in RT-37965 */
+    -fx-background-color: transparent;
+    /* originally was */
+    /*-fx-background-color: transparent;*/
+    -fx-background-insets: 0;
+    -fx-background-radius: 0;
+}
+
+/*
+.progress-bar {
+    -fx-skin: "impl.jfxtras.styles.jmetro.ProgressBarSkin";
+}*/
+
+.progress-bar > .bar {
+    -fx-background-color: bar_color;
+    -fx-background-radius: 0;
+    -fx-background-insets: 0;
+}
+
+.progress-bar > .track {
+    -fx-background-color: track_background_color;
+    -fx-background-insets: 0;
+    -fx-background-radius: 0;
+
+    -fx-pref-height: 4px;
+    -fx-min-height: 4px;
+    -fx-max-height: 4px;
+}
+
+/* Indeterminate */
+.progress-bar:indeterminate > .track {
+    -fx-background-color: transparent;
+}
+
+.progress-bar:indeterminate .dot {
+    -fx-background-radius: 1em;
+    -fx-padding: 0.166667em;
+    -fx-background-color: dot_color;
+}
+
+/*******************************************************************************
+ *                                                                             *
+ * Custom                                                                      *
+ *                                                                             *
+ ******************************************************************************/
+
+#bounding-box {
+    -fx-stroke: #C7CFC5;
+    -fx-stroke-width: 1;
+    -fx-stroke-dash-array: 4 2 4 2;
+    -fx-stroke-dash-offset: 1;
+    -fx-background-color: transparent;
+}
+
+#bounding-box-fill {
+    -fx-background-color: blanchedalmond;
+    -fx-opacity: 0.2
+}

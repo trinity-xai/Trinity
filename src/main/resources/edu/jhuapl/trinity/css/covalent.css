@@ -1,0 +1,162 @@
+@font-face {
+    font-family: 'Roboto Black';
+    src: url('Roboto-Black.ttf');
+}
+
+@font-face {
+    font-family: 'Roboto Regular';
+    src: url('Roboto-Regular.ttf');
+}
+
+@font-face {
+    font-family: 'Roboto Thin';
+    src: url('Roboto-Thin.ttf');
+}
+
+.root {
+    -grey-ish: rgba(110, 116, 156, .7);
+    -white-ish: rgba(255, 255, 255, .20);
+    -black-ish: rgba(0, 0, 0, 0.8);
+    -clear-ish: rgba(0, 0, 0, 0.3);
+    -orange-ish: rgba(215, 156, 88, .90);
+    -sheer-blue: #55C4FE33;
+    -lighter-orange-ish: rgba(230, 218, 137, 1.0);
+    -green-screen-text: rgba(0, 250, 0, 1.0);
+}
+
+.path-window-background {
+
+    /*-fx-background-color: -clear-ish;*/
+    /*    -fx-border-color: -white-ish;
+        -fx-border-style: solid;
+        -fx-border-insets: 6 6 6 6;
+        -fx-border-width: 1.5;
+        -fx-border-radius: 5;*/
+
+}
+
+.outer-path-frame {
+    -fx-fill: -clear-ish;
+    -fx-stroke: -grey-ish;
+    /*-fx-stroke: rgba(255, 255, 255, .9);*/
+    -fx-stroke-type: inside;
+    -fx-stroke-width: 2;
+    -fx-stroke-line-cap: round;
+    -fx-stroke-line-join: round;
+}
+
+.window-header {
+    -fx-background-color: -grey-ish;
+}
+
+.window-header-text {
+    -fx-font-family: "Roboto Regular";
+    -fx-font-weight: 300;
+    -fx-font-size: 12;
+    -fx-fill: blue;
+}
+
+.window-header-minimize-button {
+    -fx-fill: #FFFFFFAA;
+    -fx-stroke: -grey-ish;
+    -fx-width: 50;
+    -fx-height: 10;
+}
+
+.window-header-minimize-button:hover {
+    -fx-fill: linear-gradient(to bottom, #FFFFFF77 10%, #55C4FE55 50%, #55C4FE 90%);
+}
+
+.window-header-maximize-button {
+    -fx-fill: #0000FFAA;
+    -fx-stroke: -grey-ish;
+    -fx-width: 50;
+    -fx-height: 10;
+}
+
+.window-header-maximize-button:hover {
+    -fx-fill: linear-gradient(to bottom, #0000FF77 10%, #55C4FE55 50%, #55C4FE 90%);
+}
+
+.window-header-close-button {
+    -fx-fill: #FF0000AA;
+    -fx-stroke: -grey-ish;
+    -fx-width: 50;
+    -fx-height: 10;
+}
+
+.window-header-close-button:hover {
+    -fx-fill: linear-gradient(to bottom, #FF000077 10%, #55C4FE55 50%, #55C4FE 90%);
+}
+
+.window-accent-shape {
+    -fx-fill: -lighter-orange-ish;
+    -fx-stroke: -lighter-orange-ish;
+    -fx-stroke-width: 1;
+    -fx-stroke-line-cap: round;
+    -fx-stroke-line-join: round;
+}
+
+.left-tab-shape {
+    -fx-fill: -grey-ish;
+    -fx-stroke: -grey-ish;
+    -fx-stroke-width: 1;
+    -fx-stroke-line-cap: round;
+    -fx-stroke-line-join: round;
+}
+
+.main-title-text {
+    -fx-font-family: "Roboto Black";
+    -fx-font-weight: 900;
+    -fx-font-size: 20;
+    -fx-fill: aliceblue;
+}
+
+.main-title-text2 {
+    -fx-font-family: "Roboto Regular";
+    -fx-font-weight: 300;
+    -fx-font-size: 16;
+    -fx-fill: -grey-ish;
+}
+
+.main-title-display {
+    -fx-background-color: -black-ish;
+}
+
+.main-title-path {
+    /*    -fx-background-color: rgba(223,172,100, .90); */
+    /*    -fx-fill: -orange-ish;*/
+
+    -fx-fill: -sheer-blue;
+    -fx-stroke: -grey-ish;
+    -fx-stroke-type: inside;
+    -fx-stroke-width: 1;
+    -fx-stroke-line-cap: round;
+    -fx-stroke-line-join: round;
+}
+
+.main-content-view {
+    /*
+        -fx-background-color: red;
+
+        -fx-border-color: white;
+        -fx-border-style: solid;
+        -fx-border-insets: 6 6 6 6;
+        -fx-border-width: 1.5;
+        -fx-border-radius: 5;
+    */
+}
+
+.main-content-inner-path {
+    -fx-fill: -clear-ish;
+    /*-fx-fill: blue;*/
+    -fx-stroke: -grey-ish;
+    -fx-stroke-type: inside;
+    -fx-stroke-width: 2;
+    -fx-stroke-line-cap: round;
+    -fx-stroke-line-join: round;
+}
+
+.main-content-pane {
+    -fx-padding: 15;
+}

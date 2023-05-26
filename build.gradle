@@ -1,0 +1,348 @@
+plugins {
+    id 'java'
+    id 'idea'
+    id 'application'
+    id 'java-library'
+    // PLUGIN ORDER MATTERS!!!
+    // Leave Modularity Plugin Here!
+    id 'org.javamodularity.moduleplugin' version '1.8.12'
+    id 'org.openjfx.javafxplugin' version '0.0.14'
+    id 'org.beryx.jlink' version '2.26.0'
+    id 'com.github.ben-manes.versions' version '0.46.0'
+}
+
+ext {
+    //originalClassesDir = sourceSets.main.java.outputDir
+    //originalResourcesDir = sourceSets.main.output.resourcesDir
+    finalOutputName = 'Trinity'
+    buildDate = new Date().format("yyyy-MM-dd'T'HH:mm:ss'Z'")
+    mainClassPath = 'edu.jhuapl.trinity.App'
+    mainClassJarLauncher = 'edu.jhuapl.trinity.TrinityMain'
+    sModuleName = moduleName // force cast to string on lazy prop
+    isProdJar = findProperty('env') == 'prod-jar'
+    isProdJlink = findProperty('env') == 'prod-jlink'
+    isProdGraal = findProperty('env') == 'prod-graal'
+    isDevelopment = findProperty('env') == 'dev'
+    fxVersion = findProperty("javafx.version")
+}
+
+group 'trinity'
+version "1.0.0-SNAPSHOT"
+
+sourceCompatibility = JavaVersion.VERSION_17
+targetCompatibility = JavaVersion.VERSION_17
+mainClassName = "$moduleName/$mainClassPath"
+
+println "Working Directory: $rootDir"
+println "Java Being Used: " + System.getProperty('java.home')
+println "Building Module: $mainClassName $version with FX v$fxVersion"
+println "Is Development: $isDevelopment"
+println "Executing: " + gradle.startParameter.getTaskNames()
+println "OS Detected: " + org.gradle.internal.os.OperatingSystem.current()
+// ########################## TASKS Start ########################## //
+
+// <editor-fold desp="Start Gradle Tasks">
+
+// ########################## IDE Specific ########################## //
+
+// <editor-fold desp="IDE Specific Tasks">
+
+// https://youtrack.jetbrains.com/issue/IDEA-222172
+idea {
+    module {
+        inheritOutputDirs = true
+        downloadJavadoc = true
+        downloadSources = true
+    }
+
+}
+
+if (isDevelopment) {
+    // https://intellij-support.jetbrains.com/hc/en-us/community/posts/360000430279-Can-t-access-resource-with-Java-10
+    // Gradle separates resources and classes into separate directories. Running it with IntelliJ due to Java 9 module system makes it not work.
+    // Two Options: Make the resources dir same as java output dir (jar tasks do this) or tweak module-info.java just for the IDE to work.
+    //sourceSets.main.output.resourcesDir = sourceSets.main.java.outputDir
+}
+
+// </editor-fold>
+
+// ########################## Java FX Specific ########################## //
+
+// <editor-fold desp="Java FX Specific Tasks">
+
+javafx {
+    version = "$fxVersion"
+    modules = ['javafx.controls', 'javafx.graphics', 'javafx.fxml', 'javafx.swing']
+}
+
+// https://github.com/oracle/graal/issues/403
+// https://github.com/gluonhq/client-samples
+// https://docs.gluonhq.com/client/
+//gluonClient {
+//    target = "host"
+//}
+
+// </editor-fold>
+
+// ########################## Java Specific ########################## //
+
+// <editor-fold desp="Java Specific Tasks">
+
+java {
+    modularity.inferModulePath.set(true)
+}
+
+compileJava {
+    //moduleOptions.addExports = ['external.module.name/external.package.name': moduleName]
+    doFirst {
+        println options.compilerArgs
+    }
+}
+
+application {
+    mainClass = mainClassJarLauncher
+    mainModule = moduleName
+//    applicationDefaultJvmArgs += ["--add-exports", "external.module.name/external.package.name=" + moduleName.toString()]
+}
+
+
+run {
+//    jvmArgs += ["--add-exports", "external.module.name/external.package.name=" + moduleName.toString()]
+}
+
+tasks.register('debug', JavaExec) {
+    dependsOn 'classes'
+    mainClass = mainClassPath
+    classpath = sourceSets.main.runtimeClasspath
+    debug true
+}
+// </editor-fold>
+
+// ########################## Process Resource Files ########################## //
+
+// <editor-fold desp="Process Resource Files">
+
+// Allows adding title and version to build.properties resource file on compilation...
+processResources {
+    def props = ["title": "$finalOutputName", "version": "$version", "buildDate": "$buildDate"]
+    filesMatching("**/build.properties") {
+        expand props
+    }
+    // Configure Logging Path
+    def logPath = "${finalOutputName}.log"
+    // Log to Console.App on OSX
+    if (isProdJlink && org.gradle.internal.os.OperatingSystem.current().isMacOsX()) {
+        logPath = '${user.home}/Library/Logs/trinity.log'
+    }
+    def logbackProps = ["logPath": "$logPath", "logLevel": '${LOGBACK_LOG_LEVEL:-WARN}']
+    filesMatching("**/logback.xml") {
+        expand logbackProps
+    }
+}
+
+// </editor-fold>
+
+// ########################## Multi-Jar Tasks ########################## //
+
+// <editor-fold desp="Multi-Jar Tasks">
+
+// Non-Modular Cross Platform Build w/o Java FX
+tasks.register('nonFxFatJar', Jar) {
+    archiveClassifier = "no-fx"
+    duplicatesStrategy = DuplicatesStrategy.WARN // Gradle 7+
+    manifest {
+        attributes "Main-Class": "$mainClassJarLauncher"
+    }
+    exclude 'META-INF/.RSA', 'META-INF/.SF', 'META-INF/*.DSA', 'META-INF/proguard/**', 'META-INF/maven/**', 'META-INF/LICENSE', 'META-INF/NOTICE'
+    from {
+        // configurations.compileClasspath is Gradle 7+
+        sourceSets.main.output.collect {
+            println "Slim Jar: Including Main Dependency: $it"
+            it
+        }
+    }
+    from {
+        // configurations.compileClasspath is Gradle 7+
+        configurations.compileClasspath.filter({ !(it.name =~ /javafx.*\.jar/) }).collect {
+            println "Slim Jar: Including Dependency: $it.name"
+            it.isDirectory() ? it : zipTree(it)
+        }
+    }
+}
+
+// Non-Modular Cross Platform Build w/ Java FX
+tasks.register('fxFatJar', Jar) {
+    archiveClassifier = "fx"
+    duplicatesStrategy = DuplicatesStrategy.WARN // Gradle 7+
+    manifest {
+        attributes "Main-Class": "$mainClassJarLauncher"
+    }
+    exclude 'META-INF/.RSA', 'META-INF/.SF', 'META-INF/*.DSA', 'META-INF/proguard/**', 'META-INF/maven/**', 'META-INF/LICENSE', 'META-INF/NOTICE'
+    from {
+        sourceSets.main.output.collect {
+            println "Fat Jar: Including Main Dependency: $it"
+            it
+        }
+    }
+    from {
+        // configurations.compileClasspath is Gradle 7+
+        configurations.compileClasspath.collect {
+            println "Fat Jar: Including Dependency: $it.name"
+            it.isDirectory() ? it : zipTree(it)
+        }
+        //configurations.runtimeClasspath.collect {
+        //    println "Fat Jar: Including Dependency: $it"
+        //    it.isDirectory() ? it : zipTree(it)
+        //}
+    }
+}
+
+jar {
+    duplicatesStrategy = DuplicatesStrategy.WARN // Gradle 7+
+    manifest {
+        attributes "Main-Class": "$mainClassJarLauncher"
+    }
+    exclude 'META-INF/.RSA', 'META-INF/.SF', 'META-INF/*.DSA', 'META-INF/proguard/**', 'META-INF/maven/**', 'META-INF/LICENSE', 'META-INF/NOTICE'
+    if (isProdJar) {
+        finalizedBy(nonFxFatJar, fxFatJar)
+    }
+}
+
+// </editor-fold>
+
+// ########################## JLINK / JPACKAGE ########################## //
+
+// <editor-fold desp="JLINK / JPACKAGE">
+
+// Modular Build (non cross platform)
+jlink {
+    options.set(['--strip-debug', '--compress', '2', '--no-header-files', '--no-man-pages'])
+    imageZip.set(file("$buildDir/${finalOutputName}-${version}.zip"))
+    launcher {
+        name = "$finalOutputName"
+        mainClass = "$mainClassPath"
+        //jvmArgs += ['-Dlogback.configurationFile={{BIN_DIR}}/logback.xml']
+        //jvmArgs += ["--add-exports external.module.name/external.package.name=$sModuleName", ...]
+    }
+    //forceMerge('javafx')
+    addExtraDependencies("javafx")
+    jpackage {
+
+        imageName = "${finalOutputName}"
+        appVersion = version.toString().replaceAll("-SNAPSHOT", "")
+        //resourceDir = file("$sourceSets.main.output.resourcesDir") // https://docs.oracle.com/en/java/javase/14/jpackage/override-jpackage-resources.html
+        imageOptions += '--verbose'
+        jvmArgs = ['-p', '.']
+        if (org.gradle.internal.os.OperatingSystem.current().macOsX) {
+            skipInstaller = true
+            targetPlatformName = 'osx' // required when targetPlatform is used
+            //jvmArgs = ['-Dlogback.configurationFile=$ROOTDIR/runtime/Contents/Home/bin/logback.xml']
+        }
+        if (org.gradle.internal.os.OperatingSystem.current().windows) {
+            imageOptions += '--win-console'
+            skipInstaller = true
+            targetPlatformName = 'windows' // required when targetPlatform is used
+            // TODO
+        }
+        if (org.gradle.internal.os.OperatingSystem.current().linux) {
+            skipInstaller = false
+            // for menu group options, see https://specifications.freedesktop.org/menu-spec/latest/apa.html
+            // each value must be separated by ;, and final value must end with ;
+            installerType = 'rpm'
+            installerOptions += ['--linux-shortcut', '--linux-menu-group', 'science;graphics;']
+            targetPlatformName = 'linux-x64' // required when targetPlatform is used
+            // TODO
+        }
+        println "targetPlatformName: " + targetPlatformName
+    }
+}
+
+// https://badass-jlink-plugin.beryx.org/releases/latest/#_properties
+tasks.jlink.doLast {
+    copy {
+        from("$sourceSets.main.output.resourcesDir/logback.xml")
+        into("$imageDir/bin")
+    }
+}
+
+// </editor-fold>
+
+// </editor-fold>
+
+// ########################## TASKS END ########################## //
+
+// <editor-fold desp="Project Dependencies">
+
+repositories {
+    mavenLocal()
+    if (!maven_registry_context_url.empty) {
+        maven {
+            url "${maven_registry_context_url}/maven-central-remote"
+        }
+        maven {
+            url "${maven_registry_context_url}/maven-sonatype-remote"
+        }
+        maven {
+            url "${maven_registry_context_url}/maven-public-releases-local"
+        }
+        maven {
+            url "${maven_registry_context_url}/maven-public-snapshots-local"
+        }
+    }
+    mavenCentral()
+}
+
+dependencies {
+    // only needed if building a jar
+//    if (isProdJar) {
+//        runtimeOnly group: 'org.openjfx', name: 'javafx-graphics', version: "$fxVersion", classifier: 'win'
+//        runtimeOnly group: 'org.openjfx', name: 'javafx-graphics', version: "$fxVersion", classifier: 'linux'
+//        runtimeOnly group: 'org.openjfx', name: 'javafx-graphics', version: "$fxVersion", classifier: 'mac'
+//        runtimeOnly group: 'org.openjfx', name: 'javafx-graphics', version: "$fxVersion", classifier: 'linux-aarch64'
+//        runtimeOnly group: 'org.openjfx', name: 'javafx-graphics', version: "$fxVersion", classifier: 'mac-aarch64'
+//    }
+    // Excluding openjfx from 3rd party modules.
+    implementation(group: 'com.github.birdasaur.litfx', name: 'litfx-core', version: '0.1.0') {
+        exclude group: 'org.openjfx'
+    }
+    implementation(group: 'com.github.birdasaur.litfx', name: 'litfx-controls', version: '0.1.0') {
+        exclude group: 'org.openjfx'
+    }
+    implementation(group: 'org.fxyz3d', name: 'fxyz3d', version: '0.5.4') {
+        exclude group: 'org.openjfx'
+    }
+    implementation(group: 'eu.hansolo', name: 'toolbox', version: '17.0.43') {
+        exclude group: 'org.openjfx'
+    }
+    implementation(group: 'eu.hansolo', name: 'toolboxfx', version: '17.0.33') {
+        exclude group: 'org.openjfx'
+    }
+    implementation(group: 'eu.hansolo.fx', name: 'countries', version: '17.0.23') {
+        exclude group: 'org.openjfx'
+    }
+    implementation(group: 'eu.hansolo.fx', name: 'heatmap', version: '17.0.12') {
+        exclude group: 'org.openjfx'
+    }
+    implementation(group: 'eu.hansolo.fx', name: 'charts', version: '17.1.27') {
+        exclude group: 'org.openjfx'
+    }
+
+    implementation group: 'com.github.quickhull3d', name: 'quickhull3d', version: '1.0.0'
+    implementation group: 'org.apache.commons', name: 'commons-math3', version: '3.6.1'
+    implementation group: 'org.zeromq', name: 'jeromq', version: '0.5.3'
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.15.0'
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.15.0'
+    implementation group: 'com.github.sarxos', name: 'webcam-capture', version: '0.3.12'
+
+    // Enforce slf4j-api version across dependencies (although we're using JUL)
+    implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.7.36'
+
+    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.9.3'
+    testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.9.3'
+}
+
+//test {
+//    useJUnitPlatform()
+//}
+
+// </editor-fold>

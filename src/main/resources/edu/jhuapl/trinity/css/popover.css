@@ -1,0 +1,36 @@
+.popover {
+    -fx-background-color: linear-gradient(to right, #55C4FE11, #55C4FE99);
+    /*-fx-background-color: #55c4fe11;*/
+    /*-fx-effect: dropshadow(gaussian, lightskyblue, 6.0, 0.0, 1.0, 1.0);*/
+}
+
+.popover > .content > .title > .text {
+    -fx-text-fill: aliceblue;
+    -fx-font-size: 14pt;
+}
+
+.popover > .content > .title > .icon > .graphics > .line {
+    -fx-stroke: skyblue;
+    -fx-stroke-width: 2;
+}
+
+/*******************************************************************************
+ *                                                                             *
+ * Label                                                                       *
+ *                                                                             *
+ ******************************************************************************/
+
+.popover > .label {
+    -fx-font-size: 14pt;
+    -fx-font-family: "Segoe UI Semibold";
+    -fx-text-fill: aliceblue;
+    /*-fx-opacity: 0.75;*/
+}
+
+.popover > .border {
+    /*-fx-stroke: linear-gradient(to bottom, rgba(0,0,0, .3), rgba(0, 0, 0, .7)) ;*/
+    -fx-stroke: skyblue;
+    -fx-stroke-width: 0.5;
+    -fx-fill: rgba(0, 0, 0, 0.333); /* instead -fx-background-color */
+    /*-fx-effect: dropshadow(gaussian, lightskyblue, 6.0, 0.0, 1.0, 1.0);*/
+}

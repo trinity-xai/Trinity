@@ -1,0 +1,45 @@
+<?xml version="1.0" encoding="UTF-8"?>
+
+<?import javafx.geometry.Insets?>
+<?import javafx.scene.control.Label?>
+<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.TextField?>
+<?import javafx.scene.layout.AnchorPane?>
+<?import javafx.scene.layout.ColumnConstraints?>
+<?import javafx.scene.layout.GridPane?>
+<?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.RowConstraints?>
+<AnchorPane style="-fx-background-color: #00000000;" xmlns="http://javafx.com/javafx/17" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="edu.jhuapl.trinity.javafx.controllers.AboutController">
+    <children>
+        <ScrollPane fitToHeight="true" fitToWidth="true" hbarPolicy="NEVER" pannable="true">
+            <content>
+                <GridPane>
+                    <columnConstraints>
+                        <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" percentWidth="50.0"/>
+                        <ColumnConstraints hgrow="SOMETIMES" minWidth="10.0" percentWidth="50.0"/>
+                    </columnConstraints>
+                    <rowConstraints>
+                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
+                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
+                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
+                        <RowConstraints minHeight="10.0" vgrow="SOMETIMES"/>
+                    </rowConstraints>
+                    <children>
+                        <Label text="Software Platform" GridPane.hgrow="ALWAYS"/>
+                        <Label layoutX="10.0" layoutY="17.0" text="Version" GridPane.rowIndex="1"/>
+                        <Label text="Build Date" GridPane.rowIndex="2"/>
+                        <TextField fx:id="titleTextField" editable="false" GridPane.columnIndex="1"/>
+                        <TextField fx:id="versionTextField" editable="false" layoutX="260.0" layoutY="13.0" GridPane.columnIndex="1" GridPane.rowIndex="1"/>
+                        <TextField fx:id="buildDateTextField" editable="false" layoutX="260.0" layoutY="43.0" GridPane.columnIndex="1" GridPane.rowIndex="2"/>
+                        <HBox fx:id="aboutHBox" prefHeight="400.0" prefWidth="500.0" GridPane.columnSpan="2147483647" GridPane.rowIndex="3"
+                              GridPane.rowSpan="2147483647"/>
+                    </children>
+                    <padding>
+                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
+                    </padding>
+                </GridPane>
+            </content>
+        </ScrollPane>
+    </children>
+</AnchorPane>

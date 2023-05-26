@@ -1,0 +1,34 @@
+# EditorConfig helps developers define and maintain consistent
+# coding styles between different editors and IDEs
+# editorconfig.org
+
+root = true
+
+[*]
+
+# Sane defaults
+end_of_line = lf
+charset = utf-8
+trim_trailing_whitespace = true
+insert_final_newline = true
+
+# Java files
+[*.java]
+tab_width = 4
+indent_size = 4
+indent_style = space
+
+# XML files
+[*.{xml,fxml}]
+tab_width = 4
+indent_size = 4
+indent_style = space
+
+[*.css]
+tab_width = 4
+indent_size = 4
+indent_style = space
+
+# MD Files
+[*.md]
+ij_formatter_enabled = false
