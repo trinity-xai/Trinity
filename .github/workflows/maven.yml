@@ -1,0 +1,106 @@
+# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-java-with-maven
+
+name: Maven Build, Test, and Package
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+
+jobs:
+
+  build-jar:
+
+    name: jar / ${{ matrix.os }} / ${{ matrix.jdk-version }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: true
+      matrix:
+        jdk-version: [ 17 ]
+        os: [ ubuntu-latest, macos-latest, windows-latest ]
+
+    steps:
+
+      - uses: actions/checkout@v3
+
+      - name: Set Up JDK ${{ matrix.jdk-version }}
+        uses: actions/setup-java@v3
+        with:
+          java-version: ${{ matrix.jdk-version }}
+          distribution: 'temurin'
+
+      - name: Cache Maven repository
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Maven Build Jar
+        run: mvn -V -B -e -ff -ntp clean package -Passembly
+
+      - name: Upload Jar
+        uses: actions/upload-artifact@v3
+        continue-on-error: true
+        with:
+          name: java-${{ matrix.jdk-version }}-${{ runner.os }}-jar
+          path: target/*-assembly.jar
+          retention-days: 1
+          if-no-files-found: error
+
+  build-graal:
+
+    name: graal / ${{ matrix.os }} / ${{ matrix.jdk-version }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: true
+      matrix:
+        jdk-version: [ 17 ]
+        # TODO: Linux Support
+        os: [ macos-latest, windows-latest ]
+
+    steps:
+
+      - uses: actions/checkout@v3
+
+      - name: Set Up Graal ${{ matrix.jdk-version }}
+        uses: graalvm/setup-graalvm@v1
+        with:
+          version: 'latest'
+          java-version: ${{ matrix.jdk-version }}
+          components: 'native-image'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          native-image-job-reports: 'true'
+
+      # Specific Version Required by Gluon Plugin
+      - name: Set Up Maven
+        uses: stCarolas/setup-maven@v4.5
+        with:
+          maven-version: 3.8.8
+
+      - name: Cache Maven repository
+        uses: actions/cache@v3
+        with:
+          path: ~/.m2/repository
+          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
+          restore-keys: |
+            ${{ runner.os }}-maven-
+
+      - name: Maven Build Graal VM
+        run: mvn -V -B -e -ff -ntp clean gluonfx:compile gluonfx:link
+
+      - name: Upload Native
+        uses: actions/upload-artifact@v3
+        continue-on-error: true
+        with:
+          name: java-${{ matrix.jdk-version }}-${{ runner.os }}-graal
+          path: target/gluonfx/**/trinity*
+          retention-days: 1
+          if-no-files-found: error
