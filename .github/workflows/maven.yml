@@ -1,0 +1,81 @@
+# For more information see: https://github.com/actions/setup-java/blob/main/docs/advanced-usage.md#apache-maven-with-a-settings-path
+
+name: Maven Build, Test, and Package
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+
+permissions:
+  contents: read
+
+jobs:
+
+  build:
+
+    name: ${{ matrix.os }} / ${{ matrix.configuration }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: true
+      matrix:
+        jdk-version: [ 17 ]
+        os: [ ubuntu-latest, macos-latest, windows-latest ]
+
+    steps:
+
+      - uses: actions/checkout@v3
+
+      - name: Set Up JDK ${{ matrix.jdk-version }}
+        uses: actions/setup-java@v3
+        with:
+          java-version: ${{ matrix.jdk-version }}
+          distribution: 'temurin'
+
+      - name: Maven Build Jar
+        run: mvn -V -B -e -ff -ntp clean package -Passembly
+
+      - name: Upload Jar
+        uses: actions/upload-artifact@v3
+        with:
+          name: java-${{ jdk-version }}-${{ runner.os }}-jar
+          path: target/*-assembly.jar
+          retention-days: 1
+          if-no-files-found: error
+
+  build-graal:
+
+    name: ${{ matrix.os }} / ${{ matrix.configuration }}
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      fail-fast: true
+      matrix:
+        jdk-version: [ 17 ]
+        os: [ ubuntu-latest, macos-latest, windows-latest ]
+
+    steps:
+
+      - uses: actions/checkout@v3
+
+      - name: Set Up Graal ${{ matrix.jdk-version }}
+        uses: graalvm/setup-graalvm@v1
+        with:
+          version: 'latest'
+          java-version: ${{ matrix.jdk-version }}
+          components: 'native-image'
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          native-image-job-reports: 'true'
+
+      - name: Maven Build Graal VM
+        run: mvn -V -B -e -ff -ntp clean gluonfx:compile gluonfx:link
+
+      - name: Upload Native
+        uses: actions/upload-artifact@v3
+        with:
+          name: java-${{ jdk-version }}-${{ runner.os }}-native
+          path: target/gluonfx/**/trinity*
+          retention-days: 1
+          if-no-files-found: error
