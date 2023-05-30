@@ -1,0 +1,15 @@
+<component name="ProjectRunConfigurationManager">
+  <configuration default="false" name="TrinityMainGradle" type="Application" factoryName="Application">
+    <option name="MAIN_CLASS_NAME" value="edu.jhuapl.trinity.TrinityMain" />
+    <module name="trinity.main" />
+    <extension name="coverage">
+      <pattern>
+        <option name="PATTERN" value="edu.jhuapl.trinity.*" />
+        <option name="ENABLED" value="true" />
+      </pattern>
+    </extension>
+    <method v="2">
+      <option name="Make" enabled="true" />
+    </method>
+  </configuration>
+</component>
