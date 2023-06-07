@@ -28,6 +28,7 @@ import edu.jhuapl.trinity.data.files.GaussianMixtureCollectionFile;
 import edu.jhuapl.trinity.data.files.LabelConfigFile;
 import edu.jhuapl.trinity.data.files.McclodSplitDataTsvFile;
 import edu.jhuapl.trinity.data.files.SemanticMapCollectionFile;
+import edu.jhuapl.trinity.data.files.TextEmbeddingCollectionFile;
 import edu.jhuapl.trinity.data.messages.FeatureCollection;
 import edu.jhuapl.trinity.data.terrain.FireAreaTextFile;
 import edu.jhuapl.trinity.data.terrain.TerrainTextFile;
@@ -39,6 +40,7 @@ import edu.jhuapl.trinity.javafx.events.SemanticMapEvent;
 import edu.jhuapl.trinity.javafx.events.TerrainEvent;
 import edu.jhuapl.trinity.utils.loaders.CdcTissueGenesLoader;
 import edu.jhuapl.trinity.utils.loaders.McclodSplitDataLoader;
+import edu.jhuapl.trinity.utils.loaders.TextEmbeddingsLoader;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
@@ -48,7 +50,6 @@ import javafx.scene.input.DataFormat;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
-
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -278,6 +279,11 @@ public enum ResourceUtils {
                     GaussianMixtureCollectionFile gmcFile = new GaussianMixtureCollectionFile(file.getAbsolutePath(), true);
                     scene.getRoot().fireEvent(
                         new GaussianMixtureEvent(GaussianMixtureEvent.NEW_GAUSSIAN_COLLECTION, gmcFile.gaussianMixtureCollection));
+                } else if (TextEmbeddingCollectionFile.isTextEmbeddingCollection(file)) {
+                    TextEmbeddingsLoader task = new TextEmbeddingsLoader(scene, file);
+                    Thread thread = new Thread(task);
+                    thread.setDaemon(true);
+                    thread.start();
                 } else if (CdcCsvFile.isCdcCsvFile(file)) {
                     CdcCsvFile cdcCsvFile = new CdcCsvFile(file.getAbsolutePath(), true);
                     //convert to Feature Vector Collection for the lulz
