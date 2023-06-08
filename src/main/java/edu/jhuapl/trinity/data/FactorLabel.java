@@ -75,7 +75,7 @@ public class FactorLabel {
         });
         Platform.runLater(() -> {
             App.getAppScene().getRoot().fireEvent(new HyperspaceEvent(
-                HyperspaceEvent.ADDEDALL_FACTOR_LABEL, factorLabels));
+                HyperspaceEvent.ADDEDALL_FACTOR_LABELS, factorLabels));
         });
     }
 
@@ -97,8 +97,8 @@ public class FactorLabel {
     }
 
     public static void updateFactorLabel(String label, FactorLabel factorLabel) {
-        globalLabelMap.put(label, factorLabel);
         Platform.runLater(() -> {
+            globalLabelMap.put(label, factorLabel);
             App.getAppScene().getRoot().fireEvent(new HyperspaceEvent(
                 HyperspaceEvent.UPDATED_FACTOR_LABEL, factorLabel));
         });

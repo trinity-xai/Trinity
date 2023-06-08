@@ -36,9 +36,11 @@ public class TextEmbeddingCollection extends MessageData {
     public static final String TYPESTRING = "TextEmbeddingCollection";
     //<editor-fold defaultstate="collapsed" desc="JSON Payload">
     /*
-    {   "type": "FeatureCollection",
-        "features": [
-            ...boat load of FeatureVector objects
+    {   "type": "TextEmbeddingCollection",
+        "label" : "chatGPT",
+        "score" : 0.5,    
+        "text_embeddings": [
+            ...boat load of TextEmbeddingSet objects
         ]
     }
     */
@@ -47,6 +49,8 @@ public class TextEmbeddingCollection extends MessageData {
     //<editor-fold defaultstate="collapsed" desc="Payload Fields">
     private List<TextEmbeddingSet> text_embeddings;
     private String type;
+    private String label;
+    private Double score;
     //</editor-fold>
 
     public TextEmbeddingCollection() {
@@ -89,4 +93,32 @@ public class TextEmbeddingCollection extends MessageData {
         this.text_embeddings = text_embeddings;
     }
     //</editor-fold>    
+
+    /**
+     * @return the label
+     */
+    public String getLabel() {
+        return label;
+    }
+
+    /**
+     * @param label the label to set
+     */
+    public void setLabel(String label) {
+        this.label = label;
+    }
+
+    /**
+     * @return the score
+     */
+    public Double getScore() {
+        return score;
+    }
+
+    /**
+     * @param score the score to set
+     */
+    public void setScore(Double score) {
+        this.score = score;
+    }
 }

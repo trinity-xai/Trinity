@@ -71,7 +71,7 @@ public class TextEmbeddingSet extends MessageData {
     private List<Double> text_embedding;
     private List<List<Double>> embeddings;
     private String label;
-    private double score;
+    private Double score;
     private HashMap<String, String> metaData;
     //</editor-fold>
 
@@ -193,14 +193,14 @@ public class TextEmbeddingSet extends MessageData {
     /**
      * @return the score
      */
-    public double getScore() {
+    public Double getScore() {
         return score;
     }
 
     /**
      * @param score the score to set
      */
-    public void setScore(double score) {
+    public void setScore(Double score) {
         this.score = score;
     }
 
