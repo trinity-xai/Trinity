@@ -577,9 +577,10 @@ public class ShadowCubeWorld extends CubeWorld {
     }
 
     public void redraw(boolean clearFirst) {
-        int currentMax = featureVectors.get(0).getData().size()-1;
         //bust out early to save CPU
-        if (!renderingEnabled || featureVectors.isEmpty() || currentMax < 2) return;
+        if (!renderingEnabled || featureVectors.isEmpty()) return;
+        int currentMax = featureVectors.get(0).getData().size()-1;
+        if(currentMax < 2) return;
         //Index safety checks
         if (xFactorIndex > currentMax){
             xFactorIndex = currentMax;
