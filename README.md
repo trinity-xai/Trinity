@@ -5,6 +5,8 @@
 
 **Explainable AI (XAI) Analysis and Visualization tool**
 
+<video src='https://www.youtube.com/watch?v=YmU1tCbjkzQ' width=180/>
+
 ![Trinity City](/media/TrinityCity.png)
 
 Trinity provides performance analysis and XAI tools ideal for Deep Learning systems or other models performing complex 
@@ -12,30 +14,37 @@ classification or decoding.
 Trinity does this through a combination of different interactive 3D projections that are hyper-dimensional aware. (Vectors of Vectors)
 
 ![Hyperspace Projection](/media/TrinityChatGPT_Text_Embeddings.png) 
-
 Trinity's Hyperspace view provides a 3D scatter plot with automatic 2D projections of feature/factor data. 
 The dimensional combinations can be instantly switched to rapidly search through hyper-dimensional space.
 The user can pan, rotate and zoom either the 3D camera or the points themselves. 
 The scatter points are interactive allowing the user to select individual points to bring up the associated data/imagery with that feature.
 
+![TrinityBCI-UMAP-Yule](/media/TrinityBCI-UMAP-Yule.png)
+
+
+![TrinityBCI-UMAP-Yule](/media/TrinityBCI-UMAP-Yule.png)
 Trinity provides a fast parallelized UMAP tool with a simple to use GUI to project the hyper-dimensional embeddings
 down to an arbitrary lower dimensional space. This allows analysts to project approximate manifolds as 3D clusters.
 
-![TrinityBCI-UMAP-Yule](/media/TrinityBCI-UMAP-Yule.png)
 
-Trinity has been applied to a series of use cases including
+Trinity has been applied to a series of use cases including:
 
-• Deep Learning Object detection models
+*** Deep Learning Object detection models ***
 ![Trinity-Competency-UMAP](/media/Trinity-Competency-UMAP.png)
-• COVID gene/tissue classification
+
+
+*** COVID gene/tissue classification ***
 ![TrinityCOVIDTissueGeneSequenceUMAP-Yule](/media/TrinityCOVIDTissueGeneSequenceUMAP-Yule-000.png)
-• Brain Computer Interface decoders
+
+
+*** Brain Computer Interface decoders ***
 ![TrinityBCI-Hyperspace](/media/TrinityBCI-Hyperspace.png)
-• Large Language Model (ChatGPT) Embeddings Analysis
+
+*** Large Language Model (ChatGPT) Embeddings Analysis ***
 ![TrinityHumanVsChatGPTEmbeddings-UMAP-Yule](/media/TrinityHumanVsChatGPTEmbeddings-UMAP-Yule.png)
 
 
-Project contributors:
+## Project contributors: ##
 ![airplanelaugh](/media/airplanelaugh.jpg)
 - Sean M Phillips
 - Melanie Lockhart
