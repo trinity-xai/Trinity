@@ -17,8 +17,6 @@ The dimensional combinations can be instantly switched to rapidly search through
 The user can pan, rotate and zoom either the 3D camera or the points themselves. 
 The scatter points are interactive allowing the user to select individual points to bring up the associated data/imagery with that feature.
 
-![TrinityBCI-UMAP-Yule](/media/TrinityBCI-UMAP-Yule.png)
-
 
 ![TrinityBCI-UMAP-Yule](/media/TrinityBCI-UMAP-Yule.png)
 Trinity provides a fast parallelized UMAP tool with a simple to use GUI to project the hyper-dimensional embeddings
