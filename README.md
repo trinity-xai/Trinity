@@ -5,8 +5,6 @@
 
 **Explainable AI (XAI) Analysis and Visualization tool**
 
-<video src='https://www.youtube.com/watch?v=YmU1tCbjkzQ' width=180/>
-
 ![Trinity City](/media/TrinityCity.png)
 
 Trinity provides performance analysis and XAI tools ideal for Deep Learning systems or other models performing complex 
