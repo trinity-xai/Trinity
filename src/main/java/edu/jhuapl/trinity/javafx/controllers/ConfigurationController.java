@@ -292,7 +292,7 @@ public class ConfigurationController implements Initializable {
             FactorLabelListItem item = new FactorLabelListItem(fl);
             factorLabelListView.getItems().add(item);
         });
-        scene.getRoot().addEventHandler(HyperspaceEvent.ADDEDALL_FACTOR_LABEL, e -> {
+        scene.getRoot().addEventHandler(HyperspaceEvent.ADDEDALL_FACTOR_LABELS, e -> {
             List<FactorLabel> newLabels = (List<FactorLabel>) e.object;
             List<FactorLabelListItem> items = new ArrayList<>();
             for (FactorLabel fl : newLabels) {
@@ -783,7 +783,7 @@ public class ConfigurationController implements Initializable {
             FactorLabel.setAllVisible(visible);
             Platform.runLater(() -> {
                 scene.getRoot().fireEvent(new HyperspaceEvent(
-                    HyperspaceEvent.ADDEDALL_FACTOR_LABEL,
+                    HyperspaceEvent.UPDATEDALL_FACTOR_LABELS,
                     FactorLabel.getFactorLabels().stream().toList()));
             });
         });

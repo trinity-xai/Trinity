@@ -694,28 +694,13 @@ public class Projections3DPane extends StackPane implements
 
         this.scene.addEventHandler(HyperspaceEvent.ADDED_FACTOR_LABEL, e ->
             changeFactorLabels((FactorLabel) e.object));
-        this.scene.addEventHandler(HyperspaceEvent.ADDEDALL_FACTOR_LABEL, e -> {
+        this.scene.addEventHandler(HyperspaceEvent.ADDEDALL_FACTOR_LABELS, e -> {
             List<FactorLabel> labels = (List<FactorLabel>) e.object;
-            updatePNodeColorsAndVisibility();
-            updateView(false);
-            labels.forEach(factorLabel -> {
-                sphereToFeatureVectorMap.forEach((s, fv) -> {
-                    if (fv.getLabel().contentEquals(factorLabel.getLabel())) {
-                        s.setVisible(factorLabel.getVisible());
-                        ((PhongMaterial) s.getMaterial()).setDiffuseColor(factorLabel.getColor());
-                    }
-                });
-                ellipsoidToGMMessageMap.forEach((TriaxialSpheroidMesh t, GaussianMixture u) -> {
-                    PhongMaterial mat = (PhongMaterial) t.getMaterial();
-                    Color color = FactorLabel.getColorByLabel(u.getLabel()).deriveColor(1, 1, 1, 0.01);
-                    mat.setDiffuseColor(color);
-                    mat.setSpecularColor(Color.TRANSPARENT);
-                    t.setDiffuseColor(color);
-                    if (factorLabel.getLabel().contentEquals(u.getLabel()))
-                        t.setVisible(factorLabel.getEllipsoidsVisible());
-                });
-            });
-
+            updateOnLabelChange(labels);
+        });
+        this.scene.addEventHandler(HyperspaceEvent.UPDATEDALL_FACTOR_LABELS, e -> {
+            List<FactorLabel> labels = (List<FactorLabel>) e.object;
+            updateOnLabelChange(labels);
         });
         this.scene.addEventHandler(HyperspaceEvent.UPDATED_FACTOR_LABEL, e ->
             changeFactorLabels((FactorLabel) e.object));
@@ -899,7 +884,27 @@ public class Projections3DPane extends StackPane implements
             anchorCallout.setVisible(false);
         });
     }
-
+    public void updateOnLabelChange(List<FactorLabel> labels) {
+        updatePNodeColorsAndVisibility();
+        updateView(false);
+        labels.forEach(factorLabel -> {
+            sphereToFeatureVectorMap.forEach((s, fv) -> {
+                if (fv.getLabel().contentEquals(factorLabel.getLabel())) {
+                    s.setVisible(factorLabel.getVisible());
+                    ((PhongMaterial) s.getMaterial()).setDiffuseColor(factorLabel.getColor());
+                }
+            });
+            ellipsoidToGMMessageMap.forEach((TriaxialSpheroidMesh t, GaussianMixture u) -> {
+                PhongMaterial mat = (PhongMaterial) t.getMaterial();
+                Color color = FactorLabel.getColorByLabel(u.getLabel()).deriveColor(1, 1, 1, 0.01);
+                mat.setDiffuseColor(color);
+                mat.setSpecularColor(Color.TRANSPARENT);
+                t.setDiffuseColor(color);
+                if (factorLabel.getLabel().contentEquals(u.getLabel()))
+                    t.setVisible(factorLabel.getEllipsoidsVisible());
+            });
+        });
+    }
     public void projectHyperspace() {
         getScene().getRoot().fireEvent(
             new CommandTerminalEvent("Requesting Hyperspace Vectors...",

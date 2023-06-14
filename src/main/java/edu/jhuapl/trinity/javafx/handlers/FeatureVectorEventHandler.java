@@ -28,6 +28,7 @@ import edu.jhuapl.trinity.data.messages.LabelConfig;
 import edu.jhuapl.trinity.javafx.components.ColorMap;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
+import edu.jhuapl.trinity.javafx.events.HyperspaceEvent;
 import edu.jhuapl.trinity.javafx.renderers.FeatureVectorRenderer;
 import javafx.application.Platform;
 import javafx.event.EventHandler;
@@ -182,26 +183,54 @@ public class FeatureVectorEventHandler implements EventHandler<FeatureVectorEven
             });
             FactorLabel.removeAllFactorLabels();
         }
-
+        if (null != labelConfig.getWildcards() && !labelConfig.getWildcards().isEmpty()) {
+            Platform.runLater(() -> {
+                App.getAppScene().getRoot().fireEvent(
+                    new CommandTerminalEvent("Applying Wild Card Pattern Match Color Map...",
+                        new Font("Consolas", 20), Color.GREEN));
+            });
+            //Going through each label in the system, try to apply each wildcard pattern
+            //Yes if subsequent patterns match they will overwrite previous matches
+            List<FactorLabel> updatedFactorLabels = new ArrayList<>();
+            FactorLabel.getFactorLabels().stream().forEach(factorLabel -> {
+                labelConfig.getWildcards().forEach((p, c) -> {
+                    try {
+                        Color parsedColor = Color.valueOf(c);
+                        if(LabelConfig.isMatch(factorLabel.getLabel(), p)) {
+                            updatedFactorLabels.add(factorLabel);
+                            factorLabel.setColor(parsedColor);
+                        }
+                    } catch (Exception ex) {
+                        //Matches....Matches?? We don't need no stinkin Matches!!
+                        System.out.println("Could not convert " + p + " : " + c + " to valid pattern map");
+                    }
+                });
+            });
+            if (!updatedFactorLabels.isEmpty())
+                Platform.runLater(() -> {
+                    App.getAppScene().getRoot().fireEvent(new HyperspaceEvent(
+                        HyperspaceEvent.UPDATEDALL_FACTOR_LABELS, updatedFactorLabels));
+                });
+        }
+        //These are explicit label to color maps. This will overwrite any pattern matches
         if (null != labelConfig.getLabels() && !labelConfig.getLabels().isEmpty()) {
             Platform.runLater(() -> {
                 App.getAppScene().getRoot().fireEvent(
-                    new CommandTerminalEvent("Loading new Label Config...",
+                    new CommandTerminalEvent("Applying Explicit Label Color Map...",
                         new Font("Consolas", 20), Color.GREEN));
             });
-
-            List<FactorLabel> labels = new ArrayList<>();
+            List<FactorLabel> newFactorLabels = new ArrayList<>();
             labelConfig.getLabels().forEach((l, c) -> {
                 try {
                     Color parsedColor = Color.valueOf(c);
                     FactorLabel fl = new FactorLabel(l, parsedColor);
-                    labels.add(fl);
+                    newFactorLabels.add(fl);
                 } catch (Exception ex) {
                     System.out.println("Could not convert " + l + " : " + c + " to a Factor Label");
                 }
             });
-            if (!labels.isEmpty())
-                FactorLabel.addAllFactorLabels(labels);
+            if (!newFactorLabels.isEmpty())
+                FactorLabel.addAllFactorLabels(newFactorLabels);
         }
     }
 

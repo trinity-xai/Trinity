@@ -25,6 +25,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.util.HashMap;
 import java.util.Map.Entry;
+import java.util.regex.Pattern;
 
 /**
  * @author Sean Phillips
@@ -49,15 +50,22 @@ public class LabelConfig extends MessageData {
     //</editor-fold>
 
     //<editor-fold defaultstate="collapsed" desc="Payload Fields">
+    private HashMap<String, String> wildcards;
     private HashMap<String, String> labels;
     private Boolean clearAll;
     //</editor-fold>
 
     public LabelConfig() {
-        this.messageType = TYPESTRING;
-        this.labels = new HashMap<>();
+        messageType = TYPESTRING;
+        wildcards = new HashMap<>();
+        labels = new HashMap<>();
     }
 
+    public static boolean isMatch(String testString, String wildcardPattern) {
+        Pattern regex = Pattern.compile(wildcardPattern);
+        return regex.matcher(testString).matches();        
+    }
+    
     public static boolean isLabelConfig(String messageBody) {
         return messageBody.contains("messageType")
             && messageBody.contains(TYPESTRING);
@@ -86,6 +94,20 @@ public class LabelConfig extends MessageData {
      */
     public void setLabels(HashMap<String, String> labels) {
         this.labels = labels;
+    }
+
+    /**
+     * @return the wildcards
+     */
+    public HashMap<String, String> getWildcards() {
+        return wildcards;
+    }
+
+    /**
+     * @param wildcards the wildcards to set
+     */
+    public void setWildcards(HashMap<String, String> wildcards) {
+        this.wildcards = wildcards;
     }
 
     /**

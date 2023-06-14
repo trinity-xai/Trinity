@@ -259,7 +259,8 @@ public class ShadowCubeWorld extends CubeWorld {
             scene.addEventHandler(ColorMapEvent.COLOR_DOMAIN_CHANGE, e -> redraw(true));
 
             //Label Events
-            activeScene.addEventHandler(HyperspaceEvent.ADDEDALL_FACTOR_LABEL, e -> redraw(true));
+            activeScene.addEventHandler(HyperspaceEvent.UPDATEDALL_FACTOR_LABELS, e -> redraw(true));
+            activeScene.addEventHandler(HyperspaceEvent.ADDEDALL_FACTOR_LABELS, e -> redraw(true));
             activeScene.addEventHandler(HyperspaceEvent.ADDED_FACTOR_LABEL, e -> redraw(true));
             activeScene.addEventHandler(HyperspaceEvent.UPDATED_FACTOR_LABEL, e -> redraw(true));
             activeScene.addEventHandler(HyperspaceEvent.REMOVED_FACTOR_LABEL, e -> redraw(true));
@@ -576,9 +577,21 @@ public class ShadowCubeWorld extends CubeWorld {
     }
 
     public void redraw(boolean clearFirst) {
-        if (featureVectors.isEmpty() || featureVectors.size() < 3) return;
+        //bust out early to save CPU
+        if (!renderingEnabled || featureVectors.isEmpty()) return;
+        int currentMax = featureVectors.get(0).getData().size()-1;
+        if(currentMax < 2) return;
+        //Index safety checks
+        if (xFactorIndex > currentMax){
+            xFactorIndex = currentMax;
+        }
+        if (yFactorIndex > currentMax){
+            yFactorIndex = currentMax;
+        }
+        if (zFactorIndex > currentMax){
+            zFactorIndex = currentMax;
+        }
 
-        if (!renderingEnabled) return; //bust out early to save CPU
         if (clearFirst)
             clearNow();
 //@DEBUG SMP useful for debugging translations
@@ -615,14 +628,14 @@ public class ShadowCubeWorld extends CubeWorld {
         double totalSize = point3dSize * pointSizeScaling;
         //pure CPU way using blocking Canvas draws
         FeatureVector[] fvArray = featureVectors.toArray(FeatureVector[]::new);
-        //@DEBUG SMP what are the mins and maxs
-        double miniX = fvArray[0].getData().get(xFactorIndex);
-        double maxiX = miniX;
-        double miniY = fvArray[1].getData().get(yFactorIndex);
-        double maxiY = miniY;
-        double miniZ = fvArray[2].getData().get(zFactorIndex);
-        double maxiZ = miniZ;
-
+//        //@DEBUG SMP what are the mins and maxs
+//        System.out.println(toString()+" trying to redraw...");
+//        double miniX = fvArray[0].getData().get(xFactorIndex);
+//        double maxiX = miniX;
+//        double miniY = fvArray[1].getData().get(yFactorIndex);
+//        double maxiY = miniY;
+//        double miniZ = fvArray[2].getData().get(zFactorIndex);
+//        double maxiZ = miniZ;
         for (FeatureVector fv : fvArray) {
             if (null != fv) {
 //                //@DEBUG SMP

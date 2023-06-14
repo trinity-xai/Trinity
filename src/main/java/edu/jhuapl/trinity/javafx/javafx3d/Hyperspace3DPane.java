@@ -639,22 +639,13 @@ public class Hyperspace3DPane extends StackPane implements
         });
         this.scene.addEventHandler(HyperspaceEvent.ADDED_FACTOR_LABEL, e ->
             changeFactorLabels((FactorLabel) e.object));
-        this.scene.addEventHandler(HyperspaceEvent.ADDEDALL_FACTOR_LABEL, e -> {
+        this.scene.addEventHandler(HyperspaceEvent.ADDEDALL_FACTOR_LABELS, e -> {
             List<FactorLabel> labels = (List<FactorLabel>) e.object;
-            updatePNodeColorsAndVisibility();
-            updateView(true);
-            labels.forEach(factorLabel -> {
-                ellipsoidToGMMessageMap.forEach((TriaxialSpheroidMesh t, GaussianMixture u) -> {
-                    PhongMaterial mat = (PhongMaterial) t.getMaterial();
-                    Color color = FactorLabel.getColorByLabel(u.getLabel()).deriveColor(1, 1, 1, 0.01);
-                    mat.setDiffuseColor(color);
-                    mat.setSpecularColor(Color.TRANSPARENT);
-                    t.setDiffuseColor(color);
-                    if (factorLabel.getLabel().contentEquals(u.getLabel()))
-                        t.setVisible(factorLabel.getEllipsoidsVisible());
-                });
-            });
-
+            updateOnLabelChange(labels);
+        });
+        this.scene.addEventHandler(HyperspaceEvent.UPDATEDALL_FACTOR_LABELS, e -> {
+            List<FactorLabel> labels = (List<FactorLabel>) e.object;
+            updateOnLabelChange(labels);
         });
         this.scene.addEventHandler(HyperspaceEvent.UPDATED_FACTOR_LABEL, e ->
             changeFactorLabels((FactorLabel) e.object));
@@ -886,7 +877,21 @@ public class Hyperspace3DPane extends StackPane implements
             anchorCallout.setVisible(false);
         });
     }
-
+    public void updateOnLabelChange(List<FactorLabel> labels) {
+        updatePNodeColorsAndVisibility();
+        updateView(false);
+        labels.forEach(factorLabel -> {
+            ellipsoidToGMMessageMap.forEach((TriaxialSpheroidMesh t, GaussianMixture u) -> {
+                PhongMaterial mat = (PhongMaterial) t.getMaterial();
+                Color color = FactorLabel.getColorByLabel(u.getLabel()).deriveColor(1, 1, 1, 0.01);
+                mat.setDiffuseColor(color);
+                mat.setSpecularColor(Color.TRANSPARENT);
+                t.setDiffuseColor(color);
+                if (factorLabel.getLabel().contentEquals(u.getLabel()))
+                    t.setVisible(factorLabel.getEllipsoidsVisible());
+            });
+        });
+    }
     public void updateTrajectory3D() {
         //Clear out previous trajectory nodes
         extrasGroup.getChildren().remove(anchorTraj3D);
@@ -1659,40 +1664,72 @@ public class Hyperspace3DPane extends StackPane implements
 
     @Override
     public void addFeatureCollection(FeatureCollection featureCollection) {
+        Platform.runLater(() -> {
+            getScene().getRoot().fireEvent(
+                new CommandTerminalEvent("Loading Feature Collection... ",
+                    new Font("Consolas", 20), Color.GREEN));
+            ProgressStatus ps1 = new ProgressStatus("Loading Feature Collection...", -1);
+            getScene().getRoot().fireEvent(
+                new ApplicationEvent(ApplicationEvent.SHOW_BUSY_INDICATOR, ps1));
+        });
+        if (!featureVectors.isEmpty()) {
+            Alert alert = new Alert(AlertType.CONFIRMATION,
+                "Data queue currently has " + featureVectors.size() + " items.\n"
+                    + "Clear the queue before import?",
+                ButtonType.YES, ButtonType.NO, ButtonType.CANCEL);
+            alert.setTitle("Feature Collection Import");
+            alert.setHeaderText("Data queue currently has " + featureVectors.size() + " items.");
+            alert.setContentText("Clear the queue before import?");
+            alert.setGraphic(ResourceUtils.loadIcon("alert", 75));
+            alert.initStyle(StageStyle.TRANSPARENT);
+            DialogPane dialogPane = alert.getDialogPane();
+            dialogPane.setBackground(Background.EMPTY);
+            dialogPane.getScene().setFill(Color.TRANSPARENT);
+
+            String DIALOGCSS = this.getClass().getResource("/edu/jhuapl/trinity/css/dialogstyles.css").toExternalForm();
+            dialogPane.getStylesheets().add(DIALOGCSS);
+
+            Optional<ButtonType> optBT = alert.showAndWait();
+            if (optBT.get().equals(ButtonType.CANCEL))
+                return;
+            if (optBT.get().equals(ButtonType.YES))
+                clearAll();
+        }
+        
         Task task = new Task() {
             @Override
             protected Void call() throws Exception {
-                Platform.runLater(() -> {
-                    ProgressStatus ps1 = new ProgressStatus("Loading Feature Collection...", -1);
-                    getScene().getRoot().fireEvent(
-                        new ApplicationEvent(ApplicationEvent.SHOW_BUSY_INDICATOR, ps1));
-                    getScene().getRoot().fireEvent(
-                        new CommandTerminalEvent("Loading Feature Collection... ",
-                            new Font("Consolas", 20), Color.GREEN));
-                });
-                if (!featureVectors.isEmpty()) {
-                    Alert alert = new Alert(AlertType.CONFIRMATION,
-                        "Data queue currently has " + featureVectors.size() + " items.\n"
-                            + "Clear the queue before import?",
-                        ButtonType.YES, ButtonType.NO, ButtonType.CANCEL);
-                    alert.setTitle("Feature Collection Import");
-                    alert.setHeaderText("Data queue currently has " + featureVectors.size() + " items.");
-                    alert.setContentText("Clear the queue before import?");
-                    alert.setGraphic(ResourceUtils.loadIcon("alert", 75));
-                    alert.initStyle(StageStyle.TRANSPARENT);
-                    DialogPane dialogPane = alert.getDialogPane();
-                    dialogPane.setBackground(Background.EMPTY);
-                    dialogPane.getScene().setFill(Color.TRANSPARENT);
-
-                    String DIALOGCSS = this.getClass().getResource("/edu/jhuapl/trinity/css/dialogstyles.css").toExternalForm();
-                    dialogPane.getStylesheets().add(DIALOGCSS);
-
-                    Optional<ButtonType> optBT = alert.showAndWait();
-                    if (optBT.get().equals(ButtonType.CANCEL))
-                        return null;
-                    else if (optBT.get().equals(ButtonType.YES))
-                        clearAll();
-                }
+//                Platform.runLater(() -> {
+//                    getScene().getRoot().fireEvent(
+//                        new CommandTerminalEvent("Loading Feature Collection... ",
+//                            new Font("Consolas", 20), Color.GREEN));
+//                    ProgressStatus ps1 = new ProgressStatus("Loading Feature Collection...", -1);
+//                    getScene().getRoot().fireEvent(
+//                        new ApplicationEvent(ApplicationEvent.SHOW_BUSY_INDICATOR, ps1));
+//                });
+//                if (!featureVectors.isEmpty()) {
+//                    alert = new Alert(AlertType.CONFIRMATION,
+//                        "Data queue currently has " + featureVectors.size() + " items.\n"
+//                            + "Clear the queue before import?",
+//                        ButtonType.YES, ButtonType.NO, ButtonType.CANCEL);
+//                    alert.setTitle("Feature Collection Import");
+//                    alert.setHeaderText("Data queue currently has " + featureVectors.size() + " items.");
+//                    alert.setContentText("Clear the queue before import?");
+//                    alert.setGraphic(ResourceUtils.loadIcon("alert", 75));
+//                    alert.initStyle(StageStyle.TRANSPARENT);
+//                    DialogPane dialogPane = alert.getDialogPane();
+//                    dialogPane.setBackground(Background.EMPTY);
+//                    dialogPane.getScene().setFill(Color.TRANSPARENT);
+//
+//                    String DIALOGCSS = this.getClass().getResource("/edu/jhuapl/trinity/css/dialogstyles.css").toExternalForm();
+//                    dialogPane.getStylesheets().add(DIALOGCSS);
+//
+//                    Optional<ButtonType> optBT = alert.showAndWait();
+//                    if (optBT.get().equals(ButtonType.CANCEL))
+//                        return null;
+//                    else if (optBT.get().equals(ButtonType.YES))
+//                        clearAll();
+//                }
                 Platform.runLater(() -> {
                     getScene().getRoot().fireEvent(
                         new CommandTerminalEvent("Rendering Feature Collection... ",
