@@ -221,6 +221,7 @@ jlink {
     launcher {
         name = "$finalOutputName"
         mainClass = "$mainClassPath"
+        jvmArgs = ['-Dprism.maxvram=2G', '-Djavafx.animation.fullspeed=true']
         //jvmArgs += ['-Dlogback.configurationFile={{BIN_DIR}}/logback.xml']
         //jvmArgs += ["--add-exports external.module.name/external.package.name=$sModuleName", ...]
     }
@@ -232,7 +233,7 @@ jlink {
         appVersion = version.toString().replaceAll("-SNAPSHOT", "")
         //resourceDir = file("$sourceSets.main.output.resourcesDir") // https://docs.oracle.com/en/java/javase/14/jpackage/override-jpackage-resources.html
         imageOptions += '--verbose'
-        jvmArgs = ['-p', '.']
+        jvmArgs += ['-p', '.']
         if (org.gradle.internal.os.OperatingSystem.current().macOsX) {
             skipInstaller = true
             targetPlatformName = 'osx' // required when targetPlatform is used

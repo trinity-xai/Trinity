@@ -884,6 +884,7 @@ public class Projections3DPane extends StackPane implements
             anchorCallout.setVisible(false);
         });
     }
+
     public void updateOnLabelChange(List<FactorLabel> labels) {
         updatePNodeColorsAndVisibility();
         updateView(false);
@@ -905,6 +906,7 @@ public class Projections3DPane extends StackPane implements
             });
         });
     }
+
     public void projectHyperspace() {
         getScene().getRoot().fireEvent(
             new CommandTerminalEvent("Requesting Hyperspace Vectors...",

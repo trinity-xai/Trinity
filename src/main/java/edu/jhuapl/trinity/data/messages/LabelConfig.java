@@ -63,9 +63,9 @@ public class LabelConfig extends MessageData {
 
     public static boolean isMatch(String testString, String wildcardPattern) {
         Pattern regex = Pattern.compile(wildcardPattern);
-        return regex.matcher(testString).matches();        
+        return regex.matcher(testString).matches();
     }
-    
+
     public static boolean isLabelConfig(String messageBody) {
         return messageBody.contains("messageType")
             && messageBody.contains(TYPESTRING);

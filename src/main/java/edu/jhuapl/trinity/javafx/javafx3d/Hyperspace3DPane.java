@@ -877,6 +877,7 @@ public class Hyperspace3DPane extends StackPane implements
             anchorCallout.setVisible(false);
         });
     }
+
     public void updateOnLabelChange(List<FactorLabel> labels) {
         updatePNodeColorsAndVisibility();
         updateView(false);
@@ -892,6 +893,7 @@ public class Hyperspace3DPane extends StackPane implements
             });
         });
     }
+
     public void updateTrajectory3D() {
         //Clear out previous trajectory nodes
         extrasGroup.getChildren().remove(anchorTraj3D);
@@ -1695,7 +1697,7 @@ public class Hyperspace3DPane extends StackPane implements
             if (optBT.get().equals(ButtonType.YES))
                 clearAll();
         }
-        
+
         Task task = new Task() {
             @Override
             protected Void call() throws Exception {

@@ -70,12 +70,12 @@ public class PairwiseDistances {
         Scene scene = App.getAppScene();
         count = 0; //this is the start of the hack
         int percent = 100;
-        if(n < 100)
+        if (n < 100)
             percent = 10;
-        if(n < 10)
+        if (n < 10)
             percent = 1;
         int updatePercent = n / percent;
-        
+
         pdList.parallelStream()
             .peek(e -> {
                 count++;
