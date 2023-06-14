@@ -3,7 +3,7 @@
 [![Maven Build](https://github.com/Birdasaur/Trinity/actions/workflows/maven.yml/badge.svg)](https://github.com/Birdasaur/Trinity/actions/workflows/maven.yml)
 [![Gradle Build](https://github.com/Birdasaur/Trinity/actions/workflows/gradle.yml/badge.svg)](https://github.com/Birdasaur/Trinity/actions/workflows/gradle.yml)
 
-##Explainable AI (XAI) Analysis and Visualization tool##
+## Explainable AI (XAI) Analysis and Visualization tool ##
 
 ![Trinity City](/media/TrinityCity.png)
 
@@ -11,21 +11,25 @@ Trinity provides performance analysis and XAI tools ideal for Deep Learning syst
 classification or decoding. 
 Trinity does this through a combination of different interactive 3D projections that are hyper-dimensional aware. (Vectors of Vectors)
 
+### Hyperspace ###
 ![Hyperspace Projection](/media/TrinityChatGPT_Text_Embeddings.png) 
 Trinity's Hyperspace view provides a 3D scatter plot with automatic 2D projections of feature/factor data. 
 The dimensional combinations can be instantly switched to rapidly search through hyper-dimensional space.
 The user can pan, rotate and zoom either the 3D camera or the points themselves. 
 The scatter points are interactive allowing the user to select individual points to bring up the associated data/imagery with that feature.
 
+### Hypersurface ###
 ![TrinityBCI-Hypersurface](/media/TrinityBCI-Hypersurface.png)
 Trinity can visualize higher dimensional inputs (before decoding) as a 3D surface.
 Hypersurface view provides analyst insight into what inputs correlate strongest with a decoding/classification result.
 This view is synchronized with the same FeatureVectors and Timeline as the Hyperspace viewpoint. 
 
+### Projections and Manifolds ###
 ![TrinityBCI-UMAP-Yule](/media/TrinityBCI-UMAP-Yule.png)
 Trinity provides a fast parallelized UMAP tool with a simple to use GUI to project the hyper-dimensional embeddings
 down to an arbitrary lower dimensional space. This allows analysts to project approximate manifolds as 3D clusters.
 
+### Data Formats ###
 Trinity primarily speaks JSON and has a collection of serializable JSON message objects that can be imported.
 The primary message that most applications will leverage is the FeatureVector.
 Example:
@@ -91,6 +95,8 @@ A LabelConfig json file can be simply dragged and dropped onto the Trinity appli
 }
 	
 ```
+
+### Example Use Cases ###
 Trinity has been applied to a series of use cases including:
 
 **Deep Learning Object detection models**
