@@ -3,7 +3,7 @@
 [![Maven Build](https://github.com/Birdasaur/Trinity/actions/workflows/maven.yml/badge.svg)](https://github.com/Birdasaur/Trinity/actions/workflows/maven.yml)
 [![Gradle Build](https://github.com/Birdasaur/Trinity/actions/workflows/gradle.yml/badge.svg)](https://github.com/Birdasaur/Trinity/actions/workflows/gradle.yml)
 
-**Explainable AI (XAI) Analysis and Visualization tool**
+##Explainable AI (XAI) Analysis and Visualization tool##
 
 ![Trinity City](/media/TrinityCity.png)
 
@@ -93,18 +93,18 @@ A LabelConfig json file can be simply dragged and dropped onto the Trinity appli
 ```
 Trinity has been applied to a series of use cases including:
 
-** Deep Learning Object detection models **
+**Deep Learning Object detection models**
 ![Trinity-Competency-UMAP](/media/Trinity-Competency-UMAP.png)
 
 
-** COVID gene/tissue classification **
+**COVID gene/tissue classification**
 ![TrinityCOVIDTissueGeneSequenceUMAP-Yule](/media/TrinityCOVIDTissueGeneSequenceUMAP-Yule-000.png)
 
 
-** Brain Computer Interface decoders **
+**Brain Computer Interface decoders**
 ![TrinityBCI-Hyperspace](/media/TrinityBCI-Hyperspace.png)
 
-** Large Language Model (ChatGPT) Embeddings Analysis **
+**Large Language Model (ChatGPT) Embeddings Analysis**
 ![TrinityHumanVsChatGPTEmbeddings-UMAP-Yule](/media/TrinityHumanVsChatGPTEmbeddings-UMAP-Yule.png)
 
 
