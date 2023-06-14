@@ -218,5 +218,5 @@ public class TextEmbeddingSet extends MessageData {
         this.metaData = metaData;
     }
 
-    //</editor-fold>    
+    //</editor-fold>
 }

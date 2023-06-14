@@ -38,7 +38,7 @@ public class TextEmbeddingCollection extends MessageData {
     /*
     {   "type": "TextEmbeddingCollection",
         "label" : "chatGPT",
-        "score" : 0.5,    
+        "score" : 0.5,
         "text_embeddings": [
             ...boat load of TextEmbeddingSet objects
         ]
@@ -65,6 +65,7 @@ public class TextEmbeddingCollection extends MessageData {
     }
 
     //<editor-fold defaultstate="collapsed" desc="Properties">
+
     /**
      * @return the type
      */
@@ -92,7 +93,7 @@ public class TextEmbeddingCollection extends MessageData {
     public void setText_embeddings(List<TextEmbeddingSet> text_embeddings) {
         this.text_embeddings = text_embeddings;
     }
-    //</editor-fold>    
+    //</editor-fold>
 
     /**
      * @return the label

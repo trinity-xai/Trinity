@@ -196,7 +196,7 @@ public class FeatureVectorEventHandler implements EventHandler<FeatureVectorEven
                 labelConfig.getWildcards().forEach((p, c) -> {
                     try {
                         Color parsedColor = Color.valueOf(c);
-                        if(LabelConfig.isMatch(factorLabel.getLabel(), p)) {
+                        if (LabelConfig.isMatch(factorLabel.getLabel(), p)) {
                             updatedFactorLabels.add(factorLabel);
                             factorLabel.setColor(parsedColor);
                         }
