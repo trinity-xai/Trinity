@@ -117,6 +117,7 @@ import org.fxyz3d.utils.CameraTransformer;
 import javax.imageio.ImageIO;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -530,6 +531,8 @@ public class Hypersurface3DPane extends StackPane
         saveSnapshotItem.setOnAction((ActionEvent e) -> {
             final FileChooser fileChooser = new FileChooser();
             fileChooser.setTitle("Save scene as...");
+            fileChooser.setInitialFileName("trinity_hypersurface.png");
+            fileChooser.setInitialDirectory(Paths.get(".").toFile());
             fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PNG", "*.png"));
             File file = fileChooser.showSaveDialog(null);
             if (file != null) {
