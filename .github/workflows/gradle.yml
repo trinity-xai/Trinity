@@ -45,7 +45,7 @@ jobs:
         with:
           name: java-${{ matrix.jdk-version }}-${{ runner.os }}-jar
           path: build/libs/*-fx.jar
-          retention-days: 1
+          retention-days: 10
           if-no-files-found: error
 
   build-jlink:
@@ -80,7 +80,7 @@ jobs:
         with:
           name: java-${{ matrix.jdk-version }}-${{ runner.os }}-jlink-zip
           path: build/distributions/*.zip
-          retention-days: 1
+          retention-days: 10
           if-no-files-found: error
 
   build-jpackage:
@@ -115,5 +115,5 @@ jobs:
         with:
           name: java-${{ matrix.jdk-version }}-${{ runner.os }}-jpackage
           path: build/jpackage/**
-          retention-days: 1
+          retention-days: 10
           if-no-files-found: error
