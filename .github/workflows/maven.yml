@@ -51,7 +51,7 @@ jobs:
         with:
           name: java-${{ matrix.jdk-version }}-${{ runner.os }}-jar
           path: target/*-assembly.jar
-          retention-days: 1
+          retention-days: 10
           if-no-files-found: error
 
   build-graal:
@@ -102,5 +102,5 @@ jobs:
         with:
           name: java-${{ matrix.jdk-version }}-${{ runner.os }}-graal
           path: target/gluonfx/**/trinity*
-          retention-days: 1
+          retention-days: 10
           if-no-files-found: error
