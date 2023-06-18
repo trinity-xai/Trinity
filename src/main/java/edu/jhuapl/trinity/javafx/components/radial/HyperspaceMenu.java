@@ -36,6 +36,7 @@ import lit.litfx.controls.menus.LitRadialMenuItem;
 import javax.imageio.ImageIO;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 
 /*-
  * #%L
@@ -328,10 +329,14 @@ public class HyperspaceMenu extends RadialEntity {
         addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Save as Image", save, e -> {
             final FileChooser fileChooser = new FileChooser();
             fileChooser.setTitle("Save scene as...");
+            fileChooser.setInitialFileName("trinity_hyperspace.png");
+            fileChooser.setInitialDirectory(Paths.get(".").toFile());
             fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PNG", "*.png"));
             File file = fileChooser.showSaveDialog(null);
             if (file != null) {
-                WritableImage image = this.snapshot(new SnapshotParameters(), null);
+                setVisible(false);
+                WritableImage image = hyperspace3DPane.snapshot(new SnapshotParameters(), null);
+                setVisible(true);
                 try {
                     ImageIO.write(SwingFXUtils.fromFXImage(image, null), "png", file);
                 } catch (IOException ioe) {
