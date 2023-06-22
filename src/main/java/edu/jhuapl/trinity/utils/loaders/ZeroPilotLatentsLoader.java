@@ -20,6 +20,7 @@ package edu.jhuapl.trinity.utils.loaders;
  * #L%
  */
 
+import edu.jhuapl.trinity.data.ZeroPilotLatents;
 import edu.jhuapl.trinity.data.files.TextEmbeddingCollectionFile;
 import edu.jhuapl.trinity.data.files.ZeroPilotLatentsFile;
 import edu.jhuapl.trinity.data.messages.FeatureCollection;
@@ -119,55 +120,22 @@ public class ZeroPilotLatentsLoader extends Task {
         });
         
         try {
-            List<TextEmbeddingSet> embeddings = textEmbeddingCollectionFile
-                .textEmbeddingCollection.getText_embeddings();
-            String collectionLabel = textEmbeddingCollectionFile.textEmbeddingCollection.getLabel();
+            List<ZeroPilotLatents> latents = zeroPilotLatentsFile.zeroPilotLatentsList;
             FeatureCollection fc = new FeatureCollection();
             
-            final int n = embeddings.size(); //how many total
+            final int n = latents.size(); //how many total
             int updatePercent = n / 10; //rounded percent progress            
             if(updatePercent < 1)
                 updatePercent = 1;
-            for(int i=0;i<embeddings.size();i++) {
-                //First do the original embeddings as a special case
+            ZeroPilotLatents zero;
+            for(int i=0;i<latents.size();i++) {
+                zero = latents.get(i); 
                 FeatureVector fv = new FeatureVector();
-                List<Double> flatList = new ArrayList<>();
-                flatList.addAll(embeddings.get(i).getText_embedding());
-                fv.setData(flatList);
-                fv.setLabel(collectionLabel+"_Original_Embedding");
-                if(null != embeddings.get(i).getScore())
-                    fv.setScore(embeddings.get(i).getScore());
-                else
-                    fv.setScore(textEmbeddingCollectionFile.textEmbeddingCollection.getScore());
-                
-                fv.setLayer(i);
+                fv.getData().addAll(zero.getLatents());
+                fv.setLabel(zero.getLabels());
+                fv.setFrameId(zero.getNumber());
+                fv.setLayer(zero.getTraj_num().intValue());
                 fc.getFeatures().add(fv);
-                
-                //now for each text chunk make a feature vector
-                int width = embeddings.get(i).getParsed().size();
-                for(int parsedIndex=0;parsedIndex<width;parsedIndex++){
-                    FeatureVector parsedChunkFV = new FeatureVector();
-                    List<Double> chunkEmbedding = new ArrayList<>();
-                    chunkEmbedding.addAll(embeddings.get(i).getEmbeddings().get(parsedIndex));
-                    parsedChunkFV.setData(chunkEmbedding);
-                    //Extract first three words of chunk
-                    String parsedText = embeddings.get(i).getParsed().get(parsedIndex);
-                    String [] tokens = parsedText.split("\\s+");
-                    String parsedPreview = tokens[0];
-                    if(tokens.length > 2) {
-                        parsedPreview += " " + tokens[1] + " " + tokens[2];
-                    }
-                    String parsedChunkLabel = collectionLabel+"_"+parsedPreview;
-                    if(null != embeddings.get(i).getLabel())
-                        parsedChunkLabel = embeddings.get(i).getLabel()+"_"+parsedPreview;
-                    parsedChunkFV.setLabel(parsedChunkLabel);
-                    if(null != embeddings.get(i).getScore())
-                        parsedChunkFV.setScore(embeddings.get(i).getScore());
-                    else
-                        parsedChunkFV.setScore(textEmbeddingCollectionFile.textEmbeddingCollection.getScore());
-                    parsedChunkFV.setLayer(i);
-                    fc.getFeatures().add(parsedChunkFV);
-                }
                 //update the progress indicator
                 if (i % updatePercent == 0) {
                     double percentComplete = Double.valueOf(i) / Double.valueOf(n);
