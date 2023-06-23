@@ -164,7 +164,6 @@ public class Projections3DPane extends StackPane implements
     DirectedScatterDataModel scatterModel;
 
     public Color sceneColor = Color.BLACK;
-    //    HyperspaceMenu hyperspaceMenu;
     boolean isDirty = false;
     boolean heightChanged = false;
     boolean reflectY = true;
@@ -185,10 +184,8 @@ public class Projections3DPane extends StackPane implements
     HashMap<Point3D, HyperspaceSeed> seedToDataMap = new HashMap<>();
     //This maps each seed to a Point3D object which represents its end point transfromed to screen coordinates.
     HashMap<Point3D, HyperspaceSeed> seedToEndMap = new HashMap<>();
-
     //This maps each ellipsoid to a GMM
     HashMap<Sphere, FeatureVector> sphereToFeatureVectorMap = new HashMap<>();
-
     //This maps each ellipsoid to a GMM
     HashMap<TriaxialSpheroidMesh, GaussianMixture> ellipsoidToGMMessageMap = new HashMap<>();
     //This maps each ellipsoid to its specific GaussianMixtureData
@@ -204,6 +201,7 @@ public class Projections3DPane extends StackPane implements
     public List<Double> meanVector = new ArrayList<>();
     public double maxAbsValue = 1.0;
     public double meanCenteredMaxAbsValue = 1.0;
+    public boolean pointToPointDistanceMode = false;
 
     public ConcurrentLinkedQueue<HyperspaceSeed> hyperspaceSeeds = new ConcurrentLinkedQueue<>();
     public ConcurrentLinkedQueue<Perspective3DNode> pNodes = new ConcurrentLinkedQueue<>();
@@ -1746,18 +1744,25 @@ public class Projections3DPane extends StackPane implements
             sphere.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
                 if (e.getButton() == MouseButton.PRIMARY && !e.isControlDown())
                     radialOverlayPane.createCallout(sphere, featureVector, subScene);
-                else if (e.getButton() == MouseButton.PRIMARY && e.isControlDown()) {
-                    selectedSphereA = sphere;
-                    if (null != selectedManifoldA) {
-                        System.out.println("Point: " + sphere.toString());
-                        Point3D p1 = new Point3D(sphere.getTranslateX(),
-                            sphere.getTranslateY(), sphere.getTranslateZ());
-                        System.out.println("Hull[0]: " + selectedManifoldA.hull.getVertices()[0]);
-                        Point3D p2 = new Point3D(
-                            selectedManifoldA.hull.getVertices()[0].x,
-                            selectedManifoldA.hull.getVertices()[0].y,
-                            selectedManifoldA.hull.getVertices()[0].z);
-                        System.out.println("Distance: " + p1.substract(p2));
+                else if ((e.getButton() == MouseButton.PRIMARY && e.isControlDown())
+                     ||  (e.getButton() == MouseButton.PRIMARY && pointToPointDistanceMode)) {
+                    //@TODO SMP Upgrade to use the new pointToPointDistanceMode
+                    System.out.println("Point: " + sphere.toString());                   
+                    if(null == selectedSphereA)
+                        selectedSphereA = sphere;
+                    else
+                        selectedSphereB = sphere;
+                    if(null != selectedSphereA && null != selectedSphereB) {
+                        javafx.geometry.Point3D p1 = new javafx.geometry.Point3D(
+                            selectedSphereA.getTranslateX(),
+                            selectedSphereA.getTranslateY(), 
+                            selectedSphereA.getTranslateZ());                        
+                        javafx.geometry.Point3D p2 = new javafx.geometry.Point3D(
+                            selectedSphereB.getTranslateX(),
+                            selectedSphereB.getTranslateY(), 
+                            selectedSphereB.getTranslateZ()); 
+                        System.out.println("Difference: " + p1.subtract(p2).toString());
+                        System.out.println("Distance: " + p1.distance(p2));
                     }
                 }
             });

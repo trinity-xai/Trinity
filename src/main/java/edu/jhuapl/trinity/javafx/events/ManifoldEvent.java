@@ -34,6 +34,12 @@ public class ManifoldEvent extends Event {
 
     public static enum POINT_SOURCE {HYPERSPACE, HYPERSURFACE}
 
+    public static final EventType<ManifoldEvent> DISTANCE_MODE_POINTPOINT = new EventType(ANY, "DISTANCE_MODE_POINTWISE");
+    public static final EventType<ManifoldEvent> DISTANCE_MODE_POINTGROUP = new EventType(ANY, "DISTANCE_MODE_POINTGROUP");
+    public static final EventType<ManifoldEvent> SELECT_DISTANCE_POINT1 = new EventType(ANY, "SELECT_DISTANCE_POINT1");
+    public static final EventType<ManifoldEvent> SELECT_DISTANCE_POINT2 = new EventType(ANY, "SELECT_DISTANCE_POINT2");
+    public static final EventType<ManifoldEvent> CLEAR_DISTANCE_CONNECTORS = new EventType(ANY, "CLEAR_DISTANCE_CONNECTORS");
+
     public static final EventType<ManifoldEvent> GENERATE_NEW_UMAP = new EventType(ANY, "GENERATE_NEW_UMAP");
     public static final EventType<ManifoldEvent> USE_AUTOMATIC_TOLERANCE = new EventType(ANY, "USE_AUTOMATIC_TOLERANCE");
     public static final EventType<ManifoldEvent> SET_DISTANCE_TOLERANCE = new EventType(ANY, "SET_DISTANCE_TOLERANCE");

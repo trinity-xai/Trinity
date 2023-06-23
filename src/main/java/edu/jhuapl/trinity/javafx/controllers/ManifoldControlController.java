@@ -21,7 +21,9 @@ package edu.jhuapl.trinity.javafx.controllers;
  */
 
 import edu.jhuapl.trinity.App;
+import edu.jhuapl.trinity.data.Distance;
 import edu.jhuapl.trinity.data.FactorLabel;
+import edu.jhuapl.trinity.javafx.components.DistanceListItem;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.utils.umap.Umap;
 import javafx.fxml.FXML;
@@ -41,7 +43,10 @@ import javafx.scene.paint.Color;
 import java.net.URL;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.ResourceBundle;
+import javafx.scene.control.ListView;
 
 /**
  * FXML Controller class
@@ -131,6 +136,15 @@ public class ManifoldControlController implements Initializable {
     private RadioButton useHypersurfaceButton;
     ToggleGroup hyperSourceGroup;
 
+    //Distances Tab
+    @FXML
+    private ListView<DistanceListItem> distancesListView;
+    @FXML
+    private RadioButton pointToPointRadioButton;
+    @FXML
+    private RadioButton pointToGroupRadioButton;
+    ToggleGroup pointModeToggleGroup;
+
     Scene scene;
     private final String ALL = "ALL";
     /**
@@ -149,8 +163,24 @@ public class ManifoldControlController implements Initializable {
         scene = App.getAppScene();
         setupHullControls();
         setupUmapControls();
+        setupDistanceControls();
     }
 
+    private void setupDistanceControls() {
+        //Get a reference to any Distances already collected
+        List<DistanceListItem> existingItems = new ArrayList<>();
+        for (Distance d : Distance.getDistances()) {
+            DistanceListItem item = new DistanceListItem(d);
+            existingItems.add(item);
+        }
+        //add them all in one shot
+        distancesListView.getItems().addAll(existingItems); 
+             
+        pointModeToggleGroup = new ToggleGroup();
+        pointToPointRadioButton.setToggleGroup(pointModeToggleGroup);
+        pointToGroupRadioButton.setToggleGroup(pointModeToggleGroup);                
+    }
+    
     private void getCurrentLabels() {
         labelChoiceBox.getItems().clear();
         labelChoiceBox.getItems().add(ALL);
@@ -159,7 +189,7 @@ public class ManifoldControlController implements Initializable {
     }
 
     private void setupUmapControls() {
-        metricChoiceBox.getItems().addAll("euclidean", "manhattan", "chebyshev",
+        metricChoiceBox.getItems().addAll("euclidean", "manhattan", "chebyshev", 
             "minkowski", "canberra", "braycurtis", "cosine", "correlation",
             "haversine", "hamming", "jaccard", "dice", "russellrao",
             "kulsinski", "rogerstanimoto", "sokalmichener", "sokalsneath", "yule");
@@ -332,4 +362,20 @@ public class ManifoldControlController implements Initializable {
         scene.getRoot().fireEvent(new ManifoldEvent(
             ManifoldEvent.CLEAR_ALL_MANIFOLDS));
     }
+    @FXML
+    public void startConnector() {
+        //fire event to put projection view into connector mode
+        //@TODO SMP Hardcoded for now to Euclidean
+        if(pointToGroupRadioButton.isSelected())
+            scene.getRoot().fireEvent(new ManifoldEvent(
+                ManifoldEvent.DISTANCE_MODE_POINTGROUP, pointToGroupRadioButton.isSelected(), "euclidean"));
+        else
+            scene.getRoot().fireEvent(new ManifoldEvent(
+                ManifoldEvent.DISTANCE_MODE_POINTPOINT, pointToPointRadioButton.isSelected(), "euclidean"));
+    }    
+    @FXML
+    public void clearAllDistances() {
+        distancesListView.getItems().clear();
+        Distance.removeAllDistances(); //will fire event notifying scene
+    }    
 }
