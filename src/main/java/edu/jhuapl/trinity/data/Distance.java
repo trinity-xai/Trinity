@@ -21,7 +21,6 @@ package edu.jhuapl.trinity.data;
  */
 
 import edu.jhuapl.trinity.App;
-import edu.jhuapl.trinity.javafx.events.HyperspaceEvent;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.scene.paint.Color;
@@ -64,45 +63,45 @@ public class Distance {
 
     public static void addDistance(Distance distance) {
         globalDistanceMap.put(distance.getLabel(), distance);
-        Platform.runLater(() -> {
-            App.getAppScene().getRoot().fireEvent(new HyperspaceEvent(
-                HyperspaceEvent.ADDED_FACTOR_LABEL, distance));
-        });
+//        Platform.runLater(() -> {
+//            App.getAppScene().getRoot().fireEvent(new HyperspaceEvent(
+//                HyperspaceEvent.ADDED_FACTOR_LABEL, distance));
+//        });
     }
 
     public static void addAllDistances(List<Distance> distances) {
         distances.forEach(d -> {
             globalDistanceMap.put(d.getLabel(), d);
         });
-        Platform.runLater(() -> {
-            App.getAppScene().getRoot().fireEvent(new HyperspaceEvent(
-                HyperspaceEvent.ADDEDALL_FACTOR_LABELS, distances));
-        });
+//        Platform.runLater(() -> {
+//            App.getAppScene().getRoot().fireEvent(new HyperspaceEvent(
+//                HyperspaceEvent.ADDEDALL_FACTOR_LABELS, distances));
+//        });
     }
 
     public static void removeAllDistances() {
         globalDistanceMap.clear();
-        Platform.runLater(() -> {
-            App.getAppScene().getRoot().fireEvent(new HyperspaceEvent(
-                HyperspaceEvent.CLEARED_FACTOR_LABELS));
-        });
+//        Platform.runLater(() -> {
+//            App.getAppScene().getRoot().fireEvent(new HyperspaceEvent(
+//                HyperspaceEvent.CLEARED_FACTOR_LABELS));
+//        });
     }
 
     public static Distance removeDistance(String label) {
         Distance removed = globalDistanceMap.remove(label);
-        Platform.runLater(() -> {
-            App.getAppScene().getRoot().fireEvent(new HyperspaceEvent(
-                HyperspaceEvent.REMOVED_FACTOR_LABEL, removed));
-        });
+//        Platform.runLater(() -> {
+//            App.getAppScene().getRoot().fireEvent(new HyperspaceEvent(
+//                HyperspaceEvent.REMOVED_FACTOR_LABEL, removed));
+//        });
         return removed;
     }
 
     public static void updateDistance(String label, Distance distance) {
-        Platform.runLater(() -> {
-            globalDistanceMap.put(label, distance);
-            App.getAppScene().getRoot().fireEvent(new HyperspaceEvent(
-                HyperspaceEvent.UPDATED_FACTOR_LABEL, distance));
-        });
+        globalDistanceMap.put(label, distance);
+//        Platform.runLater(() -> {
+//            App.getAppScene().getRoot().fireEvent(new HyperspaceEvent(
+//                HyperspaceEvent.UPDATED_FACTOR_LABEL, distance));
+//        });
     }
 
     public static Color getColorByLabel(String label) {

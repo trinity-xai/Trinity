@@ -35,6 +35,7 @@ import edu.jhuapl.trinity.javafx.components.ProgressStatus;
 import edu.jhuapl.trinity.javafx.components.callouts.Callout;
 import edu.jhuapl.trinity.javafx.components.panes.ManifoldControlPane;
 import edu.jhuapl.trinity.javafx.components.panes.RadialEntityOverlayPane;
+import edu.jhuapl.trinity.javafx.components.radial.AnimatedNeonCircle;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
@@ -90,7 +91,6 @@ import javafx.scene.transform.Translate;
 import org.fxyz3d.geometry.Point3D;
 import org.fxyz3d.scene.Skybox;
 import org.fxyz3d.utils.CameraTransformer;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -103,8 +103,9 @@ import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-
 import static edu.jhuapl.trinity.javafx.components.radial.HyperspaceMenu.slideInPane;
+import javafx.animation.Transition;
+import javafx.util.Duration;
 
 /**
  * @author Sean Phillips
@@ -218,7 +219,9 @@ public class Projections3DPane extends StackPane implements
     private Group labelGroup = new Group();
     private Group manifoldGroup = new Group();
     private ArrayList<Manifold3D> manifolds = new ArrayList<>();
-
+    public AnimatedNeonCircle highlighterNeonCircle;
+    public Crosshair3D miniCrosshair;
+    
     BorderPane bp;
     //For each label you'll need some Shape3D to derive a point3d from.
     //For this we will use simple spheres.  These can be optionally invisible.
@@ -325,9 +328,15 @@ public class Projections3DPane extends StackPane implements
             anchorCallout.setVisible((boolean) e.eventObject);
         });
 
+        
         //Add 3D subscene stuff to 3D scene root object
-        sceneRoot.getChildren().addAll(cameraTransform, highlightedPoint, nodeGroup,
-            manifoldGroup, debugGroup, cubeWorld, dataXForm, extrasGroup, anchorTSM);
+        sceneRoot.getChildren().addAll(cameraTransform, highlightedPoint, 
+            nodeGroup,manifoldGroup, debugGroup, cubeWorld, 
+            dataXForm, extrasGroup, anchorTSM);
+
+        miniCrosshair = new Crosshair3D(javafx.geometry.Point3D.ZERO, 
+            2, 1.0f);
+        nodeGroup.getChildren().add(miniCrosshair);
 
         highlightedPoint.setMaterial(new PhongMaterial(Color.ALICEBLUE));
         highlightedPoint.setDrawMode(DrawMode.LINE);
@@ -616,8 +625,15 @@ public class Projections3DPane extends StackPane implements
         radialOverlayPane.maxWidthProperty().bind(widthProperty());
         radialOverlayPane.maxHeightProperty().bind(heightProperty());
 
+        //Make a 2D circle that we will use to indicate
+        highlighterNeonCircle = new AnimatedNeonCircle(
+            new AnimatedNeonCircle.Animation(
+                Duration.millis(3000), Transition.INDEFINITE, false),
+            20, 1.5, 8.0, 5.0);    
+        highlighterNeonCircle.setManaged(false);
+        highlighterNeonCircle.setMouseTransparent(true);
         getChildren().clear();
-        getChildren().addAll(bp, labelGroup, radialOverlayPane);
+        getChildren().addAll(bp, labelGroup, radialOverlayPane, highlighterNeonCircle);
 
         MenuItem projectUmapHyperspaceItem = new MenuItem("Project Hyperspace With UMAP");
         projectUmapHyperspaceItem.setOnAction(e -> projectHyperspace());
@@ -1171,6 +1187,25 @@ public class Projections3DPane extends StackPane implements
             //update the local transform of the label.
             label.getTransforms().setAll(new Translate(x, y));
         });
+        
+        javafx.geometry.Point3D coordinates = 
+            highlightedPoint.localToScene(javafx.geometry.Point3D.ZERO, true);
+        double x = coordinates.getX();//-highlighterNeonCircle.getRadius() /4.0;
+        double y = coordinates.getY();//-highlighterNeonCircle.getRadius() /4.0;
+        highlighterNeonCircle.setMouseTransparent(true);
+        //is it left of the view?
+        if (x < 0) { x = 0; }
+        //is it right of the view?
+        if ((x + highlighterNeonCircle.getRadius()+ 5) > subScene.getWidth()) {
+            x = subScene.getWidth() - (highlighterNeonCircle.getRadius() + 5);
+        }
+        //is it above the view?
+        if (y < 0) { y = 0; }
+        //is it below the view
+        if ((y + highlighterNeonCircle.getRadius()) > subScene.getHeight())
+            y = subScene.getHeight() - (highlighterNeonCircle.getRadius() + 5);
+        //update the local transform of the label.
+        highlighterNeonCircle.getTransforms().setAll(new Translate(x, y));        
     }
 
     public void updateView(boolean forcePNodeUpdate) {
@@ -1739,7 +1774,24 @@ public class Projections3DPane extends StackPane implements
             sphere.setTranslateZ(featureVector.getData().get(2));
             ellipsoidGroup.getChildren().add(sphere);
             sphereToFeatureVectorMap.put(sphere, featureVector);
-
+            //@TODO add Spinning Circle as highlight when mouse hovering
+            sphere.addEventHandler(MouseEvent.MOUSE_ENTERED, e-> {
+                highlightedPoint = sphere;
+                //This is rotating around 0,0 instead of itself. I dunno??
+                //highlighterNeonCircle.play(true);
+                updateLabels();
+                javafx.geometry.Point3D p1 = new javafx.geometry.Point3D(
+                sphere.getTranslateX(),sphere.getTranslateY(), sphere.getTranslateZ()); 
+                miniCrosshair.size = point3dSize*4.0;
+                miniCrosshair.setCenter(p1);
+                javafx.geometry.Point3D rP3D = new javafx.geometry.Point3D(camera.getTranslateX(),
+                    camera.getTranslateY(), camera.getTranslateZ());
+                javafx.geometry.Point3D rP3D2 = cameraTransform.ry.transform(rP3D);
+                javafx.geometry.Point3D rP3D3 = cameraTransform.rx.transform(rP3D2);
+                double ratio = Math.abs(rP3D3.distance(p1) / camera.getTranslateZ());
+                highlighterNeonCircle.setRadius(20.0 / ratio);
+            });
+            
             //Add click handler to popup callout
             sphere.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
                 if (e.getButton() == MouseButton.PRIMARY && !e.isControlDown())
@@ -1748,10 +1800,11 @@ public class Projections3DPane extends StackPane implements
                      ||  (e.getButton() == MouseButton.PRIMARY && pointToPointDistanceMode)) {
                     //@TODO SMP Upgrade to use the new pointToPointDistanceMode
                     System.out.println("Point: " + sphere.toString());                   
-                    if(null == selectedSphereA)
-                        selectedSphereA = sphere;
+                    if(null == selectedSphereA) {
+                        selectedSphereA = sphere; //@TODO add some sort of visual highlight
+                    }
                     else
-                        selectedSphereB = sphere;
+                        selectedSphereB = sphere; //@TODO add some sort of visual highlight
                     if(null != selectedSphereA && null != selectedSphereB) {
                         javafx.geometry.Point3D p1 = new javafx.geometry.Point3D(
                             selectedSphereA.getTranslateX(),
@@ -1763,6 +1816,9 @@ public class Projections3DPane extends StackPane implements
                             selectedSphereB.getTranslateZ()); 
                         System.out.println("Difference: " + p1.subtract(p2).toString());
                         System.out.println("Distance: " + p1.distance(p2));
+                        //@TODO SMP Fire off event to create new distance object
+                        //@TODO SMP Fire event to add distance 3D line to scene
+                        //@TODO SMP Clear selected spheres to null state
                     }
                 }
             });
