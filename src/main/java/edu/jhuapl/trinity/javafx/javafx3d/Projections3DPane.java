@@ -357,7 +357,7 @@ public class Projections3DPane extends StackPane implements
             double z = camera.getTranslateZ();
             double newZ = z + event.getZoomFactor() * modifierFactor * modifier;
             camera.setTranslateZ(newZ);
-            updateLabels();
+            updateFloatingNodes();
         });
         subScene.setOnSwipeUp(e -> {
             e.consume();
@@ -462,7 +462,7 @@ public class Projections3DPane extends StackPane implements
                         updateEllipsoids();
                         notifyIndexChange();
                     }
-                    updateLabels();
+                    updateFloatingNodes();
                     setSpheroidAnchor(true, anchorIndex);
                 }
             }
@@ -494,7 +494,7 @@ public class Projections3DPane extends StackPane implements
                         updateEllipsoids();
                         notifyIndexChange();
                     }
-                    updateLabels();
+                    updateFloatingNodes();
                     setSpheroidAnchor(true, anchorIndex);
                 } else {
                     scene.getRoot().fireEvent(
@@ -572,7 +572,7 @@ public class Projections3DPane extends StackPane implements
                 setSpheroidAnchor(true, anchorIndex);
             }
 
-            updateLabels();
+            updateFloatingNodes();
             radialOverlayPane.updateCalloutHeadPoints(subScene);
         });
 
@@ -591,7 +591,7 @@ public class Projections3DPane extends StackPane implements
             } else {
                 camera.setTranslateZ(camera.getTranslateZ() - 50.0);
             }
-            updateLabels();
+            updateFloatingNodes();
             radialOverlayPane.updateCalloutHeadPoints(subScene);
             e.consume();
         });
@@ -608,7 +608,7 @@ public class Projections3DPane extends StackPane implements
             double z = camera.getTranslateZ();
             double newZ = z + event.getDeltaY() * modifierFactor * modifier;
             camera.setTranslateZ(newZ);
-            updateLabels();
+            updateFloatingNodes();
             radialOverlayPane.updateCalloutHeadPoints(subScene);
         });
 
@@ -742,7 +742,7 @@ public class Projections3DPane extends StackPane implements
             xFactorIndex = coords.coordinateIndices.get(0);
             yFactorIndex = coords.coordinateIndices.get(1);
             zFactorIndex = coords.coordinateIndices.get(2);
-            updateLabels();
+            updateFloatingNodes();
             updateView(true);
             updateEllipsoids();
             notifyIndexChange();
@@ -889,7 +889,7 @@ public class Projections3DPane extends StackPane implements
         Platform.runLater(() -> {
             cubeWorld.adjustPanelsByPos(cameraTransform.rx.getAngle(),
                 cameraTransform.ry.getAngle(), cameraTransform.rz.getAngle());
-            updateLabels();
+            updateFloatingNodes();
             updateView(true);
             //create callout automatically puts the callout and node into a managed map
             FeatureVector dummy = FeatureVector.EMPTY_FEATURE_VECTOR("", 3);
@@ -981,7 +981,7 @@ public class Projections3DPane extends StackPane implements
         manifolds.add(manifold3D);
         manifoldGroup.getChildren().add(manifold3D);
         shape3DToLabel.putAll(manifold3D.shape3DToLabel);
-        updateLabels();
+        updateFloatingNodes();
     }
 
     private void setupSkyBox() {
@@ -1141,11 +1141,20 @@ public class Projections3DPane extends StackPane implements
             cubeWorld.projectionAffine.setToTransform(dataXForm.getLocalToSceneTransform());
             cubeWorld.setDirty(true); //signals to animation timer to redraw
         }
-        updateLabels();
+        updateFloatingNodes();
         radialOverlayPane.updateCalloutHeadPoints(subScene);
     }
-
-    private void updateLabels() {
+    private void setCircleRadiusByDistance(AnimatedNeonCircle circle, Sphere sphere) {
+        javafx.geometry.Point3D p1 = new javafx.geometry.Point3D(
+        sphere.getTranslateX(),sphere.getTranslateY(), sphere.getTranslateZ()); 
+        javafx.geometry.Point3D rP3D = new javafx.geometry.Point3D(camera.getTranslateX(),
+            camera.getTranslateY(), camera.getTranslateZ());
+        javafx.geometry.Point3D rP3D2 = cameraTransform.ry.transform(rP3D);
+        javafx.geometry.Point3D rP3D3 = cameraTransform.rx.transform(rP3D2);
+        double ratio = Math.abs(rP3D3.distance(p1) / camera.getTranslateZ());
+        circle.setRadius(20.0 / ratio);
+    }
+    private void updateFloatingNodes() {
         if (xFactorIndex < featureLabels.size())
             xLabel.setText(featureLabels.get(xFactorIndex));
         else
@@ -1190,8 +1199,8 @@ public class Projections3DPane extends StackPane implements
         
         javafx.geometry.Point3D coordinates = 
             highlightedPoint.localToScene(javafx.geometry.Point3D.ZERO, true);
-        double x = coordinates.getX();//-highlighterNeonCircle.getRadius() /4.0;
-        double y = coordinates.getY();//-highlighterNeonCircle.getRadius() /4.0;
+        double x = coordinates.getX();
+        double y = coordinates.getY();
         highlighterNeonCircle.setMouseTransparent(true);
         //is it left of the view?
         if (x < 0) { x = 0; }
@@ -1205,7 +1214,8 @@ public class Projections3DPane extends StackPane implements
         if ((y + highlighterNeonCircle.getRadius()) > subScene.getHeight())
             y = subScene.getHeight() - (highlighterNeonCircle.getRadius() + 5);
         //update the local transform of the label.
-        highlighterNeonCircle.getTransforms().setAll(new Translate(x, y));        
+        highlighterNeonCircle.getTransforms().setAll(new Translate(x, y));
+        setCircleRadiusByDistance(highlighterNeonCircle, highlightedPoint);        
     }
 
     public void updateView(boolean forcePNodeUpdate) {
@@ -1777,22 +1787,15 @@ public class Projections3DPane extends StackPane implements
             //@TODO add Spinning Circle as highlight when mouse hovering
             sphere.addEventHandler(MouseEvent.MOUSE_ENTERED, e-> {
                 highlightedPoint = sphere;
-                //This is rotating around 0,0 instead of itself. I dunno??
-                //highlighterNeonCircle.play(true);
-                updateLabels();
+                updateFloatingNodes(); //Will transform location of all floating 2D nodes
                 javafx.geometry.Point3D p1 = new javafx.geometry.Point3D(
                 sphere.getTranslateX(),sphere.getTranslateY(), sphere.getTranslateZ()); 
                 miniCrosshair.size = point3dSize*4.0;
                 miniCrosshair.setCenter(p1);
-                javafx.geometry.Point3D rP3D = new javafx.geometry.Point3D(camera.getTranslateX(),
-                    camera.getTranslateY(), camera.getTranslateZ());
-                javafx.geometry.Point3D rP3D2 = cameraTransform.ry.transform(rP3D);
-                javafx.geometry.Point3D rP3D3 = cameraTransform.rx.transform(rP3D2);
-                double ratio = Math.abs(rP3D3.distance(p1) / camera.getTranslateZ());
-                highlighterNeonCircle.setRadius(20.0 / ratio);
+                setCircleRadiusByDistance(highlighterNeonCircle, sphere);
             });
             
-            //Add click handler to popup callout
+            //Add click handler to popup callout or point distance measurements
             sphere.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
                 if (e.getButton() == MouseButton.PRIMARY && !e.isControlDown())
                     radialOverlayPane.createCallout(sphere, featureVector, subScene);
