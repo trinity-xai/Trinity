@@ -7,9 +7,16 @@ on:
     branches: [ "main" ]
   pull_request:
     branches: [ "main" ]
+  release:
+    types: [ "published" ]
 
 permissions:
-  contents: read
+  contents: write
+
+# cancel in progress jobs or runs for the current workflow
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
 
 jobs:
 
@@ -53,6 +60,24 @@ jobs:
           path: target/*-assembly.jar
           retention-days: 10
           if-no-files-found: error
+
+      - name: Release Jar
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_NAME: trinity-${{ runner.os }}-java-${{ matrix.jdk-version }}
+        shell: bash
+        run: |
+          mv target/*-assembly.jar "$RELEASE_NAME.jar"
+          if [[ "$RUNNER_OS" == "macOS" || "$RUNNER_OS" == "Linux" ]]; then
+            zip "$RELEASE_NAME-jar.zip" "$RELEASE_NAME.jar"
+          elif [[ "$RUNNER_OS" == "Windows" ]]; then
+            7z a "$RELEASE_NAME-jar.zip" "$RELEASE_NAME.jar"
+          else
+            exit 1
+          fi
+          gh release upload "$GITHUB_REF_NAME" "$RELEASE_NAME-jar.zip"
 
   build-graal:
 
@@ -104,3 +129,22 @@ jobs:
           path: target/gluonfx/**/trinity*
           retention-days: 10
           if-no-files-found: error
+
+      - name: Release Native
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_NAME: trinity-${{ runner.os }}-java-${{ matrix.jdk-version }}
+        shell: bash
+        run: |
+          if [[ "$RUNNER_OS" == "macOS" ]]; then
+            mv target/gluonfx/**/trinity* "Trinity.app"
+            zip "$RELEASE_NAME-native.zip" "Trinity.app"
+          elif [[ "$RUNNER_OS" == "Windows" ]]; then
+            mv target/gluonfx/**/trinity*.exe "Trinity.exe"
+            7z a "$RELEASE_NAME-native.zip" "Trinity.exe"
+          else
+            exit 1
+          fi
+          gh release upload "$GITHUB_REF_NAME" "$RELEASE_NAME-native.zip"
