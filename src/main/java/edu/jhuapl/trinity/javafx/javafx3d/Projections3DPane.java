@@ -104,6 +104,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import static edu.jhuapl.trinity.javafx.components.radial.HyperspaceMenu.slideInPane;
+import edu.jhuapl.trinity.javafx.components.radial.PointDistanceMenu;
 import javafx.animation.Transition;
 import javafx.util.Duration;
 
@@ -943,7 +944,8 @@ public class Projections3DPane extends StackPane implements
         trajectorySphereGroup.getChildren().clear();
 
         anchorTraj3D = JavaFX3DUtils.buildPolyLineFromTrajectory(anchorTrajectory,
-            Color.ALICEBLUE, trajectoryTailSize, trajectoryScale, sceneWidth, sceneHeight);
+            8.0f, Color.ALICEBLUE,  trajectoryTailSize, 
+            trajectoryScale, sceneWidth, sceneHeight);
         extrasGroup.getChildren().add(0, anchorTraj3D);
         for (Point3D point : anchorTraj3D.points) {
             TriaxialSpheroidMesh tsm = createEllipsoid(anchorTraj3D.width / 4.0, anchorTraj3D.width / 4.0, anchorTraj3D.width / 4.0, Color.LIGHTBLUE);
@@ -1525,16 +1527,11 @@ public class Projections3DPane extends StackPane implements
     @Override
     public void setSpheroidAnchor(boolean animate, int index) {
         if (index >= featureVectors.size()) {
-            //System.out.println("Requested anchor index of " + index + " greater than scatterModel.data size");
             return;
         } else if (index < 0) {
-            //System.out.println("Requested anchor index of " + index + " less than zero.");
             return;
         }
         Point3D p3d = new Point3D(
-//            featureVectors.get(index).getData().get(0)*projectionScalar,
-//            featureVectors.get(index).getData().get(1)*projectionScalar,
-//            featureVectors.get(index).getData().get(2)*projectionScalar
             featureVectors.get(index).getData().get(0),
             featureVectors.get(index).getData().get(1),
             featureVectors.get(index).getData().get(2)
@@ -1547,9 +1544,6 @@ public class Projections3DPane extends StackPane implements
         anchorTrajectory.states.clear();
         for (FeatureVector fv : featureVectors) {
             anchorTrajectory.states.add(new double[]{
-//                fv.getData().get(0)*projectionScalar,
-//                fv.getData().get(1)*projectionScalar,
-//                fv.getData().get(2)*projectionScalar
                 fv.getData().get(0),
                 fv.getData().get(1),
                 fv.getData().get(2)
@@ -1801,13 +1795,19 @@ public class Projections3DPane extends StackPane implements
                     radialOverlayPane.createCallout(sphere, featureVector, subScene);
                 else if ((e.getButton() == MouseButton.PRIMARY && e.isControlDown())
                      ||  (e.getButton() == MouseButton.PRIMARY && pointToPointDistanceMode)) {
-                    //@TODO SMP Upgrade to use the new pointToPointDistanceMode
                     System.out.println("Point: " + sphere.toString());                   
                     if(null == selectedSphereA) {
-                        selectedSphereA = sphere; //@TODO add some sort of visual highlight
+                        selectedSphereA = sphere; 
+                        //@TODO add some sort of visual highlight
+//                        PointDistanceMenu pdMenu = new PointDistanceMenu(this);
+//                        pdMenu.setTranslateX(e.getSceneX());
+//                        pdMenu.setTranslateY(e.getSceneY()); 
+//                        radialOverlayPane.addEntity(pdMenu);
                     }
-                    else
-                        selectedSphereB = sphere; //@TODO add some sort of visual highlight
+                    else {
+                        selectedSphereB = sphere; 
+                        //@TODO add some sort of visual highlight
+                    }
                     if(null != selectedSphereA && null != selectedSphereB) {
                         javafx.geometry.Point3D p1 = new javafx.geometry.Point3D(
                             selectedSphereA.getTranslateX(),
@@ -1820,8 +1820,24 @@ public class Projections3DPane extends StackPane implements
                         System.out.println("Difference: " + p1.subtract(p2).toString());
                         System.out.println("Distance: " + p1.distance(p2));
                         //@TODO SMP Fire off event to create new distance object
-                        //@TODO SMP Fire event to add distance 3D line to scene
-                        //@TODO SMP Clear selected spheres to null state
+                        //@TODO SMP Add 3D line to scene connecting the two points
+                        Trajectory distanceTrajectory = new Trajectory("Distance Line");
+                        //@TODO SMP add midpoint so we can anchor a numeric distance label
+                        distanceTrajectory.states.clear();
+                        distanceTrajectory.states.add(
+                            new double[]{p1.getX(),p1.getY(),p1.getZ()});
+                        distanceTrajectory.states.add(
+                            new double[]{p2.getX(),p2.getY(),p2.getZ()}
+                        );
+                        Trajectory3D distanceTraj3D = JavaFX3DUtils.buildPolyLineFromTrajectory(
+                        distanceTrajectory, 5.0f, Color.ALICEBLUE, trajectoryTailSize, 
+                            trajectoryScale, sceneWidth, sceneHeight);
+                        extrasGroup.getChildren().add(0, distanceTraj3D);
+                        //@TODO SMP Add 2D distance overlay
+                        
+                        //Clear selected spheres to null state
+                        selectedSphereA = null;
+                        selectedSphereB = null;
                     }
                 }
             });

@@ -401,20 +401,19 @@ public enum JavaFX3DUtils {
         float width = 8.0f;
         return new Trajectory3D(trial, day, trajectory, points, width, color);
     }
-
-    public static Trajectory3D buildPolyLineFromTrajectory(Trajectory trajectory,
-                                                           Color color, int tailSize, double scale, double sceneWidth, double sceneScale) {
+    public static Trajectory3D buildPolyLineFromTrajectory(
+        Trajectory trajectory, float trajWidth, Color color, int tailSize, 
+        double scale, double sceneWidth, double sceneScale) {
         if (trajectory.states.isEmpty()) {
             return null;
         }
         List<Point3D> points = convertToPoint3D(trajectory, scale, sceneWidth, sceneScale);
-        float width = 8.0f; //@TODO SMP do a configuration lookup or pass in
         //Trim older points based on tail size
         if (points.size() > tailSize)
             return new Trajectory3D(1, 1, trajectory,
-                points.subList(points.size() - tailSize, points.size()), width, color);
+                points.subList(points.size() - tailSize, points.size()), trajWidth, color);
         else
-            return new Trajectory3D(1, 1, trajectory, points, width, color);
+            return new Trajectory3D(1, 1, trajectory, points, trajWidth, color);
     }
 
     /**
