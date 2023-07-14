@@ -3,7 +3,7 @@
     <modelVersion>4.0.0</modelVersion>
     <groupId>trinity</groupId>
     <artifactId>trinity</artifactId>
-    <version>1.0.0-SNAPSHOT</version>
+    <version>${revision}</version>
     <packaging>jar</packaging>
 
     <name>${project.artifactId}-${project.version}</name>
@@ -16,6 +16,8 @@
 
     <properties>
         <title>Trinity</title>
+        <!-- https://maven.apache.org/maven-ci-friendly.html -->
+        <revision>${maven.build.timestamp}</revision>
         <buildDate>${maven.build.timestamp}</buildDate>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
@@ -25,6 +27,7 @@
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <maven.compiler.release>${java.version}</maven.compiler.release>
+        <maven.build.timestamp.format>yyyy.MM.dd</maven.build.timestamp.format>
         <license.organizationName>The Johns Hopkins University Applied Physics Laboratory LLC</license.organizationName>
         <license.licenceFile>LICENSE.md</license.licenceFile>
         <license.licenseName>apache_v2</license.licenseName>
@@ -145,6 +148,12 @@
             <groupId>com.github.sarxos</groupId>
             <artifactId>webcam-capture</artifactId>
             <version>0.3.12</version>
+        </dependency>
+        <!-- Enforce slf4j-api version across dependencies (although we're using JUL) -->
+        <dependency>
+            <groupId>org.slf4j</groupId>
+            <artifactId>slf4j-api</artifactId>
+            <version>1.7.36</version>
         </dependency>
     </dependencies>
     <build>
