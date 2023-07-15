@@ -125,3 +125,12 @@ There's already a set of scripts for building and running if you use a Jetbrains
 To run the project from a jar after building, you can take a look at the `scripts` directory to get you started.
 Otherwise, make sure to use at least `-Dprism.maxvram=2G` on your JVM parameters when starting it up.
 For JLink/JPackage builds those JVM args are baked in already into the packages.
+
+## Troubleshooting
+
+Execution permissions might need to be needed to run the `JPackage`, `JLink`, or `Native` builds
+depending on which system you're running from. For example on OSX systems you might get
+`Unknown error: 111` or launch errors, hence you need to allow the app through GateKeeper via
+`xattr -r -d com.apple.quarantine /path/to/Trinity.app`. You might also need to add execution
+permissions in some cases via `chmod +x /path/to/Trinity.app/Contents/MacOS/Trinity` when using
+the `JPackage` build.
