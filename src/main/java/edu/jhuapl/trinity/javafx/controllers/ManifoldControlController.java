@@ -26,6 +26,7 @@ import edu.jhuapl.trinity.data.FactorLabel;
 import edu.jhuapl.trinity.javafx.components.DistanceListItem;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.utils.umap.Umap;
+import edu.jhuapl.trinity.utils.umap.metric.Metric;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.scene.Scene;
@@ -39,13 +40,13 @@ import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.paint.Color;
-
 import java.net.URL;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
+import javafx.application.Platform;
 import javafx.scene.control.ListView;
 
 /**
@@ -62,7 +63,6 @@ public class ManifoldControlController implements Initializable {
     ToggleGroup pointsToggleGroup;
     @FXML
     private ChoiceBox labelChoiceBox;
-
     @FXML
     private CheckBox automaticCheckBox;
     @FXML
@@ -144,6 +144,8 @@ public class ManifoldControlController implements Initializable {
     @FXML
     private RadioButton pointToGroupRadioButton;
     ToggleGroup pointModeToggleGroup;
+    @FXML
+    private ChoiceBox distanceMetricChoiceBox;
 
     Scene scene;
     private final String ALL = "ALL";
@@ -167,6 +169,8 @@ public class ManifoldControlController implements Initializable {
     }
 
     private void setupDistanceControls() {
+        distanceMetricChoiceBox.getItems().addAll(Metric.getMetricNames());
+        
         //Get a reference to any Distances already collected
         List<DistanceListItem> existingItems = new ArrayList<>();
         for (Distance d : Distance.getDistances()) {
@@ -175,10 +179,17 @@ public class ManifoldControlController implements Initializable {
         }
         //add them all in one shot
         distancesListView.getItems().addAll(existingItems); 
-             
+        
         pointModeToggleGroup = new ToggleGroup();
         pointToPointRadioButton.setToggleGroup(pointModeToggleGroup);
-        pointToGroupRadioButton.setToggleGroup(pointModeToggleGroup);                
+        pointToGroupRadioButton.setToggleGroup(pointModeToggleGroup);
+        
+        scene.addEventHandler(ManifoldEvent.CREATE_NEW_DISTANCE, e -> {
+            Distance distance = (Distance)e.object1;
+            DistanceListItem distanceListItem = new DistanceListItem(distance);
+            Distance.addDistance(distance);
+            distancesListView.getItems().add(distanceListItem);
+        });
     }
     
     private void getCurrentLabels() {
@@ -189,10 +200,12 @@ public class ManifoldControlController implements Initializable {
     }
 
     private void setupUmapControls() {
-        metricChoiceBox.getItems().addAll("euclidean", "manhattan", "chebyshev", 
-            "minkowski", "canberra", "braycurtis", "cosine", "correlation",
-            "haversine", "hamming", "jaccard", "dice", "russellrao",
-            "kulsinski", "rogerstanimoto", "sokalmichener", "sokalsneath", "yule");
+        
+//        metricChoiceBox.getItems().addAll("euclidean", "manhattan", "chebyshev", 
+//            "minkowski", "canberra", "braycurtis", "cosine", "correlation",
+//            "haversine", "hamming", "jaccard", "dice", "russellrao",
+//            "kulsinski", "rogerstanimoto", "sokalmichener", "sokalsneath", "yule");
+        metricChoiceBox.getItems().addAll(Metric.getMetricNames());
         metricChoiceBox.getSelectionModel().selectFirst();
 
         numComponentsSpinner.setValueFactory(

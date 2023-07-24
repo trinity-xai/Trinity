@@ -38,6 +38,7 @@ public class ManifoldEvent extends Event {
     public static final EventType<ManifoldEvent> DISTANCE_MODE_POINTGROUP = new EventType(ANY, "DISTANCE_MODE_POINTGROUP");
     public static final EventType<ManifoldEvent> SELECT_DISTANCE_POINT1 = new EventType(ANY, "SELECT_DISTANCE_POINT1");
     public static final EventType<ManifoldEvent> SELECT_DISTANCE_POINT2 = new EventType(ANY, "SELECT_DISTANCE_POINT2");
+    public static final EventType<ManifoldEvent> CREATE_NEW_DISTANCE = new EventType(ANY, "CREATE_NEW_DISTANCE");
     public static final EventType<ManifoldEvent> CLEAR_DISTANCE_CONNECTORS = new EventType(ANY, "CLEAR_DISTANCE_CONNECTORS");
 
     public static final EventType<ManifoldEvent> GENERATE_NEW_UMAP = new EventType(ANY, "GENERATE_NEW_UMAP");

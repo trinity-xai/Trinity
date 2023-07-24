@@ -22,6 +22,7 @@ package edu.jhuapl.trinity.javafx.javafx3d;
 
 import edu.jhuapl.trinity.App;
 import edu.jhuapl.trinity.data.CoordinateSet;
+import edu.jhuapl.trinity.data.Distance;
 import edu.jhuapl.trinity.data.FactorLabel;
 import edu.jhuapl.trinity.data.FeatureLayer;
 import edu.jhuapl.trinity.data.HyperspaceSeed;
@@ -105,6 +106,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import static edu.jhuapl.trinity.javafx.components.radial.HyperspaceMenu.slideInPane;
 import edu.jhuapl.trinity.javafx.components.radial.PointDistanceMenu;
+import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import javafx.animation.Transition;
 import javafx.util.Duration;
 
@@ -1154,7 +1156,7 @@ public class Projections3DPane extends StackPane implements
         javafx.geometry.Point3D rP3D2 = cameraTransform.ry.transform(rP3D);
         javafx.geometry.Point3D rP3D3 = cameraTransform.rx.transform(rP3D2);
         double ratio = Math.abs(rP3D3.distance(p1) / camera.getTranslateZ());
-        circle.setRadius(20.0 / ratio);
+        circle.setRadius(25.0 / ratio);
     }
     private void updateFloatingNodes() {
         if (xFactorIndex < featureLabels.size())
@@ -1819,10 +1821,18 @@ public class Projections3DPane extends StackPane implements
                             selectedSphereB.getTranslateZ()); 
                         System.out.println("Difference: " + p1.subtract(p2).toString());
                         System.out.println("Distance: " + p1.distance(p2));
-                        //@TODO SMP Fire off event to create new distance object
-                        //@TODO SMP Add 3D line to scene connecting the two points
+                        //Fire off event to create new distance object
+                        String distanceLabel = p1.toString() + " => " + p2.toString() + " : euclidean";
+                        Distance distanceObject = new Distance(
+                        distanceLabel, Color.ALICEBLUE, "euclidean");
+                        distanceObject.setPoint1(p1);
+                        distanceObject.setPoint2(p2);
+                        distanceObject.setValue(p1.distance(p2));
+                        
+                        getScene().getRoot().fireEvent(new ManifoldEvent(
+                            ManifoldEvent.CREATE_NEW_DISTANCE, distanceObject));
+                        //Add 3D line to scene connecting the two points
                         Trajectory distanceTrajectory = new Trajectory("Distance Line");
-                        //@TODO SMP add midpoint so we can anchor a numeric distance label
                         distanceTrajectory.states.clear();
                         distanceTrajectory.states.add(
                             new double[]{p1.getX(),p1.getY(),p1.getZ()});
@@ -1833,6 +1843,7 @@ public class Projections3DPane extends StackPane implements
                         distanceTrajectory, 5.0f, Color.ALICEBLUE, trajectoryTailSize, 
                             trajectoryScale, sceneWidth, sceneHeight);
                         extrasGroup.getChildren().add(0, distanceTraj3D);
+                        //@TODO SMP add midpoint so we can anchor a numeric distance label
                         //@TODO SMP Add 2D distance overlay
                         
                         //Clear selected spheres to null state

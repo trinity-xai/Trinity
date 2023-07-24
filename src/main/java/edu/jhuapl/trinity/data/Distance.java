@@ -20,8 +20,6 @@ package edu.jhuapl.trinity.data;
  * #L%
  */
 
-import edu.jhuapl.trinity.App;
-import javafx.application.Platform;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.scene.paint.Color;
 import java.util.Collection;
@@ -33,17 +31,21 @@ import javafx.geometry.Point3D;
  * @author Sean Phillips
  */
 public class Distance {
-    
-    private double value;
+    private String metric; //Used to lookup into Metric enum later
+    private double value; //the computed value
     private Point3D point1;
     private Point3D point2;
     private String label;
     private Color color;
     public SimpleBooleanProperty visible;
 
-    public Distance(String label, Color color) {
+    public Distance(String label, Color color, String metric) {
         this.label = label;
         this.color = color;
+        if(null == metric)
+            metric = "euclidean";
+        else
+            this.metric = metric;
         visible = new SimpleBooleanProperty(true);
     }
 
@@ -63,45 +65,25 @@ public class Distance {
 
     public static void addDistance(Distance distance) {
         globalDistanceMap.put(distance.getLabel(), distance);
-//        Platform.runLater(() -> {
-//            App.getAppScene().getRoot().fireEvent(new HyperspaceEvent(
-//                HyperspaceEvent.ADDED_FACTOR_LABEL, distance));
-//        });
     }
 
     public static void addAllDistances(List<Distance> distances) {
         distances.forEach(d -> {
             globalDistanceMap.put(d.getLabel(), d);
         });
-//        Platform.runLater(() -> {
-//            App.getAppScene().getRoot().fireEvent(new HyperspaceEvent(
-//                HyperspaceEvent.ADDEDALL_FACTOR_LABELS, distances));
-//        });
     }
 
     public static void removeAllDistances() {
         globalDistanceMap.clear();
-//        Platform.runLater(() -> {
-//            App.getAppScene().getRoot().fireEvent(new HyperspaceEvent(
-//                HyperspaceEvent.CLEARED_FACTOR_LABELS));
-//        });
     }
 
     public static Distance removeDistance(String label) {
         Distance removed = globalDistanceMap.remove(label);
-//        Platform.runLater(() -> {
-//            App.getAppScene().getRoot().fireEvent(new HyperspaceEvent(
-//                HyperspaceEvent.REMOVED_FACTOR_LABEL, removed));
-//        });
         return removed;
     }
 
     public static void updateDistance(String label, Distance distance) {
         globalDistanceMap.put(label, distance);
-//        Platform.runLater(() -> {
-//            App.getAppScene().getRoot().fireEvent(new HyperspaceEvent(
-//                HyperspaceEvent.UPDATED_FACTOR_LABEL, distance));
-//        });
     }
 
     public static Color getColorByLabel(String label) {
@@ -204,5 +186,19 @@ public class Distance {
 
     public void setVisible(final java.lang.Boolean visible) {
         this.visibleProperty().set(visible);
+    }
+
+    /**
+     * @return the metric
+     */
+    public String getMetric() {
+        return metric;
+    }
+
+    /**
+     * @param metric the metric to set
+     */
+    public void setMetric(String metric) {
+        this.metric = metric;
     }
 }

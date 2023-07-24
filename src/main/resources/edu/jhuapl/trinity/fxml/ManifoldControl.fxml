@@ -130,15 +130,19 @@
                                         <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="NEVER" />
                                         <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="NEVER" />
                                         <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="NEVER" />
-                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="NEVER" />
                                     </rowConstraints>
                                     <children>
                                         <Label text="Connector Thickness" GridPane.rowIndex="5" />
-                                        <Label text="Connector Color" GridPane.rowIndex="7" />
+                              <VBox spacing="5.0" GridPane.rowIndex="7" GridPane.rowSpan="2">
+                                 <children>
+                                              <Label text="Connector Color" />
+                                    <ColorPicker fx:id="connectorColorPicker" prefWidth="200.0" />
+                                 </children>
+                              </VBox>
                                         <Spinner fx:id="connectorThicknessSpinner" editable="true" prefWidth="100.0" GridPane.rowIndex="6" />
                                         <Label text="Collected Distances" GridPane.columnIndex="1" />
                                         <ChoiceBox fx:id="distanceMetricChoiceBox" prefWidth="200.0" GridPane.rowIndex="1" />
-                                          <Button mnemonicParsing="false" onAction="#startConnector" prefWidth="150.0" text="Start Connector" GridPane.halignment="CENTER" GridPane.rowIndex="10" />
+                                          <Button mnemonicParsing="false" onAction="#startConnector" prefWidth="150.0" text="Start Connector" GridPane.halignment="CENTER" GridPane.rowIndex="9" />
                                           <CheckBox fx:id="trackMouseCheckBox" mnemonicParsing="false" text="Track Mouse" GridPane.rowIndex="4">
                                               <padding>
                                                   <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
@@ -146,8 +150,7 @@
                                           </CheckBox>
                                             <RadioButton fx:id="pointToPointRadioButton" mnemonicParsing="false" selected="true" text="Point to Point" GridPane.rowIndex="3" />
                                             <RadioButton fx:id="pointToGroupRadioButton" mnemonicParsing="false" text="Point to Group" GridPane.rowIndex="2" />
-                              <ColorPicker fx:id="connectorColorPicker" prefHeight="100.0" prefWidth="200.0" GridPane.rowIndex="8" />
-                              <Button mnemonicParsing="false" onAction="#clearAllDistances" prefWidth="150.0" text="Clear All" GridPane.halignment="CENTER" GridPane.rowIndex="11" />
+                              <Button mnemonicParsing="false" onAction="#clearAllDistances" prefWidth="150.0" text="Clear All" GridPane.halignment="CENTER" GridPane.rowIndex="10" />
                               <ScrollPane fitToHeight="true" fitToWidth="true" pannable="true" GridPane.columnIndex="1" GridPane.rowIndex="1" GridPane.rowSpan="2147483647">
                                  <content>
                                     <ListView fx:id="distancesListView" prefHeight="200.0" prefWidth="200.0">
