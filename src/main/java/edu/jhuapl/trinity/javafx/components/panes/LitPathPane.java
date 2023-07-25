@@ -67,14 +67,16 @@ public class LitPathPane extends PathPane {
     double fadeSideInset = -40;
     double hoverTopInset = -2;
     double hoverSideInset = -38;
+    public Color fillPreStartColor = Color.CADETBLUE;
     public Color fillStartColor = Color.TRANSPARENT; //Color.CYAN.deriveColor(1, 1, 1, 0.25);
     public Color fillMiddleColor = Color.CYAN;
     public Color fillEndColor = Color.TRANSPARENT;
+    public Color fillPostEndColor = Color.VIOLET;
     public LinearGradient lg;
     public Stop stop1, stop2, stop3;
     public SimpleDoubleProperty percentComplete = new SimpleDoubleProperty(0.0);
     private Timeline gradientTimeline;
-    
+    private double currentGradientMillis = 465; //This number was picked by Josh 
     /**
      * Helper utility for loading a common FXML based Controller which assumes 
      * an anchorpane node which is returned wrapped as a BorderPane
@@ -165,6 +167,9 @@ public class LitPathPane extends PathPane {
         addEventHandler(MouseEvent.MOUSE_ENTERED, e -> {
             if(fadeEnabled) {
                 fade(100, 0.8);
+                gradientTimeline.setCycleCount(2);
+                gradientTimeline.setAutoReverse(true);
+
                 gradientTimeline.playFromStart();
             }
             else
@@ -174,7 +179,6 @@ public class LitPathPane extends PathPane {
             if(fadeEnabled) {
                 fade(100, 0.3);
                 this.outerFrame.setFill(Color.TRANSPARENT);
-//                gradientTimeline.playFromStart();
             }
             else
                 contentPane.setOpacity(0.8);
@@ -183,20 +187,28 @@ public class LitPathPane extends PathPane {
     private Timeline setupGradientTimeline() {
         Timeline timeline = new Timeline(
             new KeyFrame(Duration.millis(30), new KeyValue(percentComplete, 0.0)),
-            new KeyFrame(Duration.millis(500), new KeyValue(percentComplete, 1.0)),
-            new KeyFrame(Duration.millis(550), e-> outerFrame.setFill(Color.TRANSPARENT))
+            new KeyFrame(Duration.millis(currentGradientMillis), new KeyValue(percentComplete, 1.0))
         );
+        timeline.setOnFinished(e-> outerFrame.setFill(Color.TRANSPARENT));           
         percentComplete.addListener(l -> updateGradient());
         return timeline;
     }
     private void updateGradient() {
-        stop1 = new Stop(percentComplete.get()-0.1, fillStartColor);
+        Stop preStopClear = new Stop(percentComplete.get()-0.15, Color.TRANSPARENT);
+        Stop preStop = new Stop(percentComplete.get()-0.1, fillPreStartColor);
+        stop1 = new Stop(percentComplete.get()-0.01, fillStartColor);
         stop2 = new Stop(percentComplete.get(), fillMiddleColor);
-        stop3 = new Stop(percentComplete.get()+0.1, fillEndColor);
+        stop3 = new Stop(percentComplete.get()+0.01, fillEndColor);
+        Stop postStop = new Stop(percentComplete.get()+0.1, fillPostEndColor);
+        Stop postStopClear = new Stop(percentComplete.get()+0.15, Color.TRANSPARENT);
         ArrayList<Stop> stops = new ArrayList<>();
+        stops.add(preStopClear);
+        stops.add(preStop);
         stops.add(stop1);
         stops.add(stop2);
         stops.add(stop3);
+        stops.add(postStop);
+        stops.add(postStopClear);
         lg = new LinearGradient(
             0.5, 1.0, 0.5, 0.0, true, CycleMethod.NO_CYCLE, stops);
         this.outerFrame.setFill(lg);
