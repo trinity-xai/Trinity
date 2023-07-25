@@ -236,7 +236,7 @@ public class ManifoldEventHandler implements EventHandler<ManifoldEvent> {
 
     @Override
     public void handle(ManifoldEvent event) {
-        if (event.getEventType().equals(ManifoldEvent.GENERATE_HYPERSPACE_MANIFOLD)) {
+        if (event.getEventType().equals(ManifoldEvent.GENERATE_PROJECTION_MANIFOLD)) {
             boolean useVisiblePoints = (boolean) event.object1;
             String label = (String) event.object2;
             for (ManifoldRenderer renderer : manifoldRenderers) {

@@ -501,7 +501,7 @@ public class App extends Application {
 
         meh = new ManifoldEventHandler();
         scene.getRoot().addEventHandler(ManifoldEvent.CLEAR_ALL_MANIFOLDS, meh);
-        scene.getRoot().addEventHandler(ManifoldEvent.GENERATE_HYPERSPACE_MANIFOLD, meh);
+        scene.getRoot().addEventHandler(ManifoldEvent.GENERATE_PROJECTION_MANIFOLD, meh);
         scene.getRoot().addEventHandler(ManifoldEvent.MANIFOLD_SET_SCALE, meh);
         scene.getRoot().addEventHandler(ManifoldEvent.MANIFOLD_ROTATE_X, meh);
         scene.getRoot().addEventHandler(ManifoldEvent.MANIFOLD_ROTATE_Y, meh);

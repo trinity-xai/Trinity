@@ -137,6 +137,7 @@ public class Projections3DPane extends StackPane implements
 
     public Group sceneRoot = new Group();
     public Group extrasGroup = new Group();
+    public Group connectorsGroup = new Group();
     public Group debugGroup = new Group();
     public Group ellipsoidGroup = new Group();
     public Sphere selectedSphereA = null;
@@ -336,7 +337,7 @@ public class Projections3DPane extends StackPane implements
         //Add 3D subscene stuff to 3D scene root object
         sceneRoot.getChildren().addAll(cameraTransform, highlightedPoint, 
             nodeGroup,manifoldGroup, debugGroup, cubeWorld, 
-            dataXForm, extrasGroup, anchorTSM);
+            dataXForm, extrasGroup, connectorsGroup,anchorTSM);
 
         miniCrosshair = new Crosshair3D(javafx.geometry.Point3D.ZERO, 
             2, 1.0f);
@@ -857,6 +858,10 @@ public class Projections3DPane extends StackPane implements
 
             }
         });
+        
+        scene.addEventHandler(ManifoldEvent.CLEAR_DISTANCE_CONNECTORS, e-> {
+            connectorsGroup.getChildren().removeIf(n -> n instanceof Trajectory3D);
+        });        
         scene.addEventHandler(ManifoldEvent.DISTANCE_CONNECTOR_WIDTH, e-> {
             Distance eventDistance = (Distance)e.object1;
             Trajectory3D traj3D = distanceTotrajectory3DMap.get(eventDistance);
@@ -1871,26 +1876,7 @@ public class Projections3DPane extends StackPane implements
                 ManifoldEvent.CREATE_NEW_DISTANCE, distanceObject));
             //Add 3D line to scene connecting the two points
             updateDistanceTrajectory(null, distanceObject);
-//            Trajectory distanceTrajectory = new Trajectory("Distance Line");
-//            distanceTrajectory.states.clear();
-//            distanceTrajectory.states.add(
-//                new double[]{p1.getX(),p1.getY(),p1.getZ()});
-//            distanceTrajectory.states.add(
-//                new double[]{p2.getX(),p2.getY(),p2.getZ()}
-//            );
-//            Trajectory3D distanceTraj3D = JavaFX3DUtils.buildPolyLineFromTrajectory(
-//            distanceTrajectory, 5.0f, Color.ALICEBLUE, trajectoryTailSize, 
-//                trajectoryScale, sceneWidth, sceneHeight);
-//            distanceTraj3D.addEventHandler(MouseEvent.MOUSE_CLICKED, e-> {
-//                getScene().getRoot().fireEvent(
-//                    new ManifoldEvent(ManifoldEvent.DISTANCE_CONNECTOR_SELECTED, distanceObject));
-//            });
-//            distanceTraj3D.addEventHandler(MouseEvent.MOUSE_ENTERED, e-> {
-//                getScene().getRoot().fireEvent(
-//                    new ManifoldEvent(ManifoldEvent.DISTANCE_CONNECTOR_SELECTED, distanceObject));
-//            });
-//            distanceTotrajectory3DMap.put(distanceObject,distanceTraj3D);
-//            extrasGroup.getChildren().add(0, distanceTraj3D);
+
             //@TODO SMP add midpoint so we can anchor a numeric distance label
             //@TODO SMP Add 2D distance overlay
 
@@ -1902,7 +1888,7 @@ public class Projections3DPane extends StackPane implements
     //Add 3D line to scene connecting the two points
     private void updateDistanceTrajectory(Trajectory3D distanceTraj3D, Distance distance){
         if(null!=distanceTraj3D) {
-            extrasGroup.getChildren().remove(distanceTraj3D);
+            connectorsGroup.getChildren().remove(distanceTraj3D);
             distanceTotrajectory3DMap.remove(distance);
         }
         Trajectory distanceTrajectory = new Trajectory("Distance Line");
@@ -1924,7 +1910,7 @@ public class Projections3DPane extends StackPane implements
                 new ManifoldEvent(ManifoldEvent.DISTANCE_CONNECTOR_SELECTED, distance));
         });
         distanceTotrajectory3DMap.put(distance, newDistanceTraj3D);
-        extrasGroup.getChildren().add(0, newDistanceTraj3D);
+        connectorsGroup.getChildren().add(0, newDistanceTraj3D);
     } 
     public void updateMaxAndMeans() {
         meanVector = FeatureVector.getMeanVector(featureVectors);

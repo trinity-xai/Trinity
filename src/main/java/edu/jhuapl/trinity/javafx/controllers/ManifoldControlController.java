@@ -267,11 +267,6 @@ public class ManifoldControlController implements Initializable {
     }
 
     private void setupUmapControls() {
-        
-//        metricChoiceBox.getItems().addAll("euclidean", "manhattan", "chebyshev", 
-//            "minkowski", "canberra", "braycurtis", "cosine", "correlation",
-//            "haversine", "hamming", "jaccard", "dice", "russellrao",
-//            "kulsinski", "rogerstanimoto", "sokalmichener", "sokalsneath", "yule");
         metricChoiceBox.getItems().addAll(Metric.getMetricNames());
         metricChoiceBox.getSelectionModel().selectFirst();
 
@@ -434,7 +429,7 @@ public class ManifoldControlController implements Initializable {
     @FXML
     public void generate() {
         scene.getRoot().fireEvent(new ManifoldEvent(
-            ManifoldEvent.GENERATE_HYPERSPACE_MANIFOLD, useVisibleRadioButton.isSelected(), (String) labelChoiceBox.getValue()));
+            ManifoldEvent.GENERATE_PROJECTION_MANIFOLD, useVisibleRadioButton.isSelected(), (String) labelChoiceBox.getValue()));
     }
 
     @FXML
@@ -457,5 +452,7 @@ public class ManifoldControlController implements Initializable {
     public void clearAllDistances() {
         distancesListView.getItems().clear();
         Distance.removeAllDistances(); //will fire event notifying scene
+        scene.getRoot().fireEvent(
+            new ManifoldEvent(ManifoldEvent.CLEAR_DISTANCE_CONNECTORS));
     }    
 }
