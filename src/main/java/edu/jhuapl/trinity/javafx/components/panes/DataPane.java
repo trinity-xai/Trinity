@@ -20,74 +20,20 @@ package edu.jhuapl.trinity.javafx.components.panes;
  * #L%
  */
 
-import javafx.animation.FadeTransition;
-import javafx.fxml.FXMLLoader;
-import javafx.geometry.Insets;
 import javafx.scene.Scene;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.layout.AnchorPane;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundFill;
-import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.Pane;
-import javafx.scene.paint.Color;
-import javafx.scene.text.Text;
-import javafx.util.Duration;
-import lit.litfx.controls.covalent.PathPane;
-import lit.litfx.controls.covalent.events.CovalentPaneEvent;
-
-import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * @author Sean Phillips
  */
-public class DataPane extends PathPane {
-    Scene scene;
-
-    private static AnchorPane createContent() {
-        //make transparent so it doesn't interfere with subnode transparency effects
-        Background transBack = new Background(new BackgroundFill(
-            Color.TRANSPARENT, CornerRadii.EMPTY, Insets.EMPTY));
-        FXMLLoader loader = new FXMLLoader(DataPane.class.getResource("/edu/jhuapl/trinity/fxml/Data.fxml"));
-        loader.setLocation(DataPane.class.getResource("/edu/jhuapl/trinity/fxml/Data.fxml"));
-        AnchorPane dataAnchorPane;
-        try {
-            dataAnchorPane = loader.load();
-            dataAnchorPane.setBackground(transBack);
-        } catch (IOException ex) {
-            dataAnchorPane = new AnchorPane(new Text("Unable to load Data view."));
-            Logger.getLogger(DataPane.class.getName()).log(Level.SEVERE, null, ex);
-        }
-        return dataAnchorPane;
-    }
+public class DataPane extends LitPathPane {
+    public static String CONTROLLER = "/edu/jhuapl/trinity/fxml/Data.fxml";
 
     public DataPane(Scene scene, Pane parent) {
-        super(scene, parent, 400, 200, createContent(), "Data ", "ZeroMQ", 200.0, 300.0);
-        this.scene = scene;
-        // must be set to prevent user from resizing too small.
-        setMinWidth(400);
-        setMinHeight(200);
-
-        this.scene.getRoot().addEventHandler(CovalentPaneEvent.COVALENT_PANE_CLOSE, e -> {
-            if (e.pathPane == this)
-                parent.getChildren().remove(this);
-        });
-        this.addEventHandler(MouseEvent.MOUSE_PRESSED, e -> this.toFront());
-        //transparency fade effects...
-        addEventHandler(MouseEvent.MOUSE_ENTERED, e -> {
-            fade(100, 0.8);
-        });
-        addEventHandler(MouseEvent.MOUSE_EXITED, e -> {
-            fade(100, 0.3);
-        });
+        this(scene, parent, CONTROLLER);
     }
 
-    public void fade(double timeMS, double toValue) {
-        FadeTransition fadeTransition = new FadeTransition(Duration.millis(timeMS), contentPane);
-        fadeTransition.setToValue(toValue);
-        fadeTransition.setOnFinished(e -> contentPane.setOpacity(toValue));
-        fadeTransition.play();
-    }
+    public DataPane(Scene scene, Pane parent, String controller) {
+        super(scene, parent, 400, 200, createContent(controller), "Data ", "ZeroMQ", 200.0, 300.0);
+   }
 }
