@@ -22,9 +22,14 @@ package edu.jhuapl.trinity.javafx.components.panes;
 
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.animation.FadeTransition;
+import javafx.animation.KeyFrame;
+import javafx.animation.KeyValue;
+import javafx.animation.Timeline;
+import javafx.beans.property.SimpleDoubleProperty;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
@@ -43,6 +48,9 @@ import javafx.scene.layout.BorderWidths;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.CycleMethod;
+import javafx.scene.paint.LinearGradient;
+import javafx.scene.paint.Stop;
 import javafx.scene.text.Text;
 import javafx.util.Duration;
 import lit.litfx.controls.covalent.PathPane;
@@ -59,6 +67,13 @@ public class LitPathPane extends PathPane {
     double fadeSideInset = -40;
     double hoverTopInset = -2;
     double hoverSideInset = -38;
+    public Color fillStartColor = Color.TRANSPARENT; //Color.CYAN.deriveColor(1, 1, 1, 0.25);
+    public Color fillMiddleColor = Color.CYAN;
+    public Color fillEndColor = Color.TRANSPARENT;
+    public LinearGradient lg;
+    public Stop stop1, stop2, stop3;
+    public SimpleDoubleProperty percentComplete = new SimpleDoubleProperty(0.0);
+    private Timeline gradientTimeline;
     
     /**
      * Helper utility for loading a common FXML based Controller which assumes 
@@ -145,19 +160,46 @@ public class LitPathPane extends PathPane {
                 parent.getChildren().remove(this);
         });
         this.addEventHandler(MouseEvent.MOUSE_PRESSED, e -> this.toFront());
+        gradientTimeline = setupGradientTimeline();
         //transparency fade effects...
         addEventHandler(MouseEvent.MOUSE_ENTERED, e -> {
-            if(fadeEnabled)
+            if(fadeEnabled) {
                 fade(100, 0.8);
+                gradientTimeline.playFromStart();
+            }
             else
                 contentPane.setOpacity(0.8);
         });
         addEventHandler(MouseEvent.MOUSE_EXITED, e -> {
-            if(fadeEnabled)
+            if(fadeEnabled) {
                 fade(100, 0.3);
+                this.outerFrame.setFill(Color.TRANSPARENT);
+//                gradientTimeline.playFromStart();
+            }
             else
                 contentPane.setOpacity(0.8);
         });
+    }    
+    private Timeline setupGradientTimeline() {
+        Timeline timeline = new Timeline(
+            new KeyFrame(Duration.millis(30), new KeyValue(percentComplete, 0.0)),
+            new KeyFrame(Duration.millis(500), new KeyValue(percentComplete, 1.0)),
+            new KeyFrame(Duration.millis(550), e-> outerFrame.setFill(Color.TRANSPARENT))
+        );
+        percentComplete.addListener(l -> updateGradient());
+        return timeline;
+    }
+    private void updateGradient() {
+        stop1 = new Stop(percentComplete.get()-0.1, fillStartColor);
+        stop2 = new Stop(percentComplete.get(), fillMiddleColor);
+        stop3 = new Stop(percentComplete.get()+0.1, fillEndColor);
+        ArrayList<Stop> stops = new ArrayList<>();
+        stops.add(stop1);
+        stops.add(stop2);
+        stops.add(stop3);
+        lg = new LinearGradient(
+            0.5, 1.0, 0.5, 0.0, true, CycleMethod.NO_CYCLE, stops);
+        this.outerFrame.setFill(lg);
     }    
     public void fade(double timeMS, double toValue) {
         FadeTransition fadeTransition = new FadeTransition(Duration.millis(timeMS), contentPane);
