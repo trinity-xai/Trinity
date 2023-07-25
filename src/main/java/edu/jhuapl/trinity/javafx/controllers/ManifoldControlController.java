@@ -24,7 +24,9 @@ import edu.jhuapl.trinity.App;
 import edu.jhuapl.trinity.data.Distance;
 import edu.jhuapl.trinity.data.FactorLabel;
 import edu.jhuapl.trinity.javafx.components.DistanceListItem;
+import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
+import edu.jhuapl.trinity.utils.ResourceUtils;
 import edu.jhuapl.trinity.utils.umap.Umap;
 import edu.jhuapl.trinity.utils.umap.metric.Metric;
 import javafx.fxml.FXML;
@@ -47,7 +49,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
 import javafx.application.Platform;
+import javafx.geometry.Pos;
 import javafx.scene.control.ListView;
+import javafx.scene.control.TextField;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.VBox;
+import javafx.scene.text.Font;
+import javafx.util.Duration;
 
 /**
  * FXML Controller class
@@ -145,8 +153,12 @@ public class ManifoldControlController implements Initializable {
     private RadioButton pointToGroupRadioButton;
     ToggleGroup pointModeToggleGroup;
     @FXML
-    private ChoiceBox distanceMetricChoiceBox;
-
+    private TextField distanceMetricTextField;
+    @FXML
+    private ColorPicker connectorColorPicker;
+    @FXML
+    private Spinner connectorThicknessSpinner;
+    
     Scene scene;
     private final String ALL = "ALL";
     /**
@@ -169,8 +181,31 @@ public class ManifoldControlController implements Initializable {
     }
 
     private void setupDistanceControls() {
-        distanceMetricChoiceBox.getItems().addAll(Metric.getMetricNames());
-        
+        distanceMetricTextField.setText("Select Distance Object");
+        distanceMetricTextField.setEditable(false);
+        connectorThicknessSpinner.setValueFactory(
+            new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 50, 5, 1));
+        connectorThicknessSpinner.setEditable(true);
+        connectorThicknessSpinner.valueProperty().addListener(e -> {
+            DistanceListItem item = distancesListView.getSelectionModel().getSelectedItem();
+            if(null != item) {
+                Integer width = (Integer) connectorThicknessSpinner.getValue();
+                item.getDistance().setWidth(width);
+                scene.getRoot().fireEvent(
+                    new ManifoldEvent(ManifoldEvent.DISTANCE_CONNECTOR_WIDTH, item.getDistance()));
+            }
+        });
+        connectorThicknessSpinner.setInitialDelay(Duration.millis(500));
+        connectorThicknessSpinner.setRepeatDelay(Duration.millis(500));
+
+        connectorColorPicker.valueProperty().addListener(cl -> {
+            DistanceListItem item = distancesListView.getSelectionModel().getSelectedItem();
+            if(null != item) {
+                item.getDistance().setColor(connectorColorPicker.getValue());
+                scene.getRoot().fireEvent(
+                    new ManifoldEvent(ManifoldEvent.DISTANCE_CONNECTOR_COLOR, item.getDistance()));
+            }
+        });
         //Get a reference to any Distances already collected
         List<DistanceListItem> existingItems = new ArrayList<>();
         for (Distance d : Distance.getDistances()) {
@@ -179,11 +214,43 @@ public class ManifoldControlController implements Initializable {
         }
         //add them all in one shot
         distancesListView.getItems().addAll(existingItems); 
-        
+        ImageView iv = ResourceUtils.loadIcon("metric", 200);
+        VBox placeholder = new VBox(10, iv,new Label("No Distances Acquired"));
+        placeholder.setAlignment(Pos.CENTER);
+        distancesListView.setPlaceholder(placeholder);
+
+        //Bind disable properties so that controls only active when item is selected
+        distanceMetricTextField.disableProperty().bind(
+            distancesListView.getSelectionModel().selectedIndexProperty().lessThan(0));
+        connectorThicknessSpinner.disableProperty().bind(
+            distancesListView.getSelectionModel().selectedIndexProperty().lessThan(0));
+        connectorColorPicker.disableProperty().bind(
+            distancesListView.getSelectionModel().selectedIndexProperty().lessThan(0));
+            
         pointModeToggleGroup = new ToggleGroup();
         pointToPointRadioButton.setToggleGroup(pointModeToggleGroup);
         pointToGroupRadioButton.setToggleGroup(pointModeToggleGroup);
-        
+        scene.addEventHandler(ManifoldEvent.DISTANCE_CONNECTOR_SELECTED, e -> {
+            Distance distance = (Distance)e.object1;
+            for(DistanceListItem item : distancesListView.getItems()) {
+                if(item.getDistance() == distance) {
+                    distancesListView.getSelectionModel().select(item);
+                    distanceMetricTextField.setText(distance.getMetric());
+                    connectorColorPicker.setValue(distance.getColor());
+                    connectorThicknessSpinner.getValueFactory().setValue(distance.getWidth());                    
+                    return; //break out early
+                }
+            }
+            //if we get here its because that Distance object wasn't in the list
+            scene.getRoot().fireEvent(new CommandTerminalEvent(
+                "Distance object not found!", new Font("Consolas", 20), Color.YELLOW));
+        });        
+        scene.addEventHandler(ManifoldEvent.DISTANCE_OBJECT_SELECTED, e -> {
+            Distance distance = (Distance)e.object1;
+            distanceMetricTextField.setText(distance.getMetric());
+            connectorColorPicker.setValue(distance.getColor());
+            connectorThicknessSpinner.getValueFactory().setValue(distance.getWidth());
+        });        
         scene.addEventHandler(ManifoldEvent.CREATE_NEW_DISTANCE, e -> {
             Distance distance = (Distance)e.object1;
             DistanceListItem distanceListItem = new DistanceListItem(distance);

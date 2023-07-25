@@ -33,15 +33,17 @@ import javafx.geometry.Point3D;
 public class Distance {
     private String metric; //Used to lookup into Metric enum later
     private double value; //the computed value
+    private int width; //width of the connector
     private Point3D point1;
     private Point3D point2;
     private String label;
     private Color color;
     public SimpleBooleanProperty visible;
 
-    public Distance(String label, Color color, String metric) {
+    public Distance(String label, Color color, String metric, Integer width) {
         this.label = label;
         this.color = color;
+        this.width = width;
         if(null == metric)
             metric = "euclidean";
         else
@@ -200,5 +202,19 @@ public class Distance {
      */
     public void setMetric(String metric) {
         this.metric = metric;
+    }
+
+    /**
+     * @return the width
+     */
+    public int getWidth() {
+        return width;
+    }
+
+    /**
+     * @param width the width to set
+     */
+    public void setWidth(int width) {
+        this.width = width;
     }
 }

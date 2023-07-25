@@ -21,21 +21,18 @@ package edu.jhuapl.trinity.javafx.components;
  */
 
 import edu.jhuapl.trinity.data.Distance;
+import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
+import edu.jhuapl.trinity.utils.PrecisionConverter;
 import javafx.scene.control.CheckBox;
-import javafx.scene.control.ColorPicker;
 import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
-import javafx.scene.layout.VBox;
-import javafx.scene.paint.Color;
 
 /**
  * @author Sean Phillips
  */
 public class DistanceListItem extends HBox {
-    public static double PREF_LABEL_WIDTH = 300;
     private String labelString;
     private CheckBox visibleCheckBox;
-    private ColorPicker colorPicker;
     private Label label;
     private Label distanceValueLabel;
     private Distance distance;
@@ -44,30 +41,25 @@ public class DistanceListItem extends HBox {
     public DistanceListItem(Distance distance) {
         this.distance = distance;
         this.labelString = distance.getLabel();
-        distanceValueLabel = new Label(String.valueOf(distance.getValue()));
-        distanceValueLabel.setPrefWidth(PREF_LABEL_WIDTH);
-        label = new Label(labelString);
-        label.setPrefWidth(PREF_LABEL_WIDTH);
-        colorPicker = new ColorPicker(distance.getColor());
         visibleCheckBox = new CheckBox("Visible");
         visibleCheckBox.setSelected(true);
-        HBox checkBoxHBox = new HBox(5, distanceValueLabel, visibleCheckBox);
-        VBox labelVBox = new VBox(2, label, checkBoxHBox);
-        getChildren().addAll(labelVBox, colorPicker);
-        setSpacing(20);
-        colorPicker.valueProperty().addListener(cl -> {
-            if (null != colorPicker.getScene()) {
-                distance.setColor(colorPicker.getValue());
-                if (reactive)
-                    Distance.updateDistance(distance.getLabel(), distance);
-            }
-        });
+        label = new Label(labelString);
+        PrecisionConverter pc = new PrecisionConverter(7);
+        String distanceLabel = distance.getMetric()+":"+pc.toString(distance.getValue());
+        distanceValueLabel = new Label(distanceLabel);
+        getChildren().addAll(visibleCheckBox,label, distanceValueLabel);
+        setSpacing(5);
         visibleCheckBox.selectedProperty().addListener(cl -> {
             if (null != visibleCheckBox.getScene()) {
                 distance.setVisible(visibleCheckBox.isSelected());
                 if (reactive)
                     Distance.updateDistance(distance.getLabel(), distance);
             }
+        });
+        setOnMouseClicked(e -> {
+            //Let application know this distance object has been selected
+            getScene().getRoot().fireEvent(new ManifoldEvent(
+            ManifoldEvent.DISTANCE_OBJECT_SELECTED, distance));
         });
     }
 
@@ -79,11 +71,17 @@ public class DistanceListItem extends HBox {
         visibleCheckBox.setSelected(visible);
     }
 
-    public Color getColor() {
-        return colorPicker.getValue();
+    /**
+     * @return the distance
+     */
+    public Distance getDistance() {
+        return distance;
     }
 
-    public void setColor(Color color) {
-        colorPicker.setValue(color);
+    /**
+     * @param distance the distance to set
+     */
+    public void setDistance(Distance distance) {
+        this.distance = distance;
     }
 }

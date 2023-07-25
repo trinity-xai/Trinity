@@ -9,10 +9,12 @@
 <?import javafx.scene.control.ListView?>
 <?import javafx.scene.control.RadioButton?>
 <?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Separator?>
 <?import javafx.scene.control.Slider?>
 <?import javafx.scene.control.Spinner?>
 <?import javafx.scene.control.Tab?>
 <?import javafx.scene.control.TabPane?>
+<?import javafx.scene.control.TextField?>
 <?import javafx.scene.control.TitledPane?>
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.BorderPane?>
@@ -116,6 +118,7 @@
                                 <GridPane hgap="10.0" vgap="5.0" BorderPane.alignment="CENTER">
                                     <columnConstraints>
                                         <ColumnConstraints hgrow="SOMETIMES" maxWidth="288.0" minWidth="10.0" prefWidth="206.0" />
+                              <ColumnConstraints fillWidth="false" hgrow="NEVER" />
                                         <ColumnConstraints hgrow="SOMETIMES" maxWidth="380.0" minWidth="10.0" prefWidth="380.0" />
                                     </columnConstraints>
                                     <rowConstraints>
@@ -133,25 +136,27 @@
                                     </rowConstraints>
                                     <children>
                                         <Label text="Connector Thickness" GridPane.rowIndex="5" />
-                              <VBox spacing="5.0" GridPane.rowIndex="7" GridPane.rowSpan="2">
+                              <VBox alignment="CENTER_LEFT" spacing="5.0" GridPane.rowIndex="7" GridPane.rowSpan="2">
                                  <children>
                                               <Label text="Connector Color" />
-                                    <ColorPicker fx:id="connectorColorPicker" prefWidth="200.0" />
+                                    <ColorPicker fx:id="connectorColorPicker" editable="true" minHeight="40.0" prefWidth="200.0" promptText="Change the color of the 3D connector" />
                                  </children>
+                                 <padding>
+                                    <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                                 </padding>
                               </VBox>
                                         <Spinner fx:id="connectorThicknessSpinner" editable="true" prefWidth="100.0" GridPane.rowIndex="6" />
-                                        <Label text="Collected Distances" GridPane.columnIndex="1" />
-                                        <ChoiceBox fx:id="distanceMetricChoiceBox" prefWidth="200.0" GridPane.rowIndex="1" />
-                                          <Button mnemonicParsing="false" onAction="#startConnector" prefWidth="150.0" text="Start Connector" GridPane.halignment="CENTER" GridPane.rowIndex="9" />
-                                          <CheckBox fx:id="trackMouseCheckBox" mnemonicParsing="false" text="Track Mouse" GridPane.rowIndex="4">
-                                              <padding>
-                                                  <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                                              </padding>
-                                          </CheckBox>
-                                            <RadioButton fx:id="pointToPointRadioButton" mnemonicParsing="false" selected="true" text="Point to Point" GridPane.rowIndex="3" />
-                                            <RadioButton fx:id="pointToGroupRadioButton" mnemonicParsing="false" text="Point to Group" GridPane.rowIndex="2" />
-                              <Button mnemonicParsing="false" onAction="#clearAllDistances" prefWidth="150.0" text="Clear All" GridPane.halignment="CENTER" GridPane.rowIndex="10" />
-                              <ScrollPane fitToHeight="true" fitToWidth="true" pannable="true" GridPane.columnIndex="1" GridPane.rowIndex="1" GridPane.rowSpan="2147483647">
+                                        <Label text="Collected Distances" GridPane.columnIndex="2" />
+                              <VBox spacing="5.0" GridPane.rowSpan="2">
+                                 <children>
+                                    <Label text="Distance Metric" />
+                                    <TextField fx:id="distanceMetricTextField" minHeight="40.0" promptText="Select Distance From ListView" />
+                                 </children>
+                                 <padding>
+                                    <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                                 </padding>
+                              </VBox>
+                              <ScrollPane fitToHeight="true" fitToWidth="true" pannable="true" GridPane.columnIndex="2" GridPane.rowIndex="1" GridPane.rowSpan="2147483647">
                                  <content>
                                     <ListView fx:id="distancesListView" prefHeight="200.0" prefWidth="200.0">
                                        <padding>
@@ -160,13 +165,31 @@
                                     </ListView>
                                  </content>
                               </ScrollPane>
-                              <Label text="Distance Metric" />
+                              <Separator orientation="VERTICAL" prefHeight="200.0" GridPane.columnIndex="1" GridPane.rowSpan="2147483647" />
+                                            <RadioButton fx:id="pointToGroupRadioButton" disable="true" mnemonicParsing="false" text="Point to Group" GridPane.rowIndex="3" />
+                                            <RadioButton fx:id="pointToPointRadioButton" mnemonicParsing="false" selected="true" text="Point to Point" GridPane.rowIndex="2" />
                                     </children>
                                     <padding>
-                                        <Insets bottom="25.0" left="25.0" right="25.0" top="25.0" />
+                                        <Insets bottom="20.0" left="20.0" right="20.0" top="20.0" />
                                     </padding>
                                 </GridPane>
                             </center>
+                     <bottom>
+                        <HBox alignment="CENTER" disable="true" spacing="20.0" BorderPane.alignment="CENTER">
+                           <children>
+                                          <Button mnemonicParsing="false" onAction="#startConnector" prefWidth="150.0" text="Start Connector" />
+                                          <CheckBox fx:id="trackMouseCheckBox" mnemonicParsing="false" text="Track Mouse">
+                                              <padding>
+                                                  <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                                              </padding>
+                                          </CheckBox>
+                              <Button mnemonicParsing="false" onAction="#clearAllDistances" prefWidth="150.0" text="Clear All" />
+                           </children>
+                           <padding>
+                              <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                           </padding>
+                        </HBox>
+                     </bottom>
                         </BorderPane>
                     </content>
                 </Tab>

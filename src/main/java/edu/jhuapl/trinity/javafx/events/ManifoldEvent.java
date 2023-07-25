@@ -34,6 +34,10 @@ public class ManifoldEvent extends Event {
 
     public static enum POINT_SOURCE {HYPERSPACE, HYPERSURFACE}
 
+    public static final EventType<ManifoldEvent> DISTANCE_CONNECTOR_SELECTED = new EventType(ANY, "DISTANCE_CONNECTOR_SELECTED");
+    public static final EventType<ManifoldEvent> DISTANCE_CONNECTOR_WIDTH = new EventType(ANY, "DISTANCE_CONNECTOR_WIDTH");
+    public static final EventType<ManifoldEvent> DISTANCE_CONNECTOR_COLOR = new EventType(ANY, "DISTANCE_CONNECTOR_COLOR");
+    public static final EventType<ManifoldEvent> DISTANCE_OBJECT_SELECTED = new EventType(ANY, "DISTANCE_OBJECT_SELECTED");
     public static final EventType<ManifoldEvent> DISTANCE_MODE_POINTPOINT = new EventType(ANY, "DISTANCE_MODE_POINTWISE");
     public static final EventType<ManifoldEvent> DISTANCE_MODE_POINTGROUP = new EventType(ANY, "DISTANCE_MODE_POINTGROUP");
     public static final EventType<ManifoldEvent> SELECT_DISTANCE_POINT1 = new EventType(ANY, "SELECT_DISTANCE_POINT1");

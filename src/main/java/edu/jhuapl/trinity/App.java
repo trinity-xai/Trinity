@@ -312,7 +312,6 @@ public class App extends Application {
         centerStack.getChildren().add(0, projections3DPane);
         centerStack.getChildren().add(0, hypersurface3DPane);
 
-
         System.out.println("Parsing command line...");
         //animatedConsoleText.animate("Parsing command line...");
         parseCommandLine();

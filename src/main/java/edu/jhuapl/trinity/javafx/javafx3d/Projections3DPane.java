@@ -105,7 +105,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import static edu.jhuapl.trinity.javafx.components.radial.HyperspaceMenu.slideInPane;
-import edu.jhuapl.trinity.javafx.components.radial.PointDistanceMenu;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import javafx.animation.Transition;
 import javafx.util.Duration;
@@ -196,7 +195,9 @@ public class Projections3DPane extends StackPane implements
     HashMap<TriaxialSpheroidMesh, GaussianMixtureData> ellipsoidToGMDataMap = new HashMap<>();
     //allows 2D labels to track their 3D counterparts
     HashMap<Shape3D, Label> shape3DToLabel = new HashMap<>();
-
+    //This maps 3D connectors to their respective Distance object
+    HashMap<Distance,Trajectory3D> distanceTotrajectory3DMap = new HashMap<>();
+        
     public List<FeatureVector> featureVectors = new ArrayList<>();
     public boolean meanCentered = true;
     public boolean autoScaling = true;
@@ -856,6 +857,20 @@ public class Projections3DPane extends StackPane implements
 
             }
         });
+        scene.addEventHandler(ManifoldEvent.DISTANCE_CONNECTOR_WIDTH, e-> {
+            Distance eventDistance = (Distance)e.object1;
+            Trajectory3D traj3D = distanceTotrajectory3DMap.get(eventDistance);
+            if(null != traj3D){
+                updateDistanceTrajectory(traj3D, eventDistance);
+            }
+        });        
+        scene.addEventHandler(ManifoldEvent.DISTANCE_CONNECTOR_COLOR, e-> {
+            Distance eventDistance = (Distance)e.object1;
+            Trajectory3D traj3D = distanceTotrajectory3DMap.get(eventDistance);
+            if(null != traj3D){
+                updateDistanceTrajectory(traj3D, eventDistance);
+            }
+        });        
 
         scene.addEventHandler(TimelineEvent.TIMELINE_SAMPLE_INDEX, e -> {
             anchorIndex = (int) e.object;
@@ -1797,59 +1812,7 @@ public class Projections3DPane extends StackPane implements
                     radialOverlayPane.createCallout(sphere, featureVector, subScene);
                 else if ((e.getButton() == MouseButton.PRIMARY && e.isControlDown())
                      ||  (e.getButton() == MouseButton.PRIMARY && pointToPointDistanceMode)) {
-                    System.out.println("Point: " + sphere.toString());                   
-                    if(null == selectedSphereA) {
-                        selectedSphereA = sphere; 
-                        //@TODO add some sort of visual highlight
-//                        PointDistanceMenu pdMenu = new PointDistanceMenu(this);
-//                        pdMenu.setTranslateX(e.getSceneX());
-//                        pdMenu.setTranslateY(e.getSceneY()); 
-//                        radialOverlayPane.addEntity(pdMenu);
-                    }
-                    else {
-                        selectedSphereB = sphere; 
-                        //@TODO add some sort of visual highlight
-                    }
-                    if(null != selectedSphereA && null != selectedSphereB) {
-                        javafx.geometry.Point3D p1 = new javafx.geometry.Point3D(
-                            selectedSphereA.getTranslateX(),
-                            selectedSphereA.getTranslateY(), 
-                            selectedSphereA.getTranslateZ());                        
-                        javafx.geometry.Point3D p2 = new javafx.geometry.Point3D(
-                            selectedSphereB.getTranslateX(),
-                            selectedSphereB.getTranslateY(), 
-                            selectedSphereB.getTranslateZ()); 
-                        System.out.println("Difference: " + p1.subtract(p2).toString());
-                        System.out.println("Distance: " + p1.distance(p2));
-                        //Fire off event to create new distance object
-                        String distanceLabel = p1.toString() + " => " + p2.toString() + " : euclidean";
-                        Distance distanceObject = new Distance(
-                        distanceLabel, Color.ALICEBLUE, "euclidean");
-                        distanceObject.setPoint1(p1);
-                        distanceObject.setPoint2(p2);
-                        distanceObject.setValue(p1.distance(p2));
-                        
-                        getScene().getRoot().fireEvent(new ManifoldEvent(
-                            ManifoldEvent.CREATE_NEW_DISTANCE, distanceObject));
-                        //Add 3D line to scene connecting the two points
-                        Trajectory distanceTrajectory = new Trajectory("Distance Line");
-                        distanceTrajectory.states.clear();
-                        distanceTrajectory.states.add(
-                            new double[]{p1.getX(),p1.getY(),p1.getZ()});
-                        distanceTrajectory.states.add(
-                            new double[]{p2.getX(),p2.getY(),p2.getZ()}
-                        );
-                        Trajectory3D distanceTraj3D = JavaFX3DUtils.buildPolyLineFromTrajectory(
-                        distanceTrajectory, 5.0f, Color.ALICEBLUE, trajectoryTailSize, 
-                            trajectoryScale, sceneWidth, sceneHeight);
-                        extrasGroup.getChildren().add(0, distanceTraj3D);
-                        //@TODO SMP add midpoint so we can anchor a numeric distance label
-                        //@TODO SMP Add 2D distance overlay
-                        
-                        //Clear selected spheres to null state
-                        selectedSphereA = null;
-                        selectedSphereB = null;
-                    }
+                    processDistanceClick(sphere);
                 }
             });
 
@@ -1868,7 +1831,101 @@ public class Projections3DPane extends StackPane implements
         //featureVectors.addAll(featureCollection.getFeatures());
         trimQueueNow();
     }
+    private void processDistanceClick(Sphere sphere) {
+        System.out.println("Point: " + sphere.toString());                   
+        if(null == selectedSphereA) {
+            selectedSphereA = sphere; 
+            //@TODO add some sort of visual highlight
+//                        PointDistanceMenu pdMenu = new PointDistanceMenu(this);
+//                        pdMenu.setTranslateX(e.getSceneX());
+//                        pdMenu.setTranslateY(e.getSceneY()); 
+//                        radialOverlayPane.addEntity(pdMenu);
+        }
+        else {
+            selectedSphereB = sphere; 
+            //@TODO add some sort of visual highlight
+        }
+        if(null != selectedSphereA && null != selectedSphereB) {
+            javafx.geometry.Point3D p1 = new javafx.geometry.Point3D(
+                selectedSphereA.getTranslateX(),
+                selectedSphereA.getTranslateY(), 
+                selectedSphereA.getTranslateZ());                        
+            javafx.geometry.Point3D p2 = new javafx.geometry.Point3D(
+                selectedSphereB.getTranslateX(),
+                selectedSphereB.getTranslateY(), 
+                selectedSphereB.getTranslateZ()); 
+            System.out.println("Difference: " + p1.subtract(p2).toString());
+            System.out.println("Distance: " + p1.distance(p2));
+            //Fire off event to create new distance object
+            String distanceLabel = 
+                sphereToFeatureVectorMap.get(selectedSphereA).getLabel() 
+                + " => " + 
+                sphereToFeatureVectorMap.get(selectedSphereB).getLabel();
+            Distance distanceObject = new Distance(
+            distanceLabel, Color.ALICEBLUE, "euclidean", 5);
+            distanceObject.setPoint1(p1);
+            distanceObject.setPoint2(p2);
+            distanceObject.setValue(p1.distance(p2));
 
+            getScene().getRoot().fireEvent(new ManifoldEvent(
+                ManifoldEvent.CREATE_NEW_DISTANCE, distanceObject));
+            //Add 3D line to scene connecting the two points
+            updateDistanceTrajectory(null, distanceObject);
+//            Trajectory distanceTrajectory = new Trajectory("Distance Line");
+//            distanceTrajectory.states.clear();
+//            distanceTrajectory.states.add(
+//                new double[]{p1.getX(),p1.getY(),p1.getZ()});
+//            distanceTrajectory.states.add(
+//                new double[]{p2.getX(),p2.getY(),p2.getZ()}
+//            );
+//            Trajectory3D distanceTraj3D = JavaFX3DUtils.buildPolyLineFromTrajectory(
+//            distanceTrajectory, 5.0f, Color.ALICEBLUE, trajectoryTailSize, 
+//                trajectoryScale, sceneWidth, sceneHeight);
+//            distanceTraj3D.addEventHandler(MouseEvent.MOUSE_CLICKED, e-> {
+//                getScene().getRoot().fireEvent(
+//                    new ManifoldEvent(ManifoldEvent.DISTANCE_CONNECTOR_SELECTED, distanceObject));
+//            });
+//            distanceTraj3D.addEventHandler(MouseEvent.MOUSE_ENTERED, e-> {
+//                getScene().getRoot().fireEvent(
+//                    new ManifoldEvent(ManifoldEvent.DISTANCE_CONNECTOR_SELECTED, distanceObject));
+//            });
+//            distanceTotrajectory3DMap.put(distanceObject,distanceTraj3D);
+//            extrasGroup.getChildren().add(0, distanceTraj3D);
+            //@TODO SMP add midpoint so we can anchor a numeric distance label
+            //@TODO SMP Add 2D distance overlay
+
+            //Clear selected spheres to null state
+            selectedSphereA = null;
+            selectedSphereB = null;
+        }
+    }
+    //Add 3D line to scene connecting the two points
+    private void updateDistanceTrajectory(Trajectory3D distanceTraj3D, Distance distance){
+        if(null!=distanceTraj3D) {
+            extrasGroup.getChildren().remove(distanceTraj3D);
+            distanceTotrajectory3DMap.remove(distance);
+        }
+        Trajectory distanceTrajectory = new Trajectory("Distance Line");
+        distanceTrajectory.states.clear();
+        distanceTrajectory.states.add(
+            new double[]{distance.getPoint1().getX(),distance.getPoint1().getY(),distance.getPoint1().getZ()});
+        distanceTrajectory.states.add(
+            new double[]{distance.getPoint2().getX(),distance.getPoint2().getY(),distance.getPoint2().getZ()}
+        );
+        Trajectory3D newDistanceTraj3D = JavaFX3DUtils.buildPolyLineFromTrajectory(
+        distanceTrajectory, distance.getWidth(), distance.getColor(), 
+        trajectoryTailSize, trajectoryScale, sceneWidth, sceneHeight);
+        newDistanceTraj3D.addEventHandler(MouseEvent.MOUSE_CLICKED, e-> {
+            getScene().getRoot().fireEvent(
+                new ManifoldEvent(ManifoldEvent.DISTANCE_CONNECTOR_SELECTED, distance));
+        });
+        newDistanceTraj3D.addEventHandler(MouseEvent.MOUSE_ENTERED, e-> {
+            getScene().getRoot().fireEvent(
+                new ManifoldEvent(ManifoldEvent.DISTANCE_CONNECTOR_SELECTED, distance));
+        });
+        distanceTotrajectory3DMap.put(distance, newDistanceTraj3D);
+        extrasGroup.getChildren().add(0, newDistanceTraj3D);
+    } 
     public void updateMaxAndMeans() {
         meanVector = FeatureVector.getMeanVector(featureVectors);
         maxAbsValue = FeatureVector.getMaxAbsValue(featureVectors);
