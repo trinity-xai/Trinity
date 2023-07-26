@@ -2,7 +2,6 @@ plugins {
     id 'java'
     id 'idea'
     id 'application'
-    id 'java-library'
     // PLUGIN ORDER MATTERS!!!
     // Leave Modularity Plugin Here!
     id 'org.javamodularity.moduleplugin' version '1.8.12'
@@ -27,7 +26,7 @@ ext {
 }
 
 group 'trinity'
-version "1.0.0-SNAPSHOT"
+version new Date().format('yyyy.MM.dd')
 
 sourceCompatibility = JavaVersion.VERSION_17
 targetCompatibility = JavaVersion.VERSION_17
@@ -89,7 +88,8 @@ javafx {
 // <editor-fold desp="Java Specific Tasks">
 
 java {
-    modularity.inferModulePath.set(true)
+    // Set to false per https://github.com/java9-modularity/gradle-modules-plugin
+    modularity.inferModulePath.set(false)
 }
 
 compileJava {
@@ -146,65 +146,48 @@ processResources {
 
 // <editor-fold desp="Multi-Jar Tasks">
 
-// Non-Modular Cross Platform Build w/o Java FX
-tasks.register('nonFxFatJar', Jar) {
+// Cross Platform Build w/o Java FX
+tasks.register('nonFxUberJar', Jar) {
     archiveClassifier = "no-fx"
-    duplicatesStrategy = DuplicatesStrategy.WARN // Gradle 7+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     manifest {
         attributes "Main-Class": "$mainClassJarLauncher"
     }
     exclude 'META-INF/.RSA', 'META-INF/.SF', 'META-INF/*.DSA', 'META-INF/proguard/**', 'META-INF/maven/**', 'META-INF/LICENSE', 'META-INF/NOTICE'
     from {
-        // configurations.compileClasspath is Gradle 7+
-        sourceSets.main.output.collect {
-            println "Slim Jar: Including Main Dependency: $it"
-            it
-        }
-    }
-    from {
-        // configurations.compileClasspath is Gradle 7+
-        configurations.compileClasspath.filter({ !(it.name =~ /javafx.*\.jar/) }).collect {
+        configurations.runtimeClasspath.filter({ !(it.name =~ /javafx.*\.jar/) }).collect {
             println "Slim Jar: Including Dependency: $it.name"
             it.isDirectory() ? it : zipTree(it)
         }
     }
+    with jar
 }
 
-// Non-Modular Cross Platform Build w/ Java FX
-tasks.register('fxFatJar', Jar) {
+// Cross Platform Build w/ Java FX
+tasks.register('fxUberJar', Jar) {
     archiveClassifier = "fx"
-    duplicatesStrategy = DuplicatesStrategy.WARN // Gradle 7+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     manifest {
         attributes "Main-Class": "$mainClassJarLauncher"
     }
     exclude 'META-INF/.RSA', 'META-INF/.SF', 'META-INF/*.DSA', 'META-INF/proguard/**', 'META-INF/maven/**', 'META-INF/LICENSE', 'META-INF/NOTICE'
     from {
-        sourceSets.main.output.collect {
-            println "Fat Jar: Including Main Dependency: $it"
-            it
-        }
-    }
-    from {
-        // configurations.compileClasspath is Gradle 7+
-        configurations.compileClasspath.collect {
-            println "Fat Jar: Including Dependency: $it.name"
+        configurations.runtimeClasspath.collect {
+            println "Uber Jar: Including Dependency: $it.name"
             it.isDirectory() ? it : zipTree(it)
         }
-        //configurations.runtimeClasspath.collect {
-        //    println "Fat Jar: Including Dependency: $it"
-        //    it.isDirectory() ? it : zipTree(it)
-        //}
     }
+    with jar
 }
 
 jar {
-    duplicatesStrategy = DuplicatesStrategy.WARN // Gradle 7+
+    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
     manifest {
         attributes "Main-Class": "$mainClassJarLauncher"
     }
     exclude 'META-INF/.RSA', 'META-INF/.SF', 'META-INF/*.DSA', 'META-INF/proguard/**', 'META-INF/maven/**', 'META-INF/LICENSE', 'META-INF/NOTICE'
     if (isProdJar) {
-        finalizedBy(nonFxFatJar, fxFatJar)
+        finalizedBy(nonFxUberJar, fxUberJar)
     }
 }
 
@@ -221,6 +204,7 @@ jlink {
     launcher {
         name = "$finalOutputName"
         mainClass = "$mainClassPath"
+        jvmArgs = ['-Dprism.maxvram=2G', '-Djavafx.animation.fullspeed=true']
         //jvmArgs += ['-Dlogback.configurationFile={{BIN_DIR}}/logback.xml']
         //jvmArgs += ["--add-exports external.module.name/external.package.name=$sModuleName", ...]
     }
@@ -232,7 +216,7 @@ jlink {
         appVersion = version.toString().replaceAll("-SNAPSHOT", "")
         //resourceDir = file("$sourceSets.main.output.resourcesDir") // https://docs.oracle.com/en/java/javase/14/jpackage/override-jpackage-resources.html
         imageOptions += '--verbose'
-        jvmArgs = ['-p', '.']
+        jvmArgs += ['-p', '.']
         if (org.gradle.internal.os.OperatingSystem.current().macOsX) {
             skipInstaller = true
             targetPlatformName = 'osx' // required when targetPlatform is used

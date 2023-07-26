@@ -2,16 +2,16 @@ package edu.jhuapl.trinity.data.messages;
 
 /*-
  * #%L
- * trinity-1.0.0-SNAPSHOT
+ * trinity
  * %%
  * Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -38,7 +38,7 @@ public class TextEmbeddingCollection extends MessageData {
     /*
     {   "type": "TextEmbeddingCollection",
         "label" : "chatGPT",
-        "score" : 0.5,    
+        "score" : 0.5,
         "text_embeddings": [
             ...boat load of TextEmbeddingSet objects
         ]
@@ -65,6 +65,7 @@ public class TextEmbeddingCollection extends MessageData {
     }
 
     //<editor-fold defaultstate="collapsed" desc="Properties">
+
     /**
      * @return the type
      */
@@ -92,7 +93,7 @@ public class TextEmbeddingCollection extends MessageData {
     public void setText_embeddings(List<TextEmbeddingSet> text_embeddings) {
         this.text_embeddings = text_embeddings;
     }
-    //</editor-fold>    
+    //</editor-fold>
 
     /**
      * @return the label

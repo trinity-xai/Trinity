@@ -2,16 +2,16 @@ package edu.jhuapl.trinity.utils.loaders;
 
 /*-
  * #%L
- * trinity-1.0.0-SNAPSHOT
+ * trinity
  * %%
  * Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -106,7 +106,7 @@ public class TextEmbeddingsLoader extends Task {
 
         Platform.runLater(() -> {
             scene.getRoot().fireEvent(new CommandTerminalEvent(
-            "Done Text Embeddings from File.", new Font("Consolas", 20), Color.GREEN));
+                "Done Text Embeddings from File.", new Font("Consolas", 20), Color.GREEN));
             System.out.println("Done loading embeddings file.");
             ProgressStatus ps = new ProgressStatus("Converting Text Embeddings to Feature Vectors...", -1);
             ps.fillStartColor = Color.CYAN;
@@ -116,50 +116,50 @@ public class TextEmbeddingsLoader extends Task {
             scene.getRoot().fireEvent(
                 new ApplicationEvent(ApplicationEvent.UPDATE_BUSY_INDICATOR, ps));
         });
-        
+
         try {
             List<TextEmbeddingSet> embeddings = textEmbeddingCollectionFile
                 .textEmbeddingCollection.getText_embeddings();
             String collectionLabel = textEmbeddingCollectionFile.textEmbeddingCollection.getLabel();
             FeatureCollection fc = new FeatureCollection();
-            
+
             final int n = embeddings.size(); //how many total
-            int updatePercent = n / 10; //rounded percent progress            
-            
-            for(int i=0;i<embeddings.size();i++) {
+            int updatePercent = n / 10; //rounded percent progress
+
+            for (int i = 0; i < embeddings.size(); i++) {
                 //First do the original embeddings as a special case
                 FeatureVector fv = new FeatureVector();
                 List<Double> flatList = new ArrayList<>();
                 flatList.addAll(embeddings.get(i).getText_embedding());
                 fv.setData(flatList);
-                fv.setLabel(collectionLabel+"_Original_Embedding");
-                if(null != embeddings.get(i).getScore())
+                fv.setLabel(collectionLabel + "_Original_Embedding");
+                if (null != embeddings.get(i).getScore())
                     fv.setScore(embeddings.get(i).getScore());
                 else
                     fv.setScore(textEmbeddingCollectionFile.textEmbeddingCollection.getScore());
-                
+
                 fv.setLayer(i);
                 fc.getFeatures().add(fv);
-                
+
                 //now for each text chunk make a feature vector
                 int width = embeddings.get(i).getParsed().size();
-                for(int parsedIndex=0;parsedIndex<width;parsedIndex++){
+                for (int parsedIndex = 0; parsedIndex < width; parsedIndex++) {
                     FeatureVector parsedChunkFV = new FeatureVector();
                     List<Double> chunkEmbedding = new ArrayList<>();
                     chunkEmbedding.addAll(embeddings.get(i).getEmbeddings().get(parsedIndex));
                     parsedChunkFV.setData(chunkEmbedding);
                     //Extract first three words of chunk
                     String parsedText = embeddings.get(i).getParsed().get(parsedIndex);
-                    String [] tokens = parsedText.split("\\s+");
+                    String[] tokens = parsedText.split("\\s+");
                     String parsedPreview = tokens[0];
-                    if(tokens.length > 2) {
+                    if (tokens.length > 2) {
                         parsedPreview += " " + tokens[1] + " " + tokens[2];
                     }
-                    String parsedChunkLabel = collectionLabel+"_"+parsedPreview;
-                    if(null != embeddings.get(i).getLabel())
-                        parsedChunkLabel = embeddings.get(i).getLabel()+"_"+parsedPreview;
+                    String parsedChunkLabel = collectionLabel + "_" + parsedPreview;
+                    if (null != embeddings.get(i).getLabel())
+                        parsedChunkLabel = embeddings.get(i).getLabel() + "_" + parsedPreview;
                     parsedChunkFV.setLabel(parsedChunkLabel);
-                    if(null != embeddings.get(i).getScore())
+                    if (null != embeddings.get(i).getScore())
                         parsedChunkFV.setScore(embeddings.get(i).getScore());
                     else
                         parsedChunkFV.setScore(textEmbeddingCollectionFile.textEmbeddingCollection.getScore());
@@ -179,8 +179,8 @@ public class TextEmbeddingsLoader extends Task {
                         scene.getRoot().fireEvent(
                             new ApplicationEvent(ApplicationEvent.UPDATE_BUSY_INDICATOR, ps));
                     });
-                }                
-            }            
+                }
+            }
             Platform.runLater(() -> {
                 ProgressStatus ps = new ProgressStatus("Injecting as FeatureCollection...", -1);
                 ps.fillStartColor = Color.CYAN;

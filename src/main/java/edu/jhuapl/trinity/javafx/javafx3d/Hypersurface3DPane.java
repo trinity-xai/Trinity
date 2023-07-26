@@ -2,16 +2,16 @@ package edu.jhuapl.trinity.javafx.javafx3d;
 
 /*-
  * #%L
- * trinity-1.0.0-SNAPSHOT
+ * trinity
  * %%
  * Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -117,6 +117,7 @@ import org.fxyz3d.utils.CameraTransformer;
 import javax.imageio.ImageIO;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -530,6 +531,8 @@ public class Hypersurface3DPane extends StackPane
         saveSnapshotItem.setOnAction((ActionEvent e) -> {
             final FileChooser fileChooser = new FileChooser();
             fileChooser.setTitle("Save scene as...");
+            fileChooser.setInitialFileName("trinity_hypersurface.png");
+            fileChooser.setInitialDirectory(Paths.get(".").toFile());
             fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PNG", "*.png"));
             File file = fileChooser.showSaveDialog(null);
             if (file != null) {

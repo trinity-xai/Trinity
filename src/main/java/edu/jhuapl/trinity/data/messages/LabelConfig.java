@@ -2,16 +2,16 @@ package edu.jhuapl.trinity.data.messages;
 
 /*-
  * #%L
- * trinity-1.0.0-SNAPSHOT
+ * trinity
  * %%
  * Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -63,9 +63,9 @@ public class LabelConfig extends MessageData {
 
     public static boolean isMatch(String testString, String wildcardPattern) {
         Pattern regex = Pattern.compile(wildcardPattern);
-        return regex.matcher(testString).matches();        
+        return regex.matcher(testString).matches();
     }
-    
+
     public static boolean isLabelConfig(String messageBody) {
         return messageBody.contains("messageType")
             && messageBody.contains(TYPESTRING);
