@@ -68,7 +68,7 @@ public class LitPathPane extends PathPane {
     double hoverTopInset = -2;
     double hoverSideInset = -38;
     public Color fillPreStartColor = Color.CADETBLUE;
-    public Color fillStartColor = Color.TRANSPARENT; //Color.CYAN.deriveColor(1, 1, 1, 0.25);
+    public Color fillStartColor = Color.TRANSPARENT; 
     public Color fillMiddleColor = Color.CYAN;
     public Color fillEndColor = Color.TRANSPARENT;
     public Color fillPostEndColor = Color.VIOLET;
@@ -167,9 +167,8 @@ public class LitPathPane extends PathPane {
         addEventHandler(MouseEvent.MOUSE_ENTERED, e -> {
             if(fadeEnabled) {
                 fade(100, 0.8);
-                gradientTimeline.setCycleCount(2);
-                gradientTimeline.setAutoReverse(true);
-
+                gradientTimeline.setCycleCount(1);
+                gradientTimeline.setAutoReverse(false);
                 gradientTimeline.playFromStart();
             }
             else
@@ -189,11 +188,15 @@ public class LitPathPane extends PathPane {
             new KeyFrame(Duration.millis(30), new KeyValue(percentComplete, 0.0)),
             new KeyFrame(Duration.millis(currentGradientMillis), new KeyValue(percentComplete, 1.0))
         );
-        timeline.setOnFinished(e-> outerFrame.setFill(Color.TRANSPARENT));           
+        timeline.setOnFinished(e-> {
+            percentComplete.set(0);
+            setGradientByComplete(); //will reset the gradient but not set fill
+            outerFrame.setFill(Color.TRANSPARENT);
+        });           
         percentComplete.addListener(l -> updateGradient());
         return timeline;
     }
-    private void updateGradient() {
+    private void setGradientByComplete(){
         Stop preStopClear = new Stop(percentComplete.get()-0.15, Color.TRANSPARENT);
         Stop preStop = new Stop(percentComplete.get()-0.1, fillPreStartColor);
         stop1 = new Stop(percentComplete.get()-0.01, fillStartColor);
@@ -210,7 +213,10 @@ public class LitPathPane extends PathPane {
         stops.add(postStop);
         stops.add(postStopClear);
         lg = new LinearGradient(
-            0.5, 1.0, 0.5, 0.0, true, CycleMethod.NO_CYCLE, stops);
+            0.5, 1.0, 0.5, 0.0, true, CycleMethod.NO_CYCLE, stops);        
+    }
+    private void updateGradient() {
+        setGradientByComplete();
         this.outerFrame.setFill(lg);
     }    
     public void fade(double timeMS, double toValue) {
