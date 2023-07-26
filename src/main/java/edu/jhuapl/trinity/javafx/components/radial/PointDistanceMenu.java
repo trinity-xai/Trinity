@@ -26,7 +26,7 @@ import java.io.IOException;
 
 /*-
  * #%L
- * trinity-1.0.0-SNAPSHOT
+ * trinity
  * %%
  * Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC
  * %%

@@ -2,7 +2,7 @@ package edu.jhuapl.trinity.utils.loaders;
 
 /*-
  * #%L
- * trinity-1.0.0-SNAPSHOT
+ * trinity
  * %%
  * Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC
  * %%
@@ -21,18 +21,14 @@ package edu.jhuapl.trinity.utils.loaders;
  */
 
 import edu.jhuapl.trinity.data.ZeroPilotLatents;
-import edu.jhuapl.trinity.data.files.TextEmbeddingCollectionFile;
 import edu.jhuapl.trinity.data.files.ZeroPilotLatentsFile;
 import edu.jhuapl.trinity.data.messages.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.FeatureVector;
-import edu.jhuapl.trinity.data.messages.TextEmbeddingCollection;
-import edu.jhuapl.trinity.data.messages.TextEmbeddingSet;
 import edu.jhuapl.trinity.javafx.components.ProgressStatus;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.events.HyperspaceEvent;
-import edu.jhuapl.trinity.utils.DataUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
@@ -45,7 +41,6 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.stage.StageStyle;
 import java.io.File;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
