@@ -107,6 +107,7 @@ import java.util.stream.Collectors;
 import static edu.jhuapl.trinity.javafx.components.radial.HyperspaceMenu.slideInPane;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import javafx.animation.Transition;
+import javafx.scene.text.TextAlignment;
 import javafx.util.Duration;
 
 /**
@@ -198,6 +199,8 @@ public class Projections3DPane extends StackPane implements
     HashMap<Shape3D, Label> shape3DToLabel = new HashMap<>();
     //This maps 3D connectors to their respective Distance object
     HashMap<Distance,Trajectory3D> distanceTotrajectory3DMap = new HashMap<>();
+    //This maps distance objects to label overlays
+    HashMap<Distance,Shape3D> distanceToShape3DMap = new HashMap<>();
         
     public List<FeatureVector> featureVectors = new ArrayList<>();
     public boolean meanCentered = true;
@@ -861,6 +864,16 @@ public class Projections3DPane extends StackPane implements
         
         scene.addEventHandler(ManifoldEvent.CLEAR_DISTANCE_CONNECTORS, e-> {
             connectorsGroup.getChildren().removeIf(n -> n instanceof Trajectory3D);
+            //remove label and sphere overlay components
+            distanceTotrajectory3DMap.forEach((distance, traj3D) -> {
+                //Clear this connector's label overlay
+                Shape3D shape3D = distanceToShape3DMap.get(distance); 
+                extrasGroup.getChildren().remove(shape3D);
+                Label label = shape3DToLabel.remove(shape3D);
+                labelGroup.getChildren().remove(label);
+                distanceToShape3DMap.remove(distance);
+            });
+            distanceTotrajectory3DMap.clear();
         });        
         scene.addEventHandler(ManifoldEvent.DISTANCE_CONNECTOR_WIDTH, e-> {
             Distance eventDistance = (Distance)e.object1;
@@ -1890,14 +1903,39 @@ public class Projections3DPane extends StackPane implements
         if(null!=distanceTraj3D) {
             connectorsGroup.getChildren().remove(distanceTraj3D);
             distanceTotrajectory3DMap.remove(distance);
+            //Clear this connector's label overlay
+            Shape3D shape3D = distanceToShape3DMap.get(distance); 
+            extrasGroup.getChildren().remove(shape3D);
+            Label label = shape3DToLabel.remove(shape3D);
+            labelGroup.getChildren().remove(label);
+            distanceToShape3DMap.remove(distance);
         }
+        //Build trajectory by 3D coordinate states
         Trajectory distanceTrajectory = new Trajectory("Distance Line");
         distanceTrajectory.states.clear();
+        distanceTrajectory.states.add(
+            new double[]{distance.getPoint1().getX(),distance.getPoint1().getY(),distance.getPoint1().getZ()});
+        //add midpoint so we can anchor a numeric distance label
+        javafx.geometry.Point3D midpoint = distance.getPoint1().midpoint(distance.getPoint2());
+        distanceTrajectory.states.add(
+            new double[]{midpoint.getX(),midpoint.getY(),midpoint.getZ()});
         distanceTrajectory.states.add(
             new double[]{distance.getPoint1().getX(),distance.getPoint1().getY(),distance.getPoint1().getZ()});
         distanceTrajectory.states.add(
             new double[]{distance.getPoint2().getX(),distance.getPoint2().getY(),distance.getPoint2().getZ()}
         );
+        //Add 2D distance label overlay at midpoint         
+        Sphere midpointSphere = new Sphere(1);
+        midpointSphere.setTranslateX(midpoint.getX());
+        midpointSphere.setTranslateY(midpoint.getY());
+        midpointSphere.setTranslateZ(midpoint.getZ());
+        Label midpointLabel = new Label(distance.getLabel() + "\n" + distance.getMetric()+": " + distance.getValue());
+        midpointLabel.setTextAlignment(TextAlignment.LEFT);
+        extrasGroup.getChildren().add(midpointSphere);
+        shape3DToLabel.put(midpointSphere, midpointLabel);
+        distanceToShape3DMap.put(distance, midpointSphere);
+        labelGroup.getChildren().add(midpointLabel);
+        
         Trajectory3D newDistanceTraj3D = JavaFX3DUtils.buildPolyLineFromTrajectory(
         distanceTrajectory, distance.getWidth(), distance.getColor(), 
         trajectoryTailSize, trajectoryScale, sceneWidth, sceneHeight);
@@ -1911,6 +1949,7 @@ public class Projections3DPane extends StackPane implements
         });
         distanceTotrajectory3DMap.put(distance, newDistanceTraj3D);
         connectorsGroup.getChildren().add(0, newDistanceTraj3D);
+        updateFloatingNodes();
     } 
     public void updateMaxAndMeans() {
         meanVector = FeatureVector.getMeanVector(featureVectors);
