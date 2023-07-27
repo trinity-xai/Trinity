@@ -51,7 +51,6 @@ import javafx.scene.text.Text;
 import javafx.util.Duration;
 import lit.litfx.controls.covalent.PathPane;
 import lit.litfx.controls.covalent.events.CovalentPaneEvent;
-
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.logging.Level;
@@ -77,7 +76,9 @@ public class LitPathPane extends PathPane {
     public SimpleDoubleProperty percentComplete = new SimpleDoubleProperty(0.0);
     private Timeline gradientTimeline;
     private double currentGradientMillis = 465; //This number was picked by Josh
-
+    private long lastInsideMillis = 0;
+    public static long enteredWaitTimeMillis = 5000; 
+    
     /**
      * Helper utility for loading a common FXML based Controller which assumes
      * an anchorpane node which is returned wrapped as a BorderPane
@@ -168,13 +169,16 @@ public class LitPathPane extends PathPane {
         addEventHandler(MouseEvent.MOUSE_ENTERED, e -> {
             if (fadeEnabled) {
                 fade(100, 0.8);
-                gradientTimeline.setCycleCount(1);
-                gradientTimeline.setAutoReverse(false);
-                gradientTimeline.playFromStart();
+                if(System.currentTimeMillis()-lastInsideMillis >enteredWaitTimeMillis){             
+                    gradientTimeline.setCycleCount(1);
+                    gradientTimeline.setAutoReverse(false);
+                    gradientTimeline.playFromStart();
+                }
             } else
                 contentPane.setOpacity(0.8);
         });
         addEventHandler(MouseEvent.MOUSE_EXITED, e -> {
+            lastInsideMillis = System.currentTimeMillis();
             if (fadeEnabled) {
                 fade(100, 0.3);
                 this.outerFrame.setFill(Color.TRANSPARENT);
