@@ -140,27 +140,21 @@ public class ConfigurationController implements Initializable {
     private CheckBox featureDataCheckBox;
 
     @FXML
-    private CheckBox lockedCheckBox;
+    private Spinner<Integer> xFactorSpinner;
     @FXML
-    private Slider lockedSlider;
+    private Spinner<Integer> yFactorSpinner;
     @FXML
-    private Slider xFactorSlider;
-    @FXML
-    private Slider yFactorSlider;
-    @FXML
-    private Slider zFactorSlider;
+    private Spinner<Integer> zFactorSpinner;
     @FXML
     private CheckBox enableDirectionCheckBox;
+
     @FXML
-    private CheckBox lockedDirectionCheckBox;
+    private Spinner<Integer> xDirectionFactorSpinner;
     @FXML
-    private Slider lockedDirectionSlider;
+    private Spinner<Integer> yDirectionFactorSpinner;
     @FXML
-    private Slider xDirectionFactorSlider;
-    @FXML
-    private Slider yDirectionFactorSlider;
-    @FXML
-    private Slider zDirectionFactorSlider;
+    private Spinner<Integer> zDirectionFactorSpinner;
+    
     @FXML
     private Spinner featureVectorMaxSpinner;
     @FXML
@@ -276,9 +270,9 @@ public class ConfigurationController implements Initializable {
                 scene.getRoot().fireEvent(new ShadowEvent(
                     ShadowEvent.ROTATING_PERSPECTIVE_PROJECTION, true));
         });
-        setupPositionSliders();
-        setupDirectionSliders();
-
+        setupPositionSpinners();
+        setupDirectionSpinners();
+        
         List<FactorLabelListItem> existingLabelItems = new ArrayList<>();
         for (FactorLabel fl : FactorLabel.getFactorLabels()) {
             FactorLabelListItem item = new FactorLabelListItem(fl);
@@ -437,7 +431,6 @@ public class ConfigurationController implements Initializable {
                     colorMapChoiceBox.getValue()));
         });
     }
-
     private void addHyperspaceListeners() {
         scene.getRoot().addEventHandler(HyperspaceEvent.NEW_MAX_ABS, e -> {
             maxAbsVal = (double) e.object;
@@ -450,24 +443,19 @@ public class ConfigurationController implements Initializable {
         scene.getRoot().addEventHandler(HyperspaceEvent.FACTOR_COORDINATES_KEYPRESS, e -> {
             enableCoordinateNotifications = false;
             CoordinateSet cs = (CoordinateSet) e.object;
-            if (!cs.coordinateIndices.isEmpty()) {
-                xFactorSlider.setValue(cs.coordinateIndices.get(0));
-                lockedSlider.setValue(cs.coordinateIndices.get(0));
-            }
+            if (!cs.coordinateIndices.isEmpty()) 
+                xFactorSpinner.getValueFactory().setValue(cs.coordinateIndices.get(0));
             if (cs.coordinateIndices.size() > 1)
-                yFactorSlider.setValue(cs.coordinateIndices.get(1));
+                yFactorSpinner.getValueFactory().setValue(cs.coordinateIndices.get(1));
             if (cs.coordinateIndices.size() > 2)
-                zFactorSlider.setValue(cs.coordinateIndices.get(2));
-            if (cs.coordinateIndices.size() > 3) {
-                xDirectionFactorSlider.setValue(cs.coordinateIndices.get(3));
-                lockedDirectionSlider.setValue(cs.coordinateIndices.get(3));
-            }
+                zFactorSpinner.getValueFactory().setValue(cs.coordinateIndices.get(2));
+            if (cs.coordinateIndices.size() > 3) 
+                xDirectionFactorSpinner.getValueFactory().setValue(cs.coordinateIndices.get(3));
             if (cs.coordinateIndices.size() > 4)
-                yDirectionFactorSlider.setValue(cs.coordinateIndices.get(4));
+                yDirectionFactorSpinner.getValueFactory().setValue(cs.coordinateIndices.get(4));
             if (cs.coordinateIndices.size() > 5)
-                zDirectionFactorSlider.setValue(cs.coordinateIndices.get(5));
+                zDirectionFactorSpinner.getValueFactory().setValue(cs.coordinateIndices.get(5));
             enableCoordinateNotifications = true;
-
         });
 
         scene.getRoot().addEventHandler(HyperspaceEvent.POINT3D_SIZE_KEYPRESS, e -> {
@@ -485,17 +473,43 @@ public class ConfigurationController implements Initializable {
         scene.getRoot().addEventHandler(HyperspaceEvent.FACTOR_VECTORMAX_KEYPRESS, e -> {
             featureVectorMax = (int) e.object;
             featureVectorMaxSpinner.getValueFactory().setValue(featureVectorMax);
-            //update position sliders
-            lockedSlider.setMax((int) featureVectorMaxSpinner.getValue());
-            xFactorSlider.setMax((int) featureVectorMaxSpinner.getValue());
-            yFactorSlider.setMax((int) featureVectorMaxSpinner.getValue());
-            zFactorSlider.setMax((int) featureVectorMaxSpinner.getValue());
-            xDirectionFactorSlider.setMax((int) featureVectorMaxSpinner.getValue());
-            yDirectionFactorSlider.setMax((int) featureVectorMaxSpinner.getValue());
-            zDirectionFactorSlider.setMax((int) featureVectorMaxSpinner.getValue());
+            //update position and direction sliders
+            updateSpinnerMaxValues();
         });
     }
+    private void updateSpinnerMaxValues() {
+        //update position and direction spinners
+        Integer newMax = (Integer)featureVectorMaxSpinner.getValue();
+        Integer current = xFactorSpinner.getValue();
+        xFactorSpinner.setValueFactory(
+            new SpinnerValueFactory.IntegerSpinnerValueFactory(
+                0, newMax, current, 1));
 
+        current = yFactorSpinner.getValue();
+        yFactorSpinner.setValueFactory(
+            new SpinnerValueFactory.IntegerSpinnerValueFactory(
+                0, newMax, current, 1));
+
+        current = zFactorSpinner.getValue();
+        zFactorSpinner.setValueFactory(
+            new SpinnerValueFactory.IntegerSpinnerValueFactory(
+                0, newMax, current, 1));
+
+        current = xDirectionFactorSpinner.getValue();
+        xDirectionFactorSpinner.setValueFactory(
+            new SpinnerValueFactory.IntegerSpinnerValueFactory(
+                0, newMax, current, 1));
+
+        current = yDirectionFactorSpinner.getValue();
+        yDirectionFactorSpinner.setValueFactory(
+            new SpinnerValueFactory.IntegerSpinnerValueFactory(
+                0, newMax, current, 1));
+
+        current = zDirectionFactorSpinner.getValue();
+        zDirectionFactorSpinner.setValueFactory(
+            new SpinnerValueFactory.IntegerSpinnerValueFactory(
+                0, newMax, current, 1));        
+    }
     private void setupDataBoundsSpinners() {
         featureVectorMaxSpinner.setValueFactory(
             new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 1024, featureVectorMax, 16));
@@ -505,14 +519,7 @@ public class ConfigurationController implements Initializable {
             scene.getRoot().fireEvent(
                 new HyperspaceEvent(HyperspaceEvent.FACTOR_VECTORMAX_GUI,
                     featureVectorMaxSpinner.getValue()));
-            //update position sliders
-            lockedSlider.setMax((int) featureVectorMaxSpinner.getValue());
-            xFactorSlider.setMax((int) featureVectorMaxSpinner.getValue());
-            yFactorSlider.setMax((int) featureVectorMaxSpinner.getValue());
-            zFactorSlider.setMax((int) featureVectorMaxSpinner.getValue());
-            xDirectionFactorSlider.setMax((int) featureVectorMaxSpinner.getValue());
-            yDirectionFactorSlider.setMax((int) featureVectorMaxSpinner.getValue());
-            zDirectionFactorSlider.setMax((int) featureVectorMaxSpinner.getValue());
+            updateSpinnerMaxValues();
         });
 
         nodeQueueLimitSpinner.setValueFactory(
@@ -565,90 +572,64 @@ public class ConfigurationController implements Initializable {
                     (Double) scatterBuffScalingSpinner.getValue()));
         });
     }
+    private void setupPositionSpinners() {
+        xFactorSpinner.setValueFactory(
+            new SpinnerValueFactory.IntegerSpinnerValueFactory(
+                0, featureVectorMax, 0, 1));
+        xFactorSpinner.valueProperty().addListener((obs, oldval, newVal) -> {
+            if (enableCoordinateNotifications)
+                updateHyperspaceFactors();
+        });
+        
+        yFactorSpinner.setValueFactory(
+            new SpinnerValueFactory.IntegerSpinnerValueFactory(
+                0, featureVectorMax, 1, 1));        
+        yFactorSpinner.valueProperty().addListener((obs, oldval, newVal) -> {
+            if (enableCoordinateNotifications)
+                updateHyperspaceFactors();
+        });
 
-    private void setupPositionSliders() {
-        lockedSlider.disableProperty().bind(lockedCheckBox.selectedProperty().not());
-        xFactorSlider.mouseTransparentProperty().bind(lockedCheckBox.selectedProperty());
-        yFactorSlider.mouseTransparentProperty().bind(lockedCheckBox.selectedProperty());
-        zFactorSlider.mouseTransparentProperty().bind(lockedCheckBox.selectedProperty());
-
-        lockedSlider.valueProperty().addListener((obs, oldval, newVal) -> {
-            if (enableCoordinateNotifications) {
-                if (newVal.intValue() > lockedValue) {
-                    xFactorSlider.setValue(xFactorSlider.getValue() + 1.0);
-                    yFactorSlider.setValue(yFactorSlider.getValue() + 1.0);
-                    zFactorSlider.setValue(zFactorSlider.getValue() + 1.0);
-                    lockedValue = newVal.intValue();
-                } else if (newVal.intValue() < lockedValue) {
-                    xFactorSlider.setValue(xFactorSlider.getValue() - 1.0);
-                    yFactorSlider.setValue(yFactorSlider.getValue() - 1.0);
-                    zFactorSlider.setValue(zFactorSlider.getValue() - 1.0);
-                    lockedValue = newVal.intValue();
-                }
-                lockedSlider.setValue(newVal.intValue());
-                updateHyperspaceFactors();
-            }
-        });
-        xFactorSlider.valueProperty().addListener((obs, oldval, newVal) -> {
-            if (!lockedCheckBox.isSelected() && enableCoordinateNotifications)
-                updateHyperspaceFactors();
-        });
-        yFactorSlider.valueProperty().addListener((obs, oldval, newVal) -> {
-            if (!lockedCheckBox.isSelected() && enableCoordinateNotifications)
-                updateHyperspaceFactors();
-        });
-        zFactorSlider.valueProperty().addListener((obs, oldval, newVal) -> {
-            if (!lockedCheckBox.isSelected() && enableCoordinateNotifications)
+        zFactorSpinner.setValueFactory(
+            new SpinnerValueFactory.IntegerSpinnerValueFactory(
+                0, featureVectorMax, 2, 1));        
+        zFactorSpinner.valueProperty().addListener((obs, oldval, newVal) -> {
+            if (enableCoordinateNotifications)
                 updateHyperspaceFactors();
         });
     }
 
-    private void setupDirectionSliders() {
+    private void setupDirectionSpinners() {
         enableDirectionCheckBox.selectedProperty().addListener(cl -> {
             scene.getRoot().fireEvent(
                 new HyperspaceEvent(HyperspaceEvent.ENABLE_DIRECTION_COORDINATES,
                     enableDirectionCheckBox.isSelected()));
         });
-        lockedDirectionSlider.disableProperty().bind(lockedDirectionCheckBox.selectedProperty().not()
-            .or(enableDirectionCheckBox.selectedProperty().not()));
-        xDirectionFactorSlider.mouseTransparentProperty().bind(lockedDirectionCheckBox.selectedProperty());
-        yDirectionFactorSlider.mouseTransparentProperty().bind(lockedDirectionCheckBox.selectedProperty());
-        zDirectionFactorSlider.mouseTransparentProperty().bind(lockedDirectionCheckBox.selectedProperty());
 
-        lockedDirectionCheckBox.disableProperty().bind(enableDirectionCheckBox.selectedProperty().not());
-        xDirectionFactorSlider.disableProperty().bind(enableDirectionCheckBox.selectedProperty().not());
-        yDirectionFactorSlider.disableProperty().bind(enableDirectionCheckBox.selectedProperty().not());
-        zDirectionFactorSlider.disableProperty().bind(enableDirectionCheckBox.selectedProperty().not());
+        xDirectionFactorSpinner.disableProperty().bind(enableDirectionCheckBox.selectedProperty().not());
+        yDirectionFactorSpinner.disableProperty().bind(enableDirectionCheckBox.selectedProperty().not());
+        zDirectionFactorSpinner.disableProperty().bind(enableDirectionCheckBox.selectedProperty().not());
 
-
-        lockedDirectionSlider.valueProperty().addListener((obs, oldval, newVal) -> {
-            if (newVal.intValue() > lockedDirectionValue) {
-                xDirectionFactorSlider.setValue(xDirectionFactorSlider.getValue() + 1.0);
-                yDirectionFactorSlider.setValue(yDirectionFactorSlider.getValue() + 1.0);
-                zDirectionFactorSlider.setValue(zDirectionFactorSlider.getValue() + 1.0);
-                lockedDirectionValue = newVal.intValue();
-            } else if (newVal.intValue() < lockedDirectionValue) {
-                xDirectionFactorSlider.setValue(xDirectionFactorSlider.getValue() - 1.0);
-                yDirectionFactorSlider.setValue(yDirectionFactorSlider.getValue() - 1.0);
-                zDirectionFactorSlider.setValue(zDirectionFactorSlider.getValue() - 1.0);
-                lockedDirectionValue = newVal.intValue();
-            }
-            lockedDirectionSlider.setValue(newVal.intValue());
-            updateHyperspaceFactors();
-        });
-        xDirectionFactorSlider.valueProperty().addListener((obs, oldval, newVal) -> {
-            if (!lockedDirectionCheckBox.isSelected() && enableCoordinateNotifications)
+        xDirectionFactorSpinner.setValueFactory(
+            new SpinnerValueFactory.IntegerSpinnerValueFactory(
+                0, featureVectorMax, 3, 1));        
+        xDirectionFactorSpinner.valueProperty().addListener((obs, oldval, newVal) -> {
+            if (enableCoordinateNotifications)
                 updateHyperspaceFactors();
         });
-        yDirectionFactorSlider.valueProperty().addListener((obs, oldval, newVal) -> {
-            if (!lockedDirectionCheckBox.isSelected() && enableCoordinateNotifications)
+        yDirectionFactorSpinner.setValueFactory(
+            new SpinnerValueFactory.IntegerSpinnerValueFactory(
+                0, featureVectorMax, 4, 1));        
+        yDirectionFactorSpinner.valueProperty().addListener((obs, oldval, newVal) -> {
+            if (enableCoordinateNotifications)
                 updateHyperspaceFactors();
         });
-        zDirectionFactorSlider.valueProperty().addListener((obs, oldval, newVal) -> {
-            if (!lockedDirectionCheckBox.isSelected() && enableCoordinateNotifications)
+        zDirectionFactorSpinner.setValueFactory(
+            new SpinnerValueFactory.IntegerSpinnerValueFactory(
+                0, featureVectorMax, 5, 1));        
+        zDirectionFactorSpinner.valueProperty().addListener((obs, oldval, newVal) -> {
+            if (enableCoordinateNotifications)
                 updateHyperspaceFactors();
         });
-
     }
 
     @FXML
@@ -691,19 +672,17 @@ public class ConfigurationController implements Initializable {
     public void rescanLabels() {
         scene.getRoot().fireEvent(
             new FeatureVectorEvent(FeatureVectorEvent.RESCAN_FACTOR_LABELS));
-//        scene.getRoot().fireEvent(
-//            new FeatureVectorEvent(FeatureVectorEvent.RESCAN_FEATURE_LAYERS));
     }
 
     @FXML
     public void updateHyperspaceFactors() {
         ArrayList<Integer> coordList = new ArrayList<>();
-        coordList.add(Double.valueOf(xFactorSlider.getValue()).intValue());
-        coordList.add(Double.valueOf(yFactorSlider.getValue()).intValue());
-        coordList.add(Double.valueOf(zFactorSlider.getValue()).intValue());
-        coordList.add(Double.valueOf(xDirectionFactorSlider.getValue()).intValue());
-        coordList.add(Double.valueOf(yDirectionFactorSlider.getValue()).intValue());
-        coordList.add(Double.valueOf(zDirectionFactorSlider.getValue()).intValue());
+        coordList.add(Double.valueOf(xFactorSpinner.getValue()).intValue());
+        coordList.add(Double.valueOf(yFactorSpinner.getValue()).intValue());
+        coordList.add(Double.valueOf(zFactorSpinner.getValue()).intValue());
+        coordList.add(Double.valueOf(xDirectionFactorSpinner.getValue()).intValue());
+        coordList.add(Double.valueOf(yDirectionFactorSpinner.getValue()).intValue());
+        coordList.add(Double.valueOf(zDirectionFactorSpinner.getValue()).intValue());
         CoordinateSet coords = new CoordinateSet(coordList);
         scene.getRoot().fireEvent(
             new HyperspaceEvent(HyperspaceEvent.FACTOR_COORDINATES_GUI, coords));
@@ -877,7 +856,7 @@ public class ConfigurationController implements Initializable {
     }
 
     private void setupMenuSystemControls() {
-        itemSizeSlider.setValue(Double.valueOf((String) config.configProps.get("ITEM_SIZE")));
+        itemSizeSlider.setValue(Double.parseDouble((String) config.configProps.get("ITEM_SIZE")));
         itemSizeLabel.setText(format.format(itemSizeSlider.getValue()));
         itemSizeSlider.valueProperty().addListener((ov, t, t1) -> {
             itemSizeLabel.setText(format.format(itemSizeSlider.getValue()));
@@ -886,7 +865,7 @@ public class ConfigurationController implements Initializable {
                 t.doubleValue(), t1.doubleValue()));
         });
 
-        innerRadiusSlider.setValue(Double.valueOf((String) config.configProps.get("INNER_RADIUS")));
+        innerRadiusSlider.setValue(Double.parseDouble((String) config.configProps.get("INNER_RADIUS")));
         innerRadiusLabel.setText(format.format(innerRadiusSlider.getValue()));
         innerRadiusSlider.valueProperty().addListener((ov, t, t1) -> {
             innerRadiusLabel.setText(format.format(innerRadiusSlider.getValue()));
@@ -895,7 +874,7 @@ public class ConfigurationController implements Initializable {
                 t.doubleValue(), t1.doubleValue()));
         });
 
-        itemFitWidthSlider.setValue(Double.valueOf((String) config.configProps.get("ITEM_FIT_WIDTH")));
+        itemFitWidthSlider.setValue(Double.parseDouble((String) config.configProps.get("ITEM_FIT_WIDTH")));
         itemFitWidthLabel.setText(format.format(itemFitWidthSlider.getValue()));
         itemFitWidthSlider.valueProperty().addListener((ov, t, t1) -> {
             itemFitWidthLabel.setText(format.format(itemFitWidthSlider.getValue()));
@@ -904,7 +883,7 @@ public class ConfigurationController implements Initializable {
                 t.doubleValue(), t1.doubleValue()));
         });
 
-        menuSizeSlider.setValue(Double.valueOf((String) config.configProps.get("MENU_RADIUS")));
+        menuSizeSlider.setValue(Double.parseDouble((String) config.configProps.get("MENU_RADIUS")));
         menuSizeLabel.setText(format.format(menuSizeSlider.getValue()));
         menuSizeSlider.valueProperty().addListener((ov, t, t1) -> {
             menuSizeLabel.setText(format.format(menuSizeSlider.getValue()));
@@ -913,7 +892,7 @@ public class ConfigurationController implements Initializable {
                 t.doubleValue(), t1.doubleValue()));
         });
 
-        offsetSlider.setValue(Double.valueOf((String) config.configProps.get("OFFSET")));
+        offsetSlider.setValue(Double.parseDouble((String) config.configProps.get("OFFSET")));
         offsetLabel.setText(format.format(offsetSlider.getValue()));
         offsetSlider.valueProperty().addListener((ov, t, t1) -> {
             offsetLabel.setText(format.format(offsetSlider.getValue()));
@@ -922,7 +901,7 @@ public class ConfigurationController implements Initializable {
                 t.doubleValue(), t1.doubleValue()));
         });
 
-        initialAngleSlider.setValue(Double.valueOf((String) config.configProps.get("INITIAL_ANGLE")));
+        initialAngleSlider.setValue(Double.parseDouble((String) config.configProps.get("INITIAL_ANGLE")));
         initialAngleLabel.setText(format.format(initialAngleSlider.getValue()));
         initialAngleSlider.valueProperty().addListener((ov, t, t1) -> {
             initialAngleLabel.setText(format.format(initialAngleSlider.getValue()));
@@ -931,7 +910,7 @@ public class ConfigurationController implements Initializable {
                 t.doubleValue(), t1.doubleValue()));
         });
 
-        strokeWidthSlider.setValue(Double.valueOf((String) config.configProps.get("STROKE_WIDTH")));
+        strokeWidthSlider.setValue(Double.parseDouble((String) config.configProps.get("STROKE_WIDTH")));
         strokeWidthLabel.setText(format.format(strokeWidthSlider.getValue()));
         strokeWidthSlider.valueProperty().addListener((ov, t, t1) -> {
             strokeWidthLabel.setText(format.format(strokeWidthSlider.getValue()));
