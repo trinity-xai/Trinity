@@ -1,5 +1,5 @@
-/**
- * Skybox.java
+/*
+ * Modified from Skybox.java
  * <p>
  * Copyright (c) 2013-2016, F(X)yz
  * All rights reserved.
@@ -26,7 +26,6 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-
 package edu.jhuapl.trinity.javafx.javafx3d.animated;
 
 /*-

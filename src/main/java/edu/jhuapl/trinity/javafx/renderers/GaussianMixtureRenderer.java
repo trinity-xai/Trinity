@@ -1,10 +1,5 @@
 package edu.jhuapl.trinity.javafx.renderers;
 
-import edu.jhuapl.trinity.data.messages.GaussianMixture;
-import edu.jhuapl.trinity.data.messages.GaussianMixtureCollection;
-
-import java.util.List;
-
 /*-
  * #%L
  * trinity
@@ -24,6 +19,11 @@ import java.util.List;
  * limitations under the License.
  * #L%
  */
+
+import edu.jhuapl.trinity.data.messages.GaussianMixture;
+import edu.jhuapl.trinity.data.messages.GaussianMixtureCollection;
+
+import java.util.List;
 
 /**
  * @author Sean Phillips

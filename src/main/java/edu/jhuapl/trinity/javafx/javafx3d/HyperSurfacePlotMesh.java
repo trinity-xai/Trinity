@@ -1,5 +1,5 @@
 /*
- * SurfacePlotMesh.java
+ * Modified from SurfacePlotMesh.java
  *
  * Copyright (c) 2013-2019, F(X)yz
  * All rights reserved.
@@ -69,7 +69,6 @@ import java.util.function.Function;
 
 /**
  * @author Sean Phillips
- * Modified version of SurfacePlotMesh.java
  * SurfacePlotMesh to plot 2D functions z = f(x,y)
  */
 public class HyperSurfacePlotMesh extends TexturedMesh {

@@ -3,7 +3,6 @@
  * Copyright (c) 2017, Leland McInnes, 2019 Tag.bio (Java port).
  * See UMAPLicense.txt.
  */
-
 package edu.jhuapl.trinity.utils.umap;
 
 /*-

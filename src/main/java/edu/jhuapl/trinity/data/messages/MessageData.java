@@ -1,7 +1,5 @@
 package edu.jhuapl.trinity.data.messages;
 
-import com.fasterxml.jackson.annotation.JsonInclude;
-
 /*-
  * #%L
  * trinity
@@ -21,6 +19,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  * limitations under the License.
  * #L%
  */
+
+import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
  * @author Sean Phillips
