@@ -1,7 +1,5 @@
 package edu.jhuapl.trinity.javafx.components;
 
-import javafx.scene.paint.Color;
-
 /*-
  * #%L
  * trinity
@@ -21,6 +19,8 @@ import javafx.scene.paint.Color;
  * limitations under the License.
  * #L%
  */
+
+import javafx.scene.paint.Color;
 
 /**
  * @author Sean Phillips

@@ -1,12 +1,5 @@
 package edu.jhuapl.trinity.javafx.javafx3d.particle;
 
-import edu.jhuapl.trinity.utils.ResourceUtils;
-import javafx.scene.image.Image;
-
-import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 /*-
  * #%L
  * trinity
@@ -26,6 +19,14 @@ import java.util.logging.Logger;
  * limitations under the License.
  * #L%
  */
+
+import edu.jhuapl.trinity.utils.ResourceUtils;
+import javafx.scene.image.Image;
+
+import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 public class Smoke extends DualTextureParticle {
 
     public static final String DEFAULT_TEXTURE1_NAME = "smoke1_16";

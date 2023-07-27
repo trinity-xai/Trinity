@@ -25,7 +25,10 @@ package edu.jhuapl.trinity.utils.umap.metric;
  * #L%
  */
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.HashMap;
+import java.util.List;
 import java.util.Map;
 
 /**
@@ -35,6 +38,7 @@ import java.util.Map;
  * @author Leland McInnes (Python)
  * @author Sean A. Irvine
  * @author Richard Littin
+ * @author Sean Phillips
  */
 public abstract class Metric {
 
@@ -64,24 +68,32 @@ public abstract class Metric {
 
     private static Map<String, Metric> sMETRICS = null;
 
+    public static List<String> getMetricNames() {
+        if (sMETRICS == null) generateDefaultMetrics();
+        ArrayList<String> metricKeys = new ArrayList<>(sMETRICS.keySet());
+        Collections.sort(metricKeys);
+        return metricKeys;
+    }
+
     /**
      * Retrieve a metric by name.
      *
      * @param name name of metric
      * @return metric
      */
-    public static Metric getMetric(final String name) {
+    private static void generateDefaultMetrics() {
         if (sMETRICS == null) {
             sMETRICS = new HashMap<>();
             sMETRICS.put("euclidean", EuclideanMetric.SINGLETON);
-            sMETRICS.put("l2", EuclideanMetric.SINGLETON);
+            sMETRICS.put("reducedeuclidean", ReducedEuclideanMetric.SINGLETON);
             sMETRICS.put("manhattan", ManhattanMetric.SINGLETON);
-            sMETRICS.put("l1", ManhattanMetric.SINGLETON);
-            sMETRICS.put("taxicab", ManhattanMetric.SINGLETON);
+//            sMETRICS.put("taxicab", ManhattanMetric.SINGLETON);
             sMETRICS.put("chebyshev", ChebyshevMetric.SINGLETON);
-            sMETRICS.put("linfinity", ChebyshevMetric.SINGLETON);
-            sMETRICS.put("linfty", ChebyshevMetric.SINGLETON);
-            sMETRICS.put("linf", ChebyshevMetric.SINGLETON);
+//            sMETRICS.put("linfinity", ChebyshevMetric.SINGLETON);
+//            sMETRICS.put("linfty", ChebyshevMetric.SINGLETON);
+//            sMETRICS.put("linf", ChebyshevMetric.SINGLETON);
+            //@TODO SMP Get this working with a inverse covariance matrix parameter
+            //sMETRICS.put("mahalanobis", MahalanobisMetric.SINGLETON);
             sMETRICS.put("canberra", CanberraMetric.SINGLETON);
             sMETRICS.put("minkowski", MinkowskiMetric.SINGLETON);
             sMETRICS.put("cosine", CosineMetric.SINGLETON);
@@ -99,6 +111,10 @@ public abstract class Metric {
             sMETRICS.put("sokalmichener", SokalMichenerMetric.SINGLETON);
             sMETRICS.put("yule", YuleMetric.SINGLETON);
         }
+    }
+
+    public static Metric getMetric(final String name) {
+        if (sMETRICS == null) generateDefaultMetrics();
 
         final Metric m = sMETRICS.get(name.toLowerCase());
         if (m == null) {

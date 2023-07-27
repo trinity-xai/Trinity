@@ -80,7 +80,7 @@ import java.util.concurrent.TimeUnit;
 /**
  * User: hansolo Date: 17.09.21 Time: 12:31
  *
- * @modified: Sean Phillips
+ * @author Sean Phillips
  */
 @DefaultProperty("children")
 public class MissionTimerX extends Region {

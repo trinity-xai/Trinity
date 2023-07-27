@@ -1,4 +1,4 @@
-package edu.jhuapl.trinity.javafx.components.panes;
+package edu.jhuapl.trinity.javafx;
 
 /*-
  * #%L
@@ -20,20 +20,16 @@ package edu.jhuapl.trinity.javafx.components.panes;
  * #L%
  */
 
-import javafx.scene.Scene;
-import javafx.scene.layout.Pane;
+import javafx.application.Application;
 
 /**
  * @author Sean Phillips
  */
-public class DataPane extends LitPathPane {
-    public static String CONTROLLER = "/edu/jhuapl/trinity/fxml/Data.fxml";
-
-    public DataPane(Scene scene, Pane parent) {
-        this(scene, parent, CONTROLLER);
-    }
-
-    public DataPane(Scene scene, Pane parent, String controller) {
-        super(scene, parent, 400, 200, createContent(controller), "Data ", "ZeroMQ", 200.0, 300.0);
+public class ClipTestMain {
+    /**
+     * @param args the command line arguments
+     */
+    public static void main(String[] args) {
+        Application.launch(ClipTestApp.class, args);
     }
 }

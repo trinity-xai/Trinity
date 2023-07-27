@@ -20,21 +20,12 @@ package edu.jhuapl.trinity.javafx.components.radial;
  * #L%
  */
 
-import edu.jhuapl.trinity.App;
-import edu.jhuapl.trinity.javafx.components.panes.ConfigurationPane;
-import edu.jhuapl.trinity.javafx.components.panes.ManifoldControlPane;
-import edu.jhuapl.trinity.javafx.components.panes.RadarPlotPane;
-import edu.jhuapl.trinity.javafx.components.panes.SearchPane;
-import edu.jhuapl.trinity.javafx.javafx3d.Hyperspace3DPane;
+import edu.jhuapl.trinity.javafx.javafx3d.Projections3DPane;
 import edu.jhuapl.trinity.utils.ResourceUtils;
-import javafx.animation.KeyFrame;
-import javafx.animation.KeyValue;
-import javafx.animation.Timeline;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.effect.BlurType;
 import javafx.scene.effect.Glow;
-import javafx.scene.effect.PerspectiveTransform;
 import javafx.scene.effect.Shadow;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
@@ -43,33 +34,23 @@ import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.RotateEvent;
 import javafx.scene.input.SwipeEvent;
-import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.CycleMethod;
 import javafx.scene.paint.LinearGradient;
 import javafx.scene.paint.Stop;
 import javafx.stage.FileChooser;
-import javafx.util.Duration;
-import lit.litfx.controls.covalent.PathPane;
 import lit.litfx.controls.menus.LitRadialMenuItem;
 
 import javax.imageio.ImageIO;
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Paths;
 
 /**
  * @author Sean Phillips
  */
-public class HyperspaceMenu extends RadialEntity {
+public class PointDistanceMenu extends RadialEntity {
     //momma view this will control and attach to
-    Hyperspace3DPane hyperspace3DPane;
-
-    //Various GUI views
-    ConfigurationPane configurationPane;
-    RadarPlotPane radarPlotPane;
-    SearchPane searchPane;
-    ManifoldControlPane manifoldControlPane;
+    Projections3DPane projections3DPane;
 
     //defaults
     public static double IMAGE_FIT_HEIGHT = 64;
@@ -97,14 +78,14 @@ public class HyperspaceMenu extends RadialEntity {
         new Stop(0, bgMoLg1Color), new Stop(0.8, bgMoLg2Color));
     ImageView iv;
 
-    public HyperspaceMenu(Hyperspace3DPane hyperspace3DPane) {
-        this(INITIAL_ANGLE, ITEM_SIZE, MENU_RADIUS, OFFSET, hyperspace3DPane);
+    public PointDistanceMenu(Projections3DPane projections3DPane) {
+        this(INITIAL_ANGLE, ITEM_SIZE, MENU_RADIUS, OFFSET, projections3DPane);
     }
 
-    public HyperspaceMenu(double initialAngle, double itemSize, double menuSize, double offset, Hyperspace3DPane hyperspace3DPane) {
-        super("Hyperspace Menu", IMAGE_FIT_WIDTH);
-        this.hyperspace3DPane = hyperspace3DPane;
-        this.scene = hyperspace3DPane.scene;
+    public PointDistanceMenu(double initialAngle, double itemSize, double menuSize, double offset, Projections3DPane projections3DPane) {
+        super("Metrics", IMAGE_FIT_WIDTH);
+        this.projections3DPane = projections3DPane;
+        this.scene = projections3DPane.scene;
         setScene(scene);
         buildMenu();
 
@@ -127,7 +108,7 @@ public class HyperspaceMenu extends RadialEntity {
         setShowEmitter(false);
         setManaged(false);
 
-        iv = ResourceUtils.loadIcon("rgbcube", ITEM_FIT_WIDTH);
+        iv = ResourceUtils.loadIcon("metric", ITEM_FIT_WIDTH);
         if (null != iv) {
             iv.setSmooth(true);
             iv.setPreserveRatio(true);
@@ -181,54 +162,6 @@ public class HyperspaceMenu extends RadialEntity {
         setStrokeWidth(STROKE_WIDTH);
     }
 
-    public static void slideInPane(PathPane pane) {
-        //https://stackoverflow.com/questions/48893282/javafx-apply-perspective-transformation-on-a-node-given-a-perspective-transform?noredirect=1&lq=1
-        PerspectiveTransform pt = new PerspectiveTransform();
-        pt.setUlx(pane.getWidth());
-        pt.setUly(pane.getHeight() * 0.5);
-        pt.setUrx(pane.getWidth() + 1.0);
-        pt.setUry(pane.getHeight() * 0.5);
-
-        pt.setLrx(pane.getWidth() + 1.0);
-        pt.setLry(pane.getHeight() * 0.5);
-        pt.setLlx(pane.getWidth());
-        pt.setLly(pane.getHeight() * 0.5);
-        pane.setEffect(pt);
-
-        Duration showPointDuration = Duration.seconds(0.75);
-        Duration midPointDuration = Duration.seconds(0.75);
-        Duration endPointDuration = Duration.seconds(1.00);
-
-        Timeline timeline = new Timeline(
-            new KeyFrame(showPointDuration, e -> pane.show()),
-
-            //animation to midpoint
-            new KeyFrame(midPointDuration, new KeyValue(pt.ulxProperty(), pane.getWidth() * 0.75)),
-            new KeyFrame(midPointDuration, new KeyValue(pt.ulyProperty(), 0.0)),
-            new KeyFrame(midPointDuration, new KeyValue(pt.urxProperty(), pane.getWidth())),
-            new KeyFrame(midPointDuration, new KeyValue(pt.uryProperty(), pane.getHeight() * 0.333)),
-
-            new KeyFrame(midPointDuration, new KeyValue(pt.lrxProperty(), pane.getWidth())),
-            new KeyFrame(midPointDuration, new KeyValue(pt.lryProperty(), pane.getHeight() * 0.666)),
-            new KeyFrame(midPointDuration, new KeyValue(pt.llxProperty(), pane.getWidth() * 0.75)),
-            new KeyFrame(midPointDuration, new KeyValue(pt.llyProperty(), pane.getHeight())),
-
-            //animation to actual size
-            new KeyFrame(endPointDuration, new KeyValue(pt.ulxProperty(), 0.0)),
-            new KeyFrame(endPointDuration, new KeyValue(pt.ulyProperty(), 0.0)),
-            new KeyFrame(endPointDuration, new KeyValue(pt.urxProperty(), pane.getWidth())),
-            new KeyFrame(endPointDuration, new KeyValue(pt.uryProperty(), 0.0)),
-
-            new KeyFrame(endPointDuration, new KeyValue(pt.lrxProperty(), pane.getWidth())),
-            new KeyFrame(endPointDuration, new KeyValue(pt.lryProperty(), pane.getHeight())),
-            new KeyFrame(endPointDuration, new KeyValue(pt.llxProperty(), 0.0)),
-            new KeyFrame(endPointDuration, new KeyValue(pt.llyProperty(), pane.getHeight()))
-        );
-        timeline.play();
-        timeline.setOnFinished(e -> {
-            pane.setEffect(null);
-        });
-    }
 
     public void buildMenu() {
         Glow glow = new Glow(0.5);
@@ -237,9 +170,6 @@ public class HyperspaceMenu extends RadialEntity {
 
         ImageView manifold = ResourceUtils.loadIcon("manifold", ITEM_FIT_WIDTH);
         manifold.setEffect(glow);
-
-        ImageView radar = ResourceUtils.loadIcon("radar", ITEM_FIT_WIDTH);
-        radar.setEffect(glow);
 
         ImageView search = ResourceUtils.loadIcon("search", ITEM_FIT_WIDTH);
         search.setEffect(glow);
@@ -253,108 +183,37 @@ public class HyperspaceMenu extends RadialEntity {
         ImageView save = ResourceUtils.loadIcon("save", ITEM_FIT_WIDTH);
         save.setEffect(glow);
 
-        ImageView refresh = ResourceUtils.loadIcon("refresh", ITEM_FIT_WIDTH);
-        refresh.setEffect(glow);
-
-        ImageView clear = ResourceUtils.loadIcon("clear", ITEM_FIT_WIDTH);
-        clear.setEffect(glow);
-
-        ImageView camera = ResourceUtils.loadIcon("camera", ITEM_FIT_WIDTH);
-        camera.setEffect(glow);
-
         addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Metadata Search", search, e -> {
-            Pane pathPane = App.getAppPathPaneStack();
-            if (null == searchPane) {
-                searchPane = new SearchPane(scene, pathPane);
-                searchPane.visibleProperty().bind(hyperspace3DPane.visibleProperty());
-            }
-            if (!pathPane.getChildren().contains(searchPane)) {
-                pathPane.getChildren().add(searchPane);
-                slideInPane(searchPane);
-            } else {
-                searchPane.show();
-            }
-            searchPane.showSearch();
+            System.out.println("Search by Point Type...");
         }));
 
         addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Metadata Filter", filter, e -> {
-            Pane pathPane = App.getAppPathPaneStack();
-            if (null == searchPane) {
-                searchPane = new SearchPane(scene, pathPane);
-                searchPane.visibleProperty().bind(hyperspace3DPane.visibleProperty());
-            }
-            if (!pathPane.getChildren().contains(searchPane)) {
-                pathPane.getChildren().add(searchPane);
-                slideInPane(searchPane);
-            } else {
-                searchPane.show();
-            }
-            searchPane.showFilters();
+            System.out.println("Filter by Point Type...");
         }));
 
         addMenuItem(new LitRadialMenuItem(ITEM_SIZE, "Manifolds", manifold, e -> {
-            Pane pathPane = App.getAppPathPaneStack();
-            if (null == manifoldControlPane) {
-                manifoldControlPane = new ManifoldControlPane(scene, pathPane);
-                manifoldControlPane.visibleProperty().bind(hyperspace3DPane.visibleProperty());
-            }
-            if (!pathPane.getChildren().contains(manifoldControlPane)) {
-                pathPane.getChildren().add(manifoldControlPane);
-                slideInPane(manifoldControlPane);
-            } else {
-                manifoldControlPane.show();
-            }
-        }));
-
-        addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Parameter RADAR", radar, e -> {
-            Pane pathPane = App.getAppPathPaneStack();
-            if (null == radarPlotPane) {
-                radarPlotPane = new RadarPlotPane(scene, pathPane);
-                radarPlotPane.visibleProperty().bind(hyperspace3DPane.visibleProperty());
-            }
-            if (!pathPane.getChildren().contains(radarPlotPane)) {
-                pathPane.getChildren().add(radarPlotPane);
-                slideInPane(radarPlotPane);
-            } else {
-                radarPlotPane.show();
-            }
+            System.out.println("Select nearest Manifold...");
         }));
 
         addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Copy Snapshot", copy, e -> {
             Clipboard clipboard = Clipboard.getSystemClipboard();
             ClipboardContent content = new ClipboardContent();
-            content.putImage(hyperspace3DPane.snapshot(new SnapshotParameters(), null));
+            content.putImage(projections3DPane.snapshot(new SnapshotParameters(), null));
             clipboard.setContent(content);
         }));
         addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Save as Image", save, e -> {
             final FileChooser fileChooser = new FileChooser();
             fileChooser.setTitle("Save scene as...");
-            fileChooser.setInitialFileName("trinity_hyperspace.png");
-            fileChooser.setInitialDirectory(Paths.get(".").toFile());
             fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PNG", "*.png"));
             File file = fileChooser.showSaveDialog(null);
             if (file != null) {
-                setVisible(false);
-                WritableImage image = hyperspace3DPane.snapshot(new SnapshotParameters(), null);
-                setVisible(true);
+                WritableImage image = this.snapshot(new SnapshotParameters(), null);
                 try {
                     ImageIO.write(SwingFXUtils.fromFXImage(image, null), "png", file);
                 } catch (IOException ioe) {
                     // TODO: handle exception here
                 }
             }
-        }));
-        addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Refresh Render", refresh, e -> {
-            hyperspace3DPane.updateAll();
-        }));
-
-        addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Clear Data", clear, e -> {
-            hyperspace3DPane.clearAll();
-            hyperspace3DPane.updateView(true);
-            hyperspace3DPane.cubeWorld.clearAll();
-        }));
-        addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Reset Camera View", camera, e -> {
-            hyperspace3DPane.resetView(1000, false);
         }));
     }
 }

@@ -25,19 +25,15 @@ import edu.jhuapl.trinity.javafx.components.SearchBox;
 import javafx.scene.Scene;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
-import lit.litfx.controls.covalent.PathPane;
-import lit.litfx.controls.covalent.events.CovalentPaneEvent;
 
 /**
  * @author Sean Phillips
  */
-public class SearchPane extends PathPane {
+public class SearchPane extends LitPathPane {
     public static double ICON_FIT_HEIGHT = 64;
     public static double ICON_FIT_WIDTH = 64;
-    Scene scene;
     BorderPane bp;
     TabPane tp;
 
@@ -55,15 +51,6 @@ public class SearchPane extends PathPane {
     public SearchPane(Scene scene, Pane parent) {
         super(scene, parent, 450, 350, createContent(), "Introspection ", "", 200.0, 300.0);
         this.scene = scene;
-        // must be set to prevent user from resizing too small.
-        setMinWidth(300);
-        setMinHeight(300);
-
-        this.scene.getRoot().addEventHandler(CovalentPaneEvent.COVALENT_PANE_CLOSE, e -> {
-            if (e.pathPane == this)
-                parent.getChildren().remove(this);
-        });
-        this.addEventHandler(MouseEvent.MOUSE_PRESSED, e -> this.toFront());
 
         bp = (BorderPane) this.contentPane;
         tp = (TabPane) bp.getCenter();
@@ -76,7 +63,6 @@ public class SearchPane extends PathPane {
                     this.mainTitleText2Property.set("Filter");
             }
         });
-
     }
 
     public void showSearch() {

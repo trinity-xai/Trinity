@@ -1,4 +1,4 @@
-/**
+/*
  * Copyright (c) 2013, 2018 ControlsFX
  * All rights reserved.
  * <p>

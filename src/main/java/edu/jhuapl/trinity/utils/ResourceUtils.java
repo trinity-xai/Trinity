@@ -29,6 +29,7 @@ import edu.jhuapl.trinity.data.files.LabelConfigFile;
 import edu.jhuapl.trinity.data.files.McclodSplitDataTsvFile;
 import edu.jhuapl.trinity.data.files.SemanticMapCollectionFile;
 import edu.jhuapl.trinity.data.files.TextEmbeddingCollectionFile;
+import edu.jhuapl.trinity.data.files.ZeroPilotLatentsFile;
 import edu.jhuapl.trinity.data.messages.FeatureCollection;
 import edu.jhuapl.trinity.data.terrain.FireAreaTextFile;
 import edu.jhuapl.trinity.data.terrain.TerrainTextFile;
@@ -41,6 +42,7 @@ import edu.jhuapl.trinity.javafx.events.TerrainEvent;
 import edu.jhuapl.trinity.utils.loaders.CdcTissueGenesLoader;
 import edu.jhuapl.trinity.utils.loaders.McclodSplitDataLoader;
 import edu.jhuapl.trinity.utils.loaders.TextEmbeddingsLoader;
+import edu.jhuapl.trinity.utils.loaders.ZeroPilotLatentsLoader;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
@@ -50,6 +52,7 @@ import javafx.scene.input.DataFormat;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
+
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -305,6 +308,11 @@ public enum ResourceUtils {
                     System.out.println("Trials loaded.");
                     scene.getRoot().fireEvent(
                         new NeuralEvent(NeuralEvent.NEURAL_TRIAL_LIST, trialList));
+                } else if (ZeroPilotLatentsFile.isZeroPilotLatentsFile(file)) {
+                    ZeroPilotLatentsLoader task = new ZeroPilotLatentsLoader(scene, file);
+                    Thread thread = new Thread(task);
+                    thread.setDaemon(true);
+                    thread.start();
                 }
             } catch (IOException ex) {
                 Logger.getLogger(ResourceUtils.class.getName()).log(Level.SEVERE, null, ex);

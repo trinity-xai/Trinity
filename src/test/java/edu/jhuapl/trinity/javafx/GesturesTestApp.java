@@ -1,16 +1,5 @@
 package edu.jhuapl.trinity.javafx;
 
-import edu.jhuapl.trinity.javafx.handlers.ExpandTouchGestureHandler;
-import javafx.application.Application;
-import javafx.event.EventHandler;
-import javafx.scene.Scene;
-import javafx.scene.input.TouchEvent;
-import javafx.scene.input.ZoomEvent;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.Pane;
-import javafx.scene.paint.Color;
-import javafx.stage.Stage;
-
 /*-
  * #%L
  * trinity
@@ -30,6 +19,17 @@ import javafx.stage.Stage;
  * limitations under the License.
  * #L%
  */
+
+import edu.jhuapl.trinity.javafx.handlers.ExpandTouchGestureHandler;
+import javafx.application.Application;
+import javafx.event.EventHandler;
+import javafx.scene.Scene;
+import javafx.scene.input.TouchEvent;
+import javafx.scene.input.ZoomEvent;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.Pane;
+import javafx.scene.paint.Color;
+import javafx.stage.Stage;
 
 public class GesturesTestApp extends Application {
 

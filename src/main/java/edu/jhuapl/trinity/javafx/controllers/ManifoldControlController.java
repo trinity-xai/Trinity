@@ -21,26 +21,40 @@ package edu.jhuapl.trinity.javafx.controllers;
  */
 
 import edu.jhuapl.trinity.App;
+import edu.jhuapl.trinity.data.Distance;
 import edu.jhuapl.trinity.data.FactorLabel;
+import edu.jhuapl.trinity.javafx.components.DistanceListItem;
+import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
+import edu.jhuapl.trinity.utils.ResourceUtils;
 import edu.jhuapl.trinity.utils.umap.Umap;
+import edu.jhuapl.trinity.utils.umap.metric.Metric;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ColorPicker;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.Slider;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
+import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleGroup;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
+import javafx.util.Duration;
 
 import java.net.URL;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.ResourceBundle;
 
 /**
@@ -57,7 +71,6 @@ public class ManifoldControlController implements Initializable {
     ToggleGroup pointsToggleGroup;
     @FXML
     private ChoiceBox labelChoiceBox;
-
     @FXML
     private CheckBox automaticCheckBox;
     @FXML
@@ -131,6 +144,21 @@ public class ManifoldControlController implements Initializable {
     private RadioButton useHypersurfaceButton;
     ToggleGroup hyperSourceGroup;
 
+    //Distances Tab
+    @FXML
+    private ListView<DistanceListItem> distancesListView;
+    @FXML
+    private RadioButton pointToPointRadioButton;
+    @FXML
+    private RadioButton pointToGroupRadioButton;
+    ToggleGroup pointModeToggleGroup;
+    @FXML
+    private TextField distanceMetricTextField;
+    @FXML
+    private ColorPicker connectorColorPicker;
+    @FXML
+    private Spinner connectorThicknessSpinner;
+
     Scene scene;
     private final String ALL = "ALL";
     /**
@@ -149,6 +177,86 @@ public class ManifoldControlController implements Initializable {
         scene = App.getAppScene();
         setupHullControls();
         setupUmapControls();
+        setupDistanceControls();
+    }
+
+    private void setupDistanceControls() {
+        distanceMetricTextField.setText("Select Distance Object");
+        distanceMetricTextField.setEditable(false);
+        connectorThicknessSpinner.setValueFactory(
+            new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 50, 5, 1));
+        connectorThicknessSpinner.setEditable(true);
+        connectorThicknessSpinner.valueProperty().addListener(e -> {
+            DistanceListItem item = distancesListView.getSelectionModel().getSelectedItem();
+            if (null != item) {
+                Integer width = (Integer) connectorThicknessSpinner.getValue();
+                item.getDistance().setWidth(width);
+                scene.getRoot().fireEvent(
+                    new ManifoldEvent(ManifoldEvent.DISTANCE_CONNECTOR_WIDTH, item.getDistance()));
+            }
+        });
+        connectorThicknessSpinner.setInitialDelay(Duration.millis(500));
+        connectorThicknessSpinner.setRepeatDelay(Duration.millis(500));
+
+        connectorColorPicker.valueProperty().addListener(cl -> {
+            DistanceListItem item = distancesListView.getSelectionModel().getSelectedItem();
+            if (null != item) {
+                item.getDistance().setColor(connectorColorPicker.getValue());
+                scene.getRoot().fireEvent(
+                    new ManifoldEvent(ManifoldEvent.DISTANCE_CONNECTOR_COLOR, item.getDistance()));
+            }
+        });
+        //Get a reference to any Distances already collected
+        List<DistanceListItem> existingItems = new ArrayList<>();
+        for (Distance d : Distance.getDistances()) {
+            DistanceListItem item = new DistanceListItem(d);
+            existingItems.add(item);
+        }
+        //add them all in one shot
+        distancesListView.getItems().addAll(existingItems);
+        ImageView iv = ResourceUtils.loadIcon("metric", 200);
+        VBox placeholder = new VBox(10, iv, new Label("No Distances Acquired"));
+        placeholder.setAlignment(Pos.CENTER);
+        distancesListView.setPlaceholder(placeholder);
+
+        //Bind disable properties so that controls only active when item is selected
+        distanceMetricTextField.disableProperty().bind(
+            distancesListView.getSelectionModel().selectedIndexProperty().lessThan(0));
+        connectorThicknessSpinner.disableProperty().bind(
+            distancesListView.getSelectionModel().selectedIndexProperty().lessThan(0));
+        connectorColorPicker.disableProperty().bind(
+            distancesListView.getSelectionModel().selectedIndexProperty().lessThan(0));
+
+        pointModeToggleGroup = new ToggleGroup();
+        pointToPointRadioButton.setToggleGroup(pointModeToggleGroup);
+        pointToGroupRadioButton.setToggleGroup(pointModeToggleGroup);
+        scene.addEventHandler(ManifoldEvent.DISTANCE_CONNECTOR_SELECTED, e -> {
+            Distance distance = (Distance) e.object1;
+            for (DistanceListItem item : distancesListView.getItems()) {
+                if (item.getDistance() == distance) {
+                    distancesListView.getSelectionModel().select(item);
+                    distanceMetricTextField.setText(distance.getMetric());
+                    connectorColorPicker.setValue(distance.getColor());
+                    connectorThicknessSpinner.getValueFactory().setValue(distance.getWidth());
+                    return; //break out early
+                }
+            }
+            //if we get here its because that Distance object wasn't in the list
+            scene.getRoot().fireEvent(new CommandTerminalEvent(
+                "Distance object not found!", new Font("Consolas", 20), Color.YELLOW));
+        });
+        scene.addEventHandler(ManifoldEvent.DISTANCE_OBJECT_SELECTED, e -> {
+            Distance distance = (Distance) e.object1;
+            distanceMetricTextField.setText(distance.getMetric());
+            connectorColorPicker.setValue(distance.getColor());
+            connectorThicknessSpinner.getValueFactory().setValue(distance.getWidth());
+        });
+        scene.addEventHandler(ManifoldEvent.CREATE_NEW_DISTANCE, e -> {
+            Distance distance = (Distance) e.object1;
+            DistanceListItem distanceListItem = new DistanceListItem(distance);
+            Distance.addDistance(distance);
+            distancesListView.getItems().add(distanceListItem);
+        });
     }
 
     private void getCurrentLabels() {
@@ -159,10 +267,7 @@ public class ManifoldControlController implements Initializable {
     }
 
     private void setupUmapControls() {
-        metricChoiceBox.getItems().addAll("euclidean", "manhattan", "chebyshev",
-            "minkowski", "canberra", "braycurtis", "cosine", "correlation",
-            "haversine", "hamming", "jaccard", "dice", "russellrao",
-            "kulsinski", "rogerstanimoto", "sokalmichener", "sokalsneath", "yule");
+        metricChoiceBox.getItems().addAll(Metric.getMetricNames());
         metricChoiceBox.getSelectionModel().selectFirst();
 
         numComponentsSpinner.setValueFactory(
@@ -324,12 +429,32 @@ public class ManifoldControlController implements Initializable {
     @FXML
     public void generate() {
         scene.getRoot().fireEvent(new ManifoldEvent(
-            ManifoldEvent.GENERATE_HYPERSPACE_MANIFOLD, useVisibleRadioButton.isSelected(), (String) labelChoiceBox.getValue()));
+            ManifoldEvent.GENERATE_PROJECTION_MANIFOLD, useVisibleRadioButton.isSelected(), (String) labelChoiceBox.getValue()));
     }
 
     @FXML
     public void clearAll() {
         scene.getRoot().fireEvent(new ManifoldEvent(
             ManifoldEvent.CLEAR_ALL_MANIFOLDS));
+    }
+
+    @FXML
+    public void startConnector() {
+        //fire event to put projection view into connector mode
+        //@TODO SMP Hardcoded for now to Euclidean
+        if (pointToGroupRadioButton.isSelected())
+            scene.getRoot().fireEvent(new ManifoldEvent(
+                ManifoldEvent.DISTANCE_MODE_POINTGROUP, pointToGroupRadioButton.isSelected(), "euclidean"));
+        else
+            scene.getRoot().fireEvent(new ManifoldEvent(
+                ManifoldEvent.DISTANCE_MODE_POINTPOINT, pointToPointRadioButton.isSelected(), "euclidean"));
+    }
+
+    @FXML
+    public void clearAllDistances() {
+        distancesListView.getItems().clear();
+        Distance.removeAllDistances(); //will fire event notifying scene
+        scene.getRoot().fireEvent(
+            new ManifoldEvent(ManifoldEvent.CLEAR_DISTANCE_CONNECTORS));
     }
 }

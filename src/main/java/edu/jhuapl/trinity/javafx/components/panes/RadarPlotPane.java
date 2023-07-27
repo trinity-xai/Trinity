@@ -26,11 +26,8 @@ import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import javafx.application.Platform;
 import javafx.scene.Node;
 import javafx.scene.Scene;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
-import lit.litfx.controls.covalent.PathPane;
-import lit.litfx.controls.covalent.events.CovalentPaneEvent;
 
 import java.util.List;
 import java.util.Optional;
@@ -38,8 +35,8 @@ import java.util.Optional;
 /**
  * @author Sean Phillips
  */
-public class RadarPlotPane extends PathPane {
-    Scene scene;
+public class RadarPlotPane extends LitPathPane {
+
     FeatureRadarChart radarChart;
 
     private static BorderPane createContent() {
@@ -66,11 +63,7 @@ public class RadarPlotPane extends PathPane {
         // must be set to prevent user from resizing too small.
         setMinWidth(300);
         setMinHeight(300);
-        this.scene.getRoot().addEventHandler(CovalentPaneEvent.COVALENT_PANE_CLOSE, e -> {
-            if (e.pathPane == this)
-                parent.getChildren().remove(this);
-        });
-        this.addEventHandler(MouseEvent.MOUSE_PRESSED, e -> this.toFront());
+        fadeEnabled = false; //by default we don't want to fade out with this pane.
     }
 
     public void setFeatureVector(FeatureVector featureVector) {

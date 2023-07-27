@@ -20,10 +20,10 @@ package edu.jhuapl.trinity.utils.loaders;
  * #L%
  */
 
-import edu.jhuapl.trinity.data.files.TextEmbeddingCollectionFile;
+import edu.jhuapl.trinity.data.ZeroPilotLatents;
+import edu.jhuapl.trinity.data.files.ZeroPilotLatentsFile;
 import edu.jhuapl.trinity.data.messages.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.FeatureVector;
-import edu.jhuapl.trinity.data.messages.TextEmbeddingSet;
 import edu.jhuapl.trinity.javafx.components.ProgressStatus;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
@@ -42,18 +42,17 @@ import javafx.scene.text.Font;
 import javafx.stage.StageStyle;
 
 import java.io.File;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
 
 /**
  * @author Sean Phillips
  */
-public class TextEmbeddingsLoader extends Task {
+public class ZeroPilotLatentsLoader extends Task {
     Scene scene;
     File file;
 
-    public TextEmbeddingsLoader(Scene scene, File file) {
+    public ZeroPilotLatentsLoader(Scene scene, File file) {
         this.scene = scene;
         this.file = file;
         setOnSucceeded(e -> {
@@ -78,7 +77,7 @@ public class TextEmbeddingsLoader extends Task {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
             "Clear existing data?",
             ButtonType.YES, ButtonType.NO);
-        alert.setHeaderText("Loading Text Embeddings...");
+        alert.setHeaderText("Loading ZERO Pilot Latents...");
         alert.setGraphic(ResourceUtils.loadIcon("alert", 75));
         alert.initStyle(StageStyle.TRANSPARENT);
         DialogPane dialogPane = alert.getDialogPane();
@@ -97,17 +96,17 @@ public class TextEmbeddingsLoader extends Task {
     @Override
     protected Void call() throws Exception {
         Platform.runLater(() -> {
-            ProgressStatus ps = new ProgressStatus("Loading Text Embedding Collection File...", -1);
+            ProgressStatus ps = new ProgressStatus("Loading ZERO Pilot Latents...", -1);
             scene.getRoot().fireEvent(
                 new ApplicationEvent(ApplicationEvent.SHOW_BUSY_INDICATOR, ps));
         });
-        TextEmbeddingCollectionFile textEmbeddingCollectionFile = new TextEmbeddingCollectionFile(file.getAbsolutePath(), true);
-
+        ZeroPilotLatentsFile zeroPilotLatentsFile = new ZeroPilotLatentsFile(file.getAbsolutePath(), true);
         Platform.runLater(() -> {
             scene.getRoot().fireEvent(new CommandTerminalEvent(
-                "Done Text Embeddings from File.", new Font("Consolas", 20), Color.GREEN));
-            System.out.println("Done loading embeddings file.");
-            ProgressStatus ps = new ProgressStatus("Converting Text Embeddings to Feature Vectors...", -1);
+                "Done Loading ZERO Pilot Latents from File.", new Font("Consolas", 20), Color.GREEN));
+            System.out.println("ZERO pilot latents file read.");
+
+            ProgressStatus ps = new ProgressStatus("Converting ZERO Pilot latent vectors to Feature Vectors...", -1);
             ps.fillStartColor = Color.CYAN;
             ps.fillEndColor = Color.CYAN;
             ps.innerStrokeColor = Color.CYAN;
@@ -117,64 +116,32 @@ public class TextEmbeddingsLoader extends Task {
         });
 
         try {
-            List<TextEmbeddingSet> embeddings = textEmbeddingCollectionFile
-                .textEmbeddingCollection.getText_embeddings();
-            String collectionLabel = textEmbeddingCollectionFile.textEmbeddingCollection.getLabel();
+            List<ZeroPilotLatents> latents = zeroPilotLatentsFile.zeroPilotLatentsList;
             FeatureCollection fc = new FeatureCollection();
 
-            final int n = embeddings.size(); //how many total
+            final int n = latents.size(); //how many total
             int updatePercent = n / 10; //rounded percent progress
-
-            for (int i = 0; i < embeddings.size(); i++) {
-                //First do the original embeddings as a special case
+            if (updatePercent < 1)
+                updatePercent = 1;
+            ZeroPilotLatents zero;
+            for (int i = 0; i < latents.size(); i++) {
+                zero = latents.get(i);
                 FeatureVector fv = new FeatureVector();
-                List<Double> flatList = new ArrayList<>();
-                flatList.addAll(embeddings.get(i).getText_embedding());
-                fv.setData(flatList);
-                fv.setLabel(collectionLabel + "_Original_Embedding");
-                if (null != embeddings.get(i).getScore())
-                    fv.setScore(embeddings.get(i).getScore());
-                else
-                    fv.setScore(textEmbeddingCollectionFile.textEmbeddingCollection.getScore());
-
-                fv.setLayer(i);
+                fv.getData().addAll(zero.getLatents());
+                fv.setLabel(zero.getLabels());
+                fv.setFrameId(zero.getNumber());
+                fv.setLayer(zero.getTraj_num().intValue());
                 fc.getFeatures().add(fv);
-
-                //now for each text chunk make a feature vector
-                int width = embeddings.get(i).getParsed().size();
-                for (int parsedIndex = 0; parsedIndex < width; parsedIndex++) {
-                    FeatureVector parsedChunkFV = new FeatureVector();
-                    List<Double> chunkEmbedding = new ArrayList<>();
-                    chunkEmbedding.addAll(embeddings.get(i).getEmbeddings().get(parsedIndex));
-                    parsedChunkFV.setData(chunkEmbedding);
-                    //Extract first three words of chunk
-                    String parsedText = embeddings.get(i).getParsed().get(parsedIndex);
-                    String[] tokens = parsedText.split("\\s+");
-                    String parsedPreview = tokens[0];
-                    if (tokens.length > 2) {
-                        parsedPreview += " " + tokens[1] + " " + tokens[2];
-                    }
-                    String parsedChunkLabel = collectionLabel + "_" + parsedPreview;
-                    if (null != embeddings.get(i).getLabel())
-                        parsedChunkLabel = embeddings.get(i).getLabel() + "_" + parsedPreview;
-                    parsedChunkFV.setLabel(parsedChunkLabel);
-                    if (null != embeddings.get(i).getScore())
-                        parsedChunkFV.setScore(embeddings.get(i).getScore());
-                    else
-                        parsedChunkFV.setScore(textEmbeddingCollectionFile.textEmbeddingCollection.getScore());
-                    parsedChunkFV.setLayer(i);
-                    fc.getFeatures().add(parsedChunkFV);
-                }
                 //update the progress indicator
                 if (i % updatePercent == 0) {
                     double percentComplete = Double.valueOf(i) / Double.valueOf(n);
                     Platform.runLater(() -> {
                         ProgressStatus ps = new ProgressStatus(
                             "Converting Text Embeddings to Feature Vectors...", percentComplete);
-                        ps.fillStartColor = Color.AZURE;
-                        ps.fillEndColor = Color.LIME;
-                        ps.innerStrokeColor = Color.AZURE;
-                        ps.outerStrokeColor = Color.LIME;
+                        ps.fillStartColor = Color.CYAN;
+                        ps.fillEndColor = Color.CADETBLUE;
+                        ps.innerStrokeColor = Color.DARKMAGENTA;
+                        ps.outerStrokeColor = Color.CADETBLUE;
                         scene.getRoot().fireEvent(
                             new ApplicationEvent(ApplicationEvent.UPDATE_BUSY_INDICATOR, ps));
                     });

@@ -1,3 +1,5 @@
+package edu.jhuapl.trinity.javafx.handlers;
+
 /*-
  * #%L
  * trinity
@@ -17,7 +19,6 @@
  * limitations under the License.
  * #L%
  */
-package edu.jhuapl.trinity.javafx.handlers;
 
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.Manifold3D;
@@ -236,7 +237,7 @@ public class ManifoldEventHandler implements EventHandler<ManifoldEvent> {
 
     @Override
     public void handle(ManifoldEvent event) {
-        if (event.getEventType().equals(ManifoldEvent.GENERATE_HYPERSPACE_MANIFOLD)) {
+        if (event.getEventType().equals(ManifoldEvent.GENERATE_PROJECTION_MANIFOLD)) {
             boolean useVisiblePoints = (boolean) event.object1;
             String label = (String) event.object2;
             for (ManifoldRenderer renderer : manifoldRenderers) {

@@ -1,14 +1,5 @@
 package edu.jhuapl.trinity.utils;
 
-import com.github.sarxos.webcam.Webcam;
-import javafx.embed.swing.SwingFXUtils;
-import javafx.scene.image.Image;
-import javafx.scene.image.WritableImage;
-
-import java.awt.*;
-import java.awt.image.BufferedImage;
-import java.util.concurrent.TimeUnit;
-
 /*-
  * #%L
  * trinity
@@ -28,6 +19,15 @@ import java.util.concurrent.TimeUnit;
  * limitations under the License.
  * #L%
  */
+
+import com.github.sarxos.webcam.Webcam;
+import javafx.embed.swing.SwingFXUtils;
+import javafx.scene.image.Image;
+import javafx.scene.image.WritableImage;
+
+import java.awt.*;
+import java.awt.image.BufferedImage;
+import java.util.concurrent.TimeUnit;
 
 /**
  * Utilities used to manipulate attached camera.

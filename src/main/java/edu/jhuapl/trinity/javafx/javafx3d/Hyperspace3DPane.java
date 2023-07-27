@@ -899,8 +899,9 @@ public class Hyperspace3DPane extends StackPane implements
         extrasGroup.getChildren().remove(anchorTraj3D);
         trajectorySphereGroup.getChildren().clear();
 
-        anchorTraj3D = JavaFX3DUtils.buildPolyLineFromTrajectory(anchorTrajectory,
-            Color.ALICEBLUE, trajectoryTailSize, trajectoryScale, sceneWidth, sceneHeight);
+        anchorTraj3D = JavaFX3DUtils.buildPolyLineFromTrajectory(
+            anchorTrajectory, 8.0f, Color.ALICEBLUE,
+            trajectoryTailSize, trajectoryScale, sceneWidth, sceneHeight);
         extrasGroup.getChildren().add(0, anchorTraj3D);
         for (Point3D point : anchorTraj3D.points) {
             TriaxialSpheroidMesh tsm = createEllipsoid(anchorTraj3D.width / 4.0, anchorTraj3D.width / 4.0, anchorTraj3D.width / 4.0, Color.LIGHTBLUE);

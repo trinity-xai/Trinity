@@ -56,13 +56,7 @@ public class AnimatedFillCircle extends Circle {
 
     private void updateComplete() {
         stop1 = new Stop(0, fillStartColor);
-        Color endColor = fillEndColor.deriveColor(
-            1, 1, 1, percentComplete.get() / 1.0);
-//        stop2 = new Stop(percentComplete.get(), endColor);
         stop2 = new Stop(percentComplete.get(), Color.TRANSPARENT);
-
-
-//        stop3 = new Stop(1, Color.TRANSPARENT);
         stop3 = new Stop(1, fillEndColor);
         ArrayList<Stop> stops = new ArrayList<>();
         stops.add(stop1);
