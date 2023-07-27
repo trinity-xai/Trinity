@@ -31,13 +31,13 @@ package edu.jhuapl.trinity.utils.umap.metric;
 public class MahalanobisMetric extends Metric {
 
     public static final MahalanobisMetric SINGLETON = new MahalanobisMetric();
-    
+
     private float[][] mV; //inverse convariance matrix of independent variables (each column)
 
     public MahalanobisMetric() {
         super(false);
     }
-    
+
     public MahalanobisMetric(final float[][] v) {
         this();
         mV = v;

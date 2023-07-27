@@ -9,9 +9,9 @@ package edu.jhuapl.trinity.data.files;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -27,6 +27,7 @@ import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.paint.Color;
+
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
@@ -118,7 +119,7 @@ public class ZeroPilotLatentsFile extends File implements Transferable {
             String line = null;
             Integer current = 0;
             int updatePercent = noOfLines / 10; //Find a nice balanced increment for the animation
-            if(updatePercent < 1) //safety check for the maths
+            if (updatePercent < 1) //safety check for the maths
                 updatePercent = 1;
             //For each line in the file convert to an object
             while ((line = reader.readLine()) != null) {

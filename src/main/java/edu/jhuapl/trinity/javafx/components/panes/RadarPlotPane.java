@@ -28,6 +28,7 @@ import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
+
 import java.util.List;
 import java.util.Optional;
 
@@ -64,6 +65,7 @@ public class RadarPlotPane extends LitPathPane {
         setMinHeight(300);
         fadeEnabled = false; //by default we don't want to fade out with this pane.
     }
+
     public void setFeatureVector(FeatureVector featureVector) {
         radarChart.updateRadarPlot(featureVector);
     }

@@ -1,3 +1,5 @@
+package edu.jhuapl.trinity.javafx.handlers;
+
 /*-
  * #%L
  * trinity
@@ -17,7 +19,6 @@
  * limitations under the License.
  * #L%
  */
-package edu.jhuapl.trinity.javafx.handlers;
 
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.Manifold3D;

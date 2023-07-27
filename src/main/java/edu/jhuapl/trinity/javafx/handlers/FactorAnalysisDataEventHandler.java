@@ -1,3 +1,5 @@
+package edu.jhuapl.trinity.javafx.handlers;
+
 /*-
  * #%L
  * trinity
@@ -17,7 +19,6 @@
  * limitations under the License.
  * #L%
  */
-package edu.jhuapl.trinity.javafx.handlers;
 
 import edu.jhuapl.trinity.data.FactorAnalysisState;
 import edu.jhuapl.trinity.data.Trajectory;

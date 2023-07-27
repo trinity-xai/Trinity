@@ -401,8 +401,9 @@ public enum JavaFX3DUtils {
         float width = 8.0f;
         return new Trajectory3D(trial, day, trajectory, points, width, color);
     }
+
     public static Trajectory3D buildPolyLineFromTrajectory(
-        Trajectory trajectory, float trajWidth, Color color, int tailSize, 
+        Trajectory trajectory, float trajWidth, Color color, int tailSize,
         double scale, double sceneWidth, double sceneScale) {
         if (trajectory.states.isEmpty()) {
             return null;

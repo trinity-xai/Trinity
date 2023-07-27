@@ -32,7 +32,8 @@ public class ConfigurationPane extends LitPathPane {
     public ConfigurationPane(Scene scene, Pane parent) {
         this(scene, parent, CONTROLLER);
     }
+
     public ConfigurationPane(Scene scene, Pane parent, String controller) {
         super(scene, parent, 500, 600, createContent(controller), "Configuration ", "", 200.0, 300.0);
-    }    
+    }
 }

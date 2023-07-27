@@ -686,7 +686,7 @@ public class ConfigurationController implements Initializable {
         FactorLabel.removeAllFactorLabels(); //will fire event notifying scene
         FeatureLayer.removeAllFeatureLayers();//will fire event notifying scene
     }
-    
+
     @FXML
     public void rescanLabels() {
         scene.getRoot().fireEvent(

@@ -38,7 +38,7 @@ import java.util.Map;
  * @author Leland McInnes (Python)
  * @author Sean A. Irvine
  * @author Richard Littin
- * @modified Sean Phillips
+ * @author Sean Phillips
  */
 public abstract class Metric {
 
@@ -67,12 +67,14 @@ public abstract class Metric {
     }
 
     private static Map<String, Metric> sMETRICS = null;
+
     public static List<String> getMetricNames() {
         if (sMETRICS == null) generateDefaultMetrics();
         ArrayList<String> metricKeys = new ArrayList<>(sMETRICS.keySet());
         Collections.sort(metricKeys);
         return metricKeys;
     }
+
     /**
      * Retrieve a metric by name.
      *
@@ -108,8 +110,9 @@ public abstract class Metric {
             sMETRICS.put("sokalsneath", SokalSneathMetric.SINGLETON);
             sMETRICS.put("sokalmichener", SokalMichenerMetric.SINGLETON);
             sMETRICS.put("yule", YuleMetric.SINGLETON);
-        }        
+        }
     }
+
     public static Metric getMetric(final String name) {
         if (sMETRICS == null) generateDefaultMetrics();
 

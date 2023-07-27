@@ -35,5 +35,5 @@ public class DataPane extends LitPathPane {
 
     public DataPane(Scene scene, Pane parent, String controller) {
         super(scene, parent, 400, 200, createContent(controller), "Data ", "ZeroMQ", 200.0, 300.0);
-   }
+    }
 }

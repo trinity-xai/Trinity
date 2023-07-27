@@ -29,10 +29,11 @@ import javafx.scene.layout.Pane;
 public class ManifoldControlPane extends LitPathPane {
 
     public static String CONTROLLER = "/edu/jhuapl/trinity/fxml/ManifoldControl.fxml";
-    
+
     public ManifoldControlPane(Scene scene, Pane parent) {
         this(scene, parent, CONTROLLER);
     }
+
     public ManifoldControlPane(Scene scene, Pane parent, String controller) {
         super(scene, parent, 500, 600, createContent(controller), "Manifolds ", "", 200.0, 300.0);
     }

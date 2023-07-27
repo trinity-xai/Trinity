@@ -52,6 +52,7 @@ import javafx.scene.input.DataFormat;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
+
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -311,7 +312,7 @@ public enum ResourceUtils {
                     ZeroPilotLatentsLoader task = new ZeroPilotLatentsLoader(scene, file);
                     Thread thread = new Thread(task);
                     thread.setDaemon(true);
-                    thread.start();                    
+                    thread.start();
                 }
             } catch (IOException ex) {
                 Logger.getLogger(ResourceUtils.class.getName()).log(Level.SEVERE, null, ex);

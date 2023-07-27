@@ -121,7 +121,7 @@ public class CdcTissueGenesFile extends File implements Transferable {
             String line = null;
             Integer current = 0;
             int updatePercent = noOfLines / 50; //Find a nice balanced increment for the animation
-            if(updatePercent < 1) //safety check for the maths
+            if (updatePercent < 1) //safety check for the maths
                 updatePercent = 1;
             while ((line = reader.readLine()) != null) {
                 if (current != 0 && null != line)

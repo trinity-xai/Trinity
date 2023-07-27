@@ -9,9 +9,9 @@ package edu.jhuapl.trinity.javafx.components;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -45,9 +45,9 @@ public class DistanceListItem extends HBox {
         visibleCheckBox.setSelected(true);
         label = new Label(labelString);
         PrecisionConverter pc = new PrecisionConverter(7);
-        String distanceLabel = distance.getMetric()+":"+pc.toString(distance.getValue());
+        String distanceLabel = distance.getMetric() + ":" + pc.toString(distance.getValue());
         distanceValueLabel = new Label(distanceLabel);
-        getChildren().addAll(visibleCheckBox,label, distanceValueLabel);
+        getChildren().addAll(visibleCheckBox, label, distanceValueLabel);
         setSpacing(5);
         visibleCheckBox.selectedProperty().addListener(cl -> {
             if (null != visibleCheckBox.getScene()) {
@@ -59,7 +59,7 @@ public class DistanceListItem extends HBox {
         setOnMouseClicked(e -> {
             //Let application know this distance object has been selected
             getScene().getRoot().fireEvent(new ManifoldEvent(
-            ManifoldEvent.DISTANCE_OBJECT_SELECTED, distance));
+                ManifoldEvent.DISTANCE_OBJECT_SELECTED, distance));
         });
     }
 

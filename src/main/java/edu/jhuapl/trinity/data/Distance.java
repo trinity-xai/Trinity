@@ -9,9 +9,9 @@ package edu.jhuapl.trinity.data;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -21,11 +21,12 @@ package edu.jhuapl.trinity.data;
  */
 
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.geometry.Point3D;
 import javafx.scene.paint.Color;
+
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
-import javafx.geometry.Point3D;
 
 /**
  * @author Sean Phillips
@@ -44,7 +45,7 @@ public class Distance {
         this.label = label;
         this.color = color;
         this.width = width;
-        if(null == metric)
+        if (null == metric)
             metric = "euclidean";
         else
             this.metric = metric;
@@ -108,7 +109,7 @@ public class Distance {
         });
     }
 
-/**
+    /**
      * @return the value
      */
     public double getValue() {
@@ -149,7 +150,7 @@ public class Distance {
     public void setPoint2(Point3D point2) {
         this.point2 = point2;
     }
-    
+
     /**
      * @return the label
      */

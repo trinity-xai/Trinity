@@ -9,9 +9,9 @@ package edu.jhuapl.trinity.utils.loaders;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -40,6 +40,7 @@ import javafx.scene.layout.Background;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.stage.StageStyle;
+
 import java.io.File;
 import java.util.List;
 import java.util.Optional;
@@ -102,7 +103,7 @@ public class ZeroPilotLatentsLoader extends Task {
         ZeroPilotLatentsFile zeroPilotLatentsFile = new ZeroPilotLatentsFile(file.getAbsolutePath(), true);
         Platform.runLater(() -> {
             scene.getRoot().fireEvent(new CommandTerminalEvent(
-            "Done Loading ZERO Pilot Latents from File.", new Font("Consolas", 20), Color.GREEN));
+                "Done Loading ZERO Pilot Latents from File.", new Font("Consolas", 20), Color.GREEN));
             System.out.println("ZERO pilot latents file read.");
 
             ProgressStatus ps = new ProgressStatus("Converting ZERO Pilot latent vectors to Feature Vectors...", -1);
@@ -113,18 +114,18 @@ public class ZeroPilotLatentsLoader extends Task {
             scene.getRoot().fireEvent(
                 new ApplicationEvent(ApplicationEvent.UPDATE_BUSY_INDICATOR, ps));
         });
-        
+
         try {
             List<ZeroPilotLatents> latents = zeroPilotLatentsFile.zeroPilotLatentsList;
             FeatureCollection fc = new FeatureCollection();
-            
+
             final int n = latents.size(); //how many total
-            int updatePercent = n / 10; //rounded percent progress            
-            if(updatePercent < 1)
+            int updatePercent = n / 10; //rounded percent progress
+            if (updatePercent < 1)
                 updatePercent = 1;
             ZeroPilotLatents zero;
-            for(int i=0;i<latents.size();i++) {
-                zero = latents.get(i); 
+            for (int i = 0; i < latents.size(); i++) {
+                zero = latents.get(i);
                 FeatureVector fv = new FeatureVector();
                 fv.getData().addAll(zero.getLatents());
                 fv.setLabel(zero.getLabels());
@@ -144,8 +145,8 @@ public class ZeroPilotLatentsLoader extends Task {
                         scene.getRoot().fireEvent(
                             new ApplicationEvent(ApplicationEvent.UPDATE_BUSY_INDICATOR, ps));
                     });
-                }                
-            }            
+                }
+            }
             Platform.runLater(() -> {
                 ProgressStatus ps = new ProgressStatus("Injecting as FeatureCollection...", -1);
                 ps.fillStartColor = Color.CYAN;
