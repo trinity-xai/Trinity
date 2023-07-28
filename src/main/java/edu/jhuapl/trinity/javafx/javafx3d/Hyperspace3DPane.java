@@ -1414,6 +1414,7 @@ public class Hyperspace3DPane extends StackPane implements
     }
 
     public void clearAll() {
+        featureLabels.clear();
         xFactorIndex = 0;
         yFactorIndex = 1;
         zFactorIndex = 2;
@@ -1440,6 +1441,7 @@ public class Hyperspace3DPane extends StackPane implements
         hyperspaceSeeds.add(seed);
         addPNodeFromSeed(seed);
         VisibilityMap.clearAll();
+        updateLabels(); //make sure all remaining floating labels and strings are updated
     }
 
     public void showAll() {
@@ -1902,6 +1904,7 @@ public class Hyperspace3DPane extends StackPane implements
         updateView(true);
         updateEllipsoids();
         cubeWorld.redraw(true);
+        updateLabels();
     }
 
     @Override

@@ -166,10 +166,17 @@ public class FeatureVectorEventHandler implements EventHandler<FeatureVectorEven
 
         //update labels
         scanLabelsAndLayers(featureCollection.getFeatures());
-
         for (FeatureVectorRenderer renderer : renderers) {
             renderer.addFeatureCollection(featureCollection);
         }
+        //Did the message specify any new dimensional label strings?
+        if(null != featureCollection.getDimensionLabels() && !featureCollection.getDimensionLabels().isEmpty()){
+            //update the renderers with the new arraylist of strings
+            for (FeatureVectorRenderer renderer : renderers) {
+                renderer.setFeatureLabels(featureCollection.getDimensionLabels());
+                renderer.refresh(); 
+            }            
+        }        
     }
 
     public void handleLabelConfigEvent(FeatureVectorEvent event) {
@@ -233,6 +240,14 @@ public class FeatureVectorEventHandler implements EventHandler<FeatureVectorEven
             if (!newFactorLabels.isEmpty())
                 FactorLabel.addAllFactorLabels(newFactorLabels);
         }
+        //Did the message specify any new dimensional label strings?
+        if(null != labelConfig.getDimensionLabels() && !labelConfig.getDimensionLabels().isEmpty()){
+            //update the renderers with the new arraylist of strings
+            for (FeatureVectorRenderer renderer : renderers) {
+                renderer.setFeatureLabels(labelConfig.getDimensionLabels());
+                renderer.refresh(); 
+            }            
+        }
     }
 
     @Override
@@ -250,7 +265,7 @@ public class FeatureVectorEventHandler implements EventHandler<FeatureVectorEven
             for (FeatureVectorRenderer renderer : renderers) {
                 //FeatureCollection fc = (FeatureCollection) event.object;
                 scanLabelsAndLayers(renderer.getAllFeatureVectors());
-                renderer.refresh();
+                
             }
         }
     }

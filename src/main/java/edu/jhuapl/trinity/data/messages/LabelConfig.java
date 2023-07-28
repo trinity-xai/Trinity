@@ -22,6 +22,7 @@ package edu.jhuapl.trinity.data.messages;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import java.util.ArrayList;
 
 import java.util.HashMap;
 import java.util.Map.Entry;
@@ -50,6 +51,7 @@ public class LabelConfig extends MessageData {
     //</editor-fold>
 
     //<editor-fold defaultstate="collapsed" desc="Payload Fields">
+    private ArrayList<String> dimensionLabels;
     private HashMap<String, String> wildcards;
     private HashMap<String, String> labels;
     private Boolean clearAll;
@@ -57,6 +59,7 @@ public class LabelConfig extends MessageData {
 
     public LabelConfig() {
         messageType = TYPESTRING;
+        dimensionLabels = new ArrayList<>();
         wildcards = new HashMap<>();
         labels = new HashMap<>();
     }
@@ -124,4 +127,18 @@ public class LabelConfig extends MessageData {
         this.clearAll = clearAll;
     }
     //</editor-fold>
+
+    /**
+     * @return the dimensionLabels
+     */
+    public ArrayList<String> getDimensionLabels() {
+        return dimensionLabels;
+    }
+
+    /**
+     * @param dimensionLabels the dimensionLabels to set
+     */
+    public void setDimensionLabels(ArrayList<String> dimensionLabels) {
+        this.dimensionLabels = dimensionLabels;
+    }
 }
