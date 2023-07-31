@@ -45,6 +45,7 @@ public class HyperspaceEvent extends Event {
     public static final EventType<HyperspaceEvent> UPDATED_FACTOR_LABEL = new EventType(ANY, "UPDATED_FACTOR_LABEL");
     public static final EventType<HyperspaceEvent> UPDATEDALL_FACTOR_LABELS = new EventType(ANY, "UPDATEDALL_FACTOR_LABELS");
     public static final EventType<HyperspaceEvent> FACTOR_COORDINATES_KEYPRESS = new EventType(ANY, "FACTOR_COORDINATES_KEYPRESS");
+    public static final EventType<HyperspaceEvent> DIMENSION_LABELS_SET = new EventType(ANY, "DIMENSION_LABELS_SET");
     public static final EventType<HyperspaceEvent> DIMENSION_LABEL_REMOVED = new EventType(ANY, "DIMENSION_LABEL_REMOVED");
     public static final EventType<HyperspaceEvent> CLEARED_DIMENSION_LABELS = new EventType(ANY, "CLEARED_DIMENSION_LABELS");
     public static final EventType<HyperspaceEvent> DIMENSION_LABEL_UPDATE = new EventType(ANY, "DIMENSION_LABEL_UPDATE");

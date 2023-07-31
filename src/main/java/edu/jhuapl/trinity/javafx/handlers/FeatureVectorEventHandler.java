@@ -21,6 +21,7 @@ package edu.jhuapl.trinity.javafx.handlers;
  */
 
 import edu.jhuapl.trinity.App;
+import edu.jhuapl.trinity.data.Dimension;
 import edu.jhuapl.trinity.data.FactorLabel;
 import edu.jhuapl.trinity.data.FeatureLayer;
 import edu.jhuapl.trinity.data.messages.FeatureCollection;
@@ -164,13 +165,28 @@ public class FeatureVectorEventHandler implements EventHandler<FeatureVectorEven
                     new Font("Consolas", 20), Color.GREEN));
         });
 
-        //update labels
+        //update feature labels and colors
         scanLabelsAndLayers(featureCollection.getFeatures());
         for (FeatureVectorRenderer renderer : renderers) {
             renderer.addFeatureCollection(featureCollection);
         }
         //Did the message specify any new dimensional label strings?
         if(null != featureCollection.getDimensionLabels() && !featureCollection.getDimensionLabels().isEmpty()){
+            Dimension.removeAllDimensions();
+            int counter=0;
+            for(String dimensionLabel : featureCollection.getDimensionLabels()) {
+                Dimension.addDimension(new Dimension(dimensionLabel, 
+                    counter++, Color.ALICEBLUE));
+            }
+            Platform.runLater(() -> {
+                App.getAppScene().getRoot().fireEvent(
+                    new HyperspaceEvent(HyperspaceEvent.DIMENSION_LABELS_SET,
+                            featureCollection.getDimensionLabels()));
+                
+                App.getAppScene().getRoot().fireEvent(
+                    new CommandTerminalEvent("New Dimensional Labels set",
+                        new Font("Consolas", 20), Color.GREEN));            
+            });
             //update the renderers with the new arraylist of strings
             for (FeatureVectorRenderer renderer : renderers) {
                 renderer.setFeatureLabels(featureCollection.getDimensionLabels());

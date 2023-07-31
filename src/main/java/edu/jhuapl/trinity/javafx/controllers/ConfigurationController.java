@@ -290,8 +290,23 @@ public class ConfigurationController implements Initializable {
         VBox placeholder = new VBox(20, iv, new Label("No Custom Dimension Labels"));
         placeholder.setAlignment(Pos.CENTER);
         dimensionLabelsListView.setPlaceholder(placeholder);        
-        //@TODO SMP Figure out a way to get all existing dimension labels
-        //Need to pull labels from a global dimension label map like all the other things
+        //get all existing dimension labels
+        List<DimensionLabelItem> existingDimensions = new ArrayList<>();
+        for(Dimension d : Dimension.getDimensions()) {
+            existingDimensions.add(new DimensionLabelItem(d));
+        }
+        //add them all in one shot to avoid massive event firings
+        dimensionLabelsListView.getItems().addAll(existingDimensions);
+        //add event listener for new features
+        scene.getRoot().addEventHandler(HyperspaceEvent.DIMENSION_LABELS_SET, e -> {
+            clearAllDimensionLabels();
+            List<DimensionLabelItem> newDimensions = new ArrayList<>();
+            for(Dimension d : Dimension.getDimensions()) {
+                newDimensions.add(new DimensionLabelItem(d));
+            }
+            //add them all in one shot to avoid massive event firings
+            dimensionLabelsListView.getItems().addAll(newDimensions);            
+        });
         
         List<FactorLabelListItem> existingLabelItems = new ArrayList<>();
         for (FactorLabel fl : FactorLabel.getFactorLabels()) {
@@ -656,6 +671,7 @@ public class ConfigurationController implements Initializable {
         Dimension dimension = new Dimension("Factor", size, Color.ALICEBLUE);
         dimensionLabelsListView.getItems().add(new DimensionLabelItem(dimension));
         dimensionLabelsListView.getSelectionModel().selectLast();
+        Dimension.addDimension(dimension);
         dimensionLabelsListView.getScene().getRoot().fireEvent(
             new HyperspaceEvent(HyperspaceEvent.DIMENSION_LABEL_UPDATE, dimension));
     }
@@ -663,6 +679,7 @@ public class ConfigurationController implements Initializable {
     public void removeDimensionLabel(){
         int selected = dimensionLabelsListView.getSelectionModel().getSelectedIndex();
         if(selected < 0) return;
+        Dimension.removeDimension(selected);
         Dimension removed = dimensionLabelsListView.getItems().get(selected).dimension;
         dimensionLabelsListView.getItems().remove(selected);
         dimensionLabelsListView.getSelectionModel().clearAndSelect(selected-1);
