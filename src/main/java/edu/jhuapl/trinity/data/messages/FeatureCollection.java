@@ -37,6 +37,7 @@ public class FeatureCollection extends MessageData {
     //<editor-fold defaultstate="collapsed" desc="JSON Payload">
     /*
     {   "type": "FeatureCollection",
+        "dimensionLabels": ["d1label", "d2label", "etc etc" ],
         "features": [
             ...boat load of FeatureVector objects
         ]
@@ -45,6 +46,7 @@ public class FeatureCollection extends MessageData {
     //</editor-fold>
 
     //<editor-fold defaultstate="collapsed" desc="Payload Fields">
+    private ArrayList<String> dimensionLabels;
     private List<FeatureVector> features;
     private String type;
     //</editor-fold>
@@ -132,4 +134,18 @@ public class FeatureCollection extends MessageData {
         this.type = type;
     }
     //</editor-fold>
+
+    /**
+     * @return the dimensionLabels
+     */
+    public ArrayList<String> getDimensionLabels() {
+        return dimensionLabels;
+    }
+
+    /**
+     * @param dimensionLabels the dimensionLabels to set
+     */
+    public void setDimensionLabels(ArrayList<String> dimensionLabels) {
+        this.dimensionLabels = dimensionLabels;
+    }
 }
