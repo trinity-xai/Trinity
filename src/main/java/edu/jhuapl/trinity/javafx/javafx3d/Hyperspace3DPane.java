@@ -21,6 +21,7 @@ package edu.jhuapl.trinity.javafx.javafx3d;
  */
 
 import edu.jhuapl.trinity.data.CoordinateSet;
+import edu.jhuapl.trinity.data.Dimension;
 import edu.jhuapl.trinity.data.FactorLabel;
 import edu.jhuapl.trinity.data.FeatureLayer;
 import edu.jhuapl.trinity.data.HyperspaceSeed;
@@ -433,6 +434,7 @@ public class Hyperspace3DPane extends StackPane implements
                 }
             }
             if (keycode == KeyCode.PERIOD) {
+                if(featureVectors.isEmpty()) return;
                 //shift coordinates to the right
                 int featureSize = featureVectors.get(0).getData().size();
                 if (xFactorIndex < factorMaxIndex - 1 && yFactorIndex < factorMaxIndex - 1
@@ -681,6 +683,30 @@ public class Hyperspace3DPane extends StackPane implements
             directionEnabled = (boolean) e.object;
             updateView(true);
         });
+        scene.addEventHandler(HyperspaceEvent.DIMENSION_LABEL_REMOVED, e -> {
+            Dimension d = (Dimension)e.object;
+            if(d.index < featureLabels.size()) {
+                featureLabels.remove(d.index);
+                featureLabels.add(d.index, "No Label");
+            }
+            updateLabels();
+        });         
+        scene.addEventHandler(HyperspaceEvent.DIMENSION_LABEL_UPDATE, e -> {
+            Dimension d = (Dimension)e.object;
+            //artificially fill in the label list if necessary
+            if(d.index >= featureLabels.size()) {
+                for(int i=featureLabels.size();i<=d.index;i++) {
+                    featureLabels.add("No Label");
+                }
+            }
+            featureLabels.remove(d.index);
+            featureLabels.add(d.index, d.labelString);
+            updateLabels();
+        });         
+        scene.addEventHandler(HyperspaceEvent.CLEARED_DIMENSION_LABELS, e -> {
+            featureLabels.clear();
+            updateLabels();
+        });        
         this.scene.addEventHandler(HyperspaceEvent.FACTOR_COORDINATES_GUI, e -> {
             CoordinateSet coords = (CoordinateSet) e.object;
             xFactorIndex = coords.coordinateIndices.get(0);

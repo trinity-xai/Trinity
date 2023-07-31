@@ -22,9 +22,11 @@ package edu.jhuapl.trinity.javafx.controllers;
 
 import edu.jhuapl.trinity.App;
 import edu.jhuapl.trinity.data.CoordinateSet;
+import edu.jhuapl.trinity.data.Dimension;
 import edu.jhuapl.trinity.data.FactorLabel;
 import edu.jhuapl.trinity.data.FeatureLayer;
 import edu.jhuapl.trinity.javafx.components.ColorMap;
+import edu.jhuapl.trinity.javafx.components.DimensionLabelItem;
 import edu.jhuapl.trinity.javafx.components.FactorLabelListItem;
 import edu.jhuapl.trinity.javafx.components.FeatureLayerListItem;
 import edu.jhuapl.trinity.javafx.events.ColorMapEvent;
@@ -34,6 +36,7 @@ import edu.jhuapl.trinity.javafx.events.HyperspaceEvent;
 import edu.jhuapl.trinity.javafx.events.RadialEntityEvent;
 import edu.jhuapl.trinity.javafx.events.ShadowEvent;
 import edu.jhuapl.trinity.utils.Configuration;
+import edu.jhuapl.trinity.utils.ResourceUtils;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
@@ -60,6 +63,10 @@ import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
+import javafx.geometry.Pos;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.VBox;
 
 /**
  * FXML Controller class
@@ -139,6 +146,12 @@ public class ConfigurationController implements Initializable {
     @FXML
     private CheckBox featureDataCheckBox;
 
+    //Dimensionality Controls
+    @FXML
+    private ListView<DimensionLabelItem> dimensionLabelsListView;
+    @FXML
+    private ScrollPane dimensionLabelsScrollPane;
+    
     @FXML
     private Spinner<Integer> xFactorSpinner;
     @FXML
@@ -272,6 +285,13 @@ public class ConfigurationController implements Initializable {
         });
         setupPositionSpinners();
         setupDirectionSpinners();
+        //Dimensional Label stuff
+        ImageView iv = ResourceUtils.loadIcon("dimensions", 250);
+        VBox placeholder = new VBox(20, iv, new Label("No Custom Dimension Labels"));
+        placeholder.setAlignment(Pos.CENTER);
+        dimensionLabelsListView.setPlaceholder(placeholder);        
+        //@TODO SMP Figure out a way to get all existing dimension labels
+        //Need to pull labels from a global dimension label map like all the other things
         
         List<FactorLabelListItem> existingLabelItems = new ArrayList<>();
         for (FactorLabel fl : FactorLabel.getFactorLabels()) {
@@ -327,7 +347,6 @@ public class ConfigurationController implements Initializable {
         addHyperspaceListeners();
         setupColorControls();
     }
-
     private void setupColorControls() {
 
         scoreMinimumSpinner.setValueFactory(
@@ -597,7 +616,6 @@ public class ConfigurationController implements Initializable {
                 updateHyperspaceFactors();
         });
     }
-
     private void setupDirectionSpinners() {
         enableDirectionCheckBox.selectedProperty().addListener(cl -> {
             scene.getRoot().fireEvent(
@@ -632,6 +650,33 @@ public class ConfigurationController implements Initializable {
         });
     }
 
+    @FXML
+    public void addDimensionLabel(){
+        int size = dimensionLabelsListView.getItems().size();
+        Dimension dimension = new Dimension("Factor", size, Color.ALICEBLUE);
+        dimensionLabelsListView.getItems().add(new DimensionLabelItem(dimension));
+        dimensionLabelsListView.getSelectionModel().selectLast();
+        dimensionLabelsListView.getScene().getRoot().fireEvent(
+            new HyperspaceEvent(HyperspaceEvent.DIMENSION_LABEL_UPDATE, dimension));
+    }
+    @FXML
+    public void removeDimensionLabel(){
+        int selected = dimensionLabelsListView.getSelectionModel().getSelectedIndex();
+        if(selected < 0) return;
+        Dimension removed = dimensionLabelsListView.getItems().get(selected).dimension;
+        dimensionLabelsListView.getItems().remove(selected);
+        dimensionLabelsListView.getSelectionModel().clearAndSelect(selected-1);
+        dimensionLabelsScrollPane.setVvalue(1.0);
+        dimensionLabelsListView.getScene().getRoot().fireEvent(
+            new HyperspaceEvent(HyperspaceEvent.DIMENSION_LABEL_REMOVED, removed));        
+    }
+    @FXML
+    public void clearAllDimensionLabels(){
+        dimensionLabelsListView.getScene().getRoot().fireEvent(
+            new HyperspaceEvent(HyperspaceEvent.CLEARED_DIMENSION_LABELS));
+        dimensionLabelsListView.getItems().clear();
+    }
+    
     @FXML
     public void exportData() {
         FileChooser fc = new FileChooser();
