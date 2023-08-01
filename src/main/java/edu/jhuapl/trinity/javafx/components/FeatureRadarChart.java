@@ -21,6 +21,7 @@ package edu.jhuapl.trinity.javafx.components;
  */
 
 import edu.jhuapl.trinity.data.messages.FeatureVector;
+import edu.jhuapl.trinity.utils.ResourceUtils;
 import eu.hansolo.fx.charts.Category;
 import eu.hansolo.fx.charts.ChartType;
 import eu.hansolo.fx.charts.Symbol;
@@ -40,55 +41,149 @@ import javafx.scene.paint.Stop;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.scene.control.Spinner;
+import javafx.scene.control.SpinnerValueFactory;
+import javafx.scene.control.ToggleButton;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.HBox;
+import javafx.scene.text.Font;
 
 /**
  * @author Sean Phillips
  */
 public class FeatureRadarChart extends VBox {
 
-    Label trajectoryLabel;
-    private static double SCALAR_MAG = 500.0;
+    Label featureLabel;
+    private static Integer SCALAR_MAG = 500;
     private YSeries<ValueChartItem> series;
+    private YSeries<ValueChartItem> stackedSeries;
     private YChart<ValueChartItem> chart;
     private YPane ypane;
-    private List<String> labels = null;
-
+    private List<String> labels = new ArrayList<>();
+    private Spinner<Integer> scalarSpinner;
+    private FeatureVector baseFeatureVector;
+    private FeatureVector stackedFeatureVector;
     public double initialWidth;
     public double initialHeight;
+    public SimpleBooleanProperty stacking = new SimpleBooleanProperty(false);
 
     public FeatureRadarChart(FeatureVector featureVector, double initialWidth, double initialHeight) {
         this.initialWidth = initialWidth;
         this.initialHeight = initialHeight;
-        trajectoryLabel = new Label(featureVector.getLabel());
+        featureLabel = new Label(featureVector.getLabel());
+        featureLabel.setFont(new Font("consolas", 14));
+        featureLabel.setMinWidth(200);
+        ImageView stackImageView = ResourceUtils.loadIcon("stack", 50);
+        ToggleButton stackingToggleButton = new ToggleButton(
+            "Stacking Mode", stackImageView);
+        stacking.bind(stackingToggleButton.selectedProperty());
+        stacking.addListener(cl-> {
+            stackedFeatureVector = FeatureVector.EMPTY_FEATURE_VECTOR("", baseFeatureVector.getData().size());
+            stackRadarPlot(stackedFeatureVector);
+        });
+        scalarSpinner = new Spinner<>();
+        scalarSpinner.setEditable(true);
+        scalarSpinner.setValueFactory(
+            new SpinnerValueFactory.IntegerSpinnerValueFactory(
+                1, 500, SCALAR_MAG, 25));
+        scalarSpinner.valueProperty().addListener(c -> {
+            scaleRadarPlot();
+        });
+        VBox spinnerVBox = new VBox(2, new Label("Scaling"), scalarSpinner);
+        spinnerVBox.setPrefWidth(150);
+        HBox topHBox = new HBox(5, 
+        featureLabel,  spinnerVBox, stackingToggleButton);
+
         makeRadarPlot(featureVector);
         setSpacing(5);
         ChoiceBox<ChartType> choiceBox = new ChoiceBox<>(
             FXCollections.observableList(Arrays.asList(ChartType.values())));
-        choiceBox.getSelectionModel().select(ChartType.SMOOTH_RADAR_POLYGON);
+        choiceBox.getSelectionModel().select(ChartType.RADAR_SECTOR);
         choiceBox.setOnAction(e -> {
             series.setChartType(choiceBox.getValue());
             chart.refresh();
         });
-        getChildren().addAll(trajectoryLabel, chart, choiceBox);
+        getChildren().addAll(topHBox, chart, choiceBox);
     }
-
+    public void updateLabel(int index, String label) {
+        if(index > labels.size()) return;
+        labels.remove(index);
+        labels.add(index,label);
+        refreshCategories();
+    }
+    
+    public void removeLabel(int index) {
+        if(index > labels.size()) return;
+        labels.remove(index);
+        labels.add(index, "P"+index);
+        refreshCategories();
+    }
     public void setLabels(List<String> labels) {
-        this.labels = labels;
+        this.labels.clear();
+        this.labels.addAll(labels);
+        refreshCategories();
+    }
+    public void clearLabels() {
+        int currentSize = labels.size();
+        labels.clear();
+        for (int i = 0; i < currentSize; i++) {
+            labels.add("P" + i);
+        }
+        refreshCategories();
+    }
+    private void refreshCategories() {
         List<Category> categories = new ArrayList<>();
-        for (int i = 0; i < labels.size(); i++) {
-            categories.add(new Category(labels.get(i)));
+        for (int i = 0; i < this.labels.size(); i++) {
+            categories.add(new Category(this.labels.get(i)));
         }
         ypane.setCategories(categories);
     }
-
-    public void updateRadarPlot(FeatureVector featureVector) {
+    public List<String> getLabels() {
+        return labels;
+    }
+    private void scaleRadarPlot() {
+        for(int i=0;i<series.getItems().size();i++) {
+            series.getItems().get(i).setValue(
+                baseFeatureVector.getData().get(i) * scalarSpinner.getValue());
+            if(null != stackedFeatureVector)
+                stackedSeries.getItems().get(i).setValue(
+                    stackedFeatureVector.getData().get(i) * scalarSpinner.getValue());
+        }
+        chart.refresh();
+    }
+    public void stackRadarPlot(FeatureVector featureVector) {
+        stackedFeatureVector = featureVector;
         List<ValueChartItem> items = new ArrayList<>(featureVector.getData().size());
         for (int i = 0; i < featureVector.getData().size(); i++) {
             String label = "P " + i;
             if (null != labels && i < labels.size())
                 label = labels.get(i);
             ValueChartItem dataPoint = new ValueChartItem(
-                featureVector.getData().get(i) * SCALAR_MAG, label);
+                featureVector.getData().get(i) * scalarSpinner.getValue(), label);
+            dataPoint.setSymbol(Symbol.CIRCLE);
+            dataPoint.setStroke(Color.SKYBLUE);
+            dataPoint.setFill(Color.BLUE);
+            items.add(dataPoint);
+        }
+        stackedSeries.setItems(items);
+        stackedSeries.setVisible(true);
+        chart.refresh();
+    }
+    public void updateRadarPlot(FeatureVector featureVector) {
+        baseFeatureVector = featureVector;
+        //Hide stacked series
+        stackedFeatureVector = FeatureVector.EMPTY_FEATURE_VECTOR("", baseFeatureVector.getData().size());
+        stackRadarPlot(stackedFeatureVector);
+        stackedSeries.setVisible(false);
+        //update base series
+        List<ValueChartItem> items = new ArrayList<>(baseFeatureVector.getData().size());
+        for (int i = 0; i < baseFeatureVector.getData().size(); i++) {
+            String label = "P " + i;
+            if (null != labels && i < labels.size())
+                label = labels.get(i);
+            ValueChartItem dataPoint = new ValueChartItem(
+                baseFeatureVector.getData().get(i) * scalarSpinner.getValue(), label);
             dataPoint.setSymbol(Symbol.CIRCLE);
             dataPoint.setStroke(Color.SKYBLUE);
             dataPoint.setFill(Color.BLUE);
@@ -96,7 +191,7 @@ public class FeatureRadarChart extends VBox {
         }
         series.setItems(items);
         series.setTextFill(Color.BLUE);
-        trajectoryLabel.setText(featureVector.getLabel());
+        featureLabel.setText(baseFeatureVector.getLabel());
         chart.refresh();
     }
 
@@ -123,15 +218,24 @@ public class FeatureRadarChart extends VBox {
         series.setAnimated(true);
         series.setAnimationDuration(100);
 
+        stackedSeries = new YSeries(items, ChartType.RADAR_SECTOR, "Features",
+            new RadialGradient(0, 0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
+                new Stop(0.0, Color.rgb(0, 0, 255, 0.25)),
+                new Stop(1.0, Color.rgb(0, 255, 0, 0.5))),
+            Color.SKYBLUE, Symbol.CIRCLE);
+        stackedSeries.setTextFill(Color.BLUE);
+        stackedSeries.setAnimated(true);
+        stackedSeries.setAnimationDuration(100);
+        stackedSeries.setVisible(false);
         List<Category> categories = new ArrayList<>();
         for (int i = 0; i < featureVector.getData().size(); i++) {
             categories.add(new Category("P" + i));
         }
-        ypane = new YPane(categories, series);
+        ypane = new YPane(categories, series, stackedSeries);
         ypane.setCategoryColor(Color.SKYBLUE);
         chart = new YChart(ypane);
         chart.setPrefSize(initialWidth, initialHeight);
         chart.refresh();
-        trajectoryLabel.setText(featureVector.getLabel());
+        featureLabel.setText(featureVector.getLabel());
     }
 }

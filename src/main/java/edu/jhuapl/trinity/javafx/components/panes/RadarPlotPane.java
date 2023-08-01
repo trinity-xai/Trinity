@@ -20,9 +20,11 @@ package edu.jhuapl.trinity.javafx.components.panes;
  * #L%
  */
 
+import edu.jhuapl.trinity.data.Dimension;
 import edu.jhuapl.trinity.data.messages.FeatureVector;
 import edu.jhuapl.trinity.javafx.components.FeatureRadarChart;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
+import edu.jhuapl.trinity.javafx.events.HyperspaceEvent;
 import javafx.application.Platform;
 import javafx.scene.Node;
 import javafx.scene.Scene;
@@ -54,6 +56,23 @@ public class RadarPlotPane extends LitPathPane {
                 setFeatureVector((FeatureVector) e.object);
             });
         });
+        this.scene.addEventHandler(HyperspaceEvent.DIMENSION_LABEL_REMOVED, e -> {
+            Platform.runLater(() -> {
+                Dimension d = (Dimension)e.object;
+                radarChart.removeLabel(d.index);
+            });
+        });         
+        this.scene.addEventHandler(HyperspaceEvent.DIMENSION_LABEL_UPDATE, e -> {
+            Platform.runLater(() -> {
+                Dimension d = (Dimension)e.object;
+                radarChart.updateLabel(d.index, d.labelString);
+            });
+        });         
+        this.scene.addEventHandler(HyperspaceEvent.CLEARED_DIMENSION_LABELS, e -> {
+            Platform.runLater(() -> {
+                radarChart.clearLabels();
+            });            
+        });            
         Optional<Node> bpOpt = contentPane.getChildren().stream()
             .filter(node -> node instanceof FeatureRadarChart)
             .findFirst();
@@ -67,6 +86,9 @@ public class RadarPlotPane extends LitPathPane {
     }
 
     public void setFeatureVector(FeatureVector featureVector) {
-        radarChart.updateRadarPlot(featureVector);
+        if(radarChart.stacking.get())
+            radarChart.stackRadarPlot(featureVector);
+        else
+            radarChart.updateRadarPlot(featureVector);
     }
 }
