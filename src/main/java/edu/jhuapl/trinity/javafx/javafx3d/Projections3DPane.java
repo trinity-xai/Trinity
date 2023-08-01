@@ -35,8 +35,10 @@ import edu.jhuapl.trinity.data.messages.GaussianMixtureData;
 import edu.jhuapl.trinity.javafx.components.ProgressStatus;
 import edu.jhuapl.trinity.javafx.components.callouts.Callout;
 import edu.jhuapl.trinity.javafx.components.panes.ManifoldControlPane;
+import edu.jhuapl.trinity.javafx.components.panes.RadarPlotPane;
 import edu.jhuapl.trinity.javafx.components.panes.RadialEntityOverlayPane;
 import edu.jhuapl.trinity.javafx.components.radial.AnimatedNeonCircle;
+import static edu.jhuapl.trinity.javafx.components.radial.HyperspaceMenu.slideInPane;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
@@ -110,7 +112,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import static edu.jhuapl.trinity.javafx.components.radial.HyperspaceMenu.slideInPane;
 
 /**
  * @author Sean Phillips
@@ -137,6 +138,7 @@ public class Projections3DPane extends StackPane implements
     private double mouseDeltaY;
     RadialEntityOverlayPane radialOverlayPane;
     ManifoldControlPane manifoldControlPane;
+    RadarPlotPane radarPlotPane;
 
     public Group sceneRoot = new Group();
     public Group extrasGroup = new Group();
@@ -205,6 +207,8 @@ public class Projections3DPane extends StackPane implements
     HashMap<Distance, Shape3D> distanceToShape3DMap = new HashMap<>();
 
     public List<FeatureVector> featureVectors = new ArrayList<>();
+    public List<FeatureVector> hyperFeatures = new ArrayList<>();
+    
     public boolean meanCentered = true;
     public boolean autoScaling = true;
     public boolean colorByLabel = true;
@@ -668,10 +672,24 @@ public class Projections3DPane extends StackPane implements
                 manifoldControlPane.show();
             }
         });
+
+        MenuItem radarItem = new MenuItem("Parameter RADAR");
+        radarItem.setOnAction(e -> {
+            Pane pathPane = App.getAppPathPaneStack();
+            if (null == radarPlotPane) {
+                radarPlotPane = new RadarPlotPane(scene, pathPane);
+            }
+            if (!pathPane.getChildren().contains(radarPlotPane)) {
+                pathPane.getChildren().add(radarPlotPane);
+                slideInPane(radarPlotPane);
+            } else {
+                radarPlotPane.show();
+            }
+        });
+        
         ContextMenu cm = new ContextMenu(
             projectUmapHyperspaceItem, projectUmapHypersurfaceItem,
-            resetViewItem, manifoldsItem);
-
+            resetViewItem, manifoldsItem, radarItem);
 
         cm.setAutoFix(true);
         cm.setAutoHide(true);
@@ -1812,7 +1830,8 @@ public class Projections3DPane extends StackPane implements
         });
 
         //Make a 3D sphere for each projected feature vector
-        featureCollection.getFeatures().stream().forEach(featureVector -> {
+        for(int i=0;i<featureCollection.getFeatures().size();i++){ 
+            FeatureVector featureVector = featureCollection.getFeatures().get(i);
             Sphere sphere = new Sphere(point3dSize);
             PhongMaterial mat = new PhongMaterial(
                 FactorLabel.getColorByLabel(featureVector.getLabel()));
@@ -1824,6 +1843,7 @@ public class Projections3DPane extends StackPane implements
             ellipsoidGroup.getChildren().add(sphere);
             sphereToFeatureVectorMap.put(sphere, featureVector);
             //@TODO add Spinning Circle as highlight when mouse hovering
+            int sphereIndex = i;
             sphere.addEventHandler(MouseEvent.MOUSE_ENTERED, e -> {
                 highlightedPoint = sphere;
                 updateFloatingNodes(); //Will transform location of all floating 2D nodes
@@ -1832,6 +1852,11 @@ public class Projections3DPane extends StackPane implements
                 miniCrosshair.size = point3dSize * 4.0;
                 miniCrosshair.setCenter(p1);
                 setCircleRadiusByDistance(highlighterNeonCircle, sphere);
+                //update selection listeners with original hyper dimensions (eg RADAR plot)
+                if(sphereIndex < hyperFeatures.size())
+                    scene.getRoot().fireEvent(new FeatureVectorEvent(
+                        FeatureVectorEvent.SELECT_FEATURE_VECTOR,
+                        hyperFeatures.get(sphereIndex), featureLabels));                
             });
 
             //Add click handler to popup callout or point distance measurements
@@ -1853,10 +1878,8 @@ public class Projections3DPane extends StackPane implements
             seed.score = featureVector.getScore();
             seed.pfa = featureVector.getPfa();
             hyperspaceSeeds.add(seed);
-//            VisibilityMap.visibilityList.add(true);
             addPNodeFromSeed(seed);
-        });
-        //featureVectors.addAll(featureCollection.getFeatures());
+        }
         trimQueueNow();
     }
 
@@ -2102,10 +2125,13 @@ public class Projections3DPane extends StackPane implements
     }
 
     @Override
-    public void setFeatureLabels(List<String> labelStrings) {
+    public void setDimensionLabels(List<String> labelStrings) {
         featureLabels = labelStrings;
     }
 
+    public void setHyperDimensionFeatures(FeatureCollection originalFC) {
+        hyperFeatures = originalFC.getFeatures();
+    }
     public void projectFeatureCollection(FeatureCollection originalFC, Umap umap) {
         Task task = new Task() {
             @Override
@@ -2140,7 +2166,6 @@ public class Projections3DPane extends StackPane implements
                     projectedFC.getFeatures().get(i).setScore(origFV.getScore());
                     projectedFC.getFeatures().get(i).setImageURL(origFV.getImageURL());
                 }
-
                 Platform.runLater(() -> {
                     ProgressStatus ps = new ProgressStatus("", -1);
                     scene.getRoot().fireEvent(
@@ -2152,7 +2177,12 @@ public class Projections3DPane extends StackPane implements
         task.setOnSucceeded(e -> {
             FeatureCollection fc;
             try {
+                setHyperDimensionFeatures(originalFC);
                 fc = (FeatureCollection) task.get();
+                if(null != originalFC.getDimensionLabels()) {
+                    setDimensionLabels(originalFC.getDimensionLabels());
+                    fc.setDimensionLabels(originalFC.getDimensionLabels());
+                }
                 addFeatureCollection(fc);
             } catch (InterruptedException | ExecutionException ex) {
                 Logger.getLogger(Projections3DPane.class.getName()).log(Level.SEVERE, null, ex);

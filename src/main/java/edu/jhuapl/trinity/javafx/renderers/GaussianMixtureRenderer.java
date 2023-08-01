@@ -35,5 +35,5 @@ public interface GaussianMixtureRenderer {
 
     public void clearGaussianMixtures();
 
-    public void setFeatureLabels(List<String> labelStrings);
+    public void setDimensionLabels(List<String> labelStrings);
 }

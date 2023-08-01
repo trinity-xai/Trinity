@@ -20,6 +20,7 @@ package edu.jhuapl.trinity;
  * #L%
  */
 
+import edu.jhuapl.trinity.data.Dimension;
 import edu.jhuapl.trinity.data.FactorLabel;
 import edu.jhuapl.trinity.data.files.FeatureCollectionFile;
 import edu.jhuapl.trinity.data.messages.FeatureCollection;
@@ -95,6 +96,7 @@ import lit.litfx.controls.output.AnimatedText;
 import java.io.File;
 import java.io.IOException;
 import java.time.LocalDateTime;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
@@ -243,8 +245,12 @@ public class App extends Application {
                         return FactorLabel.visibilityByLabel(fv.getLabel());
                     }).toList());
             }
+            ArrayList<String> labels = new ArrayList<>();
+            for(Dimension d : Dimension.getDimensions()) {
+                labels.add(d.labelString);    
+            }
+            originalFC.setDimensionLabels(labels);
             projections3DPane.projectFeatureCollection(originalFC, umap);
-
         });
 
         scene.addEventHandler(FeatureVectorEvent.PROJECT_SURFACE_GRID, event -> {
@@ -258,7 +264,13 @@ public class App extends Application {
                 projectedFC.getFeatures().get(i).setScore(origFV.getScore());
                 projectedFC.getFeatures().get(i).setImageURL(origFV.getImageURL());
             }
+            if(null != originalFC.getDimensionLabels()) {
+                projectedFC.setDimensionLabels(originalFC.getDimensionLabels());
+                projections3DPane.setDimensionLabels(originalFC.getDimensionLabels());
+            }
+            projections3DPane.setHyperDimensionFeatures(originalFC);
             projections3DPane.addFeatureCollection(projectedFC);
+            
         });
 
         scene.addEventHandler(FeatureVectorEvent.PROJECT_FEATURE_COLLECTION, event -> {
@@ -272,6 +284,11 @@ public class App extends Application {
                 projectedFC.getFeatures().get(i).setScore(origFV.getScore());
                 projectedFC.getFeatures().get(i).setImageURL(origFV.getImageURL());
             }
+            if(null != originalFC.getDimensionLabels()) {
+                projectedFC.setDimensionLabels(originalFC.getDimensionLabels());
+                projections3DPane.setDimensionLabels(originalFC.getDimensionLabels());
+            }
+            projections3DPane.setHyperDimensionFeatures(originalFC);            
             projections3DPane.addFeatureCollection(projectedFC);
         });
 

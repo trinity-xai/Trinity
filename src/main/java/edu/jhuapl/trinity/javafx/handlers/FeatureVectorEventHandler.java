@@ -189,7 +189,7 @@ public class FeatureVectorEventHandler implements EventHandler<FeatureVectorEven
             });
             //update the renderers with the new arraylist of strings
             for (FeatureVectorRenderer renderer : renderers) {
-                renderer.setFeatureLabels(featureCollection.getDimensionLabels());
+                renderer.setDimensionLabels(featureCollection.getDimensionLabels());
                 renderer.refresh(); 
             }            
         }        
@@ -260,7 +260,7 @@ public class FeatureVectorEventHandler implements EventHandler<FeatureVectorEven
         if(null != labelConfig.getDimensionLabels() && !labelConfig.getDimensionLabels().isEmpty()){
             //update the renderers with the new arraylist of strings
             for (FeatureVectorRenderer renderer : renderers) {
-                renderer.setFeatureLabels(labelConfig.getDimensionLabels());
+                renderer.setDimensionLabels(labelConfig.getDimensionLabels());
                 renderer.refresh(); 
             }            
         }

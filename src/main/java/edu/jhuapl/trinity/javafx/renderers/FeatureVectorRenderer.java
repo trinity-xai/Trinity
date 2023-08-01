@@ -45,5 +45,5 @@ public interface FeatureVectorRenderer {
 
     public void setSpheroidAnchor(boolean animate, int index);
 
-    public void setFeatureLabels(List<String> labelStrings);
+    public void setDimensionLabels(List<String> labelStrings);
 }

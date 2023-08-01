@@ -126,7 +126,7 @@ public class FeatureVector extends MessageData {
         return messageBody.contains("messageType")
             && messageBody.contains(TYPESTRING);
     }
-
+    
     public static double getMaxAbsValue(List<FeatureVector> featureVectors) {
         return featureVectors.parallelStream().flatMapToDouble((t) -> {
             return t.getData().stream().mapToDouble((value) -> {
