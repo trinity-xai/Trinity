@@ -42,10 +42,16 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.image.ImageView;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
+import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.HBox;
 import javafx.scene.text.Font;
 
@@ -67,16 +73,18 @@ public class FeatureRadarChart extends VBox {
     public double initialWidth;
     public double initialHeight;
     public SimpleBooleanProperty stacking = new SimpleBooleanProperty(false);
+    public SimpleBooleanProperty positiveShifting = new SimpleBooleanProperty(false);
 
     public FeatureRadarChart(FeatureVector featureVector, double initialWidth, double initialHeight) {
         this.initialWidth = initialWidth;
         this.initialHeight = initialHeight;
         featureLabel = new Label(featureVector.getLabel());
         featureLabel.setFont(new Font("consolas", 14));
-        featureLabel.setMinWidth(200);
+        featureLabel.setMinWidth(150);
         ImageView stackImageView = ResourceUtils.loadIcon("stack", 50);
         ToggleButton stackingToggleButton = new ToggleButton(
             "Stacking Mode", stackImageView);
+        
         stacking.bind(stackingToggleButton.selectedProperty());
         stacking.addListener(cl-> {
             stackedFeatureVector = FeatureVector.EMPTY_FEATURE_VECTOR("", baseFeatureVector.getData().size());
@@ -86,15 +94,23 @@ public class FeatureRadarChart extends VBox {
         scalarSpinner.setEditable(true);
         scalarSpinner.setValueFactory(
             new SpinnerValueFactory.IntegerSpinnerValueFactory(
-                1, 500, SCALAR_MAG, 25));
-        scalarSpinner.valueProperty().addListener(c -> {
-            scaleRadarPlot();
-        });
+                1, SCALAR_MAG, 50, 5));
+        scalarSpinner.valueProperty().addListener(c -> scaleRadarPlot());
         VBox spinnerVBox = new VBox(2, new Label("Scaling"), scalarSpinner);
-        spinnerVBox.setPrefWidth(150);
-        HBox topHBox = new HBox(5, 
-        featureLabel,  spinnerVBox, stackingToggleButton);
-
+        spinnerVBox.setPrefWidth(100);
+        
+        CheckBox positiveShiftCheckBox = new CheckBox("Positive Shift");
+        positiveShifting.bind(positiveShiftCheckBox.selectedProperty());
+        positiveShifting.addListener(c -> scaleRadarPlot()); //cheap way to recompute plot
+        HBox topHBox = new HBox(10, 
+        featureLabel,  positiveShiftCheckBox, spinnerVBox, stackingToggleButton);
+        topHBox.setAlignment(Pos.CENTER);
+        topHBox.setPadding(new Insets(5));
+        Background transBack = new Background(new BackgroundFill(
+        Color.CYAN.deriveColor(1, 1, 1, 0.111), 
+            new CornerRadii(10, false), Insets.EMPTY));
+        topHBox.setBackground(transBack);
+        
         makeRadarPlot(featureVector);
         setSpacing(5);
         ChoiceBox<ChartType> choiceBox = new ChoiceBox<>(
@@ -143,24 +159,35 @@ public class FeatureRadarChart extends VBox {
         return labels;
     }
     private void scaleRadarPlot() {
+        if(null == baseFeatureVector) return;
+        double value;
         for(int i=0;i<series.getItems().size();i++) {
-            series.getItems().get(i).setValue(
-                baseFeatureVector.getData().get(i) * scalarSpinner.getValue());
-            if(null != stackedFeatureVector)
-                stackedSeries.getItems().get(i).setValue(
-                    stackedFeatureVector.getData().get(i) * scalarSpinner.getValue());
+            value = baseFeatureVector.getData().get(i) * scalarSpinner.getValue(); 
+            if(positiveShifting.get())
+                value = transformPositive(baseFeatureVector.getData().get(i),baseFeatureVector) * scalarSpinner.getValue();
+            series.getItems().get(i).setValue(value);
+
+            if(null != stackedFeatureVector) {
+                value = stackedFeatureVector.getData().get(i) * scalarSpinner.getValue(); 
+                if(positiveShifting.get())
+                    value = transformPositive(stackedFeatureVector.getData().get(i),stackedFeatureVector) * scalarSpinner.getValue();
+                stackedSeries.getItems().get(i).setValue(value);
+            }
         }
         chart.refresh();
     }
     public void stackRadarPlot(FeatureVector featureVector) {
         stackedFeatureVector = featureVector;
         List<ValueChartItem> items = new ArrayList<>(featureVector.getData().size());
+        double value;
         for (int i = 0; i < featureVector.getData().size(); i++) {
             String label = "P " + i;
             if (null != labels && i < labels.size())
                 label = labels.get(i);
-            ValueChartItem dataPoint = new ValueChartItem(
-                featureVector.getData().get(i) * scalarSpinner.getValue(), label);
+            value = featureVector.getData().get(i) * scalarSpinner.getValue(); 
+            if(positiveShifting.get())
+                value = transformPositive(featureVector.getData().get(i),featureVector) * scalarSpinner.getValue();
+            ValueChartItem dataPoint = new ValueChartItem(value, label);
             dataPoint.setSymbol(Symbol.CIRCLE);
             dataPoint.setStroke(Color.SKYBLUE);
             dataPoint.setFill(Color.BLUE);
@@ -178,12 +205,15 @@ public class FeatureRadarChart extends VBox {
         stackedSeries.setVisible(false);
         //update base series
         List<ValueChartItem> items = new ArrayList<>(baseFeatureVector.getData().size());
+        double value;
         for (int i = 0; i < baseFeatureVector.getData().size(); i++) {
             String label = "P " + i;
             if (null != labels && i < labels.size())
                 label = labels.get(i);
-            ValueChartItem dataPoint = new ValueChartItem(
-                baseFeatureVector.getData().get(i) * scalarSpinner.getValue(), label);
+            value = featureVector.getData().get(i) * scalarSpinner.getValue(); 
+            if(positiveShifting.get())
+                value = transformPositive(featureVector.getData().get(i), featureVector) * scalarSpinner.getValue();
+            ValueChartItem dataPoint = new ValueChartItem(value, label);
             dataPoint.setSymbol(Symbol.CIRCLE);
             dataPoint.setStroke(Color.SKYBLUE);
             dataPoint.setFill(Color.BLUE);
@@ -194,15 +224,21 @@ public class FeatureRadarChart extends VBox {
         featureLabel.setText(baseFeatureVector.getLabel());
         chart.refresh();
     }
+    private double transformPositive(double value, FeatureVector fv) {
+        return (((value - fv.getMin()) * 1) / fv.getWidth());        
+    }
 
     private void makeRadarPlot(FeatureVector featureVector) {
         List<ValueChartItem> items = new ArrayList<>(featureVector.getData().size());
+        double value;
         for (int i = 0; i < featureVector.getData().size(); i++) {
             String label = "P " + i;
             if (null != labels && i < labels.size())
                 label = labels.get(i);
-            ValueChartItem dataPoint = new ValueChartItem(
-                featureVector.getData().get(i) * SCALAR_MAG, label);
+            value = featureVector.getData().get(i) * scalarSpinner.getValue(); 
+            if(positiveShifting.get())
+                value = transformPositive(featureVector.getData().get(i),featureVector) * scalarSpinner.getValue();
+            ValueChartItem dataPoint = new ValueChartItem(value, label);
             dataPoint.setSymbol(Symbol.CIRCLE);
             dataPoint.setStroke(Color.RED);
             dataPoint.setFill(Color.BLUE);
