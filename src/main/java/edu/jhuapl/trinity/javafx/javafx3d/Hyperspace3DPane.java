@@ -1955,7 +1955,7 @@ public class Hyperspace3DPane extends StackPane implements
     }
 
     @Override
-    public void setFeatureLabels(List<String> labelStrings) {
+    public void setDimensionLabels(List<String> labelStrings) {
         featureLabels = labelStrings;
     }
 }

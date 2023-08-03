@@ -57,7 +57,7 @@ public class GaussianMixtureEventHandler implements EventHandler<GaussianMixture
                 && !gaussianMixtureCollection.getAxesLabels().isEmpty()) {
                 //update labels on axes
                 for (GaussianMixtureRenderer renderer : renderers) {
-                    renderer.setFeatureLabels(gaussianMixtureCollection.getAxesLabels());
+                    renderer.setDimensionLabels(gaussianMixtureCollection.getAxesLabels());
                 }
             }
             gaussianMixtureCollection.getMixtures().forEach(gaussianMixture -> {

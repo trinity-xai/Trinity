@@ -310,7 +310,7 @@ public class HyperspaceMenu extends RadialEntity {
             Pane pathPane = App.getAppPathPaneStack();
             if (null == radarPlotPane) {
                 radarPlotPane = new RadarPlotPane(scene, pathPane);
-                radarPlotPane.visibleProperty().bind(hyperspace3DPane.visibleProperty());
+//                radarPlotPane.visibleProperty().bind(hyperspace3DPane.visibleProperty());
             }
             if (!pathPane.getChildren().contains(radarPlotPane)) {
                 pathPane.getChildren().add(radarPlotPane);

@@ -1728,7 +1728,7 @@ public class Hypersurface3DPane extends StackPane
     }
 
     @Override
-    public void setFeatureLabels(List<String> labelStrings) {
+    public void setDimensionLabels(List<String> labelStrings) {
         featureLabels = labelStrings;
     }
 

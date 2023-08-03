@@ -113,12 +113,20 @@ public class FeatureVector extends MessageData {
         return null != getBbox() && !getBbox().isEmpty() && getBbox().size() > 3
             && getBbox().get(2) > 0.0 && getBbox().get(3) > 0.0;
     }
-
+    public double getMin() {
+        return getData().stream().min(Double::compare).get();
+    }
+    public double getMax() {
+        return getData().stream().max(Double::compare).get();
+    }
+    public double getWidth(){
+        return Math.abs(getMax() - getMin());
+    }
     public static boolean isFeatureVector(String messageBody) {
         return messageBody.contains("messageType")
             && messageBody.contains(TYPESTRING);
     }
-
+    
     public static double getMaxAbsValue(List<FeatureVector> featureVectors) {
         return featureVectors.parallelStream().flatMapToDouble((t) -> {
             return t.getData().stream().mapToDouble((value) -> {
