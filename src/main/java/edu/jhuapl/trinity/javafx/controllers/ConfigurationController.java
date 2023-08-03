@@ -299,7 +299,7 @@ public class ConfigurationController implements Initializable {
         dimensionLabelsListView.getItems().addAll(existingDimensions);
         //add event listener for new features
         scene.getRoot().addEventHandler(HyperspaceEvent.DIMENSION_LABELS_SET, e -> {
-            clearAllDimensionLabels();
+            dimensionLabelsListView.getItems().clear();
             List<DimensionLabelItem> newDimensions = new ArrayList<>();
             for(Dimension d : Dimension.getDimensions()) {
                 newDimensions.add(new DimensionLabelItem(d));
