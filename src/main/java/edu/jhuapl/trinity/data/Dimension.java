@@ -21,9 +21,7 @@ package edu.jhuapl.trinity.data;
  */
 
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.List;
-import java.util.function.Function;
 import javafx.scene.paint.Color;
 
 

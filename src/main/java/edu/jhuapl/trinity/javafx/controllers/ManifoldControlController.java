@@ -23,7 +23,9 @@ package edu.jhuapl.trinity.javafx.controllers;
 import edu.jhuapl.trinity.App;
 import edu.jhuapl.trinity.data.Distance;
 import edu.jhuapl.trinity.data.FactorLabel;
+import edu.jhuapl.trinity.data.Manifold;
 import edu.jhuapl.trinity.javafx.components.DistanceListItem;
+import edu.jhuapl.trinity.javafx.components.ManifoldListItem;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.utils.ResourceUtils;
@@ -51,8 +53,6 @@ import javafx.scene.text.Font;
 import javafx.util.Duration;
 
 import java.net.URL;
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -75,22 +75,6 @@ public class ManifoldControlController implements Initializable {
     private CheckBox automaticCheckBox;
     @FXML
     private Spinner manualSpinner;
-    @FXML
-    private Slider scaleSlider;
-    @FXML
-    private Slider rotateXSlider;
-    @FXML
-    private Slider rotateYSlider;
-    @FXML
-    private Slider rotateZSlider;
-    @FXML
-    private Label scaleLabel;
-    @FXML
-    private Label rotateXLabel;
-    @FXML
-    private Label rotateYLabel;
-    @FXML
-    private Label rotateZLabel;
     @FXML
     private ColorPicker manifoldDiffuseColorPicker;
     @FXML
@@ -143,6 +127,8 @@ public class ManifoldControlController implements Initializable {
     @FXML
     private RadioButton useHypersurfaceButton;
     ToggleGroup hyperSourceGroup;
+    @FXML
+    private ListView<ManifoldListItem> manifoldsListView;
 
     //Distances Tab
     @FXML
@@ -161,10 +147,6 @@ public class ManifoldControlController implements Initializable {
 
     Scene scene;
     private final String ALL = "ALL";
-    /**
-     * Format for floating coordinate label
-     */
-    private NumberFormat format = new DecimalFormat("0.00");
 
     /**
      * Initializes the controller class.
@@ -287,6 +269,21 @@ public class ManifoldControlController implements Initializable {
     }
 
     private void setupHullControls() {
+        //Get a reference to any Distances already collected
+        List<ManifoldListItem> existingItems = new ArrayList<>();
+        for (Manifold m : Manifold.getManifolds()) {
+            ManifoldListItem item = new ManifoldListItem(m);
+            existingItems.add(item);
+        }
+        //add them all in one shot
+        manifoldsListView.getItems().addAll(existingItems);
+        ImageView iv = ResourceUtils.loadIcon("manifold", 200);
+        VBox placeholder = new VBox(10, iv, new Label("No Manifolds Acquired"));
+        placeholder.setAlignment(Pos.CENTER);
+        manifoldsListView.setPlaceholder(placeholder);
+        
+        
+        
         getCurrentLabels();
         labelChoiceBox.getSelectionModel().selectFirst();
         labelChoiceBox.setOnShown(e -> getCurrentLabels());
@@ -300,43 +297,6 @@ public class ManifoldControlController implements Initializable {
                     (Double) manualSpinner.getValue()));
         });
         manualSpinner.disableProperty().bind(automaticCheckBox.selectedProperty());
-
-        scaleLabel.setText(format.format(scaleSlider.getValue()));
-        scaleSlider.valueProperty().addListener((ov, t, t1) -> {
-            scaleLabel.setText(format.format(scaleSlider.getValue()));
-            scene.getRoot().fireEvent(new ManifoldEvent(
-                ManifoldEvent.MANIFOLD_SET_SCALE, t.doubleValue()));
-        });
-
-        rotateXLabel.setText(format.format(rotateXSlider.getValue()));
-        rotateXSlider.valueProperty().addListener((ov, t, t1) -> {
-            rotateXLabel.setText(format.format(rotateXSlider.getValue()));
-            double[] ypr = new double[]{
-                rotateYSlider.getValue(), rotateXSlider.getValue(), rotateZSlider.getValue()
-            };
-            scene.getRoot().fireEvent(new ManifoldEvent(
-                ManifoldEvent.MANIFOLD_SET_YAWPITCHROLL, ypr));
-        });
-
-        rotateYLabel.setText(format.format(rotateYSlider.getValue()));
-        rotateYSlider.valueProperty().addListener((ov, t, t1) -> {
-            rotateYLabel.setText(format.format(rotateYSlider.getValue()));
-            double[] ypr = new double[]{
-                rotateYSlider.getValue(), rotateXSlider.getValue(), rotateZSlider.getValue()
-            };
-            scene.getRoot().fireEvent(new ManifoldEvent(
-                ManifoldEvent.MANIFOLD_SET_YAWPITCHROLL, ypr));
-        });
-
-        rotateZLabel.setText(format.format(rotateZSlider.getValue()));
-        rotateZSlider.valueProperty().addListener((ov, t, t1) -> {
-            rotateZLabel.setText(format.format(rotateZSlider.getValue()));
-            double[] ypr = new double[]{
-                rotateYSlider.getValue(), rotateXSlider.getValue(), rotateZSlider.getValue()
-            };
-            scene.getRoot().fireEvent(new ManifoldEvent(
-                ManifoldEvent.MANIFOLD_SET_YAWPITCHROLL, ypr));
-        });
 
         manifoldDiffuseColorPicker.setValue(Color.CYAN);
         manifoldDiffuseColorPicker.valueProperty().addListener(cl -> {

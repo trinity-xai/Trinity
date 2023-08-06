@@ -50,6 +50,9 @@ public class ManifoldEvent extends Event {
     public static final EventType<ManifoldEvent> SET_DISTANCE_TOLERANCE = new EventType(ANY, "SET_DISTANCE_TOLERANCE");
     public static final EventType<ManifoldEvent> GENERATE_HYPERSPACE_MANIFOLD = new EventType(ANY, "GENERATE_HYPERSPACE_MANIFOLD");
     public static final EventType<ManifoldEvent> GENERATE_PROJECTION_MANIFOLD = new EventType(ANY, "GENERATE_PROJECTION_MANIFOLD");
+
+    public static final EventType<ManifoldEvent> MANIFOLD_OBJECT_SELECTED = new EventType(ANY, "MANIFOLD_OBJECT_SELECTED");
+    public static final EventType<ManifoldEvent> MANIFOLD_3D_SELECTED = new EventType(ANY, "MANIFOLD_3D_SELECTED");
     public static final EventType<ManifoldEvent> CLEAR_ALL_MANIFOLDS = new EventType(ANY, "CLEAR_ALL_MANIFOLDS");
     public static final EventType<ManifoldEvent> USE_VISIBLE_POINTS = new EventType(ANY, "USE_VISIBLE_POINTS");
     public static final EventType<ManifoldEvent> USE_ALL_POINTS = new EventType(ANY, "USE_ALL_POINTS");

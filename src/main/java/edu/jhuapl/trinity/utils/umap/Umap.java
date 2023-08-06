@@ -1162,7 +1162,7 @@ public class Umap {
             final IndexedDistances nn = nearestNeighbors(instances, mRunNNeighbors, mMetric, mAngularRpForest, mRandom, mThreads, mVerbose);
             mKnnIndices = nn.getIndices();
             mKnnDists = nn.getDistances();
-            mRpForest = nn.getForest();
+            setmRpForest(nn.getForest());
 
             mGraph = fuzzySimplicialSet(instances, mNNeighbors, mRandom, mMetric, mKnnIndices, mKnnDists, mAngularRpForest, mSetOpMixRatio, mLocalConnectivity, mThreads, mVerbose);
 
@@ -1170,7 +1170,7 @@ public class Umap {
             if (mMetric == PrecomputedMetric.SINGLETON) {
                 Utils.message("Using precomputed metric; transform will be unavailable for new data");
             } else {
-                mSearch = new NearestNeighborSearch(distanceFunc);
+                setmSearch(new NearestNeighborSearch(distanceFunc));
             }
         }
         UmapProgress.update();
@@ -1332,18 +1332,18 @@ public class Umap {
             indices = MathUtils.subarray(indices, mRunNNeighbors);
             dists = Utils.submatrix(distanceMatrix, indices, mRunNNeighbors);
         } else {
-            final Heap init = NearestNeighborDescent.initialiseSearch(mRpForest, mRawData, instances, (int) (mRunNNeighbors * mTransformQueueSize), mSearch, mRandom);
-            if (mSearchGraph == null) {
-                mSearchGraph = new SearchGraph(mRawData.rows());
+            final Heap init = NearestNeighborDescent.initialiseSearch(getmRpForest(), mRawData, instances, (int) (mRunNNeighbors * mTransformQueueSize), getmSearch(), mRandom);
+            if (getmSearchGraph() == null) {
+                setmSearchGraph(new SearchGraph(mRawData.rows()));
                 for (int k = 0; k < mKnnIndices.length; ++k) {
                     for (int j = 0; j < mKnnIndices[k].length; ++j) {
                         if (mKnnDists[k][j] != 0) {
-                            mSearchGraph.set(k, mKnnIndices[k][j]);
+                            getmSearchGraph().set(k, mKnnIndices[k][j]);
                         }
                     }
                 }
             }
-            final Heap result = mSearch.initializedNndSearch(mRawData, mSearchGraph, init, instances).deheapSort();
+            final Heap result = getmSearch().initializedNndSearch(mRawData, getmSearchGraph(), init, instances).deheapSort();
             indices = MathUtils.subarray(result.indices(), mRunNNeighbors);
             dists = MathUtils.subarray(result.weights(), mRunNNeighbors);
         }
@@ -1407,5 +1407,47 @@ public class Umap {
      */
     public float[][] transform(final float[][] instances) {
         return transform(new DefaultMatrix(instances)).toArray();
+    }
+
+    /**
+     * @return the mSearchGraph
+     */
+    public SearchGraph getmSearchGraph() {
+        return mSearchGraph;
+    }
+
+    /**
+     * @param mSearchGraph the mSearchGraph to set
+     */
+    public void setmSearchGraph(SearchGraph mSearchGraph) {
+        this.mSearchGraph = mSearchGraph;
+    }
+
+    /**
+     * @return the mRpForest
+     */
+    public List<FlatTree> getmRpForest() {
+        return mRpForest;
+    }
+
+    /**
+     * @param mRpForest the mRpForest to set
+     */
+    public void setmRpForest(List<FlatTree> mRpForest) {
+        this.mRpForest = mRpForest;
+    }
+
+    /**
+     * @return the mSearch
+     */
+    public NearestNeighborSearch getmSearch() {
+        return mSearch;
+    }
+
+    /**
+     * @param mSearch the mSearch to set
+     */
+    public void setmSearch(NearestNeighborSearch mSearch) {
+        this.mSearch = mSearch;
     }
 }
