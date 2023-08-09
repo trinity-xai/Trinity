@@ -26,6 +26,7 @@ import edu.jhuapl.trinity.data.Distance;
 import edu.jhuapl.trinity.data.FactorLabel;
 import edu.jhuapl.trinity.data.FeatureLayer;
 import edu.jhuapl.trinity.data.HyperspaceSeed;
+import edu.jhuapl.trinity.data.Manifold;
 import edu.jhuapl.trinity.data.Trajectory;
 import edu.jhuapl.trinity.data.messages.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.FeatureVector;
@@ -34,6 +35,7 @@ import edu.jhuapl.trinity.data.messages.GaussianMixtureCollection;
 import edu.jhuapl.trinity.data.messages.GaussianMixtureData;
 import edu.jhuapl.trinity.javafx.components.ProgressStatus;
 import edu.jhuapl.trinity.javafx.components.callouts.Callout;
+import edu.jhuapl.trinity.javafx.components.callouts.CalloutBuilder;
 import edu.jhuapl.trinity.javafx.components.panes.ManifoldControlPane;
 import edu.jhuapl.trinity.javafx.components.panes.RadarPlotPane;
 import edu.jhuapl.trinity.javafx.components.panes.RadialEntityOverlayPane;
@@ -111,6 +113,7 @@ import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import javafx.scene.image.ImageView;
 
 
 /**
@@ -573,7 +576,7 @@ public class Projections3DPane extends StackPane implements
             }
 
             if (event.isAltDown() && keycode == KeyCode.H) {
-                makeHull(false, null);
+                makeHull(getPointsByLabel(true, null), null);
             }
             if (keycode == KeyCode.F) {
                 anchorIndex--;
@@ -1012,35 +1015,20 @@ public class Projections3DPane extends StackPane implements
             trajectorySphereGroup.getChildren().add(tsm);
         }
     }
-
-    public void makeHull(boolean useVisiblePoints, String label) {
-        shape3DToLabel.clear();
-        //Add to hashmap so updateLabels() can manage the label position
-        shape3DToLabel.put(xSphere, xLabel);
-        shape3DToLabel.put(ySphere, yLabel);
-        shape3DToLabel.put(zSphere, zLabel);
-
-        Perspective3DNode[] pNodeArray = pNodes.toArray(Perspective3DNode[]::new);
-        List<Point3D> labelMatchedNodes = Arrays.stream(pNodeArray)
-            .filter(p -> p.factorAnalysisSeed.label.contentEquals(label))
-            .filter(p -> p.visible)
-            .map(p -> new Point3D(p.xCoord, p.yCoord, p.zCoord))
-            .collect(Collectors.toList());
-
-
+    public Manifold3D makeHull(List<Point3D> labelMatchedPoints, String label) {
         Manifold3D manifold3D = new Manifold3D(
-            labelMatchedNodes, true, true, true
+            labelMatchedPoints, true, true, true
         );
         manifold3D.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
             if (e.isControlDown() && e.getButton() == MouseButton.PRIMARY) {
                 selectedManifoldA = manifold3D;
             }
         });
-        System.out.println("scattermodel Manifold complete");
         manifolds.add(manifold3D);
         manifoldGroup.getChildren().add(manifold3D);
         shape3DToLabel.putAll(manifold3D.shape3DToLabel);
         updateFloatingNodes();
+        return manifold3D;
     }
 
     private void setupSkyBox() {
@@ -2102,10 +2090,49 @@ public class Projections3DPane extends StackPane implements
         updateEllipsoids();
         cubeWorld.redraw(true);
     }
-
+    private List<Point3D> getPointsByLabel(boolean useVisiblePoints, String label) {
+        Perspective3DNode[] pNodeArray = pNodes.toArray(Perspective3DNode[]::new);
+        List<Point3D> labelMatchedPoints = null;
+        if(null == label)
+            labelMatchedPoints = Arrays.stream(pNodeArray)
+            .filter(p -> p.visible)
+            .map(p -> new Point3D(p.xCoord, p.yCoord, p.zCoord))
+            .collect(Collectors.toList());
+        else if(useVisiblePoints)
+            labelMatchedPoints = Arrays.stream(pNodeArray)
+            .filter(p -> p.factorAnalysisSeed.label.contentEquals(label) && p.visible)
+            .map(p -> new Point3D(p.xCoord, p.yCoord, p.zCoord))
+            .collect(Collectors.toList());
+        else
+            labelMatchedPoints = Arrays.stream(pNodeArray)
+            .filter(p -> p.factorAnalysisSeed.label.contentEquals(label))
+            .map(p -> new Point3D(p.xCoord, p.yCoord, p.zCoord))
+            .collect(Collectors.toList());
+        return labelMatchedPoints;
+    }
     @Override
     public void makeManifold(boolean useVisiblePoints, String label) {
-        makeHull(useVisiblePoints, label);
+        //Create Manifold Object based on points that share the label
+        List<Point3D> labelMatchedPoints = getPointsByLabel(useVisiblePoints, label);
+        ArrayList<javafx.geometry.Point3D> fxPoints = labelMatchedPoints.stream()
+            .map(p3D -> new javafx.geometry.Point3D(p3D.x, p3D.y, p3D.z))
+            .collect(Collectors.toCollection(ArrayList::new));
+        Manifold manifold = new Manifold(fxPoints, label, label, sceneColor);
+
+        //Create the 3D manifold shape
+        Manifold3D manifold3D = makeHull(labelMatchedPoints, label);
+        manifold3D.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
+            getScene().getRoot().fireEvent(
+                new ManifoldEvent(ManifoldEvent.MANIFOLD_3D_SELECTED, manifold));
+        });
+        //Add this Manifold data object to the global tracker
+        Manifold.addManifold(manifold);
+        //update the manifold to manifold3D mapping
+        Manifold.globalManifoldToManifold3DMap.put(manifold, manifold3D);
+        //announce to the world of the new manifold and its shape
+        System.out.println("Manifold3D generation complete for " + label);
+        getScene().getRoot().fireEvent(new ManifoldEvent(
+        ManifoldEvent.MANIFOLD3D_OBJECT_GENERATED, manifold, manifold3D));
     }
 
     @Override

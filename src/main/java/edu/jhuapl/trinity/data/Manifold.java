@@ -20,6 +20,7 @@ package edu.jhuapl.trinity.data;
  * #L%
  */
 
+import edu.jhuapl.trinity.javafx.javafx3d.Manifold3D;
 import java.util.ArrayList;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.geometry.Point3D;
@@ -33,22 +34,16 @@ import java.util.List;
  */
 public class Manifold {
     private ArrayList<Point3D> points;
-    private String metric; //distance metric used to calculate
     private String label; //common data label of manifold (from input data)
     private String name; //optional name/human readable ID
     private Color color; //color of representative object
     public SimpleBooleanProperty visible;
 
-    public Manifold(ArrayList<Point3D> points, String metric, String label, Color color) {
+    public Manifold(ArrayList<Point3D> points, String label, String name, Color color) {
         this.points = new ArrayList<>(points.size());
         this.points.addAll(points);
-        this.metric = metric;
         this.label = label;
         this.color = color;
-        if (null == metric)
-            metric = "euclidean";
-        else
-            this.metric = metric;
         visible = new SimpleBooleanProperty(true);
     }
 
@@ -57,6 +52,7 @@ public class Manifold {
      * anchored in the system.
      */
     private static HashMap<String, Manifold> globalManifoldMap = new HashMap<>();
+    public static HashMap<Manifold, Manifold3D> globalManifoldToManifold3DMap = new HashMap<>();
 
     public static Collection<Manifold> getManifolds() {
         return globalManifoldMap.values();
@@ -147,20 +143,6 @@ public class Manifold {
 
     public void setVisible(final java.lang.Boolean visible) {
         this.visibleProperty().set(visible);
-    }
-
-    /**
-     * @return the metric
-     */
-    public String getMetric() {
-        return metric;
-    }
-
-    /**
-     * @param metric the metric to set
-     */
-    public void setMetric(String metric) {
-        this.metric = metric;
     }
 
     /**

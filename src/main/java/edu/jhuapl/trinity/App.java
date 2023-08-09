@@ -101,6 +101,13 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.scene.Node;
+import javafx.scene.layout.Border;
+import javafx.scene.layout.BorderStroke;
+import javafx.scene.layout.BorderStrokeStyle;
+import javafx.scene.layout.BorderWidths;
+import javafx.scene.layout.HBox;
+import javafx.scene.text.Text;
 
 public class App extends Application {
 
@@ -125,7 +132,6 @@ public class App extends Application {
     Map<String, String> namedParameters;
     List<String> unnamedParameters;
     AnimatedText animatedConsoleText;
-
     MessageProcessor processor;
     ZeroMQSubscriberConfig subscriberConfig;
     ZeroMQFeedManager feed;
@@ -597,7 +603,6 @@ public class App extends Application {
         scene.addEventHandler(CommandTerminalEvent.FOLLOWUP, e -> {
             animatedConsoleText.setVisible(true);
             animatedConsoleText.setOpacity(1.0);
-
             final int originalLength = animatedConsoleText.getText().length();
             final IntegerProperty i = new SimpleIntegerProperty(originalLength);
             Timeline timeline = new Timeline();

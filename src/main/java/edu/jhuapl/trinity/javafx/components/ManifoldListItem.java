@@ -25,17 +25,19 @@ import edu.jhuapl.trinity.data.Manifold;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 
 /**
  * @author Sean Phillips
  */
-public class ManifoldListItem extends HBox {
+public class ManifoldListItem extends VBox {
     private String labelString;
     private String nameString;
     private CheckBox visibleCheckBox;
+    private TextField manifoldNameTextField;
     private Label label;
-    private Label nameLabel;
     private Manifold manifold;
     public boolean reactive = true;
 
@@ -45,13 +47,16 @@ public class ManifoldListItem extends HBox {
         label = new Label(labelString);
 
         nameString = manifold.getName();
-        nameLabel = new Label(nameString);
-        
+        manifoldNameTextField = new TextField(nameString);
+        manifoldNameTextField.setPrefWidth(100);
         visibleCheckBox = new CheckBox("Visible");
         visibleCheckBox.setSelected(true);
 
-        getChildren().addAll(visibleCheckBox, label, nameLabel);
-        setSpacing(5);
+        HBox topHBox = new HBox(5, visibleCheckBox, manifoldNameTextField);
+        HBox bottomHBox = new HBox(5, label );
+        
+        getChildren().addAll(topHBox, bottomHBox );
+        setSpacing(2);
         visibleCheckBox.selectedProperty().addListener(cl -> {
             if (null != visibleCheckBox.getScene()) {
                 this.manifold.setVisible(visibleCheckBox.isSelected());

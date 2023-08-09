@@ -253,7 +253,7 @@
                                 <VBox spacing="10.0" BorderPane.alignment="CENTER">
                                     <children>
                               <Label text="Selected Manifold Properties" />
-                                        <TitledPane collapsible="false" maxHeight="1.7976931348623157E308" text="Material" VBox.vgrow="ALWAYS">
+                                        <TitledPane collapsible="false" text="Material" VBox.vgrow="ALWAYS">
                                  <content>
                                     <VBox spacing="5.0">
                                        <children>

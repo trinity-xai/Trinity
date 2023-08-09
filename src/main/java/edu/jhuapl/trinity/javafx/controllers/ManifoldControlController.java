@@ -28,6 +28,7 @@ import edu.jhuapl.trinity.javafx.components.DistanceListItem;
 import edu.jhuapl.trinity.javafx.components.ManifoldListItem;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
+import edu.jhuapl.trinity.javafx.javafx3d.Manifold3D;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import edu.jhuapl.trinity.utils.umap.Umap;
 import edu.jhuapl.trinity.utils.umap.metric.Metric;
@@ -56,6 +57,7 @@ import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
+import javafx.scene.paint.PhongMaterial;
 
 /**
  * FXML Controller class
@@ -129,7 +131,8 @@ public class ManifoldControlController implements Initializable {
     ToggleGroup hyperSourceGroup;
     @FXML
     private ListView<ManifoldListItem> manifoldsListView;
-
+    private Manifold3D activeManifold3D = null;
+    
     //Distances Tab
     @FXML
     private ListView<DistanceListItem> distancesListView;
@@ -147,7 +150,8 @@ public class ManifoldControlController implements Initializable {
 
     Scene scene;
     private final String ALL = "ALL";
-
+    boolean reactive = true;
+    
     /**
      * Initializes the controller class.
      *
@@ -282,8 +286,6 @@ public class ManifoldControlController implements Initializable {
         placeholder.setAlignment(Pos.CENTER);
         manifoldsListView.setPlaceholder(placeholder);
         
-        
-        
         getCurrentLabels();
         labelChoiceBox.getSelectionModel().selectFirst();
         labelChoiceBox.setOnShown(e -> getCurrentLabels());
@@ -300,21 +302,33 @@ public class ManifoldControlController implements Initializable {
 
         manifoldDiffuseColorPicker.setValue(Color.CYAN);
         manifoldDiffuseColorPicker.valueProperty().addListener(cl -> {
-            scene.getRoot().fireEvent(new ManifoldEvent(
-                ManifoldEvent.MANIFOLD_DIFFUSE_COLOR,
-                manifoldDiffuseColorPicker.getValue()));
+            if(!reactive) return;
+            ManifoldListItem item = manifoldsListView.getSelectionModel().getSelectedItem();
+            if(null != item) {
+                Manifold m = item.getManifold();
+                if(null != m){
+                    m.setColor(manifoldDiffuseColorPicker.getValue());
+                    scene.getRoot().fireEvent(new ManifoldEvent(
+                        ManifoldEvent.MANIFOLD_DIFFUSE_COLOR,
+                        manifoldDiffuseColorPicker.getValue(), m));
+                }
+            }
         });
         manifoldSpecularColorPicker.setValue(Color.RED);
         manifoldSpecularColorPicker.valueProperty().addListener(cl -> {
-            scene.getRoot().fireEvent(new ManifoldEvent(
+            Manifold m = manifoldsListView.getSelectionModel().getSelectedItem().getManifold();
+            if(null != m)
+                scene.getRoot().fireEvent(new ManifoldEvent(
                 ManifoldEvent.MANIFOLD_SPECULAR_COLOR,
-                manifoldSpecularColorPicker.getValue()));
+                manifoldSpecularColorPicker.getValue(), m));
         });
         manifoldWireMeshColorPicker.setValue(Color.BLUE);
         manifoldWireMeshColorPicker.valueProperty().addListener(cl -> {
-            scene.getRoot().fireEvent(new ManifoldEvent(
+            Manifold m = manifoldsListView.getSelectionModel().getSelectedItem().getManifold();
+            if(null != m)
+                scene.getRoot().fireEvent(new ManifoldEvent(
                 ManifoldEvent.MANIFOLD_WIREFRAME_COLOR,
-                manifoldWireMeshColorPicker.getValue()));
+                manifoldWireMeshColorPicker.getValue(),m));
         });
 
         pointsToggleGroup = new ToggleGroup();
@@ -334,36 +348,85 @@ public class ManifoldControlController implements Initializable {
         backCullFaceRadioButton.setToggleGroup(cullfaceToggleGroup);
         noneCullFaceRadioButton.setToggleGroup(cullfaceToggleGroup);
         cullfaceToggleGroup.selectedToggleProperty().addListener(cl -> {
-            if (frontCullFaceRadioButton.isSelected())
-                scene.getRoot().fireEvent(new ManifoldEvent(
-                    ManifoldEvent.MANIFOLD_FRONT_CULLFACE, true));
-            else if (backCullFaceRadioButton.isSelected())
-                scene.getRoot().fireEvent(new ManifoldEvent(
-                    ManifoldEvent.MANIFOLD_BACK_CULLFACE, true));
-            else
-                scene.getRoot().fireEvent(new ManifoldEvent(
-                    ManifoldEvent.MANIFOLD_NONE_CULLFACE, true));
+            Manifold m = manifoldsListView.getSelectionModel().getSelectedItem().getManifold();
+            if(null != m)
+                if (frontCullFaceRadioButton.isSelected())
+                    scene.getRoot().fireEvent(new ManifoldEvent(
+                        ManifoldEvent.MANIFOLD_FRONT_CULLFACE, true, m));
+                else if (backCullFaceRadioButton.isSelected())
+                    scene.getRoot().fireEvent(new ManifoldEvent(
+                        ManifoldEvent.MANIFOLD_BACK_CULLFACE, true, m));
+                else
+                    scene.getRoot().fireEvent(new ManifoldEvent(
+                        ManifoldEvent.MANIFOLD_NONE_CULLFACE, true, m));
         });
         drawModeToggleGroup = new ToggleGroup();
         fillDrawModeRadioButton.setToggleGroup(drawModeToggleGroup);
         linesDrawModeRadioButton.setToggleGroup(drawModeToggleGroup);
         drawModeToggleGroup.selectedToggleProperty().addListener(cl -> {
-            if (fillDrawModeRadioButton.isSelected())
-                scene.getRoot().fireEvent(new ManifoldEvent(
-                    ManifoldEvent.MANIFOLD_FILL_DRAWMODE, true));
-            else
-                scene.getRoot().fireEvent(new ManifoldEvent(
-                    ManifoldEvent.MANIFOLD_LINE_DRAWMODE, true));
+            Manifold m = manifoldsListView.getSelectionModel().getSelectedItem().getManifold();
+            if(null != m)
+                if (fillDrawModeRadioButton.isSelected())
+                    scene.getRoot().fireEvent(new ManifoldEvent(
+                        ManifoldEvent.MANIFOLD_FILL_DRAWMODE, true, m));
+                else
+                    scene.getRoot().fireEvent(new ManifoldEvent(
+                        ManifoldEvent.MANIFOLD_LINE_DRAWMODE, true, m));
         });
 
         showWireframeCheckBox.selectedProperty().addListener(cl -> {
-            scene.getRoot().fireEvent(new ManifoldEvent(
-                ManifoldEvent.MANIFOLD_SHOW_WIREFRAME, showWireframeCheckBox.isSelected()));
+            Manifold m = manifoldsListView.getSelectionModel().getSelectedItem().getManifold();
+            if(null != m)
+                scene.getRoot().fireEvent(new ManifoldEvent(
+                ManifoldEvent.MANIFOLD_SHOW_WIREFRAME, 
+                    showWireframeCheckBox.isSelected(), m));
         });
         showControlPointsCheckBox.selectedProperty().addListener(cl -> {
-            scene.getRoot().fireEvent(new ManifoldEvent(
-                ManifoldEvent.MANIFOLD_SHOW_CONTROL, showControlPointsCheckBox.isSelected()));
+            Manifold m = manifoldsListView.getSelectionModel().getSelectedItem().getManifold();
+            if(null != m)
+                scene.getRoot().fireEvent(new ManifoldEvent(
+                ManifoldEvent.MANIFOLD_SHOW_CONTROL, 
+                    showControlPointsCheckBox.isSelected(), m));
         });
+        
+        scene.addEventHandler(ManifoldEvent.MANIFOLD_3D_SELECTED, e -> {
+            Manifold manifold = (Manifold) e.object1;
+            for (ManifoldListItem item : manifoldsListView.getItems()) {
+                if (item.getManifold() == manifold) {
+                    manifoldsListView.getSelectionModel().select(item);
+                    Manifold3D manifold3D = Manifold.globalManifoldToManifold3DMap.get(manifold);
+                    updateActiveManifold3D(manifold3D);
+                    return; //break out early
+                }
+            }
+            //if we get here its because that Distance object wasn't in the list
+            scene.getRoot().fireEvent(new CommandTerminalEvent(
+                "Manifold object not found!", new Font("Consolas", 20), Color.YELLOW));
+        });
+        scene.addEventHandler(ManifoldEvent.MANIFOLD_OBJECT_SELECTED, e -> {
+            Manifold manifold = (Manifold) e.object1;
+            Manifold3D manifold3D = Manifold.globalManifoldToManifold3DMap.get(manifold);
+            updateActiveManifold3D(manifold3D);
+        });
+        scene.addEventHandler(ManifoldEvent.MANIFOLD3D_OBJECT_GENERATED, e -> {
+            Manifold manifold = (Manifold) e.object1;
+            updateActiveManifold3D((Manifold3D) e.object2);
+            ManifoldListItem manifoldListItem = new ManifoldListItem(manifold);
+            manifoldsListView.getItems().add(manifoldListItem);
+            manifoldsListView.getSelectionModel().selectLast();
+        });
+    }
+    private void updateActiveManifold3D(Manifold3D manifold3D) {
+        reactive = false;
+        activeManifold3D = manifold3D;
+        if(null != manifold3D) {
+            PhongMaterial phong = (PhongMaterial)manifold3D.quickhullMeshView.getMaterial();
+            manifoldDiffuseColorPicker.setValue(phong.getDiffuseColor());
+            manifoldSpecularColorPicker.setValue(phong.getSpecularColor());
+            manifoldWireMeshColorPicker.setValue(((PhongMaterial)
+                manifold3D.quickhullLinesMeshView.getMaterial()).getDiffuseColor());
+        }
+        reactive = true;
     }
 
     @FXML

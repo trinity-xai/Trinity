@@ -20,6 +20,7 @@ package edu.jhuapl.trinity.javafx.handlers;
  * #L%
  */
 
+import edu.jhuapl.trinity.data.Manifold;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.Manifold3D;
 import edu.jhuapl.trinity.javafx.renderers.ManifoldRenderer;
@@ -199,13 +200,16 @@ public class ManifoldEventHandler implements EventHandler<ManifoldEvent> {
 
     public void handleDiffuseColor(ManifoldEvent event) {
         Color color = (Color) event.object1;
-        for (ManifoldRenderer renderer : manifoldRenderers) {
-            for (Node node : renderer.getManifoldViews().getChildren()) {
-                if (node instanceof Manifold3D manifold) {
-                    ((PhongMaterial) manifold.quickhullMeshView.getMaterial()).setDiffuseColor(color);
+        Manifold m = (Manifold) event.object2;
+        Manifold3D manifold3D = Manifold.globalManifoldToManifold3DMap.get(m);
+        if(null != manifold3D && null != color)
+            for (ManifoldRenderer renderer : manifoldRenderers) {
+                for (Node node : renderer.getManifoldViews().getChildren()) {
+                    if (node instanceof Manifold3D manifold && manifold == manifold3D) {
+                        ((PhongMaterial) manifold.quickhullMeshView.getMaterial()).setDiffuseColor(color);
+                    }
                 }
             }
-        }
     }
 
     public void handleSpecularColor(ManifoldEvent event) {
