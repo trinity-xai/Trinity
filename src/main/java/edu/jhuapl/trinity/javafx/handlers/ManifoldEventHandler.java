@@ -62,15 +62,18 @@ public class ManifoldEventHandler implements EventHandler<ManifoldEvent> {
 
     public void handleScale(ManifoldEvent event) {
         double scale = (double) event.object1;
-        for (ManifoldRenderer renderer : manifoldRenderers) {
-            for (Node node : renderer.getManifoldViews().getChildren()) {
-                if (node instanceof Manifold3D manifold) {
-                    manifold.setScaleX(scale);
-                    manifold.setScaleY(scale);
-                    manifold.setScaleZ(scale);
+        Manifold m = (Manifold) event.object2;
+        Manifold3D manifold3D = Manifold.globalManifoldToManifold3DMap.get(m);
+        if(null != manifold3D)        
+            for (ManifoldRenderer renderer : manifoldRenderers) {
+                for (Node node : renderer.getManifoldViews().getChildren()) {
+                    if (node instanceof Manifold3D manifold && manifold == manifold3D) {
+                        manifold.setScaleX(scale);
+                        manifold.setScaleY(scale);
+                        manifold.setScaleZ(scale);
+                    }
                 }
             }
-        }
     }
 
     public void handleRotate(ManifoldEvent event) {
@@ -80,122 +83,148 @@ public class ManifoldEventHandler implements EventHandler<ManifoldEvent> {
             axis = Rotate.Y_AXIS;
         else if (event.getEventType().equals(ManifoldEvent.MANIFOLD_ROTATE_Z))
             axis = Rotate.Z_AXIS;
-
-        for (ManifoldRenderer renderer : manifoldRenderers) {
-            for (Node node : renderer.getManifoldViews().getChildren()) {
-                if (node instanceof Manifold3D manifold) {
-                    manifold.setRotationAxis(axis);
-                    manifold.setRotate(rotate);
+        Manifold m = (Manifold) event.object2;
+        Manifold3D manifold3D = Manifold.globalManifoldToManifold3DMap.get(m);
+        if(null != manifold3D)        
+            for (ManifoldRenderer renderer : manifoldRenderers) {
+                for (Node node : renderer.getManifoldViews().getChildren()) {
+                    if (node instanceof Manifold3D manifold && manifold == manifold3D) {
+                        manifold.setRotationAxis(axis);
+                        manifold.setRotate(rotate);
+                    }
                 }
             }
-        }
     }
 
     public void handleYPR(ManifoldEvent event) {
         double[] ypr = (double[]) event.object1;
-        for (ManifoldRenderer renderer : manifoldRenderers) {
-            for (Node node : renderer.getManifoldViews().getChildren()) {
-                if (node instanceof Manifold3D manifold) {
-                    manifold.matrixRotate(
-                        Math.toRadians(ypr[0]),
-                        Math.toRadians(ypr[1]),
-                        Math.toRadians(ypr[2]));
+        Manifold m = (Manifold) event.object2;
+        Manifold3D manifold3D = Manifold.globalManifoldToManifold3DMap.get(m);
+        if(null != manifold3D)        
+            for (ManifoldRenderer renderer : manifoldRenderers) {
+                for (Node node : renderer.getManifoldViews().getChildren()) {
+                    if (node instanceof Manifold3D manifold && manifold == manifold3D) {
+                        manifold.matrixRotate(
+                            Math.toRadians(ypr[0]),
+                            Math.toRadians(ypr[1]),
+                            Math.toRadians(ypr[2]));
+                    }
                 }
             }
-        }
     }
 
     public void handleDrawModeFill(ManifoldEvent event) {
         boolean fill = (boolean) event.object1;
-        for (ManifoldRenderer renderer : manifoldRenderers) {
-            for (Node node : renderer.getManifoldViews().getChildren()) {
-                if (node instanceof Manifold3D manifold) {
-                    if (fill)
-                        manifold.quickhullMeshView.setDrawMode(DrawMode.FILL);
-                    else
-                        manifold.quickhullMeshView.setDrawMode(DrawMode.LINE);
+        Manifold m = (Manifold) event.object2;
+        Manifold3D manifold3D = Manifold.globalManifoldToManifold3DMap.get(m);
+        if(null != manifold3D)        
+            for (ManifoldRenderer renderer : manifoldRenderers) {
+                for (Node node : renderer.getManifoldViews().getChildren()) {
+                    if (node instanceof Manifold3D manifold && manifold == manifold3D) {
+                        if (fill)
+                            manifold.quickhullMeshView.setDrawMode(DrawMode.FILL);
+                        else
+                            manifold.quickhullMeshView.setDrawMode(DrawMode.LINE);
+                    }
                 }
             }
-        }
     }
 
     public void handleDrawModeLine(ManifoldEvent event) {
         boolean line = (boolean) event.object1;
-        for (ManifoldRenderer renderer : manifoldRenderers) {
-            for (Node node : renderer.getManifoldViews().getChildren()) {
-                if (node instanceof Manifold3D manifold) {
-                    if (line)
-                        manifold.quickhullMeshView.setDrawMode(DrawMode.LINE);
-                    else
-                        manifold.quickhullMeshView.setDrawMode(DrawMode.FILL);
+        Manifold m = (Manifold) event.object2;
+        Manifold3D manifold3D = Manifold.globalManifoldToManifold3DMap.get(m);
+        if(null != manifold3D)        
+            for (ManifoldRenderer renderer : manifoldRenderers) {
+                for (Node node : renderer.getManifoldViews().getChildren()) {
+                    if (node instanceof Manifold3D manifold && manifold == manifold3D) {
+                        if (line)
+                            manifold.quickhullMeshView.setDrawMode(DrawMode.LINE);
+                        else
+                            manifold.quickhullMeshView.setDrawMode(DrawMode.FILL);
+                    }
                 }
             }
-        }
     }
 
     public void handleCullFaceFront(ManifoldEvent event) {
         boolean front = (boolean) event.object1;
-        for (ManifoldRenderer renderer : manifoldRenderers) {
-            for (Node node : renderer.getManifoldViews().getChildren()) {
-                if (node instanceof Manifold3D manifold) {
-                    if (front)
-                        manifold.quickhullMeshView.setCullFace(CullFace.FRONT);
-                    else
-                        manifold.quickhullMeshView.setCullFace(CullFace.NONE);
+        Manifold m = (Manifold) event.object2;
+        Manifold3D manifold3D = Manifold.globalManifoldToManifold3DMap.get(m);
+        if(null != manifold3D)        
+            for (ManifoldRenderer renderer : manifoldRenderers) {
+                for (Node node : renderer.getManifoldViews().getChildren()) {
+                    if (node instanceof Manifold3D manifold && manifold == manifold3D) {
+                        if (front)
+                            manifold.quickhullMeshView.setCullFace(CullFace.FRONT);
+                        else
+                            manifold.quickhullMeshView.setCullFace(CullFace.NONE);
+                    }
                 }
             }
-        }
     }
 
     public void handleCullFaceBack(ManifoldEvent event) {
         boolean back = (boolean) event.object1;
-        for (ManifoldRenderer renderer : manifoldRenderers) {
-            for (Node node : renderer.getManifoldViews().getChildren()) {
-                if (node instanceof Manifold3D manifold) {
-                    if (back)
-                        manifold.quickhullMeshView.setCullFace(CullFace.BACK);
-                    else
-                        manifold.quickhullMeshView.setCullFace(CullFace.NONE);
+        Manifold m = (Manifold) event.object2;
+        Manifold3D manifold3D = Manifold.globalManifoldToManifold3DMap.get(m);
+        if(null != manifold3D)        
+            for (ManifoldRenderer renderer : manifoldRenderers) {
+                for (Node node : renderer.getManifoldViews().getChildren()) {
+                    if (node instanceof Manifold3D manifold && manifold == manifold3D) {
+                        if (back)
+                            manifold.quickhullMeshView.setCullFace(CullFace.BACK);
+                        else
+                            manifold.quickhullMeshView.setCullFace(CullFace.NONE);
+                    }
                 }
             }
-        }
     }
 
     public void handleCullFaceNone(ManifoldEvent event) {
         boolean none = (boolean) event.object1;
-        for (ManifoldRenderer renderer : manifoldRenderers) {
-            for (Node node : renderer.getManifoldViews().getChildren()) {
-                if (node instanceof Manifold3D manifold) {
-                    if (none)
-                        manifold.quickhullMeshView.setCullFace(CullFace.NONE);
-                    else
-                        manifold.quickhullMeshView.setCullFace(CullFace.BACK);
+        Manifold m = (Manifold) event.object2;
+        Manifold3D manifold3D = Manifold.globalManifoldToManifold3DMap.get(m);
+        if(null != manifold3D)                
+            for (ManifoldRenderer renderer : manifoldRenderers) {
+                for (Node node : renderer.getManifoldViews().getChildren()) {
+                    if (node instanceof Manifold3D manifold && manifold == manifold3D) {
+                        if (none)
+                            manifold.quickhullMeshView.setCullFace(CullFace.NONE);
+                        else
+                            manifold.quickhullMeshView.setCullFace(CullFace.BACK);
+                    }
                 }
             }
-        }
     }
 
     public void handleShowWireframe(ManifoldEvent event) {
         boolean showWireFrame = (boolean) event.object1;
-        for (ManifoldRenderer renderer : manifoldRenderers) {
-            for (Node node : renderer.getManifoldViews().getChildren()) {
-                if (node instanceof Manifold3D manifold) {
-                    manifold.quickhullLinesMeshView.setVisible(showWireFrame);
+        Manifold m = (Manifold) event.object2;
+        Manifold3D manifold3D = Manifold.globalManifoldToManifold3DMap.get(m);
+        if(null != manifold3D)        
+            for (ManifoldRenderer renderer : manifoldRenderers) {
+                for (Node node : renderer.getManifoldViews().getChildren()) {
+                    if (node instanceof Manifold3D manifold && manifold == manifold3D) {
+                        manifold.quickhullLinesMeshView.setVisible(showWireFrame);
+                    }
                 }
             }
-        }
     }
 
     public void handleShowControl(ManifoldEvent event) {
         boolean showControl = (boolean) event.object1;
-        for (ManifoldRenderer renderer : manifoldRenderers) {
-            for (Node node : renderer.getManifoldViews().getChildren()) {
-                if (node instanceof Manifold3D manifold) {
-                    manifold.extrasGroup.getChildren().forEach(n -> n.setVisible(showControl));
-                    manifold.labelGroup.getChildren().forEach(n -> n.setVisible(showControl));
+        Manifold m = (Manifold) event.object2;
+        Manifold3D manifold3D = Manifold.globalManifoldToManifold3DMap.get(m);
+        if(null != manifold3D)                
+            for (ManifoldRenderer renderer : manifoldRenderers) {
+                for (Node node : renderer.getManifoldViews().getChildren()) {
+                    if (node instanceof Manifold3D manifold && manifold == manifold3D) {
+                        manifold.extrasGroup.getChildren().forEach(n -> n.setVisible(showControl));
+                        manifold.labelGroup.getChildren().forEach(n -> n.setVisible(showControl));
+                    }
                 }
             }
-        }
     }
 
     public void handleDiffuseColor(ManifoldEvent event) {
@@ -214,29 +243,35 @@ public class ManifoldEventHandler implements EventHandler<ManifoldEvent> {
 
     public void handleSpecularColor(ManifoldEvent event) {
         Color color = (Color) event.object1;
-        for (ManifoldRenderer renderer : manifoldRenderers) {
-            for (Node node : renderer.getManifoldViews().getChildren()) {
-                if (node instanceof Manifold3D manifold) {
-                    ((PhongMaterial) manifold.quickhullMeshView.getMaterial()).setSpecularColor(color);
+        Manifold m = (Manifold) event.object2;
+        Manifold3D manifold3D = Manifold.globalManifoldToManifold3DMap.get(m);
+        if(null != manifold3D)        
+            for (ManifoldRenderer renderer : manifoldRenderers) {
+                for (Node node : renderer.getManifoldViews().getChildren()) {
+                    if (node instanceof Manifold3D manifold && manifold == manifold3D) {
+                        ((PhongMaterial) manifold.quickhullMeshView.getMaterial()).setSpecularColor(color);
+                    }
                 }
             }
-        }
     }
 
     public void handleWireFrameColor(ManifoldEvent event) {
         Color color = (Color) event.object1;
-        for (ManifoldRenderer renderer : manifoldRenderers) {
-            for (Node node : renderer.getManifoldViews().getChildren()) {
-                if (node instanceof Manifold3D manifold) {
-                    ((PhongMaterial) manifold.quickhullLinesMeshView.getMaterial()).setDiffuseColor(color);
-                    manifold.extrasGroup.getChildren().stream()
-                        .filter(extra -> extra instanceof Sphere)
-                        .forEach(e -> {
-                            ((PhongMaterial) ((Sphere) e).getMaterial()).setDiffuseColor(color);
-                        });
+        Manifold m = (Manifold) event.object2;
+        Manifold3D manifold3D = Manifold.globalManifoldToManifold3DMap.get(m);
+        if(null != manifold3D)                
+            for (ManifoldRenderer renderer : manifoldRenderers) {
+                for (Node node : renderer.getManifoldViews().getChildren()) {
+                    if (node instanceof Manifold3D manifold && manifold == manifold3D) {
+                        ((PhongMaterial) manifold.quickhullLinesMeshView.getMaterial()).setDiffuseColor(color);
+                        manifold.extrasGroup.getChildren().stream()
+                            .filter(extra -> extra instanceof Sphere)
+                            .forEach(e -> {
+                                ((PhongMaterial) ((Sphere) e).getMaterial()).setDiffuseColor(color);
+                            });
+                    }
                 }
             }
-        }
     }
 
     @Override

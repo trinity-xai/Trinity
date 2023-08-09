@@ -316,19 +316,27 @@ public class ManifoldControlController implements Initializable {
         });
         manifoldSpecularColorPicker.setValue(Color.RED);
         manifoldSpecularColorPicker.valueProperty().addListener(cl -> {
-            Manifold m = manifoldsListView.getSelectionModel().getSelectedItem().getManifold();
-            if(null != m)
-                scene.getRoot().fireEvent(new ManifoldEvent(
-                ManifoldEvent.MANIFOLD_SPECULAR_COLOR,
-                manifoldSpecularColorPicker.getValue(), m));
+            if(!reactive) return;
+            ManifoldListItem item = manifoldsListView.getSelectionModel().getSelectedItem();
+            if(null != item) {
+                Manifold m = item.getManifold();
+                if(null != m)
+                    scene.getRoot().fireEvent(new ManifoldEvent(
+                    ManifoldEvent.MANIFOLD_SPECULAR_COLOR,
+                    manifoldSpecularColorPicker.getValue(), m));
+            }
         });
         manifoldWireMeshColorPicker.setValue(Color.BLUE);
         manifoldWireMeshColorPicker.valueProperty().addListener(cl -> {
-            Manifold m = manifoldsListView.getSelectionModel().getSelectedItem().getManifold();
-            if(null != m)
-                scene.getRoot().fireEvent(new ManifoldEvent(
+            if(!reactive) return;
+            ManifoldListItem item = manifoldsListView.getSelectionModel().getSelectedItem();
+            if(null != item) {
+                Manifold m = item.getManifold();
+                if(null != m)
+                    scene.getRoot().fireEvent(new ManifoldEvent(
                 ManifoldEvent.MANIFOLD_WIREFRAME_COLOR,
                 manifoldWireMeshColorPicker.getValue(),m));
+            }
         });
 
         pointsToggleGroup = new ToggleGroup();
