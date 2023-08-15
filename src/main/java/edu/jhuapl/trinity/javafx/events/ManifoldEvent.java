@@ -52,6 +52,10 @@ public class ManifoldEvent extends Event {
     public static final EventType<ManifoldEvent> GENERATE_HYPERSPACE_MANIFOLD = new EventType(ANY, "GENERATE_HYPERSPACE_MANIFOLD");
     public static final EventType<ManifoldEvent> GENERATE_PROJECTION_MANIFOLD = new EventType(ANY, "GENERATE_PROJECTION_MANIFOLD");
     //Manifold Geometry
+    public static final EventType<ManifoldEvent> SET_USED_HULLPOINTS = new EventType(ANY, "SET_USED_HULLPOINTS");
+    public static final EventType<ManifoldEvent> TOGGLE_HULL_POINT = new EventType(ANY, "TOGGLE_HULL_POINT");
+    public static final EventType<ManifoldEvent> SELECT_PROJECTION_POINT3D = new EventType(ANY, "SELECT_PROJECTION_POINT3D");
+    public static final EventType<ManifoldEvent> SELECT_SHAPE3D_POINT3D = new EventType(ANY, "SELECT_SHAPE3D_POINT3D");
     public static final EventType<ManifoldEvent> MANIFOLD3D_OBJECT_GENERATED = new EventType(ANY, "MANIFOLD3D_OBJECT_GENERATED");
     public static final EventType<ManifoldEvent> MANIFOLD_OBJECT_SELECTED = new EventType(ANY, "MANIFOLD_OBJECT_SELECTED");
     public static final EventType<ManifoldEvent> MANIFOLD_3D_SELECTED = new EventType(ANY, "MANIFOLD_3D_SELECTED");

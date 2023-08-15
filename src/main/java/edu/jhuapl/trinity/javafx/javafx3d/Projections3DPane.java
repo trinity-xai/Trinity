@@ -35,7 +35,6 @@ import edu.jhuapl.trinity.data.messages.GaussianMixtureCollection;
 import edu.jhuapl.trinity.data.messages.GaussianMixtureData;
 import edu.jhuapl.trinity.javafx.components.ProgressStatus;
 import edu.jhuapl.trinity.javafx.components.callouts.Callout;
-import edu.jhuapl.trinity.javafx.components.callouts.CalloutBuilder;
 import edu.jhuapl.trinity.javafx.components.panes.ManifoldControlPane;
 import edu.jhuapl.trinity.javafx.components.panes.RadarPlotPane;
 import edu.jhuapl.trinity.javafx.components.panes.RadialEntityOverlayPane;
@@ -100,7 +99,6 @@ import javafx.util.Duration;
 import org.fxyz3d.geometry.Point3D;
 import org.fxyz3d.scene.Skybox;
 import org.fxyz3d.utils.CameraTransformer;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -113,8 +111,6 @@ import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import javafx.scene.image.ImageView;
-
 
 /**
  * @author Sean Phillips
@@ -1397,7 +1393,9 @@ public class Projections3DPane extends StackPane implements
             seed);
 
         if (colorByLabel)
-            if (seed.label.isBlank())
+            if (null == seed.label)
+                pNode.nodeColor = Color.ALICEBLUE;
+            else if(seed.label.isBlank())
                 pNode.nodeColor = Color.ALICEBLUE;
             else
                 pNode.nodeColor = FactorLabel.getColorByLabel(seed.label);
@@ -1837,6 +1835,9 @@ public class Projections3DPane extends StackPane implements
                 updateFloatingNodes(); //Will transform location of all floating 2D nodes
                 javafx.geometry.Point3D p1 = new javafx.geometry.Point3D(
                     sphere.getTranslateX(), sphere.getTranslateY(), sphere.getTranslateZ());
+                scene.getRoot().fireEvent(new ManifoldEvent(
+                    ManifoldEvent.SELECT_PROJECTION_POINT3D, p1));                
+
                 miniCrosshair.size = point3dSize * 4.0;
                 miniCrosshair.setCenter(p1);
                 setCircleRadiusByDistance(highlighterNeonCircle, sphere);
@@ -2121,6 +2122,7 @@ public class Projections3DPane extends StackPane implements
 
         //Create the 3D manifold shape
         Manifold3D manifold3D = makeHull(labelMatchedPoints, label);
+        manifold3D.setManifold(manifold);
         manifold3D.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
             getScene().getRoot().fireEvent(
                 new ManifoldEvent(ManifoldEvent.MANIFOLD_3D_SELECTED, manifold));

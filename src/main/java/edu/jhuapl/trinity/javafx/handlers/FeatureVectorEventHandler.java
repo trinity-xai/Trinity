@@ -159,6 +159,11 @@ public class FeatureVectorEventHandler implements EventHandler<FeatureVectorEven
         FeatureCollection featureCollection = (FeatureCollection) event.object;
         if (null == featureCollection || featureCollection.getFeatures().isEmpty())
             return;
+        System.out.println("Imported FeatureCollection size: " + 
+            featureCollection.getFeatures().size());
+        System.out.println("Imported FeatureVector width: " + 
+            featureCollection.getFeatures().get(0).getData().size());
+        
         Platform.runLater(() -> {
             App.getAppScene().getRoot().fireEvent(
                 new CommandTerminalEvent("Scanning Feature Collection for labels...",

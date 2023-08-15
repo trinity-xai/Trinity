@@ -53,6 +53,7 @@ import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.scene.PointLight;
@@ -67,6 +68,9 @@ import javafx.scene.SnapshotParameters;
  */
 public enum JavaFX3DUtils {
     INSTANCE;
+    public static Function<Point3D, javafx.geometry.Point3D> fxyzPoint3DTofxPoint3D = 
+        p -> new javafx.geometry.Point3D(p.x, p.y, p.z);
+
     public static Image snapshotShape3D(Node node) {
         Group group = new Group(node);
         Scene scene = new Scene(group, 1000, 1000, true, SceneAntialiasing.BALANCED);

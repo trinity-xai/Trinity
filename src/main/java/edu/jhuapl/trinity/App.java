@@ -22,12 +22,15 @@ package edu.jhuapl.trinity;
 
 import edu.jhuapl.trinity.data.Dimension;
 import edu.jhuapl.trinity.data.FactorLabel;
+import edu.jhuapl.trinity.data.Manifold;
 import edu.jhuapl.trinity.data.files.FeatureCollectionFile;
 import edu.jhuapl.trinity.data.messages.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.FeatureVector;
 import edu.jhuapl.trinity.javafx.components.CircleProgressIndicator;
 import edu.jhuapl.trinity.javafx.components.MatrixOverlay;
 import edu.jhuapl.trinity.javafx.components.ProgressStatus;
+import static edu.jhuapl.trinity.javafx.components.panes.LitPathPane.slideInPane;
+import edu.jhuapl.trinity.javafx.components.panes.Shape3DControlPane;
 import edu.jhuapl.trinity.javafx.components.radial.MainNavMenu;
 import edu.jhuapl.trinity.javafx.components.timeline.Item;
 import edu.jhuapl.trinity.javafx.components.timeline.MissionTimerX;
@@ -52,6 +55,7 @@ import edu.jhuapl.trinity.javafx.handlers.SearchEventHandler;
 import edu.jhuapl.trinity.javafx.handlers.SemanticMapEventHandler;
 import edu.jhuapl.trinity.javafx.javafx3d.Hyperspace3DPane;
 import edu.jhuapl.trinity.javafx.javafx3d.Hypersurface3DPane;
+import edu.jhuapl.trinity.javafx.javafx3d.Manifold3D;
 import edu.jhuapl.trinity.javafx.javafx3d.Projections3DPane;
 import edu.jhuapl.trinity.javafx.javafx3d.RetroWavePane;
 import edu.jhuapl.trinity.messages.MessageProcessor;
@@ -101,13 +105,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javafx.scene.Node;
-import javafx.scene.layout.Border;
-import javafx.scene.layout.BorderStroke;
-import javafx.scene.layout.BorderStrokeStyle;
-import javafx.scene.layout.BorderWidths;
-import javafx.scene.layout.HBox;
-import javafx.scene.text.Text;
 
 public class App extends Application {
 
@@ -123,6 +120,7 @@ public class App extends Application {
     Hyperspace3DPane hyperspace3DPane;
     Hypersurface3DPane hypersurface3DPane;
     Projections3DPane projections3DPane;
+    Shape3DControlPane shape3DControlPane;    
     CircleProgressIndicator circleSpinner;
 
     static Configuration theConfig;
@@ -505,6 +503,22 @@ public class App extends Application {
                     hyperspaceIntroShown = true;
                 }
                 fadeInConsole(500);
+            }
+        });
+        scene.addEventHandler(ApplicationEvent.SHOW_SHAPE3D_CONTROLS, e -> {
+            Manifold3D manifold3D = (Manifold3D) e.object;
+            if (null == shape3DControlPane) {
+                shape3DControlPane = new Shape3DControlPane(scene, pathPane);
+            }
+            if(null != manifold3D) {
+//                Manifold.globalManifoldToManifold3DMap
+                shape3DControlPane.setShape3D(manifold3D);
+            }
+            if (!pathPane.getChildren().contains(shape3DControlPane)) {
+                pathPane.getChildren().add(shape3DControlPane);
+                slideInPane(shape3DControlPane);
+            } else {
+                shape3DControlPane.show();
             }
         });
 
