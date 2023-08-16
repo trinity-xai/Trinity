@@ -20,10 +20,17 @@ package edu.jhuapl.trinity.javafx.handlers;
  * #L%
  */
 
+import edu.jhuapl.trinity.App;
 import edu.jhuapl.trinity.data.Manifold;
+import edu.jhuapl.trinity.data.files.ManifoldDataFile;
+import edu.jhuapl.trinity.data.messages.ManifoldData;
+import edu.jhuapl.trinity.data.messages.P3D;
+import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.Manifold3D;
 import edu.jhuapl.trinity.javafx.renderers.ManifoldRenderer;
+import java.io.File;
+import java.io.IOException;
 import javafx.event.EventHandler;
 import javafx.geometry.Point3D;
 import javafx.scene.Node;
@@ -36,6 +43,10 @@ import javafx.scene.transform.Rotate;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.Collectors;
+import javafx.scene.text.Font;
 
 /**
  * @author Sean Phillips
@@ -53,11 +64,16 @@ public class ManifoldEventHandler implements EventHandler<ManifoldEvent> {
     }
 
     public void handleClearAllManifolds(ManifoldEvent event) {
+        App.getAppScene().getRoot().fireEvent(new CommandTerminalEvent("Clearing Manifolds... ",
+            new Font("Consolas", 20), Color.GREEN));        
+        
         System.out.print("Clearing Manifolds... ");
         for (ManifoldRenderer renderer : manifoldRenderers) {
             renderer.clearAllManifolds();
         }
+        Manifold.removeAllManifolds();         
         System.out.println("Complete.");
+        App.getAppScene().getRoot().fireEvent(new CommandTerminalEvent( "Complete."));
     }
 
     public void handleScale(ManifoldEvent event) {
@@ -312,5 +328,22 @@ public class ManifoldEventHandler implements EventHandler<ManifoldEvent> {
             handleSpecularColor(event);
         else if (event.getEventType().equals(ManifoldEvent.MANIFOLD_WIREFRAME_COLOR))
             handleWireFrameColor(event);
+        else if(event.getEventType().equals(ManifoldEvent.EXPORT_MANIFOLD_DATA)) {
+            File file = (File) event.object1;
+            Manifold3D manifold3D = (Manifold3D) event.object2;
+            ManifoldData md = new ManifoldData();
+            List<org.fxyz3d.geometry.Point3D> points = manifold3D.getOriginalPoint3DList();
+            ArrayList<P3D> p3Ds = points.stream().map(P3D.fxyzPoint3DToP3D)
+                .collect(Collectors.toCollection(ArrayList::new));
+            md.setPoints(p3Ds);
+            try {
+                ManifoldDataFile mdf = new ManifoldDataFile(file.getAbsolutePath(), false);
+                mdf.manifoldData = md;
+                mdf.writeContent();
+            } catch (IOException ex) {
+                Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            event.consume();
+        }
     }
 }

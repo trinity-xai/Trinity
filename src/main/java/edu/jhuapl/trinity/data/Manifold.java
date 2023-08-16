@@ -74,6 +74,7 @@ public class Manifold {
 
     public static void removeAllManifolds() {
         globalManifoldMap.clear();
+        globalManifoldToManifold3DMap.clear();
     }
 
     public static Manifold removeManifold(String label) {

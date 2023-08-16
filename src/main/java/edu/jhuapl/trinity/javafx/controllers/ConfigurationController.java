@@ -699,10 +699,13 @@ public class ConfigurationController implements Initializable {
         FileChooser fc = new FileChooser();
         fc.setTitle("Choose FeatureCollection file output...");
         fc.setInitialFileName("FeatureCollection.json");
+        if(!latestDir.isDirectory())
+            latestDir = new File(".");
         fc.setInitialDirectory(latestDir);
         File file = fc.showSaveDialog(scene.getWindow());
         if (null != file) {
-            latestDir = file;
+            if(file.getParentFile().isDirectory())
+                latestDir = file;
             scene.getRoot().fireEvent(
                 new FeatureVectorEvent(FeatureVectorEvent.EXPORT_FEATURE_COLLECTION, file));
         }

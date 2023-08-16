@@ -22,7 +22,6 @@ package edu.jhuapl.trinity;
 
 import edu.jhuapl.trinity.data.Dimension;
 import edu.jhuapl.trinity.data.FactorLabel;
-import edu.jhuapl.trinity.data.Manifold;
 import edu.jhuapl.trinity.data.files.FeatureCollectionFile;
 import edu.jhuapl.trinity.data.messages.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.FeatureVector;
@@ -295,6 +294,23 @@ public class App extends Application {
             projections3DPane.setHyperDimensionFeatures(originalFC);            
             projections3DPane.addFeatureCollection(projectedFC);
         });
+//        scene.addEventHandler(ManifoldEvent.EXPORT_MANIFOLD_DATA, event -> {
+//            File file = (File) event.object1;
+//            Manifold3D manifold3D = (Manifold3D) event.object2;
+//            ManifoldData md = new ManifoldData();
+//            List<Point3D> points = manifold3D.getOriginalPoint3DList();
+//            ArrayList<P3D> p3Ds = points.stream().map(P3D.fxyzPoint3DToP3D)
+//                .collect(Collectors.toCollection(ArrayList::new));
+//            md.setPoints(p3Ds);
+//            try {
+//                ManifoldDataFile mdf = new ManifoldDataFile(file.getAbsolutePath(), false);
+//                mdf.manifoldData = md;
+//                mdf.writeContent();
+//            } catch (IOException ex) {
+//                Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+//            }
+//            event.consume();
+//        });
 
         scene.addEventHandler(FeatureVectorEvent.EXPORT_FEATURE_COLLECTION, event -> {
             File file = (File) event.object;
@@ -538,6 +554,7 @@ public class App extends Application {
         fveh.addFeatureVectorRenderer(hyperspace3DPane);
 
         meh = new ManifoldEventHandler();
+        scene.getRoot().addEventHandler(ManifoldEvent.EXPORT_MANIFOLD_DATA, meh);
         scene.getRoot().addEventHandler(ManifoldEvent.CLEAR_ALL_MANIFOLDS, meh);
         scene.getRoot().addEventHandler(ManifoldEvent.GENERATE_PROJECTION_MANIFOLD, meh);
         scene.getRoot().addEventHandler(ManifoldEvent.MANIFOLD_SET_SCALE, meh);

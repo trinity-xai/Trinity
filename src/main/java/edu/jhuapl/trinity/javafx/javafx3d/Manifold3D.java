@@ -24,6 +24,8 @@ import com.github.quickhull3d.Point3d;
 import com.github.quickhull3d.QuickHull3D;
 import edu.jhuapl.trinity.data.Manifold;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
+import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
+import java.io.File;
 import javafx.animation.AnimationTimer;
 import javafx.scene.Group;
 import javafx.scene.control.ColorPicker;
@@ -47,6 +49,7 @@ import org.fxyz3d.geometry.Point3D;
 import java.util.HashMap;
 import java.util.List;
 import java.util.function.Function;
+import javafx.stage.FileChooser;
 
 /**
  * @author Sean Phillips
@@ -68,24 +71,11 @@ public class Manifold3D extends Group {
     HashMap<Shape3D, Label> shape3DToLabel = new HashMap<>();
     AnimationTimer tessellationTimer;
     private List<Point3D> originalPoint3Ds = null;
+    public static File latestDir = new File(".");
     
     public Manifold3D(List<Point3D> point3DList, boolean triangulate, boolean makeLines, boolean makePoints) {
         originalPoint3Ds = point3DList;
         buildHullMesh(point3DList, triangulate, makeLines, makePoints);
-//        hull = new QuickHull3D();
-//        //Construct an array of Point3D's
-//        com.github.quickhull3d.Point3d[] points = originalPoint3Ds.stream()
-//            .map(point3DToHullPoint)
-//            .toArray(Point3d[]::new);
-//        hull.build(points);
-//        if (triangulate) {
-//            System.out.println("Triangulating...");
-//            hull.triangulate();
-//        }
-//        System.out.println("Faces: " + hull.getNumFaces());
-//        System.out.println("Verts: " + hull.getNumVertices());
-//        System.out.println("Making Quickhull mesh...");
-//        quickhullTriangleMesh = makeQuickhullMesh(hull, artScale);
         quickhullMeshView = new MeshView(quickhullTriangleMesh);
         PhongMaterial quickhullMaterial = new PhongMaterial(Color.SKYBLUE);
         quickhullMeshView.setMaterial(quickhullMaterial);
@@ -124,8 +114,25 @@ public class Manifold3D extends Group {
             Integer i = spinner.getValue();
             animateTessellation(i.longValue());
         });
-
-        cm.getItems().addAll(editPointsItem, diffuseColorItem, 
+        
+        MenuItem exportItem = new MenuItem("Export Manifold3D");
+        exportItem.setOnAction(e -> {
+            FileChooser fc = new FileChooser();
+            fc.setTitle("Choose ManifoldData file output...");
+            fc.setInitialFileName("ManifoldData.json");
+            if(!latestDir.isDirectory())
+                latestDir = new File(".");
+            fc.setInitialDirectory(latestDir);
+            File file = fc.showSaveDialog(getScene().getWindow());
+            if (null != file) {
+                if(file.getParentFile().isDirectory())
+                    latestDir = file;
+                getScene().getRoot().fireEvent(new ManifoldEvent(
+                ManifoldEvent.EXPORT_MANIFOLD_DATA, file, this));
+            }
+        });
+        
+        cm.getItems().addAll(editPointsItem, exportItem, diffuseColorItem, 
             specColorItem, tessallateItem);
         cm.setAutoFix(true);
         cm.setAutoHide(true);
@@ -317,5 +324,4 @@ public class Manifold3D extends Group {
     public List<Point3D> getOriginalPoint3DList() {
         return originalPoint3Ds;
     }
-
 }

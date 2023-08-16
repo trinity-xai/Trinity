@@ -467,6 +467,8 @@ public class ManifoldControlController implements Initializable {
     public void clearAll() {
         scene.getRoot().fireEvent(new ManifoldEvent(
             ManifoldEvent.CLEAR_ALL_MANIFOLDS));
+        //add them all in one shot
+        manifoldsListView.getItems().clear();
     }
 
     @FXML
