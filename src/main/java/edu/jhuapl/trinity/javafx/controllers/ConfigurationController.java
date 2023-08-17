@@ -25,11 +25,14 @@ import edu.jhuapl.trinity.data.CoordinateSet;
 import edu.jhuapl.trinity.data.Dimension;
 import edu.jhuapl.trinity.data.FactorLabel;
 import edu.jhuapl.trinity.data.FeatureLayer;
+import edu.jhuapl.trinity.data.files.LabelConfigFile;
+import edu.jhuapl.trinity.data.messages.LabelConfig;
 import edu.jhuapl.trinity.javafx.components.ColorMap;
 import edu.jhuapl.trinity.javafx.components.DimensionLabelItem;
 import edu.jhuapl.trinity.javafx.components.FactorLabelListItem;
 import edu.jhuapl.trinity.javafx.components.FeatureLayerListItem;
 import edu.jhuapl.trinity.javafx.events.ColorMapEvent;
+import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.EffectEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.events.HyperspaceEvent;
@@ -37,6 +40,7 @@ import edu.jhuapl.trinity.javafx.events.RadialEntityEvent;
 import edu.jhuapl.trinity.javafx.events.ShadowEvent;
 import edu.jhuapl.trinity.utils.Configuration;
 import edu.jhuapl.trinity.utils.ResourceUtils;
+import edu.jhuapl.trinity.utils.Utils;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
@@ -57,16 +61,21 @@ import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.geometry.Pos;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
+import javafx.scene.text.Font;
 
 /**
  * FXML Controller class
@@ -693,7 +702,38 @@ public class ConfigurationController implements Initializable {
             new HyperspaceEvent(HyperspaceEvent.CLEARED_DIMENSION_LABELS));
         dimensionLabelsListView.getItems().clear();
     }
-    
+    @FXML
+    public void exportLabels() {
+        FileChooser fc = new FileChooser();
+        fc.setTitle("Choose LabelConfig file output...");
+        fc.setInitialFileName("LabelConfig.json");
+        if(!latestDir.isDirectory())
+            latestDir = new File(".");
+        fc.setInitialDirectory(latestDir);
+        File file = fc.showSaveDialog(scene.getWindow());
+        if (null != file) {        
+            LabelConfig lc = new LabelConfig();
+            lc.setDimensionLabels(Dimension.getDimensionsAsStrings());
+            HashMap<String,String> labelsHashMap = new HashMap<>();
+            FactorLabel.globalLabelMap.forEach((s,f)-> {
+                labelsHashMap.put(s, Utils.convertColorToString(f.getColor()));
+            });
+            lc.setLabels(labelsHashMap);
+            lc.setClearAll(false);
+            try {
+                LabelConfigFile lcf = new LabelConfigFile(file.getAbsolutePath(), false);
+                lcf.labelConfig = lc;
+                lcf.writeContent();
+            } catch (IOException ex) {
+                Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            Platform.runLater(() -> {
+                App.getAppScene().getRoot().fireEvent(
+                    new CommandTerminalEvent("LabelConfig Serialized.",
+                        new Font("Consolas", 20), Color.GREEN));
+            });
+        }
+    }
     @FXML
     public void exportData() {
         FileChooser fc = new FileChooser();

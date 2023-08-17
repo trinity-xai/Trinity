@@ -20,6 +20,7 @@ package edu.jhuapl.trinity.javafx.renderers;
  * #L%
  */
 
+import edu.jhuapl.trinity.data.Manifold;
 import edu.jhuapl.trinity.javafx.javafx3d.Manifold3D;
 import javafx.scene.Group;
 
@@ -30,10 +31,8 @@ import java.util.List;
  */
 public interface ManifoldRenderer {
     public void clearAllManifolds();
-
+    public void addManifold(Manifold manifold, Manifold3D manifold3D);
     public void makeManifold(boolean useVisiblePoints, String label);
-
     public List<Manifold3D> getAllManifolds();
-
     public Group getManifoldViews();
 }

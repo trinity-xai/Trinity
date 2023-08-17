@@ -34,8 +34,8 @@ import java.nio.file.Files;
  * @author Sean Phillips
  */
 public class ManifoldDataFile extends File implements Transferable {
-    public static String FILE_DESC1 = "\"type\": \"ManifoldData\"";
-    public static String FILE_DESC2 = "\"type\":\"ManifoldData\"";
+    public static String FILE_DESC1 = "\"messageType\": \"manifold_data\"";
+    public static String FILE_DESC2 = "\"messageType\":\"manifold_data\"";
     public static final DataFlavor DATA_FLAVOR = new DataFlavor(ManifoldDataFile.class, "ManifoldData");
     public ManifoldData manifoldData = null;
 

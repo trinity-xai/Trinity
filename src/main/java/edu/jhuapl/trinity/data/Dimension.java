@@ -22,6 +22,8 @@ package edu.jhuapl.trinity.data;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.stream.Collector;
+import java.util.stream.Collectors;
 import javafx.scene.paint.Color;
 
 
@@ -48,8 +50,9 @@ public class Dimension {
         return globalDimensionList;
     }
     public static ArrayList<String> getDimensionsAsStrings() {
-        ArrayList<String> strings = (ArrayList<String>) globalDimensionList.stream()
-            .map(t -> t.labelString).toList();
+        ArrayList<String> strings = globalDimensionList.stream()
+            .map(t -> t.labelString)
+            .collect(Collectors.toCollection(ArrayList::new));
         return strings;
     }
     public static Dimension getDimension(int index) {

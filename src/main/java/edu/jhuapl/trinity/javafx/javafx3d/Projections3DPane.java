@@ -2112,6 +2112,10 @@ public class Projections3DPane extends StackPane implements
         return labelMatchedPoints;
     }
     @Override
+    public void addManifold(Manifold manifold, Manifold3D manifold3D) {
+        System.out.println("Sean you need to implement addManifold!!");
+    }
+    @Override
     public void makeManifold(boolean useVisiblePoints, String label) {
         //Create Manifold Object based on points that share the label
         List<Point3D> labelMatchedPoints = getPointsByLabel(useVisiblePoints, label);

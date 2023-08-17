@@ -52,6 +52,7 @@ public class ManifoldEvent extends Event {
     public static final EventType<ManifoldEvent> GENERATE_HYPERSPACE_MANIFOLD = new EventType(ANY, "GENERATE_HYPERSPACE_MANIFOLD");
     public static final EventType<ManifoldEvent> GENERATE_PROJECTION_MANIFOLD = new EventType(ANY, "GENERATE_PROJECTION_MANIFOLD");
     //Manifold Geometry
+    public static final EventType<ManifoldEvent> NEW_MANIFOLD_DATA = new EventType(ANY, "NEW_MANIFOLD_DATA");
     public static final EventType<ManifoldEvent> EXPORT_MANIFOLD_DATA = new EventType(ANY, "EXPORT_MANIFOLD_DATA");
     public static final EventType<ManifoldEvent> SET_USED_HULLPOINTS = new EventType(ANY, "SET_USED_HULLPOINTS");
     public static final EventType<ManifoldEvent> TOGGLE_HULL_POINT = new EventType(ANY, "TOGGLE_HULL_POINT");

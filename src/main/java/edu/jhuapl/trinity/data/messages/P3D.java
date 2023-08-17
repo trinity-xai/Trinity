@@ -34,6 +34,8 @@ import org.fxyz3d.geometry.Point3D;
 public class P3D extends MessageData {
     public static Function<Point3D, P3D> fxyzPoint3DToP3D = 
         p -> new P3D(p.x, p.y, p.z);
+    public static Function<P3D,Point3D> p3DToFxyzPoint3D = 
+        p -> new Point3D(p.x, p.y, p.z);
 
     public static final String TYPESTRING = "p3d";
     //<editor-fold defaultstate="collapsed" desc="JSON Payload">
