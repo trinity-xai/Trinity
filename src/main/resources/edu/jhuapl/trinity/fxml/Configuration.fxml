@@ -524,8 +524,9 @@
                                         <HBox fx:id="startTimeHBox111" alignment="CENTER_LEFT" layoutX="15.0" layoutY="50.0" spacing="10.0">
                                             <children>
                                                 <Label prefHeight="17.0" prefWidth="175.0" text="Label and Layer Collection" />
-                                                <Button mnemonicParsing="false" onAction="#clearLabels" prefWidth="150.0" text="Clear All" />
-                                                <Button layoutX="195.0" layoutY="10.0" mnemonicParsing="false" onAction="#rescanLabels" prefWidth="150.0" text="Rescan" />
+                                                <Button mnemonicParsing="false" onAction="#clearLabels" prefWidth="125.0" text="Clear All" />
+                                                <Button layoutX="195.0" layoutY="10.0" mnemonicParsing="false" onAction="#rescanLabels" prefWidth="125.0" text="Rescan" />
+                                    <Button layoutX="355.0" layoutY="10.0" mnemonicParsing="false" onAction="#exportLabels" prefWidth="125.0" text="Export" />
                                             </children>
                                         </HBox>
                                     </children>

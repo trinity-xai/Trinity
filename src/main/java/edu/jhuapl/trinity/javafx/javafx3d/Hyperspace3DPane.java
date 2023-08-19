@@ -25,6 +25,7 @@ import edu.jhuapl.trinity.data.Dimension;
 import edu.jhuapl.trinity.data.FactorLabel;
 import edu.jhuapl.trinity.data.FeatureLayer;
 import edu.jhuapl.trinity.data.HyperspaceSeed;
+import edu.jhuapl.trinity.data.Manifold;
 import edu.jhuapl.trinity.data.Trajectory;
 import edu.jhuapl.trinity.data.messages.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.FeatureVector;
@@ -1932,7 +1933,10 @@ public class Hyperspace3DPane extends StackPane implements
         cubeWorld.redraw(true);
         updateLabels();
     }
-
+    @Override
+    public void addManifold(Manifold manifold, Manifold3D manifold3D) {
+        //System.out.println("Sean you need to implement addManifold for Hyperspace3D!!");
+    }
     @Override
     public void makeManifold(boolean useVisiblePoints, String label) {
         makeHull(useVisiblePoints, label);

@@ -51,7 +51,7 @@ public class FactorLabel {
      * Provides lookup mechanism to find any object model that is currently
      * anchored in the system.
      */
-    private static HashMap<String, FactorLabel> globalLabelMap = new HashMap<>();
+    public static HashMap<String, FactorLabel> globalLabelMap = new HashMap<>();
 
     public static Collection<FactorLabel> getFactorLabels() {
         return globalLabelMap.values();

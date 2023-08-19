@@ -26,6 +26,7 @@ import edu.jhuapl.trinity.data.Distance;
 import edu.jhuapl.trinity.data.FactorLabel;
 import edu.jhuapl.trinity.data.FeatureLayer;
 import edu.jhuapl.trinity.data.HyperspaceSeed;
+import edu.jhuapl.trinity.data.Manifold;
 import edu.jhuapl.trinity.data.Trajectory;
 import edu.jhuapl.trinity.data.messages.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.FeatureVector;
@@ -98,7 +99,6 @@ import javafx.util.Duration;
 import org.fxyz3d.geometry.Point3D;
 import org.fxyz3d.scene.Skybox;
 import org.fxyz3d.utils.CameraTransformer;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -111,7 +111,6 @@ import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-
 
 /**
  * @author Sean Phillips
@@ -573,7 +572,7 @@ public class Projections3DPane extends StackPane implements
             }
 
             if (event.isAltDown() && keycode == KeyCode.H) {
-                makeHull(false, null);
+                makeHull(getPointsByLabel(true, null), null);
             }
             if (keycode == KeyCode.F) {
                 anchorIndex--;
@@ -1012,35 +1011,24 @@ public class Projections3DPane extends StackPane implements
             trajectorySphereGroup.getChildren().add(tsm);
         }
     }
-
-    public void makeHull(boolean useVisiblePoints, String label) {
-        shape3DToLabel.clear();
-        //Add to hashmap so updateLabels() can manage the label position
-        shape3DToLabel.put(xSphere, xLabel);
-        shape3DToLabel.put(ySphere, yLabel);
-        shape3DToLabel.put(zSphere, zLabel);
-
-        Perspective3DNode[] pNodeArray = pNodes.toArray(Perspective3DNode[]::new);
-        List<Point3D> labelMatchedNodes = Arrays.stream(pNodeArray)
-            .filter(p -> p.factorAnalysisSeed.label.contentEquals(label))
-            .filter(p -> p.visible)
-            .map(p -> new Point3D(p.xCoord, p.yCoord, p.zCoord))
-            .collect(Collectors.toList());
-
-
+    public Manifold3D makeHull(List<Point3D> labelMatchedPoints, String label) {
         Manifold3D manifold3D = new Manifold3D(
-            labelMatchedNodes, true, true, true
+            labelMatchedPoints, true, true, true
         );
         manifold3D.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
-            if (e.isControlDown() && e.getButton() == MouseButton.PRIMARY) {
-                selectedManifoldA = manifold3D;
-            }
+//            if (e.getButton() == MouseButton.PRIMARY && !e.isControlDown())
+//                radialOverlayPane.createCallout(sphere, featureVector, subScene);
+//            else 
+            if ((e.getButton() == MouseButton.PRIMARY && e.isControlDown())
+                || (e.getButton() == MouseButton.PRIMARY && pointToPointDistanceMode)) {
+                processDistanceClick(manifold3D);
+            }            
         });
-        System.out.println("scattermodel Manifold complete");
         manifolds.add(manifold3D);
         manifoldGroup.getChildren().add(manifold3D);
         shape3DToLabel.putAll(manifold3D.shape3DToLabel);
         updateFloatingNodes();
+        return manifold3D;
     }
 
     private void setupSkyBox() {
@@ -1409,7 +1397,9 @@ public class Projections3DPane extends StackPane implements
             seed);
 
         if (colorByLabel)
-            if (seed.label.isBlank())
+            if (null == seed.label)
+                pNode.nodeColor = Color.ALICEBLUE;
+            else if(seed.label.isBlank())
                 pNode.nodeColor = Color.ALICEBLUE;
             else
                 pNode.nodeColor = FactorLabel.getColorByLabel(seed.label);
@@ -1849,6 +1839,9 @@ public class Projections3DPane extends StackPane implements
                 updateFloatingNodes(); //Will transform location of all floating 2D nodes
                 javafx.geometry.Point3D p1 = new javafx.geometry.Point3D(
                     sphere.getTranslateX(), sphere.getTranslateY(), sphere.getTranslateZ());
+                scene.getRoot().fireEvent(new ManifoldEvent(
+                    ManifoldEvent.SELECT_PROJECTION_POINT3D, p1));                
+
                 miniCrosshair.size = point3dSize * 4.0;
                 miniCrosshair.setCenter(p1);
                 setCircleRadiusByDistance(highlighterNeonCircle, sphere);
@@ -1882,7 +1875,47 @@ public class Projections3DPane extends StackPane implements
         }
         trimQueueNow();
     }
+    private void processDistanceClick(Manifold3D manifold3D) {
+        System.out.println("Point: " + manifold3D.toString());
+        if (null == selectedManifoldA) {
+            selectedManifoldA = manifold3D;
+            //@TODO add some sort of visual highlight
+        } else {
+            selectedManifoldB = manifold3D;
+            //@TODO add some sort of visual highlight
+        }
+        //Are we doing a point to manifold check?
+        if (null != selectedSphereA && null != selectedManifoldA) {
+            javafx.geometry.Point3D p1 = new javafx.geometry.Point3D(
+                selectedSphereA.getTranslateX(),
+                selectedSphereA.getTranslateY(),
+                selectedSphereA.getTranslateZ());
+            javafx.geometry.Point3D p2 = selectedManifoldA.getClosestHullPoint(p1);
+            System.out.println("Difference: " + p1.subtract(p2).toString());
+            System.out.println("Distance: " + p1.distance(p2));
+            //Fire off event to create new distance object
+            String distanceLabel =
+                sphereToFeatureVectorMap.get(selectedSphereA).getLabel()
+                    + " => " + manifold3D.toString();
+            Distance distanceObject = new Distance(
+                distanceLabel, Color.ALICEBLUE, "euclidean", 5);
+            distanceObject.setPoint1(p1);
+            distanceObject.setPoint2(p2);
+            distanceObject.setValue(p1.distance(p2));
 
+            getScene().getRoot().fireEvent(new ManifoldEvent(
+                ManifoldEvent.CREATE_NEW_DISTANCE, distanceObject));
+            //Add 3D line to scene connecting the two points
+            //adds midpoint so we can anchor a numeric distance label
+            updateDistanceTrajectory(null, distanceObject);
+
+            //Clear selected spheres to null state
+            selectedSphereA = null;
+            selectedSphereB = null;        
+            selectedManifoldA = null;
+            selectedManifoldB = null;
+        }
+    }
     private void processDistanceClick(Sphere sphere) {
         System.out.println("Point: " + sphere.toString());
         if (null == selectedSphereA) {
@@ -1922,10 +1955,6 @@ public class Projections3DPane extends StackPane implements
                 ManifoldEvent.CREATE_NEW_DISTANCE, distanceObject));
             //Add 3D line to scene connecting the two points
             updateDistanceTrajectory(null, distanceObject);
-
-            //@TODO SMP add midpoint so we can anchor a numeric distance label
-            //@TODO SMP Add 2D distance overlay
-
             //Clear selected spheres to null state
             selectedSphereA = null;
             selectedSphereB = null;
@@ -2102,10 +2131,68 @@ public class Projections3DPane extends StackPane implements
         updateEllipsoids();
         cubeWorld.redraw(true);
     }
+    private List<Point3D> getPointsByLabel(boolean useVisiblePoints, String label) {
+        Perspective3DNode[] pNodeArray = pNodes.toArray(Perspective3DNode[]::new);
+        List<Point3D> labelMatchedPoints = null;
+        if(null == label)
+            labelMatchedPoints = Arrays.stream(pNodeArray)
+            .filter(p -> p.visible)
+            .map(p -> new Point3D(p.xCoord, p.yCoord, p.zCoord))
+            .collect(Collectors.toList());
+        else if(useVisiblePoints)
+            labelMatchedPoints = Arrays.stream(pNodeArray)
+            .filter(p -> p.factorAnalysisSeed.label.contentEquals(label) && p.visible)
+            .map(p -> new Point3D(p.xCoord, p.yCoord, p.zCoord))
+            .collect(Collectors.toList());
+        else
+            labelMatchedPoints = Arrays.stream(pNodeArray)
+            .filter(p -> p.factorAnalysisSeed.label.contentEquals(label))
+            .map(p -> new Point3D(p.xCoord, p.yCoord, p.zCoord))
+            .collect(Collectors.toList());
+        return labelMatchedPoints;
+    }
+    @Override
+    public void addManifold(Manifold manifold, Manifold3D manifold3D) {
+        System.out.println("adding manifold to Projections View.");
+        manifold3D.setManifold(manifold);
+        manifold3D.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
+            getScene().getRoot().fireEvent(
+                new ManifoldEvent(ManifoldEvent.MANIFOLD_3D_SELECTED, manifold));
+            if ((e.getButton() == MouseButton.PRIMARY && e.isControlDown())
+                || (e.getButton() == MouseButton.PRIMARY && pointToPointDistanceMode)) {
+                processDistanceClick(manifold3D);
+            }            
 
+        });
+        manifolds.add(manifold3D);
+        manifoldGroup.getChildren().add(manifold3D);
+        shape3DToLabel.putAll(manifold3D.shape3DToLabel);
+        updateFloatingNodes();        
+        
+    }
     @Override
     public void makeManifold(boolean useVisiblePoints, String label) {
-        makeHull(useVisiblePoints, label);
+        //Create Manifold Object based on points that share the label
+        List<Point3D> labelMatchedPoints = getPointsByLabel(useVisiblePoints, label);
+        ArrayList<javafx.geometry.Point3D> fxPoints = labelMatchedPoints.stream()
+            .map(p3D -> new javafx.geometry.Point3D(p3D.x, p3D.y, p3D.z))
+            .collect(Collectors.toCollection(ArrayList::new));
+        Manifold manifold = new Manifold(fxPoints, label, label, sceneColor);
+        //Create the 3D manifold shape
+        Manifold3D manifold3D = makeHull(labelMatchedPoints, label);
+        manifold3D.setManifold(manifold);
+        manifold3D.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
+            getScene().getRoot().fireEvent(
+                new ManifoldEvent(ManifoldEvent.MANIFOLD_3D_SELECTED, manifold));
+        });
+        //Add this Manifold data object to the global tracker
+        Manifold.addManifold(manifold);
+        //update the manifold to manifold3D mapping
+        Manifold.globalManifoldToManifold3DMap.put(manifold, manifold3D);
+        //announce to the world of the new manifold and its shape
+        System.out.println("Manifold3D generation complete for " + label);
+        getScene().getRoot().fireEvent(new ManifoldEvent(
+        ManifoldEvent.MANIFOLD3D_OBJECT_GENERATED, manifold, manifold3D));
     }
 
     @Override

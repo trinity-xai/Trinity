@@ -55,6 +55,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.scene.effect.PerspectiveTransform;
 
 /**
  * @author Sean Phillips
@@ -104,7 +105,54 @@ public class LitPathPane extends PathPane {
         }
         return sgRoot;
     }
+    public static void slideInPane(PathPane pane) {
+        //https://stackoverflow.com/questions/48893282/javafx-apply-perspective-transformation-on-a-node-given-a-perspective-transform?noredirect=1&lq=1
+        PerspectiveTransform pt = new PerspectiveTransform();
+        pt.setUlx(pane.getWidth());
+        pt.setUly(pane.getHeight() * 0.5);
+        pt.setUrx(pane.getWidth() + 1.0);
+        pt.setUry(pane.getHeight() * 0.5);
 
+        pt.setLrx(pane.getWidth() + 1.0);
+        pt.setLry(pane.getHeight() * 0.5);
+        pt.setLlx(pane.getWidth());
+        pt.setLly(pane.getHeight() * 0.5);
+        pane.setEffect(pt);
+
+        Duration showPointDuration = Duration.seconds(0.75);
+        Duration midPointDuration = Duration.seconds(0.75);
+        Duration endPointDuration = Duration.seconds(1.00);
+
+        Timeline timeline = new Timeline(
+            new KeyFrame(showPointDuration, e -> pane.show()),
+
+            //animation to midpoint
+            new KeyFrame(midPointDuration, new KeyValue(pt.ulxProperty(), pane.getWidth() * 0.75)),
+            new KeyFrame(midPointDuration, new KeyValue(pt.ulyProperty(), 0.0)),
+            new KeyFrame(midPointDuration, new KeyValue(pt.urxProperty(), pane.getWidth())),
+            new KeyFrame(midPointDuration, new KeyValue(pt.uryProperty(), pane.getHeight() * 0.333)),
+
+            new KeyFrame(midPointDuration, new KeyValue(pt.lrxProperty(), pane.getWidth())),
+            new KeyFrame(midPointDuration, new KeyValue(pt.lryProperty(), pane.getHeight() * 0.666)),
+            new KeyFrame(midPointDuration, new KeyValue(pt.llxProperty(), pane.getWidth() * 0.75)),
+            new KeyFrame(midPointDuration, new KeyValue(pt.llyProperty(), pane.getHeight())),
+
+            //animation to actual size
+            new KeyFrame(endPointDuration, new KeyValue(pt.ulxProperty(), 0.0)),
+            new KeyFrame(endPointDuration, new KeyValue(pt.ulyProperty(), 0.0)),
+            new KeyFrame(endPointDuration, new KeyValue(pt.urxProperty(), pane.getWidth())),
+            new KeyFrame(endPointDuration, new KeyValue(pt.uryProperty(), 0.0)),
+
+            new KeyFrame(endPointDuration, new KeyValue(pt.lrxProperty(), pane.getWidth())),
+            new KeyFrame(endPointDuration, new KeyValue(pt.lryProperty(), pane.getHeight())),
+            new KeyFrame(endPointDuration, new KeyValue(pt.llxProperty(), 0.0)),
+            new KeyFrame(endPointDuration, new KeyValue(pt.llyProperty(), pane.getHeight()))
+        );
+        timeline.play();
+        timeline.setOnFinished(e -> {
+            pane.setEffect(null);
+        });
+    }
     public LitPathPane(Scene scene, Pane parent, int width, int height, Pane userContent, String mainTitleText, String mainTitleText2, double borderTimeMs, double contentTimeMs) {
         super(scene, parent, width, height, userContent, mainTitleText, mainTitleText2, borderTimeMs, contentTimeMs);
         this.scene = scene;

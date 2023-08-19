@@ -28,6 +28,8 @@ import edu.jhuapl.trinity.data.messages.FeatureVector;
 import edu.jhuapl.trinity.javafx.components.CircleProgressIndicator;
 import edu.jhuapl.trinity.javafx.components.MatrixOverlay;
 import edu.jhuapl.trinity.javafx.components.ProgressStatus;
+import static edu.jhuapl.trinity.javafx.components.panes.LitPathPane.slideInPane;
+import edu.jhuapl.trinity.javafx.components.panes.Shape3DControlPane;
 import edu.jhuapl.trinity.javafx.components.radial.MainNavMenu;
 import edu.jhuapl.trinity.javafx.components.timeline.Item;
 import edu.jhuapl.trinity.javafx.components.timeline.MissionTimerX;
@@ -52,6 +54,7 @@ import edu.jhuapl.trinity.javafx.handlers.SearchEventHandler;
 import edu.jhuapl.trinity.javafx.handlers.SemanticMapEventHandler;
 import edu.jhuapl.trinity.javafx.javafx3d.Hyperspace3DPane;
 import edu.jhuapl.trinity.javafx.javafx3d.Hypersurface3DPane;
+import edu.jhuapl.trinity.javafx.javafx3d.Manifold3D;
 import edu.jhuapl.trinity.javafx.javafx3d.Projections3DPane;
 import edu.jhuapl.trinity.javafx.javafx3d.RetroWavePane;
 import edu.jhuapl.trinity.messages.MessageProcessor;
@@ -116,6 +119,7 @@ public class App extends Application {
     Hyperspace3DPane hyperspace3DPane;
     Hypersurface3DPane hypersurface3DPane;
     Projections3DPane projections3DPane;
+    Shape3DControlPane shape3DControlPane;    
     CircleProgressIndicator circleSpinner;
 
     static Configuration theConfig;
@@ -125,7 +129,6 @@ public class App extends Application {
     Map<String, String> namedParameters;
     List<String> unnamedParameters;
     AnimatedText animatedConsoleText;
-
     MessageProcessor processor;
     ZeroMQSubscriberConfig subscriberConfig;
     ZeroMQFeedManager feed;
@@ -501,6 +504,22 @@ public class App extends Application {
                 fadeInConsole(500);
             }
         });
+        scene.addEventHandler(ApplicationEvent.SHOW_SHAPE3D_CONTROLS, e -> {
+            Manifold3D manifold3D = (Manifold3D) e.object;
+            if (null == shape3DControlPane) {
+                shape3DControlPane = new Shape3DControlPane(scene, pathPane);
+            }
+            if(null != manifold3D) {
+//                Manifold.globalManifoldToManifold3DMap
+                shape3DControlPane.setShape3D(manifold3D);
+            }
+            if (!pathPane.getChildren().contains(shape3DControlPane)) {
+                pathPane.getChildren().add(shape3DControlPane);
+                slideInPane(shape3DControlPane);
+            } else {
+                shape3DControlPane.show();
+            }
+        });
 
         gmeh = new GaussianMixtureEventHandler();
         scene.getRoot().addEventHandler(GaussianMixtureEvent.NEW_GAUSSIAN_MIXTURE, gmeh);
@@ -518,6 +537,9 @@ public class App extends Application {
         fveh.addFeatureVectorRenderer(hyperspace3DPane);
 
         meh = new ManifoldEventHandler();
+        
+        scene.getRoot().addEventHandler(ManifoldEvent.NEW_MANIFOLD_DATA, meh);
+        scene.getRoot().addEventHandler(ManifoldEvent.EXPORT_MANIFOLD_DATA, meh);
         scene.getRoot().addEventHandler(ManifoldEvent.CLEAR_ALL_MANIFOLDS, meh);
         scene.getRoot().addEventHandler(ManifoldEvent.GENERATE_PROJECTION_MANIFOLD, meh);
         scene.getRoot().addEventHandler(ManifoldEvent.MANIFOLD_SET_SCALE, meh);
@@ -597,7 +619,6 @@ public class App extends Application {
         scene.addEventHandler(CommandTerminalEvent.FOLLOWUP, e -> {
             animatedConsoleText.setVisible(true);
             animatedConsoleText.setOpacity(1.0);
-
             final int originalLength = animatedConsoleText.getText().length();
             final IntegerProperty i = new SimpleIntegerProperty(originalLength);
             Timeline timeline = new Timeline();

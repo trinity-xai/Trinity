@@ -22,6 +22,10 @@ package edu.jhuapl.trinity.javafx.javafx3d;
 
 import com.github.quickhull3d.Point3d;
 import com.github.quickhull3d.QuickHull3D;
+import edu.jhuapl.trinity.data.Manifold;
+import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
+import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
+import java.io.File;
 import javafx.animation.AnimationTimer;
 import javafx.scene.Group;
 import javafx.scene.control.ColorPicker;
@@ -45,6 +49,8 @@ import org.fxyz3d.geometry.Point3D;
 import java.util.HashMap;
 import java.util.List;
 import java.util.function.Function;
+import javafx.stage.FileChooser;
+
 
 /**
  * @author Sean Phillips
@@ -52,36 +58,26 @@ import java.util.function.Function;
 public class Manifold3D extends Group {
     public Group extrasGroup = new Group();
     public Group labelGroup = new Group();
-
+    private Manifold manifold = null;
     public QuickHull3D hull;
+    
     public TriangleMesh quickhullTriangleMesh;
     public MeshView quickhullMeshView;
     public TriangleMesh quickhullLinesTriangleMesh;
     public MeshView quickhullLinesMeshView;
-
-    Function<Point3D, Point3d> point3DToHullPoint = p -> new Point3d(p.x, p.y, p.z);
-    Function<Point3d, Point3D> hullPointToPoint3D = p -> new Point3D(p.x, p.y, p.z);
+    public float artScale = 1.0f;
+    public static Function<Point3D, Point3d> point3DToHullPoint = p -> new Point3d(p.x, p.y, p.z);
+    public static Function<Point3d, Point3D> hullPointToPoint3D = p -> new Point3D(p.x, p.y, p.z);
 
     //allows 2D labels to track their 3D counterparts
     HashMap<Shape3D, Label> shape3DToLabel = new HashMap<>();
     AnimationTimer tessellationTimer;
-
+    private List<Point3D> originalPoint3Ds = null;
+    public static File latestDir = new File(".");
+    
     public Manifold3D(List<Point3D> point3DList, boolean triangulate, boolean makeLines, boolean makePoints) {
-        hull = new QuickHull3D();
-        //Construct an array of Point3D's
-        com.github.quickhull3d.Point3d[] points = point3DList.stream()
-            .map(point3DToHullPoint)
-            .toArray(Point3d[]::new);
-        hull.build(points);
-        if (triangulate) {
-            System.out.println("Triangulating...");
-            hull.triangulate();
-        }
-        System.out.println("Faces: " + hull.getNumFaces());
-        System.out.println("Verts: " + hull.getNumVertices());
-        System.out.println("Making Quickhull mesh...");
-        float artScale = 1.0f;
-        quickhullTriangleMesh = makeQuickhullMesh(hull, artScale);
+        originalPoint3Ds = point3DList;
+        buildHullMesh(point3DList, triangulate, makeLines, makePoints);
         quickhullMeshView = new MeshView(quickhullTriangleMesh);
         PhongMaterial quickhullMaterial = new PhongMaterial(Color.SKYBLUE);
         quickhullMeshView.setMaterial(quickhullMaterial);
@@ -96,11 +92,18 @@ public class Manifold3D extends Group {
             makeDebugPoints(hull, artScale, false);
 
         ContextMenu cm = new ContextMenu();
+        MenuItem editPointsItem = new MenuItem("Edit Shape");
+        editPointsItem.setOnAction(e -> {
+            getScene().getRoot().fireEvent(new ApplicationEvent(
+            ApplicationEvent.SHOW_SHAPE3D_CONTROLS, this));
+        });
+
         ColorPicker diffuseColorPicker = new ColorPicker(Color.SKYBLUE);
         diffuseColorPicker.valueProperty().addListener(cl -> {
             ((PhongMaterial) quickhullMeshView.getMaterial()).setDiffuseColor(diffuseColorPicker.getValue());
         });
         MenuItem diffuseColorItem = new MenuItem("Diffuse Color", diffuseColorPicker);
+
         ColorPicker specColorPicker = new ColorPicker(Color.SKYBLUE);
         specColorPicker.valueProperty().addListener(cl -> {
             ((PhongMaterial) quickhullMeshView.getMaterial()).setSpecularColor(specColorPicker.getValue());
@@ -113,13 +116,30 @@ public class Manifold3D extends Group {
             Integer i = spinner.getValue();
             animateTessellation(i.longValue());
         });
-
-        cm.getItems().addAll(diffuseColorItem, specColorItem, tessallateItem);
+        
+        MenuItem exportItem = new MenuItem("Export Manifold3D");
+        exportItem.setOnAction(e -> {
+            FileChooser fc = new FileChooser();
+            fc.setTitle("Choose ManifoldData file output...");
+            fc.setInitialFileName("ManifoldData.json");
+            if(!latestDir.isDirectory())
+                latestDir = new File(".");
+            fc.setInitialDirectory(latestDir);
+            File file = fc.showSaveDialog(getScene().getWindow());
+            if (null != file) {
+                if(file.getParentFile().isDirectory())
+                    latestDir = file;
+                getScene().getRoot().fireEvent(new ManifoldEvent(
+                ManifoldEvent.EXPORT_MANIFOLD_DATA, file, this));
+            }
+        });
+        
+        cm.getItems().addAll(editPointsItem, exportItem, diffuseColorItem, 
+            specColorItem, tessallateItem);
         cm.setAutoFix(true);
         cm.setAutoHide(true);
         cm.setHideOnEscape(true);
         cm.setOpacity(0.85);
-
         quickhullMeshView.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
             if (e.getButton() == MouseButton.SECONDARY) {
                 if (null != cm)
@@ -130,6 +150,55 @@ public class Manifold3D extends Group {
                 e.consume();
             }
         });
+    }
+    public javafx.geometry.Point3D getClosestFacePoint(javafx.geometry.Point3D startingPoint) {
+        javafx.geometry.Point3D shortestPoint = null;
+        
+        return shortestPoint;
+    }
+    public javafx.geometry.Point3D getClosestHullPoint(javafx.geometry.Point3D startingPoint) {
+        javafx.geometry.Point3D shortestPoint = null;
+        double distance = 0;
+        for(Point3D point : originalPoint3Ds) {
+            double currentDistance = startingPoint.distance(point.x, point.y, point.z);
+            if(null == shortestPoint || currentDistance < distance) {
+               distance = currentDistance;
+               shortestPoint = new javafx.geometry.Point3D(point.x, point.y, point.z);
+            }
+        }
+        return shortestPoint;
+    }
+    
+    public void refreshMesh(List<Point3D> point3DList, boolean triangulate, boolean makeLines, boolean makePoints) {
+        quickhullLinesTriangleMesh.getPoints().clear();
+        quickhullLinesTriangleMesh.getTexCoords().clear();
+        quickhullLinesTriangleMesh.getFaces().clear();        
+        buildHullMesh(point3DList, triangulate, makeLines, makePoints);
+        quickhullMeshView.setMesh(quickhullTriangleMesh);
+        if (makeLines) {
+            quickhullLinesTriangleMesh.getPoints().addAll(quickhullTriangleMesh.getPoints());
+            quickhullLinesTriangleMesh.getTexCoords().addAll(quickhullTriangleMesh.getTexCoords());
+            quickhullLinesTriangleMesh.getFaces().addAll(quickhullTriangleMesh.getFaces());
+            quickhullLinesMeshView.setMesh(quickhullLinesTriangleMesh);
+        }
+//        if (makePoints)
+//            makeDebugPoints(hull, artScale, false); 
+    }
+    private void buildHullMesh(List<Point3D> point3DList, boolean triangulate, boolean makeLines, boolean makePoints) {
+        hull = new QuickHull3D();
+        //Construct an array of Point3D's
+        com.github.quickhull3d.Point3d[] points = point3DList.stream()
+            .map(point3DToHullPoint)
+            .toArray(Point3d[]::new);
+        hull.build(points);
+        if (triangulate) {
+            System.out.println("Triangulating...");
+            hull.triangulate();
+        }
+        System.out.println("Faces: " + hull.getNumFaces());
+        System.out.println("Verts: " + hull.getNumVertices());
+        System.out.println("Making Quickhull mesh...");
+        quickhullTriangleMesh = makeQuickhullMesh(hull, artScale);
     }
 
     public void matrixRotate(double alf, double bet, double gam) {
@@ -253,5 +322,26 @@ public class Manifold3D extends Group {
         if (print)
             System.out.println("};");
         getChildren().add(extrasGroup);
+    }
+
+    /**
+     * @return the manifold
+     */
+    public Manifold getManifold() {
+        return manifold;
+    }
+
+    /**
+     * @param manifold the manifold to set
+     */
+    public void setManifold(Manifold manifold) {
+        this.manifold = manifold;
+    }
+
+    /**
+     * @return the point3DList
+     */
+    public List<Point3D> getOriginalPoint3DList() {
+        return originalPoint3Ds;
     }
 }

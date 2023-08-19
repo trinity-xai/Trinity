@@ -1848,7 +1848,7 @@
     -var-title_background_hover_color: #4A4A4A;
     -var-border_color: #494949;
     -var-arrow_color: #6495ED; /* CornflowerBlue */
-    -var-content_background_color: #6495ED66;
+    -var-content_background_color: #6495ED11;
     -fx-background-color: -var-content_background_color;
 }
 

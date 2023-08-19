@@ -26,6 +26,7 @@ import edu.jhuapl.trinity.data.files.CdcTissueGenesFile;
 import edu.jhuapl.trinity.data.files.FeatureCollectionFile;
 import edu.jhuapl.trinity.data.files.GaussianMixtureCollectionFile;
 import edu.jhuapl.trinity.data.files.LabelConfigFile;
+import edu.jhuapl.trinity.data.files.ManifoldDataFile;
 import edu.jhuapl.trinity.data.files.McclodSplitDataTsvFile;
 import edu.jhuapl.trinity.data.files.SemanticMapCollectionFile;
 import edu.jhuapl.trinity.data.files.TextEmbeddingCollectionFile;
@@ -36,6 +37,7 @@ import edu.jhuapl.trinity.data.terrain.TerrainTextFile;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.events.GaussianMixtureEvent;
 import edu.jhuapl.trinity.javafx.events.ImageEvent;
+import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.javafx.events.NeuralEvent;
 import edu.jhuapl.trinity.javafx.events.SemanticMapEvent;
 import edu.jhuapl.trinity.javafx.events.TerrainEvent;
@@ -313,6 +315,10 @@ public enum ResourceUtils {
                     Thread thread = new Thread(task);
                     thread.setDaemon(true);
                     thread.start();
+                } else if (ManifoldDataFile.isManifoldDataFile(file)) {
+                    ManifoldDataFile mdFile = new ManifoldDataFile(file.getAbsolutePath(), true);
+                    scene.getRoot().fireEvent(
+                        new ManifoldEvent(ManifoldEvent.NEW_MANIFOLD_DATA, mdFile.manifoldData));
                 }
             } catch (IOException ex) {
                 Logger.getLogger(ResourceUtils.class.getName()).log(Level.SEVERE, null, ex);
