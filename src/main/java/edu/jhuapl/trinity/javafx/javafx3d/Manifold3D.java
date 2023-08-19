@@ -51,6 +51,7 @@ import java.util.List;
 import java.util.function.Function;
 import javafx.stage.FileChooser;
 
+
 /**
  * @author Sean Phillips
  */
@@ -59,6 +60,7 @@ public class Manifold3D extends Group {
     public Group labelGroup = new Group();
     private Manifold manifold = null;
     public QuickHull3D hull;
+    
     public TriangleMesh quickhullTriangleMesh;
     public MeshView quickhullMeshView;
     public TriangleMesh quickhullLinesTriangleMesh;
@@ -149,6 +151,24 @@ public class Manifold3D extends Group {
             }
         });
     }
+    public javafx.geometry.Point3D getClosestFacePoint(javafx.geometry.Point3D startingPoint) {
+        javafx.geometry.Point3D shortestPoint = null;
+        
+        return shortestPoint;
+    }
+    public javafx.geometry.Point3D getClosestHullPoint(javafx.geometry.Point3D startingPoint) {
+        javafx.geometry.Point3D shortestPoint = null;
+        double distance = 0;
+        for(Point3D point : originalPoint3Ds) {
+            double currentDistance = startingPoint.distance(point.x, point.y, point.z);
+            if(null == shortestPoint || currentDistance < distance) {
+               distance = currentDistance;
+               shortestPoint = new javafx.geometry.Point3D(point.x, point.y, point.z);
+            }
+        }
+        return shortestPoint;
+    }
+    
     public void refreshMesh(List<Point3D> point3DList, boolean triangulate, boolean makeLines, boolean makePoints) {
         quickhullLinesTriangleMesh.getPoints().clear();
         quickhullLinesTriangleMesh.getTexCoords().clear();

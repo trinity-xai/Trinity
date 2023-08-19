@@ -22,10 +22,8 @@ package edu.jhuapl.trinity.data;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.stream.Collector;
 import java.util.stream.Collectors;
 import javafx.scene.paint.Color;
-
 
 /**
  * @author Sean Phillips

@@ -326,7 +326,18 @@ public class ManifoldEventHandler implements EventHandler<ManifoldEvent> {
             .collect(Collectors.toCollection(ArrayList::new));
         Manifold manifold = new Manifold(fxpoints, "dudelabel", "dudename", Color.CYAN);
         Manifold3D manifold3D = new Manifold3D(points, true, true, false);
+        //Add this Manifold data object to the global tracker
+        Manifold.addManifold(manifold);
+        //update the manifold to manifold3D mapping
+        Manifold.globalManifoldToManifold3DMap.put(manifold, manifold3D);
         
+        for (ManifoldRenderer renderer : manifoldRenderers) {
+            renderer.addManifold(manifold, manifold3D);
+        }        
+        Platform.runLater(() -> {
+            App.getAppScene().getRoot().fireEvent(new ManifoldEvent(
+            ManifoldEvent.MANIFOLD3D_OBJECT_GENERATED, manifold, manifold3D));
+        });
     }
     @Override
     public void handle(ManifoldEvent event) {

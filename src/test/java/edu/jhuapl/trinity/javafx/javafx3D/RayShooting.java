@@ -20,12 +20,12 @@ package edu.jhuapl.trinity.javafx.javafx3D;
  * #L%
  */
 
-import edu.jhuapl.trinity.javafx.javafx3d.TriaxialSpheroidMesh;
 import javafx.animation.Interpolator;
 import javafx.animation.PauseTransition;
 import javafx.animation.Transition;
 import javafx.application.Application;
 import javafx.geometry.Insets;
+import javafx.geometry.Point2D;
 import javafx.geometry.Point3D;
 import javafx.scene.AmbientLight;
 import javafx.scene.Group;
@@ -118,8 +118,6 @@ public class RayShooting extends Application {
     private double cameraDistance = -4000;
     private final double sceneWidth = 4000;
     private final double sceneHeight = 4000;
-    Spheroid spheroid;
-    TriaxialSpheroidMesh triaxialSpheroid;
     private double mousePosX;
     private double mousePosY;
     private double mouseOldX;
@@ -157,45 +155,19 @@ public class RayShooting extends Application {
         headLight.setTranslateX(camera.getTranslateX());
         headLight.setTranslateY(camera.getTranslateY());
         headLight.setTranslateZ(camera.getTranslateZ() + 100.0);
-        spheroid = new Spheroid(32, 200, 200, Color.web("#ffff0080"));
-        spheroid.setDrawMode(DrawMode.FILL);
-        spheroid.setCullFace(CullFace.BACK);
-        spheroid.setDiffuseColor(Color.web("#ffff0080"));
-
-        triaxialSpheroid = new TriaxialSpheroidMesh(16, 100, 100, 100);
-        triaxialSpheroid.setDrawMode(DrawMode.FILL);
-        triaxialSpheroid.setCullFace(CullFace.BACK);
-        PhongMaterial mat = new PhongMaterial(Color.RED.deriveColor(1, 1, 1, 0.01));
-        mat.setDiffuseColor(Color.RED.deriveColor(1, 1, 1, 0.01));
-        mat.setSpecularColor(Color.RED.deriveColor(1, 1, 1, 0.01));
-        triaxialSpheroid.setMaterial(mat);
-        triaxialSpheroid.setDiffuseColor(Color.RED.deriveColor(1, 1, 1, 0.01));
-
-        Sphere sphere = new Sphere(100, 16);
-        sphere.setDrawMode(DrawMode.FILL);
-        sphere.setCullFace(CullFace.BACK);
-        PhongMaterial material = new PhongMaterial(Color.color(1, 1, 1, 0.8));//0.02));
-//        material.setDiffuseColor(Color.color(1, 1, 1, 0.1));
-//        material.setSpecularColor(Color.TRANSPARENT);
-
-        sphere.setMaterial(material);
-        triaxialSpheroid.setTranslateZ(-300);
-        sceneRoot.getChildren().addAll(cameraTransform, targetGroup
-//             , triaxialSpheroid
-            , sphere
-            , triaxialSpheroid
-        );
-//        allLight = new AmbientLight(Color.color(1,1,1,0.1));
-//        allLight.getScope().addAll(targetGroup, triaxialSpheroid, sphere);
-//        sceneRoot.getChildren().add(allLight);
 
         BorderPane bpOilSpill = new BorderPane(subScene);
 
         stackPane.getChildren().clear();
         stackPane.getChildren().addAll(bpOilSpill);
 
-//        createMesh();
+        createMesh();
+        allLight = new AmbientLight(Color.color(1,1,1,0.1));
+        allLight.getScope().addAll(targetGroup);
+        sceneRoot.getChildren().addAll(allLight, targetGroup);
+
         addMeshAndListeners();
+
 //        reset();
 
         stackPane.setPadding(new Insets(10));
@@ -257,39 +229,7 @@ public class RayShooting extends Application {
             if (keycode == KeyCode.CONTROL) {
                 fireRay = false;
             }
-            if (keycode == KeyCode.LEFT) {
-                spheroid.setMajorRadius(spheroid.getMajorRadius() - 10);
-            }
-            if (keycode == KeyCode.RIGHT) {
-                spheroid.setMajorRadius(spheroid.getMajorRadius() + 10);
-            }
-            if (keycode == KeyCode.UP) {
-                spheroid.setMinorRadius(spheroid.getMinorRadius() + 10);
-            }
-            if (keycode == KeyCode.DOWN) {
-                spheroid.setMinorRadius(spheroid.getMinorRadius() - 10);
-            }
-
-            if (keycode == KeyCode.NUMPAD7) {
-                triaxialSpheroid.setMajorRadius(triaxialSpheroid.getMajorRadius() + 10);
-            }
-            if (keycode == KeyCode.NUMPAD1) {
-                triaxialSpheroid.setMajorRadius(triaxialSpheroid.getMajorRadius() - 10);
-            }
-            if (keycode == KeyCode.NUMPAD8) {
-                triaxialSpheroid.setMinorRadius(triaxialSpheroid.getMinorRadius() + 10);
-            }
-            if (keycode == KeyCode.NUMPAD2) {
-                triaxialSpheroid.setMinorRadius(triaxialSpheroid.getMinorRadius() - 10);
-            }
-            if (keycode == KeyCode.NUMPAD9) {
-                triaxialSpheroid.setGammaRadius(triaxialSpheroid.getGammaRadius() + 10);
-            }
-            if (keycode == KeyCode.NUMPAD3) {
-                triaxialSpheroid.setGammaRadius(triaxialSpheroid.getGammaRadius() - 10);
-            }
         });
-
         subScene.setOnKeyReleased(ke -> {
             // release flag
             if (ke.getCode().equals(KeyCode.CONTROL)) {
@@ -304,38 +244,41 @@ public class RayShooting extends Application {
             mousePosY = e.getSceneY();
             mouseOldX = e.getSceneX();
             mouseOldY = e.getSceneY();
-//            if (fireRay) {
-////                Point3D o = CameraHelper.pickProjectPlane(camera, e.getX(), e.getY());
-//
-//                Point3D o = subScene.sceneToLocal(e.getX(), e.getY(), camera.getTranslateZ());
-//
-//                if (e.isPrimaryButtonDown()) {
-//                    // set Target and Direction
-//                    Point3D t = Point3D.ZERO.add(target2.getTranslateX(), target2.getTranslateY(), target2.getTranslateZ()),
-//                            d = t.subtract(o);
-//                    //Build the Ray
-//                    Ray r = new Ray(o, d);
-//                    double dist = t.distance(o);
-//                    // If ray intersects node, spawn and animate
-//                    if (target2.getBoundsInParent().contains(r.project(dist))) {
-//                        animateRayTo(r, target2, Duration.seconds(2));
-//                        e.consume();
-//                    }
-//                    e.consume();
-//                } // repeat for other target as well
-//                else if (e.isSecondaryButtonDown()) {
-//                    Point3D tgt = Point3D.ZERO.add(target1.getTranslateX(), target1.getTranslateY(), target1.getTranslateZ()),
-//                            dir = tgt.subtract(o);
-//
-//                    Ray r = new Ray(o, dir);
-//                    double dist = tgt.distance(o);
-//                    if (target1.getBoundsInParent().contains(r.project(dist))) {
-//                        animateRayTo(r, target1, Duration.seconds(2));
-//                        e.consume();
-//                    }
-//                    e.consume();
-//                }
-//            }e.consume();
+            if (fireRay) {
+//                Point3D o = CameraHelper.pickProjectPlane(camera, e.getX(), e.getY());
+//                  Point2D p2D = subScene.screenToLocal(e.getX(), e.getY());
+       
+                  Point3D o = new Point3D(cameraTransform.t.getTx(), cameraTransform.t.getTy(), camera.getTranslateZ());
+                System.out.println(o.toString());
+//                Point3D o1 = subScene.sceneToLocal(e.getX(), e.getY(), camera.getTranslateZ());
+//                System.out.println(o1.toString());
+                if (e.isPrimaryButtonDown()) {
+                    // set Target and Direction
+                    Point3D t = Point3D.ZERO.add(target2.getTranslateX(), target2.getTranslateY(), target2.getTranslateZ()),
+                            d = t.subtract(o);
+                    //Build the Ray
+                    Ray r = new Ray(o, d);
+                    double dist = t.distance(o);
+                    // If ray intersects node, spawn and animate
+                    if (target2.getBoundsInParent().contains(r.project(dist))) {
+                        animateRayTo(r, target2, Duration.seconds(2));
+                        e.consume();
+                    }
+                    e.consume();
+                } // repeat for other target as well
+                else if (e.isSecondaryButtonDown()) {
+                    Point3D tgt = Point3D.ZERO.add(target1.getTranslateX(), target1.getTranslateY(), target1.getTranslateZ()),
+                            dir = tgt.subtract(o);
+
+                    Ray r = new Ray(o, dir);
+                    double dist = tgt.distance(o);
+                    if (target1.getBoundsInParent().contains(r.project(dist))) {
+                        animateRayTo(r, target1, Duration.seconds(2));
+                        e.consume();
+                    }
+                    e.consume();
+                }
+            }e.consume();
         });
     }
 
@@ -432,18 +375,18 @@ public class RayShooting extends Application {
         target1.setId("t1");
         target1.setDrawMode(DrawMode.LINE);
         target1.setCullFace(CullFace.NONE);
-//        target1.setTranslateX(300);
-//        target1.setTranslateY(300);
-//        target1.setTranslateZ(2500);
+        target1.setTranslateX(300);
+        target1.setTranslateY(300);
+        target1.setTranslateZ(2500);
         target1.setMaterial(red);
         // create another target
         target2 = new Sphere(150);
         target2.setId("t2");
         target2.setDrawMode(DrawMode.LINE);
         target2.setCullFace(CullFace.NONE);
-//        target2.setTranslateX(200);
-//        target2.setTranslateY(-200);
-//        target2.setTranslateZ(-500);
+        target2.setTranslateX(200);
+        target2.setTranslateY(-200);
+        target2.setTranslateZ(-500);
         target2.setMaterial(blue);
 
 

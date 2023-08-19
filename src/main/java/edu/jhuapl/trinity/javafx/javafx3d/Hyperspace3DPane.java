@@ -1935,7 +1935,7 @@ public class Hyperspace3DPane extends StackPane implements
     }
     @Override
     public void addManifold(Manifold manifold, Manifold3D manifold3D) {
-        System.out.println("Sean you need to implement addManifold!!");
+        //System.out.println("Sean you need to implement addManifold for Hyperspace3D!!");
     }
     @Override
     public void makeManifold(boolean useVisiblePoints, String label) {

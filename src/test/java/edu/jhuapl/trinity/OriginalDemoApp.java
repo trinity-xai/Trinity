@@ -235,7 +235,7 @@ public class OriginalDemoApp extends Application {
             Trajectory3D traj3D = (Trajectory3D) e.eventObject;
             facpPane.setTrajectory3D(traj3D);
             Optional<Trial> optTrial = trialList.stream()
-                .filter(trial -> trial.trialId.contentEquals(traj3D.trajectory.trialID))
+                .filter(trial -> trial.trialId.contentEquals(traj3D.trajectory.getLabel()))
                 .findFirst();
             if (optTrial.isPresent()) {
                 Trial trial = optTrial.get();
