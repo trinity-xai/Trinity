@@ -21,7 +21,6 @@ package edu.jhuapl.trinity.utils;
  */
 
 import edu.jhuapl.trinity.data.Trajectory;
-import edu.jhuapl.trinity.data.Trial;
 import edu.jhuapl.trinity.data.files.CdcCsvFile;
 import edu.jhuapl.trinity.data.files.CdcTissueGenesFile;
 import edu.jhuapl.trinity.data.files.FeatureCollectionFile;
@@ -39,7 +38,6 @@ import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.events.GaussianMixtureEvent;
 import edu.jhuapl.trinity.javafx.events.ImageEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
-import edu.jhuapl.trinity.javafx.events.NeuralEvent;
 import edu.jhuapl.trinity.javafx.events.SemanticMapEvent;
 import edu.jhuapl.trinity.javafx.events.TerrainEvent;
 import edu.jhuapl.trinity.javafx.events.TrajectoryEvent;
@@ -320,11 +318,6 @@ public enum ResourceUtils {
                         Thread thread = new Thread(task);
                         thread.setDaemon(true);
                         thread.start();
-                    } else if (Trial.isTrialFile(file)) {
-                        ArrayList<Trial> trialList = Trial.readTrialFile(file);
-                        System.out.println("Trials loaded.");
-                        scene.getRoot().fireEvent(
-                            new NeuralEvent(NeuralEvent.NEURAL_TRIAL_LIST, trialList));
                     } else if (ZeroPilotLatentsFile.isZeroPilotLatentsFile(file)) {
                         ZeroPilotLatentsLoader task = new ZeroPilotLatentsLoader(scene, file);
                         Thread thread = new Thread(task);

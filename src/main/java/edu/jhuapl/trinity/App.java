@@ -42,7 +42,7 @@ import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.events.FullscreenEvent;
 import edu.jhuapl.trinity.javafx.events.GaussianMixtureEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
-import edu.jhuapl.trinity.javafx.events.NeuralEvent;
+//import edu.jhuapl.trinity.javafx.events.NeuralEvent;
 import edu.jhuapl.trinity.javafx.events.SearchEvent;
 import edu.jhuapl.trinity.javafx.events.SemanticMapEvent;
 import edu.jhuapl.trinity.javafx.events.TimelineEvent;
@@ -51,7 +51,7 @@ import edu.jhuapl.trinity.javafx.events.ZeroMQEvent;
 import edu.jhuapl.trinity.javafx.handlers.FeatureVectorEventHandler;
 import edu.jhuapl.trinity.javafx.handlers.GaussianMixtureEventHandler;
 import edu.jhuapl.trinity.javafx.handlers.ManifoldEventHandler;
-import edu.jhuapl.trinity.javafx.handlers.NeuralEventHandler;
+//import edu.jhuapl.trinity.javafx.handlers.NeuralEventHandler;
 import edu.jhuapl.trinity.javafx.handlers.SearchEventHandler;
 import edu.jhuapl.trinity.javafx.handlers.SemanticMapEventHandler;
 import edu.jhuapl.trinity.javafx.javafx3d.Hyperspace3DPane;
@@ -140,7 +140,7 @@ public class App extends Application {
     GaussianMixtureEventHandler gmeh;
     SemanticMapEventHandler smeh;
     SearchEventHandler seh;
-    NeuralEventHandler neh;
+//    NeuralEventHandler neh;
     boolean hyperspaceIntroShown = false;
     boolean hypersurfaceIntroShown = false;
     boolean matrixShowing = false;
@@ -577,10 +577,10 @@ public class App extends Application {
 //        meh.addManifoldRenderer(hyperspace3DPane);
         meh.addManifoldRenderer(projections3DPane);
 
-        neh = new NeuralEventHandler();
-        scene.getRoot().addEventHandler(NeuralEvent.NEW_NEURAL_TRIAL, neh);
-        scene.getRoot().addEventHandler(NeuralEvent.NEURAL_TRIAL_LIST, neh);
-        neh.addNeuralRenderer(hypersurface3DPane);
+//        neh = new NeuralEventHandler();
+//        scene.getRoot().addEventHandler(NeuralEvent.NEW_NEURAL_TRIAL, neh);
+//        scene.getRoot().addEventHandler(NeuralEvent.NEURAL_TRIAL_LIST, neh);
+//        neh.addNeuralRenderer(hypersurface3DPane);
 
         smeh = new SemanticMapEventHandler(false);
         scene.getRoot().addEventHandler(SemanticMapEvent.NEW_SEMANTIC_MAP, smeh);

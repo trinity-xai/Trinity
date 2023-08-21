@@ -41,7 +41,9 @@ import javafx.scene.paint.Stop;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.property.SimpleDoubleProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.CheckBox;
@@ -274,4 +276,45 @@ public class FeatureRadarChart extends VBox {
         chart.refresh();
         featureLabel.setText(featureVector.getLabel());
     }
+//     private void updateCalcs() {
+////        HEIGHT = WIDTH + (WIDTH * REFLECTION_SIZE);
+//        HEIGHT = HEIGHT;
+//
+//        RADIUS_H = WIDTH / 2;
+//        BACK = WIDTH / 10;
+//    }    
+//     /**
+//     * Angle Property
+//     */
+    public final DoubleProperty angle = new SimpleDoubleProperty(0) {
+        @Override
+        protected void invalidated() {
+            // when angle changes calculate new transform
+//            updateCalcs();
+//            double lx = (RADIUS_H - Math.sin(Math.toRadians(angle.get())) * RADIUS_H - 1);
+//            double rx = (RADIUS_H + Math.sin(Math.toRadians(angle.get())) * RADIUS_H + 1);
+//            double uly = (-Math.cos(Math.toRadians(angle.get())) * BACK);
+//            double ury = -uly;
+//            transform.setUlx(lx);
+//            transform.setUly(uly);
+//            transform.setUrx(rx);
+//            transform.setUry(ury);
+//            transform.setLrx(rx);
+//            transform.setLry(HEIGHT + uly);
+//            transform.setLlx(lx);
+//            transform.setLly(HEIGHT + ury);
+        }
+    };
+//
+//    public final double getAngle() {
+//        return angle.getValue();
+//    }
+//
+//    public final void setAngle(double value) {
+//        angle.setValue(value);
+//    }
+//
+//    public final DoubleProperty angleModel() {
+//        return angle;
+//    }   
 }

@@ -22,8 +22,6 @@ package edu.jhuapl.trinity.javafx.javafx3d;
 
 import edu.jhuapl.trinity.App;
 import edu.jhuapl.trinity.data.CoordinateSet;
-import edu.jhuapl.trinity.data.Trajectory;
-import edu.jhuapl.trinity.data.Trial;
 import edu.jhuapl.trinity.data.messages.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.FeatureVector;
 import edu.jhuapl.trinity.data.messages.SemanticMap;
@@ -42,7 +40,6 @@ import edu.jhuapl.trinity.javafx.events.ImageEvent;
 import edu.jhuapl.trinity.javafx.events.ShadowEvent;
 import edu.jhuapl.trinity.javafx.events.TimelineEvent;
 import edu.jhuapl.trinity.javafx.renderers.FeatureVectorRenderer;
-import edu.jhuapl.trinity.javafx.renderers.NeuralRenderer;
 import edu.jhuapl.trinity.javafx.renderers.SemanticMapRenderer;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
@@ -134,7 +131,7 @@ import static edu.jhuapl.trinity.javafx.components.radial.HyperspaceMenu.slideIn
  */
 
 public class Hypersurface3DPane extends StackPane
-    implements SemanticMapRenderer, FeatureVectorRenderer, NeuralRenderer {
+    implements SemanticMapRenderer, FeatureVectorRenderer { 
     public static double DEFAULT_INTRO_DISTANCE = -60000.0;
     public static double DEFAULT_ZOOM_TIME_MS = 500.0;
     public static double CHIP_FIT_WIDTH = 200;
@@ -1704,27 +1701,6 @@ public class Hypersurface3DPane extends StackPane
     @Override
     public void refresh() {
         updateTheMesh();
-    }
-
-    @Override
-    public void addTrial(Trial trial, Color color) {
-        Trajectory trajectory = trial.toTrajectory(0, 1, 2);
-        double scale = 300.0;
-        Trajectory3D traj3D = JavaFX3DUtils.buildPolyLineFromTrajectory(1, 1,
-            trajectory, color, scale, sceneWidth, sceneHeight);
-
-        extrasGroup.getChildren().add(traj3D);
-
-        for (Point3D point : traj3D.points) {
-            TrajectoryState sphere = new TrajectoryState(traj3D.width / 4.0,
-                traj3D.dayNumber, traj3D.trialNumber);
-            sphere.setTranslateX(point.x);
-            sphere.setTranslateY(point.y);
-            sphere.setTranslateZ(point.z);
-            sphere.setMaterial(new PhongMaterial(Color.ALICEBLUE));
-            extrasGroup.getChildren().add(sphere);
-        }
-
     }
 
     @Override
