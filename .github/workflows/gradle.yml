@@ -44,7 +44,7 @@ jobs:
       - name: Gradle Build Jar
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: clean build jar -Penv=prod-jar
+          arguments: clean assemble -Penv=prod-jar
 
       - name: Upload Jar
         uses: actions/upload-artifact@v3
@@ -54,6 +54,24 @@ jobs:
           path: build/libs/*-fx.jar
           retention-days: 10
           if-no-files-found: error
+
+      - name: Release Jar
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_NAME: trinity-${{ runner.os }}-java-${{ matrix.jdk-version }}
+        shell: bash
+        run: |
+          mv build/libs/*-fx.jar "$RELEASE_NAME.jar"
+          if [[ "$RUNNER_OS" == "macOS" || "$RUNNER_OS" == "Linux" ]]; then
+            zip "$RELEASE_NAME-jar.zip" "$RELEASE_NAME.jar"
+          elif [[ "$RUNNER_OS" == "Windows" ]]; then
+            7z a "$RELEASE_NAME-jar.zip" "$RELEASE_NAME.jar"
+          else
+            exit 1
+          fi
+          gh release upload "$GITHUB_REF_NAME" "$RELEASE_NAME-jar.zip"
 
   build-jlink:
 
@@ -79,7 +97,7 @@ jobs:
       - name: Gradle Build JLink Zip
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: clean build jlinkZip -Penv=prod-jlink
+          arguments: clean jlinkZip -Penv=prod-jlink
 
       - name: Upload JLink Zip
         uses: actions/upload-artifact@v3
@@ -114,7 +132,7 @@ jobs:
       - name: Gradle Build JPackage
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: clean build jpackage -Penv=prod-jlink
+          arguments: clean jpackage -Penv=prod-jlink
 
       - name: Upload JPackage
         uses: actions/upload-artifact@v3
