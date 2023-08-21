@@ -75,7 +75,8 @@ public class AboutController implements Initializable {
         Properties buildProps = Configuration.getBuildProps();
         String title = (String) buildProps.getOrDefault("title", "UNKNOWN");
         String version = (String) buildProps.getOrDefault("version", "UNKNOWN");
-        String buildDate = (String) buildProps.getOrDefault("buildDate", "UNKNOWN");
+        String revision = (String) buildProps.getOrDefault("revision", "UNKNOWN");
+        String buildDate = (String) buildProps.getOrDefault("timestamp", "UNKNOWN");
         titleTextField.setText(title);
         versionTextField.setText(version);
         buildDateTextField.setText(buildDate);

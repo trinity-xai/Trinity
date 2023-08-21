@@ -70,7 +70,7 @@ public class Configuration {
         } catch (IOException ex) {
             Logger.getLogger(Configuration.class.getName()).log(Level.SEVERE, null, ex);
         }
-        return (String) madProps.get("buildDate");
+        return (String) madProps.get("timestamp");
     }
 
     public static Configuration defaultConfiguration() {
