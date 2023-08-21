@@ -1,18 +1,8 @@
 pluginManagement {
     repositories {
-        maven {
-            url "${maven_registry_context_url}/maven-gradle-remote"
-        }
-        maven {
-            url "${maven_registry_context_url}/maven-sonatype-remote"
-        }
-        maven {
-            url "https://plugins.gradle.org/m2/"
-        }
-        gradlePluginPortal() // Include public Gradle plugin portal
+        gradlePluginPortal()
     }
 }
 
 
 rootProject.name = 'trinity'
-

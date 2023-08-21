@@ -2,42 +2,75 @@ plugins {
     id 'java'
     id 'idea'
     id 'application'
-    // PLUGIN ORDER MATTERS!!!
-    // Leave Modularity Plugin Here!
-    id 'org.javamodularity.moduleplugin' version '1.8.12'
+    id 'com.github.ben-manes.versions' version '0.47.0'
+    id 'net.nemerosa.versioning' version '3.0.0'
     id 'org.openjfx.javafxplugin' version '0.0.14'
     id 'org.beryx.jlink' version '2.26.0'
-    id 'com.github.ben-manes.versions' version '0.46.0'
 }
 
 ext {
-    //originalClassesDir = sourceSets.main.java.outputDir
-    //originalResourcesDir = sourceSets.main.output.resourcesDir
-    finalOutputName = 'Trinity'
-    buildDate = new Date().format("yyyy-MM-dd'T'HH:mm:ss'Z'")
+    artifactName = 'trinity'
+    artifactNameUpper = artifactName.capitalize()
+    buildDate = new Date().format("yyyy-MM-dd'T'HH:mm:ss'Z'", TimeZone.getTimeZone('UTC'))
+    moduleName = 'edu.jhuapl.trinity'
     mainClassPath = 'edu.jhuapl.trinity.App'
     mainClassJarLauncher = 'edu.jhuapl.trinity.TrinityMain'
-    sModuleName = moduleName // force cast to string on lazy prop
     isProdJar = findProperty('env') == 'prod-jar'
     isProdJlink = findProperty('env') == 'prod-jlink'
     isProdGraal = findProperty('env') == 'prod-graal'
     isDevelopment = findProperty('env') == 'dev'
-    fxVersion = findProperty("javafx.version")
+    fxVersion = findProperty('javafx.version')
 }
 
 group 'trinity'
-version new Date().format('yyyy.MM.dd')
+version new Date().format('yyyy.MM.dd', TimeZone.getTimeZone('UTC'))
+description 'Trinity provides performance analysis and XAI tools ideal for Deep Learning systems or other models performing complex classification or decoding.'
 
-sourceCompatibility = JavaVersion.VERSION_17
-targetCompatibility = JavaVersion.VERSION_17
-mainClassName = "$moduleName/$mainClassPath"
-
+// Output Build Info at Startup
 println "Working Directory: $rootDir"
-println "Java Being Used: " + System.getProperty('java.home')
-println "Building Module: $mainClassName $version with FX v$fxVersion"
+println "Java Being Used: ${System.getProperty('java.home')}"
+println "Building Module: $moduleName/$mainClassPath $version with FX v$fxVersion"
+println "Build Start Time: $buildDate"
 println "Is Development: $isDevelopment"
-println "Executing: " + gradle.startParameter.getTaskNames()
-println "OS Detected: " + org.gradle.internal.os.OperatingSystem.current()
+println "Executing: ${gradle.startParameter.getTaskNames()}"
+println "OS Detected: ${org.gradle.internal.os.OperatingSystem.current()}"
+
+// <editor-fold desp="Project Dependencies">
+
+repositories {
+    //mavenLocal()
+    mavenCentral()
+}
+
+
+dependencies {
+    // Excluding openjfx from 3rd party modules.
+    implementation(group: 'com.github.birdasaur.litfx', name: 'litfx-controls', version: '0.1.0') {
+        exclude group: 'org.openjfx'
+    }
+    implementation(group: 'org.fxyz3d', name: 'fxyz3d', version: '0.5.4') {
+        exclude group: 'org.openjfx'
+    }
+    implementation(group: 'eu.hansolo.fx', name: 'charts', version: '17.1.51') {
+        exclude group: 'org.openjfx'
+    }
+    implementation group: 'com.github.quickhull3d', name: 'quickhull3d', version: '1.0.0'
+    implementation group: 'org.apache.commons', name: 'commons-math3', version: '3.6.1'
+    implementation group: 'org.zeromq', name: 'jeromq', version: '0.5.3'
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.15.2'
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.15.2'
+    implementation group: 'com.github.sarxos', name: 'webcam-capture', version: '0.3.12'
+
+    // Enforce slf4j-api version across dependencies (although we're using JUL)
+    implementation group: 'org.slf4j', name: 'slf4j-api', version: '2.0.7'
+
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.10.0'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+// </editor-fold>
+
+
 // ########################## TASKS Start ########################## //
 
 // <editor-fold desp="Start Gradle Tasks">
@@ -53,14 +86,41 @@ idea {
         downloadJavadoc = true
         downloadSources = true
     }
-
 }
 
-if (isDevelopment) {
-    // https://intellij-support.jetbrains.com/hc/en-us/community/posts/360000430279-Can-t-access-resource-with-Java-10
-    // Gradle separates resources and classes into separate directories. Running it with IntelliJ due to Java 9 module system makes it not work.
-    // Two Options: Make the resources dir same as java output dir (jar tasks do this) or tweak module-info.java just for the IDE to work.
-    //sourceSets.main.output.resourcesDir = sourceSets.main.java.outputDir
+// </editor-fold>
+
+// ########################## Java Specific ########################## //
+
+// <editor-fold desp="Java Specific Tasks">
+
+application {
+    mainModule = moduleName
+    mainClass = mainClassJarLauncher
+}
+
+java {
+    sourceCompatibility = JavaVersion.VERSION_17
+    targetCompatibility = JavaVersion.VERSION_17
+    modularity.inferModulePath.set(true)
+}
+
+compileJava {
+    doFirst {
+        println "Compiler Args: $options.compilerArgs"
+        println "Runtime Classpath: ${sourceSets.main.runtimeClasspath.asPath.split(System.getProperty('path.separator'))}"
+    }
+}
+
+tasks.named('test', Test) {
+    useJUnitPlatform()
+}
+
+tasks.register('debug', JavaExec) {
+    dependsOn 'classes'
+    mainClass = mainClassPath
+    classpath = sourceSets.main.runtimeClasspath
+    debug true
 }
 
 // </editor-fold>
@@ -74,48 +134,6 @@ javafx {
     modules = ['javafx.controls', 'javafx.graphics', 'javafx.fxml', 'javafx.swing']
 }
 
-// https://github.com/oracle/graal/issues/403
-// https://github.com/gluonhq/client-samples
-// https://docs.gluonhq.com/client/
-//gluonClient {
-//    target = "host"
-//}
-
-// </editor-fold>
-
-// ########################## Java Specific ########################## //
-
-// <editor-fold desp="Java Specific Tasks">
-
-java {
-    // Set to false per https://github.com/java9-modularity/gradle-modules-plugin
-    modularity.inferModulePath.set(false)
-}
-
-compileJava {
-    //moduleOptions.addExports = ['external.module.name/external.package.name': moduleName]
-    doFirst {
-        println options.compilerArgs
-    }
-}
-
-application {
-    mainClass = mainClassJarLauncher
-    mainModule = moduleName
-//    applicationDefaultJvmArgs += ["--add-exports", "external.module.name/external.package.name=" + moduleName.toString()]
-}
-
-
-run {
-//    jvmArgs += ["--add-exports", "external.module.name/external.package.name=" + moduleName.toString()]
-}
-
-tasks.register('debug', JavaExec) {
-    dependsOn 'classes'
-    mainClass = mainClassPath
-    classpath = sourceSets.main.runtimeClasspath
-    debug true
-}
 // </editor-fold>
 
 // ########################## Process Resource Files ########################## //
@@ -124,17 +142,31 @@ tasks.register('debug', JavaExec) {
 
 // Allows adding title and version to build.properties resource file on compilation...
 processResources {
-    def props = ["title": "$finalOutputName", "version": "$version", "buildDate": "$buildDate"]
+    def props = [
+            "trinity": [
+                    "title"    : artifactNameUpper,
+                    "version"  : project.version,
+                    "revision" : versioning.info.build,
+                    "timestamp": buildDate
+            ]
+    ]
     filesMatching("**/build.properties") {
         expand props
     }
-    // Configure Logging Path
-    def logPath = "${finalOutputName}.log"
+    // Configure Default Logging Path (only applies when logback is enabled)
+    def logPath = "${artifactName}.log" // Note: if you update this make sure to verify/update fileNamePattern below as well
     // Log to Console.App on OSX
-    if (isProdJlink && org.gradle.internal.os.OperatingSystem.current().isMacOsX()) {
-        logPath = '${user.home}/Library/Logs/trinity.log'
+    if (isProdJlink && org.gradle.internal.os.OperatingSystem.current().macOsX) {
+        logPath = '${user.home}/Library/Logs/' + logPath
     }
-    def logbackProps = ["logPath": "$logPath", "logLevel": '${LOGBACK_LOG_LEVEL:-WARN}']
+    def logbackProps = [
+            "logging": [
+                    "context": artifactNameUpper,
+                    "path"   : logPath,
+                    "pattern": "${artifactName}-%d{yyyy-MM-dd}.%i.log",
+                    "level"  : '${LOGBACK_LOG_LEVEL:-WARN}'
+            ]
+    ]
     filesMatching("**/logback.xml") {
         expand logbackProps
     }
@@ -146,49 +178,76 @@ processResources {
 
 // <editor-fold desp="Multi-Jar Tasks">
 
-// Cross Platform Build w/o Java FX
-tasks.register('nonFxUberJar', Jar) {
-    archiveClassifier = "no-fx"
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
+// Might as well configure a decent manifest, even though we're not publishing this upstream...
+tasks.withType(Jar).configureEach {
     manifest {
-        attributes "Main-Class": "$mainClassJarLauncher"
+        attributes(
+                'Built-By': System.getProperty('user.name'),
+                'Created-By': "${System.getProperty('java.version')} (${System.getProperty('java.vendor')} ${System.getProperty('java.vm.version')})",
+                // https://docs.oracle.com/en/java/javase/20/docs/specs/jar/jar.html#main-attributes
+                'Main-Class': application.mainClass,
+                'Build-Date': buildDate,
+                'Build-Revision': versioning.info.commit,
+                'Specification-Title': project.name,
+                'Specification-Version': project.version,
+                'Implementation-Title': project.name,
+                'Implementation-Version': project.version,
+                // https://en.wikipedia.org/wiki/OSGi#Bundles
+                'Bundle-Name': project.name,
+                'Bundle-License': 'https://www.apache.org/licenses/LICENSE-2.0',
+                'Bundle-Description': project.description,
+                'Bundle-SymbolicName': application.mainModule,
+        )
     }
-    exclude 'META-INF/.RSA', 'META-INF/.SF', 'META-INF/*.DSA', 'META-INF/proguard/**', 'META-INF/maven/**', 'META-INF/LICENSE', 'META-INF/NOTICE'
+    // Exclude Signing Files
+    exclude 'META-INF/.RSA', 'META-INF/.SF', 'META-INF/*.DSA', 'META-INF/proguard/**'
+    // Exclude problematic duplicates (to avoid duplications strategy issues)
+    exclude 'META-INF/*LICENSE*', 'META-INF/*NOTICE*', 'META-INF/INDEX.LIST', 'META-INF/maven/**'
+    exclude 'META-INF/3rd-party-licenses/**', 'META-INF/substrate/**', 'LICENSE.txt'
+    // Include some top-level files for now...
+    from(layout.projectDirectory) {
+        include 'LICENSE.md', 'README.md'
+    }
+}
+
+// Cross Platform Build w/o Java FX
+// Reference: https://docs.gradle.org/current/userguide/working_with_files.html#sec:creating_uber_jar_example
+tasks.register('noFxUberJar', Jar) {
+    archiveClassifier = "no-fx"
+    duplicatesStrategy = DuplicatesStrategy.FAIL
+    from sourceSets.main.output
+    dependsOn configurations.runtimeClasspath
     from {
         configurations.runtimeClasspath.filter({ !(it.name =~ /javafx.*\.jar/) }).collect {
-            println "Slim Jar: Including Dependency: $it.name"
+            logger.quiet("Slim Jar: Including Dependency: {}", it.name)
             it.isDirectory() ? it : zipTree(it)
         }
+    } {
+        // Exclude problematic module-info.class duplicates from runtimeClasspath
+        exclude '**/module-info.class'
     }
-    with jar
 }
 
 // Cross Platform Build w/ Java FX
 tasks.register('fxUberJar', Jar) {
     archiveClassifier = "fx"
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    manifest {
-        attributes "Main-Class": "$mainClassJarLauncher"
-    }
-    exclude 'META-INF/.RSA', 'META-INF/.SF', 'META-INF/*.DSA', 'META-INF/proguard/**', 'META-INF/maven/**', 'META-INF/LICENSE', 'META-INF/NOTICE'
+    duplicatesStrategy = DuplicatesStrategy.FAIL
+    from sourceSets.main.output
+    dependsOn configurations.runtimeClasspath
     from {
         configurations.runtimeClasspath.collect {
-            println "Uber Jar: Including Dependency: $it.name"
+            logger.quiet("Uber Jar: Including Dependency: {}", it.name)
             it.isDirectory() ? it : zipTree(it)
         }
+    } {
+        // Exclude problematic module-info.class duplicates from runtimeClasspath
+        exclude '**/module-info.class'
     }
-    with jar
 }
 
-jar {
-    duplicatesStrategy = DuplicatesStrategy.EXCLUDE
-    manifest {
-        attributes "Main-Class": "$mainClassJarLauncher"
-    }
-    exclude 'META-INF/.RSA', 'META-INF/.SF', 'META-INF/*.DSA', 'META-INF/proguard/**', 'META-INF/maven/**', 'META-INF/LICENSE', 'META-INF/NOTICE'
-    if (isProdJar) {
-        finalizedBy(nonFxUberJar, fxUberJar)
-    }
+artifacts {
+    archives noFxUberJar
+    archives fxUberJar
 }
 
 // </editor-fold>
@@ -199,42 +258,45 @@ jar {
 
 // Modular Build (non cross platform)
 jlink {
+    def fileSep = System.getProperty('file.separator')
+    def imageZipFile = layout.buildDirectory.file("${artifactNameUpper}-${project.version}.zip")
     options.set(['--strip-debug', '--compress', '2', '--no-header-files', '--no-man-pages'])
-    imageZip.set(file("$buildDir/${finalOutputName}-${version}.zip"))
+    imageZip.set(imageZipFile)
     launcher {
-        name = "$finalOutputName"
-        mainClass = "$mainClassPath"
+        name = artifactNameUpper
+        mainClass = mainClassPath
         jvmArgs = ['-Dprism.maxvram=2G', '-Djavafx.animation.fullspeed=true']
-        //jvmArgs += ['-Dlogback.configurationFile={{BIN_DIR}}/logback.xml']
+        jvmArgs += ["-Dlogback.configurationFile={{BIN_DIR}}${fileSep}logback.xml"]
         //jvmArgs += ["--add-exports external.module.name/external.package.name=$sModuleName", ...]
     }
     //forceMerge('javafx')
     addExtraDependencies("javafx")
     jpackage {
-
-        imageName = "${finalOutputName}"
-        appVersion = version.toString().replaceAll("-SNAPSHOT", "")
-        //resourceDir = file("$sourceSets.main.output.resourcesDir") // https://docs.oracle.com/en/java/javase/14/jpackage/override-jpackage-resources.html
+        def currentOS = org.gradle.internal.os.OperatingSystem.current()
+        imageName = artifactNameUpper
+        appVersion = project.version.toString().replaceAll("-SNAPSHOT", "")
+        //resourceDir = file("$sourceSets.main.output.resourcesDir") // https://docs.oracle.com/en/java/javase/20/jpackage/override-jpackage-resources.html
         imageOptions += '--verbose'
-        jvmArgs += ['-p', '.']
-        if (org.gradle.internal.os.OperatingSystem.current().macOsX) {
-            skipInstaller = true
-            targetPlatformName = 'osx' // required when targetPlatform is used
-            //jvmArgs = ['-Dlogback.configurationFile=$ROOTDIR/runtime/Contents/Home/bin/logback.xml']
-        }
-        if (org.gradle.internal.os.OperatingSystem.current().windows) {
-            imageOptions += '--win-console'
+        jvmArgs = ['-Dprism.maxvram=2G', '-Djavafx.animation.fullspeed=true']
+        jvmArgs += ["-Dlogback.configurationFile=\$APPDIR${fileSep}logback.xml"]
+        jvmArgs += ['--module-path', '.']
+        if (currentOS.windows) {
             skipInstaller = true
             targetPlatformName = 'windows' // required when targetPlatform is used
+            imageOptions += ['--win-console']
             // TODO
         }
-        if (org.gradle.internal.os.OperatingSystem.current().linux) {
+        if (currentOS.macOsX) {
+            skipInstaller = true
+            targetPlatformName = 'osx' // required when targetPlatform is used
+        }
+        if (currentOS.linux) {
             skipInstaller = false
+            targetPlatformName = 'linux-x64' // required when targetPlatform is used
             // for menu group options, see https://specifications.freedesktop.org/menu-spec/latest/apa.html
             // each value must be separated by ;, and final value must end with ;
-            installerType = 'rpm'
+            installerType = null // generate both .deb and .rpm
             installerOptions += ['--linux-shortcut', '--linux-menu-group', 'science;graphics;']
-            targetPlatformName = 'linux-x64' // required when targetPlatform is used
             // TODO
         }
         println "targetPlatformName: " + targetPlatformName
@@ -249,84 +311,22 @@ tasks.jlink.doLast {
     }
 }
 
+tasks.jpackageImage.doLast {
+    // Note: This runs right before jpackage
+    // https://docs.oracle.com/en/java/javase/20/jpackage/packaging-overview.html
+    def currentOS = org.gradle.internal.os.OperatingSystem.current()
+    def imageName = jpackageData.imageName
+    def outputDir = jpackageData.installerOutputDir
+    def image = currentOS.windows ? "$imageName/app" : currentOS.macOsX ? "${imageName}.app/Contents/app" : currentOS.linux ? "$imageName/lib/app" : ""
+    def copyTo = "$outputDir/$image"
+    copy {
+        from("$sourceSets.main.output.resourcesDir/logback.xml")
+        into layout.buildDirectory.dir(copyTo)
+    }
+}
+
 // </editor-fold>
 
 // </editor-fold>
 
 // ########################## TASKS END ########################## //
-
-// <editor-fold desp="Project Dependencies">
-
-repositories {
-    mavenLocal()
-    if (!maven_registry_context_url.empty) {
-        maven {
-            url "${maven_registry_context_url}/maven-central-remote"
-        }
-        maven {
-            url "${maven_registry_context_url}/maven-sonatype-remote"
-        }
-        maven {
-            url "${maven_registry_context_url}/maven-public-releases-local"
-        }
-        maven {
-            url "${maven_registry_context_url}/maven-public-snapshots-local"
-        }
-    }
-    mavenCentral()
-}
-
-dependencies {
-    // only needed if building a jar
-//    if (isProdJar) {
-//        runtimeOnly group: 'org.openjfx', name: 'javafx-graphics', version: "$fxVersion", classifier: 'win'
-//        runtimeOnly group: 'org.openjfx', name: 'javafx-graphics', version: "$fxVersion", classifier: 'linux'
-//        runtimeOnly group: 'org.openjfx', name: 'javafx-graphics', version: "$fxVersion", classifier: 'mac'
-//        runtimeOnly group: 'org.openjfx', name: 'javafx-graphics', version: "$fxVersion", classifier: 'linux-aarch64'
-//        runtimeOnly group: 'org.openjfx', name: 'javafx-graphics', version: "$fxVersion", classifier: 'mac-aarch64'
-//    }
-    // Excluding openjfx from 3rd party modules.
-    implementation(group: 'com.github.birdasaur.litfx', name: 'litfx-core', version: '0.1.0') {
-        exclude group: 'org.openjfx'
-    }
-    implementation(group: 'com.github.birdasaur.litfx', name: 'litfx-controls', version: '0.1.0') {
-        exclude group: 'org.openjfx'
-    }
-    implementation(group: 'org.fxyz3d', name: 'fxyz3d', version: '0.5.4') {
-        exclude group: 'org.openjfx'
-    }
-    implementation(group: 'eu.hansolo', name: 'toolbox', version: '17.0.43') {
-        exclude group: 'org.openjfx'
-    }
-    implementation(group: 'eu.hansolo', name: 'toolboxfx', version: '17.0.33') {
-        exclude group: 'org.openjfx'
-    }
-    implementation(group: 'eu.hansolo.fx', name: 'countries', version: '17.0.23') {
-        exclude group: 'org.openjfx'
-    }
-    implementation(group: 'eu.hansolo.fx', name: 'heatmap', version: '17.0.12') {
-        exclude group: 'org.openjfx'
-    }
-    implementation(group: 'eu.hansolo.fx', name: 'charts', version: '17.1.27') {
-        exclude group: 'org.openjfx'
-    }
-
-    implementation group: 'com.github.quickhull3d', name: 'quickhull3d', version: '1.0.0'
-    implementation group: 'org.apache.commons', name: 'commons-math3', version: '3.6.1'
-    implementation group: 'org.zeromq', name: 'jeromq', version: '0.5.3'
-    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.15.0'
-    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.15.0'
-    implementation group: 'com.github.sarxos', name: 'webcam-capture', version: '0.3.12'
-
-    // Enforce slf4j-api version across dependencies (although we're using JUL)
-    implementation group: 'org.slf4j', name: 'slf4j-api', version: '1.7.36'
-
-    testImplementation group: 'org.junit.jupiter', name: 'junit-jupiter-api', version: '5.9.3'
-    testRuntimeOnly group: 'org.junit.jupiter', name: 'junit-jupiter-engine', version: '5.9.3'
-}
-
-//test {
-//    useJUnitPlatform()
-//}
-
-// </editor-fold>
