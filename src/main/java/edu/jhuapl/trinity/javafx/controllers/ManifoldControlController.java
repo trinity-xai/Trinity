@@ -154,7 +154,7 @@ public class ManifoldControlController implements Initializable {
     private final String ALL = "ALL";
     boolean reactive = true;
     Umap latestUmapObject = null;
-    File latestDir = null;
+    File latestDir = new File(".");
     
     /**
      * Initializes the controller class.

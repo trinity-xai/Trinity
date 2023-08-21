@@ -77,7 +77,7 @@
                                         <Slider fx:id="minDistanceSlider" blockIncrement="0.1" majorTickUnit="0.1" max="0.6" showTickLabels="true" showTickMarks="true" snapToTicks="true" value="0.1" GridPane.columnIndex="1" GridPane.rowIndex="3" />
                                         <Slider fx:id="spreadSlider" blockIncrement="0.1" majorTickUnit="0.1" max="1.5" min="0.5" showTickLabels="true" showTickMarks="true" snapToTicks="true" value="1.0" GridPane.columnIndex="1" GridPane.rowIndex="5" />
                                         <Slider fx:id="opMixSlider" blockIncrement="0.1" majorTickUnit="0.1" max="1.0" showTickLabels="true" showTickMarks="true" snapToTicks="true" value="0.5" GridPane.columnIndex="1" GridPane.rowIndex="7" />
-                                        <HBox alignment="CENTER" spacing="20.0" GridPane.columnSpan="2147483647" GridPane.halignment="CENTER" GridPane.rowIndex="11" GridPane.valignment="CENTER">
+                                        <HBox alignment="CENTER" spacing="15.0" GridPane.columnSpan="2147483647" GridPane.halignment="CENTER" GridPane.rowIndex="11" GridPane.rowSpan="2" GridPane.valignment="CENTER">
                                             <children>
                                                 <VBox alignment="CENTER_LEFT" spacing="10.0">
                                                     <children>
@@ -93,16 +93,16 @@
                                                         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                                                     </padding>
                                                 </CheckBox>
-                                    <VBox spacing="5.0">
+                                    <VBox alignment="CENTER" spacing="10.0">
                                        <children>
-                                                      <Button defaultButton="true" mnemonicParsing="false" onAction="#project" prefWidth="150.0" text="Run UMAP" />
-                                          <Button mnemonicParsing="false" onAction="#exportMatrix" prefWidth="150.0" text="Export TMatrix" />
-                                          <Button mnemonicParsing="false" onAction="#saveProjections" prefWidth="150.0" text="Save Projections" />
+                                                      <Button defaultButton="true" mnemonicParsing="false" onAction="#project" prefWidth="200.0" text="Run UMAP" />
+                                          <Button mnemonicParsing="false" onAction="#exportMatrix" prefWidth="200.0" text="Export TMatrix" />
+                                          <Button mnemonicParsing="false" onAction="#saveProjections" prefWidth="200.0" text="Save Projections" />
                                        </children>
                                     </VBox>
                                             </children>
                                             <padding>
-                                                <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                                                <Insets bottom="2.0" left="2.0" right="2.0" top="2.0" />
                                             </padding>
                                         </HBox>
                                     </children>

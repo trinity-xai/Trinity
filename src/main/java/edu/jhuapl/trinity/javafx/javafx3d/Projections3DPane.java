@@ -22,12 +22,14 @@ package edu.jhuapl.trinity.javafx.javafx3d;
 
 import edu.jhuapl.trinity.App;
 import edu.jhuapl.trinity.data.CoordinateSet;
+import edu.jhuapl.trinity.data.Dimension;
 import edu.jhuapl.trinity.data.Distance;
 import edu.jhuapl.trinity.data.FactorLabel;
 import edu.jhuapl.trinity.data.FeatureLayer;
 import edu.jhuapl.trinity.data.HyperspaceSeed;
 import edu.jhuapl.trinity.data.Manifold;
 import edu.jhuapl.trinity.data.Trajectory;
+import edu.jhuapl.trinity.data.files.FeatureCollectionFile;
 import edu.jhuapl.trinity.data.messages.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.FeatureVector;
 import edu.jhuapl.trinity.data.messages.GaussianMixture;
@@ -56,6 +58,8 @@ import edu.jhuapl.trinity.utils.AnalysisUtils;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.VisibilityMap;
 import edu.jhuapl.trinity.utils.umap.Umap;
+import java.io.File;
+import java.io.IOException;
 import javafx.animation.AnimationTimer;
 import javafx.animation.Timeline;
 import javafx.animation.Transition;
@@ -881,6 +885,19 @@ public class Projections3DPane extends StackPane implements
             }
         });
 
+        scene.addEventHandler(ManifoldEvent.SAVE_PROJECTION_DATA, e -> {
+            File file = (File) e.object1;
+            FeatureCollection fc = new FeatureCollection();
+            fc.setFeatures(featureVectors);
+            try {
+                FeatureCollectionFile fcf = new FeatureCollectionFile(file.getAbsolutePath(), false);
+                fc.setDimensionLabels(Dimension.getDimensionsAsStrings());
+                fcf.featureCollection = fc;
+                fcf.writeContent();
+            } catch (IOException ex) {
+                Logger.getLogger(Projections3DPane.class.getName()).log(Level.SEVERE, null, ex);
+            }                    
+        });
         scene.addEventHandler(ManifoldEvent.CLEAR_DISTANCE_CONNECTORS, e -> {
             connectorsGroup.getChildren().removeIf(n -> n instanceof Trajectory3D);
             //remove label and sphere overlay components
