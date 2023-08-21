@@ -1,5 +1,5 @@
 <component name="ProjectRunConfigurationManager">
-  <configuration default="false" name="trinity [clean,javafx:run]" type="MavenRunConfiguration" factoryName="Maven" nameIsGenerated="true">
+  <configuration default="false" name="trinity [versions:display-property-updates]" type="MavenRunConfiguration" factoryName="Maven" nameIsGenerated="true">
     <MavenSettings>
       <option name="myGeneralSettings" />
       <option name="myRunnerSettings" />
@@ -10,8 +10,7 @@
           </option>
           <option name="goals">
             <list>
-              <option value="clean" />
-              <option value="javafx:run" />
+              <option value="versions:display-property-updates" />
             </list>
           </option>
           <option name="pomFileName" />
