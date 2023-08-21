@@ -263,6 +263,7 @@ public class Projections3DPane extends StackPane implements
         cubeWorld.showAllGridLines(false);
         cubeWorld.meanCentered = false;
         cubeWorld.autoScaling = false;
+        cubeWorld.pointScale = 0.1;
 
         setBackground(Background.EMPTY);
         subScene = new SubScene(sceneRoot, sceneWidth, sceneHeight, true, SceneAntialiasing.BALANCED);
@@ -390,6 +391,7 @@ public class Projections3DPane extends StackPane implements
         });
 
         subScene.setOnKeyPressed(event -> {
+            cubeWorld.pointScale = 0.1;
             //What key did the user press?
             KeyCode keycode = event.getCode();
             if (keycode == KeyCode.OPEN_BRACKET && event.isControlDown()) {
@@ -1289,6 +1291,7 @@ public class Projections3DPane extends StackPane implements
     }
 
     public void updateView(boolean forcePNodeUpdate) {
+        scatterMesh3D.setVisible(false);
         ellipsoidGroup.getChildren().filtered(n -> n instanceof Sphere).forEach(s -> {
             ((Sphere) s).setRadius(point3dSize);
         });
@@ -1602,9 +1605,9 @@ public class Projections3DPane extends StackPane implements
             return;
         }
         Point3D p3d = new Point3D(
-            featureVectors.get(index).getData().get(0),
-            featureVectors.get(index).getData().get(1),
-            featureVectors.get(index).getData().get(2)
+            featureVectors.get(index).getData().get(0) * projectionScalar,
+            featureVectors.get(index).getData().get(1) * -projectionScalar,
+            featureVectors.get(index).getData().get(2) * projectionScalar
         );
         anchorTSM.setTranslateX(p3d.x);
         anchorTSM.setTranslateY(p3d.y);
@@ -1614,9 +1617,9 @@ public class Projections3DPane extends StackPane implements
         anchorTrajectory.states.clear();
         for (FeatureVector fv : featureVectors) {
             anchorTrajectory.states.add(new double[]{
-                fv.getData().get(0),
-                fv.getData().get(1),
-                fv.getData().get(2)
+                fv.getData().get(0) * projectionScalar,
+                fv.getData().get(1) * -projectionScalar,
+                fv.getData().get(2) * projectionScalar
             });
         }
         updateTrajectory3D();
@@ -1827,14 +1830,14 @@ public class Projections3DPane extends StackPane implements
         ellipsoidGroup.getChildren().clear();
         sphereToFeatureVectorMap.clear();
 
-        //Add artificial scaling to feature vector values...
-        //@TODO SMP Fix this so it isn't hard coded
-        featureCollection.getFeatures().stream().forEach(featureVector -> {
-            for (int i = 0; i < featureVector.getData().size(); i++) {
-                featureVector.getData().set(i,
-                    featureVector.getData().get(i) * projectionScalar);
-            }
-        });
+//        //Add artificial scaling to feature vector values...
+//        //@TODO SMP Fix this so it isn't hard coded
+//        featureCollection.getFeatures().stream().forEach(featureVector -> {
+//            for (int i = 0; i < featureVector.getData().size(); i++) {
+//                featureVector.getData().set(i,
+//                    featureVector.getData().get(i) * projectionScalar);
+//            }
+//        });
 
         //Make a 3D sphere for each projected feature vector
         for(int i=0;i<featureCollection.getFeatures().size();i++){ 
@@ -1844,9 +1847,9 @@ public class Projections3DPane extends StackPane implements
                 FactorLabel.getColorByLabel(featureVector.getLabel()));
             mat.setSpecularColor(Color.TRANSPARENT);
             sphere.setMaterial(mat);
-            sphere.setTranslateX(featureVector.getData().get(0));
-            sphere.setTranslateY(featureVector.getData().get(1));
-            sphere.setTranslateZ(featureVector.getData().get(2));
+            sphere.setTranslateX(featureVector.getData().get(0) * projectionScalar);
+            sphere.setTranslateY(featureVector.getData().get(1) * -projectionScalar);
+            sphere.setTranslateZ(featureVector.getData().get(2) * projectionScalar);
             ellipsoidGroup.getChildren().add(sphere);
             sphereToFeatureVectorMap.put(sphere, featureVector);
             //@TODO add Spinning Circle as highlight when mouse hovering
