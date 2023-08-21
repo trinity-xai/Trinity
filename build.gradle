@@ -154,7 +154,7 @@ processResources {
         expand props
     }
     // Configure Default Logging Path (only applies when logback is enabled)
-    def logPath = "${artifactName}.log" // Note: if you update this file name make sure to update fileNamePattern in logback.xml
+    def logPath = "${artifactName}.log" // Note: if you update this make sure to verify/update fileNamePattern below as well
     // Log to Console.App on OSX
     if (isProdJlink && org.gradle.internal.os.OperatingSystem.current().macOsX) {
         logPath = '${user.home}/Library/Logs/' + logPath
