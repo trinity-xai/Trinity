@@ -1291,7 +1291,8 @@ public class Projections3DPane extends StackPane implements
     }
 
     public void updateView(boolean forcePNodeUpdate) {
-        scatterMesh3D.setVisible(false);
+        if(null != scatterMesh3D)
+            scatterMesh3D.setVisible(false);
         ellipsoidGroup.getChildren().filtered(n -> n instanceof Sphere).forEach(s -> {
             ((Sphere) s).setRadius(point3dSize);
         });
