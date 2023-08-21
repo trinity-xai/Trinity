@@ -30,6 +30,7 @@ import edu.jhuapl.trinity.javafx.components.MatrixOverlay;
 import edu.jhuapl.trinity.javafx.components.ProgressStatus;
 import static edu.jhuapl.trinity.javafx.components.panes.LitPathPane.slideInPane;
 import edu.jhuapl.trinity.javafx.components.panes.Shape3DControlPane;
+import edu.jhuapl.trinity.javafx.components.panes.TrajectoryTrackerPane;
 import edu.jhuapl.trinity.javafx.components.radial.MainNavMenu;
 import edu.jhuapl.trinity.javafx.components.timeline.Item;
 import edu.jhuapl.trinity.javafx.components.timeline.MissionTimerX;
@@ -45,6 +46,7 @@ import edu.jhuapl.trinity.javafx.events.NeuralEvent;
 import edu.jhuapl.trinity.javafx.events.SearchEvent;
 import edu.jhuapl.trinity.javafx.events.SemanticMapEvent;
 import edu.jhuapl.trinity.javafx.events.TimelineEvent;
+import edu.jhuapl.trinity.javafx.events.TrajectoryEvent;
 import edu.jhuapl.trinity.javafx.events.ZeroMQEvent;
 import edu.jhuapl.trinity.javafx.handlers.FeatureVectorEventHandler;
 import edu.jhuapl.trinity.javafx.handlers.GaussianMixtureEventHandler;
@@ -119,6 +121,7 @@ public class App extends Application {
     Hyperspace3DPane hyperspace3DPane;
     Hypersurface3DPane hypersurface3DPane;
     Projections3DPane projections3DPane;
+    TrajectoryTrackerPane trajectoryTrackerPane;
     Shape3DControlPane shape3DControlPane;    
     CircleProgressIndicator circleSpinner;
 
@@ -445,6 +448,19 @@ public class App extends Application {
 
         scene.addEventHandler(ApplicationEvent.SHUTDOWN, e -> shutdown(false));
 
+        scene.addEventHandler(TrajectoryEvent.SHOW_TRAJECTORY_TRACKER, e -> {
+            if (null == trajectoryTrackerPane) {
+                trajectoryTrackerPane = new TrajectoryTrackerPane(scene, pathPane);
+            }
+
+            if (!pathPane.getChildren().contains(trajectoryTrackerPane)) {
+                pathPane.getChildren().add(trajectoryTrackerPane);
+                slideInPane(trajectoryTrackerPane);
+            } else {
+                trajectoryTrackerPane.show();
+            }
+        });
+        
         scene.addEventHandler(ApplicationEvent.SHOW_PROJECTIONS, e -> {
             if (projections3DPane.isVisible()) {
                 projections3DPane.setVisible(false);

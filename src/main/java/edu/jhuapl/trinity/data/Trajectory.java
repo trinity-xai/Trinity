@@ -33,8 +33,7 @@ import java.util.List;
  */
 public class Trajectory {
 
-    public double radius;
-    public double angle;
+    public Integer totalStates = null;
     public ArrayList<double[]> states = new ArrayList<>();
     public ArrayList<Double> times = new ArrayList<>();
     private Boolean visible = true;
@@ -54,6 +53,7 @@ public class Trajectory {
         this.states = new ArrayList<>(newStates);
         this.times = new ArrayList<>(newTimes);
         this.label = label;
+        totalStates = this.states.size();
     }
 
     /**

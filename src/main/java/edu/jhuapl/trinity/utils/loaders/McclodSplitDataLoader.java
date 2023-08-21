@@ -20,6 +20,7 @@ package edu.jhuapl.trinity.utils.loaders;
  * #L%
  */
 
+import edu.jhuapl.trinity.data.Trajectory;
 import edu.jhuapl.trinity.data.files.McclodSplitDataTsvFile;
 import edu.jhuapl.trinity.data.messages.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.FeatureVector;
@@ -29,6 +30,7 @@ import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.events.HyperspaceEvent;
+import edu.jhuapl.trinity.javafx.events.TrajectoryEvent;
 import edu.jhuapl.trinity.utils.DataUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import javafx.application.Platform;
@@ -144,6 +146,10 @@ public class McclodSplitDataLoader extends Task {
                 fc.getFeatures().add(fv);
             });
             Platform.runLater(() -> {
+                Trajectory trajectory = new Trajectory(file.getName());
+                trajectory.totalStates = fc.getFeatures().size();
+                scene.getRoot().fireEvent(
+                    new TrajectoryEvent(TrajectoryEvent.NEW_TRAJECTORY_OBJECT,trajectory));                    
                 scene.getRoot().fireEvent(
                     new FeatureVectorEvent(FeatureVectorEvent.NEW_FEATURE_COLLECTION, fc));
             });

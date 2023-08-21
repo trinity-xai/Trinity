@@ -29,6 +29,10 @@ import javafx.event.EventType;
 public class TrajectoryEvent extends Event {
 
     public Object eventObject;
+    
+    public static final EventType<TrajectoryEvent> NEW_TRAJECTORY_OBJECT = new EventType(ANY, "NEW_TRAJECTORY_OBJECT");
+    public static final EventType<TrajectoryEvent> TRAJECTORY_OBJECT_SELECTED = new EventType(ANY, "TRAJECTORY_OBJECT_SELECTED");
+    public static final EventType<TrajectoryEvent> SHOW_TRAJECTORY_TRACKER = new EventType(ANY, "SHOW_TRAJECTORY_TRACKER");
     public static final EventType<TrajectoryEvent> TIMELINE_SHOW_TRAJECTORY = new EventType(ANY, "TIMELINE_SHOW_TRAJECTORY");
     public static final EventType<TrajectoryEvent> TRAJECTORY_TAIL_SIZE = new EventType(ANY, "TRAJECTORY_TAIL_SIZE");
     public static final EventType<TrajectoryEvent> TIMELINE_SHOW_CALLOUT = new EventType(ANY, "TIMELINE_SHOW_CALLOUT");

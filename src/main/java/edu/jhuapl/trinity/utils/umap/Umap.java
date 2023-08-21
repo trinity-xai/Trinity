@@ -1121,7 +1121,7 @@ public class Umap {
         // Error check n_neighbors based on data size
         if (instances.rows() <= mNNeighbors) {
             if (instances.rows() == 1) {
-                mEmbedding = new DefaultMatrix(new float[1][mNComponents]);
+                setmEmbedding(new DefaultMatrix(new float[1][mNComponents]));
                 return;
             }
 
@@ -1212,7 +1212,7 @@ public class Umap {
             Utils.message("Construct embedding");
         }
 
-        mEmbedding = simplicialSetEmbedding(mRawData, mGraph, mNComponents, mInitialAlpha, mRunA, mRunB, mRepulsionStrength, mNegativeSampleRate, nEpochs, "random", mRandom, mMetric, mVerbose);
+        setmEmbedding(simplicialSetEmbedding(mRawData, mGraph, mNComponents, mInitialAlpha, mRunA, mRunB, mRepulsionStrength, mNegativeSampleRate, nEpochs, "random", mRandom, mMetric, mVerbose));
 
         if (mVerbose) {
             Utils.message("Finished embedding");
@@ -1235,7 +1235,7 @@ public class Umap {
      */
     public Matrix fitTransform(final Matrix instances, final float[] y) {
         fit(instances, y);
-        return mEmbedding;
+        return getmEmbedding();
     }
 
     /**
@@ -1311,7 +1311,7 @@ public class Umap {
      * @throws IllegalArgumentException If we fit just a single instance then error.
      */
     public Matrix transform(Matrix instances) {
-        if (mEmbedding.rows() == 1) {
+        if (getmEmbedding().rows() == 1) {
             throw new IllegalArgumentException("Transform unavailable when model was fit with only a single data sample.");
         }
         if (mRawData instanceof CsrMatrix) {
@@ -1364,7 +1364,7 @@ public class Umap {
         final CsrMatrix csrGraph = graph.toCsr().l1Normalize().toCsr();
         final int[][] inds = csrGraph.reshapeIndicies(instances.rows(), mRunNNeighbors);
         final float[][] weights = csrGraph.reshapeWeights(instances.rows(), mRunNNeighbors);
-        final Matrix embedding = initTransform(inds, weights, mEmbedding);
+        final Matrix embedding = initTransform(inds, weights, getmEmbedding());
 
         final int nEpochs;
         if (mNEpochs == null) {
@@ -1388,7 +1388,7 @@ public class Umap {
 
         UmapProgress.update();
         UmapProgress.incTotal(nEpochs);
-        final Matrix matrix = optimizeLayout(embedding, mEmbedding.copy(), head, tail, nEpochs, graph.cols(), epochsPerSample, mRunA, mRunB, mRandom, mRepulsionStrength, mInitialAlpha, mNegativeSampleRate, mVerbose);
+        final Matrix matrix = optimizeLayout(embedding, getmEmbedding().copy(), head, tail, nEpochs, graph.cols(), epochsPerSample, mRunA, mRunB, mRandom, mRepulsionStrength, mInitialAlpha, mNegativeSampleRate, mVerbose);
 
         UmapProgress.finished();
 
@@ -1449,5 +1449,19 @@ public class Umap {
      */
     public void setmSearch(NearestNeighborSearch mSearch) {
         this.mSearch = mSearch;
+    }
+
+    /**
+     * @return the mEmbedding
+     */
+    public Matrix getmEmbedding() {
+        return mEmbedding;
+    }
+
+    /**
+     * @param mEmbedding the mEmbedding to set
+     */
+    public void setmEmbedding(Matrix mEmbedding) {
+        this.mEmbedding = mEmbedding;
     }
 }

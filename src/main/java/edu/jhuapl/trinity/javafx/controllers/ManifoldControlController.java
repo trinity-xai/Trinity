@@ -32,6 +32,7 @@ import edu.jhuapl.trinity.javafx.javafx3d.Manifold3D;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import edu.jhuapl.trinity.utils.umap.Umap;
 import edu.jhuapl.trinity.utils.umap.metric.Metric;
+import java.io.File;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Pos;
@@ -58,6 +59,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
 import javafx.scene.paint.PhongMaterial;
+import javafx.stage.FileChooser;
 
 /**
  * FXML Controller class
@@ -151,6 +153,8 @@ public class ManifoldControlController implements Initializable {
     Scene scene;
     private final String ALL = "ALL";
     boolean reactive = true;
+    Umap latestUmapObject = null;
+    File latestDir = null;
     
     /**
      * Initializes the controller class.
@@ -436,7 +440,36 @@ public class ManifoldControlController implements Initializable {
         }
         reactive = true;
     }
-
+    @FXML
+    public void exportMatrix() {
+        if(null != latestUmapObject) {
+            if(null != latestUmapObject.getmEmbedding()) {
+                System.out.println("latestUmapObject: " + 
+                    latestUmapObject.getmEmbedding().toStringNumpy());
+            } else {
+                System.out.println("UMAP Embeddings not generated yet.");
+            }
+        } else {
+            System.out.println("UMAP object not yet established.");
+        }
+    } 
+    @FXML
+    public void saveProjections() {
+        FileChooser fc = new FileChooser();
+        fc.setTitle("Choose Projection file output...");
+        fc.setInitialFileName("ProjectionData.json");
+        if(!latestDir.isDirectory())
+            latestDir = new File(".");
+        fc.setInitialDirectory(latestDir);
+        File file = fc.showSaveDialog(scene.getWindow());
+        if (null != file) {
+            if(file.getParentFile().isDirectory())
+                latestDir = file;
+            scene.getRoot().fireEvent(new ManifoldEvent(
+            ManifoldEvent.SAVE_PROJECTION_DATA, file));
+        }        
+    } 
+            
     @FXML
     public void project() {
         Umap umap = new Umap();
@@ -455,6 +488,8 @@ public class ManifoldControlController implements Initializable {
             ManifoldEvent.POINT_SOURCE.HYPERSURFACE : ManifoldEvent.POINT_SOURCE.HYPERSPACE;
         scene.getRoot().fireEvent(new ManifoldEvent(
             ManifoldEvent.GENERATE_NEW_UMAP, umap, pointSource));
+        latestUmapObject = umap;
+        
     }
 
     @FXML
