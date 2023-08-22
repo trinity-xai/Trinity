@@ -21,6 +21,7 @@ package edu.jhuapl.trinity.javafx.components.panes;
  */
 
 import edu.jhuapl.trinity.data.Trajectory;
+import edu.jhuapl.trinity.data.messages.FeatureCollection;
 import edu.jhuapl.trinity.javafx.components.TrajectoryListItem;
 import edu.jhuapl.trinity.javafx.events.TrajectoryEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.Trajectory3D;
@@ -44,7 +45,6 @@ import javafx.scene.layout.VBox;
 public class TrajectoryTrackerPane extends LitPathPane {
     BorderPane bp;
     private ListView<TrajectoryListItem> trajectoryListView;
-//    private Trajectory3D trajectory3D = null;
     
     private static BorderPane createContent() {
         BorderPane bpOilSpill = new BorderPane();
@@ -66,6 +66,9 @@ public class TrajectoryTrackerPane extends LitPathPane {
         clearAll.setOnAction(e-> {
             trajectoryListView.getItems().clear();
             Trajectory.removeAllTrajectories();
+            Trajectory.globalTrajectoryToFeatureCollectionMap.clear();
+            clearAll.getScene().getRoot().fireEvent(new TrajectoryEvent(
+                TrajectoryEvent.CLEAR_ALL_TRAJECTORIES));            
         });
         
         HBox topHBox = new HBox(10, showAll, hideAll, clearAll);

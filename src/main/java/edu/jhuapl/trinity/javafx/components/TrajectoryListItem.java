@@ -43,7 +43,7 @@ public class TrajectoryListItem extends HBox {
     public TrajectoryListItem(Trajectory trajectory) {
         this.trajectory = trajectory;
         visibleCheckBox = new CheckBox("Visible");
-        visibleCheckBox.setSelected(true);
+        visibleCheckBox.setSelected(trajectory.getVisible());
         labelTextField = new TextField(trajectory.getLabel());
         labelTextField.setPrefWidth(225);
         colorPicker = new ColorPicker(trajectory.getColor());
@@ -56,13 +56,29 @@ public class TrajectoryListItem extends HBox {
         new HBox(15, visibleCheckBox, stateCountLabel));
         getChildren().addAll(vbox, colorPicker);
         setSpacing(5);
+        colorPicker.valueProperty().addListener(cl -> {
+            if (null != colorPicker.getScene()) {
+                trajectory.setColor(colorPicker.getValue());
+                if (reactive) {
+                    Trajectory.updateTrajectory(this.trajectory.getLabel(), this.trajectory);
+                    //Let application know this trajectory's visibility has changed
+                    getScene().getRoot().fireEvent(new TrajectoryEvent(
+                    TrajectoryEvent.TRAJECTORY_COLOR_CHANGED, this.trajectory));
+                }
+            }
+        });
         visibleCheckBox.selectedProperty().addListener(cl -> {
             if (null != visibleCheckBox.getScene()) {
                 trajectory.setVisible(visibleCheckBox.isSelected());
-                if (reactive)
+                if (reactive) {
                     Trajectory.updateTrajectory(this.trajectory.getLabel(), this.trajectory);
+                    //Let application know this trajectory's visibility has changed
+                    getScene().getRoot().fireEvent(new TrajectoryEvent(
+                    TrajectoryEvent.TRAJECTORY_VISIBILITY_CHANGED, this.trajectory));
+                }
             }
         });
+        
         setOnMouseClicked(e -> {
             //Let application know this distance object has been selected
             getScene().getRoot().fireEvent(new TrajectoryEvent(

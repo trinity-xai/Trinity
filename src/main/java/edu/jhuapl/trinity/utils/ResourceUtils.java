@@ -277,18 +277,17 @@ public enum ResourceUtils {
                         SemanticMapCollectionFile smcFile = new SemanticMapCollectionFile(file.getAbsolutePath(), true);
                         scene.getRoot().fireEvent(
                             new SemanticMapEvent(SemanticMapEvent.NEW_SEMANTICMAP_COLLECTION, smcFile.semanticMapCollection));
-                        Trajectory trajectory = new Trajectory(file.getName());
-                        trajectory.totalStates = smcFile.semanticMapCollection.getReconstruction().getData_vars().getNeural_timeseries().getData().size();
-                        scene.getRoot().fireEvent(
-                            new TrajectoryEvent(TrajectoryEvent.NEW_TRAJECTORY_OBJECT,trajectory));
+                        //Trajectory logic handled by SemanticMapEventHandler
                     } else if (FeatureCollectionFile.isFeatureCollectionFile(file)) {
                         FeatureCollectionFile fcFile = new FeatureCollectionFile(file.getAbsolutePath(), true);
                         scene.getRoot().fireEvent(
                             new FeatureVectorEvent(FeatureVectorEvent.NEW_FEATURE_COLLECTION, fcFile.featureCollection));
                         Trajectory trajectory = new Trajectory(file.getName());
                         trajectory.totalStates = fcFile.featureCollection.getFeatures().size();
+                        Trajectory.addTrajectory(trajectory);
+                        Trajectory.globalTrajectoryToFeatureCollectionMap.put(trajectory, fcFile.featureCollection);
                         scene.getRoot().fireEvent(
-                            new TrajectoryEvent(TrajectoryEvent.NEW_TRAJECTORY_OBJECT,trajectory));
+                            new TrajectoryEvent(TrajectoryEvent.NEW_TRAJECTORY_OBJECT,trajectory, fcFile.featureCollection));
                     } else if (GaussianMixtureCollectionFile.isGaussianMixtureCollectionFile(file)) {
                         GaussianMixtureCollectionFile gmcFile = new GaussianMixtureCollectionFile(file.getAbsolutePath(), true);
                         scene.getRoot().fireEvent(
@@ -307,7 +306,7 @@ public enum ResourceUtils {
                         Trajectory trajectory = new Trajectory(file.getName());
                         trajectory.totalStates = fc.getFeatures().size();
                         scene.getRoot().fireEvent(
-                            new TrajectoryEvent(TrajectoryEvent.NEW_TRAJECTORY_OBJECT,trajectory));                    
+                            new TrajectoryEvent(TrajectoryEvent.NEW_TRAJECTORY_OBJECT,trajectory, fc));                    
                     } else if (CdcTissueGenesFile.isCdcTissueGenesFile(file)) {
                         CdcTissueGenesLoader task = new CdcTissueGenesLoader(scene, file);
                         Thread thread = new Thread(task);

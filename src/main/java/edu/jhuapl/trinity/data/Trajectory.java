@@ -20,6 +20,7 @@ package edu.jhuapl.trinity.data;
  * #L%
  */
 
+import edu.jhuapl.trinity.data.messages.FeatureCollection;
 import javafx.scene.paint.Color;
 
 import java.util.ArrayList;
@@ -61,6 +62,7 @@ public class Trajectory {
      * anchored in the system.
      */
     private static HashMap<String, Trajectory> globalTrajectoryMap = new HashMap<>();
+    public static HashMap<Trajectory, FeatureCollection> globalTrajectoryToFeatureCollectionMap = new HashMap<>();
 
     public static Collection<Trajectory> getTrajectories() {
         return globalTrajectoryMap.values();

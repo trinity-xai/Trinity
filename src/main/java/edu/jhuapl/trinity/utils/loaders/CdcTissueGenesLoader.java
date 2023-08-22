@@ -62,9 +62,11 @@ public class CdcTissueGenesLoader extends Task {
                 fc = (FeatureCollection) get();
                 Trajectory trajectory = new Trajectory(file.getName());
                 trajectory.totalStates = fc.getFeatures().size();
+                Trajectory.addTrajectory(trajectory);
+                Trajectory.globalTrajectoryToFeatureCollectionMap.put(trajectory, fc);
                 Platform.runLater(() -> {
                     scene.getRoot().fireEvent(
-                        new TrajectoryEvent(TrajectoryEvent.NEW_TRAJECTORY_OBJECT,trajectory));                    
+                        new TrajectoryEvent(TrajectoryEvent.NEW_TRAJECTORY_OBJECT,trajectory, fc));                    
                     scene.getRoot().fireEvent(
                         new FeatureVectorEvent(FeatureVectorEvent.NEW_FEATURE_COLLECTION, fc));
                 });

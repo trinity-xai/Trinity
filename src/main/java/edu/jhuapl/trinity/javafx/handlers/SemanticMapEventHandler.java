@@ -22,6 +22,7 @@ package edu.jhuapl.trinity.javafx.handlers;
 
 import edu.jhuapl.trinity.App;
 import edu.jhuapl.trinity.data.FactorLabel;
+import edu.jhuapl.trinity.data.Trajectory;
 import edu.jhuapl.trinity.data.messages.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.FeatureVector;
 import edu.jhuapl.trinity.data.messages.GaussianMixture;
@@ -31,6 +32,7 @@ import edu.jhuapl.trinity.javafx.components.ColorMap;
 import edu.jhuapl.trinity.javafx.components.timeline.Item;
 import edu.jhuapl.trinity.javafx.events.SemanticMapEvent;
 import edu.jhuapl.trinity.javafx.events.TimelineEvent;
+import edu.jhuapl.trinity.javafx.events.TrajectoryEvent;
 import edu.jhuapl.trinity.javafx.renderers.FeatureVectorRenderer;
 import edu.jhuapl.trinity.javafx.renderers.SemanticMapRenderer;
 import edu.jhuapl.trinity.utils.DataUtils;
@@ -140,6 +142,13 @@ public class SemanticMapEventHandler implements EventHandler<SemanticMapEvent> {
                 colorIndex++;
             }
         });
+        Trajectory trajectory = new Trajectory("SemanticMap " + semanticMapCollection.getReconstruction().getAttrs().getRec());
+        trajectory.totalStates = semanticMapCollection.getReconstruction().getData_vars().getNeural_timeseries().getData().size();
+        Trajectory.addTrajectory(trajectory);
+        Trajectory.globalTrajectoryToFeatureCollectionMap.put(trajectory, fc);
+        App.getAppScene().getRoot().fireEvent(
+            new TrajectoryEvent(TrajectoryEvent.NEW_TRAJECTORY_OBJECT,trajectory, fc));
+        
         System.out.println("Total New Factor Labels: " + newlabels.size());
         FactorLabel.addAllFactorLabels(newlabels);
 

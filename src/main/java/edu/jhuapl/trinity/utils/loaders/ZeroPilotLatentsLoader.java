@@ -157,8 +157,10 @@ public class ZeroPilotLatentsLoader extends Task {
                 ps.outerStrokeColor = Color.CYAN;
                 Trajectory trajectory = new Trajectory(file.getName());
                 trajectory.totalStates = fc.getFeatures().size();
+                Trajectory.addTrajectory(trajectory);
+                Trajectory.globalTrajectoryToFeatureCollectionMap.put(trajectory, fc);
                 scene.getRoot().fireEvent(
-                    new TrajectoryEvent(TrajectoryEvent.NEW_TRAJECTORY_OBJECT,trajectory));                    
+                    new TrajectoryEvent(TrajectoryEvent.NEW_TRAJECTORY_OBJECT,trajectory, fc));                    
                 scene.getRoot().fireEvent(
                     new ApplicationEvent(ApplicationEvent.UPDATE_BUSY_INDICATOR, ps));
                 scene.getRoot().fireEvent(
