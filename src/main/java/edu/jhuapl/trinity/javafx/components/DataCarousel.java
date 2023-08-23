@@ -54,7 +54,7 @@ public class DataCarousel extends Region {
     public double SCALE_SMALL = 0.7;
     public double SCALE_BIG = 2.0;
     private boolean scaledBig = false;
-    private ArrayList<TrialRadarChart> radarCharts;
+    private ArrayList<FeatureRadarChart> radarCharts;
 
     private Group centered = new Group();
     private Group left = new Group();
@@ -73,7 +73,7 @@ public class DataCarousel extends Region {
     public double centerAngle = 90; //90 degrees equals a flat facing forward node
     public double rightAngle = 140;
 
-    public DataCarousel(ArrayList<TrialRadarChart> charts, double itemWidth, double itemHeight) {
+    public DataCarousel(ArrayList<FeatureRadarChart> charts, double itemWidth, double itemHeight) {
         defaultItemWidth = itemWidth;
         defaultItemHeight = itemHeight;
         // set clip
@@ -151,7 +151,7 @@ public class DataCarousel extends Region {
         update();
     }
 
-    public int addChart(TrialRadarChart chart) {
+    public int addChart(FeatureRadarChart chart) {
         radarCharts.add(chart);
         // setup scroll bar
         final double index = radarCharts.size();
@@ -226,7 +226,7 @@ public class DataCarousel extends Region {
         // add keyframes for left items
         final ObservableList<KeyFrame> keyFrames = timeline.getKeyFrames();
         for (int i = 0; i < left.getChildren().size(); i++) {
-            TrialRadarChart it = radarCharts.get(i);
+            FeatureRadarChart it = radarCharts.get(i);
             double newX = -left.getChildren().size() * SPACING + SPACING * i + LEFT_OFFSET;
             keyFrames.add(new KeyFrame(DURATION,
                 new KeyValue(it.translateXProperty(), newX, INTERPOLATOR),
@@ -236,7 +236,7 @@ public class DataCarousel extends Region {
         }
         // add keyframe for center item
         if (!radarCharts.isEmpty()) {
-            TrialRadarChart centerChart = radarCharts.get(centerIndex);
+            FeatureRadarChart centerChart = radarCharts.get(centerIndex);
             keyFrames.add(new KeyFrame(DURATION,
                 new KeyValue(centerChart.translateXProperty(), 0, INTERPOLATOR),
                 new KeyValue(centerChart.scaleXProperty(), 1.0, INTERPOLATOR),
@@ -244,7 +244,7 @@ public class DataCarousel extends Region {
                 new KeyValue(centerChart.angle, centerAngle, INTERPOLATOR)));
             // add keyframes for right items
             for (int i = 0; i < right.getChildren().size(); i++) {
-                final TrialRadarChart it = radarCharts.get(radarCharts.size() - i - 1);
+                final FeatureRadarChart it = radarCharts.get(radarCharts.size() - i - 1);
                 final double newX = right.getChildren().size()
                     * SPACING - SPACING * i + RIGHT_OFFSET;
                 keyFrames.add(new KeyFrame(DURATION,
@@ -257,7 +257,7 @@ public class DataCarousel extends Region {
         timeline.play();             // play animation
     }
 
-    private void shiftToCenter(TrialRadarChart chart) {
+    private void shiftToCenter(FeatureRadarChart chart) {
         for (int i = 0; i < left.getChildren().size(); i++) {
             if (left.getChildren().get(i) == chart) {
                 int shiftAmount = left.getChildren().size() - i;

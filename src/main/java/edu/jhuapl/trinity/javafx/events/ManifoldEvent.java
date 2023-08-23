@@ -46,6 +46,7 @@ public class ManifoldEvent extends Event {
     public static final EventType<ManifoldEvent> CREATE_NEW_DISTANCE = new EventType(ANY, "CREATE_NEW_DISTANCE");
     public static final EventType<ManifoldEvent> CLEAR_DISTANCE_CONNECTORS = new EventType(ANY, "CLEAR_DISTANCE_CONNECTORS");
     //UMAP
+    public static final EventType<ManifoldEvent> SAVE_PROJECTION_DATA = new EventType(ANY, "SAVE_PROJECTION_DATA");
     public static final EventType<ManifoldEvent> GENERATE_NEW_UMAP = new EventType(ANY, "GENERATE_NEW_UMAP");
     public static final EventType<ManifoldEvent> USE_AUTOMATIC_TOLERANCE = new EventType(ANY, "USE_AUTOMATIC_TOLERANCE");
     public static final EventType<ManifoldEvent> SET_DISTANCE_TOLERANCE = new EventType(ANY, "SET_DISTANCE_TOLERANCE");

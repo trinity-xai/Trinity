@@ -20,6 +20,7 @@ package edu.jhuapl.trinity.utils.loaders;
  * #L%
  */
 
+import edu.jhuapl.trinity.data.Trajectory;
 import edu.jhuapl.trinity.data.ZeroPilotLatents;
 import edu.jhuapl.trinity.data.files.ZeroPilotLatentsFile;
 import edu.jhuapl.trinity.data.messages.FeatureCollection;
@@ -29,6 +30,7 @@ import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.events.HyperspaceEvent;
+import edu.jhuapl.trinity.javafx.events.TrajectoryEvent;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
@@ -153,6 +155,12 @@ public class ZeroPilotLatentsLoader extends Task {
                 ps.fillEndColor = Color.CYAN;
                 ps.innerStrokeColor = Color.CYAN;
                 ps.outerStrokeColor = Color.CYAN;
+                Trajectory trajectory = new Trajectory(file.getName());
+                trajectory.totalStates = fc.getFeatures().size();
+                Trajectory.addTrajectory(trajectory);
+                Trajectory.globalTrajectoryToFeatureCollectionMap.put(trajectory, fc);
+                scene.getRoot().fireEvent(
+                    new TrajectoryEvent(TrajectoryEvent.NEW_TRAJECTORY_OBJECT,trajectory, fc));                    
                 scene.getRoot().fireEvent(
                     new ApplicationEvent(ApplicationEvent.UPDATE_BUSY_INDICATOR, ps));
                 scene.getRoot().fireEvent(

@@ -165,6 +165,8 @@ public class Hyperspace3DPane extends StackPane implements
     Trajectory anchorTrajectory;
     Trajectory3D anchorTraj3D;
     Group trajectorySphereGroup;
+    Group trajectoryGroup;
+    HashMap<Trajectory, Trajectory3D> trajToTraj3DMap = new HashMap<>();            
     double trajectoryScale = 1.0;
     int trajectoryTailSize = 5;
 
@@ -279,6 +281,7 @@ public class Hyperspace3DPane extends StackPane implements
         anchorTraj3D = JavaFX3DUtils.buildPolyLineFromTrajectory(1, 1,
             anchorTrajectory, Color.CYAN, trajectoryScale, sceneWidth, sceneHeight);
         extrasGroup.getChildren().add(anchorTraj3D);
+        trajectoryGroup = new Group();
         trajectorySphereGroup = new Group();
         double ellipsoidWidth = anchorTraj3D.width / 2.0;
         for (Point3D point : anchorTraj3D.points) {
@@ -288,8 +291,9 @@ public class Hyperspace3DPane extends StackPane implements
             tsm.setTranslateY(point.y);
             tsm.setTranslateZ(point.z);
             trajectorySphereGroup.getChildren().add(tsm);
-        }
+        } 
         extrasGroup.getChildren().add(0, trajectorySphereGroup);
+        extrasGroup.getChildren().add(0, trajectoryGroup);
         this.scene.addEventHandler(TrajectoryEvent.TIMELINE_SHOW_TRAJECTORY, e -> {
             anchorTraj3D.setVisible((boolean) e.eventObject);
             trajectorySphereGroup.setVisible((boolean) e.eventObject);
@@ -301,7 +305,30 @@ public class Hyperspace3DPane extends StackPane implements
         this.scene.addEventHandler(TrajectoryEvent.TIMELINE_SHOW_CALLOUT, e -> {
             anchorCallout.setVisible((boolean) e.eventObject);
         });
+        this.scene.addEventHandler(TrajectoryEvent.NEW_TRAJECTORY_OBJECT, e -> {
+            Platform.runLater(()-> {
+                updateTrajectory3D();
+            });
+        });
 
+        this.scene.addEventHandler(TrajectoryEvent.CLEAR_ALL_TRAJECTORIES, e -> {
+            Platform.runLater(()-> {
+                updateTrajectory3D();
+            });
+        });
+        
+        this.scene.addEventHandler(TrajectoryEvent.TRAJECTORY_VISIBILITY_CHANGED, e -> {
+            Trajectory trajectory = (Trajectory) e.eventObject;
+            Trajectory3D traj3D = trajToTraj3DMap.get(trajectory);
+            if(null != traj3D) {
+                traj3D.setVisible(trajectory.getVisible());
+            }
+        });
+        this.scene.addEventHandler(TrajectoryEvent.TRAJECTORY_COLOR_CHANGED, e -> {
+            Platform.runLater(()-> {
+                updateTrajectory3D();
+            });
+        });
         //Add 3D subscene stuff to 3D scene root object
         sceneRoot.getChildren().addAll(cameraTransform, highlightedPoint, nodeGroup,
             manifoldGroup, debugGroup, cubeWorld, dataXForm, extrasGroup, anchorTSM);
@@ -925,7 +952,7 @@ public class Hyperspace3DPane extends StackPane implements
         //Clear out previous trajectory nodes
         extrasGroup.getChildren().remove(anchorTraj3D);
         trajectorySphereGroup.getChildren().clear();
-
+        //Rebuild the anchor trajectory
         anchorTraj3D = JavaFX3DUtils.buildPolyLineFromTrajectory(
             anchorTrajectory, 8.0f, Color.ALICEBLUE,
             trajectoryTailSize, trajectoryScale, sceneWidth, sceneHeight);
@@ -937,6 +964,28 @@ public class Hyperspace3DPane extends StackPane implements
             tsm.setTranslateZ(point.z);
             trajectorySphereGroup.getChildren().add(tsm);
         }
+        //now rebuild all the generic trajectories
+        trajectoryGroup.getChildren().clear();
+        trajToTraj3DMap.clear();
+        for(Trajectory trajectory : Trajectory.getTrajectories()) {
+            FeatureCollection fc = Trajectory.globalTrajectoryToFeatureCollectionMap.get(trajectory);
+            trajectory.states.clear();
+            ArrayList<double[]> newStates = new ArrayList<>(fc.getFeatures().size());
+            for(FeatureVector fv : fc.getFeatures()) {
+                //scale each point for the hyperspace
+                newStates.add( scaleXYZ(
+                    fv.getData().get(xFactorIndex),
+                    fv.getData().get(yFactorIndex),
+                    fv.getData().get(zFactorIndex) ));
+            }
+            trajectory.states.addAll(newStates);
+            Trajectory3D traj3D = JavaFX3DUtils.buildPolyLineFromTrajectory(
+                trajectory, 8.0f, trajectory.getColor(),
+                trajectory.states.size(), trajectoryScale, sceneWidth, sceneHeight);
+            trajectoryGroup.getChildren().add(0, traj3D);
+            trajToTraj3DMap.put(trajectory, traj3D);
+            traj3D.setVisible(trajectory.getVisible());
+        }        
     }
 
     public void makeHull(boolean useVisiblePoints, String label) {
@@ -1511,7 +1560,43 @@ public class Hyperspace3DPane extends StackPane implements
             radialOverlayPane.updateCalloutHeadPoint(anchorTSM, anchorCallout, subScene);
         }
     }
-
+    private double[] scaleXYZ(double x, double y, double z) {
+        //pixel ranges we wish to fit our scaling to
+        double halfSceneWidth = sceneWidth / 2.0;
+        double halfSceneHeight = sceneHeight / 2.0;
+        //offset used to center placement of points in scene after scaling
+        float quarterSceneWidth = (float) sceneWidth / 4.0f;
+        //modifiers used to manually adjust scaling by user
+        double buff = pointScale * scatterBuffScaling;
+        if (autoScaling)
+            buff = meanCentered ? meanCenteredMaxAbsValue : maxAbsValue;
+        //formula bounds
+        double minX = -buff;
+        double rangeX = 2 * buff;
+        double minY = -buff;
+        double rangeY = 2 * buff;
+        double minZ = -buff;
+        double rangeZ = 2 * buff;
+        //Check flag to see if we are mean centering
+        double xShift = meanCentered && !meanVector.isEmpty() ? meanVector.get(xFactorIndex) : 0.0;
+        double yShift = meanCentered && !meanVector.isEmpty() ? meanVector.get(yFactorIndex) : 0.0;
+        double zShift = meanCentered && !meanVector.isEmpty() ? meanVector.get(zFactorIndex) : 0.0; 
+        //linear coordinate transformation of each covariance to match our 3D scene
+        //X ==> X Positive
+        double xCoord = (float) ((((x - xShift) * pointScale - minX) * halfSceneWidth) / rangeX);
+        //Y ==> Z Positive
+        double yCoord = (float) ((((y - yShift) * pointScale - minY) * halfSceneWidth) / rangeY);
+        //Z ==> Y Positive
+        double zCoord = (float) ((((z-zShift) * pointScale - minZ) * halfSceneWidth) / rangeZ);  
+        //our data is centered and we need to center again within 3D coordinate system
+        double shiftedX = xCoord - quarterSceneWidth;
+        double shiftedY = yCoord - quarterSceneWidth;
+        double shiftedZ = zCoord - quarterSceneWidth;
+        if(reflectY)
+            shiftedY = -shiftedY;
+        
+        return new double [] {shiftedX, shiftedY, shiftedZ};
+    }
     /**
      * @param gaussianMixture
      */
@@ -1731,37 +1816,6 @@ public class Hyperspace3DPane extends StackPane implements
         Task task = new Task() {
             @Override
             protected Void call() throws Exception {
-//                Platform.runLater(() -> {
-//                    getScene().getRoot().fireEvent(
-//                        new CommandTerminalEvent("Loading Feature Collection... ",
-//                            new Font("Consolas", 20), Color.GREEN));
-//                    ProgressStatus ps1 = new ProgressStatus("Loading Feature Collection...", -1);
-//                    getScene().getRoot().fireEvent(
-//                        new ApplicationEvent(ApplicationEvent.SHOW_BUSY_INDICATOR, ps1));
-//                });
-//                if (!featureVectors.isEmpty()) {
-//                    alert = new Alert(AlertType.CONFIRMATION,
-//                        "Data queue currently has " + featureVectors.size() + " items.\n"
-//                            + "Clear the queue before import?",
-//                        ButtonType.YES, ButtonType.NO, ButtonType.CANCEL);
-//                    alert.setTitle("Feature Collection Import");
-//                    alert.setHeaderText("Data queue currently has " + featureVectors.size() + " items.");
-//                    alert.setContentText("Clear the queue before import?");
-//                    alert.setGraphic(ResourceUtils.loadIcon("alert", 75));
-//                    alert.initStyle(StageStyle.TRANSPARENT);
-//                    DialogPane dialogPane = alert.getDialogPane();
-//                    dialogPane.setBackground(Background.EMPTY);
-//                    dialogPane.getScene().setFill(Color.TRANSPARENT);
-//
-//                    String DIALOGCSS = this.getClass().getResource("/edu/jhuapl/trinity/css/dialogstyles.css").toExternalForm();
-//                    dialogPane.getStylesheets().add(DIALOGCSS);
-//
-//                    Optional<ButtonType> optBT = alert.showAndWait();
-//                    if (optBT.get().equals(ButtonType.CANCEL))
-//                        return null;
-//                    else if (optBT.get().equals(ButtonType.YES))
-//                        clearAll();
-//                }
                 Platform.runLater(() -> {
                     getScene().getRoot().fireEvent(
                         new CommandTerminalEvent("Rendering Feature Collection... ",
@@ -1932,6 +1986,7 @@ public class Hyperspace3DPane extends StackPane implements
         updateEllipsoids();
         cubeWorld.redraw(true);
         updateLabels();
+        updateTrajectory3D();        
     }
     @Override
     public void addManifold(Manifold manifold, Manifold3D manifold3D) {

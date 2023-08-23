@@ -30,6 +30,7 @@ import edu.jhuapl.trinity.javafx.components.MatrixOverlay;
 import edu.jhuapl.trinity.javafx.components.ProgressStatus;
 import static edu.jhuapl.trinity.javafx.components.panes.LitPathPane.slideInPane;
 import edu.jhuapl.trinity.javafx.components.panes.Shape3DControlPane;
+import edu.jhuapl.trinity.javafx.components.panes.TrajectoryTrackerPane;
 import edu.jhuapl.trinity.javafx.components.radial.MainNavMenu;
 import edu.jhuapl.trinity.javafx.components.timeline.Item;
 import edu.jhuapl.trinity.javafx.components.timeline.MissionTimerX;
@@ -41,15 +42,14 @@ import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.events.FullscreenEvent;
 import edu.jhuapl.trinity.javafx.events.GaussianMixtureEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
-import edu.jhuapl.trinity.javafx.events.NeuralEvent;
 import edu.jhuapl.trinity.javafx.events.SearchEvent;
 import edu.jhuapl.trinity.javafx.events.SemanticMapEvent;
 import edu.jhuapl.trinity.javafx.events.TimelineEvent;
+import edu.jhuapl.trinity.javafx.events.TrajectoryEvent;
 import edu.jhuapl.trinity.javafx.events.ZeroMQEvent;
 import edu.jhuapl.trinity.javafx.handlers.FeatureVectorEventHandler;
 import edu.jhuapl.trinity.javafx.handlers.GaussianMixtureEventHandler;
 import edu.jhuapl.trinity.javafx.handlers.ManifoldEventHandler;
-import edu.jhuapl.trinity.javafx.handlers.NeuralEventHandler;
 import edu.jhuapl.trinity.javafx.handlers.SearchEventHandler;
 import edu.jhuapl.trinity.javafx.handlers.SemanticMapEventHandler;
 import edu.jhuapl.trinity.javafx.javafx3d.Hyperspace3DPane;
@@ -119,6 +119,7 @@ public class App extends Application {
     Hyperspace3DPane hyperspace3DPane;
     Hypersurface3DPane hypersurface3DPane;
     Projections3DPane projections3DPane;
+    TrajectoryTrackerPane trajectoryTrackerPane;
     Shape3DControlPane shape3DControlPane;    
     CircleProgressIndicator circleSpinner;
 
@@ -137,7 +138,6 @@ public class App extends Application {
     GaussianMixtureEventHandler gmeh;
     SemanticMapEventHandler smeh;
     SearchEventHandler seh;
-    NeuralEventHandler neh;
     boolean hyperspaceIntroShown = false;
     boolean hypersurfaceIntroShown = false;
     boolean matrixShowing = false;
@@ -445,6 +445,19 @@ public class App extends Application {
 
         scene.addEventHandler(ApplicationEvent.SHUTDOWN, e -> shutdown(false));
 
+        scene.addEventHandler(TrajectoryEvent.SHOW_TRAJECTORY_TRACKER, e -> {
+            if (null == trajectoryTrackerPane) {
+                trajectoryTrackerPane = new TrajectoryTrackerPane(scene, pathPane);
+            }
+
+            if (!pathPane.getChildren().contains(trajectoryTrackerPane)) {
+                pathPane.getChildren().add(trajectoryTrackerPane);
+                slideInPane(trajectoryTrackerPane);
+            } else {
+                trajectoryTrackerPane.show();
+            }
+        });
+        
         scene.addEventHandler(ApplicationEvent.SHOW_PROJECTIONS, e -> {
             if (projections3DPane.isVisible()) {
                 projections3DPane.setVisible(false);
@@ -561,10 +574,10 @@ public class App extends Application {
 //        meh.addManifoldRenderer(hyperspace3DPane);
         meh.addManifoldRenderer(projections3DPane);
 
-        neh = new NeuralEventHandler();
-        scene.getRoot().addEventHandler(NeuralEvent.NEW_NEURAL_TRIAL, neh);
-        scene.getRoot().addEventHandler(NeuralEvent.NEURAL_TRIAL_LIST, neh);
-        neh.addNeuralRenderer(hypersurface3DPane);
+//        neh = new NeuralEventHandler();
+//        scene.getRoot().addEventHandler(NeuralEvent.NEW_NEURAL_TRIAL, neh);
+//        scene.getRoot().addEventHandler(NeuralEvent.NEURAL_TRIAL_LIST, neh);
+//        neh.addNeuralRenderer(hypersurface3DPane);
 
         smeh = new SemanticMapEventHandler(false);
         scene.getRoot().addEventHandler(SemanticMapEvent.NEW_SEMANTIC_MAP, smeh);

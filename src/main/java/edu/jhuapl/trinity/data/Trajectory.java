@@ -20,6 +20,7 @@ package edu.jhuapl.trinity.data;
  * #L%
  */
 
+import edu.jhuapl.trinity.data.messages.FeatureCollection;
 import javafx.scene.paint.Color;
 
 import java.util.ArrayList;
@@ -33,11 +34,10 @@ import java.util.List;
  */
 public class Trajectory {
 
-    public double radius;
-    public double angle;
+    public Integer totalStates = null;
     public ArrayList<double[]> states = new ArrayList<>();
     public ArrayList<Double> times = new ArrayList<>();
-    private Boolean visible = true;
+    private Boolean visible = false;
     private Color color = Color.LIGHTSKYBLUE;
     private Double stability = null;
     private String label = null;
@@ -54,6 +54,7 @@ public class Trajectory {
         this.states = new ArrayList<>(newStates);
         this.times = new ArrayList<>(newTimes);
         this.label = label;
+        totalStates = this.states.size();
     }
 
     /**
@@ -61,6 +62,7 @@ public class Trajectory {
      * anchored in the system.
      */
     private static HashMap<String, Trajectory> globalTrajectoryMap = new HashMap<>();
+    public static HashMap<Trajectory, FeatureCollection> globalTrajectoryToFeatureCollectionMap = new HashMap<>();
 
     public static Collection<Trajectory> getTrajectories() {
         return globalTrajectoryMap.values();

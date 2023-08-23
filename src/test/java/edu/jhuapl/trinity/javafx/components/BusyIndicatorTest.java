@@ -49,7 +49,7 @@ public class BusyIndicatorTest extends Application {
         circleSpinner = new CircleProgressIndicator();
         circleSpinner.setLabelLater("Current Status message...");
         circleSpinner.defaultOpacity = 1.0;
-
+        circleSpinner.fillCircle.fillEndColor = Color.MAGENTA;
         stackPane = new StackPane(circleSpinner);
         stackPane.setBackground(Background.EMPTY);
         BorderPane bpOilSpill = new BorderPane(stackPane);

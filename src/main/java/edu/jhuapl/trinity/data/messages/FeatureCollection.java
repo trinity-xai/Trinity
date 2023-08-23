@@ -61,6 +61,17 @@ public class FeatureCollection extends MessageData {
             && messageBody.contains(TYPESTRING)
             && messageBody.contains("features");
     }
+    public float[][] convertFeaturesToFloatArray() {
+        int vectorCount = features.size();
+        int vectorWidth = features.get(0).getData().size();
+        float[][] data = new float[vectorCount][vectorWidth];
+        for (int featureVectorIndex = 0; featureVectorIndex < vectorCount; featureVectorIndex++) {
+            for (int vectorIndex = 0; vectorIndex < vectorWidth; vectorIndex++) {
+                data[featureVectorIndex][vectorIndex] = features.get(featureVectorIndex).getData().get(vectorIndex).floatValue();
+            }
+        }
+        return data;
+    }
 
     public double[][] convertFeaturesToArray() {
         int vectorCount = features.size();

@@ -21,6 +21,8 @@ package edu.jhuapl.trinity.utils;
  */
 
 import edu.jhuapl.trinity.data.messages.FeatureCollection;
+import edu.jhuapl.trinity.utils.umap.DefaultMatrix;
+import edu.jhuapl.trinity.utils.umap.Matrix;
 import edu.jhuapl.trinity.utils.umap.Umap;
 import javafx.geometry.Point2D;
 import org.apache.commons.math3.linear.EigenDecomposition;
@@ -197,4 +199,13 @@ public enum AnalysisUtils {
         Utils.printTotalTime(start);
         return projected;
     }
+    public static float[][] transformUMAP(FeatureCollection featureCollection, Umap umap) {
+        float[][] data = featureCollection.convertFeaturesToFloatArray();
+        System.out.println("Starting UMAP Transform... ");
+        long start = System.nanoTime();
+        float[][] projected = umap.transform(data);
+        Utils.printTotalTime(start);
+        return projected;
+    }
+    
 }
