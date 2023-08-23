@@ -1686,10 +1686,6 @@ public class Projections3DPane extends StackPane implements
         if(null == latestUmap || null == latestUmap.getmEmbedding())
             return states;
         float[][] transformed = AnalysisUtils.transformUMAP(fc, latestUmap);
-//        double shiftedX = xCoord - quarterSceneWidth;
-//        double shiftedY = yCoord - quarterSceneWidth;
-//        double shiftedZ = zCoord - quarterSceneWidth;
-
         for(int row=0;row<transformed.length;row++){
             double [] stateVector = new double[transformed[row].length];
             for(int columns=0;columns<transformed[row].length;columns++){
