@@ -37,7 +37,7 @@ public class Trajectory {
     public Integer totalStates = null;
     public ArrayList<double[]> states = new ArrayList<>();
     public ArrayList<Double> times = new ArrayList<>();
-    private Boolean visible = true;
+    private Boolean visible = false;
     private Color color = Color.LIGHTSKYBLUE;
     private Double stability = null;
     private String label = null;

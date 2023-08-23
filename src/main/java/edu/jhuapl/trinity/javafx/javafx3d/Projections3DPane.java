@@ -186,6 +186,8 @@ public class Projections3DPane extends StackPane implements
     Trajectory anchorTrajectory;
     Trajectory3D anchorTraj3D;
     Group trajectorySphereGroup;
+    Group trajectoryGroup;    
+    HashMap<Trajectory, Trajectory3D> trajToTraj3DMap = new HashMap<>(); 
     double trajectoryScale = 1.0;
     int trajectoryTailSize = 5;
     double projectionScalar = 100.0;
@@ -250,7 +252,8 @@ public class Projections3DPane extends StackPane implements
     private Label zLabel = new Label("Z Axis");
     public List<String> featureLabels = new ArrayList<>();
     public Scene scene;
-
+    Umap latestUmap = null;
+    
     public Projections3DPane(Scene scene) {
         this.scene = scene;
         cubeWorld = new ShadowCubeWorld(cubeSize, 100, true, featureVectors);
@@ -323,6 +326,7 @@ public class Projections3DPane extends StackPane implements
         anchorTraj3D = JavaFX3DUtils.buildPolyLineFromTrajectory(1, 1,
             anchorTrajectory, Color.CYAN, trajectoryScale, sceneWidth, sceneHeight);
         extrasGroup.getChildren().add(anchorTraj3D);
+        trajectoryGroup = new Group();
         trajectorySphereGroup = new Group();
         double ellipsoidWidth = anchorTraj3D.width / 2.0;
         for (Point3D point : anchorTraj3D.points) {
@@ -334,6 +338,7 @@ public class Projections3DPane extends StackPane implements
             trajectorySphereGroup.getChildren().add(tsm);
         }
         extrasGroup.getChildren().add(0, trajectorySphereGroup);
+        extrasGroup.getChildren().add(0, trajectoryGroup);        
         this.scene.addEventHandler(TrajectoryEvent.TIMELINE_SHOW_TRAJECTORY, e -> {
             anchorTraj3D.setVisible((boolean) e.eventObject);
             trajectorySphereGroup.setVisible((boolean) e.eventObject);
@@ -345,7 +350,30 @@ public class Projections3DPane extends StackPane implements
         this.scene.addEventHandler(TrajectoryEvent.TIMELINE_SHOW_CALLOUT, e -> {
             anchorCallout.setVisible((boolean) e.eventObject);
         });
+       this.scene.addEventHandler(TrajectoryEvent.NEW_TRAJECTORY_OBJECT, e -> {
+            Platform.runLater(()-> {
+                updateTrajectory3D();
+            });
+        });
 
+        this.scene.addEventHandler(TrajectoryEvent.CLEAR_ALL_TRAJECTORIES, e -> {
+            Platform.runLater(()-> {
+                updateTrajectory3D();
+            });
+        });
+        
+        this.scene.addEventHandler(TrajectoryEvent.TRAJECTORY_VISIBILITY_CHANGED, e -> {
+            Trajectory trajectory = (Trajectory) e.eventObject;
+            Trajectory3D traj3D = trajToTraj3DMap.get(trajectory);
+            if(null != traj3D) {
+                traj3D.setVisible(trajectory.getVisible());
+            }
+        });
+        this.scene.addEventHandler(TrajectoryEvent.TRAJECTORY_COLOR_CHANGED, e -> {
+            Platform.runLater(()-> {
+                updateTrajectory3D();
+            });
+        });
 
         //Add 3D subscene stuff to 3D scene root object
         sceneRoot.getChildren().addAll(cameraTransform, highlightedPoint,
@@ -1029,6 +1057,26 @@ public class Projections3DPane extends StackPane implements
             tsm.setTranslateZ(point.z);
             trajectorySphereGroup.getChildren().add(tsm);
         }
+        if(null == latestUmap) 
+            return; //can't do this without a transform matrix
+        //now rebuild all the generic trajectories
+        trajectoryGroup.getChildren().clear();
+        trajToTraj3DMap.clear();
+        for(Trajectory trajectory : Trajectory.getTrajectories()) {
+            FeatureCollection fc = Trajectory.globalTrajectoryToFeatureCollectionMap.get(trajectory);
+            trajectory.states.clear();
+            //These are the original feature values. 
+            //They need to be transformed using the current UMAP transformation matrix
+            ArrayList<double[]> newStates = transformXYZ(fc);
+            
+            trajectory.states.addAll(newStates);
+            Trajectory3D traj3D = JavaFX3DUtils.buildPolyLineFromTrajectory(
+                trajectory, 8.0f, trajectory.getColor(),
+                trajectory.states.size(), trajectoryScale, sceneWidth, sceneHeight);
+            trajectoryGroup.getChildren().add(0, traj3D);
+            trajToTraj3DMap.put(trajectory, traj3D);
+            traj3D.setVisible(trajectory.getVisible());
+        }             
     }
     public Manifold3D makeHull(List<Point3D> labelMatchedPoints, String label) {
         Manifold3D manifold3D = new Manifold3D(
@@ -1633,6 +1681,26 @@ public class Projections3DPane extends StackPane implements
             radialOverlayPane.updateCalloutHeadPoint(anchorTSM, anchorCallout, subScene);
         }
     }
+    private ArrayList<double[]> transformXYZ(FeatureCollection fc) {
+        ArrayList<double[]> states = new ArrayList<>();
+        if(null == latestUmap || null == latestUmap.getmEmbedding())
+            return states;
+        float[][] transformed = AnalysisUtils.transformUMAP(fc, latestUmap);
+//        double shiftedX = xCoord - quarterSceneWidth;
+//        double shiftedY = yCoord - quarterSceneWidth;
+//        double shiftedZ = zCoord - quarterSceneWidth;
+
+        for(int row=0;row<transformed.length;row++){
+            double [] stateVector = new double[transformed[row].length];
+            for(int columns=0;columns<transformed[row].length;columns++){
+                stateVector[columns] = transformed[row][columns]*projectionScalar;
+                if(columns == 1 && reflectY)
+                    stateVector[columns] = -stateVector[columns];                
+            }
+            states.add(stateVector);
+        }
+        return states;
+    }    
 
     /**
      * @param gaussianMixture
@@ -2241,6 +2309,7 @@ public class Projections3DPane extends StackPane implements
         hyperFeatures = originalFC.getFeatures();
     }
     public void projectFeatureCollection(FeatureCollection originalFC, Umap umap) {
+
         Task task = new Task() {
             @Override
             protected FeatureCollection call() throws Exception {
@@ -2256,7 +2325,7 @@ public class Projections3DPane extends StackPane implements
                 });
 
                 double[][] umapMatrix = AnalysisUtils.fitUMAP(originalFC, umap);
-
+                latestUmap = umap;
                 Platform.runLater(() -> {
                     ProgressStatus ps = new ProgressStatus("Converting to FeatureCollection...", 0.5);
                     ps.fillStartColor = Color.CYAN;
@@ -2292,6 +2361,7 @@ public class Projections3DPane extends StackPane implements
                     fc.setDimensionLabels(originalFC.getDimensionLabels());
                 }
                 addFeatureCollection(fc);
+                updateTrajectory3D();
             } catch (InterruptedException | ExecutionException ex) {
                 Logger.getLogger(Projections3DPane.class.getName()).log(Level.SEVERE, null, ex);
             }
