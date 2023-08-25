@@ -100,6 +100,7 @@ public class FeatureVector extends MessageData {
     private double score;
     private double pfa;
     private int layer;
+    private String text = "";
     private HashMap<String, String> metaData;
     //</editor-fold>
 
@@ -387,4 +388,18 @@ public class FeatureVector extends MessageData {
         this.metaData = metaData;
     }
     //</editor-fold>
+
+    /**
+     * @return the text
+     */
+    public String getText() {
+        return text;
+    }
+
+    /**
+     * @param text the text to set
+     */
+    public void setText(String text) {
+        this.text = text;
+    }
 }

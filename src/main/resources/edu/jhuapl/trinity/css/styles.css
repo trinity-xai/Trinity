@@ -2094,6 +2094,58 @@
 
 /*******************************************************************************
  *                                                                             *
+ * TextArea                                                                    *
+ *                                                                             *
+ ******************************************************************************/
+
+.text-area {
+    -fx-font-family: "Consolas";
+    -fx-fill: #00FF68DD;
+    -fx-stroke: lime;
+
+    -fx-display-caret: true;
+    -fx-highlight-fill: #00FF00;
+    -fx-highlight-text-fill: #000000;
+    -fx-background-insets: 0px;
+    -fx-font-size: 14;
+}
+
+.text-area .content {
+    -fx-background-color: transparent;
+}
+
+.text-area .scroll-pane {
+    -fx-background-color: transparent;
+    -fx-background-insets: 5 5 5 5;
+    -fx-pannable: true;
+}
+
+.text-area .scroll-pane .scroll-bar {
+    -fx-background-color: null;
+    -fx-background-radius: 0;
+    -fx-background-insets: 0;
+    -fx-padding: 0;
+    -fx-shape: null;
+    -fx-opacity: 0;
+}
+
+
+.text-area .scroll-pane .corner {
+    -fx-background-color: #000000;
+    -fx-background-radius: 0 0 0 0;
+    -fx-background-insets: 1 0 0 1;
+}
+
+.text-area .scroll-pane .viewport {
+    -fx-background-color: transparent;
+}
+
+.text-area .scroll-pane .content {
+    -fx-background-color: transparent;
+}
+
+/*******************************************************************************
+ *                                                                             *
  * Custom                                                                      *
  *                                                                             *
  ******************************************************************************/

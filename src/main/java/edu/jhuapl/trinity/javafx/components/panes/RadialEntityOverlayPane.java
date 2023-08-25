@@ -74,6 +74,7 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import static java.util.stream.Collectors.toList;
+import javafx.scene.control.TextArea;
 
 /**
  * @author Sean Phillips
@@ -212,7 +213,19 @@ public class RadialEntityOverlayPane extends Pane {
         metaTP.setText("Metadata");
         metaTP.setExpanded(false);
 
-        VBox mainTitleVBox = new VBox(3, imageTP, detailsTP, metaTP);
+        TextArea textArea = new TextArea(featureVector.getText());
+        textArea.setMaxWidth(225);
+        textArea.setEditable(false);
+        textArea.setMinHeight(200);
+        textArea.setPrefHeight(200);
+        textArea.setWrapText(true);
+        VBox textVBox = new VBox(2, textArea);
+        TitledPane textTP = new TitledPane();
+        textTP.setContent(textVBox);
+        textTP.setText("Text");
+        textTP.setExpanded(false);
+        
+        VBox mainTitleVBox = new VBox(3, imageTP, textTP, detailsTP, metaTP);
         mainTitleVBox.setPrefWidth(250);
         mainTitleVBox.setPrefHeight(100);
 
@@ -258,11 +271,11 @@ public class RadialEntityOverlayPane extends Pane {
         Image image = iv.getImage();
         ((ImageView) tp0.getContent()).setImage(image);
 
-        //update details
+        //update details (child 2)
         String bboxStr = "";
         if (null != featureVector.getBbox())
             bboxStr = bboxToString(featureVector);
-        TitledPane tp1 = (TitledPane) vbox.getChildren().get(1);
+        TitledPane tp1 = (TitledPane) vbox.getChildren().get(2);
         GridPane detailsGridPane = new GridPane();
         detailsGridPane.setPadding(new Insets(1));
         detailsGridPane.setHgap(5);
@@ -280,12 +293,12 @@ public class RadialEntityOverlayPane extends Pane {
             new Label(String.valueOf(featureVector.getLayer())));
         tp1.setContent(detailsGridPane);
 
-        //update metadata
+        //update metadata (child 3)
         StringBuilder sb = new StringBuilder();
         for (Entry<String, String> entry : featureVector.getMetaData().entrySet()) {
             sb.append(entry.getKey()).append(" : ").append(entry.getValue()).append("\n");
         }
-        TitledPane tp2 = (TitledPane) vbox.getChildren().get(2);
+        TitledPane tp2 = (TitledPane) vbox.getChildren().get(3);
         ((Text) tp2.getContent()).setText(sb.toString());
     }
 

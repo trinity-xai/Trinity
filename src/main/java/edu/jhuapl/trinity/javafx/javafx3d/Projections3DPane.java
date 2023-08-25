@@ -2338,6 +2338,8 @@ public class Projections3DPane extends StackPane implements
                     projectedFC.getFeatures().get(i).setLabel(origFV.getLabel());
                     projectedFC.getFeatures().get(i).setScore(origFV.getScore());
                     projectedFC.getFeatures().get(i).setImageURL(origFV.getImageURL());
+                    projectedFC.getFeatures().get(i).setText(origFV.getText());
+                    projectedFC.getFeatures().get(i).setMetaData(origFV.getMetaData());
                 }
                 Platform.runLater(() -> {
                     ProgressStatus ps = new ProgressStatus("", -1);
