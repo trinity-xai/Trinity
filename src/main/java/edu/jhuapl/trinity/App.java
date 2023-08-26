@@ -30,6 +30,7 @@ import edu.jhuapl.trinity.javafx.components.MatrixOverlay;
 import edu.jhuapl.trinity.javafx.components.ProgressStatus;
 import static edu.jhuapl.trinity.javafx.components.panes.LitPathPane.slideInPane;
 import edu.jhuapl.trinity.javafx.components.panes.Shape3DControlPane;
+import edu.jhuapl.trinity.javafx.components.panes.TextPane;
 import edu.jhuapl.trinity.javafx.components.panes.TrajectoryTrackerPane;
 import edu.jhuapl.trinity.javafx.components.radial.MainNavMenu;
 import edu.jhuapl.trinity.javafx.components.timeline.Item;
@@ -120,6 +121,7 @@ public class App extends Application {
     Hypersurface3DPane hypersurface3DPane;
     Projections3DPane projections3DPane;
     TrajectoryTrackerPane trajectoryTrackerPane;
+    TextPane textConsolePane;
     Shape3DControlPane shape3DControlPane;    
     CircleProgressIndicator circleSpinner;
 
@@ -445,11 +447,25 @@ public class App extends Application {
 
         scene.addEventHandler(ApplicationEvent.SHUTDOWN, e -> shutdown(false));
 
+        scene.addEventHandler(ApplicationEvent.SHOW_TEXT_CONSOLE, e -> {
+            if (null == textConsolePane) {
+                textConsolePane = new TextPane(scene, pathPane);
+            }
+            if (!pathPane.getChildren().contains(textConsolePane)) {
+                pathPane.getChildren().add(textConsolePane);
+                slideInPane(textConsolePane);
+            } else {
+                textConsolePane.show();
+            }
+            if(null != e.object) {
+                Platform.runLater(()->textConsolePane.setText((String)e.object));
+            }
+        });
+        
         scene.addEventHandler(TrajectoryEvent.SHOW_TRAJECTORY_TRACKER, e -> {
             if (null == trajectoryTrackerPane) {
                 trajectoryTrackerPane = new TrajectoryTrackerPane(scene, pathPane);
             }
-
             if (!pathPane.getChildren().contains(trajectoryTrackerPane)) {
                 pathPane.getChildren().add(trajectoryTrackerPane);
                 slideInPane(trajectoryTrackerPane);

@@ -74,7 +74,10 @@ import java.util.List;
 import java.util.Map.Entry;
 
 import static java.util.stream.Collectors.toList;
+import javafx.scene.control.Button;
 import javafx.scene.control.TextArea;
+import javafx.scene.effect.Glow;
+import javafx.scene.layout.HBox;
 
 /**
  * @author Sean Phillips
@@ -219,7 +222,33 @@ public class RadialEntityOverlayPane extends Pane {
         textArea.setMinHeight(200);
         textArea.setPrefHeight(200);
         textArea.setWrapText(true);
-        VBox textVBox = new VBox(2, textArea);
+        
+        Glow glow = new Glow(0.95);
+        ImageView selectAllIV = ResourceUtils.loadIcon("selectall", 30);
+        VBox selectAllVBox = new VBox(selectAllIV);
+        selectAllVBox.setOnMouseEntered(e -> selectAllIV.setEffect(glow));
+        selectAllVBox.setOnMouseExited(e -> selectAllIV.setEffect(null));
+        selectAllVBox.setOnMouseClicked(e -> textArea.selectAll());
+        
+        ImageView copyIV = ResourceUtils.loadIcon("copy", 30);
+        VBox copyVBox = new VBox(copyIV);
+        copyVBox.setOnMouseEntered(e -> copyVBox.setEffect(glow));
+        copyVBox.setOnMouseExited(e -> copyVBox.setEffect(null));
+        copyVBox.setOnMouseClicked(e -> textArea.copy());
+        
+        ImageView textIV = ResourceUtils.loadIcon("console", 30);
+        VBox textIVVBox = new VBox(textIV);        
+        textIVVBox.setOnMouseEntered(e -> textIVVBox.setEffect(glow));
+        textIVVBox.setOnMouseExited(e -> textIVVBox.setEffect(null));
+        textIVVBox.setOnMouseClicked(e -> {
+            getScene().getRoot().fireEvent(new ApplicationEvent(
+            ApplicationEvent.SHOW_TEXT_CONSOLE, featureVector.getText()));
+        });
+
+        HBox hbox = new HBox(15, selectAllVBox, copyVBox, textIVVBox);
+        hbox.setAlignment(Pos.TOP_LEFT);
+        
+        VBox textVBox = new VBox(5, hbox, textArea);
         TitledPane textTP = new TitledPane();
         textTP.setContent(textVBox);
         textTP.setText("Text");

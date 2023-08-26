@@ -35,7 +35,7 @@ public class ApplicationEvent extends Event {
     public static final EventType<ApplicationEvent> SHUTDOWN = new EventType(ANY, "SHUTDOWN");
     public static final EventType<ApplicationEvent> RESTORE_PANES = new EventType(ANY, "RESTORE_PANES");
     public static final EventType<ApplicationEvent> SHOW_DATA = new EventType(ANY, "SHOW_DATA");
-    public static final EventType<ApplicationEvent> SHOW_FACTOR_ANALYSIS = new EventType(ANY, "SHOW_FACTOR_ANALYSIS");
+    public static final EventType<ApplicationEvent> SHOW_TEXT_CONSOLE = new EventType(ANY, "SHOW_TEXT_CONSOLE");
     public static final EventType<ApplicationEvent> SHOW_HYPERSPACE = new EventType(ANY, "SHOW_HYPERSPACE");
     public static final EventType<ApplicationEvent> SHOW_HYPERSURFACE = new EventType(ANY, "SHOW_HYPERSURFACE");
     public static final EventType<ApplicationEvent> SHOW_PROJECTIONS = new EventType(ANY, "SHOW_PROJECTIONS");
