@@ -127,7 +127,7 @@ public class HyperspaceMenu extends RadialEntity {
         setShowEmitter(false);
         setManaged(false);
 
-        iv = ResourceUtils.loadIcon("rgbcube", ITEM_FIT_WIDTH);
+        iv = ResourceUtils.loadIcon("hyperspace", ITEM_FIT_WIDTH);
         if (null != iv) {
             iv.setSmooth(true);
             iv.setPreserveRatio(true);
@@ -235,9 +235,6 @@ public class HyperspaceMenu extends RadialEntity {
         Shadow shadow = new Shadow(BlurType.GAUSSIAN, Color.ALICEBLUE, 50);
         setOutlineEffect(shadow);
 
-        ImageView manifold = ResourceUtils.loadIcon("manifold", ITEM_FIT_WIDTH);
-        manifold.setEffect(glow);
-
         ImageView radar = ResourceUtils.loadIcon("radar", ITEM_FIT_WIDTH);
         radar.setEffect(glow);
 
@@ -261,6 +258,9 @@ public class HyperspaceMenu extends RadialEntity {
 
         ImageView camera = ResourceUtils.loadIcon("camera", ITEM_FIT_WIDTH);
         camera.setEffect(glow);
+
+        ImageView callouts = ResourceUtils.loadIcon("callouts", ITEM_FIT_WIDTH);
+        callouts.setEffect(glow);
 
         addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Metadata Search", search, e -> {
             Pane pathPane = App.getAppPathPaneStack();
@@ -290,20 +290,6 @@ public class HyperspaceMenu extends RadialEntity {
                 searchPane.show();
             }
             searchPane.showFilters();
-        }));
-
-        addMenuItem(new LitRadialMenuItem(ITEM_SIZE, "Manifolds", manifold, e -> {
-            Pane pathPane = App.getAppPathPaneStack();
-            if (null == manifoldControlPane) {
-                manifoldControlPane = new ManifoldControlPane(scene, pathPane);
-                manifoldControlPane.visibleProperty().bind(hyperspace3DPane.visibleProperty());
-            }
-            if (!pathPane.getChildren().contains(manifoldControlPane)) {
-                pathPane.getChildren().add(manifoldControlPane);
-                slideInPane(manifoldControlPane);
-            } else {
-                manifoldControlPane.show();
-            }
         }));
 
         addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Parameter RADAR", radar, e -> {
@@ -356,5 +342,8 @@ public class HyperspaceMenu extends RadialEntity {
         addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Reset Camera View", camera, e -> {
             hyperspace3DPane.resetView(1000, false);
         }));
+        addMenuItem(new LitRadialMenuItem(ITEM_SIZE, "Clear Callouts", callouts, e -> {
+            hyperspace3DPane.clearCallouts();
+        }));        
     }
 }

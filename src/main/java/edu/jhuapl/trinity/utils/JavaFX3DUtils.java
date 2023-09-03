@@ -56,10 +56,13 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.geometry.Point2D;
 import javafx.scene.PointLight;
 import javafx.scene.Scene;
 import javafx.scene.SceneAntialiasing;
 import javafx.scene.SnapshotParameters;
+import javafx.scene.SubScene;
+import javafx.scene.shape.Shape3D;
 
 /**
  * Utilities used by various 3D rendering code.
@@ -161,7 +164,33 @@ public enum JavaFX3DUtils {
         timeline.setCycleCount(1);
         return timeline;
     }
+    public static Point2D getTransformedP2D(Shape3D node, SubScene subScene, double clipDistance) {
+        javafx.geometry.Point3D coordinates = node.localToScene(javafx.geometry.Point3D.ZERO, true);
+        //@DEBUG SMP  useful debugging print
+        //System.out.println("subSceneToScene Coordinates: " + coordinates.toString());
+        //Clipping Logic
+        //if coordinates are outside of the scene it could
+        //stretch the screen so don't transform them
+        double x = coordinates.getX();
+        double y = coordinates.getY();
 
+        //is it left of the view?
+        if (x < 0) {
+            x = 0;
+        }
+        //is it right of the view?
+        if ((x + clipDistance) > subScene.getWidth()) {
+            x = subScene.getWidth() - (clipDistance);
+        }
+        //is it above the view?
+        if (y < 0) {
+            y = 0;
+        }
+        //is it below the view
+        if ((y + clipDistance) > subScene.getHeight())
+            y = subScene.getHeight() - (clipDistance);
+        return new Point2D(x, y);
+    } 
     public static List<Image> getTiles() throws URISyntaxException, IOException {
         List<Image> images = new ArrayList<>();
         images.add(ResourceUtils.load3DTextureImage("1500_blackgrid"));
