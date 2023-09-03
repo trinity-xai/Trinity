@@ -62,6 +62,8 @@ import edu.jhuapl.trinity.utils.VisibilityMap;
 import edu.jhuapl.trinity.utils.umap.Umap;
 import java.io.File;
 import java.io.IOException;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import javafx.animation.AnimationTimer;
 import javafx.animation.Timeline;
 import javafx.animation.Transition;
@@ -2010,7 +2012,10 @@ public class Projections3DPane extends StackPane implements
 //            radialOverlayPane.updateCalloutHeadPoints(subScene);
             ddc.play();
             distanceTotrajectory3DMap.get(distanceObject).addEventHandler(
-                MouseEvent.MOUSE_CLICKED, e -> ddc.play());
+                MouseEvent.MOUSE_CLICKED, e -> {
+                    ddc.setVisible(true);
+                    ddc.play();
+                });
             
             //Clear selected spheres to null state
             selectedSphereA = null;
@@ -2095,7 +2100,9 @@ public class Projections3DPane extends StackPane implements
         midpointSphere.setTranslateX(midpoint.getX());
         midpointSphere.setTranslateY(midpoint.getY());
         midpointSphere.setTranslateZ(midpoint.getZ());
-        Label midpointLabel = new Label(distance.getLabel() + "\n" + distance.getMetric() + ": " + distance.getValue());
+        NumberFormat doubleFormat = new DecimalFormat("0.0000");
+        Label midpointLabel = new Label(distance.getLabel() + "\n" 
+            + distance.getMetric() + ": " + doubleFormat.format(distance.getValue()));
         midpointLabel.setTextAlignment(TextAlignment.LEFT);
         midpointLabel.setMouseTransparent(true);
         extrasGroup.getChildren().add(midpointSphere);

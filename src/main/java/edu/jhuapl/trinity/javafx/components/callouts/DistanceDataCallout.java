@@ -25,6 +25,7 @@ import edu.jhuapl.trinity.javafx.javafx3d.Manifold3D;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.util.List;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.scene.SubScene;
@@ -33,6 +34,7 @@ import javafx.scene.control.TitledPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.shape.Shape3D;
+import org.fxyz3d.geometry.Face3;
 import org.fxyz3d.geometry.Point3D;
 
 /**
@@ -77,33 +79,36 @@ public class DistanceDataCallout extends VBox {
         return infoCallout;
     }
 
-    public DistanceDataCallout(Manifold3D manifold3D, Point3D point3D, SubScene subScene) {
+    public DistanceDataCallout(Manifold3D manifold3D, Point3D startingPoint3D, SubScene subScene) {
         NumberFormat doubleFormat = new DecimalFormat("0.0000");
         TitledPane manifoldTP = new TitledPane();
-
+        javafx.geometry.Point3D fxStart = JavaFX3DUtils.fxyzPoint3DTofxPoint3D.apply(startingPoint3D);
+        List<Face3> intersections = manifold3D.getIntersections(startingPoint3D);
+        System.out.println("Intersections with Manifold: " + intersections.size());
+        
         GridPane manifoldGridPane = new GridPane();
-        manifoldGridPane.setPadding(new Insets(1));
+        manifoldGridPane.setPadding(new Insets(-1));
         manifoldGridPane.setHgap(5);
-        manifoldGridPane.addRow(0, new Label("Label"),
-            new Label("Value"));
+//        manifoldGridPane.addRow(0, new Label("Label"),
+//            new Label("Value"));
 
         manifoldGridPane.addRow(1, new Label("Mean Centroid"),
             new Label("Coord"));
         manifoldGridPane.addRow(2, new Label("X"),
-            new Label(doubleFormat.format(point3D.x)));
+            new Label(doubleFormat.format(manifold3D.getBoundsCentroid().x)));
         manifoldGridPane.addRow(3, new Label("Y"),
-            new Label(doubleFormat.format(point3D.y)));
+            new Label(doubleFormat.format(manifold3D.getBoundsCentroid().y)));
         manifoldGridPane.addRow(4, new Label("Z"),
-            new Label(doubleFormat.format(point3D.z)));
+            new Label(doubleFormat.format(manifold3D.getBoundsCentroid().z)));
 
-        manifoldGridPane.addRow(1, new Label("Hit Box Size"),
+        manifoldGridPane.addRow(1, new Label("Bounds Size"),
             new Label("Dimension"));
         manifoldGridPane.addRow(2, new Label("Width"),
-            new Label(doubleFormat.format(point3D.x)));
+            new Label(doubleFormat.format(manifold3D.getBoundsWidth())));
         manifoldGridPane.addRow(3, new Label("Height"),
-            new Label(doubleFormat.format(point3D.y)));
+            new Label(doubleFormat.format(manifold3D.getBoundsHeight())));
         manifoldGridPane.addRow(4, new Label("Depth"),
-            new Label(doubleFormat.format(point3D.z)));
+            new Label(doubleFormat.format(manifold3D.getBoundsDepth())));
 
         VBox manifoldVBox = new VBox(5, manifoldGridPane);
         manifoldTP.setContent(manifoldVBox);
@@ -117,16 +122,19 @@ public class DistanceDataCallout extends VBox {
         measurementsGridPane.addRow(0, new Label("Start Point"),
             new Label("Value"));
         measurementsGridPane.addRow(1, new Label("X"),
-            new Label(doubleFormat.format(point3D.x)));
+            new Label(doubleFormat.format(startingPoint3D.x)));
         measurementsGridPane.addRow(2, new Label("Y"),
-            new Label(doubleFormat.format(point3D.y)));
+            new Label(doubleFormat.format(startingPoint3D.y)));
         measurementsGridPane.addRow(3, new Label("Z"),
-            new Label(doubleFormat.format(point3D.z)));
-        measurementsGridPane.addRow(4, new Label("Inside Hit Box"),
-            new Label("TODO Boolean"));
+            new Label(doubleFormat.format(startingPoint3D.z)));
+        
+        measurementsGridPane.addRow(4, new Label("Inside Bounds"),
+            new Label(String.valueOf(manifold3D.insideBounds(fxStart))));
         measurementsGridPane.addRow(5, new Label("Inside Hull"),
-            new Label("TODO Boolean"));
-        measurementsGridPane.addRow(6, new Label("Hull Distance"),
+            new Label(String.valueOf(intersections.size()!=0)));
+        measurementsGridPane.addRow(6, new Label("On Hull Boundary"),
+            new Label(String.valueOf(intersections.size()>2)));
+        measurementsGridPane.addRow(7, new Label("Hull Distance"),
             new Label("TODO Number"));
 
         VBox measurementsVBox = new VBox(5, measurementsGridPane);

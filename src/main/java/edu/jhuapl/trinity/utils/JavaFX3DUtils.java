@@ -52,6 +52,7 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.List;
 import java.util.function.Function;
 import java.util.logging.Level;
@@ -73,7 +74,22 @@ public enum JavaFX3DUtils {
     INSTANCE;
     public static Function<Point3D, javafx.geometry.Point3D> fxyzPoint3DTofxPoint3D = 
         p -> new javafx.geometry.Point3D(p.x, p.y, p.z);
-
+    public static Comparator<Point3D> Point3DXComparator = (Point3D p1, Point3D p2) -> {
+        if (p1.x < p2.x) return -1;
+        else if (p1.x > p2.x) return 1;
+        else return 0;
+    };
+    public static Comparator<Point3D> Point3DYComparator = (Point3D p1, Point3D p2) -> {
+        if (p1.y < p2.y) return -1;
+        else if (p1.y > p2.y) return 1;
+        else return 0;
+    };
+    public static Comparator<Point3D> Point3DZComparator = (Point3D p1, Point3D p2) -> {
+        if (p1.z < p2.z) return -1;
+        else if (p1.z > p2.z) return 1;
+        else return 0;
+    };
+    
     public static Image snapshotShape3D(Node node) {
         Group group = new Group(node);
         Scene scene = new Scene(group, 1000, 1000, true, SceneAntialiasing.BALANCED);
