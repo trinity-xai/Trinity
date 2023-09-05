@@ -987,7 +987,7 @@ public class Hyperspace3DPane extends StackPane implements
             traj3D.setVisible(trajectory.getVisible());
         }        
     }
-
+    
     public void makeHull(boolean useVisiblePoints, String label) {
         //@TODO SMP Limit hull to points with that label
         shape3DToLabel.clear();
@@ -1013,6 +1013,10 @@ public class Hyperspace3DPane extends StackPane implements
         updateLabels();
     }
 
+    public void clearCallouts() {
+        radialOverlayPane.clearCallouts();
+    }
+    
     private void setupSkyBox() {
         //Load SkyBox image
         Image

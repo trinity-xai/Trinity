@@ -1,0 +1,253 @@
+package edu.jhuapl.trinity.javafx.components.callouts;
+
+/*-
+ * #%L
+ * trinity-2023.09.01
+ * %%
+ * Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ * 
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ * 
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * #L%
+ */
+
+import edu.jhuapl.trinity.data.messages.FeatureVector;
+import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
+import edu.jhuapl.trinity.utils.HttpsUtils;
+import edu.jhuapl.trinity.utils.JavaFX3DUtils;
+import edu.jhuapl.trinity.utils.ResourceUtils;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.util.Map.Entry;
+import javafx.geometry.Insets;
+import javafx.geometry.Point2D;
+import javafx.geometry.Pos;
+import javafx.scene.SubScene;
+import javafx.scene.control.Label;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TitledPane;
+import javafx.scene.control.Tooltip;
+import javafx.scene.effect.Glow;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.image.WritableImage;
+import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
+import javafx.scene.shape.Shape3D;
+import javafx.scene.text.Text;
+
+/**
+ *
+ * @author phillsm1
+ */
+public class FeatureVectorCallout extends VBox {
+    public static double CHIP_FIT_WIDTH = 200;
+    public static double IMAGE_FIT_HEIGHT = 200;
+    public static double IMAGE_FIT_WIDTH = 200;    
+    public String imageryBasePath = "imagery/";
+    
+    public static Callout createByShape3D(Shape3D shape3D, FeatureVector featureVector, SubScene subScene) {
+        FeatureVectorCallout mainTitleVBox = new FeatureVectorCallout(shape3D, featureVector, subScene);
+        Point2D p2D = JavaFX3DUtils.getTransformedP2D(shape3D, subScene, Callout.DEFAULT_HEAD_RADIUS + 5);
+        Callout infoCallout = CalloutBuilder.create()
+            .headPoint(p2D.getX(), p2D.getY())
+            .leaderLineToPoint(p2D.getX() - 100, p2D.getY() - 150)
+            .endLeaderLineRight()
+            .mainTitle(featureVector.getLabel(), mainTitleVBox)
+            .pause(10)
+            .build();
+
+        infoCallout.setOnMouseClicked(e -> {
+            if (e.getClickCount() > 1) {
+                infoCallout.hide();
+            }
+        });
+
+        infoCallout.setOnZoom(e -> {
+            if (e.getZoomFactor() < 1)
+                infoCallout.hide(); //pinch hides it
+        });
+
+        infoCallout.setPickOnBounds(false);
+        infoCallout.setManaged(false);
+
+        subScene.getScene().addEventHandler(ApplicationEvent.SET_IMAGERY_BASEPATH, e -> {
+            mainTitleVBox.imageryBasePath = (String) e.object;
+            System.out.println("Callout image base path set to " + mainTitleVBox.imageryBasePath);
+        });
+        
+        return infoCallout;
+    }
+
+    public FeatureVectorCallout(Shape3D shape3D, FeatureVector featureVector, SubScene subScene) {
+        ImageView iv = loadImageView(featureVector, featureVector.isBBoxValid());
+        String bboxStr = "";
+        if (null != featureVector.getBbox())
+            bboxStr = bboxToString(featureVector);
+        Tooltip.install(iv, new Tooltip(
+            featureVector.getImageURL() + "\n BBOX: " + bboxStr
+        ));
+        iv.setPreserveRatio(true);
+        iv.setFitWidth(CHIP_FIT_WIDTH);
+        iv.setFitHeight(CHIP_FIT_WIDTH);
+//@TODO SMP This feature has been found to be more problematic than beneficial
+//        iv.setOnMouseClicked(e -> {
+//            if (e.getClickCount() > 1) {
+//                //add radial entity
+//                RadialEntity radialEntity = createEntity(featureVector);
+//                //radialEntity.resizeItemsToFit();
+//                addEntity(radialEntity);
+//                radialEntity.setTranslateX(getWidth() / 2.0);
+//                radialEntity.setTranslateY(getHeight() / 2.0);
+//            }
+//        });
+//@TODO SMP This feature has been found to be more problematic than beneficial
+//        iv.setOnZoom(e -> {
+//            //add radial entity
+//            RadialEntity radialEntity = createEntity(featureVector);
+//            //radialEntity.resizeItemsToFit();
+//            addEntity(radialEntity);
+//            radialEntity.setTranslateX(getWidth() / 2.0);
+//            radialEntity.setTranslateY(getHeight() / 2.0);
+//        });
+        TitledPane imageTP = new TitledPane();
+        imageTP.setContent(iv);
+        imageTP.setText("Imagery");
+        imageTP.setExpanded(false);
+        
+        TitledPane detailsTP = new TitledPane();
+        GridPane detailsGridPane = new GridPane();
+        detailsGridPane.setPadding(new Insets(1));
+        detailsGridPane.setHgap(5);
+        detailsGridPane.addRow(0, new Label("imageURL"),
+            new Label(featureVector.getImageURL()));
+        detailsGridPane.addRow(1, new Label("bbox"),
+            new Label(bboxStr));
+        detailsGridPane.addRow(2, new Label("frameId"),
+            new Label(String.valueOf(featureVector.getFrameId())));
+        detailsGridPane.addRow(3, new Label("score"),
+            new Label(String.valueOf(featureVector.getScore())));
+        detailsGridPane.addRow(4, new Label("layer"),
+            new Label(String.valueOf(featureVector.getLayer())));
+        detailsGridPane.addRow(5, new Label("messageId"),
+            new Label(String.valueOf(featureVector.getLayer())));
+
+        detailsTP.setContent(detailsGridPane);
+        detailsTP.setText("Details");
+        detailsTP.setExpanded(false);
+
+        StringBuilder sb = new StringBuilder();
+        for (Entry<String, String> entry : featureVector.getMetaData().entrySet()) {
+            sb.append(entry.getKey()).append(" : ").append(entry.getValue()).append("\n");
+        }
+        Text metaText = new Text(sb.toString());
+        TitledPane metaTP = new TitledPane();
+        metaTP.setContent(metaText);
+        metaTP.setText("Metadata");
+        metaTP.setExpanded(false);
+
+        TextArea textArea = new TextArea(featureVector.getText());
+        textArea.setMaxWidth(225);
+        textArea.setEditable(false);
+        textArea.setMinHeight(200);
+        textArea.setPrefHeight(200);
+        textArea.setWrapText(true);
+        
+        Glow glow = new Glow(0.95);
+        ImageView selectAllIV = ResourceUtils.loadIcon("selectall", 30);
+        VBox selectAllVBox = new VBox(selectAllIV);
+        selectAllVBox.setOnMouseEntered(e -> selectAllIV.setEffect(glow));
+        selectAllVBox.setOnMouseExited(e -> selectAllIV.setEffect(null));
+        selectAllVBox.setOnMouseClicked(e -> textArea.selectAll());
+        
+        ImageView copyIV = ResourceUtils.loadIcon("copy", 30);
+        VBox copyVBox = new VBox(copyIV);
+        copyVBox.setOnMouseEntered(e -> copyVBox.setEffect(glow));
+        copyVBox.setOnMouseExited(e -> copyVBox.setEffect(null));
+        copyVBox.setOnMouseClicked(e -> textArea.copy());
+        
+        ImageView textIV = ResourceUtils.loadIcon("console", 30);
+        VBox textIVVBox = new VBox(textIV);        
+        textIVVBox.setOnMouseEntered(e -> textIVVBox.setEffect(glow));
+        textIVVBox.setOnMouseExited(e -> textIVVBox.setEffect(null));
+        textIVVBox.setOnMouseClicked(e -> {
+            textIVVBox.getScene().getRoot().fireEvent(new ApplicationEvent(
+            ApplicationEvent.SHOW_TEXT_CONSOLE, featureVector.getText()));
+        });
+
+        HBox hbox = new HBox(15, selectAllVBox, copyVBox, textIVVBox);
+        hbox.setAlignment(Pos.TOP_LEFT);
+        
+        VBox textVBox = new VBox(5, hbox, textArea);
+        TitledPane textTP = new TitledPane();
+        textTP.setContent(textVBox);
+        textTP.setText("Text");
+        textTP.setExpanded(false);
+        
+        getChildren().addAll(imageTP, textTP, detailsTP, metaTP);
+        setSpacing(3);
+        setPrefWidth(250);
+        setPrefHeight(100);
+
+    }
+    private static String bboxToString(FeatureVector featureVector) {
+        NumberFormat format = new DecimalFormat("0.00");
+        StringBuilder sb = new StringBuilder("[ ");
+        for (Double d : featureVector.getBbox()) {
+            sb.append(format.format(d));
+            sb.append(" ");
+        }
+        sb.append("]");
+        String bboxStr = sb.toString();
+        return bboxStr;
+    }    
+    private ImageView loadImageView(FeatureVector featureVector, boolean bboxOnly) {
+        if (null == featureVector.getImageURL())
+            return new ImageView(ResourceUtils.loadIconFile("noimage"));
+        ImageView iv = null;
+        try {
+            if (featureVector.getImageURL().startsWith("http")) {
+                //@DEBUG SMP Useful print
+                //System.out.println("<Trinity Debug> HTTP Link: fv.getImageURL()== " + featureVector.getImageURL());
+                Image image = HttpsUtils.getImage(featureVector.getImageURL());
+                if (image.getException() != null)
+                    System.out.println("Exception info: " + image.getException().toString());
+                iv = new ImageView(image);
+            } else {
+                if (bboxOnly) {
+                    //@DEBUG SMP Useful print
+                    //System.out.println("<Trinity Debug> BoundingBox Request: file == " + imageryBasePath + featureVector.getImageURL());
+                    WritableImage image = ResourceUtils.loadImageFileSubset(imageryBasePath + featureVector.getImageURL(),
+                        featureVector.getBbox().get(0).intValue(),
+                        featureVector.getBbox().get(1).intValue(),
+                        featureVector.getBbox().get(2).intValue(),
+                        featureVector.getBbox().get(3).intValue()
+                    );
+                    iv = new ImageView(image);
+                } else {
+                    //@DEBUG SMP Useful print
+                    //System.out.println("<Trinity Debug> Full Image Request: file == " + imageryBasePath + featureVector.getImageURL());
+                    iv = new ImageView(ResourceUtils.loadImageFile(imageryBasePath + featureVector.getImageURL()));
+                }
+            }
+        } catch (Exception ex) {
+            System.out.println("Oops... problem getting image! " + ex.getMessage());
+            iv = new ImageView(ResourceUtils.loadIconFile("noimage"));
+        }
+        if (iv == null)
+            iv = new ImageView(ResourceUtils.loadIconFile("noimage"));
+        return iv;
+    }    
+ 
+    
+}

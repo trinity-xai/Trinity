@@ -123,6 +123,14 @@ public enum AnalysisUtils {
 
     }
 
+    public static double l2Norm(double [] x) {
+        double result = 0.0;
+        for(int i=0;i<x.length;i++){
+            result += x[i] * x[i];
+        }
+        return Math.sqrt(result);
+    }   
+    
     public static double[][] featuresMultWeights(double[] features, double[][] weights) {
         RealMatrix realMatrix = MatrixUtils.createRealMatrix(weights);
         RealMatrix realMatrixColumn = MatrixUtils.createColumnRealMatrix(features);
@@ -133,6 +141,8 @@ public enum AnalysisUtils {
     /**
      * @author Sean Phillips
      * Principal Component Analysis using Apache Math Commons EigenDecomposition
+     * @param array rows of data to be used for input into Covariance
+     * @return the real eigenvalues
      * @link https://stackoverflow.com/questions/10604507/pca-implementation-in-java
      */
     public static double[] doCommonsPCA(double[][] array) {

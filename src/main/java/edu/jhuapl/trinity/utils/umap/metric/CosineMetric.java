@@ -46,6 +46,7 @@ public final class CosineMetric extends Metric {
         double result = 0.0;
         double normX = 0.0;
         double normY = 0.0;
+
         for (int i = 0; i < x.length; ++i) {
             result += x[i] * y[i];
             normX += x[i] * x[i];

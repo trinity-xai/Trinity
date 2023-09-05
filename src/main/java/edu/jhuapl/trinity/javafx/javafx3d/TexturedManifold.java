@@ -20,6 +20,10 @@ package edu.jhuapl.trinity.javafx.javafx3d;
  * #L%
  */
 
+import java.util.List;
+import javafx.scene.shape.TriangleMesh;
+import org.fxyz3d.geometry.Face3;
+import org.fxyz3d.geometry.Point3D;
 import org.fxyz3d.shapes.primitives.TexturedMesh;
 
 /**
@@ -28,13 +32,32 @@ import org.fxyz3d.shapes.primitives.TexturedMesh;
  */
 public class TexturedManifold extends TexturedMesh {
 
+    List<Point3D> vertices;
+    List<Face3> faces;
+    
+    public TexturedManifold(List<Point3D> vertices, List<Face3> faces) {
+        this.vertices = vertices;
+        this.faces = faces;
+        updateMesh();
+    }
+
     @Override
     protected void updateMesh() {
-        
+        setMesh(makeMesh());
     }
-    
-    public TexturedManifold() {
-        
+    private TriangleMesh makeMesh(){
+        TriangleMesh mesh = new TriangleMesh();
+        Point3D point3D;
+        for (int i = 0; i < vertices.size(); i++) {
+            point3D = vertices.get(i);
+            mesh.getPoints().addAll(point3D.x, point3D.y, point3D.z);
+            mesh.getTexCoords().addAll(point3D.x, point3D.z);
+        }
+        for (Face3 face : faces) {
+            mesh.getFaces().addAll(face.p0, face.p2, face.p1, face.p1, face.p2, face.p0);
+//            mesh.getFaceSmoothingGroups().addAll(face[2], face[1],face[0]);
+        }        
+        return mesh;
     }
     
 }

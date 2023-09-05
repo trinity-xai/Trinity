@@ -725,7 +725,7 @@ public class Hypersurface3DPane extends StackPane
     }
 
     public void updateCalloutHeadPoint(Shape3D node, Callout callout, SubScene subScene) {
-        Point2D p2d = getTransformedP2D(node, subScene, callout.head.getRadius() + 5);
+        Point2D p2d = JavaFX3DUtils.getTransformedP2D(node, subScene, callout.head.getRadius() + 5);
         callout.updateHeadPoint(p2d.getX(), p2d.getY());
     }
 
@@ -745,7 +745,7 @@ public class Hypersurface3DPane extends StackPane
         imageTP.setContent(iv);
         imageTP.setText("Imagery");
 
-        Point2D p2D = getTransformedP2D(shape3D, subScene, Callout.DEFAULT_HEAD_RADIUS + 5);
+        Point2D p2D = JavaFX3DUtils.getTransformedP2D(shape3D, subScene, Callout.DEFAULT_HEAD_RADIUS + 5);
         StringBuilder sb = new StringBuilder();
         for (Entry<String, String> entry : featureVector.getMetaData().entrySet()) {
             sb.append(entry.getKey()).append(" : ").append(entry.getValue()).append("\n");
@@ -1027,7 +1027,7 @@ public class Hypersurface3DPane extends StackPane
 
     private void updateLabels() {
         shape3DToLabel.forEach((shape3D, node) -> {
-            Point2D p2Ditty = getTransformedP2D(shape3D, subScene, 5);
+            Point2D p2Ditty = JavaFX3DUtils.getTransformedP2D(shape3D, subScene, 5);
             //@DEBUG SMP  useful debugging print
             //System.out.println("subSceneToScene Coordinates: " + coordinates.toString());
             double x = p2Ditty.getX();
@@ -1035,34 +1035,6 @@ public class Hypersurface3DPane extends StackPane
             //update the local transform of the label.
             node.getTransforms().setAll(new Translate(x, y));
         });
-    }
-
-    private Point2D getTransformedP2D(Shape3D node, SubScene subScene, double clipDistance) {
-        javafx.geometry.Point3D coordinates = node.localToScene(javafx.geometry.Point3D.ZERO, true);
-        //@DEBUG SMP  useful debugging print
-        //System.out.println("subSceneToScene Coordinates: " + coordinates.toString());
-        //Clipping Logic
-        //if coordinates are outside of the scene it could
-        //stretch the screen so don't transform them
-        double x = coordinates.getX();
-        double y = coordinates.getY();
-
-        //is it left of the view?
-        if (x < 0) {
-            x = 0;
-        }
-        //is it right of the view?
-        if ((x + clipDistance) > subScene.getWidth()) {
-            x = subScene.getWidth() - (clipDistance);
-        }
-        //is it above the view?
-        if (y < 0) {
-            y = 0;
-        }
-        //is it below the view
-        if ((y + clipDistance) > subScene.getHeight())
-            y = subScene.getHeight() - (clipDistance);
-        return new Point2D(x, y);
     }
 
     private ImageView loadImageView(FeatureVector featureVector, boolean bboxOnly) {

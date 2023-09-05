@@ -138,7 +138,7 @@ public class TextEmbeddingsLoader extends Task {
                     fv.setScore(embeddings.get(i).getScore());
                 else
                     fv.setScore(textEmbeddingCollectionFile.textEmbeddingCollection.getScore());
-
+                fv.setText(embeddings.get(i).getText());
                 fv.setLayer(i);
                 fc.getFeatures().add(fv);
 
@@ -149,8 +149,10 @@ public class TextEmbeddingsLoader extends Task {
                     List<Double> chunkEmbedding = new ArrayList<>();
                     chunkEmbedding.addAll(embeddings.get(i).getEmbeddings().get(parsedIndex));
                     parsedChunkFV.setData(chunkEmbedding);
-                    //Extract first three words of chunk
+                    //get actual text
                     String parsedText = embeddings.get(i).getParsed().get(parsedIndex);
+                    parsedChunkFV.setText(parsedText);
+                    //Extract first three words of chunk
                     String[] tokens = parsedText.split("\\s+");
                     String parsedPreview = tokens[0];
                     if (tokens.length > 2) {
