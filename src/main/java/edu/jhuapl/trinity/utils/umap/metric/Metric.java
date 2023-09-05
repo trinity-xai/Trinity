@@ -84,14 +84,11 @@ public abstract class Metric {
     private static void generateDefaultMetrics() {
         if (sMETRICS == null) {
             sMETRICS = new HashMap<>();
+            sMETRICS.put("angular", AngularMetric.SINGLETON);
             sMETRICS.put("euclidean", EuclideanMetric.SINGLETON);
             sMETRICS.put("reducedeuclidean", ReducedEuclideanMetric.SINGLETON);
             sMETRICS.put("manhattan", ManhattanMetric.SINGLETON);
-//            sMETRICS.put("taxicab", ManhattanMetric.SINGLETON);
             sMETRICS.put("chebyshev", ChebyshevMetric.SINGLETON);
-//            sMETRICS.put("linfinity", ChebyshevMetric.SINGLETON);
-//            sMETRICS.put("linfty", ChebyshevMetric.SINGLETON);
-//            sMETRICS.put("linf", ChebyshevMetric.SINGLETON);
             //@TODO SMP Get this working with a inverse covariance matrix parameter
             //sMETRICS.put("mahalanobis", MahalanobisMetric.SINGLETON);
             sMETRICS.put("canberra", CanberraMetric.SINGLETON);

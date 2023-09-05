@@ -119,6 +119,7 @@ import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import javafx.scene.control.CheckMenuItem;
 import javafx.scene.effect.Glow;
 import javafx.scene.image.ImageView;
 
@@ -228,6 +229,7 @@ public class Projections3DPane extends StackPane implements
     public double maxAbsValue = 1.0;
     public double meanCenteredMaxAbsValue = 1.0;
     public boolean pointToPointDistanceMode = false;
+    public boolean updatingTrajectories = true;
 
     public ConcurrentLinkedQueue<HyperspaceSeed> hyperspaceSeeds = new ConcurrentLinkedQueue<>();
     public ConcurrentLinkedQueue<Perspective3DNode> pNodes = new ConcurrentLinkedQueue<>();
@@ -741,10 +743,15 @@ public class Projections3DPane extends StackPane implements
                 radarPlotPane.show();
             }
         });
+
+        CheckMenuItem updatingTrajectoriesItem = new CheckMenuItem("Auto Update Trajectories");
+        updatingTrajectoriesItem.selectedProperty().addListener(cl ->
+                updatingTrajectories = updatingTrajectoriesItem.isSelected());
         
         ContextMenu cm = new ContextMenu(
             projectUmapHyperspaceItem, projectUmapHypersurfaceItem,
-            resetViewItem, manifoldsItem, radarItem, clearCalloutsItem);
+            resetViewItem, manifoldsItem, radarItem, 
+            clearCalloutsItem, updatingTrajectoriesItem);
 
         cm.setAutoFix(true);
         cm.setAutoHide(true);
@@ -1084,6 +1091,9 @@ public class Projections3DPane extends StackPane implements
         //now rebuild all the generic trajectories
         trajectoryGroup.getChildren().clear();
         trajToTraj3DMap.clear();
+        //@TODO SMP check to see if each trajectory is visible
+        //no need to do all the work to transform and render lines if they're not visible
+        //Maybe short cut for now is a simple boolean variable blocking all updates
         for(Trajectory trajectory : Trajectory.getTrajectories()) {
             FeatureCollection fc = Trajectory.globalTrajectoryToFeatureCollectionMap.get(trajectory);
             trajectory.states.clear();
