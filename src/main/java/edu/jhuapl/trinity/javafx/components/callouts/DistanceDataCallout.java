@@ -27,9 +27,11 @@ import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.List;
 import javafx.geometry.Insets;
+import javafx.geometry.Orientation;
 import javafx.geometry.Point2D;
 import javafx.scene.SubScene;
 import javafx.scene.control.Label;
+import javafx.scene.control.Separator;
 import javafx.scene.control.TitledPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
@@ -81,26 +83,17 @@ public class DistanceDataCallout extends VBox {
 
     public DistanceDataCallout(Manifold3D manifold3D, Point3D startingPoint3D, SubScene subScene) {
         NumberFormat doubleFormat = new DecimalFormat("0.0000");
-        TitledPane manifoldTP = new TitledPane();
+
         javafx.geometry.Point3D fxStart = JavaFX3DUtils.fxyzPoint3DTofxPoint3D.apply(startingPoint3D);
         List<Face3> intersections = manifold3D.getIntersections(startingPoint3D);
         System.out.println("Intersections with Manifold: " + intersections.size());
         
+        TitledPane manifoldTP = new TitledPane();
         GridPane manifoldGridPane = new GridPane();
         manifoldGridPane.setPadding(new Insets(-1));
         manifoldGridPane.setHgap(5);
 //        manifoldGridPane.addRow(0, new Label("Label"),
 //            new Label("Value"));
-
-        manifoldGridPane.addRow(1, new Label("Mean Centroid"),
-            new Label("Coord"));
-        manifoldGridPane.addRow(2, new Label("X"),
-            new Label(doubleFormat.format(manifold3D.getBoundsCentroid().x)));
-        manifoldGridPane.addRow(3, new Label("Y"),
-            new Label(doubleFormat.format(manifold3D.getBoundsCentroid().y)));
-        manifoldGridPane.addRow(4, new Label("Z"),
-            new Label(doubleFormat.format(manifold3D.getBoundsCentroid().z)));
-
         manifoldGridPane.addRow(1, new Label("Bounds Size"),
             new Label("Dimension"));
         manifoldGridPane.addRow(2, new Label("Width"),
@@ -109,11 +102,61 @@ public class DistanceDataCallout extends VBox {
             new Label(doubleFormat.format(manifold3D.getBoundsHeight())));
         manifoldGridPane.addRow(4, new Label("Depth"),
             new Label(doubleFormat.format(manifold3D.getBoundsDepth())));
+        manifoldGridPane.addRow(5, new Separator(Orientation.HORIZONTAL),
+            new Separator(Orientation.HORIZONTAL));
+        
+        manifoldGridPane.addRow(6, new Label("Total Points"),
+            new Label(String.valueOf(manifold3D.getOriginalPoint3DList().size())));
+        manifoldGridPane.addRow(7, new Label("Convex Hull Points"),
+            new Label(String.valueOf(manifold3D.hull.getNumVertices())));
+        manifoldGridPane.addRow(8, new Label("Convex Faces"),
+            new Label(String.valueOf(manifold3D.hull.getNumFaces())));
 
         VBox manifoldVBox = new VBox(5, manifoldGridPane);
         manifoldTP.setContent(manifoldVBox);
-        manifoldTP.setText("Manifold Details");
+        manifoldTP.setText("Manifold Shape");
         manifoldTP.setExpanded(false);        
+        
+        TitledPane centroidsTP = new TitledPane();
+        GridPane centroidsGridPane = new GridPane();
+        centroidsGridPane.setPadding(new Insets(-1));
+        centroidsGridPane.setHgap(5);
+//        manifoldGridPane.addRow(0, new Label("Label"),
+//            new Label("Value"));
+        Point3D medianCenter = manifold3D.getMedianConvexCentroid();
+        centroidsGridPane.addRow(1, new Label("Median Convex"),
+            new Label("Dimension"));
+        centroidsGridPane.addRow(2, new Label("X"),
+            new Label(doubleFormat.format(Double.valueOf(medianCenter.x))));
+        centroidsGridPane.addRow(3, new Label("Y"),
+            new Label(doubleFormat.format(Double.valueOf(medianCenter.y))));
+        centroidsGridPane.addRow(4, new Label("Z"),
+            new Label(doubleFormat.format(Double.valueOf(medianCenter.z))));
+
+        centroidsGridPane.addRow(5, new Label("Bounds Center"),
+            new Label("Coord"));
+        centroidsGridPane.addRow(6, new Label("X"),
+            new Label(doubleFormat.format(manifold3D.getBoundsCentroid().x)));
+        centroidsGridPane.addRow(7, new Label("Y"),
+            new Label(doubleFormat.format(manifold3D.getBoundsCentroid().y)));
+        centroidsGridPane.addRow(8, new Label("Z"),
+            new Label(doubleFormat.format(manifold3D.getBoundsCentroid().z)));
+
+        Point3D averageCenter = manifold3D.getAverageConvexCentroid();
+        centroidsGridPane.addRow(9, new Label("Average Convex"),
+            new Label("Coord"));
+        centroidsGridPane.addRow(10, new Label("X"),
+            new Label(doubleFormat.format(Double.valueOf(averageCenter.x))));
+        centroidsGridPane.addRow(11, new Label("Y"),
+            new Label(doubleFormat.format(Double.valueOf(averageCenter.y))));
+        centroidsGridPane.addRow(12, new Label("Z"),
+            new Label(doubleFormat.format(Double.valueOf(averageCenter.z))));       
+        
+        VBox centroidsVBox = new VBox(5, centroidsGridPane);
+        centroidsTP.setContent(centroidsVBox);
+        centroidsTP.setText("Centroids");
+        centroidsTP.setExpanded(false);        
+
         
         TitledPane measurementsTP = new TitledPane();
         GridPane measurementsGridPane = new GridPane();
@@ -134,15 +177,15 @@ public class DistanceDataCallout extends VBox {
             new Label(String.valueOf(intersections.size()!=0)));
         measurementsGridPane.addRow(6, new Label("On Hull Boundary"),
             new Label(String.valueOf(intersections.size()>2)));
-        measurementsGridPane.addRow(7, new Label("Hull Distance"),
-            new Label("TODO Number"));
+//        measurementsGridPane.addRow(7, new Label("Hull Distance"),
+//            new Label("TODO ;-)"));
 
         VBox measurementsVBox = new VBox(5, measurementsGridPane);
         measurementsTP.setContent(measurementsVBox);        
         measurementsTP.setText("Measurements");
         measurementsTP.setExpanded(false);
 
-        getChildren().addAll(manifoldTP, measurementsTP);
+        getChildren().addAll(manifoldTP, centroidsTP, measurementsTP);
         setSpacing(3);
 //        setPrefWidth(250);
 //        setPrefHeight(100);

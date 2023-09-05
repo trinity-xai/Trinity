@@ -51,6 +51,7 @@ import org.fxyz3d.geometry.Point3D;
 import java.util.HashMap;
 import java.util.List;
 import java.util.function.Function;
+import java.util.stream.DoubleStream;
 import javafx.stage.FileChooser;
 import org.fxyz3d.geometry.Face3;
 import org.fxyz3d.shapes.primitives.helper.TriangleMeshHelper;
@@ -182,6 +183,10 @@ public class Manifold3D extends Group {
         return quickhullLinesMeshView.getBoundsInLocal().getDepth();
     }
     
+    /**
+     * The mathematical middle (the mean of the extrema) in each dimension
+     * @return The center of the Bounding Box
+     */
     public Point3D getBoundsCentroid() {
         return new Point3D(quickhullMeshView.getBoundsInLocal().getCenterX(),
             quickhullMeshView.getBoundsInLocal().getCenterY(),
@@ -190,14 +195,50 @@ public class Manifold3D extends Group {
     public boolean insideBounds(javafx.geometry.Point3D point3D) {
         return texturedManifold.getBoundsInLocal().contains(point3D);
     }
+    //https://stackoverflow.com/questions/77936/whats-the-best-way-to-calculate-a-3d-or-n-d-centroid    
     public Point3D getAverageConvexCentroid() {
-        Double x = null;
-        Double y = null;
-        Double z = null;
-        return null;
-//        texturedManifold.vertices.stream().max(comparator)
-        
+        double aveX = Arrays.stream(hull.getVertices())
+            .flatMapToDouble(p -> DoubleStream.of(p.x))
+            .average().getAsDouble();
+        double aveY = Arrays.stream(hull.getVertices())
+            .flatMapToDouble(p -> DoubleStream.of(p.y))
+            .average().getAsDouble();
+        double aveZ = Arrays.stream(hull.getVertices())
+            .flatMapToDouble(p -> DoubleStream.of(p.z))
+            .average().getAsDouble();
+        return new Point3D(aveX, aveY, aveZ);
     }
+    /**
+     * https://stackoverflow.com/questions/61702154/calculate-median-using-java-stream-api
+     * @return the Point3D median center of the hull
+     */
+    public Point3D getMedianConvexCentroid() {
+        int size = hull.getVertices().length;
+        DoubleStream sorted = Arrays.stream(hull.getVertices())
+            .flatMapToDouble(p -> DoubleStream.of(p.x)).sorted();
+        double medianX = size % 2 == 0 ?
+            sorted.skip((size / 2) - 1)
+                .limit(2).average().getAsDouble() :
+            sorted.skip(size / 2)
+                .findFirst().getAsDouble();
+    
+        sorted = Arrays.stream(hull.getVertices())
+            .flatMapToDouble(p -> DoubleStream.of(p.y)).sorted();
+        double medianY = size % 2 == 0 ?
+            sorted.skip((size / 2) - 1)
+                .limit(2).average().getAsDouble() :
+            sorted.skip(size / 2)
+                .findFirst().getAsDouble();
+
+        sorted = Arrays.stream(hull.getVertices())
+            .flatMapToDouble(p -> DoubleStream.of(p.z)).sorted();
+        double medianZ = size % 2 == 0 ?
+            sorted.skip((size / 2) - 1)
+                .limit(2).average().getAsDouble() :
+            sorted.skip(size / 2)
+                .findFirst().getAsDouble();
+        return new Point3D(medianX, medianY, medianZ);
+    }    
     public List<Face3> getIntersections(org.fxyz3d.geometry.Point3D startingPoint) {
         TriangleMeshHelper helper = new TriangleMeshHelper();
         org.fxyz3d.geometry.Point3D insideMeshPoint = getBoundsCentroid();
