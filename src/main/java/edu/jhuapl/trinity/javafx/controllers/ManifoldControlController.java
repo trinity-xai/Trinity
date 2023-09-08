@@ -253,7 +253,8 @@ public class ManifoldControlController implements Initializable {
         labelChoiceBox.getItems().clear();
         labelChoiceBox.getItems().add(ALL);
         labelChoiceBox.getItems().addAll(
-            FactorLabel.getFactorLabels().stream().map(f -> f.getLabel()).toList());
+            FactorLabel.getFactorLabels().stream()
+                .map(f -> f.getLabel()).sorted().toList());
     }
 
     private void setupUmapControls() {

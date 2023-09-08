@@ -43,14 +43,21 @@ public class AnalysisUtilsTest {
     @Test
     public void testDoCommonsPCA() {
         System.out.println("doCommonsPca");
-        double[] expected = new double[]{2.0, 0.666666666666667};
+        double[][] expected = new double[][]{
+            {1.414213562373095, -1.1102230246251565E-16},
+            {-1.1102230246251565E-16, -1.414213562373095},
+            {-1.414213562373095, 1.1102230246251565E-16}
+        };
         //create points in a double array
         double[][] array = new double[][]{
             new double[]{-1.0, -1.0},
             new double[]{-1.0, 1.0},
             new double[]{1.0, 1.0}};
-        double[] eigenValues = AnalysisUtils.doCommonsPCA(array);
-        assertArrayEquals(expected, eigenValues, EPISILON);
+        double[][] pcaProjection = AnalysisUtils.doCommonsPCA(array);
+        for(int i=0;i<expected.length;i++){
+            assertArrayEquals(expected[i], pcaProjection[i], EPISILON);
+        }
+        assert true;
     }
 
     /**

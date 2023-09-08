@@ -29,6 +29,7 @@ import java.util.List;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.image.ImageView;
@@ -70,7 +71,19 @@ public class TrajectoryTrackerPane extends LitPathPane {
         });
         
         HBox topHBox = new HBox(10, showAll, hideAll, clearAll);
-        bp.setTop(topHBox);
+        CheckBox autoUpdateCheckBox = new CheckBox("Auto Update Trajectories");
+        autoUpdateCheckBox.selectedProperty().addListener(e -> {
+            scene.getRoot().fireEvent(new TrajectoryEvent(
+                TrajectoryEvent.AUTO_UDPATE_TRAJECTORIES, autoUpdateCheckBox.isSelected()));
+        });
+        Button refresh = new Button("Request Refresh");
+        refresh.setOnAction(eh -> {
+            scene.getRoot().fireEvent(new TrajectoryEvent(
+                TrajectoryEvent.REFRESH_3D_TRAJECTORIES));
+        });
+        HBox top2HBox = new HBox(10,autoUpdateCheckBox, refresh);
+        VBox topVBox = new VBox(10, topHBox, top2HBox);
+        bp.setTop(topVBox);
         //Get a reference to any Distances already collected
         List<TrajectoryListItem> existingItems = new ArrayList<>();
         for (Trajectory t : Trajectory.getTrajectories()) {

@@ -258,7 +258,12 @@ public class RadialEntityOverlayPane extends Pane {
         //Anchor mapping for callout in 3D space
         shape3DToCalloutMap.put(shape3D, callout);
     }
-
+    public void removeCallout(Shape3D shape3D) {
+        Callout callout = shape3DToCalloutMap.get(shape3D);
+        getChildren().remove(callout);
+        calloutList.remove(callout);
+        shape3DToCalloutMap.remove(shape3D);
+    }
     public void removeCallout(FeatureVector featureVector) {
         Callout callout = vectorToCalloutMap.get(featureVector);
         calloutList.remove(callout);
