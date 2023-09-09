@@ -27,7 +27,7 @@
         <maven.compiler.release>${java.version}</maven.compiler.release>
         <maven.build.timestamp.format>yyyy.MM.dd</maven.build.timestamp.format>
         <maven.compiler.plugin.version>3.11.0</maven.compiler.plugin.version>
-        <maven.enforcer.plugin.version>3.3.0</maven.enforcer.plugin.version>
+        <maven.enforcer.plugin.version>3.4.0</maven.enforcer.plugin.version>
         <maven.assembly.plugin.version>3.6.0</maven.assembly.plugin.version>
         <maven.surefire.plugin.version>3.1.2</maven.surefire.plugin.version>
         <javafx.maven.plugin.version>0.0.8</javafx.maven.plugin.version>
@@ -45,7 +45,7 @@
         <zeromq.jeromq.version>0.5.3</zeromq.jeromq.version>
         <jackson.version>2.15.2</jackson.version>
         <sarxos.webcam.capture.version>0.3.12</sarxos.webcam.capture.version>
-        <slf4j.version>2.0.7</slf4j.version>
+        <slf4j.version>2.0.9</slf4j.version>
         <license.organizationName>The Johns Hopkins University Applied Physics Laboratory LLC</license.organizationName>
         <license.licenceFile>LICENSE.md</license.licenceFile>
         <license.licenseName>apache_v2</license.licenseName>
