@@ -29,6 +29,7 @@ import edu.jhuapl.trinity.javafx.components.ManifoldListItem;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.Manifold3D;
+import edu.jhuapl.trinity.utils.AnalysisUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import edu.jhuapl.trinity.utils.umap.Umap;
 import edu.jhuapl.trinity.utils.umap.metric.Metric;
@@ -123,6 +124,11 @@ public class ManifoldControlController implements Initializable {
     @FXML
     private Spinner toleranceSpinner;   
     @FXML
+    private Spinner kernelSigmaSpinner;   
+    @FXML
+    private ChoiceBox<AnalysisUtils.METHOD> kernelTypeChoiceBox;
+    
+    @FXML
     private RadioButton pcaUseHyperspaceButton;
     @FXML
     private RadioButton pcaUseHypersurfaceButton;
@@ -151,7 +157,6 @@ public class ManifoldControlController implements Initializable {
     private ChoiceBox metricChoiceBox;
     @FXML
     private CheckBox verboseCheckBox;
-
     @FXML
     private RadioButton useHyperspaceButton;
     @FXML
@@ -189,6 +194,7 @@ public class ManifoldControlController implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         scene = App.getAppScene();
+        setupPcaControls();
         setupHullControls();
         setupUmapControls();
         setupDistanceControls();
@@ -279,7 +285,37 @@ public class ManifoldControlController implements Initializable {
             FactorLabel.getFactorLabels().stream()
                 .map(f -> f.getLabel()).sorted().toList());
     }
+    private void setupPcaControls() {
+        numPcaComponentsSpinner.setValueFactory(
+            new SpinnerValueFactory.IntegerSpinnerValueFactory(2, 100, 3, 1));
+        fitStartIndexSpinner.setValueFactory(
+            new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 500, 0, 1));
+        fitEndIndexSpinner.setValueFactory(
+            new SpinnerValueFactory.IntegerSpinnerValueFactory(5, 100, 15, 5));
+        toleranceSpinner.setValueFactory(
+            new SpinnerValueFactory.DoubleSpinnerValueFactory(1, 50, 5, 1));
+        kernelSigmaSpinner.setValueFactory(
+            new SpinnerValueFactory.DoubleSpinnerValueFactory(1, 50, 1, 1));
+
+        kernelTypeChoiceBox.getItems().addAll(AnalysisUtils.METHOD.values());
+        kernelTypeChoiceBox.getSelectionModel().selectFirst();     
+        
+        componentAnalysisToggleGroup = new ToggleGroup();
+        pcaRadioButton.setToggleGroup(componentAnalysisToggleGroup);
+        svdRadioButton.setToggleGroup(componentAnalysisToggleGroup);          
+        kpcaRadioButton.setToggleGroup(componentAnalysisToggleGroup);          
+        kernelTypeChoiceBox.disableProperty().bind(kpcaRadioButton.selectedProperty().not());
+        kernelSigmaSpinner.disableProperty().bind(kpcaRadioButton.selectedProperty().not());
+        
+        pcahyperSourceGroup = new ToggleGroup();
+        pcaUseHyperspaceButton.setToggleGroup(pcahyperSourceGroup);
+        pcaUseHypersurfaceButton.setToggleGroup(pcahyperSourceGroup);        
+    }
     private void setupUmapControls() {
+        hyperSourceGroup = new ToggleGroup();
+        useHyperspaceButton.setToggleGroup(hyperSourceGroup);
+        useHypersurfaceButton.setToggleGroup(hyperSourceGroup);        
+        
         metricChoiceBox.getItems().addAll(Metric.getMetricNames());
         metricChoiceBox.getSelectionModel().selectFirst();
 

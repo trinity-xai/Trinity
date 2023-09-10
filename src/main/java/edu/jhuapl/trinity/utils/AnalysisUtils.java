@@ -21,8 +21,6 @@ package edu.jhuapl.trinity.utils;
  */
 
 import edu.jhuapl.trinity.data.messages.FeatureCollection;
-import edu.jhuapl.trinity.utils.umap.DefaultMatrix;
-import edu.jhuapl.trinity.utils.umap.Matrix;
 import edu.jhuapl.trinity.utils.umap.Umap;
 import javafx.geometry.Point2D;
 import org.apache.commons.math3.linear.EigenDecomposition;
@@ -34,7 +32,7 @@ import org.apache.commons.math3.stat.correlation.Covariance;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.function.IntToDoubleFunction;
+import org.apache.commons.math3.linear.RealVector;
 
 
 /**
@@ -43,6 +41,8 @@ import java.util.function.IntToDoubleFunction;
  */
 public enum AnalysisUtils {
     INSTANCE;
+    public static enum METHOD { PCA, SVD, KPCA };
+    public static enum KERNEL { Gaussian, Laplacian, Linear, Pearson, Polynomial };
     public static double EPISILON = 0.0000000001;
 
     public static double lerp1(double start, double end, double ratio) {
@@ -207,9 +207,37 @@ public enum AnalysisUtils {
 
         return projectedVectors;
     }
-
-    public static double[] doCommonsSVD(double[][] array) {
-        return getSVD(array).getSingularValues();
+    /**
+     * @author Sean Phillips
+     * Singular Value Decomposition using Apache Math Commons 
+     * Will mean center data by subtracting column means prior to 
+     * calculating covariance matrix
+     * @param array rows of data to be used for input into Covariance
+     * @return the projected points
+     * @link https://stackoverflow.com/questions/10604507/pca-implementation-in-java
+     * @link https://blog.clairvoyantsoft.com/eigen-decomposition-and-pca-c50f4ca15501
+     */
+    public static double[][] doCommonsSVD(double[][] array) {
+        //create real matrix of original inputs
+        RealMatrix originalMatrix = MatrixUtils.createRealMatrix(array);
+        //center columns by subtracting column means
+        RealMatrix centeredMatrix = centerMatrixByColumnMean(originalMatrix);
+        //Calculate covariance matrix of centered matrix
+        Covariance covariance = new Covariance(centeredMatrix);
+        RealMatrix covarianceMatrix = covariance.getCovarianceMatrix();
+        SingularValueDecomposition svd = new SingularValueDecomposition(covarianceMatrix);
+        //Project the original matrix against the new axes defined by the eigenvectors
+        int rowCount = originalMatrix.getRowDimension();
+        int columnCount = originalMatrix.getColumnDimension();
+        double [][] projectedVectors = new double[rowCount][columnCount];
+        RealVector singularVector = MatrixUtils.createRealVector(svd.getSingularValues());
+        for(int row=0;row<rowCount;row++) {
+            for(int column=0;column<columnCount;column++) {
+                projectedVectors[row][column] = originalMatrix.getRowVector(row)
+                    .dotProduct(singularVector);
+            }
+        }
+        return projectedVectors;
     }
 
     public static SingularValueDecomposition getSVD(double[][] array) {
