@@ -28,6 +28,66 @@
     <children>
         <TabPane fx:id="tabPane" tabClosingPolicy="UNAVAILABLE">
             <tabs>
+                <Tab closable="false" text="PCA/KPCA">
+                    <content>
+                        <BorderPane fx:id="majorPane" minHeight="200.0" minWidth="400.0">
+                            <children>
+                            </children>
+                            <top>
+                            </top>
+                            <center>
+                                <GridPane hgap="10.0" vgap="5.0" BorderPane.alignment="CENTER">
+                                    <columnConstraints>
+                                        <ColumnConstraints hgrow="SOMETIMES" maxWidth="288.0" minWidth="10.0" prefWidth="206.0" />
+                                        <ColumnConstraints hgrow="SOMETIMES" maxWidth="380.0" minWidth="10.0" prefWidth="380.0" />
+                                    </columnConstraints>
+                                    <rowConstraints>
+                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="NEVER" />
+                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="NEVER" />
+                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="NEVER" />
+                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="NEVER" />
+                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="NEVER" />
+                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="NEVER" />
+                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="NEVER" />
+                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="NEVER" />
+                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="NEVER" />
+                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="NEVER" />
+                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="NEVER" />
+                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="NEVER" />
+                              <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="NEVER" />
+                              <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="NEVER" />
+                                    </rowConstraints>
+                                    <children>
+                                        <Label text="Number of Components" />
+                                        <Spinner fx:id="numPcaComponentsSpinner" editable="true" prefWidth="100.0" GridPane.rowIndex="1" />
+                                        <Label text="Fit Start Index" GridPane.rowIndex="2" />
+                                        <Spinner fx:id="fitStartIndexSpinner" editable="true" prefWidth="100.0" GridPane.rowIndex="3" />
+                                        <Label text="Fit End Index" GridPane.rowIndex="4" />
+                                        <Label text="Tolerance Threshold" GridPane.rowIndex="6" />
+                                        <Spinner fx:id="fitEndIndexSpinner" editable="true" prefWidth="100.0" GridPane.rowIndex="5" />
+                                        <Spinner fx:id="toleranceSpinner" editable="true" prefWidth="100.0" GridPane.rowIndex="7" />
+                              <RadioButton fx:id="pcaRadioButton" mnemonicParsing="false" selected="true" text="PCA (EigenValue)" GridPane.columnIndex="1" GridPane.rowIndex="1" />
+                              <Label text="Component Analysis Type" GridPane.columnIndex="1" />
+                              <RadioButton fx:id="svdRadioButton" mnemonicParsing="false" text="Singular Value Decomposition" GridPane.columnIndex="1" GridPane.rowIndex="2" />
+                              <RadioButton fx:id="kpcaRadioButton" mnemonicParsing="false" text="Kernel PCA" GridPane.columnIndex="1" GridPane.rowIndex="3" />
+                              <ChoiceBox prefWidth="150.0" GridPane.columnIndex="1" GridPane.rowIndex="5" />
+                              <Label text="Kernel Type" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+                              <Label text="Kernel Sigma" GridPane.columnIndex="1" GridPane.rowIndex="6" />
+                              <Spinner fx:id="negativeSampleRateSpinner1" editable="true" prefWidth="100.0" GridPane.columnIndex="1" GridPane.rowIndex="7" />
+                                          <Button defaultButton="true" mnemonicParsing="false" onAction="#runPCA" prefWidth="200.0" text="Project Data" GridPane.columnIndex="1" GridPane.rowIndex="9" />
+                              <Button disable="true" mnemonicParsing="false" onAction="#exportMatrix" prefWidth="200.0" text="Export TMatrix" GridPane.columnIndex="1" GridPane.rowIndex="10" />
+                              <Button disable="true" mnemonicParsing="false" onAction="#saveProjections" prefWidth="200.0" text="Save Projections" GridPane.columnIndex="1" GridPane.rowIndex="11" />
+                                            <RadioButton fx:id="pcaUseHypersurfaceButton" mnemonicParsing="false" text="Use Hypersurface" GridPane.rowIndex="9" />
+                                            <RadioButton fx:id="pcaUseHyperspaceButton" mnemonicParsing="false" selected="true" text="Use Hyperspace" GridPane.rowIndex="10" />
+                                    </children>
+                                    <padding>
+                                        <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />
+                                    </padding>
+                                </GridPane>
+                            </center>
+                        </BorderPane>
+                    </content>
+                </Tab>
                 <Tab closable="false" text="UMAP">
                     <content>
                         <BorderPane fx:id="majorPane" minHeight="200.0" minWidth="400.0">

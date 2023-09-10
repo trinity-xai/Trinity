@@ -67,7 +67,11 @@ import javafx.stage.FileChooser;
  * @author Sean Phillips
  */
 public class ManifoldControlController implements Initializable {
+
     //Geometry Tab
+    @FXML
+    private ListView<ManifoldListItem> manifoldsListView;
+    private Manifold3D activeManifold3D = null;
     @FXML
     private RadioButton useVisibleRadioButton;
     @FXML
@@ -102,6 +106,28 @@ public class ManifoldControlController implements Initializable {
     @FXML
     private CheckBox showControlPointsCheckBox;
 
+    //PCA Tab
+    @FXML
+    private RadioButton pcaRadioButton;
+    @FXML
+    private RadioButton svdRadioButton;
+    @FXML
+    private RadioButton kpcaRadioButton;
+    ToggleGroup componentAnalysisToggleGroup;
+    @FXML
+    private Spinner numPcaComponentsSpinner;
+    @FXML
+    private Spinner fitStartIndexSpinner;
+    @FXML
+    private Spinner fitEndIndexSpinner;
+    @FXML
+    private Spinner toleranceSpinner;   
+    @FXML
+    private RadioButton pcaUseHyperspaceButton;
+    @FXML
+    private RadioButton pcaUseHypersurfaceButton;
+    ToggleGroup pcahyperSourceGroup;    
+    
     //UMAP tab
     @FXML
     private Slider repulsionSlider;
@@ -125,15 +151,13 @@ public class ManifoldControlController implements Initializable {
     private ChoiceBox metricChoiceBox;
     @FXML
     private CheckBox verboseCheckBox;
-    //Geometry Tab
+
     @FXML
     private RadioButton useHyperspaceButton;
     @FXML
     private RadioButton useHypersurfaceButton;
     ToggleGroup hyperSourceGroup;
-    @FXML
-    private ListView<ManifoldListItem> manifoldsListView;
-    private Manifold3D activeManifold3D = null;
+
     
     //Distances Tab
     @FXML
@@ -248,7 +272,6 @@ public class ManifoldControlController implements Initializable {
             distancesListView.getItems().add(distanceListItem);
         });
     }
-
     private void getCurrentLabels() {
         labelChoiceBox.getItems().clear();
         labelChoiceBox.getItems().add(ALL);
@@ -256,7 +279,6 @@ public class ManifoldControlController implements Initializable {
             FactorLabel.getFactorLabels().stream()
                 .map(f -> f.getLabel()).sorted().toList());
     }
-
     private void setupUmapControls() {
         metricChoiceBox.getItems().addAll(Metric.getMetricNames());
         metricChoiceBox.getSelectionModel().selectFirst();
@@ -276,7 +298,6 @@ public class ManifoldControlController implements Initializable {
         useHyperspaceButton.setToggleGroup(hyperSourceGroup);
         useHypersurfaceButton.setToggleGroup(hyperSourceGroup);
     }
-
     private void setupHullControls() {
         //Get a reference to any Distances already collected
         List<ManifoldListItem> existingItems = new ArrayList<>();
@@ -470,7 +491,14 @@ public class ManifoldControlController implements Initializable {
             ManifoldEvent.SAVE_PROJECTION_DATA, file));
         }        
     } 
-            
+    @FXML
+    public void runPCA() {
+        ManifoldEvent.POINT_SOURCE pointSource = useHypersurfaceButton.isSelected() ?
+            ManifoldEvent.POINT_SOURCE.HYPERSURFACE : ManifoldEvent.POINT_SOURCE.HYPERSPACE;
+        scene.getRoot().fireEvent(new ManifoldEvent(
+            ManifoldEvent.GENERATE_NEW_PCA, null, pointSource));
+        
+    }
     @FXML
     public void project() {
         Umap umap = new Umap();

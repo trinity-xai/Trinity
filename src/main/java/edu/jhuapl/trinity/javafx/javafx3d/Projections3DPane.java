@@ -123,6 +123,9 @@ import java.util.stream.Collectors;
 import javafx.scene.control.CheckMenuItem;
 import javafx.scene.effect.Glow;
 import javafx.scene.image.ImageView;
+import smile.manifold.KPCA;
+import smile.math.kernel.GaussianKernel;
+import smile.math.kernel.HellingerKernel;
 
 /**
  * @author Sean Phillips
@@ -2153,18 +2156,19 @@ public class Projections3DPane extends StackPane implements
         distanceTotrajectory3DMap.put(distance, newDistanceTraj3D);
         connectorsGroup.getChildren().add(0, newDistanceTraj3D);
 
-        Callout ddc = DistanceDataCallout.createByManifold3D(
-        midpointSphere, selectedManifoldA.getManifold(), 
-            new Point3D(distance.getPoint1().getX(),distance.getPoint1().getY(),
-                distance.getPoint1().getZ()), subScene);
-        radialOverlayPane.addCallout(ddc, midpointSphere); 
-        ddc.play();
-        newDistanceTraj3D.addEventHandler(
-            MouseEvent.MOUSE_CLICKED, e -> {
-                ddc.setVisible(true);
-                ddc.play();
+        if(null != selectedManifoldA) {
+            Callout ddc = DistanceDataCallout.createByManifold3D(
+            midpointSphere, selectedManifoldA.getManifold(), 
+                new Point3D(distance.getPoint1().getX(),distance.getPoint1().getY(),
+                    distance.getPoint1().getZ()), subScene);
+            radialOverlayPane.addCallout(ddc, midpointSphere); 
+            ddc.play();
+            newDistanceTraj3D.addEventHandler(
+                MouseEvent.MOUSE_CLICKED, e -> {
+                    ddc.setVisible(true);
+                    ddc.play();
             });
-        
+        }
         updateFloatingNodes();
         return midpointSphere;
     }
@@ -2391,15 +2395,44 @@ public class Projections3DPane extends StackPane implements
                     scene.getRoot().fireEvent(
                         new ApplicationEvent(ApplicationEvent.UPDATE_BUSY_INDICATOR, ps));
                 });
-                //Perform PCA FIT and Projection
-                long startTime = System.nanoTime();
+                
                 double[][]featureArray = originalFC.getFeatures().stream()
                     .map(FeatureVector.mapToStateArray)
                     .toArray(double[][]::new);
                 System.out.println("featureArray sizes: " 
                     + featureArray.length + " " + featureArray[0].length);
+
+                int truncSize = 10;
+                double[][]truncArray = originalFC.getFeatures().stream()
+                    .limit(20)
+                    .map((FeatureVector t) -> {
+                        double[] states = new double[truncSize];
+                        for (int i = 0; i < truncSize && i < states.length; i++) {
+                            states[i] = t.getData().get(i);                             
+                        }
+                        return states;
+                    })
+                    .toArray(double[][]::new);
+                System.out.println("truncArray sizes: " 
+                    + truncArray.length + " " + truncArray[0].length);
+
+                long startTime = System.nanoTime();
                 double[][] pcaProjection = AnalysisUtils.doCommonsPCA(featureArray);
                 System.out.print("PCA... ");
+                Utils.printTotalTime(startTime);
+                
+                System.out.print("KPCA... ");
+                startTime = System.nanoTime();
+                //Perform KPCA FIT and Projection
+//                HellingerKernel hk = new HellingerKernel();
+                GaussianKernel gk = new GaussianKernel(3);
+                try {
+                    KPCA<double[]> kpca = KPCA.fit(featureArray, gk, featureArray.length-1, 1e-19);
+                    pcaProjection = kpca.coordinates();
+                    System.out.println("KPCA Coordinates: " + pcaProjection.length + " " + pcaProjection[0].length);
+                } catch(Exception ex) {
+                    System.out.println("KPCA blew up...");
+                }
                 Utils.printTotalTime(startTime);
 
                 System.out.println("mapping projected PCA data back to FeatureVectors...");
