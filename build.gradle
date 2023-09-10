@@ -46,7 +46,7 @@ repositories {
 
 dependencies {
     // Excluding openjfx from 3rd party modules.
-    implementation(group: 'com.github.birdasaur.litfx', name: 'litfx-controls', version: '0.1.0') {
+    implementation(group: 'com.github.birdasaur.litfx', name: 'litfx-controls', version: '0.1.3') {
         exclude group: 'org.openjfx'
     }
     implementation(group: 'org.fxyz3d', name: 'fxyz3d', version: '0.5.4') {
