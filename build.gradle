@@ -5,7 +5,7 @@ plugins {
     id 'com.github.ben-manes.versions' version '0.48.0'
     id 'net.nemerosa.versioning' version '3.0.0'
     id 'org.openjfx.javafxplugin' version '0.1.0'
-    id 'org.javamodularity.moduleplugin' version '1.8.12'
+    id 'org.gradlex.extra-java-module-info' version '1.4.2'
     id 'org.beryx.jlink' version '2.26.0'
 }
 
@@ -39,7 +39,6 @@ println "OS Detected: ${org.gradle.internal.os.OperatingSystem.current()}"
 // <editor-fold desp="Project Dependencies">
 
 repositories {
-    //mavenLocal()
     mavenCentral()
 }
 
@@ -67,6 +66,59 @@ dependencies {
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.0'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher'
+}
+
+// Make sure every single dependency is modularized.
+// Alternative is to use org.javamodularity.moduleplugin but
+// it doesn't yield the same quality of results.
+extraJavaModuleInfo {
+    // Transitive of org.fxyz3d:fxyz3d
+    module('eu.mihosoft.vvecmath:vvecmath', 'vvecmath') {
+        exports('eu.mihosoft.vvecmath')
+    }
+    // Transitive of org.fxyz3d:fxyz3d
+    module('eu.mihosoft.vrl.jcsg:jcsg', 'jcsg') {
+        requires('java.logging')
+        requires('javafx.graphics')
+        requires('org.slf4j')
+        requires('vvecmath')
+        // Custom exports due to problems with other ext/samples/playground packages
+        exports('eu.mihosoft.jcsg')
+        exports('eu.mihosoft.jcsg.ext.imagej')
+        exports('eu.mihosoft.jcsg.ext.org.poly2tri')
+        exports('eu.mihosoft.jcsg.ext.quickhull3d')
+    }
+    // Transitive of org.fxyz3d:fxyz3d
+    module('org.orbisgis:poly2tri-core', 'poly2tri.core') {
+        requires('org.slf4j')
+        exportAllPackages()
+    }
+    module('com.github.quickhull3d:quickhull3d', 'quickhull3d') {
+        requires('org.slf4j')
+        exportAllPackages()
+    }
+    module('org.apache.commons:commons-math3', 'commons.math3') {
+        exportAllPackages()
+    }
+    module('org.zeromq:jeromq', 'jeromq') {
+        requires('jnacl')
+        exportAllPackages()
+    }
+    // Transitive of org.zeromq:jeromq
+    module('eu.neilalexander:jnacl', 'jnacl') {
+        exportAllPackages()
+    }
+    module('com.github.sarxos:webcam-capture', 'webcam.capture') {
+        requires('java.desktop')
+        requires('jdk.unsupported')
+        requires('bridj')
+        requires('org.slf4j')
+        exportAllPackages()
+    }
+    // Transitive of com.github.sarxos:webcam-capture
+    module('com.nativelibs4java:bridj', 'bridj') {
+        exportAllPackages()
+    }
 }
 
 // </editor-fold>
@@ -102,7 +154,7 @@ application {
 
 java {
     toolchain.languageVersion = JavaLanguageVersion.of(17)
-    modularity.inferModulePath.set(false)
+    modularity.inferModulePath.set(true)
 }
 
 compileJava {
@@ -270,7 +322,7 @@ jlink {
         //jvmArgs += ["--add-exports external.module.name/external.package.name=$sModuleName", ...]
     }
     //forceMerge('javafx')
-    addExtraDependencies("javafx")
+    //addExtraDependencies("javafx")
     jpackage {
         def currentOS = org.gradle.internal.os.OperatingSystem.current()
         imageName = artifactNameUpper
