@@ -20,6 +20,9 @@ ext {
     isProdJlink = findProperty('env') == 'prod-jlink'
     isProdGraal = findProperty('env') == 'prod-graal'
     isDevelopment = findProperty('env') == 'dev'
+    // Only used for packaging on Intel hardware...
+    isAppleSiliconBuild = providers.environmentVariable('APPLE_SILICON').isPresent()
+    appleSiliconJavaHome = providers.environmentVariable('APPLE_SILICON_JAVA_HOME').getOrElse("")
     fxVersion = findProperty('javafx.version')
 }
 
@@ -184,6 +187,10 @@ tasks.register('debug', JavaExec) {
 javafx {
     version = "$fxVersion"
     modules = ['javafx.controls', 'javafx.graphics', 'javafx.fxml', 'javafx.swing']
+    // For custom packaging on Intel Hardware
+    if (project.isAppleSiliconBuild) {
+        platform = 'osx-aarch64'
+    }
 }
 
 // </editor-fold>
@@ -321,6 +328,11 @@ jlink {
         jvmArgs += ["-Dlogback.configurationFile={{BIN_DIR}}${fileSep}logback.xml"]
         //jvmArgs += ["--add-exports external.module.name/external.package.name=$sModuleName", ...]
     }
+    if (project.isAppleSiliconBuild) {
+        targetPlatform("osx-arm64") {
+            jdkHome = project.appleSiliconJavaHome
+        }
+    }
     //forceMerge('javafx')
     //addExtraDependencies("javafx")
     jpackage {
@@ -360,6 +372,12 @@ tasks.jlink.doLast {
     copy {
         from("$sourceSets.main.output.resourcesDir/logback.xml")
         into("$imageDir/bin")
+    }
+    if (project.isAppleSiliconBuild) {
+        copy {
+            from("$sourceSets.main.output.resourcesDir/logback.xml")
+            into("$imageDir/${artifactNameUpper}-osx-arm64/bin")
+        }
     }
 }
 

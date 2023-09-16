@@ -4,11 +4,14 @@ name: Gradle Build
 
 on:
   push:
-    branches: [ "main" ]
+    branches:
+      - main
   pull_request:
-    branches: [ "main" ]
+    branches:
+      - main
   release:
-    types: [ "published" ]
+    types:
+      - published
 
 permissions:
   contents: write
@@ -63,11 +66,16 @@ jobs:
           RELEASE_NAME: trinity-${{ runner.os }}-java-${{ matrix.jdk-version }}
         shell: bash
         run: |
+          mv build/libs/*-no-fx.jar "$RELEASE_NAME-slim.jar"
           mv build/libs/*-fx.jar "$RELEASE_NAME.jar"
-          if [[ "$RUNNER_OS" == "macOS" || "$RUNNER_OS" == "Linux" ]]; then
+          if [[ "$RUNNER_OS" == "macOS" ]]; then
             zip "$RELEASE_NAME-jar.zip" "$RELEASE_NAME.jar"
           elif [[ "$RUNNER_OS" == "Windows" ]]; then
             7z a "$RELEASE_NAME-jar.zip" "$RELEASE_NAME.jar"
+          elif [[ "$RUNNER_OS" == "Linux" ]]; then
+            zip "$RELEASE_NAME-jar.zip" "$RELEASE_NAME.jar"
+            zip "trinity-java-${{ matrix.jdk-version }}-slim-jar.zip" "$RELEASE_NAME-slim.jar"
+            gh release upload "$GITHUB_REF_NAME" "trinity-java-${{ matrix.jdk-version }}-slim-jar.zip"
           else
             exit 1
           fi
@@ -97,16 +105,38 @@ jobs:
       - name: Gradle Build JLink Zip
         uses: gradle/gradle-build-action@v2
         with:
-          arguments: clean jlinkZip -Penv=prod-jlink
+          arguments: clean jlink -Penv=prod-jlink
 
       - name: Upload JLink Zip
         uses: actions/upload-artifact@v3
         continue-on-error: true
         with:
           name: java-${{ matrix.jdk-version }}-${{ runner.os }}-jlink-zip
-          path: build/distributions/*.zip
+          path: build/image/**
           retention-days: 10
           if-no-files-found: error
+
+      - name: Release JLink
+        if: github.event_name == 'release'
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+          RELEASE_NAME: trinity-${{ runner.os }}-java-${{ matrix.jdk-version }}
+        shell: bash
+        run: |
+          mv "build/image" "build/Trinity"
+          pushd "build"
+          if [[ "$RUNNER_OS" == "macOS" ]]; then
+            zip -r "../$RELEASE_NAME-jlink.zip" "Trinity"
+          elif [[ "$RUNNER_OS" == "Windows" ]]; then
+            7z a "../$RELEASE_NAME-jlink.zip" "Trinity"
+          elif [[ "$RUNNER_OS" == "Linux" ]]; then
+            zip -r ../"$RELEASE_NAME-jlink.zip" "Trinity"
+          else
+            exit 1
+          fi
+          popd
+          gh release upload "$GITHUB_REF_NAME" "$RELEASE_NAME-jlink.zip"
 
   build-jpackage:
 
