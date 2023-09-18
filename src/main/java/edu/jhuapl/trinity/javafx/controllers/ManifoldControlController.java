@@ -126,6 +126,8 @@ public class ManifoldControlController implements Initializable {
     @FXML
     private Spinner kernelSigmaSpinner;   
     @FXML
+    private Spinner pcaScalingSpinner;   
+    @FXML
     private ChoiceBox<AnalysisUtils.METHOD> kernelTypeChoiceBox;
     
     @FXML
