@@ -112,8 +112,6 @@ public class ManifoldControlController implements Initializable {
     private RadioButton pcaRadioButton;
     @FXML
     private RadioButton svdRadioButton;
-    @FXML
-    private RadioButton kpcaRadioButton;
     ToggleGroup componentAnalysisToggleGroup;
     @FXML
     private Spinner numPcaComponentsSpinner;
@@ -123,13 +121,10 @@ public class ManifoldControlController implements Initializable {
     private Spinner fitEndIndexSpinner;
     @FXML
     private Spinner toleranceSpinner;   
-    @FXML
-    private Spinner kernelSigmaSpinner;   
+
     @FXML
     private Spinner pcaScalingSpinner;   
-    @FXML
-    private ChoiceBox<AnalysisUtils.METHOD> kernelTypeChoiceBox;
-    
+   
     @FXML
     private RadioButton pcaUseHyperspaceButton;
     @FXML
@@ -296,18 +291,10 @@ public class ManifoldControlController implements Initializable {
             new SpinnerValueFactory.IntegerSpinnerValueFactory(5, 100, 15, 5));
         toleranceSpinner.setValueFactory(
             new SpinnerValueFactory.DoubleSpinnerValueFactory(1, 50, 5, 1));
-        kernelSigmaSpinner.setValueFactory(
-            new SpinnerValueFactory.DoubleSpinnerValueFactory(1, 50, 1, 1));
 
-        kernelTypeChoiceBox.getItems().addAll(AnalysisUtils.METHOD.values());
-        kernelTypeChoiceBox.getSelectionModel().selectFirst();     
-        
         componentAnalysisToggleGroup = new ToggleGroup();
         pcaRadioButton.setToggleGroup(componentAnalysisToggleGroup);
         svdRadioButton.setToggleGroup(componentAnalysisToggleGroup);          
-        kpcaRadioButton.setToggleGroup(componentAnalysisToggleGroup);          
-        kernelTypeChoiceBox.disableProperty().bind(kpcaRadioButton.selectedProperty().not());
-        kernelSigmaSpinner.disableProperty().bind(kpcaRadioButton.selectedProperty().not());
         
         pcahyperSourceGroup = new ToggleGroup();
         pcaUseHyperspaceButton.setToggleGroup(pcahyperSourceGroup);

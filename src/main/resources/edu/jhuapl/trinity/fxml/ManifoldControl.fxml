@@ -28,7 +28,7 @@
     <children>
         <TabPane fx:id="tabPane" tabClosingPolicy="UNAVAILABLE">
             <tabs>
-                <Tab closable="false" text="PCA/KPCA">
+                <Tab closable="false" text="PCA">
                     <content>
                         <BorderPane fx:id="majorPane" minHeight="200.0" minWidth="400.0">
                             <children>
@@ -40,7 +40,6 @@
                                     <columnConstraints>
                                         <ColumnConstraints hgrow="SOMETIMES" maxWidth="288.0" minWidth="10.0" prefWidth="200.0" />
                                         <ColumnConstraints hgrow="SOMETIMES" maxWidth="380.0" minWidth="10.0" prefWidth="200.0" />
-                              <ColumnConstraints hgrow="SOMETIMES" maxWidth="200.0" minWidth="10.0" prefWidth="514.0" />
                                     </columnConstraints>
                                     <rowConstraints>
                                         <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="NEVER" />
@@ -54,9 +53,6 @@
                                         <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="NEVER" />
                                         <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="NEVER" />
                                         <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="NEVER" />
-                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="NEVER" />
-                              <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="NEVER" />
-                              <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="NEVER" />
                                     </rowConstraints>
                                     <children>
                                         <Label text="Number of Components" />
@@ -70,22 +66,20 @@
                               <RadioButton fx:id="pcaRadioButton" mnemonicParsing="false" selected="true" text="PCA (EigenValue)" GridPane.columnIndex="1" GridPane.rowIndex="1" />
                               <Label text="Component Analysis Type" GridPane.columnIndex="1" />
                               <RadioButton fx:id="svdRadioButton" mnemonicParsing="false" text="Singular Value Decomposition" GridPane.columnIndex="1" GridPane.rowIndex="2" />
-                              <RadioButton fx:id="kpcaRadioButton" mnemonicParsing="false" text="Kernel PCA" GridPane.columnIndex="1" GridPane.rowIndex="3" />
-                              <ChoiceBox fx:id="kernelTypeChoiceBox" prefWidth="150.0" GridPane.columnIndex="1" GridPane.rowIndex="5" />
-                              <Label text="Kernel Type" GridPane.columnIndex="1" GridPane.rowIndex="4" />
-                              <Label text="Kernel Sigma" GridPane.columnIndex="2" GridPane.rowIndex="4" />
-                              <Spinner fx:id="kernelSigmaSpinner" editable="true" prefWidth="100.0" GridPane.columnIndex="2" GridPane.rowIndex="5" />
-                              <VBox GridPane.columnIndex="1" GridPane.columnSpan="2" GridPane.rowIndex="9" GridPane.rowSpan="3">
+                                            <RadioButton fx:id="pcaUseHypersurfaceButton" mnemonicParsing="false" text="Use Hypersurface" GridPane.rowIndex="6" />
+                                            <RadioButton fx:id="pcaUseHyperspaceButton" mnemonicParsing="false" selected="true" text="Use Hyperspace" GridPane.rowIndex="7" />
+                              <Label text="Output Scaling Factor" GridPane.columnIndex="1" GridPane.rowIndex="4" />
+                              <Spinner fx:id="pcaScalingSpinner" editable="true" prefWidth="100.0" GridPane.columnIndex="1" GridPane.rowIndex="5" />
+                              <HBox alignment="CENTER" spacing="10.0" GridPane.columnSpan="2147483647" GridPane.rowIndex="9">
                                  <children>
-                                                <Button defaultButton="true" mnemonicParsing="false" onAction="#runPCA" prefWidth="200.0" text="Project Data" />
-                                    <Button disable="true" mnemonicParsing="false" onAction="#exportMatrix" prefWidth="200.0" text="Export TMatrix" />
-                                    <Button mnemonicParsing="false" onAction="#saveProjections" prefWidth="200.0" text="Save Projections" />
+                                                <Button defaultButton="true" mnemonicParsing="false" onAction="#runPCA" prefWidth="175.0" text="Project Data" />
+                                    <Button disable="true" mnemonicParsing="false" onAction="#exportMatrix" prefWidth="175.0" text="Export Eigenvectors" />
+                                    <Button mnemonicParsing="false" onAction="#saveProjections" prefWidth="175.0" text="Save Projections" />
                                  </children>
-                              </VBox>
-                                            <RadioButton fx:id="pcaUseHypersurfaceButton" mnemonicParsing="false" text="Use Hypersurface" GridPane.rowIndex="9" />
-                                            <RadioButton fx:id="pcaUseHyperspaceButton" mnemonicParsing="false" selected="true" text="Use Hyperspace" GridPane.rowIndex="10" />
-                              <Label text="Output Scaling Factor" GridPane.rowIndex="6" />
-                              <Spinner fx:id="pcaScalingSpinner" editable="true" prefWidth="100.0" GridPane.rowIndex="7" />
+                                 <padding>
+                                    <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                                 </padding>
+                              </HBox>
                                     </children>
                                     <padding>
                                         <Insets bottom="15.0" left="15.0" right="15.0" top="15.0" />

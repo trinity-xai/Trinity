@@ -66,47 +66,6 @@
 
     <dependencies>
         <dependency>
-          <groupId>com.github.haifengl</groupId>
-          <artifactId>smile-core</artifactId>
-          <version>3.0.2</version>
-        </dependency> 
-        <dependency>
-            <groupId>org.bytedeco</groupId>
-            <artifactId>openblas</artifactId>
-            <version>0.3.23-1.5.9</version>
-            <!--<scope>provided</scope>-->
-            <classifier>windows-x86_64</classifier>
-        </dependency>
-        <dependency>
-            <groupId>org.bytedeco</groupId>
-            <artifactId>openblas-platform</artifactId>
-            <version>0.3.23-1.5.9</version>
-            <!--<scope>provided</scope>-->
-            <!--<classifier>windows-x86_64</classifier>-->
-        </dependency>
-        <dependency>
-            <groupId>org.bytedeco</groupId>
-            <artifactId>javacpp</artifactId>
-            <version>1.5.9</version>
-            <!--<scope>provided</scope>-->
-            <classifier>windows-x86_64</classifier>
-        </dependency>
-        <dependency>
-            <groupId>org.bytedeco</groupId>
-            <artifactId>arpack-ng</artifactId>
-            <version>3.9.0-1.5.9</version>
-<!--            <scope>provided</scope>-->
-            <classifier></classifier>
-        </dependency>                
-        <dependency>
-            <groupId>org.bytedeco</groupId>
-            <artifactId>arpack-ng</artifactId>
-            <version>3.9.0-1.5.9</version>
-            <!--<scope>provided</scope>-->
-            <classifier>windows-x86_64</classifier>
-        </dependency>        
-
-        <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-controls</artifactId>
             <version>${javafx.version}</version>

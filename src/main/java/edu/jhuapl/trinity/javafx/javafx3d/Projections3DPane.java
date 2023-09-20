@@ -123,9 +123,6 @@ import java.util.stream.Collectors;
 import javafx.scene.control.CheckMenuItem;
 import javafx.scene.effect.Glow;
 import javafx.scene.image.ImageView;
-import smile.manifold.KPCA;
-import smile.math.kernel.GaussianKernel;
-import smile.math.kernel.HellingerKernel;
 
 /**
  * @author Sean Phillips
@@ -2421,20 +2418,6 @@ public class Projections3DPane extends StackPane implements
                 System.out.print("PCA... ");
                 Utils.printTotalTime(startTime);
                 
-                System.out.print("KPCA... ");
-                startTime = System.nanoTime();
-                //Perform KPCA FIT and Projection
-//                HellingerKernel hk = new HellingerKernel();
-                GaussianKernel gk = new GaussianKernel(3);
-                try {
-                    KPCA<double[]> kpca = KPCA.fit(featureArray, gk, featureArray.length-1, 1e-19);
-                    pcaProjection = kpca.coordinates();
-                    System.out.println("KPCA Coordinates: " + pcaProjection.length + " " + pcaProjection[0].length);
-                } catch(Exception ex) {
-                    System.out.println("KPCA blew up...");
-                }
-                Utils.printTotalTime(startTime);
-
                 System.out.println("mapping projected PCA data back to FeatureVectors...");
                 FeatureCollection projectedFC = FeatureCollection.fromData(pcaProjection);
                 for (int i = 0; i < originalFC.getFeatures().size(); i++) {
