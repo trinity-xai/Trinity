@@ -5,6 +5,7 @@ plugins {
     id 'com.github.ben-manes.versions' version '0.48.0'
     id 'net.nemerosa.versioning' version '3.0.0'
     id 'org.openjfx.javafxplugin' version '0.1.0'
+    id 'com.gluonhq.gluonfx-gradle-plugin' version '1.0.21'
     id 'org.gradlex.extra-java-module-info' version '1.4.2'
     id 'org.beryx.jlink' version '2.26.0'
 }
@@ -167,6 +168,10 @@ compileJava {
     }
 }
 
+run {
+    jvmArgs += ['-Dprism.maxvram=2G', '-Djavafx.animation.fullspeed=true']
+}
+
 tasks.named('test', Test) {
     useJUnitPlatform()
 }
@@ -186,11 +191,20 @@ tasks.register('debug', JavaExec) {
 
 javafx {
     version = "$fxVersion"
-    modules = ['javafx.controls', 'javafx.graphics', 'javafx.fxml', 'javafx.swing']
+    modules = ['javafx.controls', 'javafx.fxml', 'javafx.swing']
     // For custom packaging on Intel Hardware
     if (project.isAppleSiliconBuild) {
         platform = 'osx-aarch64'
     }
+}
+
+gluonfx {
+    if (isProdGraal) {
+        // Needed by the plugin for now...
+        mainClassName = mainClassJarLauncher
+    }
+    target = "host"
+    javafxStaticSdkVersion = "$fxVersion"
 }
 
 // </editor-fold>
