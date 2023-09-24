@@ -357,11 +357,16 @@ public class App extends Application {
                 stage.setMaximized(true);
             }
             System.out.println("Checking for special effects requests...");
+            boolean surveillanceEnabled = namedParameters.containsKey("surveillance");
+            if (surveillanceEnabled) {
+                System.out.println("Surveillance found... enabling Camera.");
+            }
+
             if (namedParameters.containsKey("outrun")) {
                 System.out.println("Outrun found... enabling RetroWavePane.");
                 try {
                     //Add optional RETROWAVE VIEW
-                    retroWavePane = new RetroWavePane(scene);
+                    retroWavePane = new RetroWavePane(scene, surveillanceEnabled);
                     retroWavePane.setVisible(true);
                     centerStack.getChildren().add(retroWavePane);
                 } catch (Exception ex) {
@@ -563,7 +568,7 @@ public class App extends Application {
         scene.getRoot().addEventHandler(GaussianMixtureEvent.NEW_GAUSSIAN_COLLECTION, gmeh);
         gmeh.addGaussianMixtureRenderer(hyperspace3DPane);
 
-        fveh = new FeatureVectorEventHandler(false);
+        fveh = new FeatureVectorEventHandler();
         scene.getRoot().addEventHandler(FeatureVectorEvent.NEW_FEATURE_VECTOR, fveh);
         scene.getRoot().addEventHandler(FeatureVectorEvent.LOCATE_FEATURE_VECTOR, fveh);
         scene.getRoot().addEventHandler(FeatureVectorEvent.NEW_FEATURE_COLLECTION, fveh);

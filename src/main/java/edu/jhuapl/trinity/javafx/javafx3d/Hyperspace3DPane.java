@@ -659,7 +659,7 @@ public class Hyperspace3DPane extends StackPane implements
         this.scene.addEventHandler(HyperspaceEvent.ADDED_FEATURE_LAYER, e ->
             changeFeatureLayer((FeatureLayer) e.object));
         this.scene.addEventHandler(HyperspaceEvent.ADDEDALL_FEATURE_LAYER, e ->
-            changeFeatureLayer((FeatureLayer) e.object));
+            changeFeatureLayer(null));
         this.scene.addEventHandler(HyperspaceEvent.UPDATED_FEATURE_LAYER, e ->
             changeFeatureLayer((FeatureLayer) e.object));
         this.scene.addEventHandler(HyperspaceEvent.REMOVED_FEATURE_LAYER, e -> {
@@ -951,12 +951,14 @@ public class Hyperspace3DPane extends StackPane implements
 
     public void updateTrajectory3D(boolean overrideAuto) {
         //Clear out previous trajectory nodes
+        boolean wasVisible = anchorTraj3D.isVisible();
         extrasGroup.getChildren().remove(anchorTraj3D);
         trajectorySphereGroup.getChildren().clear();
         //Rebuild the anchor trajectory
         anchorTraj3D = JavaFX3DUtils.buildPolyLineFromTrajectory(
             anchorTrajectory, 8.0f, Color.ALICEBLUE,
             trajectoryTailSize, trajectoryScale, sceneWidth, sceneHeight);
+        anchorTraj3D.setVisible(wasVisible);
         extrasGroup.getChildren().add(0, anchorTraj3D);
         for (Point3D point : anchorTraj3D.points) {
             TriaxialSpheroidMesh tsm = createEllipsoid(anchorTraj3D.width / 4.0, anchorTraj3D.width / 4.0, anchorTraj3D.width / 4.0, Color.LIGHTBLUE);
@@ -1051,6 +1053,7 @@ public class Hyperspace3DPane extends StackPane implements
     }
 
     private void changeFeatureLayer(FeatureLayer featureLayer) {
+        //ignore individual and just update all
         updatePNodeColorsAndVisibility();
         updateView(false);
     }

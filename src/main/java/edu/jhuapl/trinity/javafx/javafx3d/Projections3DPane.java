@@ -792,7 +792,7 @@ public class Projections3DPane extends StackPane implements
         this.scene.addEventHandler(HyperspaceEvent.ADDED_FEATURE_LAYER, e ->
             changeFeatureLayer((FeatureLayer) e.object));
         this.scene.addEventHandler(HyperspaceEvent.ADDEDALL_FEATURE_LAYER, e ->
-            changeFeatureLayer((FeatureLayer) e.object));
+            changeFeatureLayer(null));
         this.scene.addEventHandler(HyperspaceEvent.UPDATED_FEATURE_LAYER, e ->
             changeFeatureLayer((FeatureLayer) e.object));
         this.scene.addEventHandler(HyperspaceEvent.REMOVED_FEATURE_LAYER, e -> {
@@ -1084,12 +1084,13 @@ public class Projections3DPane extends StackPane implements
 
     public void updateTrajectory3D(boolean overrideAuto) {
         //Clear out previous trajectory nodes
+        boolean wasVisible = anchorTraj3D.isVisible();
         extrasGroup.getChildren().remove(anchorTraj3D);
         trajectorySphereGroup.getChildren().clear();
-
         anchorTraj3D = JavaFX3DUtils.buildPolyLineFromTrajectory(anchorTrajectory,
             8.0f, Color.ALICEBLUE, trajectoryTailSize,
             trajectoryScale, sceneWidth, sceneHeight);
+        anchorTraj3D.setVisible(wasVisible);
         extrasGroup.getChildren().add(0, anchorTraj3D);
         for (Point3D point : anchorTraj3D.points) {
             TriaxialSpheroidMesh tsm = createEllipsoid(anchorTraj3D.width / 4.0, anchorTraj3D.width / 4.0, anchorTraj3D.width / 4.0, Color.LIGHTBLUE);
@@ -1179,7 +1180,7 @@ public class Projections3DPane extends StackPane implements
 
     private void changeFactorLabels(FactorLabel factorLabel) {
         sphereToFeatureVectorMap.forEach((s, fv) -> {
-            if (fv.getLabel().contentEquals(factorLabel.getLabel())) {
+            if (null != fv.getLabel() && fv.getLabel().contentEquals(factorLabel.getLabel())) {
                 s.setVisible(factorLabel.getVisible());
                 ((PhongMaterial) s.getMaterial()).setDiffuseColor(factorLabel.getColor());
             }
@@ -1549,7 +1550,7 @@ public class Projections3DPane extends StackPane implements
     private void updatePNodeColorsAndVisibility() {
         pNodes.parallelStream().forEach(p -> {
             if (colorByLabel)
-                if (p.factorAnalysisSeed.label.isBlank())
+                if (null == p.factorAnalysisSeed.label || p.factorAnalysisSeed.label.isBlank())
                     p.nodeColor = Color.ALICEBLUE;
                 else
                     p.nodeColor = FactorLabel.getColorByLabel(p.factorAnalysisSeed.label);

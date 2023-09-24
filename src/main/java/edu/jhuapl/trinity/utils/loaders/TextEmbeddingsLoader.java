@@ -27,7 +27,6 @@ import edu.jhuapl.trinity.data.messages.FeatureVector;
 import edu.jhuapl.trinity.data.messages.TextEmbeddingSet;
 import edu.jhuapl.trinity.javafx.components.ProgressStatus;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
-import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.events.HyperspaceEvent;
 import edu.jhuapl.trinity.javafx.events.TrajectoryEvent;
@@ -40,7 +39,6 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.DialogPane;
 import javafx.scene.layout.Background;
 import javafx.scene.paint.Color;
-import javafx.scene.text.Font;
 import javafx.stage.StageStyle;
 
 import java.io.File;
@@ -103,20 +101,8 @@ public class TextEmbeddingsLoader extends Task {
             scene.getRoot().fireEvent(
                 new ApplicationEvent(ApplicationEvent.SHOW_BUSY_INDICATOR, ps));
         });
+        System.out.print("Reading TextEmbeddingCollectionFile... ");
         TextEmbeddingCollectionFile textEmbeddingCollectionFile = new TextEmbeddingCollectionFile(file.getAbsolutePath(), true);
-
-        Platform.runLater(() -> {
-            scene.getRoot().fireEvent(new CommandTerminalEvent(
-                "Done Text Embeddings from File.", new Font("Consolas", 20), Color.GREEN));
-            System.out.println("Done loading embeddings file.");
-            ProgressStatus ps = new ProgressStatus("Converting Text Embeddings to Feature Vectors...", -1);
-            ps.fillStartColor = Color.CYAN;
-            ps.fillEndColor = Color.CYAN;
-            ps.innerStrokeColor = Color.CYAN;
-            ps.outerStrokeColor = Color.CYAN;
-            scene.getRoot().fireEvent(
-                new ApplicationEvent(ApplicationEvent.UPDATE_BUSY_INDICATOR, ps));
-        });
 
         try {
             List<TextEmbeddingSet> embeddings = textEmbeddingCollectionFile
@@ -127,6 +113,7 @@ public class TextEmbeddingsLoader extends Task {
             final int n = embeddings.size(); //how many total
             int updatePercent = n / 10; //rounded percent progress
 
+            System.out.print("Mapping text embeddings to feature collection... ");
             for (int i = 0; i < embeddings.size(); i++) {
                 //First do the original embeddings as a special case
                 FeatureVector fv = new FeatureVector();
@@ -169,21 +156,22 @@ public class TextEmbeddingsLoader extends Task {
                     parsedChunkFV.setLayer(i);
                     fc.getFeatures().add(parsedChunkFV);
                 }
-                //update the progress indicator
-                if (i % updatePercent == 0) {
-                    double percentComplete = Double.valueOf(i) / Double.valueOf(n);
-                    Platform.runLater(() -> {
-                        ProgressStatus ps = new ProgressStatus(
-                            "Converting Text Embeddings to Feature Vectors...", percentComplete);
-                        ps.fillStartColor = Color.AZURE;
-                        ps.fillEndColor = Color.LIME;
-                        ps.innerStrokeColor = Color.AZURE;
-                        ps.outerStrokeColor = Color.LIME;
-                        scene.getRoot().fireEvent(
-                            new ApplicationEvent(ApplicationEvent.UPDATE_BUSY_INDICATOR, ps));
-                    });
-                }
+//                //update the progress indicator
+//                if (i % updatePercent == 0) {
+//                    double percentComplete = Double.valueOf(i) / Double.valueOf(n);
+//                    Platform.runLater(() -> {
+//                        ProgressStatus ps = new ProgressStatus(
+//                            "Converting Text Embeddings to Feature Vectors...", percentComplete);
+//                        ps.fillStartColor = Color.AZURE;
+//                        ps.fillEndColor = Color.LIME;
+//                        ps.innerStrokeColor = Color.AZURE;
+//                        ps.outerStrokeColor = Color.LIME;
+//                        scene.getRoot().fireEvent(
+//                            new ApplicationEvent(ApplicationEvent.UPDATE_BUSY_INDICATOR, ps));
+//                    });
+//                }
             }
+            
             Platform.runLater(() -> {
                 ProgressStatus ps = new ProgressStatus("Injecting as FeatureCollection...", -1);
                 ps.fillStartColor = Color.CYAN;

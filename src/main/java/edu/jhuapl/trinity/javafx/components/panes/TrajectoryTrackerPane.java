@@ -105,64 +105,11 @@ public class TrajectoryTrackerPane extends LitPathPane {
             TrajectoryListItem item = new TrajectoryListItem(trajectory);
             trajectoryListView.getItems().add(item);
         });
-        
-//        scene.addEventHandler(ManifoldEvent.TOGGLE_HULL_POINT, e-> {
-//            if(auto.isSelected()) {
-//                Manifold eventManifold = (Manifold) e.object1;
-//                Manifold manifold = manifold3D.getManifold();
-//                if(null != eventManifold && null != manifold
-//                && eventManifold == manifold) {
-//                    updateManifold();
-//                }
-//            }
-//        });
-//        scene.addEventHandler(ManifoldEvent.SELECT_PROJECTION_POINT3D, e-> {
-//            Point3D p3D = (Point3D) e.object1;
-//            int shortestIndex = 0;
-//            Double shortestDistance = null;
-//            for(int i=0;i<pointListView.getItems().size();i++){
-//                PointListItem item = pointListView.getItems().get(i);
-//                double currentDistance = p3D.distance(item.getPoint3D().getX(), 
-//                item.getPoint3D().getY(), item.getPoint3D().getZ());
-//                if(null == shortestDistance || currentDistance < shortestDistance){
-//                    shortestDistance = currentDistance;
-//                    shortestIndex = i;
-//                }
-//            }
-//            pointListView.getSelectionModel().select(shortestIndex);
-//            pointListView.scrollTo(shortestIndex);
-//        });
-        
+               
     }
     
     public void setVisibleAll(boolean visible) {
         trajectoryListView.getItems().forEach(item -> item.setDataVisible(visible));
-    }
-    
-//    private void updateManifold() {
-//        System.out.println("Refreshing Manifold...");
-////        getScene().getRoot().fireEvent(new ManifoldEvent(
-////            ManifoldEvent.UPDATE_MANIFOLD_POINTS, 
-////                this.manifold, includeCheckBox.isSelected()));        
-//        //build list of points from listview
-//        List<org.fxyz3d.geometry.Point3D> points = new ArrayList<>();
-//        pointListView.getItems().forEach(item -> {
-//            if(item.isSelected())
-//                points.add(item.getPoint3D());
-//        });
-//        manifold3D.refreshMesh(points, false, true, false);
-//    }
-//    public void setShape3D(Manifold3D manifold3D) {
-//        this.manifold3D = manifold3D;
-//        Manifold manifold = manifold3D.getManifold();
-//        if(null != manifold) {
-//            pointListView.getItems().clear();
-//            List<PointListItem> pointListItems = this.manifold3D
-//                .getOriginalPoint3DList().stream()
-//                //.map(fxyzPoint3DTofxPoint3D)
-//                .map((p) -> new PointListItem(manifold, p, true))
-//                .collect(toList());
-//            pointListView.getItems().addAll(pointListItems);
-//        }
-//    }
+    }   
+
 }
