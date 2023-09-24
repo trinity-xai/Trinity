@@ -16,10 +16,9 @@ on:
 permissions:
   contents: write
 
-# cancel in progress jobs or runs for the current workflow
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
-  cancel-in-progress: ${{ github.ref != 'refs/heads/main' }}
+  group: maven-${{ github.head_ref || github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
 
 jobs:
 
@@ -80,7 +79,7 @@ jobs:
 
       - uses: actions/checkout@v3
 
-      - name: Set Up Graal ${{ matrix.jdk-version }}
+      - name: Set Up GraalVM ${{ matrix.jdk-version }}
         uses: graalvm/setup-graalvm@v1.0.12
         with:
           version: '22.3.2'
@@ -114,22 +113,3 @@ jobs:
           path: target/gluonfx/**/trinity*
           retention-days: 10
           if-no-files-found: error
-
-      - name: Release Native
-        if: github.event_name == 'release'
-        env:
-          GH_TOKEN: ${{ github.token }}
-          GH_REPO: ${{ github.repository }}
-          RELEASE_NAME: trinity-${{ runner.os }}-java-${{ matrix.jdk-version }}
-        shell: bash
-        run: |
-          if [[ "$RUNNER_OS" == "macOS" ]]; then
-            mv target/gluonfx/**/trinity* "Trinity.app"
-            zip "$RELEASE_NAME-native.zip" "Trinity.app"
-          elif [[ "$RUNNER_OS" == "Windows" ]]; then
-            mv target/gluonfx/**/trinity*.exe "Trinity.exe"
-            7z a "$RELEASE_NAME-native.zip" "Trinity.exe"
-          else
-            exit 1
-          fi
-          gh release upload "$GITHUB_REF_NAME" "$RELEASE_NAME-native.zip"
