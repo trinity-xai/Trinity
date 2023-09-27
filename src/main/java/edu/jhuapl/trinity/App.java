@@ -62,6 +62,7 @@ import edu.jhuapl.trinity.messages.ZeroMQFeedManager;
 import edu.jhuapl.trinity.messages.ZeroMQSubscriberConfig;
 import edu.jhuapl.trinity.utils.AnalysisUtils;
 import edu.jhuapl.trinity.utils.Configuration;
+import edu.jhuapl.trinity.utils.PCAConfig;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import edu.jhuapl.trinity.utils.umap.Umap;
 import javafx.animation.Animation;
@@ -242,10 +243,10 @@ public class App extends Application {
                 scene.getRoot().fireEvent(
                         new ApplicationEvent(ApplicationEvent.SHOW_BUSY_INDICATOR, ps));
             });
-//            Umap umap = (Umap) event.object1;
+            PCAConfig config = (PCAConfig) event.object1;
             ManifoldEvent.POINT_SOURCE source = (ManifoldEvent.POINT_SOURCE) event.object2;
             FeatureCollection originalFC = getFeaturesBySource(source);
-            projections3DPane.projectFeatureCollection(originalFC, false, 50, 1);
+            projections3DPane.projectFeatureCollection(originalFC, config);
         });
 
         scene.addEventHandler(FeatureVectorEvent.PROJECT_SURFACE_GRID, event -> {

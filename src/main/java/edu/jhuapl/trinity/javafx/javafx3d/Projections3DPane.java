@@ -57,6 +57,7 @@ import edu.jhuapl.trinity.javafx.renderers.GaussianMixtureRenderer;
 import edu.jhuapl.trinity.javafx.renderers.ManifoldRenderer;
 import edu.jhuapl.trinity.utils.AnalysisUtils;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
+import edu.jhuapl.trinity.utils.PCAConfig;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import edu.jhuapl.trinity.utils.Utils;
 import edu.jhuapl.trinity.utils.VisibilityMap;
@@ -1923,16 +1924,13 @@ public class Projections3DPane extends StackPane implements
                     new Font("Consolas", 20), Color.GREEN));
         });
         clearAll();
+        ellipsoidGroup.getChildren().clear();
+        sphereToFeatureVectorMap.clear();
         Platform.runLater(() -> {
             getScene().getRoot().fireEvent(
                 new CommandTerminalEvent("Projecting Feature Collection... ",
                     new Font("Consolas", 20), Color.GREEN));
         });
-
-        ellipsoidGroup.getChildren().clear();
-        sphereToFeatureVectorMap.clear();
-
-        //@TODO SMP Fix projection scalar so it isn't hard coded
         //Make a 3D sphere for each projected feature vector
         for(int i=0;i<featureCollection.getFeatures().size();i++){ 
             FeatureVector featureVector = featureCollection.getFeatures().get(i);
@@ -2380,7 +2378,7 @@ public class Projections3DPane extends StackPane implements
     public void setHyperDimensionFeatures(FeatureCollection originalFC) {
         hyperFeatures = originalFC.getFeatures();
     }
-    public void projectFeatureCollection(FeatureCollection originalFC, boolean useSVD, int pcaDimensions, double scaling) {
+    public void projectFeatureCollection(FeatureCollection originalFC, PCAConfig config) {
         Task task = new Task() {
             @Override
             protected FeatureCollection call() throws Exception {
@@ -2400,9 +2398,22 @@ public class Projections3DPane extends StackPane implements
                 System.out.println("featureArray sizes: " 
                     + featureArray.length + " " + featureArray[0].length);
 
-                int truncSize = 10;
+                int start = config.startIndex;
+                if(start < 0 || start >= featureArray.length) {
+                    System.out.println("PCA Start index no bueno... setting to Zero.");
+                    start = 0;
+                }
+                int end = config.endIndex;
+                if(end >= config.startIndex 
+                || end >= originalFC.getFeatures().size()
+                || end <= 0){
+                    System.out.println("PCA End index no bueno... setting to Max.");
+                    end = originalFC.getFeatures().size()-1;
+                }
+
+                int truncSize = featureArray[0].length;
                 double[][]truncArray = originalFC.getFeatures().stream()
-                    .limit(20)
+                    .skip(start).limit(end)
                     .map((FeatureVector t) -> {
                         double[] states = new double[truncSize];
                         for (int i = 0; i < truncSize && i < states.length; i++) {
@@ -2414,13 +2425,14 @@ public class Projections3DPane extends StackPane implements
                 System.out.println("truncArray sizes: " 
                     + truncArray.length + " " + truncArray[0].length);
 
+                System.out.print("PCA... ");
                 long startTime = System.nanoTime();
                 double[][] pcaProjection = AnalysisUtils.doCommonsPCA(featureArray);
-                System.out.print("PCA... ");
                 Utils.printTotalTime(startTime);
                 
                 System.out.println("mapping projected PCA data back to FeatureVectors...");
-                FeatureCollection projectedFC = FeatureCollection.fromData(pcaProjection);
+                FeatureCollection projectedFC = FeatureCollection.fromData(
+                    pcaProjection, config.pcaDimensions, config.scaling);
                 for (int i = 0; i < originalFC.getFeatures().size(); i++) {
                     FeatureVector origFV = originalFC.getFeatures().get(i);
                     projectedFC.getFeatures().get(i).setLabel(origFV.getLabel());

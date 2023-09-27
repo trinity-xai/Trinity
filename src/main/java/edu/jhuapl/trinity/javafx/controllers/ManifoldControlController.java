@@ -30,6 +30,7 @@ import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.Manifold3D;
 import edu.jhuapl.trinity.utils.AnalysisUtils;
+import edu.jhuapl.trinity.utils.PCAConfig;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import edu.jhuapl.trinity.utils.umap.Umap;
 import edu.jhuapl.trinity.utils.umap.metric.Metric;
@@ -120,8 +121,8 @@ public class ManifoldControlController implements Initializable {
     @FXML
     private Spinner fitEndIndexSpinner;
     @FXML
-    private Spinner toleranceSpinner;   
-
+    private CheckBox rangedFittingCheckBox;
+    
     @FXML
     private Spinner pcaScalingSpinner;   
    
@@ -286,11 +287,15 @@ public class ManifoldControlController implements Initializable {
         numPcaComponentsSpinner.setValueFactory(
             new SpinnerValueFactory.IntegerSpinnerValueFactory(2, 100, 3, 1));
         fitStartIndexSpinner.setValueFactory(
-            new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 500, 0, 1));
+            new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 500, 0, 5));
         fitEndIndexSpinner.setValueFactory(
-            new SpinnerValueFactory.IntegerSpinnerValueFactory(5, 100, 15, 5));
-        toleranceSpinner.setValueFactory(
-            new SpinnerValueFactory.DoubleSpinnerValueFactory(1, 50, 5, 1));
+            new SpinnerValueFactory.IntegerSpinnerValueFactory(5, 2000, 50, 5));
+        //"min","max","initialValue","amountToStepBy"
+        fitStartIndexSpinner.disableProperty().bind(rangedFittingCheckBox.selectedProperty().not());
+        fitEndIndexSpinner.disableProperty().bind(rangedFittingCheckBox.selectedProperty().not());
+        
+        pcaScalingSpinner.setValueFactory(
+            new SpinnerValueFactory.DoubleSpinnerValueFactory(1, 1000, 100, 10));
 
         componentAnalysisToggleGroup = new ToggleGroup();
         pcaRadioButton.setToggleGroup(componentAnalysisToggleGroup);
@@ -518,10 +523,27 @@ public class ManifoldControlController implements Initializable {
     } 
     @FXML
     public void runPCA() {
+        AnalysisUtils.SOURCE source = useHypersurfaceButton.isSelected() ?
+            AnalysisUtils.SOURCE.HYPERSURFACE : AnalysisUtils.SOURCE.HYPERSPACE;
+        AnalysisUtils.ANALYSIS_METHOD method = svdRadioButton.isSelected() ?
+            AnalysisUtils.ANALYSIS_METHOD.SVD : AnalysisUtils.ANALYSIS_METHOD.PCA;
+        
+        int startIndex = 0;
+        int endIndex = -1; //use max indicator
+        if(rangedFittingCheckBox.isSelected()) {
+            startIndex = (int)fitStartIndexSpinner.getValue();
+            if(endIndex > startIndex)
+                endIndex = (int)fitEndIndexSpinner.getValue();
+        } 
+            
+            
+        PCAConfig config = new PCAConfig(source, method, 
+            (int)numPcaComponentsSpinner.getValue(), (double)pcaScalingSpinner.getValue(), 
+            startIndex, endIndex);
         ManifoldEvent.POINT_SOURCE pointSource = useHypersurfaceButton.isSelected() ?
             ManifoldEvent.POINT_SOURCE.HYPERSURFACE : ManifoldEvent.POINT_SOURCE.HYPERSPACE;
         scene.getRoot().fireEvent(new ManifoldEvent(
-            ManifoldEvent.GENERATE_NEW_PCA, null, pointSource));
+            ManifoldEvent.GENERATE_NEW_PCA, config, pointSource));
         
     }
     @FXML

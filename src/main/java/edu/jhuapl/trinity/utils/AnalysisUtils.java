@@ -41,8 +41,10 @@ import org.apache.commons.math3.linear.RealVector;
  */
 public enum AnalysisUtils {
     INSTANCE;
-    public static enum METHOD { PCA, SVD, KPCA };
+    public static enum ANALYSIS_METHOD { PCA, SVD, KPCA };
+    public static enum SOURCE { HYPERSPACE, HYPERSURFACE };
     public static enum KERNEL { Gaussian, Laplacian, Linear, Pearson, Polynomial };
+    public static enum RANGE { MINIMUM, MAXIMUM };
     public static double EPISILON = 0.0000000001;
 
     public static double lerp1(double start, double end, double ratio) {

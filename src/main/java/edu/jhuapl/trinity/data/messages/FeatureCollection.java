@@ -98,7 +98,25 @@ public class FeatureCollection extends MessageData {
         fcf.setFeatures(featureVectors);
         return fcf;
     }
-
+    public static FeatureCollection fromData(double[][] data, int width, double scaling) {
+        FeatureCollection fcf = new FeatureCollection();
+        int vectorCount = data.length;
+        int vectorWidth = data[0].length;
+        if(width < vectorWidth) //truncate width if the base data is wider than the parameter
+            vectorWidth = width;
+        List<FeatureVector> featureVectors = new ArrayList<>(vectorCount);
+        //super slow and ugly conversion from arrays to lists
+        for (int featureVectorIndex = 0; featureVectorIndex < vectorCount; featureVectorIndex++) {
+            FeatureVector fv = new FeatureVector();
+            for (int vectorIndex = 0; vectorIndex < vectorWidth; vectorIndex++) {
+                fv.getData().add(data[featureVectorIndex][vectorIndex]
+                    * scaling); //add projection scaling
+            }
+            featureVectors.add(fv);
+        }
+        fcf.setFeatures(featureVectors);
+        return fcf;
+    }
     public static FeatureCollection fromData(double[][] data) {
         FeatureCollection fcf = new FeatureCollection();
         int vectorCount = data.length;
