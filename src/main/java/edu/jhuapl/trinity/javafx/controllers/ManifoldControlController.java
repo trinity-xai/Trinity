@@ -532,8 +532,9 @@ public class ManifoldControlController implements Initializable {
         int endIndex = -1; //use max indicator
         if(rangedFittingCheckBox.isSelected()) {
             startIndex = (int)fitStartIndexSpinner.getValue();
-            if(endIndex > startIndex)
-                endIndex = (int)fitEndIndexSpinner.getValue();
+            endIndex = (int)fitEndIndexSpinner.getValue();
+            if(endIndex <= startIndex)
+                endIndex = -1;
         } 
             
             

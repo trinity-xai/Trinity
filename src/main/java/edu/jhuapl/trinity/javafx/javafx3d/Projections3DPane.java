@@ -2427,13 +2427,14 @@ public class Projections3DPane extends StackPane implements
 
                 System.out.print("PCA... ");
                 long startTime = System.nanoTime();
-                double[][] pcaProjection = AnalysisUtils.doCommonsPCA(featureArray);
+//                double[][] pcaProjection = AnalysisUtils.doCommonsPCA(featureArray);
+                double[][] pcaProjection = AnalysisUtils.doCommonsPCA(truncArray);
                 Utils.printTotalTime(startTime);
                 
                 System.out.println("mapping projected PCA data back to FeatureVectors...");
                 FeatureCollection projectedFC = FeatureCollection.fromData(
                     pcaProjection, config.pcaDimensions, config.scaling);
-                for (int i = 0; i < originalFC.getFeatures().size(); i++) {
+                for (int i = 0; i < originalFC.getFeatures().size()-1; i++) {
                     FeatureVector origFV = originalFC.getFeatures().get(i);
                     projectedFC.getFeatures().get(i).setLabel(origFV.getLabel());
                     projectedFC.getFeatures().get(i).setScore(origFV.getScore());
