@@ -2404,7 +2404,7 @@ public class Projections3DPane extends StackPane implements
                     start = 0;
                 }
                 int end = config.endIndex;
-                if(end >= config.startIndex 
+                if(end <= start 
                 || end >= originalFC.getFeatures().size()
                 || end <= 0){
                     System.out.println("PCA End index no bueno... setting to Max.");
@@ -2434,7 +2434,9 @@ public class Projections3DPane extends StackPane implements
                 System.out.println("mapping projected PCA data back to FeatureVectors...");
                 FeatureCollection projectedFC = FeatureCollection.fromData(
                     pcaProjection, config.pcaDimensions, config.scaling);
-                for (int i = 0; i < originalFC.getFeatures().size()-1; i++) {
+                for (int i = 0; i < projectedFC.getFeatures().size()-1; i++) {
+                    if(i>=originalFC.getFeatures().size())
+                        break;
                     FeatureVector origFV = originalFC.getFeatures().get(i);
                     projectedFC.getFeatures().get(i).setLabel(origFV.getLabel());
                     projectedFC.getFeatures().get(i).setScore(origFV.getScore());
