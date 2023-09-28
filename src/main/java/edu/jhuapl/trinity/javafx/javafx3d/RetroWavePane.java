@@ -182,15 +182,19 @@ public class RetroWavePane extends StackPane {
     float[] verts = new float[]{0, 0, 0};
 
     TessellationMesh tessellationMeshView;
+    boolean webcamEnabled = false;
 
-    public RetroWavePane(Scene scene) {
+    public RetroWavePane(Scene scene, boolean enableWebcam) {
         this.scene = scene;
-        System.out.println("Initializing Surveillance system... ");
-        try {
-            WebCamUtils.initialize();
-            System.out.println("Camera system ONLINE!");
-        } catch (Exception ex) {
-            System.out.println("Camera system unreachable!");
+        this.webcamEnabled = enableWebcam;
+        if (enableWebcam) {
+            System.out.println("Initializing Surveillance system... ");
+            try {
+                WebCamUtils.initialize();
+                System.out.println("Camera system ONLINE!");
+            } catch (Exception ex) {
+                System.out.println("Camera system unreachable!");
+            }
         }
         setBackground(Background.EMPTY);
         subScene = new SubScene(sceneRoot, sceneWidth, sceneHeight, true, SceneAntialiasing.BALANCED);
@@ -807,20 +811,22 @@ public class RetroWavePane extends StackPane {
             nodeGroup.getChildren().remove(tessellationMeshView);
         }
         Image image = null;
-        try {
-            image = WebCamUtils.takePicture();
-            System.out.println("got your little soul...");
-            tessellationMeshView = new TessellationMesh(image,
-                Color.GREEN, 1f, 100.0f, 2, false);
-            ambientLight.getScope().add(tessellationMeshView);
-            tessellationMeshView.setOnMouseClicked(click -> {
-                if (click.getClickCount() == 1 && click.isControlDown())
-                    tessellationMeshView.enableMatrix(!tessellationMeshView.matrixEnabled);
-                if (click.getClickCount() > 1)
-                    tessellationMeshView.setVisible(false);
-            });
-        } catch (Exception ex) {
-            System.out.println("Unable to capture image.");
+        if (webcamEnabled) {
+            try {
+                image = WebCamUtils.takePicture();
+                System.out.println("got your little soul...");
+                tessellationMeshView = new TessellationMesh(image,
+                    Color.GREEN, 1f, 100.0f, 2, false);
+                ambientLight.getScope().add(tessellationMeshView);
+                tessellationMeshView.setOnMouseClicked(click -> {
+                    if (click.getClickCount() == 1 && click.isControlDown())
+                        tessellationMeshView.enableMatrix(!tessellationMeshView.matrixEnabled);
+                    if (click.getClickCount() > 1)
+                        tessellationMeshView.setVisible(false);
+                });
+            } catch (Exception ex) {
+                System.out.println("Unable to capture image.");
+            }
         }
         final int top = (int) snappedTopInset();
         final int right = (int) snappedRightInset();

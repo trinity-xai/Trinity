@@ -42,7 +42,6 @@ import edu.jhuapl.trinity.javafx.components.panes.ManifoldControlPane;
 import edu.jhuapl.trinity.javafx.components.panes.RadarPlotPane;
 import edu.jhuapl.trinity.javafx.components.panes.RadialEntityOverlayPane;
 import edu.jhuapl.trinity.javafx.components.radial.AnimatedNeonCircle;
-import static edu.jhuapl.trinity.javafx.components.radial.HyperspaceMenu.slideInPane;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
@@ -57,13 +56,11 @@ import edu.jhuapl.trinity.javafx.renderers.GaussianMixtureRenderer;
 import edu.jhuapl.trinity.javafx.renderers.ManifoldRenderer;
 import edu.jhuapl.trinity.utils.AnalysisUtils;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
+import edu.jhuapl.trinity.utils.PCAConfig;
 import edu.jhuapl.trinity.utils.ResourceUtils;
+import edu.jhuapl.trinity.utils.Utils;
 import edu.jhuapl.trinity.utils.VisibilityMap;
 import edu.jhuapl.trinity.utils.umap.Umap;
-import java.io.File;
-import java.io.IOException;
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
 import javafx.animation.AnimationTimer;
 import javafx.animation.Timeline;
 import javafx.animation.Transition;
@@ -80,10 +77,13 @@ import javafx.scene.SubScene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
+import javafx.scene.effect.Glow;
 import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
@@ -107,6 +107,11 @@ import javafx.util.Duration;
 import org.fxyz3d.geometry.Point3D;
 import org.fxyz3d.scene.Skybox;
 import org.fxyz3d.utils.CameraTransformer;
+
+import java.io.File;
+import java.io.IOException;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -119,9 +124,8 @@ import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import javafx.scene.control.CheckMenuItem;
-import javafx.scene.effect.Glow;
-import javafx.scene.image.ImageView;
+
+import static edu.jhuapl.trinity.javafx.components.radial.HyperspaceMenu.slideInPane;
 
 /**
  * @author Sean Phillips
@@ -193,8 +197,8 @@ public class Projections3DPane extends StackPane implements
     Trajectory anchorTrajectory;
     Trajectory3D anchorTraj3D;
     Group trajectorySphereGroup;
-    Group trajectoryGroup;    
-    HashMap<Trajectory, Trajectory3D> trajToTraj3DMap = new HashMap<>(); 
+    Group trajectoryGroup;
+    HashMap<Trajectory, Trajectory3D> trajToTraj3DMap = new HashMap<>();
     double trajectoryScale = 1.0;
     int trajectoryTailSize = 5;
     double projectionScalar = 100.0;
@@ -220,7 +224,7 @@ public class Projections3DPane extends StackPane implements
 
     public List<FeatureVector> featureVectors = new ArrayList<>();
     public List<FeatureVector> hyperFeatures = new ArrayList<>();
-    
+
     public boolean meanCentered = true;
     public boolean autoScaling = true;
     public boolean colorByLabel = true;
@@ -229,7 +233,7 @@ public class Projections3DPane extends StackPane implements
     public double maxAbsValue = 1.0;
     public double meanCenteredMaxAbsValue = 1.0;
     public boolean pointToPointDistanceMode = false;
-    public boolean updatingTrajectories = true;
+    public boolean updatingTrajectories = false;
 
     public ConcurrentLinkedQueue<HyperspaceSeed> hyperspaceSeeds = new ConcurrentLinkedQueue<>();
     public ConcurrentLinkedQueue<Perspective3DNode> pNodes = new ConcurrentLinkedQueue<>();
@@ -261,7 +265,7 @@ public class Projections3DPane extends StackPane implements
     public List<String> featureLabels = new ArrayList<>();
     public Scene scene;
     Umap latestUmap = null;
-    
+
     public Projections3DPane(Scene scene) {
         this.scene = scene;
         cubeWorld = new ShadowCubeWorld(cubeSize, 100, true, featureVectors);
@@ -333,6 +337,8 @@ public class Projections3DPane extends StackPane implements
         trajectoryScale = 1.0;
         anchorTraj3D = JavaFX3DUtils.buildPolyLineFromTrajectory(1, 1,
             anchorTrajectory, Color.CYAN, trajectoryScale, sceneWidth, sceneHeight);
+        anchorTSM.visibleProperty().bind(anchorTraj3D.visibleProperty());
+
         extrasGroup.getChildren().add(anchorTraj3D);
         trajectoryGroup = new Group();
         trajectorySphereGroup = new Group();
@@ -346,40 +352,48 @@ public class Projections3DPane extends StackPane implements
             trajectorySphereGroup.getChildren().add(tsm);
         }
         extrasGroup.getChildren().add(0, trajectorySphereGroup);
-        extrasGroup.getChildren().add(0, trajectoryGroup);        
+        extrasGroup.getChildren().add(0, trajectoryGroup);
+        this.scene.addEventHandler(TrajectoryEvent.REFRESH_3D_TRAJECTORIES, e -> {
+            updateTrajectory3D(true);
+        });
+        this.scene.addEventHandler(TrajectoryEvent.AUTO_UDPATE_TRAJECTORIES, e -> {
+            updatingTrajectories = (boolean) e.eventObject;
+            if (updatingTrajectories)
+                updateTrajectory3D(false);
+        });
         this.scene.addEventHandler(TrajectoryEvent.TIMELINE_SHOW_TRAJECTORY, e -> {
             anchorTraj3D.setVisible((boolean) e.eventObject);
             trajectorySphereGroup.setVisible((boolean) e.eventObject);
         });
         this.scene.addEventHandler(TrajectoryEvent.TRAJECTORY_TAIL_SIZE, e -> {
             trajectoryTailSize = (int) e.eventObject;
-            updateTrajectory3D();
+            updateTrajectory3D(false);
         });
         this.scene.addEventHandler(TrajectoryEvent.TIMELINE_SHOW_CALLOUT, e -> {
             anchorCallout.setVisible((boolean) e.eventObject);
         });
-       this.scene.addEventHandler(TrajectoryEvent.NEW_TRAJECTORY_OBJECT, e -> {
-            Platform.runLater(()-> {
-                updateTrajectory3D();
+        this.scene.addEventHandler(TrajectoryEvent.NEW_TRAJECTORY_OBJECT, e -> {
+            Platform.runLater(() -> {
+                updateTrajectory3D(false);
             });
         });
 
         this.scene.addEventHandler(TrajectoryEvent.CLEAR_ALL_TRAJECTORIES, e -> {
-            Platform.runLater(()-> {
-                updateTrajectory3D();
+            Platform.runLater(() -> {
+                updateTrajectory3D(true);
             });
         });
-        
+
         this.scene.addEventHandler(TrajectoryEvent.TRAJECTORY_VISIBILITY_CHANGED, e -> {
             Trajectory trajectory = (Trajectory) e.eventObject;
             Trajectory3D traj3D = trajToTraj3DMap.get(trajectory);
-            if(null != traj3D) {
+            if (null != traj3D) {
                 traj3D.setVisible(trajectory.getVisible());
             }
         });
         this.scene.addEventHandler(TrajectoryEvent.TRAJECTORY_COLOR_CHANGED, e -> {
-            Platform.runLater(()-> {
-                updateTrajectory3D();
+            Platform.runLater(() -> {
+                updateTrajectory3D(false);
             });
         });
 
@@ -693,27 +707,27 @@ public class Projections3DPane extends StackPane implements
         Glow glow = new Glow(0.5);
 
         ImageView hyperspace = ResourceUtils.loadIcon("hyperspace", ICON_FIT_HEIGHT);
-        hyperspace.setEffect(glow); 
+        hyperspace.setEffect(glow);
         MenuItem projectUmapHyperspaceItem = new MenuItem("Project Hyperspace With UMAP", hyperspace);
         projectUmapHyperspaceItem.setOnAction(e -> projectHyperspace());
 
         ImageView hypersurface = ResourceUtils.loadIcon("hypersurface", ICON_FIT_HEIGHT);
-        hypersurface.setEffect(glow);        
+        hypersurface.setEffect(glow);
         MenuItem projectUmapHypersurfaceItem = new MenuItem("Project Hypersurface With UMAP", hypersurface);
         projectUmapHypersurfaceItem.setOnAction(e -> projectHypersurface());
 
         ImageView reset = ResourceUtils.loadIcon("camera", ICON_FIT_HEIGHT);
-        reset.setEffect(glow);        
+        reset.setEffect(glow);
         MenuItem resetViewItem = new MenuItem("Reset View", reset);
         resetViewItem.setOnAction(e -> resetView(1000, false));
 
         ImageView callouts = ResourceUtils.loadIcon("callouts", ICON_FIT_HEIGHT);
-        callouts.setEffect(glow);        
+        callouts.setEffect(glow);
         MenuItem clearCalloutsItem = new MenuItem("Clear Callouts", callouts);
         clearCalloutsItem.setOnAction(e -> radialOverlayPane.clearCallouts());
 
         ImageView manifold = ResourceUtils.loadIcon("manifold", ICON_FIT_HEIGHT);
-        manifold.setEffect(glow);        
+        manifold.setEffect(glow);
         MenuItem manifoldsItem = new MenuItem("Manifold Controls", manifold);
         manifoldsItem.setOnAction(e -> {
             Pane pathPane = App.getAppPathPaneStack();
@@ -745,12 +759,13 @@ public class Projections3DPane extends StackPane implements
         });
 
         CheckMenuItem updatingTrajectoriesItem = new CheckMenuItem("Auto Update Trajectories");
+        updatingTrajectoriesItem.setSelected(updatingTrajectories);
         updatingTrajectoriesItem.selectedProperty().addListener(cl ->
-                updatingTrajectories = updatingTrajectoriesItem.isSelected());
-        
+            updatingTrajectories = updatingTrajectoriesItem.isSelected());
+
         ContextMenu cm = new ContextMenu(
             projectUmapHyperspaceItem, projectUmapHypersurfaceItem,
-            resetViewItem, manifoldsItem, radarItem, 
+            resetViewItem, manifoldsItem, radarItem,
             clearCalloutsItem, updatingTrajectoriesItem);
 
         cm.setAutoFix(true);
@@ -780,7 +795,7 @@ public class Projections3DPane extends StackPane implements
         this.scene.addEventHandler(HyperspaceEvent.ADDED_FEATURE_LAYER, e ->
             changeFeatureLayer((FeatureLayer) e.object));
         this.scene.addEventHandler(HyperspaceEvent.ADDEDALL_FEATURE_LAYER, e ->
-            changeFeatureLayer((FeatureLayer) e.object));
+            changeFeatureLayer(null));
         this.scene.addEventHandler(HyperspaceEvent.UPDATED_FEATURE_LAYER, e ->
             changeFeatureLayer((FeatureLayer) e.object));
         this.scene.addEventHandler(HyperspaceEvent.REMOVED_FEATURE_LAYER, e -> {
@@ -955,7 +970,7 @@ public class Projections3DPane extends StackPane implements
                 fcf.writeContent();
             } catch (IOException ex) {
                 Logger.getLogger(Projections3DPane.class.getName()).log(Level.SEVERE, null, ex);
-            }                    
+            }
         });
         scene.addEventHandler(ManifoldEvent.CLEAR_DISTANCE_CONNECTORS, e -> {
             connectorsGroup.getChildren().removeIf(n -> n instanceof Trajectory3D);
@@ -1070,14 +1085,15 @@ public class Projections3DPane extends StackPane implements
         );
     }
 
-    public void updateTrajectory3D() {
+    public void updateTrajectory3D(boolean overrideAuto) {
         //Clear out previous trajectory nodes
+        boolean wasVisible = anchorTraj3D.isVisible();
         extrasGroup.getChildren().remove(anchorTraj3D);
         trajectorySphereGroup.getChildren().clear();
-
         anchorTraj3D = JavaFX3DUtils.buildPolyLineFromTrajectory(anchorTrajectory,
             8.0f, Color.ALICEBLUE, trajectoryTailSize,
             trajectoryScale, sceneWidth, sceneHeight);
+        anchorTraj3D.setVisible(wasVisible);
         extrasGroup.getChildren().add(0, anchorTraj3D);
         for (Point3D point : anchorTraj3D.points) {
             TriaxialSpheroidMesh tsm = createEllipsoid(anchorTraj3D.width / 4.0, anchorTraj3D.width / 4.0, anchorTraj3D.width / 4.0, Color.LIGHTBLUE);
@@ -1086,30 +1102,34 @@ public class Projections3DPane extends StackPane implements
             tsm.setTranslateZ(point.z);
             trajectorySphereGroup.getChildren().add(tsm);
         }
-        if(null == latestUmap) 
+        if (null == latestUmap)
             return; //can't do this without a transform matrix
-        //now rebuild all the generic trajectories
-        trajectoryGroup.getChildren().clear();
-        trajToTraj3DMap.clear();
-        //@TODO SMP check to see if each trajectory is visible
-        //no need to do all the work to transform and render lines if they're not visible
-        //Maybe short cut for now is a simple boolean variable blocking all updates
-        for(Trajectory trajectory : Trajectory.getTrajectories()) {
-            FeatureCollection fc = Trajectory.globalTrajectoryToFeatureCollectionMap.get(trajectory);
-            trajectory.states.clear();
-            //These are the original feature values. 
-            //They need to be transformed using the current UMAP transformation matrix
-            ArrayList<double[]> newStates = transformXYZ(fc);
-            
-            trajectory.states.addAll(newStates);
-            Trajectory3D traj3D = JavaFX3DUtils.buildPolyLineFromTrajectory(
-                trajectory, 8.0f, trajectory.getColor(),
-                trajectory.states.size(), trajectoryScale, sceneWidth, sceneHeight);
-            trajectoryGroup.getChildren().add(0, traj3D);
-            trajToTraj3DMap.put(trajectory, traj3D);
-            traj3D.setVisible(trajectory.getVisible());
-        }             
+
+        if (updatingTrajectories || overrideAuto) {
+            //now rebuild all the generic trajectories
+            trajectoryGroup.getChildren().clear();
+            trajToTraj3DMap.clear();
+            //@TODO SMP check to see if each trajectory is visible
+            //no need to do all the work to transform and render lines if they're not visible
+            //Maybe short cut for now is a simple boolean variable blocking all updates
+            for (Trajectory trajectory : Trajectory.getTrajectories()) {
+                FeatureCollection fc = Trajectory.globalTrajectoryToFeatureCollectionMap.get(trajectory);
+                trajectory.states.clear();
+                //These are the original feature values.
+                //They need to be transformed using the current UMAP transformation matrix
+                ArrayList<double[]> newStates = transformXYZ(fc);
+
+                trajectory.states.addAll(newStates);
+                Trajectory3D traj3D = JavaFX3DUtils.buildPolyLineFromTrajectory(
+                    trajectory, 8.0f, trajectory.getColor(),
+                    trajectory.states.size(), trajectoryScale, sceneWidth, sceneHeight);
+                trajectoryGroup.getChildren().add(0, traj3D);
+                trajToTraj3DMap.put(trajectory, traj3D);
+                traj3D.setVisible(trajectory.getVisible());
+            }
+        }
     }
+
     public Manifold3D makeHull(List<Point3D> labelMatchedPoints, String label) {
         Manifold3D manifold3D = new Manifold3D(
             labelMatchedPoints, true, true, true
@@ -1118,7 +1138,7 @@ public class Projections3DPane extends StackPane implements
             if ((e.getButton() == MouseButton.PRIMARY && e.isControlDown())
                 || (e.getButton() == MouseButton.PRIMARY && pointToPointDistanceMode)) {
                 processDistanceClick(manifold3D);
-            }            
+            }
         });
         manifolds.add(manifold3D);
         manifoldGroup.getChildren().add(manifold3D);
@@ -1164,7 +1184,7 @@ public class Projections3DPane extends StackPane implements
 
     private void changeFactorLabels(FactorLabel factorLabel) {
         sphereToFeatureVectorMap.forEach((s, fv) -> {
-            if (fv.getLabel().contentEquals(factorLabel.getLabel())) {
+            if (null != fv.getLabel() && fv.getLabel().contentEquals(factorLabel.getLabel())) {
                 s.setVisible(factorLabel.getVisible());
                 ((PhongMaterial) s.getMaterial()).setDiffuseColor(factorLabel.getColor());
             }
@@ -1368,7 +1388,7 @@ public class Projections3DPane extends StackPane implements
     }
 
     public void updateView(boolean forcePNodeUpdate) {
-        if(null != scatterMesh3D)
+        if (null != scatterMesh3D)
             scatterMesh3D.setVisible(false);
         ellipsoidGroup.getChildren().filtered(n -> n instanceof Sphere).forEach(s -> {
             ((Sphere) s).setRadius(point3dSize);
@@ -1497,7 +1517,7 @@ public class Projections3DPane extends StackPane implements
         if (colorByLabel)
             if (null == seed.label)
                 pNode.nodeColor = Color.ALICEBLUE;
-            else if(seed.label.isBlank())
+            else if (seed.label.isBlank())
                 pNode.nodeColor = Color.ALICEBLUE;
             else
                 pNode.nodeColor = FactorLabel.getColorByLabel(seed.label);
@@ -1534,7 +1554,7 @@ public class Projections3DPane extends StackPane implements
     private void updatePNodeColorsAndVisibility() {
         pNodes.parallelStream().forEach(p -> {
             if (colorByLabel)
-                if (p.factorAnalysisSeed.label.isBlank())
+                if (null == p.factorAnalysisSeed.label || p.factorAnalysisSeed.label.isBlank())
                     p.nodeColor = Color.ALICEBLUE;
                 else
                     p.nodeColor = FactorLabel.getColorByLabel(p.factorAnalysisSeed.label);
@@ -1700,7 +1720,7 @@ public class Projections3DPane extends StackPane implements
                 fv.getData().get(2) * projectionScalar
             });
         }
-        updateTrajectory3D();
+        updateTrajectory3D(false);
         if (index < featureVectors.size()) {
             scene.getRoot().fireEvent(new FeatureVectorEvent(
                 FeatureVectorEvent.SELECT_FEATURE_VECTOR,
@@ -1710,22 +1730,23 @@ public class Projections3DPane extends StackPane implements
             radialOverlayPane.updateCalloutHeadPoint(anchorTSM, anchorCallout, subScene);
         }
     }
+
     private ArrayList<double[]> transformXYZ(FeatureCollection fc) {
         ArrayList<double[]> states = new ArrayList<>();
-        if(null == latestUmap || null == latestUmap.getmEmbedding())
+        if (null == latestUmap || null == latestUmap.getmEmbedding())
             return states;
         float[][] transformed = AnalysisUtils.transformUMAP(fc, latestUmap);
-        for(int row=0;row<transformed.length;row++){
-            double [] stateVector = new double[transformed[row].length];
-            for(int columns=0;columns<transformed[row].length;columns++){
-                stateVector[columns] = transformed[row][columns]*projectionScalar;
-                if(columns == 1 && reflectY)
-                    stateVector[columns] = -stateVector[columns];                
+        for (int row = 0; row < transformed.length; row++) {
+            double[] stateVector = new double[transformed[row].length];
+            for (int columns = 0; columns < transformed[row].length; columns++) {
+                stateVector[columns] = transformed[row][columns] * projectionScalar;
+                if (columns == 1 && reflectY)
+                    stateVector[columns] = -stateVector[columns];
             }
             states.add(stateVector);
         }
         return states;
-    }    
+    }
 
     /**
      * @param gaussianMixture
@@ -1800,14 +1821,6 @@ public class Projections3DPane extends StackPane implements
             if (reflectY) {
                 tsm.setTranslateY(tsm.getTranslateY() * -1);
             }
-
-            //@DEBUG SMP
-            Sphere sphere = new Sphere(10);
-            sphere.setTranslateX(xCoord - quarterSceneWidth);
-            sphere.setTranslateY(yCoord - quarterSceneWidth);
-            sphere.setTranslateZ(zCoord - quarterSceneWidth);
-            sphere.setMaterial(new PhongMaterial(Color.ALICEBLUE));
-            Platform.runLater(() -> debugGroup.getChildren().add(sphere));
 
             Platform.runLater(() -> {
                 //add to the 3D scene
@@ -1915,18 +1928,15 @@ public class Projections3DPane extends StackPane implements
                     new Font("Consolas", 20), Color.GREEN));
         });
         clearAll();
+        ellipsoidGroup.getChildren().clear();
+        sphereToFeatureVectorMap.clear();
         Platform.runLater(() -> {
             getScene().getRoot().fireEvent(
                 new CommandTerminalEvent("Projecting Feature Collection... ",
                     new Font("Consolas", 20), Color.GREEN));
         });
-
-        ellipsoidGroup.getChildren().clear();
-        sphereToFeatureVectorMap.clear();
-
-        //@TODO SMP Fix projection scalar so it isn't hard coded
         //Make a 3D sphere for each projected feature vector
-        for(int i=0;i<featureCollection.getFeatures().size();i++){ 
+        for (int i = 0; i < featureCollection.getFeatures().size(); i++) {
             FeatureVector featureVector = featureCollection.getFeatures().get(i);
             Sphere sphere = new Sphere(point3dSize);
             PhongMaterial mat = new PhongMaterial(
@@ -1946,16 +1956,16 @@ public class Projections3DPane extends StackPane implements
                 javafx.geometry.Point3D p1 = new javafx.geometry.Point3D(
                     sphere.getTranslateX(), sphere.getTranslateY(), sphere.getTranslateZ());
                 scene.getRoot().fireEvent(new ManifoldEvent(
-                    ManifoldEvent.SELECT_PROJECTION_POINT3D, p1));                
+                    ManifoldEvent.SELECT_PROJECTION_POINT3D, p1));
 
                 miniCrosshair.size = point3dSize * 4.0;
                 miniCrosshair.setCenter(p1);
                 setCircleRadiusByDistance(highlighterNeonCircle, sphere);
                 //update selection listeners with original hyper dimensions (eg RADAR plot)
-                if(sphereIndex < hyperFeatures.size())
+                if (sphereIndex < hyperFeatures.size())
                     scene.getRoot().fireEvent(new FeatureVectorEvent(
                         FeatureVectorEvent.SELECT_FEATURE_VECTOR,
-                        hyperFeatures.get(sphereIndex), featureLabels));                
+                        hyperFeatures.get(sphereIndex), featureLabels));
             });
 
             //Add click handler to popup callout or point distance measurements
@@ -1981,6 +1991,7 @@ public class Projections3DPane extends StackPane implements
         }
         trimQueueNow();
     }
+
     private void processDistanceClick(Manifold3D manifold3D) {
         System.out.println("Point: " + manifold3D.toString());
         if (null == selectedManifoldA) {
@@ -2015,25 +2026,26 @@ public class Projections3DPane extends StackPane implements
             //Creates a new distance trajectory (Trajectory3D polyline)
             //returns midpoint so we can anchor a numeric distance label
             Sphere midPointSphere = updateDistanceTrajectory(null, distanceObject);
-            Callout ddc = DistanceDataCallout.createByManifold3D(
-                    midPointSphere, selectedManifoldA.getManifold(), 
-                new Point3D(p1.getX(),p1.getY(),p1.getZ()), subScene);
-            radialOverlayPane.addCallout(ddc, midPointSphere); 
-//            radialOverlayPane.updateCalloutHeadPoints(subScene);
-            ddc.play();
-            distanceTotrajectory3DMap.get(distanceObject).addEventHandler(
-                MouseEvent.MOUSE_CLICKED, e -> {
-                    ddc.setVisible(true);
-                    ddc.play();
-                });
-            
+//            Callout ddc = DistanceDataCallout.createByManifold3D(
+//                    midPointSphere, selectedManifoldA.getManifold(),
+//                new Point3D(p1.getX(),p1.getY(),p1.getZ()), subScene);
+//            radialOverlayPane.addCallout(ddc, midPointSphere);
+//
+//            ddc.play();
+//            distanceTotrajectory3DMap.get(distanceObject).addEventHandler(
+//                MouseEvent.MOUSE_CLICKED, e -> {
+//                    ddc.setVisible(true);
+//                    ddc.play();
+//                });
+
             //Clear selected spheres to null state
             selectedSphereA = null;
-            selectedSphereB = null;        
+            selectedSphereB = null;
             selectedManifoldA = null;
             selectedManifoldB = null;
         }
     }
+
     private void processDistanceClick(Sphere sphere) {
         System.out.println("Point: " + sphere.toString());
         if (null == selectedSphereA) {
@@ -2090,6 +2102,7 @@ public class Projections3DPane extends StackPane implements
             Label label = shape3DToLabel.remove(shape3D);
             labelGroup.getChildren().remove(label);
             distanceToShape3DMap.remove(distance);
+
         }
         //Build trajectory by 3D coordinate states
         Trajectory distanceTrajectory = new Trajectory("Distance Line");
@@ -2111,7 +2124,7 @@ public class Projections3DPane extends StackPane implements
         midpointSphere.setTranslateY(midpoint.getY());
         midpointSphere.setTranslateZ(midpoint.getZ());
         NumberFormat doubleFormat = new DecimalFormat("0.0000");
-        Label midpointLabel = new Label(distance.getLabel() + "\n" 
+        Label midpointLabel = new Label(distance.getLabel() + "\n"
             + distance.getMetric() + ": " + doubleFormat.format(distance.getValue()));
         midpointLabel.setTextAlignment(TextAlignment.LEFT);
         midpointLabel.setMouseTransparent(true);
@@ -2119,7 +2132,7 @@ public class Projections3DPane extends StackPane implements
         shape3DToLabel.put(midpointSphere, midpointLabel);
         distanceToShape3DMap.put(distance, midpointSphere);
         labelGroup.getChildren().add(midpointLabel);
-                    
+
         Trajectory3D newDistanceTraj3D = JavaFX3DUtils.buildPolyLineFromTrajectory(
             distanceTrajectory, distance.getWidth(), distance.getColor(),
             trajectoryTailSize, trajectoryScale, sceneWidth, sceneHeight);
@@ -2141,9 +2154,23 @@ public class Projections3DPane extends StackPane implements
             midpointLabel.setScaleZ(1);
             midpointSphere.setRadius(1);
         });
-        
+
         distanceTotrajectory3DMap.put(distance, newDistanceTraj3D);
         connectorsGroup.getChildren().add(0, newDistanceTraj3D);
+
+        if (null != selectedManifoldA) {
+            Callout ddc = DistanceDataCallout.createByManifold3D(
+                midpointSphere, selectedManifoldA.getManifold(),
+                new Point3D(distance.getPoint1().getX(), distance.getPoint1().getY(),
+                    distance.getPoint1().getZ()), subScene);
+            radialOverlayPane.addCallout(ddc, midpointSphere);
+            ddc.play();
+            newDistanceTraj3D.addEventHandler(
+                MouseEvent.MOUSE_CLICKED, e -> {
+                    ddc.setVisible(true);
+                    ddc.play();
+                });
+        }
         updateFloatingNodes();
         return midpointSphere;
     }
@@ -2264,32 +2291,34 @@ public class Projections3DPane extends StackPane implements
         updateEllipsoids();
         cubeWorld.redraw(true);
     }
+
     private List<Point3D> getPointsByLabel(boolean useVisiblePoints, String label) {
         Perspective3DNode[] pNodeArray = pNodes.toArray(Perspective3DNode[]::new);
         List<Point3D> labelMatchedPoints = null;
-        if(null == label)
+        if (null == label)
             labelMatchedPoints = Arrays.stream(pNodeArray)
-            .filter(p -> p.visible)
-            .map(p -> new Point3D(p.xCoord*projectionScalar, 
-                reflectY ? p.yCoord*-projectionScalar : p.yCoord*projectionScalar, 
-                p.zCoord*projectionScalar))
-            .collect(Collectors.toList());
-        else if(useVisiblePoints)
+                .filter(p -> p.visible)
+                .map(p -> new Point3D(p.xCoord * projectionScalar,
+                    reflectY ? p.yCoord * -projectionScalar : p.yCoord * projectionScalar,
+                    p.zCoord * projectionScalar))
+                .collect(Collectors.toList());
+        else if (useVisiblePoints)
             labelMatchedPoints = Arrays.stream(pNodeArray)
-            .filter(p -> p.factorAnalysisSeed.label.contentEquals(label) && p.visible)
-            .map(p -> new Point3D(p.xCoord*projectionScalar, 
-                reflectY ? p.yCoord*-projectionScalar : p.yCoord*projectionScalar, 
-                p.zCoord*projectionScalar))
-            .collect(Collectors.toList());
+                .filter(p -> p.factorAnalysisSeed.label.contentEquals(label) && p.visible)
+                .map(p -> new Point3D(p.xCoord * projectionScalar,
+                    reflectY ? p.yCoord * -projectionScalar : p.yCoord * projectionScalar,
+                    p.zCoord * projectionScalar))
+                .collect(Collectors.toList());
         else
             labelMatchedPoints = Arrays.stream(pNodeArray)
-            .filter(p -> p.factorAnalysisSeed.label.contentEquals(label))
-            .map(p -> new Point3D(p.xCoord*projectionScalar, 
-                reflectY ? p.yCoord*-projectionScalar : p.yCoord*projectionScalar, 
-                p.zCoord*projectionScalar))
-            .collect(Collectors.toList());
+                .filter(p -> p.factorAnalysisSeed.label.contentEquals(label))
+                .map(p -> new Point3D(p.xCoord * projectionScalar,
+                    reflectY ? p.yCoord * -projectionScalar : p.yCoord * projectionScalar,
+                    p.zCoord * projectionScalar))
+                .collect(Collectors.toList());
         return labelMatchedPoints;
     }
+
     @Override
     public void addManifold(Manifold manifold, Manifold3D manifold3D) {
         System.out.println("adding manifold to Projections View.");
@@ -2300,20 +2329,21 @@ public class Projections3DPane extends StackPane implements
             if ((e.getButton() == MouseButton.PRIMARY && e.isControlDown())
                 || (e.getButton() == MouseButton.PRIMARY && pointToPointDistanceMode)) {
                 processDistanceClick(manifold3D);
-            }            
+            }
 
         });
         manifolds.add(manifold3D);
         manifoldGroup.getChildren().add(manifold3D);
         shape3DToLabel.putAll(manifold3D.shape3DToLabel);
-        updateFloatingNodes();        
+        updateFloatingNodes();
     }
+
     @Override
     public void makeManifold(boolean useVisiblePoints, String label) {
         //Create Manifold Object based on points that share the label
         List<Point3D> labelMatchedPoints = getPointsByLabel(useVisiblePoints, label);
         ArrayList<javafx.geometry.Point3D> fxPoints = labelMatchedPoints.stream()
-            .map(p3D -> new javafx.geometry.Point3D(p3D.x,p3D.y, p3D.z))
+            .map(p3D -> new javafx.geometry.Point3D(p3D.x, p3D.y, p3D.z))
             .collect(Collectors.toCollection(ArrayList::new));
         Manifold manifold = new Manifold(fxPoints, label, label, sceneColor);
         //Create the 3D manifold shape
@@ -2330,7 +2360,7 @@ public class Projections3DPane extends StackPane implements
         //announce to the world of the new manifold and its shape
         System.out.println("Manifold3D generation complete for " + label);
         getScene().getRoot().fireEvent(new ManifoldEvent(
-        ManifoldEvent.MANIFOLD3D_OBJECT_GENERATED, manifold, manifold3D));
+            ManifoldEvent.MANIFOLD3D_OBJECT_GENERATED, manifold, manifold3D));
     }
 
     @Override
@@ -2357,8 +2387,105 @@ public class Projections3DPane extends StackPane implements
     public void setHyperDimensionFeatures(FeatureCollection originalFC) {
         hyperFeatures = originalFC.getFeatures();
     }
-    public void projectFeatureCollection(FeatureCollection originalFC, Umap umap) {
 
+    public void projectFeatureCollection(FeatureCollection originalFC, PCAConfig config) {
+        Task task = new Task() {
+            @Override
+            protected FeatureCollection call() throws Exception {
+                Platform.runLater(() -> {
+                    ProgressStatus ps = new ProgressStatus("Fitting PCA Projection...", 0.5);
+                    ps.fillStartColor = Color.AZURE;
+                    ps.fillEndColor = Color.LIME;
+                    ps.innerStrokeColor = Color.AZURE;
+                    ps.outerStrokeColor = Color.LIME;
+                    scene.getRoot().fireEvent(
+                        new ApplicationEvent(ApplicationEvent.UPDATE_BUSY_INDICATOR, ps));
+                });
+
+                double[][] featureArray = originalFC.getFeatures().stream()
+                    .map(FeatureVector.mapToStateArray)
+                    .toArray(double[][]::new);
+                System.out.println("featureArray sizes: "
+                    + featureArray.length + " " + featureArray[0].length);
+
+                int start = config.startIndex;
+                if (start < 0 || start >= featureArray.length) {
+                    System.out.println("PCA Start index no bueno... setting to Zero.");
+                    start = 0;
+                }
+                int end = config.endIndex;
+                if (end <= start
+                    || end >= originalFC.getFeatures().size()
+                    || end <= 0) {
+                    System.out.println("PCA End index no bueno... setting to Max.");
+                    end = originalFC.getFeatures().size() - 1;
+                }
+
+                int truncSize = featureArray[0].length;
+                double[][] truncArray = originalFC.getFeatures().stream()
+                    .skip(start).limit(end)
+                    .map((FeatureVector t) -> {
+                        double[] states = new double[truncSize];
+                        for (int i = 0; i < truncSize && i < states.length; i++) {
+                            states[i] = t.getData().get(i);
+                        }
+                        return states;
+                    })
+                    .toArray(double[][]::new);
+                System.out.println("truncArray sizes: "
+                    + truncArray.length + " " + truncArray[0].length);
+
+                System.out.print("PCA... ");
+                long startTime = System.nanoTime();
+                double[][] pcaProjection = null;
+                if (config.method == AnalysisUtils.ANALYSIS_METHOD.SVD)
+                    pcaProjection = AnalysisUtils.doCommonsSVD(truncArray);
+                else
+                    pcaProjection = AnalysisUtils.doCommonsPCA(truncArray);
+                Utils.printTotalTime(startTime);
+
+                System.out.println("mapping projected PCA data back to FeatureVectors...");
+                FeatureCollection projectedFC = FeatureCollection.fromData(
+                    pcaProjection, config.pcaDimensions, config.scaling);
+                for (int i = 0; i < projectedFC.getFeatures().size() - 1; i++) {
+                    if (i >= originalFC.getFeatures().size())
+                        break;
+                    FeatureVector origFV = originalFC.getFeatures().get(i);
+                    projectedFC.getFeatures().get(i).setLabel(origFV.getLabel());
+                    projectedFC.getFeatures().get(i).setScore(origFV.getScore());
+                    projectedFC.getFeatures().get(i).setImageURL(origFV.getImageURL());
+                    projectedFC.getFeatures().get(i).setText(origFV.getText());
+                    projectedFC.getFeatures().get(i).setMetaData(origFV.getMetaData());
+                }
+                Platform.runLater(() -> {
+                    ProgressStatus ps = new ProgressStatus("", -1);
+                    scene.getRoot().fireEvent(
+                        new ApplicationEvent(ApplicationEvent.HIDE_BUSY_INDICATOR, ps));
+                });
+                return projectedFC;
+            }
+        };
+        task.setOnSucceeded(e -> {
+            FeatureCollection fc;
+            try {
+                setHyperDimensionFeatures(originalFC);
+                fc = (FeatureCollection) task.get();
+                if (null != originalFC.getDimensionLabels()) {
+                    setDimensionLabels(originalFC.getDimensionLabels());
+                    fc.setDimensionLabels(originalFC.getDimensionLabels());
+                }
+                addFeatureCollection(fc);
+                updateTrajectory3D(false);
+            } catch (InterruptedException | ExecutionException ex) {
+                Logger.getLogger(Projections3DPane.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        });
+        Thread thread = new Thread(task);
+        thread.setDaemon(true);
+        thread.start();
+    }
+
+    public void projectFeatureCollection(FeatureCollection originalFC, Umap umap) {
         Task task = new Task() {
             @Override
             protected FeatureCollection call() throws Exception {
@@ -2372,6 +2499,16 @@ public class Projections3DPane extends StackPane implements
                     scene.getRoot().fireEvent(
                         new ApplicationEvent(ApplicationEvent.UPDATE_BUSY_INDICATOR, ps));
                 });
+//                //@EXPERIMENT SMP show we can do a PCA prior to UMAP FIT
+//                long startTime = System.nanoTime();
+//                double[][]featureArray = originalFC.getFeatures().stream()
+//                    .map(FeatureVector.mapToStateArray)
+//                    .toArray(double[][]::new);
+//                System.out.println("featureArray sizes: "
+//                    + featureArray.length + " " + featureArray[0].length);
+//                double[][] pcaProjection = AnalysisUtils.doCommonsPCA(featureArray);
+//                System.out.print("PCA... ");
+//                Utils.printTotalTime(startTime);
 
                 double[][] umapMatrix = AnalysisUtils.fitUMAP(originalFC, umap);
                 latestUmap = umap;
@@ -2407,12 +2544,12 @@ public class Projections3DPane extends StackPane implements
             try {
                 setHyperDimensionFeatures(originalFC);
                 fc = (FeatureCollection) task.get();
-                if(null != originalFC.getDimensionLabels()) {
+                if (null != originalFC.getDimensionLabels()) {
                     setDimensionLabels(originalFC.getDimensionLabels());
                     fc.setDimensionLabels(originalFC.getDimensionLabels());
                 }
                 addFeatureCollection(fc);
-                updateTrajectory3D();
+                updateTrajectory3D(false);
             } catch (InterruptedException | ExecutionException ex) {
                 Logger.getLogger(Projections3DPane.class.getName()).log(Level.SEVERE, null, ex);
             }

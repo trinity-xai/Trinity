@@ -30,7 +30,9 @@ public class TrajectoryEvent extends Event {
 
     public Object eventObject;
     public Object eventObject2;
-        
+
+    public static final EventType<TrajectoryEvent> REFRESH_3D_TRAJECTORIES = new EventType(ANY, "REFRESH_3D_TRAJECTORIES");
+    public static final EventType<TrajectoryEvent> AUTO_UDPATE_TRAJECTORIES = new EventType(ANY, "AUTO_UDPATE_TRAJECTORIES");
     public static final EventType<TrajectoryEvent> CLEAR_ALL_TRAJECTORIES = new EventType(ANY, "CLEAR_ALL_TRAJECTORIES");
     public static final EventType<TrajectoryEvent> TRAJECTORY_VISIBILITY_CHANGED = new EventType(ANY, "TRAJECTORY_VISIBILITY_CHANGED");
     public static final EventType<TrajectoryEvent> TRAJECTORY_COLOR_CHANGED = new EventType(ANY, "TRAJECTORY_COLOR_CHANGED");
@@ -49,6 +51,7 @@ public class TrajectoryEvent extends Event {
         this(arg0);
         this.eventObject = arg1;
     }
+
     public TrajectoryEvent(EventType<? extends Event> arg0, Object eventObject, Object eventObject2) {
         this(arg0);
         this.eventObject = eventObject;

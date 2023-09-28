@@ -131,7 +131,7 @@ import static edu.jhuapl.trinity.javafx.components.radial.HyperspaceMenu.slideIn
  */
 
 public class Hypersurface3DPane extends StackPane
-    implements SemanticMapRenderer, FeatureVectorRenderer { 
+    implements SemanticMapRenderer, FeatureVectorRenderer {
     public static double DEFAULT_INTRO_DISTANCE = -60000.0;
     public static double DEFAULT_ZOOM_TIME_MS = 500.0;
     public static double CHIP_FIT_WIDTH = 200;

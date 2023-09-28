@@ -88,7 +88,7 @@ public class Trajectory3D extends PolyLine3D {
 
     private static Function<List<double[]>, List<Point3D>> statesToPoints = (states) -> {
         List<Point3D> newList = new ArrayList<>();
-        for(double [] state : states) {
+        for (double[] state : states) {
             newList.add(new Point3D(state[0], state[1], state[2]));
         }
         return newList;

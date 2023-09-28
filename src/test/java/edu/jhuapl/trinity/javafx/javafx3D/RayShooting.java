@@ -25,7 +25,6 @@ import javafx.animation.PauseTransition;
 import javafx.animation.Transition;
 import javafx.application.Application;
 import javafx.geometry.Insets;
-import javafx.geometry.Point2D;
 import javafx.geometry.Point3D;
 import javafx.scene.AmbientLight;
 import javafx.scene.Group;
@@ -51,7 +50,6 @@ import javafx.stage.Stage;
 import javafx.util.Duration;
 import org.fxyz3d.geometry.MathUtils;
 import org.fxyz3d.geometry.Ray;
-import org.fxyz3d.shapes.Spheroid;
 import org.fxyz3d.utils.CameraTransformer;
 
 /**
@@ -162,7 +160,7 @@ public class RayShooting extends Application {
         stackPane.getChildren().addAll(bpOilSpill);
 
         createMesh();
-        allLight = new AmbientLight(Color.color(1,1,1,0.1));
+        allLight = new AmbientLight(Color.color(1, 1, 1, 0.1));
         allLight.getScope().addAll(targetGroup);
         sceneRoot.getChildren().addAll(allLight, targetGroup);
 
@@ -247,15 +245,15 @@ public class RayShooting extends Application {
             if (fireRay) {
 //                Point3D o = CameraHelper.pickProjectPlane(camera, e.getX(), e.getY());
 //                  Point2D p2D = subScene.screenToLocal(e.getX(), e.getY());
-       
-                  Point3D o = new Point3D(cameraTransform.t.getTx(), cameraTransform.t.getTy(), camera.getTranslateZ());
+
+                Point3D o = new Point3D(cameraTransform.t.getTx(), cameraTransform.t.getTy(), camera.getTranslateZ());
                 System.out.println(o.toString());
 //                Point3D o1 = subScene.sceneToLocal(e.getX(), e.getY(), camera.getTranslateZ());
 //                System.out.println(o1.toString());
                 if (e.isPrimaryButtonDown()) {
                     // set Target and Direction
                     Point3D t = Point3D.ZERO.add(target2.getTranslateX(), target2.getTranslateY(), target2.getTranslateZ()),
-                            d = t.subtract(o);
+                        d = t.subtract(o);
                     //Build the Ray
                     Ray r = new Ray(o, d);
                     double dist = t.distance(o);
@@ -268,7 +266,7 @@ public class RayShooting extends Application {
                 } // repeat for other target as well
                 else if (e.isSecondaryButtonDown()) {
                     Point3D tgt = Point3D.ZERO.add(target1.getTranslateX(), target1.getTranslateY(), target1.getTranslateZ()),
-                            dir = tgt.subtract(o);
+                        dir = tgt.subtract(o);
 
                     Ray r = new Ray(o, dir);
                     double dist = tgt.distance(o);
@@ -278,7 +276,8 @@ public class RayShooting extends Application {
                     }
                     e.consume();
                 }
-            }e.consume();
+            }
+            e.consume();
         });
     }
 

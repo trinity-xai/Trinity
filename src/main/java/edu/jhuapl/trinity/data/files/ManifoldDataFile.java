@@ -23,6 +23,7 @@ package edu.jhuapl.trinity.data.files;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.jhuapl.trinity.data.messages.ManifoldData;
+
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
@@ -72,8 +73,6 @@ public class ManifoldDataFile extends File implements Transferable {
     public static boolean isManifoldDataFile(File file) throws IOException {
         String body = Files.readString(file.toPath());
         return ManifoldData.isManifoldData(body);
-//        return firstLine.isPresent() &&
-//        (firstLine.get().contains(FILE_DESC1) || firstLine.get().contains(FILE_DESC2));
     }
 
     /**

@@ -53,9 +53,9 @@ public class ManifoldListItem extends VBox {
         visibleCheckBox.setSelected(true);
 
         HBox topHBox = new HBox(5, visibleCheckBox, manifoldNameTextField);
-        HBox bottomHBox = new HBox(5, label );
-        
-        getChildren().addAll(topHBox, bottomHBox );
+        HBox bottomHBox = new HBox(5, label);
+
+        getChildren().addAll(topHBox, bottomHBox);
         setSpacing(2);
         visibleCheckBox.selectedProperty().addListener(cl -> {
             if (null != visibleCheckBox.getScene()) {

@@ -344,6 +344,6 @@ public class HyperspaceMenu extends RadialEntity {
         }));
         addMenuItem(new LitRadialMenuItem(ITEM_SIZE, "Clear Callouts", callouts, e -> {
             hyperspace3DPane.clearCallouts();
-        }));        
+        }));
     }
 }

@@ -22,8 +22,9 @@ package edu.jhuapl.trinity.data.messages;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import java.util.function.Function;
 import org.fxyz3d.geometry.Point3D;
+
+import java.util.function.Function;
 
 /**
  * @author Sean Phillips
@@ -32,9 +33,9 @@ import org.fxyz3d.geometry.Point3D;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class P3D extends MessageData {
-    public static Function<Point3D, P3D> fxyzPoint3DToP3D = 
+    public static Function<Point3D, P3D> fxyzPoint3DToP3D =
         p -> new P3D(p.x, p.y, p.z);
-    public static Function<P3D,Point3D> p3DToFxyzPoint3D = 
+    public static Function<P3D, Point3D> p3DToFxyzPoint3D =
         p -> new Point3D(p.x, p.y, p.z);
 
     public static final String TYPESTRING = "p3d";
@@ -56,6 +57,7 @@ public class P3D extends MessageData {
 
     public P3D() {
     }
+
     public P3D(double x, double y, double z) {
         this.x = x;
         this.y = y;

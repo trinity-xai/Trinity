@@ -25,11 +25,6 @@ import edu.jhuapl.trinity.javafx.components.PointListItem;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.Manifold3D;
 import edu.jhuapl.trinity.utils.ResourceUtils;
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
-import java.util.ArrayList;
-import java.util.List;
-import static java.util.stream.Collectors.toList;
 import javafx.geometry.Insets;
 import javafx.geometry.Point3D;
 import javafx.geometry.Pos;
@@ -45,6 +40,13 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.util.ArrayList;
+import java.util.List;
+
+import static java.util.stream.Collectors.toList;
+
 /**
  * @author Sean Phillips
  */
@@ -59,21 +61,21 @@ public class Shape3DControlPane extends LitPathPane {
     private Label rotateYLabel;
     private Label rotateZLabel;
     private ListView<PointListItem> pointListView;
-    
+
     /**
      * Format for floating coordinate label
      */
     private NumberFormat format = new DecimalFormat("0.00");
     private Manifold3D manifold3D = null;
-    
+
     private static BorderPane createContent() {
         BorderPane bpOilSpill = new BorderPane();
         return bpOilSpill;
     }
 
     public Shape3DControlPane(Scene scene, Pane parent) {
-        super(scene, parent, 600, 400, createContent(), 
-        "Geometry Controls", "", 300.0, 400.0);
+        super(scene, parent, 600, 400, createContent(),
+            "Geometry Controls", "", 300.0, 400.0);
         this.scene = scene;
 
         bp = (BorderPane) this.contentPane;
@@ -84,7 +86,7 @@ public class Shape3DControlPane extends LitPathPane {
         scaleSlider.setSnapToTicks(true);
         scaleLabel.setText("Scale " + format.format(scaleSlider.getValue()));
         scaleSlider.valueProperty().addListener((ov, t, t1) -> {
-        scaleLabel.setText("Scale " + format.format(scaleSlider.getValue()));
+            scaleLabel.setText("Scale " + format.format(scaleSlider.getValue()));
             scene.getRoot().fireEvent(new ManifoldEvent(
                 ManifoldEvent.MANIFOLD_SET_SCALE, t.doubleValue(), manifold3D.getManifold()));
         });
@@ -139,14 +141,14 @@ public class Shape3DControlPane extends LitPathPane {
         auto.setSelected(true);
         refresh.setOnAction(e -> updateManifold());
         auto.selectedProperty().addListener(cl -> {
-            if(auto.isSelected()) 
+            if (auto.isSelected())
                 updateManifold();
         });
-        
+
         VBox controlsVBox = new VBox(10, new Label("Controls"),
             new HBox(5, refresh, auto),
             scaleLabel, scaleSlider,
-            rotateXLabel, rotateXSlider, 
+            rotateXLabel, rotateXSlider,
             rotateYLabel, rotateYSlider,
             rotateZLabel, rotateZSlider);
         controlsVBox.setPadding(new Insets(10));
@@ -160,27 +162,27 @@ public class Shape3DControlPane extends LitPathPane {
         VBox pointVBOX = new VBox(10, new Label("Points"), pointListView);
         pointVBOX.setPrefWidth(350);
         bp.setLeft(pointVBOX);
-        scene.addEventHandler(ManifoldEvent.TOGGLE_HULL_POINT, e-> {
-            if(auto.isSelected()) {
+        scene.addEventHandler(ManifoldEvent.TOGGLE_HULL_POINT, e -> {
+            if (auto.isSelected()) {
                 Manifold eventManifold = (Manifold) e.object1;
                 Manifold manifold = manifold3D.getManifold();
-                if(null != eventManifold && null != manifold
-                && eventManifold == manifold) {
+                if (null != eventManifold && null != manifold
+                    && eventManifold == manifold) {
                     updateManifold();
                 }
             }
         });
-        scene.addEventHandler(ManifoldEvent.SELECT_PROJECTION_POINT3D, e-> {
+        scene.addEventHandler(ManifoldEvent.SELECT_PROJECTION_POINT3D, e -> {
             Point3D p3D = (Point3D) e.object1;
 //            org.fxyz3d.geometry.Point3D fxyzP3D = new org.fxyz3d.geometry.Point3D(
 //                p3D.getX(), p3D.getY(), p3D.getZ());
             int shortestIndex = 0;
             Double shortestDistance = null;
-            for(int i=0;i<pointListView.getItems().size();i++){
+            for (int i = 0; i < pointListView.getItems().size(); i++) {
                 PointListItem item = pointListView.getItems().get(i);
-                double currentDistance = p3D.distance(item.getPoint3D().getX(), 
-                item.getPoint3D().getY(), item.getPoint3D().getZ());
-                if(null == shortestDistance || currentDistance < shortestDistance){
+                double currentDistance = p3D.distance(item.getPoint3D().getX(),
+                    item.getPoint3D().getY(), item.getPoint3D().getZ());
+                if (null == shortestDistance || currentDistance < shortestDistance) {
                     shortestDistance = currentDistance;
                     shortestIndex = i;
                 }
@@ -188,25 +190,27 @@ public class Shape3DControlPane extends LitPathPane {
             pointListView.getSelectionModel().select(shortestIndex);
             pointListView.scrollTo(shortestIndex);
         });
-        
+
     }
+
     private void updateManifold() {
         System.out.println("Refreshing Manifold...");
 //        getScene().getRoot().fireEvent(new ManifoldEvent(
-//            ManifoldEvent.UPDATE_MANIFOLD_POINTS, 
-//                this.manifold, includeCheckBox.isSelected()));        
+//            ManifoldEvent.UPDATE_MANIFOLD_POINTS,
+//                this.manifold, includeCheckBox.isSelected()));
         //build list of points from listview
         List<org.fxyz3d.geometry.Point3D> points = new ArrayList<>();
         pointListView.getItems().forEach(item -> {
-            if(item.isSelected())
+            if (item.isSelected())
                 points.add(item.getPoint3D());
         });
         manifold3D.refreshMesh(points, false, true, false);
     }
+
     public void setShape3D(Manifold3D manifold3D) {
         this.manifold3D = manifold3D;
         Manifold manifold = manifold3D.getManifold();
-        if(null != manifold) {
+        if (null != manifold) {
             pointListView.getItems().clear();
             List<PointListItem> pointListItems = this.manifold3D
                 .getOriginalPoint3DList().stream()

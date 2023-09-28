@@ -21,17 +21,17 @@ package edu.jhuapl.trinity.utils;
  */
 
 import edu.jhuapl.trinity.data.messages.FeatureCollection;
-import edu.jhuapl.trinity.utils.umap.DefaultMatrix;
-import edu.jhuapl.trinity.utils.umap.Matrix;
 import edu.jhuapl.trinity.utils.umap.Umap;
 import javafx.geometry.Point2D;
 import org.apache.commons.math3.linear.EigenDecomposition;
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.linear.SingularValueDecomposition;
 import org.apache.commons.math3.stat.correlation.Covariance;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 
@@ -41,6 +41,22 @@ import java.util.List;
  */
 public enum AnalysisUtils {
     INSTANCE;
+
+    public static enum ANALYSIS_METHOD {PCA, SVD, KPCA}
+
+    ;
+
+    public static enum SOURCE {HYPERSPACE, HYPERSURFACE}
+
+    ;
+
+    public static enum KERNEL {Gaussian, Laplacian, Linear, Pearson, Polynomial}
+
+    ;
+
+    public static enum RANGE {MINIMUM, MAXIMUM}
+
+    ;
     public static double EPISILON = 0.0000000001;
 
     public static double lerp1(double start, double end, double ratio) {
@@ -123,14 +139,14 @@ public enum AnalysisUtils {
 
     }
 
-    public static double l2Norm(double [] x) {
+    public static double l2Norm(double[] x) {
         double result = 0.0;
-        for(int i=0;i<x.length;i++){
+        for (int i = 0; i < x.length; i++) {
             result += x[i] * x[i];
         }
         return Math.sqrt(result);
-    }   
-    
+    }
+
     public static double[][] featuresMultWeights(double[] features, double[][] weights) {
         RealMatrix realMatrix = MatrixUtils.createRealMatrix(weights);
         RealMatrix realMatrixColumn = MatrixUtils.createColumnRealMatrix(features);
@@ -138,24 +154,119 @@ public enum AnalysisUtils {
         return resultMatrix.getData();
     }
 
-    /**
-     * @author Sean Phillips
-     * Principal Component Analysis using Apache Math Commons EigenDecomposition
-     * @param array rows of data to be used for input into Covariance
-     * @return the real eigenvalues
-     * @link https://stackoverflow.com/questions/10604507/pca-implementation-in-java
-     */
-    public static double[] doCommonsPCA(double[][] array) {
-        //create real matrix
-        RealMatrix realMatrix = MatrixUtils.createRealMatrix(array);
-        Covariance covariance = new Covariance(realMatrix);
-        RealMatrix covarianceMatrix = covariance.getCovarianceMatrix();
-        EigenDecomposition ed = new EigenDecomposition(covarianceMatrix);
-        return ed.getRealEigenvalues();
+    public static RealMatrix centerMatrixByColumnMean(RealMatrix originalMatrix) {
+        int dataWidth = originalMatrix.getColumnDimension();
+        double[] columnMeanArray = new double[dataWidth];
+        for (int columnIndex = 0; columnIndex < dataWidth; columnIndex++) {
+            columnMeanArray[columnIndex] = Arrays.stream(
+                originalMatrix.getColumn(columnIndex)).average().getAsDouble();
+        }
+
+        int dataHeight = originalMatrix.getRowDimension();
+        double[][] centeredArray = new double[dataHeight][dataWidth];
+        final double[][] originalData = originalMatrix.getData();
+        for (int rowIndex = 0; rowIndex < dataHeight; rowIndex++) {
+            int row = rowIndex;
+            Arrays.parallelSetAll(centeredArray[row], (int value) ->
+                originalData[row][value] - columnMeanArray[value]);
+        }
+
+        return MatrixUtils.createRealMatrix(centeredArray);
     }
 
-    public static double[] doCommonsSVD(double[][] array) {
-        return getSVD(array).getSingularValues();
+    /**
+     * @param array rows of data to be used for input into Covariance
+     * @return the projected points
+     * @author Sean Phillips
+     * Principal Component Analysis using Apache Math Commons EigenDecomposition
+     * Will mean center data by subtracting column means prior to
+     * calculating covariance matrix
+     * @link https://stackoverflow.com/questions/10604507/pca-implementation-in-java
+     * @link https://blog.clairvoyantsoft.com/eigen-decomposition-and-pca-c50f4ca15501
+     */
+    public static double[][] doCommonsPCA(double[][] array) {
+        System.out.print("centering matrix... ");
+        long startTime = System.nanoTime();
+        //create real matrix
+        RealMatrix originalMatrix = MatrixUtils.createRealMatrix(array);
+        //center columns by subtracting column means
+        RealMatrix centeredMatrix = centerMatrixByColumnMean(originalMatrix);
+        Utils.printTotalTime(startTime);
+
+        System.out.print("Calculating covariance matrix... ");
+        startTime = System.nanoTime();
+        //Calculate covariance matrix of centered matrix
+        Covariance covariance = new Covariance(centeredMatrix);
+        RealMatrix covarianceMatrix = covariance.getCovarianceMatrix();
+        Utils.printTotalTime(startTime);
+
+        System.out.print("EigenDecomposition... ");
+        startTime = System.nanoTime();
+        EigenDecomposition ed = new EigenDecomposition(covarianceMatrix);
+        Utils.printTotalTime(startTime);
+
+        //Project the original matrix against the new axes defined by the eigenvectors
+        int rowCount = originalMatrix.getRowDimension();
+        int columnCount = originalMatrix.getColumnDimension();
+        double[][] projectedVectors = new double[rowCount][columnCount];
+        System.out.print("Projection... ");
+        startTime = System.nanoTime();
+        for (int row = 0; row < rowCount; row++) {
+            for (int column = 0; column < columnCount; column++) {
+                projectedVectors[row][column] = originalMatrix.getRowVector(row)
+                    .dotProduct(ed.getEigenvector(column));
+            }
+        }
+        Utils.printTotalTime(startTime);
+
+        return projectedVectors;
+    }
+
+    /**
+     * @param array rows of data to be used for input into Covariance
+     * @return the projected points
+     * @author Sean Phillips
+     * Singular Value Decomposition using Apache Math Commons
+     * Will mean center data by subtracting column means prior to
+     * calculating covariance matrix
+     * @link https://stackoverflow.com/questions/10604507/pca-implementation-in-java
+     * @link https://blog.clairvoyantsoft.com/eigen-decomposition-and-pca-c50f4ca15501
+     */
+    public static double[][] doCommonsSVD(double[][] array) {
+        System.out.print("Starting SVD Process. Centering matrix... ");
+        long startTime = System.nanoTime();
+        //create real matrix of original inputs
+        RealMatrix originalMatrix = MatrixUtils.createRealMatrix(array);
+        //center columns by subtracting column means
+        RealMatrix centeredMatrix = centerMatrixByColumnMean(originalMatrix);
+        Utils.printTotalTime(startTime);
+
+        System.out.print("Calculating covariance matrix... ");
+        startTime = System.nanoTime();
+        //Calculate covariance matrix of centered matrix
+        Covariance covariance = new Covariance(centeredMatrix);
+        RealMatrix covarianceMatrix = covariance.getCovarianceMatrix();
+        Utils.printTotalTime(startTime);
+
+        System.out.print("Singular Value Decomposition... ");
+        SingularValueDecomposition svd = new SingularValueDecomposition(covarianceMatrix);
+        Utils.printTotalTime(startTime);
+
+        System.out.print("Projection... ");
+        //Project the original matrix against the new axes defined by the eigenvectors
+        int rowCount = originalMatrix.getRowDimension();
+        int columnCount = originalMatrix.getColumnDimension();
+        double[][] projectedVectors = new double[rowCount][columnCount];
+        RealVector singularVector = MatrixUtils.createRealVector(svd.getSingularValues());
+        for (int row = 0; row < rowCount; row++) {
+            for (int column = 0; column < columnCount; column++) {
+                projectedVectors[row][column] = originalMatrix.getRowVector(row)
+                    .dotProduct(singularVector);
+            }
+        }
+        Utils.printTotalTime(startTime);
+
+        return projectedVectors;
     }
 
     public static SingularValueDecomposition getSVD(double[][] array) {
@@ -179,7 +290,6 @@ public enum AnalysisUtils {
         //perform the SVD on the covariance matrix
         SingularValueDecomposition svd = getSVD(array);
         //@TODO SMP Rotate the values to get orientation
-
         //Copy rotated values into List<Double>
         ArrayList<Double> svdValues = new ArrayList<>();
         for (double d : svd.getSingularValues()) {
@@ -209,6 +319,7 @@ public enum AnalysisUtils {
         Utils.printTotalTime(start);
         return projected;
     }
+
     public static float[][] transformUMAP(FeatureCollection featureCollection, Umap umap) {
         float[][] data = featureCollection.convertFeaturesToFloatArray();
         System.out.println("Starting UMAP Transform... ");
@@ -217,5 +328,5 @@ public enum AnalysisUtils {
         Utils.printTotalTime(start);
         return projected;
     }
-    
+
 }

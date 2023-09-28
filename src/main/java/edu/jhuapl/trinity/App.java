@@ -28,7 +28,6 @@ import edu.jhuapl.trinity.data.messages.FeatureVector;
 import edu.jhuapl.trinity.javafx.components.CircleProgressIndicator;
 import edu.jhuapl.trinity.javafx.components.MatrixOverlay;
 import edu.jhuapl.trinity.javafx.components.ProgressStatus;
-import static edu.jhuapl.trinity.javafx.components.panes.LitPathPane.slideInPane;
 import edu.jhuapl.trinity.javafx.components.panes.Shape3DControlPane;
 import edu.jhuapl.trinity.javafx.components.panes.TextPane;
 import edu.jhuapl.trinity.javafx.components.panes.TrajectoryTrackerPane;
@@ -63,6 +62,7 @@ import edu.jhuapl.trinity.messages.ZeroMQFeedManager;
 import edu.jhuapl.trinity.messages.ZeroMQSubscriberConfig;
 import edu.jhuapl.trinity.utils.AnalysisUtils;
 import edu.jhuapl.trinity.utils.Configuration;
+import edu.jhuapl.trinity.utils.PCAConfig;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import edu.jhuapl.trinity.utils.umap.Umap;
 import javafx.animation.Animation;
@@ -106,6 +106,8 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static edu.jhuapl.trinity.javafx.components.panes.LitPathPane.slideInPane;
+
 public class App extends Application {
 
     Pane desktopPane;
@@ -122,7 +124,7 @@ public class App extends Application {
     Projections3DPane projections3DPane;
     TrajectoryTrackerPane trajectoryTrackerPane;
     TextPane textConsolePane;
-    Shape3DControlPane shape3DControlPane;    
+    Shape3DControlPane shape3DControlPane;
     CircleProgressIndicator circleSpinner;
 
     static Configuration theConfig;
@@ -233,29 +235,20 @@ public class App extends Application {
             Umap umap = (Umap) event.object1;
             umap.setThreads(12);
             ManifoldEvent.POINT_SOURCE source = (ManifoldEvent.POINT_SOURCE) event.object2;
-            FeatureCollection originalFC = new FeatureCollection();
-            if (source == ManifoldEvent.POINT_SOURCE.HYPERSURFACE) {
-                originalFC = FeatureCollection.fromData(hypersurface3DPane.dataGrid);
-                for (int i = 0; i < originalFC.getFeatures().size() - 1; i++) {
-                    FeatureVector actualFV = hypersurface3DPane.getAllFeatureVectors().get(i);
-                    originalFC.getFeatures().get(i).setLabel(actualFV.getLabel());
-                    originalFC.getFeatures().get(i).setScore(actualFV.getScore());
-                    originalFC.getFeatures().get(i).setImageURL(actualFV.getImageURL());
-                }
-            } else {
-                //filter to only use visible points
-                //@TODO SMP || FeatureLayer.visibilityByIndex(fv.getLayer());
-                originalFC.setFeatures(
-                    hyperspace3DPane.getAllFeatureVectors().stream().filter(fv -> {
-                        return FactorLabel.visibilityByLabel(fv.getLabel());
-                    }).toList());
-            }
-            ArrayList<String> labels = new ArrayList<>();
-            for(Dimension d : Dimension.getDimensions()) {
-                labels.add(d.labelString);    
-            }
-            originalFC.setDimensionLabels(labels);
+            FeatureCollection originalFC = getFeaturesBySource(source);
             projections3DPane.projectFeatureCollection(originalFC, umap);
+        });
+
+        scene.addEventHandler(ManifoldEvent.GENERATE_NEW_PCA, event -> {
+            Platform.runLater(() -> {
+                ProgressStatus ps = new ProgressStatus("Projecting PCA...", -1);
+                scene.getRoot().fireEvent(
+                    new ApplicationEvent(ApplicationEvent.SHOW_BUSY_INDICATOR, ps));
+            });
+            PCAConfig config = (PCAConfig) event.object1;
+            ManifoldEvent.POINT_SOURCE source = (ManifoldEvent.POINT_SOURCE) event.object2;
+            FeatureCollection originalFC = getFeaturesBySource(source);
+            projections3DPane.projectFeatureCollection(originalFC, config);
         });
 
         scene.addEventHandler(FeatureVectorEvent.PROJECT_SURFACE_GRID, event -> {
@@ -269,13 +262,13 @@ public class App extends Application {
                 projectedFC.getFeatures().get(i).setScore(origFV.getScore());
                 projectedFC.getFeatures().get(i).setImageURL(origFV.getImageURL());
             }
-            if(null != originalFC.getDimensionLabels()) {
+            if (null != originalFC.getDimensionLabels()) {
                 projectedFC.setDimensionLabels(originalFC.getDimensionLabels());
                 projections3DPane.setDimensionLabels(originalFC.getDimensionLabels());
             }
             projections3DPane.setHyperDimensionFeatures(originalFC);
             projections3DPane.addFeatureCollection(projectedFC);
-            
+
         });
 
         scene.addEventHandler(FeatureVectorEvent.PROJECT_FEATURE_COLLECTION, event -> {
@@ -289,11 +282,11 @@ public class App extends Application {
                 projectedFC.getFeatures().get(i).setScore(origFV.getScore());
                 projectedFC.getFeatures().get(i).setImageURL(origFV.getImageURL());
             }
-            if(null != originalFC.getDimensionLabels()) {
+            if (null != originalFC.getDimensionLabels()) {
                 projectedFC.setDimensionLabels(originalFC.getDimensionLabels());
                 projections3DPane.setDimensionLabels(originalFC.getDimensionLabels());
             }
-            projections3DPane.setHyperDimensionFeatures(originalFC);            
+            projections3DPane.setHyperDimensionFeatures(originalFC);
             projections3DPane.addFeatureCollection(projectedFC);
         });
 
@@ -312,19 +305,21 @@ public class App extends Application {
         });
         hyperspace3DPane.setVisible(false); //start off hidden
         hyperspace3DPane.addEventHandler(DragEvent.DRAG_OVER, event -> {
-            if (ResourceUtils.canDragOver(event))
+            if (ResourceUtils.canDragOver(event)) {
                 event.acceptTransferModes(TransferMode.COPY);
-            else
+            } else {
                 event.consume();
+            }
         });
         hyperspace3DPane.addEventHandler(DragEvent.DRAG_DROPPED,
             e -> ResourceUtils.onDragDropped(e, scene));
 
         scene.addEventHandler(DragEvent.DRAG_OVER, event -> {
-            if (ResourceUtils.canDragOver(event))
+            if (ResourceUtils.canDragOver(event)) {
                 event.acceptTransferModes(TransferMode.COPY);
-            else
+            } else {
                 event.consume();
+            }
         });
         scene.addEventHandler(DragEvent.DRAG_DROPPED,
             e -> ResourceUtils.onDragDropped(e, scene));
@@ -365,11 +360,16 @@ public class App extends Application {
                 stage.setMaximized(true);
             }
             System.out.println("Checking for special effects requests...");
+            boolean surveillanceEnabled = namedParameters.containsKey("surveillance");
+            if (surveillanceEnabled) {
+                System.out.println("Surveillance found... enabling Camera.");
+            }
+
             if (namedParameters.containsKey("outrun")) {
                 System.out.println("Outrun found... enabling RetroWavePane.");
                 try {
                     //Add optional RETROWAVE VIEW
-                    retroWavePane = new RetroWavePane(scene);
+                    retroWavePane = new RetroWavePane(scene, surveillanceEnabled);
                     retroWavePane.setVisible(true);
                     centerStack.getChildren().add(retroWavePane);
                 } catch (Exception ex) {
@@ -415,23 +415,27 @@ public class App extends Application {
         // fun matrix effect, use Alt + N
         matrixOverlay = new MatrixOverlay(scene, centerStack);
         bp.setOnSwipeUp(e -> {
-            if (enableMatrix)
+            if (enableMatrix) {
                 if (e.getTouchCount() > 2) {
                     MatrixOverlay.on.set(false);
                     matrixOverlay.matrixOff.run();
                     e.consume(); // <-- stops passing the event to next node
                 }
+            }
         });
         bp.setOnSwipeDown(e -> {
-            if (enableMatrix)
+            if (enableMatrix) {
                 if (e.getTouchCount() > 2) {
                     MatrixOverlay.on.set(true);
                     matrixOverlay.matrixOn.run();
                     e.consume(); // <-- stops passing the event to next node
                 }
+            }
         });
         scene.addEventHandler(ApplicationEvent.SHOW_BUSY_INDICATOR, e -> {
-            if (null == e.object) return;
+            if (null == e.object) {
+                return;
+            }
             circleSpinner.updateStatus((ProgressStatus) e.object);
             circleSpinner.fadeBusy(false);
             circleSpinner.spin(true);
@@ -441,7 +445,9 @@ public class App extends Application {
             circleSpinner.fadeBusy(true);
         });
         scene.addEventHandler(ApplicationEvent.UPDATE_BUSY_INDICATOR, e -> {
-            if (null == e.object) return;
+            if (null == e.object) {
+                return;
+            }
             circleSpinner.updateStatus((ProgressStatus) e.object);
         });
 
@@ -457,11 +463,11 @@ public class App extends Application {
             } else {
                 textConsolePane.show();
             }
-            if(null != e.object) {
-                Platform.runLater(()->textConsolePane.setText((String)e.object));
+            if (null != e.object) {
+                Platform.runLater(() -> textConsolePane.setText((String) e.object));
             }
         });
-        
+
         scene.addEventHandler(TrajectoryEvent.SHOW_TRAJECTORY_TRACKER, e -> {
             if (null == trajectoryTrackerPane) {
                 trajectoryTrackerPane = new TrajectoryTrackerPane(scene, pathPane);
@@ -473,15 +479,17 @@ public class App extends Application {
                 trajectoryTrackerPane.show();
             }
         });
-        
+
         scene.addEventHandler(ApplicationEvent.SHOW_PROJECTIONS, e -> {
             if (projections3DPane.isVisible()) {
                 projections3DPane.setVisible(false);
-                if (null != retroWavePane)
+                if (null != retroWavePane) {
                     retroWavePane.animateShow();
+                }
             } else {
-                if (null != retroWavePane)
+                if (null != retroWavePane) {
                     retroWavePane.animateHide();
+                }
                 hyperspace3DPane.setVisible(false);
                 hypersurface3DPane.setVisible(false);
                 Platform.runLater(() -> {
@@ -493,22 +501,26 @@ public class App extends Application {
         scene.addEventHandler(ApplicationEvent.SHOW_HYPERSURFACE, e -> {
             if (hypersurface3DPane.isVisible()) {
                 hypersurface3DPane.hideFA3D();
-                if (null != retroWavePane)
+                if (null != retroWavePane) {
                     retroWavePane.animateShow();
+                }
             } else {
-                if (null != retroWavePane)
+                if (null != retroWavePane) {
                     retroWavePane.animateHide();
+                }
                 hyperspace3DPane.setVisible(false);
-                if (null != projections3DPane)
+                if (null != projections3DPane) {
                     projections3DPane.setVisible(false);
+                }
                 fadeOutConsole(500);
                 if (!hypersurfaceIntroShown) {
                     hypersurface3DPane.showFA3D();
                     hypersurfaceIntroShown = true;
-                } else
+                } else {
                     Platform.runLater(() -> {
                         hypersurface3DPane.setVisible(true);
                     });
+                }
 
             }
         });
@@ -516,15 +528,18 @@ public class App extends Application {
         scene.addEventHandler(ApplicationEvent.SHOW_HYPERSPACE, e -> {
             if (hyperspace3DPane.isVisible()) {
                 hyperspace3DPane.setVisible(false);
-                if (null != retroWavePane)
+                if (null != retroWavePane) {
                     retroWavePane.animateShow();
+                }
                 fadeOutConsole(500);
             } else {
                 hypersurface3DPane.setVisible(false);
-                if (null != projections3DPane)
+                if (null != projections3DPane) {
                     projections3DPane.setVisible(false);
-                if (null != retroWavePane)
+                }
+                if (null != retroWavePane) {
                     retroWavePane.animateHide();
+                }
                 hyperspace3DPane.setVisible(true);
                 if (!hyperspaceIntroShown) {
                     hyperspace3DPane.intro(1000);
@@ -538,7 +553,7 @@ public class App extends Application {
             if (null == shape3DControlPane) {
                 shape3DControlPane = new Shape3DControlPane(scene, pathPane);
             }
-            if(null != manifold3D) {
+            if (null != manifold3D) {
 //                Manifold.globalManifoldToManifold3DMap
                 shape3DControlPane.setShape3D(manifold3D);
             }
@@ -556,7 +571,7 @@ public class App extends Application {
         scene.getRoot().addEventHandler(GaussianMixtureEvent.NEW_GAUSSIAN_COLLECTION, gmeh);
         gmeh.addGaussianMixtureRenderer(hyperspace3DPane);
 
-        fveh = new FeatureVectorEventHandler(false);
+        fveh = new FeatureVectorEventHandler();
         scene.getRoot().addEventHandler(FeatureVectorEvent.NEW_FEATURE_VECTOR, fveh);
         scene.getRoot().addEventHandler(FeatureVectorEvent.LOCATE_FEATURE_VECTOR, fveh);
         scene.getRoot().addEventHandler(FeatureVectorEvent.NEW_FEATURE_COLLECTION, fveh);
@@ -566,7 +581,7 @@ public class App extends Application {
         fveh.addFeatureVectorRenderer(hyperspace3DPane);
 
         meh = new ManifoldEventHandler();
-        
+
         scene.getRoot().addEventHandler(ManifoldEvent.NEW_MANIFOLD_DATA, meh);
         scene.getRoot().addEventHandler(ManifoldEvent.EXPORT_MANIFOLD_DATA, meh);
         scene.getRoot().addEventHandler(ManifoldEvent.CLEAR_ALL_MANIFOLDS, meh);
@@ -594,7 +609,6 @@ public class App extends Application {
 //        scene.getRoot().addEventHandler(NeuralEvent.NEW_NEURAL_TRIAL, neh);
 //        scene.getRoot().addEventHandler(NeuralEvent.NEURAL_TRIAL_LIST, neh);
 //        neh.addNeuralRenderer(hypersurface3DPane);
-
         smeh = new SemanticMapEventHandler(false);
         scene.getRoot().addEventHandler(SemanticMapEvent.NEW_SEMANTIC_MAP, smeh);
 //        scene.getRoot().addEventHandler(SemanticMapEvent.LOCATE_FEATURE_VECTOR, smeh);
@@ -680,6 +694,32 @@ public class App extends Application {
         //animatedConsoleText.animate("User Inteface Lit...");
         intro();
         missionTimerX.updateTime(0, "1");
+    }
+
+    private FeatureCollection getFeaturesBySource(ManifoldEvent.POINT_SOURCE source) {
+        FeatureCollection originalFC = new FeatureCollection();
+        if (source == ManifoldEvent.POINT_SOURCE.HYPERSURFACE) {
+            originalFC = FeatureCollection.fromData(hypersurface3DPane.dataGrid);
+            for (int i = 0; i < originalFC.getFeatures().size() - 1; i++) {
+                FeatureVector actualFV = hypersurface3DPane.getAllFeatureVectors().get(i);
+                originalFC.getFeatures().get(i).setLabel(actualFV.getLabel());
+                originalFC.getFeatures().get(i).setScore(actualFV.getScore());
+                originalFC.getFeatures().get(i).setImageURL(actualFV.getImageURL());
+            }
+        } else {
+            //filter to only use visible points
+            //@TODO SMP || FeatureLayer.visibilityByIndex(fv.getLayer());
+            originalFC.setFeatures(
+                hyperspace3DPane.getAllFeatureVectors().stream().filter(fv -> {
+                    return FactorLabel.visibilityByLabel(fv.getLabel());
+                }).toList());
+        }
+        ArrayList<String> labels = new ArrayList<>();
+        for (Dimension d : Dimension.getDimensions()) {
+            labels.add(d.labelString);
+        }
+        originalFC.setDimensionLabels(labels);
+        return originalFC;
     }
 
     private void setupMissionTimer(Scene scene) {
@@ -775,14 +815,15 @@ public class App extends Application {
             stage.setFullScreen(!stage.isFullScreen());
         }
         //Terminate the app by entering an exit animation
-        if (e.isControlDown() && e.isShiftDown() &&
-            e.getCode().equals(KeyCode.C)) {
+        if (e.isControlDown() && e.isShiftDown()
+            && e.getCode().equals(KeyCode.C)) {
             shutdown(false);
         }
         if (e.isAltDown() && e.getCode().equals(KeyCode.N)) {
             matrixShowing = !matrixShowing;
-            if (!matrixShowing)
+            if (!matrixShowing) {
                 intro();
+            }
         }
     }
 
@@ -793,18 +834,21 @@ public class App extends Application {
     }
 
     private void shutdown(boolean now) {
-        if (null != missionTimerX)
+        if (null != missionTimerX) {
             missionTimerX.stop();
-        if (null != feed)
+        }
+        if (null != feed) {
             feed.disconnect(true); //if no connection does nothing
-        if (now)
+        }
+        if (now) {
             System.exit(0);
-        else {
+        } else {
             animatedConsoleText.setOpacity(0.0);
             animatedConsoleText.setVisible(true);
             animatedConsoleText.setText(">");
-            if (null != intro)
+            if (null != intro) {
                 intro.stop();
+            }
             Timeline outtro = new Timeline(
                 new KeyFrame(Duration.seconds(0.1), new KeyValue(animatedConsoleText.opacityProperty(), 1.0)),
                 new KeyFrame(Duration.seconds(0.1), kv -> animatedConsoleText.animate(">Kill Signal Received. Terminating...")),
@@ -839,8 +883,9 @@ public class App extends Application {
      * @return The current config
      */
     public static Configuration getConfig() {
-        if (null == theConfig)
+        if (null == theConfig) {
             theConfig = Configuration.defaultConfiguration();
+        }
         return theConfig;
     }
 

@@ -143,7 +143,7 @@ public class DataController implements Initializable {
         scene.getRoot().fireEvent(
             new TrajectoryEvent(TrajectoryEvent.SHOW_TRAJECTORY_TRACKER));
     }
-    
+
     @FXML
     public void browseBasePath() {
         final DirectoryChooser directoryChooser = new DirectoryChooser();

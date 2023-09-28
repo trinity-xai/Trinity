@@ -31,6 +31,7 @@ import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.effect.Glow;
+import javafx.scene.effect.PerspectiveTransform;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.AnchorPane;
@@ -51,11 +52,11 @@ import javafx.scene.text.Text;
 import javafx.util.Duration;
 import lit.litfx.controls.covalent.PathPane;
 import lit.litfx.controls.covalent.events.CovalentPaneEvent;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javafx.scene.effect.PerspectiveTransform;
 
 /**
  * @author Sean Phillips
@@ -78,8 +79,8 @@ public class LitPathPane extends PathPane {
     private Timeline gradientTimeline;
     private double currentGradientMillis = 465; //This number was picked by Josh
     private long lastInsideMillis = 0;
-    public static long enteredWaitTimeMillis = 5000; 
-    
+    public static long enteredWaitTimeMillis = 5000;
+
     /**
      * Helper utility for loading a common FXML based Controller which assumes
      * an anchorpane node which is returned wrapped as a BorderPane
@@ -105,6 +106,7 @@ public class LitPathPane extends PathPane {
         }
         return sgRoot;
     }
+
     public static void slideInPane(PathPane pane) {
         //https://stackoverflow.com/questions/48893282/javafx-apply-perspective-transformation-on-a-node-given-a-perspective-transform?noredirect=1&lq=1
         PerspectiveTransform pt = new PerspectiveTransform();
@@ -153,6 +155,7 @@ public class LitPathPane extends PathPane {
             pane.setEffect(null);
         });
     }
+
     public LitPathPane(Scene scene, Pane parent, int width, int height, Pane userContent, String mainTitleText, String mainTitleText2, double borderTimeMs, double contentTimeMs) {
         super(scene, parent, width, height, userContent, mainTitleText, mainTitleText2, borderTimeMs, contentTimeMs);
         this.scene = scene;
@@ -217,7 +220,7 @@ public class LitPathPane extends PathPane {
         addEventHandler(MouseEvent.MOUSE_ENTERED, e -> {
             if (fadeEnabled) {
                 fade(100, 0.8);
-                if(System.currentTimeMillis()-lastInsideMillis >enteredWaitTimeMillis){             
+                if (System.currentTimeMillis() - lastInsideMillis > enteredWaitTimeMillis) {
                     gradientTimeline.setCycleCount(1);
                     gradientTimeline.setAutoReverse(false);
                     gradientTimeline.playFromStart();

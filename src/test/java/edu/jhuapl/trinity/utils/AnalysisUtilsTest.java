@@ -22,6 +22,7 @@ package edu.jhuapl.trinity.utils;
 
 import edu.jhuapl.trinity.data.files.FeatureCollectionFile;
 import edu.jhuapl.trinity.utils.umap.Umap;
+import org.apache.commons.math3.linear.SingularValueDecomposition;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
@@ -43,14 +44,21 @@ public class AnalysisUtilsTest {
     @Test
     public void testDoCommonsPCA() {
         System.out.println("doCommonsPca");
-        double[] expected = new double[]{2.0, 0.666666666666667};
+        double[][] expected = new double[][]{
+            {1.414213562373095, -1.1102230246251565E-16},
+            {-1.1102230246251565E-16, -1.414213562373095},
+            {-1.414213562373095, 1.1102230246251565E-16}
+        };
         //create points in a double array
         double[][] array = new double[][]{
             new double[]{-1.0, -1.0},
             new double[]{-1.0, 1.0},
             new double[]{1.0, 1.0}};
-        double[] eigenValues = AnalysisUtils.doCommonsPCA(array);
-        assertArrayEquals(expected, eigenValues, EPISILON);
+        double[][] pcaProjection = AnalysisUtils.doCommonsPCA(array);
+        for (int i = 0; i < expected.length; i++) {
+            assertArrayEquals(expected[i], pcaProjection[i], EPISILON);
+        }
+        assert true;
     }
 
     /**
@@ -59,14 +67,21 @@ public class AnalysisUtilsTest {
     @Test
     public void testDoCommonsSVD() {
         System.out.println("doCommonsSVD");
-        double[] expected = new double[]{2.0, 0.666666666666667};
+        double[][] expected = new double[][]{
+            {-2.6666666666666665, -2.6666666666666665},
+            {-1.3333333333333326, -1.3333333333333326},
+            {2.6666666666666665, 2.6666666666666665},
+        };
         //create points in a double array
         double[][] array = new double[][]{
             new double[]{-1.0, -1.0},
             new double[]{-1.0, 1.0},
             new double[]{1.0, 1.0}};
-        double[] singularValues = AnalysisUtils.doCommonsSVD(array);
-        assertArrayEquals(expected, singularValues, EPISILON);
+        double[][] projectedValues = AnalysisUtils.doCommonsSVD(array);
+        for (int i = 0; i < expected.length; i++) {
+            assertArrayEquals(expected[i], projectedValues[i], EPISILON);
+        }
+        assert true;
     }
 
     //    @Test
@@ -198,7 +213,8 @@ public class AnalysisUtilsTest {
             new double[]{0.679070284444705},
             new double[]{0.6821951551460912}
         };
-        double[] singularValues = AnalysisUtils.doCommonsSVD(array);
+        SingularValueDecomposition svd = AnalysisUtils.getSVD(array);
+        double[] singularValues = svd.getSingularValues();
         assertArrayEquals(expected, singularValues, EPISILON);
     }
 }

@@ -160,7 +160,7 @@ public class ZeroPilotLatentsLoader extends Task {
                 Trajectory.addTrajectory(trajectory);
                 Trajectory.globalTrajectoryToFeatureCollectionMap.put(trajectory, fc);
                 scene.getRoot().fireEvent(
-                    new TrajectoryEvent(TrajectoryEvent.NEW_TRAJECTORY_OBJECT,trajectory, fc));                    
+                    new TrajectoryEvent(TrajectoryEvent.NEW_TRAJECTORY_OBJECT, trajectory, fc));
                 scene.getRoot().fireEvent(
                     new ApplicationEvent(ApplicationEvent.UPDATE_BUSY_INDICATOR, ps));
                 scene.getRoot().fireEvent(

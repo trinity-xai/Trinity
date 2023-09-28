@@ -23,7 +23,8 @@
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
 
-<AnchorPane style="-fx-background-color: #00000000;" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="edu.jhuapl.trinity.javafx.controllers.ConfigurationController">
+<AnchorPane style="-fx-background-color: #00000000;" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1"
+            fx:controller="edu.jhuapl.trinity.javafx.controllers.ConfigurationController">
     <children>
         <TabPane prefHeight="500.0" tabClosingPolicy="UNAVAILABLE">
             <tabs>
@@ -33,95 +34,106 @@
                             <content>
                                 <VBox spacing="10.0">
                                     <children>
-                                        <Label layoutX="15.0" layoutY="158.0" prefHeight="17.0" prefWidth="200.0" text="Shadow Wall Projection Type" />
+                                        <Label layoutX="15.0" layoutY="158.0" prefHeight="17.0" prefWidth="200.0" text="Shadow Wall Projection Type"/>
                                         <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="10.0" spacing="5.0">
                                             <padding>
-                                                <Insets left="5.0" right="5.0" />
+                                                <Insets left="5.0" right="5.0"/>
                                             </padding>
                                             <children>
                                                 <HBox alignment="CENTER_LEFT">
                                                     <children>
-                                                        <RadioButton fx:id="fixedOrthographicRadioButton" mnemonicParsing="false" prefWidth="150.0" selected="true" text="Fixed Orthographic" />
+                                                        <RadioButton fx:id="fixedOrthographicRadioButton" mnemonicParsing="false" prefWidth="150.0"
+                                                                     selected="true" text="Fixed Orthographic"/>
                                                     </children>
                                                 </HBox>
                                                 <HBox alignment="CENTER_LEFT" layoutX="15.0" layoutY="10.0">
                                                     <children>
-                                                        <RadioButton fx:id="rotatingPerspectiveRadioButton" mnemonicParsing="false" text="Rotating Perspective" />
+                                                        <RadioButton fx:id="rotatingPerspectiveRadioButton" mnemonicParsing="false"
+                                                                     text="Rotating Perspective"/>
                                                     </children>
                                                 </HBox>
                                             </children>
                                         </HBox>
-                                        <Separator prefWidth="200.0" />
+                                        <Separator prefWidth="200.0"/>
                                         <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="115.0" spacing="5.0">
                                             <padding>
-                                                <Insets left="5.0" right="5.0" />
+                                                <Insets left="5.0" right="5.0"/>
                                             </padding>
                                             <children>
                                                 <HBox alignment="CENTER_LEFT">
                                                     <children>
-                                                        <CheckBox fx:id="cubeVisibleCheckBox" contentDisplay="RIGHT" mnemonicParsing="false" prefWidth="150.0" selected="true" text="Cube Visible" />
+                                                        <CheckBox fx:id="cubeVisibleCheckBox" contentDisplay="RIGHT" mnemonicParsing="false" prefWidth="150.0"
+                                                                  selected="true" text="Cube Visible"/>
                                                     </children>
                                                 </HBox>
                                                 <HBox alignment="CENTER_LEFT" layoutX="15.0" layoutY="10.0">
                                                     <children>
-                                                        <CheckBox fx:id="frameVisibleCheckBox" contentDisplay="RIGHT" mnemonicParsing="false" prefWidth="150.0" text="Cube Frame" />
+                                                        <CheckBox fx:id="frameVisibleCheckBox" contentDisplay="RIGHT" mnemonicParsing="false" prefWidth="150.0"
+                                                                  text="Cube Frame"/>
                                                     </children>
                                                 </HBox>
                                                 <HBox alignment="CENTER_LEFT" HBox.hgrow="ALWAYS">
                                                     <children>
-                                                        <CheckBox fx:id="enableCubeRenderingCheckBox" contentDisplay="RIGHT" mnemonicParsing="false" prefWidth="150.0" selected="true" text="Enable Cube Rendering" />
+                                                        <CheckBox fx:id="enableCubeRenderingCheckBox" contentDisplay="RIGHT" mnemonicParsing="false"
+                                                                  prefWidth="150.0" selected="true" text="Enable Cube Rendering"/>
                                                     </children>
                                                 </HBox>
                                             </children>
                                         </HBox>
                                         <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="150.0" spacing="5.0">
                                             <padding>
-                                                <Insets left="5.0" right="5.0" />
+                                                <Insets left="5.0" right="5.0"/>
                                             </padding>
                                             <children>
                                                 <HBox alignment="CENTER_LEFT" layoutX="15.0" layoutY="10.0">
                                                     <children>
-                                                        <CheckBox fx:id="gridlinesVisibleCheckBox" contentDisplay="RIGHT" mnemonicParsing="false" prefWidth="150.0" selected="true" text="Gridlines" />
+                                                        <CheckBox fx:id="gridlinesVisibleCheckBox" contentDisplay="RIGHT" mnemonicParsing="false"
+                                                                  prefWidth="150.0" selected="true" text="Gridlines"/>
                                                     </children>
                                                 </HBox>
                                                 <HBox alignment="CENTER_LEFT">
                                                     <children>
-                                                        <CheckBox fx:id="controlPointsVisibleCheckBox" contentDisplay="RIGHT" mnemonicParsing="false" prefWidth="150.0" text="Control Points" />
+                                                        <CheckBox fx:id="controlPointsVisibleCheckBox" contentDisplay="RIGHT" mnemonicParsing="false"
+                                                                  prefWidth="150.0" text="Control Points"/>
                                                     </children>
                                                 </HBox>
                                                 <HBox alignment="CENTER_LEFT">
                                                     <children>
-                                                        <CheckBox fx:id="cubeWallsVisibleCheckBox" contentDisplay="RIGHT" mnemonicParsing="false" prefWidth="150.0" selected="true" text="Cube Inner Walls" />
+                                                        <CheckBox fx:id="cubeWallsVisibleCheckBox" contentDisplay="RIGHT" mnemonicParsing="false"
+                                                                  prefWidth="150.0" selected="true" text="Cube Inner Walls"/>
                                                     </children>
                                                 </HBox>
                                             </children>
                                         </HBox>
                                         <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="64.0" spacing="5.0">
                                             <padding>
-                                                <Insets left="5.0" right="5.0" />
+                                                <Insets left="5.0" right="5.0"/>
                                             </padding>
                                             <children>
                                                 <HBox alignment="CENTER_LEFT">
                                                     <children>
-                                                        <CheckBox fx:id="showNearsidePointsCheckBox" contentDisplay="RIGHT" mnemonicParsing="false" prefHeight="17.0" prefWidth="150.0" text="Show Nearside Points" />
+                                                        <CheckBox fx:id="showNearsidePointsCheckBox" contentDisplay="RIGHT" mnemonicParsing="false"
+                                                                  prefHeight="17.0" prefWidth="150.0" text="Show Nearside Points"/>
                                                     </children>
                                                 </HBox>
                                                 <HBox alignment="CENTER_LEFT" layoutX="15.0" layoutY="10.0">
                                                     <children>
-                                                        <CheckBox fx:id="showAxesAndLabelsCheckBox" contentDisplay="RIGHT" mnemonicParsing="false" prefHeight="17.0" prefWidth="150.0" selected="true" text="Show Axes and Labels" />
+                                                        <CheckBox fx:id="showAxesAndLabelsCheckBox" contentDisplay="RIGHT" mnemonicParsing="false"
+                                                                  prefHeight="17.0" prefWidth="150.0" selected="true" text="Show Axes and Labels"/>
                                                     </children>
                                                 </HBox>
                                             </children>
                                         </HBox>
-                                        <Separator prefWidth="200.0" />
+                                        <Separator prefWidth="200.0"/>
                                         <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="91.0" spacing="5.0">
                                             <padding>
-                                                <Insets left="5.0" right="5.0" />
+                                                <Insets left="5.0" right="5.0"/>
                                             </padding>
                                             <children>
                                                 <HBox alignment="CENTER_LEFT" HBox.hgrow="ALWAYS">
                                                     <children>
-                                                        <CheckBox fx:id="overrideDomainTransformCheckBox" contentDisplay="RIGHT" mnemonicParsing="false" prefHeight="17.0" prefWidth="175.0" text="Override Transform" />
+                                                        <CheckBox fx:id="overrideDomainTransformCheckBox" contentDisplay="RIGHT" mnemonicParsing="false"
+                                                                  prefHeight="17.0" prefWidth="175.0" text="Override Transform"/>
                                                     </children>
                                                 </HBox>
                                             </children>
@@ -130,38 +142,38 @@
                                             <children>
                                                 <HBox alignment="CENTER_LEFT" spacing="5.0">
                                                     <padding>
-                                                        <Insets left="5.0" right="5.0" />
+                                                        <Insets left="5.0" right="5.0"/>
                                                     </padding>
                                                     <children>
-                                                        <Label maxWidth="-Infinity" prefWidth="150.0" text="Domain Minimum" />
-                                                        <Spinner fx:id="domainMinimumSpinner" editable="true" maxWidth="-Infinity" prefWidth="100.0" />
+                                                        <Label maxWidth="-Infinity" prefWidth="150.0" text="Domain Minimum"/>
+                                                        <Spinner fx:id="domainMinimumSpinner" editable="true" maxWidth="-Infinity" prefWidth="100.0"/>
                                                     </children>
                                                 </HBox>
                                                 <HBox alignment="CENTER_LEFT" spacing="5.0">
                                                     <padding>
-                                                        <Insets left="5.0" right="5.0" />
+                                                        <Insets left="5.0" right="5.0"/>
                                                     </padding>
                                                     <children>
-                                                        <Label maxWidth="-Infinity" prefWidth="150.0" text="Domain Maximum" />
-                                                        <Spinner fx:id="domainMaximumSpinner" editable="true" maxWidth="-Infinity" prefWidth="100.0" />
+                                                        <Label maxWidth="-Infinity" prefWidth="150.0" text="Domain Maximum"/>
+                                                        <Spinner fx:id="domainMaximumSpinner" editable="true" maxWidth="-Infinity" prefWidth="100.0"/>
                                                     </children>
                                                 </HBox>
                                             </children>
                                         </HBox>
                                         <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="45.0" spacing="5.0">
                                             <padding>
-                                                <Insets left="5.0" right="5.0" />
+                                                <Insets left="5.0" right="5.0"/>
                                             </padding>
                                             <children>
-                                                <Label maxWidth="-Infinity" prefWidth="150.0" text="Point Scaling" />
-                                                <Spinner fx:id="pointScalingSpinner" editable="true" maxWidth="-Infinity" prefWidth="100.0" />
+                                                <Label maxWidth="-Infinity" prefWidth="150.0" text="Point Scaling"/>
+                                                <Spinner fx:id="pointScalingSpinner" editable="true" maxWidth="-Infinity" prefWidth="100.0"/>
                                             </children>
                                         </HBox>
                                     </children>
                                 </VBox>
                             </content>
                             <padding>
-                                <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                                <Insets bottom="10.0" left="10.0" right="10.0" top="10.0"/>
                             </padding>
                         </ScrollPane>
                     </content>
@@ -172,60 +184,74 @@
                             <content>
                                 <GridPane hgap="10.0" vgap="10.0">
                                     <columnConstraints>
-                                        <ColumnConstraints halignment="LEFT" hgrow="SOMETIMES" maxWidth="-Infinity" minWidth="10.0" prefWidth="200.0" />
-                                        <ColumnConstraints halignment="LEFT" hgrow="SOMETIMES" maxWidth="-Infinity" minWidth="10.0" prefWidth="200.0" />
-                                        <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" maxWidth="-Infinity" minWidth="10.0" prefWidth="200.0" />
+                                        <ColumnConstraints halignment="LEFT" hgrow="SOMETIMES" maxWidth="-Infinity" minWidth="10.0" prefWidth="200.0"/>
+                                        <ColumnConstraints halignment="LEFT" hgrow="SOMETIMES" maxWidth="-Infinity" minWidth="10.0" prefWidth="200.0"/>
+                                        <ColumnConstraints halignment="CENTER" hgrow="SOMETIMES" maxWidth="-Infinity" minWidth="10.0" prefWidth="200.0"/>
                                     </columnConstraints>
                                     <rowConstraints>
-                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
-                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES" />
+                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
+                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
+                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
+                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
+                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
+                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
+                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
+                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
+                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
+                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
+                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
+                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
+                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
+                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
+                                        <RowConstraints minHeight="10.0" prefHeight="30.0" vgrow="SOMETIMES"/>
                                     </rowConstraints>
                                     <children>
                                         <HBox spacing="10.0">
                                             <children>
-                                                <CheckBox fx:id="enableEmittersCheckBox" mnemonicParsing="false" text="Enable Emitters" />
+                                                <CheckBox fx:id="enableEmittersCheckBox" mnemonicParsing="false" text="Enable Emitters"/>
                                             </children>
                                             <padding>
-                                                <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                                                <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
                                             </padding>
                                         </HBox>
-                                        <Label layoutX="15.0" layoutY="62.0" text="Item Size" GridPane.rowIndex="1" />
-                                        <Slider fx:id="itemSizeSlider" blockIncrement="5.0" layoutX="15.0" layoutY="91.0" majorTickUnit="10.0" max="200.0" min="10.0" minorTickCount="2" showTickLabels="true" showTickMarks="true" value="180.0" GridPane.columnSpan="2147483647" GridPane.rowIndex="2" />
-                                        <Label layoutX="15.0" layoutY="182.0" text="Inner Radius" GridPane.rowIndex="3" />
-                                        <Slider fx:id="innerRadiusSlider" blockIncrement="5.0" layoutX="15.0" layoutY="211.0" majorTickUnit="10.0" max="200.0" min="10.0" minorTickCount="2" showTickLabels="true" showTickMarks="true" value="50.0" GridPane.columnSpan="2147483647" GridPane.rowIndex="4" />
-                                        <Slider fx:id="itemFitWidthSlider" blockIncrement="5.0" layoutX="15.0" layoutY="291.0" majorTickUnit="10.0" max="200.0" min="10.0" minorTickCount="2" showTickLabels="true" showTickMarks="true" value="40.0" GridPane.columnSpan="2147483647" GridPane.rowIndex="6" />
-                                        <Label layoutX="15.0" layoutY="262.0" text="Item Fit Width" GridPane.rowIndex="5" />
-                                        <Slider fx:id="menuSizeSlider" blockIncrement="5.0" layoutX="15.0" layoutY="371.0" majorTickUnit="50.0" max="1000.0" min="10.0" minorTickCount="4" showTickLabels="true" showTickMarks="true" value="150.0" GridPane.columnSpan="2147483647" GridPane.rowIndex="8" />
-                                        <Label layoutX="15.0" layoutY="342.0" text="Menu Radius" GridPane.rowIndex="7" />
-                                        <Label layoutX="15.0" layoutY="422.0" text="Offset" GridPane.rowIndex="9" />
-                                        <Slider fx:id="offsetSlider" blockIncrement="5.0" layoutX="15.0" layoutY="371.0" majorTickUnit="10.0" max="200.0" min="1.0" minorTickCount="4" showTickLabels="true" showTickMarks="true" value="10.0" GridPane.columnSpan="2147483647" GridPane.rowIndex="10" />
-                                        <Label text="Initial Angle" GridPane.rowIndex="11" />
-                                        <Slider fx:id="initialAngleSlider" blockIncrement="5.0" majorTickUnit="15.0" max="359.0" min="-359.0" minorTickCount="5" showTickLabels="true" showTickMarks="true" value="90.0" GridPane.columnSpan="2147483647" GridPane.rowIndex="12" />
-                                        <Label text="Stroke Width" GridPane.rowIndex="13" />
-                                        <Slider fx:id="strokeWidthSlider" blockIncrement="1.0" majorTickUnit="1.0" max="10.0" minorTickCount="9" showTickLabels="true" showTickMarks="true" snapToTicks="true" value="0.5" GridPane.columnSpan="2147483647" GridPane.rowIndex="14" />
-                                        <Label fx:id="itemSizeLabel" text="Size" GridPane.columnIndex="2" GridPane.rowIndex="1" />
-                                        <Label fx:id="innerRadiusLabel" text="Size" GridPane.columnIndex="2" GridPane.rowIndex="3" />
-                                        <Label fx:id="itemFitWidthLabel" text="Size" GridPane.columnIndex="2" GridPane.rowIndex="5" />
-                                        <Label fx:id="menuSizeLabel" text="Size" GridPane.columnIndex="2" GridPane.rowIndex="7" />
-                                        <Label fx:id="offsetLabel" text="Size" GridPane.columnIndex="2" GridPane.rowIndex="9" />
-                                        <Label fx:id="initialAngleLabel" text="Size" GridPane.columnIndex="2" GridPane.rowIndex="11" />
-                                        <Label fx:id="strokeWidthLabel" text="Size" GridPane.columnIndex="2" GridPane.rowIndex="13" />
+                                        <Label layoutX="15.0" layoutY="62.0" text="Item Size" GridPane.rowIndex="1"/>
+                                        <Slider fx:id="itemSizeSlider" blockIncrement="5.0" layoutX="15.0" layoutY="91.0" majorTickUnit="10.0" max="200.0"
+                                                min="10.0" minorTickCount="2" showTickLabels="true" showTickMarks="true" value="180.0"
+                                                GridPane.columnSpan="2147483647" GridPane.rowIndex="2"/>
+                                        <Label layoutX="15.0" layoutY="182.0" text="Inner Radius" GridPane.rowIndex="3"/>
+                                        <Slider fx:id="innerRadiusSlider" blockIncrement="5.0" layoutX="15.0" layoutY="211.0" majorTickUnit="10.0" max="200.0"
+                                                min="10.0" minorTickCount="2" showTickLabels="true" showTickMarks="true" value="50.0"
+                                                GridPane.columnSpan="2147483647" GridPane.rowIndex="4"/>
+                                        <Slider fx:id="itemFitWidthSlider" blockIncrement="5.0" layoutX="15.0" layoutY="291.0" majorTickUnit="10.0" max="200.0"
+                                                min="10.0" minorTickCount="2" showTickLabels="true" showTickMarks="true" value="40.0"
+                                                GridPane.columnSpan="2147483647" GridPane.rowIndex="6"/>
+                                        <Label layoutX="15.0" layoutY="262.0" text="Item Fit Width" GridPane.rowIndex="5"/>
+                                        <Slider fx:id="menuSizeSlider" blockIncrement="5.0" layoutX="15.0" layoutY="371.0" majorTickUnit="50.0" max="1000.0"
+                                                min="10.0" minorTickCount="4" showTickLabels="true" showTickMarks="true" value="150.0"
+                                                GridPane.columnSpan="2147483647" GridPane.rowIndex="8"/>
+                                        <Label layoutX="15.0" layoutY="342.0" text="Menu Radius" GridPane.rowIndex="7"/>
+                                        <Label layoutX="15.0" layoutY="422.0" text="Offset" GridPane.rowIndex="9"/>
+                                        <Slider fx:id="offsetSlider" blockIncrement="5.0" layoutX="15.0" layoutY="371.0" majorTickUnit="10.0" max="200.0"
+                                                min="1.0" minorTickCount="4" showTickLabels="true" showTickMarks="true" value="10.0"
+                                                GridPane.columnSpan="2147483647" GridPane.rowIndex="10"/>
+                                        <Label text="Initial Angle" GridPane.rowIndex="11"/>
+                                        <Slider fx:id="initialAngleSlider" blockIncrement="5.0" majorTickUnit="15.0" max="359.0" min="-359.0" minorTickCount="5"
+                                                showTickLabels="true" showTickMarks="true" value="90.0" GridPane.columnSpan="2147483647"
+                                                GridPane.rowIndex="12"/>
+                                        <Label text="Stroke Width" GridPane.rowIndex="13"/>
+                                        <Slider fx:id="strokeWidthSlider" blockIncrement="1.0" majorTickUnit="1.0" max="10.0" minorTickCount="9"
+                                                showTickLabels="true" showTickMarks="true" snapToTicks="true" value="0.5" GridPane.columnSpan="2147483647"
+                                                GridPane.rowIndex="14"/>
+                                        <Label fx:id="itemSizeLabel" text="Size" GridPane.columnIndex="2" GridPane.rowIndex="1"/>
+                                        <Label fx:id="innerRadiusLabel" text="Size" GridPane.columnIndex="2" GridPane.rowIndex="3"/>
+                                        <Label fx:id="itemFitWidthLabel" text="Size" GridPane.columnIndex="2" GridPane.rowIndex="5"/>
+                                        <Label fx:id="menuSizeLabel" text="Size" GridPane.columnIndex="2" GridPane.rowIndex="7"/>
+                                        <Label fx:id="offsetLabel" text="Size" GridPane.columnIndex="2" GridPane.rowIndex="9"/>
+                                        <Label fx:id="initialAngleLabel" text="Size" GridPane.columnIndex="2" GridPane.rowIndex="11"/>
+                                        <Label fx:id="strokeWidthLabel" text="Size" GridPane.columnIndex="2" GridPane.rowIndex="13"/>
                                     </children>
                                     <padding>
-                                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
                                     </padding>
                                 </GridPane>
                             </content>
@@ -240,95 +266,95 @@
                             <center>
                                 <VBox spacing="10.0" BorderPane.alignment="CENTER">
                                     <children>
-                                        <Label text="Position Coordinates" />
+                                        <Label text="Position Coordinates"/>
                                         <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="72.0" spacing="10.0">
                                             <children>
-                                                <Label layoutX="10.0" layoutY="10.0" prefHeight="20.0" prefWidth="100.0" text="X Factor" />
-                                                <Label prefHeight="20.0" prefWidth="100.0" text="Y Factor" />
-                                                <Label prefHeight="20.0" prefWidth="100.0" text="Z Factor" />
+                                                <Label layoutX="10.0" layoutY="10.0" prefHeight="20.0" prefWidth="100.0" text="X Factor"/>
+                                                <Label prefHeight="20.0" prefWidth="100.0" text="Y Factor"/>
+                                                <Label prefHeight="20.0" prefWidth="100.0" text="Z Factor"/>
                                             </children>
                                             <padding>
-                                                <Insets left="5.0" right="5.0" />
+                                                <Insets left="5.0" right="5.0"/>
                                             </padding>
                                         </HBox>
                                         <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="85.0" spacing="10.0">
                                             <children>
-                                    <Spinner editable="true" prefWidth="100.0" fx:id="xFactorSpinner" />
-                                    <Spinner fx:id="yFactorSpinner" editable="true" prefWidth="100.0" />
-                                    <Spinner fx:id="zFactorSpinner" editable="true" prefWidth="100.0" />
+                                                <Spinner editable="true" prefWidth="100.0" fx:id="xFactorSpinner"/>
+                                                <Spinner fx:id="yFactorSpinner" editable="true" prefWidth="100.0"/>
+                                                <Spinner fx:id="zFactorSpinner" editable="true" prefWidth="100.0"/>
                                             </children>
                                             <padding>
-                                                <Insets left="5.0" right="5.0" />
+                                                <Insets left="5.0" right="5.0"/>
                                             </padding>
                                         </HBox>
-                              <Separator prefWidth="200.0" />
+                                        <Separator prefWidth="200.0"/>
                                         <HBox spacing="10.0">
                                             <children>
-                                                <CheckBox fx:id="enableDirectionCheckBox" mnemonicParsing="false" text="Enable Direction Coordinates" />
+                                                <CheckBox fx:id="enableDirectionCheckBox" mnemonicParsing="false" text="Enable Direction Coordinates"/>
                                             </children>
                                             <padding>
-                                                <Insets left="5.0" right="5.0" />
+                                                <Insets left="5.0" right="5.0"/>
                                             </padding>
                                         </HBox>
                                         <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="55.0" spacing="10.0">
                                             <children>
-                                                <Label layoutX="10.0" layoutY="10.0" prefHeight="20.0" prefWidth="100.0" text="X Direction Factor" />
-                                                <Label prefHeight="20.0" prefWidth="100.0" text="Y Direction Factor" />
-                                                <Label prefHeight="20.0" prefWidth="100.0" text="Z Direction Factor" />
+                                                <Label layoutX="10.0" layoutY="10.0" prefHeight="20.0" prefWidth="100.0" text="X Direction Factor"/>
+                                                <Label prefHeight="20.0" prefWidth="100.0" text="Y Direction Factor"/>
+                                                <Label prefHeight="20.0" prefWidth="100.0" text="Z Direction Factor"/>
                                             </children>
                                             <padding>
-                                                <Insets left="5.0" right="5.0" />
+                                                <Insets left="5.0" right="5.0"/>
                                             </padding>
                                         </HBox>
                                         <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="118.0" spacing="10.0">
                                             <padding>
-                                                <Insets left="5.0" right="5.0" />
+                                                <Insets left="5.0" right="5.0"/>
                                             </padding>
-                                 <children>
-                                    <Spinner editable="true" prefWidth="100.0" fx:id="xDirectionFactorSpinner" />
-                                    <Spinner fx:id="yDirectionFactorSpinner" editable="true" prefWidth="100.0" />
-                                    <Spinner fx:id="zDirectionFactorSpinner" editable="true" prefWidth="100.0" />
-                                 </children>
+                                            <children>
+                                                <Spinner editable="true" prefWidth="100.0" fx:id="xDirectionFactorSpinner"/>
+                                                <Spinner fx:id="yDirectionFactorSpinner" editable="true" prefWidth="100.0"/>
+                                                <Spinner fx:id="zDirectionFactorSpinner" editable="true" prefWidth="100.0"/>
+                                            </children>
                                         </HBox>
                                         <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="181.0" spacing="5.0">
                                             <padding>
-                                                <Insets left="5.0" right="5.0" />
+                                                <Insets left="5.0" right="5.0"/>
                                             </padding>
                                         </HBox>
                                     </children>
-                           <padding>
-                              <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                           </padding>
+                                    <padding>
+                                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
+                                    </padding>
                                 </VBox>
                             </center>
                             <padding>
-                                <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                                <Insets bottom="10.0" left="10.0" right="10.0" top="10.0"/>
                             </padding>
-                     <right>
-                        <VBox BorderPane.alignment="CENTER">
-                           <children>
-                              <Label text="Dimension Labels" />
-                              <ScrollPane fx:id="dimensionLabelsScrollPane" fitToHeight="true" fitToWidth="true" pannable="true">
-                                 <content>
-                                    <ListView fx:id="dimensionLabelsListView" />
-                                 </content>
-                                 <padding>
-                                    <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                                 </padding>
-                              </ScrollPane>
-                              <HBox alignment="CENTER" spacing="5.0">
-                                 <children>
-                                    <Button minWidth="75.0" mnemonicParsing="false" onAction="#addDimensionLabel" text="Add" />
-                                    <Button minWidth="75.0" mnemonicParsing="false" onAction="#removeDimensionLabel" text="Remove" />
-                                    <Button minWidth="75.0" mnemonicParsing="false" onAction="#clearAllDimensionLabels" text="Clear All" />
-                                 </children>
-                              </HBox>
-                           </children>
-                           <padding>
-                              <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                           </padding>
-                        </VBox>
-                     </right>
+                            <right>
+                                <VBox BorderPane.alignment="CENTER">
+                                    <children>
+                                        <Label text="Dimension Labels"/>
+                                        <ScrollPane fx:id="dimensionLabelsScrollPane" fitToHeight="true" fitToWidth="true" pannable="true">
+                                            <content>
+                                                <ListView fx:id="dimensionLabelsListView"/>
+                                            </content>
+                                            <padding>
+                                                <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
+                                            </padding>
+                                        </ScrollPane>
+                                        <HBox alignment="CENTER" spacing="5.0">
+                                            <children>
+                                                <Button minWidth="75.0" mnemonicParsing="false" onAction="#addDimensionLabel" text="Add"/>
+                                                <Button minWidth="75.0" mnemonicParsing="false" onAction="#removeDimensionLabel" text="Remove"/>
+                                                <Button minWidth="75.0" mnemonicParsing="false" onAction="#clearAllDimensionLabels" text="Clear All"/>
+                                            </children>
+                                        </HBox>
+                                    </children>
+                                    <padding>
+                                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
+                                    </padding>
+                                </VBox>
+                            </right>
                         </BorderPane>
 
                     </content>
@@ -345,20 +371,20 @@
                                             <children>
                                                 <HBox alignment="CENTER_LEFT" spacing="5.0">
                                                     <padding>
-                                                        <Insets left="5.0" right="5.0" />
+                                                        <Insets left="5.0" right="5.0"/>
                                                     </padding>
                                                     <children>
-                                                        <Label maxWidth="-Infinity" prefWidth="150.0" text="Feature Vector Max" />
-                                                        <Spinner fx:id="featureVectorMaxSpinner" editable="true" maxWidth="-Infinity" prefWidth="100.0" />
+                                                        <Label maxWidth="-Infinity" prefWidth="150.0" text="Feature Vector Max"/>
+                                                        <Spinner fx:id="featureVectorMaxSpinner" editable="true" maxWidth="-Infinity" prefWidth="100.0"/>
                                                     </children>
                                                 </HBox>
                                                 <HBox alignment="CENTER_LEFT" spacing="5.0">
                                                     <padding>
-                                                        <Insets left="5.0" right="5.0" />
+                                                        <Insets left="5.0" right="5.0"/>
                                                     </padding>
                                                     <children>
-                                                        <Label maxWidth="-Infinity" prefWidth="150.0" text="Node Queue Limit" />
-                                                        <Spinner fx:id="nodeQueueLimitSpinner" editable="true" maxWidth="-Infinity" prefWidth="100.0" />
+                                                        <Label maxWidth="-Infinity" prefWidth="150.0" text="Node Queue Limit"/>
+                                                        <Spinner fx:id="nodeQueueLimitSpinner" editable="true" maxWidth="-Infinity" prefWidth="100.0"/>
                                                     </children>
                                                 </HBox>
                                             </children>
@@ -367,114 +393,119 @@
                                             <children>
                                                 <HBox alignment="CENTER_LEFT" spacing="5.0">
                                                     <padding>
-                                                        <Insets left="5.0" right="5.0" />
+                                                        <Insets left="5.0" right="5.0"/>
                                                     </padding>
                                                     <children>
-                                                        <Label maxWidth="-Infinity" prefWidth="150.0" text="Refresh Rate (ms)" />
-                                                        <Spinner fx:id="refreshRateSpinner" editable="true" maxWidth="-Infinity" prefWidth="100.0" />
+                                                        <Label maxWidth="-Infinity" prefWidth="150.0" text="Refresh Rate (ms)"/>
+                                                        <Spinner fx:id="refreshRateSpinner" editable="true" maxWidth="-Infinity" prefWidth="100.0"/>
                                                     </children>
                                                 </HBox>
                                                 <HBox alignment="CENTER_LEFT" spacing="5.0">
                                                     <padding>
-                                                        <Insets left="5.0" right="5.0" />
+                                                        <Insets left="5.0" right="5.0"/>
                                                     </padding>
                                                     <children>
-                                                        <Label maxWidth="-Infinity" prefWidth="150.0" text="Point 3D size (pixels)" />
-                                                        <Spinner fx:id="point3DSizeSpinner" editable="true" maxWidth="-Infinity" prefWidth="100.0" />
+                                                        <Label maxWidth="-Infinity" prefWidth="150.0" text="Point 3D size (pixels)"/>
+                                                        <Spinner fx:id="point3DSizeSpinner" editable="true" maxWidth="-Infinity" prefWidth="100.0"/>
                                                     </children>
                                                 </HBox>
                                             </children>
                                         </HBox>
-                                        <Separator />
+                                        <Separator/>
                                         <HBox layoutX="10.0" layoutY="93.0" spacing="5.0">
                                             <children>
-                                                <Label maxWidth="-Infinity" prefWidth="150.0" text="Data Scaling Mode" />
+                                                <Label maxWidth="-Infinity" prefWidth="150.0" text="Data Scaling Mode"/>
                                                 <HBox alignment="CENTER_LEFT" spacing="5.0">
                                                     <padding>
-                                                        <Insets left="5.0" right="5.0" />
+                                                        <Insets left="5.0" right="5.0"/>
                                                     </padding>
                                                     <children>
-                                                        <RadioButton fx:id="autoNormalizeRadioButton" mnemonicParsing="false" selected="true" text="Auto-Normalize View" />
+                                                        <RadioButton fx:id="autoNormalizeRadioButton" mnemonicParsing="false" selected="true"
+                                                                     text="Auto-Normalize View"/>
                                                     </children>
                                                 </HBox>
                                                 <HBox alignment="CENTER_LEFT" spacing="5.0">
                                                     <padding>
-                                                        <Insets left="5.0" right="5.0" />
+                                                        <Insets left="5.0" right="5.0"/>
                                                     </padding>
                                                     <children>
-                                                        <RadioButton fx:id="manualScalingRadioButton" mnemonicParsing="false" text="Manual Scaling" />
+                                                        <RadioButton fx:id="manualScalingRadioButton" mnemonicParsing="false" text="Manual Scaling"/>
                                                     </children>
                                                 </HBox>
-                                                <CheckBox fx:id="meanCenteredCheckBox" mnemonicParsing="false" selected="true" text="Mean Centered" />
+                                                <CheckBox fx:id="meanCenteredCheckBox" mnemonicParsing="false" selected="true" text="Mean Centered"/>
                                             </children>
                                             <padding>
-                                                <Insets left="5.0" right="5.0" />
+                                                <Insets left="5.0" right="5.0"/>
                                             </padding>
                                             <VBox.margin>
-                                                <Insets />
+                                                <Insets/>
                                             </VBox.margin>
                                         </HBox>
                                         <HBox layoutX="10.0" layoutY="93.0" spacing="5.0">
                                             <children>
-                                                <Label maxWidth="-Infinity" prefWidth="150.0" text="Current Max Abs" />
+                                                <Label maxWidth="-Infinity" prefWidth="150.0" text="Current Max Abs"/>
                                                 <HBox spacing="5.0">
                                                     <children>
-                                                        <TextField fx:id="currentMaxAbsTextField" editable="false" maxWidth="-Infinity" prefWidth="100.0" text="1.0" />
+                                                        <TextField fx:id="currentMaxAbsTextField" editable="false" maxWidth="-Infinity" prefWidth="100.0"
+                                                                   text="1.0"/>
                                                     </children>
                                                     <padding>
-                                                        <Insets left="5.0" right="5.0" />
+                                                        <Insets left="5.0" right="5.0"/>
                                                     </padding>
                                                 </HBox>
-                                                <Label layoutX="15.0" layoutY="10.0" maxWidth="-Infinity" prefWidth="150.0" text="Mean Centered Max Abs" />
+                                                <Label layoutX="15.0" layoutY="10.0" maxWidth="-Infinity" prefWidth="150.0" text="Mean Centered Max Abs"/>
                                                 <HBox layoutX="170.0" layoutY="10.0" spacing="5.0">
                                                     <children>
-                                                        <TextField fx:id="meanCenteredMaxAbsTextField" editable="false" maxWidth="-Infinity" prefWidth="100.0" text="1.0" />
+                                                        <TextField fx:id="meanCenteredMaxAbsTextField" editable="false" maxWidth="-Infinity" prefWidth="100.0"
+                                                                   text="1.0"/>
                                                     </children>
                                                     <padding>
-                                                        <Insets left="5.0" right="5.0" />
+                                                        <Insets left="5.0" right="5.0"/>
                                                     </padding>
                                                 </HBox>
                                             </children>
                                             <padding>
-                                                <Insets left="5.0" right="5.0" />
+                                                <Insets left="5.0" right="5.0"/>
                                             </padding>
                                         </HBox>
                                         <HBox alignment="CENTER" layoutX="10.0" layoutY="120.0" spacing="5.0">
                                             <children>
                                                 <HBox layoutX="285.0" layoutY="10.0">
                                                     <children>
-                                                        <Button fx:id="recomputeMaxAbsButton" mnemonicParsing="false" onAction="#recomputeMaxAbs" prefWidth="150.0" text="Recompute" />
+                                                        <Button fx:id="recomputeMaxAbsButton" mnemonicParsing="false" onAction="#recomputeMaxAbs"
+                                                                prefWidth="150.0" text="Recompute"/>
                                                     </children>
                                                 </HBox>
                                                 <HBox>
                                                     <children>
-                                                        <Button fx:id="resetMaxAbsButton" mnemonicParsing="false" onAction="#resetMaxAbs" prefWidth="150.0" text="Reset" />
+                                                        <Button fx:id="resetMaxAbsButton" mnemonicParsing="false" onAction="#resetMaxAbs" prefWidth="150.0"
+                                                                text="Reset"/>
                                                     </children>
                                                 </HBox>
-                                                <Button fx:id="exportButton" mnemonicParsing="false" onAction="#exportData" prefWidth="150.0" text="Export" />
+                                                <Button fx:id="exportButton" mnemonicParsing="false" onAction="#exportData" prefWidth="150.0" text="Export"/>
                                             </children>
                                             <padding>
-                                                <Insets left="5.0" right="5.0" />
+                                                <Insets left="5.0" right="5.0"/>
                                             </padding>
                                         </HBox>
                                         <HBox spacing="10.0">
                                             <children>
                                                 <HBox alignment="CENTER_LEFT" spacing="5.0">
                                                     <padding>
-                                                        <Insets left="5.0" right="5.0" />
+                                                        <Insets left="5.0" right="5.0"/>
                                                     </padding>
                                                     <children>
-                                                        <Label maxWidth="-Infinity" prefWidth="150.0" text="Point Scale (magnitude)" />
-                                                        <Spinner fx:id="pointScaleSpinner" editable="true" maxWidth="-Infinity" prefWidth="100.0" />
+                                                        <Label maxWidth="-Infinity" prefWidth="150.0" text="Point Scale (magnitude)"/>
+                                                        <Spinner fx:id="pointScaleSpinner" editable="true" maxWidth="-Infinity" prefWidth="100.0"/>
                                                     </children>
                                                 </HBox>
                                                 <HBox alignment="CENTER_LEFT" spacing="5.0">
                                                     <padding>
-                                                        <Insets left="5.0" right="5.0" />
+                                                        <Insets left="5.0" right="5.0"/>
                                                     </padding>
                                                     <children>
-                                                        <Label maxWidth="-Infinity" prefWidth="150.0" text="Scatter Buff Scaling" />
-                                                        <Spinner fx:id="scatterBuffScalingSpinner" editable="true" maxWidth="-Infinity" prefWidth="100.0" />
+                                                        <Label maxWidth="-Infinity" prefWidth="150.0" text="Scatter Buff Scaling"/>
+                                                        <Spinner fx:id="scatterBuffScalingSpinner" editable="true" maxWidth="-Infinity" prefWidth="100.0"/>
                                                     </children>
                                                 </HBox>
                                             </children>
@@ -483,7 +514,7 @@
                                 </VBox>
                             </center>
                             <padding>
-                                <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
+                                <Insets bottom="10.0" left="10.0" right="10.0" top="10.0"/>
                             </padding>
                         </BorderPane>
 
@@ -499,39 +530,43 @@
                                     <children>
                                         <HBox fx:id="startTimeHBox" alignment="CENTER_LEFT" spacing="10.0">
                                             <children>
-                                                <Label prefHeight="17.0" prefWidth="175.0" text="Hyperspace Background" />
-                                                <ColorPicker fx:id="backgroundColorPicker" editable="true" promptText="Sets the background color of the Hyperspace 3D scene." />
-                                                <Label prefHeight="17.0" prefWidth="80.0" text="Skybox" />
-                                                <CheckBox fx:id="skyboxCheckBox" mnemonicParsing="false" text="Enabled" />
+                                                <Label prefHeight="17.0" prefWidth="175.0" text="Hyperspace Background"/>
+                                                <ColorPicker fx:id="backgroundColorPicker" editable="true"
+                                                             promptText="Sets the background color of the Hyperspace 3D scene."/>
+                                                <Label prefHeight="17.0" prefWidth="80.0" text="Skybox"/>
+                                                <CheckBox fx:id="skyboxCheckBox" mnemonicParsing="false" text="Enabled"/>
                                             </children>
                                         </HBox>
                                         <HBox fx:id="startTimeHBox11" alignment="CENTER_LEFT" layoutX="15.0" layoutY="50.0" spacing="10.0">
                                             <children>
-                                                <Label prefHeight="17.0" prefWidth="175.0" text="Feature Data Visibility" />
-                                                <CheckBox fx:id="featureDataCheckBox" mnemonicParsing="false" prefHeight="17.0" prefWidth="134.0" selected="true" text="Enabled" />
+                                                <Label prefHeight="17.0" prefWidth="175.0" text="Feature Data Visibility"/>
+                                                <CheckBox fx:id="featureDataCheckBox" mnemonicParsing="false" prefHeight="17.0" prefWidth="134.0"
+                                                          selected="true" text="Enabled"/>
                                             </children>
                                         </HBox>
                                         <HBox fx:id="startTimeHBox112" alignment="CENTER_LEFT" layoutX="15.0" layoutY="50.0" spacing="10.0">
                                             <children>
-                                                <Label prefHeight="17.0" prefWidth="175.0" text="Color By" />
-                                                <RadioButton fx:id="colorByLabelRadioButton" mnemonicParsing="false" selected="true" text="Label" />
-                                                <RadioButton fx:id="colorByLayerRadioButton" mnemonicParsing="false" text="Layer" />
-                                                <RadioButton fx:id="colorByGradientRadioButton" mnemonicParsing="false" text="Gradient" />
-                                                <RadioButton fx:id="colorByScoreRadioButton" mnemonicParsing="false" text="Score" />
-                                                <RadioButton fx:id="colorByPfaRadioButton" layoutX="269.0" layoutY="10.0" mnemonicParsing="false" text="PFA" />
+                                                <Label prefHeight="17.0" prefWidth="175.0" text="Color By"/>
+                                                <RadioButton fx:id="colorByLabelRadioButton" mnemonicParsing="false" selected="true" text="Label"/>
+                                                <RadioButton fx:id="colorByLayerRadioButton" mnemonicParsing="false" text="Layer"/>
+                                                <RadioButton fx:id="colorByGradientRadioButton" mnemonicParsing="false" text="Gradient"/>
+                                                <RadioButton fx:id="colorByScoreRadioButton" mnemonicParsing="false" text="Score"/>
+                                                <RadioButton fx:id="colorByPfaRadioButton" layoutX="269.0" layoutY="10.0" mnemonicParsing="false" text="PFA"/>
                                             </children>
                                         </HBox>
                                         <HBox fx:id="startTimeHBox111" alignment="CENTER_LEFT" layoutX="15.0" layoutY="50.0" spacing="10.0">
                                             <children>
-                                                <Label prefHeight="17.0" prefWidth="175.0" text="Label and Layer Collection" />
-                                                <Button mnemonicParsing="false" onAction="#clearLabels" prefWidth="125.0" text="Clear All" />
-                                                <Button layoutX="195.0" layoutY="10.0" mnemonicParsing="false" onAction="#rescanLabels" prefWidth="125.0" text="Rescan" />
-                                    <Button layoutX="355.0" layoutY="10.0" mnemonicParsing="false" onAction="#exportLabels" prefWidth="125.0" text="Export" />
+                                                <Label prefHeight="17.0" prefWidth="175.0" text="Label and Layer Collection"/>
+                                                <Button mnemonicParsing="false" onAction="#clearLabels" prefWidth="125.0" text="Clear All"/>
+                                                <Button layoutX="195.0" layoutY="10.0" mnemonicParsing="false" onAction="#rescanLabels" prefWidth="125.0"
+                                                        text="Rescan"/>
+                                                <Button layoutX="355.0" layoutY="10.0" mnemonicParsing="false" onAction="#exportLabels" prefWidth="125.0"
+                                                        text="Export"/>
                                             </children>
                                         </HBox>
                                     </children>
                                     <padding>
-                                        <Insets bottom="25.0" left="5.0" right="5.0" top="5.0" />
+                                        <Insets bottom="25.0" left="5.0" right="5.0" top="5.0"/>
                                     </padding>
                                 </VBox>
                             </top>
@@ -544,16 +579,17 @@
                                                     <children>
                                                         <HBox alignment="CENTER_LEFT">
                                                             <children>
-                                                                <CheckBox fx:id="toggleAllVisibleCheckBox" mnemonicParsing="false" prefHeight="30.0" prefWidth="200.0" selected="true" text="Toggle All Visible" />
+                                                                <CheckBox fx:id="toggleAllVisibleCheckBox" mnemonicParsing="false" prefHeight="30.0"
+                                                                          prefWidth="200.0" selected="true" text="Toggle All Visible"/>
                                                             </children>
                                                             <VBox.margin>
-                                                                <Insets />
+                                                                <Insets/>
                                                             </VBox.margin>
                                                             <padding>
-                                                                <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                                                                <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
                                                             </padding>
                                                         </HBox>
-                                                        <ListView fx:id="factorLabelListView" />
+                                                        <ListView fx:id="factorLabelListView"/>
                                                     </children>
                                                 </VBox>
                                             </content>
@@ -562,7 +598,7 @@
                                             <content>
                                                 <VBox prefHeight="200.0" prefWidth="100.0">
                                                     <children>
-                                                        <ListView fx:id="featureLayerListView" />
+                                                        <ListView fx:id="featureLayerListView"/>
                                                     </children>
                                                 </VBox>
                                             </content>
@@ -573,62 +609,70 @@
                                                     <children>
                                                         <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="60.0" prefHeight="50.0" spacing="10.0">
                                                             <children>
-                                                                <RadioButton fx:id="hsbWheelRadioButton" mnemonicParsing="false" prefWidth="150.0" text="HSB Color Wheel" />
+                                                                <RadioButton fx:id="hsbWheelRadioButton" mnemonicParsing="false" prefWidth="150.0"
+                                                                             text="HSB Color Wheel"/>
                                                             </children>
                                                         </HBox>
                                                         <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="110.0" prefHeight="50.0" spacing="10.0">
                                                             <children>
-                                                                <RadioButton fx:id="colorMapRadioButton" mnemonicParsing="false" prefWidth="150.0" text="Color Presets" />
-                                                                <ChoiceBox fx:id="colorMapChoiceBox" prefWidth="150.0" />
+                                                                <RadioButton fx:id="colorMapRadioButton" mnemonicParsing="false" prefWidth="150.0"
+                                                                             text="Color Presets"/>
+                                                                <ChoiceBox fx:id="colorMapChoiceBox" prefWidth="150.0"/>
                                                             </children>
                                                         </HBox>
                                                         <HBox alignment="CENTER_LEFT" prefHeight="50.0" spacing="10.0">
                                                             <children>
-                                                                <RadioButton fx:id="singleColorRadioButton" mnemonicParsing="false" prefWidth="150.0" selected="true" text="Single Color" />
-                                                                <ColorPicker fx:id="colorSpectrumColorPicker" prefWidth="150.0" />
+                                                                <RadioButton fx:id="singleColorRadioButton" mnemonicParsing="false" prefWidth="150.0"
+                                                                             selected="true" text="Single Color"/>
+                                                                <ColorPicker fx:id="colorSpectrumColorPicker" prefWidth="150.0"/>
                                                             </children>
                                                         </HBox>
                                                         <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="10.0" prefHeight="50.0" spacing="10.0">
                                                             <children>
-                                                                <RadioButton fx:id="twoColorRadioButton" mnemonicParsing="false" prefWidth="150.0" text="Two Color" />
-                                                                <ColorPicker fx:id="twoColor1ColorPicker" prefWidth="150.0" />
-                                                                <ColorPicker fx:id="twoColor2ColorPicker" layoutX="160.0" layoutY="10.0" prefWidth="150.0" />
+                                                                <RadioButton fx:id="twoColorRadioButton" mnemonicParsing="false" prefWidth="150.0"
+                                                                             text="Two Color"/>
+                                                                <ColorPicker fx:id="twoColor1ColorPicker" prefWidth="150.0"/>
+                                                                <ColorPicker fx:id="twoColor2ColorPicker" layoutX="160.0" layoutY="10.0" prefWidth="150.0"/>
                                                             </children>
                                                         </HBox>
                                                         <HBox alignment="CENTER_LEFT" prefHeight="50.0" spacing="10.0">
                                                             <children>
                                                                 <VBox>
                                                                     <children>
-                                                                        <Label maxWidth="-Infinity" prefWidth="100.0" text="Score Minimum" />
-                                                                        <Spinner fx:id="scoreMinimumSpinner" editable="true" maxWidth="-Infinity" prefWidth="100.0" />
+                                                                        <Label maxWidth="-Infinity" prefWidth="100.0" text="Score Minimum"/>
+                                                                        <Spinner fx:id="scoreMinimumSpinner" editable="true" maxWidth="-Infinity"
+                                                                                 prefWidth="100.0"/>
                                                                     </children>
                                                                 </VBox>
                                                                 <VBox>
                                                                     <children>
-                                                                        <Label maxWidth="-Infinity" prefWidth="100.0" text="Score Maximum" />
-                                                                        <Spinner fx:id="scoreMaximumSpinner" editable="true" maxWidth="-Infinity" prefWidth="100.0" />
+                                                                        <Label maxWidth="-Infinity" prefWidth="100.0" text="Score Maximum"/>
+                                                                        <Spinner fx:id="scoreMaximumSpinner" editable="true" maxWidth="-Infinity"
+                                                                                 prefWidth="100.0"/>
                                                                     </children>
                                                                 </VBox>
                                                                 <VBox layoutX="10.0" layoutY="10.0">
                                                                     <children>
-                                                                        <Label maxWidth="-Infinity" prefWidth="100.0" text="PFA Minimum" />
-                                                                        <Spinner fx:id="pfaMinimumSpinner" editable="true" maxWidth="-Infinity" prefWidth="100.0" />
+                                                                        <Label maxWidth="-Infinity" prefWidth="100.0" text="PFA Minimum"/>
+                                                                        <Spinner fx:id="pfaMinimumSpinner" editable="true" maxWidth="-Infinity"
+                                                                                 prefWidth="100.0"/>
                                                                     </children>
                                                                 </VBox>
                                                                 <VBox layoutX="120.0" layoutY="10.0">
                                                                     <children>
-                                                                        <Label maxWidth="-Infinity" prefWidth="100.0" text="PFA Maximum" />
-                                                                        <Spinner fx:id="pfaMaximumSpinner" editable="true" maxWidth="-Infinity" prefWidth="100.0" />
+                                                                        <Label maxWidth="-Infinity" prefWidth="100.0" text="PFA Maximum"/>
+                                                                        <Spinner fx:id="pfaMaximumSpinner" editable="true" maxWidth="-Infinity"
+                                                                                 prefWidth="100.0"/>
                                                                     </children>
                                                                 </VBox>
                                                             </children>
                                                             <padding>
-                                                                <Insets left="5.0" />
+                                                                <Insets left="5.0"/>
                                                             </padding>
                                                         </HBox>
                                                     </children>
                                                     <padding>
-                                                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                                                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
                                                     </padding>
                                                 </VBox>
                                             </content>

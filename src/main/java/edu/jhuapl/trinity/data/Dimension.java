@@ -20,17 +20,18 @@ package edu.jhuapl.trinity.data;
  * #L%
  */
 
+import javafx.scene.paint.Color;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
-import javafx.scene.paint.Color;
 
 /**
  * @author Sean Phillips
  */
 public class Dimension {
-    public String labelString; 
-    public int index; 
+    public String labelString;
+    public int index;
     public Color color;
 
     public Dimension(String label, int index, Color color) {
@@ -38,6 +39,7 @@ public class Dimension {
         this.index = index;
         this.color = color;
     }
+
     /**
      * Provides lookup mechanism to find any object model that is currently
      * anchored in the system.
@@ -47,14 +49,16 @@ public class Dimension {
     public static ArrayList<Dimension> getDimensions() {
         return globalDimensionList;
     }
+
     public static ArrayList<String> getDimensionsAsStrings() {
         ArrayList<String> strings = globalDimensionList.stream()
             .map(t -> t.labelString)
             .collect(Collectors.toCollection(ArrayList::new));
         return strings;
     }
+
     public static Dimension getDimension(int index) {
-        if(index >= globalDimensionList.size()) return null;
+        if (index >= globalDimensionList.size()) return null;
         return globalDimensionList.get(index);
     }
 
@@ -71,14 +75,14 @@ public class Dimension {
     }
 
     public static boolean replaceDimension(int index, Dimension d) {
-        if(index >= globalDimensionList.size()) return false;
+        if (index >= globalDimensionList.size()) return false;
         globalDimensionList.remove(d.index);
-        globalDimensionList.add(d.index,d);
+        globalDimensionList.add(d.index, d);
         return true;
     }
 
     public static boolean removeDimension(int index) {
-        if(index >= globalDimensionList.size()) return false;
+        if (index >= globalDimensionList.size()) return false;
         Dimension removed = globalDimensionList.remove(index);
         return true;
     }
