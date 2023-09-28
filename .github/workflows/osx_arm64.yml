@@ -16,7 +16,6 @@ on:
 permissions:
   contents: write
 
-# cancel in progress jobs or runs for the current workflow
 concurrency:
   group: arm-${{ github.head_ref || github.ref }}
   cancel-in-progress: ${{ github.event_name == 'pull_request' }}
@@ -94,4 +93,4 @@ jobs:
         run: |
           mv build/release/Trinity.app "Trinity.app"
           zip -r "$RELEASE_NAME-jpackage.zip" "Trinity.app"
-          gh release upload "$GITHUB_REF_NAME" "$RELEASE_NAME-jpackage.zip"
+          gh release upload "${{ github.ref_name }}" "$RELEASE_NAME-jpackage.zip"
