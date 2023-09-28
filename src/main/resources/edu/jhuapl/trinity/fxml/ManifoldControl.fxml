@@ -82,7 +82,6 @@
                               <HBox alignment="CENTER" spacing="10.0" GridPane.columnSpan="2147483647" GridPane.rowIndex="8">
                                  <children>
                                                 <Button defaultButton="true" mnemonicParsing="false" onAction="#runPCA" prefWidth="175.0" text="Project Data" />
-                                    <Button disable="true" mnemonicParsing="false" onAction="#exportMatrix" prefWidth="175.0" text="Export Eigenvectors" />
                                     <Button mnemonicParsing="false" onAction="#saveProjections" prefWidth="175.0" text="Save Projections" />
                                  </children>
                                  <padding>

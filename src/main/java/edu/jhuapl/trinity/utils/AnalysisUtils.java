@@ -181,7 +181,7 @@ public enum AnalysisUtils {
         RealMatrix centeredMatrix = centerMatrixByColumnMean(originalMatrix);
         Utils.printTotalTime(startTime);
 
-        System.out.print("getting covariance matrix... ");
+        System.out.print("Calculating covariance matrix... ");
         startTime = System.nanoTime();
         //Calculate covariance matrix of centered matrix
         Covariance covariance = new Covariance(centeredMatrix);
@@ -220,14 +220,26 @@ public enum AnalysisUtils {
      * @link https://blog.clairvoyantsoft.com/eigen-decomposition-and-pca-c50f4ca15501
      */
     public static double[][] doCommonsSVD(double[][] array) {
+        System.out.print("Starting SVD Process. Centering matrix... ");
+        long startTime = System.nanoTime();
         //create real matrix of original inputs
         RealMatrix originalMatrix = MatrixUtils.createRealMatrix(array);
         //center columns by subtracting column means
         RealMatrix centeredMatrix = centerMatrixByColumnMean(originalMatrix);
+        Utils.printTotalTime(startTime);
+        
+        System.out.print("Calculating covariance matrix... ");
+        startTime = System.nanoTime();
         //Calculate covariance matrix of centered matrix
         Covariance covariance = new Covariance(centeredMatrix);
         RealMatrix covarianceMatrix = covariance.getCovarianceMatrix();
+        Utils.printTotalTime(startTime);
+        
+        System.out.print("Singular Value Decomposition... ");
         SingularValueDecomposition svd = new SingularValueDecomposition(covarianceMatrix);
+        Utils.printTotalTime(startTime);
+
+        System.out.print("Projection... ");        
         //Project the original matrix against the new axes defined by the eigenvectors
         int rowCount = originalMatrix.getRowDimension();
         int columnCount = originalMatrix.getColumnDimension();
@@ -239,6 +251,8 @@ public enum AnalysisUtils {
                     .dotProduct(singularVector);
             }
         }
+        Utils.printTotalTime(startTime);
+
         return projectedVectors;
     }
 

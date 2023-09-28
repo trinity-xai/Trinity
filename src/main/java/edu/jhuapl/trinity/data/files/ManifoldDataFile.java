@@ -72,8 +72,6 @@ public class ManifoldDataFile extends File implements Transferable {
     public static boolean isManifoldDataFile(File file) throws IOException {
         String body = Files.readString(file.toPath());
         return ManifoldData.isManifoldData(body);
-//        return firstLine.isPresent() &&
-//        (firstLine.get().contains(FILE_DESC1) || firstLine.get().contains(FILE_DESC2));
     }
 
     /**

@@ -2427,8 +2427,11 @@ public class Projections3DPane extends StackPane implements
 
                 System.out.print("PCA... ");
                 long startTime = System.nanoTime();
-//                double[][] pcaProjection = AnalysisUtils.doCommonsPCA(featureArray);
-                double[][] pcaProjection = AnalysisUtils.doCommonsPCA(truncArray);
+                double[][] pcaProjection = null;
+                if(config.method == AnalysisUtils.ANALYSIS_METHOD.SVD)
+                    pcaProjection = AnalysisUtils.doCommonsSVD(truncArray);
+                else
+                    pcaProjection = AnalysisUtils.doCommonsPCA(truncArray);
                 Utils.printTotalTime(startTime);
                 
                 System.out.println("mapping projected PCA data back to FeatureVectors...");
