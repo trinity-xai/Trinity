@@ -25,9 +25,6 @@ import com.github.quickhull3d.QuickHull3D;
 import edu.jhuapl.trinity.data.Manifold;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
-import java.io.File;
-import java.util.ArrayList;
-import java.util.Arrays;
 import javafx.animation.AnimationTimer;
 import javafx.scene.Group;
 import javafx.scene.control.ColorPicker;
@@ -46,15 +43,18 @@ import javafx.scene.shape.Shape3D;
 import javafx.scene.shape.Sphere;
 import javafx.scene.shape.TriangleMesh;
 import javafx.scene.text.Font;
+import javafx.stage.FileChooser;
+import org.fxyz3d.geometry.Face3;
 import org.fxyz3d.geometry.Point3D;
+import org.fxyz3d.shapes.primitives.helper.TriangleMeshHelper;
 
+import java.io.File;
+import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashMap;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.DoubleStream;
-import javafx.stage.FileChooser;
-import org.fxyz3d.geometry.Face3;
-import org.fxyz3d.shapes.primitives.helper.TriangleMeshHelper;
 
 
 /**
@@ -65,7 +65,7 @@ public class Manifold3D extends Group {
     public Group labelGroup = new Group();
     private Manifold manifold = null;
     public QuickHull3D hull;
-    
+
     public TriangleMesh quickhullTriangleMesh;
     public MeshView quickhullMeshView;
     public TriangleMesh quickhullLinesTriangleMesh;
@@ -74,28 +74,28 @@ public class Manifold3D extends Group {
     public static Function<Point3D, Point3d> point3DToHullPoint = p -> new Point3d(p.x, p.y, p.z);
     public static Function<Point3d, Point3D> hullPointToPoint3D = p -> new Point3D(p.x, p.y, p.z);
     private TexturedManifold texturedManifold;
-    
+
     //allows 2D labels to track their 3D counterparts
     HashMap<Shape3D, Label> shape3DToLabel = new HashMap<>();
     AnimationTimer tessellationTimer;
     private List<Point3D> originalPoint3Ds = null;
     public static File latestDir = new File(".");
-    
+
     public Manifold3D(List<Point3D> point3DList, boolean triangulate, boolean makeLines, boolean makePoints) {
         originalPoint3Ds = point3DList;
         buildHullMesh(point3DList, triangulate, makeLines, makePoints);
-        
+
         List<Point3D> fxyzPoints = new ArrayList<>();
         for (int i = 0; i < hull.getNumVertices(); i++) {
             Point3d p3d = hull.getVertices()[i];
             fxyzPoints.add(hullPointToPoint3D.apply(p3d));
         }
         List<Face3> faces = new ArrayList<>();
-        for(int[] face : hull.getFaces()) {
-            faces.add(new Face3(face[0],face[1],face[2]));
+        for (int[] face : hull.getFaces()) {
+            faces.add(new Face3(face[0], face[1], face[2]));
         }
         texturedManifold = new TexturedManifold(fxyzPoints, faces);
-        
+
         quickhullMeshView = new MeshView(quickhullTriangleMesh);
         PhongMaterial quickhullMaterial = new PhongMaterial(Color.SKYBLUE);
         quickhullMeshView.setMaterial(quickhullMaterial);
@@ -113,7 +113,7 @@ public class Manifold3D extends Group {
         MenuItem editPointsItem = new MenuItem("Edit Shape");
         editPointsItem.setOnAction(e -> {
             getScene().getRoot().fireEvent(new ApplicationEvent(
-            ApplicationEvent.SHOW_SHAPE3D_CONTROLS, this));
+                ApplicationEvent.SHOW_SHAPE3D_CONTROLS, this));
         });
 
         ColorPicker diffuseColorPicker = new ColorPicker(Color.SKYBLUE);
@@ -134,21 +134,21 @@ public class Manifold3D extends Group {
             Integer i = spinner.getValue();
             animateTessellation(i.longValue());
         });
-        
+
         MenuItem exportItem = new MenuItem("Export Manifold3D");
         exportItem.setOnAction(e -> {
             FileChooser fc = new FileChooser();
             fc.setTitle("Choose ManifoldData file output...");
             fc.setInitialFileName("ManifoldData.json");
-            if(!latestDir.isDirectory())
+            if (!latestDir.isDirectory())
                 latestDir = new File(".");
             fc.setInitialDirectory(latestDir);
             File file = fc.showSaveDialog(getScene().getWindow());
             if (null != file) {
-                if(file.getParentFile().isDirectory())
+                if (file.getParentFile().isDirectory())
                     latestDir = file;
                 getScene().getRoot().fireEvent(new ManifoldEvent(
-                ManifoldEvent.EXPORT_MANIFOLD_DATA, file, this));
+                    ManifoldEvent.EXPORT_MANIFOLD_DATA, file, this));
             }
         });
         MenuItem printBoundsCentroid = new MenuItem("Print Bounds Centroid");
@@ -156,7 +156,7 @@ public class Manifold3D extends Group {
             Point3D p = getBoundsCentroid();
             System.out.println(p);
         });
-        cm.getItems().addAll(editPointsItem, exportItem, diffuseColorItem, 
+        cm.getItems().addAll(editPointsItem, exportItem, diffuseColorItem,
             specColorItem, tessallateItem, printBoundsCentroid);
         cm.setAutoFix(true);
         cm.setAutoHide(true);
@@ -173,18 +173,22 @@ public class Manifold3D extends Group {
             }
         });
     }
+
     public double getBoundsWidth() {
         return quickhullLinesMeshView.getBoundsInLocal().getWidth();
     }
+
     public double getBoundsHeight() {
         return quickhullLinesMeshView.getBoundsInLocal().getHeight();
     }
+
     public double getBoundsDepth() {
         return quickhullLinesMeshView.getBoundsInLocal().getDepth();
     }
-    
+
     /**
      * The mathematical middle (the mean of the extrema) in each dimension
+     *
      * @return The center of the Bounding Box
      */
     public Point3D getBoundsCentroid() {
@@ -192,10 +196,12 @@ public class Manifold3D extends Group {
             quickhullMeshView.getBoundsInLocal().getCenterY(),
             quickhullMeshView.getBoundsInLocal().getCenterZ());
     }
+
     public boolean insideBounds(javafx.geometry.Point3D point3D) {
         return texturedManifold.getBoundsInLocal().contains(point3D);
     }
-    //https://stackoverflow.com/questions/77936/whats-the-best-way-to-calculate-a-3d-or-n-d-centroid    
+
+    //https://stackoverflow.com/questions/77936/whats-the-best-way-to-calculate-a-3d-or-n-d-centroid
     public Point3D getAverageConvexCentroid() {
         double aveX = Arrays.stream(hull.getVertices())
             .flatMapToDouble(p -> DoubleStream.of(p.x))
@@ -208,8 +214,10 @@ public class Manifold3D extends Group {
             .average().getAsDouble();
         return new Point3D(aveX, aveY, aveZ);
     }
+
     /**
      * https://stackoverflow.com/questions/61702154/calculate-median-using-java-stream-api
+     *
      * @return the Point3D median center of the hull
      */
     public Point3D getMedianConvexCentroid() {
@@ -221,7 +229,7 @@ public class Manifold3D extends Group {
                 .limit(2).average().getAsDouble() :
             sorted.skip(size / 2)
                 .findFirst().getAsDouble();
-    
+
         sorted = Arrays.stream(hull.getVertices())
             .flatMapToDouble(p -> DoubleStream.of(p.y)).sorted();
         double medianY = size % 2 == 0 ?
@@ -238,46 +246,47 @@ public class Manifold3D extends Group {
             sorted.skip(size / 2)
                 .findFirst().getAsDouble();
         return new Point3D(medianX, medianY, medianZ);
-    }    
+    }
+
     public List<Face3> getIntersections(org.fxyz3d.geometry.Point3D startingPoint) {
         TriangleMeshHelper helper = new TriangleMeshHelper();
         org.fxyz3d.geometry.Point3D insideMeshPoint = getBoundsCentroid();
-        
+
         List<Face3> listIntersections = helper.getListIntersections(
-            startingPoint, insideMeshPoint, 
-                texturedManifold.vertices, texturedManifold.faces);
+            startingPoint, insideMeshPoint,
+            texturedManifold.vertices, texturedManifold.faces);
         return listIntersections;
     }
 
 //    public javafx.geometry.Point3D getClosestFacePoint(javafx.geometry.Point3D startingPoint) {
 //        javafx.geometry.Point3D shortestPoint = null;
 //        TriangleMeshHelper helper = new TriangleMeshHelper();
-//        
+//
 //        List<Face3> listIntersections = helper.getListIntersections(
-//            startingPoint, direction, 
+//            startingPoint, direction,
 //                texturedManifold.vertices, texturedManifold.faces);
 //
 //
 //        return shortestPoint;
 //    }
-    
+
     public javafx.geometry.Point3D getClosestHullPoint(javafx.geometry.Point3D startingPoint) {
         javafx.geometry.Point3D shortestPoint = null;
         double distance = 0;
-        for(Point3D point : originalPoint3Ds) {
+        for (Point3D point : originalPoint3Ds) {
             double currentDistance = startingPoint.distance(point.x, point.y, point.z);
-            if(null == shortestPoint || currentDistance < distance) {
-               distance = currentDistance;
-               shortestPoint = new javafx.geometry.Point3D(point.x, point.y, point.z);
+            if (null == shortestPoint || currentDistance < distance) {
+                distance = currentDistance;
+                shortestPoint = new javafx.geometry.Point3D(point.x, point.y, point.z);
             }
         }
         return shortestPoint;
     }
-    
+
     public void refreshMesh(List<Point3D> point3DList, boolean triangulate, boolean makeLines, boolean makePoints) {
         quickhullLinesTriangleMesh.getPoints().clear();
         quickhullLinesTriangleMesh.getTexCoords().clear();
-        quickhullLinesTriangleMesh.getFaces().clear();        
+        quickhullLinesTriangleMesh.getFaces().clear();
         buildHullMesh(point3DList, triangulate, makeLines, makePoints);
         quickhullMeshView.setMesh(quickhullTriangleMesh);
         if (makeLines) {
@@ -287,8 +296,9 @@ public class Manifold3D extends Group {
             quickhullLinesMeshView.setMesh(quickhullLinesTriangleMesh);
         }
 //        if (makePoints)
-//            makeDebugPoints(hull, artScale, false); 
+//            makeDebugPoints(hull, artScale, false);
     }
+
     private void buildHullMesh(List<Point3D> point3DList, boolean triangulate, boolean makeLines, boolean makePoints) {
         hull = new QuickHull3D();
         //Construct an array of Point3D's

@@ -21,10 +21,11 @@ package edu.jhuapl.trinity.data;
  */
 
 import edu.jhuapl.trinity.javafx.javafx3d.Manifold3D;
-import java.util.ArrayList;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.geometry.Point3D;
 import javafx.scene.paint.Color;
+
+import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;

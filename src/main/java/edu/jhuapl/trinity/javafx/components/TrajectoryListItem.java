@@ -49,11 +49,11 @@ public class TrajectoryListItem extends HBox {
         colorPicker = new ColorPicker(trajectory.getColor());
         colorPicker.setPrefWidth(175);
         String stateCountString = "States: ";
-        if(null != trajectory.totalStates)
+        if (null != trajectory.totalStates)
             stateCountString += trajectory.totalStates;
         stateCountLabel = new Label(stateCountString);
         VBox vbox = new VBox(2, labelTextField,
-        new HBox(15, visibleCheckBox, stateCountLabel));
+            new HBox(15, visibleCheckBox, stateCountLabel));
         getChildren().addAll(vbox, colorPicker);
         setSpacing(5);
         colorPicker.valueProperty().addListener(cl -> {
@@ -63,7 +63,7 @@ public class TrajectoryListItem extends HBox {
                     Trajectory.updateTrajectory(this.trajectory.getLabel(), this.trajectory);
                     //Let application know this trajectory's visibility has changed
                     getScene().getRoot().fireEvent(new TrajectoryEvent(
-                    TrajectoryEvent.TRAJECTORY_COLOR_CHANGED, this.trajectory));
+                        TrajectoryEvent.TRAJECTORY_COLOR_CHANGED, this.trajectory));
                 }
             }
         });
@@ -74,17 +74,18 @@ public class TrajectoryListItem extends HBox {
                     Trajectory.updateTrajectory(this.trajectory.getLabel(), this.trajectory);
                     //Let application know this trajectory's visibility has changed
                     getScene().getRoot().fireEvent(new TrajectoryEvent(
-                    TrajectoryEvent.TRAJECTORY_VISIBILITY_CHANGED, this.trajectory));
+                        TrajectoryEvent.TRAJECTORY_VISIBILITY_CHANGED, this.trajectory));
                 }
             }
         });
-        
+
         setOnMouseClicked(e -> {
             //Let application know this distance object has been selected
             getScene().getRoot().fireEvent(new TrajectoryEvent(
                 TrajectoryEvent.TRAJECTORY_OBJECT_SELECTED, this.trajectory));
         });
     }
+
     public void setDataVisible(boolean visible) {
         visibleCheckBox.setSelected(visible);
     }

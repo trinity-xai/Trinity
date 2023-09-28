@@ -22,12 +22,13 @@ package edu.jhuapl.trinity.javafx.components;
 
 import edu.jhuapl.trinity.data.Manifold;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
-import org.fxyz3d.geometry.Point3D;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.layout.HBox;
+import org.fxyz3d.geometry.Point3D;
+
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 
 /**
  * @author Sean Phillips
@@ -51,24 +52,27 @@ public class PointListItem extends HBox {
         includeCheckBox = new CheckBox("");
         includeCheckBox.setSelected(included);
 
-        getChildren().addAll(includeCheckBox, label );
+        getChildren().addAll(includeCheckBox, label);
         setSpacing(5);
         includeCheckBox.selectedProperty().addListener(cl -> {
             if (null != includeCheckBox.getScene()) {
                 getScene().getRoot().fireEvent(new ManifoldEvent(
-                    ManifoldEvent.TOGGLE_HULL_POINT, 
-                        this.manifold, point3D));
+                    ManifoldEvent.TOGGLE_HULL_POINT,
+                    this.manifold, point3D));
             }
         });
     }
+
     private String formattedString() {
         return format.format(getPoint3D().getX()) + ", "
             + format.format(getPoint3D().getY()) + ", "
             + format.format(getPoint3D().getZ());
     }
+
     public boolean isSelected() {
         return includeCheckBox.isSelected();
     }
+
     /**
      * @return the point3D
      */

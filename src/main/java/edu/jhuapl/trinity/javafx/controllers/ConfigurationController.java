@@ -45,6 +45,7 @@ import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
@@ -52,12 +53,16 @@ import javafx.scene.control.ColorPicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.RadioButton;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Slider;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleGroup;
+import javafx.scene.image.ImageView;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
 import javafx.stage.FileChooser;
 
 import java.io.File;
@@ -71,11 +76,6 @@ import java.util.List;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javafx.geometry.Pos;
-import javafx.scene.control.ScrollPane;
-import javafx.scene.image.ImageView;
-import javafx.scene.layout.VBox;
-import javafx.scene.text.Font;
 
 /**
  * FXML Controller class
@@ -160,7 +160,7 @@ public class ConfigurationController implements Initializable {
     private ListView<DimensionLabelItem> dimensionLabelsListView;
     @FXML
     private ScrollPane dimensionLabelsScrollPane;
-    
+
     @FXML
     private Spinner<Integer> xFactorSpinner;
     @FXML
@@ -176,7 +176,7 @@ public class ConfigurationController implements Initializable {
     private Spinner<Integer> yDirectionFactorSpinner;
     @FXML
     private Spinner<Integer> zDirectionFactorSpinner;
-    
+
     @FXML
     private Spinner featureVectorMaxSpinner;
     @FXML
@@ -298,10 +298,10 @@ public class ConfigurationController implements Initializable {
         ImageView iv = ResourceUtils.loadIcon("dimensions", 250);
         VBox placeholder = new VBox(20, iv, new Label("No Custom Dimension Labels"));
         placeholder.setAlignment(Pos.CENTER);
-        dimensionLabelsListView.setPlaceholder(placeholder);        
+        dimensionLabelsListView.setPlaceholder(placeholder);
         //get all existing dimension labels
         List<DimensionLabelItem> existingDimensions = new ArrayList<>();
-        for(Dimension d : Dimension.getDimensions()) {
+        for (Dimension d : Dimension.getDimensions()) {
             existingDimensions.add(new DimensionLabelItem(d));
         }
         //add them all in one shot to avoid massive event firings
@@ -310,13 +310,13 @@ public class ConfigurationController implements Initializable {
         scene.getRoot().addEventHandler(HyperspaceEvent.DIMENSION_LABELS_SET, e -> {
             dimensionLabelsListView.getItems().clear();
             List<DimensionLabelItem> newDimensions = new ArrayList<>();
-            for(Dimension d : Dimension.getDimensions()) {
+            for (Dimension d : Dimension.getDimensions()) {
                 newDimensions.add(new DimensionLabelItem(d));
             }
             //add them all in one shot to avoid massive event firings
-            dimensionLabelsListView.getItems().addAll(newDimensions);            
+            dimensionLabelsListView.getItems().addAll(newDimensions);
         });
-        
+
         List<FactorLabelListItem> existingLabelItems = new ArrayList<>();
         for (FactorLabel fl : FactorLabel.getFactorLabels()) {
             FactorLabelListItem item = new FactorLabelListItem(fl);
@@ -371,6 +371,7 @@ public class ConfigurationController implements Initializable {
         addHyperspaceListeners();
         setupColorControls();
     }
+
     private void setupColorControls() {
 
         scoreMinimumSpinner.setValueFactory(
@@ -474,6 +475,7 @@ public class ConfigurationController implements Initializable {
                     colorMapChoiceBox.getValue()));
         });
     }
+
     private void addHyperspaceListeners() {
         scene.getRoot().addEventHandler(HyperspaceEvent.NEW_MAX_ABS, e -> {
             maxAbsVal = (double) e.object;
@@ -486,13 +488,13 @@ public class ConfigurationController implements Initializable {
         scene.getRoot().addEventHandler(HyperspaceEvent.FACTOR_COORDINATES_KEYPRESS, e -> {
             enableCoordinateNotifications = false;
             CoordinateSet cs = (CoordinateSet) e.object;
-            if (!cs.coordinateIndices.isEmpty()) 
+            if (!cs.coordinateIndices.isEmpty())
                 xFactorSpinner.getValueFactory().setValue(cs.coordinateIndices.get(0));
             if (cs.coordinateIndices.size() > 1)
                 yFactorSpinner.getValueFactory().setValue(cs.coordinateIndices.get(1));
             if (cs.coordinateIndices.size() > 2)
                 zFactorSpinner.getValueFactory().setValue(cs.coordinateIndices.get(2));
-            if (cs.coordinateIndices.size() > 3) 
+            if (cs.coordinateIndices.size() > 3)
                 xDirectionFactorSpinner.getValueFactory().setValue(cs.coordinateIndices.get(3));
             if (cs.coordinateIndices.size() > 4)
                 yDirectionFactorSpinner.getValueFactory().setValue(cs.coordinateIndices.get(4));
@@ -520,9 +522,10 @@ public class ConfigurationController implements Initializable {
             updateSpinnerMaxValues();
         });
     }
+
     private void updateSpinnerMaxValues() {
         //update position and direction spinners
-        Integer newMax = (Integer)featureVectorMaxSpinner.getValue();
+        Integer newMax = (Integer) featureVectorMaxSpinner.getValue();
         Integer current = xFactorSpinner.getValue();
         xFactorSpinner.setValueFactory(
             new SpinnerValueFactory.IntegerSpinnerValueFactory(
@@ -551,8 +554,9 @@ public class ConfigurationController implements Initializable {
         current = zDirectionFactorSpinner.getValue();
         zDirectionFactorSpinner.setValueFactory(
             new SpinnerValueFactory.IntegerSpinnerValueFactory(
-                0, newMax, current, 1));        
+                0, newMax, current, 1));
     }
+
     private void setupDataBoundsSpinners() {
         featureVectorMaxSpinner.setValueFactory(
             new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 1024, featureVectorMax, 16));
@@ -615,6 +619,7 @@ public class ConfigurationController implements Initializable {
                     (Double) scatterBuffScalingSpinner.getValue()));
         });
     }
+
     private void setupPositionSpinners() {
         xFactorSpinner.setValueFactory(
             new SpinnerValueFactory.IntegerSpinnerValueFactory(
@@ -623,10 +628,10 @@ public class ConfigurationController implements Initializable {
             if (enableCoordinateNotifications)
                 updateHyperspaceFactors();
         });
-        
+
         yFactorSpinner.setValueFactory(
             new SpinnerValueFactory.IntegerSpinnerValueFactory(
-                0, featureVectorMax, 1, 1));        
+                0, featureVectorMax, 1, 1));
         yFactorSpinner.valueProperty().addListener((obs, oldval, newVal) -> {
             if (enableCoordinateNotifications)
                 updateHyperspaceFactors();
@@ -634,12 +639,13 @@ public class ConfigurationController implements Initializable {
 
         zFactorSpinner.setValueFactory(
             new SpinnerValueFactory.IntegerSpinnerValueFactory(
-                0, featureVectorMax, 2, 1));        
+                0, featureVectorMax, 2, 1));
         zFactorSpinner.valueProperty().addListener((obs, oldval, newVal) -> {
             if (enableCoordinateNotifications)
                 updateHyperspaceFactors();
         });
     }
+
     private void setupDirectionSpinners() {
         enableDirectionCheckBox.selectedProperty().addListener(cl -> {
             scene.getRoot().fireEvent(
@@ -653,21 +659,21 @@ public class ConfigurationController implements Initializable {
 
         xDirectionFactorSpinner.setValueFactory(
             new SpinnerValueFactory.IntegerSpinnerValueFactory(
-                0, featureVectorMax, 3, 1));        
+                0, featureVectorMax, 3, 1));
         xDirectionFactorSpinner.valueProperty().addListener((obs, oldval, newVal) -> {
             if (enableCoordinateNotifications)
                 updateHyperspaceFactors();
         });
         yDirectionFactorSpinner.setValueFactory(
             new SpinnerValueFactory.IntegerSpinnerValueFactory(
-                0, featureVectorMax, 4, 1));        
+                0, featureVectorMax, 4, 1));
         yDirectionFactorSpinner.valueProperty().addListener((obs, oldval, newVal) -> {
             if (enableCoordinateNotifications)
                 updateHyperspaceFactors();
         });
         zDirectionFactorSpinner.setValueFactory(
             new SpinnerValueFactory.IntegerSpinnerValueFactory(
-                0, featureVectorMax, 5, 1));        
+                0, featureVectorMax, 5, 1));
         zDirectionFactorSpinner.valueProperty().addListener((obs, oldval, newVal) -> {
             if (enableCoordinateNotifications)
                 updateHyperspaceFactors();
@@ -675,7 +681,7 @@ public class ConfigurationController implements Initializable {
     }
 
     @FXML
-    public void addDimensionLabel(){
+    public void addDimensionLabel() {
         int size = dimensionLabelsListView.getItems().size();
         Dimension dimension = new Dimension("Factor", size, Color.ALICEBLUE);
         dimensionLabelsListView.getItems().add(new DimensionLabelItem(dimension));
@@ -684,38 +690,41 @@ public class ConfigurationController implements Initializable {
         dimensionLabelsListView.getScene().getRoot().fireEvent(
             new HyperspaceEvent(HyperspaceEvent.DIMENSION_LABEL_UPDATE, dimension));
     }
+
     @FXML
-    public void removeDimensionLabel(){
+    public void removeDimensionLabel() {
         int selected = dimensionLabelsListView.getSelectionModel().getSelectedIndex();
-        if(selected < 0) return;
+        if (selected < 0) return;
         Dimension.removeDimension(selected);
         Dimension removed = dimensionLabelsListView.getItems().get(selected).dimension;
         dimensionLabelsListView.getItems().remove(selected);
-        dimensionLabelsListView.getSelectionModel().clearAndSelect(selected-1);
+        dimensionLabelsListView.getSelectionModel().clearAndSelect(selected - 1);
         dimensionLabelsScrollPane.setVvalue(1.0);
         dimensionLabelsListView.getScene().getRoot().fireEvent(
-            new HyperspaceEvent(HyperspaceEvent.DIMENSION_LABEL_REMOVED, removed));        
+            new HyperspaceEvent(HyperspaceEvent.DIMENSION_LABEL_REMOVED, removed));
     }
+
     @FXML
-    public void clearAllDimensionLabels(){
+    public void clearAllDimensionLabels() {
         dimensionLabelsListView.getScene().getRoot().fireEvent(
             new HyperspaceEvent(HyperspaceEvent.CLEARED_DIMENSION_LABELS));
         dimensionLabelsListView.getItems().clear();
     }
+
     @FXML
     public void exportLabels() {
         FileChooser fc = new FileChooser();
         fc.setTitle("Choose LabelConfig file output...");
         fc.setInitialFileName("LabelConfig.json");
-        if(!latestDir.isDirectory())
+        if (!latestDir.isDirectory())
             latestDir = new File(".");
         fc.setInitialDirectory(latestDir);
         File file = fc.showSaveDialog(scene.getWindow());
-        if (null != file) {        
+        if (null != file) {
             LabelConfig lc = new LabelConfig();
             lc.setDimensionLabels(Dimension.getDimensionsAsStrings());
-            HashMap<String,String> labelsHashMap = new HashMap<>();
-            FactorLabel.globalLabelMap.forEach((s,f)-> {
+            HashMap<String, String> labelsHashMap = new HashMap<>();
+            FactorLabel.globalLabelMap.forEach((s, f) -> {
                 labelsHashMap.put(s, Utils.convertColorToString(f.getColor()));
             });
             lc.setLabels(labelsHashMap);
@@ -734,17 +743,18 @@ public class ConfigurationController implements Initializable {
             });
         }
     }
+
     @FXML
     public void exportData() {
         FileChooser fc = new FileChooser();
         fc.setTitle("Choose FeatureCollection file output...");
         fc.setInitialFileName("FeatureCollection.json");
-        if(!latestDir.isDirectory())
+        if (!latestDir.isDirectory())
             latestDir = new File(".");
         fc.setInitialDirectory(latestDir);
         File file = fc.showSaveDialog(scene.getWindow());
         if (null != file) {
-            if(file.getParentFile().isDirectory())
+            if (file.getParentFile().isDirectory())
                 latestDir = file;
             scene.getRoot().fireEvent(
                 new FeatureVectorEvent(FeatureVectorEvent.EXPORT_FEATURE_COLLECTION, file));

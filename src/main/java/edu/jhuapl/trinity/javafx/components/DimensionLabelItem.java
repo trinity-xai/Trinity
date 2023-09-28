@@ -40,14 +40,14 @@ public class DimensionLabelItem extends HBox {
         this.dimension = dimension;
         indexLabel = new Label(String.valueOf(dimension.index));
         dimensionLabelTextField = new TextField(dimension.labelString);
-        getChildren().addAll(indexLabel, 
+        getChildren().addAll(indexLabel,
             new Separator(Orientation.VERTICAL), dimensionLabelTextField);
         setSpacing(5);
 
         dimensionLabelTextField.textProperty().addListener(e -> {
             dimension.labelString = dimensionLabelTextField.getText();
             getScene().getRoot().fireEvent(
-                new HyperspaceEvent(HyperspaceEvent.DIMENSION_LABEL_UPDATE, dimension));            
+                new HyperspaceEvent(HyperspaceEvent.DIMENSION_LABEL_UPDATE, dimension));
         });
     }
 

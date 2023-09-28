@@ -22,12 +22,12 @@ package edu.jhuapl.trinity.utils;
 
 import edu.jhuapl.trinity.data.files.FeatureCollectionFile;
 import edu.jhuapl.trinity.utils.umap.Umap;
+import org.apache.commons.math3.linear.SingularValueDecomposition;
 import org.junit.jupiter.api.Test;
 
 import java.io.IOException;
 
 import static edu.jhuapl.trinity.utils.AnalysisUtils.EPISILON;
-import org.apache.commons.math3.linear.SingularValueDecomposition;
 import static org.junit.jupiter.api.Assertions.assertArrayEquals;
 
 /**
@@ -55,7 +55,7 @@ public class AnalysisUtilsTest {
             new double[]{-1.0, 1.0},
             new double[]{1.0, 1.0}};
         double[][] pcaProjection = AnalysisUtils.doCommonsPCA(array);
-        for(int i=0;i<expected.length;i++){
+        for (int i = 0; i < expected.length; i++) {
             assertArrayEquals(expected[i], pcaProjection[i], EPISILON);
         }
         assert true;
@@ -78,9 +78,9 @@ public class AnalysisUtilsTest {
             new double[]{-1.0, 1.0},
             new double[]{1.0, 1.0}};
         double[][] projectedValues = AnalysisUtils.doCommonsSVD(array);
-        for(int i=0;i<expected.length;i++){
+        for (int i = 0; i < expected.length; i++) {
             assertArrayEquals(expected[i], projectedValues[i], EPISILON);
-        }        
+        }
         assert true;
     }
 

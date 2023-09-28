@@ -254,7 +254,7 @@ public enum ResourceUtils {
         Dragboard db = event.getDragboard();
         boolean success = false;
         if (db.hasFiles()) {
-            for(File file : db.getFiles()) {
+            for (File file : db.getFiles()) {
 //                File file = db.getFiles().get(0);
                 try {
                     if (JavaFX3DUtils.isTextureFile(file)) {
@@ -287,7 +287,7 @@ public enum ResourceUtils {
                         Trajectory.addTrajectory(trajectory);
                         Trajectory.globalTrajectoryToFeatureCollectionMap.put(trajectory, fcFile.featureCollection);
                         scene.getRoot().fireEvent(
-                            new TrajectoryEvent(TrajectoryEvent.NEW_TRAJECTORY_OBJECT,trajectory, fcFile.featureCollection));
+                            new TrajectoryEvent(TrajectoryEvent.NEW_TRAJECTORY_OBJECT, trajectory, fcFile.featureCollection));
                     } else if (GaussianMixtureCollectionFile.isGaussianMixtureCollectionFile(file)) {
                         GaussianMixtureCollectionFile gmcFile = new GaussianMixtureCollectionFile(file.getAbsolutePath(), true);
                         scene.getRoot().fireEvent(
@@ -306,7 +306,7 @@ public enum ResourceUtils {
                         Trajectory trajectory = new Trajectory(file.getName());
                         trajectory.totalStates = fc.getFeatures().size();
                         scene.getRoot().fireEvent(
-                            new TrajectoryEvent(TrajectoryEvent.NEW_TRAJECTORY_OBJECT,trajectory, fc));                    
+                            new TrajectoryEvent(TrajectoryEvent.NEW_TRAJECTORY_OBJECT, trajectory, fc));
                     } else if (CdcTissueGenesFile.isCdcTissueGenesFile(file)) {
                         CdcTissueGenesLoader task = new CdcTissueGenesLoader(scene, file);
                         Thread thread = new Thread(task);

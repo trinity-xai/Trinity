@@ -171,7 +171,7 @@ public class TextEmbeddingsLoader extends Task {
 //                    });
 //                }
             }
-            
+
             Platform.runLater(() -> {
                 ProgressStatus ps = new ProgressStatus("Injecting as FeatureCollection...", -1);
                 ps.fillStartColor = Color.CYAN;
@@ -179,11 +179,11 @@ public class TextEmbeddingsLoader extends Task {
                 ps.innerStrokeColor = Color.CYAN;
                 ps.outerStrokeColor = Color.CYAN;
                 Trajectory trajectory = new Trajectory(file.getName());
-                trajectory.totalStates = fc.getFeatures().size();   
+                trajectory.totalStates = fc.getFeatures().size();
                 Trajectory.addTrajectory(trajectory);
                 Trajectory.globalTrajectoryToFeatureCollectionMap.put(trajectory, fc);
                 scene.getRoot().fireEvent(
-                    new TrajectoryEvent(TrajectoryEvent.NEW_TRAJECTORY_OBJECT,trajectory, fc));                    
+                    new TrajectoryEvent(TrajectoryEvent.NEW_TRAJECTORY_OBJECT, trajectory, fc));
                 scene.getRoot().fireEvent(
                     new ApplicationEvent(ApplicationEvent.UPDATE_BUSY_INDICATOR, ps));
                 scene.getRoot().fireEvent(

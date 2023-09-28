@@ -114,7 +114,7 @@ public class Trajectory {
             fl.setVisible(visible);
         });
     }
-    
+
     public double[] getMaxXState() {
         return states.stream().max((double[] o1, double[] o2) -> {
             if (o1[0] < o2[0]) return -1;

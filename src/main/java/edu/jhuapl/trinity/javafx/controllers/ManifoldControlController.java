@@ -34,7 +34,6 @@ import edu.jhuapl.trinity.utils.PCAConfig;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import edu.jhuapl.trinity.utils.umap.Umap;
 import edu.jhuapl.trinity.utils.umap.metric.Metric;
-import java.io.File;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Pos;
@@ -53,15 +52,16 @@ import javafx.scene.control.ToggleGroup;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.PhongMaterial;
 import javafx.scene.text.Font;
+import javafx.stage.FileChooser;
 import javafx.util.Duration;
 
+import java.io.File;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
-import javafx.scene.paint.PhongMaterial;
-import javafx.stage.FileChooser;
 
 /**
  * FXML Controller class
@@ -122,16 +122,16 @@ public class ManifoldControlController implements Initializable {
     private Spinner fitEndIndexSpinner;
     @FXML
     private CheckBox rangedFittingCheckBox;
-    
+
     @FXML
-    private Spinner pcaScalingSpinner;   
-   
+    private Spinner pcaScalingSpinner;
+
     @FXML
     private RadioButton pcaUseHyperspaceButton;
     @FXML
     private RadioButton pcaUseHypersurfaceButton;
-    ToggleGroup pcahyperSourceGroup;    
-    
+    ToggleGroup pcahyperSourceGroup;
+
     //UMAP tab
     @FXML
     private Slider repulsionSlider;
@@ -161,7 +161,7 @@ public class ManifoldControlController implements Initializable {
     private RadioButton useHypersurfaceButton;
     ToggleGroup hyperSourceGroup;
 
-    
+
     //Distances Tab
     @FXML
     private ListView<DistanceListItem> distancesListView;
@@ -182,7 +182,7 @@ public class ManifoldControlController implements Initializable {
     boolean reactive = true;
     Umap latestUmapObject = null;
     File latestDir = new File(".");
-    
+
     /**
      * Initializes the controller class.
      *
@@ -276,6 +276,7 @@ public class ManifoldControlController implements Initializable {
             distancesListView.getItems().add(distanceListItem);
         });
     }
+
     private void getCurrentLabels() {
         labelChoiceBox.getItems().clear();
         labelChoiceBox.getItems().add(ALL);
@@ -283,6 +284,7 @@ public class ManifoldControlController implements Initializable {
             FactorLabel.getFactorLabels().stream()
                 .map(f -> f.getLabel()).sorted().toList());
     }
+
     private void setupPcaControls() {
         numPcaComponentsSpinner.setValueFactory(
             new SpinnerValueFactory.IntegerSpinnerValueFactory(2, 100, 3, 1));
@@ -293,23 +295,24 @@ public class ManifoldControlController implements Initializable {
         //"min","max","initialValue","amountToStepBy"
         fitStartIndexSpinner.disableProperty().bind(rangedFittingCheckBox.selectedProperty().not());
         fitEndIndexSpinner.disableProperty().bind(rangedFittingCheckBox.selectedProperty().not());
-        
+
         pcaScalingSpinner.setValueFactory(
             new SpinnerValueFactory.DoubleSpinnerValueFactory(1, 1000, 100, 10));
 
         componentAnalysisToggleGroup = new ToggleGroup();
         pcaRadioButton.setToggleGroup(componentAnalysisToggleGroup);
-        svdRadioButton.setToggleGroup(componentAnalysisToggleGroup);          
-        
+        svdRadioButton.setToggleGroup(componentAnalysisToggleGroup);
+
         pcahyperSourceGroup = new ToggleGroup();
         pcaUseHyperspaceButton.setToggleGroup(pcahyperSourceGroup);
-        pcaUseHypersurfaceButton.setToggleGroup(pcahyperSourceGroup);        
+        pcaUseHypersurfaceButton.setToggleGroup(pcahyperSourceGroup);
     }
+
     private void setupUmapControls() {
         hyperSourceGroup = new ToggleGroup();
         useHyperspaceButton.setToggleGroup(hyperSourceGroup);
-        useHypersurfaceButton.setToggleGroup(hyperSourceGroup);        
-        
+        useHypersurfaceButton.setToggleGroup(hyperSourceGroup);
+
         metricChoiceBox.getItems().addAll(Metric.getMetricNames());
         metricChoiceBox.getSelectionModel().selectFirst();
 
@@ -328,6 +331,7 @@ public class ManifoldControlController implements Initializable {
         useHyperspaceButton.setToggleGroup(hyperSourceGroup);
         useHypersurfaceButton.setToggleGroup(hyperSourceGroup);
     }
+
     private void setupHullControls() {
         //Get a reference to any Distances already collected
         List<ManifoldListItem> existingItems = new ArrayList<>();
@@ -341,7 +345,7 @@ public class ManifoldControlController implements Initializable {
         VBox placeholder = new VBox(10, iv, new Label("No Manifolds Acquired"));
         placeholder.setAlignment(Pos.CENTER);
         manifoldsListView.setPlaceholder(placeholder);
-        
+
         getCurrentLabels();
         labelChoiceBox.getSelectionModel().selectFirst();
         labelChoiceBox.setOnShown(e -> getCurrentLabels());
@@ -358,11 +362,11 @@ public class ManifoldControlController implements Initializable {
 
         manifoldDiffuseColorPicker.setValue(Color.CYAN);
         manifoldDiffuseColorPicker.valueProperty().addListener(cl -> {
-            if(!reactive) return;
+            if (!reactive) return;
             ManifoldListItem item = manifoldsListView.getSelectionModel().getSelectedItem();
-            if(null != item) {
+            if (null != item) {
                 Manifold m = item.getManifold();
-                if(null != m){
+                if (null != m) {
                     m.setColor(manifoldDiffuseColorPicker.getValue());
                     scene.getRoot().fireEvent(new ManifoldEvent(
                         ManifoldEvent.MANIFOLD_DIFFUSE_COLOR,
@@ -372,26 +376,26 @@ public class ManifoldControlController implements Initializable {
         });
         manifoldSpecularColorPicker.setValue(Color.RED);
         manifoldSpecularColorPicker.valueProperty().addListener(cl -> {
-            if(!reactive) return;
+            if (!reactive) return;
             ManifoldListItem item = manifoldsListView.getSelectionModel().getSelectedItem();
-            if(null != item) {
+            if (null != item) {
                 Manifold m = item.getManifold();
-                if(null != m)
+                if (null != m)
                     scene.getRoot().fireEvent(new ManifoldEvent(
-                    ManifoldEvent.MANIFOLD_SPECULAR_COLOR,
-                    manifoldSpecularColorPicker.getValue(), m));
+                        ManifoldEvent.MANIFOLD_SPECULAR_COLOR,
+                        manifoldSpecularColorPicker.getValue(), m));
             }
         });
         manifoldWireMeshColorPicker.setValue(Color.BLUE);
         manifoldWireMeshColorPicker.valueProperty().addListener(cl -> {
-            if(!reactive) return;
+            if (!reactive) return;
             ManifoldListItem item = manifoldsListView.getSelectionModel().getSelectedItem();
-            if(null != item) {
+            if (null != item) {
                 Manifold m = item.getManifold();
-                if(null != m)
+                if (null != m)
                     scene.getRoot().fireEvent(new ManifoldEvent(
-                ManifoldEvent.MANIFOLD_WIREFRAME_COLOR,
-                manifoldWireMeshColorPicker.getValue(),m));
+                        ManifoldEvent.MANIFOLD_WIREFRAME_COLOR,
+                        manifoldWireMeshColorPicker.getValue(), m));
             }
         });
 
@@ -413,7 +417,7 @@ public class ManifoldControlController implements Initializable {
         noneCullFaceRadioButton.setToggleGroup(cullfaceToggleGroup);
         cullfaceToggleGroup.selectedToggleProperty().addListener(cl -> {
             Manifold m = manifoldsListView.getSelectionModel().getSelectedItem().getManifold();
-            if(null != m)
+            if (null != m)
                 if (frontCullFaceRadioButton.isSelected())
                     scene.getRoot().fireEvent(new ManifoldEvent(
                         ManifoldEvent.MANIFOLD_FRONT_CULLFACE, true, m));
@@ -429,7 +433,7 @@ public class ManifoldControlController implements Initializable {
         linesDrawModeRadioButton.setToggleGroup(drawModeToggleGroup);
         drawModeToggleGroup.selectedToggleProperty().addListener(cl -> {
             Manifold m = manifoldsListView.getSelectionModel().getSelectedItem().getManifold();
-            if(null != m)
+            if (null != m)
                 if (fillDrawModeRadioButton.isSelected())
                     scene.getRoot().fireEvent(new ManifoldEvent(
                         ManifoldEvent.MANIFOLD_FILL_DRAWMODE, true, m));
@@ -440,19 +444,19 @@ public class ManifoldControlController implements Initializable {
 
         showWireframeCheckBox.selectedProperty().addListener(cl -> {
             Manifold m = manifoldsListView.getSelectionModel().getSelectedItem().getManifold();
-            if(null != m)
+            if (null != m)
                 scene.getRoot().fireEvent(new ManifoldEvent(
-                ManifoldEvent.MANIFOLD_SHOW_WIREFRAME, 
+                    ManifoldEvent.MANIFOLD_SHOW_WIREFRAME,
                     showWireframeCheckBox.isSelected(), m));
         });
         showControlPointsCheckBox.selectedProperty().addListener(cl -> {
             Manifold m = manifoldsListView.getSelectionModel().getSelectedItem().getManifold();
-            if(null != m)
+            if (null != m)
                 scene.getRoot().fireEvent(new ManifoldEvent(
-                ManifoldEvent.MANIFOLD_SHOW_CONTROL, 
+                    ManifoldEvent.MANIFOLD_SHOW_CONTROL,
                     showControlPointsCheckBox.isSelected(), m));
         });
-        
+
         scene.addEventHandler(ManifoldEvent.MANIFOLD_3D_SELECTED, e -> {
             Manifold manifold = (Manifold) e.object1;
             for (ManifoldListItem item : manifoldsListView.getItems()) {
@@ -480,11 +484,12 @@ public class ManifoldControlController implements Initializable {
             manifoldsListView.getSelectionModel().selectLast();
         });
     }
+
     private void updateActiveManifold3D(Manifold3D manifold3D) {
         reactive = false;
         activeManifold3D = manifold3D;
-        if(null != manifold3D) {
-            PhongMaterial phong = (PhongMaterial)manifold3D.quickhullMeshView.getMaterial();
+        if (null != manifold3D) {
+            PhongMaterial phong = (PhongMaterial) manifold3D.quickhullMeshView.getMaterial();
             manifoldDiffuseColorPicker.setValue(phong.getDiffuseColor());
             manifoldSpecularColorPicker.setValue(phong.getSpecularColor());
             manifoldWireMeshColorPicker.setValue(((PhongMaterial)
@@ -492,11 +497,12 @@ public class ManifoldControlController implements Initializable {
         }
         reactive = true;
     }
+
     @FXML
     public void exportMatrix() {
-        if(null != latestUmapObject) {
-            if(null != latestUmapObject.getmEmbedding()) {
-                System.out.println("latestUmapObject: " + 
+        if (null != latestUmapObject) {
+            if (null != latestUmapObject.getmEmbedding()) {
+                System.out.println("latestUmapObject: " +
                     latestUmapObject.getmEmbedding().toStringNumpy());
             } else {
                 System.out.println("UMAP Embeddings not generated yet.");
@@ -504,49 +510,52 @@ public class ManifoldControlController implements Initializable {
         } else {
             System.out.println("UMAP object not yet established.");
         }
-    } 
+    }
+
     @FXML
     public void saveProjections() {
         FileChooser fc = new FileChooser();
         fc.setTitle("Choose Projection file output...");
         fc.setInitialFileName("ProjectionData.json");
-        if(!latestDir.isDirectory())
+        if (!latestDir.isDirectory())
             latestDir = new File(".");
         fc.setInitialDirectory(latestDir);
         File file = fc.showSaveDialog(scene.getWindow());
         if (null != file) {
-            if(file.getParentFile().isDirectory())
+            if (file.getParentFile().isDirectory())
                 latestDir = file;
             scene.getRoot().fireEvent(new ManifoldEvent(
-            ManifoldEvent.SAVE_PROJECTION_DATA, file));
-        }        
-    } 
+                ManifoldEvent.SAVE_PROJECTION_DATA, file));
+        }
+    }
+
     @FXML
     public void runPCA() {
         AnalysisUtils.SOURCE source = useHypersurfaceButton.isSelected() ?
             AnalysisUtils.SOURCE.HYPERSURFACE : AnalysisUtils.SOURCE.HYPERSPACE;
         AnalysisUtils.ANALYSIS_METHOD method = svdRadioButton.isSelected() ?
             AnalysisUtils.ANALYSIS_METHOD.SVD : AnalysisUtils.ANALYSIS_METHOD.PCA;
-        
+
         int startIndex = 0;
         int endIndex = -1; //use max indicator
-        if(rangedFittingCheckBox.isSelected()) {
-            startIndex = (int)fitStartIndexSpinner.getValue();
-            endIndex = (int)fitEndIndexSpinner.getValue();
-            if(endIndex <= startIndex)
+        if (rangedFittingCheckBox.isSelected()) {
+            startIndex = (int) fitStartIndexSpinner.getValue();
+            endIndex = (int) fitEndIndexSpinner.getValue();
+            if (endIndex <= startIndex)
                 endIndex = -1;
-        } 
-            
-            
-        PCAConfig config = new PCAConfig(source, method, 
-            (int)numPcaComponentsSpinner.getValue(), (double)pcaScalingSpinner.getValue(), 
+        }
+
+
+        PCAConfig config = new PCAConfig(source, method,
+            (int) numPcaComponentsSpinner.getValue(), (double) pcaScalingSpinner.getValue(),
             startIndex, endIndex);
         ManifoldEvent.POINT_SOURCE pointSource = useHypersurfaceButton.isSelected() ?
             ManifoldEvent.POINT_SOURCE.HYPERSURFACE : ManifoldEvent.POINT_SOURCE.HYPERSPACE;
         scene.getRoot().fireEvent(new ManifoldEvent(
             ManifoldEvent.GENERATE_NEW_PCA, config, pointSource));
-        
+
     }
+
     @FXML
     public void project() {
         Umap umap = new Umap();
@@ -566,7 +575,7 @@ public class ManifoldControlController implements Initializable {
         scene.getRoot().fireEvent(new ManifoldEvent(
             ManifoldEvent.GENERATE_NEW_UMAP, umap, pointSource));
         latestUmapObject = umap;
-        
+
     }
 
     @FXML

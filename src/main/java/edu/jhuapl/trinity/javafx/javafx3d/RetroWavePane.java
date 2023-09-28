@@ -183,11 +183,11 @@ public class RetroWavePane extends StackPane {
 
     TessellationMesh tessellationMeshView;
     boolean webcamEnabled = false;
-    
+
     public RetroWavePane(Scene scene, boolean enableWebcam) {
         this.scene = scene;
         this.webcamEnabled = enableWebcam;
-        if(enableWebcam) {
+        if (enableWebcam) {
             System.out.println("Initializing Surveillance system... ");
             try {
                 WebCamUtils.initialize();
@@ -810,8 +810,8 @@ public class RetroWavePane extends StackPane {
             tessellationMeshView.enableMatrix(false);
             nodeGroup.getChildren().remove(tessellationMeshView);
         }
-        Image image = null;        
-        if(webcamEnabled) {        
+        Image image = null;
+        if (webcamEnabled) {
             try {
                 image = WebCamUtils.takePicture();
                 System.out.println("got your little soul...");

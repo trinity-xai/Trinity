@@ -147,8 +147,8 @@ public class SemanticMapEventHandler implements EventHandler<SemanticMapEvent> {
         Trajectory.addTrajectory(trajectory);
         Trajectory.globalTrajectoryToFeatureCollectionMap.put(trajectory, fc);
         App.getAppScene().getRoot().fireEvent(
-            new TrajectoryEvent(TrajectoryEvent.NEW_TRAJECTORY_OBJECT,trajectory, fc));
-        
+            new TrajectoryEvent(TrajectoryEvent.NEW_TRAJECTORY_OBJECT, trajectory, fc));
+
         System.out.println("Total New Factor Labels: " + newlabels.size());
         FactorLabel.addAllFactorLabels(newlabels);
 

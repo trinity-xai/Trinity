@@ -113,7 +113,7 @@ public class FeatureVectorEventHandler implements EventHandler<FeatureVectorEven
         featureVectors.forEach(featureVector -> {
             //Have we seen this label before?
             FactorLabel matchingLabel = FactorLabel.getFactorLabel(featureVector.getLabel());
-            
+
             //The label is new... add a new FactorLabel to the map
             if (null == matchingLabel) {
                 if (labelColorIndex > labelColorCount) {
@@ -133,7 +133,7 @@ public class FeatureVectorEventHandler implements EventHandler<FeatureVectorEven
                 if (layerColorIndex > layerColorCount) {
                     layerColorIndex = 0;
                 }
-                //do bulk update using the addAllFeatureLayers() method               
+                //do bulk update using the addAllFeatureLayers() method
                 FeatureLayer fl = new FeatureLayer(index,
                     layerColorMap.getColorByIndex(layerColorIndex));
                 newFeatureLayers.add(fl);
@@ -144,18 +144,18 @@ public class FeatureVectorEventHandler implements EventHandler<FeatureVectorEven
             FactorLabel.addAllFactorLabels(newFactorLabels);
         if (!newFeatureLayers.isEmpty())
             FeatureLayer.addAllFeatureLayer(newFeatureLayers);
-        
+
     }
 
     public void handleFeatureCollectionEvent(FeatureVectorEvent event) {
         FeatureCollection featureCollection = (FeatureCollection) event.object;
         if (null == featureCollection || featureCollection.getFeatures().isEmpty())
             return;
-        System.out.println("Imported FeatureCollection size: " + 
+        System.out.println("Imported FeatureCollection size: " +
             featureCollection.getFeatures().size());
-        System.out.println("Imported FeatureVector width: " + 
+        System.out.println("Imported FeatureVector width: " +
             featureCollection.getFeatures().get(0).getData().size());
-        
+
         Platform.runLater(() -> {
             App.getAppScene().getRoot().fireEvent(
                 new CommandTerminalEvent("Scanning Feature Collection for labels...",
@@ -168,28 +168,28 @@ public class FeatureVectorEventHandler implements EventHandler<FeatureVectorEven
             renderer.addFeatureCollection(featureCollection);
         }
         //Did the message specify any new dimensional label strings?
-        if(null != featureCollection.getDimensionLabels() && !featureCollection.getDimensionLabels().isEmpty()){
+        if (null != featureCollection.getDimensionLabels() && !featureCollection.getDimensionLabels().isEmpty()) {
             Dimension.removeAllDimensions();
-            int counter=0;
-            for(String dimensionLabel : featureCollection.getDimensionLabels()) {
-                Dimension.addDimension(new Dimension(dimensionLabel, 
+            int counter = 0;
+            for (String dimensionLabel : featureCollection.getDimensionLabels()) {
+                Dimension.addDimension(new Dimension(dimensionLabel,
                     counter++, Color.ALICEBLUE));
             }
             Platform.runLater(() -> {
                 App.getAppScene().getRoot().fireEvent(
                     new HyperspaceEvent(HyperspaceEvent.DIMENSION_LABELS_SET,
-                            featureCollection.getDimensionLabels()));
-                
+                        featureCollection.getDimensionLabels()));
+
                 App.getAppScene().getRoot().fireEvent(
                     new CommandTerminalEvent("New Dimensional Labels set",
-                        new Font("Consolas", 20), Color.GREEN));            
+                        new Font("Consolas", 20), Color.GREEN));
             });
             //update the renderers with the new arraylist of strings
             for (FeatureVectorRenderer renderer : renderers) {
                 renderer.setDimensionLabels(featureCollection.getDimensionLabels());
-                renderer.refresh(); 
-            }            
-        }        
+                renderer.refresh();
+            }
+        }
     }
 
     public void handleLabelConfigEvent(FeatureVectorEvent event) {
@@ -254,12 +254,12 @@ public class FeatureVectorEventHandler implements EventHandler<FeatureVectorEven
                 FactorLabel.addAllFactorLabels(newFactorLabels);
         }
         //Did the message specify any new dimensional label strings?
-        if(null != labelConfig.getDimensionLabels() && !labelConfig.getDimensionLabels().isEmpty()){
+        if (null != labelConfig.getDimensionLabels() && !labelConfig.getDimensionLabels().isEmpty()) {
             //update the renderers with the new arraylist of strings
             for (FeatureVectorRenderer renderer : renderers) {
                 renderer.setDimensionLabels(labelConfig.getDimensionLabels());
-                renderer.refresh(); 
-            }            
+                renderer.refresh();
+            }
         }
     }
 

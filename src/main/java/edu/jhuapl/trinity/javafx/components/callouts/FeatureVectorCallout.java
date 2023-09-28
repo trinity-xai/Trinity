@@ -9,9 +9,9 @@ package edu.jhuapl.trinity.javafx.components.callouts;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -25,9 +25,6 @@ import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.utils.HttpsUtils;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
-import java.util.Map.Entry;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
@@ -46,16 +43,19 @@ import javafx.scene.layout.VBox;
 import javafx.scene.shape.Shape3D;
 import javafx.scene.text.Text;
 
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
+import java.util.Map.Entry;
+
 /**
- *
  * @author phillsm1
  */
 public class FeatureVectorCallout extends VBox {
     public static double CHIP_FIT_WIDTH = 200;
     public static double IMAGE_FIT_HEIGHT = 200;
-    public static double IMAGE_FIT_WIDTH = 200;    
+    public static double IMAGE_FIT_WIDTH = 200;
     public String imageryBasePath = "imagery/";
-    
+
     public static Callout createByShape3D(Shape3D shape3D, FeatureVector featureVector, SubScene subScene) {
         FeatureVectorCallout mainTitleVBox = new FeatureVectorCallout(shape3D, featureVector, subScene);
         Point2D p2D = JavaFX3DUtils.getTransformedP2D(shape3D, subScene, Callout.DEFAULT_HEAD_RADIUS + 5);
@@ -85,7 +85,7 @@ public class FeatureVectorCallout extends VBox {
             mainTitleVBox.imageryBasePath = (String) e.object;
             System.out.println("Callout image base path set to " + mainTitleVBox.imageryBasePath);
         });
-        
+
         return infoCallout;
     }
 
@@ -124,7 +124,7 @@ public class FeatureVectorCallout extends VBox {
         imageTP.setContent(iv);
         imageTP.setText("Imagery");
         imageTP.setExpanded(false);
-        
+
         TitledPane detailsTP = new TitledPane();
         GridPane detailsGridPane = new GridPane();
         detailsGridPane.setPadding(new Insets(1));
@@ -162,44 +162,45 @@ public class FeatureVectorCallout extends VBox {
         textArea.setMinHeight(200);
         textArea.setPrefHeight(200);
         textArea.setWrapText(true);
-        
+
         Glow glow = new Glow(0.95);
         ImageView selectAllIV = ResourceUtils.loadIcon("selectall", 30);
         VBox selectAllVBox = new VBox(selectAllIV);
         selectAllVBox.setOnMouseEntered(e -> selectAllIV.setEffect(glow));
         selectAllVBox.setOnMouseExited(e -> selectAllIV.setEffect(null));
         selectAllVBox.setOnMouseClicked(e -> textArea.selectAll());
-        
+
         ImageView copyIV = ResourceUtils.loadIcon("copy", 30);
         VBox copyVBox = new VBox(copyIV);
         copyVBox.setOnMouseEntered(e -> copyVBox.setEffect(glow));
         copyVBox.setOnMouseExited(e -> copyVBox.setEffect(null));
         copyVBox.setOnMouseClicked(e -> textArea.copy());
-        
+
         ImageView textIV = ResourceUtils.loadIcon("console", 30);
-        VBox textIVVBox = new VBox(textIV);        
+        VBox textIVVBox = new VBox(textIV);
         textIVVBox.setOnMouseEntered(e -> textIVVBox.setEffect(glow));
         textIVVBox.setOnMouseExited(e -> textIVVBox.setEffect(null));
         textIVVBox.setOnMouseClicked(e -> {
             textIVVBox.getScene().getRoot().fireEvent(new ApplicationEvent(
-            ApplicationEvent.SHOW_TEXT_CONSOLE, featureVector.getText()));
+                ApplicationEvent.SHOW_TEXT_CONSOLE, featureVector.getText()));
         });
 
         HBox hbox = new HBox(15, selectAllVBox, copyVBox, textIVVBox);
         hbox.setAlignment(Pos.TOP_LEFT);
-        
+
         VBox textVBox = new VBox(5, hbox, textArea);
         TitledPane textTP = new TitledPane();
         textTP.setContent(textVBox);
         textTP.setText("Text");
         textTP.setExpanded(false);
-        
+
         getChildren().addAll(imageTP, textTP, detailsTP, metaTP);
         setSpacing(3);
         setPrefWidth(250);
         setPrefHeight(100);
 
     }
+
     private static String bboxToString(FeatureVector featureVector) {
         NumberFormat format = new DecimalFormat("0.00");
         StringBuilder sb = new StringBuilder("[ ");
@@ -210,7 +211,8 @@ public class FeatureVectorCallout extends VBox {
         sb.append("]");
         String bboxStr = sb.toString();
         return bboxStr;
-    }    
+    }
+
     private ImageView loadImageView(FeatureVector featureVector, boolean bboxOnly) {
         if (null == featureVector.getImageURL())
             return new ImageView(ResourceUtils.loadIconFile("noimage"));
@@ -247,7 +249,7 @@ public class FeatureVectorCallout extends VBox {
         if (iv == null)
             iv = new ImageView(ResourceUtils.loadIconFile("noimage"));
         return iv;
-    }    
- 
-    
+    }
+
+
 }

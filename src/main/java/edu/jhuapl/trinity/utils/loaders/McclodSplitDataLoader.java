@@ -149,7 +149,7 @@ public class McclodSplitDataLoader extends Task {
                 Trajectory trajectory = new Trajectory(file.getName());
                 trajectory.totalStates = fc.getFeatures().size();
                 scene.getRoot().fireEvent(
-                    new TrajectoryEvent(TrajectoryEvent.NEW_TRAJECTORY_OBJECT,trajectory));                    
+                    new TrajectoryEvent(TrajectoryEvent.NEW_TRAJECTORY_OBJECT, trajectory));
                 scene.getRoot().fireEvent(
                     new FeatureVectorEvent(FeatureVectorEvent.NEW_FEATURE_COLLECTION, fc));
             });

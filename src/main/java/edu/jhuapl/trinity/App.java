@@ -19,6 +19,7 @@ package edu.jhuapl.trinity;
  * limitations under the License.
  * #L%
  */
+
 import edu.jhuapl.trinity.data.Dimension;
 import edu.jhuapl.trinity.data.FactorLabel;
 import edu.jhuapl.trinity.data.files.FeatureCollectionFile;
@@ -27,7 +28,6 @@ import edu.jhuapl.trinity.data.messages.FeatureVector;
 import edu.jhuapl.trinity.javafx.components.CircleProgressIndicator;
 import edu.jhuapl.trinity.javafx.components.MatrixOverlay;
 import edu.jhuapl.trinity.javafx.components.ProgressStatus;
-import static edu.jhuapl.trinity.javafx.components.panes.LitPathPane.slideInPane;
 import edu.jhuapl.trinity.javafx.components.panes.Shape3DControlPane;
 import edu.jhuapl.trinity.javafx.components.panes.TextPane;
 import edu.jhuapl.trinity.javafx.components.panes.TrajectoryTrackerPane;
@@ -106,6 +106,8 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
+import static edu.jhuapl.trinity.javafx.components.panes.LitPathPane.slideInPane;
+
 public class App extends Application {
 
     Pane desktopPane;
@@ -113,7 +115,7 @@ public class App extends Application {
     MainNavMenu mainNavMenu;
     //make transparent so it doesn't interfere with subnode transparency effects
     Background transBack = new Background(new BackgroundFill(
-            Color.TRANSPARENT, CornerRadii.EMPTY, Insets.EMPTY));
+        Color.TRANSPARENT, CornerRadii.EMPTY, Insets.EMPTY));
     Timeline intro;
     MatrixOverlay matrixOverlay;
     RetroWavePane retroWavePane = null;
@@ -228,7 +230,7 @@ public class App extends Application {
             Platform.runLater(() -> {
                 ProgressStatus ps = new ProgressStatus("Generating UMAP Settings...", -1);
                 scene.getRoot().fireEvent(
-                        new ApplicationEvent(ApplicationEvent.SHOW_BUSY_INDICATOR, ps));
+                    new ApplicationEvent(ApplicationEvent.SHOW_BUSY_INDICATOR, ps));
             });
             Umap umap = (Umap) event.object1;
             umap.setThreads(12);
@@ -241,7 +243,7 @@ public class App extends Application {
             Platform.runLater(() -> {
                 ProgressStatus ps = new ProgressStatus("Projecting PCA...", -1);
                 scene.getRoot().fireEvent(
-                        new ApplicationEvent(ApplicationEvent.SHOW_BUSY_INDICATOR, ps));
+                    new ApplicationEvent(ApplicationEvent.SHOW_BUSY_INDICATOR, ps));
             });
             PCAConfig config = (PCAConfig) event.object1;
             ManifoldEvent.POINT_SOURCE source = (ManifoldEvent.POINT_SOURCE) event.object2;
@@ -310,7 +312,7 @@ public class App extends Application {
             }
         });
         hyperspace3DPane.addEventHandler(DragEvent.DRAG_DROPPED,
-                e -> ResourceUtils.onDragDropped(e, scene));
+            e -> ResourceUtils.onDragDropped(e, scene));
 
         scene.addEventHandler(DragEvent.DRAG_OVER, event -> {
             if (ResourceUtils.canDragOver(event)) {
@@ -320,7 +322,7 @@ public class App extends Application {
             }
         });
         scene.addEventHandler(DragEvent.DRAG_DROPPED,
-                e -> ResourceUtils.onDragDropped(e, scene));
+            e -> ResourceUtils.onDragDropped(e, scene));
 
         //Add the base main tools
         //insert before animated console text
@@ -347,7 +349,7 @@ public class App extends Application {
                     stage.setY(Double.valueOf(tokens[2]));
                 } catch (Exception ex) {
                     System.out.println("Exception thrown parsing: " + geometryParamString
-                            + ". Setting to Maximized.");
+                        + ". Setting to Maximized.");
                     stage.setMaximized(true);
                 }
             } else if (namedParameters.containsKey("fullscreen")) {
@@ -407,7 +409,7 @@ public class App extends Application {
 
         centerStack.getChildren().remove(animatedConsoleText);
         centerStack.getChildren().addAll(desktopPane, mainNavMenu,
-                missionTimerX, circleSpinner);
+            missionTimerX, circleSpinner);
         centerStack.getChildren().add(animatedConsoleText);
 
         // fun matrix effect, use Alt + N
@@ -627,8 +629,8 @@ public class App extends Application {
         //animatedConsoleText.animate("Establishing Messaging Feed...");
         processor = new MessageProcessor(scene);
         subscriberConfig = new ZeroMQSubscriberConfig(
-                "ZeroMQ Subscriber", "Testing ZeroMQFeedManager.",
-                "tcp://localhost:5563", "ALL", "SomeIDValue", 250);
+            "ZeroMQ Subscriber", "Testing ZeroMQFeedManager.",
+            "tcp://localhost:5563", "ALL", "SomeIDValue", 250);
         feed = new ZeroMQFeedManager(2, subscriberConfig, processor);
         scene.getRoot().addEventHandler(ZeroMQEvent.ZEROMQ_ESTABLISH_CONNECTION, e -> {
             subscriberConfig = e.subscriberConfig;
@@ -708,9 +710,9 @@ public class App extends Application {
             //filter to only use visible points
             //@TODO SMP || FeatureLayer.visibilityByIndex(fv.getLayer());
             originalFC.setFeatures(
-                    hyperspace3DPane.getAllFeatureVectors().stream().filter(fv -> {
-                        return FactorLabel.visibilityByLabel(fv.getLabel());
-                    }).toList());
+                hyperspace3DPane.getAllFeatureVectors().stream().filter(fv -> {
+                    return FactorLabel.visibilityByLabel(fv.getLabel());
+                }).toList());
         }
         ArrayList<String> labels = new ArrayList<>();
         for (Dimension d : Dimension.getDimensions()) {
@@ -730,20 +732,20 @@ public class App extends Application {
             iconFitWidth = 60;
         }
         missionTimerX = MissionTimerXBuilder.create()
-                .title("Trinity Mission Time")
-                .startTime(0)
-                .timeFrame(java.time.Duration.ofMinutes(14).getSeconds())
-                .maxSize(width, height)
-                .prefSize(width, height)
-                .iconFitWidth(iconFitWidth)
-                .padding(Insets.EMPTY)
-                .ringColor(Color.STEELBLUE.deriveColor(1, 1, 1, 0.333))
-                .backgroundColor(Color.BLACK.deriveColor(1, 1, 1, 0.333))
-                .itemInnerColor(Color.CYAN.deriveColor(1, 1, 1, 0.75))
-                .clockColor(Color.ALICEBLUE)
-                .ringBackgroundColor(Color.BLACK.deriveColor(1, 1, 1, 0.333))
-                .titleColor(Color.ALICEBLUE)
-                .build();
+            .title("Trinity Mission Time")
+            .startTime(0)
+            .timeFrame(java.time.Duration.ofMinutes(14).getSeconds())
+            .maxSize(width, height)
+            .prefSize(width, height)
+            .iconFitWidth(iconFitWidth)
+            .padding(Insets.EMPTY)
+            .ringColor(Color.STEELBLUE.deriveColor(1, 1, 1, 0.333))
+            .backgroundColor(Color.BLACK.deriveColor(1, 1, 1, 0.333))
+            .itemInnerColor(Color.CYAN.deriveColor(1, 1, 1, 0.75))
+            .clockColor(Color.ALICEBLUE)
+            .ringBackgroundColor(Color.BLACK.deriveColor(1, 1, 1, 0.333))
+            .titleColor(Color.ALICEBLUE)
+            .build();
         StackPane.setAlignment(missionTimerX, Pos.BOTTOM_CENTER);
         missionTimerX.setPickOnBounds(false);
         missionTimerX.updateTime(0, "1");
@@ -754,7 +756,7 @@ public class App extends Application {
         missionTimerX.setVisible(false);
         scene.addEventHandler(TimelineEvent.TIMELINE_UPDATE_ANIMATIONTIME, e -> {
             missionTimerX.updateTime(timelineAnimation.getTimeFromStart(),
-                    timelineAnimation.getStringCurrentPropRate());
+                timelineAnimation.getStringCurrentPropRate());
         });
         // EVENT HANDLER TO CHANGE THE PROPAGATION RATE ON SCREEN
         scene.addEventHandler(TimelineEvent.TIMELINE_GET_CURRENT_PROP_RATE, e -> {
@@ -793,12 +795,12 @@ public class App extends Application {
             animatedConsoleText.setText("> ");
             animatedConsoleText.setVisible(true);
             intro = new Timeline(
-                    new KeyFrame(Duration.seconds(0.1), e -> animatedConsoleText.animate(">Trinity")),
-                    new KeyFrame(Duration.seconds(2.0), e -> animatedConsoleText.animate(">Hyperdimensional Visualization")),
-                    new KeyFrame(Duration.seconds(3.5), new KeyValue(animatedConsoleText.opacityProperty(), 1.0)),
-                    new KeyFrame(Duration.seconds(5.0), new KeyValue(animatedConsoleText.opacityProperty(), 0.0)),
-                    new KeyFrame(Duration.seconds(5.1), e -> animatedConsoleText.setVisible(false)),
-                    new KeyFrame(Duration.seconds(5.1), e -> animatedConsoleText.animate(" "))
+                new KeyFrame(Duration.seconds(0.1), e -> animatedConsoleText.animate(">Trinity")),
+                new KeyFrame(Duration.seconds(2.0), e -> animatedConsoleText.animate(">Hyperdimensional Visualization")),
+                new KeyFrame(Duration.seconds(3.5), new KeyValue(animatedConsoleText.opacityProperty(), 1.0)),
+                new KeyFrame(Duration.seconds(5.0), new KeyValue(animatedConsoleText.opacityProperty(), 0.0)),
+                new KeyFrame(Duration.seconds(5.1), e -> animatedConsoleText.setVisible(false)),
+                new KeyFrame(Duration.seconds(5.1), e -> animatedConsoleText.animate(" "))
             );
             intro.play();
         });
@@ -814,7 +816,7 @@ public class App extends Application {
         }
         //Terminate the app by entering an exit animation
         if (e.isControlDown() && e.isShiftDown()
-                && e.getCode().equals(KeyCode.C)) {
+            && e.getCode().equals(KeyCode.C)) {
             shutdown(false);
         }
         if (e.isAltDown() && e.getCode().equals(KeyCode.N)) {
@@ -848,9 +850,9 @@ public class App extends Application {
                 intro.stop();
             }
             Timeline outtro = new Timeline(
-                    new KeyFrame(Duration.seconds(0.1), new KeyValue(animatedConsoleText.opacityProperty(), 1.0)),
-                    new KeyFrame(Duration.seconds(0.1), kv -> animatedConsoleText.animate(">Kill Signal Received. Terminating...")),
-                    new KeyFrame(Duration.seconds(2.0), kv -> System.exit(0)));
+                new KeyFrame(Duration.seconds(0.1), new KeyValue(animatedConsoleText.opacityProperty(), 1.0)),
+                new KeyFrame(Duration.seconds(0.1), kv -> animatedConsoleText.animate(">Kill Signal Received. Terminating...")),
+                new KeyFrame(Duration.seconds(2.0), kv -> System.exit(0)));
             outtro.play();
         }
     }
@@ -874,6 +876,7 @@ public class App extends Application {
     }
 
     //<editor-fold defaultstate="collapsed" desc="Static Accessors">
+
     /**
      * Dirty Hack to allow components to share a common configuration
      *

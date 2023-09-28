@@ -28,15 +28,22 @@ import javafx.animation.Interpolator;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
+import javafx.geometry.Point2D;
 import javafx.scene.AmbientLight;
 import javafx.scene.Camera;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.PerspectiveCamera;
+import javafx.scene.PointLight;
+import javafx.scene.Scene;
+import javafx.scene.SceneAntialiasing;
+import javafx.scene.SnapshotParameters;
+import javafx.scene.SubScene;
 import javafx.scene.image.Image;
 import javafx.scene.image.WritableImage;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Mesh;
+import javafx.scene.shape.Shape3D;
 import javafx.scene.shape.TriangleMesh;
 import javafx.scene.text.Font;
 import javafx.scene.transform.Rotate;
@@ -57,13 +64,6 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javafx.geometry.Point2D;
-import javafx.scene.PointLight;
-import javafx.scene.Scene;
-import javafx.scene.SceneAntialiasing;
-import javafx.scene.SnapshotParameters;
-import javafx.scene.SubScene;
-import javafx.scene.shape.Shape3D;
 
 /**
  * Utilities used by various 3D rendering code.
@@ -72,7 +72,7 @@ import javafx.scene.shape.Shape3D;
  */
 public enum JavaFX3DUtils {
     INSTANCE;
-    public static Function<Point3D, javafx.geometry.Point3D> fxyzPoint3DTofxPoint3D = 
+    public static Function<Point3D, javafx.geometry.Point3D> fxyzPoint3DTofxPoint3D =
         p -> new javafx.geometry.Point3D(p.x, p.y, p.z);
     public static Comparator<Point3D> Point3DXComparator = (Point3D p1, Point3D p2) -> {
         if (p1.x < p2.x) return -1;
@@ -89,7 +89,7 @@ public enum JavaFX3DUtils {
         else if (p1.z > p2.z) return 1;
         else return 0;
     };
-    
+
     public static Image snapshotShape3D(Node node) {
         Group group = new Group(node);
         Scene scene = new Scene(group, 1000, 1000, true, SceneAntialiasing.BALANCED);
@@ -101,12 +101,13 @@ public enum JavaFX3DUtils {
         group.getChildren().add(light);
         light.getScope().add(node);
         light.setTranslateY(-500);  //interragation lamp
-        
+
         SnapshotParameters params = new SnapshotParameters();
         params.setFill(Color.TRANSPARENT);
         WritableImage image = scene.getRoot().snapshot(params, null);
         return image;
     }
+
     public static Timeline creditsReel(Group nodeGroup, Point3D centroid) {
         List<Image> images = new ArrayList<>();
         File folder = new File("credits/");
@@ -180,6 +181,7 @@ public enum JavaFX3DUtils {
         timeline.setCycleCount(1);
         return timeline;
     }
+
     public static Point2D getTransformedP2D(Shape3D node, SubScene subScene, double clipDistance) {
         javafx.geometry.Point3D coordinates = node.localToScene(javafx.geometry.Point3D.ZERO, true);
         //@DEBUG SMP  useful debugging print
@@ -206,7 +208,8 @@ public enum JavaFX3DUtils {
         if ((y + clipDistance) > subScene.getHeight())
             y = subScene.getHeight() - (clipDistance);
         return new Point2D(x, y);
-    } 
+    }
+
     public static List<Image> getTiles() throws URISyntaxException, IOException {
         List<Image> images = new ArrayList<>();
         images.add(ResourceUtils.load3DTextureImage("1500_blackgrid"));
