@@ -24,6 +24,7 @@ module edu.jhuapl.trinity {
     requires java.desktop;
     requires javafx.graphics;
     requires javafx.controls;
+    requires javafx.media;
     requires javafx.fxml;
     requires javafx.swing;
     requires org.fxyz3d.core;

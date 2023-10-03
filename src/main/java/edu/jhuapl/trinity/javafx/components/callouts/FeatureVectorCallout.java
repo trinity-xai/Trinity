@@ -101,6 +101,7 @@ public class FeatureVectorCallout extends VBox {
         iv.setFitWidth(CHIP_FIT_WIDTH);
         iv.setFitHeight(CHIP_FIT_WIDTH);
 //@TODO SMP This feature has been found to be more problematic than beneficial
+//However its pretty friggen cool so hopefully we can leverage it later
 //        iv.setOnMouseClicked(e -> {
 //            if (e.getClickCount() > 1) {
 //                //add radial entity

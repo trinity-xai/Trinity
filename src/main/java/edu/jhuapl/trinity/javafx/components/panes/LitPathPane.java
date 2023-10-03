@@ -57,6 +57,7 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.application.Platform;
 
 /**
  * @author Sean Phillips
@@ -64,6 +65,7 @@ import java.util.logging.Logger;
 public class LitPathPane extends PathPane {
     Scene scene;
     Pane parent;
+    boolean animating = false;
     boolean fadeEnabled = true;
     double fadeSideInset = -40;
     double hoverTopInset = -2;
@@ -106,53 +108,58 @@ public class LitPathPane extends PathPane {
         }
         return sgRoot;
     }
-
-    public static void slideInPane(PathPane pane) {
+    public void slideInPane() {
         //https://stackoverflow.com/questions/48893282/javafx-apply-perspective-transformation-on-a-node-given-a-perspective-transform?noredirect=1&lq=1
         PerspectiveTransform pt = new PerspectiveTransform();
-        pt.setUlx(pane.getWidth());
-        pt.setUly(pane.getHeight() * 0.5);
-        pt.setUrx(pane.getWidth() + 1.0);
-        pt.setUry(pane.getHeight() * 0.5);
+        pt.setUlx(getWidth());
+        pt.setUly(getHeight() * 0.5);
+        pt.setUrx(getWidth() + 1.0);
+        pt.setUry(getHeight() * 0.5);
 
-        pt.setLrx(pane.getWidth() + 1.0);
-        pt.setLry(pane.getHeight() * 0.5);
-        pt.setLlx(pane.getWidth());
-        pt.setLly(pane.getHeight() * 0.5);
-        pane.setEffect(pt);
+        pt.setLrx(getWidth() + 1.0);
+        pt.setLry(getHeight() * 0.5);
+        pt.setLlx(getWidth());
+        pt.setLly(getHeight() * 0.5);
+        setEffect(pt);
 
         Duration showPointDuration = Duration.seconds(0.75);
         Duration midPointDuration = Duration.seconds(0.75);
         Duration endPointDuration = Duration.seconds(1.00);
 
         Timeline timeline = new Timeline(
-            new KeyFrame(showPointDuration, e -> pane.show()),
+            new KeyFrame(showPointDuration, e -> show()),
 
             //animation to midpoint
-            new KeyFrame(midPointDuration, new KeyValue(pt.ulxProperty(), pane.getWidth() * 0.75)),
+            new KeyFrame(midPointDuration, new KeyValue(pt.ulxProperty(), getWidth() * 0.75)),
             new KeyFrame(midPointDuration, new KeyValue(pt.ulyProperty(), 0.0)),
-            new KeyFrame(midPointDuration, new KeyValue(pt.urxProperty(), pane.getWidth())),
-            new KeyFrame(midPointDuration, new KeyValue(pt.uryProperty(), pane.getHeight() * 0.333)),
+            new KeyFrame(midPointDuration, new KeyValue(pt.urxProperty(), getWidth())),
+            new KeyFrame(midPointDuration, new KeyValue(pt.uryProperty(), getHeight() * 0.333)),
 
-            new KeyFrame(midPointDuration, new KeyValue(pt.lrxProperty(), pane.getWidth())),
-            new KeyFrame(midPointDuration, new KeyValue(pt.lryProperty(), pane.getHeight() * 0.666)),
-            new KeyFrame(midPointDuration, new KeyValue(pt.llxProperty(), pane.getWidth() * 0.75)),
-            new KeyFrame(midPointDuration, new KeyValue(pt.llyProperty(), pane.getHeight())),
+            new KeyFrame(midPointDuration, new KeyValue(pt.lrxProperty(), getWidth())),
+            new KeyFrame(midPointDuration, new KeyValue(pt.lryProperty(), getHeight() * 0.666)),
+            new KeyFrame(midPointDuration, new KeyValue(pt.llxProperty(), getWidth() * 0.75)),
+            new KeyFrame(midPointDuration, new KeyValue(pt.llyProperty(), getHeight())),
 
             //animation to actual size
             new KeyFrame(endPointDuration, new KeyValue(pt.ulxProperty(), 0.0)),
             new KeyFrame(endPointDuration, new KeyValue(pt.ulyProperty(), 0.0)),
-            new KeyFrame(endPointDuration, new KeyValue(pt.urxProperty(), pane.getWidth())),
+            new KeyFrame(endPointDuration, new KeyValue(pt.urxProperty(), getWidth())),
             new KeyFrame(endPointDuration, new KeyValue(pt.uryProperty(), 0.0)),
 
-            new KeyFrame(endPointDuration, new KeyValue(pt.lrxProperty(), pane.getWidth())),
-            new KeyFrame(endPointDuration, new KeyValue(pt.lryProperty(), pane.getHeight())),
+            new KeyFrame(endPointDuration, new KeyValue(pt.lrxProperty(), getWidth())),
+            new KeyFrame(endPointDuration, new KeyValue(pt.lryProperty(), getHeight())),
             new KeyFrame(endPointDuration, new KeyValue(pt.llxProperty(), 0.0)),
-            new KeyFrame(endPointDuration, new KeyValue(pt.llyProperty(), pane.getHeight()))
+            new KeyFrame(endPointDuration, new KeyValue(pt.llyProperty(), getHeight()))
         );
+        animating = true;
         timeline.play();
         timeline.setOnFinished(e -> {
-            pane.setEffect(null);
+            animating = false;
+            setEffect(null);
+            Platform.runLater(()-> {
+            contentPane.setPrefWidth(mainContentBorderFrame.getWidth()-100);
+            contentPane.setPrefHeight(mainContentBorderFrame.getHeight()-100);
+            });
         });
     }
 
@@ -164,6 +171,16 @@ public class LitPathPane extends PathPane {
         setMinWidth(300);
         setMinHeight(200);
         setEffects();
+        mainContentBorderFrame.widthProperty().addListener(cl -> {
+            if(!animating) {
+                contentPane.setPrefWidth(mainContentBorderFrame.getWidth()-50);
+            }
+        });
+        mainContentBorderFrame.heightProperty().addListener(cl -> {
+            if(!animating) {
+                contentPane.setPrefHeight(mainContentBorderFrame.getHeight()-50);
+            }
+        });             
     }
 
     private void setEffects() {

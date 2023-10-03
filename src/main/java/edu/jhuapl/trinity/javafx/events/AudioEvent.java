@@ -1,4 +1,4 @@
-package edu.jhuapl.trinity.javafx.components;
+package edu.jhuapl.trinity.javafx.events;
 
 /*-
  * #%L
@@ -20,23 +20,23 @@ package edu.jhuapl.trinity.javafx.components;
  * #L%
  */
 
-import javafx.scene.paint.Color;
+import javafx.event.Event;
+import javafx.event.EventType;
 
 /**
  * @author Sean Phillips
  */
-public class ProgressStatus {
+public class AudioEvent extends Event {
 
-    public Color fillStartColor = Color.CYAN;
-    public Color fillEndColor = Color.CYAN;
-    public Color innerStrokeColor = Color.CYAN;
-    public Color outerStrokeColor = Color.CYAN;
-    public String statusMessage = "";
-    public double percentComplete; //-1 for indeterminate
+    public static final EventType<AudioEvent> NEW_AUDIO_FILE = new EventType(ANY, "NEW_AUDIO_FILE");
+    public Object object = null;
 
-    public ProgressStatus(String statusMessage, double percentComplete) {
-        this.statusMessage = statusMessage;
-        this.percentComplete = percentComplete;
+    public AudioEvent(EventType<? extends Event> arg0) {
+        super(arg0);
     }
 
+    public AudioEvent(EventType<? extends Event> arg0, Object object) {
+        this(arg0);
+        this.object = object;
+    }
 }

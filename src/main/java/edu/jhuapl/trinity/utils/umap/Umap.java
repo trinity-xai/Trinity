@@ -26,7 +26,7 @@ package edu.jhuapl.trinity.utils.umap;
  */
 
 import edu.jhuapl.trinity.App;
-import edu.jhuapl.trinity.javafx.components.ProgressStatus;
+import edu.jhuapl.trinity.javafx.components.radial.ProgressStatus;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.utils.umap.metric.CategoricalMetric;
 import edu.jhuapl.trinity.utils.umap.metric.EuclideanMetric;

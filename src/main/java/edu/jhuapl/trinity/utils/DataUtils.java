@@ -33,7 +33,7 @@ import edu.jhuapl.trinity.data.messages.ReconstructionAttributes;
 import edu.jhuapl.trinity.data.messages.SemanticMap;
 import edu.jhuapl.trinity.data.messages.SemanticReconstruction;
 import edu.jhuapl.trinity.data.messages.SystemFeatures;
-import edu.jhuapl.trinity.javafx.components.ProgressStatus;
+import edu.jhuapl.trinity.javafx.components.radial.ProgressStatus;
 import edu.jhuapl.trinity.javafx.components.Projector;
 import edu.jhuapl.trinity.javafx.components.timeline.Item;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;

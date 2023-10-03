@@ -34,6 +34,7 @@ import edu.jhuapl.trinity.data.files.ZeroPilotLatentsFile;
 import edu.jhuapl.trinity.data.messages.FeatureCollection;
 import edu.jhuapl.trinity.data.terrain.FireAreaTextFile;
 import edu.jhuapl.trinity.data.terrain.TerrainTextFile;
+import edu.jhuapl.trinity.javafx.events.AudioEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.events.GaussianMixtureEvent;
 import edu.jhuapl.trinity.javafx.events.ImageEvent;
@@ -66,6 +67,7 @@ import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
+import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -220,6 +222,28 @@ public enum ResourceUtils {
         iv.setFitWidth(FIT_WIDTH);
         return iv;
     }
+    /**
+     * Checks whether the file can be used as audio.
+     *
+     * @param file The File object to check.
+     * @return boolean true if it is a file, can be read and is a supported audio type
+     */
+    public static boolean isAudioFile(File file) {
+        if (file.isFile() && file.canRead()) {
+            try {
+                String contentType = Files.probeContentType(file.toPath());
+                switch (contentType) {
+                    case "audio/wav":
+                    case "audio/mp3":
+                        return true;
+                }
+                //System.out.println(contentType);
+            } catch (IOException ex) {
+                Logger.getLogger(ResourceUtils.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
+        return false;
+    }    
 
     public static boolean canDragOver(DragEvent event) {
         Dragboard db = event.getDragboard();
@@ -255,12 +279,14 @@ public enum ResourceUtils {
         boolean success = false;
         if (db.hasFiles()) {
             for (File file : db.getFiles()) {
-//                File file = db.getFiles().get(0);
                 try {
                     if (JavaFX3DUtils.isTextureFile(file)) {
                         Image image = new Image(file.toURI().toURL().toExternalForm());
                         scene.getRoot().fireEvent(
                             new ImageEvent(ImageEvent.NEW_TEXTURE_SURFACE, image));
+                    }else if (isAudioFile(file)) {
+                        scene.getRoot().fireEvent(
+                            new AudioEvent(AudioEvent.NEW_AUDIO_FILE, file));
                     } else if (LabelConfigFile.isLabelConfigFile(file)) {
                         LabelConfigFile labelConfigFile = new LabelConfigFile(file.getAbsolutePath(), true);
                         scene.getRoot().fireEvent(
