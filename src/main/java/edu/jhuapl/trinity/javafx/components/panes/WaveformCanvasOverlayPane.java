@@ -20,6 +20,13 @@ package edu.jhuapl.trinity.javafx.components.panes;
  * #L%
  */
 
+import edu.jhuapl.trinity.data.Trajectory;
+import edu.jhuapl.trinity.data.audio.FFT;
+import edu.jhuapl.trinity.data.audio.WaveDecoder;
+import edu.jhuapl.trinity.data.messages.FeatureCollection;
+import edu.jhuapl.trinity.data.messages.FeatureVector;
+import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
+import edu.jhuapl.trinity.javafx.events.TrajectoryEvent;
 import javafx.concurrent.Service;
 import javafx.concurrent.Task;
 import javafx.scene.canvas.GraphicsContext;
@@ -30,8 +37,11 @@ import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
 import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.application.Platform;
@@ -285,17 +295,55 @@ public class WaveformCanvasOverlayPane extends CanvasOverlayPane {
                         calcAudioAmplitudes();
                     }
                     processAudioAmplitudes();
-
-                    FastFourierTransformer fft = new FastFourierTransformer(
-                        DftNormalization.STANDARD);
-                    double [] amps = new double[131072];
-                    Arrays.parallelSetAll(amps, i->0.0);
-                    for(int i=0;i<audioAmplitudes.length;i++){
-                        amps[i] = audioAmplitudes[i];
+ 
+                    WaveDecoder decoder;
+                    try {
+                        double scaling = -1.0;
+                        int binSize = 512;
+                        decoder = new WaveDecoder( new FileInputStream( audioFile ) );
+                        FFT fft = new FFT(binSize, 44100);
+                        float[] samples = new float[binSize];
+                        float[] spectrum = new float[binSize / 2 + 1];
+                        float[] lastSpectrum = new float[binSize / 2 + 1];
+                        List<Float> spectralFlux = new ArrayList<Float>();
+                        int readSamples = 0;
+                        FeatureCollection fc = new FeatureCollection();
+                        
+                        while ((readSamples = decoder.readSamples(samples)) > 0) {
+                            System.out.println( "read " + readSamples + " samples" );
+                            fft.forward(samples);
+                            System.arraycopy(spectrum, 0, lastSpectrum, 0, spectrum.length);
+                            System.arraycopy(fft.getSpectrum(), 0, spectrum, 0, spectrum.length);
+                            
+                            float flux = 0;
+                            for (int i = 0; i < spectrum.length; i++)
+                                flux += (spectrum[i] - lastSpectrum[i]);
+                            spectralFlux.add(flux);
+                            System.out.println("Flux count: " + spectralFlux.size());
+                            FeatureVector fv = new FeatureVector();
+                            fv.setLabel(media.getSource());
+                            fv.setScore(flux);
+                            //inverse mirror
+                            for (int vectorIndex = spectrum.length-1; vectorIndex > 0; vectorIndex--) {
+                                fv.getData().add(spectrum[vectorIndex] * scaling); //add projection scaling
+                            }
+                            //normal wave after center
+                            for (int vectorIndex = 0; vectorIndex < spectrum.length; vectorIndex++) {
+                                fv.getData().add(spectrum[vectorIndex] * scaling); //add projection scaling
+                            }
+                            fc.getFeatures().add(fv);
+                        }
+                        getScene().getRoot().fireEvent(
+                            new FeatureVectorEvent(FeatureVectorEvent.NEW_FEATURE_COLLECTION, fc));
+                        Trajectory trajectory = new Trajectory(media.getSource());
+                        trajectory.totalStates = fc.getFeatures().size();
+                        Trajectory.addTrajectory(trajectory);
+                        Trajectory.globalTrajectoryToFeatureCollectionMap.put(trajectory, fc);
+                        getScene().getRoot().fireEvent(
+                            new TrajectoryEvent(TrajectoryEvent.NEW_TRAJECTORY_OBJECT, trajectory, fc));
+                    } catch (Exception ex) {
+                        Logger.getLogger(WaveformCanvasOverlayPane.class.getName()).log(Level.SEVERE, null, ex);
                     }
-                    Complex [] complex = fft.transform(amps, TransformType.FORWARD);
-                    
-                    complex[0].getReal();
                 }
 
                 /**

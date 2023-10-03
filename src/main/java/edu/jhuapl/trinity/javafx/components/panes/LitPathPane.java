@@ -156,10 +156,10 @@ public class LitPathPane extends PathPane {
         timeline.setOnFinished(e -> {
             animating = false;
             setEffect(null);
-            Platform.runLater(()-> {
-            contentPane.setPrefWidth(mainContentBorderFrame.getWidth()-100);
-            contentPane.setPrefHeight(mainContentBorderFrame.getHeight()-100);
-            });
+//            Platform.runLater(()-> {
+//            contentPane.setPrefWidth(mainContentBorderFrame.getWidth()-200);
+//            contentPane.setPrefHeight(mainContentBorderFrame.getHeight()-200);
+//            });
         });
     }
 
@@ -173,12 +173,12 @@ public class LitPathPane extends PathPane {
         setEffects();
         mainContentBorderFrame.widthProperty().addListener(cl -> {
             if(!animating) {
-                contentPane.setPrefWidth(mainContentBorderFrame.getWidth()-50);
+                contentPane.setPrefWidth(mainContentBorderFrame.getWidth()-100);
             }
         });
         mainContentBorderFrame.heightProperty().addListener(cl -> {
             if(!animating) {
-                contentPane.setPrefHeight(mainContentBorderFrame.getHeight()-50);
+                contentPane.setPrefHeight(mainContentBorderFrame.getHeight()-100);
             }
         });             
     }
