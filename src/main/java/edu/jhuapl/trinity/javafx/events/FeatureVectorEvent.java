@@ -34,6 +34,7 @@ public class FeatureVectorEvent extends Event {
 
     public static final EventType<FeatureVectorEvent> PROJECT_SURFACE_GRID = new EventType(ANY, "PROJECT_SURFACE_GRID");
     public static final EventType<FeatureVectorEvent> PROJECT_FEATURE_COLLECTION = new EventType(ANY, "PROJECT_FEATURE_COLLECTION");
+    public static final EventType<FeatureVectorEvent> NEW_SURFACE_COLLECTION = new EventType(ANY, "NEW_SURFACE_COLLECTION");
     public static final EventType<FeatureVectorEvent> REQUEST_FEATURE_COLLECTION = new EventType(ANY, "REQUEST_FEATURE_COLLECTION");
     public static final EventType<FeatureVectorEvent> EXPORT_FEATURE_COLLECTION = new EventType(ANY, "EXPORT_FEATURE_COLLECTION");
     public static final EventType<FeatureVectorEvent> NEW_FEATURE_COLLECTION = new EventType(ANY, "NEW_FEATURE_COLLECTION");

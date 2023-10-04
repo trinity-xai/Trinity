@@ -191,7 +191,7 @@ tasks.register('debug', JavaExec) {
 
 javafx {
     version = "$fxVersion"
-    modules = ['javafx.controls', 'javafx.fxml', 'javafx.swing']
+    modules = ['javafx.controls', 'javafx.fxml', 'javafx.swing', 'javafx.media']
     // For custom packaging on Intel Hardware
     if (project.isAppleSiliconBuild) {
         platform = 'osx-aarch64'

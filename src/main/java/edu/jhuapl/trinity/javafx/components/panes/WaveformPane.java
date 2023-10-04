@@ -37,10 +37,6 @@ import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
-import org.apache.commons.math3.complex.Complex;
-import org.apache.commons.math3.transform.DftNormalization;
-import org.apache.commons.math3.transform.FastFourierTransformer;
-import org.apache.commons.math3.transform.TransformType;
 
 /**
  * @author Sean Phillips
@@ -64,12 +60,17 @@ public class WaveformPane extends LitPathPane {
         ImageView playForwardImageView = ResourceUtils.loadIcon("forward", iconFitWidth);
         ImageView pauseImageView = ResourceUtils.loadIcon("pause", iconFitWidth);
         ImageView resetImageView = ResourceUtils.loadIcon("reset", iconFitWidth);
+        ImageView fftImageView = ResourceUtils.loadIcon("hypersurface", iconFitWidth);
+        
+        
         HBox playImageHBox = new HBox(playForwardImageView);
         playImageHBox.setAlignment(Pos.CENTER);
         HBox pauseImageHBox = new HBox( pauseImageView);
         pauseImageHBox.setAlignment(Pos.CENTER);
         HBox resetImageHBox = new HBox( resetImageView);
         resetImageHBox.setAlignment(Pos.CENTER);
+        HBox fftImageHBox = new HBox(fftImageView);
+        fftImageHBox.setAlignment(Pos.CENTER);
         
         //create effects
         DropShadow pauseIndicatorGlow = new DropShadow();
@@ -95,11 +96,20 @@ public class WaveformPane extends LitPathPane {
         playIndicatorGlow.setRadius(10);
         playIndicatorGlow.setSpread(0.5);
         playIndicatorGlow.colorProperty().set(Color.CYAN.deriveColor(1, 1, 1, 0.5));
+
+        DropShadow fftIndicatorGlow = new DropShadow();
+        fftIndicatorGlow.setBlurType(BlurType.GAUSSIAN);
+        fftIndicatorGlow.setOffsetX(0f);
+        fftIndicatorGlow.setOffsetY(0f);
+        fftIndicatorGlow.setRadius(10);
+        fftIndicatorGlow.setSpread(0.5);
+        fftIndicatorGlow.colorProperty().set(Color.CYAN.deriveColor(1, 1, 1, 0.5));
         
         // SET THE INDICATOR GLOW EFFECT
         playImageHBox.setEffect(playIndicatorGlow);
         pauseImageHBox.setEffect(pauseIndicatorGlow);
         resetImageHBox.setEffect(resetIndicatorGlow);
+        fftImageHBox.setEffect(resetIndicatorGlow);
         
 //        // SET EFFECT ON THE RESET BUTTON
 //        centerResetImageHBox.setOnMouseEntered(e -> {
@@ -159,7 +169,7 @@ public class WaveformPane extends LitPathPane {
         
         HBox toolbarHBox = new HBox(25, 
             resetImageHBox, pauseImageHBox, playImageHBox,
-                waveColorPicker, backgroundColorPicker
+            fftImageHBox, waveColorPicker, backgroundColorPicker
         );
         toolbarHBox.setAlignment(Pos.CENTER_LEFT);
         toolbarHBox.setMinHeight(iconFitWidth * 1.5);
@@ -169,13 +179,6 @@ public class WaveformPane extends LitPathPane {
         bpOilSpill.setTop(toolbarHBox);
         bpOilSpill.setCenter(waveformCanvas);
 
-//        litLog.selectingProperty.bind(logToolbar.textToggleButton.selectedProperty());
-//        litLog.vbox.addEventHandler(MouseEvent.MOUSE_CLICKED, eh -> {
-//            logToolbar.textToggleButton.setSelected(true);
-//            if (eh.getClickCount() > 1) {
-//                Platform.runLater(() -> litLog.textArea.selectAll());
-//            }
-//        });
         return bpOilSpill;
     }
 
@@ -196,12 +199,14 @@ public class WaveformPane extends LitPathPane {
         HBox resetHBox = (HBox)topHBox.getChildren().get(0);
         HBox pauseHBox = (HBox)topHBox.getChildren().get(1);
         HBox playHBox = (HBox)topHBox.getChildren().get(2);
-        waveColorPicker = (ColorPicker) topHBox.getChildren().get(3);
-        backgroundColorPicker = (ColorPicker) topHBox.getChildren().get(4);
+        HBox fftHBox = (HBox)topHBox.getChildren().get(3);
+        waveColorPicker = (ColorPicker) topHBox.getChildren().get(4);
+        backgroundColorPicker = (ColorPicker) topHBox.getChildren().get(5);
         
         resetHBox.setOnMouseClicked(eh -> waveformCanvas.resetMedia());
         pauseHBox.setOnMouseClicked(eh -> waveformCanvas.pauseMedia());
         playHBox.setOnMouseClicked(eh -> waveformCanvas.playMedia());
+        fftHBox.setOnMouseClicked(eh -> waveformCanvas.fftOnMedia());
         
         waveColorPicker.valueProperty().addListener(cl -> {
             waveformCanvas.setForegroundColor(waveColorPicker.getValue());

@@ -27,6 +27,8 @@ import edu.jhuapl.trinity.data.messages.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.FeatureVector;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.events.TrajectoryEvent;
+import edu.jhuapl.trinity.utils.loaders.AudioLoader;
+import edu.jhuapl.trinity.utils.loaders.TextEmbeddingsLoader;
 import javafx.concurrent.Service;
 import javafx.concurrent.Task;
 import javafx.scene.canvas.GraphicsContext;
@@ -82,8 +84,8 @@ public class WaveformCanvasOverlayPane extends CanvasOverlayPane {
         setClearCanvasOnResize(clearCanvas);
         graphicsContext = this.getCanvas().getGraphicsContext2D();
         service = new WaveformVisualizationService();
-        backgroundColor = Color.web("#252525");
-        foregroundColor = Color.ORANGERED;
+        backgroundColor = Color.BLACK;
+        foregroundColor = Color.TOMATO;
         transparentForegroundColor = foregroundColor.deriveColor(1, 1, 1, 0.3);
 
         // Fix the resolution in case the width changes
@@ -94,13 +96,8 @@ public class WaveformCanvasOverlayPane extends CanvasOverlayPane {
                 if (service != null) {
                     service.processAudioAmplitudes();
                 }
-                Platform.runLater(()-> {
-                paintWaveform();
-                });
+                Platform.runLater(()-> paintWaveform());
             }
-            if (service != null) {
-//                service.updateProgressByTime();
-            }            
         }));
 
         // Fix the resolution in case the height changes
@@ -111,13 +108,8 @@ public class WaveformCanvasOverlayPane extends CanvasOverlayPane {
                 if (service != null) {
                     service.processAudioAmplitudes();
                 }
-                Platform.runLater(()-> {
-                paintWaveform();
-                });
+                Platform.runLater(()-> paintWaveform());
             }
-            if (service != null) {
-//                service.updateProgressByTime();
-            }            
         }));
     }
 
@@ -190,6 +182,11 @@ public class WaveformCanvasOverlayPane extends CanvasOverlayPane {
     public void playMedia() {
         if(null != service) {
             service.playMedia();
+        }
+    }    
+    public void fftOnMedia() {
+        if(null != service) {
+            service.fftOnMedia();
         }
     }    
 
@@ -283,7 +280,7 @@ public class WaveformCanvasOverlayPane extends CanvasOverlayPane {
                         return false;
                     }
                 }
-
+                
                 /**
                  * Calculate and initialize {@link WaveformVisualizationService#audioAmplitudes} and
                  * {@link WaveformVisualization#waveformData}
@@ -295,55 +292,6 @@ public class WaveformCanvasOverlayPane extends CanvasOverlayPane {
                         calcAudioAmplitudes();
                     }
                     processAudioAmplitudes();
- 
-                    WaveDecoder decoder;
-                    try {
-                        double scaling = -1.0;
-                        int binSize = 512;
-                        decoder = new WaveDecoder( new FileInputStream( audioFile ) );
-                        FFT fft = new FFT(binSize, 44100);
-                        float[] samples = new float[binSize];
-                        float[] spectrum = new float[binSize / 2 + 1];
-                        float[] lastSpectrum = new float[binSize / 2 + 1];
-                        List<Float> spectralFlux = new ArrayList<Float>();
-                        int readSamples = 0;
-                        FeatureCollection fc = new FeatureCollection();
-                        
-                        while ((readSamples = decoder.readSamples(samples)) > 0) {
-                            System.out.println( "read " + readSamples + " samples" );
-                            fft.forward(samples);
-                            System.arraycopy(spectrum, 0, lastSpectrum, 0, spectrum.length);
-                            System.arraycopy(fft.getSpectrum(), 0, spectrum, 0, spectrum.length);
-                            
-                            float flux = 0;
-                            for (int i = 0; i < spectrum.length; i++)
-                                flux += (spectrum[i] - lastSpectrum[i]);
-                            spectralFlux.add(flux);
-                            System.out.println("Flux count: " + spectralFlux.size());
-                            FeatureVector fv = new FeatureVector();
-                            fv.setLabel(media.getSource());
-                            fv.setScore(flux);
-                            //inverse mirror
-                            for (int vectorIndex = spectrum.length-1; vectorIndex > 0; vectorIndex--) {
-                                fv.getData().add(spectrum[vectorIndex] * scaling); //add projection scaling
-                            }
-                            //normal wave after center
-                            for (int vectorIndex = 0; vectorIndex < spectrum.length; vectorIndex++) {
-                                fv.getData().add(spectrum[vectorIndex] * scaling); //add projection scaling
-                            }
-                            fc.getFeatures().add(fv);
-                        }
-                        getScene().getRoot().fireEvent(
-                            new FeatureVectorEvent(FeatureVectorEvent.NEW_FEATURE_COLLECTION, fc));
-                        Trajectory trajectory = new Trajectory(media.getSource());
-                        trajectory.totalStates = fc.getFeatures().size();
-                        Trajectory.addTrajectory(trajectory);
-                        Trajectory.globalTrajectoryToFeatureCollectionMap.put(trajectory, fc);
-                        getScene().getRoot().fireEvent(
-                            new TrajectoryEvent(TrajectoryEvent.NEW_TRAJECTORY_OBJECT, trajectory, fc));
-                    } catch (Exception ex) {
-                        Logger.getLogger(WaveformCanvasOverlayPane.class.getName()).log(Level.SEVERE, null, ex);
-                    }
                 }
 
                 /**
@@ -405,31 +353,9 @@ public class WaveformCanvasOverlayPane extends CanvasOverlayPane {
                     }
                     audioAmplitudes = finalAmplitudes;
                 }
-
-//                /**
-//                 * Calculate and initialize {@link WaveformVisualization#waveformData}
-//                 */
-//                public void processAudioAmplitudes() {
-//                    // The width of the resulting waveform panel
-//                    int width = (int) getWidth();
-//                    waveformData = new float[width];
-//                    int samplesPerPixel = audioAmplitudes.length /width;
-//
-//                    // Calculate
-//                    float nValue;
-//                    for (int w = 0; w < width; w++) {
-//                        int c = w * samplesPerPixel;
-//                        nValue = 0.0f;
-//
-//                        for (int s = 0; s < samplesPerPixel; s++) {
-//                            nValue += (Math.abs(audioAmplitudes[c + s]) / 65536.0f);
-//                        }
-//
-//                        waveformData[w] = nValue / samplesPerPixel;
-//                    }
-//                }
             };
         }
+
         /**
          * Calculate and initialize {@link WaveformVisualization#waveformData}
          */
@@ -470,7 +396,14 @@ public class WaveformCanvasOverlayPane extends CanvasOverlayPane {
                 audioPlayer.play();
             }
         }
-        
+        public void fftOnMedia() {
+            if(null != audioFile) {
+                AudioLoader task = new AudioLoader(getScene(), audioFile);
+                Thread thread = new Thread(task);
+                thread.setDaemon(true);
+                thread.start();
+            }
+        }        
         public void updateProgressByTime() {
             if(null != audioPlayer) {
                 double width = getWidth();

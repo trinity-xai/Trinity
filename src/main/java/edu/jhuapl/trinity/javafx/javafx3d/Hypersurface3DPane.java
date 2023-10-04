@@ -1311,7 +1311,7 @@ public class Hypersurface3DPane extends StackPane
 //        divisionsSpinner.setPrefWidth(125);
 
         xWidthSpinner = new Spinner(
-            new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 512, 200, 4));
+            new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 4000, 200, 4));
         xWidthSpinner.setEditable(true);
         //whenever the spinner value is changed...
         xWidthSpinner.valueProperty().addListener(e -> {
@@ -1322,7 +1322,7 @@ public class Hypersurface3DPane extends StackPane
         });
         xWidthSpinner.setPrefWidth(125);
         zWidthSpinner = new Spinner(
-            new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 2000, 200, 10));
+            new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 4000, 200, 10));
         zWidthSpinner.setEditable(true);
         //whenever the spinner value is changed...
         zWidthSpinner.valueProperty().addListener(e -> {
