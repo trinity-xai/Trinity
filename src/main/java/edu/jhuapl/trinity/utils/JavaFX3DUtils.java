@@ -89,7 +89,7 @@ public enum JavaFX3DUtils {
         else if (p1.z > p2.z) return 1;
         else return 0;
     };
-
+    static List<Image> tiles = null;
     public static Image snapshotShape3D(Node node) {
         Group group = new Group(node);
         Scene scene = new Scene(group, 1000, 1000, true, SceneAntialiasing.BALANCED);
@@ -211,18 +211,20 @@ public enum JavaFX3DUtils {
     }
 
     public static List<Image> getTiles() throws URISyntaxException, IOException {
-        List<Image> images = new ArrayList<>();
-        images.add(ResourceUtils.load3DTextureImage("1500_blackgrid"));
-        File folder = new File("textures/tiles/");
-        if (!folder.exists() || !folder.isDirectory() || folder.listFiles().length < 1) {
-            return images;
-        }
-        File[] files = folder.listFiles();
+        if(tiles == null || tiles.isEmpty()) {
+            tiles = new ArrayList<>();
+            tiles.add(ResourceUtils.load3DTextureImage("1500_blackgrid"));
+            File folder = new File("textures/tiles/");
+            if (!folder.exists() || !folder.isDirectory() || folder.listFiles().length < 1) {
+                return tiles;
+            }
+            File[] files = folder.listFiles();
 
-        for (File file : files) {
-            images.add(new Image(file.getAbsolutePath()));
-        }
-        return images;
+            for (File file : files) {
+                tiles.add(new Image(file.getAbsolutePath()));
+            }
+        }            
+        return tiles;
     }
 
     public static List<Image> getTops() throws URISyntaxException, IOException {

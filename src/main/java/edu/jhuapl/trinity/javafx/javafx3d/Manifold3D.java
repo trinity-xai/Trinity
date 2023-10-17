@@ -55,6 +55,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.DoubleStream;
+import javafx.animation.Interpolator;
+import javafx.animation.KeyFrame;
+import javafx.animation.KeyValue;
+import javafx.animation.ScaleTransition;
+import javafx.animation.Timeline;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.util.Duration;
+import org.fxyz3d.scene.paint.Palette;
 
 
 /**
@@ -66,6 +74,7 @@ public class Manifold3D extends Group {
     private Manifold manifold = null;
     public QuickHull3D hull;
 
+    public TexturedManifold selectionTexturedManifold;
     public TriangleMesh quickhullTriangleMesh;
     public MeshView quickhullMeshView;
     public TriangleMesh quickhullLinesTriangleMesh;
@@ -74,7 +83,9 @@ public class Manifold3D extends Group {
     public static Function<Point3D, Point3d> point3DToHullPoint = p -> new Point3d(p.x, p.y, p.z);
     public static Function<Point3d, Point3D> hullPointToPoint3D = p -> new Point3D(p.x, p.y, p.z);
     private TexturedManifold texturedManifold;
-
+    public SimpleBooleanProperty selected = new SimpleBooleanProperty(false);
+    
+    
     //allows 2D labels to track their 3D counterparts
     HashMap<Shape3D, Label> shape3DToLabel = new HashMap<>();
     AnimationTimer tessellationTimer;
@@ -102,7 +113,19 @@ public class Manifold3D extends Group {
         quickhullMeshView.setDrawMode(DrawMode.FILL);
         quickhullMeshView.setCullFace(CullFace.NONE);
         getChildren().addAll(quickhullMeshView);
-
+        
+        selectionTexturedManifold = new TexturedManifold(fxyzPoints, faces);
+        Palette.FunctionColorPalette trans =  new Palette.FunctionColorPalette(
+            1, d -> Color.ALICEBLUE.deriveColor(1, 1, 1, 0.75));
+        selectionTexturedManifold.setTextureModeFaces(trans);
+        getChildren().addAll(selectionTexturedManifold);
+        selectionTexturedManifold.setScaleX(1.25);
+        selectionTexturedManifold.setScaleY(1.25);
+        selectionTexturedManifold.setScaleZ(1.25);
+        selectionTexturedManifold.setDrawMode(DrawMode.LINE);
+        selectionTexturedManifold.setMouseTransparent(true);
+        selectionTexturedManifold.visibleProperty().bind(selected);
+        
         if (makeLines)
             makeLines();
 
@@ -173,7 +196,44 @@ public class Manifold3D extends Group {
             }
         });
     }
-
+    public void toggleSelection(boolean selected) {
+        if(selected) {
+            this.selected.set(selected);
+            Timeline t = new Timeline( 
+                new KeyFrame(Duration.millis(0), 
+                    new KeyValue(selectionTexturedManifold.scaleXProperty(), 0.1, Interpolator.EASE_BOTH),
+                    new KeyValue(selectionTexturedManifold.scaleYProperty(), 0.1, Interpolator.EASE_BOTH),
+                    new KeyValue(selectionTexturedManifold.scaleZProperty(), 0.1, Interpolator.EASE_BOTH)),
+                new KeyFrame(Duration.millis(350), 
+                    new KeyValue(selectionTexturedManifold.scaleXProperty(), 1.5, Interpolator.EASE_BOTH),
+                    new KeyValue(selectionTexturedManifold.scaleYProperty(), 1.5, Interpolator.EASE_BOTH),
+                    new KeyValue(selectionTexturedManifold.scaleZProperty(), 1.5, Interpolator.EASE_BOTH)),
+                new KeyFrame(Duration.millis(500), 
+                    new KeyValue(selectionTexturedManifold.scaleXProperty(), 1.25, Interpolator.EASE_BOTH),
+                    new KeyValue(selectionTexturedManifold.scaleYProperty(), 1.25, Interpolator.EASE_BOTH),
+                    new KeyValue(selectionTexturedManifold.scaleZProperty(), 1.25, Interpolator.EASE_BOTH))
+            );
+            t.playFromStart();
+        } else {
+            Timeline t = new Timeline( 
+                new KeyFrame(Duration.millis(0), 
+                    new KeyValue(selectionTexturedManifold.scaleXProperty(), 1.25, Interpolator.EASE_BOTH),
+                    new KeyValue(selectionTexturedManifold.scaleYProperty(), 1.25, Interpolator.EASE_BOTH),
+                    new KeyValue(selectionTexturedManifold.scaleZProperty(), 1.25, Interpolator.EASE_BOTH)),
+                new KeyFrame(Duration.millis(250), 
+                    new KeyValue(selectionTexturedManifold.scaleXProperty(), 1.5, Interpolator.EASE_BOTH),
+                    new KeyValue(selectionTexturedManifold.scaleYProperty(), 1.5, Interpolator.EASE_BOTH),
+                    new KeyValue(selectionTexturedManifold.scaleZProperty(), 1.5, Interpolator.EASE_BOTH)),
+                new KeyFrame(Duration.millis(500), 
+                    new KeyValue(selectionTexturedManifold.scaleXProperty(), 0.1, Interpolator.EASE_BOTH),
+                    new KeyValue(selectionTexturedManifold.scaleYProperty(), 0.1, Interpolator.EASE_BOTH),
+                    new KeyValue(selectionTexturedManifold.scaleZProperty(), 0.1, Interpolator.EASE_BOTH))
+            );
+            t.setOnFinished(e-> this.selected.set(selected));
+            t.playFromStart();
+        }
+    }
+    
     public double getBoundsWidth() {
         return quickhullLinesMeshView.getBoundsInLocal().getWidth();
     }

@@ -22,6 +22,7 @@ package edu.jhuapl.trinity.javafx.components.panes;
 
 import edu.jhuapl.trinity.javafx.events.AudioEvent;
 import edu.jhuapl.trinity.utils.ResourceUtils;
+import edu.jhuapl.trinity.utils.fun.GlitchUtils;
 import java.io.File;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -30,6 +31,7 @@ import javafx.scene.control.ColorPicker;
 import javafx.scene.effect.BlurType;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.BorderPane;
@@ -37,6 +39,7 @@ import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
+import javafx.util.Duration;
 
 /**
  * @author Sean Phillips
@@ -61,8 +64,7 @@ public class WaveformPane extends LitPathPane {
         ImageView pauseImageView = ResourceUtils.loadIcon("pause", iconFitWidth);
         ImageView resetImageView = ResourceUtils.loadIcon("reset", iconFitWidth);
         ImageView fftImageView = ResourceUtils.loadIcon("hypersurface", iconFitWidth);
-        
-        
+                
         HBox playImageHBox = new HBox(playForwardImageView);
         playImageHBox.setAlignment(Pos.CENTER);
         HBox pauseImageHBox = new HBox( pauseImageView);
@@ -215,6 +217,10 @@ public class WaveformPane extends LitPathPane {
         backgroundColorPicker.valueProperty().addListener(cl -> {
             waveformCanvas.setBackgroundColor(backgroundColorPicker.getValue());
             waveformCanvas.paintWaveform();
+        });
+        this.addEventHandler(MouseEvent.MOUSE_CLICKED, e-> {
+            GlitchUtils.gitchNode(this, 
+            Duration.millis(250), Duration.ZERO, 2);
         });
         
     }

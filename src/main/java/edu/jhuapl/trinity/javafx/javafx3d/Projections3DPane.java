@@ -1991,58 +1991,88 @@ public class Projections3DPane extends StackPane implements
         }
         trimQueueNow();
     }
+    private void pointToManifold(Manifold3D manifold3D) {
+        javafx.geometry.Point3D p1 = new javafx.geometry.Point3D(
+            selectedSphereA.getTranslateX(),
+            selectedSphereA.getTranslateY(),
+            selectedSphereA.getTranslateZ());
+        javafx.geometry.Point3D p2 = selectedManifoldA.getClosestHullPoint(p1);
+        System.out.println("Difference: " + p1.subtract(p2).toString());
+        System.out.println("Distance: " + p1.distance(p2));
+        //Fire off event to create new distance object
+        String distanceLabel =
+            sphereToFeatureVectorMap.get(selectedSphereA).getLabel()
+                + " => " + manifold3D.toString();
+        Distance distanceObject = new Distance(
+            distanceLabel, Color.ALICEBLUE, "euclidean", 5);
+        distanceObject.setPoint1(p1);
+        distanceObject.setPoint2(p2);
+        distanceObject.setValue(p1.distance(p2));
 
+        getScene().getRoot().fireEvent(new ManifoldEvent(
+            ManifoldEvent.CREATE_NEW_DISTANCE, distanceObject));
+        //Add 3D line to scene connecting the two points
+        //Creates a new distance trajectory (Trajectory3D polyline)
+        //returns midpoint so we can anchor a numeric distance label
+        Sphere midPointSphere = updateDistanceTrajectory(null, distanceObject);
+        selectedManifoldA.toggleSelection(false);
+        //Clear selected spheres to null state
+        selectedSphereA = null;
+        selectedSphereB = null;
+        selectedManifoldA = null;
+        selectedManifoldB = null;            
+    }
+    private void pointToPoint(){
+        javafx.geometry.Point3D p1 = new javafx.geometry.Point3D(
+            selectedSphereA.getTranslateX(),
+            selectedSphereA.getTranslateY(),
+            selectedSphereA.getTranslateZ());
+        javafx.geometry.Point3D p2 = new javafx.geometry.Point3D(
+            selectedSphereB.getTranslateX(),
+            selectedSphereB.getTranslateY(),
+            selectedSphereB.getTranslateZ());
+        System.out.println("Difference: " + p1.subtract(p2).toString());
+        System.out.println("Distance: " + p1.distance(p2));
+        //Fire off event to create new distance object
+        String distanceLabel =
+            sphereToFeatureVectorMap.get(selectedSphereA).getLabel()
+                + " => " +
+                sphereToFeatureVectorMap.get(selectedSphereB).getLabel();
+        Distance distanceObject = new Distance(
+            distanceLabel, Color.ALICEBLUE, "euclidean", 5);
+        distanceObject.setPoint1(p1);
+        distanceObject.setPoint2(p2);
+        distanceObject.setValue(p1.distance(p2));
+
+        getScene().getRoot().fireEvent(new ManifoldEvent(
+            ManifoldEvent.CREATE_NEW_DISTANCE, distanceObject));
+        //Add 3D line to scene connecting the two points
+        updateDistanceTrajectory(null, distanceObject);
+        //Clear selected spheres to null state
+        selectedSphereA = null;
+        selectedSphereB = null;
+        if(null != selectedManifoldA) {
+            selectedManifoldA.toggleSelection(false);
+            selectedManifoldA = null;
+        }            
+        if(null != selectedManifoldB) {
+            selectedManifoldB.toggleSelection(false);
+            selectedManifoldB = null;
+        }            
+    }
     private void processDistanceClick(Manifold3D manifold3D) {
         System.out.println("Point: " + manifold3D.toString());
         if (null == selectedManifoldA) {
             selectedManifoldA = manifold3D;
-            //@TODO add some sort of visual highlight
+            //add some sort of visual highlight
+            selectedManifoldA.toggleSelection(true);            
         } else {
             selectedManifoldB = manifold3D;
             //@TODO add some sort of visual highlight
         }
         //Are we doing a point to manifold check?
         if (null != selectedSphereA && null != selectedManifoldA) {
-            javafx.geometry.Point3D p1 = new javafx.geometry.Point3D(
-                selectedSphereA.getTranslateX(),
-                selectedSphereA.getTranslateY(),
-                selectedSphereA.getTranslateZ());
-            javafx.geometry.Point3D p2 = selectedManifoldA.getClosestHullPoint(p1);
-            System.out.println("Difference: " + p1.subtract(p2).toString());
-            System.out.println("Distance: " + p1.distance(p2));
-            //Fire off event to create new distance object
-            String distanceLabel =
-                sphereToFeatureVectorMap.get(selectedSphereA).getLabel()
-                    + " => " + manifold3D.toString();
-            Distance distanceObject = new Distance(
-                distanceLabel, Color.ALICEBLUE, "euclidean", 5);
-            distanceObject.setPoint1(p1);
-            distanceObject.setPoint2(p2);
-            distanceObject.setValue(p1.distance(p2));
-
-            getScene().getRoot().fireEvent(new ManifoldEvent(
-                ManifoldEvent.CREATE_NEW_DISTANCE, distanceObject));
-            //Add 3D line to scene connecting the two points
-            //Creates a new distance trajectory (Trajectory3D polyline)
-            //returns midpoint so we can anchor a numeric distance label
-            Sphere midPointSphere = updateDistanceTrajectory(null, distanceObject);
-//            Callout ddc = DistanceDataCallout.createByManifold3D(
-//                    midPointSphere, selectedManifoldA.getManifold(),
-//                new Point3D(p1.getX(),p1.getY(),p1.getZ()), subScene);
-//            radialOverlayPane.addCallout(ddc, midPointSphere);
-//
-//            ddc.play();
-//            distanceTotrajectory3DMap.get(distanceObject).addEventHandler(
-//                MouseEvent.MOUSE_CLICKED, e -> {
-//                    ddc.setVisible(true);
-//                    ddc.play();
-//                });
-
-            //Clear selected spheres to null state
-            selectedSphereA = null;
-            selectedSphereB = null;
-            selectedManifoldA = null;
-            selectedManifoldB = null;
+            pointToManifold(selectedManifoldA);
         }
     }
 
@@ -2051,44 +2081,16 @@ public class Projections3DPane extends StackPane implements
         if (null == selectedSphereA) {
             selectedSphereA = sphere;
             //@TODO add some sort of visual highlight
-//                        PointDistanceMenu pdMenu = new PointDistanceMenu(this);
-//                        pdMenu.setTranslateX(e.getSceneX());
-//                        pdMenu.setTranslateY(e.getSceneY());
-//                        radialOverlayPane.addEntity(pdMenu);
         } else {
             selectedSphereB = sphere;
             //@TODO add some sort of visual highlight
         }
         if (null != selectedSphereA && null != selectedSphereB) {
-            javafx.geometry.Point3D p1 = new javafx.geometry.Point3D(
-                selectedSphereA.getTranslateX(),
-                selectedSphereA.getTranslateY(),
-                selectedSphereA.getTranslateZ());
-            javafx.geometry.Point3D p2 = new javafx.geometry.Point3D(
-                selectedSphereB.getTranslateX(),
-                selectedSphereB.getTranslateY(),
-                selectedSphereB.getTranslateZ());
-            System.out.println("Difference: " + p1.subtract(p2).toString());
-            System.out.println("Distance: " + p1.distance(p2));
-            //Fire off event to create new distance object
-            String distanceLabel =
-                sphereToFeatureVectorMap.get(selectedSphereA).getLabel()
-                    + " => " +
-                    sphereToFeatureVectorMap.get(selectedSphereB).getLabel();
-            Distance distanceObject = new Distance(
-                distanceLabel, Color.ALICEBLUE, "euclidean", 5);
-            distanceObject.setPoint1(p1);
-            distanceObject.setPoint2(p2);
-            distanceObject.setValue(p1.distance(p2));
-
-            getScene().getRoot().fireEvent(new ManifoldEvent(
-                ManifoldEvent.CREATE_NEW_DISTANCE, distanceObject));
-            //Add 3D line to scene connecting the two points
-            updateDistanceTrajectory(null, distanceObject);
-            //Clear selected spheres to null state
-            selectedSphereA = null;
-            selectedSphereB = null;
+            pointToPoint();
+        } else if(null != selectedSphereA && null != selectedManifoldA) {
+            pointToManifold(selectedManifoldA);
         }
+
     }
 
     //Add 3D line to scene connecting the two points

@@ -20,6 +20,7 @@ package edu.jhuapl.trinity.javafx.components.panes;
  * #L%
  */
 
+import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import javafx.animation.FadeTransition;
 import javafx.animation.KeyFrame;
@@ -54,10 +55,16 @@ import lit.litfx.controls.covalent.PathPane;
 import lit.litfx.controls.covalent.events.CovalentPaneEvent;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
 import java.util.ArrayList;
+import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javafx.application.Platform;
+import javafx.scene.effect.BlendMode;
+import javafx.scene.layout.BackgroundImage;
+import javafx.scene.layout.BackgroundPosition;
+import javafx.scene.layout.BackgroundRepeat;
+import javafx.scene.layout.BackgroundSize;
 
 /**
  * @author Sean Phillips
@@ -82,7 +89,7 @@ public class LitPathPane extends PathPane {
     private double currentGradientMillis = 465; //This number was picked by Josh
     private long lastInsideMillis = 0;
     public static long enteredWaitTimeMillis = 5000;
-
+    
     /**
      * Helper utility for loading a common FXML based Controller which assumes
      * an anchorpane node which is returned wrapped as a BorderPane
@@ -180,7 +187,22 @@ public class LitPathPane extends PathPane {
             if(!animating) {
                 contentPane.setPrefHeight(mainContentBorderFrame.getHeight()-100);
             }
-        });             
+        });            
+        
+//        int size;
+//        try {
+//            size = JavaFX3DUtils.getTiles().size();
+//            Random someRando = new Random();
+//            Background tileBackground = new Background(new BackgroundImage(
+//                JavaFX3DUtils.getTiles().get(someRando.nextInt(size)),
+//                    BackgroundRepeat.REPEAT, BackgroundRepeat.REPEAT, 
+//                    BackgroundPosition.DEFAULT, BackgroundSize.DEFAULT
+//            ));
+//            mainContentBorderFrame.setBackground(tileBackground);
+//            mainContentBorderFrame.setBlendMode(BlendMode.COLOR_BURN);
+//        } catch (URISyntaxException | IOException ex) {
+//            Logger.getLogger(LitPathPane.class.getName()).log(Level.SEVERE, null, ex);
+//        }
     }
 
     private void setEffects() {

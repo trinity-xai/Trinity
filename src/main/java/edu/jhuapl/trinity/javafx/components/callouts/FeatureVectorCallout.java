@@ -48,7 +48,7 @@ import java.text.NumberFormat;
 import java.util.Map.Entry;
 
 /**
- * @author phillsm1
+ * @author Birdasaur
  */
 public class FeatureVectorCallout extends VBox {
     public static double CHIP_FIT_WIDTH = 200;
@@ -195,7 +195,23 @@ public class FeatureVectorCallout extends VBox {
         textTP.setText("Text");
         textTP.setExpanded(false);
 
-        getChildren().addAll(imageTP, textTP, detailsTP, metaTP);
+        ImageView openMediaIV = ResourceUtils.loadIcon("forward", 30);
+        VBox openMediaVBox = new VBox(openMediaIV);
+        openMediaVBox.setOnMouseEntered(e -> openMediaVBox.setEffect(glow));
+        openMediaVBox.setOnMouseExited(e -> openMediaVBox.setEffect(null));
+        openMediaVBox.setOnMouseClicked(e -> {
+            openMediaVBox.getScene().getRoot().fireEvent(new ApplicationEvent(
+                ApplicationEvent.SHOW_WAVEFORM_PANE, featureVector.getMediaURL()));
+        });
+        HBox mediaHBox = new HBox(15, openMediaVBox);
+        mediaHBox.setAlignment(Pos.TOP_LEFT);
+        VBox mediaVBox = new VBox(5, new Label(featureVector.getMediaURL()), mediaHBox);
+        TitledPane mediaTP = new TitledPane();
+        mediaTP.setContent(mediaVBox);
+        mediaTP.setText("Media");
+        mediaTP.setExpanded(false);
+        
+        getChildren().addAll(imageTP, mediaTP, textTP, detailsTP, metaTP);
         setSpacing(3);
         setPrefWidth(250);
         setPrefHeight(100);

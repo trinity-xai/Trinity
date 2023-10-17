@@ -24,7 +24,7 @@ import edu.jhuapl.trinity.utils.AnalysisUtils.ANALYSIS_METHOD;
 import edu.jhuapl.trinity.utils.AnalysisUtils.SOURCE;
 
 /**
- * @author phillsm1
+ * @author Birdasaur
  */
 public class PCAConfig {
     public SOURCE source;
