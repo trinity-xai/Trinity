@@ -50,7 +50,7 @@ public enum GlitchUtils {
         }        
         DisplacementMap map = new DisplacementMap(floatMap);
             //, width, width, width, width)
-        floatMap.    
+
         Timeline t = new Timeline(
             new KeyFrame(Duration.millis(0), e -> node.setEffect(map)),
             new KeyFrame(duration, e->node.setEffect(null)),

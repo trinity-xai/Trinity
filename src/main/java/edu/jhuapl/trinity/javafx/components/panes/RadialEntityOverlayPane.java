@@ -136,7 +136,8 @@ public class RadialEntityOverlayPane extends Pane {
     }
 
     public Callout createCallout(Shape3D shape3D, FeatureVector featureVector, SubScene subScene) {
-        Callout infoCallout = FeatureVectorCallout.createByShape3D(shape3D, featureVector, subScene);
+        Callout infoCallout = FeatureVectorCallout.createByShape3D(
+            shape3D, featureVector, subScene, imageryBasePath);
         addCallout(infoCallout, shape3D);
         infoCallout.play();
         return infoCallout;
@@ -154,6 +155,7 @@ public class RadialEntityOverlayPane extends Pane {
         ((ImageView) tp0.getContent()).setImage(image);
 
         //update details (child 2)
+        //@TODO SMP Create enum for index of children
         String bboxStr = "";
         if (null != featureVector.getBbox())
             bboxStr = bboxToString(featureVector);
@@ -175,12 +177,12 @@ public class RadialEntityOverlayPane extends Pane {
             new Label(String.valueOf(featureVector.getLayer())));
         tp1.setContent(detailsGridPane);
 
-        //update metadata (child 3)
+        //update metadata (child 5)
         StringBuilder sb = new StringBuilder();
         for (Entry<String, String> entry : featureVector.getMetaData().entrySet()) {
             sb.append(entry.getKey()).append(" : ").append(entry.getValue()).append("\n");
         }
-        TitledPane tp2 = (TitledPane) vbox.getChildren().get(3);
+        TitledPane tp2 = (TitledPane) vbox.getChildren().get(5);
         ((Text) tp2.getContent()).setText(sb.toString());
     }
 

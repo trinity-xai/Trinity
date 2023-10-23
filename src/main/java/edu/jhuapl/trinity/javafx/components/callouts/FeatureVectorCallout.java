@@ -56,14 +56,16 @@ public class FeatureVectorCallout extends VBox {
     public static double IMAGE_FIT_WIDTH = 200;
     public String imageryBasePath = "imagery/";
 
-    public static Callout createByShape3D(Shape3D shape3D, FeatureVector featureVector, SubScene subScene) {
-        FeatureVectorCallout mainTitleVBox = new FeatureVectorCallout(shape3D, featureVector, subScene);
+    public static Callout createByShape3D(Shape3D shape3D, 
+        FeatureVector featureVector, SubScene subScene, String imageryBasePath) {
+        FeatureVectorCallout featureVectorCallout = new FeatureVectorCallout(shape3D, 
+            featureVector, subScene, imageryBasePath);
         Point2D p2D = JavaFX3DUtils.getTransformedP2D(shape3D, subScene, Callout.DEFAULT_HEAD_RADIUS + 5);
         Callout infoCallout = CalloutBuilder.create()
             .headPoint(p2D.getX(), p2D.getY())
             .leaderLineToPoint(p2D.getX() - 100, p2D.getY() - 150)
             .endLeaderLineRight()
-            .mainTitle(featureVector.getLabel(), mainTitleVBox)
+            .mainTitle(featureVector.getLabel(), featureVectorCallout)
             .pause(10)
             .build();
 
@@ -82,14 +84,16 @@ public class FeatureVectorCallout extends VBox {
         infoCallout.setManaged(false);
 
         subScene.getScene().addEventHandler(ApplicationEvent.SET_IMAGERY_BASEPATH, e -> {
-            mainTitleVBox.imageryBasePath = (String) e.object;
-            System.out.println("Callout image base path set to " + mainTitleVBox.imageryBasePath);
+            featureVectorCallout.imageryBasePath = (String) e.object;
+            System.out.println("Callout image base path set to " + featureVectorCallout.imageryBasePath);
         });
 
         return infoCallout;
     }
 
-    public FeatureVectorCallout(Shape3D shape3D, FeatureVector featureVector, SubScene subScene) {
+    public FeatureVectorCallout(Shape3D shape3D, FeatureVector featureVector, 
+        SubScene subScene, String imageryBasePath) {
+        this.imageryBasePath = imageryBasePath;
         ImageView iv = loadImageView(featureVector, featureVector.isBBoxValid());
         String bboxStr = "";
         if (null != featureVector.getBbox())
