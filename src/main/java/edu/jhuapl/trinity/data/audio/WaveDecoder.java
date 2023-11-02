@@ -21,6 +21,7 @@ package edu.jhuapl.trinity.data.audio;
  */
 import java.io.BufferedInputStream;
 import java.io.InputStream;
+import java.util.logging.Logger;
 
 /**
  * A simple class that can read in the PCM data from a Wav file, converting the
@@ -93,7 +94,9 @@ public class WaveDecoder implements Decoder {
         channels = in.readShortLittleEndian();
         sampleRate = in.readIntLittleEndian();
         if (sampleRate != 44100) {
-            throw new IllegalArgumentException("Not 44100 sampling rate");
+            //throw new IllegalArgumentException("Not 44100 sampling rate");
+            Logger.getLogger(WaveDecoder.class.getName()).warning(
+                "Not 44100 sampling rate.\nSome functions may not behave.");
         }
         in.readIntLittleEndian();
         in.readShortLittleEndian();
@@ -119,6 +122,7 @@ public class WaveDecoder implements Decoder {
      * @param samples The samples array to write the samples to
      * @return The number of samples actually read.
      */
+    @Override
     public int readSamples(float[] samples) {
         int readSamples = 0;
         for (int i = 0; i < samples.length; i++) {

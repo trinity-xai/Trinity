@@ -233,6 +233,8 @@ public enum ResourceUtils {
             try {
                 String contentType = Files.probeContentType(file.toPath());
                 switch (contentType) {
+                    case "audio/x-flac":
+                    case "audio/flac":
                     case "audio/wav":
                     case "audio/mp3":
                         return true;

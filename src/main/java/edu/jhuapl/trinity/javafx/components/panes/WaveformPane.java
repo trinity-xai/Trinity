@@ -20,10 +20,17 @@ package edu.jhuapl.trinity.javafx.components.panes;
  * #L%
  */
 
+import edu.jhuapl.trinity.data.audio.flac.FlacConverter;
+import edu.jhuapl.trinity.data.audio.flac.FlacDecoder;
 import edu.jhuapl.trinity.javafx.events.AudioEvent;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import edu.jhuapl.trinity.utils.fun.GlitchUtils;
 import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -227,7 +234,55 @@ public class WaveformPane extends LitPathPane {
 
     public void setWaveform(File audioFile) {
         System.out.println("@TODO SMP... process audio file");
-        waveformCanvas.startVisualization(audioFile);
+        int indexOfPeriod = audioFile.getPath().lastIndexOf(".");
+        if(indexOfPeriod > 0) {
+            String ext = audioFile.getPath().substring(indexOfPeriod+1);
+            if(ext.toLowerCase().contentEquals("wav") ||
+                ext.toLowerCase().contentEquals("flac")) {
+                
+                if(ext.toLowerCase().contentEquals("flac")) {
+//                    try {
+//                        //convert to wav
+//                        FlacDecoder dec = new FlacDecoder(audioFile);
+//			// Handle metadata header blocks
+//			while (dec.readAndHandleMetadataBlock() != null);
+//			if (dec.streamInfo.sampleDepth % 8 != 0) {
+//                            System.out.println("Only whole-byte sample depth supported");
+//                            return;
+//                        }
+//			// Decode every block
+//			int[][] samples = new int[dec.streamInfo.numChannels]
+//                                [(int)dec.streamInfo.numSamples];
+//			for (int off = 0; ;) {
+//                            int len = dec.readAudioBlock(samples, off);
+//                            if (len == 0)
+//                                break;
+//                            off += len;
+//			}
+//                        FlacConverter converter = new FlacConverter(dec.streamInfo);
+//                        float [] monoWavBytes = converter.convertToWavBytes(samples);
+//                        System.out.println("Converted Flac to mono Wav format.");
+//                    } catch (IOException ex) {
+//                        Logger.getLogger(WaveformPane.class.getName()).log(Level.SEVERE, null, ex);
+//                    }
+                    //create temporary wav file
+                                        
+                    try {
+                        Path tempFile = Files.createTempFile("flacToWav-"+audioFile.getName(), ".wav");
+                        FlacConverter.decodeFlacToWav(audioFile, tempFile.toFile());
+                        waveformCanvas.startVisualization(tempFile.toFile());
+                    } catch (IOException ex) {
+                        Logger.getLogger(WaveformPane.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                } else {
+                    waveformCanvas.startVisualization(audioFile);
+                }
+            } else {
+                System.out.println("Could not load this file type.\nTypes supported: .wav | .flac");
+            }
+        } else {
+            System.out.println("Could not determine audio file type.\nTypes supported: .wav | .flac");
+        }
     }
 
  

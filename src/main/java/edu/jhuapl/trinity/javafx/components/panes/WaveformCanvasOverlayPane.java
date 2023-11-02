@@ -20,15 +20,7 @@ package edu.jhuapl.trinity.javafx.components.panes;
  * #L%
  */
 
-import edu.jhuapl.trinity.data.Trajectory;
-import edu.jhuapl.trinity.data.audio.FFT;
-import edu.jhuapl.trinity.data.audio.WaveDecoder;
-import edu.jhuapl.trinity.data.messages.FeatureCollection;
-import edu.jhuapl.trinity.data.messages.FeatureVector;
-import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
-import edu.jhuapl.trinity.javafx.events.TrajectoryEvent;
 import edu.jhuapl.trinity.utils.loaders.AudioLoader;
-import edu.jhuapl.trinity.utils.loaders.TextEmbeddingsLoader;
 import javafx.concurrent.Service;
 import javafx.concurrent.Task;
 import javafx.scene.canvas.GraphicsContext;
@@ -39,20 +31,12 @@ import javax.sound.sampled.AudioInputStream;
 import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.application.Platform;
 import javafx.scene.media.Media;
 import javafx.util.Duration;
-import org.apache.commons.math3.complex.Complex;
-import org.apache.commons.math3.transform.DftNormalization;
-import org.apache.commons.math3.transform.FastFourierTransformer;
-import org.apache.commons.math3.transform.TransformType;
 
 /**
  * Amplitude over time style waveform viz

@@ -11,8 +11,8 @@
             </goals>
             <properties>
                 <exec.executable>java</exec.executable>
-                <exec.vmArgs>-Xmx4g -Dprism.maxvram=2G</exec.vmArgs>
-                <exec.args>-Dprism.poolstats=true -Dprism.maxvram=2G -Djavafx.animation.fullspeed=true</exec.args>
+                <exec.vmArgs>-Dprism.maxvram=2G</exec.vmArgs>
+                <exec.args>${exec.vmArgs} </exec.args>
                 <exec.mainClass>edu.jhuapl.trinity.TrinityMain</exec.mainClass>                
             </properties>            
         </action>
@@ -29,9 +29,8 @@
                 <skipTests>true</skipTests>
                 <exec.executable>java</exec.executable>
                 <jpda.listen>true</jpda.listen>
-                <exec.vmArgs>-Xmx4g -Dprism.maxvram=2G</exec.vmArgs>
-                <exec.args>-Dprism.poolstats=true -Dprism.maxvram=2G -Djavafx.animation.fullspeed=true</exec.args>
-                <exec.args>-Xdebug -Xrunjdwp:transport=dt_socket,server=n,address=${jpda.address} -classpath %classpath edu.jhuapl.trinity.App</exec.args>
+                <exec.vmArgs>-Dprism.maxvram=2G</exec.vmArgs>
+                <exec.args>${exec.vmArgs} -Xdebug -Xrunjdwp:transport=dt_socket,server=n,address=${jpda.address} -classpath %classpath edu.jhuapl.trinity.App</exec.args>
             </properties>            
         </action>    
 
