@@ -46,7 +46,7 @@ final class RandomProjectionTree {
     }
 
     // Used for a floating point "nearly zero" comparison
-    private static final float EPS = 1e-8F;
+    private static final double EPS = 1e-8F;
 
     /**
      * Given a set of <code>indices</code> for data points from <code>data</code>, create
@@ -76,8 +76,8 @@ final class RandomProjectionTree {
         final int left = indices[leftIndex];
         final int right = indices[rightIndex];
 
-        float leftNorm = Utils.norm(data.row(left));
-        float rightNorm = Utils.norm(data.row(right));
+        double leftNorm = Utils.norm(data.row(left));
+        double rightNorm = Utils.norm(data.row(right));
 
         if (Math.abs(leftNorm) < EPS) {
             leftNorm = 1;
@@ -88,13 +88,13 @@ final class RandomProjectionTree {
         }
 
         // Compute the normal vector to the hyperplane (the vector between the two points)
-        final float[] hyperplaneVector = new float[dim];
+        final double[] hyperplaneVector = new double[dim];
 
         for (int d = 0; d < dim; ++d) {
             hyperplaneVector[d] = (data.get(left, d) / leftNorm) - (data.get(right, d) / rightNorm);
         }
 
-        float hyperplaneNorm = Utils.norm(hyperplaneVector);
+        double hyperplaneNorm = Utils.norm(hyperplaneVector);
         if (Math.abs(hyperplaneNorm) < EPS) {
             hyperplaneNorm = 1;
         }
@@ -110,7 +110,7 @@ final class RandomProjectionTree {
         int nRight = 0;
         final boolean[] side = new boolean[indices.length];
         for (int i = 0; i < indices.length; ++i) {
-            float margin = 0;
+            double margin = 0;
             for (int d = 0; d < dim; ++d) {
                 margin += hyperplaneVector[d] * data.get(indices[i], d);
             }
@@ -179,14 +179,14 @@ final class RandomProjectionTree {
         final int right = indices[rightIndex];
 
         // Compute the normal vector to the hyperplane (the vector between the two points) and the offset from the origin
-        float hyperplaneOffset = 0;
-        final float[] hyperplaneVector = new float[dim];
+        double hyperplaneOffset = 0;
+        final double[] hyperplaneVector = new double[dim];
 
         // todo what is the matrix type here?  Getting multiple values from same row ...
         for (int d = 0; d < dim; ++d) {
-            final float ld = data.get(left, d);
-            final float rd = data.get(right, d);
-            final float delta = ld - rd;
+            final double ld = data.get(left, d);
+            final double rd = data.get(right, d);
+            final double delta = ld - rd;
             hyperplaneVector[d] = delta;
             hyperplaneOffset -= delta * (ld + rd);
         }
@@ -199,7 +199,7 @@ final class RandomProjectionTree {
         int nRight = 0;
         final boolean[] side = new boolean[indices.length];
         for (int i = 0; i < indices.length; ++i) {
-            float margin = hyperplaneOffset;
+            double margin = hyperplaneOffset;
             for (int d = 0; d < dim; ++d) {
                 margin += hyperplaneVector[d] * data.get(indices[i], d);
             }
@@ -261,8 +261,8 @@ final class RandomProjectionTree {
         final SparseVector leftVec = matrix.vector(left);
         final SparseVector rightVec = matrix.vector(right);
 
-        float leftNorm = leftVec.norm();
-        float rightNorm = rightVec.norm();
+        double leftNorm = leftVec.norm();
+        double rightNorm = rightVec.norm();
 
         if (Math.abs(leftNorm) < EPS) {
             leftNorm = 1;
@@ -278,7 +278,7 @@ final class RandomProjectionTree {
         // Compute the normal vector to the hyperplane (the vector between the two points)
         final SparseVector sd = leftVec.subtract(rightVec);
 
-        float hyperplaneNorm = sd.norm();
+        double hyperplaneNorm = sd.norm();
         if (Math.abs(hyperplaneNorm) < EPS) {
             hyperplaneNorm = 1;
         }
@@ -293,7 +293,7 @@ final class RandomProjectionTree {
         for (int i = 0; i < indices.length; ++i) {
             final SparseVector iVec = matrix.vector(indices[i]);
             final SparseVector spm = sd.hadamardMultiply(iVec);
-            final float margin = spm.sum();
+            final double margin = spm.sum();
             if (Math.abs(margin) < EPS) {
                 side[i] = random.nextBoolean();
                 if (side[i]) {
@@ -362,7 +362,7 @@ final class RandomProjectionTree {
         final SparseVector ss = leftVec.add(rightVec);
         ss.divide(2);
         final SparseVector sm = sd.hadamardMultiply(ss);
-        final float hyperplaneOffset = -sm.sum();
+        final double hyperplaneOffset = -sm.sum();
 
         // For each point compute the margin (project into normal vector, add offset)
         // If we are on lower side of the hyperplane put in one pile, otherwise
@@ -374,7 +374,7 @@ final class RandomProjectionTree {
             final SparseVector iVec = matrix.vector(indices[i]);
 
             final SparseVector spm = sd.hadamardMultiply(iVec);
-            final float margin = hyperplaneOffset + spm.sum();
+            final double margin = hyperplaneOffset + spm.sum();
 
             if (Math.abs(margin) < EPS) {
                 side[i] = random.nextBoolean();
@@ -417,8 +417,8 @@ final class RandomProjectionTree {
             final Object[] erps = euclideanRandomProjectionSplit(data, indices, random);
             final int[] leftIndices = (int[]) erps[0];
             final int[] rightIndices = (int[]) erps[1];
-            final Hyperplane hyperplane = new Hyperplane((float[]) erps[2]);
-            final float offset = (float) erps[3];
+            final Hyperplane hyperplane = new Hyperplane((double[]) erps[2]);
+            final double offset = (double) erps[3];
 
             final RandomProjectionTreeNode leftNode = makeEuclideanTree(data, leftIndices, random, leafSize);
             final RandomProjectionTreeNode rightNode = makeEuclideanTree(data, rightIndices, random, leafSize);
@@ -434,8 +434,8 @@ final class RandomProjectionTree {
             final Object[] erps = angularRandomProjectionSplit(data, indices, random);
             final int[] leftIndices = (int[]) erps[0];
             final int[] rightIndices = (int[]) erps[1];
-            final Hyperplane hyperplane = new Hyperplane((float[]) erps[2]);
-            final float offset = (float) erps[3];
+            final Hyperplane hyperplane = new Hyperplane((double[]) erps[2]);
+            final double offset = (double) erps[3];
 
             final RandomProjectionTreeNode leftNode = makeAngularTree(data, leftIndices, random, leafSize);
             final RandomProjectionTreeNode rightNode = makeAngularTree(data, rightIndices, random, leafSize);
@@ -452,7 +452,7 @@ final class RandomProjectionTree {
             final int[] leftIndices = (int[]) erps[0];
             final int[] rightIndices = (int[]) erps[1];
             final Hyperplane hyperplane = (Hyperplane) erps[2];
-            final float offset = (float) erps[3];
+            final double offset = (double) erps[3];
 
             final RandomProjectionTreeNode leftNode = makeSparseEuclideanTree(matrix, leftIndices, random, leafSize);
             final RandomProjectionTreeNode rightNode = makeSparseEuclideanTree(matrix, rightIndices, random, leafSize);
@@ -469,7 +469,7 @@ final class RandomProjectionTree {
             final int[] leftIndices = (int[]) erps[0];
             final int[] rightIndices = (int[]) erps[1];
             final Hyperplane hyperplane = (Hyperplane) erps[2];
-            final float offset = (float) erps[3];
+            final double offset = (double) erps[3];
 
             final RandomProjectionTreeNode leftNode = makeSparseAngularTree(matrix, leftIndices, random, leafSize);
             final RandomProjectionTreeNode rightNode = makeSparseAngularTree(matrix, rightIndices, random, leafSize);

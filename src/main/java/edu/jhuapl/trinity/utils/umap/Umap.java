@@ -28,11 +28,11 @@ package edu.jhuapl.trinity.utils.umap;
 import edu.jhuapl.trinity.App;
 import edu.jhuapl.trinity.javafx.components.radial.ProgressStatus;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
-import edu.jhuapl.trinity.utils.umap.metric.CategoricalMetric;
-import edu.jhuapl.trinity.utils.umap.metric.EuclideanMetric;
-import edu.jhuapl.trinity.utils.umap.metric.Metric;
-import edu.jhuapl.trinity.utils.umap.metric.PrecomputedMetric;
-import edu.jhuapl.trinity.utils.umap.metric.ReducedEuclideanMetric;
+import edu.jhuapl.trinity.utils.metric.CategoricalMetric;
+import edu.jhuapl.trinity.utils.metric.EuclideanMetric;
+import edu.jhuapl.trinity.utils.metric.Metric;
+import edu.jhuapl.trinity.utils.metric.PrecomputedMetric;
+import edu.jhuapl.trinity.utils.metric.ReducedEuclideanMetric;
 import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.paint.Color;
@@ -53,8 +53,8 @@ import java.util.Random;
  */
 public class Umap {
 
-    private static final float SMOOTH_K_TOLERANCE = 1e-5F;
-    private static final float MIN_K_DIST_SCALE = 1e-3F;
+    private static final double SMOOTH_K_TOLERANCE = 1e-5F;
+    private static final double MIN_K_DIST_SCALE = 1e-3F;
 
     private static final int SMALL_PROBLEM_THRESHOLD = 4096;
 
@@ -83,23 +83,23 @@ public class Umap {
      * nnDist: array of shape <code>(nSamples)</code>
      * The distance to the first nearest neighbor for each point.
      */
-    private static float[][] smoothKnnDist(final float[][] distances, final float k, final int nIter, final int localConnectivity, final float bandwidth) {
-        final float target = (float) (MathUtils.log2(k) * bandwidth);
-        final float[] rho = new float[distances.length];
-        final float[] result = new float[distances.length];
+    private static double[][] smoothKnnDist(final double[][] distances, final double k, final int nIter, final int localConnectivity, final double bandwidth) {
+        final double target = (double) (MathUtils.log2(k) * bandwidth);
+        final double[] rho = new double[distances.length];
+        final double[] result = new double[distances.length];
 
-        final float meanDistances = MathUtils.mean(distances);
+        final double meanDistances = MathUtils.mean(distances);
 
         for (int i = 0; i < distances.length; ++i) {
-            float lo = 0;
-            float hi = Float.POSITIVE_INFINITY;
-            float mid = 1;
+            double lo = 0;
+            double hi = Float.POSITIVE_INFINITY;
+            double mid = 1;
 
-            final float[] ithDistances = distances[i];
-            final float[] nonZeroDists = MathUtils.filterPositive(ithDistances);
+            final double[] ithDistances = distances[i];
+            final double[] nonZeroDists = MathUtils.filterPositive(ithDistances);
             if (nonZeroDists.length >= localConnectivity) {
                 final int index = (int) Math.floor(localConnectivity);
-                final float interpolation = localConnectivity - index;
+                final double interpolation = localConnectivity - index;
                 if (index > 0) {
                     rho[i] = nonZeroDists[index - 1];
                     if (interpolation > SMOOTH_K_TOLERANCE) {
@@ -139,7 +139,7 @@ public class Umap {
             result[i] = mid;
 
             if (rho[i] > 0) {
-                final float meanIthDistances = MathUtils.mean(ithDistances);
+                final double meanIthDistances = MathUtils.mean(ithDistances);
                 if (result[i] < MIN_K_DIST_SCALE * meanIthDistances) {
                     result[i] = MIN_K_DIST_SCALE * meanIthDistances;
                 }
@@ -149,10 +149,10 @@ public class Umap {
                 }
             }
         }
-        return new float[][]{result, rho};
+        return new double[][]{result, rho};
     }
 
-    static float[][] smoothKnnDist(final float[][] distances, final float k, final int localConnectivity) {
+    static double[][] smoothKnnDist(final double[][] distances, final double k, final int localConnectivity) {
         return smoothKnnDist(distances, k, 64, localConnectivity, 1.0F);
     }
 
@@ -177,14 +177,14 @@ public class Umap {
             Utils.message("Finding nearest neighbors");
         }
         final int[][] knnIndices;
-        final float[][] knnDists;
+        final double[][] knnDists;
         final List<FlatTree> rpForest;
         if (metric.equals(PrecomputedMetric.SINGLETON)) {
             // Note that this does not support sparse distance matrices yet ...
             // Compute indices of n nearest neighbors
             knnIndices = Utils.fastKnnIndices(instances, nNeighbors);
             // Compute the nearest neighbor distances
-            knnDists = new float[knnIndices.length][nNeighbors];
+            knnDists = new double[knnIndices.length][nNeighbors];
             for (int i = 0; i < knnDists.length; ++i) {
                 for (int j = 0; j < nNeighbors; ++j) {
                     knnDists[i][j] = instances.get(i, knnIndices[i][j]);
@@ -222,7 +222,7 @@ public class Umap {
 //        }
 //        final Object[] nn = NearestNeighborDescent.metric_nn_descent(Y.indices, Y.indptr, Y.data, Y.rows(), nNeighbors, random, /*max_candidates=*/60, /*rp_tree_init=*/true,     /*leaf_array=*/leaf_array,  /*n_iters=*/n_iters, verbose);
 //        knnIndices = (int[][]) nn[0];
-//        knnDists = (float[][]) nn[1];
+//        knnDists = (double[][]) nn[1];
             } else {
                 final NearestNeighborDescent metricNearestNeighborsDescent = threads == 1 ? new NearestNeighborDescent(metric) : new ParallelNearestNeighborDescent(metric, threads);
                 final int nTrees = 5 + (int) (Math.round(Math.pow(instances.rows(), 0.5) / 20.0));
@@ -281,27 +281,27 @@ public class Umap {
      * @param colCount   number or columns in the result
      * @return sparse matrix of shape <code>(nSamples, nNeighbors)</code>
      */
-    static CooMatrix computeMembershipStrengths(final int[][] knnIndices, final float[][] knnDists, final float[] sigmas, final float[] rhos, final int rowCount, final int colCount) {
+    static CooMatrix computeMembershipStrengths(final int[][] knnIndices, final double[][] knnDists, final double[] sigmas, final double[] rhos, final int rowCount, final int colCount) {
         final int nSamples = knnIndices.length;
         final int nNeighbors = knnIndices[0].length;
         final int size = nSamples * nNeighbors;
 
         final int[] rows = new int[size];
         final int[] cols = new int[size];
-        final float[] vals = new float[size];
+        final double[] vals = new double[size];
 
         for (int i = 0; i < nSamples; ++i) {
             for (int j = 0; j < nNeighbors; ++j) {
                 if (knnIndices[i][j] == -1) {
                     continue;  // We didn't get the full knn for i
                 }
-                final float val;
+                final double val;
                 if (knnIndices[i][j] == i) {
                     val = 0;
                 } else if (knnDists[i][j] - rhos[i] <= 0) {
                     val = 1;
                 } else {
-                    val = (float) Math.exp(-((knnDists[i][j] - rhos[i]) / (sigmas[i])));
+                    val = (double) Math.exp(-((knnDists[i][j] - rhos[i]) / (sigmas[i])));
                 }
                 rows[i * nNeighbors + j] = i;
                 cols[i * nNeighbors + j] = knnIndices[i][j];
@@ -356,7 +356,7 @@ public class Umap {
      * entry of the matrix represents the membership strength of the
      * 1-simplex between the ith and jth sample points.
      */
-    static Matrix fuzzySimplicialSet(final Matrix instances, final int nNeighbors, final Random random, final Metric metric, int[][] knnIndices, float[][] knnDists, final boolean angular, final float setOpMixRatio, final int localConnectivity, final int threads, final boolean verbose) {
+    static Matrix fuzzySimplicialSet(final Matrix instances, final int nNeighbors, final Random random, final Metric metric, int[][] knnIndices, double[][] knnDists, final boolean angular, final double setOpMixRatio, final int localConnectivity, final int threads, final boolean verbose) {
 
         if (knnIndices == null || knnDists == null) {
             final IndexedDistances nn = nearestNeighbors(instances, nNeighbors, metric, angular, random, threads, verbose);
@@ -364,9 +364,9 @@ public class Umap {
             knnDists = nn.getDistances();
         }
 
-        final float[][] sigmasRhos = smoothKnnDist(knnDists, nNeighbors, localConnectivity);
-        final float[] sigmas = sigmasRhos[0];
-        final float[] rhos = sigmasRhos[1];
+        final double[][] sigmasRhos = smoothKnnDist(knnDists, nNeighbors, localConnectivity);
+        final double[] sigmas = sigmasRhos[0];
+        final double[] rhos = sigmasRhos[1];
 
         final Matrix result = computeMembershipStrengths(knnIndices, knnDists, sigmas, rhos, instances.rows(), instances.rows()).eliminateZeros();
         final Matrix prodMatrix = result.hadamardMultiplyTranspose();
@@ -401,12 +401,12 @@ public class Umap {
      * @param farDist       The distance between unmatched labels.
      * @return The resulting intersected fuzzy simplicial set.
      */
-    private static Matrix categoricalSimplicialSetIntersection(final CooMatrix simplicialSet, final float[] target, final float unknownDist, final float farDist) {
+    private static Matrix categoricalSimplicialSetIntersection(final CooMatrix simplicialSet, final double[] target, final double unknownDist, final double farDist) {
         simplicialSet.fastIntersection(target, unknownDist, farDist);
         return resetLocalConnectivity(simplicialSet.eliminateZeros());
     }
 
-    private static Matrix generalSimplicialSetIntersection(final Matrix simplicialSet1, final Matrix simplicialSet2, final float weight) {
+    private static Matrix generalSimplicialSetIntersection(final Matrix simplicialSet1, final Matrix simplicialSet2, final double weight) {
         final CooMatrix result = simplicialSet1.add(simplicialSet2).toCoo();
         final CsrMatrix left = simplicialSet1.toCsr();
         final CsrMatrix right = simplicialSet2.toCsr();
@@ -422,13 +422,13 @@ public class Umap {
      * @param nEpochs The total number of epochs we want to train for.
      * @return An array of number of epochs per sample, one for each 1-simplex.
      */
-    static float[] makeEpochsPerSample(final float[] weights, final int nEpochs) {
-        final float[] result = new float[weights.length];
+    static double[] makeEpochsPerSample(final double[] weights, final int nEpochs) {
+        final double[] result = new double[weights.length];
         Arrays.fill(result, -1.0F);
-        final float[] nSamples = MathUtils.multiply(MathUtils.divide(weights, MathUtils.max(weights)), nEpochs);
+        final double[] nSamples = MathUtils.multiply(MathUtils.divide(weights, MathUtils.max(weights)), nEpochs);
         for (int k = 0; k < nSamples.length; ++k) {
             if (nSamples[k] > 0) {
-                result[k] = (float) nEpochs / nSamples[k];
+                result[k] = (double) nEpochs / nSamples[k];
             }
         }
         return result;
@@ -440,7 +440,7 @@ public class Umap {
      * @param val The value to be clamped.
      * @return clamped value
      */
-    static float clip(final float val) {
+    static double clip(final double val) {
         return val > 4 ? 4 : val < -4 ? -4 : val;
     }
 
@@ -464,7 +464,7 @@ public class Umap {
      *                           The indices of the tails of 1-simplices with non-zero membership.
      * @param nEpochs            The number of training epochs to use in optimization.
      * @param nVertices          The number of vertices (0-simplices) in the dataset.
-     * @param epochsPerSample    A float value of the number of epochs per 1-simplex. 1-simplices with
+     * @param epochsPerSample    A double value of the number of epochs per 1-simplex. 1-simplices with
      *                           weaker membership strength will have more epochs between being sampled.
      * @param a                  Parameter of differentiable approximation of right adjoint functor
      * @param b                  Parameter of differentiable approximation of right adjoint functor
@@ -475,7 +475,7 @@ public class Umap {
      * @param verbose            Whether to report information on the current progress of the algorithm.
      * @return array of shape <code>(nSamples, nComponents)</code> The optimized embedding.
      */
-    private Matrix optimizeLayout(final Matrix headEmbedding, final Matrix tailEmbedding, final int[] head, final int[] tail, final int nEpochs, final int nVertices, final float[] epochsPerSample, final float a, final float b, final Random random, final float gamma, final float initialAlpha, final float negativeSampleRate, final boolean verbose) {
+    private Matrix optimizeLayout(final Matrix headEmbedding, final Matrix tailEmbedding, final int[] head, final int[] tail, final int nEpochs, final int nVertices, final double[] epochsPerSample, final double a, final double b, final Random random, final double gamma, final double initialAlpha, final double negativeSampleRate, final boolean verbose) {
 
         if (!(headEmbedding instanceof DefaultMatrix)) {
             throw new UnsupportedOperationException("Require matrix we can set entries on");
@@ -483,11 +483,11 @@ public class Umap {
 
         final int dim = headEmbedding.cols();
         final boolean moveOther = headEmbedding.rows() == tailEmbedding.rows();
-        float alpha = initialAlpha;
+        double alpha = initialAlpha;
 
-        final float[] epochsPerNegativeSample = MathUtils.divide(epochsPerSample, negativeSampleRate);
-        final float[] epochOfNextNegativeSample = Arrays.copyOf(epochsPerNegativeSample, epochsPerNegativeSample.length);
-        final float[] epochOfNextSample = Arrays.copyOf(epochsPerSample, epochsPerSample.length);
+        final double[] epochsPerNegativeSample = MathUtils.divide(epochsPerSample, negativeSampleRate);
+        final double[] epochOfNextNegativeSample = Arrays.copyOf(epochsPerNegativeSample, epochsPerNegativeSample.length);
+        final double[] epochOfNextSample = Arrays.copyOf(epochsPerSample, epochsPerSample.length);
 
         for (int n = 0; n < nEpochs; ++n) {
             for (int i = 0; i < epochsPerSample.length; ++i) {
@@ -496,20 +496,20 @@ public class Umap {
                     final int k = tail[i];
                     // Note this assumes that "current" is a pointer to the internal matrix data,
                     // not ideal from a data encapsulation point of view.
-                    final float[] current = headEmbedding.row(j);
-                    float[] other = tailEmbedding.row(k);
+                    final double[] current = headEmbedding.row(j);
+                    double[] other = tailEmbedding.row(k);
 
-                    float distSquared = ReducedEuclideanMetric.SINGLETON.distance(current, other);
+                    double distSquared = ReducedEuclideanMetric.SINGLETON.distance(current, other);
 
-                    float gradCoeff;
+                    double gradCoeff;
                     if (distSquared > 0.0) {
-                        gradCoeff = (float) ((-2.0 * a * b * Math.pow(distSquared, b - 1.0)) / (a * Math.pow(distSquared, b) + 1.0));
+                        gradCoeff = (double) ((-2.0 * a * b * Math.pow(distSquared, b - 1.0)) / (a * Math.pow(distSquared, b) + 1.0));
                     } else {
                         gradCoeff = 0;
                     }
 
                     for (int d = 0; d < dim; ++d) {
-                        final float gradD = clip(gradCoeff * (current[d] - other[d]));
+                        final double gradD = clip(gradCoeff * (current[d] - other[d]));
                         current[d] += gradD * alpha;
                         if (moveOther) {
                             other[d] += -gradD * alpha;
@@ -526,7 +526,7 @@ public class Umap {
                         distSquared = ReducedEuclideanMetric.SINGLETON.distance(current, other);
 
                         if (distSquared > 0) {
-                            gradCoeff = 2.0F * gamma * b / (float) ((0.001 + distSquared) * (a * Math.pow(distSquared, b) + 1));
+                            gradCoeff = 2.0F * gamma * b / (double) ((0.001 + distSquared) * (a * Math.pow(distSquared, b) + 1));
                         } else if (j == kr) {
                             continue;
                         } else {
@@ -534,7 +534,7 @@ public class Umap {
                         }
 
                         for (int d = 0; d < dim; ++d) {
-                            final float gradD = gradCoeff > 0.0 ? clip(gradCoeff * (current[d] - other[d])) : 4;
+                            final double gradD = gradCoeff > 0.0 ? clip(gradCoeff * (current[d] - other[d])) : 4;
                             current[d] += gradD * alpha;
                         }
                     }
@@ -543,7 +543,7 @@ public class Umap {
                 }
             }
 
-            alpha = initialAlpha * (1 - (float) n / (float) nEpochs);
+            alpha = initialAlpha * (1 - (double) n / (double) nEpochs);
 
             if (verbose && n % (nEpochs / 100) == 0) {
                 Scene scene = App.getAppScene();
@@ -601,7 +601,7 @@ public class Umap {
      * The optimized of <code>graph</code> into an <code>nComponents</code> dimensional
      * Euclidean space.
      */
-    private Matrix simplicialSetEmbedding(Matrix data, Matrix graphIn, int nComponents, float initialAlpha, float a, float b, float gamma, int negativeSampleRate, int nEpochs, String init, Random random, Metric metric, boolean verbose) {
+    private Matrix simplicialSetEmbedding(Matrix data, Matrix graphIn, int nComponents, double initialAlpha, double a, double b, double gamma, int negativeSampleRate, int nEpochs, String init, Random random, Metric metric, boolean verbose) {
 
         CooMatrix graph = graphIn.toCoo();
         final int nVertices = graph.cols();
@@ -615,20 +615,20 @@ public class Umap {
             }
         }
 
-        final float[] graphData = graph.data();
-        MathUtils.zeroEntriesBelowLimit(graphData, MathUtils.max(graphData) / (float) nEpochs);
+        final double[] graphData = graph.data();
+        MathUtils.zeroEntriesBelowLimit(graphData, MathUtils.max(graphData) / (double) nEpochs);
         graph = (CooMatrix) graph.eliminateZeros();
 
         final Matrix embedding;
         if ("random".equals(init)) {
-            //embedding = random.uniform(low = -10.0, high = 10.0, size = (graph.rows(), nComponents)).astype(np.float32);
+            //embedding = random.uniform(low = -10.0, high = 10.0, size = (graph.rows(), nComponents)).astype(np.double32);
             embedding = new DefaultMatrix(MathUtils.uniform(random, -10, 10, graph.rows(), nComponents));
         } else if ("spectral".equals(init)) {
             throw new UnsupportedOperationException();
 //      // We add a little noise to avoid local minima for optimization to come
-//      float[][] initialisation = Spectral.spectral_layout(data, graph, nComponents, random, /*metric=*/metric, /*metric_kwds=*/metric_kwds);
-//      float expansion = 10.0 / Math.abs(initialisation).max();
-//      embedding = (MathUtils.multiply(initialisation, expansion)).astype(np.float32) + random.normal(scale = 0.0001, size =[graph.rows(), nComponents]).astype(np.float32);
+//      double[][] initialisation = Spectral.spectral_layout(data, graph, nComponents, random, /*metric=*/metric, /*metric_kwds=*/metric_kwds);
+//      double expansion = 10.0 / Math.abs(initialisation).max();
+//      embedding = (MathUtils.multiply(initialisation, expansion)).astype(np.double32) + random.normal(scale = 0.0001, size =[graph.rows(), nComponents]).astype(np.double32);
         } else {
             // Situation where init contains prepared data
             throw new UnsupportedOperationException();
@@ -636,16 +636,16 @@ public class Umap {
 //      if (len(init_data.shape) == 2) {
 //        if (np.unique(init_data, /*axis =*/ 0).length < init_data.length) {
 //          tree = KDTree(init_data);
-//          float[][] dist /*, ind*/ = tree.query(init_data, k = 2);
+//          double[][] dist /*, ind*/ = tree.query(init_data, k = 2);
 //          double nndist = MathUtils.mean(dist, 1);
-//          embedding = init_data + random.normal(scale = 0.001 * nndist, size = init_data.shape).astype(np.float32);
+//          embedding = init_data + random.normal(scale = 0.001 * nndist, size = init_data.shape).astype(np.double32);
 //        } else {
 //          embedding = init_data;
 //        }
 //      }
         }
 
-        final float[] epochsPerSample = makeEpochsPerSample(graph.data(), nEpochs);
+        final double[] epochsPerSample = makeEpochsPerSample(graph.data(), nEpochs);
         final int[] head = graph.row();
         final int[] tail = graph.col();
 
@@ -669,8 +669,8 @@ public class Umap {
      * @return array of shape <code>(nNewSamples, dim)</code>
      * An initial embedding of the new sample points.
      */
-    private static Matrix initTransform(final int[][] indices, final float[][] weights, final Matrix embedding) {
-        final float[][] result = new float[indices.length][embedding.cols()];
+    private static Matrix initTransform(final int[][] indices, final double[][] weights, final Matrix embedding) {
+        final double[][] result = new double[indices.length][embedding.cols()];
         for (int i = 0; i < indices.length; ++i) {
             for (int j = 0; j < indices[i].length; ++j) {
                 for (int d = 0; d < embedding.cols(); ++d) {
@@ -685,23 +685,23 @@ public class Umap {
     // dimensional fuzzy simplicial complex construction. We want the
     // smooth curve (from a pre-defined family with simple gradient) that
     // best matches an offset exponential decay.
-    private static float[] findAbParams(float spread, float minDist) {
+    private static double[] findAbParams(double spread, double minDist) {
         //System.out.println("find_ab_params(" + spread + ", " + minDist + ")");
     /*
-    float[] xv = MathUtils.linspace(0, spread * 3, 300);
-    float[] yv = new float[xv.length];
+    double[] xv = MathUtils.linspace(0, spread * 3, 300);
+    double[] yv = new double[xv.length];
     //  yv[xv < minDist] = 1.0;
     //  yv[xv >= minDist] = Math.exp(-(xv[xv >= minDist] - minDist) / spread   );
     for (int k = 0; k < yv.length; ++k) {
       if (xv[k] < minDist) {
         yv[k] = 1.0F;
       } else {
-        yv[k] = (float) Math.exp(-(xv[k] - minDist) / spread);
+        yv[k] = (double) Math.exp(-(xv[k] - minDist) / spread);
       }
     }
 
-    final float[] params = Curve.curve_fit(xv, yv);
-    return new float[]{params[0], params[1]};
+    final double[] params = Curve.curve_fit(xv, yv);
+    return new double[]{params[0], params[1]};
     */
         return Curve.curveFit(spread, minDist);
     }
@@ -711,17 +711,17 @@ public class Umap {
     private int mNComponents = 2;
     private Integer mNEpochs = null;
     private Metric mMetric = EuclideanMetric.SINGLETON;
-    private float mLearningRate = 1.0F;
-    private float mRepulsionStrength = 1.0F;
-    private float mMinDist = 0.1F;
-    private float mSpread = 1.0F;
-    private float mSetOpMixRatio = 1.0F;
+    private double mLearningRate = 1.0F;
+    private double mRepulsionStrength = 1.0F;
+    private double mMinDist = 0.1F;
+    private double mSpread = 1.0F;
+    private double mSetOpMixRatio = 1.0F;
     private int mLocalConnectivity = 1;
     private int mNegativeSampleRate = 5;
-    private float mTransformQueueSize = 4.0F;
+    private double mTransformQueueSize = 4.0F;
     private Metric mTargetMetric = CategoricalMetric.SINGLETON;
     private int mTargetNNeighbors = -1;
-    private float mTargetWeight = 0.5F;
+    private double mTargetWeight = 0.5F;
     //  private int mTransformSeed = 42;
     private boolean mVerbose = false;
     private boolean parallelPairwise = true;
@@ -731,14 +731,14 @@ public class Umap {
     private Random mRandom = new Random(42);
     private int mThreads = 1;
 
-    private float mInitialAlpha;
+    private double mInitialAlpha;
     private int mRunNNeighbors;
-    private float mRunA;
-    private float mRunB;
+    private double mRunA;
+    private double mRunB;
     private Matrix mRawData;
     private SearchGraph mSearchGraph = null;
     private int[][] mKnnIndices;
-    private float[][] mKnnDists;
+    private double[][] mKnnDists;
     private List<FlatTree> mRpForest;
     private boolean mSmallData;
     private Matrix mGraph;
@@ -839,7 +839,7 @@ public class Umap {
      *
      * @param rate learning rate
      */
-    public void setLearningRate(final float rate) {
+    public void setLearningRate(final double rate) {
         if (rate <= 0.0) {
             throw new IllegalArgumentException("Learning rate must be positive.");
         }
@@ -853,7 +853,7 @@ public class Umap {
      *
      * @param repulsionStrength repulsion strength
      */
-    public void setRepulsionStrength(final float repulsionStrength) {
+    public void setRepulsionStrength(final double repulsionStrength) {
         if (repulsionStrength < 0.0) {
             throw new IllegalArgumentException("Repulsion strength cannot be negative.");
         }
@@ -870,7 +870,7 @@ public class Umap {
      *
      * @param minDist minimum distance
      */
-    public void setMinDist(final float minDist) {
+    public void setMinDist(final double minDist) {
         if (minDist < 0.0) {
             throw new IllegalArgumentException("Minimum distance must be greater than 0.0.");
         }
@@ -883,7 +883,7 @@ public class Umap {
      *
      * @param spread spread value
      */
-    public void setSpread(final float spread) {
+    public void setSpread(final double spread) {
         mSpread = spread;
     }
 
@@ -897,7 +897,7 @@ public class Umap {
      *
      * @param setOpMixRatio set operation mixing ratio
      */
-    public void setSetOpMixRatio(final float setOpMixRatio) {
+    public void setSetOpMixRatio(final double setOpMixRatio) {
         if (setOpMixRatio < 0.0 || setOpMixRatio > 1.0) {
             throw new IllegalArgumentException("Set operation mixing ratio be between 0.0 and 1.0.");
         }
@@ -991,7 +991,7 @@ public class Umap {
      *
      * @param transformQueueSize queue size
      */
-    public void setTransformQueueSize(final float transformQueueSize) {
+    public void setTransformQueueSize(final double transformQueueSize) {
         mTransformQueueSize = transformQueueSize;
     }
 
@@ -1021,11 +1021,11 @@ public class Umap {
         mTargetNNeighbors = targetNNeighbors;
     }
 
-// a: float (optional, default null)
+// a: double (optional, default null)
 //     More specific parameters controlling the embedding. If null these
 //     values are set automatically as determined by <code>minDist</code> and
 //     <code>spread</code>.
-// b: float (optional, default null)
+// b: double (optional, default null)
 //     More specific parameters controlling the embedding. If null these
 //     values are set automatically as determined by <code>minDist</code> and
 //     <code>spread</code>.
@@ -1037,7 +1037,7 @@ public class Umap {
      *
      * @param targetWeight target weighting factor
      */
-    public void setTargetWeight(final float targetWeight) {
+    public void setTargetWeight(final double targetWeight) {
         mTargetWeight = targetWeight;
     }
 
@@ -1088,7 +1088,7 @@ public class Umap {
      *                  The relevant metric is <code>mTargetMetric</code>.
      * @throws IllegalArgumentException if the matrix contains non-finite elements.
      */
-    private void fit(Matrix instances, float[] y) {
+    private void fit(Matrix instances, double[] y) {
 
         if (!instances.isFinite()) {
             throw new IllegalArgumentException("Supplied matrix of instances contains non-finite elements");
@@ -1104,7 +1104,7 @@ public class Umap {
 
         // Handle all the optional arguments, setting default
         //if (mA == null || mB == null) {
-        final float[] ab = findAbParams(mSpread, mMinDist);
+        final double[] ab = findAbParams(mSpread, mMinDist);
         mRunA = ab[0];
         mRunB = ab[1];
 //    } else {
@@ -1121,7 +1121,7 @@ public class Umap {
         // Error check n_neighbors based on data size
         if (instances.rows() <= mNNeighbors) {
             if (instances.rows() == 1) {
-                setmEmbedding(new DefaultMatrix(new float[1][mNComponents]));
+                setmEmbedding(new DefaultMatrix(new double[1][mNComponents]));
                 return;
             }
 
@@ -1182,7 +1182,7 @@ public class Umap {
                 if (mVerbose) {
                     Utils.message("Calculating categorical simplicial set intersection");
                 }
-                final float farDist = mTargetWeight < 1 ? 2.5F * (1.0F / (1.0F - mTargetWeight)) : 1.0e12F;
+                final double farDist = mTargetWeight < 1 ? 2.5F * (1.0F / (1.0F - mTargetWeight)) : 1.0e12F;
                 mGraph = categoricalSimplicialSetIntersection((CooMatrix) mGraph, y, 1, farDist);
             } else {
                 if (mVerbose) {
@@ -1233,7 +1233,7 @@ public class Umap {
      * @return array of shape <code>(nSamples, nComponents)</code>
      * Embedding of the training data in low-dimensional space.
      */
-    public Matrix fitTransform(final Matrix instances, final float[] y) {
+    public Matrix fitTransform(final Matrix instances, final double[] y) {
         fit(instances, y);
         return getmEmbedding();
     }
@@ -1266,13 +1266,13 @@ public class Umap {
      * @return array of shape <code>(nSamples, nComponents)</code>
      * Embedding of the training data in low-dimensional space.
      */
-    public float[][] fitTransform(final float[][] instances) {
+    public double[][] fitTransform(final double[][] instances) {
         return fitTransform(new DefaultMatrix(instances), null).toArray();
     }
 
     /**
      * Fit instances into an embedded space and return that transformed output.
-     * This version internally converts all the doubles to floats.
+     * This version internally converts all the doubles to doubles.
      *
      * @param instances array of shape <code>(nSamples, nFeatures)</code> or <code>(nSamples, nSamples)</code>
      *                  If the metric is <code>PrecomputedMetric.SINGLETON</code> instances must be a square distance
@@ -1283,22 +1283,22 @@ public class Umap {
      * @return array of shape <code>(nSamples, nComponents)</code>
      * Embedding of the training data in low-dimensional space.
      */
-    public double[][] fitTransform(final double[][] instances) {
-        final float[][] input = new float[instances.length][instances[0].length];
-        for (int k = 0; k < instances.length; ++k) {
-            for (int j = 0; j < instances[0].length; ++j) {
-                input[k][j] = (float) instances[k][j];
-            }
-        }
-        final Matrix result = fitTransform(new DefaultMatrix(input), null);
-        final double[][] output = new double[result.rows()][result.cols()];
-        for (int k = 0; k < result.rows(); ++k) {
-            for (int j = 0; j < result.cols(); ++j) {
-                output[k][j] = result.get(k, j);
-            }
-        }
-        return output;
-    }
+//    public double[][] fitTransform(final double[][] instances) {
+//        final double[][] input = new double[instances.length][instances[0].length];
+//        for (int k = 0; k < instances.length; ++k) {
+//            for (int j = 0; j < instances[0].length; ++j) {
+//                input[k][j] = (double) instances[k][j];
+//            }
+//        }
+//        final Matrix result = fitTransform(new DefaultMatrix(input), null);
+//        final double[][] output = new double[result.rows()][result.cols()];
+//        for (int k = 0; k < result.rows(); ++k) {
+//            for (int j = 0; j < result.cols(); ++j) {
+//                output[k][j] = result.get(k, j);
+//            }
+//        }
+//        return output;
+//    }
 
     /**
      * Transform instances into the existing embedded space and return that
@@ -1322,7 +1322,7 @@ public class Umap {
         UmapProgress.reset(4);
 
         int[][] indices;
-        final float[][] dists;
+        final double[][] dists;
         if (mSmallData) {
             final Matrix distanceMatrix = PairwiseDistances.pairwiseDistances(instances, mRawData, mMetric);
             indices = new int[distanceMatrix.rows()][];
@@ -1351,9 +1351,9 @@ public class Umap {
         UmapProgress.update();
 
         final int adjustedLocalConnectivity = Math.max(0, mLocalConnectivity - 1);
-        final float[][] sigmasRhos = smoothKnnDist(dists, mRunNNeighbors, adjustedLocalConnectivity);
-        final float[] sigmas = sigmasRhos[0];
-        final float[] rhos = sigmasRhos[1];
+        final double[][] sigmasRhos = smoothKnnDist(dists, mRunNNeighbors, adjustedLocalConnectivity);
+        final double[] sigmas = sigmasRhos[0];
+        final double[] rhos = sigmasRhos[1];
         CooMatrix graph = computeMembershipStrengths(indices, dists, sigmas, rhos, instances.rows(), mRawData.rows());
 
         UmapProgress.update();
@@ -1363,7 +1363,7 @@ public class Umap {
         // and data. Doing so relies on the constant degree assumption!
         final CsrMatrix csrGraph = graph.toCsr().l1Normalize().toCsr();
         final int[][] inds = csrGraph.reshapeIndicies(instances.rows(), mRunNNeighbors);
-        final float[][] weights = csrGraph.reshapeWeights(instances.rows(), mRunNNeighbors);
+        final double[][] weights = csrGraph.reshapeWeights(instances.rows(), mRunNNeighbors);
         final Matrix embedding = initTransform(inds, weights, getmEmbedding());
 
         final int nEpochs;
@@ -1378,10 +1378,10 @@ public class Umap {
             nEpochs = mNEpochs; // 3.0
         }
 
-        MathUtils.zeroEntriesBelowLimit(graph.data(), MathUtils.max(graph.data()) / (float) nEpochs);
+        MathUtils.zeroEntriesBelowLimit(graph.data(), MathUtils.max(graph.data()) / (double) nEpochs);
         graph = graph.eliminateZeros().toCoo();
 
-        final float[] epochsPerSample = makeEpochsPerSample(graph.data(), nEpochs);
+        final double[] epochsPerSample = makeEpochsPerSample(graph.data(), nEpochs);
 
         final int[] head = graph.row();
         final int[] tail = graph.col();
@@ -1405,7 +1405,7 @@ public class Umap {
      * Embedding of the new data in low-dimensional space.
      * @throws IllegalArgumentException If we fit just a single instance then error.
      */
-    public float[][] transform(final float[][] instances) {
+    public double[][] transform(final double[][] instances) {
         return transform(new DefaultMatrix(instances)).toArray();
     }
 

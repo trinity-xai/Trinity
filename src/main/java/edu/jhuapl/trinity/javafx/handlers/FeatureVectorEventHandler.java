@@ -111,19 +111,24 @@ public class FeatureVectorEventHandler implements EventHandler<FeatureVectorEven
         List<FeatureLayer> newFeatureLayers = new ArrayList<>();
 
         featureVectors.forEach(featureVector -> {
-            //Have we seen this label before?
-            FactorLabel matchingLabel = FactorLabel.getFactorLabel(featureVector.getLabel());
+            //Is the label already added to the local collection?
+            if(newFactorLabels.stream().noneMatch(
+                f -> f.getLabel().contentEquals(featureVector.getLabel()))) {            
+                //Have we seen this label before?
+                FactorLabel matchingLabel = FactorLabel.getFactorLabel(featureVector.getLabel());
 
-            //The label is new... add a new FactorLabel to the map
-            if (null == matchingLabel) {
-                if (labelColorIndex > labelColorCount) {
-                    labelColorIndex = 0;
+                //The label doesn't exist in the global map
+                if (null == matchingLabel) {
+                    //... add a new FactorLabel to the map
+                    if (labelColorIndex > labelColorCount) {
+                        labelColorIndex = 0;
+                    }
+                    //do bulk update using the addAllFactorLabels() method
+                    FactorLabel fl = new FactorLabel(featureVector.getLabel(),
+                        labelColorMap.getColorByIndex(labelColorIndex));
+                    newFactorLabels.add(fl);
+                    labelColorIndex++;
                 }
-                //do bulk update using the addAllFactorLabels() method
-                FactorLabel fl = new FactorLabel(featureVector.getLabel(),
-                    labelColorMap.getColorByIndex(labelColorIndex));
-                newFactorLabels.add(fl);
-                labelColorIndex++;
             }
             //Have we seen this layer before?
             int index = featureVector.getLayer();

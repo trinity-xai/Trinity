@@ -25,7 +25,7 @@ package edu.jhuapl.trinity.utils.umap;
  * #L%
  */
 
-import edu.jhuapl.trinity.utils.umap.metric.Metric;
+import edu.jhuapl.trinity.utils.metric.Metric;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -38,7 +38,7 @@ import java.util.concurrent.Future;
 /**
  * Nearest neighbor descent for a specified distance metric.
  * Nondeterministic parallel version.
- *
+ * @author Sean Phillips
  * @author Leland McInnes (Python)
  * @author Sean A. Irvine
  * @author Richard Littin
@@ -67,7 +67,7 @@ class ParallelNearestNeighborDescent extends NearestNeighborDescent {
     }
 
     @Override
-    Heap descent(final Matrix data, final int nNeighbors, final Random random, final int maxCandidates, final boolean rpTreeInit, final int nIters, final List<FlatTree> forest, final float delta, final float rho) {
+    Heap descent(final Matrix data, final int nNeighbors, final Random random, final int maxCandidates, final boolean rpTreeInit, final int nIters, final List<FlatTree> forest, final double delta, final double rho) {
         final ExecutorService executor = Executors.newFixedThreadPool(mThreads);
         try {
             UmapProgress.incTotal(nIters);
@@ -85,9 +85,9 @@ class ParallelNearestNeighborDescent extends NearestNeighborDescent {
                 final int hi = Math.min((t + 1) * chunkSize, nVertices);
                 futures.add(executor.submit(() -> {
                     for (int i = lo; i < hi; ++i) {
-                        final float[] iRow = data.row(i);
+                        final double[] iRow = data.row(i);
                         for (final int index : Utils.rejectionSample(nNeighbors, data.rows(), random)) {
-                            final float d = mMetric.distance(iRow, data.row(index));
+                            final double d = mMetric.distance(iRow, data.row(index));
                             currentGraph.push(i, d, index, true);
                             currentGraph.push(index, d, i, true);
                         }
@@ -107,9 +107,9 @@ class ParallelNearestNeighborDescent extends NearestNeighborDescent {
                         for (int l = lo; l < hi; ++l) {
                             for (final int[] leaf : forest.get(l).getIndices()) {
                                 for (int i = 0; i < leaf.length; ++i) {
-                                    final float[] iRow = data.row(leaf[i]);
+                                    final double[] iRow = data.row(leaf[i]);
                                     for (int j = i + 1; j < leaf.length; ++j) {
-                                        final float d = mMetric.distance(iRow, data.row(leaf[j]));
+                                        final double d = mMetric.distance(iRow, data.row(leaf[j]));
                                         currentGraph.push(leaf[i], d, leaf[j], true);
                                         currentGraph.push(leaf[j], d, leaf[i], true);
                                     }
@@ -152,7 +152,7 @@ class ParallelNearestNeighborDescent extends NearestNeighborDescent {
                                         continue;
                                     }
 
-                                    final float d = mMetric.distance(data.row(p), data.row(q));
+                                    final double d = mMetric.distance(data.row(p), data.row(q));
                                     if (currentGraph.push(p, d, q, true)) {
                                         ++c;
                                     }

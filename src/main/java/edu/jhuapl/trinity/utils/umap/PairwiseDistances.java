@@ -28,8 +28,8 @@ package edu.jhuapl.trinity.utils.umap;
 import edu.jhuapl.trinity.App;
 import edu.jhuapl.trinity.javafx.components.radial.ProgressStatus;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
-import edu.jhuapl.trinity.utils.umap.metric.Metric;
-import edu.jhuapl.trinity.utils.umap.metric.PrecomputedMetric;
+import edu.jhuapl.trinity.utils.metric.Metric;
+import edu.jhuapl.trinity.utils.metric.PrecomputedMetric;
 import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.paint.Color;
@@ -46,15 +46,15 @@ public class PairwiseDistances {
 
     // replacement for sklearn.pairwise_distances
     int rowIndex;
-    float[] xkRow;
-    float[] kjDistances;
+    double[] xkRow;
+    double[] kjDistances;
     private static int count = 0;
 
 
-    public PairwiseDistances(int rowIndex, int totalRows, float[] xkRow) {
+    public PairwiseDistances(int rowIndex, int totalRows, double[] xkRow) {
         this.rowIndex = rowIndex;
         this.xkRow = xkRow;
-        kjDistances = new float[totalRows]; //distances matrix will be n x n
+        kjDistances = new double[totalRows]; //distances matrix will be n x n
     }
 
     static Matrix parallelPairwise(final Matrix x, final Metric metric, boolean mVerbose) {
@@ -62,7 +62,7 @@ public class PairwiseDistances {
             return x;
         }
         final int n = x.rows();
-        final float[][] distances = new float[n][n];
+        final double[][] distances = new double[n][n];
         ArrayList<PairwiseDistances> pdList = new ArrayList<>(n);
         for (int k = 0; k < n; ++k) {
             pdList.add(new PairwiseDistances(k, n, x.row(k)));
@@ -112,12 +112,12 @@ public class PairwiseDistances {
             return x;
         }
         final int n = x.rows();
-        final float[][] distances = new float[n][n];
+        final double[][] distances = new double[n][n];
         if (mVerbose) {
             Utils.message("computing " + n + " squared pairwise distances");
         }
         for (int k = 0; k < n; ++k) {
-            final float[] xk = x.row(k);
+            final double[] xk = x.row(k);
             for (int j = 0; j < n; ++j) {
                 distances[k][j] = metric.distance(xk, x.row(j));
             }
@@ -134,9 +134,9 @@ public class PairwiseDistances {
         }
         final int xn = x.rows();
         final int yn = y.rows();
-        final float[][] distances = new float[xn][yn];
+        final double[][] distances = new double[xn][yn];
         for (int k = 0; k < xn; ++k) {
-            final float[] xk = x.row(k);
+            final double[] xk = x.row(k);
             for (int j = 0; j < yn; ++j) {
                 distances[k][j] = metric.distance(xk, y.row(j));
             }

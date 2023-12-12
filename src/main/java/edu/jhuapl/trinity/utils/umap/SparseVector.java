@@ -36,7 +36,7 @@ import java.util.Arrays;
 class SparseVector {
 
     private final int[] mIndices;
-    private final float[] mData;
+    private final double[] mData;
 
     /**
      * Vector.
@@ -44,7 +44,7 @@ class SparseVector {
      * @param indices indices of nonzero elements
      * @param data    nonzero elements
      */
-    SparseVector(final int[] indices, final float[] data) {
+    SparseVector(final int[] indices, final double[] data) {
         if (data.length != indices.length) {
             throw new IllegalArgumentException();
         }
@@ -56,15 +56,15 @@ class SparseVector {
         return mIndices;
     }
 
-    float[] getData() {
+    double[] getData() {
         return mData;
     }
 
-    float norm() {
+    double norm() {
         return Utils.norm(mData);
     }
 
-    void divide(final float v) {
+    void divide(final double v) {
         for (int k = 0; k < mData.length; ++k) {
             mData[k] /= v;
         }
@@ -73,7 +73,7 @@ class SparseVector {
     SparseVector add(final SparseVector right) {
         // Maximum length if the sum of the two input lengths
         final int[] resultInd = new int[mIndices.length + right.mIndices.length];
-        final float[] resultData = new float[resultInd.length];
+        final double[] resultData = new double[resultInd.length];
 
         int i1 = 0;
         int i2 = 0;
@@ -85,19 +85,19 @@ class SparseVector {
             final int j2 = right.mIndices[i2];
 
             if (j1 == j2) {
-                final float val = mData[i1++] + right.mData[i2++];
+                final double val = mData[i1++] + right.mData[i2++];
                 if (val != 0) {
                     resultInd[nnz] = j1;
                     resultData[nnz++] = val;
                 }
             } else if (j1 < j2) {
-                final float val = mData[i1++];
+                final double val = mData[i1++];
                 if (val != 0) {
                     resultInd[nnz] = j1;
                     resultData[nnz++] = val;
                 }
             } else {
-                final float val = right.mData[i2++];
+                final double val = right.mData[i2++];
                 if (val != 0) {
                     resultInd[nnz] = j2;
                     resultData[nnz++] = val;
@@ -107,7 +107,7 @@ class SparseVector {
 
         // pass over the tails
         while (i1 < mIndices.length) {
-            final float val = mData[i1];
+            final double val = mData[i1];
             if (val != 0) {
                 resultInd[nnz] = mIndices[i1];
                 resultData[nnz++] = val;
@@ -116,7 +116,7 @@ class SparseVector {
         }
 
         while (i2 < right.mIndices.length) {
-            final float val = right.mData[i2];
+            final double val = right.mData[i2];
             if (val != 0) {
                 resultInd[nnz] = right.mIndices[i2];
                 resultData[nnz++] = val;
@@ -134,7 +134,7 @@ class SparseVector {
     SparseVector subtract(final SparseVector right) {
         // Maximum length if the sum of the two input lengths
         final int[] resultInd = new int[mIndices.length + right.mIndices.length];
-        final float[] resultData = new float[resultInd.length];
+        final double[] resultData = new double[resultInd.length];
 
         int i1 = 0;
         int i2 = 0;
@@ -146,19 +146,19 @@ class SparseVector {
             final int j2 = right.mIndices[i2];
 
             if (j1 == j2) {
-                final float val = mData[i1++] - right.mData[i2++];
+                final double val = mData[i1++] - right.mData[i2++];
                 if (val != 0) {
                     resultInd[nnz] = j1;
                     resultData[nnz++] = val;
                 }
             } else if (j1 < j2) {
-                final float val = mData[i1++];
+                final double val = mData[i1++];
                 if (val != 0) {
                     resultInd[nnz] = j1;
                     resultData[nnz++] = val;
                 }
             } else {
-                final float val = right.mData[i2++];
+                final double val = right.mData[i2++];
                 if (val != 0) {
                     resultInd[nnz] = j2;
                     resultData[nnz++] = -val;
@@ -168,7 +168,7 @@ class SparseVector {
 
         // pass over the tails
         while (i1 < mIndices.length) {
-            final float val = mData[i1];
+            final double val = mData[i1];
             if (val != 0) {
                 resultInd[nnz] = mIndices[i1];
                 resultData[nnz++] = val;
@@ -177,7 +177,7 @@ class SparseVector {
         }
 
         while (i2 < right.mIndices.length) {
-            final float val = right.mData[i2];
+            final double val = right.mData[i2];
             if (val != 0) {
                 resultInd[nnz] = right.mIndices[i2];
                 resultData[nnz++] = -val;
@@ -195,7 +195,7 @@ class SparseVector {
     SparseVector hadamardMultiply(SparseVector right) {
         // Maximum length is the minimum length of the inputs
         final int[] resultInd = new int[Math.min(mIndices.length, right.mIndices.length)];
-        final float[] resultData = new float[resultInd.length];
+        final double[] resultData = new double[resultInd.length];
 
         int i1 = 0;
         int i2 = 0;
@@ -207,7 +207,7 @@ class SparseVector {
             final int j2 = right.mIndices[i2];
 
             if (j1 == j2) {
-                final float val = mData[i1++] * right.mData[i2++];
+                final double val = mData[i1++] * right.mData[i2++];
                 if (val != 0) {
                     resultInd[nnz] = j1;
                     resultData[nnz++] = val;
@@ -226,9 +226,9 @@ class SparseVector {
         }
     }
 
-    float sum() {
-        float sum = 0;
-        for (final float v : mData) {
+    double sum() {
+        double sum = 0;
+        for (final double v : mData) {
             sum += v;
         }
         return sum;

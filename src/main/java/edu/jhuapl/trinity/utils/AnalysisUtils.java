@@ -320,11 +320,11 @@ public enum AnalysisUtils {
         return projected;
     }
 
-    public static float[][] transformUMAP(FeatureCollection featureCollection, Umap umap) {
-        float[][] data = featureCollection.convertFeaturesToFloatArray();
+    public static double[][] transformUMAP(FeatureCollection featureCollection, Umap umap) {
+        double[][] data = featureCollection.convertFeaturesToArray();
         System.out.println("Starting UMAP Transform... ");
         long start = System.nanoTime();
-        float[][] projected = umap.transform(data);
+        double[][] projected = umap.transform(data);
         Utils.printTotalTime(start);
         return projected;
     }

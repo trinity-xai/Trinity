@@ -45,9 +45,9 @@ final class MathUtils {
         return Math.log(x) * INV_LOG2;
     }
 
-    static float max(final float... x) {
-        float max = Float.NEGATIVE_INFINITY;
-        for (final float v : x) {
+    static double max(final double... x) {
+        double max = Float.NEGATIVE_INFINITY;
+        for (final double v : x) {
             if (v > max) {
                 max = v;
             }
@@ -55,9 +55,9 @@ final class MathUtils {
         return max;
     }
 
-    static float min(final float... x) {
-        float min = Float.POSITIVE_INFINITY;
-        for (final float v : x) {
+    static double min(final double... x) {
+        double min = Float.POSITIVE_INFINITY;
+        for (final double v : x) {
             if (v < min) {
                 min = v;
             }
@@ -65,19 +65,19 @@ final class MathUtils {
         return min;
     }
 
-    static float mean(final float... x) {
-        float s = 0;
-        for (final float v : x) {
+    static double mean(final double... x) {
+        double s = 0;
+        for (final double v : x) {
             s += v;
         }
         return s / x.length;
     }
 
-    static float mean(final float[][] x) {
-        float s = 0;
+    static double mean(final double[][] x) {
+        double s = 0;
         long c = 0;
-        for (final float[] row : x) {
-            for (final float v : row) {
+        for (final double[] row : x) {
+            for (final double v : row) {
                 s += v;
                 ++c;
             }
@@ -96,7 +96,7 @@ final class MathUtils {
     }
 
     static double sum(final double[][] x) {
-        float s = 0;
+        double s = 0;
         for (final double[] row : x) {
             for (final double v : row) {
                 s += v;
@@ -111,16 +111,16 @@ final class MathUtils {
      * @param x array
      * @return positives
      */
-    static float[] filterPositive(final float... x) {
+    static double[] filterPositive(final double... x) {
         int len = 0;
-        for (final float v : x) {
+        for (final double v : x) {
             if (v > 0) {
                 ++len;
             }
         }
-        final float[] res = new float[len];
+        final double[] res = new double[len];
         int k = 0;
-        for (final float v : x) {
+        for (final double v : x) {
             if (v > 0) {
                 res[k++] = v;
             }
@@ -139,22 +139,22 @@ final class MathUtils {
         return false;
     }
 
-    static float[] multiply(final float[] x, final float s) {
-        final float[] res = new float[x.length];
+    static double[] multiply(final double[] x, final double s) {
+        final double[] res = new double[x.length];
         for (int k = 0; k < x.length; ++k) {
             res[k] = x[k] * s;
         }
         return res;
     }
 
-    static float[] divide(final float[] x, final float s) {
+    static double[] divide(final double[] x, final double s) {
         return multiply(x, 1.0F / s);
     }
 
-    static float[] linspace(final float start, final float end, final int n) {
-        final float[] res = new float[n];
-        final float span = end - start;
-        final float step = span / (n - 1);
+    static double[] linspace(final double start, final double end, final int n) {
+        final double[] res = new double[n];
+        final double span = end - start;
+        final double step = span / (n - 1);
         for (int k = 0; k < res.length; ++k) {
             res[k] = start + k * step;
         }
@@ -169,13 +169,13 @@ final class MathUtils {
         return id;
     }
 
-    static int[] argsort(final float[] x) {
+    static int[] argsort(final double[] x) {
         final int[] id = identity(x.length);
         Sort.sort(x, id);
         return id;
     }
 
-    static void zeroEntriesBelowLimit(final float[] x, final float limit) {
+    static void zeroEntriesBelowLimit(final double[] x, final double limit) {
         for (int k = 0; k < x.length; ++k) {
             if (x[k] < limit) {
                 x[k] = 0;
@@ -183,8 +183,8 @@ final class MathUtils {
         }
     }
 
-    static float[][] subarray(final float[][] x, final int cols) {
-        final float[][] res = new float[x.length][];
+    static double[][] subarray(final double[][] x, final int cols) {
+        final double[][] res = new double[x.length][];
         for (int k = 0; k < x.length; ++k) {
             res[k] = Arrays.copyOf(x[k], cols);
         }
@@ -200,21 +200,21 @@ final class MathUtils {
     }
 
     // Do equivalent of numpy: x[np.newaxis, :].T
-    static Matrix promoteTranspose(final float[] a) {
-        final float[][] res = new float[a.length][1];
+    static Matrix promoteTranspose(final double[] a) {
+        final double[][] res = new double[a.length][1];
         for (int k = 0; k < a.length; ++k) {
             res[k][0] = a[k];
         }
         return new DefaultMatrix(res);
     }
 
-    static float[][] uniform(final Random random, final float lo, final float hi, final int n, final int m) {
+    static double[][] uniform(final Random random, final double lo, final double hi, final int n, final int m) {
         // replacement for numpy.random.RandomState.uniform (2D specialization)
-        final float len = hi - lo;
+        final double len = hi - lo;
         if (len <= 0) {
             throw new IllegalArgumentException("lo must be smaller than hi");
         }
-        final float[][] res = new float[n][m];
+        final double[][] res = new double[n][m];
         for (int k = 0; k < n; ++k) {
             for (int j = 0; j < m; ++j) {
                 res[k][j] = lo + random.nextFloat() * len;
@@ -229,8 +229,8 @@ final class MathUtils {
         return res;
     }
 
-    static float[] subarray(final float[] a, final int lo, final int hi) {
-        final float[] res = new float[hi - lo];
+    static double[] subarray(final double[] a, final int lo, final int hi) {
+        final double[] res = new double[hi - lo];
         System.arraycopy(a, lo, res, 0, res.length);
         return res;
     }

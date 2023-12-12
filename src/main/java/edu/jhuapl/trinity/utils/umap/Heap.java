@@ -38,10 +38,10 @@ import java.util.Random;
 class Heap {
 
     private final int[][] mIndices;
-    private final float[][] mWeights;
+    private final double[][] mWeights;
     private final boolean[][] mIsNew;
 
-    private Heap(final int[][] indices, final float[][] weights) {
+    private Heap(final int[][] indices, final double[][] weights) {
         mIndices = indices;
         mWeights = weights;
         mIsNew = new boolean[indices.length][indices[0].length];
@@ -58,12 +58,12 @@ class Heap {
      */
     Heap(final int points, final int size) {
         mIndices = new int[points][size];
-        mWeights = new float[points][size];
+        mWeights = new double[points][size];
         mIsNew = new boolean[points][size];
         for (final int[] a : mIndices) {
             Arrays.fill(a, -1);
         }
-        for (final float[] a : mWeights) {
+        for (final double[] a : mWeights) {
             Arrays.fill(a, Float.POSITIVE_INFINITY);
         }
     }
@@ -76,7 +76,7 @@ class Heap {
         return mIndices;
     }
 
-    float[][] weights() {
+    double[][] weights() {
         return mWeights;
     }
 
@@ -97,10 +97,10 @@ class Heap {
      * @param flag   Whether to flag the newly added element or not.
      * @return True iff the pushed element is new.
      */
-    boolean push(final int row, final float weight, final int index, final boolean flag) {
+    boolean push(final int row, final double weight, final int index, final boolean flag) {
         synchronized (mIndices[row]) {
             final int[] indices = mIndices[row];
-            final float[] weights = mWeights[row];
+            final double[] weights = mWeights[row];
             final boolean[] isNew = mIsNew[row];
 
             if (weight >= weights[0]) {
@@ -175,9 +175,9 @@ class Heap {
      * @param flag   Whether to flag the newly added element or not.
      * @return True iff the pushed element is new.
      */
-    boolean uncheckedHeapPush(final int row, final float weight, final int index, final boolean flag) {
+    boolean uncheckedHeapPush(final int row, final double weight, final int index, final boolean flag) {
         final int[] indices = mIndices[row];
-        final float[] weights = mWeights[row];
+        final double[] weights = mWeights[row];
         final boolean[] isNew = mIsNew[row];
 
         if (weight >= weights[0]) {
@@ -234,7 +234,7 @@ class Heap {
     // Restore the heap property for a heap with an out of place element
     // at position <code>elt</code>. This works with a heap pair where <code>heap1</code> carries
     // the weights and <code>heap2</code> holds the corresponding elements.
-    private static void siftdown(final float[] heap1, final int[] heap2, final int length, final int elt) {
+    private static void siftdown(final double[] heap1, final int[] heap2, final int length, final int elt) {
         int mid = elt;
         while (mid * 2 + 1 < length) {
             final int leftChild = mid * 2 + 1;
@@ -252,7 +252,7 @@ class Heap {
             if (swap == mid) {
                 break;
             } else {
-                final float t = heap1[swap];
+                final double t = heap1[swap];
                 heap1[swap] = heap1[mid];
                 heap1[mid] = t;
                 final int s = heap2[swap];
@@ -274,13 +274,13 @@ class Heap {
     Heap deheapSort() {
         for (int i = 0; i < mIndices.length; ++i) {
             final int[] indHeap = mIndices[i];
-            final float[] distHeap = mWeights[i];
+            final double[] distHeap = mWeights[i];
 
             for (int j = 0; j < indHeap.length - 1; ++j) {
                 final int s = indHeap[0];
                 indHeap[0] = indHeap[indHeap.length - j - 1];
                 indHeap[indHeap.length - j - 1] = s;
-                final float t = distHeap[0];
+                final double t = distHeap[0];
                 distHeap[0] = distHeap[distHeap.length - j - 1];
                 distHeap[distHeap.length - j - 1] = t;
 
@@ -301,10 +301,10 @@ class Heap {
      */
     int smallestFlagged(final int row) {
         final int[] ind = mIndices[row];
-        final float[] dist = mWeights[row];
+        final double[] dist = mWeights[row];
         final boolean[] flag = mIsNew[row];
 
-        float minDist = Float.POSITIVE_INFINITY;
+        double minDist = Double.POSITIVE_INFINITY;
         int resultIndex = -1;
 
         for (int i = 0; i < ind.length; ++i) {

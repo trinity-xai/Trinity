@@ -52,9 +52,9 @@ public abstract class Matrix {
         mColCount = cols;
     }
 
-    abstract float get(final int row, final int col);
+    abstract double get(final int row, final int col);
 
-    abstract void set(final int row, final int col, final float val);
+    abstract void set(final int row, final int col, final double val);
 
     abstract boolean isFinite();
 
@@ -136,7 +136,7 @@ public abstract class Matrix {
     }
 
     Matrix transpose() {
-        final float[][] res = new float[cols()][rows()];
+        final double[][] res = new double[cols()][rows()];
         for (int i = 0; i < rows(); ++i) {
             for (int j = 0; j < cols(); ++j) {
                 res[j][i] = get(i, j);
@@ -176,7 +176,7 @@ public abstract class Matrix {
         return res;
     }
 
-    Matrix multiply(final float x) {
+    Matrix multiply(final double x) {
         final DefaultMatrix res = new DefaultMatrix(mRowCount, mColCount);
         final int rows = rows();
         final int cols = cols();
@@ -197,7 +197,7 @@ public abstract class Matrix {
         final Matrix res = new DefaultMatrix(rows, cols);
         for (int i = 0; i < rows; ++i) {
             for (int j = 0; j < cols; ++j) {
-                float sum = 0;
+                double sum = 0;
                 for (int k = 0; k < cols(); ++k) {
                     sum += get(i, k) * m.get(k, j);
                 }
@@ -266,10 +266,10 @@ public abstract class Matrix {
         final int len = (int) (length() - countZeros());
         final int[] row = new int[len];
         final int[] col = new int[len];
-        final float[] data = new float[len];
+        final double[] data = new double[len];
         for (int k = 0, r = 0; r < rows(); ++r) {
             for (int c = 0; c < cols(); ++c) {
-                final float x = get(r, c);
+                final double x = get(r, c);
                 if (x != 0) {
                     row[k] = r;
                     col[k] = c;
@@ -284,11 +284,11 @@ public abstract class Matrix {
         final int len = (int) (length() - countZeros());
         final int[] indptr = new int[rows() + 1];
         final int[] indices = new int[len];
-        final float[] data = new float[len];
+        final double[] data = new double[len];
         for (int k = 0, r = 0; r < rows(); ++r) {
             indptr[r] = k;
             for (int c = 0; c < cols(); ++c) {
-                final float x = get(r, c);
+                final double x = get(r, c);
                 if (x != 0) {
                     indices[k] = c;
                     data[k++] = x;
@@ -303,8 +303,8 @@ public abstract class Matrix {
         throw new UnsupportedOperationException();
     }
 
-    float[][] toArray() {
-        final float[][] res = new float[rows()][cols()];
+    double[][] toArray() {
+        final double[][] res = new double[rows()][cols()];
         for (int r = 0; r < rows(); ++r) {
             for (int c = 0; c < cols(); ++c) {
                 res[r][c] = get(r, c);
@@ -319,8 +319,8 @@ public abstract class Matrix {
      * @param row row number to get
      * @return row
      */
-    float[] row(int row) {
-        final float[] data = new float[cols()];
+    double[] row(int row) {
+        final double[] data = new double[cols()];
         for (int k = 0; k < data.length; ++k) {
             data[k] = get(row, k);
         }
@@ -347,14 +347,14 @@ public abstract class Matrix {
      * @return row normalized matrix
      */
     Matrix rowNormalize() {
-        final float[][] d = new float[rows()][];
+        final double[][] d = new double[rows()][];
         for (int k = 0; k < rows(); ++k) {
-            final float[] row = row(k);
-            final float max = MathUtils.max(row);
+            final double[] row = row(k);
+            final double max = MathUtils.max(row);
             if (max == 0) {
                 d[k] = Arrays.copyOf(row, cols());
             } else {
-                d[k] = new float[cols()];
+                d[k] = new double[cols()];
                 for (int j = 0; j < cols(); ++j) {
                     d[k][j] = row[j] / max;
                 }
@@ -370,14 +370,14 @@ public abstract class Matrix {
      * @return row normalized matrix
      */
     Matrix l1Normalize() {
-        final float[][] d = new float[rows()][];
+        final double[][] d = new double[rows()][];
         for (int k = 0; k < rows(); ++k) {
-            final float[] row = row(k);
-            final float l1 = Utils.norm(row);
+            final double[] row = row(k);
+            final double l1 = Utils.norm(row);
             if (l1 == 0) {
                 d[k] = Arrays.copyOf(row, cols());
             } else {
-                d[k] = new float[cols()];
+                d[k] = new double[cols()];
                 for (int j = 0; j < cols(); ++j) {
                     d[k][j] = row[j] / l1;
                 }

@@ -25,7 +25,7 @@ package edu.jhuapl.trinity.utils.umap;
  * #L%
  */
 
-import edu.jhuapl.trinity.utils.umap.metric.Metric;
+import edu.jhuapl.trinity.utils.metric.Metric;
 
 import java.util.List;
 import java.util.Random;
@@ -59,13 +59,13 @@ class NearestNeighborDescent {
         return descent(data, nNeighbors, random, maxCandidates, rpTreeInit, nIters, forest, 0.001F, 0.5F);
     }
 
-    Heap descent(final Matrix data, final int nNeighbors, final Random random, final int maxCandidates, final boolean rpTreeInit, final int nIters, final List<FlatTree> forest, final float delta, final float rho) {
+    Heap descent(final Matrix data, final int nNeighbors, final Random random, final int maxCandidates, final boolean rpTreeInit, final int nIters, final List<FlatTree> forest, final double delta, final double rho) {
         final int nVertices = data.rows();
         final Heap currentGraph = new Heap(data.rows(), nNeighbors);
         for (int i = 0; i < data.rows(); ++i) {
-            final float[] iRow = data.row(i);
+            final double[] iRow = data.row(i);
             for (final int index : Utils.rejectionSample(nNeighbors, data.rows(), random)) {
-                final float d = mMetric.distance(iRow, data.row(index));
+                final double d = mMetric.distance(iRow, data.row(index));
                 currentGraph.push(i, d, index, true);
                 currentGraph.push(index, d, i, true);
             }
@@ -76,9 +76,9 @@ class NearestNeighborDescent {
             for (final FlatTree tree : forest) {
                 for (final int[] leaf : tree.getIndices()) {
                     for (int i = 0; i < leaf.length; ++i) {
-                        final float[] iRow = data.row(leaf[i]);
+                        final double[] iRow = data.row(leaf[i]);
                         for (int j = i + 1; j < leaf.length; ++j) {
-                            final float d = mMetric.distance(iRow, data.row(leaf[j]));
+                            final double d = mMetric.distance(iRow, data.row(leaf[j]));
                             currentGraph.push(leaf[i], d, leaf[j], true);
                             currentGraph.push(leaf[j], d, leaf[i], true);
                         }
@@ -113,7 +113,7 @@ class NearestNeighborDescent {
                             continue;
                         }
 
-                        final float d = mMetric.distance(data.row(p), data.row(q));
+                        final double d = mMetric.distance(data.row(p), data.row(q));
                         if (currentGraph.push(p, d, q, true)) {
                             ++c;
                         }

@@ -126,6 +126,17 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static edu.jhuapl.trinity.javafx.components.radial.HyperspaceMenu.slideInPane;
+import edu.jhuapl.trinity.javafx.events.ManifoldEvent.ProjectionConfig;
+import edu.jhuapl.trinity.javafx.events.ManifoldEvent.ProjectionConfig.COVARIANCE_MODE;
+import edu.jhuapl.trinity.utils.DataUtils;
+import edu.jhuapl.trinity.utils.clustering.Cluster;
+import edu.jhuapl.trinity.utils.clustering.KmeansPlusPlus;
+import edu.jhuapl.trinity.utils.clustering.ClusterMethod;
+import edu.jhuapl.trinity.utils.clustering.GaussianMixtureComponent;
+import edu.jhuapl.trinity.utils.clustering.Point;
+import edu.jhuapl.trinity.utils.clustering.GaussianMixtureModel;
+import javafx.util.Pair;
+
 
 /**
  * @author Sean Phillips
@@ -1134,6 +1145,7 @@ public class Projections3DPane extends StackPane implements
         Manifold3D manifold3D = new Manifold3D(
             labelMatchedPoints, true, true, true
         );
+        manifold3D.quickhullMeshView.setCullFace(CullFace.FRONT);
         manifold3D.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
             if ((e.getButton() == MouseButton.PRIMARY && e.isControlDown())
                 || (e.getButton() == MouseButton.PRIMARY && pointToPointDistanceMode)) {
@@ -1142,7 +1154,7 @@ public class Projections3DPane extends StackPane implements
         });
         manifolds.add(manifold3D);
         manifoldGroup.getChildren().add(manifold3D);
-        shape3DToLabel.putAll(manifold3D.shape3DToLabel);
+        manifold3D.shape3DToLabel.putAll(manifold3D.shape3DToLabel);
         updateFloatingNodes();
         return manifold3D;
     }
@@ -1735,7 +1747,7 @@ public class Projections3DPane extends StackPane implements
         ArrayList<double[]> states = new ArrayList<>();
         if (null == latestUmap || null == latestUmap.getmEmbedding())
             return states;
-        float[][] transformed = AnalysisUtils.transformUMAP(fc, latestUmap);
+        double[][] transformed = AnalysisUtils.transformUMAP(fc, latestUmap);
         for (int row = 0; row < transformed.length; row++) {
             double[] stateVector = new double[transformed[row].length];
             for (int columns = 0; columns < transformed[row].length; columns++) {
@@ -2559,5 +2571,103 @@ public class Projections3DPane extends StackPane implements
         Thread thread = new Thread(task);
         thread.setDaemon(true);
         thread.start();
+    }
+
+    @Override
+//    public void findClusters(int components, boolean useVisiblePoints, ClusterMethod clusterMethod) {
+    public void findClusters(ProjectionConfig pc) {
+        //convert featurevector space into 2D array of doubles
+        double [][] observations = FeatureCollection.toData(featureVectors);
+
+        long startTime = System.nanoTime();
+        //find clusters
+        switch(pc.clusterMethod) {
+//            case KMEANS -> {
+//                System.out.print("Kmeans fit... ");
+//                startTime = System.nanoTime();
+//                var kmeansClusters = KMeans.fit(observations, 50);
+//                Utils.printTotalTime(startTime);                
+//                System.out.println("\n===============================================\n");
+//                System.out.println("KMeans Clusters: " + kmeansClusters.k 
+//                    + " Distortion: " + kmeansClusters.distortion);
+//                break;
+//            }
+            case EX_MAX -> {
+                System.out.print("Expectation Maximization... ");
+                startTime = System.nanoTime();
+                boolean diagonal = pc.covariance == COVARIANCE_MODE.DIAGONAL;
+                GaussianMixtureModel gmm = GaussianMixtureModel.fit(pc.components, observations, diagonal);
+                Utils.printTotalTime(startTime);
+                System.out.println("Components found: " + gmm.components.length);
+
+                
+                System.out.print("Mapping observations to clusters by component probability... ");
+                startTime = System.nanoTime();
+                ArrayList<Cluster> clusters = new ArrayList<>();
+                for(GaussianMixtureComponent c : gmm.components) {
+                    clusters.add(new Cluster(observations[0].length));
+                }
+                ArrayList<Double> maxPostProbList = new ArrayList<>(observations.length);
+                for(int dataIndex=0;dataIndex<observations.length;dataIndex++) {
+                    Pair<Integer,Double> maxPostProb = gmm.maxPostProb(observations[dataIndex]);
+                    maxPostProbList.add(maxPostProb.getValue());
+//                    int component = gmm.map(observations[dataIndex]);
+                    clusters.get(maxPostProb.getKey())
+                        .addPointToCluster(dataIndex, new Point(observations[dataIndex]));
+                }
+                Utils.printTotalTime(startTime);
+
+                Collections.sort(maxPostProbList);
+                double min = Collections.min(maxPostProbList);
+                double max = Collections.max(maxPostProbList);
+//                maxPostProbList.stream().forEach(m -> 
+//                    System.out.println(DataUtils.normalize(m, min, max))
+//                );
+                
+                System.out.print("Generating Hulls from Clusters... ");
+                startTime = System.nanoTime();
+                int index=0;
+                for(Cluster cluster : clusters){
+                    if(cluster.getClusterPoints().size()>=4) {
+                        String label = "GMM Cluster " + index;
+                        List<Point3D> points = cluster.getClusterPoints().stream()
+                            .map((Point t) -> new Point3D(
+                                t.getPosition()[0] * projectionScalar,
+                                t.getPosition()[1] * -projectionScalar, 
+                                t.getPosition()[2] * projectionScalar))
+                            .toList();
+
+                        ArrayList<javafx.geometry.Point3D> fxPoints = points.stream()
+                            .map(p3D -> new javafx.geometry.Point3D(p3D.x, p3D.y, p3D.z))
+                            .collect(Collectors.toCollection(ArrayList::new));
+                        Manifold manifold = new Manifold(fxPoints, label, label, sceneColor);
+                        //Create the 3D manifold shape
+                        Manifold3D manifold3D = makeHull(points, label);
+                        manifold3D.setManifold(manifold);
+                        manifold3D.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
+                            getScene().getRoot().fireEvent(
+                                new ManifoldEvent(ManifoldEvent.MANIFOLD_3D_SELECTED, manifold));
+                        });
+                        //Add this Manifold data object to the global tracker
+                        Manifold.addManifold(manifold);
+                        //update the manifold to manifold3D mapping
+                        Manifold.globalManifoldToManifold3DMap.put(manifold, manifold3D);
+                        //announce to the world of the new manifold and its shape
+                        System.out.println("Manifold3D generation complete for " + label);
+                        getScene().getRoot().fireEvent(new ManifoldEvent(
+                            ManifoldEvent.MANIFOLD3D_OBJECT_GENERATED, manifold, manifold3D));
+                    } else {
+                        System.out.println("Cluster has less than 4 points");
+                    }
+                    index++;
+                }
+                
+                Utils.printTotalTime(startTime);
+                System.out.println("\n===============================================\n");                
+                //System.out.println("EmDriver Results : " + emDriver.learnedModel.toString()); 
+                break;
+            }
+
+        }
     }
 }
