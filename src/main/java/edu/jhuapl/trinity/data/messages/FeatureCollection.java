@@ -46,9 +46,10 @@ public class FeatureCollection extends MessageData {
     //</editor-fold>
 
     //<editor-fold defaultstate="collapsed" desc="Payload Fields">
+    private String type;
     private ArrayList<String> dimensionLabels;
     private List<FeatureVector> features;
-    private String type;
+
     //</editor-fold>
 
     public FeatureCollection() {

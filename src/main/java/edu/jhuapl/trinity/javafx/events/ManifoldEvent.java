@@ -69,6 +69,7 @@ public class ManifoldEvent extends Event {
 
     //Clustering
     public static final EventType<ManifoldEvent> FIND_PROJECTION_CLUSTERS = new EventType(ANY, "FIND_PROJECTION_CLUSTERS");
+    public static final EventType<ManifoldEvent> NEW_CLUSTER_COLLECTION = new EventType(ANY, "NEW_CLUSTER_COLLECTION");
 
     //Manifold Geometry
     public static final EventType<ManifoldEvent> NEW_MANIFOLD_DATA = new EventType(ANY, "NEW_MANIFOLD_DATA");

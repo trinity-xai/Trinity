@@ -35,6 +35,7 @@ import edu.jhuapl.trinity.data.messages.FeatureVector;
 import edu.jhuapl.trinity.data.messages.GaussianMixture;
 import edu.jhuapl.trinity.data.messages.GaussianMixtureCollection;
 import edu.jhuapl.trinity.data.messages.GaussianMixtureData;
+import edu.jhuapl.trinity.data.messages.PointCluster;
 import edu.jhuapl.trinity.javafx.components.radial.ProgressStatus;
 import edu.jhuapl.trinity.javafx.components.callouts.Callout;
 import edu.jhuapl.trinity.javafx.components.callouts.DistanceDataCallout;
@@ -2692,6 +2693,47 @@ public class Projections3DPane extends StackPane implements
                 break;
             }
 
+        }
+    }
+
+    @Override
+    public void addCluster(PointCluster pointCluster) {
+        if(null != pointCluster.getData() && !pointCluster.getData().isEmpty()) {
+            //@TODO SMP add new data points based on these clusters
+        }
+                
+        if(pointCluster.getMap().size()>=4) {
+            List<Point3D> points = pointCluster.getMap().stream()
+                .map(p -> new Point3D(
+                    featureVectors.get(p).getData().get(0) * projectionScalar,
+                    featureVectors.get(p).getData().get(1) * -projectionScalar, 
+                    featureVectors.get(p).getData().get(2) * projectionScalar))
+                .toList();
+
+            ArrayList<javafx.geometry.Point3D> fxPoints = points.stream()
+                .map(p3D -> new javafx.geometry.Point3D(p3D.x, p3D.y, p3D.z))
+                .collect(Collectors.toCollection(ArrayList::new));
+            Manifold manifold = new Manifold(fxPoints, 
+                pointCluster.getClusterName(), 
+                pointCluster.getClusterName(), 
+                sceneColor);
+            //Create the 3D manifold shape
+            Manifold3D manifold3D = makeHull(points, pointCluster.getClusterName());
+            manifold3D.setManifold(manifold);
+            manifold3D.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
+                getScene().getRoot().fireEvent(
+                    new ManifoldEvent(ManifoldEvent.MANIFOLD_3D_SELECTED, manifold));
+            });
+            //Add this Manifold data object to the global tracker
+            Manifold.addManifold(manifold);
+            //update the manifold to manifold3D mapping
+            Manifold.globalManifoldToManifold3DMap.put(manifold, manifold3D);
+            //announce to the world of the new manifold and its shape
+            //System.out.println("Manifold3D generation complete for " + label);
+            getScene().getRoot().fireEvent(new ManifoldEvent(
+                ManifoldEvent.MANIFOLD3D_OBJECT_GENERATED, manifold, manifold3D));
+        } else {
+            System.out.println("Cluster has less than 4 points");
         }
     }
 }

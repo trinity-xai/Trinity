@@ -23,6 +23,7 @@ package edu.jhuapl.trinity.utils;
 import edu.jhuapl.trinity.data.Trajectory;
 import edu.jhuapl.trinity.data.files.CdcCsvFile;
 import edu.jhuapl.trinity.data.files.CdcTissueGenesFile;
+import edu.jhuapl.trinity.data.files.ClusterCollectionFile;
 import edu.jhuapl.trinity.data.files.FeatureCollectionFile;
 import edu.jhuapl.trinity.data.files.GaussianMixtureCollectionFile;
 import edu.jhuapl.trinity.data.files.LabelConfigFile;
@@ -306,6 +307,10 @@ public enum ResourceUtils {
                         scene.getRoot().fireEvent(
                             new SemanticMapEvent(SemanticMapEvent.NEW_SEMANTICMAP_COLLECTION, smcFile.semanticMapCollection));
                         //Trajectory logic handled by SemanticMapEventHandler
+                    } else if (ClusterCollectionFile.isClusterCollectionFile(file)) {
+                        ClusterCollectionFile ccFile = new ClusterCollectionFile(file.getAbsolutePath(), true);
+                        scene.getRoot().fireEvent(
+                            new ManifoldEvent(ManifoldEvent.NEW_CLUSTER_COLLECTION, ccFile.clusterCollection));
                     } else if (FeatureCollectionFile.isFeatureCollectionFile(file)) {
                         FeatureCollectionFile fcFile = new FeatureCollectionFile(file.getAbsolutePath(), true);
                         scene.getRoot().fireEvent(

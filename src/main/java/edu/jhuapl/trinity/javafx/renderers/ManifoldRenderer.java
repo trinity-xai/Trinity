@@ -21,6 +21,7 @@ package edu.jhuapl.trinity.javafx.renderers;
  */
 
 import edu.jhuapl.trinity.data.Manifold;
+import edu.jhuapl.trinity.data.messages.PointCluster;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent.ProjectionConfig;
 import edu.jhuapl.trinity.javafx.javafx3d.Manifold3D;
 import javafx.scene.Group;
@@ -42,4 +43,6 @@ public interface ManifoldRenderer {
     public Group getManifoldViews();
 
     public void findClusters(ProjectionConfig pc);
+
+    public void addCluster(PointCluster pointCluster);
 }

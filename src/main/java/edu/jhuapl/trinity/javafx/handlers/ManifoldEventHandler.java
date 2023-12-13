@@ -23,8 +23,10 @@ package edu.jhuapl.trinity.javafx.handlers;
 import edu.jhuapl.trinity.App;
 import edu.jhuapl.trinity.data.Manifold;
 import edu.jhuapl.trinity.data.files.ManifoldDataFile;
+import edu.jhuapl.trinity.data.messages.ClusterCollection;
 import edu.jhuapl.trinity.data.messages.ManifoldData;
 import edu.jhuapl.trinity.data.messages.P3D;
+import edu.jhuapl.trinity.data.messages.PointCluster;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent.ProjectionConfig;
@@ -348,7 +350,14 @@ public class ManifoldEventHandler implements EventHandler<ManifoldEvent> {
     @Override
     public void handle(ManifoldEvent event) {
         
-        if (event.getEventType().equals(ManifoldEvent.FIND_PROJECTION_CLUSTERS)) {
+        if (event.getEventType().equals(ManifoldEvent.NEW_CLUSTER_COLLECTION)) {
+            ClusterCollection cc = (ClusterCollection) event.object1;
+            for(PointCluster cluster : cc.getClusters()) {
+                for (ManifoldRenderer renderer : manifoldRenderers) {
+                    renderer.addCluster(cluster);
+                }
+            }
+        } else if (event.getEventType().equals(ManifoldEvent.FIND_PROJECTION_CLUSTERS)) {
             ProjectionConfig pc = (ProjectionConfig) event.object1;
             for (ManifoldRenderer renderer : manifoldRenderers) {
                 renderer.findClusters(pc);

@@ -32,6 +32,7 @@ import edu.jhuapl.trinity.data.messages.FeatureVector;
 import edu.jhuapl.trinity.data.messages.GaussianMixture;
 import edu.jhuapl.trinity.data.messages.GaussianMixtureCollection;
 import edu.jhuapl.trinity.data.messages.GaussianMixtureData;
+import edu.jhuapl.trinity.data.messages.PointCluster;
 import edu.jhuapl.trinity.javafx.components.radial.ProgressStatus;
 import edu.jhuapl.trinity.javafx.components.callouts.Callout;
 import edu.jhuapl.trinity.javafx.components.panes.RadialEntityOverlayPane;
@@ -2071,5 +2072,10 @@ public class Hyperspace3DPane extends StackPane implements
                 System.out.println("\n===============================================\n");                
             }
         }
+    }
+
+    @Override
+    public void addCluster(PointCluster pointCluster) {
+    
     }
 }

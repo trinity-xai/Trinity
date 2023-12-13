@@ -33,7 +33,7 @@ public class MessageData {
     protected String componentName;
     protected String messageType;
     protected String topic;
-    protected long messageId;
+    protected Long messageId;
 
     public MessageData() {
 
