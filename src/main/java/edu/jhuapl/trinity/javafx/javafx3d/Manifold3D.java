@@ -367,12 +367,12 @@ public class Manifold3D extends Group {
             .toArray(Point3d[]::new);
         hull.build(points);
         if (triangulate) {
-            System.out.println("Triangulating...");
+//            System.out.println("Triangulating...");
             hull.triangulate();
         }
-        System.out.println("Faces: " + hull.getNumFaces());
-        System.out.println("Verts: " + hull.getNumVertices());
-        System.out.println("Making Quickhull mesh...");
+//        System.out.println("Faces: " + hull.getNumFaces());
+//        System.out.println("Verts: " + hull.getNumVertices());
+//        System.out.println("Making Quickhull mesh...");
         quickhullTriangleMesh = makeQuickhullMesh(hull, artScale);
     }
 

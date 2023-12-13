@@ -33,6 +33,8 @@ import org.apache.commons.math3.special.Erf;
 public class GaussianDistribution { 
     public static Random rando = new Random();
 
+    /* useful for centroid tracking */
+    public double[] initialMean;
     /** The mean vector. */
     public final double[] mu;
     /** The covariance matrix. */
@@ -64,7 +66,8 @@ public class GaussianDistribution {
         if (variance <= 0) {
             throw new IllegalArgumentException("Variance is not positive: " + variance);
         }
-
+        initialMean = new double[mean.length];
+        System.arraycopy(mean,0,initialMean,0,mean.length);
         mu = mean;
         double [] diagonalVector = new double[mu.length];
         sigma = MatrixUtils.createRealDiagonalMatrix(diagonalVector);
@@ -91,7 +94,8 @@ public class GaussianDistribution {
                 throw new IllegalArgumentException("Variance is not positive: " + v);
             }
         }
-
+        initialMean = new double[mean.length];
+        System.arraycopy(mean,0,initialMean,0,mean.length);
         mu = mean;
         sigma = MatrixUtils.createRealDiagonalMatrix(variance);        
         diagonal = true;
@@ -110,6 +114,8 @@ public class GaussianDistribution {
         if (mean.length != cov.getRowDimension()) {
             throw new IllegalArgumentException("Mean vector and covariance matrix have different dimension");
         }
+        initialMean = new double[mean.length];
+        System.arraycopy(mean,0,initialMean,0,mean.length);
         mu = mean;
         sigma = cov;
         diagonal = false;

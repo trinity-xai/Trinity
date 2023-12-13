@@ -33,7 +33,7 @@ public class GaussianMixture {
     /** The components of finite mixture model. */
     public final GaussianMixtureComponent[] components;    
     /** The log-likelihood when the distribution is fit on a sample data. */
-    public final double L;
+    public final double logLikelihood;
     /** The BIC score when the distribution is fit on a sample data. */
     public final double bic;
 
@@ -51,7 +51,7 @@ public class GaussianMixture {
      */
     GaussianMixture(double L, int n, GaussianMixtureComponent... components) {
         this.components = components;
-        this.L = L;
+        this.logLikelihood = L;
         this.bic = L - 0.5 * length() * Math.log(n);
     }
 
@@ -97,7 +97,7 @@ public class GaussianMixture {
         
         // EM loop until convergence
         int iterationsComplete = 0;
-        maxIter = 100;
+        maxIter = 200;
         tol = -1e6;
         gamma = 0.0;
         double diff = Double.MAX_VALUE;

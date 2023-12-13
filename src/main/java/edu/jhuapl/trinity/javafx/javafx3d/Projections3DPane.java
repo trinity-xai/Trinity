@@ -135,6 +135,7 @@ import edu.jhuapl.trinity.utils.clustering.ClusterMethod;
 import edu.jhuapl.trinity.utils.clustering.GaussianMixtureComponent;
 import edu.jhuapl.trinity.utils.clustering.Point;
 import edu.jhuapl.trinity.utils.clustering.GaussianMixtureModel;
+import javafx.scene.shape.Box;
 import javafx.util.Pair;
 
 
@@ -2593,19 +2594,42 @@ public class Projections3DPane extends StackPane implements
 //                break;
 //            }
             case EX_MAX -> {
-                System.out.print("Expectation Maximization... ");
+                System.out.println("Expectation Maximization... ");
                 startTime = System.nanoTime();
                 boolean diagonal = pc.covariance == COVARIANCE_MODE.DIAGONAL;
+                manifoldGroup.getChildren().removeIf(n -> n instanceof Box);
+                Point[] kmeansCentroids = KmeansPlusPlus.kmeansPlusPlus(pc.components, observations);                
+                for(Point point : kmeansCentroids) {
+                    System.out.println("k++ centroid: " + Arrays.toString(point.getPosition()));
+                    Box box = new Box(point3dSize, point3dSize, point3dSize);
+                    PhongMaterial pm = new PhongMaterial(Color.ALICEBLUE);
+                    box.setMaterial(pm);
+                    box.setTranslateX(point.getPosition()[0] * projectionScalar);
+                    box.setTranslateY(point.getPosition()[1] * -projectionScalar);
+                    box.setTranslateZ(point.getPosition()[2] * projectionScalar);
+                    manifoldGroup.getChildren().add(box);
+                }
+                
                 GaussianMixtureModel gmm = GaussianMixtureModel.fit(pc.components, observations, diagonal);
                 Utils.printTotalTime(startTime);
                 System.out.println("Components found: " + gmm.components.length);
-
-                
-                System.out.print("Mapping observations to clusters by component probability... ");
+                System.out.println("Mapping observations to clusters by component probability... ");
                 startTime = System.nanoTime();
                 ArrayList<Cluster> clusters = new ArrayList<>();
+                int i=0;
                 for(GaussianMixtureComponent c : gmm.components) {
+                    System.out.println("After GMM Fit Centroid " + i + ": " + Arrays.toString(c.distribution.mu));                    
                     clusters.add(new Cluster(observations[0].length));
+                    i++;
+
+                    Box box = new Box(point3dSize, point3dSize, point3dSize);
+                    PhongMaterial pm = new PhongMaterial(Color.GREENYELLOW);
+                    box.setDrawMode(DrawMode.LINE);
+                    box.setMaterial(pm);
+                    box.setTranslateX(c.distribution.mu[0] * projectionScalar);
+                    box.setTranslateY(c.distribution.mu[1] * -projectionScalar);
+                    box.setTranslateZ(c.distribution.mu[2] * projectionScalar);
+                    manifoldGroup.getChildren().add(box);
                 }
                 ArrayList<Double> maxPostProbList = new ArrayList<>(observations.length);
                 for(int dataIndex=0;dataIndex<observations.length;dataIndex++) {
@@ -2653,7 +2677,7 @@ public class Projections3DPane extends StackPane implements
                         //update the manifold to manifold3D mapping
                         Manifold.globalManifoldToManifold3DMap.put(manifold, manifold3D);
                         //announce to the world of the new manifold and its shape
-                        System.out.println("Manifold3D generation complete for " + label);
+                        //System.out.println("Manifold3D generation complete for " + label);
                         getScene().getRoot().fireEvent(new ManifoldEvent(
                             ManifoldEvent.MANIFOLD3D_OBJECT_GENERATED, manifold, manifold3D));
                     } else {
