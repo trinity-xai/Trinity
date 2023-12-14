@@ -20,10 +20,13 @@ package edu.jhuapl.trinity.javafx.controllers;
  * #L%
  */
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import edu.jhuapl.trinity.App;
 import edu.jhuapl.trinity.data.Distance;
 import edu.jhuapl.trinity.data.FactorLabel;
 import edu.jhuapl.trinity.data.Manifold;
+import edu.jhuapl.trinity.data.messages.UmapConfig;
 import edu.jhuapl.trinity.javafx.components.listviews.DistanceListItem;
 import edu.jhuapl.trinity.javafx.components.listviews.ManifoldListItem;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
@@ -60,10 +63,13 @@ import javafx.stage.FileChooser;
 import javafx.util.Duration;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.scene.control.SplitMenuButton;
 import javafx.scene.control.MenuItem;
         
@@ -568,7 +574,73 @@ public class ManifoldControlController implements Initializable {
             System.out.println("UMAP object not yet established.");
         }
     }
-
+    @FXML
+    public void loadUmapConfig() {
+        FileChooser fc = new FileChooser();
+        fc.setTitle("Choose UMAP Config to load...");
+        if (!latestDir.isDirectory())
+            latestDir = new File(".");
+        fc.setInitialDirectory(latestDir);
+        File file = fc.showOpenDialog(scene.getWindow());
+        if (null != file) {
+            if (file.getParentFile().isDirectory())
+                latestDir = file;
+            ObjectMapper mapper = new ObjectMapper();
+            UmapConfig uc;
+            try {
+                uc = mapper.readValue(file, UmapConfig.class);
+                repulsionSlider.setValue(uc.getRepulsionStrength());
+                minDistanceSlider.setValue(uc.getMinDist());
+                spreadSlider.setValue(uc.getSpread());
+                opMixSlider.setValue(uc.getOpMixRatio());
+                numComponentsSpinner.getValueFactory().setValue(uc.getNumberComponents());
+                numEpochsSpinner.getValueFactory().setValue(uc.getNumberEpochs());
+                nearestNeighborsSpinner.getValueFactory().setValue(uc.getNumberNearestNeighbours());
+                negativeSampleRateSpinner.getValueFactory().setValue(uc.getNegativeSampleRate());
+                localConnectivitySpinner.getValueFactory().setValue(uc.getLocalConnectivity());
+                metricChoiceBox.getSelectionModel().select(uc.getMetric());
+                verboseCheckBox.setSelected(uc.getVerbose());            
+            } catch (IOException ex) {
+                Logger.getLogger(ManifoldControlController.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }             
+    }    
+    @FXML
+    public void saveUmapConfig() {
+        FileChooser fc = new FileChooser();
+        fc.setTitle("Choose UMAP Config file output...");
+        fc.setInitialFileName("UmapConfig.json");
+        if (!latestDir.isDirectory())
+            latestDir = new File(".");
+        fc.setInitialDirectory(latestDir);
+        File file = fc.showSaveDialog(scene.getWindow());
+        if (null != file) {
+            if (file.getParentFile().isDirectory())
+                latestDir = file;
+            UmapConfig uc = new UmapConfig();
+            uc.setRepulsionStrength((float) repulsionSlider.getValue());
+            uc.setMinDist((float) minDistanceSlider.getValue());
+            uc.setSpread((float) spreadSlider.getValue());
+            uc.setOpMixRatio((float) opMixSlider.getValue());
+            uc.setNumberComponents((int) numComponentsSpinner.getValue());
+            uc.setNumberEpochs((int) numEpochsSpinner.getValue());
+            uc.setNumberNearestNeighbours((int) nearestNeighborsSpinner.getValue());
+            uc.setNegativeSampleRate((int) negativeSampleRateSpinner.getValue());
+            uc.setLocalConnectivity((int) localConnectivitySpinner.getValue());
+            uc.setMetric((String) metricChoiceBox.getValue());
+            uc.setVerbose(verboseCheckBox.isSelected());            
+            ObjectMapper mapper = new ObjectMapper();
+            try {
+                
+                mapper.writeValue(file, uc);
+//                scene.getRoot().fireEvent(new ManifoldEvent(
+//                    ManifoldEvent.SAVE_PROJECTION_DATA, file));
+            } catch (IOException ex) {
+                Logger.getLogger(ManifoldControlController.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }            
+    }
+    
     @FXML
     public void saveProjections() {
         FileChooser fc = new FileChooser();

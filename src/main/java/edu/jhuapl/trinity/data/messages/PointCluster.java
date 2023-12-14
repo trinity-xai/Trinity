@@ -58,13 +58,19 @@ public class PointCluster extends MessageData {
     private String clusterName;
     private Integer clusterId;
     private List<Integer> map;
-    private List<Double[]> data;
+    private List<List<Double>> data; //optional, the original data
+    private List<Double> mean; //optional, the mean vector or centroid 
+    private List<List<Double>> covariance; //optional, the covariance of the 
+    //cluster typically derived from some fitting convergence process
+    
     //</editor-fold>
 
     public PointCluster() {
         messageType = TYPESTRING;
         map = new ArrayList<>();
         data = new ArrayList<>();
+        mean = new ArrayList<>();
+        covariance = new ArrayList<>();
     }
 
     public static boolean isPointCluster(String messageBody) {
@@ -119,15 +125,43 @@ public class PointCluster extends MessageData {
     /**
      * @return the data
      */
-    public List<Double[]> getData() {
+    public List<List<Double>> getData() {
         return data;
     }
 
     /**
      * @param data the data to set
      */
-    public void setData(List<Double[]> data) {
+    public void setData(List<List<Double>> data) {
         this.data = data;
+    }
+
+    /**
+     * @return the mean
+     */
+    public List<Double> getMean() {
+        return mean;
+    }
+
+    /**
+     * @param mean the mean to set
+     */
+    public void setMean(List<Double> mean) {
+        this.mean = mean;
+    }
+
+    /**
+     * @return the covariance
+     */
+    public List<List<Double>> getCovariance() {
+        return covariance;
+    }
+
+    /**
+     * @param covariance the covariance to set
+     */
+    public void setCovariance(List<List<Double>> covariance) {
+        this.covariance = covariance;
     }
 
     //</editor-fold>

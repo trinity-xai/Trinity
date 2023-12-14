@@ -20,12 +20,14 @@ package edu.jhuapl.trinity.data.messages;
  * #L%
  */
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
  * @author Sean Phillips
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class MessageData {
     protected String version;
     protected String component;
@@ -33,7 +35,7 @@ public class MessageData {
     protected String componentName;
     protected String messageType;
     protected String topic;
-    protected Long messageId;
+    protected long messageId;
 
     public MessageData() {
 
