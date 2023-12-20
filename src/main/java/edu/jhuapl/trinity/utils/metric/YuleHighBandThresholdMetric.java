@@ -28,7 +28,7 @@ package edu.jhuapl.trinity.utils.metric;
  */
 public final class YuleHighBandThresholdMetric extends Metric {
 
-    public static final double DEFAULT_THRESHOLD = 0.999;
+    public static final double DEFAULT_THRESHOLD = 0.5;
     public static final YuleHighBandThresholdMetric SINGLETON = new YuleHighBandThresholdMetric();
 
     private YuleHighBandThresholdMetric() {
@@ -41,11 +41,11 @@ public final class YuleHighBandThresholdMetric extends Metric {
         int numTrueFalse = 0;
         int numFalseTrue = 0;
         for (int i = 0; i < x.length; ++i) {
-            final boolean xTrue = Math.abs(x[i]) >= DEFAULT_THRESHOLD;
-            final boolean yTrue = Math.abs(y[i]) >= DEFAULT_THRESHOLD;
+            final boolean xTrue = Math.abs(x[i]) < DEFAULT_THRESHOLD;
+            final boolean yTrue = Math.abs(y[i]) < DEFAULT_THRESHOLD;
             
-            if(Math.abs(x[i])>1.0)
-                System.out.println(x[i]);
+//            if(Math.abs(x[i])>1.0)
+//                System.out.println("Dimension over 1.0: " + x[i]);
             if (xTrue && yTrue) {
                 ++numTrueTrue;
             }
