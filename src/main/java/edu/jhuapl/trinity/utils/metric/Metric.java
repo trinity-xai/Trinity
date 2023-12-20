@@ -105,8 +105,9 @@ public abstract class Metric {
             sMETRICS.put("rogerstanimoto", RogersTanimotoMetric.SINGLETON);
             sMETRICS.put("russellrao", RussellRaoMetric.SINGLETON);
             sMETRICS.put("sokalsneath", SokalSneathMetric.SINGLETON);
-            sMETRICS.put("sokalmichener", SokalMichenerMetric.SINGLETON);
             sMETRICS.put("yule", YuleMetric.SINGLETON);
+            sMETRICS.put("yulethreshold", YuleThresholdMetric.SINGLETON);
+            sMETRICS.put("yulehighbandthreshold", YuleHighBandThresholdMetric.SINGLETON);
         }
     }
 

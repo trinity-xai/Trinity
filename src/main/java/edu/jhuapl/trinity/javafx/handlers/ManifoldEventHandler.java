@@ -33,7 +33,6 @@ import edu.jhuapl.trinity.javafx.events.ManifoldEvent.ProjectionConfig;
 import edu.jhuapl.trinity.javafx.javafx3d.Manifold3D;
 import edu.jhuapl.trinity.javafx.renderers.ManifoldRenderer;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
-import edu.jhuapl.trinity.utils.clustering.ClusterMethod;
 import javafx.application.Platform;
 import javafx.event.EventHandler;
 import javafx.geometry.Point3D;
@@ -352,10 +351,8 @@ public class ManifoldEventHandler implements EventHandler<ManifoldEvent> {
         
         if (event.getEventType().equals(ManifoldEvent.NEW_CLUSTER_COLLECTION)) {
             ClusterCollection cc = (ClusterCollection) event.object1;
-            for(PointCluster cluster : cc.getClusters()) {
-                for (ManifoldRenderer renderer : manifoldRenderers) {
-                    renderer.addCluster(cluster);
-                }
+            for (ManifoldRenderer renderer : manifoldRenderers) {
+                renderer.addClusters(cc.getClusters());
             }
         } else if (event.getEventType().equals(ManifoldEvent.FIND_PROJECTION_CLUSTERS)) {
             ProjectionConfig pc = (ProjectionConfig) event.object1;

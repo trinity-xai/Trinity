@@ -44,5 +44,5 @@ public interface ManifoldRenderer {
 
     public void findClusters(ProjectionConfig pc);
 
-    public void addCluster(PointCluster pointCluster);
+    public void addClusters(List<PointCluster> clusters);
 }

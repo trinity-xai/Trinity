@@ -618,6 +618,7 @@ public class App extends Application {
         scene.getRoot().addEventHandler(ManifoldEvent.MANIFOLD_SPECULAR_COLOR, meh);
         scene.getRoot().addEventHandler(ManifoldEvent.MANIFOLD_WIREFRAME_COLOR, meh);
         scene.getRoot().addEventHandler(ManifoldEvent.FIND_PROJECTION_CLUSTERS, meh);
+        scene.getRoot().addEventHandler(ManifoldEvent.NEW_CLUSTER_COLLECTION, meh);
 //        meh.addManifoldRenderer(hyperspace3DPane);
         meh.addManifoldRenderer(projections3DPane);
 

@@ -2075,7 +2075,7 @@ public class Hyperspace3DPane extends StackPane implements
     }
 
     @Override
-    public void addCluster(PointCluster pointCluster) {
+    public void addClusters(List<PointCluster> clusters) {
     
     }
 }

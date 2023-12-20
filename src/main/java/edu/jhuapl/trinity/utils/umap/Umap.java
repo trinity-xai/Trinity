@@ -195,34 +195,7 @@ public class Umap {
             boolean isAngular = metric.isAngular();
 
             if (instances instanceof CsrMatrix) {
-//        final CsrMatrix csrInstances = instances.toCsr();
-//        // todo this is nonsense now, since metric cannot be a string at this point
-//        if (Sparse.SPARSE_NAMED_DISTANCES.containsKey(metric)) {
-//          distanceFunc = Sparse.SPARSE_NAMED_DISTANCES.get(metric);
-////          if (Sparse.sparse_need_n_features.contains(metric)) {
-////            metricKwds.put("n_features", instances.cols());
-////          }
-//        } else {
-//          throw new IllegalArgumentException("Metric " + metric + " not supported for sparse data");
-//        }
                 throw new UnsupportedOperationException();
-//        metric_nn_descent = Sparse.make_sparse_nn_descent(distanceFunc, tuple(metricKwds.values()));
-//
-//        int n_trees = 5 + (int) (Math.round(Math.pow(Y.rows(), 0.5) / 20.0));
-//        int n_iters = Math.max(5, (int) (Math.round(MathUtils.log2(Y.rows()))));
-//        if (verbose) {
-//          Utils.message("Building RP forest with " + n_trees + " trees");
-//        }
-//
-//        rpForest = RpTree.make_forest(X, nNeighbors, n_trees, random, angular);
-//        final int[][] leaf_array = RpTree.rptree_leaf_array(rpForest);
-//
-//        if (verbose) {
-//          Utils.message("NN descent for " + n_iters + " iterations");
-//        }
-//        final Object[] nn = NearestNeighborDescent.metric_nn_descent(Y.indices, Y.indptr, Y.data, Y.rows(), nNeighbors, random, /*max_candidates=*/60, /*rp_tree_init=*/true,     /*leaf_array=*/leaf_array,  /*n_iters=*/n_iters, verbose);
-//        knnIndices = (int[][]) nn[0];
-//        knnDists = (double[][]) nn[1];
             } else {
                 final NearestNeighborDescent metricNearestNeighborsDescent = threads == 1 ? new NearestNeighborDescent(metric) : new ParallelNearestNeighborDescent(metric, threads);
                 final int nTrees = 5 + (int) (Math.round(Math.pow(instances.rows(), 0.5) / 20.0));
