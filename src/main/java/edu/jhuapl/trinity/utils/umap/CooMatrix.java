@@ -39,15 +39,15 @@ import java.util.Arrays;
 class CooMatrix extends Matrix {
     private final int[] mRow;
     private final int[] mCol;
-    private final float[] mData;
+    private final double[] mData;
 
-    private static CooMatrix createWithTruncate(final float[] d, final int[] r, final int[] c, final int rows, final int cols, final int len) {
+    private static CooMatrix createWithTruncate(final double[] d, final int[] r, final int[] c, final int rows, final int cols, final int len) {
         return len == r.length
             ? new CooMatrix(d, r, c, rows, cols)
             : new CooMatrix(Arrays.copyOf(d, len), Arrays.copyOf(r, len), Arrays.copyOf(c, len), rows, cols);
     }
 
-    CooMatrix(final float[] vals, final int[] rows, final int[] cols, final int rowCount, final int colCount) {
+    CooMatrix(final double[] vals, final int[] rows, final int[] cols, final int rowCount, final int colCount) {
         super(rowCount, colCount);
         if (rows.length != cols.length || rows.length != vals.length) {
             throw new IllegalArgumentException();
@@ -84,7 +84,7 @@ class CooMatrix extends Matrix {
         final int u = mCol[a];
         mCol[a] = mCol[b];
         mCol[b] = u;
-        final float v = mData[a];
+        final double v = mData[a];
         mData[a] = mData[b];
         mData[b] = v;
     }
@@ -189,7 +189,7 @@ class CooMatrix extends Matrix {
             : (bc > 0 ? b : ac > 0 ? c : a);
     }
 
-    float[] data() {
+    double[] data() {
         return Arrays.copyOf(mData, mData.length);
     }
 
@@ -202,7 +202,7 @@ class CooMatrix extends Matrix {
     }
 
     @Override
-    float get(final int r, final int c) {
+    double get(final int r, final int c) {
         int left = 0;
         int right = mRow.length - 1;
         while (left <= right) {
@@ -232,14 +232,14 @@ class CooMatrix extends Matrix {
     }
 
     @Override
-    void set(final int row, final int col, final float val) {
+    void set(final int row, final int col, final double val) {
         throw new UnsupportedOperationException();
     }
 
     @Override
     boolean isFinite() {
-        for (final float v : mData) {
-            if (!Float.isFinite(v)) {
+        for (final double v : mData) {
+            if (!Double.isFinite(v)) {
                 return false;
             }
         }
@@ -277,7 +277,7 @@ class CooMatrix extends Matrix {
     @Override
     Matrix eliminateZeros() {
         int zeros = 0;
-        for (final float v : mData) {
+        for (final double v : mData) {
             if (v == 0) {
                 ++zeros;
             }
@@ -285,7 +285,7 @@ class CooMatrix extends Matrix {
         if (zeros > 0) {
             final int[] r = new int[mRow.length - zeros];
             final int[] c = new int[mRow.length - zeros];
-            final float[] d = new float[mRow.length - zeros];
+            final double[] d = new double[mRow.length - zeros];
             for (int k = 0, j = 0; k < mData.length; ++k) {
                 if (mData[k] != 0) {
                     r[j] = mRow[k];
@@ -319,7 +319,7 @@ class CooMatrix extends Matrix {
         final int maxNonZero = getMaxNonZeroSize();
         final int[] r = new int[maxNonZero];
         final int[] c = new int[maxNonZero];
-        final float[] d = new float[maxNonZero];
+        final double[] d = new double[maxNonZero];
         int i = 0;
         int j = 0;
         int k = 0;
@@ -348,7 +348,7 @@ class CooMatrix extends Matrix {
                     d[k++] = m.mData[j++];
                 } else {
                     assert ci == cj;
-                    final float s = mData[i++] + m.mData[j++];
+                    final double s = mData[i++] + m.mData[j++];
                     if (s != 0) {
                         r[k] = rj;
                         c[k] = cj;
@@ -383,7 +383,7 @@ class CooMatrix extends Matrix {
         final int maxNonZero = getMaxNonZeroSize();
         final int[] r = new int[maxNonZero];
         final int[] c = new int[maxNonZero];
-        final float[] d = new float[maxNonZero];
+        final double[] d = new double[maxNonZero];
         int i = 0;
         int j = 0;
         int k = 0;
@@ -412,7 +412,7 @@ class CooMatrix extends Matrix {
                     d[k++] = -m.mData[j++];
                 } else {
                     assert ci == cj;
-                    final float s = mData[i++] - m.mData[j++];
+                    final double s = mData[i++] - m.mData[j++];
                     if (s != 0) {
                         r[k] = rj;
                         c[k] = cj;
@@ -447,7 +447,7 @@ class CooMatrix extends Matrix {
         final int maxNonZero = Math.max(mRow.length, m.mRow.length);
         final int[] r = new int[maxNonZero];
         final int[] c = new int[maxNonZero];
-        final float[] d = new float[maxNonZero];
+        final double[] d = new double[maxNonZero];
         int i = 0;
         int j = 0;
         int k = 0;
@@ -468,7 +468,7 @@ class CooMatrix extends Matrix {
                     ++j;
                 } else {
                     assert ci == cj;
-                    final float s = mData[i++] * m.mData[j++];
+                    final double s = mData[i++] * m.mData[j++];
                     if (s != 0) {
                         r[k] = rj;
                         c[k] = cj;
@@ -488,10 +488,10 @@ class CooMatrix extends Matrix {
         // This product cannot have more non-zero entries than the input
         final int[] r = new int[mRow.length];
         final int[] c = new int[mCol.length];
-        final float[] d = new float[mData.length];
+        final double[] d = new double[mData.length];
         int j = 0;
         for (int k = 0; k < mRow.length; ++k) {
-            final float v = mData[k] * get(mCol[k], mRow[k]);
+            final double v = mData[k] * get(mCol[k], mRow[k]);
             if (v != 0) {
                 r[j] = mRow[k];
                 c[j] = mCol[k];
@@ -509,13 +509,13 @@ class CooMatrix extends Matrix {
         final int maxNonZero = getMaxNonZeroSize();
         final int[] r = new int[maxNonZero];
         final int[] c = new int[maxNonZero];
-        final float[] d = new float[maxNonZero];
+        final double[] d = new double[maxNonZero];
         int j = 0;
         for (int k = 0; k < mRow.length; ++k) {
             final int rk = mRow[k];
             final int ck = mCol[k];
-            final float tk = get(ck, rk);
-            final float v = mData[k] + tk;
+            final double tk = get(ck, rk);
+            final double v = mData[k] + tk;
             if (v != 0) {
                 r[j] = rk;
                 c[j] = ck;
@@ -541,7 +541,7 @@ class CooMatrix extends Matrix {
         }
         final int rows = rows();
         final int cols = m.cols();
-        final float[][] res = new float[rows][cols];
+        final double[][] res = new double[rows][cols];
         for (int k = 0; k < mData.length; ++k) {
             final int r = mRow[k];
             final int c = mCol[k];
@@ -555,8 +555,8 @@ class CooMatrix extends Matrix {
     }
 
     @Override
-    Matrix multiply(final float x) {
-        final float[] newData = new float[mData.length];
+    Matrix multiply(final double x) {
+        final double[] newData = new double[mData.length];
         for (int i = 0; i < newData.length; ++i) {
             newData[i] = mData[i] * x;
         }
@@ -573,10 +573,10 @@ class CooMatrix extends Matrix {
 
     @Override
     Matrix rowNormalize() {
-        final float[] d = new float[mData.length];
+        final double[] d = new double[mData.length];
         int k = 0;
         int row = -1;
-        float max = 0;
+        double max = 0;
         while (k < mRow.length) {
             if (mRow[k] != row) {
                 // Moving to a new row, compute max
@@ -603,7 +603,7 @@ class CooMatrix extends Matrix {
      * @param unknownDist The distance an unknown label (-1) is assumed to be from any point.
      * @param farDist     The distance between unmatched labels.
      */
-    void fastIntersection(final float[] target, final float unknownDist, final float farDist) {
+    void fastIntersection(final double[] target, final double unknownDist, final double farDist) {
         for (int nz = 0; nz < mRow.length; ++nz) {
             final int i = mRow[nz];
             final int j = mCol[nz];

@@ -25,7 +25,7 @@ package edu.jhuapl.trinity.utils.umap;
  * #L%
  */
 
-import edu.jhuapl.trinity.utils.umap.metric.Metric;
+import edu.jhuapl.trinity.utils.metric.Metric;
 
 import java.util.Random;
 import java.util.Set;
@@ -53,7 +53,7 @@ class NearestNeighborSearch {
                 if (index < 0) {
                     continue;
                 }
-                final float d = mDist.distance(data.row(index), queryPoints.row(i));
+                final double d = mDist.distance(data.row(index), queryPoints.row(i));
                 heap.push(i, d, index, true);
             }
         }
@@ -63,7 +63,7 @@ class NearestNeighborSearch {
         for (int i = 0; i < queryPoints.rows(); ++i) {
             final int[] indices = Utils.rejectionSample(nNeighbors, data.rows(), random);
             for (final int index : indices) {
-                final float d = mDist.distance(data.row(index), queryPoints.row(i));
+                final double d = mDist.distance(data.row(index), queryPoints.row(i));
                 heap.push(i, d, index, true);
             }
         }
@@ -89,7 +89,7 @@ class NearestNeighborSearch {
                     if (candidate == vertex || candidate == -1 || tried.contains(candidate)) {
                         continue;
                     }
-                    final float d = mDist.distance(data.row(candidate), queryPoints.row(i));
+                    final double d = mDist.distance(data.row(candidate), queryPoints.row(i));
                     initialization.uncheckedHeapPush(i, d, candidate, true);
                     tried.add(candidate);
                 }

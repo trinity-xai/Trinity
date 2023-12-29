@@ -20,6 +20,7 @@ package edu.jhuapl.trinity.javafx.components;
  * #L%
  */
 
+import edu.jhuapl.trinity.javafx.components.radial.CircleProgressIndicator;
 import javafx.animation.Interpolator;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;

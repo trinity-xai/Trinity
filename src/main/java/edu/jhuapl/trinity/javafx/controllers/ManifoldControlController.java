@@ -20,20 +20,25 @@ package edu.jhuapl.trinity.javafx.controllers;
  * #L%
  */
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import edu.jhuapl.trinity.App;
 import edu.jhuapl.trinity.data.Distance;
 import edu.jhuapl.trinity.data.FactorLabel;
 import edu.jhuapl.trinity.data.Manifold;
-import edu.jhuapl.trinity.javafx.components.DistanceListItem;
-import edu.jhuapl.trinity.javafx.components.ManifoldListItem;
+import edu.jhuapl.trinity.data.messages.UmapConfig;
+import edu.jhuapl.trinity.javafx.components.listviews.DistanceListItem;
+import edu.jhuapl.trinity.javafx.components.listviews.ManifoldListItem;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
+import edu.jhuapl.trinity.javafx.events.ManifoldEvent.ProjectionConfig;
 import edu.jhuapl.trinity.javafx.javafx3d.Manifold3D;
 import edu.jhuapl.trinity.utils.AnalysisUtils;
 import edu.jhuapl.trinity.utils.PCAConfig;
 import edu.jhuapl.trinity.utils.ResourceUtils;
+import edu.jhuapl.trinity.utils.clustering.ClusterMethod;
 import edu.jhuapl.trinity.utils.umap.Umap;
-import edu.jhuapl.trinity.utils.umap.metric.Metric;
+import edu.jhuapl.trinity.utils.metric.Metric;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Pos;
@@ -58,11 +63,16 @@ import javafx.stage.FileChooser;
 import javafx.util.Duration;
 
 import java.io.File;
+import java.io.IOException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
-
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import javafx.scene.control.SplitMenuButton;
+import javafx.scene.control.MenuItem;
+        
 /**
  * FXML Controller class
  *
@@ -107,7 +117,20 @@ public class ManifoldControlController implements Initializable {
     private CheckBox showWireframeCheckBox;
     @FXML
     private CheckBox showControlPointsCheckBox;
-
+    @FXML
+    private Spinner gmmIterationsSpinner;
+    @FXML
+    private Spinner gmmConvergenceSpinner;
+    @FXML
+    private Spinner gmmComponentsSpinner;
+    @FXML
+    private RadioButton diagonalRadioButton;
+    @FXML
+    private RadioButton fullCovarianceRadioButton;
+    ToggleGroup covarianceToggleGroup;
+    @FXML
+    private SplitMenuButton clusterMethodMenuButton;
+    
     //PCA Tab
     @FXML
     private RadioButton pcaRadioButton;
@@ -134,6 +157,8 @@ public class ManifoldControlController implements Initializable {
 
     //UMAP tab
     @FXML
+    private Slider targetWeightSlider;
+    @FXML
     private Slider repulsionSlider;
     @FXML
     private Slider minDistanceSlider;
@@ -151,6 +176,8 @@ public class ManifoldControlController implements Initializable {
     private Spinner negativeSampleRateSpinner;
     @FXML
     private Spinner localConnectivitySpinner;
+    @FXML
+    private Spinner thresholdSpinner;
     @FXML
     private ChoiceBox metricChoiceBox;
     @FXML
@@ -182,6 +209,7 @@ public class ManifoldControlController implements Initializable {
     boolean reactive = true;
     Umap latestUmapObject = null;
     File latestDir = new File(".");
+    ClusterMethod selectedMethod = ClusterMethod.KMEANS;
 
     /**
      * Initializes the controller class.
@@ -317,15 +345,18 @@ public class ManifoldControlController implements Initializable {
         metricChoiceBox.getSelectionModel().selectFirst();
 
         numComponentsSpinner.setValueFactory(
-            new SpinnerValueFactory.IntegerSpinnerValueFactory(2, 100, 3, 1));
+            new SpinnerValueFactory.IntegerSpinnerValueFactory(2, 50, 3, 1));
         numEpochsSpinner.setValueFactory(
             new SpinnerValueFactory.IntegerSpinnerValueFactory(25, 500, 200, 25));
         nearestNeighborsSpinner.setValueFactory(
-            new SpinnerValueFactory.IntegerSpinnerValueFactory(5, 100, 15, 5));
+            new SpinnerValueFactory.IntegerSpinnerValueFactory(5, 500, 15, 5));
         negativeSampleRateSpinner.setValueFactory(
-            new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 50, 5, 1));
+            new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 250, 5, 1));
         localConnectivitySpinner.setValueFactory(
-            new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 50, 1, 1));
+            new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 250, 1, 1));
+        thresholdSpinner.setValueFactory(
+            new SpinnerValueFactory.DoubleSpinnerValueFactory(0.001, 1.0, 0.001, 0.001));
+        thresholdSpinner.setEditable(true);
 
         hyperSourceGroup = new ToggleGroup();
         useHyperspaceButton.setToggleGroup(hyperSourceGroup);
@@ -333,6 +364,31 @@ public class ManifoldControlController implements Initializable {
     }
 
     private void setupHullControls() {
+        gmmComponentsSpinner.setValueFactory(
+            new SpinnerValueFactory.IntegerSpinnerValueFactory(2, 20, 5, 1));        
+
+        gmmIterationsSpinner.setValueFactory(
+            new SpinnerValueFactory.IntegerSpinnerValueFactory(10, 500, 50, 5));        
+
+        gmmConvergenceSpinner.setValueFactory(
+            new SpinnerValueFactory.DoubleSpinnerValueFactory(1e4, 1e12, 1e6, 100));        
+        
+        covarianceToggleGroup = new ToggleGroup();
+        diagonalRadioButton.setToggleGroup(covarianceToggleGroup);
+        fullCovarianceRadioButton.setToggleGroup(covarianceToggleGroup);        
+        
+        MenuItem kmeans = new MenuItem("KMeans++");
+        MenuItem exmax = new MenuItem("Expectation Maximization");
+        kmeans.setOnAction((e)-> {
+            selectedMethod = ClusterMethod.KMEANS;
+            clusterMethodMenuButton.setText(kmeans.getText());
+        });
+        exmax.setOnAction((e)-> {
+            selectedMethod = ClusterMethod.EX_MAX;
+            clusterMethodMenuButton.setText(exmax.getText());
+        });
+        clusterMethodMenuButton.getItems().addAll(kmeans, exmax);
+        
         //Get a reference to any Distances already collected
         List<ManifoldListItem> existingItems = new ArrayList<>();
         for (Manifold m : Manifold.getManifolds()) {
@@ -497,7 +553,21 @@ public class ManifoldControlController implements Initializable {
         }
         reactive = true;
     }
-
+    @FXML
+    public void findClusters() {
+        System.out.println("Find Clusters...");
+        ProjectionConfig pc = new ProjectionConfig();
+        pc.components = (int)gmmComponentsSpinner.getValue();
+        pc.clusterMethod = selectedMethod;
+        pc.useVisiblePoints = useVisibleRadioButton.isSelected();
+        pc.covariance = diagonalRadioButton.isSelected() 
+            ? ProjectionConfig.COVARIANCE_MODE.DIAGONAL 
+            : ProjectionConfig.COVARIANCE_MODE.FULL;
+        pc.tolerance = (double)gmmConvergenceSpinner.getValue();
+        pc.maxIterations = (int)gmmIterationsSpinner.getValue();
+        clusterMethodMenuButton.getScene().getRoot().fireEvent(
+            new ManifoldEvent(ManifoldEvent.FIND_PROJECTION_CLUSTERS, pc));        
+    }
     @FXML
     public void exportMatrix() {
         if (null != latestUmapObject) {
@@ -511,7 +581,79 @@ public class ManifoldControlController implements Initializable {
             System.out.println("UMAP object not yet established.");
         }
     }
-
+    @FXML
+    public void loadUmapConfig() {
+        FileChooser fc = new FileChooser();
+        fc.setTitle("Choose UMAP Config to load...");
+        if (!latestDir.isDirectory())
+            latestDir = new File(".");
+        fc.setInitialDirectory(latestDir);
+        File file = fc.showOpenDialog(scene.getWindow());
+        if (null != file) {
+            if (file.getParentFile().isDirectory())
+                latestDir = file;
+            ObjectMapper mapper = new ObjectMapper();
+            UmapConfig uc;
+            try {
+                uc = mapper.readValue(file, UmapConfig.class);
+                if(null != uc.getTargetWeight())
+                    targetWeightSlider.setValue(uc.getTargetWeight());
+                repulsionSlider.setValue(uc.getRepulsionStrength());
+                minDistanceSlider.setValue(uc.getMinDist());
+                spreadSlider.setValue(uc.getSpread());
+                opMixSlider.setValue(uc.getOpMixRatio());
+                numComponentsSpinner.getValueFactory().setValue(uc.getNumberComponents());
+                numEpochsSpinner.getValueFactory().setValue(uc.getNumberEpochs());
+                nearestNeighborsSpinner.getValueFactory().setValue(uc.getNumberNearestNeighbours());
+                negativeSampleRateSpinner.getValueFactory().setValue(uc.getNegativeSampleRate());
+                localConnectivitySpinner.getValueFactory().setValue(uc.getLocalConnectivity());
+                if(null != uc.getThreshold())
+                    thresholdSpinner.getValueFactory().setValue(uc.getThreshold());
+                metricChoiceBox.getSelectionModel().select(uc.getMetric());
+                verboseCheckBox.setSelected(uc.getVerbose());            
+            } catch (IOException ex) {
+                Logger.getLogger(ManifoldControlController.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }             
+    }    
+    @FXML
+    public void saveUmapConfig() {
+        FileChooser fc = new FileChooser();
+        fc.setTitle("Choose UMAP Config file output...");
+        fc.setInitialFileName("UmapConfig.json");
+        if (!latestDir.isDirectory())
+            latestDir = new File(".");
+        fc.setInitialDirectory(latestDir);
+        File file = fc.showSaveDialog(scene.getWindow());
+        if (null != file) {
+            if (file.getParentFile().isDirectory())
+                latestDir = file;
+            UmapConfig uc = new UmapConfig();
+            uc.setTargetWeight((float) targetWeightSlider.getValue());
+            uc.setRepulsionStrength((float) repulsionSlider.getValue());
+            uc.setMinDist((float) minDistanceSlider.getValue());
+            uc.setSpread((float) spreadSlider.getValue());
+            uc.setOpMixRatio((float) opMixSlider.getValue());
+            uc.setNumberComponents((int) numComponentsSpinner.getValue());
+            uc.setNumberEpochs((int) numEpochsSpinner.getValue());
+            uc.setNumberNearestNeighbours((int) nearestNeighborsSpinner.getValue());
+            uc.setNegativeSampleRate((int) negativeSampleRateSpinner.getValue());
+            uc.setLocalConnectivity((int) localConnectivitySpinner.getValue());
+            uc.setThreshold((double) thresholdSpinner.getValue());
+            uc.setMetric((String) metricChoiceBox.getValue());
+            uc.setVerbose(verboseCheckBox.isSelected());            
+            ObjectMapper mapper = new ObjectMapper();
+            try {
+                
+                mapper.writeValue(file, uc);
+//                scene.getRoot().fireEvent(new ManifoldEvent(
+//                    ManifoldEvent.SAVE_PROJECTION_DATA, file));
+            } catch (IOException ex) {
+                Logger.getLogger(ManifoldControlController.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }            
+    }
+    
     @FXML
     public void saveProjections() {
         FileChooser fc = new FileChooser();
@@ -545,7 +687,6 @@ public class ManifoldControlController implements Initializable {
                 endIndex = -1;
         }
 
-
         PCAConfig config = new PCAConfig(source, method,
             (int) numPcaComponentsSpinner.getValue(), (double) pcaScalingSpinner.getValue(),
             startIndex, endIndex);
@@ -553,12 +694,12 @@ public class ManifoldControlController implements Initializable {
             ManifoldEvent.POINT_SOURCE.HYPERSURFACE : ManifoldEvent.POINT_SOURCE.HYPERSPACE;
         scene.getRoot().fireEvent(new ManifoldEvent(
             ManifoldEvent.GENERATE_NEW_PCA, config, pointSource));
-
     }
 
     @FXML
     public void project() {
         Umap umap = new Umap();
+        umap.setTargetWeight((float) targetWeightSlider.getValue());
         umap.setRepulsionStrength((float) repulsionSlider.getValue());
         umap.setMinDist((float) minDistanceSlider.getValue());
         umap.setSpread((float) spreadSlider.getValue());
@@ -568,6 +709,7 @@ public class ManifoldControlController implements Initializable {
         umap.setNumberNearestNeighbours((int) nearestNeighborsSpinner.getValue());
         umap.setNegativeSampleRate((int) negativeSampleRateSpinner.getValue());
         umap.setLocalConnectivity((int) localConnectivitySpinner.getValue());
+        umap.setThreshold((double) thresholdSpinner.getValue());
         umap.setMetric((String) metricChoiceBox.getValue());
         umap.setVerbose(verboseCheckBox.isSelected());
         ManifoldEvent.POINT_SOURCE pointSource = useHypersurfaceButton.isSelected() ?
@@ -575,7 +717,6 @@ public class ManifoldControlController implements Initializable {
         scene.getRoot().fireEvent(new ManifoldEvent(
             ManifoldEvent.GENERATE_NEW_UMAP, umap, pointSource));
         latestUmapObject = umap;
-
     }
 
     @FXML

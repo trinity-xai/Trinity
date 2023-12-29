@@ -41,10 +41,6 @@ public class FeatureVector extends MessageData {
     //<editor-fold defaultstate="collapsed" desc="JSON Payload">
     /*
     '{
-        "version": "0.1",
-        "component": "yolov4_hagerstown",
-        "componentType": "neural_network",
-        "componentName": "yolov4",
         "messageType": "feature_vector",
         "topic": "some_topic",
         "messageId": 0,
@@ -53,18 +49,6 @@ public class FeatureVector extends MessageData {
             0.6323170694189965, 0.20112482321095512, -0.0770502704073328,
             -0.018055872253030292, 0.08990142832758276, 0.14425006537440124,
             -0.30635162612534406, -0.04588245408916634, 0.37569343542885386,
-            0.08211227109965555, -0.24560538018977932, -0.17276225757375335,
-            0.1307694902388548, 0.4419011504572875, -0.5020043352557712,
-            -0.046799799883738835, 0.3815933000031661, 0.134505902964418,
-            -0.3698586655698774, -0.041438043754909275, 0.637041131769756,
-            0.14028671697602105, -0.31694963359035455, -0.2765366812697112,
-            0.0033965453067306304, 0.5179140061417558, -0.07333959003297379,
-            -0.23864149568712367, 0.1097645008205511, 0.05210941811282495,
-            -0.2016919565475791, -0.3123633429778874, 0.0613393046929271,
-            0.3052135047986999, 0.08832894003035324, -0.19010952300435835,
-            -0.01591630873637791, 0.05026305526489366, 0.09842126297197364,
-            -0.04330519967228015, -0.15578819099574628, -0.04376947764521709,
-            0.0038256149127671598, -0.04298669635980105, -0.2368775150840421,
             -0.15806087484089912, 0.0673835604499377, 0.17998157972463474,
             -0.01611924502337739, -0.24604972532815875, -0.01560032825534631,
             0.3946917081600188, -0.12442754943149016, -0.18011471923351433,
@@ -83,7 +67,8 @@ public class FeatureVector extends MessageData {
         "bbox": [0.0, 0, 16.0, 0],
         "imageId": 7952,
         "frameId": 0,
-        "imageURL": "/media/smartsensor/Data/video_31_frame_41455.jpg",
+        "imageURL": "/media/images/video_10_frame_666.jpg",
+        "mediaURL": "/media/localrecordings/video_10_segment_8.wav",
         "layer": 3
     }
     */
@@ -97,6 +82,7 @@ public class FeatureVector extends MessageData {
     private long imageId;
     private long frameId;
     private String imageURL;
+    private String mediaURL;
     private double score;
     private double pfa;
     private int layer;
@@ -405,5 +391,19 @@ public class FeatureVector extends MessageData {
      */
     public void setText(String text) {
         this.text = text;
+    }
+
+    /**
+     * @return the mediaURL
+     */
+    public String getMediaURL() {
+        return mediaURL;
+    }
+
+    /**
+     * @param mediaURL the mediaURL to set
+     */
+    public void setMediaURL(String mediaURL) {
+        this.mediaURL = mediaURL;
     }
 }

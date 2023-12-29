@@ -21,7 +21,7 @@ package edu.jhuapl.trinity.javafx.components.panes;
  */
 
 import edu.jhuapl.trinity.data.Manifold;
-import edu.jhuapl.trinity.javafx.components.PointListItem;
+import edu.jhuapl.trinity.javafx.components.listviews.PointListItem;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.Manifold3D;
 import edu.jhuapl.trinity.utils.ResourceUtils;

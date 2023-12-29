@@ -48,7 +48,7 @@ import java.text.NumberFormat;
 import java.util.Map.Entry;
 
 /**
- * @author phillsm1
+ * @author Birdasaur
  */
 public class FeatureVectorCallout extends VBox {
     public static double CHIP_FIT_WIDTH = 200;
@@ -56,14 +56,16 @@ public class FeatureVectorCallout extends VBox {
     public static double IMAGE_FIT_WIDTH = 200;
     public String imageryBasePath = "imagery/";
 
-    public static Callout createByShape3D(Shape3D shape3D, FeatureVector featureVector, SubScene subScene) {
-        FeatureVectorCallout mainTitleVBox = new FeatureVectorCallout(shape3D, featureVector, subScene);
+    public static Callout createByShape3D(Shape3D shape3D, 
+        FeatureVector featureVector, SubScene subScene, String imageryBasePath) {
+        FeatureVectorCallout featureVectorCallout = new FeatureVectorCallout(shape3D, 
+            featureVector, subScene, imageryBasePath);
         Point2D p2D = JavaFX3DUtils.getTransformedP2D(shape3D, subScene, Callout.DEFAULT_HEAD_RADIUS + 5);
         Callout infoCallout = CalloutBuilder.create()
             .headPoint(p2D.getX(), p2D.getY())
             .leaderLineToPoint(p2D.getX() - 100, p2D.getY() - 150)
             .endLeaderLineRight()
-            .mainTitle(featureVector.getLabel(), mainTitleVBox)
+            .mainTitle(featureVector.getLabel(), featureVectorCallout)
             .pause(10)
             .build();
 
@@ -82,14 +84,16 @@ public class FeatureVectorCallout extends VBox {
         infoCallout.setManaged(false);
 
         subScene.getScene().addEventHandler(ApplicationEvent.SET_IMAGERY_BASEPATH, e -> {
-            mainTitleVBox.imageryBasePath = (String) e.object;
-            System.out.println("Callout image base path set to " + mainTitleVBox.imageryBasePath);
+            featureVectorCallout.imageryBasePath = (String) e.object;
+            System.out.println("Callout image base path set to " + featureVectorCallout.imageryBasePath);
         });
 
         return infoCallout;
     }
 
-    public FeatureVectorCallout(Shape3D shape3D, FeatureVector featureVector, SubScene subScene) {
+    public FeatureVectorCallout(Shape3D shape3D, FeatureVector featureVector, 
+        SubScene subScene, String imageryBasePath) {
+        this.imageryBasePath = imageryBasePath;
         ImageView iv = loadImageView(featureVector, featureVector.isBBoxValid());
         String bboxStr = "";
         if (null != featureVector.getBbox())
@@ -101,6 +105,7 @@ public class FeatureVectorCallout extends VBox {
         iv.setFitWidth(CHIP_FIT_WIDTH);
         iv.setFitHeight(CHIP_FIT_WIDTH);
 //@TODO SMP This feature has been found to be more problematic than beneficial
+//However its pretty friggen cool so hopefully we can leverage it later
 //        iv.setOnMouseClicked(e -> {
 //            if (e.getClickCount() > 1) {
 //                //add radial entity
@@ -194,7 +199,23 @@ public class FeatureVectorCallout extends VBox {
         textTP.setText("Text");
         textTP.setExpanded(false);
 
-        getChildren().addAll(imageTP, textTP, detailsTP, metaTP);
+        ImageView openMediaIV = ResourceUtils.loadIcon("forward", 30);
+        VBox openMediaVBox = new VBox(openMediaIV);
+        openMediaVBox.setOnMouseEntered(e -> openMediaVBox.setEffect(glow));
+        openMediaVBox.setOnMouseExited(e -> openMediaVBox.setEffect(null));
+        openMediaVBox.setOnMouseClicked(e -> {
+            openMediaVBox.getScene().getRoot().fireEvent(new ApplicationEvent(
+                ApplicationEvent.SHOW_WAVEFORM_PANE, featureVector.getMediaURL()));
+        });
+        HBox mediaHBox = new HBox(15, openMediaVBox);
+        mediaHBox.setAlignment(Pos.TOP_LEFT);
+        VBox mediaVBox = new VBox(5, new Label(featureVector.getMediaURL()), mediaHBox);
+        TitledPane mediaTP = new TitledPane();
+        mediaTP.setContent(mediaVBox);
+        mediaTP.setText("Media");
+        mediaTP.setExpanded(false);
+        
+        getChildren().addAll(imageTP, mediaTP, textTP, detailsTP, metaTP);
         setSpacing(3);
         setPrefWidth(250);
         setPrefHeight(100);

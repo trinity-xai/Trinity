@@ -22,6 +22,7 @@ package edu.jhuapl.trinity.javafx.javafx3D;
 
 import edu.jhuapl.trinity.javafx.javafx3d.animated.BillBoard;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.BillboardNode.BillboardMode;
+import edu.jhuapl.trinity.javafx.javafx3d.particle.AgingParticle;
 import edu.jhuapl.trinity.javafx.javafx3d.particle.Particle;
 import edu.jhuapl.trinity.javafx.javafx3d.particle.SimpleParticleSystem;
 import edu.jhuapl.trinity.javafx.javafx3d.particle.Smoke;
@@ -39,8 +40,11 @@ import javafx.scene.Scene;
 import javafx.scene.SceneAntialiasing;
 import javafx.scene.SubScene;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.Label;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Spinner;
+import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.effect.BlendMode;
 import javafx.scene.image.Image;
@@ -260,7 +264,18 @@ public class ParticleTest extends Application {
             }
         });
 
-
+        Spinner<Double> gravitySpinner = new Spinner(
+            new SpinnerValueFactory.DoubleSpinnerValueFactory(-1.0, 1.0, -0.01, 0.005));
+//        gravitySpinner.setEditable(true);
+        //whenever the spinner value is changed...
+        gravitySpinner.valueProperty().addListener(e -> {
+            smoke.gravity = gravitySpinner.getValue().floatValue();
+            for(Object object : particleSystem.getParticleArray()) {
+                AgingParticle p = (AgingParticle)object;
+                p.gravity = gravitySpinner.getValue().floatValue();
+            }
+        });        
+        
         VBox vbox = new VBox(10,
             particleTimerCheckBox,
             spawnParticlesCheckBox,
@@ -268,7 +283,8 @@ public class ParticleTest extends Application {
             blendModeCheckBox,
             viewOrderCheckBox,
             activeCheckBox,
-            new HBox(5, sphericalRadioButton, cylinderRadioButton)
+            new HBox(5, sphericalRadioButton, cylinderRadioButton),
+            new VBox(new Label("Gravity"),gravitySpinner)
         );
         ScrollPane scrollPane = new ScrollPane(vbox);
         StackPane.setAlignment(vbox, Pos.BOTTOM_LEFT);

@@ -35,7 +35,7 @@ import java.util.Arrays;
  */
 public class DefaultMatrix extends Matrix {
 
-    private final float[][] mData;
+    private final double[][] mData;
 
     /**
      * Construct a matrix backed by the given array.  Note the array is NOT copied, so that
@@ -43,7 +43,7 @@ public class DefaultMatrix extends Matrix {
      *
      * @param matrix matrix values
      */
-    DefaultMatrix(final float[][] matrix) {
+    DefaultMatrix(final double[][] matrix) {
         super(matrix.length, matrix[0].length);
         mData = matrix;
     }
@@ -55,24 +55,24 @@ public class DefaultMatrix extends Matrix {
      * @param cols number of columns
      */
     DefaultMatrix(final int rows, final int cols) {
-        this(new float[rows][cols]);
+        this(new double[rows][cols]);
     }
 
     @Override
-    float get(final int row, final int col) {
+    double get(final int row, final int col) {
         return mData[row][col];
     }
 
     @Override
-    void set(final int row, final int col, final float val) {
+    void set(final int row, final int col, final double val) {
         mData[row][col] = val;
     }
 
     @Override
     boolean isFinite() {
-        for (final float[] row : mData) {
-            for (final float v : row) {
-                if (!Float.isFinite(v)) {
+        for (final double[] row : mData) {
+            for (final double v : row) {
+                if (!Double.isFinite(v)) {
                     return false;
                 }
             }
@@ -82,7 +82,7 @@ public class DefaultMatrix extends Matrix {
 
     @Override
     Matrix copy() {
-        final float[][] copy = new float[mData.length][];
+        final double[][] copy = new double[mData.length][];
         for (int k = 0; k < copy.length; ++k) {
             copy[k] = Arrays.copyOf(mData[k], mData[k].length);
         }
@@ -90,12 +90,12 @@ public class DefaultMatrix extends Matrix {
     }
 
     @Override
-    float[][] toArray() {
+    double[][] toArray() {
         return mData;
     }
 
     @Override
-    float[] row(int row) {
+    double[] row(int row) {
         return mData[row];
     }
 

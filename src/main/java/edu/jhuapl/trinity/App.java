@@ -25,9 +25,9 @@ import edu.jhuapl.trinity.data.FactorLabel;
 import edu.jhuapl.trinity.data.files.FeatureCollectionFile;
 import edu.jhuapl.trinity.data.messages.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.FeatureVector;
-import edu.jhuapl.trinity.javafx.components.CircleProgressIndicator;
+import edu.jhuapl.trinity.javafx.components.radial.CircleProgressIndicator;
 import edu.jhuapl.trinity.javafx.components.MatrixOverlay;
-import edu.jhuapl.trinity.javafx.components.ProgressStatus;
+import edu.jhuapl.trinity.javafx.components.radial.ProgressStatus;
 import edu.jhuapl.trinity.javafx.components.panes.Shape3DControlPane;
 import edu.jhuapl.trinity.javafx.components.panes.TextPane;
 import edu.jhuapl.trinity.javafx.components.panes.TrajectoryTrackerPane;
@@ -106,7 +106,7 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import static edu.jhuapl.trinity.javafx.components.panes.LitPathPane.slideInPane;
+import edu.jhuapl.trinity.javafx.components.panes.WaveformPane;
 
 public class App extends Application {
 
@@ -124,6 +124,7 @@ public class App extends Application {
     Projections3DPane projections3DPane;
     TrajectoryTrackerPane trajectoryTrackerPane;
     TextPane textConsolePane;
+    WaveformPane waveformPane;
     Shape3DControlPane shape3DControlPane;
     CircleProgressIndicator circleSpinner;
 
@@ -459,12 +460,26 @@ public class App extends Application {
             }
             if (!pathPane.getChildren().contains(textConsolePane)) {
                 pathPane.getChildren().add(textConsolePane);
-                slideInPane(textConsolePane);
+                textConsolePane.slideInPane();
             } else {
                 textConsolePane.show();
             }
             if (null != e.object) {
                 Platform.runLater(() -> textConsolePane.setText((String) e.object));
+            }
+        });
+        scene.addEventHandler(ApplicationEvent.SHOW_WAVEFORM_PANE, e -> {
+            if (null == waveformPane) {
+                waveformPane = new WaveformPane(scene, pathPane);
+            }
+            if (!pathPane.getChildren().contains(waveformPane)) {
+                pathPane.getChildren().add(waveformPane);
+                waveformPane.slideInPane();
+            } else {
+                waveformPane.show();
+            }
+            if (null != e.object) {
+                Platform.runLater(() -> waveformPane.setWaveform((File) e.object));
             }
         });
 
@@ -474,7 +489,7 @@ public class App extends Application {
             }
             if (!pathPane.getChildren().contains(trajectoryTrackerPane)) {
                 pathPane.getChildren().add(trajectoryTrackerPane);
-                slideInPane(trajectoryTrackerPane);
+                trajectoryTrackerPane.slideInPane();
             } else {
                 trajectoryTrackerPane.show();
             }
@@ -559,7 +574,7 @@ public class App extends Application {
             }
             if (!pathPane.getChildren().contains(shape3DControlPane)) {
                 pathPane.getChildren().add(shape3DControlPane);
-                slideInPane(shape3DControlPane);
+                shape3DControlPane.slideInPane();
             } else {
                 shape3DControlPane.show();
             }
@@ -602,13 +617,11 @@ public class App extends Application {
         scene.getRoot().addEventHandler(ManifoldEvent.MANIFOLD_DIFFUSE_COLOR, meh);
         scene.getRoot().addEventHandler(ManifoldEvent.MANIFOLD_SPECULAR_COLOR, meh);
         scene.getRoot().addEventHandler(ManifoldEvent.MANIFOLD_WIREFRAME_COLOR, meh);
+        scene.getRoot().addEventHandler(ManifoldEvent.FIND_PROJECTION_CLUSTERS, meh);
+        scene.getRoot().addEventHandler(ManifoldEvent.NEW_CLUSTER_COLLECTION, meh);
 //        meh.addManifoldRenderer(hyperspace3DPane);
         meh.addManifoldRenderer(projections3DPane);
 
-//        neh = new NeuralEventHandler();
-//        scene.getRoot().addEventHandler(NeuralEvent.NEW_NEURAL_TRIAL, neh);
-//        scene.getRoot().addEventHandler(NeuralEvent.NEURAL_TRIAL_LIST, neh);
-//        neh.addNeuralRenderer(hypersurface3DPane);
         smeh = new SemanticMapEventHandler(false);
         scene.getRoot().addEventHandler(SemanticMapEvent.NEW_SEMANTIC_MAP, smeh);
 //        scene.getRoot().addEventHandler(SemanticMapEvent.LOCATE_FEATURE_VECTOR, smeh);
@@ -626,7 +639,6 @@ public class App extends Application {
             desktopPane.getChildren().remove(covalentEvent.pathPane);
         });
         System.out.println("Establishing Messaging Feed...");
-        //animatedConsoleText.animate("Establishing Messaging Feed...");
         processor = new MessageProcessor(scene);
         subscriberConfig = new ZeroMQSubscriberConfig(
             "ZeroMQ Subscriber", "Testing ZeroMQFeedManager.",
@@ -708,7 +720,6 @@ public class App extends Application {
             }
         } else {
             //filter to only use visible points
-            //@TODO SMP || FeatureLayer.visibilityByIndex(fv.getLayer());
             originalFC.setFeatures(
                 hyperspace3DPane.getAllFeatureVectors().stream().filter(fv -> {
                     return FactorLabel.visibilityByLabel(fv.getLabel());
@@ -819,6 +830,16 @@ public class App extends Application {
             && e.getCode().equals(KeyCode.C)) {
             shutdown(false);
         }
+        //@DEBUG SMP
+        if (e.isAltDown() && e.isControlDown() && e.getCode().equals(KeyCode.A)) {
+           stage.getScene().getRoot().fireEvent(
+                new ApplicationEvent(ApplicationEvent.SHOW_WAVEFORM_PANE));
+        }
+        if (e.isAltDown() && e.isControlDown() && e.getCode().equals(KeyCode.T)) {
+           stage.getScene().getRoot().fireEvent(
+                new ApplicationEvent(ApplicationEvent.SHOW_TEXT_CONSOLE));
+        }
+        
         if (e.isAltDown() && e.getCode().equals(KeyCode.N)) {
             matrixShowing = !matrixShowing;
             if (!matrixShowing) {

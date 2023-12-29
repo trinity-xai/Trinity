@@ -33,10 +33,8 @@ import java.util.List;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class GaussianMixture extends MessageData {
     public static enum COVARIANCE_MODE {
-        DIAG, FULL
-    }
-
-    ;
+        DIAGONAL, FULL
+    };
     public static final String TYPESTRING = "gaussian_mixture";
     //<editor-fold defaultstate="collapsed" desc="JSON Payload">
     /*

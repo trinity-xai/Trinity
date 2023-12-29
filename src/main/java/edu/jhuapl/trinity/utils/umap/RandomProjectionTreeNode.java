@@ -35,11 +35,11 @@ class RandomProjectionTreeNode {
 
     private final int[] mIndices;
     private final Hyperplane mHyperplane;
-    private final Float mOffset;
+    private final Double mOffset;
     private final RandomProjectionTreeNode mLeftChild;
     private final RandomProjectionTreeNode mRightChild;
 
-    RandomProjectionTreeNode(final int[] indices, final Hyperplane hyperplane, final Float offset, final RandomProjectionTreeNode leftChild, final RandomProjectionTreeNode rightChild) {
+    RandomProjectionTreeNode(final int[] indices, final Hyperplane hyperplane, final Double offset, final RandomProjectionTreeNode leftChild, final RandomProjectionTreeNode rightChild) {
         mIndices = indices;
         mHyperplane = hyperplane;
         mOffset = offset;
@@ -59,7 +59,7 @@ class RandomProjectionTreeNode {
         return isLeaf() ? 1 : mLeftChild.numLeaves() + mRightChild.numLeaves();
     }
 
-    private int[] recursiveFlatten(final Object hyperplanes, final float[] offsets, final int[][] children, final int[][] indices, final int nodeNum, final int leafNum) {
+    private int[] recursiveFlatten(final Object hyperplanes, final double[] offsets, final int[][] children, final int[][] indices, final int nodeNum, final int leafNum) {
         if (isLeaf()) {
             children[nodeNum] = new int[]{-leafNum, -1};
             //indices[leafNum, :tree.getIndices().shape[0]] =tree.getIndices();
@@ -68,10 +68,10 @@ class RandomProjectionTreeNode {
         } else {
             if (mHyperplane.shape().length > 1) {
                 // sparse case
-                ((float[][][]) hyperplanes)[nodeNum] = new float[][]{mHyperplane.data()}; // todo dubious
+                ((double[][][]) hyperplanes)[nodeNum] = new double[][]{mHyperplane.data()}; // todo dubious
                 //hyperplanes[nodeNum][:, :tree.getHyperplane().shape[1]] =tree.getHyperplane();
             } else {
-                ((float[][]) hyperplanes)[nodeNum] = mHyperplane.data();
+                ((double[][]) hyperplanes)[nodeNum] = mHyperplane.data();
             }
             offsets[nodeNum] = mOffset;
             final int[] flattenInfo = mLeftChild.recursiveFlatten(hyperplanes, offsets, children, indices, nodeNum + 1, leafNum);
@@ -97,11 +97,11 @@ class RandomProjectionTreeNode {
         if (mHyperplane.shape().length > 1) {
             // sparse case
             final int maxHyperplaneNnz = maxSparseHyperplaneSize();
-            hyperplanes = new float[nNodes][mHyperplane.shape()[0]][maxHyperplaneNnz];
+            hyperplanes = new double[nNodes][mHyperplane.shape()[0]][maxHyperplaneNnz];
         } else {
-            hyperplanes = new float[nNodes][mHyperplane.shape()[0]];
+            hyperplanes = new double[nNodes][mHyperplane.shape()[0]];
         }
-        final float[] offsets = new float[nNodes];
+        final double[] offsets = new double[nNodes];
         final int[][] children = new int[nNodes][];
         final int[][] indices = new int[numLeaves][];
         recursiveFlatten(hyperplanes, offsets, children, indices, 0, 0);

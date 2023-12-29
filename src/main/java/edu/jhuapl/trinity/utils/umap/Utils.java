@@ -112,12 +112,12 @@ final class Utils {
      * @param vec vector
      * @return L2 norm
      */
-    static float norm(final float[] vec) {
-        float result = 0;
-        for (final float v : vec) {
+    static double norm(final double[] vec) {
+        double result = 0;
+        for (final double v : vec) {
             result += v * v;
         }
-        return (float) Math.sqrt(result);
+        return (double) Math.sqrt(result);
     }
 
     /**
@@ -251,9 +251,9 @@ final class Utils {
      * @return array, shape <code>(nSamples, nNeighbors)</code>
      * The corresponding submatrix.
      */
-    static float[][] submatrix(Matrix matrix, int[][] indicesCol, int nNeighbors) {
+    static double[][] submatrix(Matrix matrix, int[][] indicesCol, int nNeighbors) {
         final int nSamplesTransform = matrix.rows();
-        final float[][] submat = new float[nSamplesTransform][nNeighbors];
+        final double[][] submat = new double[nSamplesTransform][nNeighbors];
         for (int i = 0; i < nSamplesTransform; ++i) {
             for (int j = 0; j < nNeighbors; ++j) {
                 submat[i][j] = matrix.get(i, indicesCol[i][j]);

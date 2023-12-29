@@ -38,9 +38,9 @@ class CsrMatrix extends Matrix {
 
     private final int[] mIndptr;  // indptr[row] to indptr[row + 1] locations of cols in indices
     private final int[] mIndices; // positions of actual data
-    private final float[] mData;
+    private final double[] mData;
 
-    CsrMatrix(final float[] data, final int[] indptr, final int[] indices, final int rowCount, final int colCount) {
+    CsrMatrix(final double[] data, final int[] indptr, final int[] indices, final int rowCount, final int colCount) {
         super(rowCount, colCount);
         mIndptr = indptr;
         mIndices = indices;
@@ -48,7 +48,7 @@ class CsrMatrix extends Matrix {
     }
 
     @Override
-    float get(final int row, final int col) {
+    double get(final int row, final int col) {
         final int colStart = mIndptr[row];
         final int colEnd = mIndptr[row + 1];
         for (int p = colStart; p < colEnd; ++p) {
@@ -60,14 +60,14 @@ class CsrMatrix extends Matrix {
     }
 
     @Override
-    void set(final int row, final int col, final float val) {
+    void set(final int row, final int col, final double val) {
         throw new UnsupportedOperationException();
     }
 
     @Override
     boolean isFinite() {
-        for (final float v : mData) {
-            if (!Float.isFinite(v)) {
+        for (final double v : mData) {
+            if (!Double.isFinite(v)) {
                 return false;
             }
         }
@@ -113,8 +113,8 @@ class CsrMatrix extends Matrix {
     }
 
     @Override
-    Matrix multiply(final float x) {
-        final float[] newData = Arrays.copyOf(mData, mData.length);
+    Matrix multiply(final double x) {
+        final double[] newData = Arrays.copyOf(mData, mData.length);
         for (int i = 0; i < newData.length; ++i) {
             newData[i] *= x;
         }
@@ -123,9 +123,9 @@ class CsrMatrix extends Matrix {
 
     @Override
     Matrix rowNormalize() {
-        final float[] d = new float[mData.length];
+        final double[] d = new double[mData.length];
         for (int row = 0; row < rows(); ++row) {
-            float max = mData[mIndptr[row]];
+            double max = mData[mIndptr[row]];
             for (int j = mIndptr[row] + 1; j < mIndptr[row + 1]; ++j) {
                 max = Math.max(max, mData[j]);
             }
@@ -139,9 +139,9 @@ class CsrMatrix extends Matrix {
 
     @Override
     Matrix l1Normalize() {
-        final float[] d = new float[mData.length];
+        final double[] d = new double[mData.length];
         for (int row = 0; row < rows(); ++row) {
-            float l1 = 0;
+            double l1 = 0;
             for (int j = mIndptr[row]; j < mIndptr[row + 1]; ++j) {
                 l1 += Math.abs(mData[j]);
             }
@@ -165,8 +165,8 @@ class CsrMatrix extends Matrix {
         return res;
     }
 
-    float[][] reshapeWeights(final int rows, final int cols) {
-        final float[][] res = new float[rows][cols];
+    double[][] reshapeWeights(final int rows, final int cols) {
+        final double[][] res = new double[rows][cols];
         for (int row = 0; row < rows; ++row) {
             final int end = mIndptr[row + 1];
             for (int col = 0, pos = mIndptr[row]; col < cols && pos < end; ++col, ++pos) {
@@ -176,26 +176,26 @@ class CsrMatrix extends Matrix {
         return res;
     }
 
-    void intersect(final CsrMatrix other, final CooMatrix result, final float mixWeight) {
+    void intersect(final CsrMatrix other, final CooMatrix result, final double mixWeight) {
 
-        final float leftMin = Math.max(MathUtils.min(mData) / 2, 1.0e-8F);
-        final float rightMin = Math.max(MathUtils.min(other.mData) / 2, 1.0e-8F);
+        final double leftMin = Math.max(MathUtils.min(mData) / 2, 1.0e-8F);
+        final double rightMin = Math.max(MathUtils.min(other.mData) / 2, 1.0e-8F);
 
         final int[] row = result.row();
         final int[] col = result.col();
-        final float[] data = result.data();
+        final double[] data = result.data();
         for (int idx = 0; idx < row.length; ++idx) {
             final int i = row[idx];
             final int j = col[idx];
 
-            float leftVal = leftMin;
+            double leftVal = leftMin;
             for (int k = mIndptr[i]; k < mIndptr[i + 1]; ++k) {
                 if (mIndices[k] == j) {
                     leftVal = mData[k];
                 }
             }
 
-            float rightVal = rightMin;
+            double rightVal = rightMin;
             for (int k = other.mIndptr[i]; k < other.mIndptr[i + 1]; ++k) {
                 if (other.mIndices[k] == j) {
                     rightVal = other.mData[k];
@@ -203,11 +203,11 @@ class CsrMatrix extends Matrix {
             }
 
             if (leftVal > leftMin || rightVal > rightMin) {
-                final float f;
+                final double f;
                 if (mixWeight < 0.5) {
-                    f = (float) (leftVal * Math.pow(rightVal, mixWeight / (1.0 - mixWeight)));
+                    f = (double) (leftVal * Math.pow(rightVal, mixWeight / (1.0 - mixWeight)));
                 } else {
-                    f = (float) (Math.pow(leftVal, (1.0 - mixWeight) / mixWeight) * rightVal);
+                    f = (double) (Math.pow(leftVal, (1.0 - mixWeight) / mixWeight) * rightVal);
                 }
                 data[idx] = f;
             }

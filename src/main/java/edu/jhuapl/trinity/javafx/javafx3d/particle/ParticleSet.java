@@ -61,7 +61,7 @@ public class ParticleSet {
         this(particleType, new Point3D(0, 0, 0));
     }
 
-    public ParticleSet(final Class<? extends Particle> particleType, Point3D spawnPoint) {
+    public ParticleSet(Class<? extends Particle> particleType, Point3D spawnPoint) {
         this.particleType = particleType;
         this.spawnPoint = spawnPoint;
         try {

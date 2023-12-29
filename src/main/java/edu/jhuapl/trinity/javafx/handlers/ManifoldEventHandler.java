@@ -23,10 +23,12 @@ package edu.jhuapl.trinity.javafx.handlers;
 import edu.jhuapl.trinity.App;
 import edu.jhuapl.trinity.data.Manifold;
 import edu.jhuapl.trinity.data.files.ManifoldDataFile;
+import edu.jhuapl.trinity.data.messages.ClusterCollection;
 import edu.jhuapl.trinity.data.messages.ManifoldData;
 import edu.jhuapl.trinity.data.messages.P3D;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
+import edu.jhuapl.trinity.javafx.events.ManifoldEvent.ProjectionConfig;
 import edu.jhuapl.trinity.javafx.javafx3d.Manifold3D;
 import edu.jhuapl.trinity.javafx.renderers.ManifoldRenderer;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
@@ -41,7 +43,6 @@ import javafx.scene.shape.DrawMode;
 import javafx.scene.shape.Sphere;
 import javafx.scene.text.Font;
 import javafx.scene.transform.Rotate;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -345,7 +346,18 @@ public class ManifoldEventHandler implements EventHandler<ManifoldEvent> {
 
     @Override
     public void handle(ManifoldEvent event) {
-        if (event.getEventType().equals(ManifoldEvent.GENERATE_PROJECTION_MANIFOLD)) {
+        
+        if (event.getEventType().equals(ManifoldEvent.NEW_CLUSTER_COLLECTION)) {
+            ClusterCollection cc = (ClusterCollection) event.object1;
+            for (ManifoldRenderer renderer : manifoldRenderers) {
+                renderer.addClusters(cc.getClusters());
+            }
+        } else if (event.getEventType().equals(ManifoldEvent.FIND_PROJECTION_CLUSTERS)) {
+            ProjectionConfig pc = (ProjectionConfig) event.object1;
+            for (ManifoldRenderer renderer : manifoldRenderers) {
+                renderer.findClusters(pc);
+            }
+        } else if (event.getEventType().equals(ManifoldEvent.GENERATE_PROJECTION_MANIFOLD)) {
             boolean useVisiblePoints = (boolean) event.object1;
             String label = (String) event.object2;
             for (ManifoldRenderer renderer : manifoldRenderers) {

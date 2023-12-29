@@ -28,7 +28,7 @@ import org.fxyz3d.shapes.primitives.TexturedMesh;
 import java.util.List;
 
 /**
- * @author phillsm1
+ * @author Birdasaur
  */
 public class TexturedManifold extends TexturedMesh {
 

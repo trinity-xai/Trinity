@@ -78,8 +78,7 @@ import java.util.List;
 import java.util.concurrent.TimeUnit;
 
 /**
- * User: hansolo Date: 17.09.21 Time: 12:31
- *
+ * @author _hansolo
  * @author Sean Phillips
  */
 @DefaultProperty("children")

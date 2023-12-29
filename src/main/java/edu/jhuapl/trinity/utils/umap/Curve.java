@@ -33,7 +33,7 @@ final class Curve {
     private Curve() {
     }
 
-    private static final float[][] SPREAD_DIST_AS = {
+    private static final double[][] SPREAD_DIST_AS = {
         {},
         {},
         {},
@@ -52,7 +52,7 @@ final class Curve {
         {0.00000F, 0.92742F, 0.84237F, 0.76312F, 0.68968F, 0.62189F, 0.55955F, 0.50242F, 0.45021F, 0.40260F, 0.35933F, 0.32008F, 0.28455F, 0.25248F, 0.22359F, 0.19762F, 0.17432F, 0.15347F, 0.13483F, 0.11822F, 0.10345F, 0.09033F, 0.07870F, 0.06843F, 0.05936F, 0.05137F, 0.04437F, 0.03821F, 0.03283F, 0.02814F, 0.02405F, 0.02050F},
         {0.00000F, 0.83896F, 0.76357F, 0.69330F, 0.62813F, 0.56793F, 0.51250F, 0.46161F, 0.41501F, 0.37246F, 0.33368F, 0.29843F, 0.26643F, 0.23745F, 0.21126F, 0.18763F, 0.16635F, 0.14723F, 0.13008F, 0.11472F, 0.10100F, 0.08875F, 0.07784F, 0.06815F, 0.05954F, 0.05192F, 0.04518F, 0.03924F, 0.03401F, 0.02941F, 0.02537F, 0.02184F, 0.01875F, 0.01606F},
     };
-    private static final float[][] SPREAD_DIST_BS = {
+    private static final double[][] SPREAD_DIST_BS = {
         {},
         {},
         {},
@@ -72,15 +72,15 @@ final class Curve {
         {0.00000F, 0.82249F, 0.85520F, 0.88837F, 0.92186F, 0.95555F, 0.98941F, 1.02340F, 1.05750F, 1.09170F, 1.12598F, 1.16036F, 1.19486F, 1.22948F, 1.26423F, 1.29912F, 1.33417F, 1.36938F, 1.40477F, 1.44033F, 1.47610F, 1.51211F, 1.54836F, 1.58489F, 1.62170F, 1.65883F, 1.69629F, 1.73407F, 1.77222F, 1.81079F, 1.84979F, 1.88926F, 1.92923F, 1.96975F},
     };
 
-    private static float findValue(float[][] spreadDist, int spreadIndex, int distIndex, float spreadDelta, float distDelta) {
-        final float start = spreadDist[spreadIndex][distIndex] + distDelta * (spreadDist[spreadIndex][distIndex + 1] - spreadDist[spreadIndex][distIndex]);
-        final float end = spreadDist[spreadIndex + 1][distIndex] + distDelta * (spreadDist[spreadIndex + 1][distIndex + 1] - spreadDist[spreadIndex + 1][distIndex]);
+    private static double findValue(double[][] spreadDist, int spreadIndex, int distIndex, double spreadDelta, double distDelta) {
+        final double start = spreadDist[spreadIndex][distIndex] + distDelta * (spreadDist[spreadIndex][distIndex + 1] - spreadDist[spreadIndex][distIndex]);
+        final double end = spreadDist[spreadIndex + 1][distIndex] + distDelta * (spreadDist[spreadIndex + 1][distIndex + 1] - spreadDist[spreadIndex + 1][distIndex]);
         return start + spreadDelta * (end - start);
     }
 
     // look up table base curve fitting
     // averages values for locations between known spread/minDist pairs
-    public static float[] curveFit(float spread, float minDist) {
+    public static double[] curveFit(double spread, double minDist) {
         if (spread < 0.5F || spread > 1.5F) {
             throw new IllegalArgumentException("Spread must be in the range 0.5 < spread <= 1.5, got : " + spread);
         }
@@ -88,23 +88,23 @@ final class Curve {
             throw new IllegalArgumentException("Expecting 0 < minDist < " + spread + ", got : " + minDist);
         }
         final int spreadIndex = (int) (10 * spread);
-        final float spreadDelta = (10 * spread - spreadIndex) / 10.0F;
+        final double spreadDelta = (10 * spread - spreadIndex) / 10.0F;
         final int distIndex = (int) (20 * minDist);
-        final float distDelta = (20 * minDist - distIndex) / 20.0F;
-        final float a = findValue(SPREAD_DIST_AS, spreadIndex, distIndex, spreadDelta, distDelta);
-        final float b = findValue(SPREAD_DIST_BS, spreadIndex, distIndex, spreadDelta, distDelta);
-        return new float[]{a, b};
+        final double distDelta = (20 * minDist - distIndex) / 20.0F;
+        final double a = findValue(SPREAD_DIST_AS, spreadIndex, distIndex, spreadDelta, distDelta);
+        final double b = findValue(SPREAD_DIST_BS, spreadIndex, distIndex, spreadDelta, distDelta);
+        return new double[]{a, b};
     }
 
 
-    private static double curve(final float x, final float a, final float b) {
+    private static double curve(final double x, final double a, final double b) {
         return 1.0 / (1.0 + a * Math.pow(x, 2 * b));
     }
 
-    private static float[] wrapCurve(final float[] x, final float[] y, final float a, final float b) {
-        final float[] res = new float[x.length];
+    private static double[] wrapCurve(final double[] x, final double[] y, final double a, final double b) {
+        final double[] res = new double[x.length];
         for (int i = 0; i < x.length; i++) {
-            res[i] = (float) (curve(x[i], a, b) - y[i]);
+            res[i] = (double) (curve(x[i], a, b) - y[i]);
         }
         return res;
     }
@@ -282,15 +282,15 @@ final class Curve {
 //    >>> plt.show()
 //
 //    """
-//  public static float[] curveFit(float[] xdata, float[] ydata) {
+//  public static double[] curveFit(double[] xdata, double[] ydata) {
     // Uses curve method above
     /*
     final int n = 2;  // number of fit parameters fixed to 2 (a and b)
 
     //lb, ub = prepare_bounds(bounds, n)
-    final float[] lb = {Float.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY};
-    final float[] ub = {Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY};
-    float[] p0 = {1.0F, 1.0F};
+    final double[] lb = {Float.NEGATIVE_INFINITY, Float.NEGATIVE_INFINITY};
+    final double[] ub = {Float.POSITIVE_INFINITY, Float.POSITIVE_INFINITY};
+    double[] p0 = {1.0F, 1.0F};
 
     // only need lm method due to constraints above
     //final String method = "lm";
@@ -301,18 +301,18 @@ final class Curve {
     //func = _wrap_func(f, xdata, ydata, transform)
     // TODO want func(xdata, *params) - ydata - see wrap_curve above
     // following is ripped out of leastsq function
-    float[] wrapped_curve = wrap_curve(xdata, ydata, p0[0], p0[1]);
+    double[] wrapped_curve = wrap_curve(xdata, ydata, p0[0], p0[1]);
     final int m = wrapped_curve.length;
     assert n > m;
 
-    final float epsfcn = 2.220446049250313e-16F; // smallest representable float
+    final double epsfcn = 2.220446049250313e-16F; // smallest representable double
     assert epsfcn + 1.0f != 1.0f;
     final int maxfev = 200 * (n + 1);
 
     int col_deriv = 0;
-    float ftol = 1.49012e-8F;
-    float xtol = 1.49012e-8F;
-    float gtol = 0.0F;
+    double ftol = 1.49012e-8F;
+    double xtol = 1.49012e-8F;
+    double gtol = 0.0F;
     int factor = 100;
 */
     //       if method == 'lm':
@@ -328,7 +328,7 @@ final class Curve {
 //        warn_cov = False
 //        if pcov is None:
 //        //# indeterminate covariance
-//        pcov = zeros((len(popt), len(popt)), dtype=float)
+//        pcov = zeros((len(popt), len(popt)), dtype=double)
 //        pcov.fill(inf)
 //        warn_cov = True
 //        elif not absolute_sigma:
@@ -351,7 +351,7 @@ final class Curve {
 //  }
 //
 //
-//    static float[] leastsq(func, x0, args=(), Dfun=None, full_output=0,
+//    static double[] leastsq(func, x0, args=(), Dfun=None, full_output=0,
 //    col_deriv=0, ftol=1.49012e-8, xtol=1.49012e-8,
 //    gtol=0.0, maxfev=0, epsfcn=None, factor=100, diag=None):
 //            """
@@ -366,7 +366,7 @@ final class Curve {
 //    ----------
 //    func : callable
 //        should take at least one (possibly length N vector) argument and
-//        returns M floating point numbers. It must not return NaNs or
+//        returns M doubleing point numbers. It must not return NaNs or
 //        fitting might fail.
 //    x0 : ndarray
 //        The starting estimate for the minimization.
@@ -380,24 +380,24 @@ final class Curve {
 //    col_deriv : bool, optional
 //        non-zero to specify that the Jacobian function computes derivatives
 //        down the columns (faster, because there is no transpose operation).
-//    ftol : float, optional
+//    ftol : double, optional
 //        Relative error desired in the sum of squares.
-//    xtol : float, optional
+//    xtol : double, optional
 //        Relative error desired in the approximate solution.
-//    gtol : float, optional
+//    gtol : double, optional
 //        Orthogonality desired between the function vector and the columns of
 //        the Jacobian.
 //    maxfev : int, optional
 //        The maximum number of calls to the function. If `Dfun` is provided
 //        then the default `maxfev` is 100*(N+1) where N is the number of elements
 //        in x0, otherwise the default `maxfev` is 200*(N+1).
-//    epsfcn : float, optional
+//    epsfcn : double, optional
 //        A variable used in determining a suitable step length for the forward-
 //        difference approximation of the Jacobian (for Dfun=None).
 //        Normally the actual step length will be sqrt(epsfcn)*x
 //        If epsfcn is less than the machine precision, it is assumed that the
 //        relative errors are of the order of the machine precision.
-//    factor : float, optional
+//    factor : double, optional
 //        A parameter determining the initial step bound
 //        (``factor * || diag * x||``). Should be in interval ``(0.1, 100)``.
 //    diag : sequence, optional
@@ -541,12 +541,12 @@ final class Curve {
 //      return null;
 //    }
 
-    private static void checkValues(float[] data) {
+    private static void checkValues(double[] data) {
         if (data.length == 0) {
             throw new IllegalArgumentException("Array must not be empty.");
         }
-        for (final float value : data) {
-            if (Float.isNaN(value) || Float.isInfinite(value)) {
+        for (final double value : data) {
+            if (Double.isNaN(value) || Double.isInfinite(value)) {
                 throw new IllegalArgumentException("Array cannot contain NaN or Infinity.");
             }
         }

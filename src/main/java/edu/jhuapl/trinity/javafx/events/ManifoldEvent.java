@@ -20,6 +20,7 @@ package edu.jhuapl.trinity.javafx.events;
  * #L%
  */
 
+import edu.jhuapl.trinity.utils.clustering.ClusterMethod;
 import javafx.event.Event;
 import javafx.event.EventTarget;
 import javafx.event.EventType;
@@ -33,7 +34,17 @@ public class ManifoldEvent extends Event {
     public Object object2 = null;
 
     public static enum POINT_SOURCE {HYPERSPACE, HYPERSURFACE}
-
+    public static class ProjectionConfig {
+        public static enum COVARIANCE_MODE {
+            DIAGONAL, FULL
+        };        
+        public boolean useVisiblePoints = true;
+        public ClusterMethod clusterMethod = ClusterMethod.EX_MAX;
+        public int components = 5;
+        public int maxIterations = 100;
+        public double tolerance = 1e4;
+        public COVARIANCE_MODE covariance = COVARIANCE_MODE.DIAGONAL;
+    }
     //Distance stuff
     public static final EventType<ManifoldEvent> DISTANCE_CONNECTOR_SELECTED = new EventType(ANY, "DISTANCE_CONNECTOR_SELECTED");
     public static final EventType<ManifoldEvent> DISTANCE_CONNECTOR_WIDTH = new EventType(ANY, "DISTANCE_CONNECTOR_WIDTH");
@@ -55,6 +66,11 @@ public class ManifoldEvent extends Event {
     public static final EventType<ManifoldEvent> SET_DISTANCE_TOLERANCE = new EventType(ANY, "SET_DISTANCE_TOLERANCE");
     public static final EventType<ManifoldEvent> GENERATE_HYPERSPACE_MANIFOLD = new EventType(ANY, "GENERATE_HYPERSPACE_MANIFOLD");
     public static final EventType<ManifoldEvent> GENERATE_PROJECTION_MANIFOLD = new EventType(ANY, "GENERATE_PROJECTION_MANIFOLD");
+
+    //Clustering
+    public static final EventType<ManifoldEvent> FIND_PROJECTION_CLUSTERS = new EventType(ANY, "FIND_PROJECTION_CLUSTERS");
+    public static final EventType<ManifoldEvent> NEW_CLUSTER_COLLECTION = new EventType(ANY, "NEW_CLUSTER_COLLECTION");
+
     //Manifold Geometry
     public static final EventType<ManifoldEvent> NEW_MANIFOLD_DATA = new EventType(ANY, "NEW_MANIFOLD_DATA");
     public static final EventType<ManifoldEvent> EXPORT_MANIFOLD_DATA = new EventType(ANY, "EXPORT_MANIFOLD_DATA");
@@ -65,6 +81,7 @@ public class ManifoldEvent extends Event {
     public static final EventType<ManifoldEvent> MANIFOLD3D_OBJECT_GENERATED = new EventType(ANY, "MANIFOLD3D_OBJECT_GENERATED");
     public static final EventType<ManifoldEvent> MANIFOLD_OBJECT_SELECTED = new EventType(ANY, "MANIFOLD_OBJECT_SELECTED");
     public static final EventType<ManifoldEvent> MANIFOLD_3D_SELECTED = new EventType(ANY, "MANIFOLD_3D_SELECTED");
+    public static final EventType<ManifoldEvent> MANIFOLD_3D_VISIBLE = new EventType(ANY, "MANIFOLD_3D_VISIBLE");
     public static final EventType<ManifoldEvent> CLEAR_ALL_MANIFOLDS = new EventType(ANY, "CLEAR_ALL_MANIFOLDS");
     public static final EventType<ManifoldEvent> USE_VISIBLE_POINTS = new EventType(ANY, "USE_VISIBLE_POINTS");
     public static final EventType<ManifoldEvent> USE_ALL_POINTS = new EventType(ANY, "USE_ALL_POINTS");

@@ -29,7 +29,7 @@ import java.util.logging.Logger;
 
 public class Smoke extends DualTextureParticle {
 
-    public static final String DEFAULT_TEXTURE1_NAME = "smoke1_16";
+    public static final String DEFAULT_TEXTURE1_NAME = "smoke2_16";
     public static final String DEFAULT_TEXTURE2_NAME = "smoke2_16";
     public static Image image1 = null;
     public static Image image2 = null;
@@ -49,6 +49,7 @@ public class Smoke extends DualTextureParticle {
 
     public Smoke() {
         super(image1, image2);
+        gravity = DEFAULT_GRAVITY;
         reset();
     }
 
@@ -78,7 +79,7 @@ public class Smoke extends DualTextureParticle {
         rotation = .05f;
         rotationCounter = 0.01f;
         location.x = location.y = location.z = 0;
-        gravity = DEFAULT_GRAVITY;
+        //gravity = DEFAULT_GRAVITY;
 
         size = .07f;
 

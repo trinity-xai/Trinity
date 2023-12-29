@@ -22,7 +22,7 @@ package edu.jhuapl.trinity.data.files;
 
 import edu.jhuapl.trinity.App;
 import edu.jhuapl.trinity.data.CdcTissueGenes;
-import edu.jhuapl.trinity.javafx.components.ProgressStatus;
+import edu.jhuapl.trinity.javafx.components.radial.ProgressStatus;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import javafx.application.Platform;
 import javafx.scene.Scene;

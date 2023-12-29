@@ -21,7 +21,7 @@ package edu.jhuapl.trinity.javafx.components.panes;
  */
 
 import edu.jhuapl.trinity.data.Trajectory;
-import edu.jhuapl.trinity.javafx.components.TrajectoryListItem;
+import edu.jhuapl.trinity.javafx.components.listviews.TrajectoryListItem;
 import edu.jhuapl.trinity.javafx.events.TrajectoryEvent;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import javafx.geometry.Pos;

@@ -36,10 +36,10 @@ import java.util.List;
 class IndexedDistances {
 
     private final int[][] mIndices;
-    private final float[][] mDistances;
+    private final double[][] mDistances;
     private final List<FlatTree> mForest;
 
-    IndexedDistances(final int[][] indices, final float[][] distances, final List<FlatTree> forest) {
+    IndexedDistances(final int[][] indices, final double[][] distances, final List<FlatTree> forest) {
         mIndices = indices;
         mDistances = distances;
         mForest = forest;
@@ -49,7 +49,7 @@ class IndexedDistances {
         return mIndices;
     }
 
-    float[][] getDistances() {
+    double[][] getDistances() {
         return mDistances;
     }
 

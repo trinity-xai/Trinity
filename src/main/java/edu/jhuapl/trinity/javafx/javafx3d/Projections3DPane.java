@@ -35,7 +35,8 @@ import edu.jhuapl.trinity.data.messages.FeatureVector;
 import edu.jhuapl.trinity.data.messages.GaussianMixture;
 import edu.jhuapl.trinity.data.messages.GaussianMixtureCollection;
 import edu.jhuapl.trinity.data.messages.GaussianMixtureData;
-import edu.jhuapl.trinity.javafx.components.ProgressStatus;
+import edu.jhuapl.trinity.data.messages.PointCluster;
+import edu.jhuapl.trinity.javafx.components.radial.ProgressStatus;
 import edu.jhuapl.trinity.javafx.components.callouts.Callout;
 import edu.jhuapl.trinity.javafx.components.callouts.DistanceDataCallout;
 import edu.jhuapl.trinity.javafx.components.panes.ManifoldControlPane;
@@ -126,6 +127,17 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static edu.jhuapl.trinity.javafx.components.radial.HyperspaceMenu.slideInPane;
+import edu.jhuapl.trinity.javafx.events.ManifoldEvent.ProjectionConfig;
+import edu.jhuapl.trinity.javafx.events.ManifoldEvent.ProjectionConfig.COVARIANCE_MODE;
+import edu.jhuapl.trinity.utils.clustering.Cluster;
+import edu.jhuapl.trinity.utils.clustering.KmeansPlusPlus;
+import edu.jhuapl.trinity.utils.clustering.GaussianMixtureComponent;
+import edu.jhuapl.trinity.utils.clustering.Point;
+import edu.jhuapl.trinity.utils.clustering.GaussianMixtureModel;
+import java.util.Comparator;
+import javafx.scene.shape.Box;
+import javafx.util.Pair;
+
 
 /**
  * @author Sean Phillips
@@ -757,6 +769,16 @@ public class Projections3DPane extends StackPane implements
                 radarPlotPane.show();
             }
         });
+        ImageView clearProjection = ResourceUtils.loadIcon("clear", ICON_FIT_HEIGHT);
+        radar.setEffect(glow);
+        MenuItem clearProjectionItem = new MenuItem("Clear Projection Data", clearProjection);
+        clearProjectionItem.setOnAction(e -> {
+            featureVectors.clear();
+            sphereToFeatureVectorMap.clear();
+            ellipsoidGroup.getChildren().clear();
+            clearAll();
+            refresh();
+        });
 
         CheckMenuItem updatingTrajectoriesItem = new CheckMenuItem("Auto Update Trajectories");
         updatingTrajectoriesItem.setSelected(updatingTrajectories);
@@ -766,7 +788,8 @@ public class Projections3DPane extends StackPane implements
         ContextMenu cm = new ContextMenu(
             projectUmapHyperspaceItem, projectUmapHypersurfaceItem,
             resetViewItem, manifoldsItem, radarItem,
-            clearCalloutsItem, updatingTrajectoriesItem);
+            clearCalloutsItem, clearProjectionItem,
+            updatingTrajectoriesItem);
 
         cm.setAutoFix(true);
         cm.setAutoHide(true);
@@ -1134,6 +1157,7 @@ public class Projections3DPane extends StackPane implements
         Manifold3D manifold3D = new Manifold3D(
             labelMatchedPoints, true, true, true
         );
+        manifold3D.quickhullMeshView.setCullFace(CullFace.FRONT);
         manifold3D.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
             if ((e.getButton() == MouseButton.PRIMARY && e.isControlDown())
                 || (e.getButton() == MouseButton.PRIMARY && pointToPointDistanceMode)) {
@@ -1142,7 +1166,7 @@ public class Projections3DPane extends StackPane implements
         });
         manifolds.add(manifold3D);
         manifoldGroup.getChildren().add(manifold3D);
-        shape3DToLabel.putAll(manifold3D.shape3DToLabel);
+        manifold3D.shape3DToLabel.putAll(manifold3D.shape3DToLabel);
         updateFloatingNodes();
         return manifold3D;
     }
@@ -1735,7 +1759,7 @@ public class Projections3DPane extends StackPane implements
         ArrayList<double[]> states = new ArrayList<>();
         if (null == latestUmap || null == latestUmap.getmEmbedding())
             return states;
-        float[][] transformed = AnalysisUtils.transformUMAP(fc, latestUmap);
+        double[][] transformed = AnalysisUtils.transformUMAP(fc, latestUmap);
         for (int row = 0; row < transformed.length; row++) {
             double[] stateVector = new double[transformed[row].length];
             for (int columns = 0; columns < transformed[row].length; columns++) {
@@ -1991,58 +2015,88 @@ public class Projections3DPane extends StackPane implements
         }
         trimQueueNow();
     }
+    private void pointToManifold(Manifold3D manifold3D) {
+        javafx.geometry.Point3D p1 = new javafx.geometry.Point3D(
+            selectedSphereA.getTranslateX(),
+            selectedSphereA.getTranslateY(),
+            selectedSphereA.getTranslateZ());
+        javafx.geometry.Point3D p2 = selectedManifoldA.getClosestHullPoint(p1);
+        System.out.println("Difference: " + p1.subtract(p2).toString());
+        System.out.println("Distance: " + p1.distance(p2));
+        //Fire off event to create new distance object
+        String distanceLabel =
+            sphereToFeatureVectorMap.get(selectedSphereA).getLabel()
+                + " => " + manifold3D.toString();
+        Distance distanceObject = new Distance(
+            distanceLabel, Color.ALICEBLUE, "euclidean", 5);
+        distanceObject.setPoint1(p1);
+        distanceObject.setPoint2(p2);
+        distanceObject.setValue(p1.distance(p2));
 
+        getScene().getRoot().fireEvent(new ManifoldEvent(
+            ManifoldEvent.CREATE_NEW_DISTANCE, distanceObject));
+        //Add 3D line to scene connecting the two points
+        //Creates a new distance trajectory (Trajectory3D polyline)
+        //returns midpoint so we can anchor a numeric distance label
+        Sphere midPointSphere = updateDistanceTrajectory(null, distanceObject);
+        selectedManifoldA.toggleSelection(false);
+        //Clear selected spheres to null state
+        selectedSphereA = null;
+        selectedSphereB = null;
+        selectedManifoldA = null;
+        selectedManifoldB = null;            
+    }
+    private void pointToPoint(){
+        javafx.geometry.Point3D p1 = new javafx.geometry.Point3D(
+            selectedSphereA.getTranslateX(),
+            selectedSphereA.getTranslateY(),
+            selectedSphereA.getTranslateZ());
+        javafx.geometry.Point3D p2 = new javafx.geometry.Point3D(
+            selectedSphereB.getTranslateX(),
+            selectedSphereB.getTranslateY(),
+            selectedSphereB.getTranslateZ());
+        System.out.println("Difference: " + p1.subtract(p2).toString());
+        System.out.println("Distance: " + p1.distance(p2));
+        //Fire off event to create new distance object
+        String distanceLabel =
+            sphereToFeatureVectorMap.get(selectedSphereA).getLabel()
+                + " => " +
+                sphereToFeatureVectorMap.get(selectedSphereB).getLabel();
+        Distance distanceObject = new Distance(
+            distanceLabel, Color.ALICEBLUE, "euclidean", 5);
+        distanceObject.setPoint1(p1);
+        distanceObject.setPoint2(p2);
+        distanceObject.setValue(p1.distance(p2));
+
+        getScene().getRoot().fireEvent(new ManifoldEvent(
+            ManifoldEvent.CREATE_NEW_DISTANCE, distanceObject));
+        //Add 3D line to scene connecting the two points
+        updateDistanceTrajectory(null, distanceObject);
+        //Clear selected spheres to null state
+        selectedSphereA = null;
+        selectedSphereB = null;
+        if(null != selectedManifoldA) {
+            selectedManifoldA.toggleSelection(false);
+            selectedManifoldA = null;
+        }            
+        if(null != selectedManifoldB) {
+            selectedManifoldB.toggleSelection(false);
+            selectedManifoldB = null;
+        }            
+    }
     private void processDistanceClick(Manifold3D manifold3D) {
         System.out.println("Point: " + manifold3D.toString());
         if (null == selectedManifoldA) {
             selectedManifoldA = manifold3D;
-            //@TODO add some sort of visual highlight
+            //add some sort of visual highlight
+            selectedManifoldA.toggleSelection(true);            
         } else {
             selectedManifoldB = manifold3D;
             //@TODO add some sort of visual highlight
         }
         //Are we doing a point to manifold check?
         if (null != selectedSphereA && null != selectedManifoldA) {
-            javafx.geometry.Point3D p1 = new javafx.geometry.Point3D(
-                selectedSphereA.getTranslateX(),
-                selectedSphereA.getTranslateY(),
-                selectedSphereA.getTranslateZ());
-            javafx.geometry.Point3D p2 = selectedManifoldA.getClosestHullPoint(p1);
-            System.out.println("Difference: " + p1.subtract(p2).toString());
-            System.out.println("Distance: " + p1.distance(p2));
-            //Fire off event to create new distance object
-            String distanceLabel =
-                sphereToFeatureVectorMap.get(selectedSphereA).getLabel()
-                    + " => " + manifold3D.toString();
-            Distance distanceObject = new Distance(
-                distanceLabel, Color.ALICEBLUE, "euclidean", 5);
-            distanceObject.setPoint1(p1);
-            distanceObject.setPoint2(p2);
-            distanceObject.setValue(p1.distance(p2));
-
-            getScene().getRoot().fireEvent(new ManifoldEvent(
-                ManifoldEvent.CREATE_NEW_DISTANCE, distanceObject));
-            //Add 3D line to scene connecting the two points
-            //Creates a new distance trajectory (Trajectory3D polyline)
-            //returns midpoint so we can anchor a numeric distance label
-            Sphere midPointSphere = updateDistanceTrajectory(null, distanceObject);
-//            Callout ddc = DistanceDataCallout.createByManifold3D(
-//                    midPointSphere, selectedManifoldA.getManifold(),
-//                new Point3D(p1.getX(),p1.getY(),p1.getZ()), subScene);
-//            radialOverlayPane.addCallout(ddc, midPointSphere);
-//
-//            ddc.play();
-//            distanceTotrajectory3DMap.get(distanceObject).addEventHandler(
-//                MouseEvent.MOUSE_CLICKED, e -> {
-//                    ddc.setVisible(true);
-//                    ddc.play();
-//                });
-
-            //Clear selected spheres to null state
-            selectedSphereA = null;
-            selectedSphereB = null;
-            selectedManifoldA = null;
-            selectedManifoldB = null;
+            pointToManifold(selectedManifoldA);
         }
     }
 
@@ -2051,44 +2105,16 @@ public class Projections3DPane extends StackPane implements
         if (null == selectedSphereA) {
             selectedSphereA = sphere;
             //@TODO add some sort of visual highlight
-//                        PointDistanceMenu pdMenu = new PointDistanceMenu(this);
-//                        pdMenu.setTranslateX(e.getSceneX());
-//                        pdMenu.setTranslateY(e.getSceneY());
-//                        radialOverlayPane.addEntity(pdMenu);
         } else {
             selectedSphereB = sphere;
             //@TODO add some sort of visual highlight
         }
         if (null != selectedSphereA && null != selectedSphereB) {
-            javafx.geometry.Point3D p1 = new javafx.geometry.Point3D(
-                selectedSphereA.getTranslateX(),
-                selectedSphereA.getTranslateY(),
-                selectedSphereA.getTranslateZ());
-            javafx.geometry.Point3D p2 = new javafx.geometry.Point3D(
-                selectedSphereB.getTranslateX(),
-                selectedSphereB.getTranslateY(),
-                selectedSphereB.getTranslateZ());
-            System.out.println("Difference: " + p1.subtract(p2).toString());
-            System.out.println("Distance: " + p1.distance(p2));
-            //Fire off event to create new distance object
-            String distanceLabel =
-                sphereToFeatureVectorMap.get(selectedSphereA).getLabel()
-                    + " => " +
-                    sphereToFeatureVectorMap.get(selectedSphereB).getLabel();
-            Distance distanceObject = new Distance(
-                distanceLabel, Color.ALICEBLUE, "euclidean", 5);
-            distanceObject.setPoint1(p1);
-            distanceObject.setPoint2(p2);
-            distanceObject.setValue(p1.distance(p2));
-
-            getScene().getRoot().fireEvent(new ManifoldEvent(
-                ManifoldEvent.CREATE_NEW_DISTANCE, distanceObject));
-            //Add 3D line to scene connecting the two points
-            updateDistanceTrajectory(null, distanceObject);
-            //Clear selected spheres to null state
-            selectedSphereA = null;
-            selectedSphereB = null;
+            pointToPoint();
+        } else if(null != selectedSphereA && null != selectedManifoldA) {
+            pointToManifold(selectedManifoldA);
         }
+
     }
 
     //Add 3D line to scene connecting the two points
@@ -2499,16 +2525,6 @@ public class Projections3DPane extends StackPane implements
                     scene.getRoot().fireEvent(
                         new ApplicationEvent(ApplicationEvent.UPDATE_BUSY_INDICATOR, ps));
                 });
-//                //@EXPERIMENT SMP show we can do a PCA prior to UMAP FIT
-//                long startTime = System.nanoTime();
-//                double[][]featureArray = originalFC.getFeatures().stream()
-//                    .map(FeatureVector.mapToStateArray)
-//                    .toArray(double[][]::new);
-//                System.out.println("featureArray sizes: "
-//                    + featureArray.length + " " + featureArray[0].length);
-//                double[][] pcaProjection = AnalysisUtils.doCommonsPCA(featureArray);
-//                System.out.print("PCA... ");
-//                Utils.printTotalTime(startTime);
 
                 double[][] umapMatrix = AnalysisUtils.fitUMAP(originalFC, umap);
                 latestUmap = umap;
@@ -2557,5 +2573,198 @@ public class Projections3DPane extends StackPane implements
         Thread thread = new Thread(task);
         thread.setDaemon(true);
         thread.start();
+    }
+
+    @Override
+//    public void findClusters(int components, boolean useVisiblePoints, ClusterMethod clusterMethod) {
+    public void findClusters(ProjectionConfig pc) {
+        //convert featurevector space into 2D array of doubles
+        double [][] observations = FeatureCollection.toData(featureVectors);
+
+        long startTime = System.nanoTime();
+        //find clusters
+        switch(pc.clusterMethod) {
+//            case KMEANS -> {
+//                System.out.print("Kmeans fit... ");
+//                startTime = System.nanoTime();
+//                var kmeansClusters = KMeans.fit(observations, 50);
+//                Utils.printTotalTime(startTime);                
+//                System.out.println("\n===============================================\n");
+//                System.out.println("KMeans Clusters: " + kmeansClusters.k 
+//                    + " Distortion: " + kmeansClusters.distortion);
+//                break;
+//            }
+            case EX_MAX -> {
+                System.out.println("Expectation Maximization... ");
+                startTime = System.nanoTime();
+                boolean diagonal = pc.covariance == COVARIANCE_MODE.DIAGONAL;
+                manifoldGroup.getChildren().removeIf(n -> n instanceof Box);
+                Point[] kmeansCentroids = KmeansPlusPlus.kmeansPlusPlus(pc.components, observations);                
+                for(Point point : kmeansCentroids) {
+                    System.out.println("k++ centroid: " + Arrays.toString(point.getPosition()));
+                    Box box = new Box(point3dSize, point3dSize, point3dSize);
+                    PhongMaterial pm = new PhongMaterial(Color.ALICEBLUE);
+                    box.setMaterial(pm);
+                    box.setTranslateX(point.getPosition()[0] * projectionScalar);
+                    box.setTranslateY(point.getPosition()[1] * -projectionScalar);
+                    box.setTranslateZ(point.getPosition()[2] * projectionScalar);
+                    manifoldGroup.getChildren().add(box);
+                }
+                
+                GaussianMixtureModel gmm = GaussianMixtureModel.fit(pc.components, observations, diagonal);
+                Utils.printTotalTime(startTime);
+                System.out.println("Components found: " + gmm.components.length);
+                System.out.println("Mapping observations to clusters by component probability... ");
+                startTime = System.nanoTime();
+                ArrayList<Cluster> clusters = new ArrayList<>();
+                int i=0;
+                for(GaussianMixtureComponent c : gmm.components) {
+                    System.out.println("After GMM Fit Centroid " + i + ": " + Arrays.toString(c.distribution.mu));                    
+                    clusters.add(new Cluster(observations[0].length));
+                    i++;
+
+                    Box box = new Box(point3dSize, point3dSize, point3dSize);
+                    PhongMaterial pm = new PhongMaterial(Color.GREENYELLOW);
+                    box.setDrawMode(DrawMode.LINE);
+                    box.setMaterial(pm);
+                    box.setTranslateX(c.distribution.mu[0] * projectionScalar);
+                    box.setTranslateY(c.distribution.mu[1] * -projectionScalar);
+                    box.setTranslateZ(c.distribution.mu[2] * projectionScalar);
+                    manifoldGroup.getChildren().add(box);
+                }
+                ArrayList<Double> maxPostProbList = new ArrayList<>(observations.length);
+                for(int dataIndex=0;dataIndex<observations.length;dataIndex++) {
+                    Pair<Integer,Double> maxPostProb = gmm.maxPostProb(observations[dataIndex]);
+                    maxPostProbList.add(maxPostProb.getValue());
+//                    int component = gmm.map(observations[dataIndex]);
+                    clusters.get(maxPostProb.getKey())
+                        .addPointToCluster(dataIndex, new Point(observations[dataIndex]));
+                }
+                Utils.printTotalTime(startTime);
+
+                Collections.sort(maxPostProbList);
+                double min = Collections.min(maxPostProbList);
+                double max = Collections.max(maxPostProbList);
+//                maxPostProbList.stream().forEach(m -> 
+//                    System.out.println(DataUtils.normalize(m, min, max))
+//                );
+                
+                System.out.print("Generating Hulls from Clusters... ");
+                startTime = System.nanoTime();
+                int index=0;
+                for(Cluster cluster : clusters){
+                    if(cluster.getClusterPoints().size()>=4) {
+                        String label = "GMM Cluster " + index;
+                        List<Point3D> points = cluster.getClusterPoints().stream()
+                            .map((Point t) -> new Point3D(
+                                t.getPosition()[0] * projectionScalar,
+                                t.getPosition()[1] * -projectionScalar, 
+                                t.getPosition()[2] * projectionScalar))
+                            .toList();
+
+                        ArrayList<javafx.geometry.Point3D> fxPoints = points.stream()
+                            .map(p3D -> new javafx.geometry.Point3D(p3D.x, p3D.y, p3D.z))
+                            .collect(Collectors.toCollection(ArrayList::new));
+                        Manifold manifold = new Manifold(fxPoints, label, label, sceneColor);
+                        //Create the 3D manifold shape
+                        Manifold3D manifold3D = makeHull(points, label);
+                        manifold3D.setManifold(manifold);
+                        manifold3D.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
+                            getScene().getRoot().fireEvent(
+                                new ManifoldEvent(ManifoldEvent.MANIFOLD_3D_SELECTED, manifold));
+                        });
+                        //Add this Manifold data object to the global tracker
+                        Manifold.addManifold(manifold);
+                        //update the manifold to manifold3D mapping
+                        Manifold.globalManifoldToManifold3DMap.put(manifold, manifold3D);
+                        //announce to the world of the new manifold and its shape
+                        //System.out.println("Manifold3D generation complete for " + label);
+                        getScene().getRoot().fireEvent(new ManifoldEvent(
+                            ManifoldEvent.MANIFOLD3D_OBJECT_GENERATED, manifold, manifold3D));
+                    } else {
+                        System.out.println("Cluster has less than 4 points");
+                    }
+                    index++;
+                }
+                
+                Utils.printTotalTime(startTime);
+                System.out.println("\n===============================================\n");                
+                //System.out.println("EmDriver Results : " + emDriver.learnedModel.toString()); 
+                break;
+            }
+
+        }
+    }
+
+    @Override
+    public void addClusters(List<PointCluster> clusters) {
+        //first add all the new data points if necessary
+        //@TODO SMP This is temporary... we need to guard this with user prompts
+        if(clusters.size()==0) {
+        clusters.stream().sorted((o1, o2) -> {
+            if(o1.getClusterId()<o2.getClusterId()) return -1;
+            else if(o1.getClusterId()>o2.getClusterId()) return 1;
+            else return 0;
+        }).forEach(pointCluster-> {
+//        for(PointCluster pointCluster : clusters) {
+            if(null != pointCluster.getData() && !pointCluster.getData().isEmpty()) {
+                //@TODO SMP add new data points based on these clusters
+                pointCluster.getData().forEach(p -> {
+                    FeatureVector fv = new FeatureVector();
+                    fv.setLabel(pointCluster.getClusterName());
+                    fv.getData().addAll(p);
+                    featureVectors.add(fv);
+                    Sphere sphere = new Sphere(point3dSize);
+                    PhongMaterial mat = new PhongMaterial(Color.ALICEBLUE);
+                    mat.setSpecularColor(Color.AQUA);
+                    sphere.setMaterial(mat);
+                    sphere.setTranslateX(fv.getData().get(0) * projectionScalar);
+                    sphere.setTranslateY(fv.getData().get(1) * -projectionScalar);
+                    sphere.setTranslateZ(fv.getData().get(2) * projectionScalar);
+                    ellipsoidGroup.getChildren().add(sphere);
+                    sphereToFeatureVectorMap.put(sphere, fv);
+                });
+            }
+        });
+        }
+        int i=0;
+
+        for(PointCluster pointCluster : clusters) {
+            if(pointCluster.getMap().size()>=4) {
+                List<Point3D> points = pointCluster.getMap().stream()
+                    .map(p -> new Point3D(
+                        featureVectors.get(p).getData().get(0) * projectionScalar,
+                        featureVectors.get(p).getData().get(1) * -projectionScalar, 
+                        featureVectors.get(p).getData().get(2) * projectionScalar))
+                    .toList();
+
+                ArrayList<javafx.geometry.Point3D> fxPoints = points.stream()
+                    .map(p3D -> new javafx.geometry.Point3D(p3D.x, p3D.y, p3D.z))
+                    .collect(Collectors.toCollection(ArrayList::new));
+                Manifold manifold = new Manifold(fxPoints, 
+                    pointCluster.getClusterName(), 
+                    pointCluster.getClusterName(), 
+                    sceneColor);
+                //Create the 3D manifold shape
+                Manifold3D manifold3D = makeHull(points, pointCluster.getClusterName());
+                manifold3D.setManifold(manifold);
+                manifold3D.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
+                    getScene().getRoot().fireEvent(
+                        new ManifoldEvent(ManifoldEvent.MANIFOLD_3D_SELECTED, manifold));
+                });
+                //Add this Manifold data object to the global tracker
+                Manifold.addManifold(manifold);
+                //update the manifold to manifold3D mapping
+                Manifold.globalManifoldToManifold3DMap.put(manifold, manifold3D);
+                //announce to the world of the new manifold and its shape
+                //System.out.println("Manifold3D generation complete for " + label);
+                getScene().getRoot().fireEvent(new ManifoldEvent(
+                    ManifoldEvent.MANIFOLD3D_OBJECT_GENERATED, manifold, manifold3D));
+            } else {
+                System.out.println("Cluster has less than 4 points");
+            }
+//            i++;
+//            if(i>0) break;
+        }
     }
 }

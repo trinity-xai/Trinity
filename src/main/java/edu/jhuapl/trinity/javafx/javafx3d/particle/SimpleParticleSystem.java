@@ -40,7 +40,7 @@ public class SimpleParticleSystem { //extends BillboardNode {
     public Group parentGroup;
     public int msInterval = 30;
 
-    public SimpleParticleSystem(final Particle _spawnType, Group parentGroup, int msInterval) {
+    public SimpleParticleSystem(Particle _spawnType, Group parentGroup, int msInterval) {
         this.parentGroup = parentGroup;
         this.msInterval = msInterval;
         particleTimer = new AnimationTimer() {

@@ -51,17 +51,17 @@ final class Sort {
     }
 
     private static class FloatIntSwapper implements Swapper {
-        FloatIntSwapper(final float[] primary, final int[] secondary) {
+        FloatIntSwapper(final double[] primary, final int[] secondary) {
             mPrimary = primary;
             mSecondary = secondary;
         }
 
-        private final float[] mPrimary;
+        private final double[] mPrimary;
         private final int[] mSecondary;
 
         @Override
         public void swap(final int a, final int b) {
-            final float t = mPrimary[a];
+            final double t = mPrimary[a];
             mPrimary[a] = mPrimary[b];
             mPrimary[b] = t;
             final int u = mSecondary[a];
@@ -77,7 +77,7 @@ final class Sort {
      * @param secondary array to keep in sync with <code>primary</code>
      * @throws IllegalArgumentException if the arrays have different lengths.
      */
-    public static void sort(final float[] primary, final int[] secondary) {
+    public static void sort(final double[] primary, final int[] secondary) {
         if (primary.length != secondary.length) {
             throw new IllegalArgumentException();
         }
@@ -93,7 +93,7 @@ final class Sort {
      * @param len     length the sort
      * @param swapper interface to the swap method
      */
-    public static void sort(final float[] x, final int off, final int len, final Swapper swapper) {
+    public static void sort(final double[] x, final int off, final int len, final Swapper swapper) {
         // Insertion sort on smallest arrays
         if (len < 7) {
             for (int i = off; i < len + off; ++i) {
@@ -191,10 +191,10 @@ final class Sort {
      * @param c third index
      * @return the median
      */
-    static int med3(final float[] x, final int a, final int b, final int c) {
-        final float xa = x[a];
-        final float xb = x[b];
-        final float xc = x[c];
+    static int med3(final double[] x, final int a, final int b, final int c) {
+        final double xa = x[a];
+        final double xb = x[b];
+        final double xc = x[c];
         return xa < xb
             ? (xb < xc ? b : xa < xc ? c : a)
             : (xb > xc ? b : xa > xc ? c : a);

@@ -596,7 +596,7 @@ public class ConcaveUtils {
     /*////////////////////////////////////////////////////////////////////////////////////////////
 	Save concave hull list data and flagged original data
 	////////////////////////////////////////////////////////////////////////////////////////////*/
-    public void SaveRseult() {
+    public void SaveResult() {
         // Save concave-hull data
         try {
             FileWriter fw_1 = new FileWriter(ccvListFile);
@@ -670,6 +670,6 @@ public class ConcaveUtils {
         obj.calcClassCenter();
 
         obj.findConcave();
-        obj.SaveRseult();
+        obj.SaveResult();
     }
 }

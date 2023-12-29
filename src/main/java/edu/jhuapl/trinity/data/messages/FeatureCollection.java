@@ -46,9 +46,10 @@ public class FeatureCollection extends MessageData {
     //</editor-fold>
 
     //<editor-fold defaultstate="collapsed" desc="Payload Fields">
+    private String type;
     private ArrayList<String> dimensionLabels;
     private List<FeatureVector> features;
-    private String type;
+
     //</editor-fold>
 
     public FeatureCollection() {
@@ -85,7 +86,13 @@ public class FeatureCollection extends MessageData {
         }
         return data;
     }
-
+    public static double[][] toData(List<FeatureVector> featureVectors) {
+        double[][] data = new double[featureVectors.size()][featureVectors.get(0).getData().size()];
+        for(int i=0; i<featureVectors.size();i++) {
+            data[i] = FeatureVector.mapToStateArray.apply(featureVectors.get(i));
+        }
+        return data;
+    }
     public static FeatureCollection fromData(List<List<Double>> data) {
         FeatureCollection fcf = new FeatureCollection();
         int vectorCount = data.size();

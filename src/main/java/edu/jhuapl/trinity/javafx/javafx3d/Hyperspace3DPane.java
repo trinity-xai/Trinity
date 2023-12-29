@@ -32,7 +32,8 @@ import edu.jhuapl.trinity.data.messages.FeatureVector;
 import edu.jhuapl.trinity.data.messages.GaussianMixture;
 import edu.jhuapl.trinity.data.messages.GaussianMixtureCollection;
 import edu.jhuapl.trinity.data.messages.GaussianMixtureData;
-import edu.jhuapl.trinity.javafx.components.ProgressStatus;
+import edu.jhuapl.trinity.data.messages.PointCluster;
+import edu.jhuapl.trinity.javafx.components.radial.ProgressStatus;
 import edu.jhuapl.trinity.javafx.components.callouts.Callout;
 import edu.jhuapl.trinity.javafx.components.panes.RadialEntityOverlayPane;
 import edu.jhuapl.trinity.javafx.components.radial.HyperspaceMenu;
@@ -43,6 +44,7 @@ import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.events.HyperspaceEvent;
 import edu.jhuapl.trinity.javafx.events.HyperspaceEvent.COLOR_MODE;
+import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.javafx.events.ShadowEvent;
 import edu.jhuapl.trinity.javafx.events.TimelineEvent;
 import edu.jhuapl.trinity.javafx.events.TrajectoryEvent;
@@ -52,7 +54,9 @@ import edu.jhuapl.trinity.javafx.renderers.GaussianMixtureRenderer;
 import edu.jhuapl.trinity.javafx.renderers.ManifoldRenderer;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
+import edu.jhuapl.trinity.utils.Utils;
 import edu.jhuapl.trinity.utils.VisibilityMap;
+import edu.jhuapl.trinity.utils.clustering.ClusterMethod;
 import javafx.animation.AnimationTimer;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
@@ -1994,7 +1998,10 @@ public class Hyperspace3DPane extends StackPane implements
 
     @Override
     public void setVisibleByIndex(int i, boolean b) {
-        VisibilityMap.pNodeVisibilityMap.put(pNodes.toArray(Perspective3DNode[]::new)[i], b);
+        Perspective3DNode[] d = pNodes.toArray(Perspective3DNode[]::new);
+        VisibilityMap.pNodeVisibilityMap.put(d[i], b);
+        
+//        VisibilityMap.pNodeVisibilityMap.put(pNodes.toArray(Perspective3DNode[]::new)[i], b);
         VisibilityMap.visibilityList.set(i, b);
     }
 
@@ -2037,5 +2044,38 @@ public class Hyperspace3DPane extends StackPane implements
     @Override
     public void setDimensionLabels(List<String> labelStrings) {
         featureLabels = labelStrings;
+    }
+
+    @Override
+    public void findClusters(ManifoldEvent.ProjectionConfig pc) {
+        System.out.println("Find Clusters for Hyperspace view.");
+        //convert featurevector space into 2D array of doubles
+        System.out.print("Convert features to data array... ");
+        long startTime = System.nanoTime();
+        double [][] observations = FeatureCollection.toData(featureVectors);
+        Utils.printTotalTime(startTime);
+        //find clusters
+        switch(pc.clusterMethod) {
+//            case KMEANS -> {
+//                System.out.print("Kmeans fit... ");
+//                startTime = System.nanoTime();
+//                var kmeansClusters = KMeans.fit(observations, 50);
+//                Utils.printTotalTime(startTime);                
+//                System.out.println("\n===============================================\n");
+//                System.out.println("KMeans Clusters: " + kmeansClusters.k 
+//                    + " Distortion: " + kmeansClusters.distortion);
+//            }
+            case EX_MAX -> {
+                System.out.print("Expectation Maximization... ");
+                startTime = System.nanoTime();
+                Utils.printTotalTime(startTime);
+                System.out.println("\n===============================================\n");                
+            }
+        }
+    }
+
+    @Override
+    public void addClusters(List<PointCluster> clusters) {
+    
     }
 }

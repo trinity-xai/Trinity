@@ -156,7 +156,7 @@ public class DataController implements Initializable {
         if (file != null) {
             lastDirectory = file;
             imageryBasePathTextField.setText(lastDirectory.getAbsolutePath()
-                + File.pathSeparator);
+                + File.separator);
         }
     }
 

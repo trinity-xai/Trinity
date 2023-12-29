@@ -36,15 +36,15 @@ import java.util.Random;
  */
 class FlatTree {
 
-    // Used for a floating point "nearly zero" comparison
-    private static final float EPS = 1e-8F;
+    // Used for a doubleing point "nearly zero" comparison
+    private static final double EPS = 1e-8F;
 
     private final Object mHyperplanes;
-    private final float[] mOffsets;
+    private final double[] mOffsets;
     private final int[][] mChildren;
     private final int[][] mIndices;
 
-    FlatTree(final Object hyperplanes, final float[] offsets, final int[][] children, final int[][] indices) {
+    FlatTree(final Object hyperplanes, final double[] offsets, final int[][] children, final int[][] indices) {
         mHyperplanes = hyperplanes;
         mOffsets = offsets;
         mChildren = children;
@@ -55,8 +55,8 @@ class FlatTree {
         return mIndices;
     }
 
-    private static boolean selectSide(final float[] hyperplane, final float offset, final float[] point, final Random random) {
-        float margin = offset;
+    private static boolean selectSide(final double[] hyperplane, final double offset, final double[] point, final Random random) {
+        double margin = offset;
         for (int d = 0; d < point.length; ++d) {
             margin += hyperplane[d] * point[d];
         }
@@ -67,10 +67,10 @@ class FlatTree {
         }
     }
 
-    int[] searchFlatTree(final float[] point, final Random random) {
+    int[] searchFlatTree(final double[] point, final Random random) {
         int node = 0;
         while (mChildren[node][0] > 0) {
-            final boolean side = selectSide(((float[][]) mHyperplanes)[node], mOffsets[node], point, random);
+            final boolean side = selectSide(((double[][]) mHyperplanes)[node], mOffsets[node], point, random);
             node = mChildren[node][side ? 1 : 0];
         }
         return mIndices[-mChildren[node][0]];

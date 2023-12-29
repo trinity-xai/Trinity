@@ -36,7 +36,6 @@ import java.util.List;
 public class Manifold {
     private ArrayList<Point3D> points;
     private String label; //common data label of manifold (from input data)
-    private String name; //optional name/human readable ID
     private Color color; //color of representative object
     public SimpleBooleanProperty visible;
 
@@ -145,19 +144,5 @@ public class Manifold {
 
     public void setVisible(final java.lang.Boolean visible) {
         this.visibleProperty().set(visible);
-    }
-
-    /**
-     * @return the name
-     */
-    public String getName() {
-        return name;
-    }
-
-    /**
-     * @param name the name to set
-     */
-    public void setName(String name) {
-        this.name = name;
     }
 }

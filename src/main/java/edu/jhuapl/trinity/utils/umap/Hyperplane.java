@@ -35,20 +35,20 @@ package edu.jhuapl.trinity.utils.umap;
 class Hyperplane {
 
     //private final int[] mInds;
-    private final float[] mData;
+    private final double[] mData;
     private final int[] mShape;
 
-    Hyperplane(final int[] inds, final float[] data) {
+    Hyperplane(final int[] inds, final double[] data) {
         //mInds = inds;
         mData = data;
         mShape = inds == null ? new int[]{data.length} : new int[]{inds.length, 2};
     }
 
-    Hyperplane(final float[] data) {
+    Hyperplane(final double[] data) {
         this(null, data);
     }
 
-    public float[] data() {
+    public double[] data() {
         return mData;
     }
 
