@@ -418,7 +418,9 @@ final class RandomProjectionTree {
             final int[] leftIndices = (int[]) erps[0];
             final int[] rightIndices = (int[]) erps[1];
             final Hyperplane hyperplane = new Hyperplane((double[]) erps[2]);
-            final double offset = (double) erps[3];
+            double offset = 0.0;
+            if(null != erps[3])
+                offset = (double) erps[3];
 
             final RandomProjectionTreeNode leftNode = makeEuclideanTree(data, leftIndices, random, leafSize);
             final RandomProjectionTreeNode rightNode = makeEuclideanTree(data, rightIndices, random, leafSize);
@@ -435,7 +437,9 @@ final class RandomProjectionTree {
             final int[] leftIndices = (int[]) erps[0];
             final int[] rightIndices = (int[]) erps[1];
             final Hyperplane hyperplane = new Hyperplane((double[]) erps[2]);
-            final double offset = (double) erps[3];
+            double offset = 0.0;
+            if(null != erps[3])
+                offset = (double) erps[3];
 
             final RandomProjectionTreeNode leftNode = makeAngularTree(data, leftIndices, random, leafSize);
             final RandomProjectionTreeNode rightNode = makeAngularTree(data, rightIndices, random, leafSize);
@@ -452,7 +456,9 @@ final class RandomProjectionTree {
             final int[] leftIndices = (int[]) erps[0];
             final int[] rightIndices = (int[]) erps[1];
             final Hyperplane hyperplane = (Hyperplane) erps[2];
-            final double offset = (double) erps[3];
+            double offset = 0.0;
+            if(null != erps[3])
+                offset = (double) erps[3];
 
             final RandomProjectionTreeNode leftNode = makeSparseEuclideanTree(matrix, leftIndices, random, leafSize);
             final RandomProjectionTreeNode rightNode = makeSparseEuclideanTree(matrix, rightIndices, random, leafSize);
@@ -469,7 +475,9 @@ final class RandomProjectionTree {
             final int[] leftIndices = (int[]) erps[0];
             final int[] rightIndices = (int[]) erps[1];
             final Hyperplane hyperplane = (Hyperplane) erps[2];
-            final double offset = (double) erps[3];
+            double offset = 0.0;
+            if(null != erps[3])
+                offset = (double) erps[3];
 
             final RandomProjectionTreeNode leftNode = makeSparseAngularTree(matrix, leftIndices, random, leafSize);
             final RandomProjectionTreeNode rightNode = makeSparseAngularTree(matrix, rightIndices, random, leafSize);

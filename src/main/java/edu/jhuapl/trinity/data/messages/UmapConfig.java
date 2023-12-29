@@ -63,6 +63,8 @@ public class UmapConfig extends MessageData {
     private Integer numberNearestNeighbours;
     private Integer negativeSampleRate;
     private Integer localConnectivity;
+    private Double threshold;
+    private Float targetWeight;
     private String metric;
     private Boolean verbose;   
         
@@ -236,6 +238,33 @@ public class UmapConfig extends MessageData {
         this.verbose = verbose;
     }
 
-    //</editor-fold>
+    /**
+     * @return the threshold
+     */
+    public Double getThreshold() {
+        return threshold;
+    }
 
+    /**
+     * @param threshold the threshold to set
+     */
+    public void setThreshold(Double threshold) {
+        this.threshold = threshold;
+    }
+
+    /**
+     * @return the targetWeight
+     */
+    public Float getTargetWeight() {
+        return targetWeight;
+    }
+
+    /**
+     * @param targetWeight the targetWeight to set
+     */
+    public void setTargetWeight(Float targetWeight) {
+        this.targetWeight = targetWeight;
+    }
+
+    //</editor-fold>    
 }

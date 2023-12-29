@@ -695,15 +695,11 @@ public class Umap {
     private Metric mTargetMetric = CategoricalMetric.SINGLETON;
     private int mTargetNNeighbors = -1;
     private double mTargetWeight = 0.5F;
-    //  private int mTransformSeed = 42;
+    private double mThreshold = 0.001;
     private boolean mVerbose = false;
     private boolean parallelPairwise = true;
-
-    //  private final Float mA = null;
-//  private final Float mB = null;
     private Random mRandom = new Random(42);
     private int mThreads = 1;
-
     private double mInitialAlpha;
     private int mRunNNeighbors;
     private double mRunA;
@@ -776,6 +772,7 @@ public class Umap {
             throw new NullPointerException("Null metric not permitted.");
         }
         mMetric = metric;
+        mMetric.setThreshold(mThreshold);
     }
 
     /**
@@ -1034,6 +1031,18 @@ public class Umap {
         }
         mThreads = threads;
     }
+    
+    /**
+     * Set the cutoff threshold for metrics that utilize it (default 0.001).
+     *
+     * @param threshold optional threshold value for metrics that utilize it.
+     */
+    public void setThreshold(final double threshold) {
+        mThreshold = threshold;
+        if(null != mMetric)
+            mMetric.setThreshold(mThreshold);
+    }
+    
 
     private void validateParameters() {
         if (mMinDist > mSpread) {
@@ -1117,6 +1126,7 @@ public class Umap {
             }
             mSmallData = true;
             Matrix dmat;
+            mMetric.setThreshold(mThreshold);
             if (parallelPairwise)
                 dmat = PairwiseDistances.parallelPairwise(instances, mMetric, mVerbose);
             else

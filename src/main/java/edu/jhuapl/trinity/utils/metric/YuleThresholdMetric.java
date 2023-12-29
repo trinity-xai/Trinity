@@ -34,6 +34,7 @@ public final class YuleThresholdMetric extends Metric {
 
     private YuleThresholdMetric() {
         super(false);
+        setThreshold(DEFAULT_THRESHOLD);
     }
 
     @Override
@@ -41,9 +42,11 @@ public final class YuleThresholdMetric extends Metric {
         int numTrueTrue = 0;
         int numTrueFalse = 0;
         int numFalseTrue = 0;
+        final double threshold = getThreshold();
+        boolean xTrue,yTrue;
         for (int i = 0; i < x.length; ++i) {
-            final boolean xTrue = Math.abs(x[i]) > DEFAULT_THRESHOLD;
-            final boolean yTrue = Math.abs(y[i]) > DEFAULT_THRESHOLD;
+            xTrue = Math.abs(x[i]) > threshold;
+            yTrue = Math.abs(y[i]) > threshold;
             if (xTrue && yTrue) {
                 ++numTrueTrue;
             }

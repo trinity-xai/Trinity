@@ -44,9 +44,10 @@ public final class YuleMetric extends Metric {
         int numTrueTrue = 0;
         int numTrueFalse = 0;
         int numFalseTrue = 0;
+        boolean xTrue,yTrue;
         for (int i = 0; i < x.length; ++i) {
-            final boolean xTrue = x[i] != 0;
-            final boolean yTrue = y[i] != 0;
+            xTrue = x[i] != 0;
+            yTrue = y[i] != 0;
             if (xTrue && yTrue) {
                 ++numTrueTrue;
             }

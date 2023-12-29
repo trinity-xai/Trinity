@@ -26,7 +26,6 @@ import edu.jhuapl.trinity.data.files.ManifoldDataFile;
 import edu.jhuapl.trinity.data.messages.ClusterCollection;
 import edu.jhuapl.trinity.data.messages.ManifoldData;
 import edu.jhuapl.trinity.data.messages.P3D;
-import edu.jhuapl.trinity.data.messages.PointCluster;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent.ProjectionConfig;
@@ -44,7 +43,6 @@ import javafx.scene.shape.DrawMode;
 import javafx.scene.shape.Sphere;
 import javafx.scene.text.Font;
 import javafx.scene.transform.Rotate;
-
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;

@@ -42,6 +42,7 @@ import java.util.Map;
  */
 public abstract class Metric {
 
+    private double mThreshold = 0.001;
     private final boolean mIsAngular;
 
     Metric(final boolean isAngular) {
@@ -65,7 +66,18 @@ public abstract class Metric {
     public boolean isAngular() {
         return mIsAngular;
     }
-
+    /**
+     * Set optional Threshold.
+     *
+     * @param threshold the threshold value used by some metrics
+     */
+    public void setThreshold(double threshold) {
+        mThreshold = threshold;
+    }
+    public double getThreshold() {
+        return mThreshold;
+    }
+    
     private static Map<String, Metric> sMETRICS = null;
 
     public static List<String> getMetricNames() {

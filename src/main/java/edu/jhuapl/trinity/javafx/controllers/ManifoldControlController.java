@@ -157,6 +157,8 @@ public class ManifoldControlController implements Initializable {
 
     //UMAP tab
     @FXML
+    private Slider targetWeightSlider;
+    @FXML
     private Slider repulsionSlider;
     @FXML
     private Slider minDistanceSlider;
@@ -174,6 +176,8 @@ public class ManifoldControlController implements Initializable {
     private Spinner negativeSampleRateSpinner;
     @FXML
     private Spinner localConnectivitySpinner;
+    @FXML
+    private Spinner thresholdSpinner;
     @FXML
     private ChoiceBox metricChoiceBox;
     @FXML
@@ -341,15 +345,18 @@ public class ManifoldControlController implements Initializable {
         metricChoiceBox.getSelectionModel().selectFirst();
 
         numComponentsSpinner.setValueFactory(
-            new SpinnerValueFactory.IntegerSpinnerValueFactory(2, 100, 3, 1));
+            new SpinnerValueFactory.IntegerSpinnerValueFactory(2, 50, 3, 1));
         numEpochsSpinner.setValueFactory(
             new SpinnerValueFactory.IntegerSpinnerValueFactory(25, 500, 200, 25));
         nearestNeighborsSpinner.setValueFactory(
-            new SpinnerValueFactory.IntegerSpinnerValueFactory(5, 100, 15, 5));
+            new SpinnerValueFactory.IntegerSpinnerValueFactory(5, 500, 15, 5));
         negativeSampleRateSpinner.setValueFactory(
-            new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 50, 5, 1));
+            new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 250, 5, 1));
         localConnectivitySpinner.setValueFactory(
-            new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 50, 1, 1));
+            new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 250, 1, 1));
+        thresholdSpinner.setValueFactory(
+            new SpinnerValueFactory.DoubleSpinnerValueFactory(0.001, 1.0, 0.001, 0.001));
+        thresholdSpinner.setEditable(true);
 
         hyperSourceGroup = new ToggleGroup();
         useHyperspaceButton.setToggleGroup(hyperSourceGroup);
@@ -589,6 +596,8 @@ public class ManifoldControlController implements Initializable {
             UmapConfig uc;
             try {
                 uc = mapper.readValue(file, UmapConfig.class);
+                if(null != uc.getTargetWeight())
+                    targetWeightSlider.setValue(uc.getTargetWeight());
                 repulsionSlider.setValue(uc.getRepulsionStrength());
                 minDistanceSlider.setValue(uc.getMinDist());
                 spreadSlider.setValue(uc.getSpread());
@@ -598,6 +607,8 @@ public class ManifoldControlController implements Initializable {
                 nearestNeighborsSpinner.getValueFactory().setValue(uc.getNumberNearestNeighbours());
                 negativeSampleRateSpinner.getValueFactory().setValue(uc.getNegativeSampleRate());
                 localConnectivitySpinner.getValueFactory().setValue(uc.getLocalConnectivity());
+                if(null != uc.getThreshold())
+                    thresholdSpinner.getValueFactory().setValue(uc.getThreshold());
                 metricChoiceBox.getSelectionModel().select(uc.getMetric());
                 verboseCheckBox.setSelected(uc.getVerbose());            
             } catch (IOException ex) {
@@ -618,6 +629,7 @@ public class ManifoldControlController implements Initializable {
             if (file.getParentFile().isDirectory())
                 latestDir = file;
             UmapConfig uc = new UmapConfig();
+            uc.setTargetWeight((float) targetWeightSlider.getValue());
             uc.setRepulsionStrength((float) repulsionSlider.getValue());
             uc.setMinDist((float) minDistanceSlider.getValue());
             uc.setSpread((float) spreadSlider.getValue());
@@ -627,6 +639,7 @@ public class ManifoldControlController implements Initializable {
             uc.setNumberNearestNeighbours((int) nearestNeighborsSpinner.getValue());
             uc.setNegativeSampleRate((int) negativeSampleRateSpinner.getValue());
             uc.setLocalConnectivity((int) localConnectivitySpinner.getValue());
+            uc.setThreshold((double) thresholdSpinner.getValue());
             uc.setMetric((String) metricChoiceBox.getValue());
             uc.setVerbose(verboseCheckBox.isSelected());            
             ObjectMapper mapper = new ObjectMapper();
@@ -674,7 +687,6 @@ public class ManifoldControlController implements Initializable {
                 endIndex = -1;
         }
 
-
         PCAConfig config = new PCAConfig(source, method,
             (int) numPcaComponentsSpinner.getValue(), (double) pcaScalingSpinner.getValue(),
             startIndex, endIndex);
@@ -682,12 +694,12 @@ public class ManifoldControlController implements Initializable {
             ManifoldEvent.POINT_SOURCE.HYPERSURFACE : ManifoldEvent.POINT_SOURCE.HYPERSPACE;
         scene.getRoot().fireEvent(new ManifoldEvent(
             ManifoldEvent.GENERATE_NEW_PCA, config, pointSource));
-
     }
 
     @FXML
     public void project() {
         Umap umap = new Umap();
+        umap.setTargetWeight((float) targetWeightSlider.getValue());
         umap.setRepulsionStrength((float) repulsionSlider.getValue());
         umap.setMinDist((float) minDistanceSlider.getValue());
         umap.setSpread((float) spreadSlider.getValue());
@@ -697,6 +709,7 @@ public class ManifoldControlController implements Initializable {
         umap.setNumberNearestNeighbours((int) nearestNeighborsSpinner.getValue());
         umap.setNegativeSampleRate((int) negativeSampleRateSpinner.getValue());
         umap.setLocalConnectivity((int) localConnectivitySpinner.getValue());
+        umap.setThreshold((double) thresholdSpinner.getValue());
         umap.setMetric((String) metricChoiceBox.getValue());
         umap.setVerbose(verboseCheckBox.isSelected());
         ManifoldEvent.POINT_SOURCE pointSource = useHypersurfaceButton.isSelected() ?
@@ -704,7 +717,6 @@ public class ManifoldControlController implements Initializable {
         scene.getRoot().fireEvent(new ManifoldEvent(
             ManifoldEvent.GENERATE_NEW_UMAP, umap, pointSource));
         latestUmapObject = umap;
-
     }
 
     @FXML
