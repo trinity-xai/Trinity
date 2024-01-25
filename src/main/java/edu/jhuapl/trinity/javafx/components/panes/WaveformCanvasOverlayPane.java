@@ -305,7 +305,8 @@ public class WaveformCanvasOverlayPane extends CanvasOverlayPane {
                     int maxArrayLength = 100000;
                     int[] finalAmplitudes = new int[maxArrayLength];
                     int samplesPerPixel = available / maxArrayLength;
-
+                    if(samplesPerPixel < 1)
+                        samplesPerPixel = 1;
                     // Variables to calculate finalAmplitudes array
                     int currentSampleCounter = 0;
                     int arrayCellPosition = 0;

@@ -21,11 +21,8 @@ package edu.jhuapl.trinity.javafx.components.panes;
  */
 
 import edu.jhuapl.trinity.data.audio.FlacToWav;
-import edu.jhuapl.trinity.data.audio.flac.FlacConverter;
-import edu.jhuapl.trinity.data.audio.flac.FlacDecoder;
 import edu.jhuapl.trinity.javafx.events.AudioEvent;
 import edu.jhuapl.trinity.utils.ResourceUtils;
-import edu.jhuapl.trinity.utils.fun.GlitchUtils;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -39,7 +36,6 @@ import javafx.scene.control.ColorPicker;
 import javafx.scene.effect.BlurType;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.image.ImageView;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.BorderPane;
@@ -47,7 +43,6 @@ import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
-import javafx.util.Duration;
 
 /**
  * @author Sean Phillips
@@ -226,26 +221,23 @@ public class WaveformPane extends LitPathPane {
             waveformCanvas.setBackgroundColor(backgroundColorPicker.getValue());
             waveformCanvas.paintWaveform();
         });
-        this.addEventHandler(MouseEvent.MOUSE_CLICKED, e-> {
-            GlitchUtils.gitchNode(this, 
-            Duration.millis(250), Duration.ZERO, 2);
-        });
-        
+//        this.addEventHandler(MouseEvent.MOUSE_CLICKED, e-> {
+//            GlitchUtils.gitchNode(this, 
+//            Duration.millis(250), Duration.ZERO, 2);
+//        });
     }
 
     public void setWaveform(File audioFile) {
-        System.out.println("@TODO SMP... process audio file");
+        System.out.println("Processing audio file...");
         int indexOfPeriod = audioFile.getPath().lastIndexOf(".");
         if(indexOfPeriod > 0) {
             String ext = audioFile.getPath().substring(indexOfPeriod+1);
             if(ext.toLowerCase().contentEquals("wav") ||
                 ext.toLowerCase().contentEquals("flac")) {
-                
                 if(ext.toLowerCase().contentEquals("flac")) {
                     //create temporary wav file
                     try {
                         Path tempFile = Files.createTempFile("flacToWav-"+audioFile.getName(), ".wav");
-//                        FlacConverter.decodeFlacToWav(audioFile, tempFile.toFile());
                         FlacToWav ftw = new FlacToWav();
                         ftw.decode(audioFile.getPath(), tempFile.toString());
                         waveformCanvas.startVisualization(tempFile.toFile());
@@ -262,6 +254,4 @@ public class WaveformPane extends LitPathPane {
             System.out.println("Could not determine audio file type.\nTypes supported: .wav | .flac");
         }
     }
-
- 
 }
