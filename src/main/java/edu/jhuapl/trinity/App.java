@@ -29,6 +29,7 @@ import edu.jhuapl.trinity.javafx.components.radial.CircleProgressIndicator;
 import edu.jhuapl.trinity.javafx.components.MatrixOverlay;
 import edu.jhuapl.trinity.javafx.components.radial.ProgressStatus;
 import edu.jhuapl.trinity.javafx.components.panes.Shape3DControlPane;
+import edu.jhuapl.trinity.javafx.components.panes.SparkLinesPane;
 import edu.jhuapl.trinity.javafx.components.panes.TextPane;
 import edu.jhuapl.trinity.javafx.components.panes.TrajectoryTrackerPane;
 import edu.jhuapl.trinity.javafx.components.radial.MainNavMenu;
@@ -123,6 +124,7 @@ public class App extends Application {
     Hypersurface3DPane hypersurface3DPane;
     Projections3DPane projections3DPane;
     TrajectoryTrackerPane trajectoryTrackerPane;
+    SparkLinesPane sparkLinesPane;
     TextPane textConsolePane;
     WaveformPane waveformPane;
     Shape3DControlPane shape3DControlPane;
@@ -213,12 +215,14 @@ public class App extends Application {
 
         System.out.println("Constructing 3D subscenes...");
         //animatedConsoleText.animate("Constructing 3D subscenes...");
-        hypersurface3DPane = new Hypersurface3DPane(scene);
-        hypersurface3DPane.setVisible(false); //start off hidden
         projections3DPane = new Projections3DPane(scene);
         projections3DPane.setVisible(false); //start off hidden
-        hyperspace3DPane = new Hyperspace3DPane(scene);
 
+        hypersurface3DPane = new Hypersurface3DPane(scene);
+        hypersurface3DPane.setVisible(false); //start off hidden
+        hyperspace3DPane = new Hyperspace3DPane(scene);
+        hyperspace3DPane.setVisible(false); //start off hidden
+        
         System.out.println("Registering Event Handlers...");
         //animatedConsoleText.animate("Registering Event Handlers...");
         scene.addEventHandler(FeatureVectorEvent.REQUEST_FEATURE_COLLECTION, event -> {
@@ -304,7 +308,7 @@ public class App extends Application {
             }
             event.consume();
         });
-        hyperspace3DPane.setVisible(false); //start off hidden
+        
         hyperspace3DPane.addEventHandler(DragEvent.DRAG_OVER, event -> {
             if (ResourceUtils.canDragOver(event)) {
                 event.acceptTransferModes(TransferMode.COPY);
@@ -494,6 +498,17 @@ public class App extends Application {
                 trajectoryTrackerPane.show();
             }
         });
+        scene.addEventHandler(ApplicationEvent.SHOW_SPARK_LINES, e -> {
+            if (null == sparkLinesPane) {
+                sparkLinesPane = new SparkLinesPane(scene, pathPane);
+            }
+            if (!pathPane.getChildren().contains(sparkLinesPane)) {
+                pathPane.getChildren().add(sparkLinesPane);
+                sparkLinesPane.slideInPane();
+            } else {
+                sparkLinesPane.show();
+            }
+        });
 
         scene.addEventHandler(ApplicationEvent.SHOW_PROJECTIONS, e -> {
             if (projections3DPane.isVisible()) {
@@ -619,7 +634,8 @@ public class App extends Application {
         scene.getRoot().addEventHandler(ManifoldEvent.MANIFOLD_WIREFRAME_COLOR, meh);
         scene.getRoot().addEventHandler(ManifoldEvent.FIND_PROJECTION_CLUSTERS, meh);
         scene.getRoot().addEventHandler(ManifoldEvent.NEW_CLUSTER_COLLECTION, meh);
-//        meh.addManifoldRenderer(hyperspace3DPane);
+        scene.getRoot().addEventHandler(ManifoldEvent.NEW_PROJECTION_VECTOR, meh);
+
         meh.addManifoldRenderer(projections3DPane);
 
         smeh = new SemanticMapEventHandler(false);

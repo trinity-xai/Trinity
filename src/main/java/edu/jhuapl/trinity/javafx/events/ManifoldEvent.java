@@ -32,6 +32,7 @@ public class ManifoldEvent extends Event {
 
     public Object object1 = null;
     public Object object2 = null;
+    public Object object3 = null;
 
     public static enum POINT_SOURCE {HYPERSPACE, HYPERSURFACE}
     public static class ProjectionConfig {
@@ -66,7 +67,8 @@ public class ManifoldEvent extends Event {
     public static final EventType<ManifoldEvent> SET_DISTANCE_TOLERANCE = new EventType(ANY, "SET_DISTANCE_TOLERANCE");
     public static final EventType<ManifoldEvent> GENERATE_HYPERSPACE_MANIFOLD = new EventType(ANY, "GENERATE_HYPERSPACE_MANIFOLD");
     public static final EventType<ManifoldEvent> GENERATE_PROJECTION_MANIFOLD = new EventType(ANY, "GENERATE_PROJECTION_MANIFOLD");
-
+    public static final EventType<ManifoldEvent> NEW_PROJECTION_VECTOR = new EventType(ANY, "NEW_PROJECTION_VECTOR");
+        
     //Clustering
     public static final EventType<ManifoldEvent> FIND_PROJECTION_CLUSTERS = new EventType(ANY, "FIND_PROJECTION_CLUSTERS");
     public static final EventType<ManifoldEvent> NEW_CLUSTER_COLLECTION = new EventType(ANY, "NEW_CLUSTER_COLLECTION");
@@ -114,6 +116,13 @@ public class ManifoldEvent extends Event {
         this(arg0);
         object1 = arg1;
         object2 = arg2;
+    }
+    //Hello... is it this hack you're looking for...?
+    public ManifoldEvent(EventType<? extends Event> arg0, Object arg1, Object arg2, Object arg3) {
+        this(arg0);
+        object1 = arg1;
+        object2 = arg2;
+        object3 = arg3;
     }
 
     public ManifoldEvent(Object arg0, EventTarget arg1, EventType<? extends Event> arg2) {

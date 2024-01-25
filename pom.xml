@@ -147,6 +147,11 @@
             <artifactId>webcam-capture</artifactId>
             <version>${sarxos.webcam.capture.version}</version>
         </dependency>
+        <dependency>
+          <groupId>org.jflac</groupId>
+          <artifactId>jflac-codec</artifactId>
+          <version>1.5.2</version>
+        </dependency>        
         <!-- Enforce slf4j-api version across dependencies (although we're using JUL) -->
         <dependency>
             <groupId>org.slf4j</groupId>

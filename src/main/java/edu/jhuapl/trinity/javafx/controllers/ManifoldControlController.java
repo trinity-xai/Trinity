@@ -21,7 +21,6 @@ package edu.jhuapl.trinity.javafx.controllers;
  */
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.SerializationFeature;
 import edu.jhuapl.trinity.App;
 import edu.jhuapl.trinity.data.Distance;
 import edu.jhuapl.trinity.data.FactorLabel;
@@ -721,8 +720,14 @@ public class ManifoldControlController implements Initializable {
 
     @FXML
     public void generate() {
+        Double tolerance = null;
+        if(!automaticCheckBox.isSelected())
+            tolerance = (Double)manualSpinner.getValue();
         scene.getRoot().fireEvent(new ManifoldEvent(
-            ManifoldEvent.GENERATE_PROJECTION_MANIFOLD, useVisibleRadioButton.isSelected(), (String) labelChoiceBox.getValue()));
+            ManifoldEvent.GENERATE_PROJECTION_MANIFOLD, 
+            useVisibleRadioButton.isSelected(), 
+                (String) labelChoiceBox.getValue(), tolerance
+        ));
     }
 
     @FXML

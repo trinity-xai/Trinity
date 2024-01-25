@@ -204,7 +204,7 @@ public class Shape3DControlPane extends LitPathPane {
             if (item.isSelected())
                 points.add(item.getPoint3D());
         });
-        manifold3D.refreshMesh(points, false, true, false);
+        manifold3D.refreshMesh(points, false, true, false, null);
     }
 
     public void setShape3D(Manifold3D manifold3D) {

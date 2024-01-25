@@ -53,7 +53,7 @@ import java.util.Objects;
  * @see FrameInfo
  * @see FlacDecoder
  */
-public final class StreamInfo {
+public final class FlacStreamInfo {
 	
 	/*---- Fields about block and frame sizes ----*/
 	
@@ -121,7 +121,7 @@ public final class StreamInfo {
 	/**
 	 * Constructs a blank stream info structure with certain default values.
 	 */
-	public StreamInfo() {
+	public FlacStreamInfo() {
 		// Set these fields to legal unknown values
 		minFrameSize = 0;
 		maxFrameSize = 0;
@@ -143,7 +143,7 @@ public final class StreamInfo {
 	 * @throws IllegalArgumentException if the array length is not 34
 	 * @throws DataFormatException if the data contains invalid values
 	 */
-	public StreamInfo(byte[] b) {
+	public FlacStreamInfo(byte[] b) {
 		Objects.requireNonNull(b);
 		if (b.length != 34)
 			throw new IllegalArgumentException("Invalid data length");

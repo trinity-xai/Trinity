@@ -77,16 +77,21 @@ public class DataController implements Initializable {
     //// Imagery /////
     @FXML
     private TextField imageryBasePathTextField;
+    
+    //// Timeline controls /////
     @FXML
     private CheckBox showTimelineCheckBox;
     @FXML
     private CheckBox showStateTrajectoryCheckBox;
     @FXML
     private CheckBox showLeadCalloutCheckBox;
-
     @FXML
     private Spinner trajectorySizeSpinner;
-
+    //// Projections /////
+    @FXML
+    ToggleButton autoProjectionToggleButton;
+    @FXML
+    Spinner projectionQueueSizeSpinner;
 
     ToggleGroup toggleGroup;
     Scene scene;
@@ -137,7 +142,12 @@ public class DataController implements Initializable {
             showStateTrajectoryCheckBox.selectedProperty().not());
 
     }
-
+    @FXML
+    public void showSparkLines() {
+        scene.getRoot().fireEvent(
+            new ApplicationEvent(ApplicationEvent.SHOW_SPARK_LINES));
+    }
+    
     @FXML
     public void showTrajectoryTracker() {
         scene.getRoot().fireEvent(

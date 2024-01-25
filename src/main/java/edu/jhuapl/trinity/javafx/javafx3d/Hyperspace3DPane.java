@@ -56,7 +56,6 @@ import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import edu.jhuapl.trinity.utils.Utils;
 import edu.jhuapl.trinity.utils.VisibilityMap;
-import edu.jhuapl.trinity.utils.clustering.ClusterMethod;
 import javafx.animation.AnimationTimer;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
@@ -560,7 +559,7 @@ public class Hyperspace3DPane extends StackPane implements
             }
 
             if (event.isAltDown() && keycode == KeyCode.H) {
-                makeHull(false, null);
+                makeHull(false, null, null);
             }
             if (keycode == KeyCode.F) {
                 anchorIndex--;
@@ -997,7 +996,7 @@ public class Hyperspace3DPane extends StackPane implements
         }
     }
 
-    public void makeHull(boolean useVisiblePoints, String label) {
+    public void makeHull(boolean useVisiblePoints, String label, Double tolerance) {
         //@TODO SMP Limit hull to points with that label
         shape3DToLabel.clear();
         //Add to hashmap so updateLabels() can manage the label position
@@ -1012,7 +1011,7 @@ public class Hyperspace3DPane extends StackPane implements
             data = getAllPoints(pNodeArray);
         }
         Manifold3D manifold3D = new Manifold3D(
-            data.subList(1, data.size()), true, true, true
+            data.subList(1, data.size()), true, true, true, tolerance
         );
 
         System.out.println("scattermodel Manifold complete");
@@ -2021,8 +2020,8 @@ public class Hyperspace3DPane extends StackPane implements
     }
 
     @Override
-    public void makeManifold(boolean useVisiblePoints, String label) {
-        makeHull(useVisiblePoints, label);
+    public void makeManifold(boolean useVisiblePoints, String label, Double tolerance) {
+        makeHull(useVisiblePoints, label, tolerance);
     }
 
     @Override
@@ -2076,6 +2075,11 @@ public class Hyperspace3DPane extends StackPane implements
 
     @Override
     public void addClusters(List<PointCluster> clusters) {
-    
+        
     }
+    @Override
+    public void projectVector(FeatureVector featureVector) {
+        
+    }
+    
 }

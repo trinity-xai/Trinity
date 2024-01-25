@@ -76,7 +76,7 @@ public final class FlacDecoder implements AutoCloseable {
 	
 	/*---- Fields ----*/
 	
-	public StreamInfo streamInfo;
+	public FlacStreamInfo streamInfo;
 	public SeekTable seekTable;
 	
 	private FlacLowLevelInput input;
@@ -126,7 +126,7 @@ public final class FlacDecoder implements AutoCloseable {
 		if (type == 0) {
 			if (streamInfo != null)
 				throw new DataFormatException("Duplicate stream info metadata block");
-			streamInfo = new StreamInfo(data);
+			streamInfo = new FlacStreamInfo(data);
 		} else {
 			if (streamInfo == null)
 				throw new DataFormatException("Expected stream info metadata block");

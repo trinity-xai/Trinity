@@ -134,7 +134,6 @@ import edu.jhuapl.trinity.utils.clustering.KmeansPlusPlus;
 import edu.jhuapl.trinity.utils.clustering.GaussianMixtureComponent;
 import edu.jhuapl.trinity.utils.clustering.Point;
 import edu.jhuapl.trinity.utils.clustering.GaussianMixtureModel;
-import java.util.Comparator;
 import javafx.scene.shape.Box;
 import javafx.util.Pair;
 
@@ -171,6 +170,7 @@ public class Projections3DPane extends StackPane implements
     public Group connectorsGroup = new Group();
     public Group debugGroup = new Group();
     public Group ellipsoidGroup = new Group();
+    public Group projectedGroup = new Group();
     public Sphere selectedSphereA = null;
     public Sphere selectedSphereB = null;
     public Manifold3D selectedManifoldA = null;
@@ -357,7 +357,7 @@ public class Projections3DPane extends StackPane implements
         double ellipsoidWidth = anchorTraj3D.width / 2.0;
         for (Point3D point : anchorTraj3D.points) {
             TriaxialSpheroidMesh tsm = createEllipsoid(ellipsoidWidth,
-                ellipsoidWidth, ellipsoidWidth, Color.LIGHTBLUE);
+                ellipsoidWidth, ellipsoidWidth, Color.TOMATO);
             tsm.setTranslateX(point.x);
             tsm.setTranslateY(point.y);
             tsm.setTranslateZ(point.z);
@@ -640,7 +640,7 @@ public class Projections3DPane extends StackPane implements
             }
 
             if (event.isAltDown() && keycode == KeyCode.H) {
-                makeHull(getPointsByLabel(true, null), null);
+                makeHull(getPointsByLabel(true, null), null, null);
             }
             if (keycode == KeyCode.F) {
                 anchorIndex--;
@@ -1153,9 +1153,9 @@ public class Projections3DPane extends StackPane implements
         }
     }
 
-    public Manifold3D makeHull(List<Point3D> labelMatchedPoints, String label) {
+    public Manifold3D makeHull(List<Point3D> labelMatchedPoints, String label, Double tolerance) {
         Manifold3D manifold3D = new Manifold3D(
-            labelMatchedPoints, true, true, true
+            labelMatchedPoints, true, true, true, tolerance
         );
         manifold3D.quickhullMeshView.setCullFace(CullFace.FRONT);
         manifold3D.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
@@ -1943,7 +1943,6 @@ public class Projections3DPane extends StackPane implements
         //rather than directly call updateView() let the rendering thread know there is a change
         isDirty = true;
     }
-
     @Override
     public void addFeatureCollection(FeatureCollection featureCollection) {
         Platform.runLater(() -> {
@@ -1962,58 +1961,60 @@ public class Projections3DPane extends StackPane implements
         //Make a 3D sphere for each projected feature vector
         for (int i = 0; i < featureCollection.getFeatures().size(); i++) {
             FeatureVector featureVector = featureCollection.getFeatures().get(i);
-            Sphere sphere = new Sphere(point3dSize);
-            PhongMaterial mat = new PhongMaterial(
-                FactorLabel.getColorByLabel(featureVector.getLabel()));
-            mat.setSpecularColor(Color.TRANSPARENT);
-            sphere.setMaterial(mat);
-            sphere.setTranslateX(featureVector.getData().get(0) * projectionScalar);
-            sphere.setTranslateY(featureVector.getData().get(1) * -projectionScalar);
-            sphere.setTranslateZ(featureVector.getData().get(2) * projectionScalar);
-            ellipsoidGroup.getChildren().add(sphere);
-            sphereToFeatureVectorMap.put(sphere, featureVector);
-            //@TODO add Spinning Circle as highlight when mouse hovering
-            int sphereIndex = i;
-            sphere.addEventHandler(MouseEvent.MOUSE_ENTERED, e -> {
-                highlightedPoint = sphere;
-                updateFloatingNodes(); //Will transform location of all floating 2D nodes
-                javafx.geometry.Point3D p1 = new javafx.geometry.Point3D(
-                    sphere.getTranslateX(), sphere.getTranslateY(), sphere.getTranslateZ());
-                scene.getRoot().fireEvent(new ManifoldEvent(
-                    ManifoldEvent.SELECT_PROJECTION_POINT3D, p1));
-
-                miniCrosshair.size = point3dSize * 4.0;
-                miniCrosshair.setCenter(p1);
-                setCircleRadiusByDistance(highlighterNeonCircle, sphere);
-                //update selection listeners with original hyper dimensions (eg RADAR plot)
-                if (sphereIndex < hyperFeatures.size())
-                    scene.getRoot().fireEvent(new FeatureVectorEvent(
-                        FeatureVectorEvent.SELECT_FEATURE_VECTOR,
-                        hyperFeatures.get(sphereIndex), featureLabels));
-            });
-
-            //Add click handler to popup callout or point distance measurements
-            sphere.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
-                if (e.getButton() == MouseButton.PRIMARY && !e.isControlDown())
-                    radialOverlayPane.createCallout(sphere, featureVector, subScene);
-                else if ((e.getButton() == MouseButton.PRIMARY && e.isControlDown())
-                    || (e.getButton() == MouseButton.PRIMARY && pointToPointDistanceMode)) {
-                    processDistanceClick(sphere);
-                }
-            });
-
-            featureVectors.add(featureVector);
-            HyperspaceSeed seed = new HyperspaceSeed(
-                0, 1, 2, 0, 1, 2,
-                FeatureVector.mapToStateArray.apply(featureVector));
-            seed.label = featureVector.getLabel();
-            seed.layer = featureVector.getLayer();
-            seed.score = featureVector.getScore();
-            seed.pfa = featureVector.getPfa();
-            hyperspaceSeeds.add(seed);
-            addPNodeFromSeed(seed);
+            addProjectedFeatureVector(featureVector);
         }
         trimQueueNow();
+    }
+    public void addProjectedFeatureVector(FeatureVector featureVector) {
+        Sphere sphere = new Sphere(point3dSize);
+        PhongMaterial mat = new PhongMaterial(
+            FactorLabel.getColorByLabel(featureVector.getLabel()));
+        mat.setSpecularColor(Color.TRANSPARENT);
+        sphere.setMaterial(mat);
+        sphere.setTranslateX(featureVector.getData().get(0) * projectionScalar);
+        sphere.setTranslateY(featureVector.getData().get(1) * -projectionScalar);
+        sphere.setTranslateZ(featureVector.getData().get(2) * projectionScalar);
+        ellipsoidGroup.getChildren().add(sphere);
+        sphereToFeatureVectorMap.put(sphere, featureVector);
+        //@TODO add Spinning Circle as highlight when mouse hovering
+        sphere.addEventHandler(MouseEvent.MOUSE_ENTERED, e -> {
+            highlightedPoint = sphere;
+            updateFloatingNodes(); //Will transform location of all floating 2D nodes
+            javafx.geometry.Point3D p1 = new javafx.geometry.Point3D(
+                sphere.getTranslateX(), sphere.getTranslateY(), sphere.getTranslateZ());
+            scene.getRoot().fireEvent(new ManifoldEvent(
+                ManifoldEvent.SELECT_PROJECTION_POINT3D, p1));
+
+            miniCrosshair.size = point3dSize * 4.0;
+            miniCrosshair.setCenter(p1);
+            setCircleRadiusByDistance(highlighterNeonCircle, sphere);
+            //update selection listeners with original hyper dimensions (eg RADAR plot)
+            FeatureVector fv = sphereToFeatureVectorMap.get(sphere);
+            if (null != fv)
+                scene.getRoot().fireEvent(new FeatureVectorEvent(
+                    FeatureVectorEvent.SELECT_FEATURE_VECTOR,fv, featureLabels));
+        });
+
+        //Add click handler to popup callout or point distance measurements
+        sphere.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
+            if (e.getButton() == MouseButton.PRIMARY && !e.isControlDown())
+                radialOverlayPane.createCallout(sphere, featureVector, subScene);
+            else if ((e.getButton() == MouseButton.PRIMARY && e.isControlDown())
+                || (e.getButton() == MouseButton.PRIMARY && pointToPointDistanceMode)) {
+                processDistanceClick(sphere);
+            }
+        });
+
+        featureVectors.add(featureVector);
+        HyperspaceSeed seed = new HyperspaceSeed(
+            0, 1, 2, 0, 1, 2,
+            FeatureVector.mapToStateArray.apply(featureVector));
+        seed.label = featureVector.getLabel();
+        seed.layer = featureVector.getLayer();
+        seed.score = featureVector.getScore();
+        seed.pfa = featureVector.getPfa();
+        hyperspaceSeeds.add(seed);
+        addPNodeFromSeed(seed);
     }
     private void pointToManifold(Manifold3D manifold3D) {
         javafx.geometry.Point3D p1 = new javafx.geometry.Point3D(
@@ -2099,7 +2100,6 @@ public class Projections3DPane extends StackPane implements
             pointToManifold(selectedManifoldA);
         }
     }
-
     private void processDistanceClick(Sphere sphere) {
         System.out.println("Point: " + sphere.toString());
         if (null == selectedSphereA) {
@@ -2116,7 +2116,6 @@ public class Projections3DPane extends StackPane implements
         }
 
     }
-
     //Add 3D line to scene connecting the two points
     private Sphere updateDistanceTrajectory(Trajectory3D distanceTraj3D, Distance distance) {
         if (null != distanceTraj3D) {
@@ -2200,7 +2199,6 @@ public class Projections3DPane extends StackPane implements
         updateFloatingNodes();
         return midpointSphere;
     }
-
     public void updateMaxAndMeans() {
         meanVector = FeatureVector.getMeanVector(featureVectors);
         maxAbsValue = FeatureVector.getMaxAbsValue(featureVectors);
@@ -2222,7 +2220,6 @@ public class Projections3DPane extends StackPane implements
                 new CommandTerminalEvent(str, new Font("Consolas", 20), Color.GREEN));
         });
     }
-
     public void trimQueueNow() {
         while (hyperspaceSeeds.size() > queueLimit) {
             hyperspaceSeeds.poll();
@@ -2365,7 +2362,7 @@ public class Projections3DPane extends StackPane implements
     }
 
     @Override
-    public void makeManifold(boolean useVisiblePoints, String label) {
+    public void makeManifold(boolean useVisiblePoints, String label, Double tolerance) {
         //Create Manifold Object based on points that share the label
         List<Point3D> labelMatchedPoints = getPointsByLabel(useVisiblePoints, label);
         ArrayList<javafx.geometry.Point3D> fxPoints = labelMatchedPoints.stream()
@@ -2373,7 +2370,7 @@ public class Projections3DPane extends StackPane implements
             .collect(Collectors.toCollection(ArrayList::new));
         Manifold manifold = new Manifold(fxPoints, label, label, sceneColor);
         //Create the 3D manifold shape
-        Manifold3D manifold3D = makeHull(labelMatchedPoints, label);
+        Manifold3D manifold3D = makeHull(labelMatchedPoints, label, tolerance);
         manifold3D.setManifold(manifold);
         manifold3D.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
             getScene().getRoot().fireEvent(
@@ -2510,7 +2507,31 @@ public class Projections3DPane extends StackPane implements
         thread.setDaemon(true);
         thread.start();
     }
-
+    @Override
+    public void projectVector(FeatureVector featureVector) {
+        if(null != latestUmap && null != latestUmap.getmEmbedding()) {
+            double [] stateArray = FeatureVector.mapToStateArray.apply(featureVector);    
+            double [][] transformInstances = new double[2][stateArray.length];
+            System.arraycopy(stateArray, 0, transformInstances[0], 0, stateArray.length);
+            System.arraycopy(stateArray, 0, transformInstances[1], 0, stateArray.length);
+            double [][] projections = latestUmap.transform(transformInstances);
+            FeatureVector projectedFV = FeatureVector.fromData(projections[0], 
+                projections[0].length, 1.0);
+            projectedFV.setLayer(featureVector.getLayer());
+            projectedFV.setLabel(featureVector.getLabel());
+            projectedFV.setMediaURL(featureVector.getMediaURL());
+            //Convert projected point to sphere
+            //set color according to label and projection status
+            //add feature vector to sphere lookup        
+            //add to scene in projected group
+            addProjectedFeatureVector(projectedFV);            
+//@TODO SMP 
+//            if in auto measurement mode, do distance check to all known manifolds
+//            update spark line views with distance and threshold checks
+                    
+        }
+    }
+    
     public void projectFeatureCollection(FeatureCollection originalFC, Umap umap) {
         Task task = new Task() {
             @Override
@@ -2527,7 +2548,7 @@ public class Projections3DPane extends StackPane implements
                 });
 
                 double[][] umapMatrix = AnalysisUtils.fitUMAP(originalFC, umap);
-                latestUmap = umap;
+                latestUmap = umap; 
                 Platform.runLater(() -> {
                     ProgressStatus ps = new ProgressStatus("Converting to FeatureCollection...", 0.5);
                     ps.fillStartColor = Color.CYAN;
@@ -2667,7 +2688,7 @@ public class Projections3DPane extends StackPane implements
                             .collect(Collectors.toCollection(ArrayList::new));
                         Manifold manifold = new Manifold(fxPoints, label, label, sceneColor);
                         //Create the 3D manifold shape
-                        Manifold3D manifold3D = makeHull(points, label);
+                        Manifold3D manifold3D = makeHull(points, label, null);
                         manifold3D.setManifold(manifold);
                         manifold3D.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
                             getScene().getRoot().fireEvent(
@@ -2746,7 +2767,7 @@ public class Projections3DPane extends StackPane implements
                     pointCluster.getClusterName(), 
                     sceneColor);
                 //Create the 3D manifold shape
-                Manifold3D manifold3D = makeHull(points, pointCluster.getClusterName());
+                Manifold3D manifold3D = makeHull(points, pointCluster.getClusterName(), null);
                 manifold3D.setManifold(manifold);
                 manifold3D.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
                     getScene().getRoot().fireEvent(

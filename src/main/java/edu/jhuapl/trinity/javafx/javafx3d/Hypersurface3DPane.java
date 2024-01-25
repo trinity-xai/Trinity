@@ -569,7 +569,6 @@ public class Hypersurface3DPane extends StackPane
             }
         });
 
-
         MenuItem updateAllItem = new MenuItem("Update Render");
         updateAllItem.setOnAction(e -> updateAll());
         MenuItem clearDataItem = new MenuItem("Clear Data");
@@ -709,8 +708,6 @@ public class Hypersurface3DPane extends StackPane
                     System.out.println("updateTheMesh(): " + Utils.totalTimeString(startTime));
                 }
             }
-
-            ;
         };
         surfUpdateAnimationTimer.start();
     }
@@ -1035,6 +1032,7 @@ public class Hypersurface3DPane extends StackPane
             //update the local transform of the label.
             node.getTransforms().setAll(new Translate(x, y));
         });
+        int i=0;
     }
 
     private ImageView loadImageView(FeatureVector featureVector, boolean bboxOnly) {
@@ -1460,7 +1458,7 @@ public class Hypersurface3DPane extends StackPane
         StackPane.setAlignment(vbox, Pos.BOTTOM_LEFT);
         vbox.setPickOnBounds(false);
         getChildren().add(vbox);
-        Utils.printTotalTime(startTime);
+//        Utils.printTotalTime(startTime);
         updateLabels();
     }
 

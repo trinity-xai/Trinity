@@ -25,6 +25,7 @@ import com.github.quickhull3d.QuickHull3D;
 import edu.jhuapl.trinity.data.Manifold;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
+import edu.jhuapl.trinity.utils.ConcaveUtils;
 import javafx.animation.AnimationTimer;
 import javafx.scene.Group;
 import javafx.scene.control.ColorPicker;
@@ -92,9 +93,9 @@ public class Manifold3D extends Group {
     private List<Point3D> originalPoint3Ds = null;
     public static File latestDir = new File(".");
 
-    public Manifold3D(List<Point3D> point3DList, boolean triangulate, boolean makeLines, boolean makePoints) {
+    public Manifold3D(List<Point3D> point3DList, boolean triangulate, boolean makeLines, boolean makePoints, Double tolerance) {
         originalPoint3Ds = point3DList;
-        buildHullMesh(point3DList, triangulate, makeLines, makePoints);
+        buildHullMesh(point3DList, triangulate, makeLines, makePoints, tolerance);
 
         List<Point3D> fxyzPoints = new ArrayList<>();
         for (int i = 0; i < hull.getNumVertices(); i++) {
@@ -138,6 +139,11 @@ public class Manifold3D extends Group {
             getScene().getRoot().fireEvent(new ApplicationEvent(
                 ApplicationEvent.SHOW_SHAPE3D_CONTROLS, this));
         });
+        
+        MenuItem makeConcaveItem = new MenuItem("Make Concave");
+        makeConcaveItem.setOnAction(e -> {
+            ConcaveUtils.makeConcave(this);
+        });
 
         ColorPicker diffuseColorPicker = new ColorPicker(Color.SKYBLUE);
         diffuseColorPicker.valueProperty().addListener(cl -> {
@@ -179,7 +185,7 @@ public class Manifold3D extends Group {
             Point3D p = getBoundsCentroid();
             System.out.println(p);
         });
-        cm.getItems().addAll(editPointsItem, exportItem, diffuseColorItem,
+        cm.getItems().addAll(editPointsItem, makeConcaveItem, exportItem, diffuseColorItem,
             specColorItem, tessallateItem, printBoundsCentroid);
         cm.setAutoFix(true);
         cm.setAutoHide(true);
@@ -343,11 +349,11 @@ public class Manifold3D extends Group {
         return shortestPoint;
     }
 
-    public void refreshMesh(List<Point3D> point3DList, boolean triangulate, boolean makeLines, boolean makePoints) {
+    public void refreshMesh(List<Point3D> point3DList, boolean triangulate, boolean makeLines, boolean makePoints, Double tolerance) {
         quickhullLinesTriangleMesh.getPoints().clear();
         quickhullLinesTriangleMesh.getTexCoords().clear();
         quickhullLinesTriangleMesh.getFaces().clear();
-        buildHullMesh(point3DList, triangulate, makeLines, makePoints);
+        buildHullMesh(point3DList, triangulate, makeLines, makePoints, tolerance);
         quickhullMeshView.setMesh(quickhullTriangleMesh);
         if (makeLines) {
             quickhullLinesTriangleMesh.getPoints().addAll(quickhullTriangleMesh.getPoints());
@@ -359,8 +365,10 @@ public class Manifold3D extends Group {
 //            makeDebugPoints(hull, artScale, false);
     }
 
-    private void buildHullMesh(List<Point3D> point3DList, boolean triangulate, boolean makeLines, boolean makePoints) {
+    private void buildHullMesh(List<Point3D> point3DList, boolean triangulate, boolean makeLines, boolean makePoints, Double tolerance) {
         hull = new QuickHull3D();
+        if(null != tolerance)
+            hull.setExplicitDistanceTolerance(tolerance);
         //Construct an array of Point3D's
         com.github.quickhull3d.Point3d[] points = point3DList.stream()
             .map(point3DToHullPoint)

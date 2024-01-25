@@ -32,9 +32,9 @@ import java.util.Arrays;
  */
 public class FlacConverter {
 
-    public StreamInfo streamInfo;
+    public FlacStreamInfo streamInfo;
 
-    public FlacConverter(StreamInfo streamInfo) {
+    public FlacConverter(FlacStreamInfo streamInfo) {
         this.streamInfo = streamInfo;
     }
 
@@ -74,7 +74,7 @@ public class FlacConverter {
 
     public static void decodeFlacToWav(File flacFile, File wavFile) throws IOException {
         // Decode input FLAC file
-        StreamInfo streamInfo;
+        FlacStreamInfo streamInfo;
         int[][] samples;
         try (FlacDecoder dec = new FlacDecoder(flacFile)) {
             // Handle metadata header blocks
@@ -99,7 +99,7 @@ public class FlacConverter {
         byte[] expectHash = streamInfo.md5Hash;
         if (Arrays.equals(expectHash, new byte[16])) {
             System.err.println("Warning: MD5 hash field was blank");
-        } else if (!Arrays.equals(StreamInfo.getMd5Hash(samples, streamInfo.sampleDepth), expectHash)) {
+        } else if (!Arrays.equals(FlacStreamInfo.getMd5Hash(samples, streamInfo.sampleDepth), expectHash)) {
             throw new DataFormatException("MD5 hash check failed");
         }
         // Else the hash check passed

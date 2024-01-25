@@ -42,6 +42,7 @@ import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.Box;
 import javafx.scene.shape.Sphere;
 import javafx.scene.transform.Rotate;
+import javafx.scene.transform.Translate;
 import javafx.stage.Stage;
 import org.fxyz3d.utils.CameraTransformer;
 
@@ -178,28 +179,84 @@ public class LookAtTest extends Application {
         primaryStage.show();
 
     }
-
+//
+//    public void matrixRotate(double alf, double bet, double gam) {
+//        double A11 = Math.cos(alf) * Math.cos(gam);
+//        double A12 = Math.cos(bet) * Math.sin(alf) + Math.cos(alf) * Math.sin(bet) * Math.sin(gam);
+//        double A13 = Math.sin(alf) * Math.sin(bet) - Math.cos(alf) * Math.cos(bet) * Math.sin(gam);
+//        double A21 = -Math.cos(gam) * Math.sin(alf);
+//        double A22 = Math.cos(alf) * Math.cos(bet) - Math.sin(alf) * Math.sin(bet) * Math.sin(gam);
+//        double A23 = Math.cos(alf) * Math.sin(bet) + Math.cos(bet) * Math.sin(alf) * Math.sin(gam);
+//        double A31 = Math.sin(gam);
+//        double A32 = -Math.cos(gam) * Math.sin(bet);
+//        double A33 = Math.cos(bet) * Math.cos(gam);
+//
+//        double d = Math.acos((A11 + A22 + A33 - 1d) / 2d);
+//        if (d != 0d) {
+//            double den = 2d * Math.sin(d);
+//            javafx.geometry.Point3D p = new javafx.geometry.Point3D((A32 - A23) / den, (A13 - A31) / den, (A21 - A12) / den);
+//            setRotationAxis(p);
+//            setRotate(Math.toDegrees(d));
+//        }
+//    }    
+    
     public void lookAt(Node node, javafx.geometry.Point3D currentPosition, javafx.geometry.Point3D lookAtPos) {
-        //Create direction vector
+
         javafx.geometry.Point3D lookDirection = lookAtPos.subtract(currentPosition.getX(), currentPosition.getY(), currentPosition.getZ());
-        lookDirection = lookDirection.normalize();
 
-        double xRotation = Math.toDegrees(Math.asin(-lookDirection.getY()));
-        double yRotation = Math.toDegrees(Math.atan2(lookDirection.getX(), lookDirection.getZ()));
+        double bet = Math.atan2( lookDirection.getY(), lookDirection.getZ() );
+        double rotx = bet;
+        //double gam = Math.atan2( lookDirection.getX() * Math.cos(rotx), lookDirection.getZ() );
+        double roty = 0;
+        if (lookDirection.getZ() >= 0) {
+           roty = -Math.atan2( lookDirection.getX() * Math.cos(rotx), lookDirection.getZ() );
+        }else{
+           roty = Math.atan2( lookDirection.getX() * Math.cos(rotx), -lookDirection.getZ() );
+        }
+        double gam = roty;
+        double alf = Math.atan2( Math.cos(rotx), Math.sin(rotx) * Math.sin(roty) );
 
-//        Rotate ry = new Rotate(yRotation, currentPosition.getX(), currentPosition.getY(), currentPosition.getZ(),  Rotate.Y_AXIS);
-//        Rotate rx = new Rotate(xRotation, currentPosition.getX(), currentPosition.getY(), currentPosition.getZ(), Rotate.X_AXIS);
+        double A11 = Math.cos(alf) * Math.cos(gam);
+        double A12 = Math.cos(bet) * Math.sin(alf) + Math.cos(alf) * Math.sin(bet) * Math.sin(gam);
+        double A13 = Math.sin(alf) * Math.sin(bet) - Math.cos(alf) * Math.cos(bet) * Math.sin(gam);
+        double A21 = -Math.cos(gam) * Math.sin(alf);
+        double A22 = Math.cos(alf) * Math.cos(bet) - Math.sin(alf) * Math.sin(bet) * Math.sin(gam);
+        double A23 = Math.cos(alf) * Math.sin(bet) + Math.cos(bet) * Math.sin(alf) * Math.sin(gam);
+        double A31 = Math.sin(gam);
+        double A32 = -Math.cos(gam) * Math.sin(bet);
+        double A33 = Math.cos(bet) * Math.cos(gam);
 
-        Rotate ry = new Rotate(yRotation, 0, 0, 0, Rotate.Y_AXIS);
-        Rotate rx = new Rotate(xRotation, 0, 0, 0, Rotate.X_AXIS);
-
-        node.getTransforms().setAll(ry, rx);
-//        node.setTranslateX(currentPosition.getX());
-//        node.setTranslateY(currentPosition.getY());
-//        node.setTranslateZ(currentPosition.getZ());
+        double d = Math.acos((A11 + A22 + A33 - 1d) / 2d);
+        if (d != 0d) {
+            double den = 2d * Math.sin(d);
+            javafx.geometry.Point3D p = new javafx.geometry.Point3D((A32 - A23) / den, (A13 - A31) / den, (A21 - A12) / den);
+            node.setRotationAxis(p);
+            node.setRotate(Math.toDegrees(d));
+        }        
+        
+//        double rotx = Math.atan2( lookDirection.getY(), lookDirection.getZ() );
+//        double roty = Math.atan2( lookDirection.getX() * Math.cos(rotx), lookDirection.getZ() );
+//        double rotz = Math.atan2( Math.cos(rotx), Math.sin(rotx) * Math.sin(roty) );
+//        Rotate ry = new Rotate(roty, 0, 0, 0, Rotate.Y_AXIS);
+//        Rotate rx = new Rotate(rotx, 0, 0, 0, Rotate.X_AXIS);
+//        Rotate rz = new Rotate(rotz, 0, 0, 0, Rotate.Z_AXIS);
+//        
+//        node.getTransforms().setAll( ry, rx, rz, new Translate(
+//            currentPosition.getX(), currentPosition.getY(), currentPosition.getZ()));
+//
+        
+//        //Create direction vector
+//        javafx.geometry.Point3D lookDirection = lookAtPos.subtract(currentPosition.getX(), currentPosition.getY(), currentPosition.getZ());
+//        lookDirection = lookDirection.normalize();
+//
+//        double xRotation = Math.toDegrees(Math.asin(-lookDirection.getY()));
+//        double yRotation = Math.toDegrees(Math.atan2(lookDirection.getX(), lookDirection.getZ()));
+//
+////        Rotate ry = new Rotate(yRotation, 0, 0, 0, Rotate.Y_AXIS);
+////        Rotate rx = new Rotate(xRotation, 0, 0, 0, Rotate.X_AXIS);
+//        
 //        node.getTransforms().setAll( ry, rx, new Translate(
 //            currentPosition.getX(), currentPosition.getY(), currentPosition.getZ()));
-////        node.getTransforms().addAll(0, node.getParent().getTransforms());
     }
 
     private void mouseDragCamera(MouseEvent me) {

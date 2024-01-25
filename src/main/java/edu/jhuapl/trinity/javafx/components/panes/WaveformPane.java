@@ -20,6 +20,7 @@ package edu.jhuapl.trinity.javafx.components.panes;
  * #L%
  */
 
+import edu.jhuapl.trinity.data.audio.FlacToWav;
 import edu.jhuapl.trinity.data.audio.flac.FlacConverter;
 import edu.jhuapl.trinity.data.audio.flac.FlacDecoder;
 import edu.jhuapl.trinity.javafx.events.AudioEvent;
@@ -241,35 +242,12 @@ public class WaveformPane extends LitPathPane {
                 ext.toLowerCase().contentEquals("flac")) {
                 
                 if(ext.toLowerCase().contentEquals("flac")) {
-//                    try {
-//                        //convert to wav
-//                        FlacDecoder dec = new FlacDecoder(audioFile);
-//			// Handle metadata header blocks
-//			while (dec.readAndHandleMetadataBlock() != null);
-//			if (dec.streamInfo.sampleDepth % 8 != 0) {
-//                            System.out.println("Only whole-byte sample depth supported");
-//                            return;
-//                        }
-//			// Decode every block
-//			int[][] samples = new int[dec.streamInfo.numChannels]
-//                                [(int)dec.streamInfo.numSamples];
-//			for (int off = 0; ;) {
-//                            int len = dec.readAudioBlock(samples, off);
-//                            if (len == 0)
-//                                break;
-//                            off += len;
-//			}
-//                        FlacConverter converter = new FlacConverter(dec.streamInfo);
-//                        float [] monoWavBytes = converter.convertToWavBytes(samples);
-//                        System.out.println("Converted Flac to mono Wav format.");
-//                    } catch (IOException ex) {
-//                        Logger.getLogger(WaveformPane.class.getName()).log(Level.SEVERE, null, ex);
-//                    }
                     //create temporary wav file
-                                        
                     try {
                         Path tempFile = Files.createTempFile("flacToWav-"+audioFile.getName(), ".wav");
-                        FlacConverter.decodeFlacToWav(audioFile, tempFile.toFile());
+//                        FlacConverter.decodeFlacToWav(audioFile, tempFile.toFile());
+                        FlacToWav ftw = new FlacToWav();
+                        ftw.decode(audioFile.getPath(), tempFile.toString());
                         waveformCanvas.startVisualization(tempFile.toFile());
                     } catch (IOException ex) {
                         Logger.getLogger(WaveformPane.class.getName()).log(Level.SEVERE, null, ex);
