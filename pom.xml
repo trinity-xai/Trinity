@@ -45,6 +45,7 @@
         <zeromq.jeromq.version>0.5.3</zeromq.jeromq.version>
         <jackson.version>2.15.2</jackson.version>
         <sarxos.webcam.capture.version>0.3.12</sarxos.webcam.capture.version>
+        <org.jflac.jflac-codec.version>1.5.2</org.jflac.jflac-codec.version>
         <slf4j.version>2.0.9</slf4j.version>
         <license.organizationName>The Johns Hopkins University Applied Physics Laboratory LLC</license.organizationName>
         <license.licenceFile>LICENSE.md</license.licenceFile>
@@ -150,8 +151,8 @@
         <dependency>
           <groupId>org.jflac</groupId>
           <artifactId>jflac-codec</artifactId>
-          <version>1.5.2</version>
-        </dependency>        
+          <version>${org.jflac.jflac-codec.version}</version>
+        </dependency>
         <!-- Enforce slf4j-api version across dependencies (although we're using JUL) -->
         <dependency>
             <groupId>org.slf4j</groupId>

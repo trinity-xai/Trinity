@@ -124,6 +124,9 @@ extraJavaModuleInfo {
     module('com.nativelibs4java:bridj', 'bridj') {
         exportAllPackages()
     }
+    module('org.jflac:jflac-codec', 'jflac.codec') {
+        exportAllPackages()
+    }
 }
 
 // </editor-fold>
