@@ -25,6 +25,7 @@ import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.utils.HttpsUtils;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
+import java.io.File;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
@@ -204,8 +205,10 @@ public class FeatureVectorCallout extends VBox {
         openMediaVBox.setOnMouseEntered(e -> openMediaVBox.setEffect(glow));
         openMediaVBox.setOnMouseExited(e -> openMediaVBox.setEffect(null));
         openMediaVBox.setOnMouseClicked(e -> {
-            openMediaVBox.getScene().getRoot().fireEvent(new ApplicationEvent(
-                ApplicationEvent.SHOW_WAVEFORM_PANE, featureVector.getMediaURL()));
+            if(null != featureVector.getMediaURL()){
+                openMediaVBox.getScene().getRoot().fireEvent(new ApplicationEvent(
+                    ApplicationEvent.SHOW_WAVEFORM_PANE, new File(imageryBasePath + featureVector.getMediaURL())));
+            }
         });
         HBox mediaHBox = new HBox(15, openMediaVBox);
         mediaHBox.setAlignment(Pos.TOP_LEFT);
