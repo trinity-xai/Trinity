@@ -34,7 +34,24 @@ import javafx.util.Duration;
 public enum GlitchUtils {
     INSTANCE;
     
-    public static void gitchNode(Node node, Duration duration, Duration delay, int cycleCount) {
+    /**
+     * Uses a DisplacementMap and a Timeline to temporarily cause any Node to 
+     * have a wavy sinusoidal effect.
+     * The effect will kick in for a user set time and then return back to normal.
+     * Suggested usage:
+     * 
+     * this.addEventHandler(MouseEvent.MOUSE_CLICKED, e-> {
+     *   GlitchUtils.gitchNode(this, 
+     *   Duration.millis(250), Duration.ZERO, 2);
+     *   });
+     *
+     * @param node The Node to make wavy
+     * @param duration how long to maintain the wavy effect
+     * @param delay how before the effect kicks in
+     * @param cycleCount how many times to repeat the effect
+     * 
+     */
+    public static void glitchNode(Node node, Duration duration, Duration delay, int cycleCount) {
         int width = 220;
         int height = 100;
 
@@ -61,6 +78,6 @@ public enum GlitchUtils {
         t.play();
     }
     private static void noOp(){
-        
+        int i = 2 + 2;
     }
 }

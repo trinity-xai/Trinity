@@ -44,10 +44,13 @@ import javafx.util.Duration;
  */
 public class WaveformCanvasOverlayPane extends CanvasOverlayPane {
     private static final Logger LOGGER = Logger.getLogger(WaveformCanvasOverlayPane.class.getName());
-    private static final double WAVEFORM_HEIGHT_COEFFICIENT = 1.3;
+    public static final double DEFAULT_WAVEFORM_HEIGHT_COEFFICIENT = 1.5;
     private static final int BUFFER_SIZE = 4096;
-    private double timerXPosition;
+    public static double AMPLITUDE_SCALE_MAX = 32767.0f; //65536.0f;
 
+    private double coeffScale = DEFAULT_WAVEFORM_HEIGHT_COEFFICIENT;
+    private double timerXPosition;
+    
     /** 2D graphics context of this canvas */
     private GraphicsContext graphicsContext;
 
@@ -77,11 +80,11 @@ public class WaveformCanvasOverlayPane extends CanvasOverlayPane {
             if (waveformData == null) {
                 clearWaveform();
             } else {
-                if (service != null) {
+                if (service != null && null != service.audioAmplitudes) {
                     service.processAudioAmplitudes();
                 }
-                Platform.runLater(()-> paintWaveform());
             }
+            Platform.runLater(()-> paintWaveform());
         }));
 
         // Fix the resolution in case the height changes
@@ -89,12 +92,18 @@ public class WaveformCanvasOverlayPane extends CanvasOverlayPane {
             if (waveformData == null) {
                 clearWaveform();
             } else {
-                if (service != null) {
+                if (service != null && null != service.audioAmplitudes) {
                     service.processAudioAmplitudes();
                 }
-                Platform.runLater(()-> paintWaveform());
             }
+            Platform.runLater(()-> paintWaveform());
         }));
+        setMinHeight(200);
+        setMinWidth(400);
+        Platform.runLater(()-> {
+            clearWaveform();
+            paintWaveform();
+        });
     }
 
     /**
@@ -104,6 +113,23 @@ public class WaveformCanvasOverlayPane extends CanvasOverlayPane {
     public void startVisualization(File audioFile) {
         service.start(audioFile);
     }
+  
+    /**
+     * Recompute the waveform rendering without reprocessing the audio data
+     * @param now if true will attempt a redraw on the application thread. 
+     * false will wrap the redraw in a Platform.runLater()
+     */
+    public void updateView(boolean now) {
+        if(null != service && null != service.audioAmplitudes) {
+            service.processAudioAmplitudes();
+        }
+        if(now) {
+            paintWaveform();
+        } else {
+            Platform.runLater(()-> paintWaveform());
+        }
+    }
+    
     /**
      * Paint the progress
      */
@@ -218,6 +244,20 @@ public class WaveformCanvasOverlayPane extends CanvasOverlayPane {
     }
 
     /**
+     * @return the coeffScale
+     */
+    public double getCoeffScale() {
+        return coeffScale;
+    }
+
+    /**
+     * @param coeffScale the coeffScale to set
+     */
+    public void setCoeffScale(double coeffScale) {
+        this.coeffScale = coeffScale;
+    }
+
+    /**
      * This class is in charge of calculating the waveform data from a audio file
      */
     private class WaveformVisualizationService extends Service<Boolean> {
@@ -319,7 +359,8 @@ public class WaveformCanvasOverlayPane extends CanvasOverlayPane {
                     while (decodedAudioInputStream.read(buffer, 0, BUFFER_SIZE) > 0) {
                         for (int i = 0; i < buffer.length - 1; i+= 2) {
                             // Calculate the value
-                            arrayCellValue = (int) (((((buffer[i + 1] << 8) | buffer[i] & 0xff) << 16) /32767) * WAVEFORM_HEIGHT_COEFFICIENT);
+//                            arrayCellValue = (int) (((((buffer[i + 1] << 8) | buffer[i] & 0xff) << 16) / AMPLITUDE_SCALE_MAX) * WAVEFORM_HEIGHT_COEFFICIENT);
+                            arrayCellValue = (int) (((((buffer[i + 1] << 8) | buffer[i] & 0xff) << 16) / AMPLITUDE_SCALE_MAX) );
 
                             if (currentSampleCounter != samplesPerPixel) {
                                 ++currentSampleCounter;
@@ -352,12 +393,15 @@ public class WaveformCanvasOverlayPane extends CanvasOverlayPane {
 
             // Calculate
             float nValue;
+
             for (int w = 0; w < width; w++) {
                 int c = w * samplesPerPixel;
                 nValue = 0.0f;
 
                 for (int s = 0; s < samplesPerPixel; s++) {
-                    nValue += (Math.abs(audioAmplitudes[c + s]) / 65536.0f);
+                    nValue += (Math.abs(audioAmplitudes[c + s]) / AMPLITUDE_SCALE_MAX) 
+                        * getCoeffScale();
+                    //nValue += (Math.abs(audioAmplitudes[c + s]) / AMPLITUDE_SCALE_MAX); //65536.0f);
                 }
 
                 waveformData[w] = nValue / samplesPerPixel;

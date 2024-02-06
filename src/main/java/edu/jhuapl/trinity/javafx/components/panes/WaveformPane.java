@@ -33,6 +33,8 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.ColorPicker;
+import javafx.scene.control.Label;
+import javafx.scene.control.Slider;
 import javafx.scene.effect.BlurType;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.image.ImageView;
@@ -178,12 +180,24 @@ public class WaveformPane extends LitPathPane {
         );
         toolbarHBox.setAlignment(Pos.CENTER_LEFT);
         toolbarHBox.setMinHeight(iconFitWidth * 1.5);
-        WaveformCanvasOverlayPane waveformCanvas = new WaveformCanvasOverlayPane(true, true);
-       
+        
+        WaveformCanvasOverlayPane waveformCanvas = new WaveformCanvasOverlayPane(false, true);
 
+        Slider scaleSlider = new Slider(0.5, 5.0, WaveformCanvasOverlayPane.DEFAULT_WAVEFORM_HEIGHT_COEFFICIENT);
+        scaleSlider.setBlockIncrement(0.5);
+        scaleSlider.setMinorTickCount(1);
+        scaleSlider.setMajorTickUnit(0.5);
+        scaleSlider.setShowTickMarks(true);
+        scaleSlider.setShowTickLabels(true);
+        scaleSlider.setSnapToTicks(true);
+        scaleSlider.setPrefWidth(300);
+        HBox sliderHBox = new HBox(10, new Label("Amplitude Height Scaling"), scaleSlider);
+        sliderHBox.setAlignment(Pos.CENTER_LEFT);
+        
         bpOilSpill.setTop(toolbarHBox);
         bpOilSpill.setCenter(waveformCanvas);
-
+        bpOilSpill.setBottom(sliderHBox);
+        
         return bpOilSpill;
     }
 
@@ -221,10 +235,13 @@ public class WaveformPane extends LitPathPane {
             waveformCanvas.setBackgroundColor(backgroundColorPicker.getValue());
             waveformCanvas.paintWaveform();
         });
-//        this.addEventHandler(MouseEvent.MOUSE_CLICKED, e-> {
-//            GlitchUtils.gitchNode(this, 
-//            Duration.millis(250), Duration.ZERO, 2);
-//        });
+        
+        HBox bottomHBox = (HBox)bp.getBottom();
+        Slider slider = (Slider)bottomHBox.getChildren().get(1);
+        slider.valueProperty().addListener(e -> {
+            waveformCanvas.setCoeffScale(slider.getValue());
+            waveformCanvas.updateView(true);
+        });
     }
 
     public void setWaveform(File audioFile) {
