@@ -530,7 +530,8 @@ public class App extends Application {
 
         scene.addEventHandler(ApplicationEvent.SHOW_HYPERSURFACE, e -> {
             if (hypersurface3DPane.isVisible()) {
-                hypersurface3DPane.hideFA3D();
+                //hypersurface3DPane.hideFA3D();
+                Platform.runLater(() -> hypersurface3DPane.setVisible(false));
                 if (null != retroWavePane) {
                     retroWavePane.animateShow();
                 }
@@ -547,9 +548,7 @@ public class App extends Application {
                     hypersurface3DPane.showFA3D();
                     hypersurfaceIntroShown = true;
                 } else {
-                    Platform.runLater(() -> {
-                        hypersurface3DPane.setVisible(true);
-                    });
+                    Platform.runLater(() -> hypersurface3DPane.setVisible(true));
                 }
 
             }

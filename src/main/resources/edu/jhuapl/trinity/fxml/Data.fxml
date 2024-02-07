@@ -14,19 +14,20 @@
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
 
 <AnchorPane style="-fx-background-color: #00000000;" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="edu.jhuapl.trinity.javafx.controllers.DataController">
     <children>
         <TabPane fx:id="tabPane" tabClosingPolicy="UNAVAILABLE">
             <tabs>
-                <Tab closable="false" text="Imagery">
+                <Tab closable="false" text="Media">
                     <content>
                     </content>
                     <content>
                         <VBox prefHeight="200.0" prefWidth="100.0" spacing="10.0">
                             <children>
-                                <Label text="Imagery Base Path" />
+                                <Label text="Base Path" />
                                 <TextField fx:id="imageryBasePathTextField" />
                                 <HBox spacing="10.0">
                                     <children>
@@ -34,6 +35,8 @@
                                         <Button mnemonicParsing="false" onAction="#applyBasePath" prefWidth="125.0" text="Apply" />
                                     </children>
                                 </HBox>
+                        <Region prefHeight="100.0" prefWidth="100.0" />
+                        <Button mnemonicParsing="false" onAction="#showWaveformDisplay" prefWidth="200.0" text="Waveform Display" />
                             </children>
                             <padding>
                                 <Insets bottom="5.0" left="5.0" right="5.0" top="15.0" />

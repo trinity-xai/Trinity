@@ -20,6 +20,7 @@ package edu.jhuapl.trinity.javafx.components.panes;
  * #L%
  */
 
+import edu.jhuapl.trinity.utils.ResourceUtils;
 import edu.jhuapl.trinity.utils.loaders.AudioLoader;
 import javafx.concurrent.Service;
 import javafx.concurrent.Task;
@@ -35,6 +36,11 @@ import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.application.Platform;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.MenuItem;
+import javafx.scene.image.ImageView;
+import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.media.Media;
 import javafx.util.Duration;
 
@@ -104,6 +110,34 @@ public class WaveformCanvasOverlayPane extends CanvasOverlayPane {
             clearWaveform();
             paintWaveform();
         });
+        
+        ImageView clearDataIV = ResourceUtils.loadIcon("clear", 32);
+        MenuItem clearDataItem = new MenuItem("Clear Data", clearDataIV);
+        clearDataItem.setOnAction(e -> {
+            //Platform.runLater(()-> {
+            service.audioAmplitudes = null;
+            clearWaveform();
+        });        
+        ContextMenu cm = new ContextMenu(clearDataItem);
+        cm.setAutoFix(true);
+        cm.setAutoHide(true);
+        cm.setHideOnEscape(true);
+        cm.setOpacity(0.85);
+        this.
+        setOnMouseClicked((MouseEvent e) -> {
+            if (e.getButton() == MouseButton.SECONDARY) {
+                if (!cm.isShowing())
+                    cm.show(this.getParent(), e.getScreenX(), e.getScreenY());
+                else
+                    cm.hide();
+                e.consume();
+            }
+        });        
+        //Allow picking/mouse interaction so handler actually works
+        setPickOnBounds(false); // allows you to click to pass through.
+        setMouseTransparent(false);
+        getCanvas().setPickOnBounds(false);
+        getCanvas().setMouseTransparent(false);        
     }
 
     /**

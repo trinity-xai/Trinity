@@ -155,6 +155,12 @@ public class DataController implements Initializable {
     }
 
     @FXML
+    public void showWaveformDisplay() {
+        scene.getRoot().fireEvent(
+            new ApplicationEvent(ApplicationEvent.SHOW_WAVEFORM_PANE));
+    }
+    
+    @FXML
     public void browseBasePath() {
         final DirectoryChooser directoryChooser = new DirectoryChooser();
         directoryChooser.setTitle("Browse for base path...");

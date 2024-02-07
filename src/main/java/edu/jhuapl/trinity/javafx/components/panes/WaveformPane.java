@@ -191,7 +191,7 @@ public class WaveformPane extends LitPathPane {
         scaleSlider.setShowTickLabels(true);
         scaleSlider.setSnapToTicks(true);
         scaleSlider.setPrefWidth(300);
-        HBox sliderHBox = new HBox(10, new Label("Amplitude Height Scaling"), scaleSlider);
+        HBox sliderHBox = new HBox(10, new Label("Amplitude Scale"), scaleSlider);
         sliderHBox.setAlignment(Pos.CENTER_LEFT);
         
         bpOilSpill.setTop(toolbarHBox);
