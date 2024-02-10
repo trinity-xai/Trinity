@@ -49,6 +49,7 @@ import javafx.scene.text.Font;
 import javafx.scene.transform.Rotate;
 import javafx.stage.FileChooser;
 import javafx.util.Duration;
+import javafx.scene.transform.Affine;
 import org.fxyz3d.geometry.Point3D;
 import org.fxyz3d.shapes.primitives.helper.MeshHelper;
 import org.fxyz3d.utils.CameraTransformer;
@@ -268,22 +269,36 @@ public enum JavaFX3DUtils {
         return res.subtract(localToScene(new javafx.geometry.Point3D(0, 0, 0), camera));
     }
 
-    public static void lookAt(Node node, boolean flipX, boolean flipY, javafx.geometry.Point3D currentPosition, javafx.geometry.Point3D lookAtPos) {
-        //Create direction vector
-        javafx.geometry.Point3D lookDirection = lookAtPos.subtract(currentPosition.getX(), currentPosition.getY(), currentPosition.getZ());
-        lookDirection = lookDirection.normalize();
-        //calculate rotation angles
-        double xRotation = Math.toDegrees(Math.asin(-lookDirection.getY()));
-        if (flipX)
-            xRotation *= -1;
-        double yRotation = Math.toDegrees(Math.atan2(lookDirection.getX(), lookDirection.getZ()));
-        if (flipY)
-            yRotation *= -1;
-        //make rotation transforms using pivot point of 0,0,0
-        Rotate ry = new Rotate(yRotation, 0, 0, 0, Rotate.Y_AXIS);
-        Rotate rx = new Rotate(xRotation, 0, 0, 0, Rotate.X_AXIS);
-        node.getTransforms().setAll(ry, rx); //rotate this pig
-    }
+    public static Affine lookAt(Node node, javafx.geometry.Point3D from, javafx.geometry.Point3D to, boolean applyTranslate) {
+        //zVec is "forward"
+        javafx.geometry.Point3D zVec = to.subtract(from).normalize();
+        //ydir is "up"
+        javafx.geometry.Point3D ydir = Rotate.Y_AXIS;
+        javafx.geometry.Point3D tangent0 = zVec.crossProduct(ydir);
+        //handle edge case where to location is precisely the "up" direction
+        if(tangent0.magnitude() < 0.001){
+            //pick a different axis to use
+            ydir = Rotate.X_AXIS;
+            tangent0 = zVec.crossProduct(ydir);
+        }
+        tangent0.normalize();
+        ydir = zVec.crossProduct(tangent0);
+        
+        javafx.geometry.Point3D xVec = ydir.normalize().crossProduct(zVec).normalize();
+        javafx.geometry.Point3D yVec = zVec.crossProduct(xVec).normalize();
+        
+        Affine affine = new Affine(
+                xVec.getX(), yVec.getX(), zVec.getX(), 0,
+                xVec.getY(), yVec.getY(), zVec.getY(), 0,
+                xVec.getZ(), yVec.getZ(), zVec.getZ(), 0);
+        if(applyTranslate){
+            affine.setTx(from.getX());
+            affine.setTy(from.getY());
+            affine.setTz(from.getZ());
+        }        
+        node.getTransforms().setAll(affine);
+        return  affine;
+    }          
 
     public static void zoomTransition(double milliseconds, Camera camera, double distance) {
         Timeline timeline = new Timeline();

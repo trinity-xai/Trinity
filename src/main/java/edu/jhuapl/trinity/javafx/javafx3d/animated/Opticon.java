@@ -225,9 +225,6 @@ public class Opticon extends Group {
         KeyValue start = new KeyValue(keyCycle, 0, Interpolator.LINEAR);
         KeyValue end = new KeyValue(keyCycle, fps * cycleSeconds, Interpolator.LINEAR);
         KeyFrame kf = new KeyFrame(Duration.seconds(cycleSeconds), start, end);
-//        KeyFrame cycleFinished = new KeyFrame(Duration.seconds(cycleSeconds), e->{
-//
-//        });
         tm = new Timeline(kf);
         tm.setCycleCount(INDEFINITE);
     }
@@ -276,9 +273,10 @@ public class Opticon extends Group {
         setScanning(true);
         final Point3D currentP3D = new Point3D(getTranslateX(), getTranslateY(), getTranslateZ());
         final double originalRadius = scannerConeMesh.radiusProperty().get();
-        //@TODO SMP lookup math is wrong
-        //lookAt(true, true, currentP3D, searchLocation);
-
+        //@TODO SMP need a way to animate the lookAt so the rotation isn't jarring 
+        //@TODO SMP also need to have the option to flatten one of the planes of rotation
+        //JavaFX3DUtils.lookAt(this, currentP3D, searchLocation, false);          
+        
         if (null != scanTimeline) {
             scanTimeline.stop();
         }
@@ -292,8 +290,6 @@ public class Opticon extends Group {
             , new KeyFrame(Duration.seconds(3.1), kv -> scannerConeMesh.setRotationAxis(Rotate.X_AXIS))
             , new KeyFrame(Duration.seconds(3.1), kv -> scannerConeMesh.setRotate(-90))
             , new KeyFrame(Duration.seconds(3.1), new KeyValue(scannerConeMesh.radiusProperty(), originalRadius / 4))
-//            ,new KeyFrame(Duration.seconds(3.5), kv -> scannerConeMesh.setRotationAxis(Rotate.Y_AXIS))
-//            ,new KeyFrame(Duration.seconds(3.5), kv -> scannerMeshTimeline.play())
             , new KeyFrame(Duration.seconds(3.5), kv -> laserSweep(parentPane, 4.0, width, height))
             , new KeyFrame(Duration.seconds(4), new KeyValue(scannerConeMesh.radiusProperty(), height / 8))
             , new KeyFrame(Duration.seconds(5), new KeyValue(scannerConeMesh.radiusProperty(), height / 8))
@@ -409,9 +405,10 @@ public class Opticon extends Group {
     public void search(Point3D searchLocation, Duration searchDuration) {
         this.searchLocation = searchLocation;
         Point3D currentP3D = new Point3D(getTranslateX(), getTranslateY(), getTranslateZ());
-        //@TODO SMP lookup math is wrong
-        //lookAt(true, true, currentP3D, searchLocation);
-
+        //@TODO SMP need a way to animate the lookAt so the rotation isn't jarring 
+        //@TODO SMP also need to have the option to flatten one of the planes of rotation
+        //JavaFX3DUtils.lookAt(this, currentP3D, searchLocation, false);         
+        
         if (null != searchTimeline) {
             searchTimeline.stop();
         }
@@ -442,23 +439,6 @@ public class Opticon extends Group {
         searchTimeline.play();
     }
 
-    public void lookAt(boolean flipX, boolean flipY, javafx.geometry.Point3D currentPosition, javafx.geometry.Point3D lookAtPos) {
-        //Create direction vector
-        javafx.geometry.Point3D lookDirection = lookAtPos.subtract(currentPosition.getX(), currentPosition.getY(), currentPosition.getZ());
-        lookDirection = lookDirection.normalize();
-        //calculate rotation angles
-        double xRotation = Math.toDegrees(Math.asin(-lookDirection.getY()));
-        if (flipX)
-            xRotation *= -1;
-        double yRotation = Math.toDegrees(Math.atan2(lookDirection.getZ(), lookDirection.getX()));
-        if (flipY)
-            yRotation *= -1;
-        //make rotation transforms using pivot point of 0,0,0
-        Rotate ry = new Rotate(yRotation, 0, 0, 0, Rotate.Y_AXIS);
-        Rotate rx = new Rotate(xRotation, 0, 0, 0, Rotate.X_AXIS);
-        getTransforms().setAll(ry, rx); //rotate this pig
-    }
-
     public void startled(double intensity, double seconds, int cycles) {
         double originalRotate = getRotate();
         Random rando = new Random();
@@ -468,21 +448,9 @@ public class Opticon extends Group {
 
         double third = seconds * 0.333;
         double twothird = seconds * 0.666;
-        double end = seconds;
-        double originalRadius = scannerConeMesh.radiusProperty().get();
-        double originalHeight = scannerConeMesh.heightProperty().get();
-        int originalDivisions = scannerConeMesh.divisionsProperty().get();
-
-//            ,new KeyFrame(Duration.seconds(third), new KeyValue(scannerConeMesh.radiusProperty(),
-//                originalRadius*2))
-//            ,new KeyFrame(Duration.seconds(third), new KeyValue(scannerConeMesh.heightProperty(),
-//                originalHeight*0.111))
-//            ,new KeyFrame(Duration.seconds(third), new KeyValue(scannerConeMesh.divisionsProperty(),
-//                originalDivisions*5))
 
         scannerConeMesh.setRadius(2);
         scannerConeMesh.setHeight(2);
-
 
         Timeline startledTimeline = new Timeline(
             new KeyFrame(Duration.seconds(third), new KeyValue(translateXProperty(), x))
