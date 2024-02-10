@@ -41,6 +41,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.Box;
 import javafx.scene.shape.Sphere;
+import javafx.scene.transform.Affine;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Translate;
 import javafx.stage.Stage;
@@ -116,6 +117,8 @@ public class LookAtTest extends Application {
         Group pointyGroup = new Group(body, pointer);
 
         pointyGroup.setTranslateX(-100);
+        //@SMP IF we translate the group we have to inform lookAt() to not 
+        //apply the translation coordinates in the resulting Affine transform
 
         Sphere sphereX = new Sphere(5);
         sphereX.setTranslateX(100);
@@ -129,7 +132,7 @@ public class LookAtTest extends Application {
                 sphereX.getTranslateX(),
                 sphereX.getTranslateY(),
                 sphereX.getTranslateZ());
-            lookAt(pointyGroup, currentPoint3D, lookAtPoint3D);
+            lookAt(pointyGroup, currentPoint3D, lookAtPoint3D, false);
         });
 
         Sphere sphereY = new Sphere(5);
@@ -144,7 +147,7 @@ public class LookAtTest extends Application {
                 sphereY.getTranslateX(),
                 sphereY.getTranslateY(),
                 sphereY.getTranslateZ());
-            lookAt(pointyGroup, currentPoint3D, lookAtPoint3D);
+            lookAt(pointyGroup, currentPoint3D,lookAtPoint3D, false);
         });
 
 
@@ -160,7 +163,7 @@ public class LookAtTest extends Application {
                 sphereZ.getTranslateX(),
                 sphereZ.getTranslateY(),
                 sphereZ.getTranslateZ());
-            lookAt(pointyGroup, currentPoint3D, lookAtPoint3D);
+            lookAt(pointyGroup, currentPoint3D,lookAtPoint3D, false);
         });
 
         sceneRoot.getChildren().addAll(cameraTransform, ambientLight,
@@ -179,85 +182,37 @@ public class LookAtTest extends Application {
         primaryStage.show();
 
     }
-//
-//    public void matrixRotate(double alf, double bet, double gam) {
-//        double A11 = Math.cos(alf) * Math.cos(gam);
-//        double A12 = Math.cos(bet) * Math.sin(alf) + Math.cos(alf) * Math.sin(bet) * Math.sin(gam);
-//        double A13 = Math.sin(alf) * Math.sin(bet) - Math.cos(alf) * Math.cos(bet) * Math.sin(gam);
-//        double A21 = -Math.cos(gam) * Math.sin(alf);
-//        double A22 = Math.cos(alf) * Math.cos(bet) - Math.sin(alf) * Math.sin(bet) * Math.sin(gam);
-//        double A23 = Math.cos(alf) * Math.sin(bet) + Math.cos(bet) * Math.sin(alf) * Math.sin(gam);
-//        double A31 = Math.sin(gam);
-//        double A32 = -Math.cos(gam) * Math.sin(bet);
-//        double A33 = Math.cos(bet) * Math.cos(gam);
-//
-//        double d = Math.acos((A11 + A22 + A33 - 1d) / 2d);
-//        if (d != 0d) {
-//            double den = 2d * Math.sin(d);
-//            javafx.geometry.Point3D p = new javafx.geometry.Point3D((A32 - A23) / den, (A13 - A31) / den, (A21 - A12) / den);
-//            setRotationAxis(p);
-//            setRotate(Math.toDegrees(d));
-//        }
-//    }    
-    
-    public void lookAt(Node node, javafx.geometry.Point3D currentPosition, javafx.geometry.Point3D lookAtPos) {
-
-        javafx.geometry.Point3D lookDirection = lookAtPos.subtract(currentPosition.getX(), currentPosition.getY(), currentPosition.getZ());
-
-        double bet = Math.atan2( lookDirection.getY(), lookDirection.getZ() );
-        double rotx = bet;
-        //double gam = Math.atan2( lookDirection.getX() * Math.cos(rotx), lookDirection.getZ() );
-        double roty = 0;
-        if (lookDirection.getZ() >= 0) {
-           roty = -Math.atan2( lookDirection.getX() * Math.cos(rotx), lookDirection.getZ() );
-        }else{
-           roty = Math.atan2( lookDirection.getX() * Math.cos(rotx), -lookDirection.getZ() );
+  
+    public static Affine lookAt(Node node, Point3D from, Point3D to, boolean applyTranslate) {
+        //zVec is "forward"
+        Point3D zVec = to.subtract(from).normalize();
+        //ydir is "up"
+        Point3D ydir = Rotate.Y_AXIS;
+        Point3D tangent0 = zVec.crossProduct(ydir);
+        //handle edge case where to location is precisely the "up" direction
+        if(tangent0.magnitude() < 0.001){
+            //pick a different axis to use
+            ydir = Rotate.X_AXIS;
+            tangent0 = zVec.crossProduct(ydir);
         }
-        double gam = roty;
-        double alf = Math.atan2( Math.cos(rotx), Math.sin(rotx) * Math.sin(roty) );
-
-        double A11 = Math.cos(alf) * Math.cos(gam);
-        double A12 = Math.cos(bet) * Math.sin(alf) + Math.cos(alf) * Math.sin(bet) * Math.sin(gam);
-        double A13 = Math.sin(alf) * Math.sin(bet) - Math.cos(alf) * Math.cos(bet) * Math.sin(gam);
-        double A21 = -Math.cos(gam) * Math.sin(alf);
-        double A22 = Math.cos(alf) * Math.cos(bet) - Math.sin(alf) * Math.sin(bet) * Math.sin(gam);
-        double A23 = Math.cos(alf) * Math.sin(bet) + Math.cos(bet) * Math.sin(alf) * Math.sin(gam);
-        double A31 = Math.sin(gam);
-        double A32 = -Math.cos(gam) * Math.sin(bet);
-        double A33 = Math.cos(bet) * Math.cos(gam);
-
-        double d = Math.acos((A11 + A22 + A33 - 1d) / 2d);
-        if (d != 0d) {
-            double den = 2d * Math.sin(d);
-            javafx.geometry.Point3D p = new javafx.geometry.Point3D((A32 - A23) / den, (A13 - A31) / den, (A21 - A12) / den);
-            node.setRotationAxis(p);
-            node.setRotate(Math.toDegrees(d));
+        tangent0.normalize();
+        ydir = zVec.crossProduct(tangent0);
+        
+        Point3D xVec = ydir.normalize().crossProduct(zVec).normalize();
+        Point3D yVec = zVec.crossProduct(xVec).normalize();
+        
+        Affine affine = new Affine(
+                xVec.getX(), yVec.getX(), zVec.getX(), 0,
+                xVec.getY(), yVec.getY(), zVec.getY(), 0,
+                xVec.getZ(), yVec.getZ(), zVec.getZ(), 0);
+        if(applyTranslate){
+            affine.setTx(from.getX());
+            affine.setTy(from.getY());
+            affine.setTz(from.getZ());
         }        
-        
-//        double rotx = Math.atan2( lookDirection.getY(), lookDirection.getZ() );
-//        double roty = Math.atan2( lookDirection.getX() * Math.cos(rotx), lookDirection.getZ() );
-//        double rotz = Math.atan2( Math.cos(rotx), Math.sin(rotx) * Math.sin(roty) );
-//        Rotate ry = new Rotate(roty, 0, 0, 0, Rotate.Y_AXIS);
-//        Rotate rx = new Rotate(rotx, 0, 0, 0, Rotate.X_AXIS);
-//        Rotate rz = new Rotate(rotz, 0, 0, 0, Rotate.Z_AXIS);
-//        
-//        node.getTransforms().setAll( ry, rx, rz, new Translate(
-//            currentPosition.getX(), currentPosition.getY(), currentPosition.getZ()));
-//
-        
-//        //Create direction vector
-//        javafx.geometry.Point3D lookDirection = lookAtPos.subtract(currentPosition.getX(), currentPosition.getY(), currentPosition.getZ());
-//        lookDirection = lookDirection.normalize();
-//
-//        double xRotation = Math.toDegrees(Math.asin(-lookDirection.getY()));
-//        double yRotation = Math.toDegrees(Math.atan2(lookDirection.getX(), lookDirection.getZ()));
-//
-////        Rotate ry = new Rotate(yRotation, 0, 0, 0, Rotate.Y_AXIS);
-////        Rotate rx = new Rotate(xRotation, 0, 0, 0, Rotate.X_AXIS);
-//        
-//        node.getTransforms().setAll( ry, rx, new Translate(
-//            currentPosition.getX(), currentPosition.getY(), currentPosition.getZ()));
-    }
+        node.getTransforms().setAll(affine);
+        return  affine;
+    }       
 
     private void mouseDragCamera(MouseEvent me) {
         mouseOldX = mousePosX;
