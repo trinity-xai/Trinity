@@ -33,7 +33,7 @@ module edu.jhuapl.trinity {
     requires lit.litfx.controls;
     requires quickhull3d;
     requires commons.math3;
-    requires jeromq;
+    requires org.zeromq.jeromq;
     requires com.fasterxml.jackson.annotation;
     requires com.fasterxml.jackson.core;
     requires com.fasterxml.jackson.databind;
