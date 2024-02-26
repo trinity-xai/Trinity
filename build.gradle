@@ -122,6 +122,8 @@ extraJavaModuleInfo {
     }
     module('org.jflac:jflac-codec', 'jflac.codec') {
         exportAllPackages()
+        ignoreServiceProvider('javax.sound.sampled.spi.AudioFileReader')
+        ignoreServiceProvider('javax.sound.sampled.spi.FormatConversionProvider')
     }
 }
 
