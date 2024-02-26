@@ -2078,8 +2078,8 @@ public class Hyperspace3DPane extends StackPane implements
         
     }
     @Override
-    public void projectVector(FeatureVector featureVector) {
-        
+    public Point3D projectVector(FeatureVector featureVector) {
+        return null;
     }
     
 }

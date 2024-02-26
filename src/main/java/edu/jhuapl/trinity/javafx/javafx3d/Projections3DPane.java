@@ -129,11 +129,13 @@ import java.util.stream.Collectors;
 import static edu.jhuapl.trinity.javafx.components.radial.HyperspaceMenu.slideInPane;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent.ProjectionConfig;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent.ProjectionConfig.COVARIANCE_MODE;
+import edu.jhuapl.trinity.javafx.javafx3d.animated.Opticon;
 import edu.jhuapl.trinity.utils.clustering.Cluster;
 import edu.jhuapl.trinity.utils.clustering.KmeansPlusPlus;
 import edu.jhuapl.trinity.utils.clustering.GaussianMixtureComponent;
 import edu.jhuapl.trinity.utils.clustering.Point;
 import edu.jhuapl.trinity.utils.clustering.GaussianMixtureModel;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.scene.shape.Box;
 import javafx.util.Pair;
 
@@ -246,7 +248,9 @@ public class Projections3DPane extends StackPane implements
     public double meanCenteredMaxAbsValue = 1.0;
     public boolean pointToPointDistanceMode = false;
     public boolean updatingTrajectories = false;
-
+    public boolean animatingProjections = false;
+    public SimpleBooleanProperty autoProjectionProperty = new SimpleBooleanProperty(false);
+    Opticon projectionOpticon;
     public ConcurrentLinkedQueue<HyperspaceSeed> hyperspaceSeeds = new ConcurrentLinkedQueue<>();
     public ConcurrentLinkedQueue<Perspective3DNode> pNodes = new ConcurrentLinkedQueue<>();
     int TOTAL_COLORS = 1530; //colors used by map function
@@ -413,7 +417,12 @@ public class Projections3DPane extends StackPane implements
         sceneRoot.getChildren().addAll(cameraTransform, highlightedPoint,
             nodeGroup, manifoldGroup, debugGroup, cubeWorld,
             dataXForm, extrasGroup, connectorsGroup, anchorTSM);
-
+        
+        projectionOpticon = new Opticon(Color.CYAN, 100);
+        extrasGroup.getChildren().add(projectionOpticon);
+        projectionOpticon.visibleProperty().bind(autoProjectionProperty);
+        projectionOpticon.orbitingProperty.bind(autoProjectionProperty);
+        
         miniCrosshair = new Crosshair3D(javafx.geometry.Point3D.ZERO,
             2, 1.0f);
         nodeGroup.getChildren().add(miniCrosshair);
@@ -718,16 +727,6 @@ public class Projections3DPane extends StackPane implements
 
         Glow glow = new Glow(0.5);
 
-        ImageView hyperspace = ResourceUtils.loadIcon("hyperspace", ICON_FIT_HEIGHT);
-        hyperspace.setEffect(glow);
-        MenuItem projectUmapHyperspaceItem = new MenuItem("Project Hyperspace With UMAP", hyperspace);
-        projectUmapHyperspaceItem.setOnAction(e -> projectHyperspace());
-
-        ImageView hypersurface = ResourceUtils.loadIcon("hypersurface", ICON_FIT_HEIGHT);
-        hypersurface.setEffect(glow);
-        MenuItem projectUmapHypersurfaceItem = new MenuItem("Project Hypersurface With UMAP", hypersurface);
-        projectUmapHypersurfaceItem.setOnAction(e -> projectHypersurface());
-
         ImageView reset = ResourceUtils.loadIcon("camera", ICON_FIT_HEIGHT);
         reset.setEffect(glow);
         MenuItem resetViewItem = new MenuItem("Reset View", reset);
@@ -779,17 +778,19 @@ public class Projections3DPane extends StackPane implements
             clearAll();
             refresh();
         });
-
+        CheckMenuItem animatingProjectionsItem = new CheckMenuItem("Animating Projections");
+        animatingProjectionsItem.setSelected(animatingProjections);
+        animatingProjectionsItem.selectedProperty().addListener(cl ->
+            animatingProjections = animatingProjectionsItem.isSelected());
         CheckMenuItem updatingTrajectoriesItem = new CheckMenuItem("Auto Update Trajectories");
         updatingTrajectoriesItem.setSelected(updatingTrajectories);
         updatingTrajectoriesItem.selectedProperty().addListener(cl ->
             updatingTrajectories = updatingTrajectoriesItem.isSelected());
 
         ContextMenu cm = new ContextMenu(
-            projectUmapHyperspaceItem, projectUmapHypersurfaceItem,
             resetViewItem, manifoldsItem, radarItem,
             clearCalloutsItem, clearProjectionItem,
-            updatingTrajectoriesItem);
+               animatingProjectionsItem,updatingTrajectoriesItem);
 
         cm.setAutoFix(true);
         cm.setAutoHide(true);
@@ -1757,8 +1758,15 @@ public class Projections3DPane extends StackPane implements
 
     private ArrayList<double[]> transformXYZ(FeatureCollection fc) {
         ArrayList<double[]> states = new ArrayList<>();
-        if (null == latestUmap || null == latestUmap.getmEmbedding())
+        if (null == latestUmap || null == latestUmap.getmEmbedding()) {
+            Platform.runLater(() -> {
+                getScene().getRoot().fireEvent(new CommandTerminalEvent(
+                    "Could not transform Feature Collection since current UMAP embeddings are null.",
+                        new Font("Consolas", 20), Color.RED,
+                    ResourceUtils.loadIcon("error", ICON_FIT_WIDTH)));
+            });            
             return states;
+        }
         double[][] transformed = AnalysisUtils.transformUMAP(fc, latestUmap);
         for (int row = 0; row < transformed.length; row++) {
             double[] stateVector = new double[transformed[row].length];
@@ -1969,13 +1977,16 @@ public class Projections3DPane extends StackPane implements
         Sphere sphere = new Sphere(point3dSize);
         PhongMaterial mat = new PhongMaterial(
             FactorLabel.getColorByLabel(featureVector.getLabel()));
-        mat.setSpecularColor(Color.TRANSPARENT);
+//        mat.setSpecularColor(Color.WHITE);
         sphere.setMaterial(mat);
         sphere.setTranslateX(featureVector.getData().get(0) * projectionScalar);
         sphere.setTranslateY(featureVector.getData().get(1) * -projectionScalar);
         sphere.setTranslateZ(featureVector.getData().get(2) * projectionScalar);
-        ellipsoidGroup.getChildren().add(sphere);
+        Platform.runLater(()-> {
+            ellipsoidGroup.getChildren().add(sphere);
+        });
         sphereToFeatureVectorMap.put(sphere, featureVector);
+        
         //@TODO add Spinning Circle as highlight when mouse hovering
         sphere.addEventHandler(MouseEvent.MOUSE_ENTERED, e -> {
             highlightedPoint = sphere;
@@ -2507,8 +2518,15 @@ public class Projections3DPane extends StackPane implements
         thread.setDaemon(true);
         thread.start();
     }
+
+    /**
+     *
+     * @param featureVector the unscaled, untransformed raw feature vector
+     * @return The point3d of the vector after projection transform. Any scaling
+     * to fit the 3D plot must still be done.
+     */
     @Override
-    public void projectVector(FeatureVector featureVector) {
+    public Point3D projectVector(FeatureVector featureVector) {
         if(null != latestUmap && null != latestUmap.getmEmbedding()) {
             double [] stateArray = FeatureVector.mapToStateArray.apply(featureVector);    
             double [][] transformInstances = new double[2][stateArray.length];
@@ -2524,14 +2542,47 @@ public class Projections3DPane extends StackPane implements
             //set color according to label and projection status
             //add feature vector to sphere lookup        
             //add to scene in projected group
-            addProjectedFeatureVector(projectedFV);            
+            addProjectedFeatureVector(projectedFV);
+            return new Point3D(projectedFV.getData().get(0),
+                projectedFV.getData().get(1),projectedFV.getData().get(2));
 //@TODO SMP 
 //            if in auto measurement mode, do distance check to all known manifolds
 //            update spark line views with distance and threshold checks
-                    
         }
+        return null;
     }
-    
+    public void transformFeatureCollection(final FeatureCollection fc) {
+        Task task = new Task() {
+            @Override
+            protected Void call() throws Exception {
+                //Make a 3D sphere for each projected feature vector
+                for (int i = 0; i < fc.getFeatures().size(); i++) {
+                    FeatureVector featureVector = fc.getFeatures().get(i);
+                    Point3D transformedPoint = projectVector(featureVector);
+                    if(animatingProjections && null != transformedPoint) {
+                        Platform.runLater(()-> {
+                            //For the lulz... (and also to provide a visual indicator to user!)
+                            projectionOpticon.fireData(new javafx.geometry.Point3D(
+                                transformedPoint.getX()*projectionScalar,
+                                    transformedPoint.getY()*-projectionScalar,
+                                    transformedPoint.getZ()*projectionScalar
+                            ), 1, FactorLabel.getColorByLabel(featureVector.getLabel()));
+                        });
+                        Thread.sleep(100);
+                    }                    
+                }
+                return null;
+            }
+        };
+        Thread t = new Thread(task);
+        t.setDaemon(false);
+        t.start();
+    }
+    public void enableAutoProjection(boolean enabled) {
+        autoProjectionProperty.set(enabled);
+        projectionOpticon.enableOrbiting(enabled);
+    }
+        
     public void projectFeatureCollection(FeatureCollection originalFC, Umap umap) {
         Task task = new Task() {
             @Override

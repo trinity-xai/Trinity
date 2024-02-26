@@ -25,7 +25,7 @@
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
 
-<AnchorPane style="-fx-background-color: #00000000;" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="edu.jhuapl.trinity.javafx.controllers.ManifoldControlController">
+<AnchorPane fx:id="root" style="-fx-background-color: #00000000;" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1" fx:controller="edu.jhuapl.trinity.javafx.controllers.ManifoldControlController">
     <children>
         <TabPane fx:id="tabPane" tabClosingPolicy="UNAVAILABLE">
             <tabs>

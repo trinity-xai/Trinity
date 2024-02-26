@@ -25,6 +25,7 @@ import edu.jhuapl.trinity.App;
 import edu.jhuapl.trinity.data.Distance;
 import edu.jhuapl.trinity.data.FactorLabel;
 import edu.jhuapl.trinity.data.Manifold;
+import edu.jhuapl.trinity.data.files.FeatureCollectionFile;
 import edu.jhuapl.trinity.data.messages.UmapConfig;
 import edu.jhuapl.trinity.javafx.components.listviews.DistanceListItem;
 import edu.jhuapl.trinity.javafx.components.listviews.ManifoldListItem;
@@ -64,13 +65,18 @@ import javafx.util.Duration;
 import java.io.File;
 import java.io.IOException;
 import java.net.URL;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.scene.Node;
 import javafx.scene.control.SplitMenuButton;
 import javafx.scene.control.MenuItem;
+import javafx.scene.input.DragEvent;
+import javafx.scene.input.Dragboard;
+import javafx.scene.input.TransferMode;
         
 /**
  * FXML Controller class
@@ -79,6 +85,9 @@ import javafx.scene.control.MenuItem;
  */
 public class ManifoldControlController implements Initializable {
 
+    @FXML
+    private Node root;
+    
     //Geometry Tab
     @FXML
     private ListView<ManifoldListItem> manifoldsListView;
@@ -223,6 +232,27 @@ public class ManifoldControlController implements Initializable {
         setupHullControls();
         setupUmapControls();
         setupDistanceControls();
+        if(null != root) {
+            root.addEventHandler(DragEvent.DRAG_OVER, event -> {
+                event.acceptTransferModes(TransferMode.COPY);
+            });        
+            root.addEventHandler(DragEvent.DRAG_DROPPED, e -> {
+                Dragboard db = e.getDragboard();
+                if (db.hasFiles()) {
+                    File file = db.getFiles().get(0);                
+                    try {
+                        
+                        if(UmapConfig.isUmapConfig(Files.readString(file.toPath()))){
+                            ObjectMapper mapper = new ObjectMapper();
+                            UmapConfig uc = mapper.readValue(file, UmapConfig.class);
+                            setUmapConfig(uc);                            
+                        }
+                    } catch (IOException ex) {
+                        Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+            });
+        }
     }
 
     private void setupDistanceControls() {
@@ -595,26 +625,30 @@ public class ManifoldControlController implements Initializable {
             UmapConfig uc;
             try {
                 uc = mapper.readValue(file, UmapConfig.class);
-                if(null != uc.getTargetWeight())
-                    targetWeightSlider.setValue(uc.getTargetWeight());
-                repulsionSlider.setValue(uc.getRepulsionStrength());
-                minDistanceSlider.setValue(uc.getMinDist());
-                spreadSlider.setValue(uc.getSpread());
-                opMixSlider.setValue(uc.getOpMixRatio());
-                numComponentsSpinner.getValueFactory().setValue(uc.getNumberComponents());
-                numEpochsSpinner.getValueFactory().setValue(uc.getNumberEpochs());
-                nearestNeighborsSpinner.getValueFactory().setValue(uc.getNumberNearestNeighbours());
-                negativeSampleRateSpinner.getValueFactory().setValue(uc.getNegativeSampleRate());
-                localConnectivitySpinner.getValueFactory().setValue(uc.getLocalConnectivity());
-                if(null != uc.getThreshold())
-                    thresholdSpinner.getValueFactory().setValue(uc.getThreshold());
-                metricChoiceBox.getSelectionModel().select(uc.getMetric());
-                verboseCheckBox.setSelected(uc.getVerbose());            
+                setUmapConfig(uc);
             } catch (IOException ex) {
                 Logger.getLogger(ManifoldControlController.class.getName()).log(Level.SEVERE, null, ex);
             }
         }             
     }    
+    public void setUmapConfig(UmapConfig uc) {
+        if(null != uc.getTargetWeight())
+            targetWeightSlider.setValue(uc.getTargetWeight());
+        repulsionSlider.setValue(uc.getRepulsionStrength());
+        minDistanceSlider.setValue(uc.getMinDist());
+        spreadSlider.setValue(uc.getSpread());
+        opMixSlider.setValue(uc.getOpMixRatio());
+        numComponentsSpinner.getValueFactory().setValue(uc.getNumberComponents());
+        numEpochsSpinner.getValueFactory().setValue(uc.getNumberEpochs());
+        nearestNeighborsSpinner.getValueFactory().setValue(uc.getNumberNearestNeighbours());
+        negativeSampleRateSpinner.getValueFactory().setValue(uc.getNegativeSampleRate());
+        localConnectivitySpinner.getValueFactory().setValue(uc.getLocalConnectivity());
+        if(null != uc.getThreshold())
+            thresholdSpinner.getValueFactory().setValue(uc.getThreshold());
+        metricChoiceBox.getSelectionModel().select(uc.getMetric());
+        verboseCheckBox.setSelected(uc.getVerbose());            
+        
+    }
     @FXML
     public void saveUmapConfig() {
         FileChooser fc = new FileChooser();

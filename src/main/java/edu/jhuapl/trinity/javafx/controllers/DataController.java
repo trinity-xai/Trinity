@@ -140,8 +140,15 @@ public class DataController implements Initializable {
         });
         trajectorySizeSpinner.disableProperty().bind(
             showStateTrajectoryCheckBox.selectedProperty().not());
-
     }
+    
+    @FXML
+    public void toggleAutoProjection() {
+        scene.getRoot().fireEvent(
+            new ApplicationEvent(ApplicationEvent.AUTO_PROJECTION_MODE, 
+                autoProjectionToggleButton.isSelected()));
+    }
+    
     @FXML
     public void showSparkLines() {
         scene.getRoot().fireEvent(

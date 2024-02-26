@@ -46,6 +46,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Map.Entry;
+import java.util.Random;
 import java.util.Set;
 
 /**
@@ -53,7 +54,14 @@ import java.util.Set;
  */
 public enum DataUtils {
     INSTANCE;
-
+    private static Random rando = new Random();
+    public static int randomSign(){
+        boolean nextBool = rando.nextBoolean();
+        int sign = -1;
+        if(nextBool)
+            sign = 1;        
+        return sign;
+    }
     public static double normalize(double rawValue, double min, double max) {
         return (rawValue - min) / (max - min);
     }

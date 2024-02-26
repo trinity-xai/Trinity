@@ -145,7 +145,7 @@
                                         <HBox alignment="CENTER_LEFT" prefWidth="150.0" spacing="20.0">
                                  <children>
                                     <Label prefWidth="125.0" text="Auto Projection" />
-                                    <ToggleButton fx:id="autoProjectionToggleButton" mnemonicParsing="false" prefWidth="125.0" text="Enable" />
+                                    <ToggleButton fx:id="autoProjectionToggleButton" mnemonicParsing="false" onAction="#toggleAutoProjection" prefWidth="125.0" text="Enable" />
                                  </children>
                                         </HBox>
                               <HBox alignment="CENTER_LEFT" spacing="20.0">

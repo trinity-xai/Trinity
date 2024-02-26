@@ -21,10 +21,12 @@ package edu.jhuapl.trinity.utils.mc;
  */
 
 import java.nio.DoubleBuffer;
+import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
 import javafx.scene.shape.TriangleMesh;
+import javafx.scene.shape.VertexFormat;
 import org.fxyz3d.geometry.Vector3D;
 
 /**
@@ -32,7 +34,9 @@ import org.fxyz3d.geometry.Vector3D;
  */
 public class MarchingCubesMeshFactory {
     int SHARED_VERTICES_PER_CUBE = 8;
-        
+    int INDEX_BUFFER_COMPONENT_COUNT = 3;    
+    int NORMAL_BUFFER_COMPONENT_COUNT = 3;  
+    int VERTICES_PER_TRIANGLE = 3;
     private float[][][] m_scalarField;
     private float m_isoLevel;
     private float m_cubeDiameter;
@@ -82,43 +86,68 @@ public class MarchingCubesMeshFactory {
     public TriangleMesh createMesh() {
         TriangleMesh mesh = new TriangleMesh();
 //TODO SMP
-//        FloatBuffer positionBuffer = createPositionBuffer();
+        DoubleBuffer positionBuffer = createPositionBuffer();
+        double [] vertices = positionBuffer.array();
+        for(int i=0;i<vertices.length;i+=VERTICES_PER_TRIANGLE){ 
+            mesh.getPoints().addAll(
+            Double.valueOf(vertices[i]).floatValue(),
+            Double.valueOf(vertices[i+1]).floatValue(),
+            Double.valueOf(vertices[i+2]).floatValue()
+            );
+        }
+        int totalFaces = mesh.getPoints().size()/3;
+        for(int faceIndex=0;faceIndex<totalFaces-1;faceIndex++) {
+            if(faceIndex+2 > mesh.getPoints().size())
+                System.out.println("wft...");
+            mesh.getFaces().addAll(
+                faceIndex, faceIndex+1, faceIndex+2,
+                faceIndex+2, faceIndex+1, faceIndex
+            );            
+        }
+
+        mesh.getTexCoords().addAll(0,0);
 //        IntBuffer indexBuffer = createIndexBuffer();
-//        FloatBuffer normalBuffer = createNormalBuffer();
-//
-//        mesh.setBuffer(Type.Position, MeshBufferUtils.VERTEX_BUFFER_COMPONENT_COUNT, positionBuffer);
-//        mesh.setBuffer(Type.Index, MeshBufferUtils.INDEX_BUFFER_COMPONENT_COUNT, indexBuffer);
-//        mesh.setBuffer(Type.Normal, MeshBufferUtils.NORMAL_BUFFER_COMPONENT_COUNT, normalBuffer);
-//
+//        for(int d : indexBuffer.array()){
+//            mesh.getFaces().addAll(d);
+//        }
+
+//        mesh.setVertexFormat(VertexFormat.POINT_NORMAL_TEXCOORD);
+
+
+//        DoubleBuffer normalBuffer = createNormalBuffer();
+//        for(Double d : normalBuffer.array()){
+//            mesh.getNormals().addAll(d.floatValue());
+//        }
+
 //        mesh.updateBound();
 
         return mesh;
     }
 
-//    private DoubleBuffer createNormalBuffer() {
-//        DoubleBuffer normalBuffer = (DoubleBuffer) VertexBuffer.createBuffer(Format.Float, MeshBufferUtils.NORMAL_BUFFER_COMPONENT_COUNT, m_vertrexList.size());
-//
-//        for (int i = MeshBufferUtils.VERTICES_PER_TRIANGLE - 1; i < m_vertrexList.size(); i += MeshBufferUtils.VERTICES_PER_TRIANGLE) {
-//            Vector3D normal = computeTriangleNormal(m_vertrexList.get(i - 2), m_vertrexList.get(i - 1), m_vertrexList.get(i));
-//
-//            for (int j = 0; j < MeshBufferUtils.NORMAL_BUFFER_COMPONENT_COUNT; ++j)
-//                normalBuffer.put(normal.x).put(normal.y).put(normal.z);
-//        }
-//
-//        return normalBuffer;
-//    }
-//
-//    private IntBuffer createIndexBuffer() {
-//        IntBuffer indexBuffer = (IntBuffer) VertexBuffer.createBuffer(Format.Int, MeshBufferUtils.INDEX_BUFFER_COMPONENT_COUNT,
-//                m_vertrexList.size() / MeshBufferUtils.INDEX_BUFFER_COMPONENT_COUNT);
-//                
-//                IntBuffer) VertexBuffer.createBuffer(Format.Int, MeshBufferUtils.INDEX_BUFFER_COMPONENT_COUNT,
-//                m_vertrexList.size() / MeshBufferUtils.INDEX_BUFFER_COMPONENT_COUNT);
-//        for (int vertexIndex = 0; vertexIndex < m_vertrexList.size(); ++vertexIndex)
-//            indexBuffer.put(vertexIndex);
-//
-//        return indexBuffer;
-//    }
+    private DoubleBuffer createNormalBuffer() {
+        //DoubleBuffer normalBuffer = (DoubleBuffer) VertexBuffer.createBuffer(Format.Float, NORMAL_BUFFER_COMPONENT_COUNT, m_vertrexList.size());
+        DoubleBuffer normalBuffer = DoubleBuffer.allocate(m_vertrexList.size()*NORMAL_BUFFER_COMPONENT_COUNT);
+        
+        for (int i = VERTICES_PER_TRIANGLE - 1; i < m_vertrexList.size(); i += VERTICES_PER_TRIANGLE) {
+            Vector3D normal = computeTriangleNormal(m_vertrexList.get(i - 2), m_vertrexList.get(i - 1), m_vertrexList.get(i));
+
+            for (int j = 0; j < NORMAL_BUFFER_COMPONENT_COUNT; ++j)
+                normalBuffer.put(normal.x).put(normal.y).put(normal.z);
+        }
+
+        return normalBuffer;
+    }
+
+    private IntBuffer createIndexBuffer() {
+//        IntBuffer indexBuffer = (IntBuffer) VertexBuffer.createBuffer(Format.Int, INDEX_BUFFER_COMPONENT_COUNT,
+//                m_vertrexList.size() / INDEX_BUFFER_COMPONENT_COUNT);
+        IntBuffer indexBuffer = IntBuffer.allocate(m_vertrexList.size() / INDEX_BUFFER_COMPONENT_COUNT);
+
+        for (int vertexIndex = 0; vertexIndex < m_vertrexList.size(); ++vertexIndex)
+            indexBuffer.put(vertexIndex);
+
+        return indexBuffer;
+    }
 
     private DoubleBuffer createPositionBuffer() {
         m_vertrexList = new ArrayList<>();
@@ -142,7 +171,7 @@ public class MarchingCubesMeshFactory {
 
     private DoubleBuffer addVerticesToPositionBuffer() {
 //        DoubleBuffer positionBuffer = (DoubleBuffer) VertexBuffer.createBuffer(Format.Float, MeshBufferUtils.VERTEX_BUFFER_COMPONENT_COUNT, m_vertrexList.size());
-        DoubleBuffer positionBuffer = DoubleBuffer.allocate(m_vertrexList.size());
+        DoubleBuffer positionBuffer = DoubleBuffer.allocate(m_vertrexList.size()*VERTICES_PER_TRIANGLE);
         
         for (int i = 0; i < m_vertrexList.size(); ++i) {
             Vector3D position = m_vertrexList.get(i);

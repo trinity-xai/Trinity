@@ -114,7 +114,8 @@ public class SparkLinesController implements Initializable {
     public void initialize(URL url, ResourceBundle rb) {
         scene = App.getAppScene();
         config = App.getConfig();
-        bmiControlWindowSize = Integer.valueOf((String)config.configProps.get("bmiControlWindowSize"));        
+        //TODO SMP read in config values for constructing the graphs
+//        bmiControlWindowSize = Integer.valueOf((String)config.configProps.get("bmiControlWindowSize"));        
 //        dataQueue = new ConcurrentLinkedQueue<>();
 
         dataWindowSpinner.setValueFactory(

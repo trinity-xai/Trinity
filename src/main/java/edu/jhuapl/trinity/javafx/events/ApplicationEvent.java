@@ -45,6 +45,7 @@ public class ApplicationEvent extends Event {
     public static final EventType<ApplicationEvent> HIDE_BUSY_INDICATOR = new EventType(ANY, "HIDE_BUSY_INDICATOR");
     public static final EventType<ApplicationEvent> UPDATE_BUSY_INDICATOR = new EventType(ANY, "PROGRESS_BUSY_INDICATOR");
     public static final EventType<ApplicationEvent> SHOW_SHAPE3D_CONTROLS = new EventType(ANY, "SHOW_SHAPE3D_CONTROLS");
+    public static final EventType<ApplicationEvent> AUTO_PROJECTION_MODE = new EventType(ANY, "AUTO_PROJECTION_MODE");
 
     public ApplicationEvent(EventType<? extends Event> eventType, Object object) {
         this(eventType);

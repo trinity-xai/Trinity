@@ -30,6 +30,7 @@ import java.util.Arrays;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Random;
+import java.util.stream.DoubleStream;
 import java.util.stream.Stream;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
@@ -463,7 +464,7 @@ public class ConcaveUtils {
         
         
         ArrayList<Sphere> p = new ArrayList<>();
-        if(null != manifold3D.getScene()) {
+        if(false && null != manifold3D.getScene()) {
 
             //Go through orgData and only add points which are marked with a 1
             
@@ -512,10 +513,50 @@ public class ConcaveUtils {
         then for each point convert x,y,z positions to an index... 
         ...rounding up or down as necessary to make them fit
         Then set that position with a 1
+  */      
+        int width = Double.valueOf(Math.ceil(manifold3D.getBoundsWidth())).intValue();
+        int height = Double.valueOf(Math.ceil(manifold3D.getBoundsHeight())).intValue();
+        int depth = Double.valueOf(Math.ceil(manifold3D.getBoundsDepth())).intValue();
+
+        float[][][] scalarField = new float[width][height][depth];
+        
+        double minX = manifold3D.getOriginalPoint3DList().stream()
+            .flatMapToDouble(point -> DoubleStream.of(point.x))
+            .min().getAsDouble(); 
+        double maxX = minX+width;
+        double minY = manifold3D.getOriginalPoint3DList().stream()
+            .flatMapToDouble(point -> DoubleStream.of(point.y))
+            .min().getAsDouble(); 
+        double maxY = minY+height;
+        double minZ = manifold3D.getOriginalPoint3DList().stream()
+            .flatMapToDouble(point -> DoubleStream.of(point.z))
+            .min().getAsDouble();
+        double maxZ = minZ+depth;
+        
+//        ;
+        
+        for(Point3D p3D : manifold3D.getOriginalPoint3DList()){
+            double normalizedX = DataUtils.normalize(p3D.x, minX, maxX);
+            double normalizedY = DataUtils.normalize(p3D.y, minY, maxY);
+            double normalizedZ = DataUtils.normalize(p3D.z, minZ, maxZ);
+//            int projectedX = Double.valueOf(Math.floor(normalized * width)).intValue();
+            int x = Double.valueOf(Math.floor(normalizedX * width)).intValue();
+            int y = Double.valueOf(Math.floor(normalizedY * height)).intValue();
+            int z = Double.valueOf(Math.floor(normalizedZ * depth)).intValue();
+            scalarField[x][y][z] = 1;
+        }                
         
         MarchingCubesMeshFactory mcmf = new MarchingCubesMeshFactory(scalarField, 
-        1, 1);
-*/
+        0.5f, 1);
+        
+        TriangleMesh tm = mcmf.createMesh();
+        MeshView mv = new MeshView(tm);
+        PhongMaterial pm = new PhongMaterial(Color.GREEN);
+        mv.setMaterial(pm);
+        mv.setDrawMode(DrawMode.FILL);
+        mv.setCullFace(CullFace.NONE);            
+        manifold3D.extrasGroup.getChildren().add(mv);
+            
         ArrayList<Sphere> concavePoints = new ArrayList<>();
 //        /////
 //        double isoValue = 0.5;

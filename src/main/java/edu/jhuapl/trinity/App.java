@@ -22,9 +22,11 @@ package edu.jhuapl.trinity;
 
 import edu.jhuapl.trinity.data.Dimension;
 import edu.jhuapl.trinity.data.FactorLabel;
+import edu.jhuapl.trinity.data.files.ClusterCollectionFile;
 import edu.jhuapl.trinity.data.files.FeatureCollectionFile;
 import edu.jhuapl.trinity.data.messages.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.FeatureVector;
+import edu.jhuapl.trinity.data.messages.UmapConfig;
 import edu.jhuapl.trinity.javafx.components.radial.CircleProgressIndicator;
 import edu.jhuapl.trinity.javafx.components.MatrixOverlay;
 import edu.jhuapl.trinity.javafx.components.radial.ProgressStatus;
@@ -108,6 +110,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import edu.jhuapl.trinity.javafx.components.panes.WaveformPane;
+import java.nio.file.Files;
+import javafx.scene.input.Dragboard;
 
 public class App extends Application {
 
@@ -319,16 +323,39 @@ public class App extends Application {
         hyperspace3DPane.addEventHandler(DragEvent.DRAG_DROPPED,
             e -> ResourceUtils.onDragDropped(e, scene));
 
-        scene.addEventHandler(DragEvent.DRAG_OVER, event -> {
-            if (ResourceUtils.canDragOver(event)) {
+        projections3DPane.addEventHandler(DragEvent.DRAG_OVER, event -> {
+            if (ResourceUtils.canDragOver(event)) { // && projections3DPane.autoProjectionProperty.get()) {
                 event.acceptTransferModes(TransferMode.COPY);
             } else {
                 event.consume();
             }
+        });        
+        projections3DPane.addEventHandler(DragEvent.DRAG_DROPPED, e -> {
+            Dragboard db = e.getDragboard();
+            if (db.hasFiles()) {
+                for (File file : db.getFiles()) {                
+                    try {
+                        if(projections3DPane.autoProjectionProperty.get()) {
+                            if (FeatureCollectionFile.isFeatureCollectionFile(file)) {
+                                FeatureCollectionFile fcFile = new FeatureCollectionFile(
+                                file.getAbsolutePath(), true);
+                                fveh.scanLabelsAndLayers(fcFile.featureCollection.getFeatures());
+                                projections3DPane.transformFeatureCollection(fcFile.featureCollection);
+                            } 
+                        }
+                        if (ClusterCollectionFile.isClusterCollectionFile(file)) {
+                            ClusterCollectionFile ccFile = new ClusterCollectionFile(file.getAbsolutePath(), true);
+                            scene.getRoot().fireEvent(
+                                new ManifoldEvent(ManifoldEvent.NEW_CLUSTER_COLLECTION, ccFile.clusterCollection));
+                        }
+                    } catch (IOException ex) {
+                        Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+            }
         });
-        scene.addEventHandler(DragEvent.DRAG_DROPPED,
-            e -> ResourceUtils.onDragDropped(e, scene));
-
+        
+        
         //Add the base main tools
         //insert before animated console text
         centerStack.getChildren().add(0, hyperspace3DPane);
@@ -527,7 +554,21 @@ public class App extends Application {
                 });
             }
         });
-
+        scene.addEventHandler(ApplicationEvent.AUTO_PROJECTION_MODE, e -> {
+            boolean enabled = (boolean) e.object;
+            if (enabled) {
+                if (null != retroWavePane) {
+                    retroWavePane.animateHide();
+                }
+                hyperspace3DPane.setVisible(false);
+                hypersurface3DPane.setVisible(false);
+//                Platform.runLater(() -> {
+                    projections3DPane.setVisible(true);
+//                });
+            }
+            projections3DPane.enableAutoProjection(enabled);
+            
+        });
         scene.addEventHandler(ApplicationEvent.SHOW_HYPERSURFACE, e -> {
             if (hypersurface3DPane.isVisible()) {
                 //hypersurface3DPane.hideFA3D();
@@ -705,7 +746,16 @@ public class App extends Application {
             timeline.setCycleCount(Animation.INDEFINITE);
             timeline.play();
         });
-
+        scene.addEventHandler(CommandTerminalEvent.ALERT, e -> {
+            animatedConsoleText.setAnimationTimeMS(15);  //default is 30ms
+            animatedConsoleText.setFont(e.font);
+            animatedConsoleText.setFill(e.color);
+            animatedConsoleText.setStroke(e.color);
+            animatedConsoleText.setText("> ");
+            animatedConsoleText.setVisible(true);
+            animatedConsoleText.setOpacity(1.0);
+            animatedConsoleText.animate("> " + e.text);            
+        });
         scene.addEventHandler(CommandTerminalEvent.NOTIFICATION, e -> {
             animatedConsoleText.setAnimationTimeMS(15);  //default is 30ms
             animatedConsoleText.setFont(e.font);

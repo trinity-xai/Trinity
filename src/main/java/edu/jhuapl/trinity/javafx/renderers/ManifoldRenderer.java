@@ -28,13 +28,14 @@ import edu.jhuapl.trinity.javafx.javafx3d.Manifold3D;
 import javafx.scene.Group;
 
 import java.util.List;
+import org.fxyz3d.geometry.Point3D;
 
 /**
  * @author Sean Phillips
  */
 public interface ManifoldRenderer {
 
-    public void projectVector(FeatureVector featureVector);
+    public Point3D projectVector(FeatureVector featureVector);
     
     public void clearAllManifolds();
 
