@@ -318,19 +318,25 @@ public class WaveformCanvasOverlayPane extends CanvasOverlayPane {
                 protected Boolean call() {
                     try {
                         if (audioFile != null) {
+                            System.out.println("Attempting to load " + audioFile.toURI().toString());
                             Media m = new Media(audioFile.toURI().toString());
                             setMedia(m);
+                            //@DEBUG SMP System.out.println("Setting up media player...");
                             MediaPlayer mp = new MediaPlayer(getMedia());
                             mp.setAutoPlay(false);
                             setAudioPlayer(mp);
+                            //@DEBUG SMP System.out.println("Attempting to process Audio File...");
                             processAudioFile();
+                            //@DEBUG SMP System.out.println("Painting Audio Waveform...");
                             Platform.runLater(()-> paintWaveform());
                             audioPlayer.currentTimeProperty().addListener(cl -> {
                                 paintWaveform();
                                 updateProgressByTime();
                             });                            
+                            //@DEBUG SMP System.out.println("Waveform Visualization Service started.");    
                             return true;
                         } else {
+                            System.out.println("Audio File is Null!");
                             return false;
                         }
                     } catch (Exception ex) {
@@ -345,10 +351,12 @@ public class WaveformCanvasOverlayPane extends CanvasOverlayPane {
                  * @throws IOException if encountered IO error
                  * @throws UnsupportedAudioFileException if encountered invalid audio file
                  */
-                private void processAudioFile() throws IOException, UnsupportedAudioFileException {
+                private void processAudioFile() throws Exception, IOException, UnsupportedAudioFileException {
                     if (audioAmplitudes == null) {
+                        //@DEBUG SMP System.out.println("calcAudioAmplitudes()...");
                         calcAudioAmplitudes();
                     }
+                    //@DEBUG SMP System.out.println("processAudioAmplitudes()...");
                     processAudioAmplitudes();
                 }
 
@@ -357,11 +365,14 @@ public class WaveformCanvasOverlayPane extends CanvasOverlayPane {
                  * @throws IOException if encountered IO error
                  * @throws UnsupportedAudioFileException if encountered invalid audio file
                  */
-                private void calcAudioAmplitudes() throws IOException, UnsupportedAudioFileException {
+                private void calcAudioAmplitudes() throws Exception, IOException, UnsupportedAudioFileException {
+                    //@DEBUG SMP System.out.println("Acquiring Audio Input: " + audioFile.getAbsolutePath());
                     AudioInputStream audioInputStream = AudioSystem.getAudioInputStream(audioFile);
+                    //@DEBUG SMP System.out.println("Acquiring Audio Format");
                     AudioFormat baseFormat = audioInputStream.getFormat();
-
+                    
                     // Encoding
+                    //@DEBUG SMP System.out.println("Acquiring Audio Encoding...");
                     AudioFormat.Encoding encoding = AudioFormat.Encoding.PCM_UNSIGNED;
                     float sampleRate = baseFormat.getSampleRate();
                     int numChannels = baseFormat.getChannels();
@@ -388,12 +399,11 @@ public class WaveformCanvasOverlayPane extends CanvasOverlayPane {
 
                     // Variables for the calculation loop
                     int arrayCellValue;
-
+                    //@DEBUG SMP System.out.println("Processing Audio Input...");
                     // Read all of the available data in chunks
                     while (decodedAudioInputStream.read(buffer, 0, BUFFER_SIZE) > 0) {
                         for (int i = 0; i < buffer.length - 1; i+= 2) {
                             // Calculate the value
-//                            arrayCellValue = (int) (((((buffer[i + 1] << 8) | buffer[i] & 0xff) << 16) / AMPLITUDE_SCALE_MAX) * WAVEFORM_HEIGHT_COEFFICIENT);
                             arrayCellValue = (int) (((((buffer[i + 1] << 8) | buffer[i] & 0xff) << 16) / AMPLITUDE_SCALE_MAX) );
 
                             if (currentSampleCounter != samplesPerPixel) {
@@ -403,8 +413,7 @@ public class WaveformCanvasOverlayPane extends CanvasOverlayPane {
                                 if (arrayCellPosition != maxArrayLength) {
                                     finalAmplitudes[arrayCellPosition] = finalAmplitudes[arrayCellPosition + 1] = (int) (currentCellValue / samplesPerPixel);
                                 }
-
-                                // Fix the variables
+                                // update indices and counters
                                 currentSampleCounter = 0;
                                 currentCellValue = 0;
                                 arrayCellPosition += 2;
@@ -424,10 +433,8 @@ public class WaveformCanvasOverlayPane extends CanvasOverlayPane {
             int width = (int) getWidth();
             waveformData = new float[width];
             int samplesPerPixel = audioAmplitudes.length /width;
-
             // Calculate
             float nValue;
-
             for (int w = 0; w < width; w++) {
                 int c = w * samplesPerPixel;
                 nValue = 0.0f;
@@ -435,9 +442,7 @@ public class WaveformCanvasOverlayPane extends CanvasOverlayPane {
                 for (int s = 0; s < samplesPerPixel; s++) {
                     nValue += (Math.abs(audioAmplitudes[c + s]) / AMPLITUDE_SCALE_MAX) 
                         * getCoeffScale();
-                    //nValue += (Math.abs(audioAmplitudes[c + s]) / AMPLITUDE_SCALE_MAX); //65536.0f);
                 }
-
                 waveformData[w] = nValue / samplesPerPixel;
             }
         }

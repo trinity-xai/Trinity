@@ -45,17 +45,22 @@ public class FlacToWav implements PCMProcessor {
      * @param outFileName   The output WAV file name
      * @throws IOException  Thrown if error reading or writing files
      */
-    public  void decode(String inFileName, String outFileName) throws IOException {
+    public  void decode(String inFileName, String outFileName) throws Exception {
         System.out.println("Decode [" + inFileName + "][" + outFileName + "]");
         FileInputStream is = null;
         FileOutputStream os = null;
         try {
+            //@DEBUG SMP System.out.println("Creating File Streams...");
             is = new FileInputStream(inFileName);
             os = new FileOutputStream(outFileName);
             wav = new WavWriter(os);
+            //@DEBUG SMP System.out.println("Initializing FLAC Decoder...");
             FLACDecoder decoder = new FLACDecoder(is);
+            //@DEBUG SMP System.out.println("Adding PCM Processor...");
             decoder.addPCMProcessor(this);
+            //@DEBUG SMP System.out.println("Attempting to decode...");
             decoder.decode();
+            System.out.println("Decoding complete.");
         } finally {
             if (is != null) {
                 is.close();
@@ -93,22 +98,4 @@ public class FlacToWav implements PCMProcessor {
             e.printStackTrace();
         }
     }
-    
-//    /**
-//     * Main routine.
-//     * <p>args[0] is the input file name
-//     * <p>args[1] is the output file name
-//     * @param args  Command line arguments
-//     */
-//    public static void main(String[] args) {
-//        try {
-//            Decoder decoder = new Decoder();
-//            decoder.decode(args[0], args[1]);
-//        } catch (FileNotFoundException e) {
-//            e.printStackTrace();
-//        } catch (IOException e) {
-//            e.printStackTrace();
-//        }
-//    }
-     
 }

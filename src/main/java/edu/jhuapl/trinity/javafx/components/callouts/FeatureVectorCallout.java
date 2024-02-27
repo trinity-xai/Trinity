@@ -84,11 +84,6 @@ public class FeatureVectorCallout extends VBox {
         infoCallout.setPickOnBounds(false);
         infoCallout.setManaged(false);
 
-        subScene.getScene().addEventHandler(ApplicationEvent.SET_IMAGERY_BASEPATH, e -> {
-            featureVectorCallout.imageryBasePath = (String) e.object;
-            System.out.println("Callout image base path set to " + featureVectorCallout.imageryBasePath);
-        });
-
         return infoCallout;
     }
 
@@ -207,7 +202,7 @@ public class FeatureVectorCallout extends VBox {
         openMediaVBox.setOnMouseClicked(e -> {
             if(null != featureVector.getMediaURL()){
                 openMediaVBox.getScene().getRoot().fireEvent(new ApplicationEvent(
-                    ApplicationEvent.SHOW_WAVEFORM_PANE, new File(imageryBasePath + featureVector.getMediaURL())));
+                    ApplicationEvent.SHOW_WAVEFORM_PANE, new File(this.imageryBasePath + featureVector.getMediaURL())));
             }
         });
         HBox mediaHBox = new HBox(15, openMediaVBox);
@@ -222,6 +217,11 @@ public class FeatureVectorCallout extends VBox {
         setSpacing(3);
         setPrefWidth(250);
         setPrefHeight(100);
+        
+        subScene.getParent().getScene().addEventHandler(ApplicationEvent.SET_IMAGERY_BASEPATH, e -> {
+            this.imageryBasePath = (String) e.object;
+            //System.out.println("Callout image base path set to " + featureVectorCallout.imageryBasePath);
+        });        
 
     }
 

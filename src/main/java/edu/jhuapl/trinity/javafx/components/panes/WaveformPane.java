@@ -22,6 +22,7 @@ package edu.jhuapl.trinity.javafx.components.panes;
 
 import edu.jhuapl.trinity.data.audio.FlacToWav;
 import edu.jhuapl.trinity.javafx.events.AudioEvent;
+import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import java.io.File;
 import java.io.IOException;
@@ -29,6 +30,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -45,6 +47,7 @@ import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
 
 /**
  * @author Sean Phillips
@@ -257,17 +260,32 @@ public class WaveformPane extends LitPathPane {
                         Path tempFile = Files.createTempFile("flacToWav-"+audioFile.getName(), ".wav");
                         FlacToWav ftw = new FlacToWav();
                         ftw.decode(audioFile.getPath(), tempFile.toString());
+                        //@DEBUG SMP System.out.println("Starting visualization");
                         waveformCanvas.startVisualization(tempFile.toFile());
-                    } catch (IOException ex) {
+                    } catch (Exception ex) {
+                        Platform.runLater(()-> {
+                            getScene().getRoot().fireEvent(new CommandTerminalEvent(
+                        ex.getMessage(), new Font("Consolas", 20), Color.RED));
+                        });
                         Logger.getLogger(WaveformPane.class.getName()).log(Level.SEVERE, null, ex);
                     }
                 } else {
                     waveformCanvas.startVisualization(audioFile);
                 }
             } else {
+                Platform.runLater(()-> {
+                    getScene().getRoot().fireEvent(new CommandTerminalEvent(
+                "Could not load this file type. Types supported: .wav | .flac", 
+                    new Font("Consolas", 20), Color.YELLOW));
+                });                
                 System.out.println("Could not load this file type.\nTypes supported: .wav | .flac");
             }
         } else {
+            Platform.runLater(()-> {
+                getScene().getRoot().fireEvent(new CommandTerminalEvent(
+            "Could not load this file type. Types supported: .wav | .flac", 
+                new Font("Consolas", 20), Color.YELLOW));
+            });               
             System.out.println("Could not determine audio file type.\nTypes supported: .wav | .flac");
         }
     }
