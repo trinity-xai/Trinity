@@ -77,6 +77,8 @@ dependencies {
 // Alternative is to use org.javamodularity.moduleplugin but
 // it doesn't yield the same quality of results.
 extraJavaModuleInfo {
+    // Avoid automatic modules
+    failOnAutomaticModules.set(true)
     // Transitive of org.fxyz3d:fxyz3d
     module('eu.mihosoft.vvecmath:vvecmath', 'vvecmath') {
         exports('eu.mihosoft.vvecmath')
@@ -121,9 +123,8 @@ extraJavaModuleInfo {
         exportAllPackages()
     }
     module('org.jflac:jflac-codec', 'jflac.codec') {
+        requires('java.desktop')
         exportAllPackages()
-        ignoreServiceProvider('javax.sound.sampled.spi.AudioFileReader')
-        ignoreServiceProvider('javax.sound.sampled.spi.FormatConversionProvider')
     }
 }
 
