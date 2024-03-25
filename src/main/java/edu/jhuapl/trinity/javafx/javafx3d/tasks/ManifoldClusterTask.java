@@ -186,7 +186,9 @@ public class ManifoldClusterTask extends Task {
             for(int index : indices) {
                 javafx.geometry.Point3D p3D = JavaFX3DUtils.mapShape3DToPoint3D.apply(spheres.get(index));
                 manPoints.add(p3D);
-                labelMatchedPoints.add(JavaFX3DUtils.toFXYZ3D.apply(p3D));
+                FeatureVector fv = currentMap.get(spheres.get(index));
+                if(!filterByLabel || (null != fv && filterLabel.contentEquals(fv.getLabel())))
+                    labelMatchedPoints.add(JavaFX3DUtils.toFXYZ3D.apply(p3D));
             }
             Manifold manifold = new Manifold(manPoints, manifoldName, manifoldName, diffuseColor);
             //Create the 3D manifold shape
