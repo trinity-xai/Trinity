@@ -20,11 +20,23 @@ package edu.jhuapl.trinity.javafx.javafx3d;
  * #L%
  */
 
-import javafx.scene.shape.Sphere;
+import edu.jhuapl.trinity.javafx.javafx3d.animated.Planetoid;
+import javafx.scene.paint.Color;
+import javafx.scene.paint.PhongMaterial;
 
 /**
+ * just a cheesy way to have a instanceof testable Shape3D.
  * @author Sean Phillips
  */
-public class AnchorSphere extends Sphere {
-    //just a cheesy way to have a instanceof testable Shape3D.
+public class AnchorSphere extends Planetoid {
+    public static PhongMaterial DEFAULT_MATERIAL = new PhongMaterial(
+        Color.ALICEBLUE.deriveColor(1, 1, 1, 0.2));
+    
+    public AnchorSphere() {
+        this(DEFAULT_MATERIAL, 10, 32);
+    }
+    
+    public AnchorSphere(PhongMaterial material, double radius, int divisions) {
+        super(material, radius, divisions);
+    }
 }

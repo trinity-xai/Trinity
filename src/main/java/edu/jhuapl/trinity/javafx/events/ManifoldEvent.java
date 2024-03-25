@@ -46,9 +46,11 @@ public class ManifoldEvent extends Event {
         public double tolerance = 1e4;
         public COVARIANCE_MODE covariance = COVARIANCE_MODE.DIAGONAL;
     }
+    //Cluster selection events
     public static final EventType<ManifoldEvent> CLUSTER_SELECTION_MODE = new EventType(ANY, "CLUSTER_SELECTION_MODE");
     public static final EventType<ManifoldEvent> ADD_CLUSTER_SELECTION = new EventType(ANY, "ADD_CLUSTER_SELECTION");
-    
+    public static final EventType<ManifoldEvent> NEW_MANIFOLD_CLUSTER = new EventType(ANY, "NEW_MANIFOLD_CLUSTER");
+            
     //Distance stuff
     public static final EventType<ManifoldEvent> DISTANCE_CONNECTOR_SELECTED = new EventType(ANY, "DISTANCE_CONNECTOR_SELECTED");
     public static final EventType<ManifoldEvent> DISTANCE_CONNECTOR_WIDTH = new EventType(ANY, "DISTANCE_CONNECTOR_WIDTH");

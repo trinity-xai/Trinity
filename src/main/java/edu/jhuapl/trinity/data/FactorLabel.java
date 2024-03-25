@@ -29,6 +29,7 @@ import javafx.scene.paint.Color;
 import java.util.Collection;
 import java.util.HashMap;
 import java.util.List;
+import javafx.scene.paint.PhongMaterial;
 
 /**
  * @author Sean Phillips
@@ -53,6 +54,9 @@ public class FactorLabel {
      */
     public static HashMap<String, FactorLabel> globalLabelMap = new HashMap<>();
 
+    public static HashMap<String, PhongMaterial> globalMaterialMap = new HashMap<>();
+    
+    
     public static Collection<FactorLabel> getFactorLabels() {
         return globalLabelMap.values();
     }

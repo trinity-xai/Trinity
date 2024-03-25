@@ -130,13 +130,13 @@ import static edu.jhuapl.trinity.javafx.components.radial.HyperspaceMenu.slideIn
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent.ProjectionConfig;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent.ProjectionConfig.COVARIANCE_MODE;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.Opticon;
+import edu.jhuapl.trinity.javafx.javafx3d.tasks.ManifoldClusterTask;
 import edu.jhuapl.trinity.utils.clustering.Cluster;
 import edu.jhuapl.trinity.utils.clustering.KmeansPlusPlus;
 import edu.jhuapl.trinity.utils.clustering.GaussianMixtureComponent;
 import edu.jhuapl.trinity.utils.clustering.Point;
 import edu.jhuapl.trinity.utils.clustering.GaussianMixtureModel;
 import javafx.beans.property.SimpleBooleanProperty;
-import javafx.geometry.Point2D;
 import javafx.scene.shape.Box;
 import javafx.scene.shape.Rectangle;
 import javafx.util.Pair;
@@ -720,8 +720,6 @@ public class Projections3DPane extends StackPane implements
         //Start Tracking mouse movements only when a button is pressed
         subScene.setOnMouseDragged((MouseEvent me) -> {
             if(clusterSelectionMode) {
-                double x = selectionRectangle.getX();
-                double y = selectionRectangle.getY();
                 mouseOldX = mousePosX;
                 mouseOldY = mousePosY;
                 mousePosX = me.getSceneX();
@@ -732,52 +730,21 @@ public class Projections3DPane extends StackPane implements
                     mousePosX - selectionRectangle.getX());
                 selectionRectangle.setHeight(
                     mousePosY - selectionRectangle.getY());
-//                selectionRectangle.setX(x);
-//                selectionRectangle.setY(y);
             } else
                 mouseDragCamera(me);
         });
         subScene.setOnMouseReleased((MouseEvent me) -> {
             if(clusterSelectionMode) {
-                System.out.println("finished selection...");
-                List<Sphere> spheres = sphereToFeatureVectorMap.keySet().stream().toList();
-
-                List<Integer> indices = 
-                    JavaFX3DUtils.pickIndicesByBox(camera, spheres, 
-                    new Point2D(selectionRectangle.getX(), selectionRectangle.getY()), 
-                    new Point2D(selectionRectangle.getX()+selectionRectangle.getWidth(), 
-                            selectionRectangle.getY()+selectionRectangle.getHeight())
-                );
+                //sphereToFeatureVectorMap
+//                List<Sphere> spheres = sphereToFeatureVectorMap.keySet().stream().toList();
+                ManifoldClusterTask manifoldClusterTask = new ManifoldClusterTask(scene, 
+                        camera, sphereToFeatureVectorMap, selectionRectangle);
+                if(!manifoldClusterTask.isCancelledByUser())
+                    manifoldClusterTask.run();
                 selectionRectangle.setVisible(false);
                 selectionRectangle.setWidth(1);
                 selectionRectangle.setHeight(1);  
                 clusterSelectionMode = false;
-                if(indices.size()>4) {
-                    String label = "Selected Manifold";
-                    ArrayList<javafx.geometry.Point3D> manPoints = new ArrayList<>();
-                    List<Point3D> labelMatchedPoints = new ArrayList<>();
-                    for(int index : indices) {
-                        javafx.geometry.Point3D p3D = JavaFX3DUtils.mapShape3DToPoint3D.apply(spheres.get(index));
-                        manPoints.add(p3D);
-                        labelMatchedPoints.add(JavaFX3DUtils.toFXYZ3D.apply(p3D));
-                    }
-                    Manifold manifold = new Manifold(manPoints, label, label, sceneColor);
-                    //Create the 3D manifold shape
-                    Manifold3D manifold3D = makeHull(labelMatchedPoints, label, null);
-                    manifold3D.setManifold(manifold);
-                    manifold3D.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
-                        getScene().getRoot().fireEvent(
-                            new ManifoldEvent(ManifoldEvent.MANIFOLD_3D_SELECTED, manifold));
-                    });
-                    //Add this Manifold data object to the global tracker
-                    Manifold.addManifold(manifold);
-                    //update the manifold to manifold3D mapping
-                    Manifold.globalManifoldToManifold3DMap.put(manifold, manifold3D);
-                    //announce to the world of the new manifold and its shape
-                    System.out.println("Manifold3D generation complete for " + label);
-                    getScene().getRoot().fireEvent(new ManifoldEvent(
-                        ManifoldEvent.MANIFOLD3D_OBJECT_GENERATED, manifold, manifold3D));
-                }
             }
         });
         bp = new BorderPane(subScene);
@@ -2068,7 +2035,6 @@ public class Projections3DPane extends StackPane implements
         Sphere sphere = new Sphere(point3dSize);
         PhongMaterial mat = new PhongMaterial(
             FactorLabel.getColorByLabel(featureVector.getLabel()));
-//        mat.setSpecularColor(Color.WHITE);
         sphere.setMaterial(mat);
         sphere.setTranslateX(featureVector.getData().get(0) * projectionScalar);
         sphere.setTranslateY(featureVector.getData().get(1) * -projectionScalar);
@@ -2078,7 +2044,7 @@ public class Projections3DPane extends StackPane implements
         });
         sphereToFeatureVectorMap.put(sphere, featureVector);
         
-        //@TODO add Spinning Circle as highlight when mouse hovering
+        //Add Circle as highlight when mouse hovering
         sphere.addEventHandler(MouseEvent.MOUSE_ENTERED, e -> {
             highlightedPoint = sphere;
             updateFloatingNodes(); //Will transform location of all floating 2D nodes

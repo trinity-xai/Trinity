@@ -651,6 +651,8 @@ public class App extends Application {
 
         meh = new ManifoldEventHandler();
 
+        
+        scene.getRoot().addEventHandler(ManifoldEvent.NEW_MANIFOLD_CLUSTER, meh);
         scene.getRoot().addEventHandler(ManifoldEvent.NEW_MANIFOLD_DATA, meh);
         scene.getRoot().addEventHandler(ManifoldEvent.EXPORT_MANIFOLD_DATA, meh);
         scene.getRoot().addEventHandler(ManifoldEvent.CLEAR_ALL_MANIFOLDS, meh);

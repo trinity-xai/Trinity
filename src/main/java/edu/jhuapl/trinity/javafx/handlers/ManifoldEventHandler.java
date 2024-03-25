@@ -347,7 +347,13 @@ public class ManifoldEventHandler implements EventHandler<ManifoldEvent> {
 
     @Override
     public void handle(ManifoldEvent event) {
-        if (event.getEventType().equals(ManifoldEvent.NEW_PROJECTION_VECTOR)) {
+        if (event.getEventType().equals(ManifoldEvent.NEW_MANIFOLD_CLUSTER)) {
+            Manifold manifold = (Manifold) event.object1;
+            Manifold3D manifold3D = (Manifold3D) event.object2;
+            for (ManifoldRenderer renderer : manifoldRenderers) {
+                renderer.addManifold(manifold, manifold3D);
+            }
+        } else if (event.getEventType().equals(ManifoldEvent.NEW_PROJECTION_VECTOR)) {
             FeatureVector fv = (FeatureVector) event.object1;
             for (ManifoldRenderer renderer : manifoldRenderers) {
                 renderer.projectVector(fv);
