@@ -327,7 +327,7 @@ public class ManifoldEventHandler implements EventHandler<ManifoldEvent> {
             .map(P3D.p3DToFxyzPoint3D)
             .collect(toList());
         ArrayList<Point3D> fxpoints = points.stream()
-            .map(JavaFX3DUtils.fxyzPoint3DTofxPoint3D)
+            .map(JavaFX3DUtils.toFX)
             .collect(Collectors.toCollection(ArrayList::new));
         Manifold manifold = new Manifold(fxpoints, "dudelabel", "dudename", Color.CYAN);
         Manifold3D manifold3D = new Manifold3D(points, true, true, false, null);

@@ -25,10 +25,10 @@ import edu.jhuapl.trinity.App;
 import edu.jhuapl.trinity.data.Distance;
 import edu.jhuapl.trinity.data.FactorLabel;
 import edu.jhuapl.trinity.data.Manifold;
-import edu.jhuapl.trinity.data.files.FeatureCollectionFile;
 import edu.jhuapl.trinity.data.messages.UmapConfig;
 import edu.jhuapl.trinity.javafx.components.listviews.DistanceListItem;
 import edu.jhuapl.trinity.javafx.components.listviews.ManifoldListItem;
+import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent.ProjectionConfig;
@@ -771,7 +771,12 @@ public class ManifoldControlController implements Initializable {
         //add them all in one shot
         manifoldsListView.getItems().clear();
     }
-
+    @FXML
+    public void clusterBuilder() {
+        //fire event to put projection view into cluster selection mode
+        scene.getRoot().fireEvent(new ApplicationEvent(
+            ApplicationEvent.SHOW_SHAPE3D_CONTROLS));
+    }
     @FXML
     public void startConnector() {
         //fire event to put projection view into connector mode

@@ -20,11 +20,16 @@ package edu.jhuapl.trinity.javafx.components.panes;
  * #L%
  */
 
+import edu.jhuapl.trinity.data.FactorLabel;
 import edu.jhuapl.trinity.data.Manifold;
+import edu.jhuapl.trinity.data.messages.P3D;
 import edu.jhuapl.trinity.javafx.components.listviews.PointListItem;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.Manifold3D;
+import edu.jhuapl.trinity.utils.JavaFX3DUtils;
+import edu.jhuapl.trinity.utils.PrecisionConverter;
 import edu.jhuapl.trinity.utils.ResourceUtils;
+import edu.jhuapl.trinity.utils.volumetric.Octree;
 import javafx.geometry.Insets;
 import javafx.geometry.Point3D;
 import javafx.geometry.Pos;
@@ -42,16 +47,32 @@ import javafx.scene.layout.VBox;
 
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.text.ParsePosition;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.UnaryOperator;
 
 import static java.util.stream.Collectors.toList;
+import javafx.scene.control.ChoiceBox;
+import javafx.scene.control.Spinner;
+import javafx.scene.control.SpinnerValueFactory;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
+import javafx.scene.control.TextField;
+import javafx.scene.control.TextFormatter;
+import javafx.scene.control.ToggleButton;
+import static edu.jhuapl.trinity.utils.JavaFX3DUtils.toFX;
+import static edu.jhuapl.trinity.utils.JavaFX3DUtils.toFXYZ3D;
+import javafx.scene.paint.Color;
 
 /**
  * @author Sean Phillips
  */
 public class Shape3DControlPane extends LitPathPane {
     BorderPane bp;
+    TabPane tabPane;
+    Tab editorTab;
+    Tab clusterBuilderTab;
     private Slider scaleSlider;
     private Slider rotateXSlider;
     private Slider rotateYSlider;
@@ -61,13 +82,16 @@ public class Shape3DControlPane extends LitPathPane {
     private Label rotateYLabel;
     private Label rotateZLabel;
     private ListView<PointListItem> pointListView;
-
+    private ChoiceBox labelChoiceBox;
     /**
      * Format for floating coordinate label
      */
     private NumberFormat format = new DecimalFormat("0.00");
     private Manifold3D manifold3D = null;
-
+    private Manifold currentManifold = null;
+    private final String ALL = "ALL";
+    public static Color DEFAULT_MANIFOLD_COLOR = Color.WHITE;
+    
     private static BorderPane createContent() {
         BorderPane bpOilSpill = new BorderPane();
         return bpOilSpill;
@@ -79,6 +103,107 @@ public class Shape3DControlPane extends LitPathPane {
         this.scene = scene;
 
         bp = (BorderPane) this.contentPane;
+        buildEditorTab();
+        buildClusterBuilderTab();
+        tabPane = new TabPane(clusterBuilderTab, editorTab );
+        tabPane.setPadding(Insets.EMPTY);
+        tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
+        tabPane.setTabDragPolicy(TabPane.TabDragPolicy.FIXED);
+        bp.setCenter(tabPane);
+    }
+    private void buildClusterBuilderTab() {
+        clusterBuilderTab = new Tab("Cluster Builder");
+        BorderPane clusterBorderPane = new BorderPane();
+        clusterBuilderTab.setContent(clusterBorderPane);  
+
+        ToggleButton activate = new ToggleButton("Activate Selection");
+        activate.setOnAction(e -> {
+            scene.getRoot().fireEvent(new ManifoldEvent(
+                ManifoldEvent.CLUSTER_SELECTION_MODE, activate.isSelected()));
+        });
+
+        Button refreshOctree = new Button("Refresh Octree");
+        refreshOctree.setOnAction(e -> refreshOctree());
+        Button startManifold = new Button("New Manifold");
+        startManifold.setOnAction(e -> startNewManifold());
+        TextField pointCount = new TextField("0");
+        pointCount.setEditable(false);
+        pointCount.setPrefWidth(100);
+        Spinner searchRange = new Spinner(
+            new SpinnerValueFactory.DoubleSpinnerValueFactory(0.1, 1000.0, 10.0, 1.0));
+        searchRange.setEditable(true);
+        searchRange.setPrefWidth(100);
+        searchRange.valueProperty().addListener(e -> {
+            //do something
+        });        
+        Spinner nearestNeighbors = new Spinner(
+            new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 5000, 10, 5));
+        nearestNeighbors.setEditable(true);
+        nearestNeighbors.setPrefWidth(100);
+        nearestNeighbors.valueProperty().addListener(e -> {
+            //do something
+        });        
+        CheckBox filterVisible = new CheckBox("Filter Visible");
+        filterVisible.setSelected(true);
+        CheckBox filterLabel = new CheckBox("Filter Label");
+        filterLabel.setSelected(false);
+        labelChoiceBox = new ChoiceBox();
+        labelChoiceBox.disableProperty().bind(filterLabel.selectedProperty().not());
+        getCurrentLabels();
+        labelChoiceBox.getSelectionModel().selectFirst();
+        labelChoiceBox.setOnShown(e -> getCurrentLabels());
+        labelChoiceBox.setPrefWidth(150);
+        VBox controlsVBox = new VBox(10, new Label("Settings"),
+            new HBox(5, refreshOctree, startManifold),
+            new HBox(5, new Label("Accumulated Points"), pointCount),
+                
+            new HBox(5, filterVisible,filterLabel),    
+            labelChoiceBox,    
+            new HBox(5, new Label("Search Range"), searchRange),
+            new HBox(5, new Label("Nearest Neighbors"), nearestNeighbors),
+            activate
+        );
+        controlsVBox.setPadding(new Insets(5));
+        clusterBorderPane.setCenter(controlsVBox);
+        
+        scene.addEventHandler(ManifoldEvent.ADD_CLUSTER_SELECTION, e -> {
+            List<Point3D> points = (List<Point3D>) e.object1;
+            List<PointListItem> newItems = new ArrayList<>();
+            //Do we have an existing Manifold started yet?
+            if(null == currentManifold) {
+                //initialize a new object to begin adding points to
+                currentManifold = new Manifold(new ArrayList<>(), "New Label", "New Manifold Name", DEFAULT_MANIFOLD_COLOR);
+            }
+            //if we don't have any points yet just add them all
+            if(pointListView.getItems().isEmpty()) {
+                for(Point3D p3D : points) {
+                    currentManifold.getPoints().add(p3D);
+                    newItems.add(new PointListItem(currentManifold, toFXYZ3D.apply(p3D), true));
+                }                
+            } else {
+                for (int i = 0; i < pointListView.getItems().size(); i++) {
+                    PointListItem item = pointListView.getItems().get(i);
+                    //go through all points to be added
+                    for(Point3D p3D : points) {
+                        //is it already in the current point list?
+                        if(JavaFX3DUtils.matches(toFX.apply(item.getPoint3D()), p3D)) {
+                            break; //no need to process... already in the list
+                        }
+                        //if we get this far its not in the list
+                        newItems.add(new PointListItem(currentManifold, toFXYZ3D.apply(p3D), true));
+                        //update the current Manifold's points
+                        currentManifold.getPoints().add(p3D);
+                    }
+                }
+            }
+            //update the gui listview with all the new items we created.
+            pointListView.getItems().addAll(newItems);
+        });          
+    }
+    private void buildEditorTab() {
+        editorTab = new Tab("Point Editor");
+        BorderPane editorBorderPane = new BorderPane();
+        editorTab.setContent(editorBorderPane);
         scaleLabel = new Label("Scale: ");
         scaleSlider = new Slider(0.25, 2, 1.0);
         scaleSlider.setShowTickMarks(true);
@@ -151,8 +276,8 @@ public class Shape3DControlPane extends LitPathPane {
             rotateXLabel, rotateXSlider,
             rotateYLabel, rotateYSlider,
             rotateZLabel, rotateZSlider);
-        controlsVBox.setPadding(new Insets(10));
-        bp.setRight(controlsVBox);
+        controlsVBox.setPadding(new Insets(5));
+        editorBorderPane.setRight(controlsVBox);
 
         pointListView = new ListView<>();
         ImageView iv = ResourceUtils.loadIcon("point3D", 200);
@@ -161,7 +286,7 @@ public class Shape3DControlPane extends LitPathPane {
         pointListView.setPlaceholder(placeholder);
         VBox pointVBOX = new VBox(10, new Label("Points"), pointListView);
         pointVBOX.setPrefWidth(350);
-        bp.setLeft(pointVBOX);
+        editorBorderPane.setLeft(pointVBOX);
         scene.addEventHandler(ManifoldEvent.TOGGLE_HULL_POINT, e -> {
             if (auto.isSelected()) {
                 Manifold eventManifold = (Manifold) e.object1;
@@ -174,8 +299,6 @@ public class Shape3DControlPane extends LitPathPane {
         });
         scene.addEventHandler(ManifoldEvent.SELECT_PROJECTION_POINT3D, e -> {
             Point3D p3D = (Point3D) e.object1;
-//            org.fxyz3d.geometry.Point3D fxyzP3D = new org.fxyz3d.geometry.Point3D(
-//                p3D.getX(), p3D.getY(), p3D.getZ());
             int shortestIndex = 0;
             Double shortestDistance = null;
             for (int i = 0; i < pointListView.getItems().size(); i++) {
@@ -189,15 +312,35 @@ public class Shape3DControlPane extends LitPathPane {
             }
             pointListView.getSelectionModel().select(shortestIndex);
             pointListView.scrollTo(shortestIndex);
-        });
-
+        });        
     }
-
+    private void getCurrentLabels() {
+        labelChoiceBox.getItems().clear();
+        labelChoiceBox.getItems().add(ALL);
+        labelChoiceBox.getItems().addAll(
+            FactorLabel.getFactorLabels().stream()
+                .map(f -> f.getLabel()).sorted().toList());
+    }        
+    private void refreshOctree() {
+        //Todo request points
+//            List<javafx.geometry.Point3D> points = 
+//                getOriginalPoint3DList().stream().map(fxyzPoint3DTofxPoint3D).toList();
+//            List<javafx.geometry.Point3D> points 
+//            // ****
+//            int n = 5; // number of neighbors
+//            int i = 6; // if you want to find the nearest neighbors of the ith point.
+//            Octree octree = new Octree();
+//            octree.buildIndex(points);
+//            int[] neighborIndices = octree.searchNearestNeighbors(n, i);
+            System.out.println("Octree stuff done.");        
+    }
+    private void startNewManifold() {
+        System.out.println("Refreshing Manifold...");
+        manifold3D = null;
+        pointListView.getItems().clear();
+    }    
     private void updateManifold() {
         System.out.println("Refreshing Manifold...");
-//        getScene().getRoot().fireEvent(new ManifoldEvent(
-//            ManifoldEvent.UPDATE_MANIFOLD_POINTS,
-//                this.manifold, includeCheckBox.isSelected()));
         //build list of points from listview
         List<org.fxyz3d.geometry.Point3D> points = new ArrayList<>();
         pointListView.getItems().forEach(item -> {

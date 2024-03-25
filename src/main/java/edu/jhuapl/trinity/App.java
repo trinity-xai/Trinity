@@ -624,7 +624,6 @@ public class App extends Application {
                 shape3DControlPane = new Shape3DControlPane(scene, pathPane);
             }
             if (null != manifold3D) {
-//                Manifold.globalManifoldToManifold3DMap
                 shape3DControlPane.setShape3D(manifold3D);
             }
             if (!pathPane.getChildren().contains(shape3DControlPane)) {

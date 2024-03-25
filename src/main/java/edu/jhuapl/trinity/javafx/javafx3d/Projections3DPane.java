@@ -136,9 +136,10 @@ import edu.jhuapl.trinity.utils.clustering.GaussianMixtureComponent;
 import edu.jhuapl.trinity.utils.clustering.Point;
 import edu.jhuapl.trinity.utils.clustering.GaussianMixtureModel;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.geometry.Point2D;
 import javafx.scene.shape.Box;
+import javafx.scene.shape.Rectangle;
 import javafx.util.Pair;
-
 
 /**
  * @author Sean Phillips
@@ -247,6 +248,7 @@ public class Projections3DPane extends StackPane implements
     public double maxAbsValue = 1.0;
     public double meanCenteredMaxAbsValue = 1.0;
     public boolean pointToPointDistanceMode = false;
+    public boolean clusterSelectionMode = false;    
     public boolean updatingTrajectories = false;
     public boolean animatingProjections = false;
     public SimpleBooleanProperty autoProjectionProperty = new SimpleBooleanProperty(false);
@@ -282,6 +284,8 @@ public class Projections3DPane extends StackPane implements
     public Scene scene;
     Umap latestUmap = null;
 
+    Rectangle selectionRectangle;
+    
     public Projections3DPane(Scene scene) {
         this.scene = scene;
         cubeWorld = new ShadowCubeWorld(cubeSize, 100, true, featureVectors);
@@ -665,14 +669,26 @@ public class Projections3DPane extends StackPane implements
             updateFloatingNodes();
             radialOverlayPane.updateCalloutHeadPoints(subScene);
         });
-
+        
+        //Setup selection rectangle and event handling
+        selectionRectangle = new Rectangle(1, 1, 
+            Color.ALICEBLUE.deriveColor(1, 1, 1, 0.2));  
+        selectionRectangle.setManaged(false);
+        selectionRectangle.setMouseTransparent(true);
+        
+        selectionRectangle.setVisible(false);
         subScene.setOnMousePressed((MouseEvent me) -> {
-//            if(me.isSynthesized())
-//                System.out.println("isSynthesized");
             mousePosX = me.getSceneX();
             mousePosY = me.getSceneY();
             mouseOldX = me.getSceneX();
             mouseOldY = me.getSceneY();
+            if(clusterSelectionMode) {
+                selectionRectangle.setWidth(1);
+                selectionRectangle.setHeight(1);
+                selectionRectangle.setX(mousePosX);
+                selectionRectangle.setY(mousePosY);
+                selectionRectangle.setVisible(true);
+            }
         });
         subScene.setOnZoom(e -> {
             double zoom = e.getZoomFactor();
@@ -701,10 +717,69 @@ public class Projections3DPane extends StackPane implements
             updateFloatingNodes();
             radialOverlayPane.updateCalloutHeadPoints(subScene);
         });
-
         //Start Tracking mouse movements only when a button is pressed
-        subScene.setOnMouseDragged((MouseEvent me) -> mouseDragCamera(me));
+        subScene.setOnMouseDragged((MouseEvent me) -> {
+            if(clusterSelectionMode) {
+                double x = selectionRectangle.getX();
+                double y = selectionRectangle.getY();
+                mouseOldX = mousePosX;
+                mouseOldY = mousePosY;
+                mousePosX = me.getSceneX();
+                mousePosY = me.getSceneY();
+                mouseDeltaX = (mousePosX - mouseOldX);
+                mouseDeltaY = (mousePosY - mouseOldY);
+                selectionRectangle.setWidth(
+                    mousePosX - selectionRectangle.getX());
+                selectionRectangle.setHeight(
+                    mousePosY - selectionRectangle.getY());
+//                selectionRectangle.setX(x);
+//                selectionRectangle.setY(y);
+            } else
+                mouseDragCamera(me);
+        });
+        subScene.setOnMouseReleased((MouseEvent me) -> {
+            if(clusterSelectionMode) {
+                System.out.println("finished selection...");
+                List<Sphere> spheres = sphereToFeatureVectorMap.keySet().stream().toList();
 
+                List<Integer> indices = 
+                    JavaFX3DUtils.pickIndicesByBox(camera, spheres, 
+                    new Point2D(selectionRectangle.getX(), selectionRectangle.getY()), 
+                    new Point2D(selectionRectangle.getX()+selectionRectangle.getWidth(), 
+                            selectionRectangle.getY()+selectionRectangle.getHeight())
+                );
+                selectionRectangle.setVisible(false);
+                selectionRectangle.setWidth(1);
+                selectionRectangle.setHeight(1);  
+                clusterSelectionMode = false;
+                if(indices.size()>4) {
+                    String label = "Selected Manifold";
+                    ArrayList<javafx.geometry.Point3D> manPoints = new ArrayList<>();
+                    List<Point3D> labelMatchedPoints = new ArrayList<>();
+                    for(int index : indices) {
+                        javafx.geometry.Point3D p3D = JavaFX3DUtils.mapShape3DToPoint3D.apply(spheres.get(index));
+                        manPoints.add(p3D);
+                        labelMatchedPoints.add(JavaFX3DUtils.toFXYZ3D.apply(p3D));
+                    }
+                    Manifold manifold = new Manifold(manPoints, label, label, sceneColor);
+                    //Create the 3D manifold shape
+                    Manifold3D manifold3D = makeHull(labelMatchedPoints, label, null);
+                    manifold3D.setManifold(manifold);
+                    manifold3D.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
+                        getScene().getRoot().fireEvent(
+                            new ManifoldEvent(ManifoldEvent.MANIFOLD_3D_SELECTED, manifold));
+                    });
+                    //Add this Manifold data object to the global tracker
+                    Manifold.addManifold(manifold);
+                    //update the manifold to manifold3D mapping
+                    Manifold.globalManifoldToManifold3DMap.put(manifold, manifold3D);
+                    //announce to the world of the new manifold and its shape
+                    System.out.println("Manifold3D generation complete for " + label);
+                    getScene().getRoot().fireEvent(new ManifoldEvent(
+                        ManifoldEvent.MANIFOLD3D_OBJECT_GENERATED, manifold, manifold3D));
+                }
+            }
+        });
         bp = new BorderPane(subScene);
         //RadialOverlayPane will hold all those nifty callouts and radial entities
         radialOverlayPane = new RadialEntityOverlayPane(this.scene, featureVectors);
@@ -723,7 +798,8 @@ public class Projections3DPane extends StackPane implements
         highlighterNeonCircle.setManaged(false);
         highlighterNeonCircle.setMouseTransparent(true);
         getChildren().clear();
-        getChildren().addAll(bp, labelGroup, radialOverlayPane, highlighterNeonCircle);
+        getChildren().addAll(bp, labelGroup, radialOverlayPane, 
+            highlighterNeonCircle, selectionRectangle);
 
         Glow glow = new Glow(0.5);
 
@@ -778,6 +854,15 @@ public class Projections3DPane extends StackPane implements
             clearAll();
             refresh();
         });
+        
+        ImageView selectPoints = ResourceUtils.loadIcon("boundingbox", ICON_FIT_HEIGHT);
+        selectPoints.setEffect(glow);
+        MenuItem selectPointsItem = new MenuItem("Select Points", selectPoints);
+        selectPointsItem.setOnAction(e -> {
+            scene.getRoot().fireEvent(new ManifoldEvent(
+                ManifoldEvent.CLUSTER_SELECTION_MODE, true));            
+        });
+                
         CheckMenuItem animatingProjectionsItem = new CheckMenuItem("Animating Projections");
         animatingProjectionsItem.setSelected(animatingProjections);
         animatingProjectionsItem.selectedProperty().addListener(cl ->
@@ -787,7 +872,7 @@ public class Projections3DPane extends StackPane implements
         updatingTrajectoriesItem.selectedProperty().addListener(cl ->
             updatingTrajectories = updatingTrajectoriesItem.isSelected());
 
-        ContextMenu cm = new ContextMenu(
+        ContextMenu cm = new ContextMenu(selectPointsItem,
             resetViewItem, manifoldsItem, radarItem,
             clearCalloutsItem, clearProjectionItem,
                animatingProjectionsItem,updatingTrajectoriesItem);
@@ -982,7 +1067,13 @@ public class Projections3DPane extends StackPane implements
 
             }
         });
-
+        
+        scene.addEventHandler(ManifoldEvent.CLUSTER_SELECTION_MODE, e -> {
+            boolean isActive = (boolean) e.object1;
+            clusterSelectionMode = isActive;
+            System.out.println("Cluster Selection Mode: " + clusterSelectionMode);
+        });
+                
         scene.addEventHandler(ManifoldEvent.SAVE_PROJECTION_DATA, e -> {
             File file = (File) e.object1;
             FeatureCollection fc = new FeatureCollection();

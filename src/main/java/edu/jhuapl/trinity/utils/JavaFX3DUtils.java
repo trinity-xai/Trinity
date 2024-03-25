@@ -21,6 +21,7 @@ package edu.jhuapl.trinity.utils;
  */
 
 import edu.jhuapl.trinity.data.Trajectory;
+import edu.jhuapl.trinity.data.messages.FeatureVector;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.Trajectory3D;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.TessellationMesh;
@@ -65,6 +66,9 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.geometry.BoundingBox;
+import javafx.geometry.Bounds;
+import javafx.scene.shape.Sphere;
 
 /**
  * Utilities used by various 3D rendering code.
@@ -73,8 +77,12 @@ import java.util.logging.Logger;
  */
 public enum JavaFX3DUtils {
     INSTANCE;
-    public static Function<Point3D, javafx.geometry.Point3D> fxyzPoint3DTofxPoint3D =
+    public static double EPSILON = 0.000000001;
+    static List<Image> tiles = null;
+    public static Function<Point3D, javafx.geometry.Point3D> toFX =
         p -> new javafx.geometry.Point3D(p.x, p.y, p.z);
+    public static Function<javafx.geometry.Point3D, Point3D> toFXYZ3D =
+        p -> new Point3D(p.getX(), p.getY(), p.getZ());
     public static Comparator<Point3D> Point3DXComparator = (Point3D p1, Point3D p2) -> {
         if (p1.x < p2.x) return -1;
         else if (p1.x > p2.x) return 1;
@@ -90,7 +98,61 @@ public enum JavaFX3DUtils {
         else if (p1.z > p2.z) return 1;
         else return 0;
     };
-    static List<Image> tiles = null;
+    public static boolean matches(Point3D p1, Point3D p2, double tolerance){
+        return (p1.getX()-p2.getX() < tolerance)
+            && (p1.getY()-p2.getY() < tolerance) 
+            && (p1.getZ()-p2.getZ() < tolerance);
+    }
+    public static boolean matches(javafx.geometry.Point3D p1, javafx.geometry.Point3D p2, double tolerance){
+        return (p1.getX()-p2.getX() < tolerance)
+            && (p1.getY()-p2.getY() < tolerance) 
+            && (p1.getZ()-p2.getZ() < tolerance);
+    }
+    public static boolean matches(Point3D p1, Point3D p2){
+        return matches(p1,p2,EPSILON);
+    }
+    public static boolean matches(javafx.geometry.Point3D p1, javafx.geometry.Point3D p2){
+        return matches(p1, p2, EPSILON);
+    }
+    public static Function<Sphere, javafx.geometry.Point3D> mapShape3DToPoint3D = (s) -> {
+        return new javafx.geometry.Point3D(s.getTranslateX(), 
+            s.getTranslateY(), s.getTranslateZ());
+    };
+
+    /**
+     * Assumes indices 0,1 and 2 map to X, Y and Z
+     */
+    public static Function<FeatureVector, javafx.geometry.Point3D> mapFeatureToPoint3D = (fv) -> {
+        return new javafx.geometry.Point3D(fv.getData().get(0), 
+            fv.getData().get(1), fv.getData().get(2));
+    };
+    
+    public static List<Integer> pickIndicesByBox(PerspectiveCamera camera, 
+        List<? extends Shape3D> shapes, Point2D upperLeft, Point2D lowerRight) {
+        
+        List<Integer> indices = new ArrayList<>();
+        //reuse this point reference
+        Shape3D shape3D;
+        javafx.geometry.Point3D coordinates;
+        boolean c;
+        BoundingBox screenBox = new BoundingBox(
+            upperLeft.getX(), upperLeft.getY(), 
+            lowerRight.getX()-upperLeft.getX(), lowerRight.getY()-upperLeft.getY()
+        );
+        int totalContains = 0;
+        for(int i=0;i<shapes.size();i++){
+            shape3D = shapes.get(i);
+            coordinates = shape3D.localToScene(javafx.geometry.Point3D.ZERO, true);            
+            c = screenBox.contains(coordinates);
+            if(c) {
+                totalContains++;
+                indices.add(i);
+            }
+        }        
+        System.out.println("screenBox contains " + totalContains + " shapes.");
+        return indices;
+    }
+
     public static Image snapshotShape3D(Node node) {
         Group group = new Group(node);
         Scene scene = new Scene(group, 1000, 1000, true, SceneAntialiasing.BALANCED);

@@ -59,7 +59,6 @@ import java.util.stream.DoubleStream;
 import javafx.animation.Interpolator;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
-import javafx.animation.ScaleTransition;
 import javafx.animation.Timeline;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.util.Duration;
@@ -142,6 +141,15 @@ public class Manifold3D extends Group {
         
         MenuItem makeConcaveItem = new MenuItem("Make Concave");
         makeConcaveItem.setOnAction(e -> {
+//            List<javafx.geometry.Point3D> points = 
+//                getOriginalPoint3DList().stream().map(fxyzPoint3DTofxPoint3D).toList();
+//            // ****
+//            int n = 5; // number of neighbors
+//            int i = 6; // if you want to find the nearest neighbors of the ith point.
+//            Octree octree = new Octree();
+//            octree.buildIndex(points);
+//            int[] neighborIndices = octree.searchNearestNeighbors(n, i);
+//            System.out.println("Octree stuff done.");
             ConcaveUtils.makeConcave(this);
         });
 

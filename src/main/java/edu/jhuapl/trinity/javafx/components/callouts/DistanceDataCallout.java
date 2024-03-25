@@ -83,7 +83,7 @@ public class DistanceDataCallout extends VBox {
     public DistanceDataCallout(Manifold3D manifold3D, Point3D startingPoint3D, SubScene subScene) {
         NumberFormat doubleFormat = new DecimalFormat("0.0000");
 
-        javafx.geometry.Point3D fxStart = JavaFX3DUtils.fxyzPoint3DTofxPoint3D.apply(startingPoint3D);
+        javafx.geometry.Point3D fxStart = JavaFX3DUtils.toFX.apply(startingPoint3D);
         List<Face3> intersections = manifold3D.getIntersections(startingPoint3D);
         System.out.println("Intersections with Manifold: " + intersections.size());
 
