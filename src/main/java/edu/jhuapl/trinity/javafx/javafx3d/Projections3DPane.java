@@ -129,6 +129,7 @@ import java.util.stream.Collectors;
 import static edu.jhuapl.trinity.javafx.components.radial.HyperspaceMenu.slideInPane;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent.ProjectionConfig;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent.ProjectionConfig.COVARIANCE_MODE;
+import edu.jhuapl.trinity.javafx.javafx3d.animated.AnimatedSphere;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.Opticon;
 import edu.jhuapl.trinity.javafx.javafx3d.tasks.ManifoldClusterTask;
 import edu.jhuapl.trinity.utils.clustering.Cluster;
@@ -735,8 +736,6 @@ public class Projections3DPane extends StackPane implements
         });
         subScene.setOnMouseReleased((MouseEvent me) -> {
             if(clusterSelectionMode) {
-                //sphereToFeatureVectorMap
-//                List<Sphere> spheres = sphereToFeatureVectorMap.keySet().stream().toList();
                 ManifoldClusterTask manifoldClusterTask = new ManifoldClusterTask(scene, 
                         camera, sphereToFeatureVectorMap, selectionRectangle);
                 if(!manifoldClusterTask.isCancelledByUser())
@@ -2032,9 +2031,11 @@ public class Projections3DPane extends StackPane implements
         trimQueueNow();
     }
     public void addProjectedFeatureVector(FeatureVector featureVector) {
-        Sphere sphere = new Sphere(point3dSize);
+//        Sphere sphere = new Sphere(point3dSize);
         PhongMaterial mat = new PhongMaterial(
             FactorLabel.getColorByLabel(featureVector.getLabel()));
+        Sphere sphere = new AnimatedSphere(mat, point3dSize, 32, true);
+        
         sphere.setMaterial(mat);
         sphere.setTranslateX(featureVector.getData().get(0) * projectionScalar);
         sphere.setTranslateY(featureVector.getData().get(1) * -projectionScalar);
@@ -2213,6 +2214,7 @@ public class Projections3DPane extends StackPane implements
         );
         //Add 2D distance label overlay at midpoint
         Sphere midpointSphere = new Sphere(1);
+        
         midpointSphere.setTranslateX(midpoint.getX());
         midpointSphere.setTranslateY(midpoint.getY());
         midpointSphere.setTranslateZ(midpoint.getZ());
@@ -2843,8 +2845,9 @@ public class Projections3DPane extends StackPane implements
                     fv.setLabel(pointCluster.getClusterName());
                     fv.getData().addAll(p);
                     featureVectors.add(fv);
-                    Sphere sphere = new Sphere(point3dSize);
+//                    Sphere sphere = new Sphere(point3dSize);
                     PhongMaterial mat = new PhongMaterial(Color.ALICEBLUE);
+                    Sphere sphere = new AnimatedSphere(mat, point3dSize, 32, true);
                     mat.setSpecularColor(Color.AQUA);
                     sphere.setMaterial(mat);
                     sphere.setTranslateX(fv.getData().get(0) * projectionScalar);

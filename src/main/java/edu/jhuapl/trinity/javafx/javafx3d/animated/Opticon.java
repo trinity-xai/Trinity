@@ -68,7 +68,7 @@ public class Opticon extends Group {
     public static double SCANMODE_X_ANGLE = 30.0;
     public static double SEARCH_DESTROY_X_ANGLE = 0.0;
     //public static double SCANMODE_ANGLE = 30.0;
-    public Planetoid mainBody;
+    public AnimatedSphere mainBody;
     Box pointer;
     public SpotLight scannerLight;
     public ConeMesh scannerConeMesh;
@@ -138,7 +138,7 @@ public class Opticon extends Group {
             Logger.getLogger(RetroWavePane.class.getName()).log(Level.SEVERE, null, ex);
             mat = new PhongMaterial(Color.BLUE);
         }
-        mainBody = new Planetoid(mat, scannerBaseRadius, 32);
+        mainBody = new AnimatedSphere(mat, scannerBaseRadius, 32, true);
         mainBody.setMaterial(mat);
         mainBody.setRotationAxis(Rotate.X_AXIS);
         mainBody.setRotate(SCANMODE_X_ANGLE);
@@ -259,7 +259,7 @@ public class Opticon extends Group {
                 Point3D shiftedP3D = new Point3D(
                     xTranslate, yTranslate, zTranslate);
 
-                mainBody.animateOnHover = true;
+                mainBody.setAnimateOnHover(true);
 //                updateScannerSize(getScannerBaseRadius() + 
 //                    rando.nextDouble() * 200);
                 //make sure the duration is less than the wakeup time above

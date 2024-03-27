@@ -153,7 +153,7 @@ public class AnimatedStack extends Group {
                 boxes.get(0).setMaterial(material);
                 event.setDropCompleted(true);
             } catch (MalformedURLException ex) {
-                Logger.getLogger(Planetoid.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(AnimatedSphere.class.getName()).log(Level.SEVERE, null, ex);
                 event.setDropCompleted(false);
             }
             event.consume();
@@ -177,7 +177,7 @@ public class AnimatedStack extends Group {
                     boxes.get(i).setMaterial(material);
                 event.setDropCompleted(true);
             } catch (MalformedURLException ex) {
-                Logger.getLogger(Planetoid.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(AnimatedSphere.class.getName()).log(Level.SEVERE, null, ex);
                 event.setDropCompleted(false);
             }
             event.consume();
