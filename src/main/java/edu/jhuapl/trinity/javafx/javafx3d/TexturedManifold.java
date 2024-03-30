@@ -2,7 +2,7 @@ package edu.jhuapl.trinity.javafx.javafx3d;
 
 /*-
  * #%L
- * trinity-2023.08.19
+ * trinity
  * %%
  * Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC
  * %%

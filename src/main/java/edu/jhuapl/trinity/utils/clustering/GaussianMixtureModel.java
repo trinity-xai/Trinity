@@ -2,7 +2,7 @@ package edu.jhuapl.trinity.utils.clustering;
 
 /*-
  * #%L
- * trinity-2023.12.05
+ * trinity
  * %%
  * Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC
  * %%

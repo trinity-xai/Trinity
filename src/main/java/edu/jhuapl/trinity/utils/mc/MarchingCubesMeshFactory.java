@@ -2,7 +2,7 @@ package edu.jhuapl.trinity.utils.mc;
 
 /*-
  * #%L
- * trinity-2024.01.18
+ * trinity
  * %%
  * Copyright (C) 2021 - 2024 The Johns Hopkins University Applied Physics Laboratory LLC
  * %%

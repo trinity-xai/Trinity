@@ -20,7 +20,7 @@ package edu.jhuapl.trinity.data.audio;
 
 /*-
  * #%L
- * trinity-2023.10.03
+ * trinity
  * %%
  * Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC
  * %%

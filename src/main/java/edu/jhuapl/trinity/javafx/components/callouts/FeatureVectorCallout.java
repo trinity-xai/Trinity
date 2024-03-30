@@ -2,7 +2,7 @@ package edu.jhuapl.trinity.javafx.components.callouts;
 
 /*-
  * #%L
- * trinity-2023.09.01
+ * trinity
  * %%
  * Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC
  * %%

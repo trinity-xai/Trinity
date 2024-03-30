@@ -2,7 +2,7 @@ package edu.jhuapl.trinity.utils.fun;
 
 /*-
  * #%L
- * trinity-2023.10.07
+ * trinity
  * %%
  * Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC
  * %%
