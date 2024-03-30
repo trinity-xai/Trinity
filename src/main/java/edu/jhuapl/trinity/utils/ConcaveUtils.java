@@ -23,15 +23,7 @@ package edu.jhuapl.trinity.utils;
 import com.github.quickhull3d.Point3d;
 import com.github.quickhull3d.QuickHull3D;
 import edu.jhuapl.trinity.javafx.javafx3d.Manifold3D;
-import edu.jhuapl.trinity.utils.marchingcubes.BenchmarkHandler;
 import edu.jhuapl.trinity.utils.mc.MarchingCubesMeshFactory;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Random;
-import java.util.stream.DoubleStream;
-import java.util.stream.Stream;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.CullFace;
@@ -39,10 +31,15 @@ import javafx.scene.shape.DrawMode;
 import javafx.scene.shape.MeshView;
 import javafx.scene.shape.Sphere;
 import javafx.scene.shape.TriangleMesh;
-import org.fxyz3d.geometry.Face3;
 import org.fxyz3d.geometry.Point3D;
 import org.fxyz3d.geometry.Vector3D;
 import org.fxyz3d.utils.geom.Vec3d;
+
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.Random;
+import java.util.stream.DoubleStream;
 
 /**
  *
@@ -92,7 +89,7 @@ public class ConcaveUtils {
     }
 
     /*///////////////////////////////////////////////////////////////////////////////////////////
-	Calculate Euclidean distance between point A and B(OH) 
+	Calculate Euclidean distance between point A and B(OH)
 	///////////////////////////////////////////////////////////////////////////////////////////*/
     public double calcEDistance(double[] pointA, double[] pointB) {
         double tmpDistance = 0;
@@ -105,7 +102,7 @@ public class ConcaveUtils {
     }
 
     /*///////////////////////////////////////////////////////////////////////////////////////////
-	Calculate distance between point A and component B(OH) 
+	Calculate distance between point A and component B(OH)
     //////////////////////////////////////////////////////////////////////////////////////////*/
     public double calcPCDistance(double[] pointA, int idxComponentB) {
         double dist = -1;
@@ -115,7 +112,7 @@ public class ConcaveUtils {
         switch (NO_OF_DIM) {
             case 2:  ////////////////////////////////////////////////////////////////////// 2-Dimensional
                 double x0 = pointA[0], y0 = pointA[1];                                     // pa
-                double x1 = orgData[getRecord[0] - 1][0]; 
+                double x1 = orgData[getRecord[0] - 1][0];
                 double y1 = orgData[getRecord[0] - 1][1];  // sa
                 double x2 = orgData[getRecord[1] - 1][0];
                 double y2 = orgData[getRecord[1] - 1][1];  // sb
@@ -195,10 +192,10 @@ public class ConcaveUtils {
     /*////////////////////////////////////////////////////////////////////////////////////////////
 	Turn on the flag of vertex via convex list.
 	////////////////////////////////////////////////////////////////////////////////////////////*/
-    public void flagVertexPoints(Point3d [] points) {
-    
+    public void flagVertexPoints(Point3d[] points) {
+
         //map the original point data to the memory structure
-        for(int pointIndex=0;pointIndex<points.length;pointIndex++) {
+        for (int pointIndex = 0; pointIndex < points.length; pointIndex++) {
             orgData[pointIndex][0] = points[pointIndex].x;
             orgData[pointIndex][1] = points[pointIndex].y;
             orgData[pointIndex][2] = points[pointIndex].z;
@@ -221,7 +218,7 @@ public class ConcaveUtils {
         System.out.println("Finding Concave Hull for face count: " + cvxList.size());
         int count_array_change = 0;
         for (int i = 0; i < cvxList.size(); i++) {
-            if(i % 10 == 0)
+            if (i % 10 == 0)
                 System.out.println("cvxList Index: " + i + " out of " + cvxList.size());
             // Step. 0 Calculate average of edges of each component
             double avgEdgeLength = 0;
@@ -343,7 +340,7 @@ public class ConcaveUtils {
             // step. 3 Compare the ratio of decision distance with threshold N.
             // if the ratio bigger than N, nearest inner point is inserted to concave list.
             double diggRatio = (double) avgEdgeLength / (double) minLength;
-            if(diggRatio < 0)
+            if (diggRatio < 0)
                 System.out.println("Negative diggRatio!");
             if (minLength > 0 && diggRatio > N) {
                 // 3.1 vertex flag on.
@@ -381,7 +378,7 @@ public class ConcaveUtils {
     //Assuming the points form a convex shape.
     //Assuming points are on a single plain (or close to it).
     //    public List<Node> sortVerticies( Vector3 normal, List<Node> nodes ) {
-    public List<int[]> sortVertices( Vec3d normal, double [] centroid, ArrayList<int[]> faceIndices, double[][] orgData ) {
+    public List<int[]> sortVertices(Vec3d normal, double[] centroid, ArrayList<int[]> faceIndices, double[][] orgData) {
         //https://gamedev.stackexchange.com/questions/159379/getting-the-winding-order-of-a-mesh
         //Vector3 first = nodes[0].pos;
         Vector3D centroidVector = new Vector3D(centroid);
@@ -390,15 +387,15 @@ public class ConcaveUtils {
         //List<Node> temp = nodes.OrderBy(n => Vector3.Distance(n.pos, first ) ).ToList();
         List<int[]> sorted = faceIndices.stream().sorted((int[] o1, int[] o2) -> {
             //TODO SMP do lookup for position values
-            Vector3D first = new Vector3D(0,0,0);
-            Vector3D second = new Vector3D(0,0,0);
+            Vector3D first = new Vector3D(0, 0, 0);
+            Vector3D second = new Vector3D(0, 0, 0);
             double d1 = first.distance(centroidVector);
             double d2 = second.distance(centroidVector);
-            if(d1 < d2) return 1;
+            if (d1 < d2) return 1;
             else if (d1 > d2) return -1;
             return 0;
         }).toList();
-        
+
 //        //Create a vector from the 2 adjacent points,
 //        //this will be used to sort all points, except the first, by the angle to this vector.
 //        //Since the shape is convex, angle will not exceed 180 degrees, resulting in a proper sort.
@@ -423,32 +420,32 @@ public class ConcaveUtils {
     public static ArrayList<Sphere> makeConcave(Manifold3D manifold3D) {
         double scale = 1.0;
         manifold3D.extrasGroup.getChildren().clear();
-        
+
         ArrayList<Point3D> subSample = new ArrayList<>();
         Random rando = new Random();
-        for(Point3D p3D : manifold3D.getOriginalPoint3DList()) {
-            if(rando.nextFloat() <= 0.05)
+        for (Point3D p3D : manifold3D.getOriginalPoint3DList()) {
+            if (rando.nextFloat() <= 0.05)
                 subSample.add(p3D);
         }
-        
+
         ConcaveUtils obj = new ConcaveUtils();
         //Initialize the memory
         int totalPoints = manifold3D.hull.getVertices().length + subSample.size();
-        obj.orgData = new double[totalPoints][NO_OF_DIM + 1];    // +1, to add flag field  
-        
+        obj.orgData = new double[totalPoints][NO_OF_DIM + 1];    // +1, to add flag field
+
         obj.cvxList.addAll(Arrays.asList(manifold3D.hull.getFaces(QuickHull3D.INDEXED_FROM_ONE)));
         obj.flagVertexPoints(manifold3D.hull.getVertices()); // flag convex list
-        
+
         //add subsampled data from total cloud
-        int pointIndex=manifold3D.hull.getVertices().length;
-        for(Point3D p3D : subSample){
+        int pointIndex = manifold3D.hull.getVertices().length;
+        for (Point3D p3D : subSample) {
             obj.orgData[pointIndex][0] = p3D.x;
             obj.orgData[pointIndex][1] = p3D.y;
             obj.orgData[pointIndex][2] = p3D.z;
             obj.orgData[pointIndex][3] = 0;
             pointIndex++;
         }
-        
+
         obj.calcClassCenter();
         Sphere centerSphere = new Sphere(2.5);
         centerSphere.setMaterial(new PhongMaterial(Color.WHITE));
@@ -458,44 +455,44 @@ public class ConcaveUtils {
         centerSphere.setTranslateY(obj.classCenter[1] * scale);
         centerSphere.setTranslateZ(obj.classCenter[2] * scale);
         manifold3D.extrasGroup.getChildren().add(centerSphere);
-        
+
         ConcaveUtils.N = 1.5;
         obj.findConcave();
-        
-        
+
+
         ArrayList<Sphere> p = new ArrayList<>();
-        if(false && null != manifold3D.getScene()) {
+        if (false && null != manifold3D.getScene()) {
 
             //Go through orgData and only add points which are marked with a 1
-            
+
             TriangleMesh tm = new TriangleMesh();
             PhongMaterial pm = new PhongMaterial(Color.RED);
             for (int i = 0; i < obj.cvxList.size(); i++) {
                 int[] vertIndices = obj.cvxList.get(i);
-                for(int v=0;v<vertIndices.length;v++) {
+                for (int v = 0; v < vertIndices.length; v++) {
                     Sphere sphere = new Sphere(1);
-                    sphere.setTranslateX(obj.orgData[vertIndices[v]-1][0] * scale);
-                    sphere.setTranslateY(obj.orgData[vertIndices[v]-1][1] * scale);
-                    sphere.setTranslateZ(obj.orgData[vertIndices[v]-1][2] * scale);
+                    sphere.setTranslateX(obj.orgData[vertIndices[v] - 1][0] * scale);
+                    sphere.setTranslateY(obj.orgData[vertIndices[v] - 1][1] * scale);
+                    sphere.setTranslateZ(obj.orgData[vertIndices[v] - 1][2] * scale);
                     sphere.setMaterial(pm);
                     manifold3D.extrasGroup.getChildren().add(sphere);
-        
+
                     //TODO SMP Need to sort the faces by order before adding to Triangle Mesh
                     //https://gamedev.stackexchange.com/questions/13229/sorting-array-of-points-in-clockwise-order
                     //https://stackoverflow.com/questions/6880899/sort-a-set-of-3-d-points-in-clockwise-counter-clockwise-order
                     tm.getPoints().addAll(
-                        Double.valueOf(obj.orgData[vertIndices[v]-1][0] * scale).floatValue(),
-                        Double.valueOf(obj.orgData[vertIndices[v]-1][1] * scale).floatValue(),
-                        Double.valueOf(obj.orgData[vertIndices[v]-1][2] * scale).floatValue()
+                        Double.valueOf(obj.orgData[vertIndices[v] - 1][0] * scale).floatValue(),
+                        Double.valueOf(obj.orgData[vertIndices[v] - 1][1] * scale).floatValue(),
+                        Double.valueOf(obj.orgData[vertIndices[v] - 1][2] * scale).floatValue()
                     );
                     tm.getTexCoords().addAll(
-                    Double.valueOf(obj.orgData[vertIndices[v]-1][0] * scale).floatValue(), 
-                    Double.valueOf(obj.orgData[vertIndices[v]-1][2] * scale).floatValue());                    
+                        Double.valueOf(obj.orgData[vertIndices[v] - 1][0] * scale).floatValue(),
+                        Double.valueOf(obj.orgData[vertIndices[v] - 1][2] * scale).floatValue());
                     //TODO SMP These faces might have already been in counter clockwise order!!
                     tm.getFaces().addAll(
-//                        vertIndices[0], vertIndices[2], vertIndices[1], 
+//                        vertIndices[0], vertIndices[2], vertIndices[1],
 //                        vertIndices[1], vertIndices[2], vertIndices[0]
-                        vertIndices[0], vertIndices[1], vertIndices[2], 
+                        vertIndices[0], vertIndices[1], vertIndices[2],
                         vertIndices[0], vertIndices[2], vertIndices[1]
                     );
                 }
@@ -503,39 +500,39 @@ public class ConcaveUtils {
             MeshView mv = new MeshView(tm);
             mv.setMaterial(pm);
             mv.setDrawMode(DrawMode.LINE);
-            mv.setCullFace(CullFace.NONE);            
+            mv.setCullFace(CullFace.NONE);
             manifold3D.extrasGroup.getChildren().add(mv);
 
-        }        
+        }
         System.out.println("Ok done with Concave stuff...");
 /*
         make 3D float array with all zeros.
-        then for each point convert x,y,z positions to an index... 
+        then for each point convert x,y,z positions to an index...
         ...rounding up or down as necessary to make them fit
         Then set that position with a 1
-  */      
+  */
         int width = Double.valueOf(Math.ceil(manifold3D.getBoundsWidth())).intValue();
         int height = Double.valueOf(Math.ceil(manifold3D.getBoundsHeight())).intValue();
         int depth = Double.valueOf(Math.ceil(manifold3D.getBoundsDepth())).intValue();
 
         float[][][] scalarField = new float[width][height][depth];
-        
+
         double minX = manifold3D.getOriginalPoint3DList().stream()
             .flatMapToDouble(point -> DoubleStream.of(point.x))
-            .min().getAsDouble(); 
-        double maxX = minX+width;
+            .min().getAsDouble();
+        double maxX = minX + width;
         double minY = manifold3D.getOriginalPoint3DList().stream()
             .flatMapToDouble(point -> DoubleStream.of(point.y))
-            .min().getAsDouble(); 
-        double maxY = minY+height;
+            .min().getAsDouble();
+        double maxY = minY + height;
         double minZ = manifold3D.getOriginalPoint3DList().stream()
             .flatMapToDouble(point -> DoubleStream.of(point.z))
             .min().getAsDouble();
-        double maxZ = minZ+depth;
-        
+        double maxZ = minZ + depth;
+
 //        ;
-        
-        for(Point3D p3D : manifold3D.getOriginalPoint3DList()){
+
+        for (Point3D p3D : manifold3D.getOriginalPoint3DList()) {
             double normalizedX = DataUtils.normalize(p3D.x, minX, maxX);
             double normalizedY = DataUtils.normalize(p3D.y, minY, maxY);
             double normalizedZ = DataUtils.normalize(p3D.z, minZ, maxZ);
@@ -544,27 +541,27 @@ public class ConcaveUtils {
             int y = Double.valueOf(Math.floor(normalizedY * height)).intValue();
             int z = Double.valueOf(Math.floor(normalizedZ * depth)).intValue();
             scalarField[x][y][z] = 1;
-        }                
-        
-        MarchingCubesMeshFactory mcmf = new MarchingCubesMeshFactory(scalarField, 
-        0.5f, 1);
-        
+        }
+
+        MarchingCubesMeshFactory mcmf = new MarchingCubesMeshFactory(scalarField,
+            0.5f, 1);
+
         TriangleMesh tm = mcmf.createMesh();
         MeshView mv = new MeshView(tm);
         PhongMaterial pm = new PhongMaterial(Color.GREEN);
         mv.setMaterial(pm);
         mv.setDrawMode(DrawMode.FILL);
-        mv.setCullFace(CullFace.NONE);            
+        mv.setCullFace(CullFace.NONE);
         manifold3D.extrasGroup.getChildren().add(mv);
-            
+
         ArrayList<Sphere> concavePoints = new ArrayList<>();
 //        /////
 //        double isoValue = 0.5;
 //        float[] voxSize = {1.0f, 1.0f, 1.0f};
-//        
+//
 //        int pointCount = subSample.size();
 //        int[] size = {pointCount, pointCount, pointCount};
-//        double[] scalarField = new double[size[0] * size[1] * size[2]];        
+//        double[] scalarField = new double[size[0] * size[1] * size[2]];
 //        for(int i=0;i<pointCount;i++) {
 //            Point3D p3D = subSample.get(i);
 //            scalarField[i] = (p3D.x * p3D.x + p3D.y * p3D.y - p3D.z * p3D.z - 25);
@@ -572,7 +569,7 @@ public class ConcaveUtils {
 //        ArrayList<ArrayList<float []>> results = BenchmarkHandler.makeConcave(
 //            scalarField, size, voxSize, isoValue, 1);
 //        System.out.println("Total results: " + results.size());
-//        
+//
 
 //        if(null != manifold3D.getScene()) {
 ////            manifold3D.extrasGroup.getChildren().clear();
@@ -588,7 +585,7 @@ public class ConcaveUtils {
 //                    sphere.setMaterial(pm);
 //                    manifold3D.extrasGroup.getChildren().add(sphere);
 //                }
-//            }            
+//            }
 //        }
         return concavePoints;
     }

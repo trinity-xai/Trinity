@@ -9,9 +9,9 @@ package edu.jhuapl.trinity.utils.mc;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,22 +20,21 @@ package edu.jhuapl.trinity.utils.mc;
  * #L%
  */
 
+import javafx.scene.shape.TriangleMesh;
+import org.fxyz3d.geometry.Vector3D;
+
 import java.nio.DoubleBuffer;
-import java.nio.FloatBuffer;
 import java.nio.IntBuffer;
 import java.util.ArrayList;
 import java.util.List;
-import javafx.scene.shape.TriangleMesh;
-import javafx.scene.shape.VertexFormat;
-import org.fxyz3d.geometry.Vector3D;
 
 /**
  * Factory for creating meshes out of a scalar field using the marching cubes algorithm. The reference is the back bottom left point, which is locally the point (0, 0, 0).
  */
 public class MarchingCubesMeshFactory {
     int SHARED_VERTICES_PER_CUBE = 8;
-    int INDEX_BUFFER_COMPONENT_COUNT = 3;    
-    int NORMAL_BUFFER_COMPONENT_COUNT = 3;  
+    int INDEX_BUFFER_COMPONENT_COUNT = 3;
+    int NORMAL_BUFFER_COMPONENT_COUNT = 3;
     int VERTICES_PER_TRIANGLE = 3;
     private float[][][] m_scalarField;
     private float m_isoLevel;
@@ -44,15 +43,15 @@ public class MarchingCubesMeshFactory {
     private int m_gridLengthY;
     private int m_gridLengthZ;
     private float[] m_cubeScalars;
-//    private Vector3f m_origin;
+    //    private Vector3f m_origin;
     private Vector3D m_origin;
     private List<Vector3D> m_vertrexList;
 
     /**
      * Constructs a new MarchingCubesMeshFactory for generating meshes out of a scalar field with the marching cubes algorithm.
-     * 
-     * @param scalarField Contains the density of each position.
-     * @param isoLevel The minimum density needed for a position to be considered solid.
+     *
+     * @param scalarField  Contains the density of each position.
+     * @param isoLevel     The minimum density needed for a position to be considered solid.
      * @param cubeDiameter The diameter of a single voxel.
      */
     public MarchingCubesMeshFactory(float[][][] scalarField, float isoLevel, float cubeDiameter) {
@@ -67,10 +66,10 @@ public class MarchingCubesMeshFactory {
 
     /**
      * Constructs a new MarchingCubesMeshFactory for generating meshes out of a scalar field with the marching cubes algorithm.
-     * 
-     * @param scalarField Contains the density of each position.
-     * @param isoLevel The minimum density needed for a position to be considered solid.
-     * @param origin The local origin for all vertices of the generated mesh.
+     *
+     * @param scalarField  Contains the density of each position.
+     * @param isoLevel     The minimum density needed for a position to be considered solid.
+     * @param origin       The local origin for all vertices of the generated mesh.
      * @param cubeDiameter The diameter of a single voxel.
      */
     public MarchingCubesMeshFactory(float[][][] scalarField, float isoLevel, Vector3D origin, float cubeDiameter) {
@@ -87,25 +86,25 @@ public class MarchingCubesMeshFactory {
         TriangleMesh mesh = new TriangleMesh();
 //TODO SMP
         DoubleBuffer positionBuffer = createPositionBuffer();
-        double [] vertices = positionBuffer.array();
-        for(int i=0;i<vertices.length;i+=VERTICES_PER_TRIANGLE){ 
+        double[] vertices = positionBuffer.array();
+        for (int i = 0; i < vertices.length; i += VERTICES_PER_TRIANGLE) {
             mesh.getPoints().addAll(
-            Double.valueOf(vertices[i]).floatValue(),
-            Double.valueOf(vertices[i+1]).floatValue(),
-            Double.valueOf(vertices[i+2]).floatValue()
+                Double.valueOf(vertices[i]).floatValue(),
+                Double.valueOf(vertices[i + 1]).floatValue(),
+                Double.valueOf(vertices[i + 2]).floatValue()
             );
         }
-        int totalFaces = mesh.getPoints().size()/3;
-        for(int faceIndex=0;faceIndex<totalFaces-1;faceIndex++) {
-            if(faceIndex+2 > mesh.getPoints().size())
+        int totalFaces = mesh.getPoints().size() / 3;
+        for (int faceIndex = 0; faceIndex < totalFaces - 1; faceIndex++) {
+            if (faceIndex + 2 > mesh.getPoints().size())
                 System.out.println("wft...");
             mesh.getFaces().addAll(
-                faceIndex, faceIndex+1, faceIndex+2,
-                faceIndex+2, faceIndex+1, faceIndex
-            );            
+                faceIndex, faceIndex + 1, faceIndex + 2,
+                faceIndex + 2, faceIndex + 1, faceIndex
+            );
         }
 
-        mesh.getTexCoords().addAll(0,0);
+        mesh.getTexCoords().addAll(0, 0);
 //        IntBuffer indexBuffer = createIndexBuffer();
 //        for(int d : indexBuffer.array()){
 //            mesh.getFaces().addAll(d);
@@ -126,8 +125,8 @@ public class MarchingCubesMeshFactory {
 
     private DoubleBuffer createNormalBuffer() {
         //DoubleBuffer normalBuffer = (DoubleBuffer) VertexBuffer.createBuffer(Format.Float, NORMAL_BUFFER_COMPONENT_COUNT, m_vertrexList.size());
-        DoubleBuffer normalBuffer = DoubleBuffer.allocate(m_vertrexList.size()*NORMAL_BUFFER_COMPONENT_COUNT);
-        
+        DoubleBuffer normalBuffer = DoubleBuffer.allocate(m_vertrexList.size() * NORMAL_BUFFER_COMPONENT_COUNT);
+
         for (int i = VERTICES_PER_TRIANGLE - 1; i < m_vertrexList.size(); i += VERTICES_PER_TRIANGLE) {
             Vector3D normal = computeTriangleNormal(m_vertrexList.get(i - 2), m_vertrexList.get(i - 1), m_vertrexList.get(i));
 
@@ -171,8 +170,8 @@ public class MarchingCubesMeshFactory {
 
     private DoubleBuffer addVerticesToPositionBuffer() {
 //        DoubleBuffer positionBuffer = (DoubleBuffer) VertexBuffer.createBuffer(Format.Float, MeshBufferUtils.VERTEX_BUFFER_COMPONENT_COUNT, m_vertrexList.size());
-        DoubleBuffer positionBuffer = DoubleBuffer.allocate(m_vertrexList.size()*VERTICES_PER_TRIANGLE);
-        
+        DoubleBuffer positionBuffer = DoubleBuffer.allocate(m_vertrexList.size() * VERTICES_PER_TRIANGLE);
+
         for (int i = 0; i < m_vertrexList.size(); ++i) {
             Vector3D position = m_vertrexList.get(i);
             positionBuffer.put(position.x).put(position.y).put(position.z);
@@ -183,10 +182,10 @@ public class MarchingCubesMeshFactory {
 
     /**
      * Add the generated vertices by the marching cubes algorithm to a list. The added vertices are modified so that they respect the origin.
-     * 
+     *
      * @param vertrexList The list where to add the marching cubes vertices.
-     * @param mcVertices The marching cubes vertices.
-     * @param cubeIndex The cubeIndex.
+     * @param mcVertices  The marching cubes vertices.
+     * @param cubeIndex   The cubeIndex.
      */
     private void addVerticesToList(List<Vector3D> vertrexList, Vector3D[] mcVertices, int cubeIndex) {
         int vertexCount = MarchingCubesTables.TRIANGLE_TABLE[cubeIndex].length;
@@ -196,10 +195,10 @@ public class MarchingCubesMeshFactory {
 
     /**
      * Computes the marching cubes vertices. Those are the lerped vertices that can later be used to form triangles.
-     * 
+     *
      * @param cubeVertices The vertices of a cube, i.e. the 8 corners.
      * @param edgeBitField The bit field representing all the edges that should be drawn.
-     * @param isoLevel The minimum density needed for a position to be considered solid.
+     * @param isoLevel     The minimum density needed for a position to be considered solid.
      * @return The lerped vertices of a cube to form the marching cubes shape.
      */
     private Vector3D[] computeMCVertices(Vector3D[] cubeVertices, int edgeBitField, float isoLevel) {
@@ -216,18 +215,19 @@ public class MarchingCubesMeshFactory {
 
         return lerpedVertices;
     }
-    
-    static double[] lerp(double[] vec1, double[] vec2, double alpha){
-        return new double[]{vec1[0] + (vec2[0] - vec1[0]) * alpha, 
-            vec1[1] + (vec2[1] - vec1[1]) * alpha, 
+
+    static double[] lerp(double[] vec1, double[] vec2, double alpha) {
+        return new double[]{vec1[0] + (vec2[0] - vec1[0]) * alpha,
+            vec1[1] + (vec2[1] - vec1[1]) * alpha,
             vec1[2] + (vec2[2] - vec1[2]) * alpha};
     }
+
     /**
      * Lerps two vertices of a cube along their shared designed edge according to their densities.
-     * 
-     * @param firstVertex The edge's first vertex.
+     *
+     * @param firstVertex  The edge's first vertex.
      * @param secondVertex The edge's second vertex.
-     * @param firstScalar The first vertex's density.
+     * @param firstScalar  The first vertex's density.
      * @param secondScalar The second vertex's density.
      * @return The lerped resulting vertex along the edge.
      */
@@ -248,11 +248,11 @@ public class MarchingCubesMeshFactory {
 
     /**
      * Computes the cubeIndex, which represents the adjacent voxels' densities.
-     * 
+     *
      * @param cubeVertices The 8 corners of a cube.
-     * @param indexX The X position of the marching cube in the grid.
-     * @param indexY The Y position of the marching cube in the grid.
-     * @param indexZ The Z position of the marching cube in the grid.
+     * @param indexX       The X position of the marching cube in the grid.
+     * @param indexY       The Y position of the marching cube in the grid.
+     * @param indexZ       The Z position of the marching cube in the grid.
      * @return The cubeIndex.
      */
     private int computeCubeIndex(Vector3D[] cubeVertices, int indexX, int indexY, int indexZ) {
@@ -295,7 +295,7 @@ public class MarchingCubesMeshFactory {
 
     /**
      * Queries if the grid is dense enough to be considered solid at the give (x, y, z) point.
-     * 
+     *
      * @param x The index on the X axis.
      * @param y The index on the Y axis.
      * @param z The index on the Z axis.
@@ -307,7 +307,7 @@ public class MarchingCubesMeshFactory {
 
     /**
      * Queries the grid scalar at the given point and manages the boundaries, i.e. it's ok if x = -1 or is bigger than the gridLengthX.
-     * 
+     *
      * @param x The scalar X position in the grid.
      * @param y The scalar X position in the grid.
      * @param z The scalar X position in the grid.
@@ -330,7 +330,7 @@ public class MarchingCubesMeshFactory {
 
     public static Vector3D computeTriangleNormal(Vector3D p1, Vector3D p2, Vector3D p3) {
 //        return p2.subtract(p1).crossLocal(p3.subtract(p1)).normalizeLocal();
-        Vector3D cross =  p2.sub(p1).crossProduct(p3.sub(p1));
+        Vector3D cross = p2.sub(p1).crossProduct(p3.sub(p1));
         cross.normalize();
         return cross;
     }

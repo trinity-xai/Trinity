@@ -9,9 +9,9 @@ package edu.jhuapl.trinity.utils.volumetric;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -21,9 +21,20 @@ package edu.jhuapl.trinity.utils.volumetric;
  */
 
 import edu.jhuapl.trinity.utils.volumetric.VolumeUtils.Adjacency;
-import java.util.*;
-import static java.lang.Math.*;
 import javafx.geometry.Point3D;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Comparator;
+import java.util.HashMap;
+import java.util.HashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.PriorityQueue;
+import java.util.Set;
+
+import static java.lang.Math.pow;
+import static java.lang.Math.sqrt;
 
 
 /**
@@ -52,12 +63,15 @@ public class Octree {
      **/
     protected static final int MAX_DEPTH = 10;
 
-    /** an octree cell contains at most 100 points **/
+    /**
+     * an octree cell contains at most 100 points
+     **/
     private int maxPointsPerNode = 100;
 
     /**
      * build spatial index for point cloud
      * note that the length double array in List points must be 3
+     *
      * @param points the point cloud
      */
     public void buildIndex(List<Point3D> points) {
@@ -74,11 +88,11 @@ public class Octree {
     }
 
 
-
     /**
      * If you want to acquire the k-nearest neighbors of a certain point p, call this function,
      * octree will decrease the time cost
-     * @param k the number of nearest neighbors
+     *
+     * @param k     the number of nearest neighbors
      * @param index the index of point p
      * @return the indices of nearest neighbors
      */
@@ -88,20 +102,20 @@ public class Octree {
 
     private Comparator<Integer> distanceComparator(final Point3D point, boolean smallFirst) {
         if (smallFirst)
+            return new Comparator<Integer>() {
+                @Override
+                public int compare(Integer pointIndex1, Integer pointIndex2) {
+                    Point3D p1 = points.get(pointIndex1);
+                    Point3D p2 = points.get(pointIndex2);
+                    return Double.compare(p1.distance(point), p2.distance(point));
+                }
+            };
         return new Comparator<Integer>() {
             @Override
             public int compare(Integer pointIndex1, Integer pointIndex2) {
                 Point3D p1 = points.get(pointIndex1);
                 Point3D p2 = points.get(pointIndex2);
-                return Double.compare(p1.distance(point), p2.distance(point));
-            }
-        };
-        return new Comparator<Integer>() {
-            @Override
-            public int compare(Integer pointIndex1, Integer pointIndex2) {
-                Point3D p1 = points.get(pointIndex1);
-                Point3D p2 = points.get(pointIndex2);
-                return - Double.compare(p1.distance(point), p2.distance(point));
+                return -Double.compare(p1.distance(point), p2.distance(point));
             }
         };
     }
@@ -127,17 +141,18 @@ public class Octree {
 
     /**
      * search k nearest neighbors for the point
-     * @throws IllegalStateException if previously forget to call buildIndex()
-     * @throws IllegalArgumentException if size of points is less than k + 1
-     * @param k the number of nearest neighbors, {@literal 0 <= k < points.size()}
+     *
+     * @param k     the number of nearest neighbors, {@literal 0 <= k < points.size()}
      * @param point the point, non-null
      * @return an array of indices of neighboring point, the length is k,
+     * @throws IllegalStateException    if previously forget to call buildIndex()
+     * @throws IllegalArgumentException if size of points is less than k + 1
      */
     public int[] searchNearestNeighbors(int k, final Point3D point) {
         if (points == null) throw new IllegalStateException("Octree.buildIndex() must be called before searchNearestNeighbors.");
         if (k >= this.points.size() || k < 0) throw new IllegalArgumentException("number of nearest neighbors is larger than data size");
         if (!VolumeUtils.validPoint(point)) throw new IllegalArgumentException("The coordinates of given point is invalid");
-        if (k == 0 ) return new int[] {};
+        if (k == 0) return new int[]{};
         Comparator<Integer> comparator = distanceComparator(point, false);
 
         long leafNodeIndex = indexOfNearestCell(point);
@@ -173,7 +188,7 @@ public class Octree {
         }
 
         int[] indices = new int[k];
-        for (int i = 0; i < k; i ++) {
+        for (int i = 0; i < k; i++) {
 //            indices[i] = queue.get(i);
             indices[i] = queue.poll();
         }
@@ -194,8 +209,9 @@ public class Octree {
 
     /**
      * partition the space recursively
-     * @param currentDepth  the depth of current octree node
-     * @param currentNode current octree node
+     *
+     * @param currentDepth the depth of current octree node
+     * @param currentNode  current octree node
      */
     protected void createOctree(int currentDepth, OctreeNode currentNode) {
         if (currentNode.indices.size() < 1) return;
@@ -213,8 +229,8 @@ public class Octree {
                     index = currentNode.index | (index << (3 * currentDepth + 3));
                     double length = currentNode.getxExtent(); // xExtent == yExtent == zExtent
                     Point3D center = new Point3D(
-                        currentNode.getCenter().getX() + i * length / 2, 
-                        currentNode.getCenter().getY() + j * length / 2, 
+                        currentNode.getCenter().getX() + i * length / 2,
+                        currentNode.getCenter().getY() + j * length / 2,
                         currentNode.getCenter().getZ() + k * length / 2);
                     OctreeNode node = new OctreeNode(center, length / 2, currentDepth + 1);
                     currentNode.children[cnt] = node;
@@ -226,7 +242,7 @@ public class Octree {
         }
         for (int index : currentNode.indices) {
             Point3D point = points.get(index);
-            if (! VolumeUtils.validPoint(point)) continue;
+            if (!VolumeUtils.validPoint(point)) continue;
             Point3D center = currentNode.getCenter();
             int xi = point.getX() < center.getX() ? 0 : 1;
             int yj = point.getY() < center.getY() ? 0 : 1;
@@ -243,7 +259,8 @@ public class Octree {
 
     /**
      * find the index of octree node in which the target point is located
-     * @param node the root octree node
+     *
+     * @param node  the root octree node
      * @param point the target point
      * @return the index of leaf node
      */
@@ -284,7 +301,8 @@ public class Octree {
 
     /**
      * search all neighboring points of specified point within distance
-     * @param point the point
+     *
+     * @param point  the point
      * @param radius the distance
      * @return a List of indices of neighboring points
      */
@@ -310,7 +328,8 @@ public class Octree {
 
     /**
      * search all neighboring points of the point with specified index within distance
-     * @param index the index of a point
+     *
+     * @param index  the index of a point
      * @param radius radius of neighborhood
      * @return indices of neighboring points of this point
      */
@@ -325,7 +344,7 @@ public class Octree {
         List<OctreeNode> visitingQueue = new ArrayList<>();
         if (VolumeUtils.intersect(root, sphere)) visitingQueue.add(root);
         int currentVisit = 0;
-        for (; currentVisit < visitingQueue.size(); currentVisit ++) {
+        for (; currentVisit < visitingQueue.size(); currentVisit++) {
             OctreeNode visiting = visitingQueue.get(currentVisit);
             if (visiting.isLeaf()) {
                 if (octreeIndices.get(visiting.index) == null) continue;
@@ -342,6 +361,7 @@ public class Octree {
 
     /**
      * search adjacent nodes of an octree node
+     *
      * @param nodeIndex the index of octree node
      * @param adjacency see {@link Adjacency}
      * @return the list of adjacent octree nodes
@@ -383,7 +403,9 @@ public class Octree {
         return result;
     }
 
-    public int getMaxPointsPerNode() {return this.maxPointsPerNode;}
+    public int getMaxPointsPerNode() {
+        return this.maxPointsPerNode;
+    }
 
     public void setMaxPointsPerNode(int m) {
         this.maxPointsPerNode = m;
@@ -408,7 +430,9 @@ public class Octree {
          **/
         List<Integer> indices = null;
 
-        /** in a non-leaf node, field indices is null **/
+        /**
+         * in a non-leaf node, field indices is null
+         **/
         OctreeNode[] children = null;
 
         int depth = 0;
@@ -455,4 +479,3 @@ public class Octree {
     }
 
 }
-

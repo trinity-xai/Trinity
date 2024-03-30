@@ -33,13 +33,13 @@ import edu.jhuapl.trinity.javafx.events.TrajectoryEvent;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.scene.Scene;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
 
 import java.io.File;
 import java.io.FileInputStream;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javafx.scene.paint.Color;
-import javafx.scene.text.Font;
 
 /**
  * @author Sean Phillips
@@ -83,7 +83,7 @@ public class AudioLoader extends Task {
         try {
             double scaling = -1.0;
             int binSize = 512;
-            decoder = new WaveDecoder( new FileInputStream( file ) );
+            decoder = new WaveDecoder(new FileInputStream(file));
             FFT fft = new FFT(binSize, 44100);
             float[] samples = new float[binSize];
             float[] spectrum = new float[binSize / 2 + 1];
@@ -103,7 +103,7 @@ public class AudioLoader extends Task {
                 fv.setLabel(file.getPath());
                 fv.setScore(flux);
                 //inverse mirror
-                for (int vectorIndex = spectrum.length-1; vectorIndex > 1; vectorIndex--) {
+                for (int vectorIndex = spectrum.length - 1; vectorIndex > 1; vectorIndex--) {
                     fv.getData().add(spectrum[vectorIndex] * scaling); //add projection scaling
                 }
                 //normal wave after center
@@ -113,7 +113,7 @@ public class AudioLoader extends Task {
                 fc.getFeatures().add(fv);
             }
 
-            Platform.runLater(()-> {
+            Platform.runLater(() -> {
                 scene.getRoot().fireEvent(
                     new FeatureVectorEvent(FeatureVectorEvent.NEW_FEATURE_COLLECTION, fc));
             });
@@ -121,15 +121,15 @@ public class AudioLoader extends Task {
             trajectory.totalStates = fc.getFeatures().size();
             Trajectory.addTrajectory(trajectory);
             Trajectory.globalTrajectoryToFeatureCollectionMap.put(trajectory, fc);
-            Platform.runLater(()-> {
+            Platform.runLater(() -> {
                 scene.getRoot().fireEvent(
                     new TrajectoryEvent(TrajectoryEvent.NEW_TRAJECTORY_OBJECT, trajectory, fc));
             });
             Thread.sleep(250);
-            Platform.runLater(()-> {            
+            Platform.runLater(() -> {
                 scene.getRoot().fireEvent(
                     new CommandTerminalEvent("Unrolling frequencies to hypersurface...",
-                    new Font("Consolas", 20), Color.GREEN));
+                        new Font("Consolas", 20), Color.GREEN));
                 scene.getRoot().fireEvent(
                     new FeatureVectorEvent(FeatureVectorEvent.REQUEST_FEATURE_COLLECTION));
             });

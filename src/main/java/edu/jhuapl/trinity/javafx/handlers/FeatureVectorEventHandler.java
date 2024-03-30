@@ -112,8 +112,8 @@ public class FeatureVectorEventHandler implements EventHandler<FeatureVectorEven
 
         featureVectors.forEach(featureVector -> {
             //Is the label already added to the local collection?
-            if(newFactorLabels.stream().noneMatch(
-                f -> f.getLabel().contentEquals(featureVector.getLabel()))) {            
+            if (newFactorLabels.stream().noneMatch(
+                f -> f.getLabel().contentEquals(featureVector.getLabel()))) {
                 //Have we seen this label before?
                 FactorLabel matchingLabel = FactorLabel.getFactorLabel(featureVector.getLabel());
 

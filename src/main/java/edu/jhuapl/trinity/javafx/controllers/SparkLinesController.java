@@ -9,9 +9,9 @@ package edu.jhuapl.trinity.javafx.controllers;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -22,15 +22,6 @@ package edu.jhuapl.trinity.javafx.controllers;
 
 import edu.jhuapl.trinity.App;
 import edu.jhuapl.trinity.utils.Configuration;
-import java.io.File;
-import java.net.URL;
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.ResourceBundle;
-import java.util.concurrent.ConcurrentLinkedQueue;
-import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
 import javafx.event.ActionEvent;
 import javafx.fxml.FXML;
@@ -45,9 +36,10 @@ import javafx.scene.chart.XYChart.Series;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.Tooltip;
-import javafx.scene.paint.Color;
-import javafx.scene.text.Font;
-import javafx.scene.text.Text;
+
+import java.io.File;
+import java.net.URL;
+import java.util.ResourceBundle;
 
 /**
  * FXML Controller class
@@ -57,7 +49,7 @@ import javafx.scene.text.Text;
 public class SparkLinesController implements Initializable {
     @FXML
     private Spinner dataWindowSpinner;
-    
+
     @FXML
     private LineChart<Number, Number> nativeControlLineChart;
     @FXML
@@ -75,7 +67,7 @@ public class SparkLinesController implements Initializable {
     @FXML
     private NumberAxis bmiPerceptionXAxis;
     XYChart.Series<Number, Number> bmiPerceptionSeries;
-    
+
     //BMI Control Chart needs some extra stuff
     private XYChart.Series<Number, Number> bmiControlSeries;
     @FXML
@@ -91,17 +83,18 @@ public class SparkLinesController implements Initializable {
     @FXML
     private BarChart barChart;
 
-    private double currentMaxX = 0.0;    
+    private double currentMaxX = 0.0;
     Scene scene;
     Configuration config;
-//    BmiControlConfig currentBmiControlConfig = null;    
+    //    BmiControlConfig currentBmiControlConfig = null;
 //    ConcurrentLinkedQueue<BmiControl> controlQueue;
 //    ConcurrentLinkedQueue<DataQueueObject> dataQueue;
-//    BmiControl mostRecentBmiControl = null;    
+//    BmiControl mostRecentBmiControl = null;
     File currentDirectory = new File(".");
     int dataWindowLimit = 2000;
     int bmiControlWindowSize;
     double deadband = 0.2;
+
     /**
      * Initializes the controller class.
      *
@@ -113,7 +106,7 @@ public class SparkLinesController implements Initializable {
         scene = App.getAppScene();
         config = App.getConfig();
         //TODO SMP read in config values for constructing the graphs
-//        bmiControlWindowSize = Integer.valueOf((String)config.configProps.get("bmiControlWindowSize"));        
+//        bmiControlWindowSize = Integer.valueOf((String)config.configProps.get("bmiControlWindowSize"));
 //        dataQueue = new ConcurrentLinkedQueue<>();
 
         dataWindowSpinner.setValueFactory(
@@ -121,17 +114,17 @@ public class SparkLinesController implements Initializable {
         //whenever the spinner value is changed... call updateData
         dataWindowSpinner.valueProperty().addListener(e -> {
             dataWindowLimit = (Integer) dataWindowSpinner.getValue();
-        });   
-        
+        });
+
         //static series initialization
         nativeControlSeries = new XYChart.Series<>();
         nativeControlLineChart.getData().add(nativeControlSeries);
-        
+
         bmiControlSeries = new XYChart.Series<>();
         bmiControlLineChart.getData().add(bmiControlSeries);
-        
+
         nativePerceptionSeries = new XYChart.Series<>();
-        nativePerceptionLineChart.getData().add(nativePerceptionSeries);        
+        nativePerceptionLineChart.getData().add(nativePerceptionSeries);
         bmiPerceptionSeries = new XYChart.Series<>();
         bmiPerceptionLineChart.getData().add(bmiPerceptionSeries);
 
@@ -169,7 +162,7 @@ public class SparkLinesController implements Initializable {
 //            updateNativeControlChart(nc.getDeltaX(), nc.getDeltaY());
 //            //pad perception charts so they keep up
 //            updatePerceptionCharts(0, 0);
-//            //update the generic data queue 
+//            //update the generic data queue
 //            addToDataQueue(nc);
 //            currentMaxX++;
 //        });
@@ -177,8 +170,8 @@ public class SparkLinesController implements Initializable {
 //            MultiplexPerception mp = (MultiplexPerception)e.data;
 //            updatePerceptionCharts(mp.getNativePerception(), mp.getBmiPerception());
 //            //pad bmi control chart so it keeps up
-//            updateBmiChart(0,currentBmiControlConfig.getBmiControlNamesArray()[0]);            
-//            //update the generic data queue 
+//            updateBmiChart(0,currentBmiControlConfig.getBmiControlNamesArray()[0]);
+//            //update the generic data queue
 //            addToDataQueue(mp);
 //            currentMaxX++;
 //        });
@@ -191,10 +184,10 @@ public class SparkLinesController implements Initializable {
 //            updateBmiChart(bc.getBmiControlR(), label);
 //            setBarData();
 ////            //pad native control chart so it keeps up
-////            updateNativeControlChart(0, 0);            
+////            updateNativeControlChart(0, 0);
 //            //pad perception charts so they keep up
 //            updatePerceptionCharts(0, 0);
-//            //update the generic data queue 
+//            //update the generic data queue
 //            addToDataQueue(bc);
 //            currentMaxX++;
 //        });
@@ -205,59 +198,62 @@ public class SparkLinesController implements Initializable {
 //        XYChart.Data dataNode;
 //        //if action == non rest
 //        if(action > 0) {
-//            dataNode = new XYChart.Data(currentMaxX, action); 
+//            dataNode = new XYChart.Data(currentMaxX, action);
 //            Font font = new Font("Consolas", 18);
 //            Text customLabel = new Text(
 //                currentBmiControlConfig.getBmiControlNamesArray()[action]);
 //            customLabel.setFont(font);
-//            customLabel.setFill(Color.BLUE);            
+//            customLabel.setFill(Color.BLUE);
 //            dataNode.setNode(customLabel);
 //            bmiControlSeries.getData().add(dataNode);
 //            bmiControlSeries.getNode().setViewOrder(1);
 //        }
 //    }
-            
+
     private void updateNativeControlChart(double deltaX, double deltaY) {
         double total = Math.abs(deltaX) + Math.abs(deltaY);
-        XYChart.Data dataNode = new XYChart.Data(currentMaxX, total); 
+        XYChart.Data dataNode = new XYChart.Data(currentMaxX, total);
         nativeControlSeries.getData().add(dataNode);
         //make sure this data series fits within the current window
         trimSeries(nativeControlSeries);
     }
+
     private void updatePerceptionCharts(int nativePerception, int bmiPerception) {
         //Native Perception
         XYChart.Data npDataNode;
         //if Native Perception == non rest
-        if(nativePerception > 0) {
-            npDataNode = new XYChart.Data(currentMaxX, 1.0); 
+        if (nativePerception > 0) {
+            npDataNode = new XYChart.Data(currentMaxX, 1.0);
         } else {
             npDataNode = new XYChart.Data(currentMaxX, 0.0);
-        }      
+        }
         nativePerceptionSeries.getData().add(npDataNode);
         //make sure this data series fits within the current window
         trimSeries(nativePerceptionSeries);
-    
+
         //BMI Perception
         XYChart.Data bpDataNode;
         //if Native Perception == non rest
-        if(bmiPerception > 0) {
-            bpDataNode = new XYChart.Data(currentMaxX, 1.0); 
+        if (bmiPerception > 0) {
+            bpDataNode = new XYChart.Data(currentMaxX, 1.0);
         } else {
             bpDataNode = new XYChart.Data(currentMaxX, 0.0);
-        }      
+        }
         bmiPerceptionSeries.getData().add(bpDataNode);
         //make sure this data series fits within the current window
         trimSeries(bmiPerceptionSeries);
     }
+
     public void updateBmiChart(int bmiSignalClass, String label) {
-        XYChart.Data dataNode = new XYChart.Data(currentMaxX, bmiSignalClass); 
+        XYChart.Data dataNode = new XYChart.Data(currentMaxX, bmiSignalClass);
         bmiControlSeries.getData().add(dataNode);
         Tooltip t = new Tooltip(label + " " + dataNode.getXValue().toString());
-        Tooltip.install(dataNode.getNode(), t);      
+        Tooltip.install(dataNode.getNode(), t);
         //make sure this data series fits within the current window
         trimSeries(bmiControlSeries);
     }
-//    private void updateBarChart() {
+
+    //    private void updateBarChart() {
 //        barChartSeriesDataList.clear();
 //        barChartXAxis.setCategories(FXCollections.<String>observableArrayList(
 //            currentBmiControlConfig.getBmiControlNamesArray()));
@@ -265,11 +261,11 @@ public class SparkLinesController implements Initializable {
 //        for(int i=0; i<len; i++) {
 //            barChartSeriesDataList.add(i, new BarChart.Data<>(
 //                currentBmiControlConfig.getBmiControlNamesArray()[i], 0.0));
-//        } 
+//        }
 //    }
 //    public void setBarData() {
-//        //which entry has the largest percentage ?                
-//        HashMap<Integer, Double> percentMap = computePercentages(bmiControlWindowSize);        
+//        //which entry has the largest percentage ?
+//        HashMap<Integer, Double> percentMap = computePercentages(bmiControlWindowSize);
 //        //Convert Hashmap to array list
 //        ArrayList<Map.Entry<Integer, Double>> categoryPercentages = new ArrayList<>(percentMap.entrySet());
 //        //for each category percentage
@@ -299,7 +295,7 @@ public class SparkLinesController implements Initializable {
 //            percentEntryMap.put(t, u.doubleValue() / total.doubleValue());
 //        });
 //        return percentEntryMap;
-//    }    
+//    }
 //    private void addToDataQueue(MessageData md) {
 //        DataQueueObject dqo = new DataQueueObject();
 //        if(md instanceof NativeControl)
@@ -308,7 +304,7 @@ public class SparkLinesController implements Initializable {
 //            dqo.setBmiControl((BmiControl)md);
 //        else if(md instanceof MultiplexPerception)
 //            dqo.setMultiplexPerception((MultiplexPerception)md);
-//        dataQueue.add(dqo);        
+//        dataQueue.add(dqo);
 //        int excess = dataQueue.size() - dataWindowLimit;
 //        if(excess > 0) {
 //            dataQueue.poll();
@@ -316,7 +312,7 @@ public class SparkLinesController implements Initializable {
 //    }
     private void trimSeries(Series series) {
         int excess = series.getData().size() - dataWindowLimit;
-        if(excess > 0) {
+        if (excess > 0) {
             series.getData().remove(0, excess);
         }
     }
@@ -326,7 +322,7 @@ public class SparkLinesController implements Initializable {
 //    private void clearBmiWindow() {
 //        controlQueue.clear();
 //    }
-//    
+//
 //    private void addBmiControlToQueue(BmiControl bc) {
 //        controlQueue.add(bc);
 //        mostRecentBmiControl = bc;
@@ -335,8 +331,8 @@ public class SparkLinesController implements Initializable {
 //            controlQueue.poll();
 //        }
 //    }
-    
-     @FXML
+
+    @FXML
     public void export(ActionEvent event) {
 //        if(metricTracker.metricDataList.isEmpty()) {
 //            Alert alert = new Alert(Alert.AlertType.INFORMATION, "No metrics data to export.", ButtonType.OK);
@@ -390,17 +386,18 @@ public class SparkLinesController implements Initializable {
 //                writer.flush();
 //            } catch(IOException e) {
 //                Logger.getLogger(ChartRecorderController.class.getName()).log(Level.SEVERE, null, e);
-//            }   
+//            }
 //        }
     }
+
     @FXML
     public void reset(ActionEvent event) {
 //        //Create and Show Confirmation Dialog.
 //        Alert alert = AlertFactory.getDeleteAllAlert();
 //        alert.showAndWait();
 //        //Begin Deletion Process.
-//        if (alert.getResult() == ButtonType.YES) {    
-//            nativeControlCorrect = bmiControlCorrect = nativePerceptionCorrect = 
+//        if (alert.getResult() == ButtonType.YES) {
+//            nativeControlCorrect = bmiControlCorrect = nativePerceptionCorrect =
 //                    bmiPerceptionCorrect = 0;
 //            metricTracker = new MetricTracker();
 //            dateTextField.setText(LocalDateTime.now().toString());

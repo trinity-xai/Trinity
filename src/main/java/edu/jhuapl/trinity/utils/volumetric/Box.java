@@ -9,9 +9,9 @@ package edu.jhuapl.trinity.utils.volumetric;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -44,19 +44,20 @@ public class Box {
 
     /**
      * the constructor of Box
-     * @throws IllegalArgumentException x/z/z extent is NaN or negative
+     *
      * @param center the center of box, the x/y/z cannot be NaN
-     * @param xAxis the x-extent of box, cannot be NaN, must be positive
-     * @param yAxis the y-extent of box, cannot be NaN, must be positive
-     * @param zAxis the z-extent of box, cannot be NaN, must be positive
+     * @param xAxis  the x-extent of box, cannot be NaN, must be positive
+     * @param yAxis  the y-extent of box, cannot be NaN, must be positive
+     * @param zAxis  the z-extent of box, cannot be NaN, must be positive
+     * @throws IllegalArgumentException x/z/z extent is NaN or negative
      */
     public Box(Point3D center, double xAxis, double yAxis, double zAxis) {
         if (Double.isNaN(center.getX())
-                || Double.isNaN(center.getY())
-                || Double.isNaN(center.getZ())
-                || Double.isNaN(xAxis)
-                || Double.isNaN(yAxis)
-                || Double.isNaN(zAxis)) {
+            || Double.isNaN(center.getY())
+            || Double.isNaN(center.getZ())
+            || Double.isNaN(xAxis)
+            || Double.isNaN(yAxis)
+            || Double.isNaN(zAxis)) {
             throw new IllegalArgumentException("The param cannot be Double.NaN");
         }
         if (xAxis < 0 || yAxis < 0 || zAxis < 0) throw new IllegalArgumentException("The x/y/z extent of box should be positive");
@@ -126,6 +127,7 @@ public class Box {
 
     /**
      * test if this box contains the specified point
+     *
      * @param point the user-specified point
      * @return test result
      */
@@ -135,17 +137,18 @@ public class Box {
 
     /**
      * test if this box contains the specified point
-     * @param point the user-specified point
+     *
+     * @param point     the user-specified point
      * @param tolerance the error within the tolerance is acceptable
      * @return test result
      */
     public boolean contains(Point3D point, double tolerance) {
         return (point.getX() <= tolerance + xExtent + center.getX())
-                && (point.getX() >= center.getX() - xExtent - tolerance)
-                && (point.getY() <= center.getY() + yExtent + tolerance)
-                && (point.getY() >= center.getY() - yExtent - tolerance)
-                && (point.getZ() <= center.getZ() + zExtent + tolerance)
-                && (point.getZ() >= center.getY() - zExtent - tolerance);
+            && (point.getX() >= center.getX() - xExtent - tolerance)
+            && (point.getY() <= center.getY() + yExtent + tolerance)
+            && (point.getY() >= center.getY() - yExtent - tolerance)
+            && (point.getZ() <= center.getZ() + zExtent + tolerance)
+            && (point.getZ() >= center.getY() - zExtent - tolerance);
     }
 
 }

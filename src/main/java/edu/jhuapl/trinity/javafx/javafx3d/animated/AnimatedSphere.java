@@ -49,7 +49,7 @@ public class AnimatedSphere extends Sphere implements Selectable3D {
     private boolean animateOnHover = false;
     private double expansionScale = 3.0;
 
-    
+
     public AnimatedSphere(PhongMaterial material, double radius, int divisions, boolean animated) {
         super(radius, divisions);
         this.sphereRadius = radius;
@@ -143,6 +143,7 @@ public class AnimatedSphere extends Sphere implements Selectable3D {
     public boolean isSelected() {
         throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
     }
+
     /**
      * @return the color
      */

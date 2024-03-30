@@ -9,9 +9,9 @@ package edu.jhuapl.trinity.utils.marchingcubes;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -26,13 +26,13 @@ import java.util.ArrayList;
  * Created by Primoz on 8.7.2016.
  */
 abstract class CallbackMC implements Runnable {
-    private ArrayList<float []> vertices;
+    private ArrayList<float[]> vertices;
 
-    void setVertices(ArrayList<float []> vertices) {
+    void setVertices(ArrayList<float[]> vertices) {
         this.vertices = vertices;
     }
 
-    ArrayList<float []> getVertices() {
+    ArrayList<float[]> getVertices() {
         return this.vertices;
     }
 }

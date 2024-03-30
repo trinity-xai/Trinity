@@ -25,7 +25,6 @@ import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.utils.HttpsUtils;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
-import java.io.File;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
@@ -44,6 +43,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.shape.Shape3D;
 import javafx.scene.text.Text;
 
+import java.io.File;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.Map.Entry;
@@ -57,9 +57,9 @@ public class FeatureVectorCallout extends VBox {
     public static double IMAGE_FIT_WIDTH = 200;
     public String imageryBasePath = "imagery/";
 
-    public static Callout createByShape3D(Shape3D shape3D, 
-        FeatureVector featureVector, SubScene subScene, String imageryBasePath) {
-        FeatureVectorCallout featureVectorCallout = new FeatureVectorCallout(shape3D, 
+    public static Callout createByShape3D(Shape3D shape3D,
+                                          FeatureVector featureVector, SubScene subScene, String imageryBasePath) {
+        FeatureVectorCallout featureVectorCallout = new FeatureVectorCallout(shape3D,
             featureVector, subScene, imageryBasePath);
         Point2D p2D = JavaFX3DUtils.getTransformedP2D(shape3D, subScene, Callout.DEFAULT_HEAD_RADIUS + 5);
         Callout infoCallout = CalloutBuilder.create()
@@ -87,8 +87,8 @@ public class FeatureVectorCallout extends VBox {
         return infoCallout;
     }
 
-    public FeatureVectorCallout(Shape3D shape3D, FeatureVector featureVector, 
-        SubScene subScene, String imageryBasePath) {
+    public FeatureVectorCallout(Shape3D shape3D, FeatureVector featureVector,
+                                SubScene subScene, String imageryBasePath) {
         this.imageryBasePath = imageryBasePath;
         ImageView iv = loadImageView(featureVector, featureVector.isBBoxValid());
         String bboxStr = "";
@@ -200,7 +200,7 @@ public class FeatureVectorCallout extends VBox {
         openMediaVBox.setOnMouseEntered(e -> openMediaVBox.setEffect(glow));
         openMediaVBox.setOnMouseExited(e -> openMediaVBox.setEffect(null));
         openMediaVBox.setOnMouseClicked(e -> {
-            if(null != featureVector.getMediaURL()){
+            if (null != featureVector.getMediaURL()) {
                 openMediaVBox.getScene().getRoot().fireEvent(new ApplicationEvent(
                     ApplicationEvent.SHOW_WAVEFORM_PANE, new File(this.imageryBasePath + featureVector.getMediaURL())));
             }
@@ -212,16 +212,16 @@ public class FeatureVectorCallout extends VBox {
         mediaTP.setContent(mediaVBox);
         mediaTP.setText("Media");
         mediaTP.setExpanded(false);
-        
+
         getChildren().addAll(imageTP, mediaTP, textTP, detailsTP, metaTP);
         setSpacing(3);
         setPrefWidth(250);
         setPrefHeight(100);
-        
+
         subScene.getParent().getScene().addEventHandler(ApplicationEvent.SET_IMAGERY_BASEPATH, e -> {
             this.imageryBasePath = (String) e.object;
             //System.out.println("Callout image base path set to " + featureVectorCallout.imageryBasePath);
-        });        
+        });
 
     }
 

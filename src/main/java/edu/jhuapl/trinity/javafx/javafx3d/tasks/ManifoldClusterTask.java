@@ -32,16 +32,10 @@ import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
-import javafx.scene.Scene;
-
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
 import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
 import javafx.scene.PerspectiveCamera;
+import javafx.scene.Scene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
@@ -64,6 +58,12 @@ import javafx.scene.text.Font;
 import javafx.stage.StageStyle;
 import org.fxyz3d.geometry.Point3D;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Optional;
+import java.util.concurrent.atomic.AtomicInteger;
+
 /**
  * @author Sean Phillips
  */
@@ -78,13 +78,13 @@ public class ManifoldClusterTask extends Task {
     String manifoldName = "Selected Manifold";
     private boolean cancelledByUser = false;
     static AtomicInteger ai = new AtomicInteger(0);
-    
-    public ManifoldClusterTask(Scene scene, PerspectiveCamera camera, 
-        HashMap<Sphere, FeatureVector> currentMap, Rectangle rectangle) {
+
+    public ManifoldClusterTask(Scene scene, PerspectiveCamera camera,
+                               HashMap<Sphere, FeatureVector> currentMap, Rectangle rectangle) {
         this.scene = scene;
         this.camera = camera;
         this.currentMap = currentMap;
-        this.rectangle = new Rectangle(rectangle.getX(), rectangle.getY(), 
+        this.rectangle = new Rectangle(rectangle.getX(), rectangle.getY(),
             rectangle.getWidth(), rectangle.getHeight());
         setOnSucceeded(e -> {
             Platform.runLater(() -> {
@@ -135,7 +135,7 @@ public class ManifoldClusterTask extends Task {
         HBox filterHBox = new HBox(10, filterCheckBoxLabel, labelChoiceBox);
         filterHBox.setAlignment(Pos.CENTER_LEFT);
         labelChoiceBox.disableProperty().bind(filterCheckBox.selectedProperty().not());
-        
+
         ColorPicker colorPicker = new ColorPicker(Color.CYAN);
         colorPicker.setPrefWidth(200);
         Label colorLabel = new Label("Color");
@@ -143,9 +143,9 @@ public class ManifoldClusterTask extends Task {
         HBox colorHBox = new HBox(10, colorLabel, colorPicker);
         colorHBox.setAlignment(Pos.CENTER_LEFT);
 
-        VBox contentVBox = new VBox(2, textFieldHBox, 
-             filterHBox, colorHBox);
-        
+        VBox contentVBox = new VBox(2, textFieldHBox,
+            filterHBox, colorHBox);
+
         dialogPane.setContent(contentVBox);
         dialogPane.setBackground(Background.EMPTY);
         dialogPane.getScene().setFill(Color.TRANSPARENT);
@@ -154,7 +154,7 @@ public class ManifoldClusterTask extends Task {
         Optional<ButtonType> optBT = alert.showAndWait();
         if (optBT.get().equals(ButtonType.APPLY)) {
             filterByLabel = filterCheckBox.isSelected();
-            filterLabel = (String)labelChoiceBox.getSelectionModel().getSelectedItem();
+            filterLabel = (String) labelChoiceBox.getSelectionModel().getSelectedItem();
             diffuseColor = colorPicker.getValue();
             manifoldName = labelTextField.getText();
         } else {
@@ -164,30 +164,30 @@ public class ManifoldClusterTask extends Task {
 
     @Override
     protected Void call() throws Exception {
-        if(isCancelled()) return null;
+        if (isCancelled()) return null;
         Platform.runLater(() -> {
             ProgressStatus ps = new ProgressStatus("Converting Cluster to Manifold...", -1);
             scene.getRoot().fireEvent(
                 new ApplicationEvent(ApplicationEvent.SHOW_BUSY_INDICATOR, ps));
         });
         List<Sphere> spheres = currentMap.keySet().stream().toList();
-        List<Integer> indices = 
-            JavaFX3DUtils.pickIndicesByBox(camera, spheres, 
-            new Point2D(rectangle.getX(), rectangle.getY()), 
-            new Point2D(rectangle.getX()+rectangle.getWidth(), 
-                    rectangle.getY()+rectangle.getHeight())
-        );
-        if(indices.size()>4) {
-            if(filterByLabel) {
-                
+        List<Integer> indices =
+            JavaFX3DUtils.pickIndicesByBox(camera, spheres,
+                new Point2D(rectangle.getX(), rectangle.getY()),
+                new Point2D(rectangle.getX() + rectangle.getWidth(),
+                    rectangle.getY() + rectangle.getHeight())
+            );
+        if (indices.size() > 4) {
+            if (filterByLabel) {
+
             }
             ArrayList<javafx.geometry.Point3D> manPoints = new ArrayList<>();
             List<Point3D> labelMatchedPoints = new ArrayList<>();
-            for(int index : indices) {
+            for (int index : indices) {
                 javafx.geometry.Point3D p3D = JavaFX3DUtils.mapShape3DToPoint3D.apply(spheres.get(index));
                 manPoints.add(p3D);
                 FeatureVector fv = currentMap.get(spheres.get(index));
-                if(!filterByLabel || (null != fv && filterLabel.contentEquals(fv.getLabel())))
+                if (!filterByLabel || (null != fv && filterLabel.contentEquals(fv.getLabel())))
                     labelMatchedPoints.add(JavaFX3DUtils.toFXYZ3D.apply(p3D));
             }
             Manifold manifold = new Manifold(manPoints, manifoldName, manifoldName, diffuseColor);
@@ -197,8 +197,8 @@ public class ManifoldClusterTask extends Task {
             );
             manifold3D.quickhullMeshView.setCullFace(CullFace.FRONT);
             manifold3D.setManifold(manifold);
-            ((PhongMaterial)manifold3D.quickhullMeshView.getMaterial()).setDiffuseColor(diffuseColor);
-            
+            ((PhongMaterial) manifold3D.quickhullMeshView.getMaterial()).setDiffuseColor(diffuseColor);
+
             manifold3D.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
                 scene.getRoot().fireEvent(
                     new ManifoldEvent(ManifoldEvent.MANIFOLD_3D_SELECTED, manifold));
@@ -209,10 +209,10 @@ public class ManifoldClusterTask extends Task {
             Manifold.globalManifoldToManifold3DMap.put(manifold, manifold3D);
             //announce to the world of the new manifold and its shape
             //System.out.println("Manifold3D generation complete for " + manifoldName);
-            Platform.runLater(()-> {
+            Platform.runLater(() -> {
                 scene.getRoot().fireEvent(
                     new CommandTerminalEvent("Manifold3D generation complete for " + manifoldName,
-                    new Font("Consolas", 20), Color.GREEN));
+                        new Font("Consolas", 20), Color.GREEN));
                 scene.getRoot().fireEvent(new ManifoldEvent(
                     ManifoldEvent.NEW_MANIFOLD_CLUSTER, manifold, manifold3D));
 
@@ -220,10 +220,10 @@ public class ManifoldClusterTask extends Task {
                     ManifoldEvent.MANIFOLD3D_OBJECT_GENERATED, manifold, manifold3D));
             });
         } else {
-            Platform.runLater(()-> {            
+            Platform.runLater(() -> {
                 scene.getRoot().fireEvent(
                     new CommandTerminalEvent("Insufficient selected points for 3D Hull.",
-                    new Font("Consolas", 20), Color.YELLOW));
+                        new Font("Consolas", 20), Color.YELLOW));
             });
         }
         return null;

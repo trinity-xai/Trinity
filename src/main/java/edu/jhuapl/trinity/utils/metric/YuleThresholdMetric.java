@@ -23,7 +23,7 @@ package edu.jhuapl.trinity.utils.metric;
 /**
  * @author Sean Phillips
  * Yule similarity distance that does a thresholded agreement check close to zero.
- * Useful similarity check for continuous data which has been normalized between 
+ * Useful similarity check for continuous data which has been normalized between
  * 0 and 1 where agreement near 0.0 is important.
  */
 
@@ -43,7 +43,7 @@ public final class YuleThresholdMetric extends Metric {
         int numTrueFalse = 0;
         int numFalseTrue = 0;
         final double threshold = getThreshold();
-        boolean xTrue,yTrue;
+        boolean xTrue, yTrue;
         for (int i = 0; i < x.length; ++i) {
             xTrue = Math.abs(x[i]) > threshold;
             yTrue = Math.abs(y[i]) > threshold;

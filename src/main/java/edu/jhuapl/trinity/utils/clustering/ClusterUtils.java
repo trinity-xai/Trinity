@@ -9,9 +9,9 @@ package edu.jhuapl.trinity.utils.clustering;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,9 +20,10 @@ package edu.jhuapl.trinity.utils.clustering;
  * #L%
  */
 
+import java.util.logging.Logger;
+
 import static java.lang.Math.abs;
 import static java.lang.Math.sqrt;
-import java.util.logging.Logger;
 
 /**
  * Cherry Picked Math functions used for GMM processing.
@@ -35,12 +36,12 @@ public class ClusterUtils {
      * and the smallest value greater than 1 that is representable for the double type.
      */
     public static final double EPSILON = 0.00000000000001;
-    public static final double LOG2PIE = Math.log(2 * Math.PI * Math.E);    
+    public static final double LOG2PIE = Math.log(2 * Math.PI * Math.E);
     public static final double LOG2PIE_2 = Math.log(2 * Math.PI * Math.E) / 2;
     public static final double LOG2PI_2 = Math.log(2 * Math.PI) / 2;
-    
-    private static Logger logger = Logger.getLogger(ClusterUtils.class.getName());    
- 
+
+    private static Logger logger = Logger.getLogger(ClusterUtils.class.getName());
+
     /**
      * The squared Euclidean distance with handling missing values (represented as NaN).
      * NaN will be treated as missing values and will be excluded from the
@@ -73,8 +74,10 @@ public class ClusterUtils {
 
         return dist;
     }
+
     /**
      * Returns the sum of an array.
+     *
      * @param x the array.
      * @return the sum.
      */
@@ -87,8 +90,10 @@ public class ClusterUtils {
 
         return sum;
     }
+
     /**
      * Returns the mean of an array.
+     *
      * @param x the array.
      * @return the mean.
      */
@@ -138,35 +143,42 @@ public class ClusterUtils {
         }
 
         return sum;
-    }    
+    }
+
     /**
      * Tests if a floating number is zero in machine precision.
+     *
      * @param x a real number.
      * @return true if x is zero in machine precision.
      */
     public static boolean isZero(double x) {
         return isZero(x, EPSILON);
     }
+
     /**
      * Tests if a floating number is zero in given precision.
-     * @param x a real number.
+     *
+     * @param x       a real number.
      * @param epsilon a number close to zero.
      * @return true if x is zero in <code>epsilon</code> precision.
      */
     public static boolean isZero(double x, double epsilon) {
         return abs(x) < epsilon;
-    }    
+    }
+
     /**
      * Returns the standard deviation of an array.
+     *
      * @param x the array.
      * @return the standard deviation.
      */
     public static double sd(double[] x) {
         return sqrt(var(x));
-    }    
+    }
 
     /**
      * Returns the variance of an array.
+     *
      * @param x the array.
      * @return the variance.
      */
@@ -185,8 +197,10 @@ public class ClusterUtils {
         int n = x.length - 1;
         return sumsq / n - (sum / x.length) * (sum / n);
     }
+
     /**
      * Returns the dot product between two vectors.
+     *
      * @param x a vector.
      * @param y a vector.
      * @return the dot product.
@@ -203,8 +217,10 @@ public class ClusterUtils {
 
         return sum;
     }
+
     /**
      * Scale each element of an array by a constant x = a * x.
+     *
      * @param a the scale factor.
      * @param x the input and output vector.
      */
@@ -213,9 +229,10 @@ public class ClusterUtils {
             x[i] *= a;
         }
     }
-    
+
     /**
      * Returns the column means of a matrix.
+     *
      * @param matrix the matrix.
      * @return the column means.
      */
@@ -235,6 +252,7 @@ public class ClusterUtils {
 
     /**
      * Returns the sample covariance matrix.
+     *
      * @param data the samples
      * @return the covariance matrix.
      */
@@ -244,8 +262,9 @@ public class ClusterUtils {
 
     /**
      * Returns the sample covariance matrix.
+     *
      * @param data the samples
-     * @param mu the known mean of data.
+     * @param mu   the known mean of data.
      * @return the covariance matrix.
      */
     public static double[][] cov(double[][] data, double[] mu) {
@@ -267,9 +286,11 @@ public class ClusterUtils {
         }
 
         return sigma;
-    }    
+    }
+
     /**
      * Returns the index of maximum value of an array.
+     *
      * @param x the array.
      * @return the index of maximum.
      */
@@ -285,9 +306,11 @@ public class ClusterUtils {
         }
 
         return which;
-    }    
+    }
+
     /**
      * Standardizes an array to mean 0 and variance 1.
+     *
      * @param x the matrix.
      */
     public static void standardize(double[] x) {
@@ -295,7 +318,7 @@ public class ClusterUtils {
         double sigma = sd(x);
 
         if (isZero(sigma)) {
-            
+
             logger.warning("array has variance of 0.");
             return;
         }
@@ -304,8 +327,10 @@ public class ClusterUtils {
             x[i] = (x[i] - mu) / sigma;
         }
     }
+
     /**
      * Swap two positions.
+     *
      * @param x the array.
      * @param i the index of array element.
      * @param j the index of other element.
@@ -315,8 +340,10 @@ public class ClusterUtils {
         x[i] = x[j];
         x[j] = a;
     }
+
     /**
      * Swap two positions.
+     *
      * @param x the array.
      * @param i the index of array element.
      * @param j the index of other element.
@@ -326,12 +353,13 @@ public class ClusterUtils {
         a = x[i];
         x[i] = x[j];
         x[j] = a;
-    }    
+    }
 
     /**
      * This is an efficient implementation Quick Sort algorithm without
      * recursive. Besides sorting the first n elements of array x, the first
      * n elements of array y will be also rearranged as the same order of x.
+     *
      * @param x the array to sort.
      * @param y the associate array.
      * @param n the first n elements to sort.
@@ -345,7 +373,7 @@ public class ClusterUtils {
         int i, j, k;
         double a;
         int b;
-        for (;;) {
+        for (; ; ) {
             if (ir - l < M) {
                 for (j = l + 1; j <= ir; j++) {
                     a = x[j];
@@ -385,7 +413,7 @@ public class ClusterUtils {
                 j = ir;
                 a = x[l + 1];
                 b = y[l + 1];
-                for (;;) {
+                for (; ; ) {
                     do {
                         i++;
                     } while (x[i] < a);
@@ -420,20 +448,23 @@ public class ClusterUtils {
             }
         }
     }
-    
+
     /**
      * Besides sorting the array x, the array y will be also
      * rearranged as the same order of x.
+     *
      * @param x the array to sort.
      * @param y the associate array.
      */
     public static void sort(double[] x, int[] y) {
         sort(x, y, x.length);
-    }    
+    }
+
     /**
      * Sorts the specified array into ascending numerical order.
-     * @return the original index of elements after sorting in range [0, n).
+     *
      * @param x the array to sort.
+     * @return the original index of elements after sorting in range [0, n).
      */
     public static int[] sort(double[] x) {
         int[] order = new int[x.length];
@@ -442,9 +473,11 @@ public class ClusterUtils {
         }
         sort(x, order);
         return order;
-    }    
+    }
+
     /**
      * Element-wise sum of two arrays y = x + y.
+     *
      * @param x a vector.
      * @param y avector.
      */
@@ -457,8 +490,10 @@ public class ClusterUtils {
             y[i] += x[i];
         }
     }
+
     /**
      * Element-wise subtraction of two arrays y = y - x.
+     *
      * @param y the minuend array.
      * @param x the subtrahend array.
      */
@@ -470,5 +505,5 @@ public class ClusterUtils {
         for (int i = 0; i < x.length; i++) {
             y[i] -= x[i];
         }
-    }    
+    }
 }

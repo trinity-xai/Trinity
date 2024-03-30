@@ -9,9 +9,9 @@ package edu.jhuapl.trinity.utils.clustering;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,46 +20,65 @@ package edu.jhuapl.trinity.utils.clustering;
  * #L%
  */
 
-import java.util.Arrays;
-import java.util.Random;
+import org.apache.commons.math3.linear.CholeskyDecomposition;
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
-import org.apache.commons.math3.linear.CholeskyDecomposition;
 import org.apache.commons.math3.special.Erf;
+
+import java.util.Arrays;
+import java.util.Random;
 
 /**
  * Gaussian distribution.
  */
-public class GaussianDistribution { 
+public class GaussianDistribution {
     public static Random rando = new Random();
 
     /* useful for centroid tracking */
     public double[] initialMean;
-    /** The mean vector. */
+    /**
+     * The mean vector.
+     */
     public final double[] mu;
-    /** The covariance matrix. */
+    /**
+     * The covariance matrix.
+     */
     public final RealMatrix sigma;
-    /** True if the covariance matrix is diagonal. */
+    /**
+     * True if the covariance matrix is diagonal.
+     */
     public final boolean diagonal;
 
-    /** The dimension. */
+    /**
+     * The dimension.
+     */
     private int dim;
-    /** The inverse of covariance matrix. */
+    /**
+     * The inverse of covariance matrix.
+     */
     private RealMatrix sigmaInv;
-    /** The Cholesky decomposition of covariance matrix. */
+    /**
+     * The Cholesky decomposition of covariance matrix.
+     */
     private RealMatrix sigmaL;
-    /** The determinant of covariance matrix. */
+    /**
+     * The determinant of covariance matrix.
+     */
     private double sigmaDet;
-    /** The constant factor in PDF. */
+    /**
+     * The constant factor in PDF.
+     */
     private double pdfConstant;
-    /** The number of parameters. */
+    /**
+     * The number of parameters.
+     */
     private final int length;
 
     /**
      * distribution with diagonal covariance matrix of
      * the same variance.
      *
-     * @param mean mean vector.
+     * @param mean     mean vector.
      * @param variance variance.
      */
     public GaussianDistribution(double[] mean, double variance) {
@@ -67,9 +86,9 @@ public class GaussianDistribution {
             throw new IllegalArgumentException("Variance is not positive: " + variance);
         }
         initialMean = new double[mean.length];
-        System.arraycopy(mean,0,initialMean,0,mean.length);
+        System.arraycopy(mean, 0, initialMean, 0, mean.length);
         mu = mean;
-        double [] diagonalVector = new double[mu.length];
+        double[] diagonalVector = new double[mu.length];
         sigma = MatrixUtils.createRealDiagonalMatrix(diagonalVector);
         diagonal = true;
         length = mu.length + 1;
@@ -81,7 +100,7 @@ public class GaussianDistribution {
      * distribution will have a diagonal covariance matrix.
      * Each element has different variance.
      *
-     * @param mean mean vector.
+     * @param mean     mean vector.
      * @param variance variance vector.
      */
     public GaussianDistribution(double[] mean, double[] variance) {
@@ -95,9 +114,9 @@ public class GaussianDistribution {
             }
         }
         initialMean = new double[mean.length];
-        System.arraycopy(mean,0,initialMean,0,mean.length);
+        System.arraycopy(mean, 0, initialMean, 0, mean.length);
         mu = mean;
-        sigma = MatrixUtils.createRealDiagonalMatrix(variance);        
+        sigma = MatrixUtils.createRealDiagonalMatrix(variance);
         diagonal = true;
         length = 2 * mu.length;
 
@@ -108,14 +127,14 @@ public class GaussianDistribution {
      * Full Covariance Distribution
      *
      * @param mean mean vector.
-     * @param cov covariance matrix.
+     * @param cov  covariance matrix.
      */
     public GaussianDistribution(double[] mean, RealMatrix cov) {
         if (mean.length != cov.getRowDimension()) {
             throw new IllegalArgumentException("Mean vector and covariance matrix have different dimension");
         }
         initialMean = new double[mean.length];
-        System.arraycopy(mean,0,initialMean,0,mean.length);
+        System.arraycopy(mean, 0, initialMean, 0, mean.length);
         mu = mean;
         sigma = cov;
         diagonal = false;
@@ -125,6 +144,7 @@ public class GaussianDistribution {
 
     /**
      * Estimates the mean and diagonal covariance by MLE.
+     *
      * @param data the training data.
      * @return the distribution.
      */
@@ -134,7 +154,8 @@ public class GaussianDistribution {
 
     /**
      * Estimates the mean and covariance by MLE.
-     * @param data the training data.
+     *
+     * @param data     the training data.
      * @param diagonal true if covariance matrix is diagonal.
      * @return the distribution.
      */
@@ -173,7 +194,7 @@ public class GaussianDistribution {
         sigmaL = cd.getL();
         pdfConstant = (dim * Math.log(2 * Math.PI) + Math.log(sigmaDet)) / 2.0;
     }
-    
+
     public int length() {
         return length;
     }
@@ -192,6 +213,7 @@ public class GaussianDistribution {
 
     /**
      * Returns the scatter of distribution, which is defined as |&Sigma;|.
+     *
      * @return the scatter of distribution.
      */
     public double scatter() {
@@ -208,7 +230,7 @@ public class GaussianDistribution {
 //        double result = sigmaInv.xAx(v) / -2.0;
 //        double[] Ax = mv(x);
         double[] Ax = sigmaInv.operate(v);
-        double result = ClusterUtils.dot(x, Ax) / -2.0;        
+        double result = ClusterUtils.dot(x, Ax) / -2.0;
         return result - pdfConstant;
     }
 
@@ -218,8 +240,9 @@ public class GaussianDistribution {
 
     /**
      * Multidimensional CDF calculation
+     *
      * @param x
-     * @return 
+     * @return
      */
     public double cdf(double[] x) {
         if (x.length != dim) {
@@ -250,7 +273,7 @@ public class GaussianDistribution {
         int N;
         for (N = 1; err > errMax && N <= Nmax; N++) {
             double[] w = rando.doubles(dim - 1).toArray();
-            
+
             for (int i = 1; i < dim; i++) {
 //                y[i - 1] = GaussianDistribution.getInstance().quantile(w[i - 1] * e[i - 1]);
                 y[i - 1] = singleDimQuantile(w[i - 1] * e[i - 1]);
@@ -272,24 +295,26 @@ public class GaussianDistribution {
 
         return p;
     }
+
     /**
      * A single dimensional quantile computation based on a mu and sigma of 0.0 and 1.0
      * The inverse of cdf.
+     *
      * @param p
-     * @return the quantile 
+     * @return the quantile
      */
     public double singleDimQuantile(double p) {
-        if (p < 0.0 )
+        if (p < 0.0)
             p = 0.0;
-        if(p > 1.0)
+        if (p > 1.0)
             p = 1.0;
 //        double localMu = 0.0;
 //        double localSigma = 1.0;
 //        double variance = sigma * sigma;
 
 //        double entropy = Math.log(sigma) + ClusterUtils.LOG2PIE_2;
-//        double pdfConstant = Math.log(sigma) + ClusterUtils.LOG2PI_2;        
-        
+//        double pdfConstant = Math.log(sigma) + ClusterUtils.LOG2PI_2;
+
 //        if (localSigma == 0.0) {
 //            if (p < 1.0) {
 //                return localMu - 1E-10;
@@ -301,17 +326,19 @@ public class GaussianDistribution {
         return -1.41421356237309505 * Erf.erfcInv(2.0 * p);
 
     }
+
     /**
-     * A single dimensional cdf computation 
+     * A single dimensional cdf computation
      * Assumes a mu and sigma of 0.0 and 1.0
      * The inverse of cdf.
+     *
      * @param x
-     * @return the cdf 
+     * @return the cdf
      */
-    
+
     public double singleDimCDF(double x) {
 //        double localMu = 0.0;
-//        double localSigma = 1.0;        
+//        double localSigma = 1.0;
 //        if (localSigma == 0) {
 //            if (x < localMu) {
 //                return 0.0;
@@ -321,10 +348,11 @@ public class GaussianDistribution {
 //        }
 //        return 0.5 * Erf.erfc(-0.707106781186547524 * (x - localMu) / localSigma);
         return 0.5 * Erf.erfc(-0.707106781186547524 * x);
-    }    
-    
+    }
+
     /**
      * random Gaussian sample.
+     *
      * @return a random sample.
      */
     public double[] randomGaussianVector() {
@@ -359,6 +387,7 @@ public class GaussianDistribution {
 
     /**
      * Generates a set of random numbers following this distribution.
+     *
      * @param n the number of random samples to generate.
      * @return a set of random samples.
      */
@@ -373,10 +402,10 @@ public class GaussianDistribution {
     /**
      * Maximization Phase of EM.
      *
-     * @param data observation data
+     * @param data       observation data
      * @param posteriori the posteriori probability.
      * @return the (unnormalized) weight of this distribution in the mixture.
-     */    
+     */
     public GaussianMixtureComponent maximization(double[][] data, double[] posteriori) {
         int n = data.length;
         int d = data[0].length;
@@ -424,7 +453,7 @@ public class GaussianDistribution {
 
             for (int i = 0; i < d; i++) {
                 for (int j = 0; j < d; j++) {
-                    double updatedEntry = cov.getEntry(i,j) / alpha;
+                    double updatedEntry = cov.getEntry(i, j) / alpha;
                     cov.setEntry(i, j, updatedEntry);
                 }
 
@@ -461,8 +490,8 @@ public class GaussianDistribution {
             L += logp(xi);
 
         return L;
-    }    
-    
+    }
+
     @Override
     public String toString() {
         return String.format("Gaussian(mu = %s, sigma = %s)", Arrays.toString(mu), sigma);

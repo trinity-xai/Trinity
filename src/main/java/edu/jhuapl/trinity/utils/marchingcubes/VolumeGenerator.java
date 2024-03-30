@@ -9,9 +9,9 @@ package edu.jhuapl.trinity.utils.marchingcubes;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -24,7 +24,7 @@ package edu.jhuapl.trinity.utils.marchingcubes;
  * Created by Primoz on 11. 07. 2016.
  */
 public class VolumeGenerator {
-    public static char[] generateScalarFieldChar(int []size) {
+    public static char[] generateScalarFieldChar(int[] size) {
         final char[] scalarField = new char[size[0] * size[1] * size[2]];
         float axisMin = -10;
         float axisMax = 10;
@@ -45,7 +45,7 @@ public class VolumeGenerator {
         return scalarField;
     }
 
-    public static short[] generateScalarFieldShort(int []size) {
+    public static short[] generateScalarFieldShort(int[] size) {
         final short[] scalarField = new short[size[0] * size[1] * size[2]];
         float axisMin = -10;
         float axisMax = 10;
@@ -66,7 +66,7 @@ public class VolumeGenerator {
         return scalarField;
     }
 
-    public static int[] generateScalarFieldInt(int []size) {
+    public static int[] generateScalarFieldInt(int[] size) {
         final int[] scalarField = new int[size[0] * size[1] * size[2]];
         float axisMin = -10;
         float axisMax = 10;
@@ -87,7 +87,7 @@ public class VolumeGenerator {
         return scalarField;
     }
 
-    public static float[] generateScalarFieldFloat(int []size) {
+    public static float[] generateScalarFieldFloat(int[] size) {
         final float[] scalarField = new float[size[0] * size[1] * size[2]];
         float axisMin = -10;
         float axisMax = 10;
@@ -108,7 +108,7 @@ public class VolumeGenerator {
         return scalarField;
     }
 
-    public static double[] generateScalarFieldDouble(int []size) {
+    public static double[] generateScalarFieldDouble(int[] size) {
         final double[] scalarField = new double[size[0] * size[1] * size[2]];
         double axisMin = -10;
         double axisMax = 10;

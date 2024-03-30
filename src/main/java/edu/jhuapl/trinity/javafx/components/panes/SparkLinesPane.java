@@ -9,9 +9,9 @@ package edu.jhuapl.trinity.javafx.components.panes;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -24,11 +24,10 @@ import javafx.scene.Scene;
 import javafx.scene.layout.Pane;
 
 /**
- *
  * @author phillsm1
  */
 public class SparkLinesPane extends LitPathPane {
-//    Scene scene;
+    //    Scene scene;
     public static String CONTROLLER = "/edu/jhuapl/trinity/fxml/SparkLines.fxml";
 
     public SparkLinesPane(Scene scene, Pane parent) {
@@ -61,11 +60,11 @@ public class SparkLinesPane extends LitPathPane {
 //        this.scene = scene;
 //        // must be set to prevent user from resizing too small.
 //        setMinWidth(300);
-//        setMinHeight(200);        
+//        setMinHeight(200);
 //        this.scene.getRoot().addEventHandler(CovalentPaneEvent.COVALENT_PANE_CLOSE, e -> {
 //            if(e.pathPane == this)
 //                parent.getChildren().remove(this);
-//        });        
+//        });
 //        this.addEventHandler(MouseEvent.MOUSE_PRESSED, e -> this.toFront());
 //    }
 }

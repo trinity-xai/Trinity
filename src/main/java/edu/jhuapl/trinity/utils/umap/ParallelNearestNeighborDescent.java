@@ -38,6 +38,7 @@ import java.util.concurrent.Future;
 /**
  * Nearest neighbor descent for a specified distance metric.
  * Nondeterministic parallel version.
+ *
  * @author Sean Phillips
  * @author Leland McInnes (Python)
  * @author Sean A. Irvine

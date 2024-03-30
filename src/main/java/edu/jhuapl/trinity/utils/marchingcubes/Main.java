@@ -9,9 +9,9 @@ package edu.jhuapl.trinity.utils.marchingcubes;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -24,21 +24,22 @@ import java.io.File;
 
 public class Main {
 
-    private static String usage = "This script may be executed in either benchmark or extract mode. Mode is specified by the first parameter [benchmark, extract].\nParameters: \n\t-input-vol\t Specifies path to the input volume. If this parameter is set volume dimensions(-vol-dim), data type(-data-type) and iso value(-iso) must also be given.\n\t-vol-dim\t Specifies the generated/read volume dimensions. Dimensions should be given as unsigned integers in format; -vol-dim X Y Z.\n\t-data-type\t Specifies the input file or generated data type. Options [char, uchar, short, ushort, int, uint, float, double].\n\t-vox-dim\t Specifies voxel dimensions used in mesh construction. Dimensions should be given as floating point numbers in format: -vox-dim X Y Z.\n\t-nThread\t Number of threads used in Marching cubes algorithm.This parameter can be either given as a single unsigned integer value or two unsigned integer values in benchmark mode, specifying the range of thread executions that will be tested.\n\t-iter\t\t Used only in benchmark mode to determine how many iterations should be executed for each configuration.\n\t-iso\t\t Isovalue that is used as a threshold for determining active voxels. Type should match the data type.\n\t-o\t\t Path to output file. In extract mode the mesh is written to file in .obj format [required]. In benchmark mode the results are written to file.\n";;
+    private static String usage = "This script may be executed in either benchmark or extract mode. Mode is specified by the first parameter [benchmark, extract].\nParameters: \n\t-input-vol\t Specifies path to the input volume. If this parameter is set volume dimensions(-vol-dim), data type(-data-type) and iso value(-iso) must also be given.\n\t-vol-dim\t Specifies the generated/read volume dimensions. Dimensions should be given as unsigned integers in format; -vol-dim X Y Z.\n\t-data-type\t Specifies the input file or generated data type. Options [char, uchar, short, ushort, int, uint, float, double].\n\t-vox-dim\t Specifies voxel dimensions used in mesh construction. Dimensions should be given as floating point numbers in format: -vox-dim X Y Z.\n\t-nThread\t Number of threads used in Marching cubes algorithm.This parameter can be either given as a single unsigned integer value or two unsigned integer values in benchmark mode, specifying the range of thread executions that will be tested.\n\t-iter\t\t Used only in benchmark mode to determine how many iterations should be executed for each configuration.\n\t-iso\t\t Isovalue that is used as a threshold for determining active voxels. Type should match the data type.\n\t-o\t\t Path to output file. In extract mode the mesh is written to file in .obj format [required]. In benchmark mode the results are written to file.\n";
+    ;
 
-    private static boolean isUint (String input) {
+    private static boolean isUint(String input) {
         try {
             return (Integer.parseInt(input) >= 0);
-        } catch (NumberFormatException  e) {
+        } catch (NumberFormatException e) {
             return false;
         }
     }
 
-    private static boolean isFloat (String input) {
+    private static boolean isFloat(String input) {
         try {
             Float.parseFloat(input);
             return true;
-        } catch (NumberFormatException  e) {
+        } catch (NumberFormatException e) {
             return false;
         }
     }
@@ -47,7 +48,7 @@ public class Main {
 
         // Benchmark or extract mode
         boolean benchmark = false;
-        
+
         if (args.length < 1) {
             System.out.println(usage);
 //            return;
@@ -55,14 +56,14 @@ public class Main {
             benchmark = true;
         } else if (args[0].equals("-help")) {
             System.out.println(usage);
-        } 
+        }
         // Read execution type
         else if (args[0].equals("benchmark")) {
             benchmark = true;
         } else if (!args[0].equals("extract")) {
             System.out.println("Invalid execution type. Valid options [extract, benchmark]");
             return;
-        }        
+        }
 
         // Default num of threads is max available
         int nThreadsMin = java.lang.Thread.activeCount();
@@ -80,7 +81,6 @@ public class Main {
         boolean customSizeSpecified = false;
         int[] size = {64, 64, 64};
         float[] voxSize = {1.0f, 1.0f, 1.0f};
-
 
 
         // Flag parsing
@@ -242,14 +242,22 @@ public class Main {
 
         if (benchmark) {
             switch (type) {
-                case "char" -> BenchmarkHandler.benchmarkChar(inputFile, outFile, size, voxSize, (char) ((isoValueStr != null) ? Integer.parseInt(isoValueStr) : 0.5), nThreadsMin, nThreadsMax, iterations);
-                case "uchar" -> BenchmarkHandler.benchmarkChar(inputFile, outFile, size, voxSize, (char) ((isoValueStr != null) ? Integer.parseInt(isoValueStr) : 0.5), nThreadsMin, nThreadsMax, iterations);
-                case "short" -> BenchmarkHandler.benchmarkShort(inputFile, outFile, size, voxSize, (short) ((isoValueStr != null) ? Integer.parseInt(isoValueStr) : 0.5), nThreadsMin, nThreadsMax, iterations);
-                case "ushort" -> BenchmarkHandler.benchmarkShort(inputFile, outFile, size, voxSize, (short) ((isoValueStr != null) ? Integer.parseInt(isoValueStr) : 0.5), nThreadsMin, nThreadsMax, iterations);
-                case "int" -> BenchmarkHandler.benchmarkInt(inputFile, outFile, size, voxSize, ((isoValueStr != null) ? Integer.parseInt(isoValueStr) : 0), nThreadsMin, nThreadsMax, iterations);
-                case "uint" -> BenchmarkHandler.benchmarkInt(inputFile, outFile, size, voxSize, ((isoValueStr != null) ? Integer.parseInt(isoValueStr) : 0), nThreadsMin, nThreadsMax, iterations);
-                case "float" -> BenchmarkHandler.benchmarkFloat(inputFile, outFile, size, voxSize, ((isoValueStr != null) ? Float.parseFloat(isoValueStr) : 0.5f), nThreadsMin, nThreadsMax, iterations);
-                case "double" -> BenchmarkHandler.benchmarkDouble(inputFile, outFile, size, voxSize, ((isoValueStr != null) ? Double.parseDouble(isoValueStr) : 0.5), nThreadsMin, nThreadsMax, iterations);
+                case "char" ->
+                    BenchmarkHandler.benchmarkChar(inputFile, outFile, size, voxSize, (char) ((isoValueStr != null) ? Integer.parseInt(isoValueStr) : 0.5), nThreadsMin, nThreadsMax, iterations);
+                case "uchar" ->
+                    BenchmarkHandler.benchmarkChar(inputFile, outFile, size, voxSize, (char) ((isoValueStr != null) ? Integer.parseInt(isoValueStr) : 0.5), nThreadsMin, nThreadsMax, iterations);
+                case "short" ->
+                    BenchmarkHandler.benchmarkShort(inputFile, outFile, size, voxSize, (short) ((isoValueStr != null) ? Integer.parseInt(isoValueStr) : 0.5), nThreadsMin, nThreadsMax, iterations);
+                case "ushort" ->
+                    BenchmarkHandler.benchmarkShort(inputFile, outFile, size, voxSize, (short) ((isoValueStr != null) ? Integer.parseInt(isoValueStr) : 0.5), nThreadsMin, nThreadsMax, iterations);
+                case "int" ->
+                    BenchmarkHandler.benchmarkInt(inputFile, outFile, size, voxSize, ((isoValueStr != null) ? Integer.parseInt(isoValueStr) : 0), nThreadsMin, nThreadsMax, iterations);
+                case "uint" ->
+                    BenchmarkHandler.benchmarkInt(inputFile, outFile, size, voxSize, ((isoValueStr != null) ? Integer.parseInt(isoValueStr) : 0), nThreadsMin, nThreadsMax, iterations);
+                case "float" ->
+                    BenchmarkHandler.benchmarkFloat(inputFile, outFile, size, voxSize, ((isoValueStr != null) ? Float.parseFloat(isoValueStr) : 0.5f), nThreadsMin, nThreadsMax, iterations);
+                case "double" ->
+                    BenchmarkHandler.benchmarkDouble(inputFile, outFile, size, voxSize, ((isoValueStr != null) ? Double.parseDouble(isoValueStr) : 0.5), nThreadsMin, nThreadsMax, iterations);
             }
         } else {
             if (outFile == null) {

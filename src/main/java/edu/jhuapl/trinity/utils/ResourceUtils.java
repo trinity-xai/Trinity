@@ -50,6 +50,8 @@ import edu.jhuapl.trinity.utils.loaders.FeatureCollectionLoader;
 import edu.jhuapl.trinity.utils.loaders.McclodSplitDataLoader;
 import edu.jhuapl.trinity.utils.loaders.TextEmbeddingsLoader;
 import edu.jhuapl.trinity.utils.loaders.ZeroPilotLatentsLoader;
+import javafx.application.Platform;
+import javafx.concurrent.Task;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
@@ -84,8 +86,6 @@ import java.util.jar.JarFile;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import javafx.application.Platform;
-import javafx.concurrent.Task;
 
 /**
  * @author Sean Phillips
@@ -228,6 +228,7 @@ public enum ResourceUtils {
         iv.setFitWidth(FIT_WIDTH);
         return iv;
     }
+
     /**
      * Checks whether the file can be used as audio.
      *
@@ -251,7 +252,7 @@ public enum ResourceUtils {
             }
         }
         return false;
-    }    
+    }
 
     public static boolean canDragOver(DragEvent event) {
         Dragboard db = event.getDragboard();
@@ -301,7 +302,7 @@ public enum ResourceUtils {
                                 Image image = new Image(file.toURI().toURL().toExternalForm());
                                 Platform.runLater(() -> scene.getRoot().fireEvent(
                                     new ImageEvent(ImageEvent.NEW_TEXTURE_SURFACE, image)));
-                            }else if (isAudioFile(file)) {
+                            } else if (isAudioFile(file)) {
                                 Platform.runLater(() -> scene.getRoot().fireEvent(
                                     new AudioEvent(AudioEvent.NEW_AUDIO_FILE, file)));
                             } else if (LabelConfigFile.isLabelConfigFile(file)) {
@@ -329,7 +330,7 @@ public enum ResourceUtils {
                                 FeatureCollectionLoader task = new FeatureCollectionLoader(scene, file);
                                 Thread thread = new Thread(task);
                                 thread.setDaemon(true);
-                                thread.start();        
+                                thread.start();
                             } else if (GaussianMixtureCollectionFile.isGaussianMixtureCollectionFile(file)) {
                                 GaussianMixtureCollectionFile gmcFile = new GaussianMixtureCollectionFile(file.getAbsolutePath(), true);
                                 Platform.runLater(() -> scene.getRoot().fireEvent(
@@ -375,7 +376,7 @@ public enum ResourceUtils {
                     }
                     return null;
                 }
-            };    
+            };
             Thread t = new Thread(task);
             t.setDaemon(true);
             t.start();

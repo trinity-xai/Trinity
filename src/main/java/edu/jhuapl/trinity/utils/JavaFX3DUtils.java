@@ -29,6 +29,7 @@ import javafx.animation.Interpolator;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
+import javafx.geometry.BoundingBox;
 import javafx.geometry.Point2D;
 import javafx.scene.AmbientLight;
 import javafx.scene.Camera;
@@ -45,12 +46,13 @@ import javafx.scene.image.WritableImage;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Mesh;
 import javafx.scene.shape.Shape3D;
+import javafx.scene.shape.Sphere;
 import javafx.scene.shape.TriangleMesh;
 import javafx.scene.text.Font;
+import javafx.scene.transform.Affine;
 import javafx.scene.transform.Rotate;
 import javafx.stage.FileChooser;
 import javafx.util.Duration;
-import javafx.scene.transform.Affine;
 import org.fxyz3d.geometry.Point3D;
 import org.fxyz3d.shapes.primitives.helper.MeshHelper;
 import org.fxyz3d.utils.CameraTransformer;
@@ -66,9 +68,6 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javafx.geometry.BoundingBox;
-import javafx.geometry.Bounds;
-import javafx.scene.shape.Sphere;
 
 /**
  * Utilities used by various 3D rendering code.
@@ -98,24 +97,29 @@ public enum JavaFX3DUtils {
         else if (p1.z > p2.z) return 1;
         else return 0;
     };
-    public static boolean matches(Point3D p1, Point3D p2, double tolerance){
-        return (p1.getX()-p2.getX() < tolerance)
-            && (p1.getY()-p2.getY() < tolerance) 
-            && (p1.getZ()-p2.getZ() < tolerance);
+
+    public static boolean matches(Point3D p1, Point3D p2, double tolerance) {
+        return (p1.getX() - p2.getX() < tolerance)
+            && (p1.getY() - p2.getY() < tolerance)
+            && (p1.getZ() - p2.getZ() < tolerance);
     }
-    public static boolean matches(javafx.geometry.Point3D p1, javafx.geometry.Point3D p2, double tolerance){
-        return (p1.getX()-p2.getX() < tolerance)
-            && (p1.getY()-p2.getY() < tolerance) 
-            && (p1.getZ()-p2.getZ() < tolerance);
+
+    public static boolean matches(javafx.geometry.Point3D p1, javafx.geometry.Point3D p2, double tolerance) {
+        return (p1.getX() - p2.getX() < tolerance)
+            && (p1.getY() - p2.getY() < tolerance)
+            && (p1.getZ() - p2.getZ() < tolerance);
     }
-    public static boolean matches(Point3D p1, Point3D p2){
-        return matches(p1,p2,EPSILON);
-    }
-    public static boolean matches(javafx.geometry.Point3D p1, javafx.geometry.Point3D p2){
+
+    public static boolean matches(Point3D p1, Point3D p2) {
         return matches(p1, p2, EPSILON);
     }
+
+    public static boolean matches(javafx.geometry.Point3D p1, javafx.geometry.Point3D p2) {
+        return matches(p1, p2, EPSILON);
+    }
+
     public static Function<Sphere, javafx.geometry.Point3D> mapShape3DToPoint3D = (s) -> {
-        return new javafx.geometry.Point3D(s.getTranslateX(), 
+        return new javafx.geometry.Point3D(s.getTranslateX(),
             s.getTranslateY(), s.getTranslateZ());
     };
 
@@ -123,32 +127,32 @@ public enum JavaFX3DUtils {
      * Assumes indices 0,1 and 2 map to X, Y and Z
      */
     public static Function<FeatureVector, javafx.geometry.Point3D> mapFeatureToPoint3D = (fv) -> {
-        return new javafx.geometry.Point3D(fv.getData().get(0), 
+        return new javafx.geometry.Point3D(fv.getData().get(0),
             fv.getData().get(1), fv.getData().get(2));
     };
-    
-    public static List<Integer> pickIndicesByBox(PerspectiveCamera camera, 
-        List<? extends Shape3D> shapes, Point2D upperLeft, Point2D lowerRight) {
-        
+
+    public static List<Integer> pickIndicesByBox(PerspectiveCamera camera,
+                                                 List<? extends Shape3D> shapes, Point2D upperLeft, Point2D lowerRight) {
+
         List<Integer> indices = new ArrayList<>();
         //reuse this point reference
         Shape3D shape3D;
         javafx.geometry.Point3D coordinates;
         boolean c;
         BoundingBox screenBox = new BoundingBox(
-            upperLeft.getX(), upperLeft.getY(), 
-            lowerRight.getX()-upperLeft.getX(), lowerRight.getY()-upperLeft.getY()
+            upperLeft.getX(), upperLeft.getY(),
+            lowerRight.getX() - upperLeft.getX(), lowerRight.getY() - upperLeft.getY()
         );
         int totalContains = 0;
-        for(int i=0;i<shapes.size();i++){
+        for (int i = 0; i < shapes.size(); i++) {
             shape3D = shapes.get(i);
-            coordinates = shape3D.localToScene(javafx.geometry.Point3D.ZERO, true);            
+            coordinates = shape3D.localToScene(javafx.geometry.Point3D.ZERO, true);
             c = screenBox.contains(coordinates);
-            if(c) {
+            if (c) {
                 totalContains++;
                 indices.add(i);
             }
-        }        
+        }
         System.out.println("screenBox contains " + totalContains + " shapes.");
         return indices;
     }
@@ -274,7 +278,7 @@ public enum JavaFX3DUtils {
     }
 
     public static List<Image> getTiles() throws URISyntaxException, IOException {
-        if(tiles == null || tiles.isEmpty()) {
+        if (tiles == null || tiles.isEmpty()) {
             tiles = new ArrayList<>();
             tiles.add(ResourceUtils.load3DTextureImage("1500_blackgrid"));
             File folder = new File("textures/tiles/");
@@ -286,7 +290,7 @@ public enum JavaFX3DUtils {
             for (File file : files) {
                 tiles.add(new Image(file.getAbsolutePath()));
             }
-        }            
+        }
         return tiles;
     }
 
@@ -338,29 +342,29 @@ public enum JavaFX3DUtils {
         javafx.geometry.Point3D ydir = Rotate.Y_AXIS;
         javafx.geometry.Point3D tangent0 = zVec.crossProduct(ydir);
         //handle edge case where to location is precisely the "up" direction
-        if(tangent0.magnitude() < 0.001){
+        if (tangent0.magnitude() < 0.001) {
             //pick a different axis to use
             ydir = Rotate.X_AXIS;
             tangent0 = zVec.crossProduct(ydir);
         }
         tangent0.normalize();
         ydir = zVec.crossProduct(tangent0);
-        
+
         javafx.geometry.Point3D xVec = ydir.normalize().crossProduct(zVec).normalize();
         javafx.geometry.Point3D yVec = zVec.crossProduct(xVec).normalize();
-        
+
         Affine affine = new Affine(
-                xVec.getX(), yVec.getX(), zVec.getX(), 0,
-                xVec.getY(), yVec.getY(), zVec.getY(), 0,
-                xVec.getZ(), yVec.getZ(), zVec.getZ(), 0);
-        if(applyTranslate){
+            xVec.getX(), yVec.getX(), zVec.getX(), 0,
+            xVec.getY(), yVec.getY(), zVec.getY(), 0,
+            xVec.getZ(), yVec.getZ(), zVec.getZ(), 0);
+        if (applyTranslate) {
             affine.setTx(from.getX());
             affine.setTy(from.getY());
             affine.setTz(from.getZ());
-        }        
+        }
         node.getTransforms().setAll(affine);
-        return  affine;
-    }          
+        return affine;
+    }
 
     public static void zoomTransition(double milliseconds, Camera camera, double distance) {
         Timeline timeline = new Timeline();

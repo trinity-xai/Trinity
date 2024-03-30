@@ -66,6 +66,7 @@ public abstract class Metric {
     public boolean isAngular() {
         return mIsAngular;
     }
+
     /**
      * Set optional Threshold.
      *
@@ -74,10 +75,11 @@ public abstract class Metric {
     public void setThreshold(double threshold) {
         mThreshold = threshold;
     }
+
     public double getThreshold() {
         return mThreshold;
     }
-    
+
     private static Map<String, Metric> sMETRICS = null;
 
     public static List<String> getMetricNames() {

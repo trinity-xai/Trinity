@@ -20,7 +20,7 @@ package edu.jhuapl.trinity.javafx.gleam;
  * #L%
  */
 
-import edu.jhuapl.trinity.javafx.starfield.*;
+import edu.jhuapl.trinity.javafx.starfield.Star;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Application;
@@ -146,8 +146,8 @@ public class Gleam extends Application {
 //      lines[i].draw();
 //    }
 //  }, 30)
-//};        
-//        
+//};
+//
     }
 
     public static void main(String[] args) {

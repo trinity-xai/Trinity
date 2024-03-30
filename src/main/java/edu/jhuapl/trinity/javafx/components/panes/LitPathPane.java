@@ -20,7 +20,6 @@ package edu.jhuapl.trinity.javafx.components.panes;
  * #L%
  */
 
-import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import javafx.animation.FadeTransition;
 import javafx.animation.KeyFrame;
@@ -55,16 +54,9 @@ import lit.litfx.controls.covalent.PathPane;
 import lit.litfx.controls.covalent.events.CovalentPaneEvent;
 
 import java.io.IOException;
-import java.net.URISyntaxException;
 import java.util.ArrayList;
-import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javafx.scene.effect.BlendMode;
-import javafx.scene.layout.BackgroundImage;
-import javafx.scene.layout.BackgroundPosition;
-import javafx.scene.layout.BackgroundRepeat;
-import javafx.scene.layout.BackgroundSize;
 
 /**
  * @author Sean Phillips
@@ -89,7 +81,7 @@ public class LitPathPane extends PathPane {
     private double currentGradientMillis = 465; //This number was picked by Josh
     private long lastInsideMillis = 0;
     public static long enteredWaitTimeMillis = 5000;
-    
+
     /**
      * Helper utility for loading a common FXML based Controller which assumes
      * an anchorpane node which is returned wrapped as a BorderPane
@@ -115,6 +107,7 @@ public class LitPathPane extends PathPane {
         }
         return sgRoot;
     }
+
     public void slideInPane() {
         //https://stackoverflow.com/questions/48893282/javafx-apply-perspective-transformation-on-a-node-given-a-perspective-transform?noredirect=1&lq=1
         PerspectiveTransform pt = new PerspectiveTransform();
@@ -179,23 +172,23 @@ public class LitPathPane extends PathPane {
         setMinHeight(200);
         setEffects();
         mainContentBorderFrame.widthProperty().addListener(cl -> {
-            if(!animating) {
-                contentPane.setPrefWidth(mainContentBorderFrame.getWidth()-100);
+            if (!animating) {
+                contentPane.setPrefWidth(mainContentBorderFrame.getWidth() - 100);
             }
         });
         mainContentBorderFrame.heightProperty().addListener(cl -> {
-            if(!animating) {
-                contentPane.setPrefHeight(mainContentBorderFrame.getHeight()-100);
+            if (!animating) {
+                contentPane.setPrefHeight(mainContentBorderFrame.getHeight() - 100);
             }
-        });            
-        
+        });
+
 //        int size;
 //        try {
 //            size = JavaFX3DUtils.getTiles().size();
 //            Random someRando = new Random();
 //            Background tileBackground = new Background(new BackgroundImage(
 //                JavaFX3DUtils.getTiles().get(someRando.nextInt(size)),
-//                    BackgroundRepeat.REPEAT, BackgroundRepeat.REPEAT, 
+//                    BackgroundRepeat.REPEAT, BackgroundRepeat.REPEAT,
 //                    BackgroundPosition.DEFAULT, BackgroundSize.DEFAULT
 //            ));
 //            mainContentBorderFrame.setBackground(tileBackground);

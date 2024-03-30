@@ -139,7 +139,7 @@ public class Hypersurface3DPane extends StackPane
     public static int DEFAULT_ZWIDTH = 200;
     public static int DEFAULT_SURFSCALE = 5;
     public static int DEFAULT_YSCALE = 5;
-    
+
     public PerspectiveCamera camera;
     public CameraTransformer cameraTransform = new CameraTransformer();
     public XFormGroup dataXForm = new XFormGroup();
@@ -582,7 +582,7 @@ public class Hypersurface3DPane extends StackPane
             zWidth = DEFAULT_ZWIDTH;
             xWidthSpinner.getValueFactory().setValue(xWidth);
             zWidthSpinner.getValueFactory().setValue(zWidth);
-            generateRandos(xWidth, zWidth, yScale);        
+            generateRandos(xWidth, zWidth, yScale);
             updateTheMesh();
             updateView(true);
         });
@@ -1042,7 +1042,7 @@ public class Hypersurface3DPane extends StackPane
             //update the local transform of the label.
             node.getTransforms().setAll(new Translate(x, y));
         });
-        int i=0;
+        int i = 0;
     }
 
     private ImageView loadImageView(FeatureVector featureVector, boolean bboxOnly) {
@@ -1631,7 +1631,7 @@ public class Hypersurface3DPane extends StackPane
     @Override
     public void addFeatureCollection(FeatureCollection featureCollection) {
         dataGrid.clear();
-        
+
         if (null == dataGrid) {
             dataGrid = new ArrayList<>(featureCollection.getFeatures().size());
         } else

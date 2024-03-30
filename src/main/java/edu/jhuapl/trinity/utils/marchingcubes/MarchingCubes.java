@@ -9,9 +9,9 @@ package edu.jhuapl.trinity.utils.marchingcubes;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -26,7 +26,7 @@ import java.util.ArrayList;
  * Created by Primoz on 11. 07. 2016.
  */
 public class MarchingCubes {
-    static float[] lerp(float[] vec1, float[] vec2, float alpha){
+    static float[] lerp(float[] vec1, float[] vec2, float alpha) {
         return new float[]{vec1[0] + (vec2[0] - vec1[0]) * alpha, vec1[1] + (vec2[1] - vec1[1]) * alpha, vec1[2] + (vec2[2] - vec1[2]) * alpha};
     }
 
@@ -64,26 +64,26 @@ public class MarchingCubes {
                     //             p                     px
 
                     int p = x + (volDim[0] * y) + (volDim[0] * volDim[1] * (z + offset)),
-                            px = p + 1,
-                            py = p + volDim[0],
-                            pxy = py + 1,
-                            pz = p + volDim[0] * volDim[1],
-                            pxz = px + volDim[0] * volDim[1],
-                            pyz = py + volDim[0] * volDim[1],
-                            pxyz = pxy + volDim[0] * volDim[1];
+                        px = p + 1,
+                        py = p + volDim[0],
+                        pxy = py + 1,
+                        pz = p + volDim[0] * volDim[1],
+                        pxz = px + volDim[0] * volDim[1],
+                        pyz = py + volDim[0] * volDim[1],
+                        pxyz = pxy + volDim[0] * volDim[1];
 
                     //							  X              Y                    Z
                     float position[] = new float[]{x * voxDim[0], y * voxDim[1], (z + offset) * voxDim[2]};
 
                     // Voxel intensities
                     char value0 = values[p],
-                            value1 = values[px],
-                            value2 = values[py],
-                            value3 = values[pxy],
-                            value4 = values[pz],
-                            value5 = values[pxz],
-                            value6 = values[pyz],
-                            value7 = values[pxyz];
+                        value1 = values[px],
+                        value2 = values[py],
+                        value3 = values[pxy],
+                        value4 = values[pz],
+                        value5 = values[pxz],
+                        value6 = values[pyz],
+                        value7 = values[pxyz];
 
                     // Voxel is active if its intensity is above isolevel
                     int cubeindex = 0;
@@ -150,7 +150,7 @@ public class MarchingCubes {
                     }
                     if ((bits & 1024) != 0) {
                         mu = (isoLevel - value3) / (value7 - value3);
-                        vertList[10] = lerp(new float[]{position[0] + voxDim[0], position[1] + voxDim[1], position[2]}, new float[]{position[0] + voxDim[0], position[1]+ voxDim[1], position[2] + voxDim[2]}, mu);
+                        vertList[10] = lerp(new float[]{position[0] + voxDim[0], position[1] + voxDim[1], position[2]}, new float[]{position[0] + voxDim[0], position[1] + voxDim[1], position[2] + voxDim[2]}, mu);
                     }
                     if ((bits & 2048) != 0) {
                         mu = (isoLevel - value2) / (value6 - value2);
@@ -168,9 +168,9 @@ public class MarchingCubes {
                         int index3 = TablesMC.MC_TRI_TABLE[cubeindex + i + 2];
 
                         // Add triangles vertices normalized with the maximal possible value
-                        vertices.add(new float[] {vertList[index3][0] / maxAxisVal - 0.5f, vertList[index3][1] / maxAxisVal - 0.5f, vertList[index3][2] / maxAxisVal - 0.5f});
-                        vertices.add(new float[] {vertList[index2][0] / maxAxisVal - 0.5f, vertList[index2][1] / maxAxisVal - 0.5f, vertList[index2][2] / maxAxisVal - 0.5f});
-                        vertices.add(new float[] {vertList[index1][0] / maxAxisVal - 0.5f, vertList[index1][1] / maxAxisVal - 0.5f, vertList[index1][2] / maxAxisVal - 0.5f});
+                        vertices.add(new float[]{vertList[index3][0] / maxAxisVal - 0.5f, vertList[index3][1] / maxAxisVal - 0.5f, vertList[index3][2] / maxAxisVal - 0.5f});
+                        vertices.add(new float[]{vertList[index2][0] / maxAxisVal - 0.5f, vertList[index2][1] / maxAxisVal - 0.5f, vertList[index2][2] / maxAxisVal - 0.5f});
+                        vertices.add(new float[]{vertList[index1][0] / maxAxisVal - 0.5f, vertList[index1][1] / maxAxisVal - 0.5f, vertList[index1][2] / maxAxisVal - 0.5f});
 
                         i += 3;
                     }
@@ -216,26 +216,26 @@ public class MarchingCubes {
                     //             p                     px
 
                     int p = x + (volDim[0] * y) + (volDim[0] * volDim[1] * (z + offset)),
-                            px = p + 1,
-                            py = p + volDim[0],
-                            pxy = py + 1,
-                            pz = p + volDim[0] * volDim[1],
-                            pxz = px + volDim[0] * volDim[1],
-                            pyz = py + volDim[0] * volDim[1],
-                            pxyz = pxy + volDim[0] * volDim[1];
+                        px = p + 1,
+                        py = p + volDim[0],
+                        pxy = py + 1,
+                        pz = p + volDim[0] * volDim[1],
+                        pxz = px + volDim[0] * volDim[1],
+                        pyz = py + volDim[0] * volDim[1],
+                        pxyz = pxy + volDim[0] * volDim[1];
 
                     //							  X              Y                    Z
                     float position[] = new float[]{x * voxDim[0], y * voxDim[1], (z + offset) * voxDim[2]};
 
                     // Voxel intensities
                     short value0 = values[p],
-                            value1 = values[px],
-                            value2 = values[py],
-                            value3 = values[pxy],
-                            value4 = values[pz],
-                            value5 = values[pxz],
-                            value6 = values[pyz],
-                            value7 = values[pxyz];
+                        value1 = values[px],
+                        value2 = values[py],
+                        value3 = values[pxy],
+                        value4 = values[pz],
+                        value5 = values[pxz],
+                        value6 = values[pyz],
+                        value7 = values[pxyz];
 
                     // Voxel is active if its intensity is above isolevel
                     int cubeindex = 0;
@@ -302,7 +302,7 @@ public class MarchingCubes {
                     }
                     if ((bits & 1024) != 0) {
                         mu = (isoLevel - value3) / (value7 - value3);
-                        vertList[10] = lerp(new float[]{position[0] + voxDim[0], position[1] + voxDim[1], position[2]}, new float[]{position[0] + voxDim[0], position[1]+ voxDim[1], position[2] + voxDim[2]}, mu);
+                        vertList[10] = lerp(new float[]{position[0] + voxDim[0], position[1] + voxDim[1], position[2]}, new float[]{position[0] + voxDim[0], position[1] + voxDim[1], position[2] + voxDim[2]}, mu);
                     }
                     if ((bits & 2048) != 0) {
                         mu = (isoLevel - value2) / (value6 - value2);
@@ -320,9 +320,9 @@ public class MarchingCubes {
                         int index3 = TablesMC.MC_TRI_TABLE[cubeindex + i + 2];
 
                         // Add triangles vertices normalized with the maximal possible value
-                        vertices.add(new float[] {vertList[index3][0] / maxAxisVal - 0.5f, vertList[index3][1] / maxAxisVal - 0.5f, vertList[index3][2] / maxAxisVal - 0.5f});
-                        vertices.add(new float[] {vertList[index2][0] / maxAxisVal - 0.5f, vertList[index2][1] / maxAxisVal - 0.5f, vertList[index2][2] / maxAxisVal - 0.5f});
-                        vertices.add(new float[] {vertList[index1][0] / maxAxisVal - 0.5f, vertList[index1][1] / maxAxisVal - 0.5f, vertList[index1][2] / maxAxisVal - 0.5f});
+                        vertices.add(new float[]{vertList[index3][0] / maxAxisVal - 0.5f, vertList[index3][1] / maxAxisVal - 0.5f, vertList[index3][2] / maxAxisVal - 0.5f});
+                        vertices.add(new float[]{vertList[index2][0] / maxAxisVal - 0.5f, vertList[index2][1] / maxAxisVal - 0.5f, vertList[index2][2] / maxAxisVal - 0.5f});
+                        vertices.add(new float[]{vertList[index1][0] / maxAxisVal - 0.5f, vertList[index1][1] / maxAxisVal - 0.5f, vertList[index1][2] / maxAxisVal - 0.5f});
 
                         i += 3;
                     }
@@ -368,26 +368,26 @@ public class MarchingCubes {
                     //             p                     px
 
                     int p = x + (volDim[0] * y) + (volDim[0] * volDim[1] * (z + offset)),
-                            px = p + 1,
-                            py = p + volDim[0],
-                            pxy = py + 1,
-                            pz = p + volDim[0] * volDim[1],
-                            pxz = px + volDim[0] * volDim[1],
-                            pyz = py + volDim[0] * volDim[1],
-                            pxyz = pxy + volDim[0] * volDim[1];
+                        px = p + 1,
+                        py = p + volDim[0],
+                        pxy = py + 1,
+                        pz = p + volDim[0] * volDim[1],
+                        pxz = px + volDim[0] * volDim[1],
+                        pyz = py + volDim[0] * volDim[1],
+                        pxyz = pxy + volDim[0] * volDim[1];
 
                     //							  X              Y                    Z
                     float position[] = new float[]{x * voxDim[0], y * voxDim[1], (z + offset) * voxDim[2]};
 
                     // Voxel intensities
                     int value0 = values[p],
-                            value1 = values[px],
-                            value2 = values[py],
-                            value3 = values[pxy],
-                            value4 = values[pz],
-                            value5 = values[pxz],
-                            value6 = values[pyz],
-                            value7 = values[pxyz];
+                        value1 = values[px],
+                        value2 = values[py],
+                        value3 = values[pxy],
+                        value4 = values[pz],
+                        value5 = values[pxz],
+                        value6 = values[pyz],
+                        value7 = values[pxyz];
 
                     // Voxel is active if its intensity is above isolevel
                     int cubeindex = 0;
@@ -454,7 +454,7 @@ public class MarchingCubes {
                     }
                     if ((bits & 1024) != 0) {
                         mu = (isoLevel - value3) / (value7 - value3);
-                        vertList[10] = lerp(new float[]{position[0] + voxDim[0], position[1] + voxDim[1], position[2]}, new float[]{position[0] + voxDim[0], position[1]+ voxDim[1], position[2] + voxDim[2]}, mu);
+                        vertList[10] = lerp(new float[]{position[0] + voxDim[0], position[1] + voxDim[1], position[2]}, new float[]{position[0] + voxDim[0], position[1] + voxDim[1], position[2] + voxDim[2]}, mu);
                     }
                     if ((bits & 2048) != 0) {
                         mu = (isoLevel - value2) / (value6 - value2);
@@ -472,9 +472,9 @@ public class MarchingCubes {
                         int index3 = TablesMC.MC_TRI_TABLE[cubeindex + i + 2];
 
                         // Add triangles vertices normalized with the maximal possible value
-                        vertices.add(new float[] {vertList[index3][0] / maxAxisVal - 0.5f, vertList[index3][1] / maxAxisVal - 0.5f, vertList[index3][2] / maxAxisVal - 0.5f});
-                        vertices.add(new float[] {vertList[index2][0] / maxAxisVal - 0.5f, vertList[index2][1] / maxAxisVal - 0.5f, vertList[index2][2] / maxAxisVal - 0.5f});
-                        vertices.add(new float[] {vertList[index1][0] / maxAxisVal - 0.5f, vertList[index1][1] / maxAxisVal - 0.5f, vertList[index1][2] / maxAxisVal - 0.5f});
+                        vertices.add(new float[]{vertList[index3][0] / maxAxisVal - 0.5f, vertList[index3][1] / maxAxisVal - 0.5f, vertList[index3][2] / maxAxisVal - 0.5f});
+                        vertices.add(new float[]{vertList[index2][0] / maxAxisVal - 0.5f, vertList[index2][1] / maxAxisVal - 0.5f, vertList[index2][2] / maxAxisVal - 0.5f});
+                        vertices.add(new float[]{vertList[index1][0] / maxAxisVal - 0.5f, vertList[index1][1] / maxAxisVal - 0.5f, vertList[index1][2] / maxAxisVal - 0.5f});
 
                         i += 3;
                     }
@@ -520,26 +520,26 @@ public class MarchingCubes {
                     //             p                     px
 
                     int p = x + (volDim[0] * y) + (volDim[0] * volDim[1] * (z + offset)),
-                            px = p + 1,
-                            py = p + volDim[0],
-                            pxy = py + 1,
-                            pz = p + volDim[0] * volDim[1],
-                            pxz = px + volDim[0] * volDim[1],
-                            pyz = py + volDim[0] * volDim[1],
-                            pxyz = pxy + volDim[0] * volDim[1];
+                        px = p + 1,
+                        py = p + volDim[0],
+                        pxy = py + 1,
+                        pz = p + volDim[0] * volDim[1],
+                        pxz = px + volDim[0] * volDim[1],
+                        pyz = py + volDim[0] * volDim[1],
+                        pxyz = pxy + volDim[0] * volDim[1];
 
                     //							  X              Y                    Z
                     float position[] = new float[]{x * voxDim[0], y * voxDim[1], (z + offset) * voxDim[2]};
 
                     // Voxel intensities
                     float value0 = values[p],
-                            value1 = values[px],
-                            value2 = values[py],
-                            value3 = values[pxy],
-                            value4 = values[pz],
-                            value5 = values[pxz],
-                            value6 = values[pyz],
-                            value7 = values[pxyz];
+                        value1 = values[px],
+                        value2 = values[py],
+                        value3 = values[pxy],
+                        value4 = values[pz],
+                        value5 = values[pxz],
+                        value6 = values[pyz],
+                        value7 = values[pxyz];
 
                     // Voxel is active if its intensity is above isolevel
                     int cubeindex = 0;
@@ -606,7 +606,7 @@ public class MarchingCubes {
                     }
                     if ((bits & 1024) != 0) {
                         mu = (float) ((isoLevel - value3) / (value7 - value3));
-                        vertList[10] = lerp(new float[]{position[0] + voxDim[0], position[1] + voxDim[1], position[2]}, new float[]{position[0] + voxDim[0], position[1]+ voxDim[1], position[2] + voxDim[2]}, mu);
+                        vertList[10] = lerp(new float[]{position[0] + voxDim[0], position[1] + voxDim[1], position[2]}, new float[]{position[0] + voxDim[0], position[1] + voxDim[1], position[2] + voxDim[2]}, mu);
                     }
                     if ((bits & 2048) != 0) {
                         mu = (float) ((isoLevel - value2) / (value6 - value2));
@@ -624,9 +624,9 @@ public class MarchingCubes {
                         int index3 = TablesMC.MC_TRI_TABLE[cubeindex + i + 2];
 
                         // Add triangles vertices normalized with the maximal possible value
-                        vertices.add(new float[] {vertList[index3][0] / maxAxisVal - 0.5f, vertList[index3][1] / maxAxisVal - 0.5f, vertList[index3][2] / maxAxisVal - 0.5f});
-                        vertices.add(new float[] {vertList[index2][0] / maxAxisVal - 0.5f, vertList[index2][1] / maxAxisVal - 0.5f, vertList[index2][2] / maxAxisVal - 0.5f});
-                        vertices.add(new float[] {vertList[index1][0] / maxAxisVal - 0.5f, vertList[index1][1] / maxAxisVal - 0.5f, vertList[index1][2] / maxAxisVal - 0.5f});
+                        vertices.add(new float[]{vertList[index3][0] / maxAxisVal - 0.5f, vertList[index3][1] / maxAxisVal - 0.5f, vertList[index3][2] / maxAxisVal - 0.5f});
+                        vertices.add(new float[]{vertList[index2][0] / maxAxisVal - 0.5f, vertList[index2][1] / maxAxisVal - 0.5f, vertList[index2][2] / maxAxisVal - 0.5f});
+                        vertices.add(new float[]{vertList[index1][0] / maxAxisVal - 0.5f, vertList[index1][1] / maxAxisVal - 0.5f, vertList[index1][2] / maxAxisVal - 0.5f});
 
                         i += 3;
                     }
@@ -672,26 +672,26 @@ public class MarchingCubes {
                     //             p                     px
 
                     int p = x + (volDim[0] * y) + (volDim[0] * volDim[1] * (z + offset)),
-                            px = p + 1,
-                            py = p + volDim[0],
-                            pxy = py + 1,
-                            pz = p + volDim[0] * volDim[1],
-                            pxz = px + volDim[0] * volDim[1],
-                            pyz = py + volDim[0] * volDim[1],
-                            pxyz = pxy + volDim[0] * volDim[1];
+                        px = p + 1,
+                        py = p + volDim[0],
+                        pxy = py + 1,
+                        pz = p + volDim[0] * volDim[1],
+                        pxz = px + volDim[0] * volDim[1],
+                        pyz = py + volDim[0] * volDim[1],
+                        pxyz = pxy + volDim[0] * volDim[1];
 
                     //							  X              Y                    Z
                     float position[] = new float[]{x * voxDim[0], y * voxDim[1], (z + offset) * voxDim[2]};
 
                     // Voxel intensities
                     double value0 = values[p],
-                            value1 = values[px],
-                            value2 = values[py],
-                            value3 = values[pxy],
-                            value4 = values[pz],
-                            value5 = values[pxz],
-                            value6 = values[pyz],
-                            value7 = values[pxyz];
+                        value1 = values[px],
+                        value2 = values[py],
+                        value3 = values[pxy],
+                        value4 = values[pz],
+                        value5 = values[pxz],
+                        value6 = values[pyz],
+                        value7 = values[pxyz];
 
                     // Voxel is active if its intensity is above isolevel
                     int cubeindex = 0;
@@ -758,7 +758,7 @@ public class MarchingCubes {
                     }
                     if ((bits & 1024) != 0) {
                         mu = (float) ((isoLevel - value3) / (value7 - value3));
-                        vertList[10] = lerp(new float[]{position[0] + voxDim[0], position[1] + voxDim[1], position[2]}, new float[]{position[0] + voxDim[0], position[1]+ voxDim[1], position[2] + voxDim[2]}, mu);
+                        vertList[10] = lerp(new float[]{position[0] + voxDim[0], position[1] + voxDim[1], position[2]}, new float[]{position[0] + voxDim[0], position[1] + voxDim[1], position[2] + voxDim[2]}, mu);
                     }
                     if ((bits & 2048) != 0) {
                         mu = (float) ((isoLevel - value2) / (value6 - value2));
@@ -776,9 +776,9 @@ public class MarchingCubes {
                         int index3 = TablesMC.MC_TRI_TABLE[cubeindex + i + 2];
 
                         // Add triangles vertices normalized with the maximal possible value
-                        vertices.add(new float[] {vertList[index3][0] / maxAxisVal - 0.5f, vertList[index3][1] / maxAxisVal - 0.5f, vertList[index3][2] / maxAxisVal - 0.5f});
-                        vertices.add(new float[] {vertList[index2][0] / maxAxisVal - 0.5f, vertList[index2][1] / maxAxisVal - 0.5f, vertList[index2][2] / maxAxisVal - 0.5f});
-                        vertices.add(new float[] {vertList[index1][0] / maxAxisVal - 0.5f, vertList[index1][1] / maxAxisVal - 0.5f, vertList[index1][2] / maxAxisVal - 0.5f});
+                        vertices.add(new float[]{vertList[index3][0] / maxAxisVal - 0.5f, vertList[index3][1] / maxAxisVal - 0.5f, vertList[index3][2] / maxAxisVal - 0.5f});
+                        vertices.add(new float[]{vertList[index2][0] / maxAxisVal - 0.5f, vertList[index2][1] / maxAxisVal - 0.5f, vertList[index2][2] / maxAxisVal - 0.5f});
+                        vertices.add(new float[]{vertList[index1][0] / maxAxisVal - 0.5f, vertList[index1][1] / maxAxisVal - 0.5f, vertList[index1][2] / maxAxisVal - 0.5f});
 
                         i += 3;
                     }

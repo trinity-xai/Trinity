@@ -9,9 +9,9 @@ package edu.jhuapl.trinity.utils.clustering;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -23,23 +23,22 @@ package edu.jhuapl.trinity.utils.clustering;
 import java.util.Random;
 
 /**
- *
  * @author phillsm1
  */
 public enum KmeansPlusPlus {
     INSTANCE;
+
     /**
-     * 
-     * @param k number of clusters
+     * @param k    number of clusters
      * @param data observation samples
      * @return array of Points, each one a centroid, ordered from 0 to k
      */
     public static Point[] kmeansPlusPlus(int k, double[][] data) {
         Random rando = new Random();
         int dimensions = data.length;
-        int sampleCount = data[0].length;        
+        int sampleCount = data[0].length;
 //        double[] currentCentroid = data[rando.nextInt(dimensions)];
-        Point [] centroids = new Point[k];
+        Point[] centroids = new Point[k];
         //the kmeans++ algorithm to find the  centers.
         double[] currentDistance = new double[dimensions];
         for (int i = 0; i < dimensions; i++) {
@@ -53,8 +52,8 @@ public enum KmeansPlusPlus {
             int currentIteration = 0;
             double previousCost = 0.0;
             double costThreshold = 1e-8;
-            while(currentIteration < maxIterations) {
-                // Loop over the samples and compare them to the most recent center.  
+            while (currentIteration < maxIterations) {
+                // Loop over the samples and compare them to the most recent center.
                 // store the distance from each sample to its closest center in scores.
                 for (int j = 0; j < dimensions; j++) {
                     // compute the distance between this sample and the current center
@@ -73,9 +72,9 @@ public enum KmeansPlusPlus {
                     break;
                 }
                 //current costs across dimensions are less than previous cutoff.
-                //Assign the new centroid 
+                //Assign the new centroid
                 for (int j = 0; j < dimensions; j++) {
-                    currentCentroid[j] = currentCentroid[j] + currentDistance[j]/2.0;
+                    currentCentroid[j] = currentCentroid[j] + currentDistance[j] / 2.0;
                 }
                 currentIteration++;
             }

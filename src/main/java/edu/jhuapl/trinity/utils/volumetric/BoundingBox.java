@@ -9,9 +9,9 @@ package edu.jhuapl.trinity.utils.volumetric;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,8 +20,9 @@ package edu.jhuapl.trinity.utils.volumetric;
  * #L%
  */
 
-import java.util.Collection;
 import javafx.geometry.Point3D;
+
+import java.util.Collection;
 
 /**
  * The AABoundingBox of 3d model.
@@ -56,6 +57,7 @@ public class BoundingBox extends Box {
 
     /**
      * construct an empty bounding box
+     *
      * @return return an bounding box whose size is zero
      */
     private static BoundingBox empty() {
@@ -64,6 +66,7 @@ public class BoundingBox extends Box {
 
     /**
      * Obtain the bounding box of a collection of 3d points.
+     *
      * @param data the collection of 3d points, Not null.
      *             - if this collection has no points, return a box whose size is zero.
      *             - if this collection has NaN points, the NaN points are ignored.
@@ -72,12 +75,12 @@ public class BoundingBox extends Box {
      */
     public static BoundingBox of(Collection<Point3D> data) {
         if (data.size() < 1) return empty();
-        double minX =  Double.POSITIVE_INFINITY;
-        double maxX =  Double.NEGATIVE_INFINITY;
-        double minY =  Double.POSITIVE_INFINITY;
-        double maxY =  Double.NEGATIVE_INFINITY;
-        double minZ =  Double.POSITIVE_INFINITY;
-        double maxZ =  Double.NEGATIVE_INFINITY;
+        double minX = Double.POSITIVE_INFINITY;
+        double maxX = Double.NEGATIVE_INFINITY;
+        double minY = Double.POSITIVE_INFINITY;
+        double maxY = Double.NEGATIVE_INFINITY;
+        double minZ = Double.POSITIVE_INFINITY;
+        double maxZ = Double.NEGATIVE_INFINITY;
         for (Point3D p : data) {
             if (!VolumeUtils.validPoint(p)) continue;
             minX = Math.min(minX, p.getX());
@@ -93,6 +96,7 @@ public class BoundingBox extends Box {
 
     /**
      * get the length of the diagonal line of the bounding box
+     *
      * @return the length of diagonal
      */
     public double diagonalLength() {

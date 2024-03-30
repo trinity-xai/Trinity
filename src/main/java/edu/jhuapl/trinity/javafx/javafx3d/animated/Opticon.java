@@ -24,13 +24,14 @@ import edu.jhuapl.trinity.javafx.components.Crosshair;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.RetroWavePane;
 import edu.jhuapl.trinity.utils.DataUtils;
-import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
+import javafx.animation.AnimationTimer;
 import javafx.animation.Interpolator;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
 import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.geometry.Point3D;
 import javafx.scene.Group;
@@ -56,9 +57,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 
 import static javafx.animation.Animation.INDEFINITE;
-import javafx.animation.AnimationTimer;
-import javafx.beans.property.SimpleBooleanProperty;
-import javafx.concurrent.Task;
 
 /**
  * @author Sean Phillips
@@ -121,7 +119,7 @@ public class Opticon extends Group {
     private double totalSceneHeight = 1000;
     private double totalSceneDepth = 1000;
     private double scannerBaseRadius = 20;
-    
+
     public Opticon(Color lightColor, double scannerBaseRadius) {
         this.scannerBaseRadius = scannerBaseRadius;
         pointer = new Box(1, 1, scannerBaseRadius);
@@ -236,7 +234,7 @@ public class Opticon extends Group {
             long prevTime = 0;
             long NANOS_IN_SECOND = 1_000_000_000;
             Random rando = new Random();
-            
+
             @Override
             public void handle(long now) {
                 //wake up and change position time
@@ -246,32 +244,33 @@ public class Opticon extends Group {
                     return;
                 }
                 prevTime = now;
-                if(!orbitingProperty.get())
+                if (!orbitingProperty.get())
                     return;
-                
+
                 double yTranslate = -getTotalSceneWidth() -
-                        rando.nextDouble() * 200;
-                double xTranslate = DataUtils.randomSign() * 
+                    rando.nextDouble() * 200;
+                double xTranslate = DataUtils.randomSign() *
                     rando.nextDouble() * getTotalSceneWidth();
-                double zTranslate = DataUtils.randomSign() * 
+                double zTranslate = DataUtils.randomSign() *
                     rando.nextDouble() * getTotalSceneDepth();
-                
+
                 Point3D shiftedP3D = new Point3D(
                     xTranslate, yTranslate, zTranslate);
 
                 mainBody.setAnimateOnHover(true);
-//                updateScannerSize(getScannerBaseRadius() + 
+//                updateScannerSize(getScannerBaseRadius() +
 //                    rando.nextDouble() * 200);
                 //make sure the duration is less than the wakeup time above
                 search(shiftedP3D, Duration.seconds(5));
             }
         };
     }
+
     public void fireData(Point3D destination, double seconds, Color dataColor) {
         Point3D sceneToLocalPoint = this.sceneToLocal(destination);
         Sphere dataSphere = new Sphere(10);
         dataSphere.setMaterial(new PhongMaterial(dataColor));
-        
+
         Timeline timeline = new Timeline();
         timeline.getKeyFrames().addAll(new KeyFrame[]{
             new KeyFrame(Duration.seconds(seconds), new KeyValue[]{// Frame End
@@ -284,14 +283,16 @@ public class Opticon extends Group {
             getChildren().remove(dataSphere);
         });
         getChildren().add(dataSphere);
-        timeline.playFromStart();        
+        timeline.playFromStart();
     }
+
     public void updateScannerSize(double radius) {
         scannerConeMesh.setHeight(2 * getScannerBaseRadius());
         scannerConeMesh.setRadius(5 * getScannerBaseRadius());
     }
+
     public void enableOrbiting(boolean enabled) {
-        if(enabled)
+        if (enabled)
             orbitAnimationTimer.start();
         else
             orbitAnimationTimer.stop();
@@ -349,10 +350,10 @@ public class Opticon extends Group {
         setScanning(true);
         final Point3D currentP3D = new Point3D(getTranslateX(), getTranslateY(), getTranslateZ());
         final double originalRadius = scannerConeMesh.radiusProperty().get();
-        //@TODO SMP need a way to animate the lookAt so the rotation isn't jarring 
+        //@TODO SMP need a way to animate the lookAt so the rotation isn't jarring
         //@TODO SMP also need to have the option to flatten one of the planes of rotation
-        //JavaFX3DUtils.lookAt(this, currentP3D, searchLocation, false);          
-        
+        //JavaFX3DUtils.lookAt(this, currentP3D, searchLocation, false);
+
         if (null != scanTimeline) {
             scanTimeline.stop();
         }
@@ -481,10 +482,10 @@ public class Opticon extends Group {
     public void search(Point3D searchLocation, Duration searchDuration) {
         this.searchLocation = searchLocation;
         Point3D currentP3D = new Point3D(getTranslateX(), getTranslateY(), getTranslateZ());
-        //@TODO SMP need a way to animate the lookAt so the rotation isn't jarring 
+        //@TODO SMP need a way to animate the lookAt so the rotation isn't jarring
         //@TODO SMP also need to have the option to flatten one of the planes of rotation
-        //JavaFX3DUtils.lookAt(this, currentP3D, searchLocation, false);         
-        
+        //JavaFX3DUtils.lookAt(this, currentP3D, searchLocation, false);
+
         if (null != searchTimeline) {
             searchTimeline.stop();
         }

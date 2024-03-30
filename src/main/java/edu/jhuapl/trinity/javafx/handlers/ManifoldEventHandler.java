@@ -44,6 +44,7 @@ import javafx.scene.shape.DrawMode;
 import javafx.scene.shape.Sphere;
 import javafx.scene.text.Font;
 import javafx.scene.transform.Rotate;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -373,7 +374,7 @@ public class ManifoldEventHandler implements EventHandler<ManifoldEvent> {
             String label = (String) event.object2;
             Double tolerance = null;
             //the following is so hacky but I'm not getting paid sooooo...
-            if(null != event.object3)
+            if (null != event.object3)
                 tolerance = (Double) event.object3;
             for (ManifoldRenderer renderer : manifoldRenderers) {
                 renderer.makeManifold(useVisiblePoints, label, tolerance);

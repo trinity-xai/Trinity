@@ -9,9 +9,9 @@ package edu.jhuapl.trinity.utils.marchingcubes;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,7 +20,11 @@ package edu.jhuapl.trinity.utils.marchingcubes;
  * #L%
  */
 
-import java.io.*;
+import java.io.BufferedOutputStream;
+import java.io.DataInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
 
 /**
@@ -55,13 +59,11 @@ public class ExtractHandler {
                     System.out.println("Invalid volume size was specified.");
                     return;
                 }
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 System.out.println("Something went wrong while reading the volume");
                 return;
             }
-        }
-        else {
+        } else {
             System.out.println("PROGRESS: Generating volume data.");
             scalarField = VolumeGenerator.generateScalarFieldChar(size);
         }
@@ -69,7 +71,7 @@ public class ExtractHandler {
         final char[] finalScalarField = scalarField;
 
         ArrayList<Thread> threads = new ArrayList<>();
-        final ArrayList<ArrayList<float []>> results = new ArrayList<>();
+        final ArrayList<ArrayList<float[]>> results = new ArrayList<>();
 
         // Thread work distribution
         int remainder = size[2] % nThreads;
@@ -114,7 +116,7 @@ public class ExtractHandler {
         }
 
         // Join the threads
-        for (int i = 0; i <threads.size(); i ++) {
+        for (int i = 0; i < threads.size(); i++) {
             try {
                 threads.get(i).join();
             } catch (InterruptedException e) {
@@ -154,13 +156,11 @@ public class ExtractHandler {
                     System.out.println("Invalid volume size was specified.");
                     return;
                 }
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 System.out.println("Something went wrong while reading the volume");
                 return;
             }
-        }
-        else {
+        } else {
             System.out.println("PROGRESS: Generating volume data.");
             scalarField = VolumeGenerator.generateScalarFieldShort(size);
         }
@@ -168,7 +168,7 @@ public class ExtractHandler {
         final short[] finalScalarField = scalarField;
 
         ArrayList<Thread> threads = new ArrayList<>();
-        final ArrayList<ArrayList<float []>> results = new ArrayList<>();
+        final ArrayList<ArrayList<float[]>> results = new ArrayList<>();
 
         // Thread work distribution
         int remainder = size[2] % nThreads;
@@ -213,7 +213,7 @@ public class ExtractHandler {
         }
 
         // Join the threads
-        for (int i = 0; i <threads.size(); i ++) {
+        for (int i = 0; i < threads.size(); i++) {
             try {
                 threads.get(i).join();
             } catch (InterruptedException e) {
@@ -253,13 +253,11 @@ public class ExtractHandler {
                     System.out.println("Invalid volume size was specified.");
                     return;
                 }
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 System.out.println("Something went wrong while reading the volume");
                 return;
             }
-        }
-        else {
+        } else {
             System.out.println("PROGRESS: Generating volume data.");
             scalarField = VolumeGenerator.generateScalarFieldInt(size);
         }
@@ -267,7 +265,7 @@ public class ExtractHandler {
         final int[] finalScalarField = scalarField;
 
         ArrayList<Thread> threads = new ArrayList<>();
-        final ArrayList<ArrayList<float []>> results = new ArrayList<>();
+        final ArrayList<ArrayList<float[]>> results = new ArrayList<>();
 
         // Thread work distribution
         int remainder = size[2] % nThreads;
@@ -312,7 +310,7 @@ public class ExtractHandler {
         }
 
         // Join the threads
-        for (int i = 0; i <threads.size(); i ++) {
+        for (int i = 0; i < threads.size(); i++) {
             System.out.println("PROGRESS: Reading input data.");
             try {
                 threads.get(i).join();
@@ -353,13 +351,11 @@ public class ExtractHandler {
                     System.out.println("Invalid volume size was specified.");
                     return;
                 }
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 System.out.println("Something went wrong while reading the volume");
                 return;
             }
-        }
-        else {
+        } else {
             System.out.println("PROGRESS: Generating volume data.");
             scalarField = VolumeGenerator.generateScalarFieldFloat(size);
         }
@@ -368,7 +364,7 @@ public class ExtractHandler {
 
         // TIMER
         ArrayList<Thread> threads = new ArrayList<>();
-        final ArrayList<ArrayList<float []>> results = new ArrayList<>();
+        final ArrayList<ArrayList<float[]>> results = new ArrayList<>();
 
         // Thread work distribution
         int remainder = size[2] % nThreads;
@@ -413,7 +409,7 @@ public class ExtractHandler {
         }
 
         // Join the threads
-        for (int i = 0; i <threads.size(); i ++) {
+        for (int i = 0; i < threads.size(); i++) {
             try {
                 threads.get(i).join();
             } catch (InterruptedException e) {
@@ -452,13 +448,11 @@ public class ExtractHandler {
                     System.out.println("Invalid volume size was specified.");
                     return;
                 }
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 System.out.println("Something went wrong while reading the volume");
                 return;
             }
-        }
-        else {
+        } else {
             System.out.println("PROGRESS: Generating volume data.");
             scalarField = VolumeGenerator.generateScalarFieldDouble(size);
         }
@@ -467,7 +461,7 @@ public class ExtractHandler {
 
         // TIMER
         ArrayList<Thread> threads = new ArrayList<>();
-        final ArrayList<ArrayList<float []>> results = new ArrayList<>();
+        final ArrayList<ArrayList<float[]>> results = new ArrayList<>();
 
         // Thread work distribution
         int remainder = size[2] % nThreads;
@@ -511,7 +505,7 @@ public class ExtractHandler {
         }
 
         // Join the threads
-        for (int i = 0; i <threads.size(); i ++) {
+        for (int i = 0; i < threads.size(); i++) {
             try {
                 threads.get(i).join();
             } catch (InterruptedException e) {
@@ -535,7 +529,7 @@ public class ExtractHandler {
                     if (idx % 3 == 0) {
                         stream.write(("f " + (idx + 1) + " " + (idx + 2) + " " + (idx + 3) + "\n").getBytes());
                     }
-                    idx ++;
+                    idx++;
 
                     stream.write(("v " + resSeg.get(j)[0] + " " + resSeg.get(j)[1] + " " + resSeg.get(j)[2] + "\n").getBytes());
                 }
@@ -543,8 +537,7 @@ public class ExtractHandler {
 
             stream.flush();
             stream.close();
-        }
-        catch (Exception e) {
+        } catch (Exception e) {
             System.out.println("Something went wrong while writing to the output file");
             return;
         }

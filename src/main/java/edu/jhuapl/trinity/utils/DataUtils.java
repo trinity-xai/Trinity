@@ -33,8 +33,8 @@ import edu.jhuapl.trinity.data.messages.ReconstructionAttributes;
 import edu.jhuapl.trinity.data.messages.SemanticMap;
 import edu.jhuapl.trinity.data.messages.SemanticReconstruction;
 import edu.jhuapl.trinity.data.messages.SystemFeatures;
-import edu.jhuapl.trinity.javafx.components.radial.ProgressStatus;
 import edu.jhuapl.trinity.javafx.components.Projector;
+import edu.jhuapl.trinity.javafx.components.radial.ProgressStatus;
 import edu.jhuapl.trinity.javafx.components.timeline.Item;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import javafx.application.Platform;
@@ -55,13 +55,15 @@ import java.util.Set;
 public enum DataUtils {
     INSTANCE;
     private static Random rando = new Random();
-    public static int randomSign(){
+
+    public static int randomSign() {
         boolean nextBool = rando.nextBoolean();
         int sign = -1;
-        if(nextBool)
-            sign = 1;        
+        if (nextBool)
+            sign = 1;
         return sign;
     }
+
     public static double normalize(double rawValue, double min, double max) {
         return (rawValue - min) / (max - min);
     }

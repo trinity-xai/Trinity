@@ -9,9 +9,9 @@ package edu.jhuapl.trinity.utils.marchingcubes;
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,7 +20,11 @@ package edu.jhuapl.trinity.utils.marchingcubes;
  * #L%
  */
 
-import java.io.*;
+import java.io.DataInputStream;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.OutputStreamWriter;
 import java.util.ArrayList;
 
 /**
@@ -56,13 +60,11 @@ public class BenchmarkHandler {
                     System.out.println("Invalid volume size was specified.");
                     return;
                 }
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 System.out.println("Something went wrong while reading the volume");
                 return;
             }
-        }
-        else {
+        } else {
             System.out.println("PROGRESS: Generating volume data.");
             scalarField = VolumeGenerator.generateScalarFieldChar(size);
         }
@@ -82,7 +84,7 @@ public class BenchmarkHandler {
                 final long start = System.currentTimeMillis();
 
                 ArrayList<Thread> threads = new ArrayList<>();
-                final ArrayList<ArrayList<float []>> results = new ArrayList<>();
+                final ArrayList<ArrayList<float[]>> results = new ArrayList<>();
 
 
                 // Thread work distribution
@@ -127,7 +129,7 @@ public class BenchmarkHandler {
                 }
 
                 // Join the threads
-                for (int i = 0; i <threads.size(); i ++) {
+                for (int i = 0; i < threads.size(); i++) {
                     try {
                         threads.get(i).join();
                     } catch (InterruptedException e) {
@@ -136,7 +138,7 @@ public class BenchmarkHandler {
                 }
 
                 // Time measurement
-                long end= System.currentTimeMillis();
+                long end = System.currentTimeMillis();
                 times.add((end - start) / 1000.0);
             }
 
@@ -177,8 +179,7 @@ public class BenchmarkHandler {
             try {
                 OutputStreamWriter osw = new OutputStreamWriter(new FileOutputStream(outFile));
                 osw.write(benchmarkResults.toString());
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 System.out.println("Something went wrong while writing the results to file.");
                 return;
             }
@@ -213,13 +214,11 @@ public class BenchmarkHandler {
                     System.out.println("Invalid volume size was specified.");
                     return;
                 }
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 System.out.println("Something went wrong while reading the volume");
                 return;
             }
-        }
-        else {
+        } else {
             System.out.println("PROGRESS: Generating volume data.");
             scalarField = VolumeGenerator.generateScalarFieldShort(size);
         }
@@ -239,7 +238,7 @@ public class BenchmarkHandler {
                 final long start = System.currentTimeMillis();
 
                 ArrayList<Thread> threads = new ArrayList<>();
-                final ArrayList<ArrayList<float []>> results = new ArrayList<>();
+                final ArrayList<ArrayList<float[]>> results = new ArrayList<>();
 
 
                 // Thread work distribution
@@ -284,7 +283,7 @@ public class BenchmarkHandler {
                 }
 
                 // Join the threads
-                for (int i = 0; i <threads.size(); i ++) {
+                for (int i = 0; i < threads.size(); i++) {
                     try {
                         threads.get(i).join();
                     } catch (InterruptedException e) {
@@ -293,7 +292,7 @@ public class BenchmarkHandler {
                 }
 
                 // Time measurement
-                long end= System.currentTimeMillis();
+                long end = System.currentTimeMillis();
                 times.add((end - start) / 1000.0);
             }
 
@@ -334,8 +333,7 @@ public class BenchmarkHandler {
             try {
                 OutputStreamWriter osw = new OutputStreamWriter(new FileOutputStream(outFile));
                 osw.write(benchmarkResults.toString());
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 System.out.println("Something went wrong while writing the results to file.");
                 return;
             }
@@ -370,13 +368,11 @@ public class BenchmarkHandler {
                     System.out.println("Invalid volume size was specified.");
                     return;
                 }
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 System.out.println("Something went wrong while reading the volume");
                 return;
             }
-        }
-        else {
+        } else {
             System.out.println("PROGRESS: Generating volume data.");
             scalarField = VolumeGenerator.generateScalarFieldInt(size);
         }
@@ -396,7 +392,7 @@ public class BenchmarkHandler {
                 final long start = System.currentTimeMillis();
 
                 ArrayList<Thread> threads = new ArrayList<>();
-                final ArrayList<ArrayList<float []>> results = new ArrayList<>();
+                final ArrayList<ArrayList<float[]>> results = new ArrayList<>();
 
 
                 // Thread work distribution
@@ -441,7 +437,7 @@ public class BenchmarkHandler {
                 }
 
                 // Join the threads
-                for (int i = 0; i <threads.size(); i ++) {
+                for (int i = 0; i < threads.size(); i++) {
                     try {
                         threads.get(i).join();
                     } catch (InterruptedException e) {
@@ -450,7 +446,7 @@ public class BenchmarkHandler {
                 }
 
                 // Time measurement
-                long end= System.currentTimeMillis();
+                long end = System.currentTimeMillis();
                 times.add((end - start) / 1000.0);
             }
 
@@ -491,8 +487,7 @@ public class BenchmarkHandler {
             try {
                 OutputStreamWriter osw = new OutputStreamWriter(new FileOutputStream(outFile));
                 osw.write(benchmarkResults.toString());
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 System.out.println("Something went wrong while writing the results to file.");
                 return;
             }
@@ -527,13 +522,11 @@ public class BenchmarkHandler {
                     System.out.println("Invalid volume size was specified.");
                     return;
                 }
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 System.out.println("Something went wrong while reading the volume");
                 return;
             }
-        }
-        else {
+        } else {
             System.out.println("PROGRESS: Generating volume data.");
             scalarField = VolumeGenerator.generateScalarFieldFloat(size);
         }
@@ -553,7 +546,7 @@ public class BenchmarkHandler {
                 final long start = System.currentTimeMillis();
 
                 ArrayList<Thread> threads = new ArrayList<>();
-                final ArrayList<ArrayList<float []>> results = new ArrayList<>();
+                final ArrayList<ArrayList<float[]>> results = new ArrayList<>();
 
 
                 // Thread work distribution
@@ -598,7 +591,7 @@ public class BenchmarkHandler {
                 }
 
                 // Join the threads
-                for (int i = 0; i <threads.size(); i ++) {
+                for (int i = 0; i < threads.size(); i++) {
                     try {
                         threads.get(i).join();
                     } catch (InterruptedException e) {
@@ -607,7 +600,7 @@ public class BenchmarkHandler {
                 }
 
                 // Time measurement
-                long end= System.currentTimeMillis();
+                long end = System.currentTimeMillis();
                 times.add((end - start) / 1000.0);
             }
 
@@ -648,8 +641,7 @@ public class BenchmarkHandler {
             try {
                 OutputStreamWriter osw = new OutputStreamWriter(new FileOutputStream(outFile));
                 osw.write(benchmarkResults.toString());
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 System.out.println("Something went wrong while writing the results to file.");
                 return;
             }
@@ -683,13 +675,11 @@ public class BenchmarkHandler {
                     System.out.println("Invalid volume size was specified.");
                     return;
                 }
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 System.out.println("Something went wrong while reading the volume");
                 return;
             }
-        }
-        else {
+        } else {
             System.out.println("PROGRESS: Generating volume data.");
             scalarField = VolumeGenerator.generateScalarFieldDouble(size);
         }
@@ -709,7 +699,7 @@ public class BenchmarkHandler {
                 final long start = System.currentTimeMillis();
 
                 ArrayList<Thread> threads = new ArrayList<>();
-                final ArrayList<ArrayList<float []>> results = new ArrayList<>();
+                final ArrayList<ArrayList<float[]>> results = new ArrayList<>();
 
 
                 // Thread work distribution
@@ -754,7 +744,7 @@ public class BenchmarkHandler {
                 }
 
                 // Join the threads
-                for (int i = 0; i <threads.size(); i ++) {
+                for (int i = 0; i < threads.size(); i++) {
                     try {
                         threads.get(i).join();
                     } catch (InterruptedException e) {
@@ -763,7 +753,7 @@ public class BenchmarkHandler {
                 }
 
                 // Time measurement
-                long end= System.currentTimeMillis();
+                long end = System.currentTimeMillis();
                 times.add((end - start) / 1000.0);
             }
 
@@ -804,22 +794,21 @@ public class BenchmarkHandler {
             try {
                 OutputStreamWriter osw = new OutputStreamWriter(new FileOutputStream(outFile));
                 osw.write(benchmarkResults.toString());
-            }
-            catch (Exception e) {
+            } catch (Exception e) {
                 System.out.println("Something went wrong while writing the results to file.");
                 return;
             }
         }
     }
 
-    public static ArrayList<ArrayList<float []>> makeConcave(double[] scalarField, final int[] size, 
-        final float voxSize[], final double isoValue, int nThreads) {
-        
+    public static ArrayList<ArrayList<float[]>> makeConcave(double[] scalarField, final int[] size,
+                                                            final float voxSize[], final double isoValue, int nThreads) {
+
         final double[] finalScalarField = scalarField;
 
         // TIMER
         ArrayList<Thread> threads = new ArrayList<>();
-        final ArrayList<ArrayList<float []>> results = new ArrayList<>();
+        final ArrayList<ArrayList<float[]>> results = new ArrayList<>();
 
         // Thread work distribution
         int remainder = size[2] % nThreads;
@@ -864,7 +853,7 @@ public class BenchmarkHandler {
         }
 
         // Join the threads
-        for (int i = 0; i <threads.size(); i ++) {
+        for (int i = 0; i < threads.size(); i++) {
             try {
                 threads.get(i).join();
             } catch (InterruptedException e) {
@@ -873,5 +862,5 @@ public class BenchmarkHandler {
         }
         return results;
     }
-    
+
 }

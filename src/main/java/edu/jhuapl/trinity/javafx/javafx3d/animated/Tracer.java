@@ -20,22 +20,22 @@ package edu.jhuapl.trinity.javafx.javafx3d.animated;
  * #L%
  */
 
-import java.util.ArrayList;
-import java.util.List;
 import javafx.animation.Interpolator;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
-import javafx.scene.shape.MeshView;
+import javafx.scene.paint.Color;
 import javafx.scene.shape.TriangleMesh;
 import javafx.util.Duration;
-
-import static javafx.animation.Animation.INDEFINITE;
-import javafx.scene.paint.Color;
 import org.fxyz3d.geometry.Point3D;
 import org.fxyz3d.shapes.composites.PolyLine3D;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static javafx.animation.Animation.INDEFINITE;
 
 /**
  * @author Sean Phillips
@@ -61,7 +61,7 @@ public class Tracer extends PolyLine3D {
         diffuseColor = color;
         mesh = (TriangleMesh) this.meshView.getMesh();
         setCycle(20, 30);
-        
+
         keyCycle.addListener(e -> {
             float add = keyCycle.getValue() / 30000f;
             //i=0;i+=2 is right to left
@@ -83,12 +83,14 @@ public class Tracer extends PolyLine3D {
             }
         });
     }
+
     public static List<Point3D> makePointList(Point3D start, Point3D end) {
         List<Point3D> points = new ArrayList<>(2);
         points.add(start);
         points.add(end);
         return points;
     }
+
     public void setCycle(double cycleSeconds, double fps) {
         KeyValue start = new KeyValue(keyCycle, 0, Interpolator.LINEAR);
         KeyValue end = new KeyValue(keyCycle, fps * cycleSeconds, Interpolator.LINEAR);
