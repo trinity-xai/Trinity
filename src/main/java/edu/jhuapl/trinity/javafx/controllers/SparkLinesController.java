@@ -2,9 +2,7 @@ package edu.jhuapl.trinity.javafx.controllers;
 
 /*-
  * #%L
- * ******************************* UNCLASSIFIED *******************************
- * ChartRecorderController.java
- * neo:Neo
+ * trinity
  * %%
  * Copyright (C) 2020 - 2024 Johns Hopkins University Applied Physics Laboratory
  * %%
