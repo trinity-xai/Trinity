@@ -64,6 +64,7 @@ dependencies {
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.16.1'
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.16.1'
     implementation group: 'com.github.sarxos', name: 'webcam-capture', version: '0.3.12'
+    implementation group: 'org.jflac', name: 'jflac-codec', version: '1.5.2'
 
     // Enforce slf4j-api version across dependencies (although we're using JUL)
     implementation group: 'org.slf4j', name: 'slf4j-api', version: '2.0.12'
@@ -76,6 +77,8 @@ dependencies {
 // Alternative is to use org.javamodularity.moduleplugin but
 // it doesn't yield the same quality of results.
 extraJavaModuleInfo {
+    // Avoid automatic modules
+    failOnAutomaticModules.set(true)
     // Transitive of org.fxyz3d:fxyz3d
     module('eu.mihosoft.vvecmath:vvecmath', 'vvecmath') {
         exports('eu.mihosoft.vvecmath')
@@ -117,6 +120,10 @@ extraJavaModuleInfo {
     }
     // Transitive of com.github.sarxos:webcam-capture
     module('com.nativelibs4java:bridj', 'bridj') {
+        exportAllPackages()
+    }
+    module('org.jflac:jflac-codec', 'jflac.codec') {
+        requires('java.desktop')
         exportAllPackages()
     }
 }

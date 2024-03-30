@@ -33,10 +33,10 @@ import edu.jhuapl.trinity.data.messages.GaussianMixture;
 import edu.jhuapl.trinity.data.messages.GaussianMixtureCollection;
 import edu.jhuapl.trinity.data.messages.GaussianMixtureData;
 import edu.jhuapl.trinity.data.messages.PointCluster;
-import edu.jhuapl.trinity.javafx.components.radial.ProgressStatus;
 import edu.jhuapl.trinity.javafx.components.callouts.Callout;
 import edu.jhuapl.trinity.javafx.components.panes.RadialEntityOverlayPane;
 import edu.jhuapl.trinity.javafx.components.radial.HyperspaceMenu;
+import edu.jhuapl.trinity.javafx.components.radial.ProgressStatus;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.ColorMapEvent;
 import edu.jhuapl.trinity.javafx.events.ColorMapEvent.COLOR_MAP;
@@ -56,7 +56,6 @@ import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import edu.jhuapl.trinity.utils.Utils;
 import edu.jhuapl.trinity.utils.VisibilityMap;
-import edu.jhuapl.trinity.utils.clustering.ClusterMethod;
 import javafx.animation.AnimationTimer;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
@@ -560,7 +559,7 @@ public class Hyperspace3DPane extends StackPane implements
             }
 
             if (event.isAltDown() && keycode == KeyCode.H) {
-                makeHull(false, null);
+                makeHull(false, null, null);
             }
             if (keycode == KeyCode.F) {
                 anchorIndex--;
@@ -997,7 +996,7 @@ public class Hyperspace3DPane extends StackPane implements
         }
     }
 
-    public void makeHull(boolean useVisiblePoints, String label) {
+    public void makeHull(boolean useVisiblePoints, String label, Double tolerance) {
         //@TODO SMP Limit hull to points with that label
         shape3DToLabel.clear();
         //Add to hashmap so updateLabels() can manage the label position
@@ -1012,7 +1011,7 @@ public class Hyperspace3DPane extends StackPane implements
             data = getAllPoints(pNodeArray);
         }
         Manifold3D manifold3D = new Manifold3D(
-            data.subList(1, data.size()), true, true, true
+            data.subList(1, data.size()), true, true, true, tolerance
         );
 
         System.out.println("scattermodel Manifold complete");
@@ -2000,7 +1999,7 @@ public class Hyperspace3DPane extends StackPane implements
     public void setVisibleByIndex(int i, boolean b) {
         Perspective3DNode[] d = pNodes.toArray(Perspective3DNode[]::new);
         VisibilityMap.pNodeVisibilityMap.put(d[i], b);
-        
+
 //        VisibilityMap.pNodeVisibilityMap.put(pNodes.toArray(Perspective3DNode[]::new)[i], b);
         VisibilityMap.visibilityList.set(i, b);
     }
@@ -2021,8 +2020,8 @@ public class Hyperspace3DPane extends StackPane implements
     }
 
     @Override
-    public void makeManifold(boolean useVisiblePoints, String label) {
-        makeHull(useVisiblePoints, label);
+    public void makeManifold(boolean useVisiblePoints, String label, Double tolerance) {
+        makeHull(useVisiblePoints, label, tolerance);
     }
 
     @Override
@@ -2052,30 +2051,36 @@ public class Hyperspace3DPane extends StackPane implements
         //convert featurevector space into 2D array of doubles
         System.out.print("Convert features to data array... ");
         long startTime = System.nanoTime();
-        double [][] observations = FeatureCollection.toData(featureVectors);
+        double[][] observations = FeatureCollection.toData(featureVectors);
         Utils.printTotalTime(startTime);
         //find clusters
-        switch(pc.clusterMethod) {
+        switch (pc.clusterMethod) {
 //            case KMEANS -> {
 //                System.out.print("Kmeans fit... ");
 //                startTime = System.nanoTime();
 //                var kmeansClusters = KMeans.fit(observations, 50);
-//                Utils.printTotalTime(startTime);                
+//                Utils.printTotalTime(startTime);
 //                System.out.println("\n===============================================\n");
-//                System.out.println("KMeans Clusters: " + kmeansClusters.k 
+//                System.out.println("KMeans Clusters: " + kmeansClusters.k
 //                    + " Distortion: " + kmeansClusters.distortion);
 //            }
             case EX_MAX -> {
                 System.out.print("Expectation Maximization... ");
                 startTime = System.nanoTime();
                 Utils.printTotalTime(startTime);
-                System.out.println("\n===============================================\n");                
+                System.out.println("\n===============================================\n");
             }
         }
     }
 
     @Override
     public void addClusters(List<PointCluster> clusters) {
-    
+
     }
+
+    @Override
+    public Point3D projectVector(FeatureVector featureVector) {
+        return null;
+    }
+
 }

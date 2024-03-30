@@ -22,7 +22,6 @@ package edu.jhuapl.trinity.javafx.components.listviews;
 
 
 import edu.jhuapl.trinity.data.Manifold;
-import static edu.jhuapl.trinity.data.Manifold.globalManifoldToManifold3DMap;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.Manifold3D;
 import edu.jhuapl.trinity.utils.ResourceUtils;
@@ -33,11 +32,13 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
+import static edu.jhuapl.trinity.data.Manifold.globalManifoldToManifold3DMap;
+
 /**
  * @author Sean Phillips
  */
 public class ManifoldListItem extends VBox {
-    
+
     private String labelString;
     private CheckBox visibleCheckBox;
     private TextField manifoldLabelTextField;
@@ -51,7 +52,7 @@ public class ManifoldListItem extends VBox {
         manifoldLabelTextField.setPrefWidth(200);
         visibleCheckBox = new CheckBox("Show");
         visibleCheckBox.setSelected(true);
-        
+
         ImageView manifoldIcon = ResourceUtils.loadIcon("manifold", 32);
 
         HBox topHBox = new HBox(5, manifoldIcon, visibleCheckBox, manifoldLabelTextField);
@@ -70,13 +71,13 @@ public class ManifoldListItem extends VBox {
                 }
             }
         });
-        manifoldIcon.addEventHandler(MouseEvent.MOUSE_CLICKED, e-> {
-            if(e.getClickCount()>1){
+        manifoldIcon.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
+            if (e.getClickCount() > 1) {
                 //Let application know this distance object has been selected
                 getScene().getRoot().fireEvent(new ManifoldEvent(
                     ManifoldEvent.MANIFOLD_OBJECT_SELECTED, this.manifold));
                 getScene().getRoot().fireEvent(
-                    new ManifoldEvent(ManifoldEvent.MANIFOLD_3D_SELECTED, this.manifold));                
+                    new ManifoldEvent(ManifoldEvent.MANIFOLD_3D_SELECTED, this.manifold));
             }
         });
         setOnMouseClicked(e -> {
@@ -84,7 +85,7 @@ public class ManifoldListItem extends VBox {
             getScene().getRoot().fireEvent(new ManifoldEvent(
                 ManifoldEvent.MANIFOLD_OBJECT_SELECTED, this.getManifold()));
         });
-        manifoldLabelTextField.textProperty().addListener(e-> {
+        manifoldLabelTextField.textProperty().addListener(e -> {
             labelString = manifoldLabelTextField.getText();
             this.manifold.setLabel(labelString);
         });

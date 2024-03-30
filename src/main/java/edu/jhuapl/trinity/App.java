@@ -22,16 +22,19 @@ package edu.jhuapl.trinity;
 
 import edu.jhuapl.trinity.data.Dimension;
 import edu.jhuapl.trinity.data.FactorLabel;
+import edu.jhuapl.trinity.data.files.ClusterCollectionFile;
 import edu.jhuapl.trinity.data.files.FeatureCollectionFile;
 import edu.jhuapl.trinity.data.messages.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.FeatureVector;
-import edu.jhuapl.trinity.javafx.components.radial.CircleProgressIndicator;
 import edu.jhuapl.trinity.javafx.components.MatrixOverlay;
-import edu.jhuapl.trinity.javafx.components.radial.ProgressStatus;
 import edu.jhuapl.trinity.javafx.components.panes.Shape3DControlPane;
+import edu.jhuapl.trinity.javafx.components.panes.SparkLinesPane;
 import edu.jhuapl.trinity.javafx.components.panes.TextPane;
 import edu.jhuapl.trinity.javafx.components.panes.TrajectoryTrackerPane;
+import edu.jhuapl.trinity.javafx.components.panes.WaveformPane;
+import edu.jhuapl.trinity.javafx.components.radial.CircleProgressIndicator;
 import edu.jhuapl.trinity.javafx.components.radial.MainNavMenu;
+import edu.jhuapl.trinity.javafx.components.radial.ProgressStatus;
 import edu.jhuapl.trinity.javafx.components.timeline.Item;
 import edu.jhuapl.trinity.javafx.components.timeline.MissionTimerX;
 import edu.jhuapl.trinity.javafx.components.timeline.MissionTimerXBuilder;
@@ -80,6 +83,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
 import javafx.scene.input.DragEvent;
+import javafx.scene.input.Dragboard;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.input.KeyEvent;
@@ -106,8 +110,6 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
-import edu.jhuapl.trinity.javafx.components.panes.WaveformPane;
-
 public class App extends Application {
 
     Pane desktopPane;
@@ -123,6 +125,7 @@ public class App extends Application {
     Hypersurface3DPane hypersurface3DPane;
     Projections3DPane projections3DPane;
     TrajectoryTrackerPane trajectoryTrackerPane;
+    SparkLinesPane sparkLinesPane;
     TextPane textConsolePane;
     WaveformPane waveformPane;
     Shape3DControlPane shape3DControlPane;
@@ -213,11 +216,13 @@ public class App extends Application {
 
         System.out.println("Constructing 3D subscenes...");
         //animatedConsoleText.animate("Constructing 3D subscenes...");
-        hypersurface3DPane = new Hypersurface3DPane(scene);
-        hypersurface3DPane.setVisible(false); //start off hidden
         projections3DPane = new Projections3DPane(scene);
         projections3DPane.setVisible(false); //start off hidden
+
+        hypersurface3DPane = new Hypersurface3DPane(scene);
+        hypersurface3DPane.setVisible(false); //start off hidden
         hyperspace3DPane = new Hyperspace3DPane(scene);
+        hyperspace3DPane.setVisible(false); //start off hidden
 
         System.out.println("Registering Event Handlers...");
         //animatedConsoleText.animate("Registering Event Handlers...");
@@ -304,7 +309,7 @@ public class App extends Application {
             }
             event.consume();
         });
-        hyperspace3DPane.setVisible(false); //start off hidden
+
         hyperspace3DPane.addEventHandler(DragEvent.DRAG_OVER, event -> {
             if (ResourceUtils.canDragOver(event)) {
                 event.acceptTransferModes(TransferMode.COPY);
@@ -315,15 +320,38 @@ public class App extends Application {
         hyperspace3DPane.addEventHandler(DragEvent.DRAG_DROPPED,
             e -> ResourceUtils.onDragDropped(e, scene));
 
-        scene.addEventHandler(DragEvent.DRAG_OVER, event -> {
-            if (ResourceUtils.canDragOver(event)) {
+        projections3DPane.addEventHandler(DragEvent.DRAG_OVER, event -> {
+            if (ResourceUtils.canDragOver(event)) { // && projections3DPane.autoProjectionProperty.get()) {
                 event.acceptTransferModes(TransferMode.COPY);
             } else {
                 event.consume();
             }
         });
-        scene.addEventHandler(DragEvent.DRAG_DROPPED,
-            e -> ResourceUtils.onDragDropped(e, scene));
+        projections3DPane.addEventHandler(DragEvent.DRAG_DROPPED, e -> {
+            Dragboard db = e.getDragboard();
+            if (db.hasFiles()) {
+                for (File file : db.getFiles()) {
+                    try {
+                        if (projections3DPane.autoProjectionProperty.get()) {
+                            if (FeatureCollectionFile.isFeatureCollectionFile(file)) {
+                                FeatureCollectionFile fcFile = new FeatureCollectionFile(
+                                    file.getAbsolutePath(), true);
+                                fveh.scanLabelsAndLayers(fcFile.featureCollection.getFeatures());
+                                projections3DPane.transformFeatureCollection(fcFile.featureCollection);
+                            }
+                        }
+                        if (ClusterCollectionFile.isClusterCollectionFile(file)) {
+                            ClusterCollectionFile ccFile = new ClusterCollectionFile(file.getAbsolutePath(), true);
+                            scene.getRoot().fireEvent(
+                                new ManifoldEvent(ManifoldEvent.NEW_CLUSTER_COLLECTION, ccFile.clusterCollection));
+                        }
+                    } catch (IOException ex) {
+                        Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+            }
+        });
+
 
         //Add the base main tools
         //insert before animated console text
@@ -494,6 +522,17 @@ public class App extends Application {
                 trajectoryTrackerPane.show();
             }
         });
+        scene.addEventHandler(ApplicationEvent.SHOW_SPARK_LINES, e -> {
+            if (null == sparkLinesPane) {
+                sparkLinesPane = new SparkLinesPane(scene, pathPane);
+            }
+            if (!pathPane.getChildren().contains(sparkLinesPane)) {
+                pathPane.getChildren().add(sparkLinesPane);
+                sparkLinesPane.slideInPane();
+            } else {
+                sparkLinesPane.show();
+            }
+        });
 
         scene.addEventHandler(ApplicationEvent.SHOW_PROJECTIONS, e -> {
             if (projections3DPane.isVisible()) {
@@ -512,10 +551,25 @@ public class App extends Application {
                 });
             }
         });
+        scene.addEventHandler(ApplicationEvent.AUTO_PROJECTION_MODE, e -> {
+            boolean enabled = (boolean) e.object;
+            if (enabled) {
+                if (null != retroWavePane) {
+                    retroWavePane.animateHide();
+                }
+                hyperspace3DPane.setVisible(false);
+                hypersurface3DPane.setVisible(false);
+//                Platform.runLater(() -> {
+                projections3DPane.setVisible(true);
+//                });
+            }
+            projections3DPane.enableAutoProjection(enabled);
 
+        });
         scene.addEventHandler(ApplicationEvent.SHOW_HYPERSURFACE, e -> {
             if (hypersurface3DPane.isVisible()) {
-                hypersurface3DPane.hideFA3D();
+                //hypersurface3DPane.hideFA3D();
+                Platform.runLater(() -> hypersurface3DPane.setVisible(false));
                 if (null != retroWavePane) {
                     retroWavePane.animateShow();
                 }
@@ -532,9 +586,7 @@ public class App extends Application {
                     hypersurface3DPane.showFA3D();
                     hypersurfaceIntroShown = true;
                 } else {
-                    Platform.runLater(() -> {
-                        hypersurface3DPane.setVisible(true);
-                    });
+                    Platform.runLater(() -> hypersurface3DPane.setVisible(true));
                 }
 
             }
@@ -569,7 +621,6 @@ public class App extends Application {
                 shape3DControlPane = new Shape3DControlPane(scene, pathPane);
             }
             if (null != manifold3D) {
-//                Manifold.globalManifoldToManifold3DMap
                 shape3DControlPane.setShape3D(manifold3D);
             }
             if (!pathPane.getChildren().contains(shape3DControlPane)) {
@@ -597,6 +648,8 @@ public class App extends Application {
 
         meh = new ManifoldEventHandler();
 
+
+        scene.getRoot().addEventHandler(ManifoldEvent.NEW_MANIFOLD_CLUSTER, meh);
         scene.getRoot().addEventHandler(ManifoldEvent.NEW_MANIFOLD_DATA, meh);
         scene.getRoot().addEventHandler(ManifoldEvent.EXPORT_MANIFOLD_DATA, meh);
         scene.getRoot().addEventHandler(ManifoldEvent.CLEAR_ALL_MANIFOLDS, meh);
@@ -619,7 +672,8 @@ public class App extends Application {
         scene.getRoot().addEventHandler(ManifoldEvent.MANIFOLD_WIREFRAME_COLOR, meh);
         scene.getRoot().addEventHandler(ManifoldEvent.FIND_PROJECTION_CLUSTERS, meh);
         scene.getRoot().addEventHandler(ManifoldEvent.NEW_CLUSTER_COLLECTION, meh);
-//        meh.addManifoldRenderer(hyperspace3DPane);
+        scene.getRoot().addEventHandler(ManifoldEvent.NEW_PROJECTION_VECTOR, meh);
+
         meh.addManifoldRenderer(projections3DPane);
 
         smeh = new SemanticMapEventHandler(false);
@@ -690,7 +744,16 @@ public class App extends Application {
             timeline.setCycleCount(Animation.INDEFINITE);
             timeline.play();
         });
-
+        scene.addEventHandler(CommandTerminalEvent.ALERT, e -> {
+            animatedConsoleText.setAnimationTimeMS(15);  //default is 30ms
+            animatedConsoleText.setFont(e.font);
+            animatedConsoleText.setFill(e.color);
+            animatedConsoleText.setStroke(e.color);
+            animatedConsoleText.setText("> ");
+            animatedConsoleText.setVisible(true);
+            animatedConsoleText.setOpacity(1.0);
+            animatedConsoleText.animate("> " + e.text);
+        });
         scene.addEventHandler(CommandTerminalEvent.NOTIFICATION, e -> {
             animatedConsoleText.setAnimationTimeMS(15);  //default is 30ms
             animatedConsoleText.setFont(e.font);
@@ -832,14 +895,14 @@ public class App extends Application {
         }
         //@DEBUG SMP
         if (e.isAltDown() && e.isControlDown() && e.getCode().equals(KeyCode.A)) {
-           stage.getScene().getRoot().fireEvent(
+            stage.getScene().getRoot().fireEvent(
                 new ApplicationEvent(ApplicationEvent.SHOW_WAVEFORM_PANE));
         }
         if (e.isAltDown() && e.isControlDown() && e.getCode().equals(KeyCode.T)) {
-           stage.getScene().getRoot().fireEvent(
+            stage.getScene().getRoot().fireEvent(
                 new ApplicationEvent(ApplicationEvent.SHOW_TEXT_CONSOLE));
         }
-        
+
         if (e.isAltDown() && e.getCode().equals(KeyCode.N)) {
             matrixShowing = !matrixShowing;
             if (!matrixShowing) {

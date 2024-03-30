@@ -39,6 +39,7 @@ module edu.jhuapl.trinity {
     requires com.fasterxml.jackson.databind;
     requires webcam.capture;
     requires jdk.crypto.ec;
+    requires jflac.codec;
     opens edu.jhuapl.trinity.javafx.components.radial to lit.litfx.controls;
     opens edu.jhuapl.trinity to webcam.capture;
     opens edu.jhuapl.trinity.data to javafx.base;

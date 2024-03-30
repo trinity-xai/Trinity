@@ -20,25 +20,20 @@ package edu.jhuapl.trinity.javafx.components.panes;
  * #L%
  */
 
-import edu.jhuapl.trinity.data.audio.flac.FlacConverter;
-import edu.jhuapl.trinity.data.audio.flac.FlacDecoder;
+import edu.jhuapl.trinity.data.audio.FlacToWav;
 import edu.jhuapl.trinity.javafx.events.AudioEvent;
+import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.utils.ResourceUtils;
-import edu.jhuapl.trinity.utils.fun.GlitchUtils;
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.ColorPicker;
+import javafx.scene.control.Label;
+import javafx.scene.control.Slider;
 import javafx.scene.effect.BlurType;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.image.ImageView;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.BorderPane;
@@ -46,7 +41,13 @@ import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
-import javafx.util.Duration;
+import javafx.scene.text.Font;
+
+import java.io.File;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author Sean Phillips
@@ -54,13 +55,13 @@ import javafx.util.Duration;
 public class WaveformPane extends LitPathPane {
     public static Color transDarkCyan = Color.DARKCYAN.deriveColor(1, 1, 1, 0.1);
     Background transBackground = new Background(new BackgroundFill(
-        transDarkCyan,CornerRadii.EMPTY, Insets.EMPTY));
+        transDarkCyan, CornerRadii.EMPTY, Insets.EMPTY));
     static double iconFitWidth = 30.0;
     BorderPane bp;
     WaveformCanvasOverlayPane waveformCanvas;
     ColorPicker waveColorPicker;
     ColorPicker backgroundColorPicker;
-            
+
     public static int PANE_WIDTH = 700;
 
     private static BorderPane createContent() {
@@ -71,16 +72,16 @@ public class WaveformPane extends LitPathPane {
         ImageView pauseImageView = ResourceUtils.loadIcon("pause", iconFitWidth);
         ImageView resetImageView = ResourceUtils.loadIcon("reset", iconFitWidth);
         ImageView fftImageView = ResourceUtils.loadIcon("hypersurface", iconFitWidth);
-                
+
         HBox playImageHBox = new HBox(playForwardImageView);
         playImageHBox.setAlignment(Pos.CENTER);
-        HBox pauseImageHBox = new HBox( pauseImageView);
+        HBox pauseImageHBox = new HBox(pauseImageView);
         pauseImageHBox.setAlignment(Pos.CENTER);
-        HBox resetImageHBox = new HBox( resetImageView);
+        HBox resetImageHBox = new HBox(resetImageView);
         resetImageHBox.setAlignment(Pos.CENTER);
         HBox fftImageHBox = new HBox(fftImageView);
         fftImageHBox.setAlignment(Pos.CENTER);
-        
+
         //create effects
         DropShadow pauseIndicatorGlow = new DropShadow();
         pauseIndicatorGlow.setBlurType(BlurType.GAUSSIAN);
@@ -113,13 +114,13 @@ public class WaveformPane extends LitPathPane {
         fftIndicatorGlow.setRadius(10);
         fftIndicatorGlow.setSpread(0.5);
         fftIndicatorGlow.colorProperty().set(Color.CYAN.deriveColor(1, 1, 1, 0.5));
-        
+
         // SET THE INDICATOR GLOW EFFECT
         playImageHBox.setEffect(playIndicatorGlow);
         pauseImageHBox.setEffect(pauseIndicatorGlow);
         resetImageHBox.setEffect(resetIndicatorGlow);
         fftImageHBox.setEffect(resetIndicatorGlow);
-        
+
 //        // SET EFFECT ON THE RESET BUTTON
 //        centerResetImageHBox.setOnMouseEntered(e -> {
 //            Platform.runLater(() -> {
@@ -130,7 +131,7 @@ public class WaveformPane extends LitPathPane {
 //            Platform.runLater(() -> {
 //                resetIndicatorGlow.setColor(Color.CYAN.deriveColor(1, 1, 1, 0.5));
 //            });
-//        });     
+//        });
 //        // SET EFFECT ON THE PAUSE BUTTON
 //        centerPauseImageHBox.setOnMouseClicked(e -> {
 //            Platform.runLater(() -> {
@@ -157,7 +158,7 @@ public class WaveformPane extends LitPathPane {
 //                    pauseIndicatorGlow.setColor(Color.CYAN.deriveColor(1, 1, 1, 0.5));
 //                }
 //            });
-//        });        
+//        });
 //        centerForwardImageHBox.setOnMouseEntered(e -> {
 //            Platform.runLater(() -> {
 //                if (!playOn) {
@@ -172,21 +173,33 @@ public class WaveformPane extends LitPathPane {
 //                }
 //            });
 //        });
-        
+
         ColorPicker waveColorPicker = new ColorPicker(Color.ORANGERED);
         ColorPicker backgroundColorPicker = new ColorPicker(transDarkCyan);
-        
-        HBox toolbarHBox = new HBox(25, 
+
+        HBox toolbarHBox = new HBox(25,
             resetImageHBox, pauseImageHBox, playImageHBox,
             fftImageHBox, waveColorPicker, backgroundColorPicker
         );
         toolbarHBox.setAlignment(Pos.CENTER_LEFT);
         toolbarHBox.setMinHeight(iconFitWidth * 1.5);
-        WaveformCanvasOverlayPane waveformCanvas = new WaveformCanvasOverlayPane(true, true);
-       
+
+        WaveformCanvasOverlayPane waveformCanvas = new WaveformCanvasOverlayPane(false, true);
+
+        Slider scaleSlider = new Slider(0.5, 5.0, WaveformCanvasOverlayPane.DEFAULT_WAVEFORM_HEIGHT_COEFFICIENT);
+        scaleSlider.setBlockIncrement(0.5);
+        scaleSlider.setMinorTickCount(1);
+        scaleSlider.setMajorTickUnit(0.5);
+        scaleSlider.setShowTickMarks(true);
+        scaleSlider.setShowTickLabels(true);
+        scaleSlider.setSnapToTicks(true);
+        scaleSlider.setPrefWidth(300);
+        HBox sliderHBox = new HBox(10, new Label("Amplitude Scale"), scaleSlider);
+        sliderHBox.setAlignment(Pos.CENTER_LEFT);
 
         bpOilSpill.setTop(toolbarHBox);
         bpOilSpill.setCenter(waveformCanvas);
+        bpOilSpill.setBottom(sliderHBox);
 
         return bpOilSpill;
     }
@@ -199,24 +212,24 @@ public class WaveformPane extends LitPathPane {
 
         waveformCanvas = (WaveformCanvasOverlayPane) bp.getCenter();
         this.scene.addEventHandler(AudioEvent.NEW_AUDIO_FILE, e -> {
-            if(null != e.object) {
-                File audioFile = (File)e.object;
+            if (null != e.object) {
+                File audioFile = (File) e.object;
                 setWaveform(audioFile);
             }
         });
-        HBox topHBox = (HBox)bp.getTop();
-        HBox resetHBox = (HBox)topHBox.getChildren().get(0);
-        HBox pauseHBox = (HBox)topHBox.getChildren().get(1);
-        HBox playHBox = (HBox)topHBox.getChildren().get(2);
-        HBox fftHBox = (HBox)topHBox.getChildren().get(3);
+        HBox topHBox = (HBox) bp.getTop();
+        HBox resetHBox = (HBox) topHBox.getChildren().get(0);
+        HBox pauseHBox = (HBox) topHBox.getChildren().get(1);
+        HBox playHBox = (HBox) topHBox.getChildren().get(2);
+        HBox fftHBox = (HBox) topHBox.getChildren().get(3);
         waveColorPicker = (ColorPicker) topHBox.getChildren().get(4);
         backgroundColorPicker = (ColorPicker) topHBox.getChildren().get(5);
-        
+
         resetHBox.setOnMouseClicked(eh -> waveformCanvas.resetMedia());
         pauseHBox.setOnMouseClicked(eh -> waveformCanvas.pauseMedia());
         playHBox.setOnMouseClicked(eh -> waveformCanvas.playMedia());
         fftHBox.setOnMouseClicked(eh -> waveformCanvas.fftOnMedia());
-        
+
         waveColorPicker.valueProperty().addListener(cl -> {
             waveformCanvas.setForegroundColor(waveColorPicker.getValue());
             waveformCanvas.paintWaveform();
@@ -225,65 +238,55 @@ public class WaveformPane extends LitPathPane {
             waveformCanvas.setBackgroundColor(backgroundColorPicker.getValue());
             waveformCanvas.paintWaveform();
         });
-        this.addEventHandler(MouseEvent.MOUSE_CLICKED, e-> {
-            GlitchUtils.gitchNode(this, 
-            Duration.millis(250), Duration.ZERO, 2);
+
+        HBox bottomHBox = (HBox) bp.getBottom();
+        Slider slider = (Slider) bottomHBox.getChildren().get(1);
+        slider.valueProperty().addListener(e -> {
+            waveformCanvas.setCoeffScale(slider.getValue());
+            waveformCanvas.updateView(true);
         });
-        
     }
 
     public void setWaveform(File audioFile) {
-        System.out.println("@TODO SMP... process audio file");
+        System.out.println("Processing audio file...");
         int indexOfPeriod = audioFile.getPath().lastIndexOf(".");
-        if(indexOfPeriod > 0) {
-            String ext = audioFile.getPath().substring(indexOfPeriod+1);
-            if(ext.toLowerCase().contentEquals("wav") ||
+        if (indexOfPeriod > 0) {
+            String ext = audioFile.getPath().substring(indexOfPeriod + 1);
+            if (ext.toLowerCase().contentEquals("wav") ||
                 ext.toLowerCase().contentEquals("flac")) {
-                
-                if(ext.toLowerCase().contentEquals("flac")) {
-//                    try {
-//                        //convert to wav
-//                        FlacDecoder dec = new FlacDecoder(audioFile);
-//			// Handle metadata header blocks
-//			while (dec.readAndHandleMetadataBlock() != null);
-//			if (dec.streamInfo.sampleDepth % 8 != 0) {
-//                            System.out.println("Only whole-byte sample depth supported");
-//                            return;
-//                        }
-//			// Decode every block
-//			int[][] samples = new int[dec.streamInfo.numChannels]
-//                                [(int)dec.streamInfo.numSamples];
-//			for (int off = 0; ;) {
-//                            int len = dec.readAudioBlock(samples, off);
-//                            if (len == 0)
-//                                break;
-//                            off += len;
-//			}
-//                        FlacConverter converter = new FlacConverter(dec.streamInfo);
-//                        float [] monoWavBytes = converter.convertToWavBytes(samples);
-//                        System.out.println("Converted Flac to mono Wav format.");
-//                    } catch (IOException ex) {
-//                        Logger.getLogger(WaveformPane.class.getName()).log(Level.SEVERE, null, ex);
-//                    }
+                if (ext.toLowerCase().contentEquals("flac")) {
                     //create temporary wav file
-                                        
                     try {
-                        Path tempFile = Files.createTempFile("flacToWav-"+audioFile.getName(), ".wav");
-                        FlacConverter.decodeFlacToWav(audioFile, tempFile.toFile());
+                        Path tempFile = Files.createTempFile("flacToWav-" + audioFile.getName(), ".wav");
+                        FlacToWav ftw = new FlacToWav();
+                        ftw.decode(audioFile.getPath(), tempFile.toString());
+                        //@DEBUG SMP System.out.println("Starting visualization");
                         waveformCanvas.startVisualization(tempFile.toFile());
-                    } catch (IOException ex) {
+                    } catch (Exception ex) {
+                        Platform.runLater(() -> {
+                            getScene().getRoot().fireEvent(new CommandTerminalEvent(
+                                ex.getMessage(), new Font("Consolas", 20), Color.RED));
+                        });
                         Logger.getLogger(WaveformPane.class.getName()).log(Level.SEVERE, null, ex);
                     }
                 } else {
                     waveformCanvas.startVisualization(audioFile);
                 }
             } else {
+                Platform.runLater(() -> {
+                    getScene().getRoot().fireEvent(new CommandTerminalEvent(
+                        "Could not load this file type. Types supported: .wav | .flac",
+                        new Font("Consolas", 20), Color.YELLOW));
+                });
                 System.out.println("Could not load this file type.\nTypes supported: .wav | .flac");
             }
         } else {
+            Platform.runLater(() -> {
+                getScene().getRoot().fireEvent(new CommandTerminalEvent(
+                    "Could not load this file type. Types supported: .wav | .flac",
+                    new Font("Consolas", 20), Color.YELLOW));
+            });
             System.out.println("Could not determine audio file type.\nTypes supported: .wav | .flac");
         }
     }
-
- 
 }

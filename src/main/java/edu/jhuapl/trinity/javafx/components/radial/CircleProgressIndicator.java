@@ -20,8 +20,6 @@ package edu.jhuapl.trinity.javafx.components.radial;
  * #L%
  */
 
-import edu.jhuapl.trinity.javafx.components.radial.AnimatedFillCircle;
-import edu.jhuapl.trinity.javafx.components.radial.AnimatedNeonCircle;
 import javafx.animation.FadeTransition;
 import javafx.animation.Transition;
 import javafx.application.Platform;

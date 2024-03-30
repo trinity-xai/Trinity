@@ -24,7 +24,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 
-
 /**
  * @author Sean Phillips
  */
@@ -53,7 +52,7 @@ public class UmapConfig extends MessageData {
     //</editor-fold>
 
     //<editor-fold defaultstate="collapsed" desc="Payload Fields">
-     
+
     private Float repulsionStrength;
     private Float minDist;
     private Float spread;
@@ -66,13 +65,13 @@ public class UmapConfig extends MessageData {
     private Double threshold;
     private Float targetWeight;
     private String metric;
-    private Boolean verbose;   
-        
+    private Boolean verbose;
+
     //</editor-fold>
 
     public UmapConfig() {
         messageType = TYPESTRING;
-     
+
     }
 
     public static boolean isUmapConfig(String messageBody) {
@@ -266,5 +265,5 @@ public class UmapConfig extends MessageData {
         this.targetWeight = targetWeight;
     }
 
-    //</editor-fold>    
+    //</editor-fold>
 }

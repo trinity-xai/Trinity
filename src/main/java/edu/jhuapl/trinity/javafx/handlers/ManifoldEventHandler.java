@@ -24,6 +24,7 @@ import edu.jhuapl.trinity.App;
 import edu.jhuapl.trinity.data.Manifold;
 import edu.jhuapl.trinity.data.files.ManifoldDataFile;
 import edu.jhuapl.trinity.data.messages.ClusterCollection;
+import edu.jhuapl.trinity.data.messages.FeatureVector;
 import edu.jhuapl.trinity.data.messages.ManifoldData;
 import edu.jhuapl.trinity.data.messages.P3D;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
@@ -43,6 +44,7 @@ import javafx.scene.shape.DrawMode;
 import javafx.scene.shape.Sphere;
 import javafx.scene.text.Font;
 import javafx.scene.transform.Rotate;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
@@ -326,10 +328,10 @@ public class ManifoldEventHandler implements EventHandler<ManifoldEvent> {
             .map(P3D.p3DToFxyzPoint3D)
             .collect(toList());
         ArrayList<Point3D> fxpoints = points.stream()
-            .map(JavaFX3DUtils.fxyzPoint3DTofxPoint3D)
+            .map(JavaFX3DUtils.toFX)
             .collect(Collectors.toCollection(ArrayList::new));
         Manifold manifold = new Manifold(fxpoints, "dudelabel", "dudename", Color.CYAN);
-        Manifold3D manifold3D = new Manifold3D(points, true, true, false);
+        Manifold3D manifold3D = new Manifold3D(points, true, true, false, null);
         //Add this Manifold data object to the global tracker
         Manifold.addManifold(manifold);
         //update the manifold to manifold3D mapping
@@ -346,8 +348,18 @@ public class ManifoldEventHandler implements EventHandler<ManifoldEvent> {
 
     @Override
     public void handle(ManifoldEvent event) {
-        
-        if (event.getEventType().equals(ManifoldEvent.NEW_CLUSTER_COLLECTION)) {
+        if (event.getEventType().equals(ManifoldEvent.NEW_MANIFOLD_CLUSTER)) {
+            Manifold manifold = (Manifold) event.object1;
+            Manifold3D manifold3D = (Manifold3D) event.object2;
+            for (ManifoldRenderer renderer : manifoldRenderers) {
+                renderer.addManifold(manifold, manifold3D);
+            }
+        } else if (event.getEventType().equals(ManifoldEvent.NEW_PROJECTION_VECTOR)) {
+            FeatureVector fv = (FeatureVector) event.object1;
+            for (ManifoldRenderer renderer : manifoldRenderers) {
+                renderer.projectVector(fv);
+            }
+        } else if (event.getEventType().equals(ManifoldEvent.NEW_CLUSTER_COLLECTION)) {
             ClusterCollection cc = (ClusterCollection) event.object1;
             for (ManifoldRenderer renderer : manifoldRenderers) {
                 renderer.addClusters(cc.getClusters());
@@ -360,8 +372,12 @@ public class ManifoldEventHandler implements EventHandler<ManifoldEvent> {
         } else if (event.getEventType().equals(ManifoldEvent.GENERATE_PROJECTION_MANIFOLD)) {
             boolean useVisiblePoints = (boolean) event.object1;
             String label = (String) event.object2;
+            Double tolerance = null;
+            //the following is so hacky but I'm not getting paid sooooo...
+            if (null != event.object3)
+                tolerance = (Double) event.object3;
             for (ManifoldRenderer renderer : manifoldRenderers) {
-                renderer.makeManifold(useVisiblePoints, label);
+                renderer.makeManifold(useVisiblePoints, label, tolerance);
             }
         } else if (event.getEventType().equals(ManifoldEvent.CLEAR_ALL_MANIFOLDS))
             handleClearAllManifolds(event);

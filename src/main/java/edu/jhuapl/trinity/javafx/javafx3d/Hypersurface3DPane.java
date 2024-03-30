@@ -132,9 +132,14 @@ import static edu.jhuapl.trinity.javafx.components.radial.HyperspaceMenu.slideIn
 
 public class Hypersurface3DPane extends StackPane
     implements SemanticMapRenderer, FeatureVectorRenderer {
-    public static double DEFAULT_INTRO_DISTANCE = -60000.0;
+    public static double DEFAULT_INTRO_DISTANCE = -30000.0;
     public static double DEFAULT_ZOOM_TIME_MS = 500.0;
     public static double CHIP_FIT_WIDTH = 200;
+    public static int DEFAULT_XWIDTH = 200;
+    public static int DEFAULT_ZWIDTH = 200;
+    public static int DEFAULT_SURFSCALE = 5;
+    public static int DEFAULT_YSCALE = 5;
+
     public PerspectiveCamera camera;
     public CameraTransformer cameraTransform = new CameraTransformer();
     public XFormGroup dataXForm = new XFormGroup();
@@ -190,11 +195,10 @@ public class Hypersurface3DPane extends StackPane
     private Random rando = new Random();
     private HyperSurfacePlotMesh surfPlot;
 
-    private int xWidth = 200;
-    private int zWidth = 200;
-    private float yScale = 5;
-    private float debugHeightScale = 1.0f;
-    private float surfScale = 5;
+    private int xWidth = DEFAULT_XWIDTH;
+    private int zWidth = DEFAULT_ZWIDTH;
+    private float yScale = DEFAULT_YSCALE;
+    private float surfScale = DEFAULT_SURFSCALE;
 
     int TOTAL_COLORS = 1530; //colors used by map function
     Function<Point3D, Number> colorByLabel = p -> p.f; //Color mapping function
@@ -569,12 +573,17 @@ public class Hypersurface3DPane extends StackPane
             }
         });
 
-
         MenuItem updateAllItem = new MenuItem("Update Render");
         updateAllItem.setOnAction(e -> updateAll());
         MenuItem clearDataItem = new MenuItem("Clear Data");
         clearDataItem.setOnAction(e -> {
             clearAll();
+            xWidth = DEFAULT_XWIDTH;
+            zWidth = DEFAULT_ZWIDTH;
+            xWidthSpinner.getValueFactory().setValue(xWidth);
+            zWidthSpinner.getValueFactory().setValue(zWidth);
+            generateRandos(xWidth, zWidth, yScale);
+            updateTheMesh();
             updateView(true);
         });
 
@@ -709,8 +718,6 @@ public class Hypersurface3DPane extends StackPane
                     System.out.println("updateTheMesh(): " + Utils.totalTimeString(startTime));
                 }
             }
-
-            ;
         };
         surfUpdateAnimationTimer.start();
     }
@@ -1035,6 +1042,7 @@ public class Hypersurface3DPane extends StackPane
             //update the local transform of the label.
             node.getTransforms().setAll(new Translate(x, y));
         });
+        int i = 0;
     }
 
     private ImageView loadImageView(FeatureVector featureVector, boolean bboxOnly) {
@@ -1460,7 +1468,7 @@ public class Hypersurface3DPane extends StackPane
         StackPane.setAlignment(vbox, Pos.BOTTOM_LEFT);
         vbox.setPickOnBounds(false);
         getChildren().add(vbox);
-        Utils.printTotalTime(startTime);
+//        Utils.printTotalTime(startTime);
         updateLabels();
     }
 
@@ -1513,6 +1521,8 @@ public class Hypersurface3DPane extends StackPane
         shape3DToLabel.put(ySphere, yLabel);
         shape3DToLabel.put(zSphere, zLabel);
         shape3DToLabel.put(highlightedPoint, hoverText);
+        dataGrid.clear();
+        featureVectors.clear();
     }
 
     public void showAll() {
@@ -1524,9 +1534,11 @@ public class Hypersurface3DPane extends StackPane
             new KeyFrame(Duration.seconds(0.1), new KeyValue(opacityProperty(), 1.0)),
             new KeyFrame(Duration.seconds(0.2), e -> outtro(1000)),
             new KeyFrame(Duration.seconds(2.0), new KeyValue(opacityProperty(), 0.0)),
-            new KeyFrame(Duration.seconds(2.0), e -> setVisible(false))
+            new KeyFrame(Duration.seconds(2.0), e -> setVisible(false)),
+            new KeyFrame(Duration.seconds(2.1), e -> setOpacity(1.0))
         );
-        timeline.play();
+        timeline.setOnFinished(e -> setVisible(false));
+        timeline.playFromStart();
     }
 
     public void showFA3D() {
@@ -1538,7 +1550,7 @@ public class Hypersurface3DPane extends StackPane
             new KeyFrame(Duration.seconds(0.3), new KeyValue(opacityProperty(), 1.0)),
             new KeyFrame(Duration.seconds(0.6), e -> intro(1000))
         );
-        timeline.play();
+        timeline.playFromStart();
     }
 
     @Override
@@ -1645,7 +1657,8 @@ public class Hypersurface3DPane extends StackPane
 
     @Override
     public void addFeatureVector(FeatureVector featureVector) {
-        throw new UnsupportedOperationException("Not supported yet.");
+        featureVectors.add(featureVector);
+        dataGrid.add(featureVector.getData());
     }
 
     @Override
@@ -1655,7 +1668,8 @@ public class Hypersurface3DPane extends StackPane
 
     @Override
     public void clearFeatureVectors() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        featureVectors.clear();
+        dataGrid.clear();
     }
 
     @Override

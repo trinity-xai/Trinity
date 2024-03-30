@@ -30,12 +30,14 @@
         <maven.enforcer.plugin.version>3.4.1</maven.enforcer.plugin.version>
         <maven.assembly.plugin.version>3.6.0</maven.assembly.plugin.version>
         <maven.surefire.plugin.version>3.1.2</maven.surefire.plugin.version>
+        <maven.site.plugin.version>4.0.0-M13</maven.site.plugin.version>
         <javafx.maven.plugin.version>0.0.8</javafx.maven.plugin.version>
         <gluonfx.maven.plugin.version>1.0.22</gluonfx.maven.plugin.version>
         <codehaus.license.plugin.version>2.4.0</codehaus.license.plugin.version>
         <codehaus.flatten.plugin.version>1.6.0</codehaus.flatten.plugin.version>
         <codehaus.build.helper.maven.plugin.version>3.5.0</codehaus.build.helper.maven.plugin.version>
         <git.commit.maven.plugin.version>7.0.0</git.commit.maven.plugin.version>
+        <org.owasp.dependency-check-maven.plugin.version>9.0.10</org.owasp.dependency-check-maven.plugin.version>
         <junit.jupiter.version>5.10.2</junit.jupiter.version>
         <litfx.controls.version>0.1.3</litfx.controls.version>
         <fxyz3d.version>0.6.0</fxyz3d.version>
@@ -45,6 +47,7 @@
         <zeromq.jeromq.version>0.6.0</zeromq.jeromq.version>
         <jackson.version>2.16.1</jackson.version>
         <sarxos.webcam.capture.version>0.3.12</sarxos.webcam.capture.version>
+        <org.jflac.jflac-codec.version>1.5.2</org.jflac.jflac-codec.version>
         <slf4j.version>2.0.12</slf4j.version>
         <license.organizationName>The Johns Hopkins University Applied Physics Laboratory LLC</license.organizationName>
         <license.licenceFile>LICENSE.md</license.licenceFile>
@@ -147,6 +150,11 @@
             <artifactId>webcam-capture</artifactId>
             <version>${sarxos.webcam.capture.version}</version>
         </dependency>
+        <dependency>
+          <groupId>org.jflac</groupId>
+          <artifactId>jflac-codec</artifactId>
+          <version>${org.jflac.jflac-codec.version}</version>
+        </dependency>
         <!-- Enforce slf4j-api version across dependencies (although we're using JUL) -->
         <dependency>
             <groupId>org.slf4j</groupId>
@@ -154,9 +162,30 @@
             <version>${slf4j.version}</version>
         </dependency>
     </dependencies>
-    <build>
-
+    <reporting>
         <plugins>
+            <plugin>
+                <groupId>org.owasp</groupId>
+                <artifactId>dependency-check-maven</artifactId>
+                <version>${org.owasp.dependency-check-maven.plugin.version}</version>
+                <reportSets>
+                    <reportSet>
+                        <reports>
+                            <report>aggregate</report>
+                        </reports>
+                    </reportSet>
+                </reportSets>
+            </plugin>
+        </plugins>
+    </reporting>
+    <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-site-plugin</artifactId>
+                <version>${maven.site.plugin.version}</version>
+            </plugin>
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>

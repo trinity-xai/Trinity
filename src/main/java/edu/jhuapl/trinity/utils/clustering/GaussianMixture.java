@@ -6,16 +6,16 @@ import org.apache.commons.math3.linear.RealMatrix;
 
 /*-
  * #%L
- * trinity-2023.12.05
+ * trinity
  * %%
  * Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -29,12 +29,18 @@ import org.apache.commons.math3.linear.RealMatrix;
  * The EM algorithm can be used to learn the mixture model from data.
  */
 public class GaussianMixture {
-    
-    /** The components of finite mixture model. */
-    public final GaussianMixtureComponent[] components;    
-    /** The log-likelihood when the distribution is fit on a sample data. */
+
+    /**
+     * The components of finite mixture model.
+     */
+    public final GaussianMixtureComponent[] components;
+    /**
+     * The log-likelihood when the distribution is fit on a sample data.
+     */
     public final double logLikelihood;
-    /** The BIC score when the distribution is fit on a sample data. */
+    /**
+     * The BIC score when the distribution is fit on a sample data.
+     */
     public final double bic;
 
     /**
@@ -46,8 +52,8 @@ public class GaussianMixture {
 
     /**
      * @param components a list of discrete exponential family distributions.
-     * @param L the log-likelihood.
-     * @param n the number of samples to fit the distribution.
+     * @param L          the log-likelihood.
+     * @param n          the number of samples to fit the distribution.
      */
     GaussianMixture(double L, int n, GaussianMixtureComponent... components) {
         this.components = components;
@@ -57,7 +63,8 @@ public class GaussianMixture {
 
     /**
      * Fits the mixture model with the EM algorithm.
-     * @param x the training data.
+     *
+     * @param x          the training data.
      * @param components the initial configuration of mixture. Components may have
      *                   different distribution form.
      * @return the distribution.
@@ -69,12 +76,12 @@ public class GaussianMixture {
     /**
      * Fits the mixture model with the EM algorithm.
      *
-     * @param x the training data.
+     * @param x          the training data.
      * @param components the initial configuration of mixture. Components may have
      *                   different distribution form.
-     * @param gamma the regularization parameter.
-     * @param maxIter the maximum number of iterations.
-     * @param tol the tolerance of convergence test.
+     * @param gamma      the regularization parameter.
+     * @param maxIter    the maximum number of iterations.
+     * @param tol        the tolerance of convergence test.
      * @return the distribution.
      */
     public static GaussianMixture fit(double[][] x, GaussianMixtureComponent[] components, double gamma, int maxIter, double tol) {
@@ -94,7 +101,7 @@ public class GaussianMixture {
         // Log Likelihood
         double L = 0.0;
         double log2 = Math.log(2);
-        
+
         // EM loop until convergence
         int iterationsComplete = 0;
         maxIter = 200;
@@ -111,7 +118,7 @@ public class GaussianMixture {
                     posteriori[i][j] = c.priori * c.distribution.p(x[j]);
                 }
             }
-            
+
             // Normalize posteriori probability.
             for (int j = 0; j < n; j++) {
                 double p = 0.0;
@@ -127,7 +134,7 @@ public class GaussianMixture {
                 // Adjust posterior probabilites based on Regularized EM algorithm.
                 if (gamma > 0) {
                     for (int i = 0; i < k; i++) {
-                        posteriori[i][j] *= (1 + gamma * 
+                        posteriori[i][j] *= (1 + gamma *
                             Math.log(posteriori[i][j]) / log2);
                         if (Double.isNaN(posteriori[i][j]) || posteriori[i][j] < 0.0) {
                             posteriori[i][j] = 0.0;
@@ -169,6 +176,7 @@ public class GaussianMixture {
         System.out.println("EM Iterations: " + iterationsComplete);
         return new GaussianMixture(L, x.length, components);
     }
+
     public int length() {
         int f = components.length - 1; // independent priori parameters
         for (GaussianMixtureComponent component : components) {
@@ -177,6 +185,7 @@ public class GaussianMixture {
 
         return f;
     }
+
     public double p(double[] x) {
         double p = 0.0;
 
@@ -185,9 +194,11 @@ public class GaussianMixture {
         }
 
         return p;
-    }    
+    }
+
     /**
      * Returns the BIC score.
+     *
      * @param data the data to calculate likelihood.
      * @return the BIC score.
      */
@@ -203,9 +214,11 @@ public class GaussianMixture {
         }
 
         return logLikelihood - 0.5 * length() * Math.log(n);
-    }    
+    }
+
     /**
      * Returns the posteriori probabilities.
+     *
      * @param x a real vector.
      * @return the posteriori probabilities.
      */
@@ -222,7 +235,8 @@ public class GaussianMixture {
             prob[i] /= p;
         }
         return prob;
-    }    
+    }
+
     public double[] mean() {
         double w = components[0].priori;
         double[] m = components[0].distribution.mean();
@@ -267,7 +281,8 @@ public class GaussianMixture {
         }
 
         return cov;
-    }    
+    }
+
     public Pair<Integer, Double> maxPostProb(double[] x) {
         int k = components.length;
         double[] prob = new double[k];
@@ -276,6 +291,6 @@ public class GaussianMixture {
             prob[i] = c.priori * c.distribution.p(x);
         }
         int maxIndex = ClusterUtils.whichMax(prob);
-        return new Pair<>(maxIndex,prob[maxIndex]);
-    }    
+        return new Pair<>(maxIndex, prob[maxIndex]);
+    }
 }

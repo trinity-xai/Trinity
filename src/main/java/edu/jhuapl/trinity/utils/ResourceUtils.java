@@ -35,6 +35,8 @@ import edu.jhuapl.trinity.data.files.ZeroPilotLatentsFile;
 import edu.jhuapl.trinity.data.messages.FeatureCollection;
 import edu.jhuapl.trinity.data.terrain.FireAreaTextFile;
 import edu.jhuapl.trinity.data.terrain.TerrainTextFile;
+import edu.jhuapl.trinity.javafx.components.radial.ProgressStatus;
+import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.AudioEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.events.GaussianMixtureEvent;
@@ -44,9 +46,12 @@ import edu.jhuapl.trinity.javafx.events.SemanticMapEvent;
 import edu.jhuapl.trinity.javafx.events.TerrainEvent;
 import edu.jhuapl.trinity.javafx.events.TrajectoryEvent;
 import edu.jhuapl.trinity.utils.loaders.CdcTissueGenesLoader;
+import edu.jhuapl.trinity.utils.loaders.FeatureCollectionLoader;
 import edu.jhuapl.trinity.utils.loaders.McclodSplitDataLoader;
 import edu.jhuapl.trinity.utils.loaders.TextEmbeddingsLoader;
 import edu.jhuapl.trinity.utils.loaders.ZeroPilotLatentsLoader;
+import javafx.application.Platform;
+import javafx.concurrent.Task;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
@@ -223,6 +228,7 @@ public enum ResourceUtils {
         iv.setFitWidth(FIT_WIDTH);
         return iv;
     }
+
     /**
      * Checks whether the file can be used as audio.
      *
@@ -246,7 +252,7 @@ public enum ResourceUtils {
             }
         }
         return false;
-    }    
+    }
 
     public static boolean canDragOver(DragEvent event) {
         Dragboard db = event.getDragboard();
@@ -279,94 +285,103 @@ public enum ResourceUtils {
      */
     public static void onDragDropped(DragEvent event, Scene scene) {
         Dragboard db = event.getDragboard();
-        boolean success = false;
         if (db.hasFiles()) {
-            for (File file : db.getFiles()) {
-                try {
-                    if (JavaFX3DUtils.isTextureFile(file)) {
-                        Image image = new Image(file.toURI().toURL().toExternalForm());
+            final List<File> files = db.getFiles();
+            Task task = new Task() {
+                @Override
+                protected Void call() throws Exception {
+                    Platform.runLater(() -> {
+                        ProgressStatus ps1 = new ProgressStatus("Receiving Data Drop...", -1);
                         scene.getRoot().fireEvent(
-                            new ImageEvent(ImageEvent.NEW_TEXTURE_SURFACE, image));
-                    }else if (isAudioFile(file)) {
-                        scene.getRoot().fireEvent(
-                            new AudioEvent(AudioEvent.NEW_AUDIO_FILE, file));
-                    } else if (LabelConfigFile.isLabelConfigFile(file)) {
-                        LabelConfigFile labelConfigFile = new LabelConfigFile(file.getAbsolutePath(), true);
-                        scene.getRoot().fireEvent(
-                            new FeatureVectorEvent(FeatureVectorEvent.NEW_LABEL_CONFIG, labelConfigFile.labelConfig));
-                    } else if (TerrainTextFile.isTerrainTextFile(file)) {
-                        TerrainTextFile terrainTextFile = new TerrainTextFile(file.getAbsolutePath(), true);
-                        scene.getRoot().fireEvent(
-                            new TerrainEvent(TerrainEvent.NEW_TERRAIN_TEXTFILE, terrainTextFile.dataGrid));
-                    } else if (FireAreaTextFile.isFireAreaTextFile(file)) {
-                        FireAreaTextFile fireAreaTextFile = new FireAreaTextFile(file.getAbsolutePath(), true);
-                        scene.getRoot().fireEvent(
-                            new TerrainEvent(TerrainEvent.NEW_FIREAREA_TEXTFILE, fireAreaTextFile.dataGrid));
-                    } else if (SemanticMapCollectionFile.isSemanticMapCollectionFile(file)) {
-                        SemanticMapCollectionFile smcFile = new SemanticMapCollectionFile(file.getAbsolutePath(), true);
-                        scene.getRoot().fireEvent(
-                            new SemanticMapEvent(SemanticMapEvent.NEW_SEMANTICMAP_COLLECTION, smcFile.semanticMapCollection));
-                        //Trajectory logic handled by SemanticMapEventHandler
-                    } else if (ClusterCollectionFile.isClusterCollectionFile(file)) {
-                        ClusterCollectionFile ccFile = new ClusterCollectionFile(file.getAbsolutePath(), true);
-                        scene.getRoot().fireEvent(
-                            new ManifoldEvent(ManifoldEvent.NEW_CLUSTER_COLLECTION, ccFile.clusterCollection));
-                    } else if (FeatureCollectionFile.isFeatureCollectionFile(file)) {
-                        FeatureCollectionFile fcFile = new FeatureCollectionFile(file.getAbsolutePath(), true);
-                        scene.getRoot().fireEvent(
-                            new FeatureVectorEvent(FeatureVectorEvent.NEW_FEATURE_COLLECTION, fcFile.featureCollection));
-                        Trajectory trajectory = new Trajectory(file.getName());
-                        trajectory.totalStates = fcFile.featureCollection.getFeatures().size();
-                        Trajectory.addTrajectory(trajectory);
-                        Trajectory.globalTrajectoryToFeatureCollectionMap.put(trajectory, fcFile.featureCollection);
-                        scene.getRoot().fireEvent(
-                            new TrajectoryEvent(TrajectoryEvent.NEW_TRAJECTORY_OBJECT, trajectory, fcFile.featureCollection));
-                    } else if (GaussianMixtureCollectionFile.isGaussianMixtureCollectionFile(file)) {
-                        GaussianMixtureCollectionFile gmcFile = new GaussianMixtureCollectionFile(file.getAbsolutePath(), true);
-                        scene.getRoot().fireEvent(
-                            new GaussianMixtureEvent(GaussianMixtureEvent.NEW_GAUSSIAN_COLLECTION, gmcFile.gaussianMixtureCollection));
-                    } else if (TextEmbeddingCollectionFile.isTextEmbeddingCollection(file)) {
-                        TextEmbeddingsLoader task = new TextEmbeddingsLoader(scene, file);
-                        Thread thread = new Thread(task);
-                        thread.setDaemon(true);
-                        thread.start();
-                    } else if (CdcCsvFile.isCdcCsvFile(file)) {
-                        CdcCsvFile cdcCsvFile = new CdcCsvFile(file.getAbsolutePath(), true);
-                        //convert to Feature Vector Collection for the lulz
-                        FeatureCollection fc = DataUtils.convertCdcCsv(cdcCsvFile.cdcCsvList, true);
-                        scene.getRoot().fireEvent(
-                            new FeatureVectorEvent(FeatureVectorEvent.NEW_FEATURE_COLLECTION, fc));
-                        Trajectory trajectory = new Trajectory(file.getName());
-                        trajectory.totalStates = fc.getFeatures().size();
-                        scene.getRoot().fireEvent(
-                            new TrajectoryEvent(TrajectoryEvent.NEW_TRAJECTORY_OBJECT, trajectory, fc));
-                    } else if (CdcTissueGenesFile.isCdcTissueGenesFile(file)) {
-                        CdcTissueGenesLoader task = new CdcTissueGenesLoader(scene, file);
-                        Thread thread = new Thread(task);
-                        thread.setDaemon(true);
-                        thread.start();
-                    } else if (McclodSplitDataTsvFile.isMcclodSplitDataTsvFile(file)) {
-                        McclodSplitDataLoader task = new McclodSplitDataLoader(scene, file);
-                        Thread thread = new Thread(task);
-                        thread.setDaemon(true);
-                        thread.start();
-                    } else if (ZeroPilotLatentsFile.isZeroPilotLatentsFile(file)) {
-                        ZeroPilotLatentsLoader task = new ZeroPilotLatentsLoader(scene, file);
-                        Thread thread = new Thread(task);
-                        thread.setDaemon(true);
-                        thread.start();
-                    } else if (ManifoldDataFile.isManifoldDataFile(file)) {
-                        ManifoldDataFile mdFile = new ManifoldDataFile(file.getAbsolutePath(), true);
-                        scene.getRoot().fireEvent(
-                            new ManifoldEvent(ManifoldEvent.NEW_MANIFOLD_DATA, mdFile.manifoldData));
+                            new ApplicationEvent(ApplicationEvent.SHOW_BUSY_INDICATOR, ps1));
+                    });
+
+                    for (File file : files) {
+                        try {
+                            if (JavaFX3DUtils.isTextureFile(file)) {
+                                Image image = new Image(file.toURI().toURL().toExternalForm());
+                                Platform.runLater(() -> scene.getRoot().fireEvent(
+                                    new ImageEvent(ImageEvent.NEW_TEXTURE_SURFACE, image)));
+                            } else if (isAudioFile(file)) {
+                                Platform.runLater(() -> scene.getRoot().fireEvent(
+                                    new AudioEvent(AudioEvent.NEW_AUDIO_FILE, file)));
+                            } else if (LabelConfigFile.isLabelConfigFile(file)) {
+                                LabelConfigFile labelConfigFile = new LabelConfigFile(file.getAbsolutePath(), true);
+                                Platform.runLater(() -> scene.getRoot().fireEvent(
+                                    new FeatureVectorEvent(FeatureVectorEvent.NEW_LABEL_CONFIG, labelConfigFile.labelConfig)));
+                            } else if (TerrainTextFile.isTerrainTextFile(file)) {
+                                TerrainTextFile terrainTextFile = new TerrainTextFile(file.getAbsolutePath(), true);
+                                Platform.runLater(() -> scene.getRoot().fireEvent(
+                                    new TerrainEvent(TerrainEvent.NEW_TERRAIN_TEXTFILE, terrainTextFile.dataGrid)));
+                            } else if (FireAreaTextFile.isFireAreaTextFile(file)) {
+                                FireAreaTextFile fireAreaTextFile = new FireAreaTextFile(file.getAbsolutePath(), true);
+                                Platform.runLater(() -> scene.getRoot().fireEvent(
+                                    new TerrainEvent(TerrainEvent.NEW_FIREAREA_TEXTFILE, fireAreaTextFile.dataGrid)));
+                            } else if (SemanticMapCollectionFile.isSemanticMapCollectionFile(file)) {
+                                SemanticMapCollectionFile smcFile = new SemanticMapCollectionFile(file.getAbsolutePath(), true);
+                                Platform.runLater(() -> scene.getRoot().fireEvent(
+                                    new SemanticMapEvent(SemanticMapEvent.NEW_SEMANTICMAP_COLLECTION, smcFile.semanticMapCollection)));
+                                //Trajectory logic handled by SemanticMapEventHandler
+                            } else if (ClusterCollectionFile.isClusterCollectionFile(file)) {
+                                ClusterCollectionFile ccFile = new ClusterCollectionFile(file.getAbsolutePath(), true);
+                                Platform.runLater(() -> scene.getRoot().fireEvent(
+                                    new ManifoldEvent(ManifoldEvent.NEW_CLUSTER_COLLECTION, ccFile.clusterCollection)));
+                            } else if (FeatureCollectionFile.isFeatureCollectionFile(file)) {
+                                FeatureCollectionLoader task = new FeatureCollectionLoader(scene, file);
+                                Thread thread = new Thread(task);
+                                thread.setDaemon(true);
+                                thread.start();
+                            } else if (GaussianMixtureCollectionFile.isGaussianMixtureCollectionFile(file)) {
+                                GaussianMixtureCollectionFile gmcFile = new GaussianMixtureCollectionFile(file.getAbsolutePath(), true);
+                                Platform.runLater(() -> scene.getRoot().fireEvent(
+                                    new GaussianMixtureEvent(GaussianMixtureEvent.NEW_GAUSSIAN_COLLECTION, gmcFile.gaussianMixtureCollection)));
+                            } else if (TextEmbeddingCollectionFile.isTextEmbeddingCollection(file)) {
+                                TextEmbeddingsLoader task = new TextEmbeddingsLoader(scene, file);
+                                Thread thread = new Thread(task);
+                                thread.setDaemon(true);
+                                thread.start();
+                            } else if (CdcCsvFile.isCdcCsvFile(file)) {
+                                CdcCsvFile cdcCsvFile = new CdcCsvFile(file.getAbsolutePath(), true);
+                                //convert to Feature Vector Collection for the lulz
+                                FeatureCollection fc = DataUtils.convertCdcCsv(cdcCsvFile.cdcCsvList, true);
+                                Platform.runLater(() -> scene.getRoot().fireEvent(
+                                    new FeatureVectorEvent(FeatureVectorEvent.NEW_FEATURE_COLLECTION, fc)));
+                                Trajectory trajectory = new Trajectory(file.getName());
+                                trajectory.totalStates = fc.getFeatures().size();
+                                Platform.runLater(() -> scene.getRoot().fireEvent(
+                                    new TrajectoryEvent(TrajectoryEvent.NEW_TRAJECTORY_OBJECT, trajectory, fc)));
+                            } else if (CdcTissueGenesFile.isCdcTissueGenesFile(file)) {
+                                CdcTissueGenesLoader task = new CdcTissueGenesLoader(scene, file);
+                                Thread thread = new Thread(task);
+                                thread.setDaemon(true);
+                                thread.start();
+                            } else if (McclodSplitDataTsvFile.isMcclodSplitDataTsvFile(file)) {
+                                McclodSplitDataLoader task = new McclodSplitDataLoader(scene, file);
+                                Thread thread = new Thread(task);
+                                thread.setDaemon(true);
+                                thread.start();
+                            } else if (ZeroPilotLatentsFile.isZeroPilotLatentsFile(file)) {
+                                ZeroPilotLatentsLoader task = new ZeroPilotLatentsLoader(scene, file);
+                                Thread thread = new Thread(task);
+                                thread.setDaemon(true);
+                                thread.start();
+                            } else if (ManifoldDataFile.isManifoldDataFile(file)) {
+                                ManifoldDataFile mdFile = new ManifoldDataFile(file.getAbsolutePath(), true);
+                                Platform.runLater(() -> scene.getRoot().fireEvent(
+                                    new ManifoldEvent(ManifoldEvent.NEW_MANIFOLD_DATA, mdFile.manifoldData)));
+                            }
+                        } catch (IOException ex) {
+                            Logger.getLogger(ResourceUtils.class.getName()).log(Level.SEVERE, null, ex);
+                        }
                     }
-                } catch (IOException ex) {
-                    Logger.getLogger(ResourceUtils.class.getName()).log(Level.SEVERE, null, ex);
+                    return null;
                 }
-                success = true;
-            }
+            };
+            Thread t = new Thread(task);
+            t.setDaemon(true);
+            t.start();
+            event.setDropCompleted(true);
+            event.consume();
         }
-        event.setDropCompleted(success);
-        event.consume();
     }
 }

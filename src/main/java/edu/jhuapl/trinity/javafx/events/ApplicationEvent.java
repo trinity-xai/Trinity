@@ -34,6 +34,7 @@ public class ApplicationEvent extends Event {
     public static final EventType<ApplicationEvent> SHOW_ABOUT = new EventType(ANY, "SHOW_ABOUT");
     public static final EventType<ApplicationEvent> SHUTDOWN = new EventType(ANY, "SHUTDOWN");
     public static final EventType<ApplicationEvent> RESTORE_PANES = new EventType(ANY, "RESTORE_PANES");
+    public static final EventType<ApplicationEvent> SHOW_SPARK_LINES = new EventType(ANY, "SHOW_SPARK_LINES");
     public static final EventType<ApplicationEvent> SHOW_DATA = new EventType(ANY, "SHOW_DATA");
     public static final EventType<ApplicationEvent> SHOW_TEXT_CONSOLE = new EventType(ANY, "SHOW_TEXT_CONSOLE");
     public static final EventType<ApplicationEvent> SHOW_WAVEFORM_PANE = new EventType(ANY, "SHOW_WAVEFORM_PANE");
@@ -44,6 +45,7 @@ public class ApplicationEvent extends Event {
     public static final EventType<ApplicationEvent> HIDE_BUSY_INDICATOR = new EventType(ANY, "HIDE_BUSY_INDICATOR");
     public static final EventType<ApplicationEvent> UPDATE_BUSY_INDICATOR = new EventType(ANY, "PROGRESS_BUSY_INDICATOR");
     public static final EventType<ApplicationEvent> SHOW_SHAPE3D_CONTROLS = new EventType(ANY, "SHOW_SHAPE3D_CONTROLS");
+    public static final EventType<ApplicationEvent> AUTO_PROJECTION_MODE = new EventType(ANY, "AUTO_PROJECTION_MODE");
 
     public ApplicationEvent(EventType<? extends Event> eventType, Object object) {
         this(eventType);

@@ -44,6 +44,8 @@ public class SearchPane extends LitPathPane {
         Tab filterTab = new Tab("Filters", filterBox);
 
         TabPane tabPane = new TabPane(searchTab, filterTab);
+        tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
+        tabPane.setTabDragPolicy(TabPane.TabDragPolicy.FIXED);
         BorderPane bpOilSpill = new BorderPane(tabPane);
         return bpOilSpill;
     }

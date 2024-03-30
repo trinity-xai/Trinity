@@ -105,7 +105,7 @@ public class RadialEntityOverlayPane extends Pane {
         vectorToEntityMap = new HashMap<>();
         calloutList = FXCollections.observableArrayList();
         vectorToCalloutMap = new HashMap<>();
-        scene.addEventHandler(ApplicationEvent.SET_IMAGERY_BASEPATH, e -> {
+        this.scene.addEventHandler(ApplicationEvent.SET_IMAGERY_BASEPATH, e -> {
             imageryBasePath = (String) e.object;
             System.out.println("Callout image base path set to " + imageryBasePath);
         });

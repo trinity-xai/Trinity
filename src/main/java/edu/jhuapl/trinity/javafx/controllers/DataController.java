@@ -77,16 +77,21 @@ public class DataController implements Initializable {
     //// Imagery /////
     @FXML
     private TextField imageryBasePathTextField;
+
+    //// Timeline controls /////
     @FXML
     private CheckBox showTimelineCheckBox;
     @FXML
     private CheckBox showStateTrajectoryCheckBox;
     @FXML
     private CheckBox showLeadCalloutCheckBox;
-
     @FXML
     private Spinner trajectorySizeSpinner;
-
+    //// Projections /////
+    @FXML
+    ToggleButton autoProjectionToggleButton;
+    @FXML
+    Spinner projectionQueueSizeSpinner;
 
     ToggleGroup toggleGroup;
     Scene scene;
@@ -135,13 +140,31 @@ public class DataController implements Initializable {
         });
         trajectorySizeSpinner.disableProperty().bind(
             showStateTrajectoryCheckBox.selectedProperty().not());
+    }
 
+    @FXML
+    public void toggleAutoProjection() {
+        scene.getRoot().fireEvent(
+            new ApplicationEvent(ApplicationEvent.AUTO_PROJECTION_MODE,
+                autoProjectionToggleButton.isSelected()));
+    }
+
+    @FXML
+    public void showSparkLines() {
+        scene.getRoot().fireEvent(
+            new ApplicationEvent(ApplicationEvent.SHOW_SPARK_LINES));
     }
 
     @FXML
     public void showTrajectoryTracker() {
         scene.getRoot().fireEvent(
             new TrajectoryEvent(TrajectoryEvent.SHOW_TRAJECTORY_TRACKER));
+    }
+
+    @FXML
+    public void showWaveformDisplay() {
+        scene.getRoot().fireEvent(
+            new ApplicationEvent(ApplicationEvent.SHOW_WAVEFORM_PANE));
     }
 
     @FXML

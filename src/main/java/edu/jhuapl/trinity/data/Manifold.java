@@ -145,4 +145,18 @@ public class Manifold {
     public void setVisible(final java.lang.Boolean visible) {
         this.visibleProperty().set(visible);
     }
+
+    /**
+     * @return the points
+     */
+    public ArrayList<Point3D> getPoints() {
+        return points;
+    }
+
+    /**
+     * @param points the points to set
+     */
+    public void setPoints(ArrayList<Point3D> points) {
+        this.points = points;
+    }
 }

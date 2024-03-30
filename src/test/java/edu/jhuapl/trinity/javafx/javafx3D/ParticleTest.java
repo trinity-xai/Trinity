@@ -270,12 +270,12 @@ public class ParticleTest extends Application {
         //whenever the spinner value is changed...
         gravitySpinner.valueProperty().addListener(e -> {
             smoke.gravity = gravitySpinner.getValue().floatValue();
-            for(Object object : particleSystem.getParticleArray()) {
-                AgingParticle p = (AgingParticle)object;
+            for (Object object : particleSystem.getParticleArray()) {
+                AgingParticle p = (AgingParticle) object;
                 p.gravity = gravitySpinner.getValue().floatValue();
             }
-        });        
-        
+        });
+
         VBox vbox = new VBox(10,
             particleTimerCheckBox,
             spawnParticlesCheckBox,
@@ -284,7 +284,7 @@ public class ParticleTest extends Application {
             viewOrderCheckBox,
             activeCheckBox,
             new HBox(5, sphericalRadioButton, cylinderRadioButton),
-            new VBox(new Label("Gravity"),gravitySpinner)
+            new VBox(new Label("Gravity"), gravitySpinner)
         );
         ScrollPane scrollPane = new ScrollPane(vbox);
         StackPane.setAlignment(vbox, Pos.BOTTOM_LEFT);

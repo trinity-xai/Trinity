@@ -25,6 +25,7 @@ import edu.jhuapl.trinity.javafx.events.HyperspaceEvent;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.PhongMaterial;
 
 import java.util.Collection;
 import java.util.HashMap;
@@ -52,6 +53,9 @@ public class FactorLabel {
      * anchored in the system.
      */
     public static HashMap<String, FactorLabel> globalLabelMap = new HashMap<>();
+
+    public static HashMap<String, PhongMaterial> globalMaterialMap = new HashMap<>();
+
 
     public static Collection<FactorLabel> getFactorLabels() {
         return globalLabelMap.values();

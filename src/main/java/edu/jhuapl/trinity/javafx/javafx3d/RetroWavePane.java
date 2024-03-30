@@ -24,10 +24,10 @@ import edu.jhuapl.trinity.data.messages.ChannelFrame;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.HyperspaceEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.AnimatedBox;
+import edu.jhuapl.trinity.javafx.javafx3d.animated.AnimatedSphere;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.AnimatedStack;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.AnimatedTetrahedron;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.Opticon;
-import edu.jhuapl.trinity.javafx.javafx3d.animated.Planetoid;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.TessellationMesh;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.MessageUtils;
@@ -134,7 +134,8 @@ public class RetroWavePane extends StackPane {
     //allows 2D labels to track their 3D counterparts
     HashMap<Shape3D, Label> shape3DToLabel = new HashMap<>();
     private Random rando = new Random();
-    Planetoid retroMoonSphere, retroSunSphere;
+    AnimatedSphere retroMoonSphere;
+    AnimatedSphere retroSunSphere;
     List<Opticon> opticonList = new ArrayList<>();
     public AnimatedBox retroHighway;
     public AnimatedTetrahedron pyramid;
@@ -1037,7 +1038,7 @@ public class RetroWavePane extends StackPane {
             Logger.getLogger(RetroWavePane.class.getName()).log(Level.SEVERE, null, ex);
             sunMat = new PhongMaterial(Color.ORANGE);
         }
-        retroSunSphere = new Planetoid(sunMat, 400, 256);
+        retroSunSphere = new AnimatedSphere(sunMat, 400, 256, true);
         retroSunSphere.setTranslateZ((surfScale * zWidth) + 600);
         retroSunSphere.setTranslateY(-sunTranslateY);
         //HIDDEN FEATURE EASTER EGG!!
@@ -1061,7 +1062,7 @@ public class RetroWavePane extends StackPane {
             Logger.getLogger(RetroWavePane.class.getName()).log(Level.SEVERE, null, ex);
             mat = new PhongMaterial(Color.CYAN);
         }
-        retroMoonSphere = new Planetoid(mat, 200.0, 64);
+        retroMoonSphere = new AnimatedSphere(mat, 200.0, 64, true);
         retroMoonSphere.setMaterial(mat);
         retroMoonSphere.setTranslateY(sunTranslateY);
         retroMoonSphere.setTranslateZ((surfScale * zWidth) + 600);
@@ -1080,7 +1081,7 @@ public class RetroWavePane extends StackPane {
 
 
         PhongMaterial moonMat = new PhongMaterial(Color.CYAN.brighter().brighter());
-        Planetoid retroMoonMesh = new Planetoid(moonMat, 165.0, 16);
+        AnimatedSphere retroMoonMesh = new AnimatedSphere(moonMat, 165.0, 16, true);
         retroMoonMesh.setDrawMode(DrawMode.LINE);
         //retroMoonMesh.setCullFace(CullFace.FRONT);
         retroMoonMesh.setTranslateY(-sunTranslateY / 2.0);

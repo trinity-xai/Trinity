@@ -25,7 +25,13 @@ import com.github.quickhull3d.QuickHull3D;
 import edu.jhuapl.trinity.data.Manifold;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
+import edu.jhuapl.trinity.utils.ConcaveUtils;
 import javafx.animation.AnimationTimer;
+import javafx.animation.Interpolator;
+import javafx.animation.KeyFrame;
+import javafx.animation.KeyValue;
+import javafx.animation.Timeline;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.scene.Group;
 import javafx.scene.control.ColorPicker;
 import javafx.scene.control.ContextMenu;
@@ -44,8 +50,10 @@ import javafx.scene.shape.Sphere;
 import javafx.scene.shape.TriangleMesh;
 import javafx.scene.text.Font;
 import javafx.stage.FileChooser;
+import javafx.util.Duration;
 import org.fxyz3d.geometry.Face3;
 import org.fxyz3d.geometry.Point3D;
+import org.fxyz3d.scene.paint.Palette;
 import org.fxyz3d.shapes.primitives.helper.TriangleMeshHelper;
 
 import java.io.File;
@@ -55,14 +63,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.function.Function;
 import java.util.stream.DoubleStream;
-import javafx.animation.Interpolator;
-import javafx.animation.KeyFrame;
-import javafx.animation.KeyValue;
-import javafx.animation.ScaleTransition;
-import javafx.animation.Timeline;
-import javafx.beans.property.SimpleBooleanProperty;
-import javafx.util.Duration;
-import org.fxyz3d.scene.paint.Palette;
 
 
 /**
@@ -84,17 +84,17 @@ public class Manifold3D extends Group {
     public static Function<Point3d, Point3D> hullPointToPoint3D = p -> new Point3D(p.x, p.y, p.z);
     private TexturedManifold texturedManifold;
     public SimpleBooleanProperty selected = new SimpleBooleanProperty(false);
-    
-    
+
+
     //allows 2D labels to track their 3D counterparts
     HashMap<Shape3D, Label> shape3DToLabel = new HashMap<>();
     AnimationTimer tessellationTimer;
     private List<Point3D> originalPoint3Ds = null;
     public static File latestDir = new File(".");
 
-    public Manifold3D(List<Point3D> point3DList, boolean triangulate, boolean makeLines, boolean makePoints) {
+    public Manifold3D(List<Point3D> point3DList, boolean triangulate, boolean makeLines, boolean makePoints, Double tolerance) {
         originalPoint3Ds = point3DList;
-        buildHullMesh(point3DList, triangulate, makeLines, makePoints);
+        buildHullMesh(point3DList, triangulate, makeLines, makePoints, tolerance);
 
         List<Point3D> fxyzPoints = new ArrayList<>();
         for (int i = 0; i < hull.getNumVertices(); i++) {
@@ -113,9 +113,9 @@ public class Manifold3D extends Group {
         quickhullMeshView.setDrawMode(DrawMode.FILL);
         quickhullMeshView.setCullFace(CullFace.NONE);
         getChildren().addAll(quickhullMeshView);
-        
+
         selectionTexturedManifold = new TexturedManifold(fxyzPoints, faces);
-        Palette.FunctionColorPalette trans =  new Palette.FunctionColorPalette(
+        Palette.FunctionColorPalette trans = new Palette.FunctionColorPalette(
             1, d -> Color.ALICEBLUE.deriveColor(1, 1, 1, 0.75));
         selectionTexturedManifold.setTextureModeFaces(trans);
         getChildren().addAll(selectionTexturedManifold);
@@ -125,7 +125,7 @@ public class Manifold3D extends Group {
         selectionTexturedManifold.setDrawMode(DrawMode.LINE);
         selectionTexturedManifold.setMouseTransparent(true);
         selectionTexturedManifold.visibleProperty().bind(selected);
-        
+
         if (makeLines)
             makeLines();
 
@@ -137,6 +137,20 @@ public class Manifold3D extends Group {
         editPointsItem.setOnAction(e -> {
             getScene().getRoot().fireEvent(new ApplicationEvent(
                 ApplicationEvent.SHOW_SHAPE3D_CONTROLS, this));
+        });
+
+        MenuItem makeConcaveItem = new MenuItem("Make Concave");
+        makeConcaveItem.setOnAction(e -> {
+//            List<javafx.geometry.Point3D> points =
+//                getOriginalPoint3DList().stream().map(fxyzPoint3DTofxPoint3D).toList();
+//            // ****
+//            int n = 5; // number of neighbors
+//            int i = 6; // if you want to find the nearest neighbors of the ith point.
+//            Octree octree = new Octree();
+//            octree.buildIndex(points);
+//            int[] neighborIndices = octree.searchNearestNeighbors(n, i);
+//            System.out.println("Octree stuff done.");
+            ConcaveUtils.makeConcave(this);
         });
 
         ColorPicker diffuseColorPicker = new ColorPicker(Color.SKYBLUE);
@@ -179,7 +193,7 @@ public class Manifold3D extends Group {
             Point3D p = getBoundsCentroid();
             System.out.println(p);
         });
-        cm.getItems().addAll(editPointsItem, exportItem, diffuseColorItem,
+        cm.getItems().addAll(editPointsItem, makeConcaveItem, exportItem, diffuseColorItem,
             specColorItem, tessallateItem, printBoundsCentroid);
         cm.setAutoFix(true);
         cm.setAutoHide(true);
@@ -196,44 +210,45 @@ public class Manifold3D extends Group {
             }
         });
     }
+
     public void toggleSelection(boolean selected) {
-        if(selected) {
+        if (selected) {
             this.selected.set(selected);
-            Timeline t = new Timeline( 
-                new KeyFrame(Duration.millis(0), 
+            Timeline t = new Timeline(
+                new KeyFrame(Duration.millis(0),
                     new KeyValue(selectionTexturedManifold.scaleXProperty(), 0.1, Interpolator.EASE_BOTH),
                     new KeyValue(selectionTexturedManifold.scaleYProperty(), 0.1, Interpolator.EASE_BOTH),
                     new KeyValue(selectionTexturedManifold.scaleZProperty(), 0.1, Interpolator.EASE_BOTH)),
-                new KeyFrame(Duration.millis(350), 
+                new KeyFrame(Duration.millis(350),
                     new KeyValue(selectionTexturedManifold.scaleXProperty(), 1.5, Interpolator.EASE_BOTH),
                     new KeyValue(selectionTexturedManifold.scaleYProperty(), 1.5, Interpolator.EASE_BOTH),
                     new KeyValue(selectionTexturedManifold.scaleZProperty(), 1.5, Interpolator.EASE_BOTH)),
-                new KeyFrame(Duration.millis(500), 
+                new KeyFrame(Duration.millis(500),
                     new KeyValue(selectionTexturedManifold.scaleXProperty(), 1.25, Interpolator.EASE_BOTH),
                     new KeyValue(selectionTexturedManifold.scaleYProperty(), 1.25, Interpolator.EASE_BOTH),
                     new KeyValue(selectionTexturedManifold.scaleZProperty(), 1.25, Interpolator.EASE_BOTH))
             );
             t.playFromStart();
         } else {
-            Timeline t = new Timeline( 
-                new KeyFrame(Duration.millis(0), 
+            Timeline t = new Timeline(
+                new KeyFrame(Duration.millis(0),
                     new KeyValue(selectionTexturedManifold.scaleXProperty(), 1.25, Interpolator.EASE_BOTH),
                     new KeyValue(selectionTexturedManifold.scaleYProperty(), 1.25, Interpolator.EASE_BOTH),
                     new KeyValue(selectionTexturedManifold.scaleZProperty(), 1.25, Interpolator.EASE_BOTH)),
-                new KeyFrame(Duration.millis(250), 
+                new KeyFrame(Duration.millis(250),
                     new KeyValue(selectionTexturedManifold.scaleXProperty(), 1.5, Interpolator.EASE_BOTH),
                     new KeyValue(selectionTexturedManifold.scaleYProperty(), 1.5, Interpolator.EASE_BOTH),
                     new KeyValue(selectionTexturedManifold.scaleZProperty(), 1.5, Interpolator.EASE_BOTH)),
-                new KeyFrame(Duration.millis(500), 
+                new KeyFrame(Duration.millis(500),
                     new KeyValue(selectionTexturedManifold.scaleXProperty(), 0.1, Interpolator.EASE_BOTH),
                     new KeyValue(selectionTexturedManifold.scaleYProperty(), 0.1, Interpolator.EASE_BOTH),
                     new KeyValue(selectionTexturedManifold.scaleZProperty(), 0.1, Interpolator.EASE_BOTH))
             );
-            t.setOnFinished(e-> this.selected.set(selected));
+            t.setOnFinished(e -> this.selected.set(selected));
             t.playFromStart();
         }
     }
-    
+
     public double getBoundsWidth() {
         return quickhullLinesMeshView.getBoundsInLocal().getWidth();
     }
@@ -343,11 +358,11 @@ public class Manifold3D extends Group {
         return shortestPoint;
     }
 
-    public void refreshMesh(List<Point3D> point3DList, boolean triangulate, boolean makeLines, boolean makePoints) {
+    public void refreshMesh(List<Point3D> point3DList, boolean triangulate, boolean makeLines, boolean makePoints, Double tolerance) {
         quickhullLinesTriangleMesh.getPoints().clear();
         quickhullLinesTriangleMesh.getTexCoords().clear();
         quickhullLinesTriangleMesh.getFaces().clear();
-        buildHullMesh(point3DList, triangulate, makeLines, makePoints);
+        buildHullMesh(point3DList, triangulate, makeLines, makePoints, tolerance);
         quickhullMeshView.setMesh(quickhullTriangleMesh);
         if (makeLines) {
             quickhullLinesTriangleMesh.getPoints().addAll(quickhullTriangleMesh.getPoints());
@@ -359,8 +374,10 @@ public class Manifold3D extends Group {
 //            makeDebugPoints(hull, artScale, false);
     }
 
-    private void buildHullMesh(List<Point3D> point3DList, boolean triangulate, boolean makeLines, boolean makePoints) {
+    private void buildHullMesh(List<Point3D> point3DList, boolean triangulate, boolean makeLines, boolean makePoints, Double tolerance) {
         hull = new QuickHull3D();
+        if (null != tolerance)
+            hull.setExplicitDistanceTolerance(tolerance);
         //Construct an array of Point3D's
         com.github.quickhull3d.Point3d[] points = point3DList.stream()
             .map(point3DToHullPoint)

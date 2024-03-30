@@ -23,12 +23,15 @@ package edu.jhuapl.trinity.javafx.javafx3d.animated;
 import edu.jhuapl.trinity.javafx.components.Crosshair;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.RetroWavePane;
+import edu.jhuapl.trinity.utils.DataUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
+import javafx.animation.AnimationTimer;
 import javafx.animation.Interpolator;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
 import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.geometry.Point3D;
 import javafx.scene.Group;
@@ -63,7 +66,7 @@ public class Opticon extends Group {
     public static double SCANMODE_X_ANGLE = 30.0;
     public static double SEARCH_DESTROY_X_ANGLE = 0.0;
     //public static double SCANMODE_ANGLE = 30.0;
-    public Planetoid mainBody;
+    public AnimatedSphere mainBody;
     Box pointer;
     public SpotLight scannerLight;
     public ConeMesh scannerConeMesh;
@@ -110,11 +113,18 @@ public class Opticon extends Group {
 //        1f, 0f
     };
     boolean animatingScannerTexture = false;
+    public SimpleBooleanProperty orbitingProperty = new SimpleBooleanProperty(false);
+    private AnimationTimer orbitAnimationTimer;
+    private double totalSceneWidth = 1000;
+    private double totalSceneHeight = 1000;
+    private double totalSceneDepth = 1000;
+    private double scannerBaseRadius = 20;
 
-    public Opticon(Color lightColor, double radius) {
-        pointer = new Box(1, 1, radius);
+    public Opticon(Color lightColor, double scannerBaseRadius) {
+        this.scannerBaseRadius = scannerBaseRadius;
+        pointer = new Box(1, 1, scannerBaseRadius);
         pointer.setMaterial(new PhongMaterial(Color.TOMATO));
-        pointer.setTranslateZ(radius);
+        pointer.setTranslateZ(scannerBaseRadius);
         scanColor = lightColor;
         scanConeColor = lightColor.deriveColor(1, 1, 1, 0.1);
         PhongMaterial mat;
@@ -126,7 +136,7 @@ public class Opticon extends Group {
             Logger.getLogger(RetroWavePane.class.getName()).log(Level.SEVERE, null, ex);
             mat = new PhongMaterial(Color.BLUE);
         }
-        mainBody = new Planetoid(mat, radius, 32);
+        mainBody = new AnimatedSphere(mat, scannerBaseRadius, 32, true);
         mainBody.setMaterial(mat);
         mainBody.setRotationAxis(Rotate.X_AXIS);
         mainBody.setRotate(SCANMODE_X_ANGLE);
@@ -136,11 +146,11 @@ public class Opticon extends Group {
         scannerLight.setInnerAngle(120);
         scannerLight.setOuterAngle(30);
         scannerLight.setFalloff(-0.4);
-        scannerLight.setTranslateZ(-radius - 2);
+        scannerLight.setTranslateZ(-scannerBaseRadius - 2);
 
-        scannerConeMesh = new ConeMesh(8, 2 * radius, 5 * radius);
+        scannerConeMesh = new ConeMesh(8, 2 * scannerBaseRadius, 5 * scannerBaseRadius);
         scannerConeMesh.setCullFace(CullFace.NONE);
-        scannerConeOutlineMesh = new ConeMesh(8, 2 * radius, 5 * radius);
+        scannerConeOutlineMesh = new ConeMesh(8, 2 * scannerBaseRadius, 5 * scannerBaseRadius);
         scannerConeOutlineMesh.setCullFace(CullFace.NONE);
         scannerTriangleMesh = (TriangleMesh) scannerConeMesh.getMesh();
 
@@ -165,17 +175,17 @@ public class Opticon extends Group {
 
         scannerConeMesh.setRotationAxis(Rotate.X_AXIS);
         scannerConeMesh.setRotate(CONE_MESH_ROTATE);
-        scannerConeMesh.setTranslateZ(-radius);
+        scannerConeMesh.setTranslateZ(-scannerBaseRadius);
 
         scannerConeOutlineMesh.setRotationAxis(Rotate.X_AXIS);
         scannerConeOutlineMesh.setRotate(CONE_MESH_ROTATE);
-        scannerConeOutlineMesh.setTranslateZ(-radius);
+        scannerConeOutlineMesh.setTranslateZ(-scannerBaseRadius);
 
         getChildren().addAll(mainBody, pointer, scannerConeMesh, scannerConeOutlineMesh, scannerLight);
 
         Sphere debugSphere = new Sphere(1);
         debugSphere.setMaterial(new PhongMaterial(Color.WHITE));
-        debugSphere.setTranslateZ(-radius);
+        debugSphere.setTranslateZ(-scannerBaseRadius);
         scannerLight.getScope().add(debugSphere);
         getChildren().addAll(debugSphere);
 
@@ -219,15 +229,79 @@ public class Opticon extends Group {
         scannerConeOutlineMesh.divisionsProperty().bind(scannerConeMesh.divisionsProperty());
         scannerConeOutlineMesh.heightProperty().bind(scannerConeMesh.heightProperty());
 
+        orbitAnimationTimer = new AnimationTimer() {
+            long sleepNs = 0;
+            long prevTime = 0;
+            long NANOS_IN_SECOND = 1_000_000_000;
+            Random rando = new Random();
+
+            @Override
+            public void handle(long now) {
+                //wake up and change position time
+                sleepNs = 30 * NANOS_IN_SECOND;
+
+                if ((now - prevTime) < sleepNs) {
+                    return;
+                }
+                prevTime = now;
+                if (!orbitingProperty.get())
+                    return;
+
+                double yTranslate = -getTotalSceneWidth() -
+                    rando.nextDouble() * 200;
+                double xTranslate = DataUtils.randomSign() *
+                    rando.nextDouble() * getTotalSceneWidth();
+                double zTranslate = DataUtils.randomSign() *
+                    rando.nextDouble() * getTotalSceneDepth();
+
+                Point3D shiftedP3D = new Point3D(
+                    xTranslate, yTranslate, zTranslate);
+
+                mainBody.setAnimateOnHover(true);
+//                updateScannerSize(getScannerBaseRadius() +
+//                    rando.nextDouble() * 200);
+                //make sure the duration is less than the wakeup time above
+                search(shiftedP3D, Duration.seconds(5));
+            }
+        };
+    }
+
+    public void fireData(Point3D destination, double seconds, Color dataColor) {
+        Point3D sceneToLocalPoint = this.sceneToLocal(destination);
+        Sphere dataSphere = new Sphere(10);
+        dataSphere.setMaterial(new PhongMaterial(dataColor));
+
+        Timeline timeline = new Timeline();
+        timeline.getKeyFrames().addAll(new KeyFrame[]{
+            new KeyFrame(Duration.seconds(seconds), new KeyValue[]{// Frame End
+                new KeyValue(dataSphere.translateXProperty(), sceneToLocalPoint.getX(), Interpolator.EASE_OUT),
+                new KeyValue(dataSphere.translateYProperty(), sceneToLocalPoint.getY(), Interpolator.EASE_OUT),
+                new KeyValue(dataSphere.translateZProperty(), sceneToLocalPoint.getZ(), Interpolator.EASE_OUT),
+            })
+        });
+        timeline.setOnFinished(e -> {
+            getChildren().remove(dataSphere);
+        });
+        getChildren().add(dataSphere);
+        timeline.playFromStart();
+    }
+
+    public void updateScannerSize(double radius) {
+        scannerConeMesh.setHeight(2 * getScannerBaseRadius());
+        scannerConeMesh.setRadius(5 * getScannerBaseRadius());
+    }
+
+    public void enableOrbiting(boolean enabled) {
+        if (enabled)
+            orbitAnimationTimer.start();
+        else
+            orbitAnimationTimer.stop();
     }
 
     public void setCycle(double cycleSeconds, double fps) {
         KeyValue start = new KeyValue(keyCycle, 0, Interpolator.LINEAR);
         KeyValue end = new KeyValue(keyCycle, fps * cycleSeconds, Interpolator.LINEAR);
         KeyFrame kf = new KeyFrame(Duration.seconds(cycleSeconds), start, end);
-//        KeyFrame cycleFinished = new KeyFrame(Duration.seconds(cycleSeconds), e->{
-//
-//        });
         tm = new Timeline(kf);
         tm.setCycleCount(INDEFINITE);
     }
@@ -276,8 +350,9 @@ public class Opticon extends Group {
         setScanning(true);
         final Point3D currentP3D = new Point3D(getTranslateX(), getTranslateY(), getTranslateZ());
         final double originalRadius = scannerConeMesh.radiusProperty().get();
-        //@TODO SMP lookup math is wrong
-        //lookAt(true, true, currentP3D, searchLocation);
+        //@TODO SMP need a way to animate the lookAt so the rotation isn't jarring
+        //@TODO SMP also need to have the option to flatten one of the planes of rotation
+        //JavaFX3DUtils.lookAt(this, currentP3D, searchLocation, false);
 
         if (null != scanTimeline) {
             scanTimeline.stop();
@@ -292,8 +367,6 @@ public class Opticon extends Group {
             , new KeyFrame(Duration.seconds(3.1), kv -> scannerConeMesh.setRotationAxis(Rotate.X_AXIS))
             , new KeyFrame(Duration.seconds(3.1), kv -> scannerConeMesh.setRotate(-90))
             , new KeyFrame(Duration.seconds(3.1), new KeyValue(scannerConeMesh.radiusProperty(), originalRadius / 4))
-//            ,new KeyFrame(Duration.seconds(3.5), kv -> scannerConeMesh.setRotationAxis(Rotate.Y_AXIS))
-//            ,new KeyFrame(Duration.seconds(3.5), kv -> scannerMeshTimeline.play())
             , new KeyFrame(Duration.seconds(3.5), kv -> laserSweep(parentPane, 4.0, width, height))
             , new KeyFrame(Duration.seconds(4), new KeyValue(scannerConeMesh.radiusProperty(), height / 8))
             , new KeyFrame(Duration.seconds(5), new KeyValue(scannerConeMesh.radiusProperty(), height / 8))
@@ -409,8 +482,9 @@ public class Opticon extends Group {
     public void search(Point3D searchLocation, Duration searchDuration) {
         this.searchLocation = searchLocation;
         Point3D currentP3D = new Point3D(getTranslateX(), getTranslateY(), getTranslateZ());
-        //@TODO SMP lookup math is wrong
-        //lookAt(true, true, currentP3D, searchLocation);
+        //@TODO SMP need a way to animate the lookAt so the rotation isn't jarring
+        //@TODO SMP also need to have the option to flatten one of the planes of rotation
+        //JavaFX3DUtils.lookAt(this, currentP3D, searchLocation, false);
 
         if (null != searchTimeline) {
             searchTimeline.stop();
@@ -442,23 +516,6 @@ public class Opticon extends Group {
         searchTimeline.play();
     }
 
-    public void lookAt(boolean flipX, boolean flipY, javafx.geometry.Point3D currentPosition, javafx.geometry.Point3D lookAtPos) {
-        //Create direction vector
-        javafx.geometry.Point3D lookDirection = lookAtPos.subtract(currentPosition.getX(), currentPosition.getY(), currentPosition.getZ());
-        lookDirection = lookDirection.normalize();
-        //calculate rotation angles
-        double xRotation = Math.toDegrees(Math.asin(-lookDirection.getY()));
-        if (flipX)
-            xRotation *= -1;
-        double yRotation = Math.toDegrees(Math.atan2(lookDirection.getZ(), lookDirection.getX()));
-        if (flipY)
-            yRotation *= -1;
-        //make rotation transforms using pivot point of 0,0,0
-        Rotate ry = new Rotate(yRotation, 0, 0, 0, Rotate.Y_AXIS);
-        Rotate rx = new Rotate(xRotation, 0, 0, 0, Rotate.X_AXIS);
-        getTransforms().setAll(ry, rx); //rotate this pig
-    }
-
     public void startled(double intensity, double seconds, int cycles) {
         double originalRotate = getRotate();
         Random rando = new Random();
@@ -468,21 +525,9 @@ public class Opticon extends Group {
 
         double third = seconds * 0.333;
         double twothird = seconds * 0.666;
-        double end = seconds;
-        double originalRadius = scannerConeMesh.radiusProperty().get();
-        double originalHeight = scannerConeMesh.heightProperty().get();
-        int originalDivisions = scannerConeMesh.divisionsProperty().get();
-
-//            ,new KeyFrame(Duration.seconds(third), new KeyValue(scannerConeMesh.radiusProperty(),
-//                originalRadius*2))
-//            ,new KeyFrame(Duration.seconds(third), new KeyValue(scannerConeMesh.heightProperty(),
-//                originalHeight*0.111))
-//            ,new KeyFrame(Duration.seconds(third), new KeyValue(scannerConeMesh.divisionsProperty(),
-//                originalDivisions*5))
 
         scannerConeMesh.setRadius(2);
         scannerConeMesh.setHeight(2);
-
 
         Timeline startledTimeline = new Timeline(
             new KeyFrame(Duration.seconds(third), new KeyValue(translateXProperty(), x))
@@ -523,5 +568,61 @@ public class Opticon extends Group {
     public void setScanning(boolean scanning) {
         this.scanning = scanning;
         setMouseTransparent(scanning);
+    }
+
+    /**
+     * @return the totalSceneWidth
+     */
+    public double getTotalSceneWidth() {
+        return totalSceneWidth;
+    }
+
+    /**
+     * @param totalSceneWidth the totalSceneWidth to set
+     */
+    public void setTotalSceneWidth(double totalSceneWidth) {
+        this.totalSceneWidth = totalSceneWidth;
+    }
+
+    /**
+     * @return the totalSceneHeight
+     */
+    public double getTotalSceneHeight() {
+        return totalSceneHeight;
+    }
+
+    /**
+     * @param totalSceneHeight the totalSceneHeight to set
+     */
+    public void setTotalSceneHeight(double totalSceneHeight) {
+        this.totalSceneHeight = totalSceneHeight;
+    }
+
+    /**
+     * @return the totalSceneDepth
+     */
+    public double getTotalSceneDepth() {
+        return totalSceneDepth;
+    }
+
+    /**
+     * @param totalSceneDepth the totalSceneDepth to set
+     */
+    public void setTotalSceneDepth(double totalSceneDepth) {
+        this.totalSceneDepth = totalSceneDepth;
+    }
+
+    /**
+     * @return the scannerBaseRadius
+     */
+    public double getScannerBaseRadius() {
+        return scannerBaseRadius;
+    }
+
+    /**
+     * @param scannerBaseRadius the scannerBaseRadius to set
+     */
+    public void setScannerBaseRadius(double scannerBaseRadius) {
+        this.scannerBaseRadius = scannerBaseRadius;
     }
 }

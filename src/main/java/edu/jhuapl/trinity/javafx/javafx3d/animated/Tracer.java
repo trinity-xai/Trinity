@@ -1,0 +1,125 @@
+package edu.jhuapl.trinity.javafx.javafx3d.animated;
+
+/*-
+ * #%L
+ * trinity
+ * %%
+ * Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC
+ * %%
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ * #L%
+ */
+
+import javafx.animation.Interpolator;
+import javafx.animation.KeyFrame;
+import javafx.animation.KeyValue;
+import javafx.animation.Timeline;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.scene.paint.Color;
+import javafx.scene.shape.TriangleMesh;
+import javafx.util.Duration;
+import org.fxyz3d.geometry.Point3D;
+import org.fxyz3d.shapes.composites.PolyLine3D;
+
+import java.util.ArrayList;
+import java.util.List;
+
+import static javafx.animation.Animation.INDEFINITE;
+
+/**
+ * @author Sean Phillips
+ */
+public class Tracer extends PolyLine3D {
+    public double DEFAULT_RATEOFCHANGE = 0.01;
+    private double rateOfChange = DEFAULT_RATEOFCHANGE;
+    public IntegerProperty keyCycle = new SimpleIntegerProperty();
+    Timeline tm;
+    TriangleMesh mesh;
+    float[] uvCoords = {0, 0, 1, 0, 1, 1, 0, 1};
+    boolean animating = false;
+    Point3D currentStart;
+    Point3D currentEnd;
+    float currentWidth;
+    Color diffuseColor;
+
+    public Tracer(Point3D start, Point3D end, float width, Color color) {
+        super(makePointList(start, end), width, color, LineType.TRIANGLE);
+        currentStart = start;
+        currentEnd = end;
+        currentWidth = width;
+        diffuseColor = color;
+        mesh = (TriangleMesh) this.meshView.getMesh();
+        setCycle(20, 30);
+
+        keyCycle.addListener(e -> {
+            float add = keyCycle.getValue() / 30000f;
+            //i=0;i+=2 is right to left
+            //i=1;i+=2 is bottom to top
+            for (int i = 1; i < uvCoords.length; i += 2) {
+                uvCoords[i] -= rateOfChange;
+            }
+            mesh.getTexCoords().set(0, uvCoords, 0, uvCoords.length);
+        });
+        setOnScroll(e -> {
+            setRateOfChange(rateOfChange - e.getDeltaY() / 10000f);
+        });
+        setOnMouseClicked(e -> {
+            if (e.isSecondaryButtonDown()) {
+                setRateOfChange(DEFAULT_RATEOFCHANGE);
+            }
+            if (e.getClickCount() > 1) {
+                enableCycle(!animating);
+            }
+        });
+    }
+
+    public static List<Point3D> makePointList(Point3D start, Point3D end) {
+        List<Point3D> points = new ArrayList<>(2);
+        points.add(start);
+        points.add(end);
+        return points;
+    }
+
+    public void setCycle(double cycleSeconds, double fps) {
+        KeyValue start = new KeyValue(keyCycle, 0, Interpolator.LINEAR);
+        KeyValue end = new KeyValue(keyCycle, fps * cycleSeconds, Interpolator.LINEAR);
+        KeyFrame kf = new KeyFrame(Duration.seconds(cycleSeconds), start, end);
+//        KeyFrame cycleFinished = new KeyFrame(Duration.seconds(cycleSeconds), e->{
+//
+//        });
+        tm = new Timeline(kf);
+        tm.setCycleCount(INDEFINITE);
+    }
+
+    public void enableCycle(boolean enable) {
+        if (enable)
+            tm.play();
+        else
+            tm.stop();
+    }
+
+    /**
+     * @return the rateOfChange
+     */
+    public synchronized double getRateOfChange() {
+        return rateOfChange;
+    }
+
+    /**
+     * @param rateOfChange the rateOfChange to set
+     */
+    public synchronized void setRateOfChange(double rateOfChange) {
+        this.rateOfChange = rateOfChange;
+    }
+}

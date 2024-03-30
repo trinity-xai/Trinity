@@ -191,6 +191,14 @@ public class FeatureVector extends MessageData {
         return states;
     };
 
+    public static FeatureVector fromData(double[] data, int width, double scaling) {
+        FeatureVector fv = new FeatureVector();
+        for (int vectorIndex = 0; vectorIndex < width; vectorIndex++) {
+            fv.getData().add(data[vectorIndex] * scaling);
+        }
+        return fv;
+    }
+
     public static FeatureVector EMPTY_FEATURE_VECTOR(String label, int dataSize) {
         FeatureVector fv = new FeatureVector();
         fv.setLabel(label);

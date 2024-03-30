@@ -14,6 +14,7 @@
 <?import javafx.scene.layout.AnchorPane?>
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
+<?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
 
 <AnchorPane style="-fx-background-color: #00000000;" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1"
@@ -21,13 +22,13 @@
     <children>
         <TabPane fx:id="tabPane" tabClosingPolicy="UNAVAILABLE">
             <tabs>
-                <Tab closable="false" text="Imagery">
+                <Tab closable="false" text="Media">
                     <content>
                     </content>
                     <content>
                         <VBox prefHeight="200.0" prefWidth="100.0" spacing="10.0">
                             <children>
-                                <Label text="Imagery Base Path"/>
+                                <Label text="Base Path"/>
                                 <TextField fx:id="imageryBasePathTextField"/>
                                 <HBox spacing="10.0">
                                     <children>
@@ -35,6 +36,8 @@
                                         <Button mnemonicParsing="false" onAction="#applyBasePath" prefWidth="125.0" text="Apply"/>
                                     </children>
                                 </HBox>
+                                <Region prefHeight="100.0" prefWidth="100.0"/>
+                                <Button mnemonicParsing="false" onAction="#showWaveformDisplay" prefWidth="200.0" text="Waveform Display"/>
                             </children>
                             <padding>
                                 <Insets bottom="5.0" left="5.0" right="5.0" top="15.0"/>
@@ -113,12 +116,6 @@
                                             <children>
                                                 <CheckBox fx:id="showStateTrajectoryCheckBox" mnemonicParsing="false" prefWidth="200.0"
                                                           text="Show Event Trajectory"/>
-                                                <VBox>
-                                                    <children>
-                                                        <Label text="Tail Length"/>
-                                                        <Spinner fx:id="trajectorySizeSpinner"/>
-                                                    </children>
-                                                </VBox>
                                             </children>
                                         </HBox>
                                         <HBox layoutX="20.0" layoutY="57.0" spacing="20.0">
@@ -126,7 +123,49 @@
                                                 <CheckBox fx:id="showLeadCalloutCheckBox" mnemonicParsing="false" prefWidth="200.0" text="Show Lead Callout"/>
                                             </children>
                                         </HBox>
+                                        <VBox>
+                                            <children>
+                                                <Label text="Tail Length"/>
+                                                <Spinner fx:id="trajectorySizeSpinner"/>
+                                            </children>
+                                        </VBox>
                                         <Button mnemonicParsing="false" onAction="#showTrajectoryTracker" prefWidth="200.0" text="Trajectory Tracker"/>
+                                    </children>
+                                    <padding>
+                                        <Insets bottom="10.0" left="10.0" right="10.0" top="10.0"/>
+                                    </padding>
+                                </VBox>
+                            </center>
+                        </BorderPane>
+                    </content>
+                </Tab>
+                <Tab closable="false" text="Projections">
+                    <content>
+                        <BorderPane minHeight="200.0" minWidth="400.0">
+                            <children>
+                            </children>
+                            <center>
+                                <VBox prefHeight="200.0" prefWidth="100.0" spacing="20.0" BorderPane.alignment="CENTER">
+                                    <children>
+                                        <HBox alignment="CENTER_LEFT" prefWidth="150.0" spacing="20.0">
+                                            <children>
+                                                <Label prefWidth="125.0" text="Auto Projection"/>
+                                                <ToggleButton fx:id="autoProjectionToggleButton" mnemonicParsing="false" onAction="#toggleAutoProjection"
+                                                              prefWidth="125.0" text="Enable"/>
+                                            </children>
+                                        </HBox>
+                                        <HBox alignment="CENTER_LEFT" spacing="20.0">
+                                            <children>
+                                                <Label prefWidth="125.0" text="Projection Queue Size"/>
+                                                <Spinner fx:id="projectionQueueSizeSpinner" prefWidth="125.0"/>
+                                            </children>
+                                        </HBox>
+                                        <HBox alignment="CENTER_LEFT" spacing="20.0">
+                                            <children>
+                                                <Label prefWidth="125.0" text="Spark Lines View"/>
+                                                <Button mnemonicParsing="false" onAction="#showSparkLines" prefWidth="125.0" text="Show"/>
+                                            </children>
+                                        </HBox>
                                     </children>
                                     <padding>
                                         <Insets bottom="10.0" left="10.0" right="10.0" top="10.0"/>

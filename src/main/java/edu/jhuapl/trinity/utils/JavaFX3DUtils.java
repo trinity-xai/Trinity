@@ -21,6 +21,7 @@ package edu.jhuapl.trinity.utils;
  */
 
 import edu.jhuapl.trinity.data.Trajectory;
+import edu.jhuapl.trinity.data.messages.FeatureVector;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.Trajectory3D;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.TessellationMesh;
@@ -28,6 +29,7 @@ import javafx.animation.Interpolator;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
+import javafx.geometry.BoundingBox;
 import javafx.geometry.Point2D;
 import javafx.scene.AmbientLight;
 import javafx.scene.Camera;
@@ -44,8 +46,10 @@ import javafx.scene.image.WritableImage;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Mesh;
 import javafx.scene.shape.Shape3D;
+import javafx.scene.shape.Sphere;
 import javafx.scene.shape.TriangleMesh;
 import javafx.scene.text.Font;
+import javafx.scene.transform.Affine;
 import javafx.scene.transform.Rotate;
 import javafx.stage.FileChooser;
 import javafx.util.Duration;
@@ -72,8 +76,12 @@ import java.util.logging.Logger;
  */
 public enum JavaFX3DUtils {
     INSTANCE;
-    public static Function<Point3D, javafx.geometry.Point3D> fxyzPoint3DTofxPoint3D =
+    public static double EPSILON = 0.000000001;
+    static List<Image> tiles = null;
+    public static Function<Point3D, javafx.geometry.Point3D> toFX =
         p -> new javafx.geometry.Point3D(p.x, p.y, p.z);
+    public static Function<javafx.geometry.Point3D, Point3D> toFXYZ3D =
+        p -> new Point3D(p.getX(), p.getY(), p.getZ());
     public static Comparator<Point3D> Point3DXComparator = (Point3D p1, Point3D p2) -> {
         if (p1.x < p2.x) return -1;
         else if (p1.x > p2.x) return 1;
@@ -89,7 +97,66 @@ public enum JavaFX3DUtils {
         else if (p1.z > p2.z) return 1;
         else return 0;
     };
-    static List<Image> tiles = null;
+
+    public static boolean matches(Point3D p1, Point3D p2, double tolerance) {
+        return (p1.getX() - p2.getX() < tolerance)
+            && (p1.getY() - p2.getY() < tolerance)
+            && (p1.getZ() - p2.getZ() < tolerance);
+    }
+
+    public static boolean matches(javafx.geometry.Point3D p1, javafx.geometry.Point3D p2, double tolerance) {
+        return (p1.getX() - p2.getX() < tolerance)
+            && (p1.getY() - p2.getY() < tolerance)
+            && (p1.getZ() - p2.getZ() < tolerance);
+    }
+
+    public static boolean matches(Point3D p1, Point3D p2) {
+        return matches(p1, p2, EPSILON);
+    }
+
+    public static boolean matches(javafx.geometry.Point3D p1, javafx.geometry.Point3D p2) {
+        return matches(p1, p2, EPSILON);
+    }
+
+    public static Function<Sphere, javafx.geometry.Point3D> mapShape3DToPoint3D = (s) -> {
+        return new javafx.geometry.Point3D(s.getTranslateX(),
+            s.getTranslateY(), s.getTranslateZ());
+    };
+
+    /**
+     * Assumes indices 0,1 and 2 map to X, Y and Z
+     */
+    public static Function<FeatureVector, javafx.geometry.Point3D> mapFeatureToPoint3D = (fv) -> {
+        return new javafx.geometry.Point3D(fv.getData().get(0),
+            fv.getData().get(1), fv.getData().get(2));
+    };
+
+    public static List<Integer> pickIndicesByBox(PerspectiveCamera camera,
+                                                 List<? extends Shape3D> shapes, Point2D upperLeft, Point2D lowerRight) {
+
+        List<Integer> indices = new ArrayList<>();
+        //reuse this point reference
+        Shape3D shape3D;
+        javafx.geometry.Point3D coordinates;
+        boolean c;
+        BoundingBox screenBox = new BoundingBox(
+            upperLeft.getX(), upperLeft.getY(),
+            lowerRight.getX() - upperLeft.getX(), lowerRight.getY() - upperLeft.getY()
+        );
+        int totalContains = 0;
+        for (int i = 0; i < shapes.size(); i++) {
+            shape3D = shapes.get(i);
+            coordinates = shape3D.localToScene(javafx.geometry.Point3D.ZERO, true);
+            c = screenBox.contains(coordinates);
+            if (c) {
+                totalContains++;
+                indices.add(i);
+            }
+        }
+        System.out.println("screenBox contains " + totalContains + " shapes.");
+        return indices;
+    }
+
     public static Image snapshotShape3D(Node node) {
         Group group = new Group(node);
         Scene scene = new Scene(group, 1000, 1000, true, SceneAntialiasing.BALANCED);
@@ -211,7 +278,7 @@ public enum JavaFX3DUtils {
     }
 
     public static List<Image> getTiles() throws URISyntaxException, IOException {
-        if(tiles == null || tiles.isEmpty()) {
+        if (tiles == null || tiles.isEmpty()) {
             tiles = new ArrayList<>();
             tiles.add(ResourceUtils.load3DTextureImage("1500_blackgrid"));
             File folder = new File("textures/tiles/");
@@ -223,7 +290,7 @@ public enum JavaFX3DUtils {
             for (File file : files) {
                 tiles.add(new Image(file.getAbsolutePath()));
             }
-        }            
+        }
         return tiles;
     }
 
@@ -268,21 +335,35 @@ public enum JavaFX3DUtils {
         return res.subtract(localToScene(new javafx.geometry.Point3D(0, 0, 0), camera));
     }
 
-    public static void lookAt(Node node, boolean flipX, boolean flipY, javafx.geometry.Point3D currentPosition, javafx.geometry.Point3D lookAtPos) {
-        //Create direction vector
-        javafx.geometry.Point3D lookDirection = lookAtPos.subtract(currentPosition.getX(), currentPosition.getY(), currentPosition.getZ());
-        lookDirection = lookDirection.normalize();
-        //calculate rotation angles
-        double xRotation = Math.toDegrees(Math.asin(-lookDirection.getY()));
-        if (flipX)
-            xRotation *= -1;
-        double yRotation = Math.toDegrees(Math.atan2(lookDirection.getX(), lookDirection.getZ()));
-        if (flipY)
-            yRotation *= -1;
-        //make rotation transforms using pivot point of 0,0,0
-        Rotate ry = new Rotate(yRotation, 0, 0, 0, Rotate.Y_AXIS);
-        Rotate rx = new Rotate(xRotation, 0, 0, 0, Rotate.X_AXIS);
-        node.getTransforms().setAll(ry, rx); //rotate this pig
+    public static Affine lookAt(Node node, javafx.geometry.Point3D from, javafx.geometry.Point3D to, boolean applyTranslate) {
+        //zVec is "forward"
+        javafx.geometry.Point3D zVec = to.subtract(from).normalize();
+        //ydir is "up"
+        javafx.geometry.Point3D ydir = Rotate.Y_AXIS;
+        javafx.geometry.Point3D tangent0 = zVec.crossProduct(ydir);
+        //handle edge case where to location is precisely the "up" direction
+        if (tangent0.magnitude() < 0.001) {
+            //pick a different axis to use
+            ydir = Rotate.X_AXIS;
+            tangent0 = zVec.crossProduct(ydir);
+        }
+        tangent0.normalize();
+        ydir = zVec.crossProduct(tangent0);
+
+        javafx.geometry.Point3D xVec = ydir.normalize().crossProduct(zVec).normalize();
+        javafx.geometry.Point3D yVec = zVec.crossProduct(xVec).normalize();
+
+        Affine affine = new Affine(
+            xVec.getX(), yVec.getX(), zVec.getX(), 0,
+            xVec.getY(), yVec.getY(), zVec.getY(), 0,
+            xVec.getZ(), yVec.getZ(), zVec.getZ(), 0);
+        if (applyTranslate) {
+            affine.setTx(from.getX());
+            affine.setTy(from.getY());
+            affine.setTz(from.getZ());
+        }
+        node.getTransforms().setAll(affine);
+        return affine;
     }
 
     public static void zoomTransition(double milliseconds, Camera camera, double distance) {

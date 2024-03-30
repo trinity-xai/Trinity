@@ -2,16 +2,16 @@ package edu.jhuapl.trinity.utils.clustering;
 
 /*-
  * #%L
- * trinity-2023.12.05
+ * trinity
  * %%
  * Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -20,19 +20,20 @@ package edu.jhuapl.trinity.utils.clustering;
  * #L%
  */
 
-import java.util.Arrays;
-import java.util.Random;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 
+import java.util.Random;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 /**
- * Gaussian mixture model that provides methods for fitting to observation 
- * samples using an Expectation Maximization process seeded by KMeans++. 
+ * Gaussian mixture model that provides methods for fitting to observation
+ * samples using an Expectation Maximization process seeded by KMeans++.
  */
 public class GaussianMixtureModel extends GaussianMixture {
     private static Random rando = new Random();
+
     /**
      * @param components the Gaussian distributions.
      */
@@ -42,8 +43,8 @@ public class GaussianMixtureModel extends GaussianMixture {
 
     /**
      * @param components Gaussian distributions.
-     * @param L the log-likelihood.
-     * @param n the number of samples to fit the distribution.
+     * @param L          the log-likelihood.
+     * @param n          the number of samples to fit the distribution.
      */
     private GaussianMixtureModel(double L, int n, GaussianMixtureComponent... components) {
         super(L, n, components);
@@ -51,8 +52,9 @@ public class GaussianMixtureModel extends GaussianMixture {
 
     /**
      * Fits the Gaussian mixture model with the EM algorithm.
+     *
      * @param data the training data.
-     * @param k the number of components.
+     * @param k    the number of components.
      * @return the distribution.
      */
     public static GaussianMixtureModel fit(int k, double[][] data) {
@@ -61,8 +63,9 @@ public class GaussianMixtureModel extends GaussianMixture {
 
     /**
      * Fits the Gaussian mixture model with the EM algorithm.
-     * @param data the training data.
-     * @param k the number of components.
+     *
+     * @param data     the training data.
+     * @param k        the number of components.
      * @param diagonal true if the components have diagonal covariance matrix.
      * @return the distribution.
      */
@@ -101,10 +104,10 @@ public class GaussianMixtureModel extends GaussianMixture {
         for (int i = 0; i < dimensions; i++) {
             currentDistance[i] = Double.MAX_VALUE;
         }
-        
+
         System.out.println("Finding initial centroids using KMeans++...");
-        // pick the next center.. 
-        //start at index 1 because we already computed 
+        // pick the next center..
+        //start at index 1 because we already computed
         //the first component above to get the common variance
         for (int i = 1; i < k; i++) {
             // Loop over the samples and compare them to the most recent center.  Store
@@ -125,7 +128,7 @@ public class GaussianMixtureModel extends GaussianMixture {
                 cost += currentDistance[cutoffIndex];
                 //if the cumulative cost is greater than the threshold break out
                 //we will use this as the data index for the currentCentroid
-                if (cost >= cutoff) 
+                if (cost >= cutoff)
                     break;
             }
             componentCentroid = data[cutoffIndex];
@@ -135,10 +138,10 @@ public class GaussianMixtureModel extends GaussianMixture {
         }
         //@DEBUG SMP
         Point[] centroids = KmeansPlusPlus.kmeansPlusPlus(k, data);
-        for(int i=0;i<centroids.length;i++) {
-            gaussian = diagonal ? new GaussianDistribution(centroids[i].getPosition(), variance) 
+        for (int i = 0; i < centroids.length; i++) {
+            gaussian = diagonal ? new GaussianDistribution(centroids[i].getPosition(), variance)
                 : new GaussianDistribution(centroids[i].getPosition(), cov);
-            components[i] = new GaussianMixtureComponent(1.0 / k, gaussian);            
+            components[i] = new GaussianMixtureComponent(1.0 / k, gaussian);
         }
         GaussianMixture model = fit(data, components);
         return new GaussianMixtureModel(model.logLikelihood, data.length, model.components);
@@ -147,6 +150,7 @@ public class GaussianMixtureModel extends GaussianMixture {
     /**
      * Fits the Gaussian mixture model with the EM algorithm.
      * The number of components will be selected by BIC.
+     *
      * @param data the training data.
      * @return the distribution.
      */
@@ -157,7 +161,8 @@ public class GaussianMixtureModel extends GaussianMixture {
     /**
      * Fits the Gaussian mixture model with the EM algorithm.
      * The number of components will be selected by BIC.
-     * @param data the training data.
+     *
+     * @param data     the training data.
      * @param diagonal true if the components have diagonal covariance matrix.
      * @return the distribution.
      */
@@ -168,12 +173,12 @@ public class GaussianMixtureModel extends GaussianMixture {
 
         GaussianMixtureModel mixture = new GaussianMixtureModel(new GaussianMixtureComponent(1.0, GaussianDistribution.fit(data, diagonal)));
         double bic = mixture.bic(data);
-        Logger.getLogger(GaussianMixtureModel.class.getName()).log(Level.FINE, 
+        Logger.getLogger(GaussianMixtureModel.class.getName()).log(Level.FINE,
             String.format("The BIC of %s = %.4f", mixture, bic));
 
         for (int k = 2; k < data.length / 20; k++) {
             GaussianMixture model = fit(k, data);
-            Logger.getLogger(GaussianMixtureModel.class.getName()).log(Level.FINE, 
+            Logger.getLogger(GaussianMixtureModel.class.getName()).log(Level.FINE,
                 String.format("The BIC of %s = %.4f", model, model.bic));
 
             if (model.bic <= bic) break;

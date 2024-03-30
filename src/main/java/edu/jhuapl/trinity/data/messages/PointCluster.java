@@ -19,6 +19,7 @@ package edu.jhuapl.trinity.data.messages;
  * limitations under the License.
  * #L%
  */
+
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
@@ -59,10 +60,10 @@ public class PointCluster extends MessageData {
     private Integer clusterId;
     private List<Integer> map;
     private List<List<Double>> data; //optional, the original data
-    private List<Double> mean; //optional, the mean vector or centroid 
-    private List<List<Double>> covariance; //optional, the covariance of the 
+    private List<Double> mean; //optional, the mean vector or centroid
+    private List<List<Double>> covariance; //optional, the covariance of the
     //cluster typically derived from some fitting convergence process
-    
+
     //</editor-fold>
 
     public PointCluster() {
@@ -75,11 +76,12 @@ public class PointCluster extends MessageData {
 
     public static boolean isPointCluster(String messageBody) {
         return messageBody.contains("messageType")
-                && messageBody.contains(TYPESTRING)
-                && messageBody.contains("map");
+            && messageBody.contains(TYPESTRING)
+            && messageBody.contains("map");
     }
 
     //<editor-fold defaultstate="collapsed" desc="Properties">
+
     /**
      * @return the clusterName
      */

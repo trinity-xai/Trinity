@@ -21,7 +21,6 @@ package edu.jhuapl.trinity.javafx;
  */
 
 import edu.jhuapl.trinity.utils.ResourceUtils;
-import java.io.IOException;
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;
 import javafx.beans.property.SimpleBooleanProperty;
@@ -32,7 +31,6 @@ import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
-import javafx.scene.effect.BlendMode;
 import javafx.scene.effect.DisplacementMap;
 import javafx.scene.effect.FloatMap;
 import javafx.scene.effect.PerspectiveTransform;
@@ -49,21 +47,23 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 
+import java.io.IOException;
+
 public class DisplacementTestApp extends Application {
     boolean animating = false;
     int width = 400;
     int height = 400;
-    
+
     float xOffset = 0.0f;
     float yOffset = 0.0f;
     float xScale = 0.0f;
     float yScale = 0.0f;
-    
+
     float xIncrement = 0.01f;
     float yIncrement = 0.01f;
     float sXIncrement = 0.01f;
     float sYIncrement = 0.01f;
-    
+
     Spinner<Double> band0Spinner = new Spinner<>();
     Spinner<Double> band1Spinner = new Spinner<>();
 
@@ -77,30 +77,30 @@ public class DisplacementTestApp extends Application {
     Spinner<Double> topLrxSpinner = new Spinner<>();
     Spinner<Double> topLrySpinner = new Spinner<>();
 
-    
+
     SimpleBooleanProperty wrapProp = new SimpleBooleanProperty(true);
     SimpleBooleanProperty canvasProp = new SimpleBooleanProperty(false);
     SimpleBooleanProperty topGridProp = new SimpleBooleanProperty(false);
     SimpleBooleanProperty bottomGridProp = new SimpleBooleanProperty(false);
-    
+
     PerspectiveTransform topPT = new PerspectiveTransform();
     PerspectiveTransform bottomPT = new PerspectiveTransform();
-    ImageView topGridImageView; 
-    ImageView bottomGridImageView; 
-    
-        
+    ImageView topGridImageView;
+    ImageView bottomGridImageView;
+
+
     @Override
     public void start(Stage stage) throws IOException {
         band0Spinner.setValueFactory(
             new SpinnerValueFactory.DoubleSpinnerValueFactory(
                 -1.0, 1.0, 0, 0.005));
-        band0Spinner.valueProperty().addListener(c -> updateValues());        
+        band0Spinner.valueProperty().addListener(c -> updateValues());
 
         band1Spinner.setValueFactory(
             new SpinnerValueFactory.DoubleSpinnerValueFactory(
                 -1.0, 1.0, 0, 0.005));
         band1Spinner.valueProperty().addListener(c -> updateValues());
-        
+
         //Upper Left
         topUlxSpinner.setValueFactory(
             new SpinnerValueFactory.DoubleSpinnerValueFactory(
@@ -141,7 +141,7 @@ public class DisplacementTestApp extends Application {
                 0.0, 2.0, 1, 0.01));
         topLrySpinner.valueProperty().addListener(c -> updateValues());
 
-        
+
         CheckBox wrapCheckBox = new CheckBox("Wrap");
         wrapProp.bind(wrapCheckBox.selectedProperty());
         wrapCheckBox.setSelected(true);
@@ -151,7 +151,7 @@ public class DisplacementTestApp extends Application {
         bottomGridProp.bind(bottomGridCheckBox.selectedProperty());
         CheckBox canvasCheckBox = new CheckBox("Canvas");
         canvasProp.bind(canvasCheckBox.selectedProperty());
-        
+
         VBox controlsVBox = new VBox(5,
             wrapCheckBox,
 //            topGridCheckBox,
@@ -160,24 +160,24 @@ public class DisplacementTestApp extends Application {
             new Label("Band 0"),
             band0Spinner,
             new Label("Band 1"),
-            band1Spinner,                
+            band1Spinner,
             new Label("Top Grid ULX"),
-            topUlxSpinner,        
+            topUlxSpinner,
             new Label("Top Grid ULY"),
-            topUlySpinner,                
+            topUlySpinner,
             new Label("Top Grid URX"),
-            topUrxSpinner,        
+            topUrxSpinner,
             new Label("Top Grid URY"),
-            topUrySpinner,                
+            topUrySpinner,
             new Label("Top Grid LLX"),
-            topLlxSpinner,        
+            topLlxSpinner,
             new Label("Top Grid LLY"),
-            topLlySpinner,                
+            topLlySpinner,
             new Label("Top Grid LRX"),
-            topLrxSpinner,        
+            topLrxSpinner,
             new Label("Top Grid LRY"),
-            topLrySpinner                
-                
+            topLrySpinner
+
         );
         Canvas canvas = new Canvas(width, height);
         topGridImageView = new ImageView(ResourceUtils.load3DTextureImage("green-matte-trans-grid"));
@@ -186,10 +186,10 @@ public class DisplacementTestApp extends Application {
         bottomGridImageView = new ImageView(ResourceUtils.load3DTextureImage("green-matte-trans-grid"));
         bottomGridImageView.setFitWidth(width);
         bottomGridImageView.setFitHeight(height);
-        
+
         StackPane stackPane = new StackPane(topGridImageView, bottomGridImageView, canvas);
-        
-        Background imageBack = new Background(new BackgroundImage(ResourceUtils.load3DTextureImage("1500_blackgrid"), 
+
+        Background imageBack = new Background(new BackgroundImage(ResourceUtils.load3DTextureImage("1500_blackgrid"),
             BackgroundRepeat.REPEAT, BackgroundRepeat.REPEAT, BackgroundPosition.DEFAULT, BackgroundSize.DEFAULT));
         stackPane.setBackground(imageBack);
         BorderPane borderPane = new BorderPane(stackPane);
@@ -198,7 +198,7 @@ public class DisplacementTestApp extends Application {
         GraphicsContext gc = canvas.getGraphicsContext2D();
 
         gc.setFill(Color.CYAN);
-        gc.fillOval(175,175,50,50);
+        gc.fillOval(175, 175, 50, 50);
         // Draw a green rectangle at the center with alpha 0.6
         gc.setFill(Color.GREEN.deriveColor(1, 1, 1, 0.6));
         gc.fillRect(190, 190, 20, 20);
@@ -209,10 +209,10 @@ public class DisplacementTestApp extends Application {
         floatMap.setHeight(height);
 
         DisplacementMap displacementMap = new DisplacementMap();
-        displacementMap.setMapData(floatMap);        
+        displacementMap.setMapData(floatMap);
         displacementMap.setWrap(true);
         displacementMap.wrapProperty().bind(wrapProp);
-        
+
         canvas.setEffect(displacementMap);
 
         //perspective transforms
@@ -226,8 +226,8 @@ public class DisplacementTestApp extends Application {
         topPT.setLry(topGridImageView.getFitHeight());
         topPT.setLlx(0);
         topPT.setLly(topGridImageView.getFitHeight());
-        topGridImageView.setEffect(topPT); 
-        
+        topGridImageView.setEffect(topPT);
+
         bottomPT.setInput(displacementMap);
         bottomPT.setUlx(0);
         bottomPT.setUly(0);
@@ -238,34 +238,36 @@ public class DisplacementTestApp extends Application {
         bottomPT.setLry(bottomGridImageView.getFitHeight());
         bottomPT.setLlx(0);
         bottomPT.setLly(bottomGridImageView.getFitHeight());
-        bottomGridImageView.setEffect(topPT); 
+        bottomGridImageView.setEffect(topPT);
         bottomGridImageView.setEffect(bottomPT);
-        
+
         Scene scene = new Scene(borderPane);
-        scene.addEventHandler(MouseEvent.MOUSE_CLICKED, e-> animating = !animating);
-        
+        scene.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> animating = !animating);
+
         stage.setScene(scene);
         stage.show();
-        
+
         AnimationTimer cameraTimer = new AnimationTimer() {
             long last = 0;
+
             @Override
             public void handle(long now) {
                 if ((now - last) > 30_000_000) {
                     if (animating) {
                         xOffset += xIncrement;
                         yOffset += yIncrement;
-                        for(int i=0;i< width;i++)
-                            for(int j=0;j<height;j++) 
-                                floatMap.setSamples(i, j, xOffset, yOffset);   
+                        for (int i = 0; i < width; i++)
+                            for (int j = 0; j < height; j++)
+                                floatMap.setSamples(i, j, xOffset, yOffset);
                     }
                     last = now;
                 }
             }
         };
-        updateValues();        
-        cameraTimer.start();        
+        updateValues();
+        cameraTimer.start();
     }
+
     public void updateValues() {
         //FloatMap Bands for DisplacementMap effect
 //        0 = X offset distance
@@ -273,7 +275,7 @@ public class DisplacementTestApp extends Application {
         xIncrement = band0Spinner.getValue().floatValue();
         yIncrement = band1Spinner.getValue().floatValue();
 
-//the four corners of the imageview transform        
+//the four corners of the imageview transform
         topPT.setUlx(topGridImageView.getFitWidth() * topUlxSpinner.getValue().floatValue());
         topPT.setUly(topGridImageView.getFitHeight() * topUlySpinner.getValue().floatValue());
 
@@ -298,7 +300,7 @@ public class DisplacementTestApp extends Application {
         bottomPT.setLlx(bottomGridImageView.getFitHeight() * topLlxSpinner.getValue().floatValue());
         bottomPT.setLly(bottomGridImageView.getFitHeight() * -topLlySpinner.getValue().floatValue());
 
-        
+
     }
 
     public static void main(String[] args) {

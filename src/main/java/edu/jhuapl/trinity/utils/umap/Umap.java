@@ -1031,7 +1031,7 @@ public class Umap {
         }
         mThreads = threads;
     }
-    
+
     /**
      * Set the cutoff threshold for metrics that utilize it (default 0.001).
      *
@@ -1039,10 +1039,10 @@ public class Umap {
      */
     public void setThreshold(final double threshold) {
         mThreshold = threshold;
-        if(null != mMetric)
+        if (null != mMetric)
             mMetric.setThreshold(mThreshold);
     }
-    
+
 
     private void validateParameters() {
         if (mMinDist > mSpread) {
