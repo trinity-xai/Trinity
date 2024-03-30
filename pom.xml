@@ -36,6 +36,7 @@
         <codehaus.flatten.plugin.version>1.6.0</codehaus.flatten.plugin.version>
         <codehaus.build.helper.maven.plugin.version>3.5.0</codehaus.build.helper.maven.plugin.version>
         <git.commit.maven.plugin.version>7.0.0</git.commit.maven.plugin.version>
+        <org.owasp.dependency-check-maven.plugin.version>9.0.10</org.owasp.dependency-check-maven.plugin.version>
         <junit.jupiter.version>5.10.2</junit.jupiter.version>
         <litfx.controls.version>0.1.3</litfx.controls.version>
         <fxyz3d.version>0.6.0</fxyz3d.version>
@@ -165,7 +166,7 @@
             <plugin>
                 <groupId>org.owasp</groupId>
                 <artifactId>dependency-check-maven</artifactId>
-                <version>9.0.9</version>
+                <version>${org.owasp.dependency-check-maven.plugin.version}</version>
                 <reportSets>
                     <reportSet>
                         <reports>
@@ -175,7 +176,7 @@
                 </reportSets>
             </plugin>
         </plugins>
-    </reporting>    
+    </reporting>
     <build>
         <plugins>
             <plugin>
@@ -183,7 +184,7 @@
                 <artifactId>maven-site-plugin</artifactId>
                 <version>3.7.1</version>
             </plugin>
-            
+
             <plugin>
                 <groupId>org.apache.maven.plugins</groupId>
                 <artifactId>maven-enforcer-plugin</artifactId>
