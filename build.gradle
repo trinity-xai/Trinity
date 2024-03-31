@@ -3,7 +3,7 @@ plugins {
     id 'idea'
     id 'application'
     id 'com.github.ben-manes.versions' version '0.51.0'
-    id 'net.nemerosa.versioning' version '3.0.0'
+    id 'net.nemerosa.versioning' version '3.1.0'
     id 'org.openjfx.javafxplugin' version '0.1.0'
     id 'com.gluonhq.gluonfx-gradle-plugin' version '1.0.22'
     id 'org.gradlex.extra-java-module-info' version '1.8'
@@ -25,6 +25,7 @@ ext {
     isAppleSiliconBuild = providers.environmentVariable('APPLE_SILICON').isPresent()
     appleSiliconJavaHome = providers.environmentVariable('APPLE_SILICON_JAVA_HOME').getOrElse("")
     fxVersion = findProperty('javafx.version')
+    fxStaticVersion = findProperty('javafx.static.version')
 }
 
 group = 'trinity'
@@ -61,8 +62,8 @@ dependencies {
     implementation group: 'com.github.quickhull3d', name: 'quickhull3d', version: '1.0.0'
     implementation group: 'org.apache.commons', name: 'commons-math3', version: '3.6.1'
     implementation group: 'org.zeromq', name: 'jeromq', version: '0.6.0'
-    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.16.1'
-    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.16.1'
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.17.0'
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.17.0'
     implementation group: 'com.github.sarxos', name: 'webcam-capture', version: '0.3.12'
     implementation group: 'org.jflac', name: 'jflac-codec', version: '1.5.2'
 
@@ -149,7 +150,7 @@ idea {
 }
 
 tasks.named('wrapper', Wrapper) {
-    gradleVersion = '8.6'
+    gradleVersion = '8.7'
     distributionType = Wrapper.DistributionType.BIN
 }
 
@@ -215,7 +216,7 @@ gluonfx {
         mainClassName = mainClassJarLauncher
     }
     target = "host"
-    javafxStaticSdkVersion = "$fxVersion"
+    javafxStaticSdkVersion = "$fxStaticVersion"
 }
 
 // </editor-fold>
