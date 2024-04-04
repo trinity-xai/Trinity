@@ -124,7 +124,7 @@ import java.util.Map.Entry;
 import java.util.Random;
 import java.util.function.Function;
 
-import static edu.jhuapl.trinity.javafx.components.radial.HyperspaceMenu.slideInPane;
+//import static edu.jhuapl.trinity.javafx.components.radial.HyperspaceMenu.slideInPane;
 
 /**
  * @author Sean Phillips
@@ -566,7 +566,8 @@ public class Hypersurface3DPane extends StackPane
                 }
                 if (!pp.getChildren().contains(surfaceChartPane)) {
                     pp.getChildren().add(surfaceChartPane);
-                    slideInPane(surfaceChartPane);
+                    //slideInPane(surfaceChartPane);
+                    surfaceChartPane.slideInPane();
                 } else {
                     surfaceChartPane.show();
                 }
