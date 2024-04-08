@@ -22,13 +22,11 @@ package edu.jhuapl.trinity.javafx.javafx3d.animated;
 
 import edu.jhuapl.trinity.utils.Utils;
 import javafx.scene.image.Image;
-import javafx.scene.image.WritableImage;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.CullFace;
 import javafx.scene.shape.DrawMode;
 import javafx.scene.shape.TriangleMesh;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -36,8 +34,6 @@ import java.util.stream.IntStream;
 import javafx.scene.DepthTest;
 import javafx.scene.Group;
 import javafx.scene.shape.MeshView;
-import javafx.scene.transform.Rotate;
-
 
 /**
  * @author Sean Phillips
@@ -48,7 +44,6 @@ public class TessellationTube extends Group {
     public List<List<Double>> dataGrid = new ArrayList<>();
     public PhongMaterial phongMaterial;
     public Color color;
-    private WritableImage image;
     public boolean colorByImage = false;
 
     public TessellationTube(List<List<Double>> dataGrid, Color color, 
@@ -63,8 +58,6 @@ public class TessellationTube extends Group {
         meshView.setCullFace(CullFace.NONE);
         getChildren().add(meshView);
         setDepthTest(DepthTest.ENABLE);    
-        meshView.setRotationAxis(Rotate.Y_AXIS);
-//        meshView.setRotate(180);
     }
     
     public void updateMaterial(Image image) {
@@ -74,9 +67,6 @@ public class TessellationTube extends Group {
         }
         else
             phongMaterial.setDiffuseColor(color);
-//        phongMaterial.setSelfIlluminationMap(image);
-//        phongMaterial.setBumpMap(image);
-//        phongMaterial.setSpecularColor(Color.CYAN);
     }
 
     public TriangleMesh buildWarp(List<List<Double>> dataGrid, double radius, double rowYSpacing, double elevationScale) {
@@ -109,11 +99,6 @@ public class TessellationTube extends Group {
                 Double x = ((d * elevationScale) + radius) * Math.cos(Math.toRadians(currentDegree));
                 Double y = currentY;
                 Double z = ((d * elevationScale) + radius) * -Math.sin(Math.toRadians(currentDegree));
-                //Z, Y, X order puts the texture facing out
-//                pointFloats[pointFloatIndex++] = z.floatValue();
-//                pointFloats[pointFloatIndex++] = y.floatValue();
-//                pointFloats[pointFloatIndex++] = x.floatValue();
-                //X, Y, Z to face the texture in
                 pointFloats[pointFloatIndex++] = x.floatValue();
                 pointFloats[pointFloatIndex++] = y.floatValue();
                 pointFloats[pointFloatIndex++] = z.floatValue();
@@ -158,30 +143,10 @@ public class TessellationTube extends Group {
                     faces[index + 3] = tc00;
                     faces[index + 4] = p00;
                     faces[index + 5] = tc01;
-//
-//                    //inner
-//                    index += faceSize;
-//                    faces[index + 0] = p00;
-//                    faces[index + 1] = tc00;
-//                    faces[index + 2] = p10;
-//                    faces[index + 3] = tc10;
-//                    faces[index + 4] = p11;
-//                    faces[index + 5] = tc11;
-//
-//                    index += faceSize;
-//                    faces[index + 0] = p11;
-//                    faces[index + 1] = tc11;
-//                    faces[index + 2] = p01;
-//                    faces[index + 3] = tc01;
-//                    faces[index + 4] = p00;
-//                    faces[index + 5] = tc00;
-                    
-
                 }
             }
             //@TODO SMP close the outer shell by tessellating back to the start of the row
             currentY += rowYSpacing;
-
         }
         Utils.printTotalTime(startTime);
         System.out.println("dude the warp is done.");
@@ -199,10 +164,7 @@ public class TessellationTube extends Group {
         TriangleMesh mesh = new TriangleMesh();
         mesh.getPoints().addAll(pointFloats);
         mesh.getTexCoords().addAll(texCoords);
-        
         mesh.getFaces().addAll(faces);
-//        for(int i=0;i<22200;i++)
-//            mesh.getFaces().addAll(faces[i]);
         return mesh;
     }
 }
