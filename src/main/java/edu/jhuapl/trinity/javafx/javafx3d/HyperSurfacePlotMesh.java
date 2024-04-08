@@ -395,6 +395,9 @@ public class HyperSurfacePlotMesh extends TexturedMesh {
         return createMesh();
     }
 
+    public void setAllVerts(float ... floats) {
+        mesh.getPoints().setAll(floats);        
+    }
     public void setVert(int index, Point3D p3d) {
         listVertices.set(index, p3d);
         mesh.getPoints().set(3 * index, p3d.z);

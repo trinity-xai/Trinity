@@ -31,6 +31,7 @@ import edu.jhuapl.trinity.javafx.javafx3d.HyperSurfacePlotMesh;
 import edu.jhuapl.trinity.javafx.javafx3d.Perspective3DNode;
 import edu.jhuapl.trinity.javafx.javafx3d.Vert3D;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.Opticon;
+import edu.jhuapl.trinity.javafx.javafx3d.animated.TessellationTube;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import edu.jhuapl.trinity.utils.Utils;
@@ -101,6 +102,8 @@ public class SurfaceWarpTest extends Application {
     private final double sceneHeight = 4000;
     Opticon opticon;
     HyperSurfacePlotMesh surfPlot;
+    HyperSurfacePlotMesh cylinderSurfPlot;
+    
     DirectedScatterMesh scatterMesh3D;
     DirectedScatterDataModel scatterModel;
     private double mousePosX;
@@ -128,14 +131,13 @@ public class SurfaceWarpTest extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        webCam = Webcam.getDefault();
-        webCam.open();
-        Dimension d = webCam.getViewSizes()[2];
-        d.setSize(1920, 1080);
-
-        webCam.close();
-        webCam.setViewSize(d);
-        webCam.open();
+//        webCam = Webcam.getDefault();
+//        webCam.open();
+//        Dimension d = webCam.getViewSizes()[2];
+//        d.setSize(1920, 1080);
+//        webCam.close();
+//        webCam.setViewSize(d);
+//        webCam.open();
 
         subScene = new SubScene(sceneRoot, sceneWidth, sceneHeight, true, SceneAntialiasing.BALANCED);
         //Start Tracking mouse movements only when a button is pressed
@@ -193,6 +195,10 @@ public class SurfaceWarpTest extends Application {
             if (keycode == KeyCode.C) {
                 camera.setTranslateY(camera.getTranslateY() + change);
             }
+            //show/Hide scatterplot
+            if (keycode == KeyCode.Y) {
+                scatterMesh3D.setVisible(!scatterMesh3D.isVisible());
+            }
             //point size and scaling
             if (keycode == KeyCode.O || (keycode == KeyCode.P && event.isControlDown())) {
                 point3dSize -= 1;
@@ -243,8 +249,21 @@ public class SurfaceWarpTest extends Application {
 
         MenuItem warpItem = new MenuItem("Warp Image");
         warpItem.setOnAction(e -> {
-            //vectorizeImage(image);
+            sceneRoot.getChildren().removeIf(n -> n instanceof TessellationTube);
             buildWarp(dataGrid, currentPskip, 5, 5, 5);
+            TessellationTube tube = new TessellationTube(dataGrid, Color.WHITE, 400, 5, 2);
+            tube.setMouseTransparent(true);
+            if(null != currentImage) {
+                tube.meshView.setDrawMode(DrawMode.FILL);
+//                tube.meshView.setCullFace(CullFace.NONE);
+                
+                tube.colorByImage = true;
+                tube.updateMaterial(currentImage);
+            }
+            Platform.runLater(()-> {
+                sceneRoot.getChildren().add(tube);
+                
+            });
         });
 
         Spinner<Integer> delaySpinner = new Spinner<>(1, 1000, 10, 10);
@@ -308,13 +327,21 @@ public class SurfaceWarpTest extends Application {
         primaryStage.setScene(scene);
         primaryStage.show();
         loadDirectedMesh();
+
         Platform.runLater(() -> {
             try {
-                //("/edu/jhuapl/trinity/icons/" 
+//                Image image = new Image(SurfaceWarpTest.class.getResourceAsStream("tiki.png"));
                 Image image = new Image(SurfaceWarpTest.class.getResourceAsStream("retrowaveSun_512.png"));
+//                Image image = new Image(SurfaceWarpTest.class.getResourceAsStream("moon_1024.png"));
                 currentImage = image;
-                vectorizeImage(1, image);
+     
+                cylinderSurfPlot = new HyperSurfacePlotMesh(
+                    Double.valueOf(image.getWidth()).intValue(),
+                    Double.valueOf(image.getHeight()).intValue(),
+                    64, 64, 5, 5, vert3DLookup);
+                cylinderSurfPlot.setTextureModeVertices3D(1530, p -> p.y, 0.0, 360.0);                   
 
+                vectorizeImage(1, image);
                 ImageView iv = new ImageView(image);
                 sceneRoot.getChildren().add(iv);
 
@@ -410,11 +437,6 @@ public class SurfaceWarpTest extends Application {
 
     public void buildWarp(List<List<Double>> dataGrid, int pskip, float xScale, float yScale, float zScale) {
         System.out.println("warping mesh...");
-        if (scatterMesh3D == null) {
-
-            sceneRoot.getChildren().add(scatterMesh3D);
-        }
-//        sceneRoot.getChildren().removeIf(n -> n instanceof Sphere);
         pNodes.clear();
         long startTime = System.nanoTime();
 //        int pskip = 1;
@@ -423,6 +445,8 @@ public class SurfaceWarpTest extends Application {
         //make a warped version of the dataGrid
 //        this.dataGrid = dataGrid;
 //        List<List<Point3D>> warpedGrid = new ArrayList<>();
+        float [] pointFloats = new float[3*rowHeight*columnWidth];
+        int pointFloatIndex = 0;
         double radius = 400;
         double degreeSpacing = 360.0 / columnWidth;
         double rowYSpacing = 5;
@@ -435,11 +459,14 @@ public class SurfaceWarpTest extends Application {
             for (int colIndex = 0; colIndex < columnWidth; colIndex++) {
                 double d = dataGrid.get(rowIndex).get(colIndex);
                 //circle formula
-                double x = ((d * elevationScale) + radius) * Math.cos(Math.toRadians(currentDegree));
-                double y = currentY;
-                double z = ((d * elevationScale) + radius) * -Math.sin(Math.toRadians(currentDegree));
+                Double x = ((d * elevationScale) + radius) * Math.cos(Math.toRadians(currentDegree));
+                Double y = currentY;
+                Double z = ((d * elevationScale) + radius) * -Math.sin(Math.toRadians(currentDegree));
 
 //                pointRow.add(new Point3D(x, y, z));
+                pointFloats[pointFloatIndex++] = x.floatValue();
+                pointFloats[pointFloatIndex++] = y.floatValue();
+                pointFloats[pointFloatIndex++] = z.floatValue();
                 currentDegree += degreeSpacing;
                 Perspective3DNode pNode = new Perspective3DNode(x, y, z, 0, 0, 0);
                 pNode.nodeColor = colorLookup(rowIndex * pskip, colIndex * pskip);
@@ -454,6 +481,16 @@ public class SurfaceWarpTest extends Application {
         System.out.println("Updating the scatter mesh... ");
         updateView(true);
 //        surfPlot.setTranslateX(-subDivX * xScale);
+//
+//        if (!sceneRoot.getChildren().contains(cylinderSurfPlot)) {
+//            sceneRoot.getChildren().add(cylinderSurfPlot);
+//        }
+//        cylinderSurfPlot = new HyperSurfacePlotMesh(
+//            Double.valueOf(currentImage.getWidth()).intValue(),
+//            Double.valueOf(currentImage.getHeight()).intValue(),
+//            64, 64, 5, 5, vert3DLookup);
+//        cylinderSurfPlot.setTextureModeVertices3D(1530, colorByLabelFunction, 0.0, 360.0);  
+//        cylinderSurfPlot.setAllVerts(pointFloats);
     }
 
     public void loadDirectedMesh() {
@@ -474,51 +511,7 @@ public class SurfaceWarpTest extends Application {
         scatterMesh3D.setHeight(point3dSize);
         scatterMesh3D.setDrawMode(DrawMode.FILL);
         scatterMesh3D.setTextureModeVertices3D(TOTAL_COLORS, colorByLabelFunction, 0.0, 360.0);
-//            highlightedPoint.visibleProperty().bind(scatterMesh3D.visibleProperty());
-//            highlightedPoint.setMouseTransparent(true);
-//            highlightedPoint.setOpacity(0.5);
-//            scatterMesh3D.addEventHandler(MouseEvent.MOUSE_CLICKED, event -> {
-//                PickResult n = event.getPickResult();
-//                int pointId1 = n.getIntersectedFace() / 4;
-//                //System.out.println("Intersected Face:  " + n.getIntersectedFace());
-//                if (pointId1 < scatterMesh3D.scatterDataProperty().get().size()) {
-//                    org.fxyz3d.geometry.Point3D pt1 = scatterMesh3D.scatterDataProperty().get().get(pointId1);
-//                    Sphere sphere = new Sphere(1, 1);
-//                    sphere.setTranslateX(pt1.x);
-//                    sphere.setTranslateY(pt1.y);
-//                    sphere.setTranslateZ(pt1.z);
-//                    nodeGroup.getChildren().add(sphere);
-//                    //find correct feature vector
-//                    int correctIndex = scatterModel.findIndexFromVisibleFacePoint(pointId1);
-//                    if (correctIndex >= 0)
-//                        radialOverlayPane.createCallout(sphere,
-//                            featureVectors.get(correctIndex), subScene);
-//                }
-//            });
-//            scatterMesh3D.addEventHandler(MouseEvent.MOUSE_MOVED, event -> {
-//                PickResult n = event.getPickResult();
-//                final int pointId1 = n.getIntersectedFace() / 4;
-//                Platform.runLater(() -> {
-//                    if (pointId1 < scatterMesh3D.scatterDataProperty().get().size()) {
-//                        org.fxyz3d.geometry.Point3D pt1 = scatterMesh3D.scatterDataProperty().get().get(pointId1);
-//                        Translate highlightTranslate = new Translate(pt1.x, pt1.y, pt1.z);
-//                        highlightedPoint.getTransforms().clear();
-//                        highlightedPoint.getTransforms().add(highlightTranslate);
-//                        highlightedPoint.setUserData(pt1);
-//                        highlightedPoint.setRadius(point3dSize / 2.0);
-//                        int correctIndex = scatterModel.findIndexFromVisibleFacePoint(pointId1);
-//                        if (correctIndex >= 0 && correctIndex <= featureVectors.size()) {
-//                            scene.getRoot().fireEvent(new FeatureVectorEvent(
-//                                FeatureVectorEvent.SELECT_FEATURE_VECTOR,
-//                                featureVectors.get(correctIndex), featureLabels));
-//                        }
-//                        //@TODO SMP Update HUD with hovered point
-//                        //HyperspaceSeed seed = seedToDataMap.get(pt1);
-//                        //dataHudText.setText(seed.prettyPrint());
-//                    }
-//                });
-//            });
-
+        scatterMesh3D.setMouseTransparent(true);
         Platform.runLater(() -> {
             //System.out.println("Hyperspace render complete.");
             if (!sceneRoot.getChildren().contains(scatterMesh3D)) {
