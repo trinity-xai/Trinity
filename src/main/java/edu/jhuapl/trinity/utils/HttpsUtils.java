@@ -28,6 +28,7 @@ import javax.net.ssl.TrustManager;
 import javax.net.ssl.X509TrustManager;
 import java.io.InputStream;
 import java.net.HttpURLConnection;
+import java.net.URI;
 import java.net.URL;
 import java.security.cert.X509Certificate;
 
@@ -36,7 +37,10 @@ public class HttpsUtils {
     public static Image getImage(String urlPath) {
         try {
             // Create a URL object for the image
-            URL url = new URL(urlPath);
+            //Deprecated as of JDK 20
+            //URL url = new URL(urlPath);
+            URI uri = new URI(urlPath);
+            URL url = uri.toURL();
 
             // Open a connection to the URL
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
@@ -56,20 +60,26 @@ public class HttpsUtils {
 
     public static Image getImageNoSSL(String urlPath) {
         try {
-            URL url = new URL(urlPath);
+            //Deprecated as of JDK 20
+            //URL url = new URL(urlPath);
+            URI uri = new URI(urlPath);
+            URL url = uri.toURL();
             // Open a connection to the URL
             HttpsURLConnection conn = (HttpsURLConnection) url.openConnection();
 
             // Create a trust manager that does not validate certificate chains
             TrustManager[] trustAllCerts = new TrustManager[]{
                 new X509TrustManager() {
+                    @Override
                     public X509Certificate[] getAcceptedIssuers() {
                         return null;
                     }
 
+                    @Override
                     public void checkClientTrusted(X509Certificate[] certs, String authType) {
                     }
 
+                    @Override
                     public void checkServerTrusted(X509Certificate[] certs, String authType) {
                     }
                 }

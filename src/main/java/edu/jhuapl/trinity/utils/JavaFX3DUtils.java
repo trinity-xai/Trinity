@@ -23,6 +23,7 @@ package edu.jhuapl.trinity.utils;
 import edu.jhuapl.trinity.data.Trajectory;
 import edu.jhuapl.trinity.data.messages.FeatureVector;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
+import edu.jhuapl.trinity.javafx.javafx3d.Perspective3DNode;
 import edu.jhuapl.trinity.javafx.javafx3d.Trajectory3D;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.TessellationMesh;
 import javafx.animation.Interpolator;
@@ -82,6 +83,13 @@ public enum JavaFX3DUtils {
         p -> new javafx.geometry.Point3D(p.x, p.y, p.z);
     public static Function<javafx.geometry.Point3D, Point3D> toFXYZ3D =
         p -> new Point3D(p.getX(), p.getY(), p.getZ());
+    public static Function<Perspective3DNode, Point3D> pNodetoFXYZ3D =
+        p -> {
+            Point3D p3D = new Point3D(p.xCoord, p.yCoord, p.zCoord);
+            p3D.f = Double.valueOf(p.nodeColor.getHue()).floatValue();
+            return p3D;
+        };
+
     public static Comparator<Point3D> Point3DXComparator = (Point3D p1, Point3D p2) -> {
         if (p1.x < p2.x) return -1;
         else if (p1.x > p2.x) return 1;
