@@ -41,7 +41,7 @@ public class HttpsUtils {
             //URL url = new URL(urlPath);
             URI uri = new URI(urlPath);
             URL url = uri.toURL();
-            
+
             // Open a connection to the URL
             HttpURLConnection conn = (HttpURLConnection) url.openConnection();
             conn.setRequestMethod("GET");

@@ -19,6 +19,7 @@ package edu.jhuapl.trinity.javafx.javafx3D;
  * limitations under the License.
  * #L%
  */
+
 import com.github.sarxos.webcam.Webcam;
 import edu.jhuapl.trinity.data.HyperspaceSeed;
 import edu.jhuapl.trinity.javafx.events.ColorMapEvent;
@@ -103,7 +104,7 @@ public class SurfaceWarpTest extends Application {
     Opticon opticon;
     HyperSurfacePlotMesh surfPlot;
     HyperSurfacePlotMesh cylinderSurfPlot;
-    
+
     DirectedScatterMesh scatterMesh3D;
     DirectedScatterDataModel scatterModel;
     private double mousePosX;
@@ -253,24 +254,24 @@ public class SurfaceWarpTest extends Application {
             buildWarp(dataGrid, currentPskip, 5, 5, 5);
             TessellationTube tube = new TessellationTube(dataGrid, Color.WHITE, 400, 5, 2);
             tube.setMouseTransparent(true);
-            if(null != currentImage) {
+            if (null != currentImage) {
                 tube.meshView.setDrawMode(DrawMode.FILL);
 //                tube.meshView.setCullFace(CullFace.NONE);
-                
+
                 tube.colorByImage = true;
                 tube.updateMaterial(currentImage);
             }
-            Platform.runLater(()-> {
+            Platform.runLater(() -> {
                 sceneRoot.getChildren().add(tube);
-                
+
             });
         });
 
         Spinner<Integer> delaySpinner = new Spinner<>(1, 1000, 10, 10);
         Spinner<Integer> rowsSpinner = new Spinner<>(5, 100, 5, 10);
         HBox hbox = new HBox(10,
-                new VBox(5, new Label("Delay (ms)"), delaySpinner),
-                new VBox(5, new Label("Row Stride"), rowsSpinner)
+            new VBox(5, new Label("Delay (ms)"), delaySpinner),
+            new VBox(5, new Label("Row Stride"), rowsSpinner)
         );
         MenuItem tessallateItem = new MenuItem("Tessellate", hbox);
         tessallateItem.setOnAction(e -> {
@@ -280,7 +281,7 @@ public class SurfaceWarpTest extends Application {
         });
 
         cm.getItems().addAll(diffuseColorItem, specColorItem,
-                captureItem, tessallateItem, warpItem);
+            captureItem, tessallateItem, warpItem);
         cm.setAutoFix(true);
         cm.setAutoHide(true);
         cm.setHideOnEscape(true);
@@ -314,14 +315,14 @@ public class SurfaceWarpTest extends Application {
             }
         });
         scene.addEventHandler(DragEvent.DRAG_DROPPED,
-                e -> ResourceUtils.onDragDropped(e, scene));
+            e -> ResourceUtils.onDragDropped(e, scene));
         scene.addEventHandler(ImageEvent.NEW_TEXTURE_SURFACE,
-                e -> vectorizeImage(1, (Image) e.object));
+            e -> vectorizeImage(1, (Image) e.object));
         scene.addEventHandler(TerrainEvent.NEW_TERRAIN_TEXTFILE, e -> {
             buildTerrain((List<List<Double>>) e.object, 4, 1, 4);
         });
         scene.addEventHandler(TerrainEvent.NEW_FIREAREA_TEXTFILE,
-                e -> buildTerrain((List<List<Double>>) e.object, 1, 1, 1));
+            e -> buildTerrain((List<List<Double>>) e.object, 1, 1, 1));
 
         primaryStage.setTitle("Vectorize Image Test");
         primaryStage.setScene(scene);
@@ -334,12 +335,12 @@ public class SurfaceWarpTest extends Application {
                 Image image = new Image(SurfaceWarpTest.class.getResourceAsStream("retrowaveSun_512.png"));
 //                Image image = new Image(SurfaceWarpTest.class.getResourceAsStream("moon_1024.png"));
                 currentImage = image;
-     
+
                 cylinderSurfPlot = new HyperSurfacePlotMesh(
                     Double.valueOf(image.getWidth()).intValue(),
                     Double.valueOf(image.getHeight()).intValue(),
                     64, 64, 5, 5, vert3DLookup);
-                cylinderSurfPlot.setTextureModeVertices3D(1530, p -> p.y, 0.0, 360.0);                   
+                cylinderSurfPlot.setTextureModeVertices3D(1530, p -> p.y, 0.0, 360.0);
 
                 vectorizeImage(1, image);
                 ImageView iv = new ImageView(image);
@@ -383,7 +384,7 @@ public class SurfaceWarpTest extends Application {
             }
 
             g2.setRenderingHint(RenderingHints.KEY_INTERPOLATION,
-                    RenderingHints.VALUE_INTERPOLATION_BILINEAR);
+                RenderingHints.VALUE_INTERPOLATION_BILINEAR);
             g2.drawImage(ret, 0, 0, w, h, 0, 0, prevW, prevH, null);
 
             prevW = w;
@@ -445,7 +446,7 @@ public class SurfaceWarpTest extends Application {
         //make a warped version of the dataGrid
 //        this.dataGrid = dataGrid;
 //        List<List<Point3D>> warpedGrid = new ArrayList<>();
-        float [] pointFloats = new float[3*rowHeight*columnWidth];
+        float[] pointFloats = new float[3 * rowHeight * columnWidth];
         int pointFloatIndex = 0;
         double radius = 400;
         double degreeSpacing = 360.0 / columnWidth;
@@ -489,7 +490,7 @@ public class SurfaceWarpTest extends Application {
 //            Double.valueOf(currentImage.getWidth()).intValue(),
 //            Double.valueOf(currentImage.getHeight()).intValue(),
 //            64, 64, 5, 5, vert3DLookup);
-//        cylinderSurfPlot.setTextureModeVertices3D(1530, colorByLabelFunction, 0.0, 360.0);  
+//        cylinderSurfPlot.setTextureModeVertices3D(1530, colorByLabelFunction, 0.0, 360.0);
 //        cylinderSurfPlot.setAllVerts(pointFloats);
     }
 
@@ -534,7 +535,7 @@ public class SurfaceWarpTest extends Application {
 //            seed.visible = true;
 //            addPNodeFromSeed(seed);
 //        }
-//    }    
+//    }
 
     public Perspective3DNode addPNodeFromSeed(HyperspaceSeed seed) {
         //make sure our extra dimensions are within the data vector's width
@@ -542,17 +543,17 @@ public class SurfaceWarpTest extends Application {
         int yDir = seed.yDir >= seed.vector.length ? seed.vector.length - 1 : seed.yDir;
         int zDir = seed.zDir >= seed.vector.length ? seed.vector.length - 1 : seed.zDir;
         Perspective3DNode pNode = new Perspective3DNode(
-                seed.vector[seed.x], seed.vector[seed.y], seed.vector[seed.z],
-                seed.vector[xDir], seed.vector[yDir], seed.vector[zDir],
-                seed);
+            seed.vector[seed.x], seed.vector[seed.y], seed.vector[seed.z],
+            seed.vector[xDir], seed.vector[yDir], seed.vector[zDir],
+            seed);
         double minX = -1.0;
         double minY = -1.0;
         double minZ = -1.0;
         double domainWidth = 2.0;
         pNode.nodeColor = Perspective3DNode.getPNodeColor(
-                HyperspaceEvent.COLOR_MODE.COLOR_BY_LABEL,
-                ColorMapEvent.COLOR_MAP.ONE_COLOR_SPECTRUM, seed,
-                minX, minY, minZ, domainWidth);
+            HyperspaceEvent.COLOR_MODE.COLOR_BY_LABEL,
+            ColorMapEvent.COLOR_MAP.ONE_COLOR_SPECTRUM, seed,
+            minX, minY, minZ, domainWidth);
         pNode.visible = pNode.factorAnalysisSeed.visible;
         pNodes.add(pNode);
         return pNode;
@@ -565,8 +566,8 @@ public class SurfaceWarpTest extends Application {
             Perspective3DNode[] pNodeArray = pNodes.toArray(Perspective3DNode[]::new);
             data.clear();
             data.addAll(pNodes.stream()
-                    .map(JavaFX3DUtils.pNodetoFXYZ3D) //automatically sets f value to color hue scalar
-                    .toList());
+                .map(JavaFX3DUtils.pNodetoFXYZ3D) //automatically sets f value to color hue scalar
+                .toList());
 //            data = getVisiblePoints(pNodeArray);
 //            //Implementation for directional arrows based on additional dimensions
 //            if(false) //if (directionEnabled)
@@ -615,7 +616,7 @@ public class SurfaceWarpTest extends Application {
         ArrayList<org.fxyz3d.geometry.Point3D> ends = new ArrayList<>(pNodes.length);
         for (int i = 0; i < pNodes.length; i++) {
             ends.add(new org.fxyz3d.geometry.Point3D(pNodes[i].xDirCoord * fixedSize,
-                    pNodes[i].xDirCoord * fixedSize, pNodes[i].xDirCoord * fixedSize));
+                pNodes[i].xDirCoord * fixedSize, pNodes[i].xDirCoord * fixedSize));
         }
         return ends;
     }
@@ -697,7 +698,7 @@ public class SurfaceWarpTest extends Application {
                 }
             }
 
-        ;
+            ;
         };
         tessellationTimer.start();
     }
@@ -715,7 +716,7 @@ public class SurfaceWarpTest extends Application {
 
                 WritableImage writeImage = new WritableImage(totalWidth, totalHeight);
                 PhongMaterial phong = new PhongMaterial(Color.GRAY,
-                        writeImage, null, null, null);
+                    writeImage, null, null, null);
                 surfPlotLinesMeshView.setMaterial(phong);
                 int halfWidth = totalWidth / 2;
                 int fivePercent = halfWidth / 20;
@@ -849,7 +850,7 @@ public class SurfaceWarpTest extends Application {
     private Number lookupPoint(Vert3D p) {
         //hacky bounds check
         if (p.yIndex >= dataGrid.size()
-                || p.xIndex >= dataGrid.get(0).size()) {
+            || p.xIndex >= dataGrid.get(0).size()) {
             return 0.0;
         }
         return dataGrid.get(p.yIndex).get(p.xIndex);
@@ -882,7 +883,7 @@ public class SurfaceWarpTest extends Application {
         generateRandos(xWidth, zWidth, yScale);
 
         surfPlot = new HyperSurfacePlotMesh(xWidth, zWidth,
-                64, 64, yScale, surfScale, vert3DLookup);
+            64, 64, yScale, surfScale, vert3DLookup);
         surfPlot.setTextureModeVertices3D(TOTAL_COLORS, colorByHeight, 0.0, 360.0);
 
 //        surfPlot.setTranslateX(-(xWidth*surfScale)/2.0);
@@ -912,9 +913,9 @@ public class SurfaceWarpTest extends Application {
             } else {
                 cameraTransform.ry.setAngle(((cameraTransform.ry.getAngle() + mouseDeltaX * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180); // +
                 cameraTransform.rx.setAngle(
-                        MathUtils.clamp(-60,
-                                (((cameraTransform.rx.getAngle() - mouseDeltaY * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180),
-                                60)); // -
+                    MathUtils.clamp(-60,
+                        (((cameraTransform.rx.getAngle() - mouseDeltaY * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180),
+                        60)); // -
             }
         } else if (me.isMiddleButtonDown()) {
             cameraTransform.t.setX(cameraTransform.t.getX() + mouseDeltaX * modifierFactor * modifier * 0.3); // -

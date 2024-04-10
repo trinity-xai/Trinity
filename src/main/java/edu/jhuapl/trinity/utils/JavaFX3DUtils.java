@@ -89,7 +89,7 @@ public enum JavaFX3DUtils {
             p3D.f = Double.valueOf(p.nodeColor.getHue()).floatValue();
             return p3D;
         };
-    
+
     public static Comparator<Point3D> Point3DXComparator = (Point3D p1, Point3D p2) -> {
         if (p1.x < p2.x) return -1;
         else if (p1.x > p2.x) return 1;

@@ -336,7 +336,7 @@ public enum ResourceUtils {
                                 Platform.runLater(() -> scene.getRoot().fireEvent(
                                     new GaussianMixtureEvent(GaussianMixtureEvent.NEW_GAUSSIAN_COLLECTION, gmcFile.gaussianMixtureCollection)));
                             } else if (TextEmbeddingCollectionFile.isTextEmbeddingCollection(file)) {
-                                Platform.runLater(()-> {
+                                Platform.runLater(() -> {
                                     TextEmbeddingsLoader task = new TextEmbeddingsLoader(scene, file);
                                     Thread thread = new Thread(task);
                                     thread.setDaemon(true);
@@ -379,7 +379,7 @@ public enum ResourceUtils {
                     Platform.runLater(() -> {
                         scene.getRoot().fireEvent(
                             new ApplicationEvent(ApplicationEvent.HIDE_BUSY_INDICATOR));
-                    });                    
+                    });
                     return null;
                 }
             };

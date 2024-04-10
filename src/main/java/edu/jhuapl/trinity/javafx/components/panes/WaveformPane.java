@@ -34,6 +34,9 @@ import javafx.scene.control.Slider;
 import javafx.scene.effect.BlurType;
 import javafx.scene.effect.DropShadow;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.DragEvent;
+import javafx.scene.input.Dragboard;
+import javafx.scene.input.TransferMode;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.BorderPane;
@@ -49,9 +52,6 @@ import java.nio.file.Path;
 import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javafx.scene.input.DragEvent;
-import javafx.scene.input.Dragboard;
-import javafx.scene.input.TransferMode;
 
 /**
  * @author Sean Phillips
@@ -224,12 +224,12 @@ public class WaveformPane extends LitPathPane {
             Dragboard db = e.getDragboard();
             if (db.hasFiles()) {
                 final List<File> files = db.getFiles();
-                if(ResourceUtils.isAudioFile(files.get(0))) {
+                if (ResourceUtils.isAudioFile(files.get(0))) {
                     setWaveform(files.get(0));
                 }
             }
-        }); 
-                
+        });
+
         waveformCanvas = (WaveformCanvasOverlayPane) bp.getCenter();
         this.scene.addEventHandler(AudioEvent.NEW_AUDIO_FILE, e -> {
             if (null != e.object) {
