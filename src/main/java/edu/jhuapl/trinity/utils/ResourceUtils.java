@@ -336,10 +336,12 @@ public enum ResourceUtils {
                                 Platform.runLater(() -> scene.getRoot().fireEvent(
                                     new GaussianMixtureEvent(GaussianMixtureEvent.NEW_GAUSSIAN_COLLECTION, gmcFile.gaussianMixtureCollection)));
                             } else if (TextEmbeddingCollectionFile.isTextEmbeddingCollection(file)) {
-                                TextEmbeddingsLoader task = new TextEmbeddingsLoader(scene, file);
-                                Thread thread = new Thread(task);
-                                thread.setDaemon(true);
-                                thread.start();
+                                Platform.runLater(()-> {
+                                    TextEmbeddingsLoader task = new TextEmbeddingsLoader(scene, file);
+                                    Thread thread = new Thread(task);
+                                    thread.setDaemon(true);
+                                    thread.start();
+                                });
                             } else if (CdcCsvFile.isCdcCsvFile(file)) {
                                 CdcCsvFile cdcCsvFile = new CdcCsvFile(file.getAbsolutePath(), true);
                                 //convert to Feature Vector Collection for the lulz
@@ -374,6 +376,10 @@ public enum ResourceUtils {
                             Logger.getLogger(ResourceUtils.class.getName()).log(Level.SEVERE, null, ex);
                         }
                     }
+                    Platform.runLater(() -> {
+                        scene.getRoot().fireEvent(
+                            new ApplicationEvent(ApplicationEvent.HIDE_BUSY_INDICATOR));
+                    });                    
                     return null;
                 }
             };
