@@ -84,8 +84,7 @@ public class Manifold3D extends Group {
     public static Function<Point3d, Point3D> hullPointToPoint3D = p -> new Point3D(p.x, p.y, p.z);
     private TexturedManifold texturedManifold;
     public SimpleBooleanProperty selected = new SimpleBooleanProperty(false);
-
-
+    public ContextMenu cm; //allows adding actions by local subscenes
     //allows 2D labels to track their 3D counterparts
     HashMap<Shape3D, Label> shape3DToLabel = new HashMap<>();
     AnimationTimer tessellationTimer;
@@ -132,7 +131,9 @@ public class Manifold3D extends Group {
         if (makePoints)
             makeDebugPoints(hull, artScale, false);
 
-        ContextMenu cm = new ContextMenu();
+        cm = new ContextMenu();
+        
+
         MenuItem editPointsItem = new MenuItem("Edit Shape");
         editPointsItem.setOnAction(e -> {
             getScene().getRoot().fireEvent(new ApplicationEvent(

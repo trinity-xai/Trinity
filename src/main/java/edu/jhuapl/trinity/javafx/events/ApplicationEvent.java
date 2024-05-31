@@ -24,11 +24,12 @@ import javafx.event.Event;
 import javafx.event.EventType;
 
 /**
- * @author Luis C. Puche
+ * @author Sean
  */
 public class ApplicationEvent extends Event {
 
     public Object object = null;
+    public Object object2 = null;
 
     public static final EventType<ApplicationEvent> SET_IMAGERY_BASEPATH = new EventType(ANY, "SET_IMAGERY_BASEPATH");
     public static final EventType<ApplicationEvent> SHOW_ABOUT = new EventType(ANY, "SHOW_ABOUT");
@@ -46,10 +47,16 @@ public class ApplicationEvent extends Event {
     public static final EventType<ApplicationEvent> UPDATE_BUSY_INDICATOR = new EventType(ANY, "PROGRESS_BUSY_INDICATOR");
     public static final EventType<ApplicationEvent> SHOW_SHAPE3D_CONTROLS = new EventType(ANY, "SHOW_SHAPE3D_CONTROLS");
     public static final EventType<ApplicationEvent> AUTO_PROJECTION_MODE = new EventType(ANY, "AUTO_PROJECTION_MODE");
-
+    public static final EventType<ApplicationEvent> SET_CAMERA_ORBIT = new EventType(ANY, "SET_CAMERA_ORBIT");
+    
     public ApplicationEvent(EventType<? extends Event> eventType, Object object) {
         this(eventType);
         this.object = object;
+    }
+    public ApplicationEvent(EventType<? extends Event> eventType, Object object, Object object2) {
+        this(eventType);
+        this.object = object;
+        this.object2 = object2;
     }
 
     public ApplicationEvent(EventType<? extends Event> eventType) {

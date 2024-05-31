@@ -146,6 +146,8 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static edu.jhuapl.trinity.javafx.components.radial.HyperspaceMenu.slideInPane;
+import javafx.animation.KeyFrame;
+import javafx.animation.KeyValue;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
@@ -1309,17 +1311,30 @@ public class Projections3DPane extends StackPane implements
 
     public void resetView(double milliseconds, boolean rightNow) {
         if (!rightNow) {
+            cameraTransform.setPivot(0, 0, 0);
             if (projectionType == PROJECTION_TYPE.FIXED_ORTHOGRAPHIC) {
-                Timeline timeline = JavaFX3DUtils.transitionCameraTo(milliseconds, camera, cameraTransform,
-                    0, 0, cameraDistance, -10.0, -45.0, 0.0);
-                timeline.setOnFinished(eh ->
-                    cubeWorld.adjustPanelsByPos(cameraTransform.rx.getAngle(),
-                        cameraTransform.ry.getAngle(), cameraTransform.rz.getAngle()));
+                Timeline timeline = new Timeline(
+                    new KeyFrame(Duration.millis(milliseconds), 
+                        new KeyValue(cameraTransform.translateXProperty(), 0),
+                        new KeyValue(cameraTransform.translateYProperty(), 0),
+                        new KeyValue(cameraTransform.translateZProperty(), 0)
+                    )
+                );
+                timeline.setOnFinished(eh -> {
+                    Timeline zoomTimeline = JavaFX3DUtils.transitionCameraTo(milliseconds, camera, cameraTransform,
+                        0, 0, cameraDistance, -10.0, -45.0, 0.0);
+                    zoomTimeline.setOnFinished(e -> 
+                        cubeWorld.adjustPanelsByPos(cameraTransform.rx.getAngle(),
+                            cameraTransform.ry.getAngle(), cameraTransform.rz.getAngle()));
+                });
+                timeline.playFromStart();
             } else {
                 dataXForm.reset();
                 cubeWorld.resetProjectionAffine();
             }
         } else {
+            cameraTransform.setPivot(0, 0, 0);
+            
             if (projectionType == PROJECTION_TYPE.FIXED_ORTHOGRAPHIC) {
                 cameraTransform.rx.setAngle(-10);
                 cameraTransform.ry.setAngle(-45.0);
@@ -1333,6 +1348,7 @@ public class Projections3DPane extends StackPane implements
                 dataXForm.reset();
                 cubeWorld.resetProjectionAffine();
             }
+            cameraTransform.setPivot(0, 0, 0);
         }
     }
 
@@ -2442,6 +2458,12 @@ public class Projections3DPane extends StackPane implements
             }
 
         });
+        MenuItem orbitItem = new MenuItem("Orbit Here");
+        orbitItem.setOnAction(e -> {
+            javafx.geometry.Point3D orbitPoint3D = JavaFX3DUtils.toFX.apply(manifold3D.getBoundsCentroid());
+            JavaFX3DUtils.orbitAt(camera, cameraTransform, orbitPoint3D, true);
+        });        
+        manifold3D.cm.getItems().add(0, orbitItem);
         manifolds.add(manifold3D);
         manifoldGroup.getChildren().add(manifold3D);
         shape3DToLabel.putAll(manifold3D.shape3DToLabel);

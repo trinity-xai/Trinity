@@ -20,16 +20,23 @@ package edu.jhuapl.trinity.javafx.javafx3D;
  * #L%
  */
 
+import javafx.animation.KeyFrame;
+import javafx.animation.KeyValue;
+import javafx.animation.ParallelTransition;
+import javafx.animation.Timeline;
+import javafx.animation.TranslateTransition;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Point3D;
 import javafx.scene.AmbientLight;
+import javafx.scene.Camera;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.PerspectiveCamera;
 import javafx.scene.Scene;
 import javafx.scene.SceneAntialiasing;
 import javafx.scene.SubScene;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.Background;
@@ -44,6 +51,7 @@ import javafx.scene.shape.Sphere;
 import javafx.scene.transform.Affine;
 import javafx.scene.transform.Rotate;
 import javafx.stage.Stage;
+import javafx.util.Duration;
 import org.fxyz3d.utils.CameraTransformer;
 
 public class LookAtTest extends Application {
@@ -88,6 +96,11 @@ public class LookAtTest extends Application {
             double newZ = z + event.getDeltaY() * modifierFactor * modifier;
             camera.setTranslateZ(newZ);
         });
+        subScene.setOnKeyPressed(me -> {
+            if(me.isControlDown() && me.getCode()==KeyCode.R) {
+                resetCamera(me.isShiftDown());
+            }
+        });
         StackPane stackPane = new StackPane(subScene);
         subScene.widthProperty().bind(stackPane.widthProperty());
         subScene.heightProperty().bind(stackPane.heightProperty());
@@ -131,7 +144,10 @@ public class LookAtTest extends Application {
                 sphereX.getTranslateX(),
                 sphereX.getTranslateY(),
                 sphereX.getTranslateZ());
-            lookAt(pointyGroup, currentPoint3D, lookAtPoint3D, false);
+            if(e.isControlDown()) {
+                orbitAt(camera, cameraTransform, lookAtPoint3D, e.isShiftDown());
+            } else
+                lookAt(pointyGroup, currentPoint3D, lookAtPoint3D, false);
         });
 
         Sphere sphereY = new Sphere(5);
@@ -146,7 +162,10 @@ public class LookAtTest extends Application {
                 sphereY.getTranslateX(),
                 sphereY.getTranslateY(),
                 sphereY.getTranslateZ());
-            lookAt(pointyGroup, currentPoint3D, lookAtPoint3D, false);
+            if(e.isControlDown()) {
+                orbitAt(camera, cameraTransform, lookAtPoint3D, e.isShiftDown());
+            } else
+                lookAt(pointyGroup, currentPoint3D, lookAtPoint3D, false);
         });
 
 
@@ -162,7 +181,10 @@ public class LookAtTest extends Application {
                 sphereZ.getTranslateX(),
                 sphereZ.getTranslateY(),
                 sphereZ.getTranslateZ());
-            lookAt(pointyGroup, currentPoint3D, lookAtPoint3D, false);
+            if(e.isControlDown()) {
+                orbitAt(camera, cameraTransform, lookAtPoint3D, e.isShiftDown());
+            } else
+                lookAt(pointyGroup, currentPoint3D, lookAtPoint3D, false);
         });
 
         sceneRoot.getChildren().addAll(cameraTransform, ambientLight,
@@ -180,6 +202,36 @@ public class LookAtTest extends Application {
         primaryStage.setScene(scene);
         primaryStage.show();
 
+    }
+    public void resetCamera(boolean animate) {
+//        cameraTransform.setPivot(0, 0, 0);
+        cameraTransform.setTranslate(0, 0, 0);
+        orbitAt(camera, cameraTransform, Point3D.ZERO, animate);
+    }
+    public static void orbitAt(Camera camera, CameraTransformer cameraTransform, Point3D at, boolean animate){
+        double currentZ = camera.getTranslateZ();
+        
+        if(!animate) {
+            cameraTransform.setPivot(at.getX(), at.getY(), at.getZ());
+            cameraTransform.setTranslate(at.getX(), at.getY(), at.getZ());
+            cameraTransform.setPivot(at.getX(), at.getY(), at.getZ());
+            camera.setTranslateZ(currentZ);
+        } else {
+            double time = 1.0;
+
+            Timeline timeline = new Timeline(
+                new KeyFrame(Duration.seconds(time), 
+                    new KeyValue(cameraTransform.translateXProperty(), at.getX()),
+                    new KeyValue(cameraTransform.translateYProperty(), at.getY()),
+                    new KeyValue(cameraTransform.translateZProperty(), at.getZ())
+                )
+//                ,new KeyFrame(Duration.seconds(time), 
+//                    new KeyValue(camera.translateZProperty(), currentZ)
+//                )                    
+            );
+            cameraTransform.setPivot(at.getX(), at.getY(), at.getZ());
+            timeline.play();
+        }
     }
 
     public static Affine lookAt(Node node, Point3D from, Point3D to, boolean applyTranslate) {

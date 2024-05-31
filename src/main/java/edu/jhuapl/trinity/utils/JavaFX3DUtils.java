@@ -401,7 +401,32 @@ public enum JavaFX3DUtils {
         timeline.playFromStart();
         return timeline;
     }
+    public static void resetCamera(Camera camera, CameraTransformer cameraTransform, boolean animate) {
+        cameraTransform.setTranslate(0, 0, 0);
+        orbitAt(camera, cameraTransform, javafx.geometry.Point3D.ZERO, animate);
+    }    
+    public static void orbitAt(Camera camera, CameraTransformer cameraTransform, javafx.geometry.Point3D at, boolean animate){
+        double currentZ = camera.getTranslateZ();
+        
+        if(!animate) {
+            cameraTransform.setPivot(at.getX(), at.getY(), at.getZ());
+            cameraTransform.setTranslate(at.getX(), at.getY(), at.getZ());
+            cameraTransform.setPivot(at.getX(), at.getY(), at.getZ());
+            camera.setTranslateZ(currentZ);
+        } else {
+            double time = 1.0;
 
+            Timeline timeline = new Timeline(
+                new KeyFrame(Duration.seconds(time), 
+                    new KeyValue(cameraTransform.translateXProperty(), at.getX()),
+                    new KeyValue(cameraTransform.translateYProperty(), at.getY()),
+                    new KeyValue(cameraTransform.translateZProperty(), at.getZ())
+                )
+            );
+            cameraTransform.setPivot(at.getX(), at.getY(), at.getZ());
+            timeline.play();
+        }
+    }
     public static WritableImage convertToGreyScale(Image image) {
         WritableImage tmp = new WritableImage(image.getPixelReader(), (int) image.getWidth(), (int) image.getHeight());
         for (int y = 0; y < (int) tmp.getHeight(); y++) {
