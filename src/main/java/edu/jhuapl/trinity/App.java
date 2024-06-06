@@ -24,6 +24,7 @@ import edu.jhuapl.trinity.data.Dimension;
 import edu.jhuapl.trinity.data.FactorLabel;
 import edu.jhuapl.trinity.data.files.ClusterCollectionFile;
 import edu.jhuapl.trinity.data.files.FeatureCollectionFile;
+import edu.jhuapl.trinity.data.files.ManifoldDataFile;
 import edu.jhuapl.trinity.data.messages.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.FeatureVector;
 import edu.jhuapl.trinity.javafx.components.MatrixOverlay;
@@ -60,6 +61,7 @@ import edu.jhuapl.trinity.javafx.javafx3d.Hypersurface3DPane;
 import edu.jhuapl.trinity.javafx.javafx3d.Manifold3D;
 import edu.jhuapl.trinity.javafx.javafx3d.Projections3DPane;
 import edu.jhuapl.trinity.javafx.javafx3d.RetroWavePane;
+import edu.jhuapl.trinity.javafx.javafx3d.projectiles.ProjectileSystem;
 import edu.jhuapl.trinity.messages.MessageProcessor;
 import edu.jhuapl.trinity.messages.ZeroMQFeedManager;
 import edu.jhuapl.trinity.messages.ZeroMQSubscriberConfig;
@@ -344,6 +346,11 @@ public class App extends Application {
                             ClusterCollectionFile ccFile = new ClusterCollectionFile(file.getAbsolutePath(), true);
                             scene.getRoot().fireEvent(
                                 new ManifoldEvent(ManifoldEvent.NEW_CLUSTER_COLLECTION, ccFile.clusterCollection));
+                        }
+                        if (ManifoldDataFile.isManifoldDataFile(file)) {
+                            ManifoldDataFile mdFile = new ManifoldDataFile(file.getAbsolutePath(), true);
+                            Platform.runLater(() -> scene.getRoot().fireEvent(
+                                new ManifoldEvent(ManifoldEvent.NEW_MANIFOLD_DATA, mdFile.manifoldData)));
                         }
                     } catch (IOException ex) {
                         Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);

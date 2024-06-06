@@ -20,8 +20,8 @@ package edu.jhuapl.trinity.javafx.javafx3d;
  * #L%
  */
 
-import com.clust4j.algo.DBSCAN;
-import com.clust4j.algo.DBSCANParameters;
+//import com.clust4j.algo.DBSCAN;
+//import com.clust4j.algo.DBSCANParameters;
 import com.clust4j.algo.HDBSCAN;
 import com.clust4j.algo.HDBSCAN.HDBSCAN_Algorithm;
 import com.clust4j.algo.HDBSCANParameters;
@@ -146,8 +146,13 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static edu.jhuapl.trinity.javafx.components.radial.HyperspaceMenu.slideInPane;
+import edu.jhuapl.trinity.javafx.javafx3d.projectiles.HitShape3D;
+import edu.jhuapl.trinity.javafx.javafx3d.projectiles.Hittable;
+import edu.jhuapl.trinity.javafx.javafx3d.projectiles.ProjectileSystem;
+import java.util.Random;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
+import javafx.scene.input.KeyEvent;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
@@ -296,6 +301,7 @@ public class Projections3DPane extends StackPane implements
     Umap latestUmap = null;
 
     Rectangle selectionRectangle;
+    ProjectileSystem projectileSystem;    
 
     public Projections3DPane(Scene scene) {
         this.scene = scene;
@@ -1123,6 +1129,28 @@ public class Projections3DPane extends StackPane implements
             ;
         };
         animationTimer.start();
+        projectileSystem = new ProjectileSystem(debugGroup, 15);
+        projectileSystem.setRunning(false);
+        projectileSystem.setEnableProjectileTimer(true);
+        
+        subScene.addEventHandler(KeyEvent.KEY_PRESSED, k -> {
+            //What key did the user press?
+            KeyCode keycode = k.getCode();
+            if (keycode == KeyCode.F12 && k.isControlDown()) {
+                resetAsteroids();
+            } else if (keycode == KeyCode.F12 && k.isAltDown()) {
+                //first toggle the system
+                projectileSystem.setRunning(!projectileSystem.isRunning());
+                //hide the boring serious stuff
+                manifoldGroup.setVisible(!projectileSystem.isRunning());
+                connectorsGroup.setVisible(!projectileSystem.isRunning());
+                ellipsoidGroup.setVisible(!projectileSystem.isRunning());
+                projectedGroup.setVisible(!projectileSystem.isRunning());                    
+                //show the cool stuff
+                debugGroup.setVisible(projectileSystem.isRunning());
+            }
+        });
+        
         Platform.runLater(() -> {
             cubeWorld.adjustPanelsByPos(cameraTransform.rx.getAngle(),
                 cameraTransform.ry.getAngle(), cameraTransform.rz.getAngle());
@@ -1136,6 +1164,34 @@ public class Projections3DPane extends StackPane implements
         });
     }
 
+    private void resetAsteroids() {
+        System.out.println("Resetting Shapes...");
+        projectileSystem.clearAllHitShapes();
+        projectileSystem.clearAllHittables();
+        debugGroup.getChildren().removeIf(c -> c instanceof HitShape3D);
+        //copy all shapes into the projectile system
+        Random rando = new Random();
+        getManifoldViews().getChildren()
+            .filtered(m -> m instanceof Manifold3D)
+            .forEach(t -> {
+                Manifold3D man3D = (Manifold3D)t;
+                HitShape3D hitShape = new HitShape3D(
+                man3D.texturedManifold.getVertices(), 
+                    man3D.texturedManifold.getFaces(), 
+                        JavaFX3DUtils.toFX.apply(man3D.getBoundsCentroid())
+                );
+                javafx.geometry.Point3D velocity = new javafx.geometry.Point3D(
+                  Hittable.random.nextGaussian()*0.5, 
+                    Hittable.random.nextGaussian()*2.1, //initial velocity mostly vertical 
+                 Hittable.random.nextGaussian()*0.5);
+                hitShape.setVelocity(velocity);
+                
+                projectileSystem.addHitShape(hitShape);
+                projectileSystem.addHittable(hitShape);
+                debugGroup.getChildren().add(hitShape);
+            });
+    }
+    
     public void updateOnLabelChange(List<FactorLabel> labels) {
         updatePNodeColorsAndVisibility();
         updateView(false);
@@ -2447,7 +2503,7 @@ public class Projections3DPane extends StackPane implements
 
     @Override
     public void addManifold(Manifold manifold, Manifold3D manifold3D) {
-        System.out.println("adding manifold to Projections View.");
+//        System.out.println("adding manifold to Projections View.");
         manifold3D.setManifold(manifold);
         manifold3D.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
             getScene().getRoot().fireEvent(
@@ -2464,8 +2520,10 @@ public class Projections3DPane extends StackPane implements
             JavaFX3DUtils.orbitAt(camera, cameraTransform, orbitPoint3D, true);
         });        
         manifold3D.cm.getItems().add(0, orbitItem);
-        manifolds.add(manifold3D);
-        manifoldGroup.getChildren().add(manifold3D);
+        if(!manifolds.contains(manifold3D))
+            manifolds.add(manifold3D);
+        if(!manifoldGroup.getChildren().contains(manifold3D))
+            manifoldGroup.getChildren().add(manifold3D);
         shape3DToLabel.putAll(manifold3D.shape3DToLabel);
         updateFloatingNodes();
     }
@@ -2768,7 +2826,7 @@ public class Projections3DPane extends StackPane implements
                 HDBSCAN hdb = new HDBSCANParameters()
                     .setAlpha(0.5)
                     .setMinPts(100)
-                    .setMinClustSize(1000)
+                    .setMinClustSize(50)
                     .setLeafSize(100)
 //                    .setForceParallel(true)
 //                    .setVerbose(true)
@@ -2800,13 +2858,10 @@ public class Projections3DPane extends StackPane implements
                         Manifold manifold = new Manifold(fxPoints, label, label, sceneColor);
                         //Create the 3D manifold shape
                         Manifold3D manifold3D = makeHull(points, label, null);
-                        manifold3D.setManifold(manifold);
-                        manifold3D.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
-                            getScene().getRoot().fireEvent(
-                                new ManifoldEvent(ManifoldEvent.MANIFOLD_3D_SELECTED, manifold));
-                        });
+                        addManifold(manifold, manifold3D);
                         //Add this Manifold data object to the global tracker
                         Manifold.addManifold(manifold);
+                        
                         //update the manifold to manifold3D mapping
                         Manifold.globalManifoldToManifold3DMap.put(manifold, manifold3D);
                         //announce to the world of the new manifold and its shape

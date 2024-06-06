@@ -82,7 +82,7 @@ public class Manifold3D extends Group {
     public float artScale = 1.0f;
     public static Function<Point3D, Point3d> point3DToHullPoint = p -> new Point3d(p.x, p.y, p.z);
     public static Function<Point3d, Point3D> hullPointToPoint3D = p -> new Point3D(p.x, p.y, p.z);
-    private TexturedManifold texturedManifold;
+    public TexturedManifold texturedManifold;
     public SimpleBooleanProperty selected = new SimpleBooleanProperty(false);
     public ContextMenu cm; //allows adding actions by local subscenes
     //allows 2D labels to track their 3D counterparts
@@ -328,9 +328,7 @@ public class Manifold3D extends Group {
         TriangleMeshHelper helper = new TriangleMeshHelper();
         org.fxyz3d.geometry.Point3D insideMeshPoint = getBoundsCentroid();
 
-        List<Face3> listIntersections = helper.getListIntersections(
-            startingPoint, insideMeshPoint,
-            texturedManifold.vertices, texturedManifold.faces);
+        List<Face3> listIntersections = helper.getListIntersections(startingPoint, insideMeshPoint, texturedManifold.getVertices(), texturedManifold.getFaces());
         return listIntersections;
     }
 

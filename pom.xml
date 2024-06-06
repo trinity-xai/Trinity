@@ -70,6 +70,11 @@
 
     <dependencies>
         <dependency>
+          <groupId>clust4j</groupId>
+          <artifactId>clust4j</artifactId>
+          <version>2024.06.02</version>
+        </dependency>       
+        <dependency>
             <groupId>org.openjfx</groupId>
             <artifactId>javafx-controls</artifactId>
             <version>${javafx.version}</version>
@@ -156,12 +161,6 @@
           <artifactId>jflac-codec</artifactId>
           <version>${org.jflac.jflac-codec.version}</version>
         </dependency>
-        <dependency>
-          <groupId>clust4j</groupId>
-          <artifactId>clust4j</artifactId>
-          <version>2024.05.06</version>
-        </dependency>
-        
         <!-- Enforce slf4j-api version across dependencies (although we're using JUL) -->
         <dependency>
             <groupId>org.slf4j</groupId>
