@@ -19,14 +19,16 @@ package com.clust4j.optimize;
 /**
  * A wrapper class to optimize some function. Usually
  * instantiated via anonymous classing
- * @author Taylor G Smith
+ *
  * @param <T>
+ * @author Taylor G Smith
  */
 public interface OptimizableCaller {
-	/**
-	 * The function whose output to minimize
-	 * @param val
-	 * @return
-	 */
-	public double doCall(double val);
+    /**
+     * The function whose output to minimize
+     *
+     * @param val
+     * @return
+     */
+    public double doCall(double val);
 }

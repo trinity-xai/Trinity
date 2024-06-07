@@ -24,85 +24,85 @@ import com.clust4j.algo.AbstractCentroidClusterer.InitializationStrategy;
 import com.clust4j.metrics.pairwise.GeometricallySeparable;
 
 public class KMedoidsParameters extends CentroidClustererParameters<KMedoids> {
-	private static final long serialVersionUID = -3288579217568576647L;
-	
-	private InitializationStrategy strat = KMedoids.DEF_INIT;
-	private int maxIter = KMedoids.DEF_MAX_ITER;
-	
-	public KMedoidsParameters() {
-		this.metric = KMedoids.DEF_DIST;
-	}
-	
-	public KMedoidsParameters(int k) {
-		this();
-		this.k = k;
-	}
-	
-	@Override
-	public KMedoids fitNewModel(final RealMatrix data) {
-		return new KMedoids(data, this.copy()).fit();
-	}
-	
-	@Override
-	public KMedoidsParameters copy() {
-		return new KMedoidsParameters(k)
-			.setMaxIter(maxIter)
-			.setConvergenceCriteria(minChange)
-			.setMetric(metric)
-			.setVerbose(verbose)
-			.setSeed(seed)
-			.setInitializationStrategy(strat)
-			.setForceParallel(parallel);
-	}
-	
-	@Override
-	public InitializationStrategy getInitializationStrategy() {
-		return strat;
-	}
-	
-	@Override
-	public int getMaxIter() {
-		return maxIter;
-	}
-	
-	@Override
-	public KMedoidsParameters setForceParallel(boolean b) {
-		this.parallel = b;
-		return this;
-	}
-	
-	@Override
-	public KMedoidsParameters setMetric(final GeometricallySeparable dist) {
-		this.metric = dist; // bad idea in kmedoids
-		return this;
-	}
-	
-	public KMedoidsParameters setMaxIter(final int max) {
-		this.maxIter = max;
-		return this;
-	}
+    private static final long serialVersionUID = -3288579217568576647L;
 
-	@Override
-	public KMedoidsParameters setConvergenceCriteria(final double min) {
-		this.minChange = min;
-		return this;
-	}
-	
-	@Override
-	public KMedoidsParameters setInitializationStrategy(InitializationStrategy init) {
-		this.strat = init;
-		return this;
-	}
-	
-	@Override
-	public KMedoidsParameters setSeed(final Random seed) {
-		this.seed = seed;
-		return this;
-	}
-	
-	@Override
-	public KMedoidsParameters setVerbose(final boolean v) {
-		this.verbose = v;
-		return this;
-	}
+    private InitializationStrategy strat = KMedoids.DEF_INIT;
+    private int maxIter = KMedoids.DEF_MAX_ITER;
+
+    public KMedoidsParameters() {
+        this.metric = KMedoids.DEF_DIST;
+    }
+
+    public KMedoidsParameters(int k) {
+        this();
+        this.k = k;
+    }
+
+    @Override
+    public KMedoids fitNewModel(final RealMatrix data) {
+        return new KMedoids(data, this.copy()).fit();
+    }
+
+    @Override
+    public KMedoidsParameters copy() {
+        return new KMedoidsParameters(k)
+            .setMaxIter(maxIter)
+            .setConvergenceCriteria(minChange)
+            .setMetric(metric)
+            .setVerbose(verbose)
+            .setSeed(seed)
+            .setInitializationStrategy(strat)
+            .setForceParallel(parallel);
+    }
+
+    @Override
+    public InitializationStrategy getInitializationStrategy() {
+        return strat;
+    }
+
+    @Override
+    public int getMaxIter() {
+        return maxIter;
+    }
+
+    @Override
+    public KMedoidsParameters setForceParallel(boolean b) {
+        this.parallel = b;
+        return this;
+    }
+
+    @Override
+    public KMedoidsParameters setMetric(final GeometricallySeparable dist) {
+        this.metric = dist; // bad idea in kmedoids
+        return this;
+    }
+
+    public KMedoidsParameters setMaxIter(final int max) {
+        this.maxIter = max;
+        return this;
+    }
+
+    @Override
+    public KMedoidsParameters setConvergenceCriteria(final double min) {
+        this.minChange = min;
+        return this;
+    }
+
+    @Override
+    public KMedoidsParameters setInitializationStrategy(InitializationStrategy init) {
+        this.strat = init;
+        return this;
+    }
+
+    @Override
+    public KMedoidsParameters setSeed(final Random seed) {
+        this.seed = seed;
+        return this;
+    }
+
+    @Override
+    public KMedoidsParameters setVerbose(final boolean v) {
+        this.verbose = v;
+        return this;
+    }
 }

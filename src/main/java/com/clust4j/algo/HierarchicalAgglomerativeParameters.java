@@ -23,76 +23,82 @@ import org.apache.commons.math3.linear.RealMatrix;
 import com.clust4j.algo.HierarchicalAgglomerative.Linkage;
 import com.clust4j.metrics.pairwise.GeometricallySeparable;
 
-final public class HierarchicalAgglomerativeParameters 
-		extends BaseClustererParameters 
-		implements UnsupervisedClassifierParameters<HierarchicalAgglomerative> {
+final public class HierarchicalAgglomerativeParameters
+    extends BaseClustererParameters
+    implements UnsupervisedClassifierParameters<HierarchicalAgglomerative> {
 
-	private static final long serialVersionUID = -1333222392991867085L;
-	private static int DEF_K = 2;
-	private Linkage linkage = HierarchicalAgglomerative.DEF_LINKAGE;
-	private int num_clusters = DEF_K;
+    private static final long serialVersionUID = -1333222392991867085L;
+    private static int DEF_K = 2;
+    private Linkage linkage = HierarchicalAgglomerative.DEF_LINKAGE;
+    private int num_clusters = DEF_K;
 
-	public HierarchicalAgglomerativeParameters() { this(DEF_K); }
-	public HierarchicalAgglomerativeParameters(int k) { this.num_clusters = k; }
-	public HierarchicalAgglomerativeParameters(Linkage linkage) {
-		this();
-		this.linkage = linkage;
-	}
+    public HierarchicalAgglomerativeParameters() {
+        this(DEF_K);
+    }
 
-	@Override
-	public HierarchicalAgglomerative fitNewModel(RealMatrix data) {
-		return new HierarchicalAgglomerative(data, this.copy()).fit();
-	}
+    public HierarchicalAgglomerativeParameters(int k) {
+        this.num_clusters = k;
+    }
 
-	@Override
-	public HierarchicalAgglomerativeParameters copy() {
-		return new HierarchicalAgglomerativeParameters(linkage)
-			.setMetric(metric)
-			.setSeed(seed)
-			.setVerbose(verbose)
-			.setNumClusters(num_clusters)
-			.setForceParallel(parallel);
-	}
+    public HierarchicalAgglomerativeParameters(Linkage linkage) {
+        this();
+        this.linkage = linkage;
+    }
 
-	public Linkage getLinkage() {
-		return linkage;
-	}
+    @Override
+    public HierarchicalAgglomerative fitNewModel(RealMatrix data) {
+        return new HierarchicalAgglomerative(data, this.copy()).fit();
+    }
 
-	public HierarchicalAgglomerativeParameters setLinkage(Linkage l) {
-		this.linkage = l;
-		return this;
-	}
-	
-	public int getNumClusters() {
-		return num_clusters;
-	}
+    @Override
+    public HierarchicalAgglomerativeParameters copy() {
+        return new HierarchicalAgglomerativeParameters(linkage)
+            .setMetric(metric)
+            .setSeed(seed)
+            .setVerbose(verbose)
+            .setNumClusters(num_clusters)
+            .setForceParallel(parallel);
+    }
 
-	public HierarchicalAgglomerativeParameters setNumClusters(final int d) {
-		this.num_clusters = d;
-		return this;
-	}
+    public Linkage getLinkage() {
+        return linkage;
+    }
 
-	@Override
-	public HierarchicalAgglomerativeParameters setForceParallel(boolean b) {
-		this.parallel = b;
-		return this;
-	}
+    public HierarchicalAgglomerativeParameters setLinkage(Linkage l) {
+        this.linkage = l;
+        return this;
+    }
 
-	@Override
-	public HierarchicalAgglomerativeParameters setSeed(final Random seed) {
-		this.seed = seed;
-		return this;
-	}
+    public int getNumClusters() {
+        return num_clusters;
+    }
 
-	@Override
-	public HierarchicalAgglomerativeParameters setVerbose(boolean b) {
-		this.verbose = b;
-		return this;
-	}
+    public HierarchicalAgglomerativeParameters setNumClusters(final int d) {
+        this.num_clusters = d;
+        return this;
+    }
 
-	@Override
-	public HierarchicalAgglomerativeParameters setMetric(GeometricallySeparable dist) {
-		this.metric = dist;
-		return this;
-	}
+    @Override
+    public HierarchicalAgglomerativeParameters setForceParallel(boolean b) {
+        this.parallel = b;
+        return this;
+    }
+
+    @Override
+    public HierarchicalAgglomerativeParameters setSeed(final Random seed) {
+        this.seed = seed;
+        return this;
+    }
+
+    @Override
+    public HierarchicalAgglomerativeParameters setVerbose(boolean b) {
+        this.verbose = b;
+        return this;
+    }
+
+    @Override
+    public HierarchicalAgglomerativeParameters setMetric(GeometricallySeparable dist) {
+        this.metric = dist;
+        return this;
+    }
 }

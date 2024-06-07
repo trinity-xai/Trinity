@@ -15,4 +15,5 @@
  *******************************************************************************/
 package com.clust4j.metrics.scoring;
 
-public interface EvaluationMetric extends java.io.Serializable {}
+public interface EvaluationMetric extends java.io.Serializable {
+}

@@ -25,72 +25,76 @@ import com.clust4j.algo.BaseNeighborsModel.NeighborsAlgorithm;
 import com.clust4j.metrics.pairwise.GeometricallySeparable;
 
 public class NearestNeighborsParameters extends BaseNeighborsPlanner<NearestNeighbors> {
-	private static final long serialVersionUID = -4848896423352149405L;
-	private final int k;
-	
-	
-	public NearestNeighborsParameters() { this(BaseNeighborsModel.DEF_K); }
-	public NearestNeighborsParameters(int k) {
-		this.k = k;
-	}
-	
-	@Override
-	public NearestNeighbors fitNewModel(RealMatrix data) {
-		return new NearestNeighbors(data, this.copy()).fit();
-	}
+    private static final long serialVersionUID = -4848896423352149405L;
+    private final int k;
 
-	@Override
-	public NearestNeighborsParameters setAlgorithm(NeighborsAlgorithm algo) {
-		this.algo = algo;
-		return this;
-	}
 
-	@Override
-	public NearestNeighborsParameters copy() {
-		return new NearestNeighborsParameters(k)
-			.setAlgorithm(algo)
-			.setSeed(seed)
-			.setMetric(metric)
-			.setVerbose(verbose)
-			.setLeafSize(leafSize)
-			.setForceParallel(parallel);
-	}
-	
-	@Override
-	final public Integer getK() {
-		return k;
-	}
+    public NearestNeighborsParameters() {
+        this(BaseNeighborsModel.DEF_K);
+    }
 
-	@Override
-	final public Double getRadius() {
-		return null;
-	}
+    public NearestNeighborsParameters(int k) {
+        this.k = k;
+    }
 
-	public NearestNeighborsParameters setLeafSize(int leafSize) {
-		this.leafSize = leafSize;
-		return this;
-	}
+    @Override
+    public NearestNeighbors fitNewModel(RealMatrix data) {
+        return new NearestNeighbors(data, this.copy()).fit();
+    }
 
-	@Override
-	public NearestNeighborsParameters setSeed(Random rand) {
-		this.seed= rand;
-		return this;
-	}
-	
-	@Override
-	public NearestNeighborsParameters setVerbose(boolean b) {
-		this.verbose = b;
-		return this;
-	}
+    @Override
+    public NearestNeighborsParameters setAlgorithm(NeighborsAlgorithm algo) {
+        this.algo = algo;
+        return this;
+    }
 
-	@Override
-	public NearestNeighborsParameters setMetric(GeometricallySeparable dist) {
-		this.metric = dist;
-		return this;
-	}
-	@Override
-	public NearestNeighborsParameters setForceParallel(boolean b) {
-		this.parallel = b;
-		return this;
-	}
+    @Override
+    public NearestNeighborsParameters copy() {
+        return new NearestNeighborsParameters(k)
+            .setAlgorithm(algo)
+            .setSeed(seed)
+            .setMetric(metric)
+            .setVerbose(verbose)
+            .setLeafSize(leafSize)
+            .setForceParallel(parallel);
+    }
+
+    @Override
+    final public Integer getK() {
+        return k;
+    }
+
+    @Override
+    final public Double getRadius() {
+        return null;
+    }
+
+    public NearestNeighborsParameters setLeafSize(int leafSize) {
+        this.leafSize = leafSize;
+        return this;
+    }
+
+    @Override
+    public NearestNeighborsParameters setSeed(Random rand) {
+        this.seed = rand;
+        return this;
+    }
+
+    @Override
+    public NearestNeighborsParameters setVerbose(boolean b) {
+        this.verbose = b;
+        return this;
+    }
+
+    @Override
+    public NearestNeighborsParameters setMetric(GeometricallySeparable dist) {
+        this.metric = dist;
+        return this;
+    }
+
+    @Override
+    public NearestNeighborsParameters setForceParallel(boolean b) {
+        this.parallel = b;
+        return this;
+    }
 }

@@ -18,8 +18,9 @@ package com.clust4j.utils;
 
 /**
  * Simply a {@link Serializable} Object used as a lock for synchronized fits.
+ *
  * @author Taylor G Smith
  */
 public class SynchronicityLock extends Object implements java.io.Serializable {
-	private static final long serialVersionUID = 8508396947520230401L;
+    private static final long serialVersionUID = 8508396947520230401L;
 }

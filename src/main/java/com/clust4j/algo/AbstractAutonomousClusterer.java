@@ -18,36 +18,42 @@ package com.clust4j.algo;
 import org.apache.commons.math3.linear.RealMatrix;
 
 import com.clust4j.metrics.scoring.SupervisedMetric;
+
 import static com.clust4j.metrics.scoring.UnsupervisedMetric.SILHOUETTE;
 
 public abstract class AbstractAutonomousClusterer extends AbstractClusterer implements UnsupervisedClassifier {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = -4704891508225126315L;
+    /**
+     *
+     */
+    private static final long serialVersionUID = -4704891508225126315L;
 
-	public AbstractAutonomousClusterer(RealMatrix data, BaseClustererParameters planner) {
-		super(data, planner);
-	}
-	
-	/**
-	 * The number of clusters this algorithm identified
-	 * @return the number of clusters in the system
-	 */
-	abstract public int getNumberOfIdentifiedClusters();
-	
-	
-	/** {@inheritDoc} */
-	@Override
-	public double indexAffinityScore(int[] labels) {
-		// Propagates ModelNotFitException
-		return SupervisedMetric.INDEX_AFFINITY.evaluate(labels, getLabels());
-	}
+    public AbstractAutonomousClusterer(RealMatrix data, BaseClustererParameters planner) {
+        super(data, planner);
+    }
 
-	/** {@inheritDoc} */
-	@Override
-	public double silhouetteScore() {
-		// Propagates ModelNotFitException
-		return SILHOUETTE.evaluate(this, getLabels());
-	}
+    /**
+     * The number of clusters this algorithm identified
+     *
+     * @return the number of clusters in the system
+     */
+    abstract public int getNumberOfIdentifiedClusters();
+
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double indexAffinityScore(int[] labels) {
+        // Propagates ModelNotFitException
+        return SupervisedMetric.INDEX_AFFINITY.evaluate(labels, getLabels());
+    }
+
+    /**
+     * {@inheritDoc}
+     */
+    @Override
+    public double silhouetteScore() {
+        // Propagates ModelNotFitException
+        return SILHOUETTE.evaluate(this, getLabels());
+    }
 }

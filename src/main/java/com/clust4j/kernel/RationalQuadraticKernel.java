@@ -18,34 +18,37 @@ package com.clust4j.kernel;
 import org.apache.commons.math3.util.FastMath;
 
 /**
- * The Rational Quadratic kernel is less computationally 
- * intensive than the {@link GaussianKernel} and can be used as an 
+ * The Rational Quadratic kernel is less computationally
+ * intensive than the {@link GaussianKernel} and can be used as an
  * alternative when using the Gaussian becomes too expensive.
- * 
- * @see <a href="http://crsouza.blogspot.com/2010/03/kernel-functions-for-machine-learning.html">Souza, Cesar R. -- Kernel Functions for Machine Learning Applications.</a>
+ *
  * @author Taylor G Smith
+ * @see <a href="http://crsouza.blogspot.com/2010/03/kernel-functions-for-machine-learning.html">Souza, Cesar R. -- Kernel Functions for Machine Learning Applications.</a>
  */
 public class RationalQuadraticKernel extends ConstantKernel {
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 7063644380491570720L;
-	
-	public RationalQuadraticKernel() { this(DEFAULT_CONSTANT); }
-	public RationalQuadraticKernel(final double constant) {
-		super(constant);
-	}
-	
-	
-	@Override
-	public double getSimilarity(double[] a, double[] b) {
-		final double lp = toHilbertPSpace(a, b);
-		final double sqnm = FastMath.pow(lp, 2);
-		return 1 - (sqnm / (sqnm + getConstant()));
-	}
+    /**
+     *
+     */
+    private static final long serialVersionUID = 7063644380491570720L;
 
-	@Override
-	public String getName() {
-		return "RationalQuadraticKernel";
-	}
+    public RationalQuadraticKernel() {
+        this(DEFAULT_CONSTANT);
+    }
+
+    public RationalQuadraticKernel(final double constant) {
+        super(constant);
+    }
+
+
+    @Override
+    public double getSimilarity(double[] a, double[] b) {
+        final double lp = toHilbertPSpace(a, b);
+        final double sqnm = FastMath.pow(lp, 2);
+        return 1 - (sqnm / (sqnm + getConstant()));
+    }
+
+    @Override
+    public String getName() {
+        return "RationalQuadraticKernel";
+    }
 }

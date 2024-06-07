@@ -25,100 +25,100 @@ import com.clust4j.utils.MatUtils;
 import com.clust4j.utils.VecUtils;
 
 public class MeanCenterer extends Transformer {
-	private static final long serialVersionUID = 2028554388465841136L;
-	volatile double[] means;
-	
-	private MeanCenterer(MeanCenterer instance) {
-		this.means = VecUtils.copy(instance.means);
-	}
-	
-	public MeanCenterer() {
-	}
-	
-	
-	@Override
-	protected void checkFit() {
-		if(null == means)
-			throw new ModelNotFitException("model not yet fit");
-	}
-	
-	@Override
-	public MeanCenterer copy() {
-		return new MeanCenterer(this);
-	}
+    private static final long serialVersionUID = 2028554388465841136L;
+    volatile double[] means;
 
-	@Override
-	public MeanCenterer fit(RealMatrix data) {
-		synchronized(fitLock) {
-			final int m = data.getRowDimension();
-			final int n = data.getColumnDimension();
+    private MeanCenterer(MeanCenterer instance) {
+        this.means = VecUtils.copy(instance.means);
+    }
 
-			// need to mean center...
-			this.means = new double[n];
-			final double[][] y = data.getData();
-			
-			// First pass, compute mean...
-			for(int j = 0; j < n; j++) {
-				for(int i = 0; i < m; i++) {
-					means[j] += y[i][j];
-					
-					// if last:
-					if(i == m - 1) {
-						means[j] /= (double)m;
-					}
-				}
-			}
-			
-			return this;
-		}
-	}
+    public MeanCenterer() {
+    }
 
-	@Override
-	public RealMatrix transform(RealMatrix data) {
-		return new Array2DRowRealMatrix(transform(data.getData()), false);
-	}
 
-	@Override
-	public double[][] transform(double[][] data) {
-		checkFit();
-		MatUtils.checkDimsForUniformity(data);
-		
-		final int m = data.length;
-		final int n = data[0].length;
-		
-		if(n != means.length)
-			throw new DimensionMismatchException(n, means.length);
+    @Override
+    protected void checkFit() {
+        if (null == means)
+            throw new ModelNotFitException("model not yet fit");
+    }
 
-		double[][] X = new double[m][n];
-		// second pass, subtract to center:
-		for(int j = 0; j < n; j++) {
-			for(int i = 0; i < m; i++) {
-				X[i][j] = data[i][j] - means[j];
-			}
-		}
-		
-		// assign
-		return X;
-	}
+    @Override
+    public MeanCenterer copy() {
+        return new MeanCenterer(this);
+    }
 
-	@Override
-	public RealMatrix inverseTransform(RealMatrix X) {
-		checkFit();
-		
-		// This effectively copies, so no need to do a copy later
-		double[][] data = X.getData();
-		final int m = data.length;
-		final int n = data[0].length;
-		
-		if(n != means.length)
-			throw new DimensionMismatchException(n, means.length);
-		
-		for(int j = 0; j < n; j++) {
-			for(int i = 0; i < m; i++) {
-				data[i][j] += means[j];
-			}
-		}
-		
-		return new Array2DRowRealMatrix(data, false);
-	}
+    @Override
+    public MeanCenterer fit(RealMatrix data) {
+        synchronized (fitLock) {
+            final int m = data.getRowDimension();
+            final int n = data.getColumnDimension();
+
+            // need to mean center...
+            this.means = new double[n];
+            final double[][] y = data.getData();
+
+            // First pass, compute mean...
+            for (int j = 0; j < n; j++) {
+                for (int i = 0; i < m; i++) {
+                    means[j] += y[i][j];
+
+                    // if last:
+                    if (i == m - 1) {
+                        means[j] /= (double) m;
+                    }
+                }
+            }
+
+            return this;
+        }
+    }
+
+    @Override
+    public RealMatrix transform(RealMatrix data) {
+        return new Array2DRowRealMatrix(transform(data.getData()), false);
+    }
+
+    @Override
+    public double[][] transform(double[][] data) {
+        checkFit();
+        MatUtils.checkDimsForUniformity(data);
+
+        final int m = data.length;
+        final int n = data[0].length;
+
+        if (n != means.length)
+            throw new DimensionMismatchException(n, means.length);
+
+        double[][] X = new double[m][n];
+        // second pass, subtract to center:
+        for (int j = 0; j < n; j++) {
+            for (int i = 0; i < m; i++) {
+                X[i][j] = data[i][j] - means[j];
+            }
+        }
+
+        // assign
+        return X;
+    }
+
+    @Override
+    public RealMatrix inverseTransform(RealMatrix X) {
+        checkFit();
+
+        // This effectively copies, so no need to do a copy later
+        double[][] data = X.getData();
+        final int m = data.length;
+        final int n = data[0].length;
+
+        if (n != means.length)
+            throw new DimensionMismatchException(n, means.length);
+
+        for (int j = 0; j < n; j++) {
+            for (int i = 0; i < m; i++) {
+                data[i][j] += means[j];
+            }
+        }
+
+        return new Array2DRowRealMatrix(data, false);
+    }
 }

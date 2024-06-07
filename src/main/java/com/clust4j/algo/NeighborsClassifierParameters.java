@@ -18,7 +18,7 @@ package com.clust4j.algo;
 
 import org.apache.commons.math3.linear.RealMatrix;
 
-public interface NeighborsClassifierParameters<T extends BaseNeighborsModel> 
-		extends BaseClassifierParameters {
-	public T fitNewModel(RealMatrix data);
+public interface NeighborsClassifierParameters<T extends BaseNeighborsModel>
+    extends BaseClassifierParameters {
+    public T fitNewModel(RealMatrix data);
 }

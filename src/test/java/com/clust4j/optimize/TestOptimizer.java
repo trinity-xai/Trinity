@@ -23,43 +23,43 @@ import org.apache.commons.math3.util.Precision;
 import org.junit.Test;
 
 public class TestOptimizer {
-	public final static double min_val = 0.8;
-	final static OptimizableCaller caller = new  OptimizableCaller() {
-		@Override
-		public double doCall(double val) {
-			final double a = 1.5;
-			return FastMath.pow((val - a), 2) - min_val;
-		}
-	};
+    public final static double min_val = 0.8;
+    final static OptimizableCaller caller = new OptimizableCaller() {
+        @Override
+        public double doCall(double val) {
+            final double a = 1.5;
+            return FastMath.pow((val - a), 2) - min_val;
+        }
+    };
 
-	@Test
-	public void testBrentSimple() {
-		BrentDownhillOptimizer optimizer= new BrentDownhillOptimizer(caller);
-		double res = optimizer.optimize(); // optimize
-		assertTrue(Precision.equals(res, 1.5, Precision.EPSILON));
-		assertTrue(Precision.equals(optimizer.getFunctionResult(), -min_val, Precision.EPSILON));
-		
-		// if we try to "reoptimize" we get the same res:
-		assertTrue(res == optimizer.optimize());
-	}
+    @Test
+    public void testBrentSimple() {
+        BrentDownhillOptimizer optimizer = new BrentDownhillOptimizer(caller);
+        double res = optimizer.optimize(); // optimize
+        assertTrue(Precision.equals(res, 1.5, Precision.EPSILON));
+        assertTrue(Precision.equals(optimizer.getFunctionResult(), -min_val, Precision.EPSILON));
 
-	@Test
-	public void testBrentWithBracket() {
-		BrentDownhillOptimizer optimizer= new BrentDownhillOptimizer(caller, -3, -2);
-		double res = optimizer.optimize(); // optimize
-		assertTrue(Precision.equals(res, 1.5, Precision.EPSILON));
-		assertTrue(optimizer.getNumFunctionCalls() == 5);
-	}
-	
-	@Test
-	public void testBadBracket() {
-		boolean a = false;
-		try {
-			new BrentDownhillOptimizer(caller, 0, 0);
-		} catch(IllegalArgumentException i) {
-			a = true;
-		} finally {
-			assertTrue(a);
-		}
-	}
+        // if we try to "reoptimize" we get the same res:
+        assertTrue(res == optimizer.optimize());
+    }
+
+    @Test
+    public void testBrentWithBracket() {
+        BrentDownhillOptimizer optimizer = new BrentDownhillOptimizer(caller, -3, -2);
+        double res = optimizer.optimize(); // optimize
+        assertTrue(Precision.equals(res, 1.5, Precision.EPSILON));
+        assertTrue(optimizer.getNumFunctionCalls() == 5);
+    }
+
+    @Test
+    public void testBadBracket() {
+        boolean a = false;
+        try {
+            new BrentDownhillOptimizer(caller, 0, 0);
+        } catch (IllegalArgumentException i) {
+            a = true;
+        } finally {
+            assertTrue(a);
+        }
+    }
 }

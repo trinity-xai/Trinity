@@ -23,58 +23,59 @@ import com.clust4j.algo.UnsupervisedClassifierParameters;
 import com.clust4j.algo.preprocess.PreProcessor;
 import com.clust4j.except.ModelNotFitException;
 
-public class UnsupervisedPipeline<M extends AbstractClusterer & UnsupervisedClassifier> 
-		extends Pipeline<UnsupervisedClassifierParameters<M>> 
-		implements UnsupervisedClassifier {
-	
-	private static final long serialVersionUID = 8790601917700667359L;
-	protected M fit_model = null;
+public class UnsupervisedPipeline<M extends AbstractClusterer & UnsupervisedClassifier>
+    extends Pipeline<UnsupervisedClassifierParameters<M>>
+    implements UnsupervisedClassifier {
 
-	public UnsupervisedPipeline(final UnsupervisedClassifierParameters<M> planner, final PreProcessor... pipe) {
-		super(planner, pipe);
-	}
+    private static final long serialVersionUID = 8790601917700667359L;
+    protected M fit_model = null;
 
-	public M fit(final RealMatrix data) {
-		synchronized(fitLock) {
-			RealMatrix copy = pipelineFitTransform(data);
-	
-			// Build/fit the model
-			return fit_model = planner.fitNewModel(copy);
-		}
-	}
+    public UnsupervisedPipeline(final UnsupervisedClassifierParameters<M> planner, final PreProcessor... pipe) {
+        super(planner, pipe);
+    }
 
-	@Override
-	public int[] getLabels() {
-		checkFit();
-		return fit_model.getLabels();
-	}
+    public M fit(final RealMatrix data) {
+        synchronized (fitLock) {
+            RealMatrix copy = pipelineFitTransform(data);
 
-	@Override
-	public double indexAffinityScore(int[] labels) {
-		checkFit();
-		return fit_model.indexAffinityScore(labels);
-	}
+            // Build/fit the model
+            return fit_model = planner.fitNewModel(copy);
+        }
+    }
 
-	@Override
-	public double silhouetteScore() {
-		checkFit();
-		return fit_model.silhouetteScore();
-	}
+    @Override
+    public int[] getLabels() {
+        checkFit();
+        return fit_model.getLabels();
+    }
 
-	/**
-	 * Given an incoming dataframe, pipeline transform and
-	 * predict via the fit model
-	 * @param newData
-	 */
-	@Override
-	public int[] predict(RealMatrix newData) {
-		checkFit();
-		return fit_model.predict(pipelineTransform(newData));
-	}
-	
-	@Override
-	protected void checkFit() {
-		if(null == fit_model)
-			throw new ModelNotFitException("model not yet fit");
-	}
+    @Override
+    public double indexAffinityScore(int[] labels) {
+        checkFit();
+        return fit_model.indexAffinityScore(labels);
+    }
+
+    @Override
+    public double silhouetteScore() {
+        checkFit();
+        return fit_model.silhouetteScore();
+    }
+
+    /**
+     * Given an incoming dataframe, pipeline transform and
+     * predict via the fit model
+     *
+     * @param newData
+     */
+    @Override
+    public int[] predict(RealMatrix newData) {
+        checkFit();
+        return fit_model.predict(pipelineTransform(newData));
+    }
+
+    @Override
+    protected void checkFit() {
+        if (null == fit_model)
+            throw new ModelNotFitException("model not yet fit");
+    }
 }

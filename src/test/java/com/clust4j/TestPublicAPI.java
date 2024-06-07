@@ -6,9 +6,9 @@ import org.junit.Test;
 
 public class TestPublicAPI {
 
-	@Test
-	public void test() {
-		assertTrue(true);
-	}
+    @Test
+    public void test() {
+        assertTrue(true);
+    }
 
 }

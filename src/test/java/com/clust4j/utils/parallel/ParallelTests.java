@@ -25,69 +25,69 @@ import com.clust4j.GlobalState;
 import com.clust4j.utils.MatUtils;
 
 public class ParallelTests {
-	
-	/**
-	 * Only peform these tests if the environment will even allow it...
-	 */
-	@Test
-	public void testAll() {
-		if(GlobalState.ParallelismConf.NUM_CORES < 2) {
-			return;
-		} else {
-			boolean original = GlobalState.ParallelismConf.PARALLELISM_ALLOWED;
-			GlobalState.ParallelismConf.PARALLELISM_ALLOWED = true; // force it
-			
-			try {
-				testMult();
-				testMultRealBig();
-			} catch(Exception e) {
-			} finally {
-				GlobalState.ParallelismConf.PARALLELISM_ALLOWED = original;
-			}
-		}
-	}
-	
-	static void testMult() {
-		try {
-			final double[][] a = MatUtils.randomGaussian(500, 20);
-			final double[][] b = MatUtils.randomGaussian(20, 200);
-			
-			long start = System.currentTimeMillis();
-			final double[][] ca = MatUtils.multiply(a, b);
-			long serialTime = System.currentTimeMillis() - start;
-			
-			start = System.currentTimeMillis();
-			final double[][] cb = MatUtils.multiplyDistributed(a, b);
-			long paraTime = System.currentTimeMillis() - start;
-			
-			assertTrue(MatUtils.equalsWithTolerance(ca, cb, 1e-6));
-			System.out.println("Dist MatMult test:\tParallel="+paraTime+", Serial="+serialTime);
-		} catch(OutOfMemoryError e) {
-			// don't propagate these...
-		} catch(RejectedExecutionException r) {
-			// don't propagate these...
-		}
-	}
 
-	static void testMultRealBig() {
-		try {
-			final double[][] a = MatUtils.randomGaussian(5000, 20);
-			final double[][] b = MatUtils.randomGaussian(20, 6000);
-			
-			long start = System.currentTimeMillis();
-			final double[][] ca = MatUtils.multiply(a, b);
-			long serialTime = System.currentTimeMillis() - start;
-			
-			start = System.currentTimeMillis();
-			final double[][] cb = MatUtils.multiplyDistributed(a, b);
-			long paraTime = System.currentTimeMillis() - start;
-			
-			assertTrue(MatUtils.equalsWithTolerance(ca, cb, 1e-8));
-			System.out.println("Dist MatMult test:\tParallel="+paraTime+", Serial="+serialTime);
-		} catch(OutOfMemoryError e) {
-			// don't propagate these...
-		} catch(RejectedExecutionException r) {
-			// don't propagate these...
-		}
-	}
+    /**
+     * Only peform these tests if the environment will even allow it...
+     */
+    @Test
+    public void testAll() {
+        if (GlobalState.ParallelismConf.NUM_CORES < 2) {
+            return;
+        } else {
+            boolean original = GlobalState.ParallelismConf.PARALLELISM_ALLOWED;
+            GlobalState.ParallelismConf.PARALLELISM_ALLOWED = true; // force it
+
+            try {
+                testMult();
+                testMultRealBig();
+            } catch (Exception e) {
+            } finally {
+                GlobalState.ParallelismConf.PARALLELISM_ALLOWED = original;
+            }
+        }
+    }
+
+    static void testMult() {
+        try {
+            final double[][] a = MatUtils.randomGaussian(500, 20);
+            final double[][] b = MatUtils.randomGaussian(20, 200);
+
+            long start = System.currentTimeMillis();
+            final double[][] ca = MatUtils.multiply(a, b);
+            long serialTime = System.currentTimeMillis() - start;
+
+            start = System.currentTimeMillis();
+            final double[][] cb = MatUtils.multiplyDistributed(a, b);
+            long paraTime = System.currentTimeMillis() - start;
+
+            assertTrue(MatUtils.equalsWithTolerance(ca, cb, 1e-6));
+            System.out.println("Dist MatMult test:\tParallel=" + paraTime + ", Serial=" + serialTime);
+        } catch (OutOfMemoryError e) {
+            // don't propagate these...
+        } catch (RejectedExecutionException r) {
+            // don't propagate these...
+        }
+    }
+
+    static void testMultRealBig() {
+        try {
+            final double[][] a = MatUtils.randomGaussian(5000, 20);
+            final double[][] b = MatUtils.randomGaussian(20, 6000);
+
+            long start = System.currentTimeMillis();
+            final double[][] ca = MatUtils.multiply(a, b);
+            long serialTime = System.currentTimeMillis() - start;
+
+            start = System.currentTimeMillis();
+            final double[][] cb = MatUtils.multiplyDistributed(a, b);
+            long paraTime = System.currentTimeMillis() - start;
+
+            assertTrue(MatUtils.equalsWithTolerance(ca, cb, 1e-8));
+            System.out.println("Dist MatMult test:\tParallel=" + paraTime + ", Serial=" + serialTime);
+        } catch (OutOfMemoryError e) {
+            // don't propagate these...
+        } catch (RejectedExecutionException r) {
+            // don't propagate these...
+        }
+    }
 }

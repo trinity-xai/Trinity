@@ -21,18 +21,19 @@ package com.clust4j.algo;
  * provides the method {@link #getNumberOfNoisePoints()}, which
  * returns the number of points that were not classified as
  * belonging to any clusters.
- * 
+ *
  * @author Taylor G Smith
  * @see {@link DBSCAN}
  * @see {@link MeanShift}
  */
 public interface NoiseyClusterer extends java.io.Serializable {
-	final public static int NOISE_CLASS = -1;
-	
-	/**
-	 * the number of points that were not classified as
-	 * belonging to any clusters.
-	 * @return how many points are considered noise
-	 */
-	public int getNumberOfNoisePoints();
+    final public static int NOISE_CLASS = -1;
+
+    /**
+     * the number of points that were not classified as
+     * belonging to any clusters.
+     *
+     * @return how many points are considered noise
+     */
+    public int getNumberOfNoisePoints();
 }

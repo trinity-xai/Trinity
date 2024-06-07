@@ -27,104 +27,105 @@ import com.clust4j.utils.VecUtils;
 
 /**
  * Imputes the missing values in a matrix with the column medians.
- * 
+ *
  * @author Taylor G Smith
  */
 public class MedianImputation extends MatrixImputation {
-	private static final long serialVersionUID = -3479934875830428010L;
+    private static final long serialVersionUID = -3479934875830428010L;
 
-	public MedianImputation() {
-		this(new MedianImputationPlanner());
-	}
-	
-	public MedianImputation(MedianImputationPlanner planner) {
-		super(planner);
-	}
-	
+    public MedianImputation() {
+        this(new MedianImputationPlanner());
+    }
 
-	
-	
-	public static class MedianImputationPlanner extends ImputationPlanner {
-		private boolean verbose = DEF_VERBOSE;
-		private Random seed = new Random();
-		
-		public MedianImputationPlanner() {}
-
-		@Override
-		public Random getSeed() {
-			return seed;
-		}
-		
-		@Override
-		public boolean getVerbose() {
-			return verbose;
-		}
-		
-		@Override
-		public MedianImputationPlanner setSeed(final Random seed) {
-			this.seed = seed;
-			return this;
-		}
-
-		@Override
-		public MedianImputationPlanner setVerbose(boolean b) {
-			this.verbose = b;
-			return this;
-		}
-		
-	}
+    public MedianImputation(MedianImputationPlanner planner) {
+        super(planner);
+    }
 
 
+    public static class MedianImputationPlanner extends ImputationPlanner {
+        private boolean verbose = DEF_VERBOSE;
+        private Random seed = new Random();
 
-	@Override
-	public MedianImputation copy() {
-		return new MedianImputation(new MedianImputationPlanner()
-			.setSeed(getSeed())
-			.setVerbose(verbose));
-	}
+        public MedianImputationPlanner() {
+        }
 
-	@Override
-	public Algo getLoggerTag() {
-		return Algo.IMPUTE;
-	}
-	
-	@Override
-	public String getName() {
-		return "Median imputation";
-	}
-	
-	@Override
-	public RealMatrix transform(final RealMatrix dat) {
-		return new Array2DRowRealMatrix(transform(dat.getData()), false);
-	}
-	
-	@Override
-	public double[][] transform(final double[][] dat) {
-		checkMat(dat);
-		
-		final LogTimer timer = new LogTimer();
-		final double[][] copy = MatUtils.copy(dat);
-		final int m = dat.length, n = dat[0].length;
-		info("(" + getName() + ") performing median imputation on " + m + " x " + n + " dataset");
-		
-		// Operates in 2M * N
-		for(int col = 0; col < n; col++) {
-			final double median = VecUtils.nanMedian(MatUtils.getColumn(copy, col));
+        @Override
+        public Random getSeed() {
+            return seed;
+        }
 
-			int count = 0;
-			for(int row = 0; row < m; row++) {
-				if(Double.isNaN(copy[row][col])) {
-					copy[row][col] = median;
-					count++;
-				}
-			}
-			
-			info("(" + getName() + ") " + count + " NaN" + (count!=1?"s":"") + " identified in column " + col + " (column median="+median+")");
-		}
-		
-		sayBye(timer);
-		return copy;
-	}
+        @Override
+        public boolean getVerbose() {
+            return verbose;
+        }
 
-	@Override final public MedianImputation fit(RealMatrix x){return this;}
+        @Override
+        public MedianImputationPlanner setSeed(final Random seed) {
+            this.seed = seed;
+            return this;
+        }
+
+        @Override
+        public MedianImputationPlanner setVerbose(boolean b) {
+            this.verbose = b;
+            return this;
+        }
+
+    }
+
+
+    @Override
+    public MedianImputation copy() {
+        return new MedianImputation(new MedianImputationPlanner()
+            .setSeed(getSeed())
+            .setVerbose(verbose));
+    }
+
+    @Override
+    public Algo getLoggerTag() {
+        return Algo.IMPUTE;
+    }
+
+    @Override
+    public String getName() {
+        return "Median imputation";
+    }
+
+    @Override
+    public RealMatrix transform(final RealMatrix dat) {
+        return new Array2DRowRealMatrix(transform(dat.getData()), false);
+    }
+
+    @Override
+    public double[][] transform(final double[][] dat) {
+        checkMat(dat);
+
+        final LogTimer timer = new LogTimer();
+        final double[][] copy = MatUtils.copy(dat);
+        final int m = dat.length, n = dat[0].length;
+        info("(" + getName() + ") performing median imputation on " + m + " x " + n + " dataset");
+
+        // Operates in 2M * N
+        for (int col = 0; col < n; col++) {
+            final double median = VecUtils.nanMedian(MatUtils.getColumn(copy, col));
+
+            int count = 0;
+            for (int row = 0; row < m; row++) {
+                if (Double.isNaN(copy[row][col])) {
+                    copy[row][col] = median;
+                    count++;
+                }
+            }
+
+            info("(" + getName() + ") " + count + " NaN" + (count != 1 ? "s" : "") + " identified in column " + col + " (column median=" + median + ")");
+        }
+
+        sayBye(timer);
+        return copy;
+    }
+
+    @Override
+    final public MedianImputation fit(RealMatrix x) {
+        return this;
+    }
 }

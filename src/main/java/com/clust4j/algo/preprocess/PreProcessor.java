@@ -24,14 +24,20 @@ import com.clust4j.utils.SynchronicityLock;
 import com.clust4j.utils.TableFormatter;
 
 public abstract class PreProcessor extends Clust4j implements DeepCloneable {
-	private static final long serialVersionUID = -312158525538380532L;
-	final public static TableFormatter formatter = BaseModel.formatter;
-	
-	/** The lock to synchronize on for fits */
-	protected final Object fitLock = new SynchronicityLock();
-	
-	@Override public abstract PreProcessor copy();
-	public abstract PreProcessor fit(RealMatrix X);
-	public abstract RealMatrix transform(RealMatrix data);
-	public abstract double[][] transform(double[][] data);
+    private static final long serialVersionUID = -312158525538380532L;
+    final public static TableFormatter formatter = BaseModel.formatter;
+
+    /**
+     * The lock to synchronize on for fits
+     */
+    protected final Object fitLock = new SynchronicityLock();
+
+    @Override
+    public abstract PreProcessor copy();
+
+    public abstract PreProcessor fit(RealMatrix X);
+
+    public abstract RealMatrix transform(RealMatrix data);
+
+    public abstract double[][] transform(double[][] data);
 }

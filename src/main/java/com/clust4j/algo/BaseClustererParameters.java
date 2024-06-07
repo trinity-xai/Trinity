@@ -27,27 +27,43 @@ import com.clust4j.utils.DeepCloneable;
  * will extend with static inner classes. Some clustering
  * algorithms will require more parameters and must provide
  * the interface for the getting/setting of such parameters.
- * 
+ *
  * @author Taylor G Smith
  */
-abstract public class BaseClustererParameters 
-		extends Clust4j // So all are serializable
-		implements DeepCloneable, BaseClassifierParameters {
-	private static final long serialVersionUID = -5830795881133834268L;
-	
-	protected boolean parallel, 
-		verbose = AbstractClusterer.DEF_VERBOSE;
-	protected Random seed = AbstractClusterer.DEF_SEED;
-	protected GeometricallySeparable metric = AbstractClusterer.DEF_DIST;
-	
-	@Override abstract public BaseClustererParameters copy();
-	abstract public BaseClustererParameters setSeed(final Random rand);
-	abstract public BaseClustererParameters setVerbose(final boolean b);
-	abstract public BaseClustererParameters setMetric(final GeometricallySeparable dist);
-	abstract public BaseClustererParameters setForceParallel(final boolean b);
+abstract public class BaseClustererParameters
+    extends Clust4j // So all are serializable
+    implements DeepCloneable, BaseClassifierParameters {
+    private static final long serialVersionUID = -5830795881133834268L;
 
-	final public GeometricallySeparable getMetric() { return metric; }
-	final public boolean getParallel() 				{ return parallel; }
-	final public Random getSeed() 					{ return seed; }
-	final public boolean getVerbose() 				{ return verbose; }
+    protected boolean parallel,
+        verbose = AbstractClusterer.DEF_VERBOSE;
+    protected Random seed = AbstractClusterer.DEF_SEED;
+    protected GeometricallySeparable metric = AbstractClusterer.DEF_DIST;
+
+    @Override
+    abstract public BaseClustererParameters copy();
+
+    abstract public BaseClustererParameters setSeed(final Random rand);
+
+    abstract public BaseClustererParameters setVerbose(final boolean b);
+
+    abstract public BaseClustererParameters setMetric(final GeometricallySeparable dist);
+
+    abstract public BaseClustererParameters setForceParallel(final boolean b);
+
+    final public GeometricallySeparable getMetric() {
+        return metric;
+    }
+
+    final public boolean getParallel() {
+        return parallel;
+    }
+
+    final public Random getSeed() {
+        return seed;
+    }
+
+    final public boolean getVerbose() {
+        return verbose;
+    }
 }

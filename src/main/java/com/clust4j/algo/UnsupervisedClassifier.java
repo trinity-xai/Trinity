@@ -19,18 +19,20 @@ import com.clust4j.metrics.scoring.SupervisedMetric;
 import com.clust4j.metrics.scoring.UnsupervisedMetric;
 
 public interface UnsupervisedClassifier extends BaseClassifier {
-	/**
-	 * Evaluate how the model performed against a truth set. This method
-	 * utilizes the {@link SupervisedMetric#INDEX_AFFINITY} class
-	 * @param actualLabels
-	 * @return
-	 */
-	public double indexAffinityScore(int[] labels);
-	
-	
-	/**
-	 * Evaluate how the model performed via the {@link UnsupervisedMetric#SILHOUETTE} metric
-	 * @return
-	 */
-	public double silhouetteScore();
+    /**
+     * Evaluate how the model performed against a truth set. This method
+     * utilizes the {@link SupervisedMetric#INDEX_AFFINITY} class
+     *
+     * @param actualLabels
+     * @return
+     */
+    public double indexAffinityScore(int[] labels);
+
+
+    /**
+     * Evaluate how the model performed via the {@link UnsupervisedMetric#SILHOUETTE} metric
+     *
+     * @return
+     */
+    public double silhouetteScore();
 }

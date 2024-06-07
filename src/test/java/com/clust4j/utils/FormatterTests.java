@@ -22,71 +22,71 @@ import org.junit.Test;
 import com.clust4j.utils.TableFormatter.ColumnAlignment;
 
 public class FormatterTests {
-	final MatrixFormatter formatter = new MatrixFormatter();
+    final MatrixFormatter formatter = new MatrixFormatter();
 
-	@Test
-	public void testMatrixUniform() {
-		double[][] d = new double[][]{
-			new double[]{1,2,3},
-			new double[]{4,5,6}
-		};
-		
-		formatter.format(d);
-		assertTrue(true); // get rid of import warning...
-	}
-	
-	@Test
-	public void testMatrixNonUniform() {
-		double[][] d = new double[][]{
-			new double[]{1,2,3},
-			new double[]{4,5}
-		};
-		
-		formatter.format(d);
-	}
+    @Test
+    public void testMatrixUniform() {
+        double[][] d = new double[][]{
+            new double[]{1, 2, 3},
+            new double[]{4, 5, 6}
+        };
 
-	@Test
-	public void testMatrixEmptyCols() {
-		double[][] d = new double[][]{
-			new double[]{},
-			new double[]{}
-		};
-		
-		formatter.format(d);
-	}
-	
-	@Test(expected=IllegalArgumentException.class)
-	public void testMatrixEmptyRows() {
-		double[][] d = new double[][]{ };
-		formatter.format(d);
-	}
-	
-	@Test
-	public void testIntHead() {
-		int[][] i = new int[][]{
-			new int[]{1,2,3},
-			new int[]{1,2,3},
-			new int[]{1,2,3}
-		};
-		
-		final MatrixFormatter left_align = new MatrixFormatter(ColumnAlignment.LEFT);
-		// show just top two, ensure doesn't cause index out of bounds or anything
-		System.out.println(left_align.format(i, 2));
-		// try it with one too many, make sure it only shows the head
-		System.out.println(left_align.format(i, 4));
-		
-		assertTrue(left_align.getAlignment() == ColumnAlignment.LEFT);
-		left_align.toggleAlignment();
-		assertTrue(left_align.getAlignment() == ColumnAlignment.RIGHT);
-		
-		assertTrue(left_align.prefix.isEmpty());
-		assertTrue(left_align.suffix.isEmpty());
-		assertTrue(left_align.rowPrefix.isEmpty());
-		assertTrue(left_align.rowSuffix.isEmpty());
-		assertTrue(left_align.columnSeparator.isEmpty());
-		assertTrue(left_align.rowSeparator.equals(System.getProperty("line.separator")));
-		assertTrue(left_align.getWhitespace() == 4);
-		assertNotNull(left_align.format);
-		
-	}
+        formatter.format(d);
+        assertTrue(true); // get rid of import warning...
+    }
+
+    @Test
+    public void testMatrixNonUniform() {
+        double[][] d = new double[][]{
+            new double[]{1, 2, 3},
+            new double[]{4, 5}
+        };
+
+        formatter.format(d);
+    }
+
+    @Test
+    public void testMatrixEmptyCols() {
+        double[][] d = new double[][]{
+            new double[]{},
+            new double[]{}
+        };
+
+        formatter.format(d);
+    }
+
+    @Test(expected = IllegalArgumentException.class)
+    public void testMatrixEmptyRows() {
+        double[][] d = new double[][]{};
+        formatter.format(d);
+    }
+
+    @Test
+    public void testIntHead() {
+        int[][] i = new int[][]{
+            new int[]{1, 2, 3},
+            new int[]{1, 2, 3},
+            new int[]{1, 2, 3}
+        };
+
+        final MatrixFormatter left_align = new MatrixFormatter(ColumnAlignment.LEFT);
+        // show just top two, ensure doesn't cause index out of bounds or anything
+        System.out.println(left_align.format(i, 2));
+        // try it with one too many, make sure it only shows the head
+        System.out.println(left_align.format(i, 4));
+
+        assertTrue(left_align.getAlignment() == ColumnAlignment.LEFT);
+        left_align.toggleAlignment();
+        assertTrue(left_align.getAlignment() == ColumnAlignment.RIGHT);
+
+        assertTrue(left_align.prefix.isEmpty());
+        assertTrue(left_align.suffix.isEmpty());
+        assertTrue(left_align.rowPrefix.isEmpty());
+        assertTrue(left_align.rowSuffix.isEmpty());
+        assertTrue(left_align.columnSeparator.isEmpty());
+        assertTrue(left_align.rowSeparator.equals(System.getProperty("line.separator")));
+        assertTrue(left_align.getWhitespace() == 4);
+        assertNotNull(left_align.format);
+
+    }
 }

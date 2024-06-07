@@ -29,100 +29,100 @@ import com.clust4j.utils.VecUtils;
  * transformer behaves differently than others, in that the {@link #fit(RealMatrix)}
  * method does not change the state of the transformer, but merely allows it to
  * conform to the {@link PreProcessor} API
+ *
  * @author Taylor G Smith
  */
 public class WeightTransformer extends Transformer {
-	private static final long serialVersionUID = -4256256213984769852L;
-	final static double Inf = Double.POSITIVE_INFINITY;
-	final double[] weights;
-	final int n;
-	
-	
-	private WeightTransformer(WeightTransformer wt) {
-		this.weights = VecUtils.copy(wt.weights);
-		this.n = wt.n;
-	}
-	
-	public WeightTransformer(double[] weights) {
-		this.weights = VecUtils.copy(weights);
-		this.n = weights.length;
-	}
-	
-	
+    private static final long serialVersionUID = -4256256213984769852L;
+    final static double Inf = Double.POSITIVE_INFINITY;
+    final double[] weights;
+    final int n;
 
-	@Override
-	protected void checkFit() {
-		; // will always be fit, per constructor...
-	}
 
-	/**
-	 * Inverse transform the incoming data. If the corresponding weight is 0.0,
-	 * will coerce the column to positive infinity rather than NaN.
-	 */
-	@Override
-	public RealMatrix inverseTransform(RealMatrix data) {
-		checkFit();
-		
-		final int m = data.getRowDimension();
-		if(data.getColumnDimension() != n)
-			throw new DimensionMismatchException(n, data.getColumnDimension());
+    private WeightTransformer(WeightTransformer wt) {
+        this.weights = VecUtils.copy(wt.weights);
+        this.n = wt.n;
+    }
 
-		double[][] X = data.getData();
-		double weight, val;
-		for(int j = 0; j < n; j++) {
-			weight = weights[j];
-			
-			for(int i = 0; i < m; i++) {
-				// sometimes, weight can be 0.0 if the user is masochistic...
-				val = X[i][j] / weight;
-				X[i][j] = Double.isNaN(val) ? Inf : val;
-			}
-		}
-		
-		// assign -- already copied in getData()
-		return new Array2DRowRealMatrix(X, false);
-	}
+    public WeightTransformer(double[] weights) {
+        this.weights = VecUtils.copy(weights);
+        this.n = weights.length;
+    }
 
-	@Override
-	public WeightTransformer copy() {
-		return new WeightTransformer(this);
-	}
 
-	@Override
-	public WeightTransformer fit(RealMatrix X) {
-		synchronized(fitLock) {
-			// Only enforce this to prevent accidental exceptions later if the user
-			// tries a fit(X).transform(X) and later gets a dim mismatch...
-			if(X.getColumnDimension() != n)
-				throw new DimensionMismatchException(n, X.getColumnDimension());
-			return this;
-		}
-	}
+    @Override
+    protected void checkFit() {
+        ; // will always be fit, per constructor...
+    }
 
-	@Override
-	public RealMatrix transform(RealMatrix data) {
-		return new Array2DRowRealMatrix(transform(data.getData()), false);
-	}
+    /**
+     * Inverse transform the incoming data. If the corresponding weight is 0.0,
+     * will coerce the column to positive infinity rather than NaN.
+     */
+    @Override
+    public RealMatrix inverseTransform(RealMatrix data) {
+        checkFit();
 
-	@Override
-	public double[][] transform(double[][] data) {
-		checkFit();
-		MatUtils.checkDimsForUniformity(data);
-		
-		final int m = data.length;
-		if(data[0].length != n)
-			throw new DimensionMismatchException(n, data[0].length);
+        final int m = data.getRowDimension();
+        if (data.getColumnDimension() != n)
+            throw new DimensionMismatchException(n, data.getColumnDimension());
 
-		double[][] X = new double[m][n];
-		// mult to weight:
-		for(int j = 0; j < n; j++) {
-			for(int i = 0; i < m; i++) {
-				X[i][j] = data[i][j] * weights[j];
-			}
-		}
-		
-		// assign
-		return X;
-	}
+        double[][] X = data.getData();
+        double weight, val;
+        for (int j = 0; j < n; j++) {
+            weight = weights[j];
+
+            for (int i = 0; i < m; i++) {
+                // sometimes, weight can be 0.0 if the user is masochistic...
+                val = X[i][j] / weight;
+                X[i][j] = Double.isNaN(val) ? Inf : val;
+            }
+        }
+
+        // assign -- already copied in getData()
+        return new Array2DRowRealMatrix(X, false);
+    }
+
+    @Override
+    public WeightTransformer copy() {
+        return new WeightTransformer(this);
+    }
+
+    @Override
+    public WeightTransformer fit(RealMatrix X) {
+        synchronized (fitLock) {
+            // Only enforce this to prevent accidental exceptions later if the user
+            // tries a fit(X).transform(X) and later gets a dim mismatch...
+            if (X.getColumnDimension() != n)
+                throw new DimensionMismatchException(n, X.getColumnDimension());
+            return this;
+        }
+    }
+
+    @Override
+    public RealMatrix transform(RealMatrix data) {
+        return new Array2DRowRealMatrix(transform(data.getData()), false);
+    }
+
+    @Override
+    public double[][] transform(double[][] data) {
+        checkFit();
+        MatUtils.checkDimsForUniformity(data);
+
+        final int m = data.length;
+        if (data[0].length != n)
+            throw new DimensionMismatchException(n, data[0].length);
+
+        double[][] X = new double[m][n];
+        // mult to weight:
+        for (int j = 0; j < n; j++) {
+            for (int i = 0; i < m; i++) {
+                X[i][j] = data[i][j] * weights[j];
+            }
+        }
+
+        // assign
+        return X;
+    }
 
 }

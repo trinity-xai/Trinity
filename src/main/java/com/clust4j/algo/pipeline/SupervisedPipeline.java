@@ -24,64 +24,65 @@ import com.clust4j.algo.preprocess.PreProcessor;
 import com.clust4j.except.ModelNotFitException;
 import com.clust4j.metrics.scoring.SupervisedMetric;
 
-public class SupervisedPipeline<M extends AbstractClusterer & SupervisedClassifier> 
-		extends Pipeline<SupervisedClassifierParameters<M>>
-		implements SupervisedClassifier {
-	
-	private static final long serialVersionUID = 8790601917700667359L;
-	protected M fit_model = null;
+public class SupervisedPipeline<M extends AbstractClusterer & SupervisedClassifier>
+    extends Pipeline<SupervisedClassifierParameters<M>>
+    implements SupervisedClassifier {
 
-	public SupervisedPipeline(final SupervisedClassifierParameters<M> planner, final PreProcessor... pipe) {
-		super(planner, pipe);
-	}
+    private static final long serialVersionUID = 8790601917700667359L;
+    protected M fit_model = null;
 
-	public M fit(final RealMatrix data, int[] y) {
-		synchronized(fitLock) {
-			RealMatrix copy = pipelineFitTransform(data);
-	
-			// Build/fit the model -- the model should handle the dim check internally
-			return fit_model = planner.fitNewModel(copy, y);
-		}
-	}
+    public SupervisedPipeline(final SupervisedClassifierParameters<M> planner, final PreProcessor... pipe) {
+        super(planner, pipe);
+    }
 
-	@Override
-	public int[] getLabels() {
-		checkFit();
-		return fit_model.getLabels();
-	}
+    public M fit(final RealMatrix data, int[] y) {
+        synchronized (fitLock) {
+            RealMatrix copy = pipelineFitTransform(data);
 
-	@Override
-	public int[] getTrainingLabels() {
-		checkFit();
-		return fit_model.getTrainingLabels();
-	}
+            // Build/fit the model -- the model should handle the dim check internally
+            return fit_model = planner.fitNewModel(copy, y);
+        }
+    }
 
-	@Override
-	public double score() {
-		checkFit();
-		return fit_model.score();
-	}
+    @Override
+    public int[] getLabels() {
+        checkFit();
+        return fit_model.getLabels();
+    }
 
-	@Override
-	public double score(SupervisedMetric metric) {
-		checkFit();
-		return fit_model.score(metric);
-	}
+    @Override
+    public int[] getTrainingLabels() {
+        checkFit();
+        return fit_model.getTrainingLabels();
+    }
 
-	/**
-	 * Given an incoming dataframe, pipeline transform and
-	 * predict via the fit model
-	 * @param newData
-	 */
-	@Override
-	public int[] predict(RealMatrix newData) {
-		checkFit();
-		return fit_model.predict(pipelineTransform(newData));
-	}
-	
-	@Override
-	protected void checkFit() {
-		if(null == fit_model)
-			throw new ModelNotFitException("model not yet fit");
-	}
+    @Override
+    public double score() {
+        checkFit();
+        return fit_model.score();
+    }
+
+    @Override
+    public double score(SupervisedMetric metric) {
+        checkFit();
+        return fit_model.score(metric);
+    }
+
+    /**
+     * Given an incoming dataframe, pipeline transform and
+     * predict via the fit model
+     *
+     * @param newData
+     */
+    @Override
+    public int[] predict(RealMatrix newData) {
+        checkFit();
+        return fit_model.predict(pipelineTransform(newData));
+    }
+
+    @Override
+    protected void checkFit() {
+        if (null == fit_model)
+            throw new ModelNotFitException("model not yet fit");
+    }
 }

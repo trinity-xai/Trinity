@@ -24,24 +24,27 @@ import static com.clust4j.metrics.scoring.UnsupervisedMetric.SILHOUETTE;
 
 /**
  * An interface for classifiers, both supervised and unsupervised.
+ *
  * @author Taylor G Smith
  */
 public interface BaseClassifier extends java.io.Serializable {
-	public final static SupervisedMetric DEF_SUPERVISED_METRIC = SupervisedMetric.BINOMIAL_ACCURACY;
-	public final static UnsupervisedMetric DEF_UNSUPERVISED_METRIC = SILHOUETTE;
-	
-	/**
-	 * Returns a copy of the assigned class labels in
-	 * record order
-	 * @return
-	 */
-	public int[] getLabels();
-	
-	/**
-	 * Predict on new data
-	 * @param newData
-	 * @throws ModelNotFitException if the model hasn't yet been fit
-	 * @return
-	 */
-	public int[] predict(RealMatrix newData);
+    public final static SupervisedMetric DEF_SUPERVISED_METRIC = SupervisedMetric.BINOMIAL_ACCURACY;
+    public final static UnsupervisedMetric DEF_UNSUPERVISED_METRIC = SILHOUETTE;
+
+    /**
+     * Returns a copy of the assigned class labels in
+     * record order
+     *
+     * @return
+     */
+    public int[] getLabels();
+
+    /**
+     * Predict on new data
+     *
+     * @param newData
+     * @return
+     * @throws ModelNotFitException if the model hasn't yet been fit
+     */
+    public int[] predict(RealMatrix newData);
 }

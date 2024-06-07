@@ -7,8 +7,8 @@ import com.clust4j.TestSuite;
 
 @RunWith(Suite.class)
 @Suite.SuiteClasses({
-	TestSuite.class,
-	LoadTests.class
+    TestSuite.class,
+    LoadTests.class
 })
 
 /**

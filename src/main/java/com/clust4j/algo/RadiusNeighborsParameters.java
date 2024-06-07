@@ -25,73 +25,76 @@ import com.clust4j.algo.BaseNeighborsModel.NeighborsAlgorithm;
 import com.clust4j.metrics.pairwise.GeometricallySeparable;
 
 public class RadiusNeighborsParameters extends BaseNeighborsPlanner<RadiusNeighbors> {
-	private static final long serialVersionUID = 2183556008789826257L;
-	private double radius;
-	
-	public RadiusNeighborsParameters() { this(RadiusNeighbors.DEF_RADIUS); }
-	public RadiusNeighborsParameters(double rad) {
-		this.radius = rad;
-	}
+    private static final long serialVersionUID = 2183556008789826257L;
+    private double radius;
 
-	
-	@Override
-	public RadiusNeighbors fitNewModel(RealMatrix data) {
-		return new RadiusNeighbors(data, this.copy()).fit();
-	}
+    public RadiusNeighborsParameters() {
+        this(RadiusNeighbors.DEF_RADIUS);
+    }
 
-	@Override
-	public RadiusNeighborsParameters setAlgorithm(NeighborsAlgorithm algo) {
-		this.algo = algo;
-		return this;
-	}
+    public RadiusNeighborsParameters(double rad) {
+        this.radius = rad;
+    }
 
-	@Override
-	public RadiusNeighborsParameters copy() {
-		return new RadiusNeighborsParameters(radius)
-			.setAlgorithm(algo)
-			.setSeed(seed)
-			.setMetric(metric)
-			.setVerbose(verbose)
-			.setLeafSize(leafSize)
-			.setForceParallel(parallel);
-	}
-	
-	@Override
-	final public Integer getK() {
-		return null;
-	}
 
-	@Override
-	final public Double getRadius() {
-		return radius;
-	}
+    @Override
+    public RadiusNeighbors fitNewModel(RealMatrix data) {
+        return new RadiusNeighbors(data, this.copy()).fit();
+    }
 
-	public RadiusNeighborsParameters setLeafSize(int leafSize) {
-		this.leafSize = leafSize;
-		return this;
-	}
+    @Override
+    public RadiusNeighborsParameters setAlgorithm(NeighborsAlgorithm algo) {
+        this.algo = algo;
+        return this;
+    }
 
-	@Override
-	public RadiusNeighborsParameters setSeed(Random rand) {
-		this.seed= rand;
-		return this;
-	}
+    @Override
+    public RadiusNeighborsParameters copy() {
+        return new RadiusNeighborsParameters(radius)
+            .setAlgorithm(algo)
+            .setSeed(seed)
+            .setMetric(metric)
+            .setVerbose(verbose)
+            .setLeafSize(leafSize)
+            .setForceParallel(parallel);
+    }
 
-	@Override
-	public RadiusNeighborsParameters setVerbose(boolean b) {
-		this.verbose = b;
-		return this;
-	}
+    @Override
+    final public Integer getK() {
+        return null;
+    }
 
-	@Override
-	public RadiusNeighborsParameters setMetric(GeometricallySeparable dist) {
-		this.metric = dist;
-		return this;
-	}
-	
-	@Override
-	public RadiusNeighborsParameters setForceParallel(boolean b) {
-		this.parallel = b;
-		return this;
-	}
+    @Override
+    final public Double getRadius() {
+        return radius;
+    }
+
+    public RadiusNeighborsParameters setLeafSize(int leafSize) {
+        this.leafSize = leafSize;
+        return this;
+    }
+
+    @Override
+    public RadiusNeighborsParameters setSeed(Random rand) {
+        this.seed = rand;
+        return this;
+    }
+
+    @Override
+    public RadiusNeighborsParameters setVerbose(boolean b) {
+        this.verbose = b;
+        return this;
+    }
+
+    @Override
+    public RadiusNeighborsParameters setMetric(GeometricallySeparable dist) {
+        this.metric = dist;
+        return this;
+    }
+
+    @Override
+    public RadiusNeighborsParameters setForceParallel(boolean b) {
+        this.parallel = b;
+        return this;
+    }
 }

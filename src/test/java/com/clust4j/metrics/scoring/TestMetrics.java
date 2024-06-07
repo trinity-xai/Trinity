@@ -29,80 +29,80 @@ import com.clust4j.utils.VecUtils;
 import static com.clust4j.metrics.scoring.UnsupervisedMetric.SILHOUETTE;
 
 public class TestMetrics {
-	final static DataSet IRIS = TestSuite.IRIS_DATASET.copy();
-	
-	@Test
-	public void testAcc() {
-		assertTrue(SupervisedMetric.BINOMIAL_ACCURACY.evaluate(
-				new int[]{1,1,1,0}, 
-				new int[]{1,1,1,1}) == 0.75);
-	}
+    final static DataSet IRIS = TestSuite.IRIS_DATASET.copy();
 
-	@Test
-	public void testSilhouetteScore() {
-		Array2DRowRealMatrix X = IRIS.getData();
-		final int[] labels = IRIS.getLabels();
-		
-		double silhouette = SILHOUETTE
-			.evaluate(X, labels);
-		assertTrue(silhouette == 0.5032506980665507);
-	}
-	
-	@Test(expected=DimensionMismatchException.class)
-	public void testSilhouetteScoreDME() {
-		Array2DRowRealMatrix X = IRIS.getData();
-		final int[] labels = new int[]{1,2,3};
-		
-		SILHOUETTE.evaluate(X, labels);
-	}
-	
-	@Test
-	public void testSilhouetteScoreNaN() {
-		Array2DRowRealMatrix X = IRIS.getData();
-		final int[] labels = VecUtils.repInt(1, X.getRowDimension());
-		
-		assertTrue(Double.isNaN(SILHOUETTE
-			.evaluate(X, labels)));
-	}
-	
-	@Test(expected=DimensionMismatchException.class)
-	public void testDME() {
-		SupervisedMetric.BINOMIAL_ACCURACY.evaluate(new int[]{1,2}, new int[]{1,2,3});
-	}
-	
-	@Test
-	public void testIndexAffinityExceptionHandling() {
-		final int[] a = new int[]{0,0,0,1,1};
-		final int[] b = new int[]{0,0,0,1,2};
-		
-		boolean c = false;
-		try {
-			SupervisedMetric.INDEX_AFFINITY.evaluate(a, new int[]{0,0});
-		} catch(DimensionMismatchException d) {
-			c = true;
-		} finally {
-			assertTrue(c);
-		}
-		
-		c = false;
-		try {
-			SupervisedMetric.INDEX_AFFINITY.evaluate(new int[]{}, new int[]{});
-		} catch(IllegalArgumentException d) {
-			c = true;
-		} finally {
-			assertTrue(c);
-		}
-		
-		c = false;
-		try {
-			SupervisedMetric.INDEX_AFFINITY.evaluate(a,b);
-		} catch(IllegalArgumentException d) {
-			c = true;
-		} finally {
-			assertTrue(c);
-		}
-		
-		assertTrue(SupervisedMetric.INDEX_AFFINITY.evaluate(new int[]{0}, new int[]{9}) == 1.0);
-		assertTrue(SupervisedMetric.INDEX_AFFINITY.evaluate(new int[]{0,1,2}, new int[]{9,5,4}) == 1.0);
-	}
+    @Test
+    public void testAcc() {
+        assertTrue(SupervisedMetric.BINOMIAL_ACCURACY.evaluate(
+            new int[]{1, 1, 1, 0},
+            new int[]{1, 1, 1, 1}) == 0.75);
+    }
+
+    @Test
+    public void testSilhouetteScore() {
+        Array2DRowRealMatrix X = IRIS.getData();
+        final int[] labels = IRIS.getLabels();
+
+        double silhouette = SILHOUETTE
+            .evaluate(X, labels);
+        assertTrue(silhouette == 0.5032506980665507);
+    }
+
+    @Test(expected = DimensionMismatchException.class)
+    public void testSilhouetteScoreDME() {
+        Array2DRowRealMatrix X = IRIS.getData();
+        final int[] labels = new int[]{1, 2, 3};
+
+        SILHOUETTE.evaluate(X, labels);
+    }
+
+    @Test
+    public void testSilhouetteScoreNaN() {
+        Array2DRowRealMatrix X = IRIS.getData();
+        final int[] labels = VecUtils.repInt(1, X.getRowDimension());
+
+        assertTrue(Double.isNaN(SILHOUETTE
+            .evaluate(X, labels)));
+    }
+
+    @Test(expected = DimensionMismatchException.class)
+    public void testDME() {
+        SupervisedMetric.BINOMIAL_ACCURACY.evaluate(new int[]{1, 2}, new int[]{1, 2, 3});
+    }
+
+    @Test
+    public void testIndexAffinityExceptionHandling() {
+        final int[] a = new int[]{0, 0, 0, 1, 1};
+        final int[] b = new int[]{0, 0, 0, 1, 2};
+
+        boolean c = false;
+        try {
+            SupervisedMetric.INDEX_AFFINITY.evaluate(a, new int[]{0, 0});
+        } catch (DimensionMismatchException d) {
+            c = true;
+        } finally {
+            assertTrue(c);
+        }
+
+        c = false;
+        try {
+            SupervisedMetric.INDEX_AFFINITY.evaluate(new int[]{}, new int[]{});
+        } catch (IllegalArgumentException d) {
+            c = true;
+        } finally {
+            assertTrue(c);
+        }
+
+        c = false;
+        try {
+            SupervisedMetric.INDEX_AFFINITY.evaluate(a, b);
+        } catch (IllegalArgumentException d) {
+            c = true;
+        } finally {
+            assertTrue(c);
+        }
+
+        assertTrue(SupervisedMetric.INDEX_AFFINITY.evaluate(new int[]{0}, new int[]{9}) == 1.0);
+        assertTrue(SupervisedMetric.INDEX_AFFINITY.evaluate(new int[]{0, 1, 2}, new int[]{9, 5, 4}) == 1.0);
+    }
 }

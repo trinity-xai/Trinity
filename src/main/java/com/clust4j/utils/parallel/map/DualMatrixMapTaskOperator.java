@@ -17,41 +17,43 @@ package com.clust4j.utils.parallel.map;
 
 abstract class DualMatrixMapTaskOperator extends DualMatrixMapTask {
 
-	/**
-	 * 
-	 */
-	private static final long serialVersionUID = 2401423511466814014L;
+    /**
+     *
+     */
+    private static final long serialVersionUID = 2401423511466814014L;
 
-	DualMatrixMapTaskOperator(double[][] mat, double[][] mat_b, double[][] result, int lo, int hi) {
-		super(mat, mat_b, result, lo, hi);
-	}
+    DualMatrixMapTaskOperator(double[][] mat, double[][] mat_b, double[][] result, int lo, int hi) {
+        super(mat, mat_b, result, lo, hi);
+    }
 
-	@Override
+    @Override
     protected double[][] compute() {
-        if(high - low <= getChunkSize()) {
+        if (high - low <= getChunkSize()) {
             return operate(low, high);
         } else {
             int mid = low + (high - low) / 2;
-            DualMatrixMapTaskOperator left  = newInstance(matrix, matrix_b, matrix_c, low, mid);
+            DualMatrixMapTaskOperator left = newInstance(matrix, matrix_b, matrix_c, low, mid);
             DualMatrixMapTaskOperator right = newInstance(matrix, matrix_b, matrix_c, mid, high);
             left.fork();
             right.compute();
             left.join();
-            
+
             return matrix_c;
         }
     }
-	
-	/**
+
+    /**
      * Must be overridden by subclasses
+     *
      * @param a
      * @param b
      * @return
      */
     abstract protected double[][] operate(final int lo, final int hi);
-    
+
     /**
      * Must be overridden by subclasses
+     *
      * @param a
      * @param b
      * @param c

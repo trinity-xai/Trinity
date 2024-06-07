@@ -24,81 +24,83 @@ import com.clust4j.algo.AbstractCentroidClusterer.InitializationStrategy;
 import com.clust4j.metrics.pairwise.GeometricallySeparable;
 
 final public class KMeansParameters extends CentroidClustererParameters<KMeans> {
-	private static final long serialVersionUID = -813106538623499760L;
-	
-	private InitializationStrategy strat = KMeans.DEF_INIT;
-	private int maxIter = KMeans.DEF_MAX_ITER;
-	
-	public KMeansParameters() { }
-	public KMeansParameters(int k) {
-		this.k = k;
-	}
-	
-	@Override
-	public KMeans fitNewModel(final RealMatrix data) {
-		return new KMeans(data, this.copy()).fit();
-	}
-	
-	@Override
-	public KMeansParameters copy() {
-		return new KMeansParameters(k)
-			.setMaxIter(maxIter)
-			.setConvergenceCriteria(minChange)
-			.setMetric(metric)
-			.setVerbose(verbose)
-			.setSeed(seed)
-			.setInitializationStrategy(strat)
-			.setForceParallel(parallel);
-	}
-	
-	@Override
-	public InitializationStrategy getInitializationStrategy() {
-		return strat;
-	}
-	
-	@Override
-	public int getMaxIter() {
-		return maxIter;
-	}
-	
-	@Override
-	public KMeansParameters setForceParallel(boolean b) {
-		this.parallel = b;
-		return this;
-	}
-	
-	@Override
-	public KMeansParameters setMetric(final GeometricallySeparable dist) {
-		this.metric = dist;
-		return this;
-	}
-	
-	public KMeansParameters setMaxIter(final int max) {
-		this.maxIter = max;
-		return this;
-	}
+    private static final long serialVersionUID = -813106538623499760L;
 
-	@Override
-	public KMeansParameters setConvergenceCriteria(final double min) {
-		this.minChange = min;
-		return this;
-	}
-	
-	@Override
-	public KMeansParameters setInitializationStrategy(InitializationStrategy init) {
-		this.strat = init;
-		return this;
-	}
-	
-	@Override
-	public KMeansParameters setSeed(final Random seed) {
-		this.seed = seed;
-		return this;
-	}
-	
-	@Override
-	public KMeansParameters setVerbose(final boolean v) {
-		this.verbose = v;
-		return this;
-	}
+    private InitializationStrategy strat = KMeans.DEF_INIT;
+    private int maxIter = KMeans.DEF_MAX_ITER;
+
+    public KMeansParameters() {
+    }
+
+    public KMeansParameters(int k) {
+        this.k = k;
+    }
+
+    @Override
+    public KMeans fitNewModel(final RealMatrix data) {
+        return new KMeans(data, this.copy()).fit();
+    }
+
+    @Override
+    public KMeansParameters copy() {
+        return new KMeansParameters(k)
+            .setMaxIter(maxIter)
+            .setConvergenceCriteria(minChange)
+            .setMetric(metric)
+            .setVerbose(verbose)
+            .setSeed(seed)
+            .setInitializationStrategy(strat)
+            .setForceParallel(parallel);
+    }
+
+    @Override
+    public InitializationStrategy getInitializationStrategy() {
+        return strat;
+    }
+
+    @Override
+    public int getMaxIter() {
+        return maxIter;
+    }
+
+    @Override
+    public KMeansParameters setForceParallel(boolean b) {
+        this.parallel = b;
+        return this;
+    }
+
+    @Override
+    public KMeansParameters setMetric(final GeometricallySeparable dist) {
+        this.metric = dist;
+        return this;
+    }
+
+    public KMeansParameters setMaxIter(final int max) {
+        this.maxIter = max;
+        return this;
+    }
+
+    @Override
+    public KMeansParameters setConvergenceCriteria(final double min) {
+        this.minChange = min;
+        return this;
+    }
+
+    @Override
+    public KMeansParameters setInitializationStrategy(InitializationStrategy init) {
+        this.strat = init;
+        return this;
+    }
+
+    @Override
+    public KMeansParameters setSeed(final Random seed) {
+        this.seed = seed;
+        return this;
+    }
+
+    @Override
+    public KMeansParameters setVerbose(final boolean v) {
+        this.verbose = v;
+        return this;
+    }
 }

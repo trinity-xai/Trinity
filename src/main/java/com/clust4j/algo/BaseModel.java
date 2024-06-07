@@ -22,21 +22,25 @@ import com.clust4j.utils.SynchronicityLock;
 import com.clust4j.utils.TableFormatter;
 
 abstract public class BaseModel extends Clust4j implements java.io.Serializable {
-	private static final long serialVersionUID = 4707757741169405063L;
-	public final static TableFormatter formatter;
-	
-	// Initializers
-	static {
-		NumberFormat nf = NumberFormat.getInstance(TableFormatter.DEFAULT_LOCALE);
-		nf.setMaximumFractionDigits(5);
-		formatter = new TableFormatter(nf);
-		formatter.leadWithEmpty = false;
-		formatter.setWhiteSpace(1);
-	}
-	
-	/** The lock to synchronize on for fits */
-	protected final Object fitLock = new SynchronicityLock();
+    private static final long serialVersionUID = 4707757741169405063L;
+    public final static TableFormatter formatter;
 
-	/** This should be synchronized and thread-safe */
-	protected abstract BaseModel fit();
+    // Initializers
+    static {
+        NumberFormat nf = NumberFormat.getInstance(TableFormatter.DEFAULT_LOCALE);
+        nf.setMaximumFractionDigits(5);
+        formatter = new TableFormatter(nf);
+        formatter.leadWithEmpty = false;
+        formatter.setWhiteSpace(1);
+    }
+
+    /**
+     * The lock to synchronize on for fits
+     */
+    protected final Object fitLock = new SynchronicityLock();
+
+    /**
+     * This should be synchronized and thread-safe
+     */
+    protected abstract BaseModel fit();
 }
