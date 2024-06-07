@@ -109,9 +109,6 @@ extraJavaModuleInfo {
     module('org.apache.commons:commons-math3', 'commons.math3') {
         exportAllPackages()
     }
-    module('org.apache.commons:commons-lang3', 'org.apache.commons.lang3') {
-        exportAllPackages()
-    }
     // Transitive of org.zeromq:jeromq
     module('eu.neilalexander:jnacl', 'jnacl') {
         exportAllPackages()
