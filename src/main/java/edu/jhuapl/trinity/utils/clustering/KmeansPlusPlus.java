@@ -23,7 +23,7 @@ package edu.jhuapl.trinity.utils.clustering;
 import java.util.Random;
 
 /**
- * @author phillsm1
+ * @author Sean Phillips
  */
 public enum KmeansPlusPlus {
     INSTANCE;

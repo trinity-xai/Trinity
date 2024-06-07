@@ -2,16 +2,16 @@ package edu.jhuapl.trinity.javafx.javafx3d.projectiles;
 
 /*-
  * #%L
- * trinity-2024.06.03
+ * trinity
  * %%
- * Copyright (C) 2021 - 2024 The Johns Hopkins University Applied Physics Laboratory LLC
+ * Copyright (C) 2021 - 2024 Sean Phillips
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -26,12 +26,12 @@ import javafx.geometry.Point3D;
 
 /**
  *
- * @author phillsm1
+ * @author Sean Phillips
  */
 public class CollisionSweeper {
     private ArrayList<HitBox> hitBoxes;
     private ArrayList<HitShape3D> hitShapes;
-    
+
     public CollisionSweeper(){
         hitBoxes = new ArrayList<>();
         hitShapes = new ArrayList<>();
@@ -51,13 +51,13 @@ public class CollisionSweeper {
             .filter(t -> t.rayChecker(point3D, velocity))
             .toList();
     }
-    
+
     public HitBox checkRayIntersect(Point3D point3D, Point3D velocity) {
         return hitBoxes.stream()
             .filter(t -> t.intersectsPlanes(point3D, velocity))
             .findFirst().orElse(null); //null if no intersections
     }
-    
+
     public ArrayList<HitBox> getHitBoxes() {
         return hitBoxes;
     }
@@ -76,15 +76,15 @@ public class CollisionSweeper {
             .filter(t -> t.rayChecker(point3D, velocity))
             .toList();
     }
-    
+
     public HitShape3D checkRayShapeIntersect(Point3D point3D, Point3D velocity) {
         return hitShapes.stream()
             .filter(t -> t.intersectsPlanes(point3D, velocity))
             .findFirst().orElse(null); //null if no intersections
     }
-    
+
     public ArrayList<HitShape3D> getHitShapes() {
         return hitShapes;
     }
-    
+
 }

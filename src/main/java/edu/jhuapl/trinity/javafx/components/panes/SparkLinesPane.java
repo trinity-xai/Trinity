@@ -24,7 +24,7 @@ import javafx.scene.Scene;
 import javafx.scene.layout.Pane;
 
 /**
- * @author phillsm1
+ * @author Sean Phillips
  */
 public class SparkLinesPane extends LitPathPane {
     //    Scene scene;

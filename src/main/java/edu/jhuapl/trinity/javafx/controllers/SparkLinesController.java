@@ -44,7 +44,7 @@ import java.util.ResourceBundle;
 /**
  * FXML Controller class
  *
- * @author phillsm1
+ * @author Sean Phillips
  */
 public class SparkLinesController implements Initializable {
     @FXML

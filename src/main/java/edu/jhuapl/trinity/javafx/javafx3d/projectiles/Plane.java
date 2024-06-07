@@ -2,16 +2,16 @@ package edu.jhuapl.trinity.javafx.javafx3d.projectiles;
 
 /*-
  * #%L
- * trinity-2024.06.03
+ * trinity
  * %%
- * Copyright (C) 2021 - 2024 The Johns Hopkins University Applied Physics Laboratory LLC
+ * Copyright (C) 2021 - 2024 Sean Phillips
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -26,7 +26,7 @@ import org.fxyz3d.geometry.Vector3D;
 
 /**
  * Representation of a plane in 3-space using the four component plane equation:
- * 
+ *
  * <code>
  * aX + bY + cZ + d = 0
  * </code>.
@@ -60,7 +60,7 @@ public final class Plane {
 
    /**
     * Defines a plane from the plane equation Ax + By + Cz + D = 0.
-    * 
+    *
     * @param _a
     *           The x component of the plane normal
     * @param _b
@@ -79,7 +79,7 @@ public final class Plane {
 
    /**
     * Copy constructor.
-    * 
+    *
     * @param _p
     *           A non-null plane
     */
@@ -92,7 +92,7 @@ public final class Plane {
 
    /**
     * Defines a plane from a point on the plane and the plane normal.
-    * 
+    *
     * @param point
     *           A non-null point on the plane.
     * @param normal
@@ -107,7 +107,7 @@ public final class Plane {
 
    /**
     * Creates a plane from three (non-collinear) points.
-    * 
+    *
     * @param p1
     *           A point on the plane.
     * @param p2
@@ -121,7 +121,7 @@ public final class Plane {
 
    /**
     * Creates a new plane from three non-colinear points.
-    * 
+    *
     * @param x1
     *           The x component of the first point.
     * @param y1
@@ -148,7 +148,7 @@ public final class Plane {
 
    /**
     * Copies parameters from the specified plane.
-    * 
+    *
     * @param _plane
     *           A non-null plane to copy.
     */
@@ -158,7 +158,7 @@ public final class Plane {
 
    /**
     * Defines a plane from the plane equation Ax + By + Cz + D = 0.
-    * 
+    *
     * @param _a
     *           The x component of the plane normal
     * @param _b
@@ -177,7 +177,7 @@ public final class Plane {
 
    /**
     * Defines a plane from three (non-colinear) points.
-    * 
+    *
     * @param p1
     *           A point on the plane.
     * @param p2
@@ -189,7 +189,7 @@ public final class Plane {
    Point3D normalPoint = p2.substract(p1);
    Point3D tempPoint = p3.substract(p1);
    Point3D normal = tempPoint.crossProduct(normalPoint);
-      
+
       a = normal.x;
       b = normal.y;
       c = normal.z;
@@ -198,7 +198,7 @@ public final class Plane {
 
 //   /**
 //    * Transforms this Plane instance by the specified matrix.
-//    * 
+//    *
 //    * @param matrix
 //    *           A non-null Matrix
 //    */
@@ -225,7 +225,7 @@ public final class Plane {
 //
 //   /**
 //    * Returns a new Plane instance representing this plane transformed by the specified matrix.
-//    * 
+//    *
 //    * @param matrix
 //    *           A non-null Matrix
 //    * @return A new Plane instance.
@@ -238,14 +238,14 @@ public final class Plane {
 
    /**
     * Signed distance from the plane to the specified point.
-    * 
+    *
     * @param x
     *           X component of the point to find the distance to.
     * @param y
     *           Y component of the point to find the distance to.
     * @param z
     *           Z component of the point to find the distance to.
-    * 
+    *
     * @return The shortest distance between the specified point and the plane. This number is positive if the point is
     *         on the side of the plane that the normal points toward, 0 if the point is on the plane, or negative if the
     *         point is on the opposite side of the plane. May return {@link Double#NaN} if the normal length is 0.
@@ -309,7 +309,7 @@ public final class Plane {
 
    /**
     * Computes the distance from a specified point to a plane defined by its normal and a point on the plane.
-    * 
+    *
     * @param planeNormal
     *           The plane normal.
     * @param planePoint

@@ -2,16 +2,16 @@ package edu.jhuapl.trinity.utils;
 
 /*-
  * #%L
- * trinity-2024.06.03
+ * trinity
  * %%
- * Copyright (C) 2021 - 2024 The Johns Hopkins University Applied Physics Laboratory LLC
+ * Copyright (C) 2021 - 2024 Sean Phillips
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -22,7 +22,7 @@ package edu.jhuapl.trinity.utils;
 
 /**
  *
- * @author phillsm1
+ * @author Sean Phillips
  */
 public class MathConstants {
 
@@ -75,16 +75,16 @@ public class MathConstants {
     * Feet to Meters.
     */
    public static final double FEET_TO_METERS          = 1 / MathConstants.METERS_TO_FEET;
-   
+
 
    /** Converts miles into meters. */
-   public static final double                         MILE_TO_METERS          = 1609.34;   
+   public static final double                         MILE_TO_METERS          = 1609.34;
 
    /** Converts meters into miles. */
-   public static final double                         METER_TO_MILES          = 0.000621371;   
+   public static final double                         METER_TO_MILES          = 0.000621371;
 
    /** Converts meters into kilometers. */
-   public static final double                         METER_TO_KILOMETERS     = 0.001;   
+   public static final double                         METER_TO_KILOMETERS     = 0.001;
 
    /** Converts kilometers into meters. */
    public static final double                         KILOMETER_TO_METER      = 1000;

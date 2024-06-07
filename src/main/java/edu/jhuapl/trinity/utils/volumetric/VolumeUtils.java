@@ -28,7 +28,7 @@ import java.util.HashMap;
 import java.util.List;
 
 /**
- * @author phillsm1
+ * @author Sean Phillips
  */
 public enum VolumeUtils {
     INSTANCE;

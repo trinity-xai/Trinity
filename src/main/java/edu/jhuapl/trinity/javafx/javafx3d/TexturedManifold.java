@@ -29,7 +29,7 @@ import java.util.List;
 import java.util.stream.DoubleStream;
 
 /**
- * @author Birdasaur
+ * @author Sean Phillips
  */
 public class TexturedManifold extends TexturedMesh {
 
@@ -59,10 +59,10 @@ public class TexturedManifold extends TexturedMesh {
         div = getVertices().size();
         final float rDiv = 1.f / div;
         float textureDelta = 1.f / 256;
-        //2*r*PI x 2*r        
+        //2*r*PI x 2*r
 //        double h = 2 * r;
 //        double w = 2 * r * 3.125; // 3.125 is ~ PI, rounded to get perfect squares.
-        
+
         Point3D centroid = getAverageConvexCentroid();
         float maxY = getMaxY().floatValue();
         float maxX = getMaxX().floatValue();
@@ -74,8 +74,8 @@ public class TexturedManifold extends TexturedMesh {
 //            tPoints[tPos + 0] = 1.0f - rDiv * (0.5f + i);
               getVertices().get(i).getX()/maxX, getVertices().get(i).getY()/maxY
             );
-        }        
-        
+        }
+
         for (Face3 face : getFaces()) {
             mesh.getFaces().addAll(face.p0, face.p2, face.p1, face.p1, face.p2, face.p0);
 //            mesh.getFaceSmoothingGroups().addAll(face[2], face[1],face[0]);
@@ -109,7 +109,7 @@ public class TexturedManifold extends TexturedMesh {
             .flatMapToDouble(p -> DoubleStream.of(p.z))
             .average().getAsDouble();
         return new Point3D(aveX, aveY, aveZ);
-    }    
+    }
 
     /**
      * @return the vertices

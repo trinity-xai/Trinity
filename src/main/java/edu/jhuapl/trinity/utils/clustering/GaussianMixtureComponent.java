@@ -24,7 +24,7 @@ package edu.jhuapl.trinity.utils.clustering;
  * the mixture distribution is defined by a distribution
  * and its weight in the mixture.
  *
- * @author phillsm1
+ * @author Sean Phillips
  */
 public class GaussianMixtureComponent {
     /**

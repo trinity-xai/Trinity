@@ -2,16 +2,16 @@ package edu.jhuapl.trinity.javafx.javafx3d.projectiles;
 
 /*-
  * #%L
- * trinity-2024.06.03
+ * trinity
  * %%
- * Copyright (C) 2021 - 2024 The Johns Hopkins University Applied Physics Laboratory LLC
+ * Copyright (C) 2021 - 2024 Sean Phillips
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -117,7 +117,7 @@ public class Line {
         double parm = lineToGivenPoint.x * normalizedV.x
                 + lineToGivenPoint.y * normalizedV.y
                 + lineToGivenPoint.z * normalizedV.z;
-        
+
         Vector3D tempVector = new Vector3D(
             lineToGivenPoint.x - parm * normalizedV.x,
             lineToGivenPoint.y - parm * normalizedV.y,
@@ -139,7 +139,7 @@ public class Line {
         double v2DotProduct = v2.dotProduct(v1);
         double v3DotProduct = v3.dotProduct(v1);
         //if (dot(v2,v1)>0 and dot(v3,v1)<0) return between
-        return (v2DotProduct > smallDiff && v3DotProduct < smallDiff) 
+        return (v2DotProduct > smallDiff && v3DotProduct < smallDiff)
             || (v2DotProduct == 0 && v3DotProduct == 0);
         //else return not between
     }
@@ -154,8 +154,8 @@ public class Line {
         //v3 = p3 - p2
         javafx.geometry.Point3D  v3 = p3.subtract(p2);
         //if (fabs(dot(v2,v1)-1.0)<EPS and dot(v3,v1)<0) return between
-        return (Math.abs(v2.dotProduct(v1)-1.0) < smallDiff) 
-            && v3.dotProduct(v1) < 0; //else return not between   
+        return (Math.abs(v2.dotProduct(v1)-1.0) < smallDiff)
+            && v3.dotProduct(v1) < 0; //else return not between
     }
 
     @Override

@@ -49,7 +49,7 @@ import java.text.NumberFormat;
 import java.util.Map.Entry;
 
 /**
- * @author Birdasaur
+ * @author Sean Phillips
  */
 public class FeatureVectorCallout extends VBox {
     public static double CHIP_FIT_WIDTH = 200;

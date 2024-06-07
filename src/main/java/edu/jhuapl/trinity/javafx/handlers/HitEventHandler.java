@@ -2,16 +2,16 @@ package edu.jhuapl.trinity.javafx.handlers;
 
 /*-
  * #%L
- * trinity-2024.06.03
+ * trinity
  * %%
- * Copyright (C) 2021 - 2024 The Johns Hopkins University Applied Physics Laboratory LLC
+ * Copyright (C) 2021 - 2024 Sean Phillips
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -34,20 +34,20 @@ import javafx.scene.media.MediaPlayer;
 
 /**
  *
- * @author phillsm1
+ * @author Sean Phillips
  */
 public class HitEventHandler implements EventHandler<HitEvent> {
 
     private static HashMap<String, HitBox> hitBoxMap = new HashMap<>();
     Media smallBoom = null;
-    MediaPlayer smallBoomMediaPlayer = null;    
+    MediaPlayer smallBoomMediaPlayer = null;
     Media bigBoom = null;
     MediaPlayer bigBoomMediaPlayer = null;
     Media death = null;
-    MediaPlayer deathMediaPlayer = null;  
+    MediaPlayer deathMediaPlayer = null;
 
     public HitEventHandler() {
-        
+
         try {
             smallBoom = ResourceUtils.loadMediaWav("smallBoom");
             smallBoomMediaPlayer = new MediaPlayer(smallBoom);
@@ -79,27 +79,27 @@ public class HitEventHandler implements EventHandler<HitEvent> {
         }
         if (event.getEventType().equals(HitEvent.PROJECTILE_HIT_CHARACTER)) {
             playDeath();
-        }   
+        }
     }
     private void playBounce(){
         if(null != smallBoomMediaPlayer) {
             smallBoomMediaPlayer.stop();
             smallBoomMediaPlayer.seek(smallBoomMediaPlayer.getStartTime());
             smallBoomMediaPlayer.play();
-        }        
+        }
     }
     private void playBreak(){
         if(null != bigBoomMediaPlayer) {
             bigBoomMediaPlayer.stop();
             bigBoomMediaPlayer.seek(bigBoomMediaPlayer.getStartTime());
             bigBoomMediaPlayer.play();
-        }        
-    }    
+        }
+    }
     private void playDeath(){
         if(null != deathMediaPlayer) {
             deathMediaPlayer.stop();
             deathMediaPlayer.seek(deathMediaPlayer.getStartTime());
             deathMediaPlayer.play();
-        }        
-    }      
+        }
+    }
 }

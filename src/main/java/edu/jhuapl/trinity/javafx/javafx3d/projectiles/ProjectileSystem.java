@@ -2,16 +2,16 @@ package edu.jhuapl.trinity.javafx.javafx3d.projectiles;
 
 /*-
  * #%L
- * trinity-2024.06.03
+ * trinity
  * %%
- * Copyright (C) 2021 - 2024 The Johns Hopkins University Applied Physics Laboratory LLC
+ * Copyright (C) 2021 - 2024 Sean Phillips
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
  * You may obtain a copy of the License at
- * 
+ *
  *      http://www.apache.org/licenses/LICENSE-2.0
- * 
+ *
  * Unless required by applicable law or agreed to in writing, software
  * distributed under the License is distributed on an "AS IS" BASIS,
  * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
@@ -37,7 +37,7 @@ import static javafx.scene.media.MediaPlayer.INDEFINITE;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 
-public class ProjectileSystem { 
+public class ProjectileSystem {
 
     public AnimationTimer projectileTimer;
     private ArrayList<Projectile> projectiles;
@@ -50,18 +50,18 @@ public class ProjectileSystem {
     private boolean collisions = true;
     private boolean autoCull = true;
     Media asteriods1981 = null;
-    MediaPlayer asteriods1981MediaPlayer = null;          
-    //AudioClip plonkSound 
-    
+    MediaPlayer asteriods1981MediaPlayer = null;
+    //AudioClip plonkSound
+
     double absSafetyPosition = 2000;
     HitBox xPlusBox;
     HitBox xMinusBox;
     HitBox yPlusBox;
     HitBox yMinusBox;
     HitBox zPlusBox;
-    HitBox zMinusBox;    
+    HitBox zMinusBox;
     PlayerShip playerShip;
-    
+
     public ProjectileSystem(Group parentGroup, int millisInterval) {
         this.parentGroup = parentGroup;
         msInterval = millisInterval;
@@ -79,13 +79,13 @@ public class ProjectileSystem {
 //            asteriods1981MediaPlayer.play();
         } catch (IOException ex) {
             Logger.getLogger(ProjectileSystem.class.getName()).log(Level.SEVERE, null, ex);
-        }        
+        }
         projectileTimer = new AnimationTimer() {
             long msCounter = 0;
             long sleepNs = 0;
             long prevTime = 0;
             long NANOS_IN_MILLI = 1_000_000;
-            
+
             @Override
             public void handle(long now) {
                 sleepNs = getMsInterval() * NANOS_IN_MILLI;
@@ -96,7 +96,7 @@ public class ProjectileSystem {
                 msCounter += getMsInterval();
                 if(running) {
                     playerShip.triangleMesh.getPoints().set(2, 200);
-                    
+
                     //move objects based on simple linear physics, no gravity
                     updateHittables(msCounter);
                     updateProjectiles(msCounter);
@@ -104,7 +104,7 @@ public class ProjectileSystem {
                         //Check to see if any hittable Shape bounced off a barrier
 //                        hittableSweep();
                         //check to see if a projectile hit a hittable
-                        projectileSweep();                         
+                        projectileSweep();
                     }
                     if(autoCull ) {
                         //maybe convert to dropWhile?
@@ -125,12 +125,12 @@ public class ProjectileSystem {
             //    System.out.println("box collision...");
             //sweep through existing hitboxes
             HitBox rayCheck = collisionSweeper.rayCheckFirst(
-                p.getLocation().add(p.getStart()), 
+                p.getLocation().add(p.getStart()),
 //                    p.getLocation(),
                     p.getVelocity());
             if(null != rayCheck ) {
                 processCollision(rayCheck, p);
-            } 
+            }
         });
     }
     private void processCollision(HitBox rayCheck, HitShape3D p) {
@@ -143,7 +143,7 @@ public class ProjectileSystem {
         //fire off hit event
         parentGroup.getScene().getRoot().fireEvent(
             new HitEvent(HitEvent.SHAPE_HIT_BOX, p, hit));
-        
+
     }
     private void projectileSweep() {
         projectiles.stream().forEach(p -> {
@@ -179,7 +179,7 @@ public class ProjectileSystem {
         zPlusBox = new HitBox(new Point3D(0, 0, position), size, size, depth);
         zMinusBox = new HitBox(new Point3D(0, 0, -position), size, size, depth);
 
-//        //@DEBUG SMP 
+//        //@DEBUG SMP
 //        parentGroup.getChildren().add(yPlusBox);
 //        ((PhongMaterial)yPlusBox.getMaterial()).setDiffuseColor(
 //        Color.CYAN.deriveColor(1, 1, 1, 0.1));
@@ -189,13 +189,13 @@ public class ProjectileSystem {
 
         addHitBox(xPlusBox);
         addHitBox(xMinusBox);
-        
+
         addHitBox(yPlusBox);
         addHitBox(yMinusBox);
-        
+
         addHitBox(zPlusBox);
         addHitBox(zMinusBox);
-        
+
     }
     public void addHitShape(HitShape3D hitShape) {
         collisionSweeper.getHitShapes().add(hitShape);
@@ -205,7 +205,7 @@ public class ProjectileSystem {
     }
     public void clearAllHitShapes() {
         collisionSweeper.getHitShapes().clear();
-    }    
+    }
     public void addHitBox(HitBox hitBox) {
         collisionSweeper.getHitBoxes().add(hitBox);
         //parentGroup.getChildren().add(hitBox.box);
@@ -215,15 +215,15 @@ public class ProjectileSystem {
     }
     public void clearAllHitBoxes() {
         collisionSweeper.getHitBoxes().clear();
-    }    
-    
+    }
+
     public void addHittable(HitShape3D hittable) {
         hittables.add(hittable);
-//        parentGroup.getChildren().add(hittable.getShape3D());        
+//        parentGroup.getChildren().add(hittable.getShape3D());
     }
     public void removeHittable(HitShape3D hittable) {
         hittables.remove(hittable);
-//        parentGroup.getChildren().remove(hittable.getShape3D());        
+//        parentGroup.getChildren().remove(hittable.getShape3D());
     }
     public void clearAllHittables() {
 //        for(Hittable p : projectiles) {
@@ -234,11 +234,11 @@ public class ProjectileSystem {
 
     public void addProjectile(Projectile projectile) {
         projectiles.add(projectile);
-        parentGroup.getChildren().add(projectile.getShape3D());        
+        parentGroup.getChildren().add(projectile.getShape3D());
     }
     public void removeProjectile(Projectile projectile) {
         projectiles.remove(projectile);
-        parentGroup.getChildren().remove(projectile.getShape3D());        
+        parentGroup.getChildren().remove(projectile.getShape3D());
     }
     public void clearAllProjectiles() {
         for(Projectile p : projectiles) {
@@ -272,19 +272,19 @@ public class ProjectileSystem {
         double bufferY = hitShape.getVelocity().getY()*2;
         double bufferZ = hitShape.getVelocity().getZ()*2;
         Point3D loc = hitShape.getLocation().add(hitShape.getStart());
-        if(loc.getX() < -absSafetyPosition) 
+        if(loc.getX() < -absSafetyPosition)
             hitShape.setLocation(new Point3D(absSafetyPosition-bufferX, loc.getY(), loc.getZ()));
-        if(loc.getX() > absSafetyPosition) 
+        if(loc.getX() > absSafetyPosition)
             hitShape.setLocation(new Point3D(-absSafetyPosition+bufferX, loc.getY(), loc.getZ()));
-        if(loc.getY() < -absSafetyPosition) 
+        if(loc.getY() < -absSafetyPosition)
             hitShape.setLocation(new Point3D(loc.getX(), absSafetyPosition-bufferY, loc.getZ()));
-        if(loc.getY() > absSafetyPosition) 
+        if(loc.getY() > absSafetyPosition)
             hitShape.setLocation(new Point3D(loc.getX(), -absSafetyPosition+bufferY, loc.getZ()));
-        if(loc.getZ() < -absSafetyPosition) 
+        if(loc.getZ() < -absSafetyPosition)
             hitShape.setLocation(new Point3D(loc.getX(), loc.getY(), absSafetyPosition-bufferZ));
-        if(loc.getZ() > absSafetyPosition) 
+        if(loc.getZ() > absSafetyPosition)
             hitShape.setLocation(new Point3D(loc.getX(), loc.getY(), -absSafetyPosition+bufferZ));
-        
+
     }
 
     public void updateHittables(long millis) {
@@ -330,7 +330,7 @@ public class ProjectileSystem {
      */
     public void setRunning(final boolean _isRunning) {
         running = _isRunning;
-        if(null != asteriods1981MediaPlayer) 
+        if(null != asteriods1981MediaPlayer)
             if(running) {
                 asteriods1981MediaPlayer.setMute(false);
                 asteriods1981MediaPlayer.play();
