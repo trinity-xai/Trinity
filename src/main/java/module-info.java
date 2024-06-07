@@ -33,6 +33,7 @@ module edu.jhuapl.trinity {
     requires lit.litfx.controls;
     requires quickhull3d;
     requires commons.math3;
+    requires org.apache.commons.lang3;
     requires org.zeromq.jeromq;
     requires com.fasterxml.jackson.annotation;
     requires com.fasterxml.jackson.core;
@@ -40,13 +41,14 @@ module edu.jhuapl.trinity {
     requires webcam.capture;
     requires jdk.crypto.ec;
     requires jflac.codec;
-    requires com.clust4j;
     opens edu.jhuapl.trinity.javafx.components.radial to lit.litfx.controls;
     opens edu.jhuapl.trinity to webcam.capture;
     opens edu.jhuapl.trinity.data to javafx.base;
     opens edu.jhuapl.trinity.data.terrain to javafx.base;
     opens edu.jhuapl.trinity.javafx.controllers to javafx.fxml;
     opens edu.jhuapl.trinity.javafx.javafx3d.particle to java.base;
+    exports com.clust4j;
+    exports com.clust4j.algo;
     exports edu.jhuapl.trinity;
     exports edu.jhuapl.trinity.data;
     exports edu.jhuapl.trinity.data.messages;
