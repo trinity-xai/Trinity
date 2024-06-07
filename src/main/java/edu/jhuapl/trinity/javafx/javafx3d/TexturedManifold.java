@@ -20,11 +20,11 @@ package edu.jhuapl.trinity.javafx.javafx3d;
  * #L%
  */
 
-import java.util.Arrays;
 import javafx.scene.shape.TriangleMesh;
 import org.fxyz3d.geometry.Face3;
 import org.fxyz3d.geometry.Point3D;
 import org.fxyz3d.shapes.primitives.TexturedMesh;
+
 import java.util.List;
 import java.util.stream.DoubleStream;
 
@@ -36,6 +36,7 @@ public class TexturedManifold extends TexturedMesh {
     private List<Point3D> vertices;
     private List<Face3> faces;
     int div;
+
     public TexturedManifold(List<Point3D> vertices, List<Face3> faces) {
         this.vertices = vertices;
         this.faces = faces;
@@ -69,10 +70,10 @@ public class TexturedManifold extends TexturedMesh {
         float radius = 0;
 //        for (int i = 0; i < div; ++i) {
         for (int i = 0; i < getVertices().size(); i++) {
-            radius = distance(getVertices().get(i),centroid).floatValue();
+            radius = distance(getVertices().get(i), centroid).floatValue();
             mesh.getTexCoords().addAll(
 //            tPoints[tPos + 0] = 1.0f - rDiv * (0.5f + i);
-              getVertices().get(i).getX()/maxX, getVertices().get(i).getY()/maxY
+                getVertices().get(i).getX() / maxX, getVertices().get(i).getY() / maxY
             );
         }
 
@@ -82,22 +83,27 @@ public class TexturedManifold extends TexturedMesh {
         }
         return mesh;
     }
+
     private Double getMaxX() {
         return getVertices().stream()
             .flatMapToDouble(p -> DoubleStream.of(Math.abs(p.x)))
             .max().getAsDouble();
-    }    private Double getMaxY() {
+    }
+
+    private Double getMaxY() {
         return getVertices().stream()
             .flatMapToDouble(p -> DoubleStream.of(Math.abs(p.y)))
             .max().getAsDouble();
     }
+
     private Double distance(Point3D p1, Point3D p2) {
         return Math.sqrt(
-            ((p2.getX()-p1.getX())*(p2.getX()-p1.getX()))+
-            ((p2.getY()-p1.getY())*(p2.getY()-p1.getY()))+
-            ((p2.getZ()-p1.getZ())*(p2.getZ()-p1.getZ()))
+            ((p2.getX() - p1.getX()) * (p2.getX() - p1.getX())) +
+                ((p2.getY() - p1.getY()) * (p2.getY() - p1.getY())) +
+                ((p2.getZ() - p1.getZ()) * (p2.getZ() - p1.getZ()))
         );
     }
+
     public Point3D getAverageConvexCentroid() {
         double aveX = getVertices().stream()
             .flatMapToDouble(p -> DoubleStream.of(p.x))

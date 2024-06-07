@@ -20,39 +20,44 @@ package edu.jhuapl.trinity.javafx.javafx3d.projectiles;
  * #L%
  */
 
-import java.util.Random;
-import javafx.beans.property.SimpleBooleanProperty;
 import javafx.geometry.Point3D;
-import javafx.scene.shape.Shape3D;
+
+import java.util.Random;
 
 public interface Hittable {
-   /**
-    * Random instance for random behavior.
-    */
-   static Random random = new Random();
+    /**
+     * Random instance for random behavior.
+     */
+    static Random random = new Random();
 
 //   /**
 //    * Flag indicating whether the particle is active.
 //    */
 //   public SimpleBooleanProperty activeProperty = new SimpleBooleanProperty(true);
-   /**
-    * physics of the hittable.
-    */
+
+    /**
+     * physics of the hittable.
+     */
     public void setStart(Point3D p3D);
+
     public Point3D getStart();
+
     public void setLocation(Point3D p3D);
+
     public Point3D getLocation();
+
     public void setVelocity(Point3D p3D);
+
     public Point3D getVelocity();
 
 
-   public static Point3D getRandomPoint3D(float lowerBound, float upperBound) {
-       return new Point3D(
+    public static Point3D getRandomPoint3D(float lowerBound, float upperBound) {
+        return new Point3D(
             random.nextFloat() * (upperBound - lowerBound) + lowerBound,
             random.nextFloat() * (upperBound - lowerBound) + lowerBound,
             random.nextFloat() * (upperBound - lowerBound) + lowerBound
-       );
-   }
+        );
+    }
 //
 //   /**
 //    * Logic to tell implementation to reset to defaults/initial conditions
@@ -62,10 +67,12 @@ public interface Hittable {
 //    * @return the Shape3D that is added to the 3D scene
 //    */
 //   public abstract Shape3D getShape3D();
-  /**
-    * Updates the particle animation by the specified number of milliseconds.
-    * @param _time The number of milliseconds elapsed since the last update.
-    * @return true if the particle is still 'alive' (requires further animation), false if it has terminated.
-    */
-   public abstract boolean update(final double _time);
+
+    /**
+     * Updates the particle animation by the specified number of milliseconds.
+     *
+     * @param _time The number of milliseconds elapsed since the last update.
+     * @return true if the particle is still 'alive' (requires further animation), false if it has terminated.
+     */
+    public abstract boolean update(final double _time);
 }

@@ -132,7 +132,7 @@ public class Manifold3D extends Group {
             makeDebugPoints(hull, artScale, false);
 
         cm = new ContextMenu();
-        
+
 
         MenuItem editPointsItem = new MenuItem("Edit Shape");
         editPointsItem.setOnAction(e -> {

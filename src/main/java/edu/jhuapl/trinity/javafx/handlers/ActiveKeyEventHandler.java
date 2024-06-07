@@ -20,13 +20,13 @@ package edu.jhuapl.trinity.javafx.handlers;
  * #L%
  */
 
-import java.util.HashSet;
 import javafx.event.EventHandler;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 
+import java.util.HashSet;
+
 /**
- *
  * @author Sean Phillips
  */
 public class ActiveKeyEventHandler implements EventHandler<KeyEvent> {
@@ -40,18 +40,19 @@ public class ActiveKeyEventHandler implements EventHandler<KeyEvent> {
     public void handle(KeyEvent event) {
         if (event.getEventType().equals(KeyEvent.KEY_PRESSED)) {
             currentlyActiveKeys.add(event.getCode().toString());
-            if(event.getCode() == KeyCode.CONTROL) {
+            if (event.getCode() == KeyCode.CONTROL) {
                 System.out.println("Control Key is pressed.");
             }
         }
         if (event.getEventType().equals(KeyEvent.KEY_RELEASED)) {
             currentlyActiveKeys.remove(event.getCode().toString());
-            if(event.getCode() == KeyCode.CONTROL) {
+            if (event.getCode() == KeyCode.CONTROL) {
                 System.out.println("Control Key is released.");
             }
         }
 
     }
+
     public static boolean isPressed(KeyCode keyCode) {
         return currentlyActiveKeys.contains(keyCode.toString());
     }

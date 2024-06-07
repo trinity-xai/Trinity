@@ -24,15 +24,6 @@ import edu.jhuapl.trinity.javafx.events.HitEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.AnimatedTetrahedron;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-import java.util.stream.IntStream;
 import javafx.geometry.Bounds;
 import javafx.geometry.Point3D;
 import javafx.scene.image.Image;
@@ -45,11 +36,18 @@ import javafx.scene.shape.CullFace;
 import javafx.scene.shape.DrawMode;
 import javafx.scene.transform.Rotate;
 import org.fxyz3d.geometry.Vector3D;
-import org.fxyz3d.shapes.primitives.ConeMesh;
-import org.fxyz3d.shapes.primitives.PyramidMesh;
+
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+import java.util.stream.IntStream;
 
 /**
- *
  * @author Sean Phillips
  */
 public class PlayerShip extends AnimatedTetrahedron implements Hittable {
@@ -63,9 +61,9 @@ public class PlayerShip extends AnimatedTetrahedron implements Hittable {
     /**
      * physics of the ship.
      */
-    private Point3D start = new Point3D(0,0,0);
-    private Point3D location = new Point3D(0,0,0);
-    private Point3D velocity = new Point3D(0,0,0);
+    private Point3D start = new Point3D(0, 0, 0);
+    private Point3D location = new Point3D(0, 0, 0);
+    private Point3D velocity = new Point3D(0, 0, 0);
     public double rotateIncrementDegrees = 0.0;
     public Point3D rotateAxis = Rotate.X_AXIS;
 
@@ -80,7 +78,7 @@ public class PlayerShip extends AnimatedTetrahedron implements Hittable {
         } catch (IOException ex) {
             Logger.getLogger(PlayerShip.class.getName()).log(Level.SEVERE, null, ex);
             playerMaterial = new PhongMaterial(Color.NAVAJOWHITE);
-       }
+        }
         setMaterial(playerMaterial);
 //        setMaterial(new PhongMaterial(c));
         setDrawMode(DrawMode.FILL);
@@ -121,15 +119,17 @@ public class PlayerShip extends AnimatedTetrahedron implements Hittable {
         //then what you want is −(2(n · v) n − v).
         //The minus sign accounts for the fact that the reflection formula
         //doesn't actually reverse the direction, as an object's velocity would reverse.
-        double value = 2*direction.dotProduct(normal);
+        double value = 2 * direction.dotProduct(normal);
         Point3D subbed = normal.multiply(value);
         Point3D reflection = direction.subtract(subbed);
         return reflection;
     }
+
     //Vnew = -2*(V dot N)*N + V
     public Vector3D vecReflec(Vector3D normal, Vector3D velocity) {
-        return normal.multiply(-2*velocity.dotProduct(normal)).add(velocity);
+        return normal.multiply(-2 * velocity.dotProduct(normal)).add(velocity);
     }
+
     public Point3D ricochet(Point3D testPoint, Point3D velocity) {
         //figure out target and direction (global coordinates), then normalize
         Point3D gloTarget = testPoint;
@@ -139,18 +139,18 @@ public class PlayerShip extends AnimatedTetrahedron implements Hittable {
         //In local coordinates of the shape we have 6 faces given by their normals
         Bounds locBounds = getBoundsInLocal();
         List<Point3D> normals = Arrays.asList(
-                new Point3D(-1, 0, 0), new Point3D(1, 0, 0), new Point3D(0, -1, 0),
-                new Point3D(0, 1, 0), new Point3D(0, 0, -1), new Point3D(0, 0, 1));
+            new Point3D(-1, 0, 0), new Point3D(1, 0, 0), new Point3D(0, -1, 0),
+            new Point3D(0, 1, 0), new Point3D(0, 0, -1), new Point3D(0, 0, 1));
 
         List<Point3D> positions = Arrays.asList(
-                new Point3D(locBounds.getMinX(), 0, 0), new Point3D(locBounds.getMaxX(), 0, 0),
-                new Point3D(0, locBounds.getMinY(), 0), new Point3D(0, locBounds.getMaxY(), 0),
-                new Point3D(0, 0, locBounds.getMinZ()), new Point3D(0, 0, locBounds.getMaxZ()));
+            new Point3D(locBounds.getMinX(), 0, 0), new Point3D(locBounds.getMaxX(), 0, 0),
+            new Point3D(0, locBounds.getMinY(), 0), new Point3D(0, locBounds.getMaxY(), 0),
+            new Point3D(0, 0, locBounds.getMinZ()), new Point3D(0, 0, locBounds.getMaxZ()));
         //Since we'll work on the local system, we need our origin point in this coordinates:
         Point3D gloOriginInLoc = sceneToLocal(gloOrigin);
         //If the shape is no longer axis aligned we need to rotate the normals to match
-        if(useParentRotate) {
-            for(int i=0;i<6;i++) {
+        if (useParentRotate) {
+            for (int i = 0; i < 6; i++) {
                 normals.set(i, parentRotateX.transform(
                     parentRotateY.transform(normals.get(i))));
                 positions.set(i, parentRotateX.transform(
@@ -162,17 +162,17 @@ public class PlayerShip extends AnimatedTetrahedron implements Hittable {
         Double shortestDistance = null;
         //Go through each normal
         System.out.print("Planar distances: ");
-        for(int i=0;i<6;i++) {
+        for (int i = 0; i < 6; i++) {
             //find the distance to the plane
             double d = -normals.get(i).dotProduct(positions.get(i));
             //the distance t to the plane
             double t = Math.abs(
                 -(gloOriginInLoc.dotProduct(normals.get(i)) + d)
-                / (gloDirection.dotProduct(normals.get(i)))
+                    / (gloDirection.dotProduct(normals.get(i)))
             );
             System.out.print("(" + d + ", " + t + ") ");
             //only do the reflection if its a shorter distance
-            if(null == shortestDistance || t < shortestDistance) {
+            if (null == shortestDistance || t < shortestDistance) {
                 shortestDistance = t;
                 //convert normal point to vector
                 Vector3D n = new Vector3D(normals.get(i).getX(),
@@ -187,6 +187,7 @@ public class PlayerShip extends AnimatedTetrahedron implements Hittable {
         System.out.println(".");
         return velocityReflection;
     }
+
     public boolean rayChecker(Point3D testPoint, Point3D velocity) {
         //figure out target and direction (global coordinates), then normalize
         Point3D gloTarget = testPoint;
@@ -197,12 +198,12 @@ public class PlayerShip extends AnimatedTetrahedron implements Hittable {
         //by their normals, with their 6 centers:
         Bounds locBounds = getBoundsInLocal();
         List<Point3D> normals = Arrays.asList(
-                new Point3D(-1, 0, 0), new Point3D(1, 0, 0), new Point3D(0, -1, 0),
-                new Point3D(0, 1, 0), new Point3D(0, 0, -1), new Point3D(0, 0, 1));
+            new Point3D(-1, 0, 0), new Point3D(1, 0, 0), new Point3D(0, -1, 0),
+            new Point3D(0, 1, 0), new Point3D(0, 0, -1), new Point3D(0, 0, 1));
         List<Point3D> positions = Arrays.asList(
-                new Point3D(locBounds.getMinX(), 0, 0), new Point3D(locBounds.getMaxX(), 0, 0),
-                new Point3D(0, locBounds.getMinY(), 0), new Point3D(0, locBounds.getMaxY(), 0),
-                new Point3D(0, 0, locBounds.getMinZ()), new Point3D(0, 0, locBounds.getMaxZ()));
+            new Point3D(locBounds.getMinX(), 0, 0), new Point3D(locBounds.getMaxX(), 0, 0),
+            new Point3D(0, locBounds.getMinY(), 0), new Point3D(0, locBounds.getMaxY(), 0),
+            new Point3D(0, 0, locBounds.getMinZ()), new Point3D(0, 0, locBounds.getMaxZ()));
 
         //Since we'll work on the local system, we need our origin point in this coordinates:
         Point3D gloOriginInLoc = sceneToLocal(gloOrigin);
@@ -215,7 +216,7 @@ public class PlayerShip extends AnimatedTetrahedron implements Hittable {
         IntStream.range(0, 6).forEach(i -> {
             double d = -normals.get(i).dotProduct(positions.get(i));
             double t = -(gloOriginInLoc.dotProduct(normals.get(i)) + d)
-                    / (gloDirection.dotProduct(normals.get(i)));
+                / (gloDirection.dotProduct(normals.get(i)));
 
             Point3D locInter = gloOriginInLoc.add(gloDirection.multiply(t));
             if (locBounds.contains(locInter)) {
@@ -230,7 +231,7 @@ public class PlayerShip extends AnimatedTetrahedron implements Hittable {
         //@DEBUG SMP helps plot a ray intersect point for debugging
         if (!intersections.isEmpty()) {
             getParent().getScene().getRoot().fireEvent(new HitEvent(
-                    HitEvent.RAY_INTERSECTS_BOX, this, intersections));
+                HitEvent.RAY_INTERSECTS_BOX, this, intersections));
         }
         //If counter.get()>0  we have intersection between the line segment and the shape
         return counter.get() > 0;
@@ -242,57 +243,58 @@ public class PlayerShip extends AnimatedTetrahedron implements Hittable {
         double boxTz = useLocalTransform ? getTranslateZ() : getLocalToSceneTransform().getTz();
 
         double x = testVelocity.getX(),
-                y = testVelocity.getY(),
-                z = testVelocity.getZ(),
-                halfWidth = getBoundsInLocal().getWidth() / 2.0,
-                halfHeight = getBoundsInLocal().getHeight() / 2.0,
-                halfDepth = getBoundsInLocal().getDepth() / 2.0;
+            y = testVelocity.getY(),
+            z = testVelocity.getZ(),
+            halfWidth = getBoundsInLocal().getWidth() / 2.0,
+            halfHeight = getBoundsInLocal().getHeight() / 2.0,
+            halfDepth = getBoundsInLocal().getDepth() / 2.0;
         //crossed lower x
         if (boxTx - halfWidth <= testPoint.getX() //current
-                && boxTx - halfWidth >= testPoint.getX() - x) //previous
+            && boxTx - halfWidth >= testPoint.getX() - x) //previous
         {
             x = -x;
         } //crossed upper x
         else if (boxTx + halfWidth >= testPoint.getX() //current
-                && boxTx + halfWidth <= testPoint.getX() - x) //previous
+            && boxTx + halfWidth <= testPoint.getX() - x) //previous
         {
             x = -x;
         }
 
         //crossed lower Y
         if (boxTy - halfHeight <= testPoint.getY() //current
-                && boxTy - halfHeight >= testPoint.getY() - y) //previous
+            && boxTy - halfHeight >= testPoint.getY() - y) //previous
         {
             y = -y;
         } //crossed upper Y
         else if (boxTy + halfHeight >= testPoint.getY() //current
-                && boxTy + halfHeight <= testPoint.getY() - y) //previous
+            && boxTy + halfHeight <= testPoint.getY() - y) //previous
         {
             y = -y;
         }
 
         //crossed lower Z
         if (boxTz - halfDepth <= testPoint.getZ() //current
-                && boxTz - halfDepth >= testPoint.getZ() - z) //previous
+            && boxTz - halfDepth >= testPoint.getZ() - z) //previous
         {
             z = -z;
         } //crossed upper Z
         else if (boxTz + halfDepth >= testPoint.getZ() //current
-                && boxTz + halfDepth <= testPoint.getZ() - z) //previous
+            && boxTz + halfDepth <= testPoint.getZ() - z) //previous
         {
             z = -z;
         }
 
         return new Point3D(x, y, z);
     }
+
     private boolean intersectsPlane(final Line line, final Plane plane) {
         /*   UNnormalized normal = (A,B,C);    P is a specific point in the plane;
-       *   (x,y,z) is an arbitrary point in the plane
-       *   D = -( A* P.x  +  B* P.y  +  C* P.z )
-       *   ( A, B, C ) <dot> ( (x,y,z)  -  P ) = 0  because a plane's normal is
-       *      orthogonal to the plane
-       *   = Ax  +  By  +  Cz  +  D  =  0 ;
-       *   A plane is specified by A,B,C,D.     */
+         *   (x,y,z) is an arbitrary point in the plane
+         *   D = -( A* P.x  +  B* P.y  +  C* P.z )
+         *   ( A, B, C ) <dot> ( (x,y,z)  -  P ) = 0  because a plane's normal is
+         *      orthogonal to the plane
+         *   = Ax  +  By  +  Cz  +  D  =  0 ;
+         *   A plane is specified by A,B,C,D.     */
         double denominator = (plane.a * line.v.x) + (plane.b * line.v.y) + (plane.c * line.v.z);
         double numerator = -((plane.a * line.p.x) + (plane.b * line.p.y) + (plane.c * line.p.z) + plane.d);
 
@@ -306,14 +308,14 @@ public class PlayerShip extends AnimatedTetrahedron implements Hittable {
             //There is an intersection on an infinte ray somewhere. But Where?
             double u = numerator / denominator;
             Point3D p = new Point3D(line.p.x + (line.v.x * u),
-                    line.p.y + (line.v.y * u),
-                    line.p.z + (line.v.z * u));
+                line.p.y + (line.v.y * u),
+                line.p.z + (line.v.z * u));
             //is that point actually on the original line segment?
             //OLD SMP
 //         if(line.inLine(p.getX(), p.getY(), p.getZ()))
 //            return true;
             org.fxyz3d.geometry.Point3D fxyzP3D
-                    = org.fxyz3d.geometry.Point3D.convertFromJavaFXPoint3D(p);
+                = org.fxyz3d.geometry.Point3D.convertFromJavaFXPoint3D(p);
             if (line.intersects(fxyzP3D)) {
                 return true;
             }
@@ -328,8 +330,8 @@ public class PlayerShip extends AnimatedTetrahedron implements Hittable {
         //make line vector based on testPoint and velocity
         //test using previous point plus velocity
         Line line = new Line(testPoint.getX() - velocity.getX(),
-                testPoint.getY() - velocity.getY(), testPoint.getZ() - velocity.getZ(),
-                velocity.getX(), velocity.getY(), velocity.getZ());
+            testPoint.getY() - velocity.getY(), testPoint.getZ() - velocity.getZ(),
+            velocity.getX(), velocity.getY(), velocity.getZ());
         //get actual origin based on transform mode
         double boxTx = useLocalTransform ? getTranslateX() : getLocalToSceneTransform().getTx();
         double boxTy = useLocalTransform ? getTranslateY() : getLocalToSceneTransform().getTy();
@@ -495,7 +497,7 @@ public class PlayerShip extends AnimatedTetrahedron implements Hittable {
         setTranslateX(location.getX());
         setTranslateY(location.getY());
         setTranslateZ(location.getZ());
-        if(enableRotationAnimation) {
+        if (enableRotationAnimation) {
             setRotationAxis(rotateAxis);
             setRotate(getRotate() + rotateIncrementDegrees);
         }

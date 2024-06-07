@@ -21,12 +21,10 @@ package edu.jhuapl.trinity.javafx.events;
  */
 
 import javafx.event.Event;
-import static javafx.event.Event.ANY;
 import javafx.event.EventTarget;
 import javafx.event.EventType;
 
 /**
- *
  * @author Sean Phillips
  */
 public class HitEvent extends Event {
@@ -45,6 +43,7 @@ public class HitEvent extends Event {
     public HitEvent(EventType<? extends Event> arg0) {
         super(arg0);
     }
+
     public HitEvent(EventType<? extends Event> arg0, Object arg1, Object arg2) {
         this(arg0);
         object1 = arg1;

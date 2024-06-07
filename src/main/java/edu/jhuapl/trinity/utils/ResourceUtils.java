@@ -61,6 +61,7 @@ import javafx.scene.input.DataFormat;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
+import javafx.scene.media.Media;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -86,7 +87,6 @@ import java.util.jar.JarFile;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import javafx.scene.media.Media;
 
 /**
  * @author Sean Phillips
@@ -254,6 +254,7 @@ public enum ResourceUtils {
         }
         return false;
     }
+
     public static Media loadMediaWav(String filename) throws IOException {
         return new Media(ResourceUtils.class.getResource("/edu/jhuapl/trinity/audio/" + filename + ".wav")
             .toExternalForm());

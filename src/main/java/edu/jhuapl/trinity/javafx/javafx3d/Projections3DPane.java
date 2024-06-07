@@ -22,8 +22,8 @@ package edu.jhuapl.trinity.javafx.javafx3d;
 
 //import com.clust4j.algo.DBSCAN;
 //import com.clust4j.algo.DBSCANParameters;
+
 import com.clust4j.algo.HDBSCAN;
-import com.clust4j.algo.HDBSCAN.HDBSCAN_Algorithm;
 import com.clust4j.algo.HDBSCANParameters;
 import edu.jhuapl.trinity.App;
 import edu.jhuapl.trinity.data.CoordinateSet;
@@ -61,6 +61,9 @@ import edu.jhuapl.trinity.javafx.events.TrajectoryEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.ShadowCubeWorld.PROJECTION_TYPE;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.AnimatedSphere;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.Opticon;
+import edu.jhuapl.trinity.javafx.javafx3d.projectiles.HitShape3D;
+import edu.jhuapl.trinity.javafx.javafx3d.projectiles.Hittable;
+import edu.jhuapl.trinity.javafx.javafx3d.projectiles.ProjectileSystem;
 import edu.jhuapl.trinity.javafx.javafx3d.tasks.ManifoldClusterTask;
 import edu.jhuapl.trinity.javafx.renderers.FeatureVectorRenderer;
 import edu.jhuapl.trinity.javafx.renderers.GaussianMixtureRenderer;
@@ -78,6 +81,8 @@ import edu.jhuapl.trinity.utils.clustering.KmeansPlusPlus;
 import edu.jhuapl.trinity.utils.clustering.Point;
 import edu.jhuapl.trinity.utils.umap.Umap;
 import javafx.animation.AnimationTimer;
+import javafx.animation.KeyFrame;
+import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
 import javafx.animation.Transition;
 import javafx.application.Platform;
@@ -102,6 +107,7 @@ import javafx.scene.effect.Glow;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.PickResult;
@@ -124,6 +130,7 @@ import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Translate;
 import javafx.util.Duration;
 import javafx.util.Pair;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.fxyz3d.geometry.Point3D;
 import org.fxyz3d.scene.Skybox;
 import org.fxyz3d.utils.CameraTransformer;
@@ -138,6 +145,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
+import java.util.Random;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
@@ -146,16 +154,6 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static edu.jhuapl.trinity.javafx.components.radial.HyperspaceMenu.slideInPane;
-import edu.jhuapl.trinity.javafx.javafx3d.projectiles.HitShape3D;
-import edu.jhuapl.trinity.javafx.javafx3d.projectiles.Hittable;
-import edu.jhuapl.trinity.javafx.javafx3d.projectiles.ProjectileSystem;
-import java.util.Random;
-import javafx.animation.KeyFrame;
-import javafx.animation.KeyValue;
-import javafx.scene.input.KeyEvent;
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.apache.commons.math3.linear.MatrixUtils;
-import org.apache.commons.math3.linear.RealMatrix;
 
 /**
  * @author Sean Phillips
@@ -301,7 +299,7 @@ public class Projections3DPane extends StackPane implements
     Umap latestUmap = null;
 
     Rectangle selectionRectangle;
-    ProjectileSystem projectileSystem;    
+    ProjectileSystem projectileSystem;
 
     public Projections3DPane(Scene scene) {
         this.scene = scene;
@@ -1132,7 +1130,7 @@ public class Projections3DPane extends StackPane implements
         projectileSystem = new ProjectileSystem(debugGroup, 15);
         projectileSystem.setRunning(false);
         projectileSystem.setEnableProjectileTimer(true);
-        
+
         subScene.addEventHandler(KeyEvent.KEY_PRESSED, k -> {
             //What key did the user press?
             KeyCode keycode = k.getCode();
@@ -1145,12 +1143,12 @@ public class Projections3DPane extends StackPane implements
                 manifoldGroup.setVisible(!projectileSystem.isRunning());
                 connectorsGroup.setVisible(!projectileSystem.isRunning());
                 ellipsoidGroup.setVisible(!projectileSystem.isRunning());
-                projectedGroup.setVisible(!projectileSystem.isRunning());                    
+                projectedGroup.setVisible(!projectileSystem.isRunning());
                 //show the cool stuff
                 debugGroup.setVisible(projectileSystem.isRunning());
             }
         });
-        
+
         Platform.runLater(() -> {
             cubeWorld.adjustPanelsByPos(cameraTransform.rx.getAngle(),
                 cameraTransform.ry.getAngle(), cameraTransform.rz.getAngle());
@@ -1174,24 +1172,24 @@ public class Projections3DPane extends StackPane implements
         getManifoldViews().getChildren()
             .filtered(m -> m instanceof Manifold3D)
             .forEach(t -> {
-                Manifold3D man3D = (Manifold3D)t;
+                Manifold3D man3D = (Manifold3D) t;
                 HitShape3D hitShape = new HitShape3D(
-                man3D.texturedManifold.getVertices(), 
-                    man3D.texturedManifold.getFaces(), 
-                        JavaFX3DUtils.toFX.apply(man3D.getBoundsCentroid())
+                    man3D.texturedManifold.getVertices(),
+                    man3D.texturedManifold.getFaces(),
+                    JavaFX3DUtils.toFX.apply(man3D.getBoundsCentroid())
                 );
                 javafx.geometry.Point3D velocity = new javafx.geometry.Point3D(
-                  Hittable.random.nextGaussian()*0.5, 
-                    Hittable.random.nextGaussian()*2.1, //initial velocity mostly vertical 
-                 Hittable.random.nextGaussian()*0.5);
+                    Hittable.random.nextGaussian() * 0.5,
+                    Hittable.random.nextGaussian() * 2.1, //initial velocity mostly vertical
+                    Hittable.random.nextGaussian() * 0.5);
                 hitShape.setVelocity(velocity);
-                
+
                 projectileSystem.addHitShape(hitShape);
                 projectileSystem.addHittable(hitShape);
                 debugGroup.getChildren().add(hitShape);
             });
     }
-    
+
     public void updateOnLabelChange(List<FactorLabel> labels) {
         updatePNodeColorsAndVisibility();
         updateView(false);
@@ -1370,7 +1368,7 @@ public class Projections3DPane extends StackPane implements
             cameraTransform.setPivot(0, 0, 0);
             if (projectionType == PROJECTION_TYPE.FIXED_ORTHOGRAPHIC) {
                 Timeline timeline = new Timeline(
-                    new KeyFrame(Duration.millis(milliseconds), 
+                    new KeyFrame(Duration.millis(milliseconds),
                         new KeyValue(cameraTransform.translateXProperty(), 0),
                         new KeyValue(cameraTransform.translateYProperty(), 0),
                         new KeyValue(cameraTransform.translateZProperty(), 0)
@@ -1379,7 +1377,7 @@ public class Projections3DPane extends StackPane implements
                 timeline.setOnFinished(eh -> {
                     Timeline zoomTimeline = JavaFX3DUtils.transitionCameraTo(milliseconds, camera, cameraTransform,
                         0, 0, cameraDistance, -10.0, -45.0, 0.0);
-                    zoomTimeline.setOnFinished(e -> 
+                    zoomTimeline.setOnFinished(e ->
                         cubeWorld.adjustPanelsByPos(cameraTransform.rx.getAngle(),
                             cameraTransform.ry.getAngle(), cameraTransform.rz.getAngle()));
                 });
@@ -1390,7 +1388,7 @@ public class Projections3DPane extends StackPane implements
             }
         } else {
             cameraTransform.setPivot(0, 0, 0);
-            
+
             if (projectionType == PROJECTION_TYPE.FIXED_ORTHOGRAPHIC) {
                 cameraTransform.rx.setAngle(-10);
                 cameraTransform.ry.setAngle(-45.0);
@@ -2518,11 +2516,11 @@ public class Projections3DPane extends StackPane implements
         orbitItem.setOnAction(e -> {
             javafx.geometry.Point3D orbitPoint3D = JavaFX3DUtils.toFX.apply(manifold3D.getBoundsCentroid());
             JavaFX3DUtils.orbitAt(camera, cameraTransform, orbitPoint3D, true);
-        });        
+        });
         manifold3D.cm.getItems().add(0, orbitItem);
-        if(!manifolds.contains(manifold3D))
+        if (!manifolds.contains(manifold3D))
             manifolds.add(manifold3D);
-        if(!manifoldGroup.getChildren().contains(manifold3D))
+        if (!manifoldGroup.getChildren().contains(manifold3D))
             manifoldGroup.getChildren().add(manifold3D);
         shape3DToLabel.putAll(manifold3D.shape3DToLabel);
         updateFloatingNodes();
@@ -2838,12 +2836,12 @@ public class Projections3DPane extends StackPane implements
                 System.out.println("\n===============================================\n");
                 System.out.print("Generating Hulls from Clusters... ");
                 startTime = System.nanoTime();
-  
-                for (int clusterIndex = 0;clusterIndex<clusters;clusterIndex++) {
+
+                for (int clusterIndex = 0; clusterIndex < clusters; clusterIndex++) {
                     String label = "HDDBSCAN Cluster " + clusterIndex;
                     List<Point3D> points = new ArrayList<>();
-                    for(int i=0;i<results.length;i++){
-                        if(results[i] == clusterIndex) {
+                    for (int i = 0; i < results.length; i++) {
+                        if (results[i] == clusterIndex) {
                             points.add(new Point3D(
                                 observations[i][0] * projectionScalar,
                                 observations[i][1] * -projectionScalar,
@@ -2861,7 +2859,7 @@ public class Projections3DPane extends StackPane implements
                         addManifold(manifold, manifold3D);
                         //Add this Manifold data object to the global tracker
                         Manifold.addManifold(manifold);
-                        
+
                         //update the manifold to manifold3D mapping
                         Manifold.globalManifoldToManifold3DMap.put(manifold, manifold3D);
                         //announce to the world of the new manifold and its shape
@@ -2874,7 +2872,7 @@ public class Projections3DPane extends StackPane implements
                 }
 
                 Utils.printTotalTime(startTime);
-                System.out.println("\n===============================================\n");                
+                System.out.println("\n===============================================\n");
 //                System.out.println("KMeans Clusters: " + kmeansClusters.k
 //                    + " Distortion: " + kmeansClusters.distortion);
                 break;
