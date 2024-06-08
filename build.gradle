@@ -72,8 +72,8 @@ dependencies {
     implementation group: 'org.slf4j', name: 'slf4j-api', version: '2.0.12'
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+    testImplementation 'org.junit.platform:junit-platform-suite:1.10.2'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.10.2'
-    testRuntimeOnly 'org.junit.platform:junit-platform-suite:1.10.2'
 }
 
 // Make sure every single dependency is modularized.

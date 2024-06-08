@@ -20,7 +20,7 @@
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
         <java.version>21</java.version>
-        <javafx.version>21.0.2</javafx.version>
+        <javafx.version>21.0.3</javafx.version>
         <javafx.static.version>21-ea+11.2</javafx.static.version>
         <maven.min.version>3.6.3</maven.min.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
@@ -104,13 +104,13 @@
         </dependency>
         <dependency>
             <groupId>org.junit.platform</groupId>
-            <artifactId>junit-platform-launcher</artifactId>
+            <artifactId>junit-platform-suite</artifactId>
             <version>${junit.jupiter.platform.version}</version>
             <scope>test</scope>
         </dependency>
         <dependency>
             <groupId>org.junit.platform</groupId>
-            <artifactId>junit-platform-suite</artifactId>
+            <artifactId>junit-platform-launcher</artifactId>
             <version>${junit.jupiter.platform.version}</version>
             <scope>test</scope>
         </dependency>
