@@ -22,9 +22,7 @@ package edu.jhuapl.trinity.javafx.javafx3D;
 
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
-import javafx.animation.ParallelTransition;
 import javafx.animation.Timeline;
-import javafx.animation.TranslateTransition;
 import javafx.application.Application;
 import javafx.geometry.Insets;
 import javafx.geometry.Point3D;
@@ -97,7 +95,7 @@ public class LookAtTest extends Application {
             camera.setTranslateZ(newZ);
         });
         subScene.setOnKeyPressed(me -> {
-            if(me.isControlDown() && me.getCode()==KeyCode.R) {
+            if (me.isControlDown() && me.getCode() == KeyCode.R) {
                 resetCamera(me.isShiftDown());
             }
         });
@@ -144,7 +142,7 @@ public class LookAtTest extends Application {
                 sphereX.getTranslateX(),
                 sphereX.getTranslateY(),
                 sphereX.getTranslateZ());
-            if(e.isControlDown()) {
+            if (e.isControlDown()) {
                 orbitAt(camera, cameraTransform, lookAtPoint3D, e.isShiftDown());
             } else
                 lookAt(pointyGroup, currentPoint3D, lookAtPoint3D, false);
@@ -162,7 +160,7 @@ public class LookAtTest extends Application {
                 sphereY.getTranslateX(),
                 sphereY.getTranslateY(),
                 sphereY.getTranslateZ());
-            if(e.isControlDown()) {
+            if (e.isControlDown()) {
                 orbitAt(camera, cameraTransform, lookAtPoint3D, e.isShiftDown());
             } else
                 lookAt(pointyGroup, currentPoint3D, lookAtPoint3D, false);
@@ -181,7 +179,7 @@ public class LookAtTest extends Application {
                 sphereZ.getTranslateX(),
                 sphereZ.getTranslateY(),
                 sphereZ.getTranslateZ());
-            if(e.isControlDown()) {
+            if (e.isControlDown()) {
                 orbitAt(camera, cameraTransform, lookAtPoint3D, e.isShiftDown());
             } else
                 lookAt(pointyGroup, currentPoint3D, lookAtPoint3D, false);
@@ -203,15 +201,17 @@ public class LookAtTest extends Application {
         primaryStage.show();
 
     }
+
     public void resetCamera(boolean animate) {
 //        cameraTransform.setPivot(0, 0, 0);
         cameraTransform.setTranslate(0, 0, 0);
         orbitAt(camera, cameraTransform, Point3D.ZERO, animate);
     }
-    public static void orbitAt(Camera camera, CameraTransformer cameraTransform, Point3D at, boolean animate){
+
+    public static void orbitAt(Camera camera, CameraTransformer cameraTransform, Point3D at, boolean animate) {
         double currentZ = camera.getTranslateZ();
-        
-        if(!animate) {
+
+        if (!animate) {
             cameraTransform.setPivot(at.getX(), at.getY(), at.getZ());
             cameraTransform.setTranslate(at.getX(), at.getY(), at.getZ());
             cameraTransform.setPivot(at.getX(), at.getY(), at.getZ());
@@ -220,14 +220,14 @@ public class LookAtTest extends Application {
             double time = 1.0;
 
             Timeline timeline = new Timeline(
-                new KeyFrame(Duration.seconds(time), 
+                new KeyFrame(Duration.seconds(time),
                     new KeyValue(cameraTransform.translateXProperty(), at.getX()),
                     new KeyValue(cameraTransform.translateYProperty(), at.getY()),
                     new KeyValue(cameraTransform.translateZProperty(), at.getZ())
                 )
-//                ,new KeyFrame(Duration.seconds(time), 
+//                ,new KeyFrame(Duration.seconds(time),
 //                    new KeyValue(camera.translateZProperty(), currentZ)
-//                )                    
+//                )
             );
             cameraTransform.setPivot(at.getX(), at.getY(), at.getZ());
             timeline.play();
