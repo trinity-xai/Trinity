@@ -15,22 +15,28 @@
  *******************************************************************************/
 package com.clust4j;
 
+import org.junit.jupiter.api.Test;
+
 import java.io.IOException;
 
-import org.junit.Test;
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class TestClust4j {
     final static Clust4j c4j = new Clust4j() {
         private static final long serialVersionUID = 1L;
     };
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void testSaveNPE() throws IOException {
-        c4j.saveObject(null);
+        assertThrows(NullPointerException.class, () -> {
+            c4j.saveObject(null);
+        });
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void testLoadNPE() throws IOException, ClassNotFoundException {
-        Clust4j.loadObject(null);
+        assertThrows(NullPointerException.class, () -> {
+            Clust4j.loadObject(null);
+        });
     }
 }

@@ -15,7 +15,36 @@
  *******************************************************************************/
 package com.clust4j.algo;
 
-import static org.junit.Assert.*;
+import com.clust4j.TestSuite;
+import com.clust4j.algo.HDBSCAN.CompQuadTup;
+import com.clust4j.algo.HDBSCAN.HDBSCAN_Algorithm;
+import com.clust4j.algo.HDBSCAN.LinkageTreeUtils;
+import com.clust4j.algo.HDBSCAN.TreeUnionFind;
+import com.clust4j.algo.HDBSCAN.UnionFind;
+import com.clust4j.algo.preprocess.StandardScaler;
+import com.clust4j.data.DataSet;
+import com.clust4j.except.ModelNotFitException;
+import com.clust4j.kernel.GaussianKernel;
+import com.clust4j.kernel.Kernel;
+import com.clust4j.kernel.KernelTestCases;
+import com.clust4j.metrics.pairwise.Distance;
+import com.clust4j.metrics.pairwise.DistanceMetric;
+import com.clust4j.metrics.pairwise.MinkowskiDistance;
+import com.clust4j.metrics.pairwise.Pairwise;
+import com.clust4j.metrics.pairwise.Similarity;
+import com.clust4j.utils.EntryPair;
+import com.clust4j.utils.MatUtils;
+import com.clust4j.utils.MatUtils.MatSeries;
+import com.clust4j.utils.MatrixFormatter;
+import com.clust4j.utils.QuadTup;
+import com.clust4j.utils.Series.Inequality;
+import com.clust4j.utils.VecUtils;
+import org.apache.commons.math3.exception.DimensionMismatchException;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.commons.math3.util.FastMath;
+import org.apache.commons.math3.util.Precision;
+import org.junit.jupiter.api.Test;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -28,39 +57,7 @@ import java.util.Comparator;
 import java.util.Map;
 import java.util.TreeMap;
 
-import org.apache.commons.math3.exception.DimensionMismatchException;
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.apache.commons.math3.linear.RealMatrix;
-import org.apache.commons.math3.util.FastMath;
-import org.apache.commons.math3.util.Precision;
-import org.junit.Test;
-
-import com.clust4j.TestSuite;
-import com.clust4j.algo.HDBSCAN.HDBSCAN_Algorithm;
-import com.clust4j.algo.HDBSCAN.CompQuadTup;
-import com.clust4j.algo.HDBSCANParameters;
-import com.clust4j.algo.HDBSCAN.LinkageTreeUtils;
-import com.clust4j.algo.HDBSCAN.TreeUnionFind;
-import com.clust4j.algo.HDBSCAN.UnionFind;
-import com.clust4j.algo.preprocess.StandardScaler;
-import com.clust4j.algo.Neighborhood;
-import com.clust4j.data.DataSet;
-import com.clust4j.except.ModelNotFitException;
-import com.clust4j.kernel.GaussianKernel;
-import com.clust4j.kernel.Kernel;
-import com.clust4j.kernel.KernelTestCases;
-import com.clust4j.metrics.pairwise.Distance;
-import com.clust4j.metrics.pairwise.DistanceMetric;
-import com.clust4j.metrics.pairwise.MinkowskiDistance;
-import com.clust4j.metrics.pairwise.Pairwise;
-import com.clust4j.metrics.pairwise.Similarity;
-import com.clust4j.utils.EntryPair;
-import com.clust4j.utils.Series.Inequality;
-import com.clust4j.utils.MatUtils;
-import com.clust4j.utils.VecUtils;
-import com.clust4j.utils.MatUtils.MatSeries;
-import com.clust4j.utils.MatrixFormatter;
-import com.clust4j.utils.QuadTup;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class HDBSCANTests implements ClusterTest, ClassifierTest, BaseModelTest {
     final Array2DRowRealMatrix DATA = TestSuite.IRIS_DATASET.getData();
@@ -527,9 +524,11 @@ public class HDBSCANTests implements ClusterTest, ClassifierTest, BaseModelTest 
         Files.delete(TestSuite.path);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testAlphaIAE() {
-        new HDBSCAN(TestSuite.getRandom(5, 5), new HDBSCANParameters().setAlpha(0.0));
+        assertThrows(IllegalArgumentException.class, () -> {
+            new HDBSCAN(TestSuite.getRandom(5, 5), new HDBSCANParameters().setAlpha(0.0));
+        });
     }
 
     @Test

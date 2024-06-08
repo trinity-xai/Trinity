@@ -16,11 +16,11 @@
 
 package com.clust4j.optimize;
 
-import static org.junit.Assert.*;
-
 import org.apache.commons.math3.util.FastMath;
 import org.apache.commons.math3.util.Precision;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TestOptimizer {
     public final static double min_val = 0.8;

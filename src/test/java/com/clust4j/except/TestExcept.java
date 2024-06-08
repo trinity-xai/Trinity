@@ -15,96 +15,132 @@
  *******************************************************************************/
 package com.clust4j.except;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
 
 public class TestExcept {
 
-    @Test(expected = IllegalClusterStateException.class)
+    @Test
     public void testICSE1() {
-        throw new IllegalClusterStateException();
+        assertThrows(IllegalClusterStateException.class, () -> {
+            throw new IllegalClusterStateException();
+        });
     }
 
-    @Test(expected = IllegalClusterStateException.class)
+    @Test
     public void testICSE2() {
-        throw new IllegalClusterStateException("asdf");
+        assertThrows(IllegalClusterStateException.class, () -> {
+            throw new IllegalClusterStateException("asdf");
+        });
     }
 
-    @Test(expected = IllegalClusterStateException.class)
+    @Test
     public void testICSE3() {
-        throw new IllegalClusterStateException(new Exception());
+        assertThrows(IllegalClusterStateException.class, () -> {
+            throw new IllegalClusterStateException(new Exception());
+        });
     }
 
-    @Test(expected = IllegalClusterStateException.class)
+    @Test
     public void testICSE4() {
-        throw new IllegalClusterStateException("asdf", new Exception());
+        assertThrows(IllegalClusterStateException.class, () -> {
+            throw new IllegalClusterStateException("asdf", new Exception());
+        });
     }
 
 
-    @Test(expected = MatrixParseException.class)
+    @Test
     public void testMPE1() {
-        throw new MatrixParseException();
+        assertThrows(MatrixParseException.class, () -> {
+            throw new MatrixParseException();
+        });
     }
 
-    @Test(expected = MatrixParseException.class)
+    @Test
     public void testMPE2() {
-        throw new MatrixParseException("asdf");
+        assertThrows(MatrixParseException.class, () -> {
+            throw new MatrixParseException("asdf");
+        });
     }
 
-    @Test(expected = MatrixParseException.class)
+    @Test
     public void testMPE3() {
-        throw new MatrixParseException(new Exception());
+        assertThrows(MatrixParseException.class, () -> {
+            throw new MatrixParseException(new Exception());
+        });
     }
 
-    @Test(expected = MatrixParseException.class)
+    @Test
     public void testMPE4() {
-        throw new MatrixParseException("asdf", new Exception());
+        assertThrows(MatrixParseException.class, () -> {
+            throw new MatrixParseException("asdf", new Exception());
+        });
     }
 
 
-    @Test(expected = ModelNotFitException.class)
+    @Test
     public void testMNFE1() {
-        throw new ModelNotFitException();
+        assertThrows(ModelNotFitException.class, () -> {
+            throw new ModelNotFitException();
+        });
     }
 
-    @Test(expected = ModelNotFitException.class)
+    @Test
     public void testMNFE2() {
-        throw new ModelNotFitException("asdf");
+        assertThrows(ModelNotFitException.class, () -> {
+            throw new ModelNotFitException("asdf");
+        });
     }
 
-    @Test(expected = ModelNotFitException.class)
+    @Test
     public void testMNFE3() {
-        throw new ModelNotFitException(new Exception());
+        assertThrows(ModelNotFitException.class, () -> {
+            throw new ModelNotFitException(new Exception());
+        });
     }
 
-    @Test(expected = ModelNotFitException.class)
+    @Test
     public void testMNFE4() {
-        throw new ModelNotFitException("asdf", new Exception());
+        assertThrows(ModelNotFitException.class, () -> {
+            throw new ModelNotFitException("asdf", new Exception());
+        });
     }
 
 
-    @Test(expected = NaNException.class)
+    @Test
     public void testNaN1() {
-        throw new NaNException();
+        assertThrows(NaNException.class, () -> {
+            throw new NaNException();
+        });
     }
 
-    @Test(expected = NaNException.class)
+    @Test
     public void testNaN2() {
-        throw new NaNException("asdf");
+        assertThrows(NaNException.class, () -> {
+            throw new NaNException("asdf");
+        });
     }
 
-    @Test(expected = NaNException.class)
+    @Test
     public void testNaN3() {
-        throw new NaNException(new Exception());
+        assertThrows(NaNException.class, () -> {
+            throw new NaNException(new Exception());
+        });
     }
 
-    @Test(expected = NaNException.class)
+    @Test
     public void testNaN4() {
-        throw new NaNException("asdf", new Exception());
+        assertThrows(NaNException.class, () -> {
+            throw new NaNException("asdf", new Exception());
+        });
     }
 
 
-    @Test(expected = NonUniformMatrixException.class)
+    @Test
     public void testNUME1() {
-        throw new NonUniformMatrixException(1, 2);
+        assertThrows(NonUniformMatrixException.class, () -> {
+            throw new NonUniformMatrixException(1, 2);
+        });
     }
 }

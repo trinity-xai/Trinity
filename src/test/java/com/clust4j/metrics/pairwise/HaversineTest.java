@@ -15,18 +15,17 @@
  *******************************************************************************/
 package com.clust4j.metrics.pairwise;
 
-import static org.junit.Assert.*;
-
-import org.apache.commons.math3.linear.RealMatrix;
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.junit.Test;
-
 import com.clust4j.algo.AbstractCentroidClusterer;
 import com.clust4j.algo.CentroidClustererParameters;
 import com.clust4j.algo.KMeansParameters;
 import com.clust4j.algo.KMedoidsParameters;
 import com.clust4j.algo.preprocess.StandardScaler;
 import com.clust4j.utils.VecUtils;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.RealMatrix;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class HaversineTest {
     final static double[][] coordinates = new double[][]{

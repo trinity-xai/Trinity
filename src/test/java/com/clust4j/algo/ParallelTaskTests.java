@@ -1,12 +1,12 @@
 package com.clust4j.algo;
 
-import static org.junit.Assert.*;
-
-import org.junit.Test;
-
 import com.clust4j.algo.ParallelChunkingTask.ChunkingStrategy;
 import com.clust4j.algo.ParallelChunkingTask.SimpleChunkingStrategy;
 import com.clust4j.utils.MatUtils;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ParallelTaskTests {
 

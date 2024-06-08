@@ -15,22 +15,8 @@
  *******************************************************************************/
 package com.clust4j.algo;
 
-import static org.junit.Assert.*;
-
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.util.Random;
-
-import org.apache.commons.math3.exception.DimensionMismatchException;
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.junit.Test;
-
 import com.clust4j.TestSuite;
 import com.clust4j.algo.BaseNeighborsModel.NeighborsAlgorithm;
-import com.clust4j.algo.Neighborhood;
-import com.clust4j.algo.RadiusNeighborsParameters;
 import com.clust4j.except.ModelNotFitException;
 import com.clust4j.kernel.GaussianKernel;
 import com.clust4j.metrics.pairwise.Distance;
@@ -38,6 +24,17 @@ import com.clust4j.metrics.pairwise.MinkowskiDistance;
 import com.clust4j.metrics.pairwise.Similarity;
 import com.clust4j.utils.MatUtils;
 import com.clust4j.utils.Series.Inequality;
+import org.apache.commons.math3.exception.DimensionMismatchException;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.junit.jupiter.api.Test;
+
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.Random;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class RadiusNeighborsTests implements ClusterTest, BaseModelTest {
     final static Array2DRowRealMatrix iris = TestSuite.IRIS_DATASET.getData();
@@ -65,22 +62,26 @@ public class RadiusNeighborsTests implements ClusterTest, BaseModelTest {
         }
     }
 
-    @Test(expected = DimensionMismatchException.class)
+    @Test
     public void testDimMM1() {
-        RadiusNeighbors n = new RadiusNeighbors(data, 1.0).fit();
-        n.getNeighbors(new Array2DRowRealMatrix(new double[][]{
-            new double[]{1, 2, 3, 4},
-            new double[]{5, 6, 7, 8}
-        }, false));
+        assertThrows(DimensionMismatchException.class, () -> {
+            RadiusNeighbors n = new RadiusNeighbors(data, 1.0).fit();
+            n.getNeighbors(new Array2DRowRealMatrix(new double[][]{
+                new double[]{1, 2, 3, 4},
+                new double[]{5, 6, 7, 8}
+            }, false));
+        });
     }
 
-    @Test(expected = DimensionMismatchException.class)
+    @Test
     public void testDimMM2() {
-        RadiusNeighbors n = new RadiusNeighbors(data, 1.0).fit();
-        n.getNeighbors(new Array2DRowRealMatrix(new double[][]{
-            new double[]{1, 2, 3, 4},
-            new double[]{5, 6, 7, 8}
-        }, false), 2.0);
+        assertThrows(DimensionMismatchException.class, () -> {
+            RadiusNeighbors n = new RadiusNeighbors(data, 1.0).fit();
+            n.getNeighbors(new Array2DRowRealMatrix(new double[][]{
+                new double[]{1, 2, 3, 4},
+                new double[]{5, 6, 7, 8}
+            }, false), 2.0);
+        });
     }
 
     @Test
@@ -166,16 +167,20 @@ public class RadiusNeighborsTests implements ClusterTest, BaseModelTest {
         }
     }
 
-    @Test(expected = ModelNotFitException.class)
+    @Test
     public void testNotFit1() {
-        RadiusNeighbors nn = new RadiusNeighbors(data, 1.0);
-        nn.getNeighbors();
+        assertThrows(ModelNotFitException.class, () -> {
+            RadiusNeighbors nn = new RadiusNeighbors(data, 1.0);
+            nn.getNeighbors();
+        });
     }
 
-    @Test(expected = ModelNotFitException.class)
+    @Test
     public void testNotFit2() {
-        RadiusNeighbors nn = new RadiusNeighbors(data, 1.0);
-        nn.getNeighbors(data);
+        assertThrows(ModelNotFitException.class, () -> {
+            RadiusNeighbors nn = new RadiusNeighbors(data, 1.0);
+            nn.getNeighbors(data);
+        });
     }
 
     @Test
@@ -192,35 +197,45 @@ public class RadiusNeighborsTests implements ClusterTest, BaseModelTest {
         assertTrue(nn.getRadius() == 1.0);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testIAEConstructor1() {
-        // Assert 0 is not permissible
-        new RadiusNeighbors(data, 0);
+        assertThrows(IllegalArgumentException.class, () -> {
+            // Assert 0 is not permissible
+            new RadiusNeighbors(data, 0);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testIAEConstructor2() {
-        new RadiusNeighbors(data, -1);
+        assertThrows(IllegalArgumentException.class, () -> {
+            new RadiusNeighbors(data, -1);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testIAEConstructor3() {
-        new RadiusNeighbors(data,
-            new RadiusNeighborsParameters(2.0)
-                .setLeafSize(-1));
+        assertThrows(IllegalArgumentException.class, () -> {
+            new RadiusNeighbors(data,
+                new RadiusNeighborsParameters(2.0)
+                    .setLeafSize(-1));
+        });
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void testNPEConstructor1() {
-        new RadiusNeighbors(data,
-            new RadiusNeighborsParameters(2)
-                .setAlgorithm(null));
+        assertThrows(NullPointerException.class, () -> {
+            new RadiusNeighbors(data,
+                new RadiusNeighborsParameters(2)
+                    .setAlgorithm(null));
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testIAEMethod1() {
-        RadiusNeighbors nn = new RadiusNeighbors(data, 2.0).fit();
-        nn.getNeighbors(data, -1.0);
+        assertThrows(IllegalArgumentException.class, () -> {
+            RadiusNeighbors nn = new RadiusNeighbors(data, 2.0).fit();
+            nn.getNeighbors(data, -1.0);
+        });
     }
 
     @Test

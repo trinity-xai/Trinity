@@ -15,25 +15,21 @@
  *******************************************************************************/
 package com.clust4j.algo;
 
-import static org.junit.Assert.*;
-import static com.clust4j.TestSuite.getRandom;
-
-import java.util.Random;
-
-import org.apache.commons.math3.linear.AbstractRealMatrix;
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.junit.Test;
-
 import com.clust4j.TestSuite;
-import com.clust4j.algo.BaseClustererParameters;
-import com.clust4j.algo.DBSCAN;
-import com.clust4j.algo.KMeansParameters;
 import com.clust4j.algo.preprocess.StandardScaler;
 import com.clust4j.except.NaNException;
 import com.clust4j.log.Log.Tag.Algo;
 import com.clust4j.metrics.pairwise.GeometricallySeparable;
 import com.clust4j.metrics.pairwise.Similarity;
 import com.clust4j.utils.MatrixFormatter;
+import org.apache.commons.math3.linear.AbstractRealMatrix;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.junit.jupiter.api.Test;
+
+import java.util.Random;
+
+import static com.clust4j.TestSuite.getRandom;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ClustTests {
 
@@ -69,16 +65,18 @@ public class ClustTests {
     }
 
 
-    @Test(expected = NaNException.class)
+    @Test
     public void testNanException() {
-        final double[][] train_array = new double[][]{
-            new double[]{0.0, 1.0, 2.0, 3.0},
-            new double[]{1.0, 2.3, Double.NaN, 4.0},
-            new double[]{9.06, 12.6, 6.5, 9.0}
-        };
+        assertThrows(NaNException.class, () -> {
+            final double[][] train_array = new double[][]{
+                new double[]{0.0, 1.0, 2.0, 3.0},
+                new double[]{1.0, 2.3, Double.NaN, 4.0},
+                new double[]{9.06, 12.6, 6.5, 9.0}
+            };
 
-        final Array2DRowRealMatrix mat = new Array2DRowRealMatrix(train_array);
-        new NearestNeighbors(mat, 1);
+            final Array2DRowRealMatrix mat = new Array2DRowRealMatrix(train_array);
+            new NearestNeighbors(mat, 1);
+        });
     }
 
     @Test
@@ -126,14 +124,16 @@ public class ClustTests {
         assertTrue(ref == a.data);
     }
 
-    @Test(expected = NaNException.class)
+    @Test
     public void ensureNanException() {
-        double[][] d = new double[][]{
-            new double[]{1, 2, 3},
-            new double[]{Double.NaN, 0, 1}
-        };
+        assertThrows(NaNException.class, () -> {
+            double[][] d = new double[][]{
+                new double[]{1, 2, 3},
+                new double[]{Double.NaN, 0, 1}
+            };
 
-        new KMeans(toMat(d), 2);
+            new KMeans(toMat(d), 2);
+        });
     }
 
     @Test

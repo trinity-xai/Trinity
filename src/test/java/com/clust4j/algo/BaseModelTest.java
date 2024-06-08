@@ -15,9 +15,9 @@
  *******************************************************************************/
 package com.clust4j.algo;
 
-import java.io.IOException;
+import org.junit.jupiter.api.Test;
 
-import org.junit.Test;
+import java.io.IOException;
 
 public interface BaseModelTest {
     @Test

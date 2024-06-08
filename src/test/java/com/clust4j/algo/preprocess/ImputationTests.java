@@ -15,26 +15,25 @@
  *******************************************************************************/
 package com.clust4j.algo.preprocess;
 
-import static org.junit.Assert.*;
-
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.junit.Test;
-
 import com.clust4j.GlobalState;
 import com.clust4j.algo.preprocess.impute.BootstrapImputation;
-import com.clust4j.algo.preprocess.impute.MeanImputation;
-import com.clust4j.algo.preprocess.impute.MedianImputation;
-import com.clust4j.algo.preprocess.impute.NearestNeighborImputation;
 import com.clust4j.algo.preprocess.impute.BootstrapImputation.BootstrapImputationPlanner;
 import com.clust4j.algo.preprocess.impute.CentralTendencyMethod;
+import com.clust4j.algo.preprocess.impute.MeanImputation;
 import com.clust4j.algo.preprocess.impute.MeanImputation.MeanImputationPlanner;
+import com.clust4j.algo.preprocess.impute.MedianImputation;
 import com.clust4j.algo.preprocess.impute.MedianImputation.MedianImputationPlanner;
+import com.clust4j.algo.preprocess.impute.NearestNeighborImputation;
 import com.clust4j.algo.preprocess.impute.NearestNeighborImputation.NNImputationPlanner;
 import com.clust4j.except.NaNException;
 import com.clust4j.sample.BootstrapTest;
 import com.clust4j.sample.Bootstrapper;
 import com.clust4j.utils.MatUtils;
 import com.clust4j.utils.MatrixFormatter;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class ImputationTests {
     final static MatrixFormatter formatter = new MatrixFormatter();
@@ -217,14 +216,18 @@ public class ImputationTests {
         new NearestNeighborImputation().transform(d);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testNullBootstrapPlanner() {
-        new BootstrapImputation(new BootstrapImputationPlanner().setBootstrapper(null));
+        assertThrows(IllegalArgumentException.class, () -> {
+            new BootstrapImputation(new BootstrapImputationPlanner().setBootstrapper(null));
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testBadBootstrapPlannerRatio() {
-        new BootstrapImputation(new BootstrapImputationPlanner().setRatio(0.0));
+        assertThrows(IllegalArgumentException.class, () -> {
+            new BootstrapImputation(new BootstrapImputationPlanner().setRatio(0.0));
+        });
     }
 
     @Test
@@ -232,14 +235,18 @@ public class ImputationTests {
         new BootstrapImputation().copy();
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testNNWithNullCent() {
-        new NearestNeighborImputation(new NNImputationPlanner().setMethodOfCentralTendency(null));
+        assertThrows(IllegalArgumentException.class, () -> {
+            new NearestNeighborImputation(new NNImputationPlanner().setMethodOfCentralTendency(null));
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testNNWithBadK() {
-        new NearestNeighborImputation(new NNImputationPlanner(0).setSeed(GlobalState.DEFAULT_RANDOM_STATE));
+        assertThrows(IllegalArgumentException.class, () -> {
+            new NearestNeighborImputation(new NNImputationPlanner(0).setSeed(GlobalState.DEFAULT_RANDOM_STATE));
+        });
     }
 
     @Test
@@ -266,40 +273,44 @@ public class ImputationTests {
         assertTrue(MatUtils.equalsExactly(nn.transform(a).getData(), nn2.transform(a).getData()));
     }
 
-    @Test(expected = NaNException.class)
+    @Test
     public void testNoComplete() {
-        final double[][] d = new double[][]{
-            new double[]{1, 1, Double.NaN},
-            new double[]{1, Double.NaN, 3},
-            new double[]{Double.NaN, 7.9, 6},
-            new double[]{9, 8, Double.NaN},
-            new double[]{Double.NaN, 2.9, 6.1},
-            new double[]{3, Double.NaN, 1},
-            new double[]{Double.NaN, 0, 0},
-            new double[]{2, 4, Double.NaN},
-            new double[]{1.4, Double.NaN, 6},
-        };
+        assertThrows(NaNException.class, () -> {
+            final double[][] d = new double[][]{
+                new double[]{1, 1, Double.NaN},
+                new double[]{1, Double.NaN, 3},
+                new double[]{Double.NaN, 7.9, 6},
+                new double[]{9, 8, Double.NaN},
+                new double[]{Double.NaN, 2.9, 6.1},
+                new double[]{3, Double.NaN, 1},
+                new double[]{Double.NaN, 0, 0},
+                new double[]{2, 4, Double.NaN},
+                new double[]{1.4, Double.NaN, 6},
+            };
 
-        NearestNeighborImputation nn = new NearestNeighborImputation(3);
-        nn.transform(d); // thrown here
+            NearestNeighborImputation nn = new NearestNeighborImputation(3);
+            nn.transform(d); // thrown here
+        }); // thrown here
     }
 
-    @Test(expected = NaNException.class)
+    @Test
     public void testCompletelyNaNRow() {
-        final double[][] d = new double[][]{
-            new double[]{1, 1, 1},
-            new double[]{1, 2, 3},
-            new double[]{5, 7.9, 6},
-            new double[]{9, 8, 7},
-            new double[]{4, 2.9, 6.1},
-            new double[]{Double.NaN, Double.NaN, Double.NaN},
-            new double[]{1, 0, 0},
-            new double[]{2, 4, 2},
-            new double[]{1.4, 2, 6},
-        };
+        assertThrows(NaNException.class, () -> {
+            final double[][] d = new double[][]{
+                new double[]{1, 1, 1},
+                new double[]{1, 2, 3},
+                new double[]{5, 7.9, 6},
+                new double[]{9, 8, 7},
+                new double[]{4, 2.9, 6.1},
+                new double[]{Double.NaN, Double.NaN, Double.NaN},
+                new double[]{1, 0, 0},
+                new double[]{2, 4, 2},
+                new double[]{1.4, 2, 6},
+            };
 
-        NearestNeighborImputation nn = new NearestNeighborImputation(1);
-        nn.transform(d); // thrown here
+            NearestNeighborImputation nn = new NearestNeighborImputation(1);
+            nn.transform(d); // thrown here
+        }); // thrown here
     }
 
     @Test

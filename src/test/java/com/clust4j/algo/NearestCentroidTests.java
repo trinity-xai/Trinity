@@ -15,21 +15,7 @@
  *******************************************************************************/
 package com.clust4j.algo;
 
-import static org.junit.Assert.*;
-
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Random;
-
-import org.apache.commons.math3.exception.DimensionMismatchException;
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.junit.Test;
-
 import com.clust4j.TestSuite;
-import com.clust4j.algo.NearestCentroidParameters;
 import com.clust4j.except.ModelNotFitException;
 import com.clust4j.kernel.Kernel;
 import com.clust4j.kernel.KernelTestCases;
@@ -38,8 +24,20 @@ import com.clust4j.metrics.pairwise.DistanceMetric;
 import com.clust4j.metrics.pairwise.MinkowskiDistance;
 import com.clust4j.metrics.pairwise.Similarity;
 import com.clust4j.utils.MatUtils;
-import com.clust4j.utils.VecUtils;
 import com.clust4j.utils.Series.Inequality;
+import com.clust4j.utils.VecUtils;
+import org.apache.commons.math3.exception.DimensionMismatchException;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.junit.jupiter.api.Test;
+
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Random;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class NearestCentroidTests implements ClassifierTest, ClusterTest, BaseModelTest {
     final Array2DRowRealMatrix data_ = TestSuite.IRIS_DATASET.getData();
@@ -89,9 +87,11 @@ public class NearestCentroidTests implements ClassifierTest, ClusterTest, BaseMo
         new NearestCentroid(data_, target_, new NearestCentroidParameters().setShrinkage(0.5)).fit().score();
     }
 
-    @Test(expected = DimensionMismatchException.class)
+    @Test
     public void testDME() {
-        new NearestCentroid(data_, new int[]{1, 2, 3});
+        assertThrows(DimensionMismatchException.class, () -> {
+            new NearestCentroid(data_, new int[]{1, 2, 3});
+        });
     }
 
     @Test
@@ -105,19 +105,25 @@ public class NearestCentroidTests implements ClassifierTest, ClusterTest, BaseMo
 		*/
     }
 
-    @Test(expected = ModelNotFitException.class)
+    @Test
     public void testMNFE1() {
-        new NearestCentroid(data_, target_).getCentroids();
+        assertThrows(ModelNotFitException.class, () -> {
+            new NearestCentroid(data_, target_).getCentroids();
+        });
     }
 
-    @Test(expected = ModelNotFitException.class)
+    @Test
     public void testMNFE2() {
-        new NearestCentroid(data_, target_).predict(data_);
+        assertThrows(ModelNotFitException.class, () -> {
+            new NearestCentroid(data_, target_).predict(data_);
+        });
     }
 
-    @Test(expected = ModelNotFitException.class)
+    @Test
     public void testMNFE3() {
-        new NearestCentroid(data_, target_).getLabels();
+        assertThrows(ModelNotFitException.class, () -> {
+            new NearestCentroid(data_, target_).getLabels();
+        });
     }
 
     @Test
@@ -257,27 +263,35 @@ public class NearestCentroidTests implements ClassifierTest, ClusterTest, BaseMo
         assertTrue(MatUtils.equalsExactly(shrunk, expected));
     }
 
-    @Test(expected = ModelNotFitException.class)
+    @Test
     public void testNCBasicException1() {
-        NearestCentroid n = new NearestCentroid(data, new int[]{0, 1, 1});
-        n.getCentroids();
+        assertThrows(ModelNotFitException.class, () -> {
+            NearestCentroid n = new NearestCentroid(data, new int[]{0, 1, 1});
+            n.getCentroids();
+        });
     }
 
-    @Test(expected = ModelNotFitException.class)
+    @Test
     public void testMNFE() {
-        NearestCentroid n = new NearestCentroid(data, new int[]{0, 1, 1});
-        n.predict(data);
+        assertThrows(ModelNotFitException.class, () -> {
+            NearestCentroid n = new NearestCentroid(data, new int[]{0, 1, 1});
+            n.predict(data);
+        });
     }
 
-    @Test(expected = ModelNotFitException.class)
+    @Test
     public void testNCBasicException2() {
-        NearestCentroid n = new NearestCentroid(data, new int[]{0, 1, 1});
-        n.getLabels();
+        assertThrows(ModelNotFitException.class, () -> {
+            NearestCentroid n = new NearestCentroid(data, new int[]{0, 1, 1});
+            n.getLabels();
+        });
     }
 
-    @Test(expected = DimensionMismatchException.class)
+    @Test
     public void testNCBasicDimMismatch() {
-        new NearestCentroid(data, new int[]{0, 1, 1, 2});
+        assertThrows(DimensionMismatchException.class, () -> {
+            new NearestCentroid(data, new int[]{0, 1, 1, 2});
+        });
     }
 
     @Test

@@ -15,24 +15,7 @@
  *******************************************************************************/
 package com.clust4j.algo;
 
-import static org.junit.Assert.*;
-
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Arrays;
-
-import static com.clust4j.TestSuite.getRandom;
-
-import org.apache.commons.math3.exception.DimensionMismatchException;
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.junit.Test;
-
 import com.clust4j.TestSuite;
-import com.clust4j.utils.SimpleHeap;
-import com.clust4j.algo.HierarchicalAgglomerativeParameters;
 import com.clust4j.algo.HierarchicalAgglomerative.EfficientDistanceMatrix;
 import com.clust4j.algo.HierarchicalAgglomerative.Linkage;
 import com.clust4j.except.ModelNotFitException;
@@ -44,8 +27,22 @@ import com.clust4j.metrics.pairwise.DistanceMetric;
 import com.clust4j.metrics.pairwise.MinkowskiDistance;
 import com.clust4j.utils.MatUtils;
 import com.clust4j.utils.MatrixFormatter;
-import com.clust4j.utils.VecUtils;
 import com.clust4j.utils.Series.Inequality;
+import com.clust4j.utils.SimpleHeap;
+import com.clust4j.utils.VecUtils;
+import org.apache.commons.math3.exception.DimensionMismatchException;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.junit.jupiter.api.Test;
+
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Arrays;
+
+import static com.clust4j.TestSuite.getRandom;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class HierarchicalTests implements ClusterTest, ClassifierTest, BaseModelTest {
     final Array2DRowRealMatrix data_ = TestSuite.IRIS_DATASET.getData();
@@ -210,9 +207,11 @@ public class HierarchicalTests implements ClusterTest, ClassifierTest, BaseModel
         new HierarchicalAgglomerativeParameters(Linkage.WARD).fitNewModel(data_);
     }
 
-    @Test(expected = ModelNotFitException.class)
+    @Test
     public void testNotFit1() {
-        new HierarchicalAgglomerative(data_).getLabels();
+        assertThrows(ModelNotFitException.class, () -> {
+            new HierarchicalAgglomerative(data_).getLabels();
+        });
     }
 
     @Test
@@ -238,13 +237,15 @@ public class HierarchicalTests implements ClusterTest, ClassifierTest, BaseModel
         Files.delete(TestSuite.path);
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void testHeapUtils() {
-        final ArrayList<Integer> a = new ArrayList<>();
-        final SimpleHeap<Integer> b = new SimpleHeap<>(a);
+        assertThrows(IllegalStateException.class, () -> {
+            final ArrayList<Integer> a = new ArrayList<>();
+            final SimpleHeap<Integer> b = new SimpleHeap<>(a);
 
-        assertNotNull(b); // Just to make sure we get here...
-        b.popInPlace(); // thrown here
+            assertNotNull(b); // Just to make sure we get here...
+            b.popInPlace(); // thrown here
+        }); // thrown here
     }
 
     @Test

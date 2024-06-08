@@ -15,11 +15,10 @@
  *******************************************************************************/
 package com.clust4j.utils;
 
-import static org.junit.Assert.*;
-
-import org.junit.Test;
-
 import com.clust4j.utils.TableFormatter.ColumnAlignment;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class FormatterTests {
     final MatrixFormatter formatter = new MatrixFormatter();
@@ -55,10 +54,12 @@ public class FormatterTests {
         formatter.format(d);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testMatrixEmptyRows() {
-        double[][] d = new double[][]{};
-        formatter.format(d);
+        assertThrows(IllegalArgumentException.class, () -> {
+            double[][] d = new double[][]{};
+            formatter.format(d);
+        });
     }
 
     @Test

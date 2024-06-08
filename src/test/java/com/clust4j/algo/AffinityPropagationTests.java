@@ -15,22 +15,8 @@
  *******************************************************************************/
 package com.clust4j.algo;
 
-import static org.junit.Assert.*;
-import static com.clust4j.TestSuite.getRandom;
-
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.util.Random;
-
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.apache.commons.math3.util.Precision;
-import org.junit.Test;
-
 import com.clust4j.GlobalState;
 import com.clust4j.TestSuite;
-import com.clust4j.algo.AffinityPropagationParameters;
 import com.clust4j.data.DataSet;
 import com.clust4j.except.ModelNotFitException;
 import com.clust4j.kernel.GaussianKernel;
@@ -42,8 +28,21 @@ import com.clust4j.metrics.pairwise.MinkowskiDistance;
 import com.clust4j.metrics.pairwise.Similarity;
 import com.clust4j.metrics.pairwise.SimilarityMetric;
 import com.clust4j.utils.MatUtils;
-import com.clust4j.utils.VecUtils;
 import com.clust4j.utils.Series.Inequality;
+import com.clust4j.utils.VecUtils;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.util.Precision;
+import org.junit.jupiter.api.Test;
+
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.Random;
+
+import static com.clust4j.TestSuite.getRandom;
+import static org.junit.jupiter.api.Assertions.assertFalse;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class AffinityPropagationTests implements ClusterTest, ClassifierTest, ConvergeableTest, BaseModelTest {
     final DataSet irisds = TestSuite.IRIS_DATASET.copy();

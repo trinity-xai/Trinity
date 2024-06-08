@@ -15,19 +15,6 @@
  *******************************************************************************/
 package com.clust4j.algo.pipeline;
 
-import static org.junit.Assert.*;
-
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.util.Arrays;
-
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.apache.commons.math3.linear.RealMatrix;
-import org.junit.Test;
-
 import com.clust4j.TestSuite;
 import com.clust4j.algo.BaseModelTest;
 import com.clust4j.algo.KMeans;
@@ -36,9 +23,9 @@ import com.clust4j.algo.KMedoids;
 import com.clust4j.algo.KMedoidsParameters;
 import com.clust4j.algo.NearestCentroid;
 import com.clust4j.algo.NearestCentroidParameters;
-import com.clust4j.algo.Neighborhood;
 import com.clust4j.algo.NearestNeighbors;
 import com.clust4j.algo.NearestNeighborsParameters;
+import com.clust4j.algo.Neighborhood;
 import com.clust4j.algo.preprocess.BoxCoxTransformer;
 import com.clust4j.algo.preprocess.MinMaxScaler;
 import com.clust4j.algo.preprocess.PCA;
@@ -55,8 +42,21 @@ import com.clust4j.kernel.GaussianKernel;
 import com.clust4j.metrics.scoring.SupervisedMetric;
 import com.clust4j.utils.MatUtils;
 import com.clust4j.utils.VecUtils;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.RealMatrix;
+import org.junit.jupiter.api.Test;
 
-import static com.clust4j.metrics.scoring.SupervisedMetric.*;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.Arrays;
+
+import static com.clust4j.metrics.scoring.SupervisedMetric.BINOMIAL_ACCURACY;
+import static com.clust4j.metrics.scoring.SupervisedMetric.INDEX_AFFINITY;
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class PipelineTest implements BaseModelTest {
 

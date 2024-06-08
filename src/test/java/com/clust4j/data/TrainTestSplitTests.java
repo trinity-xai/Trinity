@@ -1,14 +1,13 @@
 package com.clust4j.data;
 
-import static org.junit.Assert.*;
-
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.junit.Test;
-
 import com.clust4j.TestSuite;
 import com.clust4j.algo.KMeans;
 import com.clust4j.algo.KMeansParameters;
 import com.clust4j.metrics.scoring.SupervisedMetric;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TrainTestSplitTests {
 

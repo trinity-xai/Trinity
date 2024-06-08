@@ -15,11 +15,6 @@
  *******************************************************************************/
 package com.clust4j.metrics.pairwise;
 
-import static org.junit.Assert.*;
-
-import org.apache.commons.math3.util.Precision;
-import org.junit.Test;
-
 import com.clust4j.kernel.ANOVAKernel;
 import com.clust4j.kernel.CauchyKernel;
 import com.clust4j.kernel.CircularKernel;
@@ -42,6 +37,10 @@ import com.clust4j.kernel.SphericalKernel;
 import com.clust4j.kernel.SplineKernel;
 import com.clust4j.utils.MatUtils;
 import com.clust4j.utils.VecUtils;
+import org.apache.commons.math3.util.Precision;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class PairwiseTests {
 

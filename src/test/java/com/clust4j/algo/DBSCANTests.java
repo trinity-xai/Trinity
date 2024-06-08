@@ -15,23 +15,7 @@
  *******************************************************************************/
 package com.clust4j.algo;
 
-import static org.junit.Assert.*;
-
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.file.Files;
-
-import org.apache.commons.math3.exception.DimensionMismatchException;
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.apache.commons.math3.util.Precision;
-
-import static com.clust4j.TestSuite.getRandom;
-
-import org.junit.Test;
-
 import com.clust4j.TestSuite;
-import com.clust4j.algo.DBSCANParameters;
 import com.clust4j.algo.preprocess.StandardScaler;
 import com.clust4j.data.DataSet;
 import com.clust4j.except.ModelNotFitException;
@@ -43,8 +27,20 @@ import com.clust4j.metrics.pairwise.Distance;
 import com.clust4j.metrics.pairwise.DistanceMetric;
 import com.clust4j.metrics.pairwise.MinkowskiDistance;
 import com.clust4j.utils.MatUtils;
-import com.clust4j.utils.VecUtils;
 import com.clust4j.utils.Series.Inequality;
+import com.clust4j.utils.VecUtils;
+import org.apache.commons.math3.exception.DimensionMismatchException;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.util.Precision;
+import org.junit.jupiter.api.Test;
+
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+
+import static com.clust4j.TestSuite.getRandom;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class DBSCANTests implements ClusterTest, ClassifierTest, BaseModelTest {
     final DataSet irisds = TestSuite.IRIS_DATASET.copy();
@@ -199,10 +195,12 @@ public class DBSCANTests implements ClusterTest, ClassifierTest, BaseModelTest {
         Files.delete(TestSuite.path);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testMinPtsIAE() {
-        new DBSCAN(data,
-            new DBSCANParameters().setMinPts(0));
+        assertThrows(IllegalArgumentException.class, () -> {
+            new DBSCAN(data,
+                new DBSCANParameters().setMinPts(0));
+        });
     }
 
     @Test

@@ -15,8 +15,26 @@
  *******************************************************************************/
 package com.clust4j.algo;
 
-import static com.clust4j.TestSuite.getRandom;
-import static org.junit.Assert.*;
+import com.clust4j.GlobalState;
+import com.clust4j.TestSuite;
+import com.clust4j.algo.AbstractCentroidClusterer.InitializationStrategy;
+import com.clust4j.algo.preprocess.PreProcessor;
+import com.clust4j.algo.preprocess.StandardScaler;
+import com.clust4j.data.DataSet;
+import com.clust4j.except.ModelNotFitException;
+import com.clust4j.except.NaNException;
+import com.clust4j.kernel.GaussianKernel;
+import com.clust4j.kernel.Kernel;
+import com.clust4j.metrics.pairwise.Distance;
+import com.clust4j.metrics.pairwise.DistanceMetric;
+import com.clust4j.metrics.pairwise.GeometricallySeparable;
+import com.clust4j.utils.MatUtils;
+import com.clust4j.utils.Series.Inequality;
+import com.clust4j.utils.VecUtils;
+import org.apache.commons.math3.exception.DimensionMismatchException;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.RealMatrix;
+import org.junit.jupiter.api.Test;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -28,29 +46,8 @@ import java.util.HashSet;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 
-import org.apache.commons.math3.exception.DimensionMismatchException;
-import org.apache.commons.math3.linear.RealMatrix;
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.junit.Test;
-
-import com.clust4j.GlobalState;
-import com.clust4j.TestSuite;
-import com.clust4j.algo.AbstractCentroidClusterer.InitializationStrategy;
-import com.clust4j.algo.preprocess.PreProcessor;
-import com.clust4j.algo.preprocess.StandardScaler;
-import com.clust4j.algo.KMeansParameters;
-import com.clust4j.data.DataSet;
-import com.clust4j.except.ModelNotFitException;
-import com.clust4j.except.NaNException;
-import com.clust4j.kernel.GaussianKernel;
-import com.clust4j.kernel.Kernel;
-//import com.clust4j.kernel.KernelTestCases;
-import com.clust4j.metrics.pairwise.Distance;
-import com.clust4j.metrics.pairwise.DistanceMetric;
-import com.clust4j.metrics.pairwise.GeometricallySeparable;
-import com.clust4j.utils.MatUtils;
-import com.clust4j.utils.VecUtils;
-import com.clust4j.utils.Series.Inequality;
+import static com.clust4j.TestSuite.getRandom;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class KMeansTests implements ClassifierTest, ClusterTest, ConvergeableTest, BaseModelTest {
     final Array2DRowRealMatrix data_ = TestSuite.IRIS_DATASET.getData();
@@ -405,14 +402,18 @@ public class KMeansTests implements ClassifierTest, ClusterTest, ConvergeableTes
 
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testPartitionalClass1() {
-        new KMeans(data_, 0);
+        assertThrows(IllegalArgumentException.class, () -> {
+            new KMeans(data_, 0);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testPartitionalClass2() {
-        new KMeans(data_, 151);
+        assertThrows(IllegalArgumentException.class, () -> {
+            new KMeans(data_, 151);
+        });
     }
 
     @Test
@@ -556,21 +557,27 @@ public class KMeansTests implements ClassifierTest, ClusterTest, ConvergeableTes
         System.out.println();
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testTooLowK() {
-        int k = 0;
-        new KMeans(data_, k);
+        assertThrows(IllegalArgumentException.class, () -> {
+            int k = 0;
+            new KMeans(data_, k);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testTooHighK() {
-        int k = 155;
-        new KMeans(data_, k);
+        assertThrows(IllegalArgumentException.class, () -> {
+            int k = 155;
+            new KMeans(data_, k);
+        });
     }
 
-    @Test(expected = ModelNotFitException.class)
+    @Test
     public void testNotFit() {
-        new KMeans(data_, 3).getLabels();
+        assertThrows(ModelNotFitException.class, () -> {
+            new KMeans(data_, 3).getLabels();
+        });
     }
 
     @Test

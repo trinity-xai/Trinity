@@ -15,7 +15,10 @@
  *******************************************************************************/
 package com.clust4j.data;
 
-import static org.junit.Assert.*;
+import com.clust4j.data.BufferedMatrixReader.MatrixReaderSetup;
+import com.clust4j.except.MatrixParseException;
+import com.clust4j.utils.MatUtils;
+import org.junit.jupiter.api.Test;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -27,11 +30,7 @@ import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.Arrays;
 
-import org.junit.Test;
-
-import com.clust4j.data.BufferedMatrixReader.MatrixReaderSetup;
-import com.clust4j.except.MatrixParseException;
-import com.clust4j.utils.MatUtils;
+import static org.junit.jupiter.api.Assertions.*;
 
 
 public class BufferedMatrixReaderTests {

@@ -15,21 +15,20 @@
  *******************************************************************************/
 package com.clust4j.utils;
 
-import static org.junit.Assert.*;
+import com.clust4j.GlobalState;
+import com.clust4j.utils.Series.Inequality;
+import com.clust4j.utils.VecUtils.DoubleSeries;
+import com.clust4j.utils.VecUtils.VecSeries;
+import org.apache.commons.math3.exception.DimensionMismatchException;
+import org.apache.commons.math3.util.FastMath;
+import org.apache.commons.math3.util.Precision;
+import org.junit.jupiter.api.Test;
 
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Random;
 
-import org.apache.commons.math3.exception.DimensionMismatchException;
-import org.apache.commons.math3.util.FastMath;
-import org.apache.commons.math3.util.Precision;
-import org.junit.Test;
-
-import com.clust4j.GlobalState;
-import com.clust4j.utils.Series.Inequality;
-import com.clust4j.utils.VecUtils.DoubleSeries;
-import com.clust4j.utils.VecUtils.VecSeries;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class VectorTests {
     final static double[] empty = new double[]{};
@@ -185,10 +184,12 @@ public class VectorTests {
         assertTrue(VecUtils.median(b) == 3.5);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testMedianExcept() {
-        final double[] a = empty;
-        VecUtils.median(a);
+        assertThrows(IllegalArgumentException.class, () -> {
+            final double[] a = empty;
+            VecUtils.median(a);
+        });
     }
 
     @Test
@@ -204,24 +205,30 @@ public class VectorTests {
         assertTrue(VecUtils.argMin(bd) == 0);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testArgs2() {
-        final double[] a = empty;
-        VecUtils.argMax(a);
+        assertThrows(IllegalArgumentException.class, () -> {
+            final double[] a = empty;
+            VecUtils.argMax(a);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testArangeInt() {
-        assertTrue(VecUtils.equalsExactly(VecUtils.arange(10), new int[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}));
-        assertTrue(VecUtils.equalsExactly(VecUtils.arange(10, 0), new int[]{10, 9, 8, 7, 6, 5, 4, 3, 2, 1}));
-        assertTrue(VecUtils.equalsExactly(VecUtils.arange(10, 0, -2), new int[]{10, 8, 6, 4, 2}));
+        assertThrows(IllegalArgumentException.class, () -> {
+            assertTrue(VecUtils.equalsExactly(VecUtils.arange(10), new int[]{0, 1, 2, 3, 4, 5, 6, 7, 8, 9}));
+            assertTrue(VecUtils.equalsExactly(VecUtils.arange(10, 0), new int[]{10, 9, 8, 7, 6, 5, 4, 3, 2, 1}));
+            assertTrue(VecUtils.equalsExactly(VecUtils.arange(10, 0, -2), new int[]{10, 8, 6, 4, 2}));
 
-        System.out.println(Arrays.toString(VecUtils.arange(10, 0, -3)));
+            System.out.println(Arrays.toString(VecUtils.arange(10, 0, -3)));
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testArange2() {
-        VecUtils.arange(10, 0, -3);
+        assertThrows(IllegalArgumentException.class, () -> {
+            VecUtils.arange(10, 0, -3);
+        });
     }
 
     @Test

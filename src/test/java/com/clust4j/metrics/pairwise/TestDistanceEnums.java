@@ -15,13 +15,10 @@
  *******************************************************************************/
 package com.clust4j.metrics.pairwise;
 
-import static org.junit.Assert.*;
-
-import org.junit.Test;
 import org.apache.commons.math3.exception.DimensionMismatchException;
+import org.junit.jupiter.api.Test;
 
-import com.clust4j.metrics.pairwise.Distance;
-import com.clust4j.metrics.pairwise.MinkowskiDistance;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class TestDistanceEnums {
 
@@ -55,32 +52,40 @@ public class TestDistanceEnums {
 
     }
 
-    @Test(expected = DimensionMismatchException.class)
+    @Test
     public void testEuclideanFail1() {
-        final double[] a = new double[]{0d, 0d, 0d};
-        final double[] b = new double[]{3d, 4d};
-        Distance.EUCLIDEAN.getDistance(a, b);
+        assertThrows(DimensionMismatchException.class, () -> {
+            final double[] a = new double[]{0d, 0d, 0d};
+            final double[] b = new double[]{3d, 4d};
+            Distance.EUCLIDEAN.getDistance(a, b);
+        });
     }
 
-    @Test(expected = DimensionMismatchException.class)
+    @Test
     public void testManhattanFail1() {
-        final double[] a = new double[]{0d, 0d, 0d};
-        final double[] b = new double[]{3d, 4d};
-        Distance.MANHATTAN.getDistance(a, b);
+        assertThrows(DimensionMismatchException.class, () -> {
+            final double[] a = new double[]{0d, 0d, 0d};
+            final double[] b = new double[]{3d, 4d};
+            Distance.MANHATTAN.getDistance(a, b);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testEuclideanFail2() {
-        final double[] a = new double[0];
-        final double[] b = new double[0];
-        Distance.EUCLIDEAN.getDistance(a, b);
+        assertThrows(IllegalArgumentException.class, () -> {
+            final double[] a = new double[0];
+            final double[] b = new double[0];
+            Distance.EUCLIDEAN.getDistance(a, b);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testManhattanFail2() {
-        final double[] a = new double[]{};
-        final double[] b = new double[]{};
-        Distance.MANHATTAN.getDistance(a, b);
+        assertThrows(IllegalArgumentException.class, () -> {
+            final double[] a = new double[]{};
+            final double[] b = new double[]{};
+            Distance.MANHATTAN.getDistance(a, b);
+        });
     }
 
     @Test
@@ -102,11 +107,13 @@ public class TestDistanceEnums {
         assertTrue(haversine.getDistance(a, b) == 9.304482988008138);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testHaversineFail() {
-        final double[] a = new double[]{47.6788206, -122.3271205, 0d};
-        final double[] b = new double[]{47.6788206, -122.5271205, 1d};
-        Distance.HAVERSINE.KM.getDistance(a, b);
+        assertThrows(IllegalArgumentException.class, () -> {
+            final double[] a = new double[]{47.6788206, -122.3271205, 0d};
+            final double[] b = new double[]{47.6788206, -122.5271205, 1d};
+            Distance.HAVERSINE.KM.getDistance(a, b);
+        });
     }
 
     @Test

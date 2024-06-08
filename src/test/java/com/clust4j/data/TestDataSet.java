@@ -15,20 +15,6 @@
  *******************************************************************************/
 package com.clust4j.data;
 
-import static org.junit.Assert.*;
-
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.FileSystems;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.text.DecimalFormat;
-
-import org.apache.commons.math3.exception.DimensionMismatchException;
-import org.apache.commons.math3.linear.RealMatrix;
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.junit.Test;
-
 import com.clust4j.TestSuite;
 import com.clust4j.algo.AbstractClusterer;
 import com.clust4j.algo.AffinityPropagation;
@@ -50,6 +36,19 @@ import com.clust4j.algo.preprocess.StandardScaler;
 import com.clust4j.utils.MatUtils;
 import com.clust4j.utils.MatrixFormatter;
 import com.clust4j.utils.VecUtils;
+import org.apache.commons.math3.exception.DimensionMismatchException;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.RealMatrix;
+import org.junit.jupiter.api.Test;
+
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.FileSystems;
+import java.nio.file.Files;
+import java.nio.file.Path;
+import java.text.DecimalFormat;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class TestDataSet
     implements java.io.Serializable {
@@ -64,32 +63,34 @@ public class TestDataSet
     private final static DataSet WINE = ExampleDataSets.loadWine();
     private final static DataSet BC = ExampleDataSets.loadBreastCancer();
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void testIris() {
-        final int len = IRIS.getDataRef().getRowDimension();
-        DataSet shuffled = IRIS.shuffle();
-        assertTrue(shuffled.getDataRef().getRowDimension() == len);
+        assertThrows(IllegalStateException.class, () -> {
+            final int len = IRIS.getDataRef().getRowDimension();
+            DataSet shuffled = IRIS.shuffle();
+            assertTrue(shuffled.getDataRef().getRowDimension() == len);
 
-        // Test that no reference carried over...
-        shuffled.getHeaderRef()[0] = "TESTING!";
-        assertTrue(!IRIS.getHeaderRef()[0].equals(shuffled.getHeaderRef()[0]));
+            // Test that no reference carried over...
+            shuffled.getHeaderRef()[0] = "TESTING!";
+            assertTrue(!IRIS.getHeaderRef()[0].equals(shuffled.getHeaderRef()[0]));
 
-        shuffled.setColumn("TESTING!",
-            VecUtils.rep(Double.POSITIVE_INFINITY, shuffled.numRows()));
-        assertTrue(VecUtils.unique(shuffled.getColumn("TESTING!")).size() == 1);
+            shuffled.setColumn("TESTING!",
+                VecUtils.rep(Double.POSITIVE_INFINITY, shuffled.numRows()));
+            assertTrue(VecUtils.unique(shuffled.getColumn("TESTING!")).size() == 1);
 
-        // Test piecewise col drops
-        shuffled.dropCol("TESTING!");
-        assertTrue(shuffled.numCols() == 3);
+            // Test piecewise col drops
+            shuffled.dropCol("TESTING!");
+            assertTrue(shuffled.numCols() == 3);
 
-        shuffled.dropCol("Sepal Width");
-        assertTrue(shuffled.numCols() == 2);
+            shuffled.dropCol("Sepal Width");
+            assertTrue(shuffled.numCols() == 2);
 
-        shuffled.dropCol("Petal Length");
-        assertTrue(shuffled.numCols() == 1);
+            shuffled.dropCol("Petal Length");
+            assertTrue(shuffled.numCols() == 1);
 
-        // Prepare for the throw...
-        shuffled.dropCol("Petal Width"); // BOOM!
+            // Prepare for the throw...
+            shuffled.dropCol("Petal Width"); // BOOM!
+        }); // BOOM!
     }
 
 
@@ -513,37 +514,47 @@ public class TestDataSet
         new DataSet(MatUtils.randomGaussian(5, 2), new int[]{1, 2, 3, 4, 5}, null, null);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testNullData() {
-        double[][] d = null;
-        new DataSet(d, new int[]{1, 2, 3, 4, 5});
+        assertThrows(IllegalArgumentException.class, () -> {
+            double[][] d = null;
+            new DataSet(d, new int[]{1, 2, 3, 4, 5});
+        });
     }
 
-    @Test(expected = DimensionMismatchException.class)
+    @Test
     public void testLabDim() {
-        new DataSet(MatUtils.randomGaussian(5, 2), new int[]{1, 2});
+        assertThrows(DimensionMismatchException.class, () -> {
+            new DataSet(MatUtils.randomGaussian(5, 2), new int[]{1, 2});
+        });
     }
 
-    @Test(expected = DimensionMismatchException.class)
+    @Test
     public void testHeaderDim() {
-        new DataSet(MatUtils.randomGaussian(5, 2), new int[]{1, 2, 3, 4, 5}, new String[]{"s"});
+        assertThrows(DimensionMismatchException.class, () -> {
+            new DataSet(MatUtils.randomGaussian(5, 2), new int[]{1, 2, 3, 4, 5}, new String[]{"s"});
+        });
     }
 
-    @Test(expected = DimensionMismatchException.class)
+    @Test
     public void testColAddDim() {
-        DataSet d = new DataSet(MatUtils.randomGaussian(5, 2), new int[]{1, 2, 3, 4, 5});
-        d.addColumn(new double[]{1});
+        assertThrows(DimensionMismatchException.class, () -> {
+            DataSet d = new DataSet(MatUtils.randomGaussian(5, 2), new int[]{1, 2, 3, 4, 5});
+            d.addColumn(new double[]{1});
+        });
     }
 
-    @Test(expected = DimensionMismatchException.class)
+    @Test
     public void testColsAddDim() {
-        DataSet d = new DataSet(MatUtils.randomGaussian(5, 2), new int[]{1, 2, 3, 4, 5});
-        double[][] dub = new double[][]{
-            new double[]{1, 2},
-            new double[]{1, 2}
-        };
+        assertThrows(DimensionMismatchException.class, () -> {
+            DataSet d = new DataSet(MatUtils.randomGaussian(5, 2), new int[]{1, 2, 3, 4, 5});
+            double[][] dub = new double[][]{
+                new double[]{1, 2},
+                new double[]{1, 2}
+            };
 
-        d.addColumns(dub);
+            d.addColumns(dub);
+        });
     }
 
     @Test
@@ -554,18 +565,22 @@ public class TestDataSet
         assertTrue(d.numCols() == 4);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testBadDrop() {
-        DataSet d = new DataSet(MatUtils.randomGaussian(5, 2), new int[]{1, 2, 3, 4, 5});
-        d.dropCol(-1);
+        assertThrows(IllegalArgumentException.class, () -> {
+            DataSet d = new DataSet(MatUtils.randomGaussian(5, 2), new int[]{1, 2, 3, 4, 5});
+            d.dropCol(-1);
+        });
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void testBadDrop2() {
-        DataSet d = new DataSet(MatUtils.randomGaussian(5, 2), new int[]{1, 2, 3, 4, 5});
-        while (d.numCols() > 1)
+        assertThrows(IllegalStateException.class, () -> {
+            DataSet d = new DataSet(MatUtils.randomGaussian(5, 2), new int[]{1, 2, 3, 4, 5});
+            while (d.numCols() > 1)
+                d.dropCol(0);
             d.dropCol(0);
-        d.dropCol(0);
+        });
     }
 
     @Test
@@ -582,9 +597,11 @@ public class TestDataSet
         assertFalse(iris.equals(new Object()));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testMissingHeader() {
-        IRIS.getColumn("missing column");
+        assertThrows(IllegalArgumentException.class, () -> {
+            IRIS.getColumn("missing column");
+        });
     }
 
     @Test
@@ -592,14 +609,18 @@ public class TestDataSet
         IRIS.hashCode(); // no test... just ensure not null
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testSetColOOB() {
-        IRIS.setColumn(9, new double[]{});
+        assertThrows(IllegalArgumentException.class, () -> {
+            IRIS.setColumn(9, new double[]{});
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testSetRowOOB() {
-        IRIS.setRow(-1, new double[]{});
+        assertThrows(IllegalArgumentException.class, () -> {
+            IRIS.setRow(-1, new double[]{});
+        });
     }
 
     @Test
@@ -624,16 +645,20 @@ public class TestDataSet
         i.stdOut();
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testSortEx() {
-        DataSet i = IRIS.copy();
-        i.sortAscInPlace(-1);
+        assertThrows(IllegalArgumentException.class, () -> {
+            DataSet i = IRIS.copy();
+            i.sortAscInPlace(-1);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testSortDescEx() {
-        DataSet i = IRIS.copy();
-        i.sortDescInPlace(6);
+        assertThrows(IllegalArgumentException.class, () -> {
+            DataSet i = IRIS.copy();
+            i.sortDescInPlace(6);
+        });
     }
 
     @Test
@@ -649,10 +674,12 @@ public class TestDataSet
         i.setLabels(new int[150]);
     }
 
-    @Test(expected = DimensionMismatchException.class)
+    @Test
     public void testSetLabel3() {
-        DataSet i = IRIS.copy();
-        i.setLabels(new int[15]);
+        assertThrows(DimensionMismatchException.class, () -> {
+            DataSet i = IRIS.copy();
+            i.setLabels(new int[15]);
+        });
     }
 
     @Test

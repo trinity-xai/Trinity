@@ -50,6 +50,18 @@ module edu.jhuapl.trinity {
     opens edu.jhuapl.trinity.javafx.javafx3d.particle to java.base;
     exports com.clust4j;
     exports com.clust4j.algo;
+    exports com.clust4j.algo.pipeline;
+    exports com.clust4j.algo.preprocess;
+    exports com.clust4j.data;
+    exports com.clust4j.except;
+    exports com.clust4j.kernel;
+    exports com.clust4j.log;
+    exports com.clust4j.metrics.pairwise;
+    exports com.clust4j.metrics.scoring;
+    exports com.clust4j.optimize;
+    exports com.clust4j.sample;
+    exports com.clust4j.utils;
+    exports com.clust4j.utils.parallel;
     exports edu.jhuapl.trinity;
     exports edu.jhuapl.trinity.data;
     exports edu.jhuapl.trinity.data.messages;

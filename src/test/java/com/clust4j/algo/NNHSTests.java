@@ -15,38 +15,34 @@
  *******************************************************************************/
 package com.clust4j.algo;
 
-import static org.junit.Assert.*;
-
-import java.util.ArrayList;
-import java.util.Random;
-
-import org.apache.commons.lang3.tuple.Triple;
-import org.apache.commons.math3.exception.DimensionMismatchException;
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.apache.commons.math3.util.FastMath;
-import org.apache.commons.math3.util.Precision;
-import org.junit.Test;
-
 import com.clust4j.TestSuite;
-import com.clust4j.algo.BallTree;
-import com.clust4j.algo.KDTree;
 import com.clust4j.algo.NearestNeighborHeapSearch.Heap;
-import com.clust4j.algo.NearestNeighborHeapSearch.NodeHeap.NodeHeapData;
 import com.clust4j.algo.NearestNeighborHeapSearch.MutableDouble;
 import com.clust4j.algo.NearestNeighborHeapSearch.NeighborsHeap;
 import com.clust4j.algo.NearestNeighborHeapSearch.NodeData;
 import com.clust4j.algo.NearestNeighborHeapSearch.NodeHeap;
+import com.clust4j.algo.NearestNeighborHeapSearch.NodeHeap.NodeHeapData;
 import com.clust4j.algo.NearestNeighborHeapSearch.PartialKernelDensity;
-import com.clust4j.algo.Neighborhood;
 import com.clust4j.log.Loggable;
 import com.clust4j.metrics.pairwise.Distance;
 import com.clust4j.metrics.pairwise.DistanceMetric;
 import com.clust4j.utils.MatUtils;
 import com.clust4j.utils.QuadTup;
-import com.clust4j.utils.VecUtils;
 import com.clust4j.utils.Series.Inequality;
+import com.clust4j.utils.VecUtils;
 import com.clust4j.utils.VecUtils.DoubleSeries;
 import com.clust4j.utils.VecUtils.IntSeries;
+import org.apache.commons.lang3.tuple.Triple;
+import org.apache.commons.math3.exception.DimensionMismatchException;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.util.FastMath;
+import org.apache.commons.math3.util.Precision;
+import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+import java.util.Random;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class NNHSTests {
     final public static Array2DRowRealMatrix IRIS = TestSuite.IRIS_DATASET.getData();
@@ -604,10 +600,12 @@ public class NNHSTests {
         ball = new BallTree(A, 5, Distance.EUCLIDEAN, null);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testConstIAE1() {
-        Array2DRowRealMatrix A = new Array2DRowRealMatrix(a);
-        new KDTree(A, 0);
+        assertThrows(IllegalArgumentException.class, () -> {
+            Array2DRowRealMatrix A = new Array2DRowRealMatrix(a);
+            new KDTree(A, 0);
+        });
     }
 
     // Create anonymous DistanceMetric class to test
@@ -752,17 +750,19 @@ public class NNHSTests {
         assertTrue(VecUtils.equalsExactly(ex, new int[]{1, 0, 2}));
     }
 
-    @Test(expected = IllegalStateException.class)
+    @Test
     public void testNodeHeap1() {
-        NodeHeap nh1 = new NodeHeap(0);
-        assertTrue(nh1.data.length == 1); // picks max (size, 1)
-        nh1 = new NodeHeap(2);
-        assertTrue(nh1.data.length == 2);
-        assertTrue(nh1.n == 0);
-        nh1.clear();
-        assertTrue(nh1.n == 0);
-        assertTrue(null == nh1.peek());
-        nh1.pop(); // throws the exception on empty heap
+        assertThrows(IllegalStateException.class, () -> {
+            NodeHeap nh1 = new NodeHeap(0);
+            assertTrue(nh1.data.length == 1); // picks max (size, 1)
+            nh1 = new NodeHeap(2);
+            assertTrue(nh1.data.length == 2);
+            assertTrue(nh1.n == 0);
+            nh1.clear();
+            assertTrue(nh1.n == 0);
+            assertTrue(null == nh1.peek());
+            nh1.pop(); // throws the exception on empty heap
+        }); // throws the exception on empty heap
     }
 
     @Test
@@ -1170,10 +1170,12 @@ public class NNHSTests {
         nh.toString(); // Ensure does not throw NPE
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void nodeHeapResizeUnder1() {
-        NodeHeap nh = new NodeHeap(10);
-        nh.resize(0); // Here is the exception
+        assertThrows(IllegalArgumentException.class, () -> {
+            NodeHeap nh = new NodeHeap(10);
+            nh.resize(0); // Here is the exception
+        }); // Here is the exception
     }
 
 
@@ -1630,22 +1632,28 @@ public class NNHSTests {
         assertTrue(VecUtils.equalsExactly(corr, VecUtils.repInt(0, X.length)));
     }
 
-    @Test(expected = DimensionMismatchException.class)
+    @Test
     public void testTwoPointCorrelationExcept1() {
-        NearestNeighborHeapSearch tree = new KDTree(IRIS);
-        tree.twoPointCorrelation(new double[][]{new double[]{1, 2}}, new double[]{1.5});
+        assertThrows(DimensionMismatchException.class, () -> {
+            NearestNeighborHeapSearch tree = new KDTree(IRIS);
+            tree.twoPointCorrelation(new double[][]{new double[]{1, 2}}, new double[]{1.5});
+        });
     }
 
-    @Test(expected = DimensionMismatchException.class)
+    @Test
     public void testTwoPointCorrelationExcept2() {
-        NearestNeighborHeapSearch tree = new KDTree(IRIS);
-        tree.twoPointCorrelation(new double[][]{new double[]{1, 2}}, 1.5);
+        assertThrows(DimensionMismatchException.class, () -> {
+            NearestNeighborHeapSearch tree = new KDTree(IRIS);
+            tree.twoPointCorrelation(new double[][]{new double[]{1, 2}}, 1.5);
+        });
     }
 
-    @Test(expected = DimensionMismatchException.class)
+    @Test
     public void radiusQueryTestDimException() {
-        NearestNeighborHeapSearch tree = new KDTree(IRIS);
-        tree.queryRadius(new double[][]{new double[]{1, 2}}, 150.0, true);
+        assertThrows(DimensionMismatchException.class, () -> {
+            NearestNeighborHeapSearch tree = new KDTree(IRIS);
+            tree.queryRadius(new double[][]{new double[]{1, 2}}, 150.0, true);
+        });
     }
 
     @Test
@@ -1654,30 +1662,38 @@ public class NNHSTests {
         tree.queryRadius(new double[][]{new double[]{2.5, 2.5, 2.5, 2.5}}, 150.0, true);
     }
 
-    @Test(expected = DimensionMismatchException.class)
+    @Test
     public void radiusQueryTestMPrimeDimMismatch1() {
-        NearestNeighborHeapSearch tree = new KDTree(IRIS);
-        tree.queryRadius(new double[][]{new double[]{2.5, 2.5, 2.5, 2.5}},
-            new double[]{1, 2, 3, 4, 5}, true);
+        assertThrows(DimensionMismatchException.class, () -> {
+            NearestNeighborHeapSearch tree = new KDTree(IRIS);
+            tree.queryRadius(new double[][]{new double[]{2.5, 2.5, 2.5, 2.5}},
+                new double[]{1, 2, 3, 4, 5}, true);
+        });
     }
 
-    @Test(expected = DimensionMismatchException.class)
+    @Test
     public void radiusQueryTestNDimMismatch2() {
-        NearestNeighborHeapSearch tree = new KDTree(IRIS);
-        tree.queryRadius(new double[][]{new double[]{2.5, 2.5, 2.5}},
-            new double[]{5}, true);
+        assertThrows(DimensionMismatchException.class, () -> {
+            NearestNeighborHeapSearch tree = new KDTree(IRIS);
+            tree.queryRadius(new double[][]{new double[]{2.5, 2.5, 2.5}},
+                new double[]{5}, true);
+        });
     }
 
-    @Test(expected = DimensionMismatchException.class)
+    @Test
     public void queryNDimMismatch1() {
-        NearestNeighborHeapSearch tree = new KDTree(IRIS);
-        tree.query(new double[][]{new double[]{1, 2}}, 2, true, true);
+        assertThrows(DimensionMismatchException.class, () -> {
+            NearestNeighborHeapSearch tree = new KDTree(IRIS);
+            tree.query(new double[][]{new double[]{1, 2}}, 2, true, true);
+        });
     }
 
-    @Test(expected = DimensionMismatchException.class)
+    @Test
     public void testKernelDimMismatch() {
-        NearestNeighborHeapSearch tree = new KDTree(IRIS);
-        tree.kernelDensity(new double[][]{new double[]{1.0}}, 1.0, PartialKernelDensity.LOG_COSINE, 0.0, 1e-8, false);
+        assertThrows(DimensionMismatchException.class, () -> {
+            NearestNeighborHeapSearch tree = new KDTree(IRIS);
+            tree.kernelDensity(new double[][]{new double[]{1.0}}, 1.0, PartialKernelDensity.LOG_COSINE, 0.0, 1e-8, false);
+        });
     }
 
     @Test

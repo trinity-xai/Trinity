@@ -15,18 +15,18 @@
  *******************************************************************************/
 package com.clust4j.algo;
 
-import static org.junit.Assert.*;
+import com.clust4j.TestSuite;
+import com.clust4j.except.ModelNotFitException;
+import com.clust4j.utils.VecUtils;
+import org.junit.jupiter.api.Test;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.nio.file.Files;
 
-import org.junit.Test;
-
-import com.clust4j.TestSuite;
-import com.clust4j.except.ModelNotFitException;
-import com.clust4j.utils.VecUtils;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TestLabelEncoder implements BaseModelTest {
 
@@ -57,73 +57,93 @@ public class TestLabelEncoder implements BaseModelTest {
         assertTrue(VecUtils.equalsExactly(le.transform(le.getRawLabels()), expectedEncodings));
     }
 
-    @Test(expected = ModelNotFitException.class)
+    @Test
     public void test2() {
-        int[] labels = new int[]{1, 2, 2, 6};
-        LabelEncoder le = new LabelEncoder(labels);
-        le.encodeOrNull(1);
+        assertThrows(ModelNotFitException.class, () -> {
+            int[] labels = new int[]{1, 2, 2, 6};
+            LabelEncoder le = new LabelEncoder(labels);
+            le.encodeOrNull(1);
+        });
     }
 
-    @Test(expected = ModelNotFitException.class)
+    @Test
     public void test3() {
-        int[] labels = new int[]{1, 2, 2, 6};
-        LabelEncoder le = new LabelEncoder(labels);
-        le.reverseEncodeOrNull(1);
+        assertThrows(ModelNotFitException.class, () -> {
+            int[] labels = new int[]{1, 2, 2, 6};
+            LabelEncoder le = new LabelEncoder(labels);
+            le.reverseEncodeOrNull(1);
+        });
     }
 
-    @Test(expected = ModelNotFitException.class)
+    @Test
     public void test4() {
-        int[] labels = new int[]{1, 2, 2, 6};
-        LabelEncoder le = new LabelEncoder(labels);
-        le.getEncodedLabels();
+        assertThrows(ModelNotFitException.class, () -> {
+            int[] labels = new int[]{1, 2, 2, 6};
+            LabelEncoder le = new LabelEncoder(labels);
+            le.getEncodedLabels();
+        });
     }
 
-    @Test(expected = ModelNotFitException.class)
+    @Test
     public void test5() {
-        int[] labels = new int[]{1, 2, 2, 6};
-        LabelEncoder le = new LabelEncoder(labels);
-        le.reverseTransform(new int[]{0, 1, 1, 2});
+        assertThrows(ModelNotFitException.class, () -> {
+            int[] labels = new int[]{1, 2, 2, 6};
+            LabelEncoder le = new LabelEncoder(labels);
+            le.reverseTransform(new int[]{0, 1, 1, 2});
+        });
     }
 
-    @Test(expected = ModelNotFitException.class)
+    @Test
     public void test6() {
-        int[] labels = new int[]{1, 2, 2, 6};
-        LabelEncoder le = new LabelEncoder(labels);
-        le.transform(labels);
+        assertThrows(ModelNotFitException.class, () -> {
+            int[] labels = new int[]{1, 2, 2, 6};
+            LabelEncoder le = new LabelEncoder(labels);
+            le.transform(labels);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test7() {
-        int[] labels = new int[]{1, 2, 2, 6};
-        LabelEncoder le = new LabelEncoder(labels).fit();
-        le.transform(new int[]{7, 6, 5});
+        assertThrows(IllegalArgumentException.class, () -> {
+            int[] labels = new int[]{1, 2, 2, 6};
+            LabelEncoder le = new LabelEncoder(labels).fit();
+            le.transform(new int[]{7, 6, 5});
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test8() {
-        int[] labels = new int[]{1, 2, 2, 6};
-        LabelEncoder le = new LabelEncoder(labels).fit();
-        le.reverseTransform(new int[]{3, 2, 1});
+        assertThrows(IllegalArgumentException.class, () -> {
+            int[] labels = new int[]{1, 2, 2, 6};
+            LabelEncoder le = new LabelEncoder(labels).fit();
+            le.reverseTransform(new int[]{3, 2, 1});
+        });
     }
 
 
     // ====== test unique classes with less than 2
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test9() {
-        int[] labels = new int[]{};
-        new LabelEncoder(labels);
+        assertThrows(IllegalArgumentException.class, () -> {
+            int[] labels = new int[]{};
+            new LabelEncoder(labels);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test10() {
-        int[] labels = new int[]{1, 1, 1, 1, 1, 1, 1};
-        new LabelEncoder(labels);
+        assertThrows(IllegalArgumentException.class, () -> {
+            int[] labels = new int[]{1, 1, 1, 1, 1, 1, 1};
+            new LabelEncoder(labels);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void test11() {
-        int[] labels = new int[]{1};
-        new LabelEncoder(labels);
+        assertThrows(IllegalArgumentException.class, () -> {
+            int[] labels = new int[]{1};
+            new LabelEncoder(labels);
+        });
     }
 
     @Test
@@ -142,34 +162,44 @@ public class TestLabelEncoder implements BaseModelTest {
         Files.delete(TestSuite.path);
     }
 
-    @Test(expected = ModelNotFitException.class)
+    @Test
     public void testNotFitException1() {
-        LabelEncoder encoder = new LabelEncoder(new int[]{0, 1, 5, 1, 2, 2, 2, 0, 1, 1, 5});
-        encoder.encodeOrNull(2);
+        assertThrows(ModelNotFitException.class, () -> {
+            LabelEncoder encoder = new LabelEncoder(new int[]{0, 1, 5, 1, 2, 2, 2, 0, 1, 1, 5});
+            encoder.encodeOrNull(2);
+        });
     }
 
-    @Test(expected = ModelNotFitException.class)
+    @Test
     public void testNotFitException2() {
-        LabelEncoder encoder = new LabelEncoder(new int[]{0, 1, 5, 1, 2, 2, 2, 0, 1, 1, 5});
-        encoder.reverseEncodeOrNull(2);
+        assertThrows(ModelNotFitException.class, () -> {
+            LabelEncoder encoder = new LabelEncoder(new int[]{0, 1, 5, 1, 2, 2, 2, 0, 1, 1, 5});
+            encoder.reverseEncodeOrNull(2);
+        });
     }
 
-    @Test(expected = ModelNotFitException.class)
+    @Test
     public void testNotFitException3() {
-        LabelEncoder encoder = new LabelEncoder(new int[]{0, 1, 5, 1, 2, 2, 2, 0, 1, 1, 5});
-        encoder.getEncodedLabels();
+        assertThrows(ModelNotFitException.class, () -> {
+            LabelEncoder encoder = new LabelEncoder(new int[]{0, 1, 5, 1, 2, 2, 2, 0, 1, 1, 5});
+            encoder.getEncodedLabels();
+        });
     }
 
-    @Test(expected = ModelNotFitException.class)
+    @Test
     public void testNotFitException4() {
-        LabelEncoder encoder = new LabelEncoder(new int[]{0, 1, 5, 1, 2, 2, 2, 0, 1, 1, 5});
-        encoder.transform(new int[]{1, 2, 0});
+        assertThrows(ModelNotFitException.class, () -> {
+            LabelEncoder encoder = new LabelEncoder(new int[]{0, 1, 5, 1, 2, 2, 2, 0, 1, 1, 5});
+            encoder.transform(new int[]{1, 2, 0});
+        });
     }
 
-    @Test(expected = ModelNotFitException.class)
+    @Test
     public void testNotFitException5() {
-        LabelEncoder encoder = new LabelEncoder(new int[]{0, 1, 5, 1, 2, 2, 2, 0, 1, 1, 5});
-        encoder.reverseTransform(new int[]{1, 2, 0});
+        assertThrows(ModelNotFitException.class, () -> {
+            LabelEncoder encoder = new LabelEncoder(new int[]{0, 1, 5, 1, 2, 2, 2, 0, 1, 1, 5});
+            encoder.reverseTransform(new int[]{1, 2, 0});
+        });
     }
 
     @Test

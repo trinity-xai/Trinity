@@ -15,18 +15,6 @@
  *******************************************************************************/
 package com.clust4j;
 
-import java.io.File;
-import java.nio.file.FileSystems;
-import java.nio.file.Path;
-import java.util.Random;
-
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.junit.runner.JUnitCore;
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
-
-import com.clust4j.TestClust4j;
-import com.clust4j.TestGlobals;
 import com.clust4j.algo.AffinityPropagationTests;
 import com.clust4j.algo.BoruvkaTests;
 import com.clust4j.algo.ClustTests;
@@ -40,8 +28,8 @@ import com.clust4j.algo.NNHSTests;
 import com.clust4j.algo.NearestCentroidTests;
 import com.clust4j.algo.NearestNeighborsTests;
 import com.clust4j.algo.ParallelTaskTests;
-import com.clust4j.algo.TestLabelEncoder;
 import com.clust4j.algo.RadiusNeighborsTests;
+import com.clust4j.algo.TestLabelEncoder;
 import com.clust4j.algo.pipeline.PipelineTest;
 import com.clust4j.algo.preprocess.ImputationTests;
 import com.clust4j.algo.preprocess.PreProcessorTests;
@@ -69,9 +57,17 @@ import com.clust4j.utils.TestArrayFormatter;
 import com.clust4j.utils.TestUtils;
 import com.clust4j.utils.VectorTests;
 import com.clust4j.utils.parallel.ParallelTests;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.junit.platform.suite.api.SelectClasses;
+import org.junit.platform.suite.api.Suite;
 
-@RunWith(Suite.class)
-@Suite.SuiteClasses({
+import java.io.File;
+import java.nio.file.FileSystems;
+import java.nio.file.Path;
+import java.util.Random;
+
+@Suite
+@SelectClasses({
     AffinityPropagationTests.class,
     BootstrapTest.class,
     BoruvkaTests.class,
@@ -169,7 +165,4 @@ public class TestSuite {
         return new Array2DRowRealMatrix(data, false);
     }
 
-    public static void main(String[] args) throws Exception {
-        JUnitCore.main("com.clust4j.TestSuite");
-    }
 }

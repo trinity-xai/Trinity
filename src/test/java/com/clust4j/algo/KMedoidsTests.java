@@ -15,8 +15,22 @@
  *******************************************************************************/
 package com.clust4j.algo;
 
-import static com.clust4j.TestSuite.getRandom;
-import static org.junit.Assert.*;
+import com.clust4j.TestSuite;
+import com.clust4j.algo.preprocess.StandardScaler;
+import com.clust4j.data.DataSet;
+import com.clust4j.kernel.HyperbolicTangentKernel;
+import com.clust4j.kernel.Kernel;
+import com.clust4j.kernel.LaplacianKernel;
+import com.clust4j.metrics.pairwise.Distance;
+import com.clust4j.metrics.pairwise.DistanceMetric;
+import com.clust4j.metrics.pairwise.GeometricallySeparable;
+import com.clust4j.utils.MatUtils;
+import com.clust4j.utils.Series.Inequality;
+import com.clust4j.utils.VecUtils;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.commons.math3.util.FastMath;
+import org.junit.jupiter.api.Test;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -25,25 +39,8 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 
-import org.apache.commons.math3.linear.RealMatrix;
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.apache.commons.math3.util.FastMath;
-import org.junit.Test;
-
-import com.clust4j.TestSuite;
-import com.clust4j.algo.KMedoidsParameters;
-import com.clust4j.algo.preprocess.StandardScaler;
-import com.clust4j.data.DataSet;
-import com.clust4j.kernel.HyperbolicTangentKernel;
-import com.clust4j.kernel.Kernel;
-//import com.clust4j.kernel.KernelTestCases;
-import com.clust4j.kernel.LaplacianKernel;
-import com.clust4j.metrics.pairwise.Distance;
-import com.clust4j.metrics.pairwise.DistanceMetric;
-import com.clust4j.metrics.pairwise.GeometricallySeparable;
-import com.clust4j.utils.MatUtils;
-import com.clust4j.utils.VecUtils;
-import com.clust4j.utils.Series.Inequality;
+import static com.clust4j.TestSuite.getRandom;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class KMedoidsTests implements ClusterTest, ClassifierTest, ConvergeableTest, BaseModelTest {
     final Array2DRowRealMatrix irisdata = TestSuite.IRIS_DATASET.getData();

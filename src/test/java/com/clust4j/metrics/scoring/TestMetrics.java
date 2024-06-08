@@ -15,18 +15,16 @@
  *******************************************************************************/
 package com.clust4j.metrics.scoring;
 
-import static org.junit.Assert.*;
-
-import org.apache.commons.math3.exception.DimensionMismatchException;
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.junit.Test;
-
 import com.clust4j.TestSuite;
 import com.clust4j.data.DataSet;
-import com.clust4j.metrics.scoring.SupervisedMetric;
 import com.clust4j.utils.VecUtils;
+import org.apache.commons.math3.exception.DimensionMismatchException;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.junit.jupiter.api.Test;
 
 import static com.clust4j.metrics.scoring.UnsupervisedMetric.SILHOUETTE;
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TestMetrics {
     final static DataSet IRIS = TestSuite.IRIS_DATASET.copy();
@@ -48,12 +46,14 @@ public class TestMetrics {
         assertTrue(silhouette == 0.5032506980665507);
     }
 
-    @Test(expected = DimensionMismatchException.class)
+    @Test
     public void testSilhouetteScoreDME() {
-        Array2DRowRealMatrix X = IRIS.getData();
-        final int[] labels = new int[]{1, 2, 3};
+        assertThrows(DimensionMismatchException.class, () -> {
+            Array2DRowRealMatrix X = IRIS.getData();
+            final int[] labels = new int[]{1, 2, 3};
 
-        SILHOUETTE.evaluate(X, labels);
+            SILHOUETTE.evaluate(X, labels);
+        });
     }
 
     @Test
@@ -65,9 +65,11 @@ public class TestMetrics {
             .evaluate(X, labels)));
     }
 
-    @Test(expected = DimensionMismatchException.class)
+    @Test
     public void testDME() {
-        SupervisedMetric.BINOMIAL_ACCURACY.evaluate(new int[]{1, 2}, new int[]{1, 2, 3});
+        assertThrows(DimensionMismatchException.class, () -> {
+            SupervisedMetric.BINOMIAL_ACCURACY.evaluate(new int[]{1, 2}, new int[]{1, 2, 3});
+        });
     }
 
     @Test

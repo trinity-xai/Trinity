@@ -15,10 +15,11 @@
  *******************************************************************************/
 package com.clust4j.utils;
 
-import static org.junit.Assert.*;
-
 import org.apache.commons.lang3.tuple.ImmutableTriple;
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertNotNull;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class QuadTupTests {
 

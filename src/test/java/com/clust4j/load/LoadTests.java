@@ -1,14 +1,14 @@
 package com.clust4j.load;
 
-import static org.junit.Assert.*;
-
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.junit.Test;
-
 import com.clust4j.GlobalState;
 import com.clust4j.TestSuite;
 import com.clust4j.log.Log;
 import com.clust4j.utils.MatUtils;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
+import static org.junit.jupiter.api.Assertions.fail;
 
 /**
  * A set of tests that are quite large. Not

@@ -15,18 +15,17 @@
  *******************************************************************************/
 package com.clust4j.algo.preprocess;
 
-import static org.junit.Assert.*;
-
-import org.apache.commons.math3.exception.DimensionMismatchException;
-import org.apache.commons.math3.linear.RealMatrix;
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.apache.commons.math3.util.Precision;
-import org.junit.Test;
-
 import com.clust4j.TestSuite;
 import com.clust4j.except.ModelNotFitException;
 import com.clust4j.utils.MatUtils;
 import com.clust4j.utils.VecUtils;
+import org.apache.commons.math3.exception.DimensionMismatchException;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.commons.math3.util.Precision;
+import org.junit.jupiter.api.Test;
+
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class PreProcessorTests {
 

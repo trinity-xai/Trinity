@@ -15,30 +15,9 @@
  *******************************************************************************/
 package com.clust4j.algo;
 
-import static org.junit.Assert.*;
-
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.io.IOException;
-import java.nio.file.Files;
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.Random;
-import java.util.TreeSet;
-import java.util.concurrent.RejectedExecutionException;
-
-import org.apache.commons.math3.exception.DimensionMismatchException;
-import org.apache.commons.math3.linear.RealMatrix;
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.apache.commons.math3.util.Precision;
-import org.junit.Test;
-
 import com.clust4j.GlobalState;
 import com.clust4j.TestSuite;
-import com.clust4j.algo.MeanShiftParameters;
 import com.clust4j.algo.MeanShift.MeanShiftSeed;
-import com.clust4j.algo.NearestNeighborsParameters;
-import com.clust4j.algo.RadiusNeighborsParameters;
 import com.clust4j.algo.preprocess.StandardScaler;
 import com.clust4j.except.IllegalClusterStateException;
 import com.clust4j.except.ModelNotFitException;
@@ -50,8 +29,26 @@ import com.clust4j.metrics.pairwise.Similarity;
 import com.clust4j.metrics.pairwise.SimilarityMetric;
 import com.clust4j.utils.EntryPair;
 import com.clust4j.utils.MatUtils;
-import com.clust4j.utils.VecUtils;
 import com.clust4j.utils.Series.Inequality;
+import com.clust4j.utils.VecUtils;
+import org.apache.commons.math3.exception.DimensionMismatchException;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.commons.math3.util.Precision;
+import org.junit.jupiter.api.Test;
+
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.Random;
+import java.util.TreeSet;
+import java.util.concurrent.RejectedExecutionException;
+
+import static org.junit.jupiter.api.Assertions.assertThrows;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class MeanShiftTests implements ClusterTest, ClassifierTest, ConvergeableTest, BaseModelTest {
     final static Array2DRowRealMatrix data_ = TestSuite.IRIS_DATASET.getData();
@@ -162,10 +159,12 @@ public class MeanShiftTests implements ClusterTest, ClassifierTest, Convergeable
         }
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testMeanShiftIAEConst() {
-        final Array2DRowRealMatrix mat = new Array2DRowRealMatrix(MatUtils.randomGaussian(50, 2));
-        new MeanShift(mat, 0.0);
+        assertThrows(IllegalArgumentException.class, () -> {
+            final Array2DRowRealMatrix mat = new Array2DRowRealMatrix(MatUtils.randomGaussian(50, 2));
+            new MeanShift(mat, 0.0);
+        });
     }
 
 
@@ -205,20 +204,24 @@ public class MeanShiftTests implements ClusterTest, ClassifierTest, Convergeable
         assertTrue(ms.getBandwidth() == 0.9148381982960355);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testMeanShiftAutoBwEstimateException1() {
-        final double[][] x = TestSuite.bigMatrix;
-        new MeanShift(new Array2DRowRealMatrix(x),
-            new MeanShiftParameters()
-                .setAutoBandwidthEstimationQuantile(1.1));
+        assertThrows(IllegalArgumentException.class, () -> {
+            final double[][] x = TestSuite.bigMatrix;
+            new MeanShift(new Array2DRowRealMatrix(x),
+                new MeanShiftParameters()
+                    .setAutoBandwidthEstimationQuantile(1.1));
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testMeanShiftAutoBwEstimateException2() {
-        final double[][] x = TestSuite.bigMatrix;
-        new MeanShift(new Array2DRowRealMatrix(x),
-            new MeanShiftParameters()
-                .setAutoBandwidthEstimationQuantile(0.0));
+        assertThrows(IllegalArgumentException.class, () -> {
+            final double[][] x = TestSuite.bigMatrix;
+            new MeanShift(new Array2DRowRealMatrix(x),
+                new MeanShiftParameters()
+                    .setAutoBandwidthEstimationQuantile(0.0));
+        });
     }
 
     @Test
@@ -377,48 +380,56 @@ public class MeanShiftTests implements ClusterTest, ClassifierTest, Convergeable
 	}
 	*/
 
-    @Test(expected = NonUniformMatrixException.class)
+    @Test
     public void testSeededNUME() {
-        Array2DRowRealMatrix iris = data_;
+        assertThrows(NonUniformMatrixException.class, () -> {
+            Array2DRowRealMatrix iris = data_;
 
-        new MeanShift(iris,
-            new MeanShiftParameters()
-                .setSeeds(new double[][]{
-                    new double[]{1, 2, 3, 4},
-                    new double[]{0}
-                }));
+            new MeanShift(iris,
+                new MeanShiftParameters()
+                    .setSeeds(new double[][]{
+                        new double[]{1, 2, 3, 4},
+                        new double[]{0}
+                    }));
+        });
     }
 
-    @Test(expected = DimensionMismatchException.class)
+    @Test
     public void testSeededDME() {
-        Array2DRowRealMatrix iris = data_;
+        assertThrows(DimensionMismatchException.class, () -> {
+            Array2DRowRealMatrix iris = data_;
 
-        new MeanShift(iris,
-            new MeanShiftParameters()
-                .setSeeds(new double[][]{
-                    new double[]{1, 2, 3},
-                    new double[]{1, 2, 3}
-                }));
+            new MeanShift(iris,
+                new MeanShiftParameters()
+                    .setSeeds(new double[][]{
+                        new double[]{1, 2, 3},
+                        new double[]{1, 2, 3}
+                    }));
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testSeededIAE1() {
-        Array2DRowRealMatrix iris = data_;
+        assertThrows(IllegalArgumentException.class, () -> {
+            Array2DRowRealMatrix iris = data_;
 
-        new MeanShift(iris,
-            new MeanShiftParameters()
-                .setSeeds(new double[][]{
-                }));
+            new MeanShift(iris,
+                new MeanShiftParameters()
+                    .setSeeds(new double[][]{
+                    }));
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testSeededIAE2() {
-        Array2DRowRealMatrix iris = data_;
+        assertThrows(IllegalArgumentException.class, () -> {
+            Array2DRowRealMatrix iris = data_;
 
-        new MeanShift(iris,
-            new MeanShiftParameters()
-                .setSeeds(MatUtils.randomGaussian(iris.getRowDimension() + 1,
-                    iris.getColumnDimension())));
+            new MeanShift(iris,
+                new MeanShiftParameters()
+                    .setSeeds(MatUtils.randomGaussian(iris.getRowDimension() + 1,
+                        iris.getColumnDimension())));
+        });
     }
 
     @Test

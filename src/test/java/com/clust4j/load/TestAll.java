@@ -1,12 +1,12 @@
 package com.clust4j.load;
 
-import org.junit.runner.RunWith;
-import org.junit.runners.Suite;
-
 import com.clust4j.TestSuite;
+import org.junit.platform.suite.api.SelectClasses;
+import org.junit.platform.suite.api.Suite;
 
-@RunWith(Suite.class)
-@Suite.SuiteClasses({
+
+@Suite
+@SelectClasses({
     TestSuite.class,
     LoadTests.class
 })

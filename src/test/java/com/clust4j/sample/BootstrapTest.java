@@ -15,14 +15,13 @@
  *******************************************************************************/
 package com.clust4j.sample;
 
-import static org.junit.Assert.*;
+import com.clust4j.utils.MatrixFormatter;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.junit.jupiter.api.Test;
 
 import java.util.Arrays;
 
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.junit.Test;
-
-import com.clust4j.utils.MatrixFormatter;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class BootstrapTest {
     final static MatrixFormatter formatter = new MatrixFormatter();

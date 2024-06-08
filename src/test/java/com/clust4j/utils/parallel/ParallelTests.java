@@ -15,14 +15,13 @@
  *******************************************************************************/
 package com.clust4j.utils.parallel;
 
-import static org.junit.Assert.*;
+import com.clust4j.GlobalState;
+import com.clust4j.utils.MatUtils;
+import org.junit.jupiter.api.Test;
 
 import java.util.concurrent.RejectedExecutionException;
 
-import org.junit.Test;
-
-import com.clust4j.GlobalState;
-import com.clust4j.utils.MatUtils;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ParallelTests {
 

@@ -15,14 +15,6 @@
  *******************************************************************************/
 package com.clust4j.utils;
 
-import static org.junit.Assert.*;
-
-import java.util.ArrayList;
-
-import org.apache.commons.math3.exception.DimensionMismatchException;
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.junit.Test;
-
 import com.clust4j.GlobalState;
 import com.clust4j.TestSuite;
 import com.clust4j.algo.NearestNeighbors;
@@ -33,6 +25,13 @@ import com.clust4j.except.NonUniformMatrixException;
 import com.clust4j.utils.MatUtils.Axis;
 import com.clust4j.utils.MatUtils.MatSeries;
 import com.clust4j.utils.Series.Inequality;
+import org.apache.commons.math3.exception.DimensionMismatchException;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.junit.jupiter.api.Test;
+
+import java.util.ArrayList;
+
+import static org.junit.jupiter.api.Assertions.*;
 
 public class MatTests {
     final static DataSet IRIS = ExampleDataSets.loadIris();
@@ -251,9 +250,11 @@ public class MatTests {
         assertTrue(cube[1][1] == data[2][2]);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testMatCheck() {
-        MatUtils.checkDims(new double[5][]);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MatUtils.checkDims(new double[5][]);
+        });
     }
 
     public void testMatVecScalarOperations() {
@@ -658,34 +659,40 @@ public class MatTests {
         }
     }
 
-    @Test(expected = NonUniformMatrixException.class)
+    @Test
     public void testNUMEMatSeries1() {
-        double[][] jagged = new double[][]{
-            new double[]{0, 1, 2},
-            new double[]{2}
-        };
+        assertThrows(NonUniformMatrixException.class, () -> {
+            double[][] jagged = new double[][]{
+                new double[]{0, 1, 2},
+                new double[]{2}
+            };
 
-        new MatSeries(jagged, Inequality.EQUAL_TO, 0);
+            new MatSeries(jagged, Inequality.EQUAL_TO, 0);
+        });
     }
 
-    @Test(expected = NonUniformMatrixException.class)
+    @Test
     public void testNUMEMatSeries2() {
-        double[][] jagged = new double[][]{
-            new double[]{0, 1, 2},
-            new double[]{2}
-        };
+        assertThrows(NonUniformMatrixException.class, () -> {
+            double[][] jagged = new double[][]{
+                new double[]{0, 1, 2},
+                new double[]{2}
+            };
 
-        new MatSeries(new double[]{1, 2, 3}, Inequality.EQUAL_TO, jagged);
+            new MatSeries(new double[]{1, 2, 3}, Inequality.EQUAL_TO, jagged);
+        });
     }
 
-    @Test(expected = DimensionMismatchException.class)
+    @Test
     public void testDMEMatSeries1() {
-        double[][] a = new double[][]{
-            new double[]{0, 1, 2},
-            new double[]{2, 1, 0}
-        };
+        assertThrows(DimensionMismatchException.class, () -> {
+            double[][] a = new double[][]{
+                new double[]{0, 1, 2},
+                new double[]{2, 1, 0}
+            };
 
-        new MatSeries(new double[]{1, 2}, Inequality.EQUAL_TO, a);
+            new MatSeries(new double[]{1, 2}, Inequality.EQUAL_TO, a);
+        });
     }
 
     @Test
@@ -775,25 +782,27 @@ public class MatTests {
     }
 
 
-    @Test(expected = NonUniformMatrixException.class)
+    @Test
     public void testAddJagged() {
-        final double[][] a = new double[][]{
-            new double[]{1, -2, 3},
-            new double[]{4, 6},
-            new double[]{},
-            new double[]{10, -11, 12},
-            new double[]{13, -14, -15}
-        };
+        assertThrows(NonUniformMatrixException.class, () -> {
+            final double[][] a = new double[][]{
+                new double[]{1, -2, 3},
+                new double[]{4, 6},
+                new double[]{},
+                new double[]{10, -11, 12},
+                new double[]{13, -14, -15}
+            };
 
-        final double[][] b = new double[][]{
-            new double[]{1, 2, 3},
-            new double[]{4, 6},
-            new double[]{},
-            new double[]{10, 11, 12},
-            new double[]{13, 14, 15}
-        };
+            final double[][] b = new double[][]{
+                new double[]{1, 2, 3},
+                new double[]{4, 6},
+                new double[]{},
+                new double[]{10, 11, 12},
+                new double[]{13, 14, 15}
+            };
 
-        MatUtils.add(a, b);
+            MatUtils.add(a, b);
+        });
     }
 
 
@@ -850,56 +859,64 @@ public class MatTests {
         assertTrue(VecUtils.equalsExactly(new int[]{}, MatUtils.argMin(a, Axis.COL)));
     }
 
-    @Test(expected = NonUniformMatrixException.class)
+    @Test
     public void testArgMaxMinNUME1() {
-        final double[][] a = new double[][]{
-            new double[]{1, 2, 3},
-            new double[]{4},
-            new double[]{7, 9},
-            new double[]{10, 11, 12, 12},
-            new double[]{}
-        };
+        assertThrows(NonUniformMatrixException.class, () -> {
+            final double[][] a = new double[][]{
+                new double[]{1, 2, 3},
+                new double[]{4},
+                new double[]{7, 9},
+                new double[]{10, 11, 12, 12},
+                new double[]{}
+            };
 
-        MatUtils.argMax(a, Axis.ROW);
+            MatUtils.argMax(a, Axis.ROW);
+        });
     }
 
-    @Test(expected = NonUniformMatrixException.class)
+    @Test
     public void testArgMaxMinNUME2() {
-        final double[][] a = new double[][]{
-            new double[]{1, 2, 3},
-            new double[]{4},
-            new double[]{7, 9},
-            new double[]{10, 11, 12, 12},
-            new double[]{}
-        };
+        assertThrows(NonUniformMatrixException.class, () -> {
+            final double[][] a = new double[][]{
+                new double[]{1, 2, 3},
+                new double[]{4},
+                new double[]{7, 9},
+                new double[]{10, 11, 12, 12},
+                new double[]{}
+            };
 
-        MatUtils.argMin(a, Axis.ROW);
+            MatUtils.argMin(a, Axis.ROW);
+        });
     }
 
-    @Test(expected = NonUniformMatrixException.class)
+    @Test
     public void testColMeanSumNUME1() {
-        final double[][] a = new double[][]{
-            new double[]{1, 2, 3},
-            new double[]{4},
-            new double[]{7, 9},
-            new double[]{10, 11, 12, 12},
-            new double[]{}
-        };
+        assertThrows(NonUniformMatrixException.class, () -> {
+            final double[][] a = new double[][]{
+                new double[]{1, 2, 3},
+                new double[]{4},
+                new double[]{7, 9},
+                new double[]{10, 11, 12, 12},
+                new double[]{}
+            };
 
-        MatUtils.colMeans(a);
+            MatUtils.colMeans(a);
+        });
     }
 
-    @Test(expected = NonUniformMatrixException.class)
+    @Test
     public void testColMeanSumNUME2() {
-        final double[][] a = new double[][]{
-            new double[]{1, 2, 3},
-            new double[]{4},
-            new double[]{7, 9},
-            new double[]{10, 11, 12, 12},
-            new double[]{}
-        };
+        assertThrows(NonUniformMatrixException.class, () -> {
+            final double[][] a = new double[][]{
+                new double[]{1, 2, 3},
+                new double[]{4},
+                new double[]{7, 9},
+                new double[]{10, 11, 12, 12},
+                new double[]{}
+            };
 
-        MatUtils.colSums(a);
+            MatUtils.colSums(a);
+        });
     }
 
     @Test
@@ -988,25 +1005,29 @@ public class MatTests {
         assertTrue(VecUtils.equalsExactly(MatUtils.diagFromSquare(a), new double[]{1, 1, 1}));
     }
 
-    @Test(expected = DimensionMismatchException.class)
+    @Test
     public void testDiagonalDME() {
-        double[][] a = new double[][]{
-            new double[]{1, 0, 0},
-            new double[]{0, 1, 0}
-        };
+        assertThrows(DimensionMismatchException.class, () -> {
+            double[][] a = new double[][]{
+                new double[]{1, 0, 0},
+                new double[]{0, 1, 0}
+            };
 
-        MatUtils.diagFromSquare(a);
+            MatUtils.diagFromSquare(a);
+        });
     }
 
-    @Test(expected = NonUniformMatrixException.class)
+    @Test
     public void testDiagonalNUME() {
-        double[][] a = new double[][]{
-            new double[]{1, 0, 0},
-            new double[]{0, 1},
-            new double[]{0, 0, 1}
-        };
+        assertThrows(NonUniformMatrixException.class, () -> {
+            double[][] a = new double[][]{
+                new double[]{1, 0, 0},
+                new double[]{0, 1},
+                new double[]{0, 0, 1}
+            };
 
-        MatUtils.diagFromSquare(a);
+            MatUtils.diagFromSquare(a);
+        });
     }
 
     @Test
@@ -1054,136 +1075,160 @@ public class MatTests {
         MatUtils.checkDims(a, b);
     }
 
-    @Test(expected = DimensionMismatchException.class)
+    @Test
     public void testJaggedMultiArrayDims2() {
-        double[][] a = new double[][]{
-            new double[]{1, 2},
-            new double[]{2}
-        };
+        assertThrows(DimensionMismatchException.class, () -> {
+            double[][] a = new double[][]{
+                new double[]{1, 2},
+                new double[]{2}
+            };
 
-        double[][] b = new double[][]{
-            new double[]{1, 2, 4},
-            new double[]{2}
-        };
+            double[][] b = new double[][]{
+                new double[]{1, 2, 4},
+                new double[]{2}
+            };
 
-        MatUtils.checkDims(a, b);
+            MatUtils.checkDims(a, b);
+        });
     }
 
-    @Test(expected = DimensionMismatchException.class)
+    @Test
     public void testJaggedMultiIntArrayDims2() {
-        int[][] a = new int[][]{
-            new int[]{1, 2},
-            new int[]{2}
-        };
+        assertThrows(DimensionMismatchException.class, () -> {
+            int[][] a = new int[][]{
+                new int[]{1, 2},
+                new int[]{2}
+            };
 
-        int[][] b = new int[][]{
-            new int[]{1, 2, 4},
-            new int[]{2}
-        };
+            int[][] b = new int[][]{
+                new int[]{1, 2, 4},
+                new int[]{2}
+            };
 
-        MatUtils.checkDims(a, b);
+            MatUtils.checkDims(a, b);
+        });
     }
 
-    @Test(expected = DimensionMismatchException.class)
+    @Test
     public void testJaggedMultiBooleanArrayDims2() {
-        boolean[][] a = new boolean[][]{
-            new boolean[]{true, false},
-            new boolean[]{false}
-        };
+        assertThrows(DimensionMismatchException.class, () -> {
+            boolean[][] a = new boolean[][]{
+                new boolean[]{true, false},
+                new boolean[]{false}
+            };
 
-        boolean[][] b = new boolean[][]{
-            new boolean[]{false, false, false},
-            new boolean[]{true}
-        };
+            boolean[][] b = new boolean[][]{
+                new boolean[]{false, false, false},
+                new boolean[]{true}
+            };
 
-        MatUtils.checkDims(a, b);
+            MatUtils.checkDims(a, b);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testEmptyMultiArrayDims() {
-        double[][] a = new double[][]{};
-        double[][] b = new double[][]{};
-        MatUtils.checkDims(a, b);
+        assertThrows(IllegalArgumentException.class, () -> {
+            double[][] a = new double[][]{};
+            double[][] b = new double[][]{};
+            MatUtils.checkDims(a, b);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testEmptyMultiIntArrayDims() {
-        int[][] a = new int[][]{};
-        int[][] b = new int[][]{};
-        MatUtils.checkDims(a, b);
+        assertThrows(IllegalArgumentException.class, () -> {
+            int[][] a = new int[][]{};
+            int[][] b = new int[][]{};
+            MatUtils.checkDims(a, b);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testEmptyMultiBooleanArrayDims() {
-        boolean[][] a = new boolean[][]{};
-        boolean[][] b = new boolean[][]{};
-        MatUtils.checkDims(a, b);
+        assertThrows(IllegalArgumentException.class, () -> {
+            boolean[][] a = new boolean[][]{};
+            boolean[][] b = new boolean[][]{};
+            MatUtils.checkDims(a, b);
+        });
     }
 
-    @Test(expected = DimensionMismatchException.class)
+    @Test
     public void testJaggedMultiArrayDims3() {
-        double[][] a = new double[][]{
-            new double[]{1, 2, 3}
-        };
+        assertThrows(DimensionMismatchException.class, () -> {
+            double[][] a = new double[][]{
+                new double[]{1, 2, 3}
+            };
 
-        double[][] b = new double[][]{
-            new double[]{1, 2, 4},
-            new double[]{2}
-        };
+            double[][] b = new double[][]{
+                new double[]{1, 2, 4},
+                new double[]{2}
+            };
 
-        MatUtils.checkDims(a, b);
+            MatUtils.checkDims(a, b);
+        });
     }
 
-    @Test(expected = DimensionMismatchException.class)
+    @Test
     public void testJaggedMultiIntArrayDims3() {
-        int[][] a = new int[][]{
-            new int[]{1, 2, 3}
-        };
+        assertThrows(DimensionMismatchException.class, () -> {
+            int[][] a = new int[][]{
+                new int[]{1, 2, 3}
+            };
 
-        int[][] b = new int[][]{
-            new int[]{1, 2, 4},
-            new int[]{2}
-        };
+            int[][] b = new int[][]{
+                new int[]{1, 2, 4},
+                new int[]{2}
+            };
 
-        MatUtils.checkDims(a, b);
+            MatUtils.checkDims(a, b);
+        });
     }
 
-    @Test(expected = DimensionMismatchException.class)
+    @Test
     public void testJaggedMultiBooleanArrayDims3() {
-        boolean[][] a = new boolean[][]{
-            new boolean[]{false, false, true}
-        };
+        assertThrows(DimensionMismatchException.class, () -> {
+            boolean[][] a = new boolean[][]{
+                new boolean[]{false, false, true}
+            };
 
-        boolean[][] b = new boolean[][]{
-            new boolean[]{true, true, true},
-            new boolean[]{false}
-        };
+            boolean[][] b = new boolean[][]{
+                new boolean[]{true, true, true},
+                new boolean[]{false}
+            };
 
-        MatUtils.checkDims(a, b);
+            MatUtils.checkDims(a, b);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testJaggedMultiArrayDims4() {
-        double[][] a = new double[5][];
-        double[][] b = new double[5][];
+        assertThrows(IllegalArgumentException.class, () -> {
+            double[][] a = new double[5][];
+            double[][] b = new double[5][];
 
-        MatUtils.checkDims(a, b);
+            MatUtils.checkDims(a, b);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testJaggedMultiIntArrayDims4() {
-        int[][] a = new int[5][];
-        int[][] b = new int[5][];
+        assertThrows(IllegalArgumentException.class, () -> {
+            int[][] a = new int[5][];
+            int[][] b = new int[5][];
 
-        MatUtils.checkDims(a, b);
+            MatUtils.checkDims(a, b);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testJaggedMultiBooleanArrayDims4() {
-        boolean[][] a = new boolean[5][];
-        boolean[][] b = new boolean[5][];
+        assertThrows(IllegalArgumentException.class, () -> {
+            boolean[][] a = new boolean[5][];
+            boolean[][] b = new boolean[5][];
 
-        MatUtils.checkDims(a, b);
+            MatUtils.checkDims(a, b);
+        });
     }
 
     @Test
@@ -1231,91 +1276,103 @@ public class MatTests {
         MatUtils.checkDimsForUniformity(a, b);
     }
 
-    @Test(expected = DimensionMismatchException.class)
+    @Test
     public void testMultiArrayUniformity2() {
-        double[][] a = new double[][]{
-            new double[]{1, 2, 7}
-        };
+        assertThrows(DimensionMismatchException.class, () -> {
+            double[][] a = new double[][]{
+                new double[]{1, 2, 7}
+            };
 
-        double[][] b = new double[][]{
-            new double[]{1, 2, 4},
-            new double[]{2, 1, 9}
-        };
+            double[][] b = new double[][]{
+                new double[]{1, 2, 4},
+                new double[]{2, 1, 9}
+            };
 
-        MatUtils.checkDimsForUniformity(a, b);
+            MatUtils.checkDimsForUniformity(a, b);
+        });
     }
 
-    @Test(expected = DimensionMismatchException.class)
+    @Test
     public void testMultiArrayIntUniformity2() {
-        int[][] a = new int[][]{
-            new int[]{1, 2, 7}
-        };
+        assertThrows(DimensionMismatchException.class, () -> {
+            int[][] a = new int[][]{
+                new int[]{1, 2, 7}
+            };
 
-        int[][] b = new int[][]{
-            new int[]{1, 2, 4},
-            new int[]{2, 1, 9}
-        };
+            int[][] b = new int[][]{
+                new int[]{1, 2, 4},
+                new int[]{2, 1, 9}
+            };
 
-        MatUtils.checkDimsForUniformity(a, b);
+            MatUtils.checkDimsForUniformity(a, b);
+        });
     }
 
-    @Test(expected = DimensionMismatchException.class)
+    @Test
     public void testMultiArrayBooleanUniformity2() {
-        boolean[][] a = new boolean[][]{
-            new boolean[]{false, true, false}
-        };
+        assertThrows(DimensionMismatchException.class, () -> {
+            boolean[][] a = new boolean[][]{
+                new boolean[]{false, true, false}
+            };
 
-        boolean[][] b = new boolean[][]{
-            new boolean[]{true, true, true},
-            new boolean[]{false, true, true}
-        };
+            boolean[][] b = new boolean[][]{
+                new boolean[]{true, true, true},
+                new boolean[]{false, true, true}
+            };
 
-        MatUtils.checkDimsForUniformity(a, b);
+            MatUtils.checkDimsForUniformity(a, b);
+        });
     }
 
-    @Test(expected = DimensionMismatchException.class)
+    @Test
     public void testMultiArrayUniformity3() {
-        double[][] a = new double[][]{
-            new double[]{1, 7},
-            new double[]{9, 8}
-        };
+        assertThrows(DimensionMismatchException.class, () -> {
+            double[][] a = new double[][]{
+                new double[]{1, 7},
+                new double[]{9, 8}
+            };
 
-        double[][] b = new double[][]{
-            new double[]{1, 2, 4},
-            new double[]{2, 1, 9}
-        };
+            double[][] b = new double[][]{
+                new double[]{1, 2, 4},
+                new double[]{2, 1, 9}
+            };
 
-        MatUtils.checkDimsForUniformity(a, b);
+            MatUtils.checkDimsForUniformity(a, b);
+        });
     }
 
-    @Test(expected = DimensionMismatchException.class)
+    @Test
     public void testMultiArrayIntUniformity3() {
-        int[][] a = new int[][]{
-            new int[]{1, 7},
-            new int[]{9, 8}
-        };
+        assertThrows(DimensionMismatchException.class, () -> {
+            int[][] a = new int[][]{
+                new int[]{1, 7},
+                new int[]{9, 8}
+            };
 
-        int[][] b = new int[][]{
-            new int[]{1, 2, 4},
-            new int[]{2, 1, 9}
-        };
+            int[][] b = new int[][]{
+                new int[]{1, 2, 4},
+                new int[]{2, 1, 9}
+            };
 
-        MatUtils.checkDimsForUniformity(a, b);
+            MatUtils.checkDimsForUniformity(a, b);
+        });
     }
 
-    @Test(expected = DimensionMismatchException.class)
+    @Test
     public void testMultiArrayBooleanUniformity3() {
-        boolean[][] a = new boolean[][]{
-            new boolean[]{true, true},
-            new boolean[]{true, true}
-        };
+        assertThrows(DimensionMismatchException.class, () -> {
+            boolean[][] a = new boolean[][]{
+                new boolean[]{true, true},
+                new boolean[]{true, true}
+            };
 
-        boolean[][] b = new boolean[][]{
-            new boolean[]{false, false, false},
-            new boolean[]{true, true, true}
-        };
+            boolean[][] b = new boolean[][]{
+                new boolean[]{false, false, false},
+                new boolean[]{true, true, true}
+            };
 
-        MatUtils.checkDimsForUniformity(a, b);
+            MatUtils.checkDimsForUniformity(a, b);
+        });
     }
 
     @Test
@@ -1355,20 +1412,24 @@ public class MatTests {
         assertTrue(VecUtils.equalsExactly(new double[]{1, 2, 3, 4, 5, 6}, MatUtils.flatten(a)));
     }
 
-    @Test(expected = NonUniformMatrixException.class)
+    @Test
     public void testFlatten2() {
-        double[][] a = new double[][]{
-            new double[]{1, 2, 3},
-            new double[]{4, 5}
-        };
+        assertThrows(NonUniformMatrixException.class, () -> {
+            double[][] a = new double[][]{
+                new double[]{1, 2, 3},
+                new double[]{4, 5}
+            };
 
-        MatUtils.flatten(a);
+            MatUtils.flatten(a);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testFlatten3() {
-        double[][] a = new double[][]{};
-        MatUtils.flatten(a);
+        assertThrows(IllegalArgumentException.class, () -> {
+            double[][] a = new double[][]{};
+            MatUtils.flatten(a);
+        });
     }
 
     @Test
@@ -1381,20 +1442,24 @@ public class MatTests {
         assertTrue(VecUtils.equalsExactly(new int[]{1, 2, 3, 4, 5, 6}, MatUtils.flatten(a)));
     }
 
-    @Test(expected = NonUniformMatrixException.class)
+    @Test
     public void testIntFlatten2() {
-        int[][] a = new int[][]{
-            new int[]{1, 2, 3},
-            new int[]{4, 5}
-        };
+        assertThrows(NonUniformMatrixException.class, () -> {
+            int[][] a = new int[][]{
+                new int[]{1, 2, 3},
+                new int[]{4, 5}
+            };
 
-        MatUtils.flatten(a);
+            MatUtils.flatten(a);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testIntFlatten3() {
-        int[][] a = new int[][]{};
-        MatUtils.flatten(a);
+        assertThrows(IllegalArgumentException.class, () -> {
+            int[][] a = new int[][]{};
+            MatUtils.flatten(a);
+        });
     }
 
     @Test
@@ -1409,33 +1474,39 @@ public class MatTests {
             .flattenUpperTriangularMatrix(a), new double[]{2, 3, 6}));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testFlattenUpperTriangular2() {
-        double[][] a = new double[][]{
-        };
+        assertThrows(IllegalArgumentException.class, () -> {
+            double[][] a = new double[][]{
+            };
 
-        MatUtils.flattenUpperTriangularMatrix(a);
+            MatUtils.flattenUpperTriangularMatrix(a);
+        });
     }
 
-    @Test(expected = NonUniformMatrixException.class)
+    @Test
     public void testFlattenUpperTriangular3() {
-        double[][] a = new double[][]{
-            new double[]{1, 2, 3},
-            new double[]{4, 5},
-            new double[]{7, 8, 9}
-        };
+        assertThrows(NonUniformMatrixException.class, () -> {
+            double[][] a = new double[][]{
+                new double[]{1, 2, 3},
+                new double[]{4, 5},
+                new double[]{7, 8, 9}
+            };
 
-        MatUtils.flattenUpperTriangularMatrix(a);
+            MatUtils.flattenUpperTriangularMatrix(a);
+        });
     }
 
-    @Test(expected = DimensionMismatchException.class)
+    @Test
     public void testFlattenUpperTriangular4() {
-        double[][] a = new double[][]{
-            new double[]{1, 2, 3},
-            new double[]{4, 5, 6}
-        };
+        assertThrows(DimensionMismatchException.class, () -> {
+            double[][] a = new double[][]{
+                new double[]{1, 2, 3},
+                new double[]{4, 5, 6}
+            };
 
-        MatUtils.flattenUpperTriangularMatrix(a);
+            MatUtils.flattenUpperTriangularMatrix(a);
+        });
     }
 
     @Test
@@ -1483,9 +1554,11 @@ public class MatTests {
             MatUtils.fromVector(new double[]{1}, 2, Axis.COL)));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testFromVector3() {
-        MatUtils.fromVector(new double[]{1}, 0, Axis.COL);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MatUtils.fromVector(new double[]{1}, 0, Axis.COL);
+        });
     }
 
     @Test
@@ -1522,34 +1595,46 @@ public class MatTests {
         assertTrue(VecUtils.equalsExactly(new int[]{3, 6}, MatUtils.getColumn(ai, 2)));
     }
 
-    @Test(expected = IndexOutOfBoundsException.class)
+    @Test
     public void testGetColumnException1() {
-        MatUtils.getColumn(new double[][]{new double[]{}}, -1);
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            MatUtils.getColumn(new double[][]{new double[]{}}, -1);
+        });
     }
 
-    @Test(expected = IndexOutOfBoundsException.class)
+    @Test
     public void testGetColumnException2() {
-        MatUtils.getColumn(new int[][]{new int[]{}}, -1);
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            MatUtils.getColumn(new int[][]{new int[]{}}, -1);
+        });
     }
 
-    @Test(expected = IndexOutOfBoundsException.class)
+    @Test
     public void testGetColumnException3() {
-        MatUtils.getColumn(new double[][]{new double[]{1, 2, 3}}, 3);
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            MatUtils.getColumn(new double[][]{new double[]{1, 2, 3}}, 3);
+        });
     }
 
-    @Test(expected = IndexOutOfBoundsException.class)
+    @Test
     public void testGetColumnException4() {
-        MatUtils.getColumn(new int[][]{new int[]{1, 2, 3}}, 3);
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            MatUtils.getColumn(new int[][]{new int[]{1, 2, 3}}, 3);
+        });
     }
 
-    @Test(expected = NonUniformMatrixException.class)
+    @Test
     public void testGetColumnException5() {
-        MatUtils.getColumn(new double[][]{new double[]{1, 2, 3}, new double[]{1}}, 0);
+        assertThrows(NonUniformMatrixException.class, () -> {
+            MatUtils.getColumn(new double[][]{new double[]{1, 2, 3}, new double[]{1}}, 0);
+        });
     }
 
-    @Test(expected = NonUniformMatrixException.class)
+    @Test
     public void testGetColumnException6() {
-        MatUtils.getColumn(new int[][]{new int[]{1, 2, 3}, new int[]{1}}, 0);
+        assertThrows(NonUniformMatrixException.class, () -> {
+            MatUtils.getColumn(new int[][]{new int[]{1, 2, 3}, new int[]{1}}, 0);
+        });
     }
 
     @Test
@@ -1577,9 +1662,11 @@ public class MatTests {
             }));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testGetColumnsEmpty() {
-        MatUtils.getColumns(new double[][]{}, new Integer[]{0, 0, 2});
+        assertThrows(IllegalArgumentException.class, () -> {
+            MatUtils.getColumns(new double[][]{}, new Integer[]{0, 0, 2});
+        });
     }
 
     @Test
@@ -1607,9 +1694,11 @@ public class MatTests {
             }));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testGetRowsEmpty() {
-        MatUtils.getRows(new double[][]{}, new Integer[]{0, 0, 2});
+        assertThrows(IllegalArgumentException.class, () -> {
+            MatUtils.getRows(new double[][]{}, new Integer[]{0, 0, 2});
+        });
     }
 
     @Test
@@ -1629,68 +1718,84 @@ public class MatTests {
             new double[]{0, 4, 8}));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testMinMaxEmpty1() {
-        MatUtils.min(new double[][]{}, Axis.ROW);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MatUtils.min(new double[][]{}, Axis.ROW);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testMinMaxEmpty2() {
-        MatUtils.min(new double[][]{}, Axis.COL);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MatUtils.min(new double[][]{}, Axis.COL);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testMinMaxEmpty3() {
-        MatUtils.max(new double[][]{}, Axis.ROW);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MatUtils.max(new double[][]{}, Axis.ROW);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testMinMaxEmpty4() {
-        MatUtils.max(new double[][]{}, Axis.COL);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MatUtils.max(new double[][]{}, Axis.COL);
+        });
     }
 
-    @Test(expected = NonUniformMatrixException.class)
+    @Test
     public void testMinMaxNUME1() {
-        double[][] a = new double[][]{
-            new double[]{1, 2},
-            new double[]{},
-            new double[]{1}
-        };
+        assertThrows(NonUniformMatrixException.class, () -> {
+            double[][] a = new double[][]{
+                new double[]{1, 2},
+                new double[]{},
+                new double[]{1}
+            };
 
-        MatUtils.min(a, Axis.ROW);
+            MatUtils.min(a, Axis.ROW);
+        });
     }
 
-    @Test(expected = NonUniformMatrixException.class)
+    @Test
     public void testMinMaxNUME2() {
-        double[][] a = new double[][]{
-            new double[]{1, 2},
-            new double[]{},
-            new double[]{1}
-        };
+        assertThrows(NonUniformMatrixException.class, () -> {
+            double[][] a = new double[][]{
+                new double[]{1, 2},
+                new double[]{},
+                new double[]{1}
+            };
 
-        MatUtils.min(a, Axis.COL);
+            MatUtils.min(a, Axis.COL);
+        });
     }
 
-    @Test(expected = NonUniformMatrixException.class)
+    @Test
     public void testMinMaxNUME3() {
-        double[][] a = new double[][]{
-            new double[]{1, 2},
-            new double[]{},
-            new double[]{1}
-        };
+        assertThrows(NonUniformMatrixException.class, () -> {
+            double[][] a = new double[][]{
+                new double[]{1, 2},
+                new double[]{},
+                new double[]{1}
+            };
 
-        MatUtils.max(a, Axis.ROW);
+            MatUtils.max(a, Axis.ROW);
+        });
     }
 
-    @Test(expected = NonUniformMatrixException.class)
+    @Test
     public void testMinMaxNUME() {
-        double[][] a = new double[][]{
-            new double[]{1, 2},
-            new double[]{},
-            new double[]{1}
-        };
+        assertThrows(NonUniformMatrixException.class, () -> {
+            double[][] a = new double[][]{
+                new double[]{1, 2},
+                new double[]{},
+                new double[]{1}
+            };
 
-        MatUtils.max(a, Axis.COL);
+            MatUtils.max(a, Axis.COL);
+        });
     }
 
     @Test
@@ -1711,16 +1816,20 @@ public class MatTests {
             new double[]{}));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testMeanRecordIAE() {
-        MatUtils.meanRecord(new double[][]{});
+        assertThrows(IllegalArgumentException.class, () -> {
+            MatUtils.meanRecord(new double[][]{});
+        });
     }
 
-    @Test(expected = NonUniformMatrixException.class)
+    @Test
     public void testMeanRecordNUME() {
-        MatUtils.meanRecord(new double[][]{
-            new double[]{},
-            new double[]{1, 2, 3}
+        assertThrows(NonUniformMatrixException.class, () -> {
+            MatUtils.meanRecord(new double[][]{
+                new double[]{},
+                new double[]{1, 2, 3}
+            });
         });
     }
 
@@ -1744,16 +1853,20 @@ public class MatTests {
             new double[]{}));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testMedianRecordIAE() {
-        MatUtils.medianRecord(new double[][]{});
+        assertThrows(IllegalArgumentException.class, () -> {
+            MatUtils.medianRecord(new double[][]{});
+        });
     }
 
-    @Test(expected = NonUniformMatrixException.class)
+    @Test
     public void testMedianRecordNUME() {
-        MatUtils.medianRecord(new double[][]{
-            new double[]{},
-            new double[]{1, 2, 3}
+        assertThrows(NonUniformMatrixException.class, () -> {
+            MatUtils.medianRecord(new double[][]{
+                new double[]{},
+                new double[]{1, 2, 3}
+            });
         });
     }
 
@@ -1790,59 +1903,69 @@ public class MatTests {
         }
     }
 
-    @Test(expected = DimensionMismatchException.class)
+    @Test
     public void testMultDimExcept1() {
-        MatUtils.multiply(
-            new double[][]{
-                new double[]{1, 2, 3},
-                new double[]{1, 2, 3}
-            },
+        assertThrows(DimensionMismatchException.class, () -> {
+            MatUtils.multiply(
+                new double[][]{
+                    new double[]{1, 2, 3},
+                    new double[]{1, 2, 3}
+                },
 
-            new double[][]{
-                new double[]{1, 2, 3},
-                new double[]{1, 2, 3}
-            });
+                new double[][]{
+                    new double[]{1, 2, 3},
+                    new double[]{1, 2, 3}
+                });
+        });
     }
 
-    @Test(expected = DimensionMismatchException.class)
+    @Test
     public void testMultDimExcept2() {
-        MatUtils.multiplyDistributed(
-            new double[][]{
-                new double[]{1, 2, 3},
-                new double[]{1, 2, 3}
-            },
+        assertThrows(DimensionMismatchException.class, () -> {
+            MatUtils.multiplyDistributed(
+                new double[][]{
+                    new double[]{1, 2, 3},
+                    new double[]{1, 2, 3}
+                },
 
-            new double[][]{
-                new double[]{1, 2, 3},
-                new double[]{1, 2, 3}
-            });
+                new double[][]{
+                    new double[]{1, 2, 3},
+                    new double[]{1, 2, 3}
+                });
+        });
     }
 
-    @Test(expected = DimensionMismatchException.class)
+    @Test
     public void testMultDimExcept3() {
-        MatUtils.multiply(
-            TestSuite.getRandom(10, 2).getDataRef(),
-            TestSuite.getRandom(10, 2).getDataRef());
+        assertThrows(DimensionMismatchException.class, () -> {
+            MatUtils.multiply(
+                TestSuite.getRandom(10, 2).getDataRef(),
+                TestSuite.getRandom(10, 2).getDataRef());
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testMultIAExcept1() {
-        MatUtils.multiply(
-            new double[][]{
-            },
+        assertThrows(IllegalArgumentException.class, () -> {
+            MatUtils.multiply(
+                new double[][]{
+                },
 
-            new double[][]{
-            });
+                new double[][]{
+                });
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testMultIAExcept2() {
-        MatUtils.multiplyDistributed(
-            new double[][]{
-            },
+        assertThrows(IllegalArgumentException.class, () -> {
+            MatUtils.multiplyDistributed(
+                new double[][]{
+                },
 
-            new double[][]{
-            });
+                new double[][]{
+                });
+        });
     }
 
     @Test
@@ -1871,9 +1994,11 @@ public class MatTests {
             }));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testNegativeIAE() {
-        MatUtils.negative(new double[][]{});
+        assertThrows(IllegalArgumentException.class, () -> {
+            MatUtils.negative(new double[][]{});
+        });
     }
 
     @Test
@@ -1888,14 +2013,18 @@ public class MatTests {
             new double[][]{}));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testRandomGaussiansIAE1() {
-        MatUtils.randomGaussian(0, -1);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MatUtils.randomGaussian(0, -1);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testRandomGaussiansIAE2() {
-        MatUtils.randomGaussian(-1, 0);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MatUtils.randomGaussian(-1, 0);
+        });
     }
 
     @Test
@@ -1931,24 +2060,32 @@ public class MatTests {
             }));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testReorderIAE1() {
-        MatUtils.reorder(new int[][]{}, new int[]{0, 0, 0});
+        assertThrows(IllegalArgumentException.class, () -> {
+            MatUtils.reorder(new int[][]{}, new int[]{0, 0, 0});
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testReorderIAE2() {
-        MatUtils.reorder(new int[][]{new int[]{}}, new int[]{});
+        assertThrows(IllegalArgumentException.class, () -> {
+            MatUtils.reorder(new int[][]{new int[]{}}, new int[]{});
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testReorderIAE3() {
-        MatUtils.reorder(new double[][]{}, new int[]{0, 0, 0});
+        assertThrows(IllegalArgumentException.class, () -> {
+            MatUtils.reorder(new double[][]{}, new int[]{0, 0, 0});
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testReorderIAE4() {
-        MatUtils.reorder(new double[][]{new double[]{}}, new int[]{});
+        assertThrows(IllegalArgumentException.class, () -> {
+            MatUtils.reorder(new double[][]{new double[]{}}, new int[]{});
+        });
     }
 
     @Test
@@ -1969,73 +2106,91 @@ public class MatTests {
         assertTrue(MatUtils.equalsExactly(MatUtils.reshape(a, 4, 3), b));
     }
 
-    @Test(expected = NonUniformMatrixException.class)
+    @Test
     public void testReshapeNUME1() {
-        MatUtils.reshape(new double[][]{
-            new double[]{-0, 1, 2, 3},
-            new double[]{-2, 1, 8},
-            new double[]{-5, 2, 3, 4}
-        }, 4, 3);
+        assertThrows(NonUniformMatrixException.class, () -> {
+            MatUtils.reshape(new double[][]{
+                new double[]{-0, 1, 2, 3},
+                new double[]{-2, 1, 8},
+                new double[]{-5, 2, 3, 4}
+            }, 4, 3);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testReshapeIAE1() {
-        MatUtils.reshape(new double[][]{
-            new double[]{-0, 1, 2, 3},
-            new double[]{-2, 1, 8, 2},
-            new double[]{-5, 2, 3, 4}
-        }, 4, 2);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MatUtils.reshape(new double[][]{
+                new double[]{-0, 1, 2, 3},
+                new double[]{-2, 1, 8, 2},
+                new double[]{-5, 2, 3, 4}
+            }, 4, 2);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testReshapeIAE2() {
-        MatUtils.reshape(new double[][]{
-            new double[]{-0, 1, 2, 3},
-            new double[]{-2, 1, 8, 2},
-            new double[]{-5, 2, 3, 4}
-        }, -12, -1);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MatUtils.reshape(new double[][]{
+                new double[]{-0, 1, 2, 3},
+                new double[]{-2, 1, 8, 2},
+                new double[]{-5, 2, 3, 4}
+            }, -12, -1);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testReshapeIAE2_5() {
-        MatUtils.reshape(new int[][]{
-            new int[]{-0, 1, 2, 3},
-            new int[]{-2, 1, 8, 2},
-            new int[]{-5, 2, 3, 4}
-        }, -12, -1);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MatUtils.reshape(new int[][]{
+                new int[]{-0, 1, 2, 3},
+                new int[]{-2, 1, 8, 2},
+                new int[]{-5, 2, 3, 4}
+            }, -12, -1);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testReshapeIAE2_75() {
-        MatUtils.reshape(new int[][]{
-            new int[]{-0, 1, 2, 3},
-            new int[]{-2, 1, 8, 2},
-            new int[]{-5, 2, 3, 4}
-        }, 11, 1);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MatUtils.reshape(new int[][]{
+                new int[]{-0, 1, 2, 3},
+                new int[]{-2, 1, 8, 2},
+                new int[]{-5, 2, 3, 4}
+            }, 11, 1);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testReshapeIAE3() {
-        final double[] n = new double[]{1, 2, 3, 4, 5};
-        MatUtils.reshape(n, 3, 2); //here
+        assertThrows(IllegalArgumentException.class, () -> {
+            final double[] n = new double[]{1, 2, 3, 4, 5};
+            MatUtils.reshape(n, 3, 2); //here
+        }); //here
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testReshapeIAE4() {
-        final int[] n = new int[]{1, 2, 3, 4, 5};
-        MatUtils.reshape(n, 3, 2); //here
+        assertThrows(IllegalArgumentException.class, () -> {
+            final int[] n = new int[]{1, 2, 3, 4, 5};
+            MatUtils.reshape(n, 3, 2); //here
+        }); //here
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testReshapeIAE5() {
-        final double[] n = new double[]{1, 2, 3, 4, 5, 6};
-        MatUtils.reshape(n, -3, -2); //here
+        assertThrows(IllegalArgumentException.class, () -> {
+            final double[] n = new double[]{1, 2, 3, 4, 5, 6};
+            MatUtils.reshape(n, -3, -2); //here
+        }); //here
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testReshapeIAE6() {
-        final int[] n = new int[]{1, 2, 3, 4, 5, 6};
-        MatUtils.reshape(n, -3, -2); //here
+        assertThrows(IllegalArgumentException.class, () -> {
+            final int[] n = new int[]{1, 2, 3, 4, 5, 6};
+            MatUtils.reshape(n, -3, -2); //here
+        }); //here
     }
 
     public void testRepping() {
@@ -2064,39 +2219,53 @@ public class MatTests {
             }));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testRepIAE1() {
-        MatUtils.rep(3.0, -1, 0);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MatUtils.rep(3.0, -1, 0);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testRepIAE2() {
-        MatUtils.rep(3.0, 0, -1);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MatUtils.rep(3.0, 0, -1);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testRepIAE3() {
-        MatUtils.rep(3.0, 0, 0);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MatUtils.rep(3.0, 0, 0);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testRepIAE4() {
-        MatUtils.rep(new double[]{1.0, 1.0}, -1);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MatUtils.rep(new double[]{1.0, 1.0}, -1);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testRepIAE5() {
-        MatUtils.rep(new double[]{1.0, 1.0}, 0);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MatUtils.rep(new double[]{1.0, 1.0}, 0);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testRowMeansSumIAE1() {
-        MatUtils.rowSums(new double[][]{});
+        assertThrows(IllegalArgumentException.class, () -> {
+            MatUtils.rowSums(new double[][]{});
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testRowMeansSumIAE2() {
-        MatUtils.rowMeans(new double[][]{});
+        assertThrows(IllegalArgumentException.class, () -> {
+            MatUtils.rowMeans(new double[][]{});
+        });
     }
 
     @Test
@@ -2196,24 +2365,32 @@ public class MatTests {
             a));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testScalarOpIAE1() {
-        MatUtils.scalarAdd(new double[][]{}, 0.0);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MatUtils.scalarAdd(new double[][]{}, 0.0);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testScalarOpIAE2() {
-        MatUtils.scalarDivide(new double[][]{}, 0.0);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MatUtils.scalarDivide(new double[][]{}, 0.0);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testScalarOpIAE3() {
-        MatUtils.scalarMultiply(new double[][]{}, 0.0);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MatUtils.scalarMultiply(new double[][]{}, 0.0);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testScalarOpIAE4() {
-        MatUtils.scalarSubtract(new double[][]{}, 0.0);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MatUtils.scalarSubtract(new double[][]{}, 0.0);
+        });
     }
 
     public void testScalarVectorOps() {
@@ -2418,109 +2595,141 @@ public class MatTests {
     }
 
     // Tests on empty matrices
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testScalarVecOpIAE1() {
-        MatUtils.scalarAdd(new double[][]{}, new double[]{}, Axis.ROW);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MatUtils.scalarAdd(new double[][]{}, new double[]{}, Axis.ROW);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testScalarVecOpIAE2() {
-        MatUtils.scalarDivide(new double[][]{}, new double[]{}, Axis.ROW);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MatUtils.scalarDivide(new double[][]{}, new double[]{}, Axis.ROW);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testScalarVecOpIAE3() {
-        MatUtils.scalarMultiply(new double[][]{}, new double[]{}, Axis.ROW);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MatUtils.scalarMultiply(new double[][]{}, new double[]{}, Axis.ROW);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testScalarVecOpIAE4() {
-        MatUtils.scalarSubtract(new double[][]{}, new double[]{}, Axis.ROW);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MatUtils.scalarSubtract(new double[][]{}, new double[]{}, Axis.ROW);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testScalarColVecOpIAE1() {
-        MatUtils.scalarAdd(new double[][]{}, new double[]{}, Axis.COL);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MatUtils.scalarAdd(new double[][]{}, new double[]{}, Axis.COL);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testScalarColVecOpIAE2() {
-        MatUtils.scalarDivide(new double[][]{}, new double[]{}, Axis.COL);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MatUtils.scalarDivide(new double[][]{}, new double[]{}, Axis.COL);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testScalarColVecOpIAE3() {
-        MatUtils.scalarMultiply(new double[][]{}, new double[]{}, Axis.COL);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MatUtils.scalarMultiply(new double[][]{}, new double[]{}, Axis.COL);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testScalarColVecOpIAE4() {
-        MatUtils.scalarSubtract(new double[][]{}, new double[]{}, Axis.COL);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MatUtils.scalarSubtract(new double[][]{}, new double[]{}, Axis.COL);
+        });
     }
 
     // Tests on non-uniform matrices
-    @Test(expected = NonUniformMatrixException.class)
+    @Test
     public void testScalarVecOpNUME1() {
-        MatUtils.scalarAdd(new double[][]{
-            new double[]{1, 2, 3},
-            new double[]{1}
-        }, new double[]{}, Axis.ROW);
+        assertThrows(NonUniformMatrixException.class, () -> {
+            MatUtils.scalarAdd(new double[][]{
+                new double[]{1, 2, 3},
+                new double[]{1}
+            }, new double[]{}, Axis.ROW);
+        });
     }
 
-    @Test(expected = NonUniformMatrixException.class)
+    @Test
     public void testScalarVecOpNUME2() {
-        MatUtils.scalarDivide(new double[][]{
-            new double[]{1, 2, 3},
-            new double[]{1}
-        }, new double[]{}, Axis.ROW);
+        assertThrows(NonUniformMatrixException.class, () -> {
+            MatUtils.scalarDivide(new double[][]{
+                new double[]{1, 2, 3},
+                new double[]{1}
+            }, new double[]{}, Axis.ROW);
+        });
     }
 
-    @Test(expected = NonUniformMatrixException.class)
+    @Test
     public void testScalarVecOpNUME3() {
-        MatUtils.scalarMultiply(new double[][]{
-            new double[]{1, 2, 3},
-            new double[]{1}
-        }, new double[]{}, Axis.ROW);
+        assertThrows(NonUniformMatrixException.class, () -> {
+            MatUtils.scalarMultiply(new double[][]{
+                new double[]{1, 2, 3},
+                new double[]{1}
+            }, new double[]{}, Axis.ROW);
+        });
     }
 
-    @Test(expected = NonUniformMatrixException.class)
+    @Test
     public void testScalarVecOpNUME4() {
-        MatUtils.scalarSubtract(new double[][]{
-            new double[]{1, 2, 3},
-            new double[]{1}
-        }, new double[]{}, Axis.ROW);
+        assertThrows(NonUniformMatrixException.class, () -> {
+            MatUtils.scalarSubtract(new double[][]{
+                new double[]{1, 2, 3},
+                new double[]{1}
+            }, new double[]{}, Axis.ROW);
+        });
     }
 
-    @Test(expected = NonUniformMatrixException.class)
+    @Test
     public void testScalarColVecOpNUME1() {
-        MatUtils.scalarAdd(new double[][]{
-            new double[]{1, 2, 3},
-            new double[]{1}
-        }, new double[]{}, Axis.COL);
+        assertThrows(NonUniformMatrixException.class, () -> {
+            MatUtils.scalarAdd(new double[][]{
+                new double[]{1, 2, 3},
+                new double[]{1}
+            }, new double[]{}, Axis.COL);
+        });
     }
 
-    @Test(expected = NonUniformMatrixException.class)
+    @Test
     public void testScalarColVecOpNUME2() {
-        MatUtils.scalarDivide(new double[][]{
-            new double[]{1, 2, 3},
-            new double[]{1}
-        }, new double[]{}, Axis.COL);
+        assertThrows(NonUniformMatrixException.class, () -> {
+            MatUtils.scalarDivide(new double[][]{
+                new double[]{1, 2, 3},
+                new double[]{1}
+            }, new double[]{}, Axis.COL);
+        });
     }
 
-    @Test(expected = NonUniformMatrixException.class)
+    @Test
     public void testScalarColVecOpNUME3() {
-        MatUtils.scalarMultiply(new double[][]{
-            new double[]{1, 2, 3},
-            new double[]{1}
-        }, new double[]{}, Axis.COL);
+        assertThrows(NonUniformMatrixException.class, () -> {
+            MatUtils.scalarMultiply(new double[][]{
+                new double[]{1, 2, 3},
+                new double[]{1}
+            }, new double[]{}, Axis.COL);
+        });
     }
 
-    @Test(expected = NonUniformMatrixException.class)
+    @Test
     public void testScalarColVecOpNUME4() {
-        MatUtils.scalarSubtract(new double[][]{
-            new double[]{1, 2, 3},
-            new double[]{1}
-        }, new double[]{}, Axis.COL);
+        assertThrows(NonUniformMatrixException.class, () -> {
+            MatUtils.scalarSubtract(new double[][]{
+                new double[]{1, 2, 3},
+                new double[]{1}
+            }, new double[]{}, Axis.COL);
+        });
     }
 
     @Test
@@ -2555,37 +2764,47 @@ public class MatTests {
             }));
     }
 
-    @Test(expected = IndexOutOfBoundsException.class)
+    @Test
     public void testSetColInPlaceIOOBE1() {
-        MatUtils.setColumnInPlace(new double[][]{
-            new double[]{0, 1, 2},
-            new double[]{0, 1, 2}}, 3, new double[]{});
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            MatUtils.setColumnInPlace(new double[][]{
+                new double[]{0, 1, 2},
+                new double[]{0, 1, 2}}, 3, new double[]{});
+        });
     }
 
-    @Test(expected = IndexOutOfBoundsException.class)
+    @Test
     public void testSetColInPlaceIOOBE2() {
-        MatUtils.setColumnInPlace(new double[][]{
-            new double[]{0, 1, 2},
-            new double[]{0, 1, 2}}, -1, new double[]{});
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            MatUtils.setColumnInPlace(new double[][]{
+                new double[]{0, 1, 2},
+                new double[]{0, 1, 2}}, -1, new double[]{});
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testSetColInPlaceIAE1() {
-        MatUtils.setColumnInPlace(new double[][]{}, 0, new double[]{});
+        assertThrows(IllegalArgumentException.class, () -> {
+            MatUtils.setColumnInPlace(new double[][]{}, 0, new double[]{});
+        });
     }
 
-    @Test(expected = NonUniformMatrixException.class)
+    @Test
     public void testSetColInPlaceNUME1() {
-        MatUtils.setColumnInPlace(new double[][]{
-            new double[]{0, 1, 2},
-            new double[]{0, 1}}, 0, new double[]{});
+        assertThrows(NonUniformMatrixException.class, () -> {
+            MatUtils.setColumnInPlace(new double[][]{
+                new double[]{0, 1, 2},
+                new double[]{0, 1}}, 0, new double[]{});
+        });
     }
 
-    @Test(expected = DimensionMismatchException.class)
+    @Test
     public void testSetColInPlaceDME1() {
-        MatUtils.setColumnInPlace(new double[][]{
-            new double[]{0, 1, 2},
-            new double[]{0, 1, 2}}, 0, new double[]{1, 2, 3});
+        assertThrows(DimensionMismatchException.class, () -> {
+            MatUtils.setColumnInPlace(new double[][]{
+                new double[]{0, 1, 2},
+                new double[]{0, 1, 2}}, 0, new double[]{1, 2, 3});
+        });
     }
 
     @Test
@@ -2614,24 +2833,32 @@ public class MatTests {
             }));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testSetRowIAE() {
-        MatUtils.setRowInPlace(new double[][]{}, 0, new double[]{});
+        assertThrows(IllegalArgumentException.class, () -> {
+            MatUtils.setRowInPlace(new double[][]{}, 0, new double[]{});
+        });
     }
 
-    @Test(expected = IndexOutOfBoundsException.class)
+    @Test
     public void testSetRowIOOBE1() {
-        MatUtils.setRowInPlace(new double[][]{new double[]{}}, -1, new double[]{});
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            MatUtils.setRowInPlace(new double[][]{new double[]{}}, -1, new double[]{});
+        });
     }
 
-    @Test(expected = IndexOutOfBoundsException.class)
+    @Test
     public void testSetRowIOOBE2() {
-        MatUtils.setRowInPlace(new double[][]{new double[]{}}, 1, new double[]{});
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            MatUtils.setRowInPlace(new double[][]{new double[]{}}, 1, new double[]{});
+        });
     }
 
-    @Test(expected = DimensionMismatchException.class)
+    @Test
     public void testSetRowDME() {
-        MatUtils.setRowInPlace(new double[][]{new double[]{}}, 0, new double[]{1, 2, 3});
+        assertThrows(DimensionMismatchException.class, () -> {
+            MatUtils.setRowInPlace(new double[][]{new double[]{}}, 0, new double[]{1, 2, 3});
+        });
     }
 
 
@@ -2726,84 +2953,116 @@ public class MatTests {
         assertTrue(i[0][0] != 1);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testSortIAE1() {
-        MatUtils.sortAscByCol(new double[][]{}, 0);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MatUtils.sortAscByCol(new double[][]{}, 0);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testSortIAE2() {
-        MatUtils.sortAscByCol(new int[][]{}, 0);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MatUtils.sortAscByCol(new int[][]{}, 0);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testSortIAE3() {
-        MatUtils.sortDescByCol(new double[][]{}, 0);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MatUtils.sortDescByCol(new double[][]{}, 0);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testSortIAE4() {
-        MatUtils.sortDescByCol(new int[][]{}, 0);
+        assertThrows(IllegalArgumentException.class, () -> {
+            MatUtils.sortDescByCol(new int[][]{}, 0);
+        });
     }
 
-    @Test(expected = IndexOutOfBoundsException.class)
+    @Test
     public void testSortIOOBE1() {
-        MatUtils.sortAscByCol(new double[][]{new double[]{}}, -1);
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            MatUtils.sortAscByCol(new double[][]{new double[]{}}, -1);
+        });
     }
 
-    @Test(expected = IndexOutOfBoundsException.class)
+    @Test
     public void testSortIOOBE2() {
-        MatUtils.sortAscByCol(new double[][]{new double[]{}}, 1);
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            MatUtils.sortAscByCol(new double[][]{new double[]{}}, 1);
+        });
     }
 
-    @Test(expected = IndexOutOfBoundsException.class)
+    @Test
     public void testSortIOOBE3() {
-        MatUtils.sortAscByCol(new int[][]{new int[]{}}, -1);
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            MatUtils.sortAscByCol(new int[][]{new int[]{}}, -1);
+        });
     }
 
-    @Test(expected = IndexOutOfBoundsException.class)
+    @Test
     public void testSortIOOBE4() {
-        MatUtils.sortAscByCol(new int[][]{new int[]{}}, 1);
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            MatUtils.sortAscByCol(new int[][]{new int[]{}}, 1);
+        });
     }
 
-    @Test(expected = IndexOutOfBoundsException.class)
+    @Test
     public void testSortIOOBE5() {
-        MatUtils.sortDescByCol(new double[][]{new double[]{}}, -1);
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            MatUtils.sortDescByCol(new double[][]{new double[]{}}, -1);
+        });
     }
 
-    @Test(expected = IndexOutOfBoundsException.class)
+    @Test
     public void testSortIOOBE6() {
-        MatUtils.sortDescByCol(new double[][]{new double[]{}}, 1);
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            MatUtils.sortDescByCol(new double[][]{new double[]{}}, 1);
+        });
     }
 
-    @Test(expected = IndexOutOfBoundsException.class)
+    @Test
     public void testSortIOOBE7() {
-        MatUtils.sortDescByCol(new int[][]{new int[]{}}, -1);
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            MatUtils.sortDescByCol(new int[][]{new int[]{}}, -1);
+        });
     }
 
-    @Test(expected = IndexOutOfBoundsException.class)
+    @Test
     public void testSortIOOBE8() {
-        MatUtils.sortDescByCol(new int[][]{new int[]{}}, 1);
+        assertThrows(IndexOutOfBoundsException.class, () -> {
+            MatUtils.sortDescByCol(new int[][]{new int[]{}}, 1);
+        });
     }
 
-    @Test(expected = NonUniformMatrixException.class)
+    @Test
     public void testSortNUME1() {
-        MatUtils.sortAscByCol(new double[][]{new double[]{}, new double[]{1, 2}}, 0);
+        assertThrows(NonUniformMatrixException.class, () -> {
+            MatUtils.sortAscByCol(new double[][]{new double[]{}, new double[]{1, 2}}, 0);
+        });
     }
 
-    @Test(expected = NonUniformMatrixException.class)
+    @Test
     public void testSortNUME2() {
-        MatUtils.sortAscByCol(new int[][]{new int[]{}, new int[]{1, 2}}, 0);
+        assertThrows(NonUniformMatrixException.class, () -> {
+            MatUtils.sortAscByCol(new int[][]{new int[]{}, new int[]{1, 2}}, 0);
+        });
     }
 
-    @Test(expected = NonUniformMatrixException.class)
+    @Test
     public void testSortNUME3() {
-        MatUtils.sortDescByCol(new double[][]{new double[]{}, new double[]{1, 2}}, 0);
+        assertThrows(NonUniformMatrixException.class, () -> {
+            MatUtils.sortDescByCol(new double[][]{new double[]{}, new double[]{1, 2}}, 0);
+        });
     }
 
-    @Test(expected = NonUniformMatrixException.class)
+    @Test
     public void testSortNUME4() {
-        MatUtils.sortDescByCol(new int[][]{new int[]{}, new int[]{1, 2}}, 0);
+        assertThrows(NonUniformMatrixException.class, () -> {
+            MatUtils.sortDescByCol(new int[][]{new int[]{}, new int[]{1, 2}}, 0);
+        });
     }
 
     @Test
@@ -2839,19 +3098,25 @@ public class MatTests {
         ));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testSubIAE1() {
-        MatUtils.subtract(new double[][]{}, new double[][]{new double[]{}});
+        assertThrows(IllegalArgumentException.class, () -> {
+            MatUtils.subtract(new double[][]{}, new double[][]{new double[]{}});
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testSubIAE2() {
-        MatUtils.subtract(new double[][]{new double[]{}}, new double[][]{});
+        assertThrows(IllegalArgumentException.class, () -> {
+            MatUtils.subtract(new double[][]{new double[]{}}, new double[][]{});
+        });
     }
 
-    @Test(expected = DimensionMismatchException.class)
+    @Test
     public void testSubDME1() {
-        MatUtils.subtract(new double[][]{new double[]{}}, new double[][]{new double[]{}, new double[]{}});
+        assertThrows(DimensionMismatchException.class, () -> {
+            MatUtils.subtract(new double[][]{new double[]{}}, new double[][]{new double[]{}, new double[]{}});
+        });
     }
 
     @Test
@@ -2895,9 +3160,11 @@ public class MatTests {
             }));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testToDoubleIAE() {
-        MatUtils.toDouble(new int[][]{});
+        assertThrows(IllegalArgumentException.class, () -> {
+            MatUtils.toDouble(new int[][]{});
+        });
     }
 
     @Test
@@ -2923,24 +3190,32 @@ public class MatTests {
             MatUtils.transpose(new double[]{0, 1})));
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testTransposeIAE() {
-        MatUtils.transpose(new double[][]{});
+        assertThrows(IllegalArgumentException.class, () -> {
+            MatUtils.transpose(new double[][]{});
+        });
     }
 
-    @Test(expected = NonUniformMatrixException.class)
+    @Test
     public void testTransposeNUME() {
-        MatUtils.transpose(new double[][]{new double[]{}, new double[]{1, 2}});
+        assertThrows(NonUniformMatrixException.class, () -> {
+            MatUtils.transpose(new double[][]{new double[]{}, new double[]{1, 2}});
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testTransposeEmpty() {
-        MatUtils.transpose(new double[][]{new double[]{}});
+        assertThrows(IllegalArgumentException.class, () -> {
+            MatUtils.transpose(new double[][]{new double[]{}});
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testTransposeVecIAE() {
-        MatUtils.transpose(new double[]{});
+        assertThrows(IllegalArgumentException.class, () -> {
+            MatUtils.transpose(new double[]{});
+        });
     }
 
     @Test
@@ -3031,26 +3306,30 @@ public class MatTests {
         }));
     }
 
-    @Test(expected = DimensionMismatchException.class)
+    @Test
     public void testScalarOpDME1() {
-        double[][] a = new double[][]{
-            new double[]{0, 1, 2},
-            new double[]{2, 3, 4}
-        };
+        assertThrows(DimensionMismatchException.class, () -> {
+            double[][] a = new double[][]{
+                new double[]{0, 1, 2},
+                new double[]{2, 3, 4}
+            };
 
-        double[] v = new double[]{-1, 2, 3};
-        MatUtils.scalarAdd(a, v, Axis.ROW); // here
+            double[] v = new double[]{-1, 2, 3};
+            MatUtils.scalarAdd(a, v, Axis.ROW); // here
+        }); // here
     }
 
-    @Test(expected = DimensionMismatchException.class)
+    @Test
     public void testScalarOpDME2() {
-        double[][] a = new double[][]{
-            new double[]{0, 1, 2},
-            new double[]{2, 3, 4}
-        };
+        assertThrows(DimensionMismatchException.class, () -> {
+            double[][] a = new double[][]{
+                new double[]{0, 1, 2},
+                new double[]{2, 3, 4}
+            };
 
-        double[] v = new double[]{-1, 2};
-        MatUtils.scalarAdd(a, v, Axis.COL); // here
+            double[] v = new double[]{-1, 2};
+            MatUtils.scalarAdd(a, v, Axis.COL); // here
+        }); // here
     }
 
     @Test
@@ -3066,83 +3345,107 @@ public class MatTests {
         }
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testDimCheckIAE1() {
-        Array2DRowRealMatrix matrix = new Array2DRowRealMatrix();
-        MatUtils.checkDims(matrix);
+        assertThrows(IllegalArgumentException.class, () -> {
+            Array2DRowRealMatrix matrix = new Array2DRowRealMatrix();
+            MatUtils.checkDims(matrix);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testDimCheckIAE2() {
-        double[][] a = new double[5][2];
-        double[][] b = new double[5][];
-        MatUtils.checkDimsPermitEmpty(a, b);
+        assertThrows(IllegalArgumentException.class, () -> {
+            double[][] a = new double[5][2];
+            double[][] b = new double[5][];
+            MatUtils.checkDimsPermitEmpty(a, b);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testDimCheckIAE3() {
-        boolean[][] a = new boolean[5][2];
-        boolean[][] b = new boolean[5][];
-        MatUtils.checkDimsPermitEmpty(a, b);
+        assertThrows(IllegalArgumentException.class, () -> {
+            boolean[][] a = new boolean[5][2];
+            boolean[][] b = new boolean[5][];
+            MatUtils.checkDimsPermitEmpty(a, b);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testDimCheckIAE4() {
-        boolean[][] b = new boolean[5][];
-        MatUtils.checkDimsPermitEmpty(b);
+        assertThrows(IllegalArgumentException.class, () -> {
+            boolean[][] b = new boolean[5][];
+            MatUtils.checkDimsPermitEmpty(b);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testDimCheckIAE5() {
-        int[][] b = new int[5][];
-        MatUtils.checkDimsPermitEmpty(b);
+        assertThrows(IllegalArgumentException.class, () -> {
+            int[][] b = new int[5][];
+            MatUtils.checkDimsPermitEmpty(b);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testDimCheckIAE6() {
-        double[][] b = new double[5][];
-        MatUtils.checkDimsPermitEmpty(b);
+        assertThrows(IllegalArgumentException.class, () -> {
+            double[][] b = new double[5][];
+            MatUtils.checkDimsPermitEmpty(b);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testDimCheckIAE7() {
-        boolean[][] b = new boolean[1][];
-        MatUtils.checkDimsPermitEmpty(b);
+        assertThrows(IllegalArgumentException.class, () -> {
+            boolean[][] b = new boolean[1][];
+            MatUtils.checkDimsPermitEmpty(b);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testDimCheckIAE8() {
-        int[][] b = new int[1][];
-        MatUtils.checkDimsPermitEmpty(b);
+        assertThrows(IllegalArgumentException.class, () -> {
+            int[][] b = new int[1][];
+            MatUtils.checkDimsPermitEmpty(b);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testDimCheckIAE9() {
-        double[][] b = new double[1][];
-        MatUtils.checkDimsPermitEmpty(b);
+        assertThrows(IllegalArgumentException.class, () -> {
+            double[][] b = new double[1][];
+            MatUtils.checkDimsPermitEmpty(b);
+        });
     }
 
-    @Test(expected = NonUniformMatrixException.class)
+    @Test
     public void testNUMEBoolean1() {
-        boolean[][] b = new boolean[][]{
-            new boolean[]{true, false},
-            new boolean[]{true}
-        };
-        MatUtils.checkDimsForUniformity(b);
+        assertThrows(NonUniformMatrixException.class, () -> {
+            boolean[][] b = new boolean[][]{
+                new boolean[]{true, false},
+                new boolean[]{true}
+            };
+            MatUtils.checkDimsForUniformity(b);
+        });
     }
 
-    @Test(expected = DimensionMismatchException.class)
+    @Test
     public void testDimCheckDME1() {
-        Array2DRowRealMatrix matrix1 = new Array2DRowRealMatrix(new double[5][2], false);
-        Array2DRowRealMatrix matrix2 = new Array2DRowRealMatrix(new double[4][2], false);
-        MatUtils.checkDims(matrix1, matrix2);
+        assertThrows(DimensionMismatchException.class, () -> {
+            Array2DRowRealMatrix matrix1 = new Array2DRowRealMatrix(new double[5][2], false);
+            Array2DRowRealMatrix matrix2 = new Array2DRowRealMatrix(new double[4][2], false);
+            MatUtils.checkDims(matrix1, matrix2);
+        });
     }
 
-    @Test(expected = DimensionMismatchException.class)
+    @Test
     public void testDimCheckDME2() {
-        Array2DRowRealMatrix matrix1 = new Array2DRowRealMatrix(new double[5][2], false);
-        Array2DRowRealMatrix matrix2 = new Array2DRowRealMatrix(new double[5][3], false);
-        MatUtils.checkDims(matrix1, matrix2);
+        assertThrows(DimensionMismatchException.class, () -> {
+            Array2DRowRealMatrix matrix1 = new Array2DRowRealMatrix(new double[5][2], false);
+            Array2DRowRealMatrix matrix2 = new Array2DRowRealMatrix(new double[5][3], false);
+            MatUtils.checkDims(matrix1, matrix2);
+        });
     }
 
     @Test

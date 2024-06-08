@@ -15,7 +15,7 @@
  *******************************************************************************/
 package com.clust4j.algo;
 
-import org.junit.Test;
+import org.junit.jupiter.api.Test;
 
 public interface ClusterTest {
     @Test

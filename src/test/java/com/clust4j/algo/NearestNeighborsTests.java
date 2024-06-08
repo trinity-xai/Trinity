@@ -15,8 +15,19 @@
  *******************************************************************************/
 package com.clust4j.algo;
 
-import static com.clust4j.TestSuite.getRandom;
-import static org.junit.Assert.*;
+import com.clust4j.GlobalState;
+import com.clust4j.TestSuite;
+import com.clust4j.algo.BaseNeighborsModel.NeighborsAlgorithm;
+import com.clust4j.except.ModelNotFitException;
+import com.clust4j.kernel.GaussianKernel;
+import com.clust4j.metrics.pairwise.Distance;
+import com.clust4j.metrics.pairwise.MinkowskiDistance;
+import com.clust4j.metrics.pairwise.Similarity;
+import com.clust4j.utils.MatUtils;
+import com.clust4j.utils.Series.Inequality;
+import com.clust4j.utils.VecUtils;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.junit.jupiter.api.Test;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -25,22 +36,8 @@ import java.nio.file.Files;
 import java.util.Random;
 import java.util.concurrent.RejectedExecutionException;
 
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.junit.Test;
-
-import com.clust4j.GlobalState;
-import com.clust4j.TestSuite;
-import com.clust4j.algo.BaseNeighborsModel.NeighborsAlgorithm;
-import com.clust4j.algo.Neighborhood;
-import com.clust4j.algo.NearestNeighborsParameters;
-import com.clust4j.except.ModelNotFitException;
-import com.clust4j.kernel.GaussianKernel;
-import com.clust4j.metrics.pairwise.Distance;
-import com.clust4j.metrics.pairwise.MinkowskiDistance;
-import com.clust4j.metrics.pairwise.Similarity;
-import com.clust4j.utils.MatUtils;
-import com.clust4j.utils.VecUtils;
-import com.clust4j.utils.Series.Inequality;
+import static com.clust4j.TestSuite.getRandom;
+import static org.junit.jupiter.api.Assertions.*;
 
 public class NearestNeighborsTests implements ClusterTest, BaseModelTest {
     final Array2DRowRealMatrix data = TestSuite.IRIS_DATASET.getData();
@@ -178,24 +175,32 @@ public class NearestNeighborsTests implements ClusterTest, BaseModelTest {
         }
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testIAE1() {
-        new NearestNeighbors(data, 0);
+        assertThrows(IllegalArgumentException.class, () -> {
+            new NearestNeighbors(data, 0);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testIAE2() {
-        new NearestNeighbors(data, 151);
+        assertThrows(IllegalArgumentException.class, () -> {
+            new NearestNeighbors(data, 151);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testIAE3() {
-        new NearestNeighbors(data, new NearestNeighborsParameters(0));
+        assertThrows(IllegalArgumentException.class, () -> {
+            new NearestNeighbors(data, new NearestNeighborsParameters(0));
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testIAE4() {
-        new NearestNeighbors(data, new NearestNeighborsParameters(151));
+        assertThrows(IllegalArgumentException.class, () -> {
+            new NearestNeighbors(data, new NearestNeighborsParameters(151));
+        });
     }
 
     @Test
@@ -203,19 +208,25 @@ public class NearestNeighborsTests implements ClusterTest, BaseModelTest {
         assertTrue(new NearestNeighbors(data, 3).getK() == 3);
     }
 
-    @Test(expected = ModelNotFitException.class)
+    @Test
     public void testMNFNeigb1() {
-        new NearestNeighbors(data).getNeighbors(data);
+        assertThrows(ModelNotFitException.class, () -> {
+            new NearestNeighbors(data).getNeighbors(data);
+        });
     }
 
-    @Test(expected = ModelNotFitException.class)
+    @Test
     public void testMNFNeigb2() {
-        new NearestNeighbors(data).getNeighbors(data, 2);
+        assertThrows(ModelNotFitException.class, () -> {
+            new NearestNeighbors(data).getNeighbors(data, 2);
+        });
     }
 
-    @Test(expected = ModelNotFitException.class)
+    @Test
     public void testMNFNeigb3() {
-        new NearestNeighbors(data).getNeighbors();
+        assertThrows(ModelNotFitException.class, () -> {
+            new NearestNeighbors(data).getNeighbors();
+        });
     }
 
     @Test
@@ -224,14 +235,18 @@ public class NearestNeighborsTests implements ClusterTest, BaseModelTest {
         new NearestNeighbors(data).fit().getNeighbors(data).getDistances();
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testGetNeighbIAE1() {
-        new NearestNeighbors(data).fit().getNeighbors(data, 0);
+        assertThrows(IllegalArgumentException.class, () -> {
+            new NearestNeighbors(data).fit().getNeighbors(data, 0);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testGetNeighbIAE2() {
-        new NearestNeighbors(data).fit().getNeighbors(data, 151);
+        assertThrows(IllegalArgumentException.class, () -> {
+            new NearestNeighbors(data).fit().getNeighbors(data, 151);
+        });
     }
 
     final static Array2DRowRealMatrix DATA =
@@ -386,16 +401,20 @@ public class NearestNeighborsTests implements ClusterTest, BaseModelTest {
         }
     }
 
-    @Test(expected = ModelNotFitException.class)
+    @Test
     public void testNotFit1() {
-        NearestNeighbors nn = new NearestNeighbors(DATA, 1);
-        nn.getNeighbors();
+        assertThrows(ModelNotFitException.class, () -> {
+            NearestNeighbors nn = new NearestNeighbors(DATA, 1);
+            nn.getNeighbors();
+        });
     }
 
-    @Test(expected = ModelNotFitException.class)
+    @Test
     public void testNotFit2() {
-        NearestNeighbors nn = new NearestNeighbors(DATA, 1);
-        nn.getNeighbors(DATA);
+        assertThrows(ModelNotFitException.class, () -> {
+            NearestNeighbors nn = new NearestNeighbors(DATA, 1);
+            nn.getNeighbors(DATA);
+        });
     }
 
     @Test
@@ -411,49 +430,65 @@ public class NearestNeighborsTests implements ClusterTest, BaseModelTest {
         assertTrue(nn.getK() == 1);
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testIAEConstructor1() {
-        new NearestNeighbors(DATA, 0);
+        assertThrows(IllegalArgumentException.class, () -> {
+            new NearestNeighbors(DATA, 0);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testIAEConstructor2() {
-        new NearestNeighbors(DATA, 8);
+        assertThrows(IllegalArgumentException.class, () -> {
+            new NearestNeighbors(DATA, 8);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testIAEConstructor3() {
-        new NearestNeighbors(DATA, -1);
+        assertThrows(IllegalArgumentException.class, () -> {
+            new NearestNeighbors(DATA, -1);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testIAEConstructor4() {
-        new NearestNeighbors(DATA, new NearestNeighborsParameters(2).setLeafSize(-1));
+        assertThrows(IllegalArgumentException.class, () -> {
+            new NearestNeighbors(DATA, new NearestNeighborsParameters(2).setLeafSize(-1));
+        });
     }
 
-    @Test(expected = NullPointerException.class)
+    @Test
     public void testNPEConstructor1() {
-        new NearestNeighbors(DATA, new NearestNeighborsParameters(2).setAlgorithm(null));
+        assertThrows(NullPointerException.class, () -> {
+            new NearestNeighbors(DATA, new NearestNeighborsParameters(2).setAlgorithm(null));
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testIAEMethod1() {
-        NearestNeighbors nn = new NearestNeighbors(DATA, 2).fit();
-        nn.getNeighbors(DATA, 9);
-        // test refit
-        nn.fit();
+        assertThrows(IllegalArgumentException.class, () -> {
+            NearestNeighbors nn = new NearestNeighbors(DATA, 2).fit();
+            nn.getNeighbors(DATA, 9);
+            // test refit
+            nn.fit();
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testIAEMethod2() {
-        NearestNeighbors nn = new NearestNeighbors(DATA, 2).fit();
-        nn.getNeighbors(DATA, 0);
+        assertThrows(IllegalArgumentException.class, () -> {
+            NearestNeighbors nn = new NearestNeighbors(DATA, 2).fit();
+            nn.getNeighbors(DATA, 0);
+        });
     }
 
-    @Test(expected = IllegalArgumentException.class)
+    @Test
     public void testIAEMethod3() {
-        NearestNeighbors nn = new NearestNeighbors(DATA, 2).fit();
-        nn.getNeighbors(DATA, -1);
+        assertThrows(IllegalArgumentException.class, () -> {
+            NearestNeighbors nn = new NearestNeighbors(DATA, 2).fit();
+            nn.getNeighbors(DATA, -1);
+        });
     }
 
     @Test
