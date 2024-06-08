@@ -57,7 +57,7 @@ jobs:
             ${{ runner.os }}-${{ runner.arch }}-maven-
 
       - name: Maven Build Jar
-        run: mvn -V -B -e -ff -ntp clean package -Passembly
+        run: ./mvnw -V -B -e -ff -ntp clean package -Passembly
 
       - name: Upload Jar
         uses: actions/upload-artifact@v4
@@ -118,12 +118,6 @@ jobs:
           github-token: ${{ secrets.GITHUB_TOKEN }}
           native-image-job-reports: 'true'
 
-      # Specific Version Required by Gluon Plugin
-      - name: Set Up Maven
-        uses: stCarolas/setup-maven@v5
-        with:
-          maven-version: 3.8.8
-
       - name: Cache Maven repository
         uses: actions/cache@v4
         with:
@@ -133,7 +127,7 @@ jobs:
             ${{ runner.os }}-${{ runner.arch }}-maven-
 
       - name: Maven Build Graal VM
-        run: mvn -V -B -e -ff -ntp clean gluonfx:compile gluonfx:link
+        run: ./mvnw -V -B -e -ff -ntp clean gluonfx:compile gluonfx:link
 
       - name: Upload Native
         uses: actions/upload-artifact@v4
