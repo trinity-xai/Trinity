@@ -28,7 +28,7 @@ jobs:
     runs-on: ${{ matrix.os }}
 
     strategy:
-      fail-fast: true
+      fail-fast: false
       matrix:
         jdk-version: [ 21 ]
         os:
