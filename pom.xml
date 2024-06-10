@@ -52,9 +52,6 @@
         <sarxos.webcam.capture.version>0.3.12</sarxos.webcam.capture.version>
         <org.jflac.jflac-codec.version>1.5.2</org.jflac.jflac-codec.version>
         <slf4j.version>2.0.12</slf4j.version>
-        <license.organizationName>The Johns Hopkins University Applied Physics Laboratory LLC</license.organizationName>
-        <license.licenceFile>LICENSE.md</license.licenceFile>
-        <license.licenseName>apache_v2</license.licenseName>
         <mainClassName>edu.jhuapl.trinity.TrinityMain</mainClassName>
         <!-- Values for build.properties -->
         <trinity.title>Trinity</trinity.title>
@@ -278,33 +275,6 @@
                     <javafxStaticSdkVersion>${javafx.static.version}</javafxStaticSdkVersion>
                     <mainClass>${mainClassName}</mainClass>
                 </configuration>
-            </plugin>
-            <!-- Adding license header to file, and copying license into metadata -->
-            <!-- Currently only used Manually -->
-            <plugin>
-                <groupId>org.codehaus.mojo</groupId>
-                <artifactId>license-maven-plugin</artifactId>
-                <version>${codehaus.license.plugin.version}</version>
-                <configuration>
-                    <licenseName>apache_v2</licenseName>
-                    <canUpdateCopyright>false</canUpdateCopyright>
-                    <canUpdateDescription>false</canUpdateDescription>
-                    <roots>
-                        <root>src/main/java</root>
-                        <root>src/test/java</root>
-                    </roots>
-                    <excludes>
-                        <exclude>**/*.json</exclude>
-                    </excludes>
-                </configuration>
-                <executions>
-                    <execution>
-                        <phase>process-sources</phase>
-                        <goals>
-                            <goal>update-file-header</goal>
-                        </goals>
-                    </execution>
-                </executions>
             </plugin>
             <plugin>
                 <groupId>io.github.git-commit-id</groupId>
