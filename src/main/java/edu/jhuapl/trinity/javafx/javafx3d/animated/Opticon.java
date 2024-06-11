@@ -130,8 +130,9 @@ public class Opticon extends Group {
         PhongMaterial mat;
         try {
             Image diffuseImage = ResourceUtils.load3DTextureImage("top");
-            Image specBumpImage = ResourceUtils.load3DTextureImage("inverseRetroline");
-            mat = new PhongMaterial(Color.BLUE, diffuseImage, specBumpImage, specBumpImage, diffuseImage);
+            Image specBumpImage = ResourceUtils.load3DTextureImage("droidBumpNormalMap");
+            Image specularImage = ResourceUtils.load3DTextureImage("inverseRetroline");
+            mat = new PhongMaterial(Color.BLUE, diffuseImage, specularImage, specBumpImage, diffuseImage);
         } catch (IOException ex) {
             Logger.getLogger(RetroWavePane.class.getName()).log(Level.SEVERE, null, ex);
             mat = new PhongMaterial(Color.BLUE);

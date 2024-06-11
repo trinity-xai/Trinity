@@ -35,12 +35,10 @@ public class TexturedManifold extends TexturedMesh {
 
     private List<Point3D> vertices;
     private List<Face3> faces;
-    int div;
 
     public TexturedManifold(List<Point3D> vertices, List<Face3> faces) {
         this.vertices = vertices;
         this.faces = faces;
-        div = 64;
         updateMesh();
     }
 
@@ -55,35 +53,35 @@ public class TexturedManifold extends TexturedMesh {
         for (int i = 0; i < getVertices().size(); i++) {
             point3D = getVertices().get(i);
             mesh.getPoints().addAll(point3D.x, point3D.y, point3D.z);
-//            mesh.getTexCoords().addAll(point3D.x, point3D.z);
         }
-        div = getVertices().size();
-        final float rDiv = 1.f / div;
-        float textureDelta = 1.f / 256;
-        //2*r*PI x 2*r
-//        double h = 2 * r;
-//        double w = 2 * r * 3.125; // 3.125 is ~ PI, rounded to get perfect squares.
-
-        Point3D centroid = getAverageConvexCentroid();
         float maxY = getMaxY().floatValue();
         float maxX = getMaxX().floatValue();
-        float radius = 0;
-//        for (int i = 0; i < div; ++i) {
         for (int i = 0; i < getVertices().size(); i++) {
-            radius = distance(getVertices().get(i), centroid).floatValue();
             mesh.getTexCoords().addAll(
-//            tPoints[tPos + 0] = 1.0f - rDiv * (0.5f + i);
                 getVertices().get(i).getX() / maxX, getVertices().get(i).getY() / maxY
             );
         }
 
         for (Face3 face : getFaces()) {
-            mesh.getFaces().addAll(face.p0, face.p2, face.p1, face.p1, face.p2, face.p0);
-//            mesh.getFaceSmoothingGroups().addAll(face[2], face[1],face[0]);
+            mesh.getFaces().addAll(
+                face.p0, face.p2, face.p1,
+                 face.p1, face.p2, face.p0
+            );
         }
         return mesh;
     }
-
+    public void flipFaces(int indexSkip) {
+        TriangleMesh tm = (TriangleMesh) getMesh();
+        int size = tm.getFaces().size();
+        int swap = 0;
+        for(int i=0; i<size; i+=indexSkip) {
+            swap = tm.getFaces().get(i);
+            tm.getFaces().set(i, tm.getFaces().get(i+2));
+            tm.getFaces().set(i+2,swap);
+            if(i+indexSkip+3>size) //safety check
+                return;
+        }
+    }
     private Double getMaxX() {
         return getVertices().stream()
             .flatMapToDouble(p -> DoubleStream.of(Math.abs(p.x)))
@@ -130,4 +128,5 @@ public class TexturedManifold extends TexturedMesh {
     public List<Face3> getFaces() {
         return faces;
     }
+
 }

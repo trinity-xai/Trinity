@@ -62,7 +62,6 @@ import edu.jhuapl.trinity.javafx.javafx3d.ShadowCubeWorld.PROJECTION_TYPE;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.AnimatedSphere;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.Opticon;
 import edu.jhuapl.trinity.javafx.javafx3d.projectiles.HitShape3D;
-import edu.jhuapl.trinity.javafx.javafx3d.projectiles.Hittable;
 import edu.jhuapl.trinity.javafx.javafx3d.projectiles.ProjectileSystem;
 import edu.jhuapl.trinity.javafx.javafx3d.tasks.ManifoldClusterTask;
 import edu.jhuapl.trinity.javafx.renderers.FeatureVectorRenderer;
@@ -145,7 +144,6 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
-import java.util.Random;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
@@ -153,7 +151,7 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import static edu.jhuapl.trinity.javafx.components.radial.HyperspaceMenu.slideInPane;
+//import static edu.jhuapl.trinity.javafx.components.radial.HyperspaceMenu.slideInPane;
 
 /**
  * @author Sean Phillips
@@ -804,7 +802,8 @@ public class Projections3DPane extends StackPane implements
             }
             if (!pathPane.getChildren().contains(manifoldControlPane)) {
                 pathPane.getChildren().add(manifoldControlPane);
-                slideInPane(manifoldControlPane);
+//                slideInPane(manifoldControlPane);
+                manifoldControlPane.slideInPane();
             } else {
                 manifoldControlPane.show();
             }
@@ -819,7 +818,8 @@ public class Projections3DPane extends StackPane implements
             }
             if (!pathPane.getChildren().contains(radarPlotPane)) {
                 pathPane.getChildren().add(radarPlotPane);
-                slideInPane(radarPlotPane);
+//                slideInPane(radarPlotPane);
+                radarPlotPane.slideInPane();
             } else {
                 radarPlotPane.show();
             }
@@ -1147,6 +1147,10 @@ public class Projections3DPane extends StackPane implements
                 //show the cool stuff
                 debugGroup.setVisible(projectileSystem.isRunning());
             }
+            if(keycode == KeyCode.SPACE && k.isControlDown()) {
+                projectileSystem.fire();
+
+            }            
         });
 
         Platform.runLater(() -> {
@@ -1168,25 +1172,15 @@ public class Projections3DPane extends StackPane implements
         projectileSystem.clearAllHittables();
         debugGroup.getChildren().removeIf(c -> c instanceof HitShape3D);
         //copy all shapes into the projectile system
-        Random rando = new Random();
         getManifoldViews().getChildren()
             .filtered(m -> m instanceof Manifold3D)
             .forEach(t -> {
                 Manifold3D man3D = (Manifold3D) t;
-                HitShape3D hitShape = new HitShape3D(
-                    man3D.texturedManifold.getVertices(),
-                    man3D.texturedManifold.getFaces(),
-                    JavaFX3DUtils.toFX.apply(man3D.getBoundsCentroid())
-                );
-                javafx.geometry.Point3D velocity = new javafx.geometry.Point3D(
-                    Hittable.random.nextGaussian() * 0.5,
-                    Hittable.random.nextGaussian() * 2.1, //initial velocity mostly vertical
-                    Hittable.random.nextGaussian() * 0.5);
-                hitShape.setVelocity(velocity);
-
-                projectileSystem.addHitShape(hitShape);
-                projectileSystem.addHittable(hitShape);
-                debugGroup.getChildren().add(hitShape);
+                try {
+                    projectileSystem.makeAsteroidFromPoints(man3D);
+                } catch (Exception ex) {
+                    System.out.println("Could not make HitShape3D: " + ex.getMessage());
+                }
             });
     }
 

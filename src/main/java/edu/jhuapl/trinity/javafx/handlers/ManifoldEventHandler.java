@@ -316,12 +316,12 @@ public class ManifoldEventHandler implements EventHandler<ManifoldEvent> {
     }
 
     public void handleNewManifoldData(ManifoldEvent event) {
-        Platform.runLater(() -> {
-            App.getAppScene().getRoot().fireEvent(
-                new CommandTerminalEvent("Loading Manifold Data...",
-                    new Font("Consolas", 20), Color.GREEN));
-        });
-        System.out.println("Loading Manifold Data...");
+//        Platform.runLater(() -> {
+//            App.getAppScene().getRoot().fireEvent(
+//                new CommandTerminalEvent("Loading Manifold Data...",
+//                    new Font("Consolas", 20), Color.GREEN));
+//        });
+//        System.out.println("Loading Manifold Data...");
         ManifoldData md = (ManifoldData) event.object1;
         //convert deserialized points to Fxyz3D point3ds
         List<org.fxyz3d.geometry.Point3D> points = md.getPoints().stream()

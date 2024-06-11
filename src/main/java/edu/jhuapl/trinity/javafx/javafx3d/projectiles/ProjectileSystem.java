@@ -21,6 +21,8 @@ package edu.jhuapl.trinity.javafx.javafx3d.projectiles;
  */
 
 import edu.jhuapl.trinity.javafx.events.HitEvent;
+import edu.jhuapl.trinity.javafx.javafx3d.Manifold3D;
+import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import javafx.animation.AnimationTimer;
 import javafx.geometry.Point3D;
@@ -31,13 +33,20 @@ import javafx.scene.media.MediaPlayer;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.application.Platform;
+import javafx.concurrent.Task;
+import javafx.scene.media.AudioClip;
 
 import static javafx.scene.media.MediaPlayer.INDEFINITE;
+import javafx.scene.shape.CullFace;
+import javafx.scene.shape.TriangleMesh;
+import javafx.util.Pair;
 
 public class ProjectileSystem {
-
+    
     public AnimationTimer projectileTimer;
     private ArrayList<Projectile> projectiles;
     private ArrayList<HitShape3D> hittables;
@@ -50,7 +59,9 @@ public class ProjectileSystem {
     private boolean autoCull = true;
     Media asteriods1981 = null;
     MediaPlayer asteriods1981MediaPlayer = null;
-    //AudioClip plonkSound
+    AudioClip fireSound = null;
+    AudioClip bigBoom = null;
+    AudioClip smallBoom = null;
 
     double absSafetyPosition = 2000;
     HitBox xPlusBox;
@@ -60,7 +71,9 @@ public class ProjectileSystem {
     HitBox zPlusBox;
     HitBox zMinusBox;
     PlayerShip playerShip;
-
+    public boolean splittingEnabled = true;
+    public double bigThreshold = 200;
+    
     public ProjectileSystem(Group parentGroup, int millisInterval) {
         this.parentGroup = parentGroup;
         msInterval = millisInterval;
@@ -75,7 +88,10 @@ public class ProjectileSystem {
             asteriods1981MediaPlayer = new MediaPlayer(asteriods1981);
             asteriods1981MediaPlayer.setCycleCount(INDEFINITE);
             asteriods1981MediaPlayer.setMute(true);
-//            asteriods1981MediaPlayer.play();
+            fireSound = ResourceUtils.loadAudioClipWav("fire");
+            bigBoom = ResourceUtils.loadAudioClipWav("bigBoom");
+            smallBoom = ResourceUtils.loadAudioClipWav("smallBoom");
+            
         } catch (IOException ex) {
             Logger.getLogger(ProjectileSystem.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -116,7 +132,6 @@ public class ProjectileSystem {
             }
         };
     }
-
     private void hittableSweep() {
         hittables.stream().forEach(p -> {
             //@TODO SMP might need to do BOTH an inner check and ray check
@@ -133,7 +148,6 @@ public class ProjectileSystem {
             }
         });
     }
-
     private void processCollision(HitBox rayCheck, HitShape3D p) {
         HitBox hit = rayCheck;
         //compute the ricochet based on the normal
@@ -144,10 +158,99 @@ public class ProjectileSystem {
         //fire off hit event
         parentGroup.getScene().getRoot().fireEvent(
             new HitEvent(HitEvent.SHAPE_HIT_BOX, p, hit));
+    }
+    public void fire() {
+        javafx.geometry.Point3D start = javafx.geometry.Point3D.ZERO;
+        javafx.geometry.Point3D velocity = new Point3D(0, 0, -10);
+        FireBall fireBall = new FireBall(20, start, velocity);
+        addProjectile(fireBall);
+        fireSound.play();
+    }
+    private boolean isBig(HitShape3D hit, double threshold){ 
+        return hit.getBoundsInLocal().getWidth() > threshold 
+        || hit.getBoundsInLocal().getHeight() > threshold
+        || hit.getBoundsInLocal().getDepth() > threshold;
+    }
+    
 
+    public void makeAsteroidFromPoints(List<org.fxyz3d.geometry.Point3D> list) throws Exception {
+        Manifold3D man3D = new Manifold3D(list, true, false, false, 1.0);
+        makeAsteroidFromPoints(man3D);
+    }
+    public void makeAsteroidFromPoints(Manifold3D man3D) throws Exception {
+        HitShape3D hitShape = new HitShape3D(
+            man3D.texturedManifold.getVertices(),
+            man3D.texturedManifold.getFaces(),
+            JavaFX3DUtils.toFX.apply(man3D.getBoundsCentroid())
+        );
+        javafx.geometry.Point3D velocity = new javafx.geometry.Point3D(
+            Hittable.random.nextGaussian() * 0.5,
+            Hittable.random.nextGaussian() * 2.1, //initial velocity mostly vertical
+            Hittable.random.nextGaussian() * 0.5);
+        hitShape.setVelocity(velocity);
+        addHitShape(hitShape);
+        addHittable(hitShape);
+        Platform.runLater(()-> {
+        parentGroup.getChildren().add(hitShape);
+        });
     }
 
+    public void explodo(HitShape3D hit){
+        List<org.fxyz3d.geometry.Point3D> northList = new ArrayList<>();
+        List<org.fxyz3d.geometry.Point3D> southList = new ArrayList<>();
+        org.fxyz3d.geometry.Point3D center = JavaFX3DUtils.toFXYZ3D.apply(hit.getLocation());
+        for(org.fxyz3d.geometry.Point3D vert : hit.texturedManifold.getVertices()) {
+            if(vert.substract(center).getY() < 0) {
+                southList.add(vert);
+            } else {
+                northList.add(vert);
+            }
+        }
+        if(southList.size() > 3) {
+            try {
+                makeAsteroidFromPoints(southList);
+            } catch (Exception ex) {
+                System.out.println("Could not make Asteroid: " + ex.getMessage());
+            }
+        }
+        if(northList.size() > 3) {
+            try {
+                makeAsteroidFromPoints(northList);
+            } catch (Exception ex) {
+                System.out.println("Could not make Asteroid: " + ex.getMessage());
+            }
+        }
+    }
+    private void processProjectileImpact(Projectile p, HitShape3D hit) {
+        removeProjectile(p);
+        Task task = hit.vaporizeTask();
+        task.setOnSucceeded(e -> {
+            //mark to be culled from scene
+            p.activeProperty.set(false); 
+            //remove nodes from view
+            removeHittable(hit);
+            removeHitShape(hit);            
+        });
+        Thread t = new Thread(task);
+        t.setDaemon(true);
+        //Is it a biggun?
+        if(isBig(hit, bigThreshold) ) {
+            bigBoom.play();
+            //Will we split it?
+            if(splittingEnabled) {
+                //Is this HitShape3D large enough to break up into chunks??
+                System.out.println("Splitting an biggun... ");
+                explodo(hit);
+            }
+        } else {
+            //its a wee one
+            smallBoom.play();
+        }        
+        t.start();
+        
+    }
     private void projectileSweep() {
+        List<Pair<Projectile,HitShape3D>> cullList = new ArrayList<>();
         projectiles.stream().forEach(p -> {
             //@TODO SMP might need to do BOTH an inner check and ray check
             //HitBox hit = collisionSweeper.checkCollision(p.location);
@@ -157,16 +260,21 @@ public class ProjectileSystem {
             HitShape3D rayCheck = collisionSweeper.rayShapeCheckFirst(p.location, p.velocity);
             if (null != rayCheck) {
                 HitShape3D hit = rayCheck;
-                //compute the ricochet based on the normal
-                Point3D ricochet = hit.ricochet(p.location, p.velocity);
-                p.velocity = ricochet;
-                //bump the position so it doesn't get stuck on plane
-                p.location = p.location.add(p.velocity);
-                //fire off hit event
-                parentGroup.getScene().getRoot().fireEvent(
-                    new HitEvent(HitEvent.PROJECTILE_HIT_SHAPE, p, hit));
+//For now we are just blowing stuff up
+//                //compute the ricochet based on the normal
+//                Point3D ricochet = hit.ricochet(p.location, p.velocity);
+//                p.velocity = ricochet;
+//                //bump the position so it doesn't get stuck on plane
+//                p.location = p.location.add(p.velocity);
+//                //fire off hit event
+//                parentGroup.getScene().getRoot().fireEvent(
+//                    new HitEvent(HitEvent.PROJECTILE_HIT_SHAPE, p, hit));
+                cullList.add(new Pair<>(p, hit));
             }
         });
+        //this will cull these objects while potentially creating more if splitting enabled
+        cullList.forEach(pair -> processProjectileImpact(pair.getKey(), pair.getValue()));
+
     }
 
     public void addOuterBox() {
@@ -233,7 +341,7 @@ public class ProjectileSystem {
 
     public void removeHittable(HitShape3D hittable) {
         hittables.remove(hittable);
-//        parentGroup.getChildren().remove(hittable.getShape3D());
+        parentGroup.getChildren().remove(hittable);
     }
 
     public void clearAllHittables() {

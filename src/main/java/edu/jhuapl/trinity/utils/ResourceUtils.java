@@ -87,6 +87,7 @@ import java.util.jar.JarFile;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import javafx.scene.media.AudioClip;
 
 /**
  * @author Sean Phillips
@@ -254,11 +255,14 @@ public enum ResourceUtils {
         }
         return false;
     }
-
+    public static AudioClip loadAudioClipWav(String filename) {
+        return new AudioClip(ResourceUtils.class.getResource("/edu/jhuapl/trinity/audio/" + filename + ".wav")
+            .toExternalForm());
+    }
     public static Media loadMediaWav(String filename) throws IOException {
         return new Media(ResourceUtils.class.getResource("/edu/jhuapl/trinity/audio/" + filename + ".wav")
             .toExternalForm());
-    } //file.toURI().toURL().toExternalForm()
+    } 
 
     public static boolean canDragOver(DragEvent event) {
         Dragboard db = event.getDragboard();

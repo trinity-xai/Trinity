@@ -43,11 +43,18 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
+import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import java.util.stream.Collectors;
 import java.util.stream.IntStream;
+import java.util.stream.Stream;
+import javafx.concurrent.Task;
+import javafx.scene.image.PixelWriter;
+import javafx.scene.image.WritableImage;
 
 /**
  * @author Sean Phillips
@@ -70,22 +77,34 @@ public class HitShape3D extends MeshView implements Hittable {
     private Point3D velocity = new Point3D(0, 0, 0);
     public double rotateIncrementDegrees = 1;
     public Point3D rotateAxis = Rotate.X_AXIS;
-
+    public Color defaultColor = new Color(0.1, 0.1, 0.1, 1);
+    public WritableImage writableDiffuseImage;
+    
     public HitShape3D(List<org.fxyz3d.geometry.Point3D> vertices, List<Face3> faces, Point3D center) {
         texturedManifold = new TexturedManifold(vertices, faces);
         setMesh(texturedManifold.getMesh());
-//        setLocation(center);
         setStart(center);
         Color c = Color.color(Math.random(), Math.random(), Math.random());
         try {
+            //PhongMaterial(Color diffuseColor,
+            // Image diffuseMap,
+            // Image specularMap,
+            // Image bumpMap,
+            // Image selfIlluminationMap)            
             Image diffuseImage = ResourceUtils.load3DTextureImage("asteroid");
-            asteroidMaterial = new PhongMaterial(Color.GRAY, diffuseImage, null, null, null);
+            writableDiffuseImage = new WritableImage(diffuseImage.getPixelReader(), 
+                Double.valueOf(diffuseImage.getWidth()).intValue(),
+                Double.valueOf(diffuseImage.getHeight()).intValue()
+            );
+            Image bumpImage = ResourceUtils.load3DTextureImage("asteroidBumpNormalMap");
+            Image selfImage = ResourceUtils.load3DTextureImage("asteroidSelfIllumination");
+            asteroidMaterial = new PhongMaterial(Color.SLATEGRAY, 
+                writableDiffuseImage, selfImage, bumpImage, null);
         } catch (IOException ex) {
             Logger.getLogger(HitShape3D.class.getName()).log(Level.SEVERE, null, ex);
             asteroidMaterial = new PhongMaterial(c);
         }
         setMaterial(asteroidMaterial);
-//        setMaterial(new PhongMaterial(c));
         setDrawMode(DrawMode.FILL);
         setCullFace(CullFace.BACK);
 
@@ -125,6 +144,50 @@ public class HitShape3D extends MeshView implements Hittable {
                 event.consume();
             }
         });
+    }
+    public Task vaporizeTask() {
+        Task task = new Task() {
+            @Override
+            protected Void call() throws Exception {
+                Random rando = new Random();
+                List<Integer> rangeX = Stream.iterate(0, n -> n + 1)
+                    .limit(Double.valueOf(writableDiffuseImage.getWidth()).intValue()-1)
+                    .collect(Collectors.toList());
+                List<Integer> rangeY = Stream.iterate(0, n -> n + 1)
+                    .limit(Double.valueOf(writableDiffuseImage.getHeight()).intValue()-1)
+                    .collect(Collectors.toList());
+
+                Collections.shuffle(rangeX);
+                Collections.shuffle(rangeY);
+                PixelWriter pw = writableDiffuseImage.getPixelWriter();
+                int stride = 0;
+                Color flash = Color.WHITE;
+//                asteroidMaterial.setSelfIlluminationMap(null);
+//                asteroidMaterial.setBumpMap(null);
+                int strideWidth = rangeX.size() / 15;
+                for(Integer x : rangeX) {
+                    for(Integer y : rangeY) {
+                        if(rando.nextDouble() > 0.05) //95 percent chance to disappear
+                            pw.setColor(x, y, Color.TRANSPARENT);
+                        else
+                            pw.setColor(x, y, flash);
+                    }
+                    stride++;
+                    if(stride >= strideWidth) {
+                        stride = 0;
+                        Thread.sleep(32);
+                    }
+                }
+                
+                return null;
+            }   
+        };
+        return task;    
+    }
+    public void vaporize(){
+        Thread t = new Thread(vaporizeTask());
+        t.setDaemon(true);
+        t.start();
     }
 
     //Reflect(Vector3 vector, Vector3 normal)
