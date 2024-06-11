@@ -82,6 +82,9 @@ public class HitEventHandler implements EventHandler<HitEvent> {
         if (event.getEventType().equals(HitEvent.PROJECTILE_HIT_CHARACTER)) {
             playDeath();
         }
+        if (event.getEventType().equals(HitEvent.PROJECTILE_HIT_SHAPE)) {
+            playBreak();
+        }        
     }
 
     private void playBounce() {

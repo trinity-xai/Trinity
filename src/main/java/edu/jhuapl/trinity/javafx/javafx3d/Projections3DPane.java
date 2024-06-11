@@ -151,8 +151,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-//import static edu.jhuapl.trinity.javafx.components.radial.HyperspaceMenu.slideInPane;
-
 /**
  * @author Sean Phillips
  */
@@ -169,7 +167,6 @@ public class Projections3DPane extends StackPane implements
     private final double cubeSize = sceneWidth / 2.0;
     public PerspectiveCamera camera;
     public CameraTransformer cameraTransform = new CameraTransformer();
-    public XFormGroup dataXForm = new XFormGroup();
     private double mousePosX;
     private double mousePosY;
     private double mouseOldX;
@@ -186,6 +183,8 @@ public class Projections3DPane extends StackPane implements
     public Group debugGroup = new Group();
     public Group ellipsoidGroup = new Group();
     public Group projectedGroup = new Group();
+    public XFormGroup dataXForm = new XFormGroup();
+    public boolean enableXForm = false;
     public Sphere selectedSphereA = null;
     public Sphere selectedSphereB = null;
     public Manifold3D selectedManifoldA = null;
@@ -802,7 +801,6 @@ public class Projections3DPane extends StackPane implements
             }
             if (!pathPane.getChildren().contains(manifoldControlPane)) {
                 pathPane.getChildren().add(manifoldControlPane);
-//                slideInPane(manifoldControlPane);
                 manifoldControlPane.slideInPane();
             } else {
                 manifoldControlPane.show();
@@ -818,7 +816,6 @@ public class Projections3DPane extends StackPane implements
             }
             if (!pathPane.getChildren().contains(radarPlotPane)) {
                 pathPane.getChildren().add(radarPlotPane);
-//                slideInPane(radarPlotPane);
                 radarPlotPane.slideInPane();
             } else {
                 radarPlotPane.show();
@@ -863,7 +860,7 @@ public class Projections3DPane extends StackPane implements
         cm.setOpacity(0.85);
 
         subScene.setOnMouseClicked((MouseEvent e) -> {
-            if (e.getButton() == MouseButton.SECONDARY) {
+            if (e.getButton() == MouseButton.SECONDARY && !enableXForm) {
                 if (!cm.isShowing())
                     cm.show(this.getParent(), e.getScreenX(), e.getScreenY());
                 else
@@ -1044,9 +1041,12 @@ public class Projections3DPane extends StackPane implements
                     sceneRoot.getChildren().remove(scatterMesh3D);
                     dataXForm.getChildren().add(scatterMesh3D);
                 });
-
             }
         });
+        scene.addEventHandler(ShadowEvent.OVERRIDE_XFORM, e -> {
+            enableXForm = (boolean)e.object;
+        });
+        
 
         scene.addEventHandler(ManifoldEvent.CLUSTER_SELECTION_MODE, e -> {
             boolean isActive = (boolean) e.object1;
@@ -1144,13 +1144,21 @@ public class Projections3DPane extends StackPane implements
                 connectorsGroup.setVisible(!projectileSystem.isRunning());
                 ellipsoidGroup.setVisible(!projectileSystem.isRunning());
                 projectedGroup.setVisible(!projectileSystem.isRunning());
+                highlighterNeonCircle.setVisible(!projectileSystem.isRunning());
                 //show the cool stuff
                 debugGroup.setVisible(projectileSystem.isRunning());
             }
             if(keycode == KeyCode.SPACE && k.isControlDown()) {
                 projectileSystem.fire();
-
             }            
+            if(keycode == KeyCode.F12 && k.isShiftDown()) {
+                enableXForm = !enableXForm;
+                if(enableXForm) {
+                    dataXForm.getChildren().add(projectileSystem.playerShip);
+                } else {
+                    dataXForm.getChildren().remove(projectileSystem.playerShip);
+                }
+            }
         });
 
         Platform.runLater(() -> {
@@ -1457,6 +1465,13 @@ public class Projections3DPane extends StackPane implements
 
             cubeWorld.projectionAffine.setToTransform(dataXForm.getLocalToSceneTransform());
             cubeWorld.setDirty(true); //signals to animation timer to redraw
+        }
+        //right clicking should rotate pointing objects in the xform group only
+        if(projectionType == PROJECTION_TYPE.FIXED_ORTHOGRAPHIC && enableXForm && me.isSecondaryButtonDown()) {
+            double yChange = (((mouseDeltaX * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180);
+            double xChange = (((-mouseDeltaY * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180);
+            dataXForm.addRotation(yChange, Rotate.Y_AXIS);
+            dataXForm.addRotation(xChange, Rotate.X_AXIS);
         }
         updateFloatingNodes();
         radialOverlayPane.updateCalloutHeadPoints(subScene);

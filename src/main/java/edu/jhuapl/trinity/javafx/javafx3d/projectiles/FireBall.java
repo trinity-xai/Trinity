@@ -18,7 +18,8 @@ import javafx.scene.shape.Shape3D;
 public class FireBall extends Projectile {
     
     TriaxialSpheroidMesh ellipsoid;
-   
+    double distanceToLive = 2000;
+    
     public FireBall(double radius, Point3D start, Point3D velocity) {
         this.start = start;
         this.velocity = velocity;
@@ -61,6 +62,7 @@ public class FireBall extends Projectile {
         getShape3D().setTranslateX(location.getX());
         getShape3D().setTranslateY(location.getY());
         getShape3D().setTranslateZ(location.getZ());
-        return true;
+        //mark to be culled if it has travelled this far without hitting anything
+        return Math.abs(location.distance(Point3D.ZERO)) < distanceToLive;
     }
 }

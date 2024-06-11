@@ -111,9 +111,6 @@ public class AnimatedTetrahedron extends TetrahedraMesh {
         KeyValue start = new KeyValue(keyCycle, 0, Interpolator.LINEAR);
         KeyValue end = new KeyValue(keyCycle, fps * cycleSeconds, Interpolator.LINEAR);
         KeyFrame kf = new KeyFrame(Duration.seconds(cycleSeconds), start, end);
-//        KeyFrame cycleFinished = new KeyFrame(Duration.seconds(cycleSeconds), e->{
-//
-//        });
         tm = new Timeline(kf);
         tm.setCycleCount(INDEFINITE);
     }

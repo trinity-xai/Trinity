@@ -33,7 +33,6 @@ import javafx.scene.media.MediaPlayer;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.application.Platform;
@@ -41,8 +40,6 @@ import javafx.concurrent.Task;
 import javafx.scene.media.AudioClip;
 
 import static javafx.scene.media.MediaPlayer.INDEFINITE;
-import javafx.scene.shape.CullFace;
-import javafx.scene.shape.TriangleMesh;
 import javafx.util.Pair;
 
 public class ProjectileSystem {
@@ -70,9 +67,10 @@ public class ProjectileSystem {
     HitBox yMinusBox;
     HitBox zPlusBox;
     HitBox zMinusBox;
-    PlayerShip playerShip;
+    public PlayerShip playerShip;
     public boolean splittingEnabled = true;
     public double bigThreshold = 200;
+    public double fireVelocity = 10.0;
     
     public ProjectileSystem(Group parentGroup, int millisInterval) {
         this.parentGroup = parentGroup;
@@ -110,8 +108,6 @@ public class ProjectileSystem {
                 prevTime = now;
                 msCounter += getMsInterval();
                 if (running) {
-                    playerShip.triangleMesh.getPoints().set(2, 200);
-
                     //move objects based on simple linear physics, no gravity
                     updateHittables(msCounter);
                     updateProjectiles(msCounter);
@@ -125,7 +121,8 @@ public class ProjectileSystem {
                         //maybe convert to dropWhile?
                         for (int i = 0; i < projectiles.size(); i++) {
                             if (!projectiles.get(i).activeProperty.get())
-                                projectiles.remove(i);
+                                removeProjectile(projectiles.get(i));
+                            //projectiles.remove(i);
                         }
                     }
                 }
@@ -161,7 +158,9 @@ public class ProjectileSystem {
     }
     public void fire() {
         javafx.geometry.Point3D start = javafx.geometry.Point3D.ZERO;
-        javafx.geometry.Point3D velocity = new Point3D(0, 0, -10);
+        //default starting pointing direction is Z+. 
+        javafx.geometry.Point3D velocity = new Point3D(0, 0, fireVelocity); 
+        velocity = playerShip.getParent().getTransforms().get(0).transform(velocity);
         FireBall fireBall = new FireBall(20, start, velocity);
         addProjectile(fireBall);
         fireSound.play();
@@ -371,12 +370,8 @@ public class ProjectileSystem {
     public void setEnableProjectileTimer(boolean enable) {
         if (enable) {
             projectileTimer.start();
-//            if(null != asteriods1981MediaPlayer)
-//                asteriods1981MediaPlayer.play();
         } else {
             projectileTimer.stop();
-//            if(null != asteriods1981MediaPlayer)
-//                asteriods1981MediaPlayer.pause();
         }
     }
 

@@ -35,6 +35,7 @@ public class ShadowEvent extends Event {
     public static final EventType<ShadowEvent> ROTATING_PERSPECTIVE_PROJECTION = new EventType(ANY, "ROTATING_PERSPECTIVE_PROJECTION");
     public static final EventType<ShadowEvent> SHOW_AXES_LABELS = new EventType(ANY, "SHOW_AXES_LABELS");
     public static final EventType<ShadowEvent> OVERRIDE_DOMAIN_TRANSFORM = new EventType(ANY, "OVERRIDE_DOMAIN_TRANSFORM");
+    public static final EventType<ShadowEvent> OVERRIDE_XFORM = new EventType(ANY, "OVERRIDE_XFORM");
     public static final EventType<ShadowEvent> SET_PANEL_OPACITY = new EventType(ANY, "SET_PANEL_OPACITY");
     public static final EventType<ShadowEvent> SHOW_NEARSIDE_POINTS = new EventType(ANY, "SHOW_NEARSIDE_POINTS");
     public static final EventType<ShadowEvent> ENABLE_CUBE_PROJECTIONS = new EventType(ANY, "ENABLE_CUBE_PROJECTIONS");

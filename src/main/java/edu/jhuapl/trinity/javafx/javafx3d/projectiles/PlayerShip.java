@@ -49,6 +49,7 @@ import java.util.stream.IntStream;
 
 /**
  * @author Sean Phillips
+ * Hokey tetrahedra that is artificially stretched to point in the Z+ axis
  */
 public class PlayerShip extends AnimatedTetrahedron implements Hittable {
     public PhongMaterial playerMaterial = null;
@@ -66,7 +67,8 @@ public class PlayerShip extends AnimatedTetrahedron implements Hittable {
     private Point3D velocity = new Point3D(0, 0, 0);
     public double rotateIncrementDegrees = 0.0;
     public Point3D rotateAxis = Rotate.X_AXIS;
-
+    public boolean enableMouseRotation = false;
+    
     public PlayerShip(Point3D center) {
         super(100);
         setStart(center);
@@ -111,6 +113,8 @@ public class PlayerShip extends AnimatedTetrahedron implements Hittable {
                 event.consume();
             }
         });
+        //point in the Z positive direction by default
+        triangleMesh.getPoints().set(2, 200); 
     }
 
     //Reflect(Vector3 vector, Vector3 normal)
