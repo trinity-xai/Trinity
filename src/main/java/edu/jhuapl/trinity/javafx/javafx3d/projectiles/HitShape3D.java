@@ -305,11 +305,11 @@ public class HitShape3D extends MeshView implements Hittable {
                 }
             }
         });
-        //@DEBUG SMP helps plot a ray intersect point for debugging
-        if (!intersections.isEmpty()) {
-            getParent().getScene().getRoot().fireEvent(new HitEvent(
-                HitEvent.RAY_INTERSECTS_BOX, this, intersections));
-        }
+//        //@DEBUG SMP helps plot a ray intersect point for debugging
+//        if (!intersections.isEmpty()) {
+//            getParent().getScene().getRoot().fireEvent(new HitEvent(
+//                HitEvent.RAY_INTERSECTS_BOX, this, intersections));
+//        }
         //If counter.get()>0  we have intersection between the line segment and the shape
         return counter.get() > 0;
     }
@@ -567,7 +567,10 @@ public class HitShape3D extends MeshView implements Hittable {
     public Point3D getVelocity() {
         return velocity;
     }
-
+    public List<Point3D> getPoints() {
+        return texturedManifold.getVertices().stream()
+            .map(JavaFX3DUtils.toFX).toList();
+    }
     @Override
     public boolean update(double _time) {
         location = location.add(velocity);

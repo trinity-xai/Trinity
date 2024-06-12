@@ -45,6 +45,7 @@ import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.events.FullscreenEvent;
 import edu.jhuapl.trinity.javafx.events.GaussianMixtureEvent;
+import edu.jhuapl.trinity.javafx.events.HitEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.javafx.events.SearchEvent;
 import edu.jhuapl.trinity.javafx.events.SemanticMapEvent;
@@ -53,6 +54,7 @@ import edu.jhuapl.trinity.javafx.events.TrajectoryEvent;
 import edu.jhuapl.trinity.javafx.events.ZeroMQEvent;
 import edu.jhuapl.trinity.javafx.handlers.FeatureVectorEventHandler;
 import edu.jhuapl.trinity.javafx.handlers.GaussianMixtureEventHandler;
+import edu.jhuapl.trinity.javafx.handlers.HitEventHandler;
 import edu.jhuapl.trinity.javafx.handlers.ManifoldEventHandler;
 import edu.jhuapl.trinity.javafx.handlers.SearchEventHandler;
 import edu.jhuapl.trinity.javafx.handlers.SemanticMapEventHandler;
@@ -147,6 +149,8 @@ public class App extends Application {
     GaussianMixtureEventHandler gmeh;
     SemanticMapEventHandler smeh;
     SearchEventHandler seh;
+    HitEventHandler heh;
+    
     boolean hyperspaceIntroShown = false;
     boolean hypersurfaceIntroShown = false;
     boolean matrixShowing = false;
@@ -653,8 +657,6 @@ public class App extends Application {
         fveh.addFeatureVectorRenderer(hyperspace3DPane);
 
         meh = new ManifoldEventHandler();
-
-
         scene.getRoot().addEventHandler(ManifoldEvent.NEW_MANIFOLD_CLUSTER, meh);
         scene.getRoot().addEventHandler(ManifoldEvent.NEW_MANIFOLD_DATA, meh);
         scene.getRoot().addEventHandler(ManifoldEvent.EXPORT_MANIFOLD_DATA, meh);
@@ -679,9 +681,12 @@ public class App extends Application {
         scene.getRoot().addEventHandler(ManifoldEvent.FIND_PROJECTION_CLUSTERS, meh);
         scene.getRoot().addEventHandler(ManifoldEvent.NEW_CLUSTER_COLLECTION, meh);
         scene.getRoot().addEventHandler(ManifoldEvent.NEW_PROJECTION_VECTOR, meh);
-
         meh.addManifoldRenderer(projections3DPane);
 
+        heh = new HitEventHandler(desktopPane);
+        scene.getRoot().addEventHandler(HitEvent.PROJECTILE_HIT_SHAPE, heh);
+        
+        
         smeh = new SemanticMapEventHandler(false);
         scene.getRoot().addEventHandler(SemanticMapEvent.NEW_SEMANTIC_MAP, smeh);
 //        scene.getRoot().addEventHandler(SemanticMapEvent.LOCATE_FEATURE_VECTOR, smeh);

@@ -1134,6 +1134,9 @@ public class Projections3DPane extends StackPane implements
         subScene.addEventHandler(KeyEvent.KEY_PRESSED, k -> {
             //What key did the user press?
             KeyCode keycode = k.getCode();
+            if(keycode == KeyCode.F11) {
+                projectileSystem.setInMotion(!projectileSystem.isInMotion());
+            }
             if (keycode == KeyCode.F12 && k.isControlDown()) {
                 resetAsteroids();
             } else if (keycode == KeyCode.F12 && k.isAltDown()) {

@@ -51,6 +51,8 @@ public class ProjectileSystem {
     public Point3D spawnPoint = Point3D.ZERO;
     public Group parentGroup;
     private int msInterval = 30;
+    
+    private boolean inMotion = true;
     private boolean running = true;
     private boolean collisions = true;
     private boolean autoCull = true;
@@ -109,7 +111,8 @@ public class ProjectileSystem {
                 msCounter += getMsInterval();
                 if (running) {
                     //move objects based on simple linear physics, no gravity
-                    updateHittables(msCounter);
+                    if(inMotion)
+                        updateHittables(msCounter);
                     updateProjectiles(msCounter);
                     if (collisions) {
                         //Check to see if any hittable Shape bounced off a barrier
@@ -233,6 +236,9 @@ public class ProjectileSystem {
         Thread t = new Thread(task);
         t.setDaemon(true);
         //Is it a biggun?
+        //fire off hit event
+        parentGroup.getScene().getRoot().fireEvent(
+            new HitEvent(HitEvent.PROJECTILE_HIT_SHAPE, p, hit));        
         if(isBig(hit, bigThreshold) ) {
             bigBoom.play();
             //Will we split it?
@@ -433,7 +439,23 @@ public class ProjectileSystem {
     public int getNumberOfProjectiles() {
         return projectiles.size();
     }
+    /**
+     * Check to see if this projectile system is animating objects.
+     *
+     * @return boolean running
+     */
+    public boolean isInMotion() {
+        return inMotion;
+    }
 
+    /**
+     * Tell the projectile system to start/stop motion.
+     *
+     * @param _isRunning
+     */
+    public void setInMotion(final boolean _inMotion) {
+        inMotion = _inMotion;
+    }
     /**
      * Check to see if this projectile system is running.
      *
