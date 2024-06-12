@@ -46,6 +46,7 @@ import edu.jhuapl.trinity.javafx.components.callouts.DistanceDataCallout;
 import edu.jhuapl.trinity.javafx.components.panes.ManifoldControlPane;
 import edu.jhuapl.trinity.javafx.components.panes.RadarPlotPane;
 import edu.jhuapl.trinity.javafx.components.panes.RadialEntityOverlayPane;
+import edu.jhuapl.trinity.javafx.components.panes.VideoPane;
 import edu.jhuapl.trinity.javafx.components.radial.AnimatedNeonCircle;
 import edu.jhuapl.trinity.javafx.components.radial.ProgressStatus;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
@@ -1140,16 +1141,33 @@ public class Projections3DPane extends StackPane implements
             if (keycode == KeyCode.F12 && k.isControlDown()) {
                 resetAsteroids();
             } else if (keycode == KeyCode.F12 && k.isAltDown()) {
-                //first toggle the system
-                projectileSystem.setRunning(!projectileSystem.isRunning());
-                //hide the boring serious stuff
-                manifoldGroup.setVisible(!projectileSystem.isRunning());
-                connectorsGroup.setVisible(!projectileSystem.isRunning());
-                ellipsoidGroup.setVisible(!projectileSystem.isRunning());
-                projectedGroup.setVisible(!projectileSystem.isRunning());
-                highlighterNeonCircle.setVisible(!projectileSystem.isRunning());
-                //show the cool stuff
-                debugGroup.setVisible(projectileSystem.isRunning());
+                //do we need an intro?
+                if(!projectileSystem.isRunning() && !projectileSystem.introPlayed) {
+                    projectileSystem.introPlayed = true;
+                    VideoPane vp = App.getVideoPane();
+                    vp.setVideo();
+                    vp.setScaleX(0.05);
+                    vp.setScaleY(0.05);
+                    Pane desktopPane = App.getAppPathPaneStack();
+                    App.getAppPathPaneStack().getChildren().add(vp);
+                    vp.setTranslateX(desktopPane.getWidth()/2.0 
+                        - vp.getBoundsInLocal().getWidth()/2.0);
+                    vp.setTranslateY(desktopPane.getHeight()/2.0 
+                        - vp.getBoundsInLocal().getHeight()/2.0); 
+                    vp.restore();
+                    vp.show();
+                    vp.setOpacity(1);
+                    vp.mediaPlayer.setOnStopped(() -> {
+                        vp.shutdown();
+                        toggleProjectileViews();                        
+                    });
+                    vp.mediaPlayer.setOnEndOfMedia(() -> {
+                        vp.shutdown();
+                        toggleProjectileViews();
+                    });
+                } else {
+                    toggleProjectileViews();
+                }
             }
             if(keycode == KeyCode.SPACE && k.isControlDown()) {
                 projectileSystem.fire();
@@ -1176,7 +1194,20 @@ public class Projections3DPane extends StackPane implements
             anchorCallout.setVisible(false);
         });
     }
-
+    private void toggleProjectileViews() {
+        //first toggle the system
+        projectileSystem.setRunning(!projectileSystem.isRunning());
+        //hide the boring serious stuff
+        manifoldGroup.setVisible(!projectileSystem.isRunning());
+        connectorsGroup.setVisible(!projectileSystem.isRunning());
+        ellipsoidGroup.setVisible(!projectileSystem.isRunning());
+        projectedGroup.setVisible(!projectileSystem.isRunning());
+        highlighterNeonCircle.setVisible(!projectileSystem.isRunning());
+        //show the cool stuff
+        debugGroup.setVisible(projectileSystem.isRunning());
+        skybox.setVisible(projectileSystem.isRunning());                        
+        
+    }
     private void resetAsteroids() {
         System.out.println("Resetting Shapes...");
         projectileSystem.clearAllHitShapes();
@@ -1299,27 +1330,16 @@ public class Projections3DPane extends StackPane implements
     }
 
     private void setupSkyBox() {
-        //Load SkyBox image
-        Image
-            top = new Image(Projections3DPane.class.getResource("images/darkmetalbottom.png").toExternalForm()),
-            bottom = new Image(Projections3DPane.class.getResource("images/darkmetalbottom.png").toExternalForm()),
-            left = new Image(Projections3DPane.class.getResource("images/1500_blackgrid.png").toExternalForm()),
-            right = new Image(Projections3DPane.class.getResource("images/1500_blackgrid.png").toExternalForm()),
-            front = new Image(Projections3DPane.class.getResource("images/1500_blackgrid.png").toExternalForm()),
-            back = new Image(Projections3DPane.class.getResource("images/1500_blackgrid.png").toExternalForm());
-
         // Load Skybox AFTER camera is initialized
         double size = 100000D;
+        Image singleImage = new Image(Projections3DPane.class.getResource(
+            "images/space-skybox.png").toExternalForm());
         skybox = new Skybox(
-            top,
-            bottom,
-            left,
-            right,
-            front,
-            back,
+            singleImage,
             size,
             camera
         );
+        
         sceneRoot.getChildren().add(skybox);
         //Add some ambient light so folks can see it
         AmbientLight light = new AmbientLight(Color.WHITE);

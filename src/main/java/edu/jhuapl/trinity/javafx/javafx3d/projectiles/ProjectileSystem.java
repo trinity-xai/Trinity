@@ -73,6 +73,7 @@ public class ProjectileSystem {
     public boolean splittingEnabled = true;
     public double bigThreshold = 200;
     public double fireVelocity = 10.0;
+    public boolean introPlayed = false;
     
     public ProjectileSystem(Group parentGroup, int millisInterval) {
         this.parentGroup = parentGroup;
@@ -472,6 +473,9 @@ public class ProjectileSystem {
      */
     public void setRunning(final boolean _isRunning) {
         running = _isRunning;
+        if(null != parentGroup.getScene())
+            parentGroup.getScene().getRoot().fireEvent(
+                new HitEvent(HitEvent.TRACKING_PROJECTILE_EVENTS, running, null));
         if (null != asteriods1981MediaPlayer)
             if (running) {
                 asteriods1981MediaPlayer.setMute(false);

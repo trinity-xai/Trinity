@@ -32,6 +32,7 @@ public class HitEvent extends Event {
     public Object object1 = null;
     public Object object2 = null;
 
+    public static final EventType<HitEvent> TRACKING_PROJECTILE_EVENTS = new EventType(ANY, "TRACKING_PROJECTILE_EVENTS");
     public static final EventType<HitEvent> RAY_INTERSECTS_BOX = new EventType(ANY, "RAY_INTERSECTS_BOX");
     public static final EventType<HitEvent> PROJECTILE_HIT_BOX = new EventType(ANY, "PROJECTILE_HIT_BOX");
     public static final EventType<HitEvent> PROJECTILE_HIT_BRICK = new EventType(ANY, "PROJECTILE_HIT_BRICK");

@@ -32,6 +32,7 @@ import edu.jhuapl.trinity.javafx.components.panes.Shape3DControlPane;
 import edu.jhuapl.trinity.javafx.components.panes.SparkLinesPane;
 import edu.jhuapl.trinity.javafx.components.panes.TextPane;
 import edu.jhuapl.trinity.javafx.components.panes.TrajectoryTrackerPane;
+import edu.jhuapl.trinity.javafx.components.panes.VideoPane;
 import edu.jhuapl.trinity.javafx.components.panes.WaveformPane;
 import edu.jhuapl.trinity.javafx.components.radial.CircleProgressIndicator;
 import edu.jhuapl.trinity.javafx.components.radial.MainNavMenu;
@@ -130,6 +131,7 @@ public class App extends Application {
     TrajectoryTrackerPane trajectoryTrackerPane;
     SparkLinesPane sparkLinesPane;
     TextPane textConsolePane;
+    VideoPane videoPane;
     WaveformPane waveformPane;
     Shape3DControlPane shape3DControlPane;
     CircleProgressIndicator circleSpinner;
@@ -137,6 +139,7 @@ public class App extends Application {
     static Configuration theConfig;
     static Pane pathPane;
     static Scene theScene;
+    static VideoPane theVideo = null;
     //Command line argument support
     Map<String, String> namedParameters;
     List<String> unnamedParameters;
@@ -209,6 +212,8 @@ public class App extends Application {
         //@HACK This ultra dirty hack lets me easily add floating panes from anywhere
         pathPane = desktopPane;
         theScene = scene;
+        videoPane = new VideoPane(scene, desktopPane);
+        theVideo = videoPane;
         matrixEnabled = enableMatrix;
         //</HACK>
         System.out.println("Building menu system...");
@@ -506,6 +511,22 @@ public class App extends Application {
                 Platform.runLater(() -> textConsolePane.setText((String) e.object));
             }
         });
+        scene.addEventHandler(ApplicationEvent.SHOW_VIDEO_PANE, e -> {
+            if (null == videoPane) {
+                videoPane = new VideoPane(scene, pathPane);
+                theVideo = videoPane;
+            }
+            if (!pathPane.getChildren().contains(videoPane)) {
+                pathPane.getChildren().add(videoPane);
+                videoPane.slideInPane();
+            } else {
+                videoPane.show();
+            }
+            if (null != e.object) {
+                Platform.runLater(() -> videoPane.setVideo());
+            }
+        });
+        
         scene.addEventHandler(ApplicationEvent.SHOW_WAVEFORM_PANE, e -> {
             if (null == waveformPane) {
                 waveformPane = new WaveformPane(scene, pathPane);
@@ -685,11 +706,10 @@ public class App extends Application {
 
         heh = new HitEventHandler(desktopPane);
         scene.getRoot().addEventHandler(HitEvent.PROJECTILE_HIT_SHAPE, heh);
-        
+        scene.getRoot().addEventHandler(HitEvent.TRACKING_PROJECTILE_EVENTS, heh);
         
         smeh = new SemanticMapEventHandler(false);
         scene.getRoot().addEventHandler(SemanticMapEvent.NEW_SEMANTIC_MAP, smeh);
-//        scene.getRoot().addEventHandler(SemanticMapEvent.LOCATE_FEATURE_VECTOR, smeh);
         scene.getRoot().addEventHandler(SemanticMapEvent.NEW_SEMANTICMAP_COLLECTION, smeh);
         smeh.addFeatureVectorRenderer(hyperspace3DPane);
         smeh.addSemanticMapRenderer(hypersurface3DPane);
@@ -1001,7 +1021,9 @@ public class App extends Application {
     public static Pane getAppPathPaneStack() {
         return pathPane;
     }
-
+    public static VideoPane getVideoPane() {
+        return theVideo;
+    }
     /**
      *
      */
