@@ -4,7 +4,6 @@ import edu.jhuapl.trinity.javafx.javafx3d.animated.Opticon;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.geometry.Point3D;
 import javafx.scene.paint.Color;
-import javafx.scene.transform.Affine;
 
 /**
  *
@@ -14,11 +13,12 @@ public class Alien extends Opticon implements Hittable {
     private Point3D start = new Point3D(0, 0, 0);
     private Point3D location = new Point3D(0, 0, 0);
     private Point3D velocity = new Point3D(0, 0, 0);
-    /**
-     * Flag indicating whether the ship is active.
-     */
-    public SimpleBooleanProperty activeProperty = new SimpleBooleanProperty(false);    
-
+    private boolean disappearsOnFlip = true;
+   /**
+    * Flag indicating whether the particle is active.
+    */
+    public SimpleBooleanProperty activeProperty = new SimpleBooleanProperty(true);
+    
     public Alien(Color lightColor, double scannerBaseRadius) {
         super(lightColor, scannerBaseRadius);
         enableCycle(false);
@@ -75,18 +75,32 @@ public class Alien extends Opticon implements Hittable {
         double bufferY = 50;
         double bufferZ = 50;
         Point3D loc = getLocation();
-        if (loc.getX() < -absSafetyPosition)
+        boolean flipped = false;
+        if (loc.getX() < -absSafetyPosition) {
             setLocation(new Point3D(absSafetyPosition - bufferX, loc.getY(), loc.getZ()));
-        if (loc.getX() > absSafetyPosition)
+            flipped = true;
+        }
+        if (loc.getX() > absSafetyPosition) {
             setLocation(new Point3D(-absSafetyPosition + bufferX, loc.getY(), loc.getZ()));
-        if (loc.getY() < -absSafetyPosition)
+            flipped = true;
+        }
+        if (loc.getY() < -absSafetyPosition) {
             setLocation(new Point3D(loc.getX(), absSafetyPosition - bufferY, loc.getZ()));
-        if (loc.getY() > absSafetyPosition)
+            flipped = true;
+        }
+        if (loc.getY() > absSafetyPosition) {
             setLocation(new Point3D(loc.getX(), -absSafetyPosition + bufferY, loc.getZ()));
-        if (loc.getZ() < -absSafetyPosition)
+            flipped = true;
+        }
+        if (loc.getZ() < -absSafetyPosition) {
             setLocation(new Point3D(loc.getX(), loc.getY(), absSafetyPosition - bufferZ));
-        if (loc.getZ() > absSafetyPosition)
+            flipped = true;
+        }
+        if (loc.getZ() > absSafetyPosition) {
             setLocation(new Point3D(loc.getX(), loc.getY(), -absSafetyPosition + bufferZ));
+            flipped = true;
+        }
+        activeProperty.set(!flipped);
     }
     @Override
     public boolean update(double _time) {
@@ -95,5 +109,19 @@ public class Alien extends Opticon implements Hittable {
         setTranslateY(location.getY());
         setTranslateZ(location.getZ());
         return true;
+    }
+
+    /**
+     * @return the disappearsOnFlip
+     */
+    public boolean isDisappearsOnFlip() {
+        return disappearsOnFlip;
+    }
+
+    /**
+     * @param disappearsOnFlip the disappearsOnFlip to set
+     */
+    public void setDisappearsOnFlip(boolean disappearsOnFlip) {
+        this.disappearsOnFlip = disappearsOnFlip;
     }
 }

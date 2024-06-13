@@ -25,13 +25,23 @@ import java.io.IOException;
 import java.net.URISyntaxException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
+import javafx.scene.control.Label;
 import javafx.scene.effect.Glow;
+import javafx.scene.effect.InnerShadow;
+import javafx.scene.effect.SepiaTone;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.VBox;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
 import javafx.scene.media.MediaView;
+import javafx.scene.paint.Color;
 import javafx.util.Duration;
 
 /**
@@ -45,12 +55,12 @@ public class VideoPane extends LitPathPane {
     Media media;
     MediaView mediaView;
     public MediaPlayer mediaPlayer;
+    boolean auto = false;
+    ChangeListener endOfMediaListener;
     
     private static BorderPane createContent() {
         BorderPane bpOilSpill = new BorderPane();
         MediaView mediaView = new MediaView();
-        Glow glow = new Glow(0.95);
-        mediaView.setEffect(glow);
         bpOilSpill.setCenter(mediaView);
        return bpOilSpill;
     }
@@ -66,7 +76,51 @@ public class VideoPane extends LitPathPane {
         mediaView.setOnMouseClicked(e -> {
             shutdown();
         });
-        getChildren().remove(mainTitleArea);
+        
+        ImageView tv = ResourceUtils.loadIcon("retrowave-tv-2", 72);
+        ImageView forward = ResourceUtils.loadIcon("forward", 32);
+        ImageView refresh = ResourceUtils.loadIcon("refresh", 32);
+        VBox forwardVBox = new VBox(1, forward, new Label("NEXT"));
+        forwardVBox.setAlignment(Pos.BOTTOM_CENTER);
+
+        VBox refreshVBox = new VBox(1, refresh, new Label("AUTO"));
+        refreshVBox.setAlignment(Pos.BOTTOM_CENTER);
+        
+        InnerShadow innerShadow = new InnerShadow();
+        innerShadow.setOffsetX(4);
+        innerShadow.setOffsetY(4);
+        innerShadow.setColor(Color.CYAN);
+//        Glow glow = new Glow(0.95);
+//        glow.setInput(innerShadow);
+        forwardVBox.setOnMouseEntered(e -> {
+            forward.setEffect(innerShadow);
+        });
+        forwardVBox.setOnMouseClicked(e -> {
+            mediaPlayer.pause();
+            setVideo();
+        });
+        forwardVBox.setOnMouseExited(e -> {
+            forward.setEffect(null);
+        });
+        
+        refreshVBox.setOnMouseEntered(e -> {
+            refresh.setEffect(innerShadow);
+        });
+        refreshVBox.setOnMouseClicked(e -> {
+            toggleAuto();
+            if(auto)
+                refreshVBox.setEffect(innerShadow);
+            else
+                refreshVBox.setEffect(null);
+        });
+        refreshVBox.setOnMouseExited(e -> {
+            refresh.setEffect(null);
+        });        
+        
+        HBox hbox = new HBox(50,  tv, refreshVBox, forwardVBox);
+        hbox.setAlignment(Pos.CENTER_RIGHT);
+        mainTitleArea.getChildren().add(hbox);
+        hbox.prefWidthProperty().bind(mainTitleArea.widthProperty().subtract(10));
     }
     
     @Override
@@ -84,14 +138,20 @@ public class VideoPane extends LitPathPane {
         close();
         parent.getChildren().remove(this);        
     }
-    
+    public void toggleAuto() {
+        auto = !auto;
+    }
     public void setVideo() {
         try {
             media = ResourceUtils.loadRandomMediaMp4();
             if(null != media) {
                 mediaPlayer = new MediaPlayer(media);
                 mediaView.setMediaPlayer(mediaPlayer);
-                mediaPlayer.seek(Duration.seconds(1));
+                mediaPlayer.setOnEndOfMedia(() -> {
+                    if(auto) {
+                        setVideo();
+                    }                        
+                });
                 mediaPlayer.play();
             } else {
                 shutdown();

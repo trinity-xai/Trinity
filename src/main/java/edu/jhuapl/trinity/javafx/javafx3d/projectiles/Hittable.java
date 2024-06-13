@@ -29,11 +29,13 @@ public interface Hittable {
      * Random instance for random behavior.
      */
     static Random random = new Random();
-
-//   /**
-//    * Flag indicating whether the particle is active.
-//    */
-//   public SimpleBooleanProperty activeProperty = new SimpleBooleanProperty(true);
+    public static Point3D getRandomPoint3D(float lowerBound, float upperBound) {
+        return new Point3D(
+            random.nextFloat() * (upperBound - lowerBound) + lowerBound,
+            random.nextFloat() * (upperBound - lowerBound) + lowerBound,
+            random.nextFloat() * (upperBound - lowerBound) + lowerBound
+        );
+    }
 
     /**
      * physics of the hittable.
@@ -50,15 +52,6 @@ public interface Hittable {
 
     public Point3D getVelocity();
 
-
-    public static Point3D getRandomPoint3D(float lowerBound, float upperBound) {
-        return new Point3D(
-            random.nextFloat() * (upperBound - lowerBound) + lowerBound,
-            random.nextFloat() * (upperBound - lowerBound) + lowerBound,
-            random.nextFloat() * (upperBound - lowerBound) + lowerBound
-        );
-    }
-    
     public void flipCheck(double absSafetyPosition);
 
     /**

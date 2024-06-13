@@ -151,6 +151,8 @@ import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import javafx.scene.control.DialogPane;
+import javafx.stage.StageStyle;
 
 /**
  * @author Sean Phillips
@@ -1146,12 +1148,12 @@ public class Projections3DPane extends StackPane implements
                 resetAsteroids();
             } else if (keycode == KeyCode.F12 && k.isAltDown()) {
                 //do we need an intro?
+                if(k.isShiftDown())
+                    projectileSystem.introPlayed = true; //just skip the intro
                 if(!projectileSystem.isRunning() && !projectileSystem.introPlayed) {
                     projectileSystem.introPlayed = true;
                     VideoPane vp = App.getVideoPane();
                     vp.setVideo();
-                    vp.setScaleX(0.05);
-                    vp.setScaleY(0.05);
                     Pane desktopPane = App.getAppPathPaneStack();
                     App.getAppPathPaneStack().getChildren().add(vp);
                     vp.setTranslateX(desktopPane.getWidth()/2.0 
@@ -2790,10 +2792,30 @@ public class Projections3DPane extends StackPane implements
     }
 
     public void projectFeatureCollection(FeatureCollection originalFC, Umap umap) {
+        Alert alert = new Alert(AlertType.CONFIRMATION,
+        "",ButtonType.YES, ButtonType.NO);
+        alert.setHeaderText("Watch a TV while you wait?");
+        alert.setGraphic(ResourceUtils.loadIcon("retrowave-tv", 100));
+        alert.initStyle(StageStyle.TRANSPARENT);
+        DialogPane dialogPane = alert.getDialogPane();
+        dialogPane.setBackground(Background.EMPTY);
+        dialogPane.getScene().setFill(Color.TRANSPARENT);
+        String DIALOGCSS = this.getClass().getResource("/edu/jhuapl/trinity/css/dialogstyles.css").toExternalForm();
+        dialogPane.getStylesheets().add(DIALOGCSS);
+        alert.setX(scene.getWidth() - 500);
+        alert.setY(500);
+        alert.resultProperty().addListener(r -> {
+            if(alert.getResult().equals(ButtonType.YES)) {
+                manifoldControlPane.minimize();
+                scene.getRoot().fireEvent(
+                    new ApplicationEvent(ApplicationEvent.SHOW_VIDEO_PANE, 
+                    "EMPTY VISION ", "A past never had for a Retrowave Future"));
+            }
+        });
+        alert.show();        
         Task task = new Task() {
             @Override
             protected FeatureCollection call() throws Exception {
-                //Scene scene = App.getAppScene();
                 Platform.runLater(() -> {
                     ProgressStatus ps = new ProgressStatus("Fitting UMAP Transform...", 0.5);
                     ps.fillStartColor = Color.AZURE;
@@ -2851,6 +2873,7 @@ public class Projections3DPane extends StackPane implements
         Thread thread = new Thread(task);
         thread.setDaemon(true);
         thread.start();
+
     }
 
     @Override

@@ -20,7 +20,6 @@ package edu.jhuapl.trinity.javafx.javafx3d.projectiles;
  * #L%
  */
 
-import edu.jhuapl.trinity.javafx.events.HitEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.TexturedManifold;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
@@ -52,6 +51,7 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.concurrent.Task;
 import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
@@ -79,6 +79,11 @@ public class HitShape3D extends MeshView implements Hittable {
     public Point3D rotateAxis = Rotate.X_AXIS;
     public Color defaultColor = new Color(0.1, 0.1, 0.1, 1);
     public WritableImage writableDiffuseImage;
+   /**
+    * Flag indicating whether the particle is active.
+    */
+    public SimpleBooleanProperty activeProperty = new SimpleBooleanProperty(true);
+    
     
     public HitShape3D(List<org.fxyz3d.geometry.Point3D> vertices, List<Face3> faces, Point3D center) {
         texturedManifold = new TexturedManifold(vertices, faces);

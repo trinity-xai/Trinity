@@ -518,13 +518,24 @@ public class App extends Application {
             }
             if (!pathPane.getChildren().contains(videoPane)) {
                 pathPane.getChildren().add(videoPane);
+                videoPane.setTranslateX(desktopPane.getWidth()/2.0 
+                    - videoPane.getBoundsInLocal().getWidth()/2.0);
+                videoPane.setTranslateY(desktopPane.getHeight()/2.0 
+                    - videoPane.getBoundsInLocal().getHeight()/2.0);                 
                 videoPane.slideInPane();
             } else {
                 videoPane.show();
             }
             if (null != e.object) {
-                Platform.runLater(() -> videoPane.setVideo());
+                String title = (String) e.object;
+                videoPane.mainTitleTextProperty.set(title);
             }
+            if (null != e.object2) {
+                String caption = (String) e.object2;
+                videoPane.mainTitleText2Property.set(caption);
+            }
+            
+            videoPane.setVideo();
         });
         
         scene.addEventHandler(ApplicationEvent.SHOW_WAVEFORM_PANE, e -> {
@@ -933,7 +944,11 @@ public class App extends Application {
             stage.getScene().getRoot().fireEvent(
                 new ApplicationEvent(ApplicationEvent.SHOW_TEXT_CONSOLE));
         }
-
+        if (e.isAltDown() && e.isControlDown() && e.getCode().equals(KeyCode.V)) {
+            stage.getScene().getRoot().fireEvent(
+                new ApplicationEvent(ApplicationEvent.SHOW_VIDEO_PANE, 
+                    "EMPTY VISION ", "A past never had for a Retrowave Future"));
+        }
         if (e.isAltDown() && e.getCode().equals(KeyCode.N)) {
             matrixShowing = !matrixShowing;
             if (!matrixShowing) {

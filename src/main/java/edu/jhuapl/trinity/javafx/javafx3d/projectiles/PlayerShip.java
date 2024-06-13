@@ -60,10 +60,6 @@ public class PlayerShip extends AnimatedTetrahedron implements Hittable {
     public static double maxThrustMagnitude = 20.0;
     public PhongMaterial playerMaterial = null;
     /**
-     * Flag indicating whether the ship is active.
-     */
-    public SimpleBooleanProperty activeProperty = new SimpleBooleanProperty(true);
-    /**
      * Transform Management
      */
     private boolean useLocalTransform = true;
@@ -81,6 +77,10 @@ public class PlayerShip extends AnimatedTetrahedron implements Hittable {
     public double rotateIncrementDegrees = 0.0;
     public Point3D rotateAxis = Rotate.X_AXIS;
     public boolean enableMouseRotation = false;
+   /**
+    * Flag indicating whether the particle is active.
+    */
+    public SimpleBooleanProperty activeProperty = new SimpleBooleanProperty(true);
     
     public PlayerShip(Point3D center) {
         super(100);

@@ -22,7 +22,6 @@ package edu.jhuapl.trinity.javafx.javafx3d.projectiles;
 
 import edu.jhuapl.trinity.javafx.events.HitEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.Manifold3D;
-import edu.jhuapl.trinity.javafx.javafx3d.animated.Opticon;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import javafx.animation.AnimationTimer;
@@ -200,8 +199,6 @@ public class ProjectileSystem {
         //default starting pointing direction is Z+. 
         javafx.geometry.Point3D velocity = new Point3D(0, 0, fireVelocity); 
         velocity = playerShip.getTransforms().get(0).transform(velocity);
-//        javafx.geometry.Point3D start = javafx.geometry.Point3D.ZERO;
-//        FireBall fireBall = new FireBall(20, start, velocity);
         FireBall fireBall = new FireBall(20, playerShip.getLocation(), velocity);
         addProjectile(fireBall);
         fireSound.play();
@@ -418,35 +415,6 @@ public class ProjectileSystem {
         }
     }
 
-//    private HitBox safetyCheck(Point3D p) {
-//        if (p.getX() < -absSafetyPosition) return xMinusBox;
-//        else if (p.getX() > absSafetyPosition) return xPlusBox;
-//        else if (p.getY() < -absSafetyPosition) return yMinusBox;
-//        else if (p.getY() > absSafetyPosition) return yPlusBox;
-//        else if (p.getZ() < -absSafetyPosition) return zMinusBox;
-//        else if (p.getZ() > absSafetyPosition) return zPlusBox;
-//        return null;
-//    }
-//
-//    private void flipCheck(HitShape3D hitShape) {
-//        double bufferX = hitShape.getVelocity().getX() * 2;
-//        double bufferY = hitShape.getVelocity().getY() * 2;
-//        double bufferZ = hitShape.getVelocity().getZ() * 2;
-//        Point3D loc = hitShape.getLocation().add(hitShape.getStart());
-//        if (loc.getX() < -absSafetyPosition)
-//            hitShape.setLocation(new Point3D(absSafetyPosition - bufferX, loc.getY(), loc.getZ()));
-//        if (loc.getX() > absSafetyPosition)
-//            hitShape.setLocation(new Point3D(-absSafetyPosition + bufferX, loc.getY(), loc.getZ()));
-//        if (loc.getY() < -absSafetyPosition)
-//            hitShape.setLocation(new Point3D(loc.getX(), absSafetyPosition - bufferY, loc.getZ()));
-//        if (loc.getY() > absSafetyPosition)
-//            hitShape.setLocation(new Point3D(loc.getX(), -absSafetyPosition + bufferY, loc.getZ()));
-//        if (loc.getZ() < -absSafetyPosition)
-//            hitShape.setLocation(new Point3D(loc.getX(), loc.getY(), absSafetyPosition - bufferZ));
-//        if (loc.getZ() > absSafetyPosition)
-//            hitShape.setLocation(new Point3D(loc.getX(), loc.getY(), -absSafetyPosition + bufferZ));
-//    }
-
     public void updateHittables(long millis) {
         if (null != hittables) {
             hittables.forEach(p -> {
@@ -459,12 +427,15 @@ public class ProjectileSystem {
     }
     public void updateAlien(long millis) {
         if (null != alienShip && parentGroup.getChildren().contains(alienShip)) {
-            if (!alienShip.update(millis))
+            if (!alienShip.update(millis)) //has it expired somehow?
                 alienShip.activeProperty.set(false);
-            alienShip.flipCheck(absSafetyPosition);
+            alienShip.flipCheck(absSafetyPosition); //did it flip over?
             //reverse the order of the points because alienship is already rotated
             JavaFX3DUtils.lookAt(alienShip, playerShip.getLocation(), 
                 alienShip.getLocation(), false);            
+            //After all that is it no longer active logically?
+            if(!alienShip.activeProperty.get()) //if not we should remove it
+                toggleAlien();
         }
     }
     public void updatePlayer(long millis) {
