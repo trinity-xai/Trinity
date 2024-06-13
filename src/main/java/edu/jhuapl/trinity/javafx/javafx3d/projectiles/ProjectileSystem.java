@@ -33,6 +33,7 @@ import javafx.scene.media.MediaPlayer;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.application.Platform;
@@ -52,7 +53,7 @@ public class ProjectileSystem {
     public Point3D spawnPoint = Point3D.ZERO;
     public Group parentGroup;
     private int msInterval = 30;
-    
+    private Random random = new Random();
     private boolean inMotion = true;
     private boolean running = true;
     private boolean collisions = true;
@@ -151,7 +152,11 @@ public class ProjectileSystem {
                 start, false);
             alienShip.setStart(start);
             alienShip.setLocation(start);
-            alienShip.setVelocity(new Point3D(-10,0,0));
+            if(start.getX() < 0)
+                alienShip.setVelocity(new Point3D(10,0,0));
+            else
+                alienShip.setVelocity(new Point3D(-10,0,0));
+
             parentGroup.getChildren().add(alienShip);
             saucerBig.setCycleCount(AudioClip.INDEFINITE);
             saucerBig.setVolume(0.2);
@@ -199,7 +204,7 @@ public class ProjectileSystem {
         //default starting pointing direction is Z+. 
         javafx.geometry.Point3D velocity = new Point3D(0, 0, fireVelocity); 
         velocity = playerShip.getTransforms().get(0).transform(velocity);
-        FireBall fireBall = new FireBall(20, playerShip.getLocation(), velocity);
+        FireBall fireBall = new FireBall(15, playerShip.getLocation(), velocity);
         addProjectile(fireBall);
         fireSound.play();
     }
@@ -429,10 +434,19 @@ public class ProjectileSystem {
         if (null != alienShip && parentGroup.getChildren().contains(alienShip)) {
             if (!alienShip.update(millis)) //has it expired somehow?
                 alienShip.activeProperty.set(false);
+
             alienShip.flipCheck(absSafetyPosition); //did it flip over?
             //reverse the order of the points because alienship is already rotated
             JavaFX3DUtils.lookAt(alienShip, playerShip.getLocation(), 
                 alienShip.getLocation(), false);            
+            if(random.nextDouble() >= 0.985) {
+                //Minus because the Alien is rotated 180 degrees ahead of time
+                javafx.geometry.Point3D velocity = new Point3D(0, 0, -fireVelocity); 
+                velocity = alienShip.getTransforms().get(0).transform(velocity);
+                FireBall fireBall = new FireBall(15, alienShip.getLocation(), velocity);
+                addProjectile(fireBall);
+                fireSound.play();                
+            }            
             //After all that is it no longer active logically?
             if(!alienShip.activeProperty.get()) //if not we should remove it
                 toggleAlien();

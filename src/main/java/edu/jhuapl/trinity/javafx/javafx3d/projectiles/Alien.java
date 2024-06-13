@@ -27,7 +27,13 @@ public class Alien extends Opticon implements Hittable {
     }
     public Point3D randomStart(double distance) {
         //Start the alien somewhere on the outskirts of play
-        Point3D randomStart = new Point3D(distance-50, 0, 0);
+        int directionX = random.nextBoolean() ? 1 : -1;
+        int directionY = random.nextBoolean() ? 1 : -1;
+        int directionZ = random.nextBoolean() ? 1 : -1;
+        Point3D randomStart = new Point3D(
+            directionX * (distance-50), 
+            directionY * random.nextDouble() * (distance-50), 
+            directionZ * random.nextDouble() * (distance-50));
         return randomStart;
     }
     /**
