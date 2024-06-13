@@ -73,7 +73,7 @@ public class ProjectileSystem {
     public PlayerShip playerShip;
     public boolean splittingEnabled = true;
     public double bigThreshold = 200;
-    public double fireVelocity = 10.0;
+    public double fireVelocity = 30.0;
     public boolean introPlayed = false;
     
     public ProjectileSystem(Group parentGroup, int millisInterval) {
@@ -166,11 +166,12 @@ public class ProjectileSystem {
         playerShip.thrust();
     }
     public void fire() {
-        javafx.geometry.Point3D start = javafx.geometry.Point3D.ZERO;
         //default starting pointing direction is Z+. 
         javafx.geometry.Point3D velocity = new Point3D(0, 0, fireVelocity); 
-        velocity = playerShip.getParent().getTransforms().get(0).transform(velocity);
-        FireBall fireBall = new FireBall(20, start, velocity);
+        velocity = playerShip.getTransforms().get(0).transform(velocity);
+//        javafx.geometry.Point3D start = javafx.geometry.Point3D.ZERO;
+//        FireBall fireBall = new FireBall(20, start, velocity);
+        FireBall fireBall = new FireBall(20, playerShip.getLocation(), velocity);
         addProjectile(fireBall);
         fireSound.play();
     }

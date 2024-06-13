@@ -1161,9 +1161,9 @@ public class Projections3DPane extends StackPane implements
                     vp.restore();
                     vp.show();
                     vp.setOpacity(1);
-                    vp.mediaPlayer.setOnStopped(() -> {
+                    vp.mediaPlayer.setOnPaused(() -> {
+                        toggleProjectileViews();
                         vp.shutdown();
-                        toggleProjectileViews();                        
                     });
                     vp.mediaPlayer.setOnEndOfMedia(() -> {
                         vp.shutdown();
@@ -1207,6 +1207,13 @@ public class Projections3DPane extends StackPane implements
         //first toggle the system
         projectileSystem.setRunning(!projectileSystem.isRunning());
         //hide the boring serious stuff
+        cubeWorld.setVisible(!projectileSystem.isRunning());
+        xSphere.setVisible(!projectileSystem.isRunning());
+        ySphere.setVisible(!projectileSystem.isRunning());
+        zSphere.setVisible(!projectileSystem.isRunning());
+        xLabel.setVisible(!projectileSystem.isRunning());
+        yLabel.setVisible(!projectileSystem.isRunning());
+        zLabel.setVisible(!projectileSystem.isRunning());
         manifoldGroup.setVisible(!projectileSystem.isRunning());
         connectorsGroup.setVisible(!projectileSystem.isRunning());
         ellipsoidGroup.setVisible(!projectileSystem.isRunning());

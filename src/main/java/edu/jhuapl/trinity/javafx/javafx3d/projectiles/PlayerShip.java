@@ -57,6 +57,7 @@ import javafx.scene.transform.Affine;
 public class PlayerShip extends AnimatedTetrahedron implements Hittable {
     public static final double smallDiff = 1.0E-11;
     public static double defaultThrustMagnitude = 1.0;
+    public static double maxThrustMagnitude = 20.0;
     public PhongMaterial playerMaterial = null;
     /**
      * Flag indicating whether the ship is active.
@@ -574,6 +575,10 @@ public class PlayerShip extends AnimatedTetrahedron implements Hittable {
         javafx.geometry.Point3D rotatedThrust = new Point3D(0, 0, defaultThrustMagnitude); 
         velocity = velocity.add(getTransforms().get(0)
             .transform(rotatedThrust));        
+        if(velocity.magnitude()>maxThrustMagnitude) {
+            javafx.geometry.Point3D maxThrust = new Point3D(0, 0, maxThrustMagnitude); 
+            velocity = getTransforms().get(0).transform(maxThrust);           
+        }
     }
     @Override
     public boolean update(double _time) {

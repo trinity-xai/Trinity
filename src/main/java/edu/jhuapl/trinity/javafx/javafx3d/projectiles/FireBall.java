@@ -22,6 +22,7 @@ public class FireBall extends Projectile {
     
     public FireBall(double radius, Point3D start, Point3D velocity) {
         this.start = start;
+        location = start;
         this.velocity = velocity;
         ellipsoid = new TriaxialSpheroidMesh(64, radius, radius, radius);
         //Try to load default texture set
