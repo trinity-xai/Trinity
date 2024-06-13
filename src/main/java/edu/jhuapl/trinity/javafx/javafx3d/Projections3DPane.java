@@ -1179,6 +1179,9 @@ public class Projections3DPane extends StackPane implements
             if(keycode == KeyCode.SPACE && k.isControlDown()) {
                 projectileSystem.fire();
             }            
+            if(keycode == KeyCode.F10 && k.isControlDown()) {
+                projectileSystem.toggleAlien();
+            }
             if(keycode == KeyCode.F12 && k.isShiftDown()) {
                 if(!dataXForm.getChildren().contains(projectileSystem.playerShip)) {
                     projectileSystem.playerShip.reset();

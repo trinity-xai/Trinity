@@ -22,6 +22,7 @@ package edu.jhuapl.trinity.javafx.javafx3d.projectiles;
 
 import edu.jhuapl.trinity.javafx.events.HitEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.Manifold3D;
+import edu.jhuapl.trinity.javafx.javafx3d.animated.Opticon;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import javafx.animation.AnimationTimer;
@@ -40,6 +41,7 @@ import javafx.concurrent.Task;
 import javafx.scene.media.AudioClip;
 
 import static javafx.scene.media.MediaPlayer.INDEFINITE;
+import javafx.scene.paint.Color;
 import javafx.util.Pair;
 
 public class ProjectileSystem {
@@ -62,6 +64,7 @@ public class ProjectileSystem {
     AudioClip bigBoom = null;
     AudioClip smallBoom = null;
     AudioClip thrust = null;
+    AudioClip saucerBig = null;
 
     double absSafetyPosition = 2000;
     HitBox xPlusBox;
@@ -71,6 +74,7 @@ public class ProjectileSystem {
     HitBox zPlusBox;
     HitBox zMinusBox;
     public PlayerShip playerShip;
+    public Alien alienShip;
     public boolean splittingEnabled = true;
     public double bigThreshold = 200;
     public double fireVelocity = 30.0;
@@ -85,6 +89,8 @@ public class ProjectileSystem {
         addOuterBox();
         playerShip = new PlayerShip(Point3D.ZERO);
         parentGroup.getChildren().add(playerShip);
+        alienShip = new Alien(Color.FIREBRICK, 100);
+        
         try {
             asteriods1981 = ResourceUtils.loadMediaWav("asteroids1981");
             asteriods1981MediaPlayer = new MediaPlayer(asteriods1981);
@@ -94,6 +100,8 @@ public class ProjectileSystem {
             bigBoom = ResourceUtils.loadAudioClipWav("bigBoom");
             smallBoom = ResourceUtils.loadAudioClipWav("smallBoom");
             thrust = ResourceUtils.loadAudioClipWav("thrust");
+            saucerBig = ResourceUtils.loadAudioClipWav("saucerBig");
+            
         } catch (IOException ex) {
             Logger.getLogger(ProjectileSystem.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -113,6 +121,7 @@ public class ProjectileSystem {
                 msCounter += getMsInterval();
                 if (running) {
                     updatePlayer(msCounter);
+                    updateAlien(msCounter);
                     //move objects based on simple linear physics, no gravity
                     if(inMotion)
                         updateHittables(msCounter);
@@ -133,6 +142,28 @@ public class ProjectileSystem {
                 }
             }
         };
+
+    }
+    public void toggleAlien() {
+        if(!parentGroup.getChildren().contains(alienShip)) {
+            Point3D start = alienShip.randomStart(absSafetyPosition);
+            //reverse the order of the points because alienship is already rotated
+            JavaFX3DUtils.lookAt(alienShip, playerShip.getLocation(), 
+                start, false);
+            alienShip.setStart(start);
+            alienShip.setLocation(start);
+            alienShip.setVelocity(new Point3D(-10,0,0));
+            parentGroup.getChildren().add(alienShip);
+            saucerBig.setCycleCount(AudioClip.INDEFINITE);
+            saucerBig.setVolume(0.2);
+            saucerBig.setRate(0.5);
+            saucerBig.play();
+        } else {
+            saucerBig.stop();
+            parentGroup.getChildren().remove(alienShip);
+            alienShip.reset();
+            
+        }
     }
     private void hittableSweep() {
         hittables.stream().forEach(p -> {
@@ -424,6 +455,16 @@ public class ProjectileSystem {
                 } else
                     p.flipCheck(absSafetyPosition);
             });
+        }
+    }
+    public void updateAlien(long millis) {
+        if (null != alienShip && parentGroup.getChildren().contains(alienShip)) {
+            if (!alienShip.update(millis))
+                alienShip.activeProperty.set(false);
+            alienShip.flipCheck(absSafetyPosition);
+            //reverse the order of the points because alienship is already rotated
+            JavaFX3DUtils.lookAt(alienShip, playerShip.getLocation(), 
+                alienShip.getLocation(), false);            
         }
     }
     public void updatePlayer(long millis) {

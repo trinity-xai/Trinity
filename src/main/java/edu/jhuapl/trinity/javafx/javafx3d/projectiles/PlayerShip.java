@@ -71,12 +71,7 @@ public class PlayerShip extends AnimatedTetrahedron implements Hittable {
     public Rotate parentRotateX = null;
     public Rotate parentRotateY = null;
     public boolean enableRotationAnimation = true;
-    private double mousePosX;
-    private double mousePosY;
-    private double mouseOldX;
-    private double mouseOldY;
-    private double mouseDeltaX;
-    private double mouseDeltaY;    
+  
     /**
      * physics of the ship.
      */

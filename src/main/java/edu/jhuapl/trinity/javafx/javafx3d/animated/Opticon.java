@@ -568,6 +568,12 @@ public class Opticon extends Group {
      */
     public void setScanning(boolean scanning) {
         this.scanning = scanning;
+        scannerConeMesh.setVisible(scanning);
+        scannerConeOutlineMesh.setVisible(scanning);
+        if(scanning) 
+            scannerMeshTimeline.playFromStart();
+        else
+            scannerMeshTimeline.stop();
         setMouseTransparent(scanning);
     }
 
