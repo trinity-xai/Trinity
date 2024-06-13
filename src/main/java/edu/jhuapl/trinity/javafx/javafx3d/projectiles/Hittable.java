@@ -58,15 +58,8 @@ public interface Hittable {
             random.nextFloat() * (upperBound - lowerBound) + lowerBound
         );
     }
-//
-//   /**
-//    * Logic to tell implementation to reset to defaults/initial conditions
-//    */
-//   public abstract void reset();
-//   /**
-//    * @return the Shape3D that is added to the 3D scene
-//    */
-//   public abstract Shape3D getShape3D();
+    
+    public void flipCheck(double absSafetyPosition);
 
     /**
      * Updates the particle animation by the specified number of milliseconds.

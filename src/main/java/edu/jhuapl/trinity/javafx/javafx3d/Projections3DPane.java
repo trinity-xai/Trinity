@@ -186,6 +186,8 @@ public class Projections3DPane extends StackPane implements
     public Group projectedGroup = new Group();
     public XFormGroup dataXForm = new XFormGroup();
     public boolean enableXForm = false;
+    public boolean enableContextMenu = true;
+    
     public Sphere selectedSphereA = null;
     public Sphere selectedSphereB = null;
     public Manifold3D selectedManifoldA = null;
@@ -861,7 +863,7 @@ public class Projections3DPane extends StackPane implements
         cm.setOpacity(0.85);
 
         subScene.setOnMouseClicked((MouseEvent e) -> {
-            if (e.getButton() == MouseButton.SECONDARY && !enableXForm) {
+            if (e.getButton() == MouseButton.SECONDARY && enableContextMenu && !enableXForm) {
                 if (!cm.isShowing())
                     cm.show(this.getParent(), e.getScreenX(), e.getScreenY());
                 else
@@ -1131,7 +1133,9 @@ public class Projections3DPane extends StackPane implements
         projectileSystem = new ProjectileSystem(debugGroup, 15);
         projectileSystem.setRunning(false);
         projectileSystem.setEnableProjectileTimer(true);
-
+        subScene.addEventHandler(MouseEvent.MOUSE_DRAGGED, me -> {
+            projectileSystem.playerShip.mouseDragged(me, mouseDeltaX, mouseDeltaY);
+        });
         subScene.addEventHandler(KeyEvent.KEY_PRESSED, k -> {
             //What key did the user press?
             KeyCode keycode = k.getCode();
@@ -1169,15 +1173,20 @@ public class Projections3DPane extends StackPane implements
                     toggleProjectileViews();
                 }
             }
+            if(keycode == KeyCode.Z && k.isControlDown()) {
+                projectileSystem.thrustPlayer();
+            }            
             if(keycode == KeyCode.SPACE && k.isControlDown()) {
                 projectileSystem.fire();
             }            
             if(keycode == KeyCode.F12 && k.isShiftDown()) {
-                enableXForm = !enableXForm;
-                if(enableXForm) {
+                if(!dataXForm.getChildren().contains(projectileSystem.playerShip)) {
+                    projectileSystem.playerShip.reset();
                     dataXForm.getChildren().add(projectileSystem.playerShip);
+                    enableContextMenu = false; //right clicking interferes...
                 } else {
                     dataXForm.getChildren().remove(projectileSystem.playerShip);
+                    enableContextMenu = true;
                 }
             }
         });

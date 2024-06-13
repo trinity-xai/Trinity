@@ -61,6 +61,7 @@ public class ProjectileSystem {
     AudioClip fireSound = null;
     AudioClip bigBoom = null;
     AudioClip smallBoom = null;
+    AudioClip thrust = null;
 
     double absSafetyPosition = 2000;
     HitBox xPlusBox;
@@ -92,7 +93,7 @@ public class ProjectileSystem {
             fireSound = ResourceUtils.loadAudioClipWav("fire");
             bigBoom = ResourceUtils.loadAudioClipWav("bigBoom");
             smallBoom = ResourceUtils.loadAudioClipWav("smallBoom");
-            
+            thrust = ResourceUtils.loadAudioClipWav("thrust");
         } catch (IOException ex) {
             Logger.getLogger(ProjectileSystem.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -111,6 +112,7 @@ public class ProjectileSystem {
                 prevTime = now;
                 msCounter += getMsInterval();
                 if (running) {
+                    updatePlayer(msCounter);
                     //move objects based on simple linear physics, no gravity
                     if(inMotion)
                         updateHittables(msCounter);
@@ -126,7 +128,6 @@ public class ProjectileSystem {
                         for (int i = 0; i < projectiles.size(); i++) {
                             if (!projectiles.get(i).activeProperty.get())
                                 removeProjectile(projectiles.get(i));
-                            //projectiles.remove(i);
                         }
                     }
                 }
@@ -160,6 +161,10 @@ public class ProjectileSystem {
         parentGroup.getScene().getRoot().fireEvent(
             new HitEvent(HitEvent.SHAPE_HIT_BOX, p, hit));
     }
+    public void thrustPlayer() {
+        thrust.play();
+        playerShip.thrust();
+    }
     public void fire() {
         javafx.geometry.Point3D start = javafx.geometry.Point3D.ZERO;
         //default starting pointing direction is Z+. 
@@ -175,7 +180,6 @@ public class ProjectileSystem {
         || hit.getBoundsInLocal().getDepth() > threshold;
     }
     
-
     public void makeAsteroidFromPoints(List<org.fxyz3d.geometry.Point3D> list) throws Exception {
         Manifold3D man3D = new Manifold3D(list, true, false, false, 1.0);
         makeAsteroidFromPoints(man3D);
@@ -187,14 +191,14 @@ public class ProjectileSystem {
             JavaFX3DUtils.toFX.apply(man3D.getBoundsCentroid())
         );
         javafx.geometry.Point3D velocity = new javafx.geometry.Point3D(
-            Hittable.random.nextGaussian() * 0.5,
+            Hittable.random.nextGaussian() * 0.25,
             Hittable.random.nextGaussian() * 2.1, //initial velocity mostly vertical
-            Hittable.random.nextGaussian() * 0.5);
+            Hittable.random.nextGaussian() * 0.25);
         hitShape.setVelocity(velocity);
         addHitShape(hitShape);
         addHittable(hitShape);
         Platform.runLater(()-> {
-        parentGroup.getChildren().add(hitShape);
+            parentGroup.getChildren().add(hitShape);
         });
     }
 
@@ -382,35 +386,34 @@ public class ProjectileSystem {
         }
     }
 
-    private HitBox safetyCheck(Point3D p) {
-        if (p.getX() < -absSafetyPosition) return xMinusBox;
-        else if (p.getX() > absSafetyPosition) return xPlusBox;
-        else if (p.getY() < -absSafetyPosition) return yMinusBox;
-        else if (p.getY() > absSafetyPosition) return yPlusBox;
-        else if (p.getZ() < -absSafetyPosition) return zMinusBox;
-        else if (p.getZ() > absSafetyPosition) return zPlusBox;
-        return null;
-    }
-
-    private void flipCheck(HitShape3D hitShape) {
-        double bufferX = hitShape.getVelocity().getX() * 2;
-        double bufferY = hitShape.getVelocity().getY() * 2;
-        double bufferZ = hitShape.getVelocity().getZ() * 2;
-        Point3D loc = hitShape.getLocation().add(hitShape.getStart());
-        if (loc.getX() < -absSafetyPosition)
-            hitShape.setLocation(new Point3D(absSafetyPosition - bufferX, loc.getY(), loc.getZ()));
-        if (loc.getX() > absSafetyPosition)
-            hitShape.setLocation(new Point3D(-absSafetyPosition + bufferX, loc.getY(), loc.getZ()));
-        if (loc.getY() < -absSafetyPosition)
-            hitShape.setLocation(new Point3D(loc.getX(), absSafetyPosition - bufferY, loc.getZ()));
-        if (loc.getY() > absSafetyPosition)
-            hitShape.setLocation(new Point3D(loc.getX(), -absSafetyPosition + bufferY, loc.getZ()));
-        if (loc.getZ() < -absSafetyPosition)
-            hitShape.setLocation(new Point3D(loc.getX(), loc.getY(), absSafetyPosition - bufferZ));
-        if (loc.getZ() > absSafetyPosition)
-            hitShape.setLocation(new Point3D(loc.getX(), loc.getY(), -absSafetyPosition + bufferZ));
-
-    }
+//    private HitBox safetyCheck(Point3D p) {
+//        if (p.getX() < -absSafetyPosition) return xMinusBox;
+//        else if (p.getX() > absSafetyPosition) return xPlusBox;
+//        else if (p.getY() < -absSafetyPosition) return yMinusBox;
+//        else if (p.getY() > absSafetyPosition) return yPlusBox;
+//        else if (p.getZ() < -absSafetyPosition) return zMinusBox;
+//        else if (p.getZ() > absSafetyPosition) return zPlusBox;
+//        return null;
+//    }
+//
+//    private void flipCheck(HitShape3D hitShape) {
+//        double bufferX = hitShape.getVelocity().getX() * 2;
+//        double bufferY = hitShape.getVelocity().getY() * 2;
+//        double bufferZ = hitShape.getVelocity().getZ() * 2;
+//        Point3D loc = hitShape.getLocation().add(hitShape.getStart());
+//        if (loc.getX() < -absSafetyPosition)
+//            hitShape.setLocation(new Point3D(absSafetyPosition - bufferX, loc.getY(), loc.getZ()));
+//        if (loc.getX() > absSafetyPosition)
+//            hitShape.setLocation(new Point3D(-absSafetyPosition + bufferX, loc.getY(), loc.getZ()));
+//        if (loc.getY() < -absSafetyPosition)
+//            hitShape.setLocation(new Point3D(loc.getX(), absSafetyPosition - bufferY, loc.getZ()));
+//        if (loc.getY() > absSafetyPosition)
+//            hitShape.setLocation(new Point3D(loc.getX(), -absSafetyPosition + bufferY, loc.getZ()));
+//        if (loc.getZ() < -absSafetyPosition)
+//            hitShape.setLocation(new Point3D(loc.getX(), loc.getY(), absSafetyPosition - bufferZ));
+//        if (loc.getZ() > absSafetyPosition)
+//            hitShape.setLocation(new Point3D(loc.getX(), loc.getY(), -absSafetyPosition + bufferZ));
+//    }
 
     public void updateHittables(long millis) {
         if (null != hittables) {
@@ -418,11 +421,17 @@ public class ProjectileSystem {
                 if (!p.update(millis)) {
                     //p.activeProperty.set(false);
                 } else
-                    flipCheck(p);
+                    p.flipCheck(absSafetyPosition);
             });
         }
     }
-
+    public void updatePlayer(long millis) {
+        if (null != playerShip) {
+            if (!playerShip.update(millis))
+                playerShip.activeProperty.set(false);
+            playerShip.flipCheck(absSafetyPosition);
+        }
+    }
     public void updateProjectiles(long millis) {
         if (null != projectiles) {
             projectiles.forEach(p -> {

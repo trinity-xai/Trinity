@@ -572,6 +572,25 @@ public class HitShape3D extends MeshView implements Hittable {
             .map(JavaFX3DUtils.toFX).toList();
     }
     @Override
+    public void flipCheck(double absSafetyPosition) {
+        double bufferX = 50;
+        double bufferY = 50;
+        double bufferZ = 50;
+        Point3D loc = getLocation().add(getStart());
+        if (loc.getX() < -absSafetyPosition)
+            setLocation(new Point3D(absSafetyPosition - bufferX, loc.getY(), loc.getZ()));
+        if (loc.getX() > absSafetyPosition)
+            setLocation(new Point3D(-absSafetyPosition + bufferX, loc.getY(), loc.getZ()));
+        if (loc.getY() < -absSafetyPosition)
+            setLocation(new Point3D(loc.getX(), absSafetyPosition - bufferY, loc.getZ()));
+        if (loc.getY() > absSafetyPosition)
+            setLocation(new Point3D(loc.getX(), -absSafetyPosition + bufferY, loc.getZ()));
+        if (loc.getZ() < -absSafetyPosition)
+            setLocation(new Point3D(loc.getX(), loc.getY(), absSafetyPosition - bufferZ));
+        if (loc.getZ() > absSafetyPosition)
+            setLocation(new Point3D(loc.getX(), loc.getY(), -absSafetyPosition + bufferZ));
+    }    
+    @Override
     public boolean update(double _time) {
         location = location.add(velocity);
         setTranslateX(location.getX());

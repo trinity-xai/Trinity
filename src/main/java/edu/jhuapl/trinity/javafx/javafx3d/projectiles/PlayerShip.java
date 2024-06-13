@@ -46,19 +46,36 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.IntStream;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.transform.Affine;
 
 /**
  * @author Sean Phillips
  * Hokey tetrahedra that is artificially stretched to point in the Z+ axis
  */
 public class PlayerShip extends AnimatedTetrahedron implements Hittable {
-    public PhongMaterial playerMaterial = null;
     public static final double smallDiff = 1.0E-11;
+    public static double defaultThrustMagnitude = 1.0;
+    public PhongMaterial playerMaterial = null;
+    /**
+     * Flag indicating whether the ship is active.
+     */
+    public SimpleBooleanProperty activeProperty = new SimpleBooleanProperty(true);
+    /**
+     * Transform Management
+     */
     private boolean useLocalTransform = true;
     public boolean useParentRotate = false;
     public Rotate parentRotateX = null;
     public Rotate parentRotateY = null;
     public boolean enableRotationAnimation = true;
+    private double mousePosX;
+    private double mousePosY;
+    private double mouseOldX;
+    private double mouseOldY;
+    private double mouseDeltaX;
+    private double mouseDeltaY;    
     /**
      * physics of the ship.
      */
@@ -82,7 +99,6 @@ public class PlayerShip extends AnimatedTetrahedron implements Hittable {
             playerMaterial = new PhongMaterial(Color.NAVAJOWHITE);
         }
         setMaterial(playerMaterial);
-//        setMaterial(new PhongMaterial(c));
         setDrawMode(DrawMode.FILL);
         setCullFace(CullFace.BACK);
 
@@ -115,8 +131,47 @@ public class PlayerShip extends AnimatedTetrahedron implements Hittable {
         });
         //point in the Z positive direction by default
         triangleMesh.getPoints().set(2, 200); 
+        getTransforms().add(new Affine());
     }
+    /**
+     * Accumulate rotation about specified axis
+     *
+     * @param angle
+     * @param axis
+     */
+    public void addRotation(double angle, Point3D axis) {
+        Rotate r = new Rotate(angle, axis);
+        /**
+         * This is the important bit and thanks to bronkowitz in this post
+         * https://stackoverflow.com/questions/31382634/javafx-3d-rotations for
+         * getting me to the solution that the rotations need accumulated in
+         * this way
+         */
+        getTransforms().set(0, r.createConcatenation(getTransforms().get(0)));
+    }
+    /**
+     * Reset transform to identity transform
+     */
+    public void reset() {
+        velocity = Point3D.ZERO;
+        location = Point3D.ZERO;
+        getTransforms().set(0, new Affine());
+    }    
+    public void mouseDragged(MouseEvent me, double mouseDeltaX, double mouseDeltaY) {
+        double modifier = 1.0;
+        double modifierFactor = 0.1;  //@TODO SMP connect to sensitivity property
 
+        if (me.isControlDown()) {
+            modifier = 0.1;
+        }
+        if (me.isShiftDown()) {
+            modifier = 25.0;
+        }        
+        double yChange = (((mouseDeltaX * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180);
+        double xChange = (((-mouseDeltaY * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180);
+        addRotation(yChange, Rotate.Y_AXIS);
+        addRotation(xChange, Rotate.X_AXIS);        
+    }
     //Reflect(Vector3 vector, Vector3 normal)
     public Point3D reflect(Point3D normal, Point3D direction) {
         //If n is a normalized vector, and v is the incoming direction,
@@ -494,7 +549,32 @@ public class PlayerShip extends AnimatedTetrahedron implements Hittable {
     public Point3D getVelocity() {
         return velocity;
     }
-
+    @Override
+    public void flipCheck(double absSafetyPosition) {
+        double bufferX = 50;
+        double bufferY = 50;
+        double bufferZ = 50;
+        Point3D loc = getLocation().add(getStart());
+        if (loc.getX() < -absSafetyPosition)
+            setLocation(new Point3D(absSafetyPosition - bufferX, loc.getY(), loc.getZ()));
+        if (loc.getX() > absSafetyPosition)
+            setLocation(new Point3D(-absSafetyPosition + bufferX, loc.getY(), loc.getZ()));
+        if (loc.getY() < -absSafetyPosition)
+            setLocation(new Point3D(loc.getX(), absSafetyPosition - bufferY, loc.getZ()));
+        if (loc.getY() > absSafetyPosition)
+            setLocation(new Point3D(loc.getX(), -absSafetyPosition + bufferY, loc.getZ()));
+        if (loc.getZ() < -absSafetyPosition)
+            setLocation(new Point3D(loc.getX(), loc.getY(), absSafetyPosition - bufferZ));
+        if (loc.getZ() > absSafetyPosition)
+            setLocation(new Point3D(loc.getX(), loc.getY(), -absSafetyPosition + bufferZ));
+    }
+    
+    public void thrust() {
+        //default starting pointing direction is Z+. 
+        javafx.geometry.Point3D rotatedThrust = new Point3D(0, 0, defaultThrustMagnitude); 
+        velocity = velocity.add(getTransforms().get(0)
+            .transform(rotatedThrust));        
+    }
     @Override
     public boolean update(double _time) {
         location = location.add(velocity);
