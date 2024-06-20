@@ -20,6 +20,7 @@ package edu.jhuapl.trinity.javafx.javafx3d.animated;
  * #L%
  */
 
+import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import javafx.animation.Interpolator;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
@@ -36,6 +37,7 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static javafx.animation.Animation.INDEFINITE;
+import javafx.scene.shape.CullFace;
 
 /**
  * @author Sean Phillips
@@ -46,13 +48,48 @@ public class Tracer extends PolyLine3D {
     public IntegerProperty keyCycle = new SimpleIntegerProperty();
     Timeline tm;
     TriangleMesh mesh;
-    float[] uvCoords = {0, 0, 1, 0, 1, 1, 0, 1};
+    float[] uvCoords = {
+        0f, 0f,
+        0.25f, 0.5f,
+        0.5f, 0f,
+        0.5f, 1f,
+        0.75f, 0.5f,
+        1f, 0f
+    };
     boolean animating = false;
     Point3D currentStart;
     Point3D currentEnd;
     float currentWidth;
     Color diffuseColor;
+    float[] originalUVCoords = {
+        0.25f, 0.5f, 0.9f, 0.5f,
+        
+        
+        0.25f, 0.5f, 0.9f, 0.5f,
+        0.25f, 0.5f, 0.9f, 0.5f,
+        0.25f, 0.5f, 0.9f, 0.5f,
+        0.25f, 0.5f, 0.9f, 0.5f,
+        0.25f, 0.5f, 0.9f, 0.5f,
+        0.25f, 0.5f, 0.9f, 0.5f,
 
+        0.25f, 0.5f, 0.9f, 0.5f,
+        0.25f, 0.5f, 0.9f, 0.5f,
+        0.25f, 0.5f, 0.9f, 0.5f,
+        0.25f, 0.5f, 0.9f, 0.5f,
+        0.25f, 0.5f, 0.9f, 0.5f,
+        0.25f, 0.5f, 0.9f, 0.5f,
+        
+        0.25f, 0.5f, 0.9f, 0.5f,
+        0.25f, 0.5f, 0.9f, 0.5f,
+        0.25f, 0.5f, 0.9f, 0.5f,
+        0.25f, 0.5f, 0.9f, 0.5f,
+        0.25f, 0.5f, 0.9f, 0.5f,
+        0.25f, 0.5f, 0.9f, 0.5f,
+
+        0.25f, 0.5f, 0.9f, 0.5f,
+        
+    };
+    
     public Tracer(Point3D start, Point3D end, float width, Color color) {
         super(makePointList(start, end), width, color, LineType.TRIANGLE);
         currentStart = start;
@@ -60,6 +97,8 @@ public class Tracer extends PolyLine3D {
         currentWidth = width;
         diffuseColor = color;
         mesh = (TriangleMesh) this.meshView.getMesh();
+        mesh.getTexCoords().setAll(originalUVCoords);
+//        meshView.setCullFace(CullFace.NONE);        
         setCycle(20, 30);
 
         keyCycle.addListener(e -> {
@@ -71,22 +110,28 @@ public class Tracer extends PolyLine3D {
             }
             mesh.getTexCoords().set(0, uvCoords, 0, uvCoords.length);
         });
-        setOnScroll(e -> {
-            setRateOfChange(rateOfChange - e.getDeltaY() / 10000f);
-        });
-        setOnMouseClicked(e -> {
-            if (e.isSecondaryButtonDown()) {
-                setRateOfChange(DEFAULT_RATEOFCHANGE);
-            }
-            if (e.getClickCount() > 1) {
-                enableCycle(!animating);
-            }
-        });
+//        setOnScroll(e -> {
+//            setRateOfChange(rateOfChange - e.getDeltaY() / 10000f);
+//        });
+//        setOnMouseClicked(e -> {
+//            if (e.isSecondaryButtonDown()) {
+//                setRateOfChange(DEFAULT_RATEOFCHANGE);
+//            }
+//            if (e.getClickCount() > 1) {
+//                enableCycle(!animating);
+//            }
+//        });
+//        animating = true;
+//        enableCycle(animating);
     }
 
     public static List<Point3D> makePointList(Point3D start, Point3D end) {
         List<Point3D> points = new ArrayList<>(2);
         points.add(start);
+        Point3D midPoint = JavaFX3DUtils.toFXYZ3D.apply(
+            JavaFX3DUtils.toFX.apply(start)
+                .midpoint(JavaFX3DUtils.toFX.apply(end)));
+        points.add(midPoint);
         points.add(end);
         return points;
     }

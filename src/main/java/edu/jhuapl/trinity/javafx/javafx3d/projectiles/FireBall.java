@@ -16,7 +16,7 @@ import javafx.scene.shape.Shape3D;
  * @author Sean Phillips
  */
 public class FireBall extends Projectile {
-    
+    public static double DEFAULT_FIREBALL_RADIUS = 15;
     TriaxialSpheroidMesh ellipsoid;
     double distanceToLive = 2000;
     
