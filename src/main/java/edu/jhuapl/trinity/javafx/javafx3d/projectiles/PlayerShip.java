@@ -47,6 +47,8 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.IntStream;
 import javafx.beans.property.SimpleBooleanProperty;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.transform.Affine;
 
@@ -81,6 +83,8 @@ public class PlayerShip extends AnimatedTetrahedron implements Hittable {
     * Flag indicating whether the particle is active.
     */
     public SimpleBooleanProperty activeProperty = new SimpleBooleanProperty(true);
+
+
     
     public PlayerShip(Point3D center) {
         super(100);
@@ -152,19 +156,22 @@ public class PlayerShip extends AnimatedTetrahedron implements Hittable {
         velocity = Point3D.ZERO;
         location = Point3D.ZERO;
         getTransforms().set(0, new Affine());
-    }    
+    } 
     public void mouseDragged(MouseEvent me, double mouseDeltaX, double mouseDeltaY) {
         double modifier = 1.0;
         double modifierFactor = 0.1;  //@TODO SMP connect to sensitivity property
-
-        if (me.isControlDown()) {
-            modifier = 0.1;
+        
+        if(null != me) {
+            if (me.isControlDown()) {
+                modifier = 0.1;
+            }
+            if (me.isShiftDown()) {
+                modifier = 25.0;
+            }        
         }
-        if (me.isShiftDown()) {
-            modifier = 25.0;
-        }        
         double yChange = (((mouseDeltaX * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180);
         double xChange = (((-mouseDeltaY * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180);
+
         addRotation(yChange, Rotate.Y_AXIS);
         addRotation(xChange, Rotate.X_AXIS);        
     }

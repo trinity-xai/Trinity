@@ -20,9 +20,6 @@ package edu.jhuapl.trinity.javafx.javafx3d;
  * #L%
  */
 
-//import com.clust4j.algo.DBSCAN;
-//import com.clust4j.algo.DBSCANParameters;
-
 import com.clust4j.algo.HDBSCAN;
 import com.clust4j.algo.HDBSCANParameters;
 import edu.jhuapl.trinity.App;
@@ -43,12 +40,14 @@ import edu.jhuapl.trinity.data.messages.GaussianMixtureData;
 import edu.jhuapl.trinity.data.messages.PointCluster;
 import edu.jhuapl.trinity.javafx.components.callouts.Callout;
 import edu.jhuapl.trinity.javafx.components.callouts.DistanceDataCallout;
+import edu.jhuapl.trinity.javafx.components.panes.JoystickPane;
 import edu.jhuapl.trinity.javafx.components.panes.ManifoldControlPane;
 import edu.jhuapl.trinity.javafx.components.panes.RadarPlotPane;
 import edu.jhuapl.trinity.javafx.components.panes.RadialEntityOverlayPane;
 import edu.jhuapl.trinity.javafx.components.panes.VideoPane;
 import edu.jhuapl.trinity.javafx.components.radial.AnimatedNeonCircle;
 import edu.jhuapl.trinity.javafx.components.radial.ProgressStatus;
+import edu.jhuapl.trinity.javafx.components.radial.ViewControlsMenu;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
@@ -151,6 +150,9 @@ import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
+import javafx.beans.InvalidationListener;
+import javafx.beans.value.ChangeListener;
+import javafx.beans.value.ObservableValue;
 import javafx.scene.control.DialogPane;
 import javafx.stage.StageStyle;
 
@@ -179,7 +181,9 @@ public class Projections3DPane extends StackPane implements
     RadialEntityOverlayPane radialOverlayPane;
     ManifoldControlPane manifoldControlPane;
     RadarPlotPane radarPlotPane;
-
+    ViewControlsMenu viewControlsMenu;
+    JoystickPane joystickPane;
+    
     public Group sceneRoot = new Group();
     public Group extrasGroup = new Group();
     public Group connectorsGroup = new Group();
@@ -302,6 +306,7 @@ public class Projections3DPane extends StackPane implements
 
     Rectangle selectionRectangle;
     ProjectileSystem projectileSystem;
+    InvalidationListener angleListener, valueListener;    
 
     public Projections3DPane(Scene scene) {
         this.scene = scene;
@@ -1132,11 +1137,18 @@ public class Projections3DPane extends StackPane implements
             ;
         };
         animationTimer.start();
+        
         projectileSystem = new ProjectileSystem(debugGroup, 15);
         projectileSystem.setRunning(false);
         projectileSystem.setEnableProjectileTimer(true);
+        viewControlsMenu = new ViewControlsMenu(this);
+        radialOverlayPane.addEntity(viewControlsMenu);
+        viewControlsMenu.setTranslateX(200);
+        viewControlsMenu.setTranslateY(200);
+        
         subScene.addEventHandler(MouseEvent.MOUSE_DRAGGED, me -> {
-            projectileSystem.playerShip.mouseDragged(me, mouseDeltaX, mouseDeltaY);
+            if(me.isSecondaryButtonDown())
+                projectileSystem.playerShip.mouseDragged(me, mouseDeltaX, mouseDeltaY);
         });
         subScene.addEventHandler(KeyEvent.KEY_PRESSED, k -> {
             //What key did the user press?
@@ -1199,7 +1211,15 @@ public class Projections3DPane extends StackPane implements
                 }
             }
         });
-
+        scene.addEventHandler(ApplicationEvent.SHOW_JOYSTICK_CONTROLS, e-> {
+            Pane pathPane = App.getAppPathPaneStack();
+            if (!pathPane.getChildren().contains(joystickPane)) {
+                pathPane.getChildren().add(joystickPane);
+                joystickPane.slideInPane();
+            } else {
+                joystickPane.show();
+            }            
+        });
         Platform.runLater(() -> {
             cubeWorld.adjustPanelsByPos(cameraTransform.rx.getAngle(),
                 cameraTransform.ry.getAngle(), cameraTransform.rz.getAngle());
@@ -1210,6 +1230,22 @@ public class Projections3DPane extends StackPane implements
             anchorCallout = radialOverlayPane.createCallout(anchorTSM, dummy, subScene);
             anchorCallout.play();
             anchorCallout.setVisible(false);
+
+            joystickPane = new JoystickPane(scene, App.getAppPathPaneStack());
+            joystickPane.fireButton.setOnAction(e -> projectileSystem.fire());
+            joystickPane.thrustButton.setOnAction(e -> projectileSystem.thrustPlayer());
+            joystickPane.angleproperty.subscribe(c -> {
+                projectileSystem.playerShip.mouseDragged(null,
+                    joystickPane.mouseDeltaX,
+                    joystickPane.mouseDeltaY);
+            });
+
+            joystickPane.valueproperty.subscribe(c -> {
+                projectileSystem.playerShip.mouseDragged(null,
+                    joystickPane.mouseDeltaX,
+                    joystickPane.mouseDeltaY);
+            });
+           
         });
     }
     private void toggleProjectileViews() {
@@ -1231,7 +1267,7 @@ public class Projections3DPane extends StackPane implements
         //show the cool stuff
         debugGroup.setVisible(projectileSystem.isRunning());
         skybox.setVisible(projectileSystem.isRunning());                        
-        
+        viewControlsMenu.setVisible(projectileSystem.isRunning());
     }
     private void resetAsteroids() {
         System.out.println("Resetting Shapes...");

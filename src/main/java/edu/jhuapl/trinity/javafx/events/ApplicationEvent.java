@@ -49,6 +49,7 @@ public class ApplicationEvent extends Event {
     public static final EventType<ApplicationEvent> SHOW_SHAPE3D_CONTROLS = new EventType(ANY, "SHOW_SHAPE3D_CONTROLS");
     public static final EventType<ApplicationEvent> AUTO_PROJECTION_MODE = new EventType(ANY, "AUTO_PROJECTION_MODE");
     public static final EventType<ApplicationEvent> SET_CAMERA_ORBIT = new EventType(ANY, "SET_CAMERA_ORBIT");
+    public static final EventType<ApplicationEvent> SHOW_JOYSTICK_CONTROLS = new EventType(ANY, "SHOW_JOYSTICK_CONTROLS");
 
     public ApplicationEvent(EventType<? extends Event> eventType, Object object) {
         this(eventType);
