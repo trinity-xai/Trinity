@@ -100,7 +100,7 @@ public class PlayerShip extends AnimatedTetrahedron implements Hittable {
         }
         setMaterial(playerMaterial);
         setDrawMode(DrawMode.FILL);
-        setCullFace(CullFace.BACK);
+        setCullFace(CullFace.NONE);
 
         addEventHandler(DragEvent.DRAG_OVER, event -> {
             Dragboard db = event.getDragboard();

@@ -1145,6 +1145,7 @@ public class Projections3DPane extends StackPane implements
         radialOverlayPane.addEntity(viewControlsMenu);
         viewControlsMenu.setTranslateX(200);
         viewControlsMenu.setTranslateY(200);
+        viewControlsMenu.setVisible(false);
         
         subScene.addEventHandler(MouseEvent.MOUSE_DRAGGED, me -> {
             if(me.isSecondaryButtonDown())
@@ -1264,6 +1265,12 @@ public class Projections3DPane extends StackPane implements
         ellipsoidGroup.setVisible(!projectileSystem.isRunning());
         projectedGroup.setVisible(!projectileSystem.isRunning());
         highlighterNeonCircle.setVisible(!projectileSystem.isRunning());
+        anchorTrajectory.setVisible(!projectileSystem.isRunning());
+        anchorTraj3D.setVisible(!projectileSystem.isRunning());
+        trajectorySphereGroup.setVisible(!projectileSystem.isRunning());
+        trajectoryGroup.setVisible(!projectileSystem.isRunning());
+        scatterMesh3D.setVisible(!projectileSystem.isRunning());
+        miniCrosshair.setVisible(!projectileSystem.isRunning());
         //show the cool stuff
         debugGroup.setVisible(projectileSystem.isRunning());
         skybox.setVisible(projectileSystem.isRunning());                        
