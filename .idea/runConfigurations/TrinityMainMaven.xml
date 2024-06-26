@@ -1,8 +1,7 @@
 <component name="ProjectRunConfigurationManager">
   <configuration default="false" name="TrinityMainMaven" type="Application" factoryName="Application">
-    <option name="ALTERNATIVE_JRE_PATH" value="$PROJECT_DIR$/../../jdk-19.0.2" />
-    <option name="ALTERNATIVE_JRE_PATH_ENABLED" value="true" />
     <option name="MAIN_CLASS_NAME" value="edu.jhuapl.trinity.TrinityMain" />
+    <module name="trinity" />
     <extension name="coverage">
       <pattern>
         <option name="PATTERN" value="edu.jhuapl.trinity.*" />
