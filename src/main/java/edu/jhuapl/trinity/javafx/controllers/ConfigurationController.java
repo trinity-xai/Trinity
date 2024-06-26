@@ -901,7 +901,7 @@ public class ConfigurationController implements Initializable {
                 ShadowEvent.OVERRIDE_XFORM,
                 overrideXFormCheckBox.isSelected()));
         });
-        
+
         showNearsidePointsCheckBox.selectedProperty().addListener(cl -> {
             scene.getRoot().fireEvent(new ShadowEvent(
                 ShadowEvent.SHOW_NEARSIDE_POINTS,

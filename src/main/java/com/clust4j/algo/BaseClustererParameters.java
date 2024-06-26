@@ -16,11 +16,11 @@
 
 package com.clust4j.algo;
 
-import java.util.Random;
-
 import com.clust4j.Clust4j;
 import com.clust4j.metrics.pairwise.GeometricallySeparable;
 import com.clust4j.utils.DeepCloneable;
+
+import java.util.Random;
 
 /**
  * Base planner class many clustering algorithms

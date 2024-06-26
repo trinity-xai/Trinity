@@ -23,15 +23,15 @@ package edu.jhuapl.trinity.javafx.javafx3d.projectiles;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.Tracer;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
-import java.io.IOException;
-import javafx.scene.paint.Color;
-import java.util.logging.Level;
-import java.util.logging.Logger;
-
 import javafx.geometry.Point3D;
 import javafx.scene.image.Image;
+import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.Shape3D;
+
+import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author Sean Phillips
@@ -41,12 +41,12 @@ public class TracerRound extends Projectile {
     public static double DEFAULT_TRACER_LENGTH = 200;
     Tracer tracer;
     double distanceToLive = 2000;
-    
+
     public TracerRound(float width, Point3D start, Point3D end, Point3D velocity) {
         this.start = start;
         location = start;
         this.velocity = velocity;
-        tracer = new Tracer(JavaFX3DUtils.toFXYZ3D.apply(start), 
+        tracer = new Tracer(JavaFX3DUtils.toFXYZ3D.apply(start),
             JavaFX3DUtils.toFXYZ3D.apply(end), width, Color.TOMATO);
         //Try to load default texture set
         Image diffuse = null, specular = null, bump = null, self = null;
@@ -61,16 +61,16 @@ public class TracerRound extends Projectile {
         }
         //diffuse color, diffuseMap, specularMap, bumpMap, selfIlluminationMap
         PhongMaterial material = new PhongMaterial(
-        Color.WHITE, 
-            diffuse, 
-            null, 
-            null, 
+            Color.WHITE,
+            diffuse,
+            null,
+            null,
             null
         );
         tracer.material = material;
         tracer.meshView.setMaterial(tracer.material);
     }
-    
+
     @Override
     public void reset() {
         location = start;

@@ -15,22 +15,21 @@
  *******************************************************************************/
 package com.clust4j.algo.preprocess.impute;
 
-import java.util.ArrayList;
-import java.util.Random;
-
-import org.apache.commons.math3.linear.RealMatrix;
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-
 import com.clust4j.algo.BaseNeighborsModel;
 import com.clust4j.algo.NearestNeighbors;
 import com.clust4j.algo.NearestNeighborsParameters;
 import com.clust4j.except.NaNException;
-import com.clust4j.log.LogTimer;
 import com.clust4j.log.Log.Tag.Algo;
+import com.clust4j.log.LogTimer;
 import com.clust4j.metrics.pairwise.Distance;
 import com.clust4j.metrics.pairwise.GeometricallySeparable;
 import com.clust4j.utils.MatUtils;
 import com.clust4j.utils.VecUtils;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.RealMatrix;
+
+import java.util.ArrayList;
+import java.util.Random;
 
 public class NearestNeighborImputation extends MatrixImputation {
     private static final long serialVersionUID = -2717555601058365204L;

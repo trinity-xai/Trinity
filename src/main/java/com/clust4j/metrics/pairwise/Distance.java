@@ -15,12 +15,11 @@
  *******************************************************************************/
 package com.clust4j.metrics.pairwise;
 
-import java.util.ArrayList;
-import java.util.Collection;
-
+import com.clust4j.utils.VecUtils;
 import org.apache.commons.math3.util.FastMath;
 
-import com.clust4j.utils.VecUtils;
+import java.util.ArrayList;
+import java.util.Collection;
 
 public enum Distance implements DistanceMetric, java.io.Serializable {
     HAMMING {

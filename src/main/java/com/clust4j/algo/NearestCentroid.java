@@ -15,13 +15,6 @@
  *******************************************************************************/
 package com.clust4j.algo;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-
-import org.apache.commons.math3.exception.DimensionMismatchException;
-import org.apache.commons.math3.linear.RealMatrix;
-import org.apache.commons.math3.util.FastMath;
-
 import com.clust4j.except.ModelNotFitException;
 import com.clust4j.kernel.CircularKernel;
 import com.clust4j.kernel.LogKernel;
@@ -34,6 +27,12 @@ import com.clust4j.utils.ArrayFormatter;
 import com.clust4j.utils.EntryPair;
 import com.clust4j.utils.MatUtils;
 import com.clust4j.utils.VecUtils;
+import org.apache.commons.math3.exception.DimensionMismatchException;
+import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.commons.math3.util.FastMath;
+
+import java.util.ArrayList;
+import java.util.HashSet;
 
 /**
  * A supervised clustering algorithm used to predict a record's membership

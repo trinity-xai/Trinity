@@ -15,13 +15,6 @@
  *******************************************************************************/
 package com.clust4j.algo;
 
-import java.util.ArrayList;
-import java.util.Map;
-import java.util.TreeMap;
-
-import org.apache.commons.math3.linear.RealMatrix;
-import org.apache.commons.math3.util.FastMath;
-
 import com.clust4j.except.IllegalClusterStateException;
 import com.clust4j.log.Log.Tag.Algo;
 import com.clust4j.log.LogTimer;
@@ -29,6 +22,12 @@ import com.clust4j.metrics.pairwise.Distance;
 import com.clust4j.metrics.pairwise.GeometricallySeparable;
 import com.clust4j.metrics.pairwise.Pairwise;
 import com.clust4j.utils.VecUtils;
+import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.commons.math3.util.FastMath;
+
+import java.util.ArrayList;
+import java.util.Map;
+import java.util.TreeMap;
 
 /**
  * <a href="https://en.wikipedia.org/wiki/K-medoids">KMedoids</a> is

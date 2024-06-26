@@ -15,6 +15,21 @@
  *******************************************************************************/
 package com.clust4j.data;
 
+import com.clust4j.Clust4j;
+import com.clust4j.GlobalState;
+import com.clust4j.algo.ParallelChunkingTask;
+import com.clust4j.except.MatrixParseException;
+import com.clust4j.log.Log;
+import com.clust4j.log.Log.Tag.Algo;
+import com.clust4j.log.LogTimer;
+import com.clust4j.log.Loggable;
+import com.clust4j.utils.ArrayFormatter;
+import com.clust4j.utils.DeepCloneable;
+import com.clust4j.utils.MatUtils;
+import com.clust4j.utils.VecUtils;
+import org.apache.commons.math3.exception.DimensionMismatchException;
+import org.apache.commons.math3.util.FastMath;
+
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -22,22 +37,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.concurrent.RecursiveTask;
 import java.util.concurrent.RejectedExecutionException;
-
-import org.apache.commons.math3.exception.DimensionMismatchException;
-import org.apache.commons.math3.util.FastMath;
-
-import com.clust4j.Clust4j;
-import com.clust4j.GlobalState;
-import com.clust4j.algo.ParallelChunkingTask;
-import com.clust4j.except.MatrixParseException;
-import com.clust4j.log.Log.Tag.Algo;
-import com.clust4j.log.Log;
-import com.clust4j.log.LogTimer;
-import com.clust4j.log.Loggable;
-import com.clust4j.utils.ArrayFormatter;
-import com.clust4j.utils.DeepCloneable;
-import com.clust4j.utils.MatUtils;
-import com.clust4j.utils.VecUtils;
 
 
 /**

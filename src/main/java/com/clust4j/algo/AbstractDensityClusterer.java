@@ -15,9 +15,8 @@
  *******************************************************************************/
 package com.clust4j.algo;
 
-import org.apache.commons.math3.linear.RealMatrix;
-
 import com.clust4j.metrics.pairwise.SimilarityMetric;
+import org.apache.commons.math3.linear.RealMatrix;
 
 public abstract class AbstractDensityClusterer extends AbstractAutonomousClusterer {
     /**

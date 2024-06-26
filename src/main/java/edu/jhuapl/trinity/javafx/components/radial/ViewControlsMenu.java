@@ -171,11 +171,11 @@ public class ViewControlsMenu extends RadialEntity {
 
         ImageView touchCountrols = ResourceUtils.loadIcon("touch", ITEM_FIT_WIDTH);
         touchCountrols.setEffect(glow);
-        
+
         ImageView keyboard = ResourceUtils.loadIcon("keyboard", ITEM_FIT_WIDTH);
         keyboard.setEffect(glow);
 
-        addMenuItem(new LitRadialMenuItem(ITEM_SIZE , "Free Cam", freeCam, e -> {
+        addMenuItem(new LitRadialMenuItem(ITEM_SIZE, "Free Cam", freeCam, e -> {
             scene.getRoot().fireEvent(new ApplicationEvent(
                 ApplicationEvent.FREE_CAMERA_MODE));
         }));
@@ -187,10 +187,10 @@ public class ViewControlsMenu extends RadialEntity {
 
         addMenuItem(new LitRadialMenuItem(ITEM_SIZE, "Aft Thruster", aftThruster, e -> {
             scene.getRoot().fireEvent(new ApplicationEvent(
-                ApplicationEvent.SHOULDER_CAMERA_MODE));        
+                ApplicationEvent.SHOULDER_CAMERA_MODE));
         }));
-        
-        LitRadialMenuItem touchMenuItem = new LitRadialMenuItem(ITEM_SIZE*2.0, "Touch Controls", touchCountrols, e -> {
+
+        LitRadialMenuItem touchMenuItem = new LitRadialMenuItem(ITEM_SIZE * 2.0, "Touch Controls", touchCountrols, e -> {
             scene.getRoot().fireEvent(new ApplicationEvent(
                 ApplicationEvent.SHOW_JOYSTICK_CONTROLS));
         });

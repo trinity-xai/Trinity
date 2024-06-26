@@ -15,10 +15,10 @@
  *******************************************************************************/
 package com.clust4j.utils;
 
+import org.apache.commons.math3.linear.RealMatrix;
+
 import java.text.NumberFormat;
 import java.util.ArrayList;
-
-import org.apache.commons.math3.linear.RealMatrix;
 
 public class MatrixFormatter extends TableFormatter {
     private static final long serialVersionUID = 6065772725783899020L;

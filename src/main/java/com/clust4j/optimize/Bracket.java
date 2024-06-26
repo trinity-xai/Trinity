@@ -16,9 +16,8 @@
 
 package com.clust4j.optimize;
 
-import org.apache.commons.math3.util.FastMath;
-
 import com.clust4j.GlobalState;
+import org.apache.commons.math3.util.FastMath;
 
 /**
  * Build the functional bracket for the optimizing function.

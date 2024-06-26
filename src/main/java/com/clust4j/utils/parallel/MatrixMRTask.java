@@ -15,12 +15,12 @@
  *******************************************************************************/
 package com.clust4j.utils.parallel;
 
-import static com.clust4j.GlobalState.ParallelismConf.MAX_PARALLEL_CHUNK_SIZE;
+import com.clust4j.GlobalState;
 
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveTask;
 
-import com.clust4j.GlobalState;
+import static com.clust4j.GlobalState.ParallelismConf.MAX_PARALLEL_CHUNK_SIZE;
 
 public abstract class MatrixMRTask<T> extends RecursiveTask<T> {
     private static final long serialVersionUID = -4091298557784484895L;

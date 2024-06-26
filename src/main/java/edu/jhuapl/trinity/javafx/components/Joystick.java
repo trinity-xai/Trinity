@@ -17,7 +17,6 @@ package edu.jhuapl.trinity.javafx.components;
  */
 
 import edu.jhuapl.trinity.App;
-import java.util.List;
 import javafx.animation.Interpolator;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
@@ -50,6 +49,8 @@ import javafx.scene.shape.StrokeLineCap;
 import javafx.scene.shape.StrokeLineJoin;
 import javafx.util.Duration;
 
+import java.util.List;
+
 /**
  * User: hansolo
  * Date: 31.05.20
@@ -57,61 +58,61 @@ import javafx.util.Duration;
  * Modified by Birdasaur
  */
 public class Joystick extends Region {
-    private static final double                    PREFERRED_WIDTH  = 500;
-    private static final double                    PREFERRED_HEIGHT = 500;
-    private static final double                    MINIMUM_WIDTH    = 50;
-    private static final double                    MINIMUM_HEIGHT   = 50;
-    private static final double                    MAXIMUM_WIDTH    = 1024;
-    private static final double                    MAXIMUM_HEIGHT   = 1024;
-    private static final double                    HALF_PI          = Math.PI / 2.0;
-    private static final double                    MAX_STEP_SIZE    = 10;
-    private              double                    size;
-    private              double                    center;
-    private              double                    width;
-    private              double                    height;
-    private              Canvas                    background;
-    private              GraphicsContext           ctx;
-    private              Circle                    touchIndicator;
-    private              Circle                    touchPoint;
-    private              Arc                       touchN;
-    private              Arc                       touchNW;
-    private              Arc                       touchW;
-    private              Arc                       touchSW;
-    private              Arc                       touchS;
-    private              Arc                       touchSE;
-    private              Arc                       touchE;
-    private              Arc                       touchNE;
-    private              Pane                      pane;
-    private              LockState                 _lockState;
-    private              ObjectProperty<LockState> lockState;
-    private              boolean                   _stickyMode;
-    private              BooleanProperty           stickyMode;
-    private              boolean                   _animated;
-    private              BooleanProperty           animated;
-    private              long                      _durationMillis;
-    private              LongProperty              durationMillis;
-    private              double                    _stepSize;
-    private              DoubleProperty            stepSize;
-    private              boolean                   _stepButtonsVisible;
-    private              BooleanProperty           stepButtonsVisible;
-    private              Color                     _inactiveColor;
-    private              ObjectProperty<Color>     inactiveColor;
-    private              Color                     _activeColor;
-    private              ObjectProperty<Color>     activeColor;
-    private              Color                     _lockedColor;
-    private              ObjectProperty<Color>     lockedColor;
-    private              Color                     transclucentActiveColor;
-    private              boolean                   _touched;
-    private              BooleanProperty           touched;
-    private              DoubleProperty            x;
-    private              DoubleProperty            y;
-    public              DoubleProperty            value;
-public              DoubleProperty            angle;
-    private              double                    offsetX;
-    private              double                    offsetY;
-    private              Timeline                  timeline;
-    private              EventHandler<MouseEvent>  mouseHandler;
-    private              EventHandler<TouchEvent>  touchHandler;
+    private static final double PREFERRED_WIDTH = 500;
+    private static final double PREFERRED_HEIGHT = 500;
+    private static final double MINIMUM_WIDTH = 50;
+    private static final double MINIMUM_HEIGHT = 50;
+    private static final double MAXIMUM_WIDTH = 1024;
+    private static final double MAXIMUM_HEIGHT = 1024;
+    private static final double HALF_PI = Math.PI / 2.0;
+    private static final double MAX_STEP_SIZE = 10;
+    private double size;
+    private double center;
+    private double width;
+    private double height;
+    private Canvas background;
+    private GraphicsContext ctx;
+    private Circle touchIndicator;
+    private Circle touchPoint;
+    private Arc touchN;
+    private Arc touchNW;
+    private Arc touchW;
+    private Arc touchSW;
+    private Arc touchS;
+    private Arc touchSE;
+    private Arc touchE;
+    private Arc touchNE;
+    private Pane pane;
+    private LockState _lockState;
+    private ObjectProperty<LockState> lockState;
+    private boolean _stickyMode;
+    private BooleanProperty stickyMode;
+    private boolean _animated;
+    private BooleanProperty animated;
+    private long _durationMillis;
+    private LongProperty durationMillis;
+    private double _stepSize;
+    private DoubleProperty stepSize;
+    private boolean _stepButtonsVisible;
+    private BooleanProperty stepButtonsVisible;
+    private Color _inactiveColor;
+    private ObjectProperty<Color> inactiveColor;
+    private Color _activeColor;
+    private ObjectProperty<Color> activeColor;
+    private Color _lockedColor;
+    private ObjectProperty<Color> lockedColor;
+    private Color transclucentActiveColor;
+    private boolean _touched;
+    private BooleanProperty touched;
+    private DoubleProperty x;
+    private DoubleProperty y;
+    public DoubleProperty value;
+    public DoubleProperty angle;
+    private double offsetX;
+    private double offsetY;
+    private Timeline timeline;
+    private EventHandler<MouseEvent> mouseHandler;
+    private EventHandler<TouchEvent> touchHandler;
 
     private List<Color> buttonColors = null;
     private List<String> buttonStrings = null;
@@ -126,8 +127,8 @@ public              DoubleProperty            angle;
     private boolean touchSELatch = false;
     private boolean touchELatch = false;
     private boolean touchNELatch = false;
-    
-//    private Label touchNText;
+
+    //    private Label touchNText;
 //    private Label touchNWText;
 //    private Label touchWText;
 //    private Label touchSWText;
@@ -141,53 +142,93 @@ public              DoubleProperty            angle;
     private double mouseOldY;
     public double mouseDeltaX;
     public double mouseDeltaY;
-    
+
     public SimpleObjectProperty actionTaken = new SimpleObjectProperty(false);
     private boolean touchPointLatch = false;
-    
+
     // ******************** Constructors **************************************
     public Joystick() {
-        center                  = PREFERRED_WIDTH * 0.5;
-        _lockState              = LockState.UNLOCKED;
-        _stickyMode             = false;
-        _animated               = true;
-        _durationMillis         = 100;
-        _stepSize               = 0.01;
-        _stepButtonsVisible     = true;
-        _inactiveColor          = Color.web("#506691");
-        _activeColor            = Color.web("#CFF9FF");
-        _lockedColor            = Color.web("#B36B6B");
+        center = PREFERRED_WIDTH * 0.5;
+        _lockState = LockState.UNLOCKED;
+        _stickyMode = false;
+        _animated = true;
+        _durationMillis = 100;
+        _stepSize = 0.01;
+        _stepButtonsVisible = true;
+        _inactiveColor = Color.web("#506691");
+        _activeColor = Color.web("#CFF9FF");
+        _lockedColor = Color.web("#B36B6B");
         transclucentActiveColor = Color.color(_activeColor.getRed(), _activeColor.getGreen(), _activeColor.getBlue(), 0.25);
-        _touched                = false;
-        x                       = new DoublePropertyBase(0.0) {
-            @Override protected void invalidated() {}
-            @Override public Object getBean() { return Joystick.this; }
-            @Override public String getName() { return "valueX"; }
-        };
-        y                       = new DoublePropertyBase(0.0) {
-            @Override protected void invalidated() {}
-            @Override public Object getBean() { return Joystick.this; }
-            @Override public String getName() { return "valueY"; }
-        };
-        value                   = new DoublePropertyBase(0) {
-            @Override protected void invalidated() { redraw(); }
-            @Override public Object getBean() { return Joystick.this; }
-            @Override public String getName() { return "value"; }
-        };
-        angle                   = new DoublePropertyBase(0) {
-            @Override protected void invalidated() {
+        _touched = false;
+        x = new DoublePropertyBase(0.0) {
+            @Override
+            protected void invalidated() {
             }
-            @Override public Object getBean() { return Joystick.this; }
-            @Override public String getName() { return "angle"; }
+
+            @Override
+            public Object getBean() {
+                return Joystick.this;
+            }
+
+            @Override
+            public String getName() {
+                return "valueX";
+            }
         };
-        offsetX                 = 0;
-        offsetY                 = 0;
-        timeline                = new Timeline();
-        mouseHandler            = e -> {
-            Object                          src  = e.getSource();
+        y = new DoublePropertyBase(0.0) {
+            @Override
+            protected void invalidated() {
+            }
+
+            @Override
+            public Object getBean() {
+                return Joystick.this;
+            }
+
+            @Override
+            public String getName() {
+                return "valueY";
+            }
+        };
+        value = new DoublePropertyBase(0) {
+            @Override
+            protected void invalidated() {
+                redraw();
+            }
+
+            @Override
+            public Object getBean() {
+                return Joystick.this;
+            }
+
+            @Override
+            public String getName() {
+                return "value";
+            }
+        };
+        angle = new DoublePropertyBase(0) {
+            @Override
+            protected void invalidated() {
+            }
+
+            @Override
+            public Object getBean() {
+                return Joystick.this;
+            }
+
+            @Override
+            public String getName() {
+                return "angle";
+            }
+        };
+        offsetX = 0;
+        offsetY = 0;
+        timeline = new Timeline();
+        mouseHandler = e -> {
+            Object src = e.getSource();
             EventType<? extends MouseEvent> type = e.getEventType();
-            double x   = clamp(size * 0.15, size * 0.85, e.getX());
-            double y   = clamp(size * 0.15, size * 0.85, e.getY());
+            double x = clamp(size * 0.15, size * 0.85, e.getX());
+            double y = clamp(size * 0.15, size * 0.85, e.getY());
 
             if (LockState.X_LOCKED == getLockState()) {
                 y = center;
@@ -195,12 +236,14 @@ public              DoubleProperty            angle;
                 x = center;
             }
 
-            double dx  = x - center;
-            double dy  = -(y - center);
+            double dx = x - center;
+            double dy = -(y - center);
             double rad = Math.atan2(dy, dx) + HALF_PI;
             double phi = Math.toDegrees(rad - Math.PI);
-            if (phi < 0) { phi += 360.0; }
-            double r    = Math.sqrt(dx * dx + dy * dy);
+            if (phi < 0) {
+                phi += 360.0;
+            }
+            double r = Math.sqrt(dx * dx + dy * dy);
             double maxR = size * 0.35;
             if (r > maxR) {
                 x = -Math.cos(rad + HALF_PI) * maxR + center;
@@ -210,13 +253,13 @@ public              DoubleProperty            angle;
             setX(-Math.cos(rad + HALF_PI));
             setY(-Math.sin(rad + HALF_PI));
             if (src.equals(touchPoint)) {
-                if(!touchPointLatch) {
+                if (!touchPointLatch) {
                     touchPointLatch = true; //let this be the only time we collect the start
                     Platform.runLater(() -> {
                         Scene scene = App.getAppScene();
                         //@TODO SMP fire event?
 //                        scene.getRoot().fireEvent(
-//                            new ScenarioEvent(ScenarioEvent.MULTIPLEX_NATIVE_START, System.currentTimeMillis())); 
+//                            new ScenarioEvent(ScenarioEvent.MULTIPLEX_NATIVE_START, System.currentTimeMillis()));
                     });
                 }
                 setAngle(phi);
@@ -300,11 +343,11 @@ public              DoubleProperty            angle;
                 }
             }
         };
-        touchHandler            = e -> {
-            Object                          src  = e.getSource();
+        touchHandler = e -> {
+            Object src = e.getSource();
             EventType<? extends TouchEvent> type = e.getEventType();
-            double x   = clamp(size * 0.15, size * 0.85, e.getTouchPoint().getX());
-            double y   = clamp(size * 0.15, size * 0.85, e.getTouchPoint().getY());
+            double x = clamp(size * 0.15, size * 0.85, e.getTouchPoint().getX());
+            double y = clamp(size * 0.15, size * 0.85, e.getTouchPoint().getY());
 
             if (LockState.X_LOCKED == getLockState()) {
                 y = center;
@@ -312,13 +355,15 @@ public              DoubleProperty            angle;
                 x = center;
             }
 
-            double dx  = x - center;
-            double dy  = -(y - center);
+            double dx = x - center;
+            double dy = -(y - center);
             double rad = Math.atan2(dy, dx) + HALF_PI;
             double phi = Math.toDegrees(rad - Math.PI);
-            if (phi < 0) { phi += 360.0; }
+            if (phi < 0) {
+                phi += 360.0;
+            }
             setAngle(phi);
-            double r    = Math.sqrt(dx * dx + dy * dy);
+            double r = Math.sqrt(dx * dx + dy * dy);
             double maxR = size * 0.35;
             if (r > maxR) {
                 x = -Math.cos(rad + HALF_PI) * maxR + center;
@@ -329,15 +374,15 @@ public              DoubleProperty            angle;
             setY(-Math.sin(rad + HALF_PI));
 
             if (src.equals(touchPoint)) {
-                if(!touchPointLatch) {
+                if (!touchPointLatch) {
                     touchPointLatch = true; //let this be the only time we collect the start
                     Platform.runLater(() -> {
                         Scene scene = App.getAppScene();
                         //@TODO SMP Fire event
 //                        scene.getRoot().fireEvent(
-//                            new ScenarioEvent(ScenarioEvent.MULTIPLEX_NATIVE_START, System.currentTimeMillis())); 
+//                            new ScenarioEvent(ScenarioEvent.MULTIPLEX_NATIVE_START, System.currentTimeMillis()));
                     });
-                }                
+                }
                 if (TouchEvent.TOUCH_PRESSED.equals(type)) {
                     setTouched(true);
                     if (isStickyMode() && e.getTouchCount() == 2) {
@@ -428,82 +473,92 @@ public              DoubleProperty            angle;
         });
         angle.addListener(e -> updateTransforms());
     }
+
     private void updateTransforms() {
         double scalar = 100.0;
 //        double modifier = 1.0;
 //        double modifierFactor = 0.1;  //@TODO SMP connect to sensitivity property
         mouseOldX = mousePosX;
         mouseOldY = mousePosY;
-        mousePosX = scalar*value.get()*Math.cos(angle.getValue());
-        mousePosY = scalar*value.get()*Math.sin(angle.getValue());
+        mousePosX = scalar * value.get() * Math.cos(angle.getValue());
+        mousePosY = scalar * value.get() * Math.sin(angle.getValue());
         mouseDeltaX = (mousePosX - mouseOldX);
         mouseDeltaY = (mousePosY - mouseOldY);
 //        double yChange = (((mouseDeltaX * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180);
 //        double xChange = (((-mouseDeltaY * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180);
 //        addRotation(yChange, Rotate.Y_AXIS);
 //        addRotation(xChange, Rotate.X_AXIS);
-        
+
     }
+
     private void testStatus() {
         System.out.println(value.get() + ", " + angle.get());
-        if(null != vectorActions) {
+        if (null != vectorActions) {
             System.out.println("Testing value at " + value.get());
-            if(value.get() >= 1) {
-                Platform.runLater(()-> {
+            if (value.get() >= 1) {
+                Platform.runLater(() -> {
                     Scene scene = App.getAppScene();
                     VectorAction va = null;
                     System.out.println("Testing angle at " + angle.getValue().intValue());
                     boolean sendEvent = false;
-                    switch(angle.getValue().intValue()) {
-                        case 0: va = vectorActions.get(0); 
-                            if(!touchNLatch)
+                    switch (angle.getValue().intValue()) {
+                        case 0:
+                            va = vectorActions.get(0);
+                            if (!touchNLatch)
                                 sendEvent = true;
                             touchNLatch = true;
                             break;
-                        case 45: va = vectorActions.get(1); 
-                            if(!touchNWLatch)
+                        case 45:
+                            va = vectorActions.get(1);
+                            if (!touchNWLatch)
                                 sendEvent = true;
                             touchNWLatch = true;
                             break;
-                        case 90: va = vectorActions.get(2); 
-                            if(!touchWLatch)
+                        case 90:
+                            va = vectorActions.get(2);
+                            if (!touchWLatch)
                                 sendEvent = true;
                             touchWLatch = true;
                             break;
-                        case 135: va = vectorActions.get(3); 
-                            if(!touchSWLatch)
+                        case 135:
+                            va = vectorActions.get(3);
+                            if (!touchSWLatch)
                                 sendEvent = true;
                             touchSWLatch = true;
                             break;
-                        case 180: va = vectorActions.get(4); 
-                            if(!touchSLatch)
+                        case 180:
+                            va = vectorActions.get(4);
+                            if (!touchSLatch)
                                 sendEvent = true;
                             touchSLatch = true;
                             break;
-                        case 225: va = vectorActions.get(5); 
-                            if(!touchSELatch)
+                        case 225:
+                            va = vectorActions.get(5);
+                            if (!touchSELatch)
                                 sendEvent = true;
                             touchSELatch = true;
                             break;
-                        case 270: va = vectorActions.get(6); 
-                            if(!touchELatch)
+                        case 270:
+                            va = vectorActions.get(6);
+                            if (!touchELatch)
                                 sendEvent = true;
                             touchELatch = true;
                             break;
-                        case 315: va = vectorActions.get(7); 
-                            if(!touchNELatch)
+                        case 315:
+                            va = vectorActions.get(7);
+                            if (!touchNELatch)
                                 sendEvent = true;
                             touchNELatch = true;
                             break;
                     }
-                    if(null != va) {
+                    if (null != va) {
                         //@DEBUG SMP useful print
-                        //System.out.println("Angle and Value REACHED!");    
-                        if(sendEvent) {    
+                        //System.out.println("Angle and Value REACHED!");
+                        if (sendEvent) {
                             actionTaken.set(va);
                             //TODO SMP Fire event?
 //                            scene.getRoot().fireEvent(
-//                                new ScenarioEvent(ScenarioEvent.MULTIPLEX_NATIVE_END, System.currentTimeMillis())); 
+//                                new ScenarioEvent(ScenarioEvent.MULTIPLEX_NATIVE_END, System.currentTimeMillis()));
                         }
                     }
                 });
@@ -526,15 +581,15 @@ public              DoubleProperty            angle;
 
         background = new Canvas(0.7 * PREFERRED_WIDTH, 0.7 * PREFERRED_HEIGHT);
         background.setMouseTransparent(true);
-        ctx        = background.getGraphicsContext2D();
+        ctx = background.getGraphicsContext2D();
 
-        touchN  = createArc(0);
+        touchN = createArc(0);
         touchNW = createArc(45);
-        touchW  = createArc(90);
+        touchW = createArc(90);
         touchSW = createArc(135);
-        touchS  = createArc(180);
+        touchS = createArc(180);
         touchSE = createArc(225);
-        touchE  = createArc(270);
+        touchE = createArc(270);
         touchNE = createArc(315);
 
         touchIndicator = new Circle();
@@ -575,19 +630,45 @@ public              DoubleProperty            angle;
 
 
     // ******************** Methods *******************************************
-    @Override protected double computeMinWidth(final double HEIGHT) { return MINIMUM_WIDTH; }
-    @Override protected double computeMinHeight(final double WIDTH) { return MINIMUM_HEIGHT; }
-    @Override protected double computePrefWidth(final double HEIGHT) { return super.computePrefWidth(HEIGHT); }
-    @Override protected double computePrefHeight(final double WIDTH) { return super.computePrefHeight(WIDTH); }
-    @Override protected double computeMaxWidth(final double HEIGHT) { return MAXIMUM_WIDTH; }
-    @Override protected double computeMaxHeight(final double WIDTH) { return MAXIMUM_HEIGHT; }
+    @Override
+    protected double computeMinWidth(final double HEIGHT) {
+        return MINIMUM_WIDTH;
+    }
+
+    @Override
+    protected double computeMinHeight(final double WIDTH) {
+        return MINIMUM_HEIGHT;
+    }
+
+    @Override
+    protected double computePrefWidth(final double HEIGHT) {
+        return super.computePrefWidth(HEIGHT);
+    }
+
+    @Override
+    protected double computePrefHeight(final double WIDTH) {
+        return super.computePrefHeight(WIDTH);
+    }
+
+    @Override
+    protected double computeMaxWidth(final double HEIGHT) {
+        return MAXIMUM_WIDTH;
+    }
+
+    @Override
+    protected double computeMaxHeight(final double WIDTH) {
+        return MAXIMUM_HEIGHT;
+    }
 
 
-    public LockState getLockState() { return null == lockState ? _lockState : lockState.get(); }
+    public LockState getLockState() {
+        return null == lockState ? _lockState : lockState.get();
+    }
+
     public void setLockState(final LockState lockState) {
         if (null == this.lockState) {
             _lockState = lockState;
-            switch(lockState) {
+            switch (lockState) {
                 case X_LOCKED:
                     touchN.setDisable(true);
                     touchNW.setDisable(true);
@@ -625,11 +706,13 @@ public              DoubleProperty            angle;
             this.lockState.set(lockState);
         }
     }
+
     public ObjectProperty<LockState> lockStateProperty() {
         if (null == lockState) {
             lockState = new ObjectPropertyBase<>(_lockState) {
-                @Override protected void invalidated() {
-                    switch(get()) {
+                @Override
+                protected void invalidated() {
+                    switch (get()) {
                         case X_LOCKED:
                             touchN.setDisable(false);
                             touchNW.setDisable(true);
@@ -664,15 +747,26 @@ public              DoubleProperty            angle;
                     }
                     redraw();
                 }
-                @Override public Object getBean() { return Joystick.this; }
-                @Override public String getName() { return "lockState"; }
+
+                @Override
+                public Object getBean() {
+                    return Joystick.this;
+                }
+
+                @Override
+                public String getName() {
+                    return "lockState";
+                }
             };
             _lockState = null;
         }
         return lockState;
     }
-    
-    public boolean isStickyMode() { return null == stickyMode ? _stickyMode : stickyMode.get(); }
+
+    public boolean isStickyMode() {
+        return null == stickyMode ? _stickyMode : stickyMode.get();
+    }
+
     public void setStickyMode(final boolean stickyMode) {
         if (null == this.stickyMode) {
             _stickyMode = stickyMode;
@@ -680,17 +774,28 @@ public              DoubleProperty            angle;
             this.stickyMode.set(stickyMode);
         }
     }
+
     public BooleanProperty stickyModeProperty() {
         if (null == stickyMode) {
             stickyMode = new BooleanPropertyBase(_stickyMode) {
-                @Override public Object getBean() { return Joystick.this; }
-                @Override public String getName() { return "stickyMode"; }
+                @Override
+                public Object getBean() {
+                    return Joystick.this;
+                }
+
+                @Override
+                public String getName() {
+                    return "stickyMode";
+                }
             };
         }
         return stickyMode;
     }
-    
-    public boolean isAnimated() { return null == animated ? _animated : animated.get(); }
+
+    public boolean isAnimated() {
+        return null == animated ? _animated : animated.get();
+    }
+
     public void setAnimated(final boolean animated) {
         if (null == this.animated) {
             _animated = animated;
@@ -698,17 +803,28 @@ public              DoubleProperty            angle;
             this.animated.set(animated);
         }
     }
+
     public BooleanProperty animatedProperty() {
         if (null == animated) {
             animated = new BooleanPropertyBase(_animated) {
-                @Override public Object getBean() { return Joystick.this; }
-                @Override public String getName() { return "animated"; }
+                @Override
+                public Object getBean() {
+                    return Joystick.this;
+                }
+
+                @Override
+                public String getName() {
+                    return "animated";
+                }
             };
         }
         return animated;
     }
 
-    public long getDurationMillis() { return null == durationMillis ? _durationMillis : durationMillis.get(); }
+    public long getDurationMillis() {
+        return null == durationMillis ? _durationMillis : durationMillis.get();
+    }
+
     public void setDurationMillis(final long durationMillis) {
         if (null == this.durationMillis) {
             _durationMillis = clamp(10, 1000, durationMillis);
@@ -716,18 +832,33 @@ public              DoubleProperty            angle;
             this.durationMillis.set(durationMillis);
         }
     }
+
     public LongProperty durationMillisProperty() {
         if (null == durationMillis) {
             durationMillis = new LongPropertyBase(_durationMillis) {
-                @Override protected void invalidated() { set(clamp(10, 1000, get())); }
-                @Override public Object getBean() { return Joystick.this; }
-                @Override public String getName() { return "durationMillis"; }
+                @Override
+                protected void invalidated() {
+                    set(clamp(10, 1000, get()));
+                }
+
+                @Override
+                public Object getBean() {
+                    return Joystick.this;
+                }
+
+                @Override
+                public String getName() {
+                    return "durationMillis";
+                }
             };
         }
         return durationMillis;
     }
 
-    public double getStepSize() { return null == stepSize ? _stepSize : stepSize.get(); }
+    public double getStepSize() {
+        return null == stepSize ? _stepSize : stepSize.get();
+    }
+
     public void setStepSize(final double stepSize) {
         if (null == this.stepSize) {
             _stepSize = clamp(0.001, MAX_STEP_SIZE, stepSize);
@@ -735,18 +866,33 @@ public              DoubleProperty            angle;
             this.stepSize.set(stepSize);
         }
     }
+
     public DoubleProperty stepSizeProperty() {
         if (null == stepSize) {
             stepSize = new DoublePropertyBase(_stepSize) {
-                @Override protected void invalidated() { set(clamp(0.001, MAX_STEP_SIZE, get())); }
-                @Override public Object getBean() { return Joystick.this; }
-                @Override public String getName() { return "stepSizeX"; }
+                @Override
+                protected void invalidated() {
+                    set(clamp(0.001, MAX_STEP_SIZE, get()));
+                }
+
+                @Override
+                public Object getBean() {
+                    return Joystick.this;
+                }
+
+                @Override
+                public String getName() {
+                    return "stepSizeX";
+                }
             };
         }
         return stepSize;
     }
 
-    public boolean getStepButtonsVisible() { return null == stepButtonsVisible ? _stepButtonsVisible : stepButtonsVisible.get(); }
+    public boolean getStepButtonsVisible() {
+        return null == stepButtonsVisible ? _stepButtonsVisible : stepButtonsVisible.get();
+    }
+
     public void setStepButtonsVisible(final boolean stepButtonsVisible) {
         if (null == this.stepButtonsVisible) {
             _stepButtonsVisible = stepButtonsVisible;
@@ -763,10 +909,12 @@ public              DoubleProperty            angle;
             this.stepButtonsVisible.set(stepButtonsVisible);
         }
     }
+
     public BooleanProperty stepButtonsVisibleProperty() {
         if (null == stepButtonsVisible) {
             stepButtonsVisible = new BooleanPropertyBase(_stepButtonsVisible) {
-                @Override protected void invalidated() {
+                @Override
+                protected void invalidated() {
                     touchN.setVisible(get());
                     touchNW.setVisible(get());
                     touchW.setVisible(get());
@@ -777,14 +925,25 @@ public              DoubleProperty            angle;
                     touchNE.setVisible(get());
                     redraw();
                 }
-                @Override public Object getBean() { return Joystick.this; }
-                @Override public String getName() { return "stepButtonsVisible"; }
+
+                @Override
+                public Object getBean() {
+                    return Joystick.this;
+                }
+
+                @Override
+                public String getName() {
+                    return "stepButtonsVisible";
+                }
             };
         }
         return stepButtonsVisible;
     }
-    
-    public Color getInactiveColor() { return null == inactiveColor ? _inactiveColor : inactiveColor.get(); }
+
+    public Color getInactiveColor() {
+        return null == inactiveColor ? _inactiveColor : inactiveColor.get();
+    }
+
     public void setInactiveColor(final Color inactiveColor) {
         if (null == this.inactiveColor) {
             _inactiveColor = inactiveColor;
@@ -793,44 +952,72 @@ public              DoubleProperty            angle;
             this.inactiveColor.set(inactiveColor);
         }
     }
+
     public ObjectProperty<Color> inactiveColorProperty() {
         if (null == inactiveColor) {
             inactiveColor = new ObjectPropertyBase<Color>(_inactiveColor) {
-                @Override protected void invalidated() { redraw(); }
-                @Override public Object getBean() { return Joystick.this; }
-                @Override public String getName() { return "inactiveColor"; }
+                @Override
+                protected void invalidated() {
+                    redraw();
+                }
+
+                @Override
+                public Object getBean() {
+                    return Joystick.this;
+                }
+
+                @Override
+                public String getName() {
+                    return "inactiveColor";
+                }
             };
             _inactiveColor = null;
         }
         return inactiveColor;
     }
 
-    public Color getActiveColor() { return null == activeColor ? _activeColor : activeColor.get(); }
+    public Color getActiveColor() {
+        return null == activeColor ? _activeColor : activeColor.get();
+    }
+
     public void setActiveColor(final Color activeColor) {
         if (null == this.activeColor) {
-            _activeColor            = activeColor;
+            _activeColor = activeColor;
             transclucentActiveColor = Color.color(_activeColor.getRed(), _activeColor.getGreen(), _activeColor.getBlue(), 0.25);
             redraw();
         } else {
             this.activeColor.set(activeColor);
         }
     }
+
     public ObjectProperty<Color> activeColorProperty() {
         if (null == activeColor) {
             activeColor = new ObjectPropertyBase<Color>(_activeColor) {
-                @Override protected void invalidated() {
+                @Override
+                protected void invalidated() {
                     transclucentActiveColor = Color.color(get().getRed(), get().getGreen(), get().getBlue(), 0.25);
                     redraw();
                 }
-                @Override public Object getBean() { return Joystick.this; }
-                @Override public String getName() { return "activeColor"; }
+
+                @Override
+                public Object getBean() {
+                    return Joystick.this;
+                }
+
+                @Override
+                public String getName() {
+                    return "activeColor";
+                }
             };
             _activeColor = null;
         }
         return activeColor;
     }
 
-    public Color getLockedColor() { return null == lockedColor ? _lockedColor : lockedColor.get(); }
+    public Color getLockedColor() {
+        return null == lockedColor ? _lockedColor : lockedColor.get();
+    }
+
     public void setLockedColor(final Color lockedColor) {
         if (null == this.lockedColor) {
             _lockedColor = lockedColor;
@@ -839,19 +1026,34 @@ public              DoubleProperty            angle;
             this.lockedColor.set(lockedColor);
         }
     }
+
     public ObjectProperty<Color> lockedColorProperty() {
         if (null == lockedColor) {
             lockedColor = new ObjectPropertyBase<Color>(_lockedColor) {
-                @Override protected void invalidated() { redraw(); }
-                @Override public Object getBean() { return Joystick.this; }
-                @Override public String getName() { return "lockedColor"; }
+                @Override
+                protected void invalidated() {
+                    redraw();
+                }
+
+                @Override
+                public Object getBean() {
+                    return Joystick.this;
+                }
+
+                @Override
+                public String getName() {
+                    return "lockedColor";
+                }
             };
             _lockedColor = null;
         }
         return lockedColor;
     }
 
-    public boolean isTouched() { return null == touched ? _touched : touched.get(); }
+    public boolean isTouched() {
+        return null == touched ? _touched : touched.get();
+    }
+
     private void setTouched(final boolean touched) {
         if (null == this.touched) {
             _touched = touched;
@@ -860,32 +1062,76 @@ public              DoubleProperty            angle;
             this.touched.set(touched);
         }
     }
+
     public ReadOnlyBooleanProperty touchedProperty() {
         if (null == touched) {
             touched = new BooleanPropertyBase(_touched) {
-                @Override protected void invalidated() { redraw(); }
-                @Override public Object getBean() { return Joystick.this; }
-                @Override public String getName() { return "touched"; }
+                @Override
+                protected void invalidated() {
+                    redraw();
+                }
+
+                @Override
+                public Object getBean() {
+                    return Joystick.this;
+                }
+
+                @Override
+                public String getName() {
+                    return "touched";
+                }
             };
         }
         return touched;
     }
 
-    public double getValue() { return value.get(); }
-    private void setValue(final double value) { this.value.set(value); }
-    public ReadOnlyDoubleProperty valueProperty() { return value; }
+    public double getValue() {
+        return value.get();
+    }
 
-    public double getAngle() { return angle.get(); }
-    private void setAngle(final double angle) { this.angle.set(angle); }
-    public ReadOnlyDoubleProperty angleProperty() { return angle; }
+    private void setValue(final double value) {
+        this.value.set(value);
+    }
 
-    public double getX() { return x.get(); }
-    private void setX(final double x) { this.x.set(x); }
-    public ReadOnlyDoubleProperty xProperty() { return x; }
+    public ReadOnlyDoubleProperty valueProperty() {
+        return value;
+    }
 
-    public double getY() { return y.get(); }
-    private void setY(final double y) { this.y.set(y); }
-    public ReadOnlyDoubleProperty yProperty() { return y; }
+    public double getAngle() {
+        return angle.get();
+    }
+
+    private void setAngle(final double angle) {
+        this.angle.set(angle);
+    }
+
+    public ReadOnlyDoubleProperty angleProperty() {
+        return angle;
+    }
+
+    public double getX() {
+        return x.get();
+    }
+
+    private void setX(final double x) {
+        this.x.set(x);
+    }
+
+    public ReadOnlyDoubleProperty xProperty() {
+        return x;
+    }
+
+    public double getY() {
+        return y.get();
+    }
+
+    private void setY(final double y) {
+        this.y.set(y);
+    }
+
+    public ReadOnlyDoubleProperty yProperty() {
+        return y;
+    }
 
     private void reset() {
         if (!isStickyMode()) {
@@ -896,8 +1142,8 @@ public              DoubleProperty            angle;
                 KeyValue kvX1 = new KeyValue(touchPoint.centerXProperty(), 0.5 * size, Interpolator.EASE_OUT);
                 KeyValue kvY1 = new KeyValue(touchPoint.centerYProperty(), 0.5 * size, Interpolator.EASE_OUT);
                 KeyValue kvV1 = new KeyValue(value, 0, Interpolator.EASE_OUT);
-                KeyFrame kf0  = new KeyFrame(Duration.ZERO, kvX0, kvY0, kvV0);
-                KeyFrame kf1  = new KeyFrame(Duration.millis(getDurationMillis()), kvX1, kvY1, kvV1);
+                KeyFrame kf0 = new KeyFrame(Duration.ZERO, kvX0, kvY0, kvV0);
+                KeyFrame kf1 = new KeyFrame(Duration.millis(getDurationMillis()), kvX1, kvY1, kvV1);
                 timeline.getKeyFrames().setAll(kf0, kf1);
                 timeline.play();
             } else {
@@ -912,7 +1158,7 @@ public              DoubleProperty            angle;
 
     private void resetTouchButtons() {
         Color inactiveColor = getInactiveColor();
-        switch(getLockState()) {
+        switch (getLockState()) {
             case X_LOCKED:
                 touchN.setStroke(transclucentActiveColor);
                 touchNW.setStroke(transclucentActiveColor);
@@ -948,15 +1194,17 @@ public              DoubleProperty            angle;
     }
 
     private void setXY(final double newX, final double newY, final double newAngle) {
-        double x   = clamp(size * 0.15, size * 0.85, newX);
-        double y   = clamp(size * 0.15, size * 0.85, newY);
-        double dx  = x - center;
-        double dy  = -(y - center);
+        double x = clamp(size * 0.15, size * 0.85, newX);
+        double y = clamp(size * 0.15, size * 0.85, newY);
+        double dx = x - center;
+        double dy = -(y - center);
         double rad = Math.atan2(dy, dx) + HALF_PI;
         double phi = Math.toDegrees(rad - Math.PI);
-        if (phi < 0) { phi += 360.0; }
+        if (phi < 0) {
+            phi += 360.0;
+        }
         setAngle(phi);
-        double r    = Math.sqrt(dx * dx + dy * dy);
+        double r = Math.sqrt(dx * dx + dy * dy);
         double maxR = size * 0.35;
         if (r > maxR) {
             x = -Math.cos(rad + HALF_PI) * maxR + center;
@@ -974,7 +1222,7 @@ public              DoubleProperty            angle;
     }
 
     private Arc createArc(final double startAngle) {
-        Arc arc  = new Arc(0.5 * size, 0.5 * size, 0.455 * size, 0.455 * size, startAngle + 90 - 18.5, 37);
+        Arc arc = new Arc(0.5 * size, 0.5 * size, 0.455 * size, 0.455 * size, startAngle + 90 - 18.5, 37);
         arc.setFill(Color.TRANSPARENT);
         arc.setStrokeLineCap(StrokeLineCap.BUTT);
         arc.addEventHandler(MouseEvent.MOUSE_PRESSED, mouseHandler);
@@ -985,22 +1233,31 @@ public              DoubleProperty            angle;
     }
 
     private double clamp(final double min, final double max, final double value) {
-        if (value < min) { return min; }
-        if (value > max) { return max; }
-        return value;
-    }
-    private long clamp(final long min, final long max, final long value) {
-        if (value < min) { return min; }
-        if (value > max) { return max; }
+        if (value < min) {
+            return min;
+        }
+        if (value > max) {
+            return max;
+        }
         return value;
     }
 
-    
+    private long clamp(final long min, final long max, final long value) {
+        if (value < min) {
+            return min;
+        }
+        if (value > max) {
+            return max;
+        }
+        return value;
+    }
+
+
     // ******************** Resizing ******************************************
     private void resize() {
-        width  = getWidth() - getInsets().getLeft() - getInsets().getRight();
+        width = getWidth() - getInsets().getLeft() - getInsets().getRight();
         height = getHeight() - getInsets().getTop() - getInsets().getBottom();
-        size   = width < height ? width : height;
+        size = width < height ? width : height;
         center = size * 0.5;
 
         if (width > 0 && height > 0) {
@@ -1010,32 +1267,32 @@ public              DoubleProperty            angle;
 
             background.setWidth(0.7 * size);
             background.setHeight(0.7 * size);
-            background.relocate(0.15 *size, 0.15 * size);
+            background.relocate(0.15 * size, 0.15 * size);
             double extra = 1.2;
             resizeArc(touchN);
-//            touchNText.setTranslateX(center + (center * Math.cos(Math.toRadians(90))));            
-//            touchNText.setTranslateY(center + (-center * Math.sin(Math.toRadians(90))));            
+//            touchNText.setTranslateX(center + (center * Math.cos(Math.toRadians(90))));
+//            touchNText.setTranslateY(center + (-center * Math.sin(Math.toRadians(90))));
             resizeArc(touchNW);
-//            touchNWText.setTranslateX(center + (center*extra * Math.cos(Math.toRadians(135))));            
-//            touchNWText.setTranslateY(center + (-center*extra * Math.sin(Math.toRadians(135))));            
+//            touchNWText.setTranslateX(center + (center*extra * Math.cos(Math.toRadians(135))));
+//            touchNWText.setTranslateY(center + (-center*extra * Math.sin(Math.toRadians(135))));
             resizeArc(touchW);
-//            touchWText.setTranslateX(center + (center*extra * Math.cos(Math.toRadians(180))));            
-//            touchWText.setTranslateY(center + (-center*extra * Math.sin(Math.toRadians(180))));            
+//            touchWText.setTranslateX(center + (center*extra * Math.cos(Math.toRadians(180))));
+//            touchWText.setTranslateY(center + (-center*extra * Math.sin(Math.toRadians(180))));
             resizeArc(touchSW);
-//            touchSWText.setTranslateX(center + (center*extra * Math.cos(Math.toRadians(215))));            
-//            touchSWText.setTranslateY(center + (-center*extra * Math.sin(Math.toRadians(215))));            
+//            touchSWText.setTranslateX(center + (center*extra * Math.cos(Math.toRadians(215))));
+//            touchSWText.setTranslateY(center + (-center*extra * Math.sin(Math.toRadians(215))));
             resizeArc(touchS);
-//            touchSText.setTranslateX(center + (center * Math.cos(Math.toRadians(260))));            
-//            touchSText.setTranslateY(center + (-center * Math.sin(Math.toRadians(260))));            
+//            touchSText.setTranslateX(center + (center * Math.cos(Math.toRadians(260))));
+//            touchSText.setTranslateY(center + (-center * Math.sin(Math.toRadians(260))));
             resizeArc(touchSE);
-//            touchSEText.setTranslateX(center + (center * Math.cos(Math.toRadians(315))));            
-//            touchSEText.setTranslateY(center + (-center * Math.sin(Math.toRadians(315))));            
+//            touchSEText.setTranslateX(center + (center * Math.cos(Math.toRadians(315))));
+//            touchSEText.setTranslateY(center + (-center * Math.sin(Math.toRadians(315))));
             resizeArc(touchE);
-//            touchEText.setTranslateX(center + (center * Math.cos(Math.toRadians(0))));            
-//            touchEText.setTranslateY(center + (-center * Math.sin(Math.toRadians(0))));            
+//            touchEText.setTranslateX(center + (center * Math.cos(Math.toRadians(0))));
+//            touchEText.setTranslateY(center + (-center * Math.sin(Math.toRadians(0))));
             resizeArc(touchNE);
-//            touchNEText.setTranslateX(center + (center * Math.cos(Math.toRadians(45))));            
-//            touchNEText.setTranslateY(center + (-center * Math.sin(Math.toRadians(45))));            
+//            touchNEText.setTranslateX(center + (center * Math.cos(Math.toRadians(45))));
+//            touchNEText.setTranslateY(center + (-center * Math.sin(Math.toRadians(45))));
 
             touchIndicator.setRadius(0.4 * size);
             touchIndicator.setCenterX(center);
@@ -1070,20 +1327,20 @@ public              DoubleProperty            angle;
         ctx.setStroke(transclucentActiveColor);
         ctx.strokeOval(0.42857143 * w, 0.42857143 * h, 0.14285714 * w, 0.14285714 * h);
         ctx.setStroke(LockState.Y_LOCKED == getLockState() ? getLockedColor() : transclucentActiveColor);
-        ctx.strokeLine(0, 0.5 * h, w, 0.5 *h);
+        ctx.strokeLine(0, 0.5 * h, w, 0.5 * h);
         ctx.setStroke(LockState.X_LOCKED == getLockState() ? getLockedColor() : transclucentActiveColor);
         ctx.strokeLine(0.5 * w, 0, 0.5 * w, h);
 
         ctx.save();
-        double value            = getValue();
+        double value = getValue();
         double chevronHalfWidth = 0.05 * w;
-        double chevronHeight    = 0.04 * h;
-        double center           = 0.5 * w;
+        double chevronHeight = 0.04 * h;
+        double center = 0.5 * w;
 
-        double offsetY          = center;
+        double offsetY = center;
 //        double offsetY          = h - chevronHeight * 0.25;
 
-        double chevronStepY     = 1.22 * chevronHeight;
+        double chevronStepY = 1.22 * chevronHeight;
         ctx.translate(center, center);
         ctx.rotate(-getAngle());
         ctx.translate(-center, -center);
@@ -1092,7 +1349,7 @@ public              DoubleProperty            angle;
         ctx.setLineCap(StrokeLineCap.ROUND);
         ctx.setLineJoin(StrokeLineJoin.ROUND);
         int counter = 0;
-        for (double i = 0.0 ; i < value - 0.1 ; i += 0.1) {
+        for (double i = 0.0; i < value - 0.1; i += 0.1) {
             ctx.strokeLine(center - chevronHalfWidth, offsetY - counter * chevronStepY, center, offsetY - (counter + 1) * chevronStepY);
             ctx.strokeLine(center, offsetY - (counter + 1) * chevronStepY, center + chevronHalfWidth, offsetY - counter * chevronStepY);
             counter += 1;
@@ -1102,9 +1359,9 @@ public              DoubleProperty            angle;
 
     private void redraw() {
         drawBackground();
-        Color activeColor   = getActiveColor();
+        Color activeColor = getActiveColor();
         Color inactiveColor = getInactiveColor();
-        switch(getLockState()) {
+        switch (getLockState()) {
             case X_LOCKED:
                 touchN.setStroke(transclucentActiveColor);
                 touchNW.setStroke(transclucentActiveColor);
@@ -1138,7 +1395,7 @@ public              DoubleProperty            angle;
                 break;
         }
         //Override default logic if colors and strings made available
-        if(null != buttonColors) {
+        if (null != buttonColors) {
             touchN.setStroke(touchN.isHover() ? touchNLatch ? buttonColors.get(0) : activeColor : buttonColors.get(0));
             touchNW.setStroke(touchNW.isHover() ? touchNWLatch ? buttonColors.get(1) : activeColor : buttonColors.get(1));
             touchW.setStroke(touchW.isHover() ? touchWLatch ? buttonColors.get(2) : activeColor : buttonColors.get(2));
@@ -1162,13 +1419,14 @@ public              DoubleProperty            angle;
         touchPoint.setFill(isTouched() ? activeColor : Color.TRANSPARENT);
         touchIndicator.setStroke(isTouched() ? activeColor : inactiveColor);
     }
-    
+
     public void setupButtons(List<VectorAction> actions, List<Color> colorList, List<String> stringList, List<String> textList) {
         vectorActions = actions;
         buttonColors = colorList;
         buttonStrings = stringList;
         buttonText = textList;
     }
+
     public Circle getTouchPoint() {
         return touchPoint;
     }

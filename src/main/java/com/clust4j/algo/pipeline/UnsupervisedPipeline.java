@@ -15,13 +15,12 @@
  *******************************************************************************/
 package com.clust4j.algo.pipeline;
 
-import org.apache.commons.math3.linear.RealMatrix;
-
 import com.clust4j.algo.AbstractClusterer;
 import com.clust4j.algo.UnsupervisedClassifier;
 import com.clust4j.algo.UnsupervisedClassifierParameters;
 import com.clust4j.algo.preprocess.PreProcessor;
 import com.clust4j.except.ModelNotFitException;
+import org.apache.commons.math3.linear.RealMatrix;
 
 public class UnsupervisedPipeline<M extends AbstractClusterer & UnsupervisedClassifier>
     extends Pipeline<UnsupervisedClassifierParameters<M>>

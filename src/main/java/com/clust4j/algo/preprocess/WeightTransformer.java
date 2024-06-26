@@ -16,12 +16,11 @@
 
 package com.clust4j.algo.preprocess;
 
+import com.clust4j.utils.MatUtils;
+import com.clust4j.utils.VecUtils;
 import org.apache.commons.math3.exception.DimensionMismatchException;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.RealMatrix;
-
-import com.clust4j.utils.MatUtils;
-import com.clust4j.utils.VecUtils;
 
 /**
  * The weight transformer takes a vector of weights as a constructor argument,

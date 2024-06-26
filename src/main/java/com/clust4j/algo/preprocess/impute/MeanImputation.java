@@ -15,14 +15,13 @@
  *******************************************************************************/
 package com.clust4j.algo.preprocess.impute;
 
-import java.util.Random;
-
-import org.apache.commons.math3.linear.RealMatrix;
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-
-import com.clust4j.log.LogTimer;
 import com.clust4j.log.Log.Tag.Algo;
+import com.clust4j.log.LogTimer;
 import com.clust4j.utils.MatUtils;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.RealMatrix;
+
+import java.util.Random;
 
 /**
  * Imputes the missing values in a matrix with the column means.

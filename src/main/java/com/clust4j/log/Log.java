@@ -428,7 +428,7 @@ public abstract class Log {
         return _logger;
     }
 
-	private static void setLog4jProperties(String logDirParent, java.util.Properties p) {
+    private static void setLog4jProperties(String logDirParent, java.util.Properties p) {
 //	    LOG_DIR = logDirParent + File.separator + "clust4jlogs";
 //	    String logPathFileName = getLogPathFileNameStem();
 //
@@ -506,7 +506,7 @@ public abstract class Log {
 //	    //
 //	    //  Uncomment this line to find the source of unwanted messages.
 //		//     p.setProperty("log4j.appender.R1.layout.ConversionPattern", "%p %C %m%n");
-	}
+    }
 
 //	private static org.apache.logging.log4j.Logger createLog4jLogger(String logDirParent) {
 //		synchronized (com.clust4j.log.Log.class) {

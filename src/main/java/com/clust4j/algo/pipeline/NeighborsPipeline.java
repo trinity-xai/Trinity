@@ -16,12 +16,11 @@
 
 package com.clust4j.algo.pipeline;
 
-import org.apache.commons.math3.linear.RealMatrix;
-
 import com.clust4j.algo.BaseNeighborsModel;
 import com.clust4j.algo.NeighborsClassifierParameters;
 import com.clust4j.algo.preprocess.PreProcessor;
 import com.clust4j.except.ModelNotFitException;
+import org.apache.commons.math3.linear.RealMatrix;
 
 public class NeighborsPipeline<M extends BaseNeighborsModel>
     extends Pipeline<NeighborsClassifierParameters<M>> {

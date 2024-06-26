@@ -15,14 +15,13 @@
  *******************************************************************************/
 package com.clust4j.algo.pipeline;
 
-import org.apache.commons.math3.linear.RealMatrix;
-
 import com.clust4j.algo.AbstractClusterer;
 import com.clust4j.algo.SupervisedClassifier;
 import com.clust4j.algo.SupervisedClassifierParameters;
 import com.clust4j.algo.preprocess.PreProcessor;
 import com.clust4j.except.ModelNotFitException;
 import com.clust4j.metrics.scoring.SupervisedMetric;
+import org.apache.commons.math3.linear.RealMatrix;
 
 public class SupervisedPipeline<M extends AbstractClusterer & SupervisedClassifier>
     extends Pipeline<SupervisedClassifierParameters<M>>

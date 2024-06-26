@@ -19,15 +19,22 @@ package edu.jhuapl.trinity.javafx.javafx3d.projectiles;
  * limitations under the License.
  * #L%
  */
+
 import edu.jhuapl.trinity.javafx.events.HitEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.Manifold3D;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import javafx.animation.AnimationTimer;
+import javafx.application.Platform;
+import javafx.concurrent.Task;
 import javafx.geometry.Point3D;
 import javafx.scene.Group;
+import javafx.scene.media.AudioClip;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
+import javafx.scene.paint.Color;
+import javafx.scene.transform.Rotate;
+import javafx.util.Pair;
 
 import java.io.IOException;
 import java.util.ArrayList;
@@ -35,14 +42,8 @@ import java.util.List;
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javafx.application.Platform;
-import javafx.concurrent.Task;
-import javafx.scene.media.AudioClip;
 
 import static javafx.scene.media.MediaPlayer.INDEFINITE;
-import javafx.scene.paint.Color;
-import javafx.scene.transform.Rotate;
-import javafx.util.Pair;
 
 public class ProjectileSystem {
 
@@ -167,7 +168,7 @@ public class ProjectileSystem {
             Point3D start = alienShip.randomStart(absSafetyPosition);
             //reverse the order of the points because alienship is already rotated
             JavaFX3DUtils.lookAt(alienShip, playerShip.getLocation(),
-                    start, false);
+                start, false);
             alienShip.setStart(start);
             alienShip.setLocation(start);
             if (start.getX() < 0) {
@@ -197,9 +198,9 @@ public class ProjectileSystem {
             //    System.out.println("box collision...");
             //sweep through existing hitboxes
             HitBox rayCheck = collisionSweeper.rayCheckFirst(
-                    p.getLocation().add(p.getStart()),
-                    //                    p.getLocation(),
-                    p.getVelocity());
+                p.getLocation().add(p.getStart()),
+                //                    p.getLocation(),
+                p.getVelocity());
             if (null != rayCheck) {
                 processCollision(rayCheck, p);
             }
@@ -215,7 +216,7 @@ public class ProjectileSystem {
         p.setLocation(p.getLocation().add(p.getVelocity()));
         //fire off hit event
         parentGroup.getScene().getRoot().fireEvent(
-                new HitEvent(HitEvent.SHAPE_HIT_BOX, p, hit));
+            new HitEvent(HitEvent.SHAPE_HIT_BOX, p, hit));
     }
 
     public void thrustPlayer() {
@@ -224,32 +225,32 @@ public class ProjectileSystem {
     }
 
     public void fire() {
-        //default starting pointing direction is Z+. 
+        //default starting pointing direction is Z+.
         javafx.geometry.Point3D velocity = new Point3D(0, 0, fireVelocity);
         velocity = playerShip.getTransforms().get(0).transform(velocity);
         FireBall fireBall = new FireBall(FireBall.DEFAULT_FIREBALL_RADIUS,
-        playerShip.getLocation(), velocity);
+            playerShip.getLocation(), velocity);
         addProjectile(fireBall);
         fireSound.play();
     }
 
     public void fireTracer() {
-        //default starting pointing direction is Z+. 
+        //default starting pointing direction is Z+.
         javafx.geometry.Point3D velocity = new Point3D(0, 0, fireVelocity);
         velocity = playerShip.getTransforms().get(0).transform(velocity);
         Point3D end = playerShip.getTransforms().get(0).transform(
             new Point3D(0, 0, TracerRound.DEFAULT_TRACER_LENGTH));
         TracerRound tracer = new TracerRound(TracerRound.DEFAULT_TRACER_WIDTH,
-                playerShip.getLocation(), end, velocity);
-        
+            playerShip.getLocation(), end, velocity);
+
         addProjectile(tracer);
         fireSound.play();
     }
 
     private boolean isBig(HitShape3D hit, double threshold) {
         return hit.getBoundsInLocal().getWidth() > threshold
-                || hit.getBoundsInLocal().getHeight() > threshold
-                || hit.getBoundsInLocal().getDepth() > threshold;
+            || hit.getBoundsInLocal().getHeight() > threshold
+            || hit.getBoundsInLocal().getDepth() > threshold;
     }
 
     public void makeAsteroidFromPoints(List<org.fxyz3d.geometry.Point3D> list) throws Exception {
@@ -259,14 +260,14 @@ public class ProjectileSystem {
 
     public void makeAsteroidFromPoints(Manifold3D man3D) throws Exception {
         HitShape3D hitShape = new HitShape3D(
-                man3D.texturedManifold.getVertices(),
-                man3D.texturedManifold.getFaces(),
-                JavaFX3DUtils.toFX.apply(man3D.getBoundsCentroid())
+            man3D.texturedManifold.getVertices(),
+            man3D.texturedManifold.getFaces(),
+            JavaFX3DUtils.toFX.apply(man3D.getBoundsCentroid())
         );
         javafx.geometry.Point3D velocity = new javafx.geometry.Point3D(
-                Hittable.random.nextGaussian() * 0.25,
-                Hittable.random.nextGaussian() * 2.1, //initial velocity mostly vertical
-                Hittable.random.nextGaussian() * 0.25);
+            Hittable.random.nextGaussian() * 0.25,
+            Hittable.random.nextGaussian() * 2.1, //initial velocity mostly vertical
+            Hittable.random.nextGaussian() * 0.25);
         hitShape.setVelocity(velocity);
         addHitShape(hitShape);
         addHittable(hitShape);
@@ -286,14 +287,14 @@ public class ProjectileSystem {
                 northList.add(vert);
             }
         }
-        if (southList.size() > bigThreshold/2) {
+        if (southList.size() > bigThreshold / 2) {
             try {
                 makeAsteroidFromPoints(southList);
             } catch (Exception ex) {
                 System.out.println("Could not make Asteroid: " + ex.getMessage());
             }
         }
-        if (northList.size() > bigThreshold/2) {
+        if (northList.size() > bigThreshold / 2) {
             try {
                 makeAsteroidFromPoints(northList);
             } catch (Exception ex) {
@@ -303,7 +304,7 @@ public class ProjectileSystem {
     }
 
     private void processProjectileImpact(Projectile p, HitShape3D hit) {
-        if(!p.activeProperty.get()) return; //don't do a second impact
+        if (!p.activeProperty.get()) return; //don't do a second impact
         removeProjectile(p);
         p.activeProperty.set(false);
         Task task = hit.vaporizeTask();
@@ -319,7 +320,7 @@ public class ProjectileSystem {
         //Is it a biggun?
         //fire off hit event
         parentGroup.getScene().getRoot().fireEvent(
-                new HitEvent(HitEvent.PROJECTILE_HIT_SHAPE, p, hit));
+            new HitEvent(HitEvent.PROJECTILE_HIT_SHAPE, p, hit));
         if (isBig(hit, bigThreshold)) {
             bigBoom.play();
             //Will we split it?
@@ -484,7 +485,7 @@ public class ProjectileSystem {
             alienShip.flipCheck(absSafetyPosition); //did it flip over?
             //reverse the order of the points because alienship is already rotated
             JavaFX3DUtils.lookAt(alienShip, playerShip.getLocation(),
-                    alienShip.getLocation(), false);
+                alienShip.getLocation(), false);
             if (random.nextDouble() >= 0.985) {
                 //Minus because the Alien is rotated 180 degrees ahead of time
                 javafx.geometry.Point3D velocity = new Point3D(0, 0, -fireVelocity);
@@ -565,7 +566,7 @@ public class ProjectileSystem {
         running = _isRunning;
         if (null != parentGroup.getScene()) {
             parentGroup.getScene().getRoot().fireEvent(
-                    new HitEvent(HitEvent.TRACKING_PROJECTILE_EVENTS, running, null));
+                new HitEvent(HitEvent.TRACKING_PROJECTILE_EVENTS, running, null));
         }
         if (null != asteriods1981MediaPlayer) {
             if (running) {

@@ -15,6 +15,23 @@
  *******************************************************************************/
 package com.clust4j.algo;
 
+import com.clust4j.except.IllegalClusterStateException;
+import com.clust4j.except.ModelNotFitException;
+import com.clust4j.kernel.GaussianKernel;
+import com.clust4j.kernel.RadialBasisKernel;
+import com.clust4j.log.Log.Tag.Algo;
+import com.clust4j.log.LogTimer;
+import com.clust4j.log.Loggable;
+import com.clust4j.metrics.pairwise.GeometricallySeparable;
+import com.clust4j.metrics.pairwise.SimilarityMetric;
+import com.clust4j.utils.EntryPair;
+import com.clust4j.utils.MatUtils;
+import com.clust4j.utils.VecUtils;
+import org.apache.commons.math3.exception.DimensionMismatchException;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.commons.math3.util.FastMath;
+
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -23,27 +40,6 @@ import java.util.TreeSet;
 import java.util.concurrent.ConcurrentLinkedDeque;
 import java.util.concurrent.ConcurrentSkipListSet;
 import java.util.concurrent.RejectedExecutionException;
-
-import org.apache.commons.math3.exception.DimensionMismatchException;
-import org.apache.commons.math3.linear.RealMatrix;
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.apache.commons.math3.util.FastMath;
-
-import com.clust4j.algo.NearestNeighborsParameters;
-import com.clust4j.algo.Neighborhood;
-import com.clust4j.algo.RadiusNeighborsParameters;
-import com.clust4j.except.IllegalClusterStateException;
-import com.clust4j.except.ModelNotFitException;
-import com.clust4j.kernel.RadialBasisKernel;
-import com.clust4j.kernel.GaussianKernel;
-import com.clust4j.log.LogTimer;
-import com.clust4j.log.Log.Tag.Algo;
-import com.clust4j.log.Loggable;
-import com.clust4j.metrics.pairwise.GeometricallySeparable;
-import com.clust4j.metrics.pairwise.SimilarityMetric;
-import com.clust4j.utils.EntryPair;
-import com.clust4j.utils.MatUtils;
-import com.clust4j.utils.VecUtils;
 
 /**
  * Mean shift is a procedure for locating the maxima of a density function given discrete

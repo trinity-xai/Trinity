@@ -2,24 +2,24 @@ package edu.jhuapl.trinity.javafx.javafx3d.projectiles;
 
 import edu.jhuapl.trinity.javafx.javafx3d.TriaxialSpheroidMesh;
 import edu.jhuapl.trinity.utils.ResourceUtils;
-import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javafx.geometry.Point3D;
 import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.Shape3D;
 
+import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 /**
- *
  * @author Sean Phillips
  */
 public class FireBall extends Projectile {
     public static double DEFAULT_FIREBALL_RADIUS = 15;
     TriaxialSpheroidMesh ellipsoid;
     double distanceToLive = 2000;
-    
+
     public FireBall(double radius, Point3D start, Point3D velocity) {
         this.start = start;
         location = start;
@@ -37,15 +37,15 @@ public class FireBall extends Projectile {
         }
         //diffuse color, diffuseMap, specularMap, bumpMap, selfIlluminationMap
         PhongMaterial material = new PhongMaterial(
-        Color.FIREBRICK, 
-            diffuse, 
-            specular, 
-            bump, 
+            Color.FIREBRICK,
+            diffuse,
+            specular,
+            bump,
             self
         );
         ellipsoid.setMaterial(material);
     }
-    
+
     @Override
     public void reset() {
         location = start;

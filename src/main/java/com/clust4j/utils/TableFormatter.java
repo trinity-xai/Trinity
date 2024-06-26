@@ -15,15 +15,15 @@
  *******************************************************************************/
 package com.clust4j.utils;
 
-import static com.clust4j.utils.TableFormatter.ColumnAlignment.LEFT;
-import static com.clust4j.utils.TableFormatter.ColumnAlignment.RIGHT;
+import org.apache.commons.math3.util.FastMath;
 
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Locale;
 
-import org.apache.commons.math3.util.FastMath;
+import static com.clust4j.utils.TableFormatter.ColumnAlignment.LEFT;
+import static com.clust4j.utils.TableFormatter.ColumnAlignment.RIGHT;
 
 public class TableFormatter implements java.io.Serializable {
     private static final long serialVersionUID = -4944015740188846236L;

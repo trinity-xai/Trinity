@@ -15,10 +15,10 @@
  *******************************************************************************/
 package com.clust4j.metrics.scoring;
 
+import org.apache.commons.math3.exception.DimensionMismatchException;
+
 import java.util.HashSet;
 import java.util.TreeMap;
-
-import org.apache.commons.math3.exception.DimensionMismatchException;
 
 public enum SupervisedMetric implements EvaluationMetric {
     BINOMIAL_ACCURACY {

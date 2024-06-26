@@ -15,17 +15,16 @@
  *******************************************************************************/
 package com.clust4j.algo;
 
-import java.util.HashSet;
-
-import org.apache.commons.math3.linear.RealMatrix;
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.apache.commons.math3.util.FastMath;
-
 import com.clust4j.log.Loggable;
 import com.clust4j.metrics.pairwise.Distance;
 import com.clust4j.metrics.pairwise.DistanceMetric;
 import com.clust4j.metrics.pairwise.GeometricallySeparable;
 import com.clust4j.metrics.pairwise.MinkowskiDistance;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.commons.math3.util.FastMath;
+
+import java.util.HashSet;
 
 /**
  * A <i>k</i>-d tree (short for k-dimensional tree) is a space-partitioning

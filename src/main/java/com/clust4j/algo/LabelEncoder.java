@@ -15,11 +15,11 @@
  *******************************************************************************/
 package com.clust4j.algo;
 
-import java.util.LinkedHashSet;
-import java.util.TreeMap;
-
 import com.clust4j.except.ModelNotFitException;
 import com.clust4j.utils.VecUtils;
+
+import java.util.LinkedHashSet;
+import java.util.TreeMap;
 
 public class LabelEncoder extends BaseModel implements java.io.Serializable {
     private static final long serialVersionUID = 6618077714920820376L;

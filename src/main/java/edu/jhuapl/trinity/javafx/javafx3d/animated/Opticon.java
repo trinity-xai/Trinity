@@ -570,7 +570,7 @@ public class Opticon extends Group {
         this.scanning = scanning;
         scannerConeMesh.setVisible(scanning);
         scannerConeOutlineMesh.setVisible(scanning);
-        if(scanning) 
+        if (scanning)
             scannerMeshTimeline.playFromStart();
         else
             scannerMeshTimeline.stop();

@@ -15,21 +15,20 @@
  *******************************************************************************/
 package com.clust4j.algo;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Random;
-
+import com.clust4j.GlobalState;
+import com.clust4j.except.ModelNotFitException;
+import com.clust4j.log.Log.Tag.Algo;
+import com.clust4j.log.LogTimer;
+import com.clust4j.metrics.pairwise.GeometricallySeparable;
+import com.clust4j.utils.MatUtils;
+import com.clust4j.utils.MatUtils.Axis;
+import com.clust4j.utils.VecUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.util.FastMath;
 
-import com.clust4j.GlobalState;
-import com.clust4j.except.ModelNotFitException;
-import com.clust4j.log.LogTimer;
-import com.clust4j.log.Log.Tag.Algo;
-import com.clust4j.metrics.pairwise.GeometricallySeparable;
-import com.clust4j.utils.MatUtils;
-import com.clust4j.utils.VecUtils;
-import com.clust4j.utils.MatUtils.Axis;
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Random;
 
 /**
  * <a href="https://en.wikipedia.org/wiki/Affinity_propagation">Affinity Propagation</a> (AP)

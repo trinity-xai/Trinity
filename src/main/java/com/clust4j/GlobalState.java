@@ -15,10 +15,10 @@
  *******************************************************************************/
 package com.clust4j;
 
+import org.apache.commons.math3.util.FastMath;
+
 import java.util.Random;
 import java.util.concurrent.ForkJoinPool;
-
-import org.apache.commons.math3.util.FastMath;
 
 /**
  * A set of global config values used in multiple classes. Some values may

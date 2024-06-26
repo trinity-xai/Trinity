@@ -15,13 +15,12 @@
  *******************************************************************************/
 package com.clust4j.algo;
 
+import com.clust4j.except.ModelNotFitException;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.RealMatrix;
+
 import java.util.ArrayList;
 import java.util.Collection;
-
-import org.apache.commons.math3.linear.RealMatrix;
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-
-import com.clust4j.except.ModelNotFitException;
 
 public interface CentroidLearner extends java.io.Serializable {
     /**

@@ -16,13 +16,12 @@
 
 package com.clust4j.algo.pipeline;
 
-import org.apache.commons.math3.linear.RealMatrix;
-
 import com.clust4j.Clust4j;
 import com.clust4j.NamedEntity;
 import com.clust4j.algo.BaseClassifierParameters;
 import com.clust4j.algo.preprocess.PreProcessor;
 import com.clust4j.utils.SynchronicityLock;
+import org.apache.commons.math3.linear.RealMatrix;
 
 public abstract class Pipeline<T extends BaseClassifierParameters>
     extends Clust4j implements NamedEntity {

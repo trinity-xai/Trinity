@@ -153,7 +153,7 @@ public class App extends Application {
     SemanticMapEventHandler smeh;
     SearchEventHandler seh;
     HitEventHandler heh;
-    
+
     boolean hyperspaceIntroShown = false;
     boolean hypersurfaceIntroShown = false;
     boolean matrixShowing = false;
@@ -518,10 +518,10 @@ public class App extends Application {
             }
             if (!pathPane.getChildren().contains(videoPane)) {
                 pathPane.getChildren().add(videoPane);
-                videoPane.setTranslateX(desktopPane.getWidth()/2.0 
-                    - videoPane.getBoundsInLocal().getWidth()/2.0);
-                videoPane.setTranslateY(desktopPane.getHeight()/2.0 
-                    - videoPane.getBoundsInLocal().getHeight()/2.0);                 
+                videoPane.setTranslateX(desktopPane.getWidth() / 2.0
+                    - videoPane.getBoundsInLocal().getWidth() / 2.0);
+                videoPane.setTranslateY(desktopPane.getHeight() / 2.0
+                    - videoPane.getBoundsInLocal().getHeight() / 2.0);
                 videoPane.slideInPane();
             } else {
                 videoPane.show();
@@ -534,10 +534,10 @@ public class App extends Application {
                 String caption = (String) e.object2;
                 videoPane.mainTitleText2Property.set(caption);
             }
-            
+
             videoPane.setVideo();
         });
-        
+
         scene.addEventHandler(ApplicationEvent.SHOW_WAVEFORM_PANE, e -> {
             if (null == waveformPane) {
                 waveformPane = new WaveformPane(scene, pathPane);
@@ -718,7 +718,7 @@ public class App extends Application {
         heh = new HitEventHandler(desktopPane);
         scene.getRoot().addEventHandler(HitEvent.PROJECTILE_HIT_SHAPE, heh);
         scene.getRoot().addEventHandler(HitEvent.TRACKING_PROJECTILE_EVENTS, heh);
-        
+
         smeh = new SemanticMapEventHandler(false);
         scene.getRoot().addEventHandler(SemanticMapEvent.NEW_SEMANTIC_MAP, smeh);
         scene.getRoot().addEventHandler(SemanticMapEvent.NEW_SEMANTICMAP_COLLECTION, smeh);
@@ -946,7 +946,7 @@ public class App extends Application {
         }
         if (e.isAltDown() && e.isControlDown() && e.getCode().equals(KeyCode.V)) {
             stage.getScene().getRoot().fireEvent(
-                new ApplicationEvent(ApplicationEvent.SHOW_VIDEO_PANE, 
+                new ApplicationEvent(ApplicationEvent.SHOW_VIDEO_PANE,
                     "EMPTY VISION ", "A past never had for a Retrowave Future"));
         }
         if (e.isAltDown() && e.getCode().equals(KeyCode.N)) {
@@ -1036,9 +1036,11 @@ public class App extends Application {
     public static Pane getAppPathPaneStack() {
         return pathPane;
     }
+
     public static VideoPane getVideoPane() {
         return theVideo;
     }
+
     /**
      *
      */

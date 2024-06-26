@@ -15,9 +15,9 @@
  *******************************************************************************/
 package com.clust4j.sample;
 
-import java.util.Random;
-
 import com.clust4j.NamedEntity;
+
+import java.util.Random;
 
 public interface Sampler extends NamedEntity {
     public double[][] sample(final double[][] data, final int n);

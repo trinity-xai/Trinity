@@ -15,9 +15,8 @@
  *******************************************************************************/
 package com.clust4j.kernel;
 
-import org.apache.commons.math3.util.FastMath;
-
 import com.clust4j.utils.VecUtils;
+import org.apache.commons.math3.util.FastMath;
 
 /**
  * The Generalized Histogram Intersection kernel

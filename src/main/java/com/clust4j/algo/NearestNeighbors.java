@@ -15,17 +15,15 @@
  *******************************************************************************/
 package com.clust4j.algo;
 
-import java.util.concurrent.RejectedExecutionException;
-
-import org.apache.commons.math3.linear.RealMatrix;
-import org.apache.commons.math3.util.FastMath;
-
-import com.clust4j.algo.Neighborhood;
 import com.clust4j.except.ModelNotFitException;
 import com.clust4j.log.Log.Tag.Algo;
 import com.clust4j.log.LogTimer;
 import com.clust4j.utils.MatUtils;
 import com.clust4j.utils.VecUtils;
+import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.commons.math3.util.FastMath;
+
+import java.util.concurrent.RejectedExecutionException;
 
 final public class NearestNeighbors extends BaseNeighborsModel {
     private static final long serialVersionUID = 8306843374522289973L;

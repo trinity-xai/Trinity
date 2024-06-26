@@ -15,11 +15,11 @@
  *******************************************************************************/
 package com.clust4j.algo;
 
-import java.text.NumberFormat;
-
 import com.clust4j.Clust4j;
 import com.clust4j.utils.SynchronicityLock;
 import com.clust4j.utils.TableFormatter;
+
+import java.text.NumberFormat;
 
 abstract public class BaseModel extends Clust4j implements java.io.Serializable {
     private static final long serialVersionUID = 4707757741169405063L;

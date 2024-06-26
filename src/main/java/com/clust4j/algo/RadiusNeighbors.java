@@ -15,16 +15,14 @@
  *******************************************************************************/
 package com.clust4j.algo;
 
-import java.util.concurrent.RejectedExecutionException;
-
+import com.clust4j.except.ModelNotFitException;
+import com.clust4j.log.Log.Tag.Algo;
+import com.clust4j.log.LogTimer;
+import com.clust4j.utils.MatUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.util.FastMath;
 
-import com.clust4j.algo.Neighborhood;
-import com.clust4j.except.ModelNotFitException;
-import com.clust4j.log.LogTimer;
-import com.clust4j.log.Log.Tag.Algo;
-import com.clust4j.utils.MatUtils;
+import java.util.concurrent.RejectedExecutionException;
 
 final public class RadiusNeighbors extends BaseNeighborsModel {
     private static final long serialVersionUID = 3620377771231699918L;

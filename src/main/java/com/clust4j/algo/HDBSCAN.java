@@ -15,6 +15,26 @@
  *******************************************************************************/
 package com.clust4j.algo;
 
+import com.clust4j.GlobalState;
+import com.clust4j.log.Log.Tag.Algo;
+import com.clust4j.log.LogTimer;
+import com.clust4j.log.Loggable;
+import com.clust4j.metrics.pairwise.Distance;
+import com.clust4j.metrics.pairwise.DistanceMetric;
+import com.clust4j.metrics.pairwise.GeometricallySeparable;
+import com.clust4j.metrics.pairwise.Pairwise;
+import com.clust4j.utils.EntryPair;
+import com.clust4j.utils.MatUtils;
+import com.clust4j.utils.MatUtils.MatSeries;
+import com.clust4j.utils.QuadTup;
+import com.clust4j.utils.Series.Inequality;
+import com.clust4j.utils.VecUtils;
+import com.clust4j.utils.VecUtils.DoubleSeries;
+import org.apache.commons.math3.exception.DimensionMismatchException;
+import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.commons.math3.util.FastMath;
+import org.apache.commons.math3.util.Precision;
+
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -24,28 +44,6 @@ import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.TreeMap;
-
-import org.apache.commons.math3.exception.DimensionMismatchException;
-import org.apache.commons.math3.linear.RealMatrix;
-import org.apache.commons.math3.util.FastMath;
-import org.apache.commons.math3.util.Precision;
-
-import com.clust4j.GlobalState;
-import com.clust4j.utils.QuadTup;
-import com.clust4j.algo.Neighborhood;
-import com.clust4j.log.LogTimer;
-import com.clust4j.log.Loggable;
-import com.clust4j.log.Log.Tag.Algo;
-import com.clust4j.metrics.pairwise.Distance;
-import com.clust4j.metrics.pairwise.DistanceMetric;
-import com.clust4j.metrics.pairwise.GeometricallySeparable;
-import com.clust4j.metrics.pairwise.Pairwise;
-import com.clust4j.utils.EntryPair;
-import com.clust4j.utils.Series.Inequality;
-import com.clust4j.utils.MatUtils;
-import com.clust4j.utils.MatUtils.MatSeries;
-import com.clust4j.utils.VecUtils;
-import com.clust4j.utils.VecUtils.DoubleSeries;
 
 /**
  * Hierarchical Density-Based Spatial Clustering of Applications with Noise.

@@ -16,13 +16,12 @@
 
 package com.clust4j.algo;
 
-import java.util.Random;
-
-import org.apache.commons.math3.linear.RealMatrix;
-
 import com.clust4j.algo.BaseNeighborsModel.BaseNeighborsPlanner;
 import com.clust4j.algo.BaseNeighborsModel.NeighborsAlgorithm;
 import com.clust4j.metrics.pairwise.GeometricallySeparable;
+import org.apache.commons.math3.linear.RealMatrix;
+
+import java.util.Random;
 
 public class NearestNeighborsParameters extends BaseNeighborsPlanner<NearestNeighbors> {
     private static final long serialVersionUID = -4848896423352149405L;

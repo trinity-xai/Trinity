@@ -16,13 +16,12 @@
 
 package com.clust4j.algo.preprocess;
 
-import org.apache.commons.math3.exception.DimensionMismatchException;
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.apache.commons.math3.linear.RealMatrix;
-
 import com.clust4j.except.ModelNotFitException;
 import com.clust4j.utils.MatUtils;
 import com.clust4j.utils.VecUtils;
+import org.apache.commons.math3.exception.DimensionMismatchException;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.RealMatrix;
 
 public class MedianCenterer extends Transformer {
     private static final long serialVersionUID = -5983524673626323084L;

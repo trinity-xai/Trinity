@@ -15,11 +15,11 @@
  *******************************************************************************/
 package com.clust4j.sample;
 
-import java.util.Random;
-import java.util.TreeSet;
-
 import com.clust4j.utils.MatUtils;
 import com.clust4j.utils.VecUtils;
+
+import java.util.Random;
+import java.util.TreeSet;
 
 /**
  * <a href="https://en.wikipedia.org/wiki/Bootstrapping_%28statistics%29">Bootstrapping</a>

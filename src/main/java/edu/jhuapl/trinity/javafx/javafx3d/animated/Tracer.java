@@ -37,7 +37,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 import static javafx.animation.Animation.INDEFINITE;
-import javafx.scene.shape.CullFace;
 
 /**
  * @author Sean Phillips
@@ -63,8 +62,8 @@ public class Tracer extends PolyLine3D {
     Color diffuseColor;
     float[] originalUVCoords = {
         0.25f, 0.5f, 0.9f, 0.5f,
-        
-        
+
+
         0.25f, 0.5f, 0.9f, 0.5f,
         0.25f, 0.5f, 0.9f, 0.5f,
         0.25f, 0.5f, 0.9f, 0.5f,
@@ -78,7 +77,7 @@ public class Tracer extends PolyLine3D {
         0.25f, 0.5f, 0.9f, 0.5f,
         0.25f, 0.5f, 0.9f, 0.5f,
         0.25f, 0.5f, 0.9f, 0.5f,
-        
+
         0.25f, 0.5f, 0.9f, 0.5f,
         0.25f, 0.5f, 0.9f, 0.5f,
         0.25f, 0.5f, 0.9f, 0.5f,
@@ -87,9 +86,9 @@ public class Tracer extends PolyLine3D {
         0.25f, 0.5f, 0.9f, 0.5f,
 
         0.25f, 0.5f, 0.9f, 0.5f,
-        
+
     };
-    
+
     public Tracer(Point3D start, Point3D end, float width, Color color) {
         super(makePointList(start, end), width, color, LineType.TRIANGLE);
         currentStart = start;
@@ -98,7 +97,7 @@ public class Tracer extends PolyLine3D {
         diffuseColor = color;
         mesh = (TriangleMesh) this.meshView.getMesh();
         mesh.getTexCoords().setAll(originalUVCoords);
-//        meshView.setCullFace(CullFace.NONE);        
+//        meshView.setCullFace(CullFace.NONE);
         setCycle(20, 30);
 
         keyCycle.addListener(e -> {

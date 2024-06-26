@@ -6,7 +6,6 @@ import javafx.geometry.Point3D;
 import javafx.scene.paint.Color;
 
 /**
- *
  * @author Sean Phillips
  */
 public class Alien extends Opticon implements Hittable {
@@ -14,35 +13,38 @@ public class Alien extends Opticon implements Hittable {
     private Point3D location = new Point3D(0, 0, 0);
     private Point3D velocity = new Point3D(0, 0, 0);
     private boolean disappearsOnFlip = true;
-   /**
-    * Flag indicating whether the particle is active.
-    */
+    /**
+     * Flag indicating whether the particle is active.
+     */
     public SimpleBooleanProperty activeProperty = new SimpleBooleanProperty(true);
-    
+
     public Alien(Color lightColor, double scannerBaseRadius) {
         super(lightColor, scannerBaseRadius);
         enableCycle(false);
         enableOrbiting(false);
-        setScanning(false);        
+        setScanning(false);
     }
+
     public Point3D randomStart(double distance) {
         //Start the alien somewhere on the outskirts of play
         int directionX = random.nextBoolean() ? 1 : -1;
         int directionY = random.nextBoolean() ? 1 : -1;
         int directionZ = random.nextBoolean() ? 1 : -1;
         Point3D randomStart = new Point3D(
-            directionX * (distance-50), 
-            directionY * random.nextDouble() * (distance-50), 
-            directionZ * random.nextDouble() * (distance-50));
+            directionX * (distance - 50),
+            directionY * random.nextDouble() * (distance - 50),
+            directionZ * random.nextDouble() * (distance - 50));
         return randomStart;
     }
+
     /**
      * Reset transform to identity transform
      */
     public void reset() {
         velocity = Point3D.ZERO;
         location = Point3D.ZERO;
-    }       
+    }
+
     @Override
     public void setStart(Point3D p3D) {
         start = p3D;
@@ -58,7 +60,7 @@ public class Alien extends Opticon implements Hittable {
         location = p3D;
         setTranslateX(location.getX());
         setTranslateY(location.getY());
-        setTranslateZ(location.getZ());        
+        setTranslateZ(location.getZ());
     }
 
     @Override
@@ -75,6 +77,7 @@ public class Alien extends Opticon implements Hittable {
     public Point3D getVelocity() {
         return velocity;
     }
+
     @Override
     public void flipCheck(double absSafetyPosition) {
         double bufferX = 50;
@@ -108,6 +111,7 @@ public class Alien extends Opticon implements Hittable {
         }
         activeProperty.set(!flipped);
     }
+
     @Override
     public boolean update(double _time) {
         location = location.add(velocity);

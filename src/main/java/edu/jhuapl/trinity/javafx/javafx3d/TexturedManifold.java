@@ -65,23 +65,25 @@ public class TexturedManifold extends TexturedMesh {
         for (Face3 face : getFaces()) {
             mesh.getFaces().addAll(
                 face.p0, face.p2, face.p1,
-                 face.p1, face.p2, face.p0
+                face.p1, face.p2, face.p0
             );
         }
         return mesh;
     }
+
     public void flipFaces(int indexSkip) {
         TriangleMesh tm = (TriangleMesh) getMesh();
         int size = tm.getFaces().size();
         int swap = 0;
-        for(int i=0; i<size; i+=indexSkip) {
+        for (int i = 0; i < size; i += indexSkip) {
             swap = tm.getFaces().get(i);
-            tm.getFaces().set(i, tm.getFaces().get(i+2));
-            tm.getFaces().set(i+2,swap);
-            if(i+indexSkip+3>size) //safety check
+            tm.getFaces().set(i, tm.getFaces().get(i + 2));
+            tm.getFaces().set(i + 2, swap);
+            if (i + indexSkip + 3 > size) //safety check
                 return;
         }
     }
+
     private Double getMaxX() {
         return getVertices().stream()
             .flatMapToDouble(p -> DoubleStream.of(Math.abs(p.x)))

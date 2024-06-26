@@ -23,9 +23,13 @@ package edu.jhuapl.trinity.javafx.javafx3d.projectiles;
 import edu.jhuapl.trinity.javafx.javafx3d.TexturedManifold;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
+import javafx.beans.property.SimpleBooleanProperty;
+import javafx.concurrent.Task;
 import javafx.geometry.Bounds;
 import javafx.geometry.Point3D;
 import javafx.scene.image.Image;
+import javafx.scene.image.PixelWriter;
+import javafx.scene.image.WritableImage;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
@@ -51,10 +55,6 @@ import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
-import javafx.beans.property.SimpleBooleanProperty;
-import javafx.concurrent.Task;
-import javafx.scene.image.PixelWriter;
-import javafx.scene.image.WritableImage;
 
 /**
  * @author Sean Phillips
@@ -79,12 +79,12 @@ public class HitShape3D extends MeshView implements Hittable {
     public Point3D rotateAxis = Rotate.X_AXIS;
     public Color defaultColor = new Color(0.1, 0.1, 0.1, 1);
     public WritableImage writableDiffuseImage;
-   /**
-    * Flag indicating whether the particle is active.
-    */
+    /**
+     * Flag indicating whether the particle is active.
+     */
     public SimpleBooleanProperty activeProperty = new SimpleBooleanProperty(true);
-    
-    
+
+
     public HitShape3D(List<org.fxyz3d.geometry.Point3D> vertices, List<Face3> faces, Point3D center) {
         texturedManifold = new TexturedManifold(vertices, faces);
         setMesh(texturedManifold.getMesh());
@@ -95,15 +95,15 @@ public class HitShape3D extends MeshView implements Hittable {
             // Image diffuseMap,
             // Image specularMap,
             // Image bumpMap,
-            // Image selfIlluminationMap)            
+            // Image selfIlluminationMap)
             Image diffuseImage = ResourceUtils.load3DTextureImage("asteroid");
-            writableDiffuseImage = new WritableImage(diffuseImage.getPixelReader(), 
+            writableDiffuseImage = new WritableImage(diffuseImage.getPixelReader(),
                 Double.valueOf(diffuseImage.getWidth()).intValue(),
                 Double.valueOf(diffuseImage.getHeight()).intValue()
             );
             Image bumpImage = ResourceUtils.load3DTextureImage("asteroidBumpNormalMap");
             Image selfImage = ResourceUtils.load3DTextureImage("asteroidSelfIllumination");
-            asteroidMaterial = new PhongMaterial(Color.SLATEGRAY, 
+            asteroidMaterial = new PhongMaterial(Color.SLATEGRAY,
                 writableDiffuseImage, selfImage, bumpImage, null);
         } catch (IOException ex) {
             Logger.getLogger(HitShape3D.class.getName()).log(Level.SEVERE, null, ex);
@@ -150,16 +150,17 @@ public class HitShape3D extends MeshView implements Hittable {
             }
         });
     }
+
     public Task vaporizeTask() {
         Task task = new Task() {
             @Override
             protected Void call() throws Exception {
                 Random rando = new Random();
                 List<Integer> rangeX = Stream.iterate(0, n -> n + 1)
-                    .limit(Double.valueOf(writableDiffuseImage.getWidth()).intValue()-1)
+                    .limit(Double.valueOf(writableDiffuseImage.getWidth()).intValue() - 1)
                     .collect(Collectors.toList());
                 List<Integer> rangeY = Stream.iterate(0, n -> n + 1)
-                    .limit(Double.valueOf(writableDiffuseImage.getHeight()).intValue()-1)
+                    .limit(Double.valueOf(writableDiffuseImage.getHeight()).intValue() - 1)
                     .collect(Collectors.toList());
 
                 Collections.shuffle(rangeX);
@@ -170,26 +171,27 @@ public class HitShape3D extends MeshView implements Hittable {
 //                asteroidMaterial.setSelfIlluminationMap(null);
 //                asteroidMaterial.setBumpMap(null);
                 int strideWidth = rangeX.size() / 15;
-                for(Integer x : rangeX) {
-                    for(Integer y : rangeY) {
-                        if(rando.nextDouble() > 0.05) //95 percent chance to disappear
+                for (Integer x : rangeX) {
+                    for (Integer y : rangeY) {
+                        if (rando.nextDouble() > 0.05) //95 percent chance to disappear
                             pw.setColor(x, y, Color.TRANSPARENT);
                         else
                             pw.setColor(x, y, flash);
                     }
                     stride++;
-                    if(stride >= strideWidth) {
+                    if (stride >= strideWidth) {
                         stride = 0;
                         Thread.sleep(32);
                     }
                 }
-                
+
                 return null;
-            }   
+            }
         };
-        return task;    
+        return task;
     }
-    public void vaporize(){
+
+    public void vaporize() {
         Thread t = new Thread(vaporizeTask());
         t.setDaemon(true);
         t.start();
@@ -572,10 +574,12 @@ public class HitShape3D extends MeshView implements Hittable {
     public Point3D getVelocity() {
         return velocity;
     }
+
     public List<Point3D> getPoints() {
         return texturedManifold.getVertices().stream()
             .map(JavaFX3DUtils.toFX).toList();
     }
+
     @Override
     public void flipCheck(double absSafetyPosition) {
         double bufferX = 50;
@@ -586,17 +590,18 @@ public class HitShape3D extends MeshView implements Hittable {
             setLocation(new Point3D(absSafetyPosition - bufferX, loc.getY(), loc.getZ()));
         else if (loc.getX() > absSafetyPosition)
             setLocation(new Point3D(-absSafetyPosition + bufferX, loc.getY(), loc.getZ()));
-        
+
         if (loc.getY() < -absSafetyPosition)
             setLocation(new Point3D(loc.getX(), absSafetyPosition - bufferY, loc.getZ()));
         else if (loc.getY() > absSafetyPosition)
             setLocation(new Point3D(loc.getX(), -absSafetyPosition + bufferY, loc.getZ()));
-        
+
         if (loc.getZ() < -absSafetyPosition)
             setLocation(new Point3D(loc.getX(), loc.getY(), absSafetyPosition - bufferZ));
         else if (loc.getZ() > absSafetyPosition)
             setLocation(new Point3D(loc.getX(), loc.getY(), -absSafetyPosition + bufferZ));
-    }    
+    }
+
     @Override
     public boolean update(double _time) {
         location = location.add(velocity);

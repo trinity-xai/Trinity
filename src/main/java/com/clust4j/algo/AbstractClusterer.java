@@ -16,16 +16,6 @@
 
 package com.clust4j.algo;
 
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
-import java.util.Random;
-import java.util.UUID;
-
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.apache.commons.math3.linear.RealMatrix;
-import org.apache.commons.math3.util.FastMath;
-
 import com.clust4j.GlobalState;
 import com.clust4j.NamedEntity;
 import com.clust4j.except.ModelNotFitException;
@@ -41,6 +31,15 @@ import com.clust4j.metrics.pairwise.SimilarityMetric;
 import com.clust4j.utils.MatUtils;
 import com.clust4j.utils.TableFormatter.Table;
 import com.clust4j.utils.VecUtils;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.commons.math3.util.FastMath;
+
+import java.util.ArrayList;
+import java.util.Collection;
+import java.util.HashSet;
+import java.util.Random;
+import java.util.UUID;
 
 /**
  * The highest level of cluster abstraction in clust4j, AbstractClusterer

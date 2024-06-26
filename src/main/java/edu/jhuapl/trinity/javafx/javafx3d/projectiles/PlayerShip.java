@@ -24,16 +24,19 @@ import edu.jhuapl.trinity.javafx.events.HitEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.AnimatedTetrahedron;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.geometry.Bounds;
 import javafx.geometry.Point3D;
 import javafx.scene.image.Image;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.input.TransferMode;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.CullFace;
 import javafx.scene.shape.DrawMode;
+import javafx.scene.transform.Affine;
 import javafx.scene.transform.Rotate;
 import org.fxyz3d.geometry.Vector3D;
 
@@ -46,9 +49,6 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.IntStream;
-import javafx.beans.property.SimpleBooleanProperty;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.transform.Affine;
 
 /**
  * @author Sean Phillips
@@ -68,7 +68,7 @@ public class PlayerShip extends AnimatedTetrahedron implements Hittable {
     public Rotate parentRotateX = null;
     public Rotate parentRotateY = null;
     public boolean enableRotationAnimation = true;
-  
+
     /**
      * physics of the ship.
      */
@@ -78,11 +78,11 @@ public class PlayerShip extends AnimatedTetrahedron implements Hittable {
     public double rotateIncrementDegrees = 0.0;
     public Point3D rotateAxis = Rotate.X_AXIS;
     public boolean enableMouseRotation = false;
-   /**
-    * Flag indicating whether the particle is active.
-    */
+    /**
+     * Flag indicating whether the particle is active.
+     */
     public SimpleBooleanProperty activeProperty = new SimpleBooleanProperty(true);
-    
+
     public PlayerShip(Point3D center) {
         super(100);
         setStart(center);
@@ -93,7 +93,7 @@ public class PlayerShip extends AnimatedTetrahedron implements Hittable {
             playerMaterial = new PhongMaterial(Color.HOTPINK, diffuseImage, null, specImage, null);
             Image cockpitImage = ResourceUtils.load3DTextureImage("cockpit-transparent");
             cockpitMaterial = new PhongMaterial(Color.WHITE, cockpitImage, null, null, null);
-            
+
         } catch (IOException ex) {
             Logger.getLogger(PlayerShip.class.getName()).log(Level.SEVERE, null, ex);
             playerMaterial = new PhongMaterial(Color.NAVAJOWHITE);
@@ -131,18 +131,19 @@ public class PlayerShip extends AnimatedTetrahedron implements Hittable {
             }
         });
         //point in the Z positive direction by default
-        triangleMesh.getPoints().set(2, 300); 
+        triangleMesh.getPoints().set(2, 300);
         affineTransform = new Affine();
         getTransforms().add(affineTransform);
         setMouseTransparent(true);
     }
+
     public void setCockPitView(boolean enabled) {
-        if(enabled) {
+        if (enabled) {
             setMaterial(cockpitMaterial);
         } else {
             setMaterial(playerMaterial);
         }
-    }   
+    }
 
     /**
      * Accumulate rotation about specified axis
@@ -159,8 +160,9 @@ public class PlayerShip extends AnimatedTetrahedron implements Hittable {
          * this way
          */
         getTransforms().set(0, r.createConcatenation(getTransforms().get(0)));
-        affineTransform = (Affine)getTransforms().get(0);
+        affineTransform = (Affine) getTransforms().get(0);
     }
+
     /**
      * Reset transform to identity transform
      */
@@ -169,25 +171,27 @@ public class PlayerShip extends AnimatedTetrahedron implements Hittable {
         location = Point3D.ZERO;
         affineTransform = new Affine();
         getTransforms().set(0, affineTransform);
-    } 
+    }
+
     public void mouseDragged(MouseEvent me, double mouseDeltaX, double mouseDeltaY) {
         double modifier = 1.0;
         double modifierFactor = 0.1;  //@TODO SMP connect to sensitivity property
-        
-        if(null != me) {
+
+        if (null != me) {
             if (me.isControlDown()) {
                 modifier = 0.1;
             }
             if (me.isShiftDown()) {
                 modifier = 25.0;
-            }        
+            }
         }
         double yChange = (((mouseDeltaX * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180);
         double xChange = (((-mouseDeltaY * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180);
 
         addRotation(yChange, Rotate.Y_AXIS);
-        addRotation(xChange, Rotate.X_AXIS);        
+        addRotation(xChange, Rotate.X_AXIS);
     }
+
     //Reflect(Vector3 vector, Vector3 normal)
     public Point3D reflect(Point3D normal, Point3D direction) {
         //If n is a normalized vector, and v is the incoming direction,
@@ -565,6 +569,7 @@ public class PlayerShip extends AnimatedTetrahedron implements Hittable {
     public Point3D getVelocity() {
         return velocity;
     }
+
     @Override
     public void flipCheck(double absSafetyPosition) {
         double bufferX = 50;
@@ -584,17 +589,18 @@ public class PlayerShip extends AnimatedTetrahedron implements Hittable {
         if (loc.getZ() > absSafetyPosition)
             setLocation(new Point3D(loc.getX(), loc.getY(), -absSafetyPosition + bufferZ));
     }
-    
+
     public void thrust() {
-        //default starting pointing direction is Z+. 
-        javafx.geometry.Point3D rotatedThrust = new Point3D(0, 0, defaultThrustMagnitude); 
+        //default starting pointing direction is Z+.
+        javafx.geometry.Point3D rotatedThrust = new Point3D(0, 0, defaultThrustMagnitude);
         velocity = velocity.add(getTransforms().get(0)
-            .transform(rotatedThrust));        
-        if(velocity.magnitude()>maxThrustMagnitude) {
-            javafx.geometry.Point3D maxThrust = new Point3D(0, 0, maxThrustMagnitude); 
-            velocity = getTransforms().get(0).transform(maxThrust);           
+            .transform(rotatedThrust));
+        if (velocity.magnitude() > maxThrustMagnitude) {
+            javafx.geometry.Point3D maxThrust = new Point3D(0, 0, maxThrustMagnitude);
+            velocity = getTransforms().get(0).transform(maxThrust);
         }
     }
+
     @Override
     public boolean update(double _time) {
         location = location.add(velocity);

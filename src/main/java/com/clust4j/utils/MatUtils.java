@@ -15,17 +15,16 @@
  *******************************************************************************/
 package com.clust4j.utils;
 
-import java.util.ArrayList;
-import java.util.Random;
-
+import com.clust4j.except.NonUniformMatrixException;
+import com.clust4j.utils.parallel.map.DistributedMatrixMultiplication;
 import org.apache.commons.math3.exception.DimensionMismatchException;
 import org.apache.commons.math3.linear.AbstractRealMatrix;
 import org.apache.commons.math3.linear.BlockRealMatrix;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.util.Precision;
 
-import com.clust4j.except.NonUniformMatrixException;
-import com.clust4j.utils.parallel.map.DistributedMatrixMultiplication;
+import java.util.ArrayList;
+import java.util.Random;
 
 /**
  * A number of algorithms in clust4j utilize linear algebraic functions

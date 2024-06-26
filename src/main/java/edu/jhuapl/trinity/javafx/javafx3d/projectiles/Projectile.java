@@ -65,8 +65,8 @@ public abstract class Projectile {
      * Updates the particle animation by the specified number of milliseconds.
      *
      * @param _time The number of milliseconds elapsed since the last update.
-     * @return true if the particle is still 'alive' (requires further animation), 
-     *  false if it has terminated.
+     * @return true if the particle is still 'alive' (requires further animation),
+     * false if it has terminated.
      */
     public abstract boolean update(final double _time);
 }

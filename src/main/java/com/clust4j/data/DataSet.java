@@ -15,17 +15,6 @@
  *******************************************************************************/
 package com.clust4j.data;
 
-import java.io.BufferedWriter;
-import java.io.File;
-import java.io.FileWriter;
-import java.io.IOException;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-
-import org.apache.commons.math3.exception.DimensionMismatchException;
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-
 import com.clust4j.Clust4j;
 import com.clust4j.log.Loggable;
 import com.clust4j.utils.DeepCloneable;
@@ -33,6 +22,16 @@ import com.clust4j.utils.MatUtils;
 import com.clust4j.utils.MatrixFormatter;
 import com.clust4j.utils.TableFormatter;
 import com.clust4j.utils.VecUtils;
+import org.apache.commons.math3.exception.DimensionMismatchException;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+
+import java.io.BufferedWriter;
+import java.io.File;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 
 /**
  * A lightweight dataset wrapper that stores information on

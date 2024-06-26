@@ -15,14 +15,6 @@
  *******************************************************************************/
 package com.clust4j.algo;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Random;
-
-import org.apache.commons.math3.exception.DimensionMismatchException;
-import org.apache.commons.math3.linear.RealMatrix;
-import org.apache.commons.math3.util.FastMath;
-
 import com.clust4j.NamedEntity;
 import com.clust4j.kernel.Kernel;
 import com.clust4j.log.LogTimer;
@@ -31,6 +23,13 @@ import com.clust4j.metrics.pairwise.GeometricallySeparable;
 import com.clust4j.metrics.scoring.SupervisedMetric;
 import com.clust4j.utils.MatUtils;
 import com.clust4j.utils.VecUtils;
+import org.apache.commons.math3.exception.DimensionMismatchException;
+import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.commons.math3.util.FastMath;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Random;
 
 import static com.clust4j.metrics.scoring.UnsupervisedMetric.SILHOUETTE;
 

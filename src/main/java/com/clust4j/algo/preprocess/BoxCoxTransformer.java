@@ -16,20 +16,19 @@
 
 package com.clust4j.algo.preprocess;
 
-import java.util.concurrent.RejectedExecutionException;
-
-import org.apache.commons.math3.exception.DimensionMismatchException;
-import org.apache.commons.math3.exception.NotStrictlyPositiveException;
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.apache.commons.math3.linear.RealMatrix;
-import org.apache.commons.math3.util.FastMath;
-
 import com.clust4j.algo.ParallelChunkingTask;
 import com.clust4j.except.ModelNotFitException;
 import com.clust4j.optimize.BrentDownhillOptimizer;
 import com.clust4j.optimize.OptimizableCaller;
 import com.clust4j.utils.MatUtils;
 import com.clust4j.utils.VecUtils;
+import org.apache.commons.math3.exception.DimensionMismatchException;
+import org.apache.commons.math3.exception.NotStrictlyPositiveException;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.RealMatrix;
+import org.apache.commons.math3.util.FastMath;
+
+import java.util.concurrent.RejectedExecutionException;
 
 public class BoxCoxTransformer extends Transformer {
     private static final long serialVersionUID = -5397818601304593058L;

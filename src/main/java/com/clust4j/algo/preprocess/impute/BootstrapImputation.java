@@ -15,17 +15,16 @@
  *******************************************************************************/
 package com.clust4j.algo.preprocess.impute;
 
-import java.util.Random;
-
-import org.apache.commons.math3.linear.RealMatrix;
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-
 import com.clust4j.except.NaNException;
 import com.clust4j.log.Log.Tag.Algo;
 import com.clust4j.log.LogTimer;
 import com.clust4j.sample.Bootstrapper;
 import com.clust4j.utils.MatUtils;
 import com.clust4j.utils.VecUtils;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.linear.RealMatrix;
+
+import java.util.Random;
 
 /**
  * The BootstrapImputation class will impute {@link Double#NaN}<tt>s</tt>

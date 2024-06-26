@@ -15,13 +15,12 @@
  *******************************************************************************/
 package com.clust4j.algo.preprocess;
 
-import org.apache.commons.math3.linear.RealMatrix;
-
 import com.clust4j.Clust4j;
 import com.clust4j.algo.BaseModel;
 import com.clust4j.utils.DeepCloneable;
 import com.clust4j.utils.SynchronicityLock;
 import com.clust4j.utils.TableFormatter;
+import org.apache.commons.math3.linear.RealMatrix;
 
 public abstract class PreProcessor extends Clust4j implements DeepCloneable {
     private static final long serialVersionUID = -312158525538380532L;

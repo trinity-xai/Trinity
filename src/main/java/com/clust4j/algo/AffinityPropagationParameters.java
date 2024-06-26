@@ -16,11 +16,10 @@
 
 package com.clust4j.algo;
 
-import java.util.Random;
-
+import com.clust4j.metrics.pairwise.GeometricallySeparable;
 import org.apache.commons.math3.linear.RealMatrix;
 
-import com.clust4j.metrics.pairwise.GeometricallySeparable;
+import java.util.Random;
 
 /**
  * A model setup class for {@link AffinityPropagation}. This class houses all

@@ -16,16 +16,15 @@
 
 package com.clust4j.algo;
 
-import java.util.ArrayList;
-import java.util.concurrent.ForkJoinPool;
-import java.util.concurrent.RecursiveTask;
-
-import org.apache.commons.math3.util.FastMath;
-
 import com.clust4j.GlobalState;
 import com.clust4j.NamedEntity;
 import com.clust4j.log.LogTimer;
 import com.clust4j.utils.MatrixFormatter;
+import org.apache.commons.math3.util.FastMath;
+
+import java.util.ArrayList;
+import java.util.concurrent.ForkJoinPool;
+import java.util.concurrent.RecursiveTask;
 
 public abstract class ParallelChunkingTask<T> extends RecursiveTask<T> implements NamedEntity {
     private static final long serialVersionUID = 6377106189203872639L;

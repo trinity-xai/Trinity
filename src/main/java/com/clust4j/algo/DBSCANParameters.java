@@ -16,12 +16,11 @@
 
 package com.clust4j.algo;
 
-import java.util.Random;
-
-import org.apache.commons.math3.linear.RealMatrix;
-
 import com.clust4j.algo.AbstractDBSCAN.AbstractDBSCANParameters;
 import com.clust4j.metrics.pairwise.GeometricallySeparable;
+import org.apache.commons.math3.linear.RealMatrix;
+
+import java.util.Random;
 
 /**
  * A builder class to provide an easier constructing

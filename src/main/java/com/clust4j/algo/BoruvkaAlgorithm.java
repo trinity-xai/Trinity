@@ -15,16 +15,14 @@
  *******************************************************************************/
 package com.clust4j.algo;
 
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
-import org.apache.commons.math3.util.FastMath;
-
-import com.clust4j.algo.Neighborhood;
 import com.clust4j.algo.NearestNeighborHeapSearch.NodeData;
 import com.clust4j.log.LogTimer;
 import com.clust4j.log.Loggable;
 import com.clust4j.metrics.pairwise.DistanceMetric;
 import com.clust4j.metrics.pairwise.Pairwise;
 import com.clust4j.utils.VecUtils;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.apache.commons.math3.util.FastMath;
 
 /**
  * A graph traversal algorithm used in identifying the minimum spanning tree

@@ -29,6 +29,7 @@ public interface Hittable {
      * Random instance for random behavior.
      */
     static Random random = new Random();
+
     public static Point3D getRandomPoint3D(float lowerBound, float upperBound) {
         return new Point3D(
             random.nextFloat() * (upperBound - lowerBound) + lowerBound,

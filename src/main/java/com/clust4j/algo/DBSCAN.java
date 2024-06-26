@@ -15,19 +15,17 @@
  *******************************************************************************/
 package com.clust4j.algo;
 
-import java.util.ArrayList;
-import java.util.HashSet;
-import java.util.Stack;
-
-import org.apache.commons.math3.exception.DimensionMismatchException;
-import org.apache.commons.math3.linear.RealMatrix;
-
-import com.clust4j.algo.RadiusNeighborsParameters;
-import com.clust4j.log.LogTimer;
 import com.clust4j.log.Log.Tag.Algo;
+import com.clust4j.log.LogTimer;
 import com.clust4j.metrics.pairwise.GeometricallySeparable;
 import com.clust4j.metrics.pairwise.SimilarityMetric;
 import com.clust4j.utils.MatUtils;
+import org.apache.commons.math3.exception.DimensionMismatchException;
+import org.apache.commons.math3.linear.RealMatrix;
+
+import java.util.ArrayList;
+import java.util.HashSet;
+import java.util.Stack;
 
 
 /**

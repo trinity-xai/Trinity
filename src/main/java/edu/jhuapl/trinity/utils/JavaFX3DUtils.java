@@ -342,6 +342,7 @@ public enum JavaFX3DUtils {
         javafx.geometry.Point3D res = localToScene(dir, camera);
         return res.subtract(localToScene(new javafx.geometry.Point3D(0, 0, 0), camera));
     }
+
     public static double[] extractRotationAngles(Affine affine) {
         double mxx = affine.getMxx();
         double mxy = affine.getMxy();
@@ -359,6 +360,7 @@ public enum JavaFX3DUtils {
 
         return new double[]{angleX, angleY, angleZ};
     }
+
     public static Affine lookAt(Node node, javafx.geometry.Point3D from, javafx.geometry.Point3D to, boolean applyTranslate) {
         //zVec is "forward"
         javafx.geometry.Point3D zVec = to.subtract(from).normalize();

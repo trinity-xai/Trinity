@@ -21,10 +21,6 @@ package edu.jhuapl.trinity.javafx.components.panes;
  */
 
 import edu.jhuapl.trinity.utils.ResourceUtils;
-import java.io.IOException;
-import java.net.URISyntaxException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javafx.beans.value.ChangeListener;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -40,6 +36,11 @@ import javafx.scene.media.MediaPlayer;
 import javafx.scene.media.MediaView;
 import javafx.scene.paint.Color;
 
+import java.io.IOException;
+import java.net.URISyntaxException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 /**
  * @author Sean Phillips
  */
@@ -53,12 +54,12 @@ public class VideoPane extends LitPathPane {
     public MediaPlayer mediaPlayer;
     boolean auto = false;
     ChangeListener endOfMediaListener;
-    
+
     private static BorderPane createContent() {
         BorderPane bpOilSpill = new BorderPane();
         MediaView mediaView = new MediaView();
         bpOilSpill.setCenter(mediaView);
-       return bpOilSpill;
+        return bpOilSpill;
     }
 
     public VideoPane(Scene scene, Pane parent) {
@@ -72,7 +73,7 @@ public class VideoPane extends LitPathPane {
         mediaView.setOnMouseClicked(e -> {
             shutdown();
         });
-        
+
         ImageView tv = ResourceUtils.loadIcon("retrowave-tv-2", 72);
         ImageView forward = ResourceUtils.loadIcon("forward", 32);
         ImageView refresh = ResourceUtils.loadIcon("refresh", 32);
@@ -81,7 +82,7 @@ public class VideoPane extends LitPathPane {
 
         VBox refreshVBox = new VBox(1, refresh, new Label("AUTO"));
         refreshVBox.setAlignment(Pos.BOTTOM_CENTER);
-        
+
         InnerShadow innerShadow = new InnerShadow();
         innerShadow.setOffsetX(4);
         innerShadow.setOffsetY(4);
@@ -98,55 +99,58 @@ public class VideoPane extends LitPathPane {
         forwardVBox.setOnMouseExited(e -> {
             forward.setEffect(null);
         });
-        
+
         refreshVBox.setOnMouseEntered(e -> {
             refresh.setEffect(innerShadow);
         });
         refreshVBox.setOnMouseClicked(e -> {
             toggleAuto();
-            if(auto)
+            if (auto)
                 refreshVBox.setEffect(innerShadow);
             else
                 refreshVBox.setEffect(null);
         });
         refreshVBox.setOnMouseExited(e -> {
             refresh.setEffect(null);
-        });        
-        
-        HBox hbox = new HBox(50,  tv, refreshVBox, forwardVBox);
+        });
+
+        HBox hbox = new HBox(50, tv, refreshVBox, forwardVBox);
         hbox.setAlignment(Pos.CENTER_RIGHT);
         mainTitleArea.getChildren().add(hbox);
         hbox.prefWidthProperty().bind(mainTitleArea.widthProperty().subtract(10));
     }
-    
+
     @Override
     public void close() {
         super.close();
         mediaPlayer.pause();
     }
+
     @Override
     public void minimize() {
         super.minimize();
         mediaPlayer.pause();
     }
-    
+
     public void shutdown() {
         close();
-        parent.getChildren().remove(this);        
+        parent.getChildren().remove(this);
     }
+
     public void toggleAuto() {
         auto = !auto;
     }
+
     public void setVideo() {
         try {
             media = ResourceUtils.loadRandomMediaMp4();
-            if(null != media) {
+            if (null != media) {
                 mediaPlayer = new MediaPlayer(media);
                 mediaView.setMediaPlayer(mediaPlayer);
                 mediaPlayer.setOnEndOfMedia(() -> {
-                    if(auto) {
+                    if (auto) {
                         setVideo();
-                    }                        
+                    }
                 });
                 mediaPlayer.play();
             } else {

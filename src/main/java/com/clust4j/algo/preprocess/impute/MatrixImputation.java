@@ -16,8 +16,6 @@
 
 package com.clust4j.algo.preprocess.impute;
 
-import java.util.Random;
-
 import com.clust4j.NamedEntity;
 import com.clust4j.algo.AbstractClusterer;
 import com.clust4j.algo.preprocess.PreProcessor;
@@ -26,6 +24,8 @@ import com.clust4j.log.Log;
 import com.clust4j.log.LogTimer;
 import com.clust4j.log.Loggable;
 import com.clust4j.utils.MatUtils;
+
+import java.util.Random;
 
 /**
  * {@link AbstractClusterer} algorithms are not capable of robustly handling
