@@ -89,6 +89,7 @@ public class ProjectileSystem {
         addOuterBox();
         playerShip = new PlayerShip(Point3D.ZERO);
         parentGroup.getChildren().add(playerShip);
+        playerShip.addRotation(30, Rotate.Z_AXIS);
         alienShip = new Alien(Color.FIREBRICK, 100);
 
         try {
@@ -102,19 +103,19 @@ public class ProjectileSystem {
             thrust = ResourceUtils.loadAudioClipWav("thrust");
             saucerBig = ResourceUtils.loadAudioClipWav("saucerBig");
 
-            //EXPERIMENTAL Load 3D model for king/warlord
-            MaterialModel crowns3D = new MaterialModel("crowns", Color.CYAN, 100);
-            crowns3D.setChildVisible(0, false);
-            crowns3D.setChildVisible(2, false);
-            parentGroup.getChildren().add(crowns3D);
-            crowns3D.setOnMouseClicked(e -> {
-                if (e.getClickCount() > 1 && e.isControlDown()) {
-                    crowns3D.resetMaterials(Color.BLACK);
-                }
-            });
-            //Milkywaygalaxy as diffuse plus a colored self illumination looks good
-            crowns3D.setRotationAxis(Rotate.Z_AXIS);
-            crowns3D.setRotate(180);
+//            //EXPERIMENTAL Load 3D model for king/warlord
+//            MaterialModel crowns3D = new MaterialModel("crowns", Color.CYAN, 100);
+//            crowns3D.setChildVisible(0, false);
+//            crowns3D.setChildVisible(2, false);
+//            parentGroup.getChildren().add(crowns3D);
+//            crowns3D.setOnMouseClicked(e -> {
+//                if (e.getClickCount() > 1 && e.isControlDown()) {
+//                    crowns3D.resetMaterials(Color.BLACK);
+//                }
+//            });
+//            //Milkywaygalaxy as diffuse plus a colored self illumination looks good
+//            crowns3D.setRotationAxis(Rotate.Z_AXIS);
+//            crowns3D.setRotate(180);
 
         } catch (IOException ex) {
             Logger.getLogger(ProjectileSystem.class.getName()).log(Level.SEVERE, null, ex);
@@ -285,14 +286,14 @@ public class ProjectileSystem {
                 northList.add(vert);
             }
         }
-        if (southList.size() > 3) {
+        if (southList.size() > bigThreshold/2) {
             try {
                 makeAsteroidFromPoints(southList);
             } catch (Exception ex) {
                 System.out.println("Could not make Asteroid: " + ex.getMessage());
             }
         }
-        if (northList.size() > 3) {
+        if (northList.size() > bigThreshold/2) {
             try {
                 makeAsteroidFromPoints(northList);
             } catch (Exception ex) {
@@ -302,7 +303,9 @@ public class ProjectileSystem {
     }
 
     private void processProjectileImpact(Projectile p, HitShape3D hit) {
+        if(!p.activeProperty.get()) return; //don't do a second impact
         removeProjectile(p);
+        p.activeProperty.set(false);
         Task task = hit.vaporizeTask();
         task.setOnSucceeded(e -> {
             //mark to be culled from scene

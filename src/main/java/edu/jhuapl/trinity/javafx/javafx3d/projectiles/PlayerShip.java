@@ -47,8 +47,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.IntStream;
 import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.transform.Affine;
 
@@ -60,10 +58,11 @@ public class PlayerShip extends AnimatedTetrahedron implements Hittable {
     public static final double smallDiff = 1.0E-11;
     public static double defaultThrustMagnitude = 1.0;
     public static double maxThrustMagnitude = 20.0;
-    public PhongMaterial playerMaterial = null;
+    public PhongMaterial playerMaterial, cockpitMaterial = null;
     /**
      * Transform Management
      */
+    public Affine affineTransform;
     private boolean useLocalTransform = true;
     public boolean useParentRotate = false;
     public Rotate parentRotateX = null;
@@ -83,8 +82,6 @@ public class PlayerShip extends AnimatedTetrahedron implements Hittable {
     * Flag indicating whether the particle is active.
     */
     public SimpleBooleanProperty activeProperty = new SimpleBooleanProperty(true);
-
-
     
     public PlayerShip(Point3D center) {
         super(100);
@@ -94,9 +91,13 @@ public class PlayerShip extends AnimatedTetrahedron implements Hittable {
             Image diffuseImage = ResourceUtils.load3DTextureImage("darkcyanpyramid");
             //PhongMaterial(Color diffuseColor, Image diffuseMap, Image specularMap, Image bumpMap, Image selfIlluminationMap)
             playerMaterial = new PhongMaterial(Color.HOTPINK, diffuseImage, null, specImage, null);
+            Image cockpitImage = ResourceUtils.load3DTextureImage("cockpit-transparent");
+            cockpitMaterial = new PhongMaterial(Color.WHITE, cockpitImage, null, null, null);
+            
         } catch (IOException ex) {
             Logger.getLogger(PlayerShip.class.getName()).log(Level.SEVERE, null, ex);
             playerMaterial = new PhongMaterial(Color.NAVAJOWHITE);
+            cockpitMaterial = new PhongMaterial(Color.TRANSPARENT);
         }
         setMaterial(playerMaterial);
         setDrawMode(DrawMode.FILL);
@@ -130,9 +131,19 @@ public class PlayerShip extends AnimatedTetrahedron implements Hittable {
             }
         });
         //point in the Z positive direction by default
-        triangleMesh.getPoints().set(2, 200); 
-        getTransforms().add(new Affine());
+        triangleMesh.getPoints().set(2, 300); 
+        affineTransform = new Affine();
+        getTransforms().add(affineTransform);
+        setMouseTransparent(true);
     }
+    public void setCockPitView(boolean enabled) {
+        if(enabled) {
+            setMaterial(cockpitMaterial);
+        } else {
+            setMaterial(playerMaterial);
+        }
+    }   
+
     /**
      * Accumulate rotation about specified axis
      *
@@ -148,6 +159,7 @@ public class PlayerShip extends AnimatedTetrahedron implements Hittable {
          * this way
          */
         getTransforms().set(0, r.createConcatenation(getTransforms().get(0)));
+        affineTransform = (Affine)getTransforms().get(0);
     }
     /**
      * Reset transform to identity transform
@@ -155,7 +167,8 @@ public class PlayerShip extends AnimatedTetrahedron implements Hittable {
     public void reset() {
         velocity = Point3D.ZERO;
         location = Point3D.ZERO;
-        getTransforms().set(0, new Affine());
+        affineTransform = new Affine();
+        getTransforms().set(0, affineTransform);
     } 
     public void mouseDragged(MouseEvent me, double mouseDeltaX, double mouseDeltaY) {
         double modifier = 1.0;

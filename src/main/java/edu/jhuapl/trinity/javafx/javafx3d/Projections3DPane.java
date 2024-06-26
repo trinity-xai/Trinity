@@ -150,9 +150,6 @@ import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import javafx.beans.InvalidationListener;
-import javafx.beans.value.ChangeListener;
-import javafx.beans.value.ObservableValue;
 import javafx.scene.control.DialogPane;
 import javafx.stage.StageStyle;
 
@@ -172,6 +169,7 @@ public class Projections3DPane extends StackPane implements
     private final double cubeSize = sceneWidth / 2.0;
     public PerspectiveCamera camera;
     public CameraTransformer cameraTransform = new CameraTransformer();
+    public boolean bindCameraRotations = false;
     private double mousePosX;
     private double mousePosY;
     private double mouseOldX;
@@ -306,7 +304,6 @@ public class Projections3DPane extends StackPane implements
 
     Rectangle selectionRectangle;
     ProjectileSystem projectileSystem;
-    InvalidationListener angleListener, valueListener;    
 
     public Projections3DPane(Scene scene) {
         this.scene = scene;
@@ -1203,7 +1200,6 @@ public class Projections3DPane extends StackPane implements
             }
             if(keycode == KeyCode.F12 && k.isShiftDown()) {
                 if(!dataXForm.getChildren().contains(projectileSystem.playerShip)) {
-                    projectileSystem.playerShip.reset();
                     dataXForm.getChildren().add(projectileSystem.playerShip);
                     enableContextMenu = false; //right clicking interferes...
                 } else {
@@ -1221,6 +1217,64 @@ public class Projections3DPane extends StackPane implements
                 joystickPane.show();
             }            
         });
+        scene.addEventHandler(ApplicationEvent.BACK_TO_WORK, e-> {
+            Pane pathPane = App.getAppPathPaneStack();
+            pathPane.getChildren().remove(joystickPane);
+            dataXForm.getChildren().remove(projectileSystem.playerShip);
+            resetView(250, false);
+            projectileSystem.playerShip.setCockPitView(false);
+            bindCameraRotations = false;
+            toggleProjectileViews();
+            enableContextMenu = true;
+        });
+        
+        scene.addEventHandler(ApplicationEvent.FPS_CAMERA_MODE, e-> {
+            cameraTransform.setPivot(0, 0, 0);
+            Timeline timeline = new Timeline(
+                new KeyFrame(Duration.millis(100),
+                    new KeyValue(cameraTransform.translateXProperty(), 0),
+                    new KeyValue(cameraTransform.translateYProperty(), 0),
+                    new KeyValue(cameraTransform.translateZProperty(), 0)
+                )
+            );
+            timeline.setOnFinished(f -> {
+                Timeline zoomTimeline = JavaFX3DUtils.transitionCameraTo(
+                100, camera, cameraTransform,
+                    0, 0, 0, 0, 0, 0.0);
+                zoomTimeline.setOnFinished(zt -> {
+                    projectileSystem.playerShip.setCockPitView(true);
+                    bindCameraRotations = true;
+                });
+            });
+            timeline.playFromStart();
+        });
+        scene.addEventHandler(ApplicationEvent.SHOULDER_CAMERA_MODE, e-> {
+            javafx.geometry.Point3D p = sceneRoot.localToScene(
+                projectileSystem.playerShip.getLocation(), false);
+                System.out.println("Pivoting for Shoulder Cam at: " + p.toString());
+                cameraTransform.setTranslateX(0);
+                cameraTransform.setTranslateY(0);
+                cameraTransform.setTranslateZ(0);
+//                cameraTransform.setPivot(p.getX(), p.getY(), p.getZ());
+
+                double[] rots = JavaFX3DUtils.extractRotationAngles(
+                    projectileSystem.playerShip.affineTransform);
+                cameraTransform.rz.setAngle(rots[2]); 
+                cameraTransform.ry.setAngle(rots[1]); 
+                cameraTransform.rx.setAngle(rots[0]);
+                camera.setTranslateX(p.getX());
+                camera.setTranslateY(p.getY());
+                camera.setTranslateZ(p.getZ()-250);                 
+                projectileSystem.playerShip.setCockPitView(true);
+                bindCameraRotations = true;
+
+        });        
+        scene.addEventHandler(ApplicationEvent.FREE_CAMERA_MODE, e-> {
+            resetView(250, false);
+            projectileSystem.playerShip.setCockPitView(false);
+            bindCameraRotations = false;
+        });
+        
         Platform.runLater(() -> {
             cubeWorld.adjustPanelsByPos(cameraTransform.rx.getAngle(),
                 cameraTransform.ry.getAngle(), cameraTransform.rz.getAngle());
@@ -1533,14 +1587,26 @@ public class Projections3DPane extends StackPane implements
         if (me.isShiftDown()) {
             modifier = 25.0;
         }
+
         if (projectionType == PROJECTION_TYPE.FIXED_ORTHOGRAPHIC) {
             if (me.isPrimaryButtonDown()) {
                 if (me.isAltDown()) { //roll
                     cameraTransform.rz.setAngle(((cameraTransform.rz.getAngle() + mouseDeltaX * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180); // +
+                    if(bindCameraRotations)
+                        projectileSystem.playerShip.addRotation(cameraTransform.rz.getAngle(), Rotate.Z_AXIS);
                 } else {
                     cameraTransform.ry.setAngle(((cameraTransform.ry.getAngle() + mouseDeltaX * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180); // +
                     cameraTransform.rx.setAngle(
                         ((cameraTransform.rx.getAngle() - mouseDeltaY * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180);
+                    if(bindCameraRotations) {
+                        //must clamp the turns 
+                        double yChange = 
+                            (((mouseDeltaX * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180);
+                        double xChange = 
+                            (((-mouseDeltaY * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180);
+                        projectileSystem.playerShip.addRotation(yChange, Rotate.Y_AXIS);
+                        projectileSystem.playerShip.addRotation(xChange, Rotate.X_AXIS);
+                    }
                 }
             } else if (me.isMiddleButtonDown()) {
                 cameraTransform.t.setX(cameraTransform.t.getX() + mouseDeltaX * modifierFactor * modifier * 0.3); // -
@@ -1548,7 +1614,6 @@ public class Projections3DPane extends StackPane implements
             }
             cubeWorld.adjustPanelsByPos(cameraTransform.rx.getAngle(), cameraTransform.ry.getAngle(), cameraTransform.rz.getAngle());
         } else {
-            //System.out.println("Rotating data and not camera...");
             double yChange = (((mouseDeltaX * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180);
             double xChange = (((-mouseDeltaY * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180);
             dataXForm.addRotation(yChange, Rotate.Y_AXIS);
@@ -1558,9 +1623,10 @@ public class Projections3DPane extends StackPane implements
             cubeWorld.setDirty(true); //signals to animation timer to redraw
         }
         //right clicking should rotate pointing objects in the xform group only
-        if(projectionType == PROJECTION_TYPE.FIXED_ORTHOGRAPHIC && enableXForm && me.isSecondaryButtonDown()) {
+        if((projectionType == PROJECTION_TYPE.FIXED_ORTHOGRAPHIC && enableXForm && me.isSecondaryButtonDown())) {
             double yChange = (((mouseDeltaX * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180);
             double xChange = (((-mouseDeltaY * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180);
+            System.out.println("BINDCAMERAROTATIONS Rotating data and not camera: " + yChange + " " + xChange);
             dataXForm.addRotation(yChange, Rotate.Y_AXIS);
             dataXForm.addRotation(xChange, Rotate.X_AXIS);
         }

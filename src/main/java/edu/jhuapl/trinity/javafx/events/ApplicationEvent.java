@@ -50,6 +50,7 @@ public class ApplicationEvent extends Event {
     public static final EventType<ApplicationEvent> AUTO_PROJECTION_MODE = new EventType(ANY, "AUTO_PROJECTION_MODE");
     public static final EventType<ApplicationEvent> SET_CAMERA_ORBIT = new EventType(ANY, "SET_CAMERA_ORBIT");
     public static final EventType<ApplicationEvent> SHOW_JOYSTICK_CONTROLS = new EventType(ANY, "SHOW_JOYSTICK_CONTROLS");
+    public static final EventType<ApplicationEvent> BACK_TO_WORK = new EventType(ANY, "BACK_TO_WORK");
     public static final EventType<ApplicationEvent> FPS_CAMERA_MODE = new EventType(ANY, "FPS_CAMERA_MODE");
     public static final EventType<ApplicationEvent> FREE_CAMERA_MODE = new EventType(ANY, "FREE_CAMERA_MODE");
     public static final EventType<ApplicationEvent> SHOULDER_CAMERA_MODE = new EventType(ANY, "SHOULDER_CAMERA_MODE");

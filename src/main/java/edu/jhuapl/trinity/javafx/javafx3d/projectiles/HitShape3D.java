@@ -584,15 +584,17 @@ public class HitShape3D extends MeshView implements Hittable {
         Point3D loc = getLocation().add(getStart());
         if (loc.getX() < -absSafetyPosition)
             setLocation(new Point3D(absSafetyPosition - bufferX, loc.getY(), loc.getZ()));
-        if (loc.getX() > absSafetyPosition)
+        else if (loc.getX() > absSafetyPosition)
             setLocation(new Point3D(-absSafetyPosition + bufferX, loc.getY(), loc.getZ()));
+        
         if (loc.getY() < -absSafetyPosition)
             setLocation(new Point3D(loc.getX(), absSafetyPosition - bufferY, loc.getZ()));
-        if (loc.getY() > absSafetyPosition)
+        else if (loc.getY() > absSafetyPosition)
             setLocation(new Point3D(loc.getX(), -absSafetyPosition + bufferY, loc.getZ()));
+        
         if (loc.getZ() < -absSafetyPosition)
             setLocation(new Point3D(loc.getX(), loc.getY(), absSafetyPosition - bufferZ));
-        if (loc.getZ() > absSafetyPosition)
+        else if (loc.getZ() > absSafetyPosition)
             setLocation(new Point3D(loc.getX(), loc.getY(), -absSafetyPosition + bufferZ));
     }    
     @Override

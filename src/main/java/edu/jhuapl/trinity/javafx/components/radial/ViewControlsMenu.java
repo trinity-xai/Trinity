@@ -93,7 +93,7 @@ public class ViewControlsMenu extends RadialEntity {
         setOutlineStrokeWidth(STROKE_WIDTH);
         setOutlineStrokeFill(outlineColor);
         setOutlineStrokeMouseOnFill(outlineMouseOnColor);
-        setHideMenuOnItemClick(true);
+        setHideMenuOnItemClick(false);
 
         setEmitterColors(Color.CYAN.deriveColor(1, 1, 1, 0.5),
             Color.CYAN.deriveColor(1, 1, 1, 0.15));
@@ -176,34 +176,29 @@ public class ViewControlsMenu extends RadialEntity {
         keyboard.setEffect(glow);
 
         addMenuItem(new LitRadialMenuItem(ITEM_SIZE , "Free Cam", freeCam, e -> {
-            System.out.println("Free Camera View...");
             scene.getRoot().fireEvent(new ApplicationEvent(
                 ApplicationEvent.FREE_CAMERA_MODE));
         }));
 
         addMenuItem(new LitRadialMenuItem(ITEM_SIZE, "Cockpit", cockpit, e -> {
-            System.out.println("FPS Cockpit View...");
             scene.getRoot().fireEvent(new ApplicationEvent(
                 ApplicationEvent.FPS_CAMERA_MODE));
         }));
 
         addMenuItem(new LitRadialMenuItem(ITEM_SIZE, "Aft Thruster", aftThruster, e -> {
-            System.out.println("Over the Shoulder Aft Thruster View...");
             scene.getRoot().fireEvent(new ApplicationEvent(
                 ApplicationEvent.SHOULDER_CAMERA_MODE));        
         }));
         
         LitRadialMenuItem touchMenuItem = new LitRadialMenuItem(ITEM_SIZE*2.0, "Touch Controls", touchCountrols, e -> {
-            System.out.println("Toggling Touch controls...");
             scene.getRoot().fireEvent(new ApplicationEvent(
                 ApplicationEvent.SHOW_JOYSTICK_CONTROLS));
         });
         addMenuItem(touchMenuItem);
 
-        addMenuItem(new LitRadialMenuItem(ITEM_SIZE, "Keyboard/Mouse", keyboard, e -> {
-            System.out.println("Switching to Keyboard/Mouse...");
+        addMenuItem(new LitRadialMenuItem(ITEM_SIZE, "Back to Work!!", keyboard, e -> {
+            scene.getRoot().fireEvent(new ApplicationEvent(
+                ApplicationEvent.BACK_TO_WORK));
         }));
-        
-        
     }
 }
