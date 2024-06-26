@@ -135,6 +135,8 @@ public class ConfigurationController implements Initializable {
     @FXML
     private CheckBox showAxesAndLabelsCheckBox;
     @FXML
+    private CheckBox overrideXFormCheckBox;
+    @FXML
     private Spinner domainMinimumSpinner;
     @FXML
     private Spinner domainMaximumSpinner;
@@ -889,11 +891,15 @@ public class ConfigurationController implements Initializable {
                 ShadowEvent.SHOW_AXES_LABELS,
                 showAxesAndLabelsCheckBox.isSelected()));
         });
-
         overrideDomainTransformCheckBox.selectedProperty().addListener(cl -> {
             scene.getRoot().fireEvent(new ShadowEvent(
                 ShadowEvent.OVERRIDE_DOMAIN_TRANSFORM,
                 overrideDomainTransformCheckBox.isSelected()));
+        });
+        overrideXFormCheckBox.selectedProperty().addListener(cl -> {
+            scene.getRoot().fireEvent(new ShadowEvent(
+                ShadowEvent.OVERRIDE_XFORM,
+                overrideXFormCheckBox.isSelected()));
         });
 
         showNearsidePointsCheckBox.selectedProperty().addListener(cl -> {

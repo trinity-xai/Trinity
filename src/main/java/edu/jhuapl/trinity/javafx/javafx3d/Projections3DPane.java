@@ -20,6 +20,8 @@ package edu.jhuapl.trinity.javafx.javafx3d;
  * #L%
  */
 
+import com.clust4j.algo.HDBSCAN;
+import com.clust4j.algo.HDBSCANParameters;
 import edu.jhuapl.trinity.App;
 import edu.jhuapl.trinity.data.CoordinateSet;
 import edu.jhuapl.trinity.data.Dimension;
@@ -38,11 +40,14 @@ import edu.jhuapl.trinity.data.messages.GaussianMixtureData;
 import edu.jhuapl.trinity.data.messages.PointCluster;
 import edu.jhuapl.trinity.javafx.components.callouts.Callout;
 import edu.jhuapl.trinity.javafx.components.callouts.DistanceDataCallout;
+import edu.jhuapl.trinity.javafx.components.panes.JoystickPane;
 import edu.jhuapl.trinity.javafx.components.panes.ManifoldControlPane;
 import edu.jhuapl.trinity.javafx.components.panes.RadarPlotPane;
 import edu.jhuapl.trinity.javafx.components.panes.RadialEntityOverlayPane;
+import edu.jhuapl.trinity.javafx.components.panes.VideoPane;
 import edu.jhuapl.trinity.javafx.components.radial.AnimatedNeonCircle;
 import edu.jhuapl.trinity.javafx.components.radial.ProgressStatus;
+import edu.jhuapl.trinity.javafx.components.radial.ViewControlsMenu;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
@@ -56,6 +61,8 @@ import edu.jhuapl.trinity.javafx.events.TrajectoryEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.ShadowCubeWorld.PROJECTION_TYPE;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.AnimatedSphere;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.Opticon;
+import edu.jhuapl.trinity.javafx.javafx3d.projectiles.HitShape3D;
+import edu.jhuapl.trinity.javafx.javafx3d.projectiles.ProjectileSystem;
 import edu.jhuapl.trinity.javafx.javafx3d.tasks.ManifoldClusterTask;
 import edu.jhuapl.trinity.javafx.renderers.FeatureVectorRenderer;
 import edu.jhuapl.trinity.javafx.renderers.GaussianMixtureRenderer;
@@ -73,6 +80,8 @@ import edu.jhuapl.trinity.utils.clustering.KmeansPlusPlus;
 import edu.jhuapl.trinity.utils.clustering.Point;
 import edu.jhuapl.trinity.utils.umap.Umap;
 import javafx.animation.AnimationTimer;
+import javafx.animation.KeyFrame;
+import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
 import javafx.animation.Transition;
 import javafx.application.Platform;
@@ -91,12 +100,14 @@ import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.ContextMenu;
+import javafx.scene.control.DialogPane;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
 import javafx.scene.effect.Glow;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.PickResult;
@@ -117,8 +128,10 @@ import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Translate;
+import javafx.stage.StageStyle;
 import javafx.util.Duration;
 import javafx.util.Pair;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.fxyz3d.geometry.Point3D;
 import org.fxyz3d.scene.Skybox;
 import org.fxyz3d.utils.CameraTransformer;
@@ -140,8 +153,6 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
-import static edu.jhuapl.trinity.javafx.components.radial.HyperspaceMenu.slideInPane;
-
 /**
  * @author Sean Phillips
  */
@@ -158,7 +169,7 @@ public class Projections3DPane extends StackPane implements
     private final double cubeSize = sceneWidth / 2.0;
     public PerspectiveCamera camera;
     public CameraTransformer cameraTransform = new CameraTransformer();
-    public XFormGroup dataXForm = new XFormGroup();
+    public boolean bindCameraRotations = false;
     private double mousePosX;
     private double mousePosY;
     private double mouseOldX;
@@ -168,6 +179,8 @@ public class Projections3DPane extends StackPane implements
     RadialEntityOverlayPane radialOverlayPane;
     ManifoldControlPane manifoldControlPane;
     RadarPlotPane radarPlotPane;
+    ViewControlsMenu viewControlsMenu;
+    JoystickPane joystickPane;
 
     public Group sceneRoot = new Group();
     public Group extrasGroup = new Group();
@@ -175,6 +188,10 @@ public class Projections3DPane extends StackPane implements
     public Group debugGroup = new Group();
     public Group ellipsoidGroup = new Group();
     public Group projectedGroup = new Group();
+    public XFormGroup dataXForm = new XFormGroup();
+    public boolean enableXForm = false;
+    public boolean enableContextMenu = true;
+
     public Sphere selectedSphereA = null;
     public Sphere selectedSphereB = null;
     public Manifold3D selectedManifoldA = null;
@@ -286,6 +303,7 @@ public class Projections3DPane extends StackPane implements
     Umap latestUmap = null;
 
     Rectangle selectionRectangle;
+    ProjectileSystem projectileSystem;
 
     public Projections3DPane(Scene scene) {
         this.scene = scene;
@@ -790,7 +808,7 @@ public class Projections3DPane extends StackPane implements
             }
             if (!pathPane.getChildren().contains(manifoldControlPane)) {
                 pathPane.getChildren().add(manifoldControlPane);
-                slideInPane(manifoldControlPane);
+                manifoldControlPane.slideInPane();
             } else {
                 manifoldControlPane.show();
             }
@@ -805,7 +823,7 @@ public class Projections3DPane extends StackPane implements
             }
             if (!pathPane.getChildren().contains(radarPlotPane)) {
                 pathPane.getChildren().add(radarPlotPane);
-                slideInPane(radarPlotPane);
+                radarPlotPane.slideInPane();
             } else {
                 radarPlotPane.show();
             }
@@ -849,7 +867,7 @@ public class Projections3DPane extends StackPane implements
         cm.setOpacity(0.85);
 
         subScene.setOnMouseClicked((MouseEvent e) -> {
-            if (e.getButton() == MouseButton.SECONDARY) {
+            if (e.getButton() == MouseButton.SECONDARY && enableContextMenu && !enableXForm) {
                 if (!cm.isShowing())
                     cm.show(this.getParent(), e.getScreenX(), e.getScreenY());
                 else
@@ -1030,9 +1048,12 @@ public class Projections3DPane extends StackPane implements
                     sceneRoot.getChildren().remove(scatterMesh3D);
                     dataXForm.getChildren().add(scatterMesh3D);
                 });
-
             }
         });
+        scene.addEventHandler(ShadowEvent.OVERRIDE_XFORM, e -> {
+            enableXForm = (boolean) e.object;
+        });
+
 
         scene.addEventHandler(ManifoldEvent.CLUSTER_SELECTION_MODE, e -> {
             boolean isActive = (boolean) e.object1;
@@ -1113,6 +1134,147 @@ public class Projections3DPane extends StackPane implements
             ;
         };
         animationTimer.start();
+
+        projectileSystem = new ProjectileSystem(debugGroup, 15);
+        projectileSystem.setRunning(false);
+        projectileSystem.setEnableProjectileTimer(true);
+        viewControlsMenu = new ViewControlsMenu(this);
+        radialOverlayPane.addEntity(viewControlsMenu);
+        viewControlsMenu.setTranslateX(200);
+        viewControlsMenu.setTranslateY(200);
+        viewControlsMenu.setVisible(false);
+
+        subScene.addEventHandler(MouseEvent.MOUSE_DRAGGED, me -> {
+            if (me.isSecondaryButtonDown())
+                projectileSystem.playerShip.mouseDragged(me, mouseDeltaX, mouseDeltaY);
+        });
+        subScene.addEventHandler(KeyEvent.KEY_PRESSED, k -> {
+            //What key did the user press?
+            KeyCode keycode = k.getCode();
+            if (keycode == KeyCode.F11) {
+                projectileSystem.setInMotion(!projectileSystem.isInMotion());
+            }
+            if (keycode == KeyCode.F12 && k.isControlDown()) {
+                resetAsteroids();
+            } else if (keycode == KeyCode.F12 && k.isAltDown()) {
+                //do we need an intro?
+                if (k.isShiftDown())
+                    projectileSystem.introPlayed = true; //just skip the intro
+                if (!projectileSystem.isRunning() && !projectileSystem.introPlayed) {
+                    projectileSystem.introPlayed = true;
+                    VideoPane vp = App.getVideoPane();
+                    vp.setVideo();
+                    Pane desktopPane = App.getAppPathPaneStack();
+                    App.getAppPathPaneStack().getChildren().add(vp);
+                    vp.setTranslateX(desktopPane.getWidth() / 2.0
+                        - vp.getBoundsInLocal().getWidth() / 2.0);
+                    vp.setTranslateY(desktopPane.getHeight() / 2.0
+                        - vp.getBoundsInLocal().getHeight() / 2.0);
+                    vp.restore();
+                    vp.show();
+                    vp.setOpacity(1);
+                    vp.mediaPlayer.setOnPaused(() -> {
+                        toggleProjectileViews();
+                        vp.shutdown();
+                    });
+                    vp.mediaPlayer.setOnEndOfMedia(() -> {
+                        vp.shutdown();
+                        toggleProjectileViews();
+                    });
+                } else {
+                    toggleProjectileViews();
+                }
+            }
+            if (keycode == KeyCode.Z && k.isControlDown()) {
+                projectileSystem.thrustPlayer();
+            }
+            if (keycode == KeyCode.SPACE && k.isControlDown()) {
+                projectileSystem.fire();
+            }
+            if (keycode == KeyCode.SPACE && k.isShiftDown()) {
+                projectileSystem.fireTracer();
+            }
+
+            if (keycode == KeyCode.F10 && k.isControlDown()) {
+                projectileSystem.toggleAlien();
+            }
+            if (keycode == KeyCode.F12 && k.isShiftDown()) {
+                if (!dataXForm.getChildren().contains(projectileSystem.playerShip)) {
+                    dataXForm.getChildren().add(projectileSystem.playerShip);
+                    enableContextMenu = false; //right clicking interferes...
+                } else {
+                    dataXForm.getChildren().remove(projectileSystem.playerShip);
+                    enableContextMenu = true;
+                }
+            }
+        });
+        scene.addEventHandler(ApplicationEvent.SHOW_JOYSTICK_CONTROLS, e -> {
+            Pane pathPane = App.getAppPathPaneStack();
+            if (!pathPane.getChildren().contains(joystickPane)) {
+                pathPane.getChildren().add(joystickPane);
+                joystickPane.slideInPane();
+            } else {
+                joystickPane.show();
+            }
+        });
+        scene.addEventHandler(ApplicationEvent.BACK_TO_WORK, e -> {
+            Pane pathPane = App.getAppPathPaneStack();
+            pathPane.getChildren().remove(joystickPane);
+            dataXForm.getChildren().remove(projectileSystem.playerShip);
+            resetView(250, false);
+            projectileSystem.playerShip.setCockPitView(false);
+            bindCameraRotations = false;
+            toggleProjectileViews();
+            enableContextMenu = true;
+        });
+
+        scene.addEventHandler(ApplicationEvent.FPS_CAMERA_MODE, e -> {
+            cameraTransform.setPivot(0, 0, 0);
+            Timeline timeline = new Timeline(
+                new KeyFrame(Duration.millis(100),
+                    new KeyValue(cameraTransform.translateXProperty(), 0),
+                    new KeyValue(cameraTransform.translateYProperty(), 0),
+                    new KeyValue(cameraTransform.translateZProperty(), 0)
+                )
+            );
+            timeline.setOnFinished(f -> {
+                Timeline zoomTimeline = JavaFX3DUtils.transitionCameraTo(
+                    100, camera, cameraTransform,
+                    0, 0, 0, 0, 0, 0.0);
+                zoomTimeline.setOnFinished(zt -> {
+                    projectileSystem.playerShip.setCockPitView(true);
+                    bindCameraRotations = true;
+                });
+            });
+            timeline.playFromStart();
+        });
+        scene.addEventHandler(ApplicationEvent.SHOULDER_CAMERA_MODE, e -> {
+            javafx.geometry.Point3D p = sceneRoot.localToScene(
+                projectileSystem.playerShip.getLocation(), false);
+            System.out.println("Pivoting for Shoulder Cam at: " + p.toString());
+            cameraTransform.setTranslateX(0);
+            cameraTransform.setTranslateY(0);
+            cameraTransform.setTranslateZ(0);
+//                cameraTransform.setPivot(p.getX(), p.getY(), p.getZ());
+
+            double[] rots = JavaFX3DUtils.extractRotationAngles(
+                projectileSystem.playerShip.affineTransform);
+            cameraTransform.rz.setAngle(rots[2]);
+            cameraTransform.ry.setAngle(rots[1]);
+            cameraTransform.rx.setAngle(rots[0]);
+            camera.setTranslateX(p.getX());
+            camera.setTranslateY(p.getY());
+            camera.setTranslateZ(p.getZ() - 250);
+            projectileSystem.playerShip.setCockPitView(true);
+            bindCameraRotations = true;
+
+        });
+        scene.addEventHandler(ApplicationEvent.FREE_CAMERA_MODE, e -> {
+            resetView(250, false);
+            projectileSystem.playerShip.setCockPitView(false);
+            bindCameraRotations = false;
+        });
+
         Platform.runLater(() -> {
             cubeWorld.adjustPanelsByPos(cameraTransform.rx.getAngle(),
                 cameraTransform.ry.getAngle(), cameraTransform.rz.getAngle());
@@ -1123,7 +1285,69 @@ public class Projections3DPane extends StackPane implements
             anchorCallout = radialOverlayPane.createCallout(anchorTSM, dummy, subScene);
             anchorCallout.play();
             anchorCallout.setVisible(false);
+
+            joystickPane = new JoystickPane(scene, App.getAppPathPaneStack());
+            joystickPane.fireButton.setOnAction(e -> projectileSystem.fire());
+            joystickPane.thrustButton.setOnAction(e -> projectileSystem.thrustPlayer());
+            joystickPane.angleproperty.subscribe(c -> {
+                projectileSystem.playerShip.mouseDragged(null,
+                    joystickPane.mouseDeltaX,
+                    joystickPane.mouseDeltaY);
+            });
+
+            joystickPane.valueproperty.subscribe(c -> {
+                projectileSystem.playerShip.mouseDragged(null,
+                    joystickPane.mouseDeltaX,
+                    joystickPane.mouseDeltaY);
+            });
+
         });
+    }
+
+    private void toggleProjectileViews() {
+        //first toggle the system
+        projectileSystem.setRunning(!projectileSystem.isRunning());
+        //hide the boring serious stuff
+        cubeWorld.setVisible(!projectileSystem.isRunning());
+        xSphere.setVisible(!projectileSystem.isRunning());
+        ySphere.setVisible(!projectileSystem.isRunning());
+        zSphere.setVisible(!projectileSystem.isRunning());
+        xLabel.setVisible(!projectileSystem.isRunning());
+        yLabel.setVisible(!projectileSystem.isRunning());
+        zLabel.setVisible(!projectileSystem.isRunning());
+        manifoldGroup.setVisible(!projectileSystem.isRunning());
+        connectorsGroup.setVisible(!projectileSystem.isRunning());
+        ellipsoidGroup.setVisible(!projectileSystem.isRunning());
+        projectedGroup.setVisible(!projectileSystem.isRunning());
+        highlighterNeonCircle.setVisible(!projectileSystem.isRunning());
+        anchorTrajectory.setVisible(!projectileSystem.isRunning());
+        anchorTraj3D.setVisible(!projectileSystem.isRunning());
+        trajectorySphereGroup.setVisible(!projectileSystem.isRunning());
+        trajectoryGroup.setVisible(!projectileSystem.isRunning());
+        scatterMesh3D.setVisible(!projectileSystem.isRunning());
+        miniCrosshair.setVisible(!projectileSystem.isRunning());
+        //show the cool stuff
+        debugGroup.setVisible(projectileSystem.isRunning());
+        skybox.setVisible(projectileSystem.isRunning());
+        viewControlsMenu.setVisible(projectileSystem.isRunning());
+    }
+
+    private void resetAsteroids() {
+        System.out.println("Resetting Shapes...");
+        projectileSystem.clearAllHitShapes();
+        projectileSystem.clearAllHittables();
+        debugGroup.getChildren().removeIf(c -> c instanceof HitShape3D);
+        //copy all shapes into the projectile system
+        getManifoldViews().getChildren()
+            .filtered(m -> m instanceof Manifold3D)
+            .forEach(t -> {
+                Manifold3D man3D = (Manifold3D) t;
+                try {
+                    projectileSystem.makeAsteroidFromPoints(man3D);
+                } catch (Exception ex) {
+                    System.out.println("Could not make HitShape3D: " + ex.getMessage());
+                }
+            });
     }
 
     public void updateOnLabelChange(List<FactorLabel> labels) {
@@ -1230,27 +1454,16 @@ public class Projections3DPane extends StackPane implements
     }
 
     private void setupSkyBox() {
-        //Load SkyBox image
-        Image
-            top = new Image(Projections3DPane.class.getResource("images/darkmetalbottom.png").toExternalForm()),
-            bottom = new Image(Projections3DPane.class.getResource("images/darkmetalbottom.png").toExternalForm()),
-            left = new Image(Projections3DPane.class.getResource("images/1500_blackgrid.png").toExternalForm()),
-            right = new Image(Projections3DPane.class.getResource("images/1500_blackgrid.png").toExternalForm()),
-            front = new Image(Projections3DPane.class.getResource("images/1500_blackgrid.png").toExternalForm()),
-            back = new Image(Projections3DPane.class.getResource("images/1500_blackgrid.png").toExternalForm());
-
         // Load Skybox AFTER camera is initialized
         double size = 100000D;
+        Image singleImage = new Image(Projections3DPane.class.getResource(
+            "images/space-skybox.png").toExternalForm());
         skybox = new Skybox(
-            top,
-            bottom,
-            left,
-            right,
-            front,
-            back,
+            singleImage,
             size,
             camera
         );
+
         sceneRoot.getChildren().add(skybox);
         //Add some ambient light so folks can see it
         AmbientLight light = new AmbientLight(Color.WHITE);
@@ -1301,17 +1514,30 @@ public class Projections3DPane extends StackPane implements
 
     public void resetView(double milliseconds, boolean rightNow) {
         if (!rightNow) {
+            cameraTransform.setPivot(0, 0, 0);
             if (projectionType == PROJECTION_TYPE.FIXED_ORTHOGRAPHIC) {
-                Timeline timeline = JavaFX3DUtils.transitionCameraTo(milliseconds, camera, cameraTransform,
-                    0, 0, cameraDistance, -10.0, -45.0, 0.0);
-                timeline.setOnFinished(eh ->
-                    cubeWorld.adjustPanelsByPos(cameraTransform.rx.getAngle(),
-                        cameraTransform.ry.getAngle(), cameraTransform.rz.getAngle()));
+                Timeline timeline = new Timeline(
+                    new KeyFrame(Duration.millis(milliseconds),
+                        new KeyValue(cameraTransform.translateXProperty(), 0),
+                        new KeyValue(cameraTransform.translateYProperty(), 0),
+                        new KeyValue(cameraTransform.translateZProperty(), 0)
+                    )
+                );
+                timeline.setOnFinished(eh -> {
+                    Timeline zoomTimeline = JavaFX3DUtils.transitionCameraTo(milliseconds, camera, cameraTransform,
+                        0, 0, cameraDistance, -10.0, -45.0, 0.0);
+                    zoomTimeline.setOnFinished(e ->
+                        cubeWorld.adjustPanelsByPos(cameraTransform.rx.getAngle(),
+                            cameraTransform.ry.getAngle(), cameraTransform.rz.getAngle()));
+                });
+                timeline.playFromStart();
             } else {
                 dataXForm.reset();
                 cubeWorld.resetProjectionAffine();
             }
         } else {
+            cameraTransform.setPivot(0, 0, 0);
+
             if (projectionType == PROJECTION_TYPE.FIXED_ORTHOGRAPHIC) {
                 cameraTransform.rx.setAngle(-10);
                 cameraTransform.ry.setAngle(-45.0);
@@ -1325,6 +1551,7 @@ public class Projections3DPane extends StackPane implements
                 dataXForm.reset();
                 cubeWorld.resetProjectionAffine();
             }
+            cameraTransform.setPivot(0, 0, 0);
         }
     }
 
@@ -1362,14 +1589,26 @@ public class Projections3DPane extends StackPane implements
         if (me.isShiftDown()) {
             modifier = 25.0;
         }
+
         if (projectionType == PROJECTION_TYPE.FIXED_ORTHOGRAPHIC) {
             if (me.isPrimaryButtonDown()) {
                 if (me.isAltDown()) { //roll
                     cameraTransform.rz.setAngle(((cameraTransform.rz.getAngle() + mouseDeltaX * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180); // +
+                    if (bindCameraRotations)
+                        projectileSystem.playerShip.addRotation(cameraTransform.rz.getAngle(), Rotate.Z_AXIS);
                 } else {
                     cameraTransform.ry.setAngle(((cameraTransform.ry.getAngle() + mouseDeltaX * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180); // +
                     cameraTransform.rx.setAngle(
                         ((cameraTransform.rx.getAngle() - mouseDeltaY * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180);
+                    if (bindCameraRotations) {
+                        //must clamp the turns
+                        double yChange =
+                            (((mouseDeltaX * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180);
+                        double xChange =
+                            (((-mouseDeltaY * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180);
+                        projectileSystem.playerShip.addRotation(yChange, Rotate.Y_AXIS);
+                        projectileSystem.playerShip.addRotation(xChange, Rotate.X_AXIS);
+                    }
                 }
             } else if (me.isMiddleButtonDown()) {
                 cameraTransform.t.setX(cameraTransform.t.getX() + mouseDeltaX * modifierFactor * modifier * 0.3); // -
@@ -1377,7 +1616,6 @@ public class Projections3DPane extends StackPane implements
             }
             cubeWorld.adjustPanelsByPos(cameraTransform.rx.getAngle(), cameraTransform.ry.getAngle(), cameraTransform.rz.getAngle());
         } else {
-            //System.out.println("Rotating data and not camera...");
             double yChange = (((mouseDeltaX * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180);
             double xChange = (((-mouseDeltaY * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180);
             dataXForm.addRotation(yChange, Rotate.Y_AXIS);
@@ -1385,6 +1623,14 @@ public class Projections3DPane extends StackPane implements
 
             cubeWorld.projectionAffine.setToTransform(dataXForm.getLocalToSceneTransform());
             cubeWorld.setDirty(true); //signals to animation timer to redraw
+        }
+        //right clicking should rotate pointing objects in the xform group only
+        if ((projectionType == PROJECTION_TYPE.FIXED_ORTHOGRAPHIC && enableXForm && me.isSecondaryButtonDown())) {
+            double yChange = (((mouseDeltaX * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180);
+            double xChange = (((-mouseDeltaY * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180);
+            System.out.println("BINDCAMERAROTATIONS Rotating data and not camera: " + yChange + " " + xChange);
+            dataXForm.addRotation(yChange, Rotate.Y_AXIS);
+            dataXForm.addRotation(xChange, Rotate.X_AXIS);
         }
         updateFloatingNodes();
         radialOverlayPane.updateCalloutHeadPoints(subScene);
@@ -2423,7 +2669,7 @@ public class Projections3DPane extends StackPane implements
 
     @Override
     public void addManifold(Manifold manifold, Manifold3D manifold3D) {
-        System.out.println("adding manifold to Projections View.");
+//        System.out.println("adding manifold to Projections View.");
         manifold3D.setManifold(manifold);
         manifold3D.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
             getScene().getRoot().fireEvent(
@@ -2434,8 +2680,16 @@ public class Projections3DPane extends StackPane implements
             }
 
         });
-        manifolds.add(manifold3D);
-        manifoldGroup.getChildren().add(manifold3D);
+        MenuItem orbitItem = new MenuItem("Orbit Here");
+        orbitItem.setOnAction(e -> {
+            javafx.geometry.Point3D orbitPoint3D = JavaFX3DUtils.toFX.apply(manifold3D.getBoundsCentroid());
+            JavaFX3DUtils.orbitAt(camera, cameraTransform, orbitPoint3D, true);
+        });
+        manifold3D.cm.getItems().add(0, orbitItem);
+        if (!manifolds.contains(manifold3D))
+            manifolds.add(manifold3D);
+        if (!manifoldGroup.getChildren().contains(manifold3D))
+            manifoldGroup.getChildren().add(manifold3D);
         shape3DToLabel.putAll(manifold3D.shape3DToLabel);
         updateFloatingNodes();
     }
@@ -2653,10 +2907,30 @@ public class Projections3DPane extends StackPane implements
     }
 
     public void projectFeatureCollection(FeatureCollection originalFC, Umap umap) {
+        Alert alert = new Alert(AlertType.CONFIRMATION,
+            "", ButtonType.YES, ButtonType.NO);
+        alert.setHeaderText("Watch a TV while you wait?");
+        alert.setGraphic(ResourceUtils.loadIcon("retrowave-tv", 100));
+        alert.initStyle(StageStyle.TRANSPARENT);
+        DialogPane dialogPane = alert.getDialogPane();
+        dialogPane.setBackground(Background.EMPTY);
+        dialogPane.getScene().setFill(Color.TRANSPARENT);
+        String DIALOGCSS = this.getClass().getResource("/edu/jhuapl/trinity/css/dialogstyles.css").toExternalForm();
+        dialogPane.getStylesheets().add(DIALOGCSS);
+        alert.setX(scene.getWidth() - 500);
+        alert.setY(500);
+        alert.resultProperty().addListener(r -> {
+            if (alert.getResult().equals(ButtonType.YES)) {
+                manifoldControlPane.minimize();
+                scene.getRoot().fireEvent(
+                    new ApplicationEvent(ApplicationEvent.SHOW_VIDEO_PANE,
+                        "EMPTY VISION ", "A past never had for a Retrowave Future"));
+            }
+        });
+        alert.show();
         Task task = new Task() {
             @Override
             protected FeatureCollection call() throws Exception {
-                //Scene scene = App.getAppScene();
                 Platform.runLater(() -> {
                     ProgressStatus ps = new ProgressStatus("Fitting UMAP Transform...", 0.5);
                     ps.fillStartColor = Color.AZURE;
@@ -2714,6 +2988,7 @@ public class Projections3DPane extends StackPane implements
         Thread thread = new Thread(task);
         thread.setDaemon(true);
         thread.start();
+
     }
 
     @Override
@@ -2725,16 +3000,72 @@ public class Projections3DPane extends StackPane implements
         long startTime = System.nanoTime();
         //find clusters
         switch (pc.clusterMethod) {
-//            case KMEANS -> {
-//                System.out.print("Kmeans fit... ");
-//                startTime = System.nanoTime();
+            case KMEANS -> {
+                System.out.print("HDBSCAN fit... ");
+
+                startTime = System.nanoTime();
 //                var kmeansClusters = KMeans.fit(observations, 50);
-//                Utils.printTotalTime(startTime);
-//                System.out.println("\n===============================================\n");
+//                RealMatrix obsMatrix = MatrixUtils.createRealMatrix(observations);
+                Array2DRowRealMatrix obsMatrix = new Array2DRowRealMatrix(observations);
+//                DBSCAN db = new DBSCANParameters()
+//                    .setEps(10)
+//                    .fitNewModel(obsMatrix);
+                HDBSCAN hdb = new HDBSCANParameters()
+                    .setAlpha(0.5)
+                    .setMinPts(100)
+                    .setMinClustSize(50)
+                    .setLeafSize(100)
+//                    .setForceParallel(true)
+//                    .setVerbose(true)
+                    .fitNewModel(obsMatrix);
+                final int[] results = hdb.getLabels();
+                int clusters = hdb.getNumberOfIdentifiedClusters();
+
+                Utils.printTotalTime(startTime);
+                System.out.println("\n===============================================\n");
+                System.out.print("Generating Hulls from Clusters... ");
+                startTime = System.nanoTime();
+
+                for (int clusterIndex = 0; clusterIndex < clusters; clusterIndex++) {
+                    String label = "HDDBSCAN Cluster " + clusterIndex;
+                    List<Point3D> points = new ArrayList<>();
+                    for (int i = 0; i < results.length; i++) {
+                        if (results[i] == clusterIndex) {
+                            points.add(new Point3D(
+                                observations[i][0] * projectionScalar,
+                                observations[i][1] * -projectionScalar,
+                                observations[i][2] * projectionScalar)
+                            );
+                        }
+                    }
+                    if (points.size() >= 4) {
+                        ArrayList<javafx.geometry.Point3D> fxPoints = points.stream()
+                            .map(p3D -> new javafx.geometry.Point3D(p3D.x, p3D.y, p3D.z))
+                            .collect(Collectors.toCollection(ArrayList::new));
+                        Manifold manifold = new Manifold(fxPoints, label, label, sceneColor);
+                        //Create the 3D manifold shape
+                        Manifold3D manifold3D = makeHull(points, label, null);
+                        addManifold(manifold, manifold3D);
+                        //Add this Manifold data object to the global tracker
+                        Manifold.addManifold(manifold);
+
+                        //update the manifold to manifold3D mapping
+                        Manifold.globalManifoldToManifold3DMap.put(manifold, manifold3D);
+                        //announce to the world of the new manifold and its shape
+                        //System.out.println("Manifold3D generation complete for " + label);
+                        getScene().getRoot().fireEvent(new ManifoldEvent(
+                            ManifoldEvent.MANIFOLD3D_OBJECT_GENERATED, manifold, manifold3D));
+                    } else {
+                        System.out.println("Cluster has less than 4 points");
+                    }
+                }
+
+                Utils.printTotalTime(startTime);
+                System.out.println("\n===============================================\n");
 //                System.out.println("KMeans Clusters: " + kmeansClusters.k
 //                    + " Distortion: " + kmeansClusters.distortion);
-//                break;
-//            }
+                break;
+            }
             case EX_MAX -> {
                 System.out.println("Expectation Maximization... ");
                 startTime = System.nanoTime();

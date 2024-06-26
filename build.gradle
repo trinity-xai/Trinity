@@ -61,6 +61,7 @@ dependencies {
     }
     implementation group: 'com.github.quickhull3d', name: 'quickhull3d', version: '1.0.0'
     implementation group: 'org.apache.commons', name: 'commons-math3', version: '3.6.1'
+    implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.14.0'
     implementation group: 'org.zeromq', name: 'jeromq', version: '0.6.0'
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.17.0'
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.17.0'
@@ -71,6 +72,7 @@ dependencies {
     implementation group: 'org.slf4j', name: 'slf4j-api', version: '2.0.12'
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.2'
+    testImplementation 'org.junit.platform:junit-platform-suite:1.10.2'
     testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.10.2'
 }
 

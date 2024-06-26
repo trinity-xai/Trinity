@@ -41,7 +41,7 @@ import java.text.NumberFormat;
 import java.util.List;
 
 /**
- * @author Birdasaur
+ * @author Sean Phillips
  */
 public class DistanceDataCallout extends VBox {
     /**

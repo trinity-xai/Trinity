@@ -48,7 +48,7 @@ import java.util.logging.Logger;
 /**
  * Amplitude over time style waveform viz
  *
- * @author Birdasaur
+ * @author Sean Phillips
  */
 public class WaveformCanvasOverlayPane extends CanvasOverlayPane {
     private static final Logger LOGGER = Logger.getLogger(WaveformCanvasOverlayPane.class.getName());

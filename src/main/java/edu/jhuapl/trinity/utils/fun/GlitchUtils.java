@@ -28,7 +28,7 @@ import javafx.scene.effect.FloatMap;
 import javafx.util.Duration;
 
 /**
- * @author Birdasaur
+ * @author Sean Phillips
  */
 public enum GlitchUtils {
     INSTANCE;

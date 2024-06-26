@@ -65,6 +65,7 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.text.Font;
+import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.util.Duration;
 
@@ -775,6 +776,32 @@ public class ManifoldControlController implements Initializable {
             ManifoldEvent.CLEAR_ALL_MANIFOLDS));
         //add them all in one shot
         manifoldsListView.getItems().clear();
+    }
+
+    @FXML
+    public void exportAll() {
+        DirectoryChooser fc = new DirectoryChooser();
+        fc.setTitle("Choose Directory to export ManifoldData files...");
+        if (!latestDir.isDirectory())
+            latestDir = new File(".");
+        fc.setInitialDirectory(latestDir);
+        File file = fc.showDialog(scene.getWindow());
+        if (null != file) {
+            if (file.getParentFile().isDirectory()) {
+                latestDir = file;
+                int sequence = 0;
+                for (ManifoldListItem m : manifoldsListView.getItems()) {
+                    Manifold3D m3D = Manifold.globalManifoldToManifold3DMap.get(m.getManifold());
+                    if (null != m3D) {
+                        String fileName = "ManifoldData_" + sequence + "_" + m.getManifold().getLabel() + ".json";
+                        File exportFile = new File(latestDir.getPath() + fileName);
+                        scene.getRoot().fireEvent(new ManifoldEvent(
+                            ManifoldEvent.EXPORT_MANIFOLD_DATA, exportFile, m3D));
+                    }
+                    sequence++;
+                }
+            }
+        }
     }
 
     @FXML

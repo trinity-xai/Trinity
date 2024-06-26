@@ -61,6 +61,8 @@ import javafx.scene.input.DataFormat;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
+import javafx.scene.media.AudioClip;
+import javafx.scene.media.Media;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -80,6 +82,7 @@ import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Random;
 import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
@@ -252,6 +255,28 @@ public enum ResourceUtils {
             }
         }
         return false;
+    }
+
+    public static AudioClip loadAudioClipWav(String filename) {
+        return new AudioClip(ResourceUtils.class.getResource("/edu/jhuapl/trinity/audio/" + filename + ".wav")
+            .toExternalForm());
+    }
+
+    public static Media loadMediaWav(String filename) throws IOException {
+        return new Media(ResourceUtils.class.getResource("/edu/jhuapl/trinity/audio/" + filename + ".wav")
+            .toExternalForm());
+    }
+
+    public static Media loadRandomMediaMp4() throws URISyntaxException, IOException {
+        File folder = new File("video/");
+        if (!folder.exists() || !folder.isDirectory() || folder.listFiles().length < 1) {
+            return null;
+        }
+        File[] files = folder.listFiles();
+        Random rando = new Random();
+        File file = files[rando.nextInt(files.length)];
+        Media media = new Media(file.toURI().toURL().toString());
+        return media;
     }
 
     public static boolean canDragOver(DragEvent event) {

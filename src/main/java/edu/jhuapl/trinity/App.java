@@ -24,6 +24,7 @@ import edu.jhuapl.trinity.data.Dimension;
 import edu.jhuapl.trinity.data.FactorLabel;
 import edu.jhuapl.trinity.data.files.ClusterCollectionFile;
 import edu.jhuapl.trinity.data.files.FeatureCollectionFile;
+import edu.jhuapl.trinity.data.files.ManifoldDataFile;
 import edu.jhuapl.trinity.data.messages.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.FeatureVector;
 import edu.jhuapl.trinity.javafx.components.MatrixOverlay;
@@ -31,6 +32,7 @@ import edu.jhuapl.trinity.javafx.components.panes.Shape3DControlPane;
 import edu.jhuapl.trinity.javafx.components.panes.SparkLinesPane;
 import edu.jhuapl.trinity.javafx.components.panes.TextPane;
 import edu.jhuapl.trinity.javafx.components.panes.TrajectoryTrackerPane;
+import edu.jhuapl.trinity.javafx.components.panes.VideoPane;
 import edu.jhuapl.trinity.javafx.components.panes.WaveformPane;
 import edu.jhuapl.trinity.javafx.components.radial.CircleProgressIndicator;
 import edu.jhuapl.trinity.javafx.components.radial.MainNavMenu;
@@ -44,6 +46,7 @@ import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.events.FullscreenEvent;
 import edu.jhuapl.trinity.javafx.events.GaussianMixtureEvent;
+import edu.jhuapl.trinity.javafx.events.HitEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.javafx.events.SearchEvent;
 import edu.jhuapl.trinity.javafx.events.SemanticMapEvent;
@@ -52,6 +55,7 @@ import edu.jhuapl.trinity.javafx.events.TrajectoryEvent;
 import edu.jhuapl.trinity.javafx.events.ZeroMQEvent;
 import edu.jhuapl.trinity.javafx.handlers.FeatureVectorEventHandler;
 import edu.jhuapl.trinity.javafx.handlers.GaussianMixtureEventHandler;
+import edu.jhuapl.trinity.javafx.handlers.HitEventHandler;
 import edu.jhuapl.trinity.javafx.handlers.ManifoldEventHandler;
 import edu.jhuapl.trinity.javafx.handlers.SearchEventHandler;
 import edu.jhuapl.trinity.javafx.handlers.SemanticMapEventHandler;
@@ -127,6 +131,7 @@ public class App extends Application {
     TrajectoryTrackerPane trajectoryTrackerPane;
     SparkLinesPane sparkLinesPane;
     TextPane textConsolePane;
+    VideoPane videoPane;
     WaveformPane waveformPane;
     Shape3DControlPane shape3DControlPane;
     CircleProgressIndicator circleSpinner;
@@ -134,6 +139,7 @@ public class App extends Application {
     static Configuration theConfig;
     static Pane pathPane;
     static Scene theScene;
+    static VideoPane theVideo = null;
     //Command line argument support
     Map<String, String> namedParameters;
     List<String> unnamedParameters;
@@ -146,6 +152,8 @@ public class App extends Application {
     GaussianMixtureEventHandler gmeh;
     SemanticMapEventHandler smeh;
     SearchEventHandler seh;
+    HitEventHandler heh;
+
     boolean hyperspaceIntroShown = false;
     boolean hypersurfaceIntroShown = false;
     boolean matrixShowing = false;
@@ -204,6 +212,8 @@ public class App extends Application {
         //@HACK This ultra dirty hack lets me easily add floating panes from anywhere
         pathPane = desktopPane;
         theScene = scene;
+        videoPane = new VideoPane(scene, desktopPane);
+        theVideo = videoPane;
         matrixEnabled = enableMatrix;
         //</HACK>
         System.out.println("Building menu system...");
@@ -344,6 +354,11 @@ public class App extends Application {
                             ClusterCollectionFile ccFile = new ClusterCollectionFile(file.getAbsolutePath(), true);
                             scene.getRoot().fireEvent(
                                 new ManifoldEvent(ManifoldEvent.NEW_CLUSTER_COLLECTION, ccFile.clusterCollection));
+                        }
+                        if (ManifoldDataFile.isManifoldDataFile(file)) {
+                            ManifoldDataFile mdFile = new ManifoldDataFile(file.getAbsolutePath(), true);
+                            Platform.runLater(() -> scene.getRoot().fireEvent(
+                                new ManifoldEvent(ManifoldEvent.NEW_MANIFOLD_DATA, mdFile.manifoldData)));
                         }
                     } catch (IOException ex) {
                         Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
@@ -496,6 +511,33 @@ public class App extends Application {
                 Platform.runLater(() -> textConsolePane.setText((String) e.object));
             }
         });
+        scene.addEventHandler(ApplicationEvent.SHOW_VIDEO_PANE, e -> {
+            if (null == videoPane) {
+                videoPane = new VideoPane(scene, pathPane);
+                theVideo = videoPane;
+            }
+            if (!pathPane.getChildren().contains(videoPane)) {
+                pathPane.getChildren().add(videoPane);
+                videoPane.setTranslateX(desktopPane.getWidth() / 2.0
+                    - videoPane.getBoundsInLocal().getWidth() / 2.0);
+                videoPane.setTranslateY(desktopPane.getHeight() / 2.0
+                    - videoPane.getBoundsInLocal().getHeight() / 2.0);
+                videoPane.slideInPane();
+            } else {
+                videoPane.show();
+            }
+            if (null != e.object) {
+                String title = (String) e.object;
+                videoPane.mainTitleTextProperty.set(title);
+            }
+            if (null != e.object2) {
+                String caption = (String) e.object2;
+                videoPane.mainTitleText2Property.set(caption);
+            }
+
+            videoPane.setVideo();
+        });
+
         scene.addEventHandler(ApplicationEvent.SHOW_WAVEFORM_PANE, e -> {
             if (null == waveformPane) {
                 waveformPane = new WaveformPane(scene, pathPane);
@@ -647,8 +689,6 @@ public class App extends Application {
         fveh.addFeatureVectorRenderer(hyperspace3DPane);
 
         meh = new ManifoldEventHandler();
-
-
         scene.getRoot().addEventHandler(ManifoldEvent.NEW_MANIFOLD_CLUSTER, meh);
         scene.getRoot().addEventHandler(ManifoldEvent.NEW_MANIFOLD_DATA, meh);
         scene.getRoot().addEventHandler(ManifoldEvent.EXPORT_MANIFOLD_DATA, meh);
@@ -673,12 +713,14 @@ public class App extends Application {
         scene.getRoot().addEventHandler(ManifoldEvent.FIND_PROJECTION_CLUSTERS, meh);
         scene.getRoot().addEventHandler(ManifoldEvent.NEW_CLUSTER_COLLECTION, meh);
         scene.getRoot().addEventHandler(ManifoldEvent.NEW_PROJECTION_VECTOR, meh);
-
         meh.addManifoldRenderer(projections3DPane);
+
+        heh = new HitEventHandler(desktopPane);
+        scene.getRoot().addEventHandler(HitEvent.PROJECTILE_HIT_SHAPE, heh);
+        scene.getRoot().addEventHandler(HitEvent.TRACKING_PROJECTILE_EVENTS, heh);
 
         smeh = new SemanticMapEventHandler(false);
         scene.getRoot().addEventHandler(SemanticMapEvent.NEW_SEMANTIC_MAP, smeh);
-//        scene.getRoot().addEventHandler(SemanticMapEvent.LOCATE_FEATURE_VECTOR, smeh);
         scene.getRoot().addEventHandler(SemanticMapEvent.NEW_SEMANTICMAP_COLLECTION, smeh);
         smeh.addFeatureVectorRenderer(hyperspace3DPane);
         smeh.addSemanticMapRenderer(hypersurface3DPane);
@@ -902,7 +944,11 @@ public class App extends Application {
             stage.getScene().getRoot().fireEvent(
                 new ApplicationEvent(ApplicationEvent.SHOW_TEXT_CONSOLE));
         }
-
+        if (e.isAltDown() && e.isControlDown() && e.getCode().equals(KeyCode.V)) {
+            stage.getScene().getRoot().fireEvent(
+                new ApplicationEvent(ApplicationEvent.SHOW_VIDEO_PANE,
+                    "EMPTY VISION ", "A past never had for a Retrowave Future"));
+        }
         if (e.isAltDown() && e.getCode().equals(KeyCode.N)) {
             matrixShowing = !matrixShowing;
             if (!matrixShowing) {
@@ -989,6 +1035,10 @@ public class App extends Application {
      */
     public static Pane getAppPathPaneStack() {
         return pathPane;
+    }
+
+    public static VideoPane getVideoPane() {
+        return theVideo;
     }
 
     /**

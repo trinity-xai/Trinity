@@ -343,6 +343,24 @@ public enum JavaFX3DUtils {
         return res.subtract(localToScene(new javafx.geometry.Point3D(0, 0, 0), camera));
     }
 
+    public static double[] extractRotationAngles(Affine affine) {
+        double mxx = affine.getMxx();
+        double mxy = affine.getMxy();
+        double mxz = affine.getMxz();
+        double myx = affine.getMyx();
+        double myy = affine.getMyy();
+        double myz = affine.getMyz();
+        double mzx = affine.getMzx();
+        double mzy = affine.getMzy();
+        double mzz = affine.getMzz();
+
+        double angleX = Math.toDegrees(Math.atan2(myz, mzz));
+        double angleY = Math.toDegrees(Math.atan2(-mxz, Math.sqrt(mxx * mxx + myx * myx)));
+        double angleZ = Math.toDegrees(Math.atan2(myx, mxx));
+
+        return new double[]{angleX, angleY, angleZ};
+    }
+
     public static Affine lookAt(Node node, javafx.geometry.Point3D from, javafx.geometry.Point3D to, boolean applyTranslate) {
         //zVec is "forward"
         javafx.geometry.Point3D zVec = to.subtract(from).normalize();
@@ -400,6 +418,34 @@ public enum JavaFX3DUtils {
         });
         timeline.playFromStart();
         return timeline;
+    }
+
+    public static void resetCamera(Camera camera, CameraTransformer cameraTransform, boolean animate) {
+        cameraTransform.setTranslate(0, 0, 0);
+        orbitAt(camera, cameraTransform, javafx.geometry.Point3D.ZERO, animate);
+    }
+
+    public static void orbitAt(Camera camera, CameraTransformer cameraTransform, javafx.geometry.Point3D at, boolean animate) {
+        double currentZ = camera.getTranslateZ();
+
+        if (!animate) {
+            cameraTransform.setPivot(at.getX(), at.getY(), at.getZ());
+            cameraTransform.setTranslate(at.getX(), at.getY(), at.getZ());
+            cameraTransform.setPivot(at.getX(), at.getY(), at.getZ());
+            camera.setTranslateZ(currentZ);
+        } else {
+            double time = 1.0;
+
+            Timeline timeline = new Timeline(
+                new KeyFrame(Duration.seconds(time),
+                    new KeyValue(cameraTransform.translateXProperty(), at.getX()),
+                    new KeyValue(cameraTransform.translateYProperty(), at.getY()),
+                    new KeyValue(cameraTransform.translateZProperty(), at.getZ())
+                )
+            );
+            cameraTransform.setPivot(at.getX(), at.getY(), at.getZ());
+            timeline.play();
+        }
     }
 
     public static WritableImage convertToGreyScale(Image image) {
