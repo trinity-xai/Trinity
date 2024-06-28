@@ -68,6 +68,8 @@ import edu.jhuapl.trinity.javafx.javafx3d.animated.AnimatedSphere;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.Opticon;
 import edu.jhuapl.trinity.javafx.javafx3d.projectiles.HitShape3D;
 import edu.jhuapl.trinity.javafx.javafx3d.projectiles.ProjectileSystem;
+import edu.jhuapl.trinity.javafx.javafx3d.tasks.HDDBSCANClusterTask;
+import edu.jhuapl.trinity.javafx.javafx3d.tasks.KMeansClusterTask;
 import edu.jhuapl.trinity.javafx.javafx3d.tasks.ManifoldClusterTask;
 import edu.jhuapl.trinity.javafx.renderers.FeatureVectorRenderer;
 import edu.jhuapl.trinity.javafx.renderers.GaussianMixtureRenderer;
@@ -2997,134 +2999,34 @@ public class Projections3DPane extends StackPane implements
     }
 
     @Override
-//    public void findClusters(int components, boolean useVisiblePoints, ClusterMethod clusterMethod) {
     public void findClusters(ProjectionConfig pc) {
         //convert featurevector space into 2D array of doubles
         double[][] observations = FeatureCollection.toData(featureVectors);
-
-        long startTime = System.nanoTime();
         //find clusters
         switch (pc.clusterMethod) {
             case HDDBSCAN -> {
-                System.out.print("HDBSCAN fit... ");
-                startTime = System.nanoTime();
-                Array2DRowRealMatrix obsMatrix = new Array2DRowRealMatrix(observations);
-//                DBSCAN db = new DBSCANParameters()
-//                    .setEps(10)
-//                    .fitNewModel(obsMatrix);
-                HDBSCAN hdb = new HDBSCANParameters()
-                    .setAlpha(0.5)
-                    .setMinPts(100)
-                    .setMinClustSize(50)
-                    .setLeafSize(100)
-//                    .setForceParallel(true)
-//                    .setVerbose(true)
-                    .fitNewModel(obsMatrix);
-                final int[] results = hdb.getLabels();
-                int clusters = hdb.getNumberOfIdentifiedClusters();
-
-                Utils.printTotalTime(startTime);
-                System.out.println("\n===============================================\n");
-                System.out.print("Generating Hulls from Clusters... ");
-                startTime = System.nanoTime();
-
-                for (int clusterIndex = 0; clusterIndex < clusters; clusterIndex++) {
-                    String label = "HDDBSCAN Cluster " + clusterIndex;
-                    List<Point3D> points = new ArrayList<>();
-                    for (int i = 0; i < results.length; i++) {
-                        if (results[i] == clusterIndex) {
-                            points.add(new Point3D(
-                                observations[i][0] * projectionScalar,
-                                observations[i][1] * -projectionScalar,
-                                observations[i][2] * projectionScalar)
-                            );
-                        }
-                    }
-                    if (points.size() >= 4) {
-                        ArrayList<javafx.geometry.Point3D> fxPoints = points.stream()
-                            .map(p3D -> new javafx.geometry.Point3D(p3D.x, p3D.y, p3D.z))
-                            .collect(Collectors.toCollection(ArrayList::new));
-                        Manifold manifold = new Manifold(fxPoints, label, label, sceneColor);
-                        //Create the 3D manifold shape
-                        Manifold3D manifold3D = makeHull(points, label, null);
-                        addManifold(manifold, manifold3D);
-                        //Add this Manifold data object to the global tracker
-                        Manifold.addManifold(manifold);
-
-                        //update the manifold to manifold3D mapping
-                        Manifold.globalManifoldToManifold3DMap.put(manifold, manifold3D);
-                        //announce to the world of the new manifold and its shape
-                        //System.out.println("Manifold3D generation complete for " + label);
-                        getScene().getRoot().fireEvent(new ManifoldEvent(
-                            ManifoldEvent.MANIFOLD3D_OBJECT_GENERATED, manifold, manifold3D));
-                    } else {
-                        System.out.println("Cluster has less than 4 points");
-                    }
+                HDDBSCANClusterTask hddbscanClusterTask = new HDDBSCANClusterTask(
+                    scene, camera, projectionScalar, observations, pc);
+                if (!hddbscanClusterTask.isCancelledByUser()) {
+                    Thread t = new Thread(hddbscanClusterTask);
+                    t.setDaemon(true);
+                    t.start();
                 }
-
-                Utils.printTotalTime(startTime);
-                System.out.println("\n===============================================\n");
                 break;                
             }
             case KMEANS -> {
-                System.out.print("Running KMEANS... ");
-                startTime = System.nanoTime();
-                Array2DRowRealMatrix obsMatrix = new Array2DRowRealMatrix(observations);
-                KMeans kmeans = new KMeansParameters()
-//                    .setMaxIter(100)
-//                    .setConvergenceCriteria(0.01)
-//                    .setInitializationStrategy(AbstractCentroidClusterer.InitializationStrategy.AUTO)
-//                    .setMetric(new CauchyKernel())
-                    .fitNewModel(obsMatrix);
-                final int[] results = kmeans.getLabels();
-                int clusters = kmeans.getK();
-
-                Utils.printTotalTime(startTime);
-                System.out.println("\n===============================================\n");
-                System.out.print("Generating Hulls from Clusters... ");
-                startTime = System.nanoTime();
-
-                for (int clusterIndex = 0; clusterIndex < clusters; clusterIndex++) {
-                    String label = "KMeans Cluster " + clusterIndex;
-                    List<Point3D> points = new ArrayList<>();
-                    for (int i = 0; i < results.length; i++) {
-                        if (results[i] == clusterIndex) {
-                            points.add(new Point3D(
-                                observations[i][0] * projectionScalar,
-                                observations[i][1] * -projectionScalar,
-                                observations[i][2] * projectionScalar)
-                            );
-                        }
-                    }
-                    if (points.size() >= 4) {
-                        ArrayList<javafx.geometry.Point3D> fxPoints = points.stream()
-                            .map(p3D -> new javafx.geometry.Point3D(p3D.x, p3D.y, p3D.z))
-                            .collect(Collectors.toCollection(ArrayList::new));
-                        Manifold manifold = new Manifold(fxPoints, label, label, sceneColor);
-                        //Create the 3D manifold shape
-                        Manifold3D manifold3D = makeHull(points, label, null);
-                        addManifold(manifold, manifold3D);
-                        //Add this Manifold data object to the global tracker
-                        Manifold.addManifold(manifold);
-
-                        //update the manifold to manifold3D mapping
-                        Manifold.globalManifoldToManifold3DMap.put(manifold, manifold3D);
-                        //announce to the world of the new manifold and its shape
-                        //System.out.println("Manifold3D generation complete for " + label);
-                        getScene().getRoot().fireEvent(new ManifoldEvent(
-                            ManifoldEvent.MANIFOLD3D_OBJECT_GENERATED, manifold, manifold3D));
-                    } else {
-                        System.out.println("Cluster has less than 4 points");
-                    }
+                KMeansClusterTask kmeansClusterTask = new KMeansClusterTask(
+                    scene, camera, projectionScalar, observations, pc);
+                if (!kmeansClusterTask.isCancelledByUser()) {
+                    Thread t = new Thread(kmeansClusterTask);
+                    t.setDaemon(true);
+                    t.start();
                 }
-                Utils.printTotalTime(startTime);
-                System.out.println("KMeans Clusters: " + kmeans.getK());
-                System.out.println("\n===============================================\n");
-                break;
+                break; 
             }
             case EX_MAX -> {
                 System.out.println("Expectation Maximization... ");
-                startTime = System.nanoTime();
+                long startTime = System.nanoTime();                
                 boolean diagonal = pc.covariance == COVARIANCE_MODE.DIAGONAL;
                 manifoldGroup.getChildren().removeIf(n -> n instanceof Box);
                 Point[] kmeansCentroids = KmeansPlusPlus.kmeansPlusPlus(pc.components, observations);
@@ -3220,7 +3122,6 @@ public class Projections3DPane extends StackPane implements
                 //System.out.println("EmDriver Results : " + emDriver.learnedModel.toString());
                 break;
             }
-
         }
     }
 

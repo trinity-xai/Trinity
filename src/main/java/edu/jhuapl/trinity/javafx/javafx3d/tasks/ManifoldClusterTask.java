@@ -31,7 +31,6 @@ import edu.jhuapl.trinity.javafx.javafx3d.Manifold3D;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import javafx.application.Platform;
-import javafx.concurrent.Task;
 import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
 import javafx.scene.PerspectiveCamera;
@@ -62,48 +61,23 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author Sean Phillips
  */
-public class ManifoldClusterTask extends Task {
-    Scene scene;
-    PerspectiveCamera camera;
+public class ManifoldClusterTask extends ClusterTask {
     HashMap<Sphere, FeatureVector> currentMap;
     Rectangle rectangle;
-    boolean filterByLabel = false;
-    String filterLabel = "";
-    Color diffuseColor = Color.CYAN;
+
     String manifoldName = "Selected Manifold";
-    private boolean cancelledByUser = false;
-    static AtomicInteger ai = new AtomicInteger(0);
 
     public ManifoldClusterTask(Scene scene, PerspectiveCamera camera,
                                HashMap<Sphere, FeatureVector> currentMap, Rectangle rectangle) {
-        this.scene = scene;
-        this.camera = camera;
+        super(scene, camera);
         this.currentMap = currentMap;
         this.rectangle = new Rectangle(rectangle.getX(), rectangle.getY(),
             rectangle.getWidth(), rectangle.getHeight());
-        setOnSucceeded(e -> {
-            Platform.runLater(() -> {
-                scene.getRoot().fireEvent(
-                    new ApplicationEvent(ApplicationEvent.HIDE_BUSY_INDICATOR));
-            });
-        });
-        setOnFailed(e -> {
-            Platform.runLater(() -> {
-                scene.getRoot().fireEvent(
-                    new ApplicationEvent(ApplicationEvent.HIDE_BUSY_INDICATOR));
-            });
-        });
-        setOnCancelled(e -> {
-            Platform.runLater(() -> {
-                scene.getRoot().fireEvent(
-                    new ApplicationEvent(ApplicationEvent.HIDE_BUSY_INDICATOR));
-            });
-        });
+
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
             "Customizations",
             ButtonType.APPLY, ButtonType.CANCEL);
@@ -155,16 +129,15 @@ public class ManifoldClusterTask extends Task {
         if (optBT.get().equals(ButtonType.APPLY)) {
             filterByLabel = filterCheckBox.isSelected();
             filterLabel = (String) labelChoiceBox.getSelectionModel().getSelectedItem();
-            diffuseColor = colorPicker.getValue();
+            setDiffuseColor(colorPicker.getValue());
             manifoldName = labelTextField.getText();
         } else {
-            cancelledByUser = true;
+            setCancelledByUser(true);
         }
     }
 
     @Override
-    protected Void call() throws Exception {
-        if (isCancelled()) return null;
+    protected void processTask() throws Exception {
         Platform.runLater(() -> {
             ProgressStatus ps = new ProgressStatus("Converting Cluster to Manifold...", -1);
             scene.getRoot().fireEvent(
@@ -190,14 +163,14 @@ public class ManifoldClusterTask extends Task {
                 if (!filterByLabel || (null != fv && filterLabel.contentEquals(fv.getLabel())))
                     labelMatchedPoints.add(JavaFX3DUtils.toFXYZ3D.apply(p3D));
             }
-            Manifold manifold = new Manifold(manPoints, manifoldName, manifoldName, diffuseColor);
+            Manifold manifold = new Manifold(manPoints, manifoldName, manifoldName, getDiffuseColor());
             //Create the 3D manifold shape
             Manifold3D manifold3D = new Manifold3D(
                 labelMatchedPoints, true, true, true, null
             );
             manifold3D.quickhullMeshView.setCullFace(CullFace.FRONT);
             manifold3D.setManifold(manifold);
-            ((PhongMaterial) manifold3D.quickhullMeshView.getMaterial()).setDiffuseColor(diffuseColor);
+            ((PhongMaterial) manifold3D.quickhullMeshView.getMaterial()).setDiffuseColor(getDiffuseColor());
 
             manifold3D.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
                 scene.getRoot().fireEvent(
@@ -226,20 +199,5 @@ public class ManifoldClusterTask extends Task {
                         new Font("Consolas", 20), Color.YELLOW));
             });
         }
-        return null;
-    }
-
-    /**
-     * @return the cancelledByUser
-     */
-    public boolean isCancelledByUser() {
-        return cancelledByUser;
-    }
-
-    /**
-     * @param cancelledByUser the cancelledByUser to set
-     */
-    public void setCancelledByUser(boolean cancelledByUser) {
-        this.cancelledByUser = cancelledByUser;
     }
 }

@@ -153,7 +153,7 @@ public class Shape3DControlPane extends LitPathPane {
 
         hddbscan.setOnAction((e) -> {
             selectedMethod = ClusterMethod.HDDBSCAN;
-            clusterMethodMenuButton.setText(kmeans.getText());
+            clusterMethodMenuButton.setText(hddbscan.getText());
         });
 
         kmeans.setOnAction((e) -> {
