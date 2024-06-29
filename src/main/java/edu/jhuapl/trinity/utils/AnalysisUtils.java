@@ -153,14 +153,18 @@ public enum AnalysisUtils {
         RealMatrix resultMatrix = realMatrix.multiply(realMatrixColumn);
         return resultMatrix.getData();
     }
-
-    public static RealMatrix centerMatrixByColumnMean(RealMatrix originalMatrix) {
+    public static double [] getColumnMean(RealMatrix originalMatrix) {
         int dataWidth = originalMatrix.getColumnDimension();
         double[] columnMeanArray = new double[dataWidth];
         for (int columnIndex = 0; columnIndex < dataWidth; columnIndex++) {
             columnMeanArray[columnIndex] = Arrays.stream(
                 originalMatrix.getColumn(columnIndex)).average().getAsDouble();
         }
+        return columnMeanArray;
+    }
+    public static RealMatrix centerMatrixByColumnMean(RealMatrix originalMatrix) {
+        int dataWidth = originalMatrix.getColumnDimension();
+        double[] columnMeanArray = getColumnMean(originalMatrix);
 
         int dataHeight = originalMatrix.getRowDimension();
         double[][] centeredArray = new double[dataHeight][dataWidth];

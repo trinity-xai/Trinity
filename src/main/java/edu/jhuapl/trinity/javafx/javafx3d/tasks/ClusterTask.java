@@ -84,7 +84,36 @@ public abstract class ClusterTask extends Task {
         processTask();
         return null;
     }
-    
+    protected void createManifold(List<Point3D> points, String label) {
+        ArrayList<javafx.geometry.Point3D> fxPoints = points.stream()
+            .map(p3D -> new javafx.geometry.Point3D(p3D.x, p3D.y, p3D.z))
+            .collect(Collectors.toCollection(ArrayList::new));
+        Manifold manifold = new Manifold(fxPoints, label, label, getDiffuseColor());
+        //Create the 3D manifold shape
+        Manifold3D manifold3D = new Manifold3D(points, 
+        true, true, true, null
+        );                
+        manifold3D.quickhullMeshView.setCullFace(CullFace.FRONT);
+        manifold3D.setManifold(manifold);
+        ((PhongMaterial) manifold3D.quickhullMeshView.getMaterial()).setDiffuseColor(getDiffuseColor());
+
+        manifold3D.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
+            scene.getRoot().fireEvent(
+                new ManifoldEvent(ManifoldEvent.MANIFOLD_3D_SELECTED, manifold));
+        });                
+        //Add this Manifold data object to the global tracker
+        Manifold.addManifold(manifold);
+        //update the manifold to manifold3D mapping
+        Manifold.globalManifoldToManifold3DMap.put(manifold, manifold3D);
+        //announce to the world of the new manifold and its shape
+        //System.out.println("Manifold3D generation complete for " + label);
+        Platform.runLater(() -> {                
+            scene.getRoot().fireEvent(new ManifoldEvent(
+            ManifoldEvent.NEW_MANIFOLD_CLUSTER, manifold, manifold3D));                    
+            scene.getRoot().fireEvent(new ManifoldEvent(
+                ManifoldEvent.MANIFOLD3D_OBJECT_GENERATED, manifold, manifold3D));
+        });        
+}
     protected void convertToManifoldGeometry(double[][] observations, 
         int[] labels, int clusters, String prefix) {
         for (int clusterIndex = 0; clusterIndex < clusters; clusterIndex++) {
@@ -100,34 +129,7 @@ public abstract class ClusterTask extends Task {
                 }
             }
             if (points.size() >= 4) {
-                ArrayList<javafx.geometry.Point3D> fxPoints = points.stream()
-                    .map(p3D -> new javafx.geometry.Point3D(p3D.x, p3D.y, p3D.z))
-                    .collect(Collectors.toCollection(ArrayList::new));
-                Manifold manifold = new Manifold(fxPoints, label, label, getDiffuseColor());
-                //Create the 3D manifold shape
-                Manifold3D manifold3D = new Manifold3D(points, 
-                true, true, true, null
-                );                
-                manifold3D.quickhullMeshView.setCullFace(CullFace.FRONT);
-                manifold3D.setManifold(manifold);
-                ((PhongMaterial) manifold3D.quickhullMeshView.getMaterial()).setDiffuseColor(getDiffuseColor());
-
-                manifold3D.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
-                    scene.getRoot().fireEvent(
-                        new ManifoldEvent(ManifoldEvent.MANIFOLD_3D_SELECTED, manifold));
-                });                
-                //Add this Manifold data object to the global tracker
-                Manifold.addManifold(manifold);
-                //update the manifold to manifold3D mapping
-                Manifold.globalManifoldToManifold3DMap.put(manifold, manifold3D);
-                //announce to the world of the new manifold and its shape
-                //System.out.println("Manifold3D generation complete for " + label);
-                Platform.runLater(() -> {                
-                    scene.getRoot().fireEvent(new ManifoldEvent(
-                    ManifoldEvent.NEW_MANIFOLD_CLUSTER, manifold, manifold3D));                    
-                    scene.getRoot().fireEvent(new ManifoldEvent(
-                        ManifoldEvent.MANIFOLD3D_OBJECT_GENERATED, manifold, manifold3D));
-                });
+                createManifold(points, label);
             } else {
                 System.out.println("Cluster has less than 4 points");
             }
