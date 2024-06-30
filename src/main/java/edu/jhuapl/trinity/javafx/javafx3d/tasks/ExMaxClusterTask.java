@@ -20,38 +20,25 @@ package edu.jhuapl.trinity.javafx.javafx3d.tasks;
  * #L%
  */
 
-import com.clust4j.algo.KMeans;
-import com.clust4j.algo.KMeansParameters;
-import edu.jhuapl.trinity.data.Manifold;
 import edu.jhuapl.trinity.javafx.components.radial.ProgressStatus;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
-import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent.ProjectionConfig;
-import edu.jhuapl.trinity.javafx.javafx3d.Manifold3D;
 import edu.jhuapl.trinity.utils.Utils;
 import edu.jhuapl.trinity.utils.clustering.Cluster;
-import edu.jhuapl.trinity.utils.clustering.GaussianDistribution;
 import edu.jhuapl.trinity.utils.clustering.GaussianMixtureComponent;
 import edu.jhuapl.trinity.utils.clustering.GaussianMixtureModel;
-import edu.jhuapl.trinity.utils.clustering.KmeansPlusPlus;
 import edu.jhuapl.trinity.utils.clustering.Point;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
-import java.util.stream.Collectors;
 import javafx.application.Platform;
 import javafx.scene.PerspectiveCamera;
 import javafx.scene.Scene;
-import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
-import javafx.scene.paint.PhongMaterial;
-import javafx.scene.shape.Box;
-import javafx.scene.shape.DrawMode;
 import javafx.scene.text.Font;
 import javafx.util.Pair;
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.fxyz3d.geometry.Point3D;
 
 /**

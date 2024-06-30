@@ -144,18 +144,24 @@ public class Shape3DControlPane extends LitPathPane {
         fullCovarianceRadioButton.setToggleGroup(covarianceToggleGroup);
         diagonalRadioButton.setSelected(true);
         
-        MenuItem hddbscan = new MenuItem("HDDBSCAN");
+        MenuItem dbscan = new MenuItem("DBSCAN");
+        MenuItem hdbscan = new MenuItem("HDBSCAN");
         MenuItem kmeans = new MenuItem("KMeans++");
         MenuItem exmax = new MenuItem("Expectation Maximization");
-        clusterMethodMenuButton = new SplitMenuButton(hddbscan, kmeans, exmax);  
+        MenuItem affinity = new MenuItem("Affinity Propagation");
+        clusterMethodMenuButton = new SplitMenuButton(dbscan, hdbscan, 
+            kmeans, exmax, affinity);  
         clusterMethodMenuButton.setText("Select method");
         clusterMethodMenuButton.setOnAction(e->findClusters());
 
-        hddbscan.setOnAction((e) -> {
-            selectedMethod = ClusterMethod.HDDBSCAN;
-            clusterMethodMenuButton.setText(hddbscan.getText());
+        dbscan.setOnAction((e) -> {
+            selectedMethod = ClusterMethod.DBSCAN;
+            clusterMethodMenuButton.setText(dbscan.getText());
         });
-
+        hdbscan.setOnAction((e) -> {
+            selectedMethod = ClusterMethod.HDDBSCAN;
+            clusterMethodMenuButton.setText(hdbscan.getText());
+        });
         kmeans.setOnAction((e) -> {
             selectedMethod = ClusterMethod.KMEANS;
             clusterMethodMenuButton.setText(kmeans.getText());
@@ -163,6 +169,10 @@ public class Shape3DControlPane extends LitPathPane {
         exmax.setOnAction((e) -> {
             selectedMethod = ClusterMethod.EX_MAX;
             clusterMethodMenuButton.setText(exmax.getText());
+        });
+        affinity.setOnAction((e) -> {
+            selectedMethod = ClusterMethod.AFFINITY;
+            clusterMethodMenuButton.setText(affinity.getText());
         });
         clusterMethodMenuButton.setPrefWidth(SELECTION_PREF_WIDTH);
         

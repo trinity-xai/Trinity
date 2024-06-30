@@ -33,6 +33,7 @@ import org.apache.commons.math3.stat.correlation.Covariance;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Random;
 
 
 /**
@@ -146,7 +147,39 @@ public enum AnalysisUtils {
         }
         return Math.sqrt(result);
     }
-
+    public static Double[][] boxDoubleArrays(double[][] arrays) {
+        Double[][] inverse = Arrays.stream(arrays)
+                .map(d -> Arrays.stream(d).boxed().toArray(Double[]::new))
+                .toArray(Double[][]::new);            
+        return inverse;
+    }
+    // A function to randomly select k items from
+    // stream[0..n-1].
+    public static double[][] selectKItems(double stream[][], int n, int k)
+    {
+        int i; // index for elements in stream[]
+ 
+        // reservoir[] is the output array. Initialize it
+        // with first k elements from stream[]
+        double reservoir[][] = new double[k][stream[0].length];
+        for (i = 0; i < k; i++)
+            reservoir[i] = stream[i];
+ 
+        Random r = new Random();
+ 
+        // Iterate from the (k+1)th element to nth element
+        for (; i < n; i++) {
+            // Pick a random index from 0 to i.
+            int j = r.nextInt(i + 1);
+ 
+            // If the randomly  picked index is smaller than
+            // k, then replace the element present at the
+            // index with new element from stream
+            if (j < k)
+                reservoir[j] = stream[i];
+        }
+        return reservoir;
+    }
     public static double[][] featuresMultWeights(double[] features, double[][] weights) {
         RealMatrix realMatrix = MatrixUtils.createRealMatrix(weights);
         RealMatrix realMatrixColumn = MatrixUtils.createColumnRealMatrix(features);
