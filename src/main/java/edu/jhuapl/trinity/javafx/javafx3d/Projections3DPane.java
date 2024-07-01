@@ -20,13 +20,6 @@ package edu.jhuapl.trinity.javafx.javafx3d;
  * #L%
  */
 
-import com.clust4j.algo.AbstractCentroidClusterer;
-import com.clust4j.algo.HDBSCAN;
-import com.clust4j.algo.HDBSCANParameters;
-import com.clust4j.algo.KMeans;
-import com.clust4j.algo.KMeansParameters;
-import com.clust4j.kernel.CauchyKernel;
-import com.clust4j.metrics.pairwise.GeometricallySeparable;
 import edu.jhuapl.trinity.App;
 import edu.jhuapl.trinity.data.CoordinateSet;
 import edu.jhuapl.trinity.data.Dimension;
@@ -51,7 +44,6 @@ import edu.jhuapl.trinity.javafx.components.panes.RadarPlotPane;
 import edu.jhuapl.trinity.javafx.components.panes.RadialEntityOverlayPane;
 import edu.jhuapl.trinity.javafx.components.panes.VideoPane;
 import edu.jhuapl.trinity.javafx.components.radial.AnimatedNeonCircle;
-import edu.jhuapl.trinity.javafx.components.radial.ProgressStatus;
 import edu.jhuapl.trinity.javafx.components.radial.ViewControlsMenu;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
@@ -59,7 +51,6 @@ import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.events.HyperspaceEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent.ProjectionConfig;
-import edu.jhuapl.trinity.javafx.events.ManifoldEvent.ProjectionConfig.COVARIANCE_MODE;
 import edu.jhuapl.trinity.javafx.events.ShadowEvent;
 import edu.jhuapl.trinity.javafx.events.TimelineEvent;
 import edu.jhuapl.trinity.javafx.events.TrajectoryEvent;
@@ -74,6 +65,8 @@ import edu.jhuapl.trinity.javafx.javafx3d.tasks.ExMaxClusterTask;
 import edu.jhuapl.trinity.javafx.javafx3d.tasks.HDDBSCANClusterTask;
 import edu.jhuapl.trinity.javafx.javafx3d.tasks.KMeansClusterTask;
 import edu.jhuapl.trinity.javafx.javafx3d.tasks.ManifoldClusterTask;
+import edu.jhuapl.trinity.javafx.javafx3d.tasks.ProjectPcaFeaturesTask;
+import edu.jhuapl.trinity.javafx.javafx3d.tasks.ProjectUmapFeaturesTask;
 import edu.jhuapl.trinity.javafx.renderers.FeatureVectorRenderer;
 import edu.jhuapl.trinity.javafx.renderers.GaussianMixtureRenderer;
 import edu.jhuapl.trinity.javafx.renderers.ManifoldRenderer;
@@ -81,13 +74,7 @@ import edu.jhuapl.trinity.utils.AnalysisUtils;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.PCAConfig;
 import edu.jhuapl.trinity.utils.ResourceUtils;
-import edu.jhuapl.trinity.utils.Utils;
 import edu.jhuapl.trinity.utils.VisibilityMap;
-import edu.jhuapl.trinity.utils.clustering.Cluster;
-import edu.jhuapl.trinity.utils.clustering.GaussianMixtureComponent;
-import edu.jhuapl.trinity.utils.clustering.GaussianMixtureModel;
-import edu.jhuapl.trinity.utils.clustering.KmeansPlusPlus;
-import edu.jhuapl.trinity.utils.clustering.Point;
 import edu.jhuapl.trinity.utils.umap.Umap;
 import javafx.animation.AnimationTimer;
 import javafx.animation.KeyFrame;
@@ -110,7 +97,6 @@ import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.ContextMenu;
-import javafx.scene.control.DialogPane;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
 import javafx.scene.effect.Glow;
@@ -128,7 +114,6 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
-import javafx.scene.shape.Box;
 import javafx.scene.shape.CullFace;
 import javafx.scene.shape.DrawMode;
 import javafx.scene.shape.Rectangle;
@@ -138,10 +123,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Translate;
-import javafx.stage.StageStyle;
 import javafx.util.Duration;
-import javafx.util.Pair;
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.fxyz3d.geometry.Point3D;
 import org.fxyz3d.scene.Skybox;
 import org.fxyz3d.utils.CameraTransformer;
@@ -2755,82 +2737,7 @@ public class Projections3DPane extends StackPane implements
     }
 
     public void projectFeatureCollection(FeatureCollection originalFC, PCAConfig config) {
-        Task task = new Task() {
-            @Override
-            protected FeatureCollection call() throws Exception {
-                Platform.runLater(() -> {
-                    ProgressStatus ps = new ProgressStatus("Fitting PCA Projection...", 0.5);
-                    ps.fillStartColor = Color.AZURE;
-                    ps.fillEndColor = Color.LIME;
-                    ps.innerStrokeColor = Color.AZURE;
-                    ps.outerStrokeColor = Color.LIME;
-                    scene.getRoot().fireEvent(
-                        new ApplicationEvent(ApplicationEvent.UPDATE_BUSY_INDICATOR, ps));
-                });
-
-                double[][] featureArray = originalFC.getFeatures().stream()
-                    .map(FeatureVector.mapToStateArray)
-                    .toArray(double[][]::new);
-                System.out.println("featureArray sizes: "
-                    + featureArray.length + " " + featureArray[0].length);
-
-                int start = config.startIndex;
-                if (start < 0 || start >= featureArray.length) {
-                    System.out.println("PCA Start index no bueno... setting to Zero.");
-                    start = 0;
-                }
-                int end = config.endIndex;
-                if (end <= start
-                    || end >= originalFC.getFeatures().size()
-                    || end <= 0) {
-                    System.out.println("PCA End index no bueno... setting to Max.");
-                    end = originalFC.getFeatures().size() - 1;
-                }
-
-                int truncSize = featureArray[0].length;
-                double[][] truncArray = originalFC.getFeatures().stream()
-                    .skip(start).limit(end)
-                    .map((FeatureVector t) -> {
-                        double[] states = new double[truncSize];
-                        for (int i = 0; i < truncSize && i < states.length; i++) {
-                            states[i] = t.getData().get(i);
-                        }
-                        return states;
-                    })
-                    .toArray(double[][]::new);
-                System.out.println("truncArray sizes: "
-                    + truncArray.length + " " + truncArray[0].length);
-
-                System.out.print("PCA... ");
-                long startTime = System.nanoTime();
-                double[][] pcaProjection = null;
-                if (config.method == AnalysisUtils.ANALYSIS_METHOD.SVD)
-                    pcaProjection = AnalysisUtils.doCommonsSVD(truncArray);
-                else
-                    pcaProjection = AnalysisUtils.doCommonsPCA(truncArray);
-                Utils.printTotalTime(startTime);
-
-                System.out.println("mapping projected PCA data back to FeatureVectors...");
-                FeatureCollection projectedFC = FeatureCollection.fromData(
-                    pcaProjection, config.pcaDimensions, config.scaling);
-                for (int i = 0; i < projectedFC.getFeatures().size() - 1; i++) {
-                    if (i >= originalFC.getFeatures().size())
-                        break;
-                    FeatureVector origFV = originalFC.getFeatures().get(i);
-                    projectedFC.getFeatures().get(i).setLabel(origFV.getLabel());
-                    projectedFC.getFeatures().get(i).setScore(origFV.getScore());
-                    projectedFC.getFeatures().get(i).setImageURL(origFV.getImageURL());
-                    projectedFC.getFeatures().get(i).setText(origFV.getText());
-                    projectedFC.getFeatures().get(i).setMetaData(origFV.getMetaData());
-                }
-                Platform.runLater(() -> {
-                    ProgressStatus ps = new ProgressStatus("", -1);
-                    scene.getRoot().fireEvent(
-                        new ApplicationEvent(ApplicationEvent.HIDE_BUSY_INDICATOR, ps));
-                });
-                return projectedFC;
-            }
-        };
+        ProjectPcaFeaturesTask task = new ProjectPcaFeaturesTask(scene, originalFC, config);
         task.setOnSucceeded(e -> {
             FeatureCollection fc;
             try {
@@ -2917,69 +2824,8 @@ public class Projections3DPane extends StackPane implements
     }
 
     public void projectFeatureCollection(FeatureCollection originalFC, Umap umap) {
-        Alert alert = new Alert(AlertType.CONFIRMATION,
-            "", ButtonType.YES, ButtonType.NO);
-        alert.setHeaderText("Watch a TV while you wait?");
-        alert.setGraphic(ResourceUtils.loadIcon("retrowave-tv", 100));
-        alert.initStyle(StageStyle.TRANSPARENT);
-        DialogPane dialogPane = alert.getDialogPane();
-        dialogPane.setBackground(Background.EMPTY);
-        dialogPane.getScene().setFill(Color.TRANSPARENT);
-        String DIALOGCSS = this.getClass().getResource("/edu/jhuapl/trinity/css/dialogstyles.css").toExternalForm();
-        dialogPane.getStylesheets().add(DIALOGCSS);
-        alert.setX(scene.getWidth() - 500);
-        alert.setY(500);
-        alert.resultProperty().addListener(r -> {
-            if (alert.getResult().equals(ButtonType.YES)) {
-                manifoldControlPane.minimize();
-                scene.getRoot().fireEvent(
-                    new ApplicationEvent(ApplicationEvent.SHOW_VIDEO_PANE,
-                        "EMPTY VISION ", "A past never had for a Retrowave Future"));
-            }
-        });
-        alert.show();
-        Task task = new Task() {
-            @Override
-            protected FeatureCollection call() throws Exception {
-                Platform.runLater(() -> {
-                    ProgressStatus ps = new ProgressStatus("Fitting UMAP Transform...", 0.5);
-                    ps.fillStartColor = Color.AZURE;
-                    ps.fillEndColor = Color.LIME;
-                    ps.innerStrokeColor = Color.AZURE;
-                    ps.outerStrokeColor = Color.LIME;
-                    scene.getRoot().fireEvent(
-                        new ApplicationEvent(ApplicationEvent.UPDATE_BUSY_INDICATOR, ps));
-                });
-
-                double[][] umapMatrix = AnalysisUtils.fitUMAP(originalFC, umap);
-                latestUmap = umap;
-                Platform.runLater(() -> {
-                    ProgressStatus ps = new ProgressStatus("Converting to FeatureCollection...", 0.5);
-                    ps.fillStartColor = Color.CYAN;
-                    ps.fillEndColor = Color.NAVY;
-                    ps.innerStrokeColor = Color.CYAN;
-                    ps.outerStrokeColor = Color.SILVER;
-                    scene.getRoot().fireEvent(
-                        new ApplicationEvent(ApplicationEvent.UPDATE_BUSY_INDICATOR, ps));
-                });
-                System.out.println("mapping projected UMAP data back to FeatureVectors...");
-                FeatureCollection projectedFC = FeatureCollection.fromData(umapMatrix);
-                for (int i = 0; i < originalFC.getFeatures().size(); i++) {
-                    FeatureVector origFV = originalFC.getFeatures().get(i);
-                    projectedFC.getFeatures().get(i).setLabel(origFV.getLabel());
-                    projectedFC.getFeatures().get(i).setScore(origFV.getScore());
-                    projectedFC.getFeatures().get(i).setImageURL(origFV.getImageURL());
-                    projectedFC.getFeatures().get(i).setText(origFV.getText());
-                    projectedFC.getFeatures().get(i).setMetaData(origFV.getMetaData());
-                }
-                Platform.runLater(() -> {
-                    ProgressStatus ps = new ProgressStatus("", -1);
-                    scene.getRoot().fireEvent(
-                        new ApplicationEvent(ApplicationEvent.HIDE_BUSY_INDICATOR, ps));
-                });
-                return projectedFC;
-            }
-        };
+        latestUmap = umap;
+        ProjectUmapFeaturesTask task = new ProjectUmapFeaturesTask(scene, originalFC, umap);
         task.setOnSucceeded(e -> {
             FeatureCollection fc;
             try {
@@ -2998,7 +2844,6 @@ public class Projections3DPane extends StackPane implements
         Thread thread = new Thread(task);
         thread.setDaemon(true);
         thread.start();
-
     }
 
     @Override
