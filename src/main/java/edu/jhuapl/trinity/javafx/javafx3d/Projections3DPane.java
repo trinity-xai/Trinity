@@ -64,6 +64,7 @@ import edu.jhuapl.trinity.javafx.javafx3d.tasks.DBSCANClusterTask;
 import edu.jhuapl.trinity.javafx.javafx3d.tasks.ExMaxClusterTask;
 import edu.jhuapl.trinity.javafx.javafx3d.tasks.HDDBSCANClusterTask;
 import edu.jhuapl.trinity.javafx.javafx3d.tasks.KMeansClusterTask;
+import edu.jhuapl.trinity.javafx.javafx3d.tasks.KMediodsClusterTask;
 import edu.jhuapl.trinity.javafx.javafx3d.tasks.ManifoldClusterTask;
 import edu.jhuapl.trinity.javafx.javafx3d.tasks.ProjectPcaFeaturesTask;
 import edu.jhuapl.trinity.javafx.javafx3d.tasks.ProjectUmapFeaturesTask;
@@ -2882,6 +2883,17 @@ public class Projections3DPane extends StackPane implements
                 }
                 break; 
             }
+            case KMEDIODS -> {
+                KMediodsClusterTask kmediodsClusterTask = new KMediodsClusterTask(
+                    scene, camera, projectionScalar, observations, pc);
+                if (!kmediodsClusterTask.isCancelledByUser()) {
+                    Thread t = new Thread(kmediodsClusterTask);
+                    t.setDaemon(true);
+                    t.start();
+                }
+                break; 
+            }
+            
             case EX_MAX -> {
                 ExMaxClusterTask exMaxClusterTask = new ExMaxClusterTask(
                     scene, camera, projectionScalar, observations, pc);
@@ -2902,7 +2914,6 @@ public class Projections3DPane extends StackPane implements
                 }
                 break;                
             }
-            
         }
     }
 

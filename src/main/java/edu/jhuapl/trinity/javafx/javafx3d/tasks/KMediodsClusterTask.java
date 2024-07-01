@@ -20,11 +20,12 @@ package edu.jhuapl.trinity.javafx.javafx3d.tasks;
  * #L%
  */
 
-import com.clust4j.algo.DBSCAN;
-import com.clust4j.algo.DBSCANParameters;
+import com.clust4j.algo.KMedoids;
+import com.clust4j.algo.KMedoidsParameters;
 import edu.jhuapl.trinity.javafx.components.radial.ProgressStatus;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
+import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent.ProjectionConfig;
 import edu.jhuapl.trinity.utils.Utils;
 import javafx.application.Platform;
@@ -37,49 +38,48 @@ import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 /**
  * @author Sean Phillips
  */
-public class DBSCANClusterTask extends ClusterTask {
+public class KMediodsClusterTask extends ClusterTask {
 
     ProjectionConfig pc;
     double [][] observations;
     
-    public DBSCANClusterTask(Scene scene, PerspectiveCamera camera,
+    public KMediodsClusterTask(Scene scene, PerspectiveCamera camera,
         double projectionScalar, double[][] observations, ProjectionConfig pc) {
         super(scene, camera);
         setProjectionScalar(projectionScalar);
-        this.pc = pc;
         this.observations = observations;
+        this.pc = pc;        
     }
 
     @Override
     protected void processTask() throws Exception {
         Platform.runLater(() -> {
-            ProgressStatus ps = new ProgressStatus("Fitting DBSCAN from Observations...", -1);
+            ProgressStatus ps = new ProgressStatus("Fitting KMedoids from Observations...", -1);
             scene.getRoot().fireEvent(
                 new ApplicationEvent(ApplicationEvent.SHOW_BUSY_INDICATOR, ps));
         });
-        System.out.print("DBSCAN fit... ");
+        System.out.print("KMedoids fit... ");
         long startTime = System.nanoTime();
         Array2DRowRealMatrix obsMatrix = new Array2DRowRealMatrix(observations);
-        DBSCAN hdb = new DBSCANParameters()
-            .setEps(0.5)
-//            .setMinPts(100)
-//            .setMetric(new ExponentialKernel(0.1))
-            .setForceParallel(true)
-//                    .setVerbose(true)
+        KMedoids kmedoids = new KMedoidsParameters()
+//                    .setMaxIter(100)
+//                    .setConvergenceCriteria(0.01)
+//                    .setInitializationStrategy(AbstractCentroidClusterer.InitializationStrategy.AUTO)
+//                    .setMetric(new CauchyKernel())
             .fitNewModel(obsMatrix);
-        final int[] labels = hdb.getLabels();
-        final int clusters = hdb.getNumberOfIdentifiedClusters();
+        final int[] labels = kmedoids.getLabels();
+        final int clusters = kmedoids.getK();
         Utils.printTotalTime(startTime);
-        System.out.println("\n===============================================\n");
+        System.out.println("===============================================");
 
         System.out.print("Converting clusters to Manifold Geometry... ");
         startTime = System.nanoTime();
-        convertToManifoldGeometry(observations, labels, clusters, "DBSCAN Cluster ");
+        convertToManifoldGeometry(observations, labels, clusters, "KMedoids Cluster ");
         Utils.printTotalTime(startTime);
-        System.out.println("\n===============================================\n");        
+        System.out.println("===============================================");        
         Platform.runLater(() -> {
             scene.getRoot().fireEvent(
-                new CommandTerminalEvent("Completed HDDBSCAN Fit and Manifold Geometry Task.",
+                new CommandTerminalEvent("Completed KMedoids Fit and Manifold Geometry Task.",
                     new Font("Consolas", 20), Color.GREEN));
         });        
     }

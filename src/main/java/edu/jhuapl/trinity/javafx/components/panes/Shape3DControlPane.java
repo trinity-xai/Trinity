@@ -146,11 +146,12 @@ public class Shape3DControlPane extends LitPathPane {
         
         MenuItem dbscan = new MenuItem("DBSCAN");
         MenuItem hdbscan = new MenuItem("HDBSCAN");
-        MenuItem kmeans = new MenuItem("KMeans++");
+        MenuItem kmeans = new MenuItem("KMeans");
+        MenuItem kmedoids = new MenuItem("KMedoids");
         MenuItem exmax = new MenuItem("Expectation Maximization");
         MenuItem affinity = new MenuItem("Affinity Propagation");
         clusterMethodMenuButton = new SplitMenuButton(dbscan, hdbscan, 
-            kmeans, exmax, affinity);  
+            kmeans, kmedoids, exmax, affinity);  
         clusterMethodMenuButton.setText("Select method");
         clusterMethodMenuButton.setOnAction(e->findClusters());
 
@@ -165,6 +166,10 @@ public class Shape3DControlPane extends LitPathPane {
         kmeans.setOnAction((e) -> {
             selectedMethod = ClusterMethod.KMEANS;
             clusterMethodMenuButton.setText(kmeans.getText());
+        });
+        kmedoids.setOnAction((e) -> {
+            selectedMethod = ClusterMethod.KMEDIODS;
+            clusterMethodMenuButton.setText(kmedoids.getText());
         });
         exmax.setOnAction((e) -> {
             selectedMethod = ClusterMethod.EX_MAX;

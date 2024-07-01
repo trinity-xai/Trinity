@@ -46,8 +46,8 @@ public class KMeansClusterTask extends ClusterTask {
         double projectionScalar, double[][] observations, ProjectionConfig pc) {
         super(scene, camera);
         setProjectionScalar(projectionScalar);
-        this.pc = pc;
         this.observations = observations;
+        this.pc = pc;
     }
 
     @Override

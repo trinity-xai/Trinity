@@ -90,7 +90,7 @@ public class AffinityClusterTask extends ClusterTask {
         long startTime = System.nanoTime();
         try {
         AffinityPropagation aff = new AffinityPropagationParameters()
-            .setVerbose(true)
+//            .setVerbose(true)
             .setDampingFactor(0.5)
 //            .setMinChange(100)
 //            .setMetric(new ExponentialKernel(0.1))
