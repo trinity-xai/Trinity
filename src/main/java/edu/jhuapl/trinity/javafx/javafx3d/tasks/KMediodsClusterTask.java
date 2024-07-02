@@ -61,11 +61,13 @@ public class KMediodsClusterTask extends ClusterTask {
         System.out.print("KMedoids fit... ");
         long startTime = System.nanoTime();
         Array2DRowRealMatrix obsMatrix = new Array2DRowRealMatrix(observations);
-        KMedoids kmedoids = new KMedoidsParameters()
-//                    .setMaxIter(100)
-//                    .setConvergenceCriteria(0.01)
+        KMedoids kmedoids = new KMedoidsParameters(pc.components)
+            .setMaxIter(pc.maxIterations)
+            .setConvergenceCriteria(pc.toleranceConvergence)
 //                    .setInitializationStrategy(AbstractCentroidClusterer.InitializationStrategy.AUTO)
 //                    .setMetric(new CauchyKernel())
+            .setForceParallel(pc.forceParallel)
+            .setVerbose(pc.verbose)
             .fitNewModel(obsMatrix);
         final int[] labels = kmedoids.getLabels();
         final int clusters = kmedoids.getK();

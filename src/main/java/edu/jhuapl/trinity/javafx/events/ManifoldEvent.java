@@ -41,12 +41,17 @@ public class ManifoldEvent extends Event {
             DIAGONAL, FULL
         }
 
-        ;
         public boolean useVisiblePoints = true;
         public ClusterMethod clusterMethod = ClusterMethod.EX_MAX;
         public int components = 5;
         public int maxIterations = 100;
-        public double tolerance = 1e4;
+        public double toleranceConvergence = 1e4;
+        public double epsilonAlpha = 0.5;
+        public int minimumPoints = 4;
+        public int minimumClusterSize = 100;
+        public int minimumLeafSize = 100;
+        public boolean forceParallel = false;
+        public boolean verbose = false;
         public COVARIANCE_MODE covariance = COVARIANCE_MODE.DIAGONAL;
     }
 

@@ -60,11 +60,13 @@ public class KMeansClusterTask extends ClusterTask {
         System.out.print("KMeans fit... ");
         long startTime = System.nanoTime();
         Array2DRowRealMatrix obsMatrix = new Array2DRowRealMatrix(observations);
-        KMeans kmeans = new KMeansParameters()
-//                    .setMaxIter(100)
-//                    .setConvergenceCriteria(0.01)
+        KMeans kmeans = new KMeansParameters(pc.components)
+            .setMaxIter(pc.maxIterations)
+            .setConvergenceCriteria(pc.toleranceConvergence)
 //                    .setInitializationStrategy(AbstractCentroidClusterer.InitializationStrategy.AUTO)
 //                    .setMetric(new CauchyKernel())
+            .setForceParallel(pc.forceParallel)
+            .setVerbose(pc.verbose)
             .fitNewModel(obsMatrix);
         final int[] labels = kmeans.getLabels();
         final int clusters = kmeans.getK();

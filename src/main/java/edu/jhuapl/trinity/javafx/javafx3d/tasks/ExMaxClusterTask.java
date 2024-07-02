@@ -60,7 +60,7 @@ public class ExMaxClusterTask extends ClusterTask {
     @Override
     protected void processTask() throws Exception {
         Platform.runLater(() -> {
-            ProgressStatus ps = new ProgressStatus("Fitting KMeans from Observations...", -1);
+            ProgressStatus ps = new ProgressStatus("Fitting GMM from Observations...", -1);
             scene.getRoot().fireEvent(
                 new ApplicationEvent(ApplicationEvent.SHOW_BUSY_INDICATOR, ps));
         });

@@ -90,20 +90,20 @@ public class AffinityClusterTask extends ClusterTask {
         long startTime = System.nanoTime();
         try {
         AffinityPropagation aff = new AffinityPropagationParameters()
-//            .setVerbose(true)
-            .setDampingFactor(0.5)
-//            .setMinChange(100)
+            .setDampingFactor(pc.epsilonAlpha)
+            .setMinChange(pc.toleranceConvergence)
+            .setIterBreak(AffinityPropagation.DEF_ITER_BREAK) //@TODO SMP add gui control and config support
+            .setMaxIter(pc.maxIterations)
+            .setForceParallel(pc.forceParallel)
+            .setVerbose(pc.verbose)
+            .useGaussianSmoothing(AffinityPropagation.DEF_ADD_GAUSSIAN_NOISE) //@TODO SMP add GUI and config support
 //            .setMetric(new ExponentialKernel(0.1))
-//            .setMaxIter(200)
-//            .setIterBreak(50)
-//            .setForceParallel(true)
-//                    .setVerbose(true)
             .fitNewModel(obsMatrix);
         final int[] labels = aff.getLabels();
         final int clusters = aff.getNumberOfIdentifiedClusters();
 
         Utils.printTotalTime(startTime);
-        System.out.println("\n===============================================\n");
+        System.out.println("===============================================");
 
         System.out.print("Converting clusters to Manifold Geometry... ");
         startTime = System.nanoTime();
@@ -115,7 +115,7 @@ public class AffinityClusterTask extends ClusterTask {
             ex.printStackTrace();
         }
         Utils.printTotalTime(startTime);
-        System.out.println("\n===============================================\n");        
+        System.out.println("===============================================");        
         Platform.runLater(() -> {
             scene.getRoot().fireEvent(
                 new CommandTerminalEvent("Completed Affinity Propagation Fit and Manifold Geometry Task.",

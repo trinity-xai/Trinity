@@ -86,9 +86,15 @@ public class Shape3DControlPane extends LitPathPane {
     private Label rotateZLabel;
     private ListView<PointListItem> pointListView;
     private ChoiceBox labelChoiceBox;
-    private Spinner gmmIterationsSpinner;
-    private Spinner gmmConvergenceSpinner;
-    private Spinner gmmComponentsSpinner;
+    private Spinner iterationsSpinner;
+    private Spinner convergenceSpinner;
+    private Spinner componentsSpinner;
+    private Spinner epsilonAlphaSpinner;
+    private Spinner minimumPointsSpinner;
+    private Spinner minimumClusterSizeSpinner;
+    private Spinner minimumLeafSizeSpinner;
+    private CheckBox parallelCheckBox;
+    private CheckBox verboseCheckBox;
     private RadioButton diagonalRadioButton;
     private RadioButton fullCovarianceRadioButton;
     private SplitMenuButton clusterMethodMenuButton;    
@@ -127,15 +133,41 @@ public class Shape3DControlPane extends LitPathPane {
         BorderPane findClusterBorderPane = new BorderPane();
         findClustersTab.setContent(findClusterBorderPane);        
         
-        gmmComponentsSpinner = new Spinner(
+        componentsSpinner = new Spinner(
             new SpinnerValueFactory.IntegerSpinnerValueFactory(2, 20, 5, 1));
-        gmmComponentsSpinner.setPrefWidth(SPINNER_PREF_WIDTH);        
-        gmmIterationsSpinner = new Spinner(
+        componentsSpinner.setPrefWidth(SPINNER_PREF_WIDTH);        
+        componentsSpinner.setEditable(true);
+        iterationsSpinner = new Spinner(
                 new SpinnerValueFactory.IntegerSpinnerValueFactory(10, 500, 50, 5));
-        gmmIterationsSpinner.setPrefWidth(SPINNER_PREF_WIDTH);        
-        gmmConvergenceSpinner = new Spinner(
-            new SpinnerValueFactory.DoubleSpinnerValueFactory(1e4, 1e12, 1e6, 100));
-        gmmConvergenceSpinner.setPrefWidth(SPINNER_PREF_WIDTH);
+        iterationsSpinner.setPrefWidth(SPINNER_PREF_WIDTH);        
+        iterationsSpinner.setEditable(true);
+        convergenceSpinner = new Spinner(
+            new SpinnerValueFactory.DoubleSpinnerValueFactory( 0.001, 0.999,  0.005, 0.001));
+        convergenceSpinner.setPrefWidth(SPINNER_PREF_WIDTH);
+        convergenceSpinner.setEditable(true);
+
+        epsilonAlphaSpinner = new Spinner(
+            new SpinnerValueFactory.DoubleSpinnerValueFactory(0.01, 1, 0.5, 0.01));
+        epsilonAlphaSpinner.setPrefWidth(SPINNER_PREF_WIDTH);
+        epsilonAlphaSpinner.setEditable(true);
+        
+        minimumPointsSpinner = new Spinner(
+            new SpinnerValueFactory.IntegerSpinnerValueFactory(4, 1000, 10, 10));
+        minimumPointsSpinner.setPrefWidth(SPINNER_PREF_WIDTH);
+        minimumPointsSpinner.setEditable(true);
+
+        minimumClusterSizeSpinner = new Spinner(
+            new SpinnerValueFactory.IntegerSpinnerValueFactory(4, 1000, 100, 50));
+        minimumClusterSizeSpinner.setPrefWidth(SPINNER_PREF_WIDTH);
+        minimumClusterSizeSpinner.setEditable(true);
+        
+        minimumLeafSizeSpinner = new Spinner(
+            new SpinnerValueFactory.IntegerSpinnerValueFactory(4, 1000, 100, 50));
+        minimumLeafSizeSpinner.setPrefWidth(SPINNER_PREF_WIDTH);
+        minimumLeafSizeSpinner.setEditable(true);
+        
+        parallelCheckBox = new CheckBox("Force Parallel");
+        verboseCheckBox = new CheckBox("Verbose Output");
         
         ToggleGroup covarianceToggleGroup = new ToggleGroup();
         diagonalRadioButton = new RadioButton("Diagonal");
@@ -189,14 +221,27 @@ public class Shape3DControlPane extends LitPathPane {
         convergenceLabel.setPrefWidth(SPINNER_PREF_WIDTH);
         Label covarianceLabel = new Label("Covariance");
         covarianceLabel.setPrefWidth(SPINNER_PREF_WIDTH);
+        Label epsilonAlphaLabel = new Label("Epsilon/Alpha");
+        epsilonAlphaLabel.setPrefWidth(SPINNER_PREF_WIDTH);
+        Label minimumPointsLabel = new Label("Minimum Points");
+        minimumPointsLabel.setPrefWidth(SPINNER_PREF_WIDTH);
+        Label minimumClusterSizeLabel = new Label("Minimum Cluster Size");
+        minimumClusterSizeLabel.setPrefWidth(SPINNER_PREF_WIDTH);
+        Label minimumLeafSizeLabel = new Label("Minimum Leaf Size");
+        minimumLeafSizeLabel.setPrefWidth(SPINNER_PREF_WIDTH);
         Label clusteringLabel = new Label("Clustering Method");        
         clusteringLabel.setPrefWidth(SPINNER_PREF_WIDTH);
 
         VBox vbox = new VBox(10,
             new HBox(10, clusteringLabel, clusterMethodMenuButton),
-            new HBox(10, componentsLabel, gmmComponentsSpinner),
-            new HBox(10, iterationsLabel, gmmIterationsSpinner),
-            new HBox(10, convergenceLabel, gmmConvergenceSpinner),
+            new HBox(10, componentsLabel, componentsSpinner),
+            new HBox(10, iterationsLabel, iterationsSpinner),
+            new HBox(10, convergenceLabel, convergenceSpinner),
+            new HBox(10, epsilonAlphaLabel, epsilonAlphaSpinner),    
+            new HBox(10, minimumPointsLabel, minimumPointsSpinner),    
+            new HBox(10, minimumClusterSizeLabel, minimumClusterSizeSpinner),    
+            new HBox(10, minimumLeafSizeLabel, minimumLeafSizeSpinner),    
+            new HBox(10, parallelCheckBox, verboseCheckBox),    
             new HBox(10, covarianceLabel, diagonalRadioButton, fullCovarianceRadioButton)
         );
         findClusterBorderPane.setCenter(vbox);
@@ -205,15 +250,20 @@ public class Shape3DControlPane extends LitPathPane {
     public void findClusters() {
         System.out.println("Find Clusters...");
         ProjectionConfig pc = new ProjectionConfig();
-        pc.components = (int) gmmComponentsSpinner.getValue();
+        pc.components = (int) componentsSpinner.getValue();
         pc.clusterMethod = selectedMethod;
 //        pc.useVisiblePoints = useVisibleRadioButton.isSelected();
         pc.useVisiblePoints = true;
         pc.covariance = diagonalRadioButton.isSelected()
             ? ProjectionConfig.COVARIANCE_MODE.DIAGONAL
             : ProjectionConfig.COVARIANCE_MODE.FULL;
-        pc.tolerance = (double) gmmConvergenceSpinner.getValue();
-        pc.maxIterations = (int) gmmIterationsSpinner.getValue();
+        pc.toleranceConvergence = (double) convergenceSpinner.getValue();
+        pc.maxIterations = (int) iterationsSpinner.getValue();
+        pc.epsilonAlpha = (double) epsilonAlphaSpinner.getValue();
+        pc.minimumPoints = (int) minimumPointsSpinner.getValue();
+        pc.minimumClusterSize = (int) minimumClusterSizeSpinner.getValue();
+        pc.minimumLeafSize = (int) minimumLeafSizeSpinner.getValue();
+
         clusterMethodMenuButton.getScene().getRoot().fireEvent(
             new ManifoldEvent(ManifoldEvent.FIND_PROJECTION_CLUSTERS, pc));
     }    

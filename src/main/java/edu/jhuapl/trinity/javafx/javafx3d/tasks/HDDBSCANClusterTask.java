@@ -61,12 +61,12 @@ public class HDDBSCANClusterTask extends ClusterTask {
         long startTime = System.nanoTime();
         Array2DRowRealMatrix obsMatrix = new Array2DRowRealMatrix(observations);
         HDBSCAN hdb = new HDBSCANParameters()
-            .setAlpha(0.5)
-            .setMinPts(100)
-            .setMinClustSize(50)
-            .setLeafSize(100)
-                    .setForceParallel(true)
-//                    .setVerbose(true)
+            .setAlpha(pc.epsilonAlpha)
+            .setMinPts(pc.minimumPoints)
+            .setMinClustSize(pc.minimumClusterSize)
+            .setLeafSize(pc.minimumLeafSize)
+            .setForceParallel(pc.forceParallel)
+            .setVerbose(pc.verbose)
             .fitNewModel(obsMatrix);
         final int[] labels = hdb.getLabels();
         final int clusters = hdb.getNumberOfIdentifiedClusters();

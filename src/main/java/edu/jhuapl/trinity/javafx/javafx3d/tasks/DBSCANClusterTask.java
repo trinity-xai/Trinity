@@ -61,22 +61,22 @@ public class DBSCANClusterTask extends ClusterTask {
         long startTime = System.nanoTime();
         Array2DRowRealMatrix obsMatrix = new Array2DRowRealMatrix(observations);
         DBSCAN hdb = new DBSCANParameters()
-            .setEps(0.5)
-//            .setMinPts(100)
+            .setEps(pc.epsilonAlpha)
+            .setMinPts(pc.minimumPoints)
 //            .setMetric(new ExponentialKernel(0.1))
-            .setForceParallel(true)
-//                    .setVerbose(true)
+            .setForceParallel(pc.forceParallel)
+            .setVerbose(pc.verbose)
             .fitNewModel(obsMatrix);
         final int[] labels = hdb.getLabels();
         final int clusters = hdb.getNumberOfIdentifiedClusters();
         Utils.printTotalTime(startTime);
-        System.out.println("\n===============================================\n");
+        System.out.println("===============================================");
 
         System.out.print("Converting clusters to Manifold Geometry... ");
         startTime = System.nanoTime();
         convertToManifoldGeometry(observations, labels, clusters, "DBSCAN Cluster ");
         Utils.printTotalTime(startTime);
-        System.out.println("\n===============================================\n");        
+        System.out.println("===============================================");        
         Platform.runLater(() -> {
             scene.getRoot().fireEvent(
                 new CommandTerminalEvent("Completed HDDBSCAN Fit and Manifold Geometry Task.",

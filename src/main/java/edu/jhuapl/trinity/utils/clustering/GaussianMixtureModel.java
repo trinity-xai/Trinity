@@ -151,7 +151,7 @@ public class GaussianMixtureModel extends GaussianMixture {
 //            components[i] = new GaussianMixtureComponent(1.0 / k, gaussian);
 //        }
         Array2DRowRealMatrix obsMatrix = new Array2DRowRealMatrix(data);
-        KMeans kmeans = new KMeansParameters()
+        KMeans kmeans = new KMeansParameters(k)
                     .setMaxIter(100)
 //                    .setConvergenceCriteria(0.01)
 //                    .setInitializationStrategy(AbstractCentroidClusterer.InitializationStrategy.AUTO)
