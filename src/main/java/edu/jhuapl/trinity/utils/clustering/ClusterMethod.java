@@ -24,5 +24,5 @@ package edu.jhuapl.trinity.utils.clustering;
  * @author Sean Phillips
  */
 public enum ClusterMethod {
-    KMEANS, EX_MAX
+    DBSCAN, HDDBSCAN, KMEANS, KMEDIODS, EX_MAX, AFFINITY
 }

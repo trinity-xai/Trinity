@@ -20,8 +20,6 @@ package edu.jhuapl.trinity.javafx.javafx3d;
  * #L%
  */
 
-import com.clust4j.algo.HDBSCAN;
-import com.clust4j.algo.HDBSCANParameters;
 import edu.jhuapl.trinity.App;
 import edu.jhuapl.trinity.data.CoordinateSet;
 import edu.jhuapl.trinity.data.Dimension;
@@ -46,7 +44,6 @@ import edu.jhuapl.trinity.javafx.components.panes.RadarPlotPane;
 import edu.jhuapl.trinity.javafx.components.panes.RadialEntityOverlayPane;
 import edu.jhuapl.trinity.javafx.components.panes.VideoPane;
 import edu.jhuapl.trinity.javafx.components.radial.AnimatedNeonCircle;
-import edu.jhuapl.trinity.javafx.components.radial.ProgressStatus;
 import edu.jhuapl.trinity.javafx.components.radial.ViewControlsMenu;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
@@ -54,7 +51,6 @@ import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.events.HyperspaceEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent.ProjectionConfig;
-import edu.jhuapl.trinity.javafx.events.ManifoldEvent.ProjectionConfig.COVARIANCE_MODE;
 import edu.jhuapl.trinity.javafx.events.ShadowEvent;
 import edu.jhuapl.trinity.javafx.events.TimelineEvent;
 import edu.jhuapl.trinity.javafx.events.TrajectoryEvent;
@@ -63,7 +59,15 @@ import edu.jhuapl.trinity.javafx.javafx3d.animated.AnimatedSphere;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.Opticon;
 import edu.jhuapl.trinity.javafx.javafx3d.projectiles.HitShape3D;
 import edu.jhuapl.trinity.javafx.javafx3d.projectiles.ProjectileSystem;
+import edu.jhuapl.trinity.javafx.javafx3d.tasks.AffinityClusterTask;
+import edu.jhuapl.trinity.javafx.javafx3d.tasks.DBSCANClusterTask;
+import edu.jhuapl.trinity.javafx.javafx3d.tasks.ExMaxClusterTask;
+import edu.jhuapl.trinity.javafx.javafx3d.tasks.HDDBSCANClusterTask;
+import edu.jhuapl.trinity.javafx.javafx3d.tasks.KMeansClusterTask;
+import edu.jhuapl.trinity.javafx.javafx3d.tasks.KMediodsClusterTask;
 import edu.jhuapl.trinity.javafx.javafx3d.tasks.ManifoldClusterTask;
+import edu.jhuapl.trinity.javafx.javafx3d.tasks.ProjectPcaFeaturesTask;
+import edu.jhuapl.trinity.javafx.javafx3d.tasks.ProjectUmapFeaturesTask;
 import edu.jhuapl.trinity.javafx.renderers.FeatureVectorRenderer;
 import edu.jhuapl.trinity.javafx.renderers.GaussianMixtureRenderer;
 import edu.jhuapl.trinity.javafx.renderers.ManifoldRenderer;
@@ -71,13 +75,7 @@ import edu.jhuapl.trinity.utils.AnalysisUtils;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.PCAConfig;
 import edu.jhuapl.trinity.utils.ResourceUtils;
-import edu.jhuapl.trinity.utils.Utils;
 import edu.jhuapl.trinity.utils.VisibilityMap;
-import edu.jhuapl.trinity.utils.clustering.Cluster;
-import edu.jhuapl.trinity.utils.clustering.GaussianMixtureComponent;
-import edu.jhuapl.trinity.utils.clustering.GaussianMixtureModel;
-import edu.jhuapl.trinity.utils.clustering.KmeansPlusPlus;
-import edu.jhuapl.trinity.utils.clustering.Point;
 import edu.jhuapl.trinity.utils.umap.Umap;
 import javafx.animation.AnimationTimer;
 import javafx.animation.KeyFrame;
@@ -100,7 +98,6 @@ import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.ContextMenu;
-import javafx.scene.control.DialogPane;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
 import javafx.scene.effect.Glow;
@@ -118,7 +115,6 @@ import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
-import javafx.scene.shape.Box;
 import javafx.scene.shape.CullFace;
 import javafx.scene.shape.DrawMode;
 import javafx.scene.shape.Rectangle;
@@ -128,10 +124,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Translate;
-import javafx.stage.StageStyle;
 import javafx.util.Duration;
-import javafx.util.Pair;
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.fxyz3d.geometry.Point3D;
 import org.fxyz3d.scene.Skybox;
 import org.fxyz3d.utils.CameraTransformer;
@@ -2745,82 +2738,7 @@ public class Projections3DPane extends StackPane implements
     }
 
     public void projectFeatureCollection(FeatureCollection originalFC, PCAConfig config) {
-        Task task = new Task() {
-            @Override
-            protected FeatureCollection call() throws Exception {
-                Platform.runLater(() -> {
-                    ProgressStatus ps = new ProgressStatus("Fitting PCA Projection...", 0.5);
-                    ps.fillStartColor = Color.AZURE;
-                    ps.fillEndColor = Color.LIME;
-                    ps.innerStrokeColor = Color.AZURE;
-                    ps.outerStrokeColor = Color.LIME;
-                    scene.getRoot().fireEvent(
-                        new ApplicationEvent(ApplicationEvent.UPDATE_BUSY_INDICATOR, ps));
-                });
-
-                double[][] featureArray = originalFC.getFeatures().stream()
-                    .map(FeatureVector.mapToStateArray)
-                    .toArray(double[][]::new);
-                System.out.println("featureArray sizes: "
-                    + featureArray.length + " " + featureArray[0].length);
-
-                int start = config.startIndex;
-                if (start < 0 || start >= featureArray.length) {
-                    System.out.println("PCA Start index no bueno... setting to Zero.");
-                    start = 0;
-                }
-                int end = config.endIndex;
-                if (end <= start
-                    || end >= originalFC.getFeatures().size()
-                    || end <= 0) {
-                    System.out.println("PCA End index no bueno... setting to Max.");
-                    end = originalFC.getFeatures().size() - 1;
-                }
-
-                int truncSize = featureArray[0].length;
-                double[][] truncArray = originalFC.getFeatures().stream()
-                    .skip(start).limit(end)
-                    .map((FeatureVector t) -> {
-                        double[] states = new double[truncSize];
-                        for (int i = 0; i < truncSize && i < states.length; i++) {
-                            states[i] = t.getData().get(i);
-                        }
-                        return states;
-                    })
-                    .toArray(double[][]::new);
-                System.out.println("truncArray sizes: "
-                    + truncArray.length + " " + truncArray[0].length);
-
-                System.out.print("PCA... ");
-                long startTime = System.nanoTime();
-                double[][] pcaProjection = null;
-                if (config.method == AnalysisUtils.ANALYSIS_METHOD.SVD)
-                    pcaProjection = AnalysisUtils.doCommonsSVD(truncArray);
-                else
-                    pcaProjection = AnalysisUtils.doCommonsPCA(truncArray);
-                Utils.printTotalTime(startTime);
-
-                System.out.println("mapping projected PCA data back to FeatureVectors...");
-                FeatureCollection projectedFC = FeatureCollection.fromData(
-                    pcaProjection, config.pcaDimensions, config.scaling);
-                for (int i = 0; i < projectedFC.getFeatures().size() - 1; i++) {
-                    if (i >= originalFC.getFeatures().size())
-                        break;
-                    FeatureVector origFV = originalFC.getFeatures().get(i);
-                    projectedFC.getFeatures().get(i).setLabel(origFV.getLabel());
-                    projectedFC.getFeatures().get(i).setScore(origFV.getScore());
-                    projectedFC.getFeatures().get(i).setImageURL(origFV.getImageURL());
-                    projectedFC.getFeatures().get(i).setText(origFV.getText());
-                    projectedFC.getFeatures().get(i).setMetaData(origFV.getMetaData());
-                }
-                Platform.runLater(() -> {
-                    ProgressStatus ps = new ProgressStatus("", -1);
-                    scene.getRoot().fireEvent(
-                        new ApplicationEvent(ApplicationEvent.HIDE_BUSY_INDICATOR, ps));
-                });
-                return projectedFC;
-            }
-        };
+        ProjectPcaFeaturesTask task = new ProjectPcaFeaturesTask(scene, originalFC, config);
         task.setOnSucceeded(e -> {
             FeatureCollection fc;
             try {
@@ -2907,69 +2825,8 @@ public class Projections3DPane extends StackPane implements
     }
 
     public void projectFeatureCollection(FeatureCollection originalFC, Umap umap) {
-        Alert alert = new Alert(AlertType.CONFIRMATION,
-            "", ButtonType.YES, ButtonType.NO);
-        alert.setHeaderText("Watch a TV while you wait?");
-        alert.setGraphic(ResourceUtils.loadIcon("retrowave-tv", 100));
-        alert.initStyle(StageStyle.TRANSPARENT);
-        DialogPane dialogPane = alert.getDialogPane();
-        dialogPane.setBackground(Background.EMPTY);
-        dialogPane.getScene().setFill(Color.TRANSPARENT);
-        String DIALOGCSS = this.getClass().getResource("/edu/jhuapl/trinity/css/dialogstyles.css").toExternalForm();
-        dialogPane.getStylesheets().add(DIALOGCSS);
-        alert.setX(scene.getWidth() - 500);
-        alert.setY(500);
-        alert.resultProperty().addListener(r -> {
-            if (alert.getResult().equals(ButtonType.YES)) {
-                manifoldControlPane.minimize();
-                scene.getRoot().fireEvent(
-                    new ApplicationEvent(ApplicationEvent.SHOW_VIDEO_PANE,
-                        "EMPTY VISION ", "A past never had for a Retrowave Future"));
-            }
-        });
-        alert.show();
-        Task task = new Task() {
-            @Override
-            protected FeatureCollection call() throws Exception {
-                Platform.runLater(() -> {
-                    ProgressStatus ps = new ProgressStatus("Fitting UMAP Transform...", 0.5);
-                    ps.fillStartColor = Color.AZURE;
-                    ps.fillEndColor = Color.LIME;
-                    ps.innerStrokeColor = Color.AZURE;
-                    ps.outerStrokeColor = Color.LIME;
-                    scene.getRoot().fireEvent(
-                        new ApplicationEvent(ApplicationEvent.UPDATE_BUSY_INDICATOR, ps));
-                });
-
-                double[][] umapMatrix = AnalysisUtils.fitUMAP(originalFC, umap);
-                latestUmap = umap;
-                Platform.runLater(() -> {
-                    ProgressStatus ps = new ProgressStatus("Converting to FeatureCollection...", 0.5);
-                    ps.fillStartColor = Color.CYAN;
-                    ps.fillEndColor = Color.NAVY;
-                    ps.innerStrokeColor = Color.CYAN;
-                    ps.outerStrokeColor = Color.SILVER;
-                    scene.getRoot().fireEvent(
-                        new ApplicationEvent(ApplicationEvent.UPDATE_BUSY_INDICATOR, ps));
-                });
-                System.out.println("mapping projected UMAP data back to FeatureVectors...");
-                FeatureCollection projectedFC = FeatureCollection.fromData(umapMatrix);
-                for (int i = 0; i < originalFC.getFeatures().size(); i++) {
-                    FeatureVector origFV = originalFC.getFeatures().get(i);
-                    projectedFC.getFeatures().get(i).setLabel(origFV.getLabel());
-                    projectedFC.getFeatures().get(i).setScore(origFV.getScore());
-                    projectedFC.getFeatures().get(i).setImageURL(origFV.getImageURL());
-                    projectedFC.getFeatures().get(i).setText(origFV.getText());
-                    projectedFC.getFeatures().get(i).setMetaData(origFV.getMetaData());
-                }
-                Platform.runLater(() -> {
-                    ProgressStatus ps = new ProgressStatus("", -1);
-                    scene.getRoot().fireEvent(
-                        new ApplicationEvent(ApplicationEvent.HIDE_BUSY_INDICATOR, ps));
-                });
-                return projectedFC;
-            }
-        };
+        latestUmap = umap;
+        ProjectUmapFeaturesTask task = new ProjectUmapFeaturesTask(scene, originalFC, umap);
         task.setOnSucceeded(e -> {
             FeatureCollection fc;
             try {
@@ -2988,183 +2845,75 @@ public class Projections3DPane extends StackPane implements
         Thread thread = new Thread(task);
         thread.setDaemon(true);
         thread.start();
-
     }
 
     @Override
-//    public void findClusters(int components, boolean useVisiblePoints, ClusterMethod clusterMethod) {
     public void findClusters(ProjectionConfig pc) {
         //convert featurevector space into 2D array of doubles
         double[][] observations = FeatureCollection.toData(featureVectors);
-
-        long startTime = System.nanoTime();
         //find clusters
         switch (pc.clusterMethod) {
+            case DBSCAN -> {
+                DBSCANClusterTask dbscanClusterTask = new DBSCANClusterTask(
+                    scene, camera, projectionScalar, observations, pc);
+                if (!dbscanClusterTask.isCancelledByUser()) {
+                    Thread t = new Thread(dbscanClusterTask);
+                    t.setDaemon(true);
+                    t.start();
+                }
+                break;                
+            }
+            case HDDBSCAN -> {
+                HDDBSCANClusterTask hddbscanClusterTask = new HDDBSCANClusterTask(
+                    scene, camera, projectionScalar, observations, pc);
+                if (!hddbscanClusterTask.isCancelledByUser()) {
+                    Thread t = new Thread(hddbscanClusterTask);
+                    t.setDaemon(true);
+                    t.start();
+                }
+                break;                
+            }
             case KMEANS -> {
-                System.out.print("HDBSCAN fit... ");
-
-                startTime = System.nanoTime();
-//                var kmeansClusters = KMeans.fit(observations, 50);
-//                RealMatrix obsMatrix = MatrixUtils.createRealMatrix(observations);
-                Array2DRowRealMatrix obsMatrix = new Array2DRowRealMatrix(observations);
-//                DBSCAN db = new DBSCANParameters()
-//                    .setEps(10)
-//                    .fitNewModel(obsMatrix);
-                HDBSCAN hdb = new HDBSCANParameters()
-                    .setAlpha(0.5)
-                    .setMinPts(100)
-                    .setMinClustSize(50)
-                    .setLeafSize(100)
-//                    .setForceParallel(true)
-//                    .setVerbose(true)
-                    .fitNewModel(obsMatrix);
-                final int[] results = hdb.getLabels();
-                int clusters = hdb.getNumberOfIdentifiedClusters();
-
-                Utils.printTotalTime(startTime);
-                System.out.println("\n===============================================\n");
-                System.out.print("Generating Hulls from Clusters... ");
-                startTime = System.nanoTime();
-
-                for (int clusterIndex = 0; clusterIndex < clusters; clusterIndex++) {
-                    String label = "HDDBSCAN Cluster " + clusterIndex;
-                    List<Point3D> points = new ArrayList<>();
-                    for (int i = 0; i < results.length; i++) {
-                        if (results[i] == clusterIndex) {
-                            points.add(new Point3D(
-                                observations[i][0] * projectionScalar,
-                                observations[i][1] * -projectionScalar,
-                                observations[i][2] * projectionScalar)
-                            );
-                        }
-                    }
-                    if (points.size() >= 4) {
-                        ArrayList<javafx.geometry.Point3D> fxPoints = points.stream()
-                            .map(p3D -> new javafx.geometry.Point3D(p3D.x, p3D.y, p3D.z))
-                            .collect(Collectors.toCollection(ArrayList::new));
-                        Manifold manifold = new Manifold(fxPoints, label, label, sceneColor);
-                        //Create the 3D manifold shape
-                        Manifold3D manifold3D = makeHull(points, label, null);
-                        addManifold(manifold, manifold3D);
-                        //Add this Manifold data object to the global tracker
-                        Manifold.addManifold(manifold);
-
-                        //update the manifold to manifold3D mapping
-                        Manifold.globalManifoldToManifold3DMap.put(manifold, manifold3D);
-                        //announce to the world of the new manifold and its shape
-                        //System.out.println("Manifold3D generation complete for " + label);
-                        getScene().getRoot().fireEvent(new ManifoldEvent(
-                            ManifoldEvent.MANIFOLD3D_OBJECT_GENERATED, manifold, manifold3D));
-                    } else {
-                        System.out.println("Cluster has less than 4 points");
-                    }
+                KMeansClusterTask kmeansClusterTask = new KMeansClusterTask(
+                    scene, camera, projectionScalar, observations, pc);
+                if (!kmeansClusterTask.isCancelledByUser()) {
+                    Thread t = new Thread(kmeansClusterTask);
+                    t.setDaemon(true);
+                    t.start();
                 }
-
-                Utils.printTotalTime(startTime);
-                System.out.println("\n===============================================\n");
-//                System.out.println("KMeans Clusters: " + kmeansClusters.k
-//                    + " Distortion: " + kmeansClusters.distortion);
-                break;
+                break; 
             }
+            case KMEDIODS -> {
+                KMediodsClusterTask kmediodsClusterTask = new KMediodsClusterTask(
+                    scene, camera, projectionScalar, observations, pc);
+                if (!kmediodsClusterTask.isCancelledByUser()) {
+                    Thread t = new Thread(kmediodsClusterTask);
+                    t.setDaemon(true);
+                    t.start();
+                }
+                break; 
+            }
+            
             case EX_MAX -> {
-                System.out.println("Expectation Maximization... ");
-                startTime = System.nanoTime();
-                boolean diagonal = pc.covariance == COVARIANCE_MODE.DIAGONAL;
-                manifoldGroup.getChildren().removeIf(n -> n instanceof Box);
-                Point[] kmeansCentroids = KmeansPlusPlus.kmeansPlusPlus(pc.components, observations);
-                for (Point point : kmeansCentroids) {
-                    System.out.println("k++ centroid: " + Arrays.toString(point.getPosition()));
-                    Box box = new Box(point3dSize, point3dSize, point3dSize);
-                    PhongMaterial pm = new PhongMaterial(Color.ALICEBLUE);
-                    box.setMaterial(pm);
-                    box.setTranslateX(point.getPosition()[0] * projectionScalar);
-                    box.setTranslateY(point.getPosition()[1] * -projectionScalar);
-                    box.setTranslateZ(point.getPosition()[2] * projectionScalar);
-                    manifoldGroup.getChildren().add(box);
+                ExMaxClusterTask exMaxClusterTask = new ExMaxClusterTask(
+                    scene, camera, projectionScalar, observations, pc);
+                if (!exMaxClusterTask.isCancelledByUser()) {
+                    Thread t = new Thread(exMaxClusterTask);
+                    t.setDaemon(true);
+                    t.start();
                 }
-
-                GaussianMixtureModel gmm = GaussianMixtureModel.fit(pc.components, observations, diagonal);
-                Utils.printTotalTime(startTime);
-                System.out.println("Components found: " + gmm.components.length);
-                System.out.println("Mapping observations to clusters by component probability... ");
-                startTime = System.nanoTime();
-                ArrayList<Cluster> clusters = new ArrayList<>();
-                int i = 0;
-                for (GaussianMixtureComponent c : gmm.components) {
-                    System.out.println("After GMM Fit Centroid " + i + ": " + Arrays.toString(c.distribution.mu));
-                    clusters.add(new Cluster(observations[0].length));
-                    i++;
-
-                    Box box = new Box(point3dSize, point3dSize, point3dSize);
-                    PhongMaterial pm = new PhongMaterial(Color.GREENYELLOW);
-                    box.setDrawMode(DrawMode.LINE);
-                    box.setMaterial(pm);
-                    box.setTranslateX(c.distribution.mu[0] * projectionScalar);
-                    box.setTranslateY(c.distribution.mu[1] * -projectionScalar);
-                    box.setTranslateZ(c.distribution.mu[2] * projectionScalar);
-                    manifoldGroup.getChildren().add(box);
-                }
-                ArrayList<Double> maxPostProbList = new ArrayList<>(observations.length);
-                for (int dataIndex = 0; dataIndex < observations.length; dataIndex++) {
-                    Pair<Integer, Double> maxPostProb = gmm.maxPostProb(observations[dataIndex]);
-                    maxPostProbList.add(maxPostProb.getValue());
-//                    int component = gmm.map(observations[dataIndex]);
-                    clusters.get(maxPostProb.getKey())
-                        .addPointToCluster(dataIndex, new Point(observations[dataIndex]));
-                }
-                Utils.printTotalTime(startTime);
-
-                Collections.sort(maxPostProbList);
-                double min = Collections.min(maxPostProbList);
-                double max = Collections.max(maxPostProbList);
-//                maxPostProbList.stream().forEach(m ->
-//                    System.out.println(DataUtils.normalize(m, min, max))
-//                );
-
-                System.out.print("Generating Hulls from Clusters... ");
-                startTime = System.nanoTime();
-                int index = 0;
-                for (Cluster cluster : clusters) {
-                    if (cluster.getClusterPoints().size() >= 4) {
-                        String label = "GMM Cluster " + index;
-                        List<Point3D> points = cluster.getClusterPoints().stream()
-                            .map((Point t) -> new Point3D(
-                                t.getPosition()[0] * projectionScalar,
-                                t.getPosition()[1] * -projectionScalar,
-                                t.getPosition()[2] * projectionScalar))
-                            .toList();
-
-                        ArrayList<javafx.geometry.Point3D> fxPoints = points.stream()
-                            .map(p3D -> new javafx.geometry.Point3D(p3D.x, p3D.y, p3D.z))
-                            .collect(Collectors.toCollection(ArrayList::new));
-                        Manifold manifold = new Manifold(fxPoints, label, label, sceneColor);
-                        //Create the 3D manifold shape
-                        Manifold3D manifold3D = makeHull(points, label, null);
-                        manifold3D.setManifold(manifold);
-                        manifold3D.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
-                            getScene().getRoot().fireEvent(
-                                new ManifoldEvent(ManifoldEvent.MANIFOLD_3D_SELECTED, manifold));
-                        });
-                        //Add this Manifold data object to the global tracker
-                        Manifold.addManifold(manifold);
-                        //update the manifold to manifold3D mapping
-                        Manifold.globalManifoldToManifold3DMap.put(manifold, manifold3D);
-                        //announce to the world of the new manifold and its shape
-                        //System.out.println("Manifold3D generation complete for " + label);
-                        getScene().getRoot().fireEvent(new ManifoldEvent(
-                            ManifoldEvent.MANIFOLD3D_OBJECT_GENERATED, manifold, manifold3D));
-                    } else {
-                        System.out.println("Cluster has less than 4 points");
-                    }
-                    index++;
-                }
-
-                Utils.printTotalTime(startTime);
-                System.out.println("\n===============================================\n");
-                //System.out.println("EmDriver Results : " + emDriver.learnedModel.toString());
-                break;
+                break; 
             }
-
+            case AFFINITY -> {
+                AffinityClusterTask affinityClusterTask = new AffinityClusterTask(
+                    scene, camera, projectionScalar, observations, pc);
+                if (!affinityClusterTask.isCancelledByUser()) {
+                    Thread t = new Thread(affinityClusterTask);
+                    t.setDaemon(true);
+                    t.start();
+                }
+                break;                
+            }
         }
     }
 
@@ -3172,7 +2921,7 @@ public class Projections3DPane extends StackPane implements
     public void addClusters(List<PointCluster> clusters) {
         //first add all the new data points if necessary
         //@TODO SMP This is temporary... we need to guard this with user prompts
-        if (clusters.size() == 0) {
+        if (clusters.isEmpty()) {
             clusters.stream().sorted((o1, o2) -> {
                 if (o1.getClusterId() < o2.getClusterId()) return -1;
                 else if (o1.getClusterId() > o2.getClusterId()) return 1;

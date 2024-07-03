@@ -31,12 +31,10 @@ import edu.jhuapl.trinity.javafx.components.listviews.ManifoldListItem;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
-import edu.jhuapl.trinity.javafx.events.ManifoldEvent.ProjectionConfig;
 import edu.jhuapl.trinity.javafx.javafx3d.Manifold3D;
 import edu.jhuapl.trinity.utils.AnalysisUtils;
 import edu.jhuapl.trinity.utils.PCAConfig;
 import edu.jhuapl.trinity.utils.ResourceUtils;
-import edu.jhuapl.trinity.utils.clustering.ClusterMethod;
 import edu.jhuapl.trinity.utils.metric.Metric;
 import edu.jhuapl.trinity.utils.umap.Umap;
 import javafx.fxml.FXML;
@@ -49,12 +47,10 @@ import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ColorPicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
-import javafx.scene.control.MenuItem;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.Slider;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
-import javafx.scene.control.SplitMenuButton;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.image.ImageView;
@@ -126,19 +122,6 @@ public class ManifoldControlController implements Initializable {
     private CheckBox showWireframeCheckBox;
     @FXML
     private CheckBox showControlPointsCheckBox;
-    @FXML
-    private Spinner gmmIterationsSpinner;
-    @FXML
-    private Spinner gmmConvergenceSpinner;
-    @FXML
-    private Spinner gmmComponentsSpinner;
-    @FXML
-    private RadioButton diagonalRadioButton;
-    @FXML
-    private RadioButton fullCovarianceRadioButton;
-    ToggleGroup covarianceToggleGroup;
-    @FXML
-    private SplitMenuButton clusterMethodMenuButton;
 
     //PCA Tab
     @FXML
@@ -218,7 +201,6 @@ public class ManifoldControlController implements Initializable {
     boolean reactive = true;
     Umap latestUmapObject = null;
     File latestDir = new File(".");
-    ClusterMethod selectedMethod = ClusterMethod.KMEANS;
 
     /**
      * Initializes the controller class.
@@ -394,31 +376,6 @@ public class ManifoldControlController implements Initializable {
     }
 
     private void setupHullControls() {
-        gmmComponentsSpinner.setValueFactory(
-            new SpinnerValueFactory.IntegerSpinnerValueFactory(2, 20, 5, 1));
-
-        gmmIterationsSpinner.setValueFactory(
-            new SpinnerValueFactory.IntegerSpinnerValueFactory(10, 500, 50, 5));
-
-        gmmConvergenceSpinner.setValueFactory(
-            new SpinnerValueFactory.DoubleSpinnerValueFactory(1e4, 1e12, 1e6, 100));
-
-        covarianceToggleGroup = new ToggleGroup();
-        diagonalRadioButton.setToggleGroup(covarianceToggleGroup);
-        fullCovarianceRadioButton.setToggleGroup(covarianceToggleGroup);
-
-        MenuItem kmeans = new MenuItem("KMeans++");
-        MenuItem exmax = new MenuItem("Expectation Maximization");
-        kmeans.setOnAction((e) -> {
-            selectedMethod = ClusterMethod.KMEANS;
-            clusterMethodMenuButton.setText(kmeans.getText());
-        });
-        exmax.setOnAction((e) -> {
-            selectedMethod = ClusterMethod.EX_MAX;
-            clusterMethodMenuButton.setText(exmax.getText());
-        });
-        clusterMethodMenuButton.getItems().addAll(kmeans, exmax);
-
         //Get a reference to any Distances already collected
         List<ManifoldListItem> existingItems = new ArrayList<>();
         for (Manifold m : Manifold.getManifolds()) {
@@ -584,21 +541,21 @@ public class ManifoldControlController implements Initializable {
         reactive = true;
     }
 
-    @FXML
-    public void findClusters() {
-        System.out.println("Find Clusters...");
-        ProjectionConfig pc = new ProjectionConfig();
-        pc.components = (int) gmmComponentsSpinner.getValue();
-        pc.clusterMethod = selectedMethod;
-        pc.useVisiblePoints = useVisibleRadioButton.isSelected();
-        pc.covariance = diagonalRadioButton.isSelected()
-            ? ProjectionConfig.COVARIANCE_MODE.DIAGONAL
-            : ProjectionConfig.COVARIANCE_MODE.FULL;
-        pc.tolerance = (double) gmmConvergenceSpinner.getValue();
-        pc.maxIterations = (int) gmmIterationsSpinner.getValue();
-        clusterMethodMenuButton.getScene().getRoot().fireEvent(
-            new ManifoldEvent(ManifoldEvent.FIND_PROJECTION_CLUSTERS, pc));
-    }
+//    @FXML
+//    public void findClusters() {
+//        System.out.println("Find Clusters...");
+//        ProjectionConfig pc = new ProjectionConfig();
+//        pc.components = (int) gmmComponentsSpinner.getValue();
+//        pc.clusterMethod = selectedMethod;
+//        pc.useVisiblePoints = useVisibleRadioButton.isSelected();
+//        pc.covariance = diagonalRadioButton.isSelected()
+//            ? ProjectionConfig.COVARIANCE_MODE.DIAGONAL
+//            : ProjectionConfig.COVARIANCE_MODE.FULL;
+//        pc.tolerance = (double) gmmConvergenceSpinner.getValue();
+//        pc.maxIterations = (int) gmmIterationsSpinner.getValue();
+//        clusterMethodMenuButton.getScene().getRoot().fireEvent(
+//            new ManifoldEvent(ManifoldEvent.FIND_PROJECTION_CLUSTERS, pc));
+//    }
 
     @FXML
     public void exportMatrix() {

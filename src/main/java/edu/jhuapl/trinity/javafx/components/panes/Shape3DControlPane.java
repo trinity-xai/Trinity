@@ -24,6 +24,7 @@ import edu.jhuapl.trinity.data.FactorLabel;
 import edu.jhuapl.trinity.data.Manifold;
 import edu.jhuapl.trinity.javafx.components.listviews.PointListItem;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
+import edu.jhuapl.trinity.javafx.events.ManifoldEvent.ProjectionConfig;
 import edu.jhuapl.trinity.javafx.javafx3d.Manifold3D;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
@@ -57,16 +58,24 @@ import java.util.List;
 
 import static edu.jhuapl.trinity.utils.JavaFX3DUtils.toFX;
 import static edu.jhuapl.trinity.utils.JavaFX3DUtils.toFXYZ3D;
+import edu.jhuapl.trinity.utils.clustering.ClusterMethod;
 import static java.util.stream.Collectors.toList;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.RadioButton;
+import javafx.scene.control.SplitMenuButton;
+import javafx.scene.control.ToggleGroup;
 
 /**
  * @author Sean Phillips
  */
 public class Shape3DControlPane extends LitPathPane {
+    public static double SPINNER_PREF_WIDTH = 150;
+    public static double SELECTION_PREF_WIDTH = 250;
     BorderPane bp;
     TabPane tabPane;
     Tab editorTab;
     Tab clusterBuilderTab;
+    Tab findClustersTab;
     private Slider scaleSlider;
     private Slider rotateXSlider;
     private Slider rotateYSlider;
@@ -77,6 +86,18 @@ public class Shape3DControlPane extends LitPathPane {
     private Label rotateZLabel;
     private ListView<PointListItem> pointListView;
     private ChoiceBox labelChoiceBox;
+    private Spinner iterationsSpinner;
+    private Spinner convergenceSpinner;
+    private Spinner componentsSpinner;
+    private Spinner epsilonAlphaSpinner;
+    private Spinner minimumPointsSpinner;
+    private Spinner minimumClusterSizeSpinner;
+    private Spinner minimumLeafSizeSpinner;
+    private CheckBox parallelCheckBox;
+    private CheckBox verboseCheckBox;
+    private RadioButton diagonalRadioButton;
+    private RadioButton fullCovarianceRadioButton;
+    private SplitMenuButton clusterMethodMenuButton;    
     /**
      * Format for floating coordinate label
      */
@@ -85,7 +106,8 @@ public class Shape3DControlPane extends LitPathPane {
     private Manifold currentManifold = null;
     private final String ALL = "ALL";
     public static Color DEFAULT_MANIFOLD_COLOR = Color.WHITE;
-
+    ClusterMethod selectedMethod = ClusterMethod.KMEANS;
+    
     private static BorderPane createContent() {
         BorderPane bpOilSpill = new BorderPane();
         return bpOilSpill;
@@ -98,14 +120,154 @@ public class Shape3DControlPane extends LitPathPane {
 
         bp = (BorderPane) this.contentPane;
         buildEditorTab();
+        buildFindClustersTab();
         buildClusterBuilderTab();
-        tabPane = new TabPane(clusterBuilderTab, editorTab);
+        tabPane = new TabPane(clusterBuilderTab, findClustersTab, editorTab);
         tabPane.setPadding(Insets.EMPTY);
         tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
         tabPane.setTabDragPolicy(TabPane.TabDragPolicy.FIXED);
         bp.setCenter(tabPane);
     }
+    private void buildFindClustersTab() {
+        findClustersTab = new Tab("Find Clusters");
+        BorderPane findClusterBorderPane = new BorderPane();
+        findClustersTab.setContent(findClusterBorderPane);        
+        
+        componentsSpinner = new Spinner(
+            new SpinnerValueFactory.IntegerSpinnerValueFactory(2, 20, 5, 1));
+        componentsSpinner.setPrefWidth(SPINNER_PREF_WIDTH);        
+        componentsSpinner.setEditable(true);
+        iterationsSpinner = new Spinner(
+                new SpinnerValueFactory.IntegerSpinnerValueFactory(10, 500, 50, 5));
+        iterationsSpinner.setPrefWidth(SPINNER_PREF_WIDTH);        
+        iterationsSpinner.setEditable(true);
+        convergenceSpinner = new Spinner(
+            new SpinnerValueFactory.DoubleSpinnerValueFactory( 0.001, 0.999,  0.005, 0.001));
+        convergenceSpinner.setPrefWidth(SPINNER_PREF_WIDTH);
+        convergenceSpinner.setEditable(true);
 
+        epsilonAlphaSpinner = new Spinner(
+            new SpinnerValueFactory.DoubleSpinnerValueFactory(0.01, 1, 0.5, 0.01));
+        epsilonAlphaSpinner.setPrefWidth(SPINNER_PREF_WIDTH);
+        epsilonAlphaSpinner.setEditable(true);
+        
+        minimumPointsSpinner = new Spinner(
+            new SpinnerValueFactory.IntegerSpinnerValueFactory(4, 1000, 10, 10));
+        minimumPointsSpinner.setPrefWidth(SPINNER_PREF_WIDTH);
+        minimumPointsSpinner.setEditable(true);
+
+        minimumClusterSizeSpinner = new Spinner(
+            new SpinnerValueFactory.IntegerSpinnerValueFactory(4, 1000, 100, 50));
+        minimumClusterSizeSpinner.setPrefWidth(SPINNER_PREF_WIDTH);
+        minimumClusterSizeSpinner.setEditable(true);
+        
+        minimumLeafSizeSpinner = new Spinner(
+            new SpinnerValueFactory.IntegerSpinnerValueFactory(4, 1000, 100, 50));
+        minimumLeafSizeSpinner.setPrefWidth(SPINNER_PREF_WIDTH);
+        minimumLeafSizeSpinner.setEditable(true);
+        
+        parallelCheckBox = new CheckBox("Force Parallel");
+        verboseCheckBox = new CheckBox("Verbose Output");
+        
+        ToggleGroup covarianceToggleGroup = new ToggleGroup();
+        diagonalRadioButton = new RadioButton("Diagonal");
+        diagonalRadioButton.setToggleGroup(covarianceToggleGroup);
+        fullCovarianceRadioButton = new RadioButton("Full");
+        fullCovarianceRadioButton.setToggleGroup(covarianceToggleGroup);
+        diagonalRadioButton.setSelected(true);
+        
+        MenuItem dbscan = new MenuItem("DBSCAN");
+        MenuItem hdbscan = new MenuItem("HDBSCAN");
+        MenuItem kmeans = new MenuItem("KMeans");
+        MenuItem kmedoids = new MenuItem("KMedoids");
+        MenuItem exmax = new MenuItem("Expectation Maximization");
+        MenuItem affinity = new MenuItem("Affinity Propagation");
+        clusterMethodMenuButton = new SplitMenuButton(dbscan, hdbscan, 
+            kmeans, kmedoids, exmax, affinity);  
+        clusterMethodMenuButton.setText("Select method");
+        clusterMethodMenuButton.setOnAction(e->findClusters());
+
+        dbscan.setOnAction((e) -> {
+            selectedMethod = ClusterMethod.DBSCAN;
+            clusterMethodMenuButton.setText(dbscan.getText());
+        });
+        hdbscan.setOnAction((e) -> {
+            selectedMethod = ClusterMethod.HDDBSCAN;
+            clusterMethodMenuButton.setText(hdbscan.getText());
+        });
+        kmeans.setOnAction((e) -> {
+            selectedMethod = ClusterMethod.KMEANS;
+            clusterMethodMenuButton.setText(kmeans.getText());
+        });
+        kmedoids.setOnAction((e) -> {
+            selectedMethod = ClusterMethod.KMEDIODS;
+            clusterMethodMenuButton.setText(kmedoids.getText());
+        });
+        exmax.setOnAction((e) -> {
+            selectedMethod = ClusterMethod.EX_MAX;
+            clusterMethodMenuButton.setText(exmax.getText());
+        });
+        affinity.setOnAction((e) -> {
+            selectedMethod = ClusterMethod.AFFINITY;
+            clusterMethodMenuButton.setText(affinity.getText());
+        });
+        clusterMethodMenuButton.setPrefWidth(SELECTION_PREF_WIDTH);
+        
+        Label componentsLabel = new Label("Components");
+        componentsLabel.setPrefWidth(SPINNER_PREF_WIDTH);
+        Label iterationsLabel = new Label("Iterations");
+        iterationsLabel.setPrefWidth(SPINNER_PREF_WIDTH);
+        Label convergenceLabel = new Label("Convergence");
+        convergenceLabel.setPrefWidth(SPINNER_PREF_WIDTH);
+        Label covarianceLabel = new Label("Covariance");
+        covarianceLabel.setPrefWidth(SPINNER_PREF_WIDTH);
+        Label epsilonAlphaLabel = new Label("Epsilon/Alpha");
+        epsilonAlphaLabel.setPrefWidth(SPINNER_PREF_WIDTH);
+        Label minimumPointsLabel = new Label("Minimum Points");
+        minimumPointsLabel.setPrefWidth(SPINNER_PREF_WIDTH);
+        Label minimumClusterSizeLabel = new Label("Minimum Cluster Size");
+        minimumClusterSizeLabel.setPrefWidth(SPINNER_PREF_WIDTH);
+        Label minimumLeafSizeLabel = new Label("Minimum Leaf Size");
+        minimumLeafSizeLabel.setPrefWidth(SPINNER_PREF_WIDTH);
+        Label clusteringLabel = new Label("Clustering Method");        
+        clusteringLabel.setPrefWidth(SPINNER_PREF_WIDTH);
+
+        VBox vbox = new VBox(10,
+            new HBox(10, clusteringLabel, clusterMethodMenuButton),
+            new HBox(10, componentsLabel, componentsSpinner),
+            new HBox(10, iterationsLabel, iterationsSpinner),
+            new HBox(10, convergenceLabel, convergenceSpinner),
+            new HBox(10, epsilonAlphaLabel, epsilonAlphaSpinner),    
+            new HBox(10, minimumPointsLabel, minimumPointsSpinner),    
+            new HBox(10, minimumClusterSizeLabel, minimumClusterSizeSpinner),    
+            new HBox(10, minimumLeafSizeLabel, minimumLeafSizeSpinner),    
+            new HBox(10, parallelCheckBox, verboseCheckBox),    
+            new HBox(10, covarianceLabel, diagonalRadioButton, fullCovarianceRadioButton)
+        );
+        findClusterBorderPane.setCenter(vbox);
+    }
+
+    public void findClusters() {
+        System.out.println("Find Clusters...");
+        ProjectionConfig pc = new ProjectionConfig();
+        pc.components = (int) componentsSpinner.getValue();
+        pc.clusterMethod = selectedMethod;
+//        pc.useVisiblePoints = useVisibleRadioButton.isSelected();
+        pc.useVisiblePoints = true;
+        pc.covariance = diagonalRadioButton.isSelected()
+            ? ProjectionConfig.COVARIANCE_MODE.DIAGONAL
+            : ProjectionConfig.COVARIANCE_MODE.FULL;
+        pc.toleranceConvergence = (double) convergenceSpinner.getValue();
+        pc.maxIterations = (int) iterationsSpinner.getValue();
+        pc.epsilonAlpha = (double) epsilonAlphaSpinner.getValue();
+        pc.minimumPoints = (int) minimumPointsSpinner.getValue();
+        pc.minimumClusterSize = (int) minimumClusterSizeSpinner.getValue();
+        pc.minimumLeafSize = (int) minimumLeafSizeSpinner.getValue();
+
+        clusterMethodMenuButton.getScene().getRoot().fireEvent(
+            new ManifoldEvent(ManifoldEvent.FIND_PROJECTION_CLUSTERS, pc));
+    }    
+    
     private void buildClusterBuilderTab() {
         clusterBuilderTab = new Tab("Cluster Builder");
         BorderPane clusterBorderPane = new BorderPane();
