@@ -30,6 +30,7 @@ import edu.jhuapl.trinity.data.files.LabelConfigFile;
 import edu.jhuapl.trinity.data.files.ManifoldDataFile;
 import edu.jhuapl.trinity.data.files.McclodSplitDataTsvFile;
 import edu.jhuapl.trinity.data.files.SemanticMapCollectionFile;
+import edu.jhuapl.trinity.data.files.ShapleyCollectionFile;
 import edu.jhuapl.trinity.data.files.TextEmbeddingCollectionFile;
 import edu.jhuapl.trinity.data.files.ZeroPilotLatentsFile;
 import edu.jhuapl.trinity.data.messages.FeatureCollection;
@@ -48,6 +49,7 @@ import edu.jhuapl.trinity.javafx.events.TrajectoryEvent;
 import edu.jhuapl.trinity.utils.loaders.CdcTissueGenesLoader;
 import edu.jhuapl.trinity.utils.loaders.FeatureCollectionLoader;
 import edu.jhuapl.trinity.utils.loaders.McclodSplitDataLoader;
+import edu.jhuapl.trinity.utils.loaders.ShapleyCollectionLoader;
 import edu.jhuapl.trinity.utils.loaders.TextEmbeddingsLoader;
 import edu.jhuapl.trinity.utils.loaders.ZeroPilotLatentsLoader;
 import javafx.application.Platform;
@@ -353,6 +355,11 @@ public enum ResourceUtils {
                                     new ManifoldEvent(ManifoldEvent.NEW_CLUSTER_COLLECTION, ccFile.clusterCollection)));
                             } else if (FeatureCollectionFile.isFeatureCollectionFile(file)) {
                                 FeatureCollectionLoader task = new FeatureCollectionLoader(scene, file);
+                                Thread thread = new Thread(task);
+                                thread.setDaemon(true);
+                                thread.start();
+                            } else if (ShapleyCollectionFile.isShapleyCollectionFile(file)) {
+                                ShapleyCollectionLoader task = new ShapleyCollectionLoader(scene, file);
                                 Thread thread = new Thread(task);
                                 thread.setDaemon(true);
                                 thread.start();
