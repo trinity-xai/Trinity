@@ -329,6 +329,15 @@ public class App extends Application {
         });
         hyperspace3DPane.addEventHandler(DragEvent.DRAG_DROPPED,
             e -> ResourceUtils.onDragDropped(e, scene));
+        hypersurface3DPane.addEventHandler(DragEvent.DRAG_OVER, event -> {
+            if (ResourceUtils.canDragOver(event)) {
+                event.acceptTransferModes(TransferMode.COPY);
+            } else {
+                event.consume();
+            }
+        });
+        hypersurface3DPane.addEventHandler(DragEvent.DRAG_DROPPED,
+            e -> ResourceUtils.onDragDropped(e, scene));
 
         projections3DPane.addEventHandler(DragEvent.DRAG_OVER, event -> {
             if (ResourceUtils.canDragOver(event)) { // && projections3DPane.autoProjectionProperty.get()) {

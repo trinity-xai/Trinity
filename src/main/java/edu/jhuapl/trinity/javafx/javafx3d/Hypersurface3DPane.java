@@ -123,6 +123,7 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.function.Function;
+import javafx.scene.image.PixelReader;
 
 //import static edu.jhuapl.trinity.javafx.components.radial.HyperspaceMenu.slideInPane;
 
@@ -626,14 +627,44 @@ public class Hypersurface3DPane extends StackPane
         });
         this.scene.addEventHandler(ImageEvent.NEW_TEXTURE_SURFACE, e -> {
             Image image = (Image) e.object;
-            Float pSkip = 5.0f;
+            Float pSkip = 2.0f;
             float scale = 1.0f;
+            System.out.print("Creating Height Map from Image... ");
+            long startTime = System.nanoTime();
             TriangleMesh tm = JavaFX3DUtils.createHeightMap(image, pSkip.intValue(), 250, scale);
-            surfPlot.injectMesh(tm);
+            Utils.printTotalTime(startTime);
+            
+            System.out.print("Mapping Image Raster to Feature Vector... ");
+            startTime = System.nanoTime();
+            int rows = Double.valueOf(image.getHeight()).intValue();
+            int columns = Double.valueOf(image.getWidth()).intValue();
+            PixelReader pr = image.getPixelReader();
+            Color color = null;
+            if (null == dataGrid) {
+                dataGrid = new ArrayList<>(rows/2);
+            } else
+                dataGrid.clear();
 
+            for(int rowIndex = 0; rowIndex < rows; rowIndex+=2) {
+                for(int colIndex = 0; colIndex < columns; colIndex+=2) {
+                    color = pr.getColor(colIndex, rowIndex);
+                    FeatureVector fv = FeatureVector.EMPTY_FEATURE_VECTOR(color.toString(), 3);
+                    fv.getData().set(0, color.getRed());
+                    fv.getData().set(1, color.getGreen());
+                    fv.getData().set(2, color.getBlue());
+                    featureVectors.add(fv);
+                    dataGrid.add(fv.getData());
+                }
+            }
+            Utils.printTotalTime(startTime);
+            System.out.print("Injecting Mesh into Hypersurface... ");
+            startTime = System.nanoTime();
+            surfPlot.injectMesh(tm);
             ((PhongMaterial) surfPlot.getMaterial()).setDiffuseMap(image);
             surfPlot.setTranslateX(-(image.getWidth() / (pSkip * 2)) / 2.0);
             surfPlot.setTranslateZ(-(image.getHeight() / (pSkip * 2)) / 2.0);
+            Utils.printTotalTime(startTime);
+            System.out.println(image.getWidth()*image.getHeight()/ pSkip + " Pixels mapped to vertices.");
         });
         this.scene.addEventHandler(HyperspaceEvent.FACTOR_COORDINATES_GUI, e -> {
             CoordinateSet coords = (CoordinateSet) e.object;
@@ -1631,8 +1662,6 @@ public class Hypersurface3DPane extends StackPane
 
     @Override
     public void addFeatureCollection(FeatureCollection featureCollection) {
-        dataGrid.clear();
-
         if (null == dataGrid) {
             dataGrid = new ArrayList<>(featureCollection.getFeatures().size());
         } else
