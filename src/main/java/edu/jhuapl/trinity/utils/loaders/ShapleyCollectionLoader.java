@@ -20,17 +20,15 @@ package edu.jhuapl.trinity.utils.loaders;
  * #L%
  */
 
-import edu.jhuapl.trinity.data.Trajectory;
-import edu.jhuapl.trinity.data.files.FeatureCollectionFile;
+import edu.jhuapl.trinity.data.files.ShapleyCollectionFile;
 import edu.jhuapl.trinity.javafx.components.radial.ProgressStatus;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
-import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
-import edu.jhuapl.trinity.javafx.events.TrajectoryEvent;
+import edu.jhuapl.trinity.javafx.events.ShapleyEvent;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.scene.Scene;
-
 import java.io.File;
+import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -73,16 +71,10 @@ public class ShapleyCollectionLoader extends Task {
         });
 
         try {
-            FeatureCollectionFile fcFile = new FeatureCollectionFile(file.getAbsolutePath(), true);
+            ShapleyCollectionFile scFile = new ShapleyCollectionFile(file.getAbsolutePath(), true);
             Platform.runLater(() -> scene.getRoot().fireEvent(
-                new FeatureVectorEvent(FeatureVectorEvent.NEW_FEATURE_COLLECTION, fcFile.featureCollection)));
-            Trajectory trajectory = new Trajectory(file.getName());
-            trajectory.totalStates = fcFile.featureCollection.getFeatures().size();
-            Trajectory.addTrajectory(trajectory);
-            Trajectory.globalTrajectoryToFeatureCollectionMap.put(trajectory, fcFile.featureCollection);
-            Platform.runLater(() -> scene.getRoot().fireEvent(
-                new TrajectoryEvent(TrajectoryEvent.NEW_TRAJECTORY_OBJECT, trajectory, fcFile.featureCollection)));
-        } catch (Exception ex) {
+                new ShapleyEvent(ShapleyEvent.NEW_SHAPLEY_COLLECTION, scFile.shapleyCollection)));
+        } catch (IOException ex) {
             Logger.getLogger(ShapleyCollectionLoader.class.getName()).log(Level.SEVERE, null, ex);
         }
 

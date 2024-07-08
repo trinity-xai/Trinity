@@ -723,7 +723,10 @@ public class App extends Application {
         scene.getRoot().addEventHandler(ManifoldEvent.NEW_CLUSTER_COLLECTION, meh);
         scene.getRoot().addEventHandler(ManifoldEvent.NEW_PROJECTION_VECTOR, meh);
         meh.addManifoldRenderer(projections3DPane);
-
+        scene.getRoot().addEventHandler(ManifoldEvent.FIND_HYPERSURFACE_CLUSTERS, e -> {
+            hypersurface3DPane.findClusters((ManifoldEvent.ProjectionConfig)e.object1);
+        });
+        
         heh = new HitEventHandler(desktopPane);
         scene.getRoot().addEventHandler(HitEvent.PROJECTILE_HIT_SHAPE, heh);
         scene.getRoot().addEventHandler(HitEvent.TRACKING_PROJECTILE_EVENTS, heh);

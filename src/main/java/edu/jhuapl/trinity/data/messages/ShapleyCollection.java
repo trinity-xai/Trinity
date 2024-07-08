@@ -25,6 +25,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Random;
 
 /**
  * @author Sean Phillips
@@ -47,18 +48,20 @@ public class ShapleyCollection extends MessageData {
     //<editor-fold defaultstate="collapsed" desc="Payload Fields">
     private ArrayList<String> dimensionLabels;
     private List<ShapleyVector> shapleyValues;
-
+    private String sourceInput;
     //</editor-fold>
 
     public ShapleyCollection() {
         this.messageType = TYPESTRING;
         this.shapleyValues = new ArrayList<>();
+        
     }
 
     public static boolean isShapleyCollection(String messageBody) {
         return messageBody.contains("messageType")
             && messageBody.contains(TYPESTRING)
-            && messageBody.contains("shapleyValues");
+            && messageBody.contains("sourceInput")
+            && messageBody.contains("values");
     }
 
     public float[][] convertValuesToFloatArray() {
@@ -143,6 +146,26 @@ public class ShapleyCollection extends MessageData {
         sc.setValues(shapleyVectors);
         return sc;
     }
+    public static ShapleyCollection fakeCollection(int rows, int columns) {
+        ShapleyCollection sc = new ShapleyCollection();
+        sc.setSourceInput("OnyxHappyFace.png");
+        Random rando = new Random();
+        List<ShapleyVector> shapleyVectors = new ArrayList<>(rows);
+        //Assumes Image input mapping values to pixel grid 
+        for (int shapleyVectorIndex = 0; shapleyVectorIndex < rows; shapleyVectorIndex++) {
+            for (int vectorIndex = 0; vectorIndex < columns; vectorIndex++) {
+                ShapleyVector sv = new ShapleyVector();
+                sv.setxCoordinate(vectorIndex); //columns are x position
+                sv.setyCoordinate(shapleyVectorIndex); //rows are y position
+                sv.getData().add(rando.nextGaussian()); 
+                sv.setMetaData(null);
+                shapleyVectors.add(sv);
+            }
+        }
+        sc.setValues(shapleyVectors);
+        return sc;
+        
+    }
     //<editor-fold defaultstate="collapsed" desc="Properties">
 
     /**
@@ -157,6 +180,20 @@ public class ShapleyCollection extends MessageData {
      */
     public void setValues(List<ShapleyVector> values) {
         this.shapleyValues = values;
+    }
+
+    /**
+     * @return the sourceInput
+     */
+    public String getSourceInput() {
+        return sourceInput;
+    }
+
+    /**
+     * @param sourceInput the sourceInput to set
+     */
+    public void setSourceInput(String sourceInput) {
+        this.sourceInput = sourceInput;
     }
 
     //</editor-fold>

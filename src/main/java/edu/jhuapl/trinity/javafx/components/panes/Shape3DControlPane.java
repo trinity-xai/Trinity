@@ -98,6 +98,9 @@ public class Shape3DControlPane extends LitPathPane {
     private RadioButton diagonalRadioButton;
     private RadioButton fullCovarianceRadioButton;
     private SplitMenuButton clusterMethodMenuButton;    
+    private RadioButton hypersurfaceRadioButton;
+    private RadioButton projectionsRadioButton;
+
     /**
      * Format for floating coordinate label
      */
@@ -176,6 +179,13 @@ public class Shape3DControlPane extends LitPathPane {
         fullCovarianceRadioButton.setToggleGroup(covarianceToggleGroup);
         diagonalRadioButton.setSelected(true);
         
+        ToggleGroup datasourceToggleGroup = new ToggleGroup();
+        hypersurfaceRadioButton = new RadioButton("Hypersurface");
+        hypersurfaceRadioButton.setToggleGroup(datasourceToggleGroup);
+        projectionsRadioButton = new RadioButton("Projections");
+        projectionsRadioButton.setToggleGroup(datasourceToggleGroup);
+        projectionsRadioButton.setSelected(true);
+
         MenuItem dbscan = new MenuItem("DBSCAN");
         MenuItem hdbscan = new MenuItem("HDBSCAN");
         MenuItem kmeans = new MenuItem("KMeans");
@@ -213,6 +223,8 @@ public class Shape3DControlPane extends LitPathPane {
         });
         clusterMethodMenuButton.setPrefWidth(SELECTION_PREF_WIDTH);
         
+        Label sourceLabel = new Label("Data Source");
+        sourceLabel.setPrefWidth(SPINNER_PREF_WIDTH);
         Label componentsLabel = new Label("Components");
         componentsLabel.setPrefWidth(SPINNER_PREF_WIDTH);
         Label iterationsLabel = new Label("Iterations");
@@ -233,6 +245,7 @@ public class Shape3DControlPane extends LitPathPane {
         clusteringLabel.setPrefWidth(SPINNER_PREF_WIDTH);
 
         VBox vbox = new VBox(10,
+            new HBox(10, sourceLabel, hypersurfaceRadioButton, projectionsRadioButton),
             new HBox(10, clusteringLabel, clusterMethodMenuButton),
             new HBox(10, componentsLabel, componentsSpinner),
             new HBox(10, iterationsLabel, iterationsSpinner),
@@ -244,12 +257,16 @@ public class Shape3DControlPane extends LitPathPane {
             new HBox(10, parallelCheckBox, verboseCheckBox),    
             new HBox(10, covarianceLabel, diagonalRadioButton, fullCovarianceRadioButton)
         );
+        vbox.setPadding(new Insets(10,5,5,5));
         findClusterBorderPane.setCenter(vbox);
     }
 
     public void findClusters() {
         System.out.println("Find Clusters...");
         ProjectionConfig pc = new ProjectionConfig();
+        pc.dataSource = hypersurfaceRadioButton.isSelected() 
+            ? ProjectionConfig.DATA_SOURCE.HYPERSURFACE
+            : ProjectionConfig.DATA_SOURCE.PROJECTIONS;
         pc.components = (int) componentsSpinner.getValue();
         pc.clusterMethod = selectedMethod;
 //        pc.useVisiblePoints = useVisibleRadioButton.isSelected();
@@ -263,8 +280,12 @@ public class Shape3DControlPane extends LitPathPane {
         pc.minimumPoints = (int) minimumPointsSpinner.getValue();
         pc.minimumClusterSize = (int) minimumClusterSizeSpinner.getValue();
         pc.minimumLeafSize = (int) minimumLeafSizeSpinner.getValue();
-
-        clusterMethodMenuButton.getScene().getRoot().fireEvent(
+        
+        if(hypersurfaceRadioButton.isSelected())
+            clusterMethodMenuButton.getScene().getRoot().fireEvent(
+            new ManifoldEvent(ManifoldEvent.FIND_HYPERSURFACE_CLUSTERS, pc));
+        else
+            clusterMethodMenuButton.getScene().getRoot().fireEvent(
             new ManifoldEvent(ManifoldEvent.FIND_PROJECTION_CLUSTERS, pc));
     }    
     

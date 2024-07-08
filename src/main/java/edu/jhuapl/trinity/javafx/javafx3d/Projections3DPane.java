@@ -2849,6 +2849,8 @@ public class Projections3DPane extends StackPane implements
 
     @Override
     public void findClusters(ProjectionConfig pc) {
+        //safety check
+        if(pc.dataSource != ProjectionConfig.DATA_SOURCE.PROJECTIONS) return;
         //convert featurevector space into 2D array of doubles
         double[][] observations = FeatureCollection.toData(featureVectors);
         //find clusters

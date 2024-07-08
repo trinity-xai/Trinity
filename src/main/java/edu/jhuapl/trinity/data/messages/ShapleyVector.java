@@ -47,9 +47,8 @@ public class ShapleyVector extends MessageData {
     private String entityId;
     private List<Double> data;
     private String label;
-    private long imageId;
-    private String imageURL;
-    private int layer;
+    private int xCoordinate;
+    private int yCoordinate;
     private HashMap<String, String> metaData;
     //</editor-fold>
 
@@ -57,18 +56,6 @@ public class ShapleyVector extends MessageData {
         this.messageType = TYPESTRING;
         this.data = new ArrayList<>();
         this.metaData = new HashMap<>();
-    }
-
-    public double getMin() {
-        return getData().stream().min(Double::compare).get();
-    }
-
-    public double getMax() {
-        return getData().stream().max(Double::compare).get();
-    }
-
-    public double getWidth() {
-        return Math.abs(getMax() - getMin());
     }
 
     public static boolean isShapleyVector(String messageBody) {
@@ -121,6 +108,18 @@ public class ShapleyVector extends MessageData {
         }
         return sb.toString();
     }
+    public double minDataValue() {
+        return getData().stream().min(Double::compare).get();
+    }
+
+    public double maxDataValue() {
+        return getData().stream().max(Double::compare).get();
+    }
+
+    public double totalDataWidth() {
+        return Math.abs(maxDataValue() - minDataValue());
+    }
+
     //<editor-fold defaultstate="collapsed" desc="Properties">
 
     /**
@@ -166,45 +165,31 @@ public class ShapleyVector extends MessageData {
     }
 
     /**
-     * @return the imageId
+     * @return the xCoordinate
      */
-    public long getImageId() {
-        return imageId;
+    public int getxCoordinate() {
+        return xCoordinate;
     }
 
     /**
-     * @param imageId the imageId to set
+     * @param xCoordinate the xCoordinate to set
      */
-    public void setImageId(long imageId) {
-        this.imageId = imageId;
+    public void setxCoordinate(int xCoordinate) {
+        this.xCoordinate = xCoordinate;
     }
 
     /**
-     * @return the imageURL
+     * @return the yCoordinate
      */
-    public String getImageURL() {
-        return imageURL;
+    public int getyCoordinate() {
+        return yCoordinate;
     }
 
     /**
-     * @param imageURL the imageURL to set
+     * @param yCoordinate the yCoordinate to set
      */
-    public void setImageURL(String imageURL) {
-        this.imageURL = imageURL;
-    }
-
-    /**
-     * @return the layer
-     */
-    public int getLayer() {
-        return layer;
-    }
-
-    /**
-     * @param layer the layer to set
-     */
-    public void setLayer(int layer) {
-        this.layer = layer;
+    public void setyCoordinate(int yCoordinate) {
+        this.yCoordinate = yCoordinate;
     }
 
     /**

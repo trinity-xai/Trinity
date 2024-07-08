@@ -1,4 +1,4 @@
-package edu.jhuapl.trinity.messages;
+package edu.jhuapl.trinity.data.messages;
 
 /*-
  * #%L

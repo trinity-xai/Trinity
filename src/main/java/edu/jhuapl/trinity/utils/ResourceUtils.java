@@ -332,6 +332,16 @@ public enum ResourceUtils {
                             } else if (isAudioFile(file)) {
                                 Platform.runLater(() -> scene.getRoot().fireEvent(
                                     new AudioEvent(AudioEvent.NEW_AUDIO_FILE, file)));
+                            } else if (FeatureCollectionFile.isFeatureCollectionFile(file)) {
+                                FeatureCollectionLoader task = new FeatureCollectionLoader(scene, file);
+                                Thread thread = new Thread(task);
+                                thread.setDaemon(true);
+                                thread.start();
+                            } else if (ShapleyCollectionFile.isShapleyCollectionFile(file)) {
+                                ShapleyCollectionLoader task = new ShapleyCollectionLoader(scene, file);
+                                Thread thread = new Thread(task);
+                                thread.setDaemon(true);
+                                thread.start();
                             } else if (LabelConfigFile.isLabelConfigFile(file)) {
                                 LabelConfigFile labelConfigFile = new LabelConfigFile(file.getAbsolutePath(), true);
                                 Platform.runLater(() -> scene.getRoot().fireEvent(
@@ -353,16 +363,6 @@ public enum ResourceUtils {
                                 ClusterCollectionFile ccFile = new ClusterCollectionFile(file.getAbsolutePath(), true);
                                 Platform.runLater(() -> scene.getRoot().fireEvent(
                                     new ManifoldEvent(ManifoldEvent.NEW_CLUSTER_COLLECTION, ccFile.clusterCollection)));
-                            } else if (FeatureCollectionFile.isFeatureCollectionFile(file)) {
-                                FeatureCollectionLoader task = new FeatureCollectionLoader(scene, file);
-                                Thread thread = new Thread(task);
-                                thread.setDaemon(true);
-                                thread.start();
-                            } else if (ShapleyCollectionFile.isShapleyCollectionFile(file)) {
-                                ShapleyCollectionLoader task = new ShapleyCollectionLoader(scene, file);
-                                Thread thread = new Thread(task);
-                                thread.setDaemon(true);
-                                thread.start();
                             } else if (GaussianMixtureCollectionFile.isGaussianMixtureCollectionFile(file)) {
                                 GaussianMixtureCollectionFile gmcFile = new GaussianMixtureCollectionFile(file.getAbsolutePath(), true);
                                 Platform.runLater(() -> scene.getRoot().fireEvent(

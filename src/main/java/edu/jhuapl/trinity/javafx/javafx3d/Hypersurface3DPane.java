@@ -37,13 +37,26 @@ import edu.jhuapl.trinity.javafx.events.FactorAnalysisEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.events.HyperspaceEvent;
 import edu.jhuapl.trinity.javafx.events.ImageEvent;
+import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.javafx.events.ShadowEvent;
 import edu.jhuapl.trinity.javafx.events.TimelineEvent;
+import edu.jhuapl.trinity.javafx.javafx3d.tasks.AffinityClusterTask;
+import edu.jhuapl.trinity.javafx.javafx3d.tasks.DBSCANClusterTask;
+import edu.jhuapl.trinity.javafx.javafx3d.tasks.ExMaxClusterTask;
+import edu.jhuapl.trinity.javafx.javafx3d.tasks.HDDBSCANClusterTask;
+import edu.jhuapl.trinity.javafx.javafx3d.tasks.KMeansClusterTask;
+import edu.jhuapl.trinity.javafx.javafx3d.tasks.KMediodsClusterTask;
 import edu.jhuapl.trinity.javafx.renderers.FeatureVectorRenderer;
 import edu.jhuapl.trinity.javafx.renderers.SemanticMapRenderer;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import edu.jhuapl.trinity.utils.Utils;
+import static edu.jhuapl.trinity.utils.clustering.ClusterMethod.AFFINITY;
+import static edu.jhuapl.trinity.utils.clustering.ClusterMethod.DBSCAN;
+import static edu.jhuapl.trinity.utils.clustering.ClusterMethod.EX_MAX;
+import static edu.jhuapl.trinity.utils.clustering.ClusterMethod.HDDBSCAN;
+import static edu.jhuapl.trinity.utils.clustering.ClusterMethod.KMEANS;
+import static edu.jhuapl.trinity.utils.clustering.ClusterMethod.KMEDIODS;
 import javafx.animation.AnimationTimer;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
@@ -640,18 +653,28 @@ public class Hypersurface3DPane extends StackPane
             int columns = Double.valueOf(image.getWidth()).intValue();
             PixelReader pr = image.getPixelReader();
             Color color = null;
+            int rgb, r, g, b =0;
             if (null == dataGrid) {
-                dataGrid = new ArrayList<>(rows/2);
+                dataGrid = new ArrayList<>(rows);
             } else
                 dataGrid.clear();
-
-            for(int rowIndex = 0; rowIndex < rows; rowIndex+=2) {
-                for(int colIndex = 0; colIndex < columns; colIndex+=2) {
+            featureVectors.clear();
+            for(int rowIndex = 0; rowIndex < rows; rowIndex++) {
+                for(int colIndex = 0; colIndex < columns; colIndex++) {
                     color = pr.getColor(colIndex, rowIndex);
+                    rgb = ((int) pr.getArgb(colIndex, rowIndex));
                     FeatureVector fv = FeatureVector.EMPTY_FEATURE_VECTOR(color.toString(), 3);
-                    fv.getData().set(0, color.getRed());
-                    fv.getData().set(1, color.getGreen());
-                    fv.getData().set(2, color.getBlue());
+//                    fv.getData().set(0, color.getRed());
+//                    fv.getData().set(1, color.getGreen());
+//                    fv.getData().set(2, color.getBlue());
+                    fv.getData().set(0, Double.valueOf(colIndex));
+                    fv.getData().set(1, Double.valueOf(rowIndex));
+//                    fv.getData().set(2, Double.valueOf(color.getHue()));
+                    r = (rgb >> 16) & 0xFF;
+                    g = (rgb >> 8) & 0xFF;
+                    b = rgb & 0xFF;
+                    fv.getData().set(2, 100*(((r + g + b) / 3.0) / 255.0)); 
+                
                     featureVectors.add(fv);
                     dataGrid.add(fv.getData());
                 }
@@ -1588,6 +1611,77 @@ public class Hypersurface3DPane extends StackPane
     @Override
     public void setFeatureCollection(FeatureCollection fc) {
         featureVectors = fc.getFeatures();
+    }
+    public void findClusters(ManifoldEvent.ProjectionConfig pc) {
+        //safety check
+        if(pc.dataSource != ManifoldEvent.ProjectionConfig.DATA_SOURCE.HYPERSURFACE) return;
+        //convert featurevector space into 2D array of doubles
+        double[][] observations = FeatureCollection.toData(featureVectors);
+        double projectionScalar = 1.0;
+        //find clusters
+        switch (pc.clusterMethod) {
+            case DBSCAN -> {
+                DBSCANClusterTask dbscanClusterTask = new DBSCANClusterTask(
+                    scene, camera, projectionScalar, observations, pc);
+                if (!dbscanClusterTask.isCancelledByUser()) {
+                    Thread t = new Thread(dbscanClusterTask);
+                    t.setDaemon(true);
+                    t.start();
+                }
+                break;                
+            }
+            case HDDBSCAN -> {
+                HDDBSCANClusterTask hddbscanClusterTask = new HDDBSCANClusterTask(
+                    scene, camera, projectionScalar, observations, pc);
+                if (!hddbscanClusterTask.isCancelledByUser()) {
+                    Thread t = new Thread(hddbscanClusterTask);
+                    t.setDaemon(true);
+                    t.start();
+                }
+                break;                
+            }
+            case KMEANS -> {
+                KMeansClusterTask kmeansClusterTask = new KMeansClusterTask(
+                    scene, camera, projectionScalar, observations, pc);
+                if (!kmeansClusterTask.isCancelledByUser()) {
+                    Thread t = new Thread(kmeansClusterTask);
+                    t.setDaemon(true);
+                    t.start();
+                }
+                break; 
+            }
+            case KMEDIODS -> {
+                KMediodsClusterTask kmediodsClusterTask = new KMediodsClusterTask(
+                    scene, camera, projectionScalar, observations, pc);
+                if (!kmediodsClusterTask.isCancelledByUser()) {
+                    Thread t = new Thread(kmediodsClusterTask);
+                    t.setDaemon(true);
+                    t.start();
+                }
+                break; 
+            }
+            
+            case EX_MAX -> {
+                ExMaxClusterTask exMaxClusterTask = new ExMaxClusterTask(
+                    scene, camera, projectionScalar, observations, pc);
+                if (!exMaxClusterTask.isCancelledByUser()) {
+                    Thread t = new Thread(exMaxClusterTask);
+                    t.setDaemon(true);
+                    t.start();
+                }
+                break; 
+            }
+            case AFFINITY -> {
+                AffinityClusterTask affinityClusterTask = new AffinityClusterTask(
+                    scene, camera, projectionScalar, observations, pc);
+                if (!affinityClusterTask.isCancelledByUser()) {
+                    Thread t = new Thread(affinityClusterTask);
+                    t.setDaemon(true);
+                    t.start();
+                }
+                break;                
+            }
+        }
     }
 
     @Override
