@@ -28,6 +28,8 @@ import edu.jhuapl.trinity.data.messages.SemanticMap;
 import edu.jhuapl.trinity.data.messages.SemanticMapCollection;
 import edu.jhuapl.trinity.data.messages.SemanticReconstruction;
 import edu.jhuapl.trinity.data.messages.SemanticReconstructionMap;
+import edu.jhuapl.trinity.data.messages.ShapleyCollection;
+import edu.jhuapl.trinity.data.messages.ShapleyVector;
 import edu.jhuapl.trinity.javafx.components.callouts.Callout;
 import edu.jhuapl.trinity.javafx.components.callouts.CalloutBuilder;
 import edu.jhuapl.trinity.javafx.components.panes.SurfaceChartPane;
@@ -40,6 +42,7 @@ import edu.jhuapl.trinity.javafx.events.ImageEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.javafx.events.ShadowEvent;
 import edu.jhuapl.trinity.javafx.events.TimelineEvent;
+import edu.jhuapl.trinity.javafx.javafx3d.animated.TessellationTube;
 import edu.jhuapl.trinity.javafx.javafx3d.tasks.AffinityClusterTask;
 import edu.jhuapl.trinity.javafx.javafx3d.tasks.DBSCANClusterTask;
 import edu.jhuapl.trinity.javafx.javafx3d.tasks.ExMaxClusterTask;
@@ -48,6 +51,7 @@ import edu.jhuapl.trinity.javafx.javafx3d.tasks.KMeansClusterTask;
 import edu.jhuapl.trinity.javafx.javafx3d.tasks.KMediodsClusterTask;
 import edu.jhuapl.trinity.javafx.renderers.FeatureVectorRenderer;
 import edu.jhuapl.trinity.javafx.renderers.SemanticMapRenderer;
+import edu.jhuapl.trinity.javafx.renderers.ShapleyVectorRenderer;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import edu.jhuapl.trinity.utils.Utils;
@@ -136,16 +140,16 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.function.Function;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 import javafx.scene.image.PixelReader;
-
-//import static edu.jhuapl.trinity.javafx.components.radial.HyperspaceMenu.slideInPane;
 
 /**
  * @author Sean Phillips
  */
 
 public class Hypersurface3DPane extends StackPane
-    implements SemanticMapRenderer, FeatureVectorRenderer {
+    implements SemanticMapRenderer, FeatureVectorRenderer, ShapleyVectorRenderer {
     public static double DEFAULT_INTRO_DISTANCE = -30000.0;
     public static double DEFAULT_ZOOM_TIME_MS = 500.0;
     public static double CHIP_FIT_WIDTH = 200;
@@ -176,9 +180,6 @@ public class Hypersurface3DPane extends StackPane
     public Group ellipsoidGroup = new Group();
     public SubScene subScene;
 
-    public double point3dSize = 10.0; //size of 3d tetrahedra
-    public double pointScale = 1.0; //scales parameter value in transform
-    public double scatterBuffScaling = 1.0; //scales domain range in transform
     public long hypersurfaceRefreshRate = 500; //milliseconds
     public int queueLimit = 20000;
 
@@ -193,10 +194,14 @@ public class Hypersurface3DPane extends StackPane
     boolean computeRandos = false;
     boolean animated = false;
     boolean heightChanged = false;
-    boolean rawMeshRender = true;
+    boolean surfaceRender = true;
     boolean hoverInteractionsEnabled = false;
     boolean surfaceChartsEnabled = false;
 
+    //Shapley value support
+    private Image lastImage = null;
+    public List<ShapleyVector> shapleyVectors = new ArrayList<>();
+    
     WritableImage diffusePaintImage;
     PhongMaterial paintPhong;
     TriangleMesh paintTriangleMesh;
@@ -204,8 +209,9 @@ public class Hypersurface3DPane extends StackPane
 
     //allows 2D labels to track their 3D counterparts
     HashMap<Shape3D, Node> shape3DToLabel = new HashMap<>();
-
     public List<FeatureVector> featureVectors = new ArrayList<>();
+    public List<List<Double>> dataGrid = new ArrayList<>();
+
     private Random rando = new Random();
     private HyperSurfacePlotMesh surfPlot;
 
@@ -218,8 +224,6 @@ public class Hypersurface3DPane extends StackPane
     Function<Point3D, Number> colorByLabel = p -> p.f; //Color mapping function
     Function<Point3D, Number> colorByHeight = p -> p.y; //Color mapping function
     Function<Vert3D, Number> vert3DLookup = p -> vertToHeight(p);
-
-    public List<List<Double>> dataGrid = new ArrayList<>();
 
     // initial rotation
     private final Rotate rotateX = new Rotate(0, Rotate.X_AXIS);
@@ -640,54 +644,8 @@ public class Hypersurface3DPane extends StackPane
         });
         this.scene.addEventHandler(ImageEvent.NEW_TEXTURE_SURFACE, e -> {
             Image image = (Image) e.object;
-            Float pSkip = 2.0f;
-            float scale = 1.0f;
-            System.out.print("Creating Height Map from Image... ");
-            long startTime = System.nanoTime();
-            TriangleMesh tm = JavaFX3DUtils.createHeightMap(image, pSkip.intValue(), 250, scale);
-            Utils.printTotalTime(startTime);
-            
-            System.out.print("Mapping Image Raster to Feature Vector... ");
-            startTime = System.nanoTime();
-            int rows = Double.valueOf(image.getHeight()).intValue();
-            int columns = Double.valueOf(image.getWidth()).intValue();
-            PixelReader pr = image.getPixelReader();
-            Color color = null;
-            int rgb, r, g, b =0;
-            if (null == dataGrid) {
-                dataGrid = new ArrayList<>(rows);
-            } else
-                dataGrid.clear();
-            featureVectors.clear();
-            for(int rowIndex = 0; rowIndex < rows; rowIndex++) {
-                for(int colIndex = 0; colIndex < columns; colIndex++) {
-                    color = pr.getColor(colIndex, rowIndex);
-                    rgb = ((int) pr.getArgb(colIndex, rowIndex));
-                    FeatureVector fv = FeatureVector.EMPTY_FEATURE_VECTOR(color.toString(), 3);
-//                    fv.getData().set(0, color.getRed());
-//                    fv.getData().set(1, color.getGreen());
-//                    fv.getData().set(2, color.getBlue());
-                    fv.getData().set(0, Double.valueOf(colIndex));
-                    fv.getData().set(1, Double.valueOf(rowIndex));
-//                    fv.getData().set(2, Double.valueOf(color.getHue()));
-                    r = (rgb >> 16) & 0xFF;
-                    g = (rgb >> 8) & 0xFF;
-                    b = rgb & 0xFF;
-                    fv.getData().set(2, 100*(((r + g + b) / 3.0) / 255.0)); 
-                
-                    featureVectors.add(fv);
-                    dataGrid.add(fv.getData());
-                }
-            }
-            Utils.printTotalTime(startTime);
-            System.out.print("Injecting Mesh into Hypersurface... ");
-            startTime = System.nanoTime();
-            surfPlot.injectMesh(tm);
-            ((PhongMaterial) surfPlot.getMaterial()).setDiffuseMap(image);
-            surfPlot.setTranslateX(-(image.getWidth() / (pSkip * 2)) / 2.0);
-            surfPlot.setTranslateZ(-(image.getHeight() / (pSkip * 2)) / 2.0);
-            Utils.printTotalTime(startTime);
-            System.out.println(image.getWidth()*image.getHeight()/ pSkip + " Pixels mapped to vertices.");
+            tessellateImage(image);
+            lastImage = image;
         });
         this.scene.addEventHandler(HyperspaceEvent.FACTOR_COORDINATES_GUI, e -> {
             CoordinateSet coords = (CoordinateSet) e.object;
@@ -726,26 +684,13 @@ public class Hypersurface3DPane extends StackPane
 
         scene.addEventHandler(HyperspaceEvent.NODE_QUEUELIMIT_GUI, e -> queueLimit = (int) e.object);
         scene.addEventHandler(HyperspaceEvent.REFRESH_RATE_GUI, e -> hypersurfaceRefreshRate = (long) e.object);
-        scene.addEventHandler(HyperspaceEvent.POINT3D_SIZE_GUI, e -> {
-            point3dSize = (double) e.object;
-            updateView(false);
-        });
-        scene.addEventHandler(HyperspaceEvent.POINT_SCALE_GUI, e -> {
-            pointScale = (double) e.object;
-            notifyScaleChange();
-            updateView(false);
-        });
-        scene.addEventHandler(HyperspaceEvent.SCATTERBUFF_SCALING_GUI, e -> {
-            scatterBuffScaling = (double) e.object;
-            notifyScaleChange();
-            updateView(false);
-        });
 
         scene.addEventHandler(ShadowEvent.SHOW_AXES_LABELS, e -> {
             nodeGroup.setVisible((boolean) e.object);
             labelGroup.setVisible((boolean) e.object);
         });
-        scene.addEventHandler(ApplicationEvent.SET_IMAGERY_BASEPATH, e -> imageryBasePath = (String) e.object);
+        scene.addEventHandler(ApplicationEvent.SET_IMAGERY_BASEPATH, e -> 
+            imageryBasePath = (String) e.object);
         Platform.runLater(() -> {
             updateLabels();
             updateView(true);
@@ -856,10 +801,26 @@ public class Hypersurface3DPane extends StackPane
     }
 
     public void updateTheMesh() {
-        if (rawMeshRender) {
+        surfPlot.setVisible(surfaceRender);
+        sceneRoot.getChildren().removeIf(n -> n instanceof TessellationTube);
+        if (surfaceRender) {
             surfPlot.updateMeshRaw(xWidth, zWidth, surfScale, yScale, surfScale);
         } else {
-            surfPlot.updateMeshSmooth(xWidth, zWidth);
+            //@TODO SMP add TessellationTube support
+            int currentPskip = 1;
+            sceneRoot.getChildren().removeIf(n -> n instanceof TessellationTube);
+//            buildWarp(dataGrid, currentPskip, 5, 5, 5);
+            TessellationTube tube = new TessellationTube(dataGrid, Color.WHITE, yScale*10, surfScale, yScale);
+            tube.setMouseTransparent(true);
+            if (null != lastImage) {
+                tube.meshView.setDrawMode(DrawMode.FILL);
+//                tube.meshView.setCullFace(CullFace.NONE);
+                tube.colorByImage = true;
+                tube.updateMaterial(lastImage);
+            }
+            Platform.runLater(() -> {
+                sceneRoot.getChildren().add(tube);
+            });
         }
         Platform.runLater(() -> {
             updatePaintMesh();
@@ -870,8 +831,6 @@ public class Hypersurface3DPane extends StackPane
         //in case the data grid dimensions have changed
         //make the painting image the same dimension as the data grid for easy math
         diffusePaintImage = new WritableImage(
-//            Double.valueOf(xWidth*surfScale).intValue(),
-//            Double.valueOf(zWidth*surfScale).intValue()
             Double.valueOf(xWidth).intValue(),
             Double.valueOf(zWidth).intValue()
         );
@@ -1020,14 +979,6 @@ public class Hypersurface3DPane extends StackPane
                 + xFactorIndex + ", " + yFactorIndex + ", " + zFactorIndex + ")",
                 new Font("Consolas", 20), Color.GREEN));
     }
-
-    private void notifyScaleChange() {
-        getScene().getRoot().fireEvent(
-            new CommandTerminalEvent("Point Scale = "
-                + pointScale + ", Scatter Range = " + scatterBuffScaling,
-                new Font("Consolas", 20), Color.GREEN));
-    }
-
     public void resetView(double milliseconds, boolean rightNow) {
         if (!rightNow) {
             Timeline timeline = JavaFX3DUtils.transitionCameraTo(milliseconds, camera, cameraTransform,
@@ -1036,7 +987,6 @@ public class Hypersurface3DPane extends StackPane
         } else {
             dataXForm.reset();
         }
-
     }
 
     public void intro(double milliseconds) {
@@ -1097,9 +1047,17 @@ public class Hypersurface3DPane extends StackPane
             //update the local transform of the label.
             node.getTransforms().setAll(new Translate(x, y));
         });
-        int i = 0;
     }
 
+    private WritableImage loadImage(String fileSource) throws IOException {
+        WritableImage image = null;
+        try {
+            image = ResourceUtils.loadImageFile(imageryBasePath + fileSource);
+        } catch (IOException ex) {
+            image = ResourceUtils.loadIconAsWritableImage("noimage");
+        }
+        return image;
+    }    
     private ImageView loadImageView(FeatureVector featureVector, boolean bboxOnly) {
         ImageView iv = null;
         try {
@@ -1157,7 +1115,7 @@ public class Hypersurface3DPane extends StackPane
 
     private Number vertToHeight(Vert3D p) {
         if (null != dataGrid) {
-            if (rawMeshRender)
+            if (surfaceRender)
                 return lookupPoint(p);
             else
                 return findBlerpHeight(p);
@@ -1396,16 +1354,16 @@ public class Hypersurface3DPane extends StackPane
         });
         zWidthSpinner.setPrefWidth(125);
         ToggleGroup meshTypeToggle = new ToggleGroup();
-        RadioButton rawMesh = new RadioButton("Raw Mesh");
-        rawMesh.setSelected(true);
-        rawMesh.setToggleGroup(meshTypeToggle);
-        RadioButton smoothMesh = new RadioButton("Smooth Mesh");
-        smoothMesh.setToggleGroup(meshTypeToggle);
+        RadioButton surfaceRadioButton = new RadioButton("Surface Projection");
+        surfaceRadioButton.setSelected(true);
+        surfaceRadioButton.setToggleGroup(meshTypeToggle);
+        RadioButton cylinderRadioButton = new RadioButton("Cylindrical");
+        cylinderRadioButton.setToggleGroup(meshTypeToggle);
         meshTypeToggle.selectedToggleProperty().addListener(cl -> {
-            rawMeshRender = rawMesh.isSelected();
+            surfaceRender = surfaceRadioButton.isSelected();
             updateTheMesh();
         });
-        HBox meshTypeHBox = new HBox(10, rawMesh, smoothMesh);
+        HBox meshTypeHBox = new HBox(10, surfaceRadioButton, cylinderRadioButton);
 
         ToggleGroup drawModeToggle = new ToggleGroup();
         RadioButton drawModeLine = new RadioButton("Line");
@@ -1617,7 +1575,7 @@ public class Hypersurface3DPane extends StackPane
         if(pc.dataSource != ManifoldEvent.ProjectionConfig.DATA_SOURCE.HYPERSURFACE) return;
         //convert featurevector space into 2D array of doubles
         double[][] observations = FeatureCollection.toData(featureVectors);
-        double projectionScalar = 1.0;
+        double projectionScalar = 1000.0;
         //find clusters
         switch (pc.clusterMethod) {
             case DBSCAN -> {
@@ -1821,5 +1779,89 @@ public class Hypersurface3DPane extends StackPane
     @Override
     public void setSpheroidAnchor(boolean animate, int index) {
         //throw new UnsupportedOperationException("Not supported yet.");
+    }
+    private void tessellateImage(Image image) {
+        long startTime = System.nanoTime();
+//        Float pSkip = 2.0f;
+//        float xScale = 1.0f;
+//        System.out.print("Creating Height Map from Image... ");
+//        long startTime = System.nanoTime();
+//        TriangleMesh tm = JavaFX3DUtils.createHeightMap(image, pSkip.intValue(), yScale, xScale);
+//        Utils.printTotalTime(startTime);
+
+        System.out.print("Mapping Image Raster to Feature Vector... ");
+        startTime = System.nanoTime();
+        int rows = Double.valueOf(image.getHeight()).intValue();
+        int columns = Double.valueOf(image.getWidth()).intValue();
+        PixelReader pr = image.getPixelReader();
+        Color color = null;
+        int rgb, r, g, b =0;
+        double dataValue = 0;
+        if (null == dataGrid) {
+            dataGrid = new ArrayList<>(rows);
+        } else
+            dataGrid.clear();
+        featureVectors.clear();
+        for(int rowIndex = 0; rowIndex < rows; rowIndex++) {
+            List<Double> currentDataRow = new ArrayList<>();
+            for(int colIndex = 0; colIndex < columns; colIndex++) {
+                color = pr.getColor(colIndex, rowIndex);
+                rgb = ((int) pr.getArgb(colIndex, rowIndex));
+                FeatureVector fv = FeatureVector.EMPTY_FEATURE_VECTOR(color.toString(), 3);
+                fv.getData().set(0, Double.valueOf(colIndex)/columns);
+                fv.getData().set(1, Double.valueOf(rowIndex)/rows);
+                r = (rgb >> 16) & 0xFF;
+                g = (rgb >> 8) & 0xFF;
+                b = rgb & 0xFF;
+                dataValue = (((r + g + b) / 3.0) / 255.0);
+                fv.getData().set(2, dataValue); 
+                featureVectors.add(fv);
+                currentDataRow.add(dataValue);
+            }
+            dataGrid.add(currentDataRow);
+
+        }
+        Utils.printTotalTime(startTime);
+        System.out.print("Injecting Mesh into Hypersurface... ");
+        startTime = System.nanoTime();
+        zWidth = rows;
+        xWidth = columns;
+        zWidthSpinner.getValueFactory().setValue(zWidth);
+        xWidthSpinner.getValueFactory().setValue(xWidth);
+        updateTheMesh();
+        xSphere.setTranslateX((xWidth * surfScale) / 2.0);
+        zSphere.setTranslateZ((zWidth * surfScale) / 2.0);
+        
+//        surfPlot.injectMesh(tm);
+//        ((PhongMaterial) surfPlot.getMaterial()).setDiffuseMap(image);
+        
+//        surfPlot.setTranslateX(-(image.getWidth() / (pSkip * 2)) / 2.0);
+//        surfPlot.setTranslateZ(-(image.getHeight() / (pSkip * 2)) / 2.0);
+        Utils.printTotalTime(startTime);
+    }
+    @Override
+    public void addShapleyCollection(ShapleyCollection shapleyCollection) {
+        shapleyVectors.clear();
+        shapleyVectors.addAll(shapleyCollection.getValues());
+        try {
+            //method will automatically prepend base path for imagery
+            WritableImage wi = loadImage(shapleyCollection.getSourceInput());
+            if(null != wi) {
+                tessellateImage(wi);
+                lastImage = wi;
+            }
+        } catch (IOException ex) {
+            Logger.getLogger(Hypersurface3DPane.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    @Override
+    public void addShapleyVector(ShapleyVector shapleyVector) {
+        shapleyVectors.add(shapleyVector); 
+    }
+
+    @Override
+    public void clearShapleyVectors() {
+        shapleyVectors.clear();
     }
 }

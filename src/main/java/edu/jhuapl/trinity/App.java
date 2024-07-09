@@ -50,6 +50,7 @@ import edu.jhuapl.trinity.javafx.events.HitEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.javafx.events.SearchEvent;
 import edu.jhuapl.trinity.javafx.events.SemanticMapEvent;
+import edu.jhuapl.trinity.javafx.events.ShapleyEvent;
 import edu.jhuapl.trinity.javafx.events.TimelineEvent;
 import edu.jhuapl.trinity.javafx.events.TrajectoryEvent;
 import edu.jhuapl.trinity.javafx.events.ZeroMQEvent;
@@ -59,6 +60,7 @@ import edu.jhuapl.trinity.javafx.handlers.HitEventHandler;
 import edu.jhuapl.trinity.javafx.handlers.ManifoldEventHandler;
 import edu.jhuapl.trinity.javafx.handlers.SearchEventHandler;
 import edu.jhuapl.trinity.javafx.handlers.SemanticMapEventHandler;
+import edu.jhuapl.trinity.javafx.handlers.ShapleyEventHandler;
 import edu.jhuapl.trinity.javafx.javafx3d.Hyperspace3DPane;
 import edu.jhuapl.trinity.javafx.javafx3d.Hypersurface3DPane;
 import edu.jhuapl.trinity.javafx.javafx3d.Manifold3D;
@@ -149,6 +151,7 @@ public class App extends Application {
     ZeroMQFeedManager feed;
     ManifoldEventHandler meh;
     FeatureVectorEventHandler fveh;
+    ShapleyEventHandler sheh;
     GaussianMixtureEventHandler gmeh;
     SemanticMapEventHandler smeh;
     SearchEventHandler seh;
@@ -726,6 +729,11 @@ public class App extends Application {
         scene.getRoot().addEventHandler(ManifoldEvent.FIND_HYPERSURFACE_CLUSTERS, e -> {
             hypersurface3DPane.findClusters((ManifoldEvent.ProjectionConfig)e.object1);
         });
+        
+        sheh = new ShapleyEventHandler();
+        scene.getRoot().addEventHandler(ShapleyEvent.NEW_SHAPLEY_VECTOR, sheh);
+        scene.getRoot().addEventHandler(ShapleyEvent.NEW_SHAPLEY_COLLECTION, sheh);
+        sheh.addShapleyVectorRenderer(hypersurface3DPane);
         
         heh = new HitEventHandler(desktopPane);
         scene.getRoot().addEventHandler(HitEvent.PROJECTILE_HIT_SHAPE, heh);

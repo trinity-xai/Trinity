@@ -64,6 +64,7 @@ public class TessellationTube extends Group {
     public void updateMaterial(Image image) {
         if (colorByImage) {
             phongMaterial.setDiffuseMap(image);
+            phongMaterial.setSelfIlluminationMap(image);
             phongMaterial.setDiffuseColor(Color.WHITE);
         } else
             phongMaterial.setDiffuseColor(color);
