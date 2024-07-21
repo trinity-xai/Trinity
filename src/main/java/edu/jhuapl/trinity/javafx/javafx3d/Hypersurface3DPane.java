@@ -194,12 +194,14 @@ public class Hypersurface3DPane extends StackPane
     boolean computeRandos = false;
     boolean animated = false;
     boolean heightChanged = false;
-    boolean surfaceRender = true;
+    public boolean surfaceRender = true;
+    public boolean colorByImage = false;
     boolean hoverInteractionsEnabled = false;
     boolean surfaceChartsEnabled = false;
 
     //Shapley value support
     private Image lastImage = null;
+    private String lastImageSource = null;
     public List<ShapleyVector> shapleyVectors = new ArrayList<>();
     
     WritableImage diffusePaintImage;
@@ -213,12 +215,12 @@ public class Hypersurface3DPane extends StackPane
     public List<List<Double>> dataGrid = new ArrayList<>();
 
     private Random rando = new Random();
-    private HyperSurfacePlotMesh surfPlot;
+    public HyperSurfacePlotMesh surfPlot;
 
-    private int xWidth = DEFAULT_XWIDTH;
-    private int zWidth = DEFAULT_ZWIDTH;
-    private float yScale = DEFAULT_YSCALE;
-    private float surfScale = DEFAULT_SURFSCALE;
+    public int xWidth = DEFAULT_XWIDTH;
+    public int zWidth = DEFAULT_ZWIDTH;
+    public float yScale = DEFAULT_YSCALE;
+    public float surfScale = DEFAULT_SURFSCALE;
 
     int TOTAL_COLORS = 1530; //colors used by map function
     Function<Point3D, Number> colorByLabel = p -> p.f; //Color mapping function
@@ -254,15 +256,19 @@ public class Hypersurface3DPane extends StackPane
     Text hoverText = new Text("Coordinates: ");
 
     public List<String> featureLabels = new ArrayList<>();
-    Spinner xWidthSpinner, zWidthSpinner;
+    public Spinner xWidthSpinner, zWidthSpinner;
     public Scene scene;
     HashMap<Shape3D, Callout> shape3DToCalloutMap;
     public String imageryBasePath = "imagery/";
     SurfaceChartPane surfaceChartPane;
-
+    public AmbientLight ambientLight;
+    public PointLight pointLight;
+    
     public Hypersurface3DPane(Scene scene) {
-        shape3DToCalloutMap = new HashMap<>();
         this.scene = scene;
+        shape3DToCalloutMap = new HashMap<>();
+        ambientLight = new AmbientLight(Color.WHITE);
+        
         setBackground(Background.EMPTY);
         subScene = new SubScene(sceneRoot, sceneWidth, sceneHeight, true, SceneAntialiasing.BALANCED);
         subScene.widthProperty().bind(widthProperty());
@@ -330,11 +336,11 @@ public class Hypersurface3DPane extends StackPane
 
         subScene.setCamera(camera);
         //add a Point Light for better viewing of the grid coordinate system
-        PointLight light = new PointLight(Color.WHITE);
-        cameraTransform.getChildren().add(light);
-        light.setTranslateX(camera.getTranslateX());
-        light.setTranslateY(camera.getTranslateY());
-        light.setTranslateZ(camera.getTranslateZ() + 500.0);
+        pointLight = new PointLight(Color.WHITE);
+        cameraTransform.getChildren().add(pointLight);
+        pointLight.setTranslateX(camera.getTranslateX());
+        pointLight.setTranslateY(camera.getTranslateY());
+        pointLight.setTranslateZ(camera.getTranslateZ() + 500.0);
 
         //Some camera controls...
         subScene.setOnMouseEntered(event -> subScene.requestFocus());
@@ -806,16 +812,12 @@ public class Hypersurface3DPane extends StackPane
         if (surfaceRender) {
             surfPlot.updateMeshRaw(xWidth, zWidth, surfScale, yScale, surfScale);
         } else {
-            //@TODO SMP add TessellationTube support
-            int currentPskip = 1;
             sceneRoot.getChildren().removeIf(n -> n instanceof TessellationTube);
-//            buildWarp(dataGrid, currentPskip, 5, 5, 5);
             TessellationTube tube = new TessellationTube(dataGrid, Color.WHITE, yScale*10, surfScale, yScale);
             tube.setMouseTransparent(true);
             if (null != lastImage) {
                 tube.meshView.setDrawMode(DrawMode.FILL);
-//                tube.meshView.setCullFace(CullFace.NONE);
-                tube.colorByImage = true;
+                tube.colorByImage = colorByImage;
                 tube.updateMaterial(lastImage);
             }
             Platform.runLater(() -> {
@@ -967,9 +969,7 @@ public class Hypersurface3DPane extends StackPane
         );
         sceneRoot.getChildren().add(skybox);
         //Add some ambient light so folks can see it
-        AmbientLight light = new AmbientLight(Color.WHITE);
-        light.getScope().addAll(skybox);
-        sceneRoot.getChildren().add(light);
+        ambientLight.getScope().addAll(skybox);
         skybox.setVisible(false);
     }
 
@@ -1082,7 +1082,6 @@ public class Hypersurface3DPane extends StackPane
         if (null != surfPlot) {
             Platform.runLater(() -> {
                 if (heightChanged) { //if it hasn't changed, don't call expensive height change
-
                     heightChanged = false;
                 }
                 //@DEBUG SMP Rendering timing print
@@ -1091,8 +1090,6 @@ public class Hypersurface3DPane extends StackPane
                 //Since we changed the mesh unfortunately we have to reset the color mode
                 //otherwise the triangles won't have color.
                 //5ms for 20k points
-                surfPlot.setTextureModeVertices3D(TOTAL_COLORS, colorByHeight, 0.0, 360.0);
-//                surfPlot.setTextureModeVertices3D(TOTAL_COLORS, colorByLabel, 0.0, 360.0);
                 isDirty = false;
             });
         }
@@ -1353,6 +1350,27 @@ public class Hypersurface3DPane extends StackPane
             surfPlot.setTranslateZ(-(zWidth * surfScale) / 2.0);
         });
         zWidthSpinner.setPrefWidth(125);
+
+        ToggleGroup colorationToggle = new ToggleGroup();
+        RadioButton colorByImageRadioButton = new RadioButton("Color by Image");
+        colorByImageRadioButton.setToggleGroup(colorationToggle);
+
+        RadioButton colorByValueRadioButton = new RadioButton("Color by Value");
+        colorByValueRadioButton.setSelected(true);
+        colorByValueRadioButton.setToggleGroup(colorationToggle);
+        colorationToggle.selectedToggleProperty().addListener(cl -> {
+            colorByImage = colorByImageRadioButton.isSelected();
+            if(colorByImage) {
+                File imageFile = new File(imageryBasePath + lastImageSource);
+                surfPlot.setTextureModeImage(imageFile.toURI().toString());
+            }
+            else
+                surfPlot.setTextureModeVertices3D(TOTAL_COLORS, colorByHeight, 0.0, 360.0);
+
+            updateTheMesh();
+        });
+        HBox colorationHBox = new HBox(10, colorByImageRadioButton, colorByValueRadioButton);
+
         ToggleGroup meshTypeToggle = new ToggleGroup();
         RadioButton surfaceRadioButton = new RadioButton("Surface Projection");
         surfaceRadioButton.setSelected(true);
@@ -1400,14 +1418,12 @@ public class Hypersurface3DPane extends StackPane
         HBox cullFaceHBox = new HBox(10, cullFaceFront, cullFaceBack, cullFaceNone);
 
         //add a Point Light for better viewing of the grid coordinate system
-        PointLight pointLight = new PointLight(Color.WHITE);
         pointLight.getScope().addAll(surfPlot);
         sceneRoot.getChildren().add(pointLight);
         pointLight.translateXProperty().bind(camera.translateXProperty());
         pointLight.translateYProperty().bind(camera.translateYProperty());
         pointLight.translateZProperty().bind(camera.translateZProperty().add(500));
 
-        AmbientLight ambientLight = new AmbientLight(Color.WHITE);
         ambientLight.getScope().addAll(surfPlot);
         sceneRoot.getChildren().add(ambientLight);
 
@@ -1415,8 +1431,10 @@ public class Hypersurface3DPane extends StackPane
         ambientLight.colorProperty().bind(lightPicker.valueProperty());
 
         ColorPicker specPicker = new ColorPicker(Color.CYAN);
-        material.specularColorProperty().bind(specPicker.valueProperty());
-
+        specPicker.setOnAction(e -> {
+            ((PhongMaterial)surfPlot.getMaterial()).setSpecularColor(specPicker.getValue());
+        });
+        
         CheckBox enableAmbient = new CheckBox("Enable Ambient Light");
         enableAmbient.setSelected(true);
         enableAmbient.setOnAction(e -> {
@@ -1464,6 +1482,8 @@ public class Hypersurface3DPane extends StackPane
             new HBox(10, zWidthLabel, zWidthSpinner),
             new HBox(10, yScaleLabel, yScaleSpinner),
             new HBox(10, surfScaleLabel, surfScaleSpinner),
+            new Label("Color Method"),
+       colorationHBox,                
             new Label("Draw Mode"),
             meshTypeHBox,
             drawModeHBox,
@@ -1781,14 +1801,8 @@ public class Hypersurface3DPane extends StackPane
         //throw new UnsupportedOperationException("Not supported yet.");
     }
     private void tessellateImage(Image image) {
+        lastImage = image;
         long startTime = System.nanoTime();
-//        Float pSkip = 2.0f;
-//        float xScale = 1.0f;
-//        System.out.print("Creating Height Map from Image... ");
-//        long startTime = System.nanoTime();
-//        TriangleMesh tm = JavaFX3DUtils.createHeightMap(image, pSkip.intValue(), yScale, xScale);
-//        Utils.printTotalTime(startTime);
-
         System.out.print("Mapping Image Raster to Feature Vector... ");
         startTime = System.nanoTime();
         int rows = Double.valueOf(image.getHeight()).intValue();
@@ -1837,15 +1851,22 @@ public class Hypersurface3DPane extends StackPane
         
 //        surfPlot.setTranslateX(-(image.getWidth() / (pSkip * 2)) / 2.0);
 //        surfPlot.setTranslateZ(-(image.getHeight() / (pSkip * 2)) / 2.0);
+        if(colorByImage) {
+            //((PhongMaterial) surfPlot.getMaterial()).setDiffuseMap(image);
+            surfPlot.setTextureModeImage(imageryBasePath + lastImageSource);
+        } 
+
         Utils.printTotalTime(startTime);
     }
     @Override
     public void addShapleyCollection(ShapleyCollection shapleyCollection) {
         shapleyVectors.clear();
+        lastImageSource = shapleyCollection.getSourceInput();
         shapleyVectors.addAll(shapleyCollection.getValues());
         try {
             //method will automatically prepend base path for imagery
             WritableImage wi = loadImage(shapleyCollection.getSourceInput());
+//            Image i = new Image(shapleyCollection.getSourceInput());
             if(null != wi) {
                 tessellateImage(wi);
                 lastImage = wi;
