@@ -48,6 +48,8 @@ package edu.jhuapl.trinity.javafx.javafx3d;
  * #L%
  */
 
+import java.util.ArrayList;
+import java.util.List;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.ObjectProperty;
@@ -77,18 +79,15 @@ import org.fxyz3d.shapes.primitives.helper.TriangleMeshHelper.TextureType;
  * SurfacePlotMesh to plot 2D functions z = f(x,y)
  */
 public class HyperSurfacePlotMesh extends TexturedMesh {
-
     private static final Function<Point2D, Number> DEFAULT_FUNCTION = p -> Math.sin(p.magnitude()) / p.magnitude();
     private static final Function<Vert3D, Number> DEFAULT_VERT3D_FUNCTION = p -> Math.sin(p.magnitude()) / p.magnitude();
-
-
     private static final double DEFAULT_X_RANGE = 10; // -5 +5
     private static final double DEFAULT_Y_RANGE = 10; // -5 +5
     private static final int DEFAULT_X_DIVISIONS = 64;
     private static final int DEFAULT_Y_DIVISIONS = 64;
     private static final double DEFAULT_FUNCTION_SCALE = 1.0D;
     private static final double DEFAULT_SURF_SCALE = 1.0D;
-
+    public List<Double> functionValues;
     private PolygonMesh polygonMesh;
 
     public HyperSurfacePlotMesh() {
@@ -114,11 +113,12 @@ public class HyperSurfacePlotMesh extends TexturedMesh {
         setDivisionsX(divisionsX);
         setDivisionsY(divisionsY);
         setFunctionScale(functionScale);
-
+        functionValues = new ArrayList<>();
         updateMesh();
         setCullFace(CullFace.BACK);
         setDrawMode(DrawMode.FILL);
         setDepthTest(DepthTest.ENABLE);
+        
     }
 
     public HyperSurfacePlotMesh(int rangeX, int rangeY, int divisionsX, int divisionsY,
@@ -131,26 +131,11 @@ public class HyperSurfacePlotMesh extends TexturedMesh {
         setDivisionsY(divisionsY);
         setFunctionScale(functionScale);
         setSurfScale(surfScale);
+        functionValues = new ArrayList<>();
         updateMeshRaw(rangeX, rangeY, surfScale, functionScale, surfScale);
         setCullFace(CullFace.BACK);
         setDrawMode(DrawMode.FILL);
         setDepthTest(DepthTest.ENABLE);
-    }
-    public void setTextureModeImage(Image image) {
-        if(image!=null ){
-//            helper.setTextureType(TextureType.IMAGE);
-            setTextureType(TextureType.IMAGE);
-//            helper.getMaterialWithImage(image);
-            PhongMaterial mat = (PhongMaterial) getMaterial();
-            mat.setBumpMap(null);
-            mat.setSpecularMap(null);
-            mat.setSelfIlluminationMap(null);
-
-            mat.setDiffuseColor(DEFAULT_DIFFUSE_COLOR);
-            mat.setSpecularColor(DEFAULT_SPECULAR_COLOR);
-            mat.setDiffuseMap(image);
-//            setTextureType(TextureType.IMAGE);
-        }
     }
     public javafx.geometry.Point3D getPoint3DByVertNumber(int pointId) {
         Point3D p = listVertices.get(pointId);
@@ -167,6 +152,11 @@ public class HyperSurfacePlotMesh extends TexturedMesh {
         double xScale, double yScale, double zScale) {
         setMesh(null);
         mesh = createRawMesh(getFunctionVert3D(), rangeX, rangeY, xScale, yScale, zScale);
+//        for(int i=0;i<functionValues.size();i++){
+//            if(i>=listVertices.size()) break;
+//            listVertices.get(i).f 
+//                = functionValues.get(i).floatValue();
+//        }
         setMesh(mesh);
     }
 
@@ -382,13 +372,19 @@ public class HyperSurfacePlotMesh extends TexturedMesh {
         // Create texture coordinates
         createTexCoords(rangeX, rangeZ);
 
+        int functionIndex = 0;
+        Double currentFValue = 0.0;
         // Create points
         for (int z = 0; z <= rangeZ; z++) {
             dz = (float) (z * zScale);
             for (int x = 0; x <= rangeX; x++) {
                 dx = (float) (x * xScale);
                 height = (float) yScale * vertFunction.apply(new Vert3D(dx, dz, x, z)).floatValue();
-                listVertices.add(new Point3D(dx, height, dz));
+                functionIndex = (z * rangeX) + x;
+                if(functionIndex < functionValues.size())
+                    currentFValue = functionValues.get(functionIndex);
+                listVertices.add(new Point3D(dx, height, dz, currentFValue.floatValue()));
+                
                 if (z < rangeZ && x < rangeX) {
                     p00 = z * numDivX + x;
                     p01 = p00 + 1;
@@ -521,5 +517,8 @@ public class HyperSurfacePlotMesh extends TexturedMesh {
             }
         }
         return createMesh();
+    }
+    public List<Point3D> getListVertices() {
+        return listVertices;
     }
 }
