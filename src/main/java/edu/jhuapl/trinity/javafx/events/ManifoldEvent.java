@@ -40,10 +40,11 @@ public class ManifoldEvent extends Event {
         public static enum COVARIANCE_MODE {
             DIAGONAL, FULL
         }
+
         public static enum DATA_SOURCE {
             HYPERSPACE, HYPERSURFACE, PROJECTIONS
         }
-        
+
         public DATA_SOURCE dataSource = DATA_SOURCE.PROJECTIONS;
         public boolean useVisiblePoints = true;
         public ClusterMethod clusterMethod = ClusterMethod.EX_MAX;

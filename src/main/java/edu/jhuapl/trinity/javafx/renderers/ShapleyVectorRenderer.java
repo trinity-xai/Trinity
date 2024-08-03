@@ -28,7 +28,10 @@ import edu.jhuapl.trinity.data.messages.ShapleyVector;
  */
 public interface ShapleyVectorRenderer {
     public void addShapleyCollection(ShapleyCollection shapleyCollection);
+
     public void addShapleyVector(ShapleyVector shapleyVector);
+
     public void clearShapleyVectors();
+
     public void refresh();
 }

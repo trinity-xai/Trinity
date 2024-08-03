@@ -108,6 +108,7 @@ public class ShapleyVector extends MessageData {
         }
         return sb.toString();
     }
+
     public double minDataValue() {
         return getData().stream().min(Double::compare).get();
     }

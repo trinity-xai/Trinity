@@ -49,7 +49,7 @@ public class SurfaceControlPane extends LitPathPane {
     BorderPane bp;
     Hypersurface3DPane hypersurface;
     Spinner xWidthSpinner, zWidthSpinner;
-    
+
     private static BorderPane createContent() {
         BorderPane bpOilSpill = new BorderPane();
         return bpOilSpill;
@@ -62,6 +62,7 @@ public class SurfaceControlPane extends LitPathPane {
         bp = (BorderPane) this.contentPane;
         buildControls();
     }
+
     private void buildControls() {
         Spinner yScaleSpinner = new Spinner(
             new SpinnerValueFactory.DoubleSpinnerValueFactory(
@@ -182,9 +183,9 @@ public class SurfaceControlPane extends LitPathPane {
 
         ColorPicker specPicker = new ColorPicker(Color.CYAN);
         specPicker.setOnAction(e -> {
-            ((PhongMaterial)hypersurface.surfPlot.getMaterial()).setSpecularColor(specPicker.getValue());
+            ((PhongMaterial) hypersurface.surfPlot.getMaterial()).setSpecularColor(specPicker.getValue());
         });
-        
+
         CheckBox enableAmbient = new CheckBox("Enable Ambient Light");
         enableAmbient.setSelected(true);
         enableAmbient.setOnAction(e -> {
@@ -241,6 +242,6 @@ public class SurfaceControlPane extends LitPathPane {
         );
         StackPane.setAlignment(vbox, Pos.BOTTOM_LEFT);
         vbox.setPickOnBounds(false);
-        getChildren().add(vbox);        
+        getChildren().add(vbox);
     }
 }

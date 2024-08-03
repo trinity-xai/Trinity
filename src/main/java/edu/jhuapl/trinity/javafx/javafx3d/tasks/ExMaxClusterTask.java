@@ -4,7 +4,7 @@ package edu.jhuapl.trinity.javafx.javafx3d.tasks;
  * #%L
  * trinity
  * %%
- * Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC
+ * Copyright (C) 2021 - 2024 Sean Phillips
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -29,10 +29,6 @@ import edu.jhuapl.trinity.utils.clustering.Cluster;
 import edu.jhuapl.trinity.utils.clustering.GaussianMixtureComponent;
 import edu.jhuapl.trinity.utils.clustering.GaussianMixtureModel;
 import edu.jhuapl.trinity.utils.clustering.Point;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
 import javafx.application.Platform;
 import javafx.scene.PerspectiveCamera;
 import javafx.scene.Scene;
@@ -41,16 +37,21 @@ import javafx.scene.text.Font;
 import javafx.util.Pair;
 import org.fxyz3d.geometry.Point3D;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+
 /**
  * @author Sean Phillips
  */
 public class ExMaxClusterTask extends ClusterTask {
 
     ProjectionConfig pc;
-    double [][] observations;
-    
+    double[][] observations;
+
     public ExMaxClusterTask(Scene scene, PerspectiveCamera camera,
-        double projectionScalar, double[][] observations, ProjectionConfig pc) {
+                            double projectionScalar, double[][] observations, ProjectionConfig pc) {
         super(scene, camera);
         setProjectionScalar(projectionScalar);
         this.pc = pc;
@@ -65,7 +66,7 @@ public class ExMaxClusterTask extends ClusterTask {
                 new ApplicationEvent(ApplicationEvent.SHOW_BUSY_INDICATOR, ps));
         });
         System.out.println("Expectation Maximization... ");
-        long startTime = System.nanoTime();                
+        long startTime = System.nanoTime();
         boolean diagonal = pc.covariance == ProjectionConfig.COVARIANCE_MODE.DIAGONAL;
         GaussianMixtureModel gmm = GaussianMixtureModel.fit(pc.components, observations, diagonal);
         Utils.printTotalTime(startTime);
@@ -120,6 +121,6 @@ public class ExMaxClusterTask extends ClusterTask {
             scene.getRoot().fireEvent(
                 new CommandTerminalEvent("Completed KMeans Fit and Manifold Geometry Task.",
                     new Font("Consolas", 20), Color.GREEN));
-        });        
+        });
     }
 }

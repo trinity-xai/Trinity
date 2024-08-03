@@ -27,6 +27,7 @@ import edu.jhuapl.trinity.javafx.events.ShapleyEvent;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.scene.Scene;
+
 import java.io.File;
 import java.io.IOException;
 import java.util.logging.Level;

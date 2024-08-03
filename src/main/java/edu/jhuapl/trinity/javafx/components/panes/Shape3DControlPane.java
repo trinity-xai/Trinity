@@ -28,6 +28,7 @@ import edu.jhuapl.trinity.javafx.events.ManifoldEvent.ProjectionConfig;
 import edu.jhuapl.trinity.javafx.javafx3d.Manifold3D;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
+import edu.jhuapl.trinity.utils.clustering.ClusterMethod;
 import javafx.geometry.Insets;
 import javafx.geometry.Point3D;
 import javafx.geometry.Pos;
@@ -37,13 +38,17 @@ import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.RadioButton;
 import javafx.scene.control.Slider;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
+import javafx.scene.control.SplitMenuButton;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
@@ -58,12 +63,7 @@ import java.util.List;
 
 import static edu.jhuapl.trinity.utils.JavaFX3DUtils.toFX;
 import static edu.jhuapl.trinity.utils.JavaFX3DUtils.toFXYZ3D;
-import edu.jhuapl.trinity.utils.clustering.ClusterMethod;
 import static java.util.stream.Collectors.toList;
-import javafx.scene.control.MenuItem;
-import javafx.scene.control.RadioButton;
-import javafx.scene.control.SplitMenuButton;
-import javafx.scene.control.ToggleGroup;
 
 /**
  * @author Sean Phillips
@@ -97,7 +97,7 @@ public class Shape3DControlPane extends LitPathPane {
     private CheckBox verboseCheckBox;
     private RadioButton diagonalRadioButton;
     private RadioButton fullCovarianceRadioButton;
-    private SplitMenuButton clusterMethodMenuButton;    
+    private SplitMenuButton clusterMethodMenuButton;
     private RadioButton hypersurfaceRadioButton;
     private RadioButton projectionsRadioButton;
 
@@ -110,7 +110,7 @@ public class Shape3DControlPane extends LitPathPane {
     private final String ALL = "ALL";
     public static Color DEFAULT_MANIFOLD_COLOR = Color.WHITE;
     ClusterMethod selectedMethod = ClusterMethod.KMEANS;
-    
+
     private static BorderPane createContent() {
         BorderPane bpOilSpill = new BorderPane();
         return bpOilSpill;
@@ -131,21 +131,22 @@ public class Shape3DControlPane extends LitPathPane {
         tabPane.setTabDragPolicy(TabPane.TabDragPolicy.FIXED);
         bp.setCenter(tabPane);
     }
+
     private void buildFindClustersTab() {
         findClustersTab = new Tab("Find Clusters");
         BorderPane findClusterBorderPane = new BorderPane();
-        findClustersTab.setContent(findClusterBorderPane);        
-        
+        findClustersTab.setContent(findClusterBorderPane);
+
         componentsSpinner = new Spinner(
             new SpinnerValueFactory.IntegerSpinnerValueFactory(2, 20, 5, 1));
-        componentsSpinner.setPrefWidth(SPINNER_PREF_WIDTH);        
+        componentsSpinner.setPrefWidth(SPINNER_PREF_WIDTH);
         componentsSpinner.setEditable(true);
         iterationsSpinner = new Spinner(
-                new SpinnerValueFactory.IntegerSpinnerValueFactory(10, 500, 50, 5));
-        iterationsSpinner.setPrefWidth(SPINNER_PREF_WIDTH);        
+            new SpinnerValueFactory.IntegerSpinnerValueFactory(10, 500, 50, 5));
+        iterationsSpinner.setPrefWidth(SPINNER_PREF_WIDTH);
         iterationsSpinner.setEditable(true);
         convergenceSpinner = new Spinner(
-            new SpinnerValueFactory.DoubleSpinnerValueFactory( 0.001, 0.999,  0.005, 0.001));
+            new SpinnerValueFactory.DoubleSpinnerValueFactory(0.001, 0.999, 0.005, 0.001));
         convergenceSpinner.setPrefWidth(SPINNER_PREF_WIDTH);
         convergenceSpinner.setEditable(true);
 
@@ -153,7 +154,7 @@ public class Shape3DControlPane extends LitPathPane {
             new SpinnerValueFactory.DoubleSpinnerValueFactory(0.01, 1, 0.5, 0.01));
         epsilonAlphaSpinner.setPrefWidth(SPINNER_PREF_WIDTH);
         epsilonAlphaSpinner.setEditable(true);
-        
+
         minimumPointsSpinner = new Spinner(
             new SpinnerValueFactory.IntegerSpinnerValueFactory(4, 1000, 10, 10));
         minimumPointsSpinner.setPrefWidth(SPINNER_PREF_WIDTH);
@@ -163,22 +164,22 @@ public class Shape3DControlPane extends LitPathPane {
             new SpinnerValueFactory.IntegerSpinnerValueFactory(4, 1000, 100, 50));
         minimumClusterSizeSpinner.setPrefWidth(SPINNER_PREF_WIDTH);
         minimumClusterSizeSpinner.setEditable(true);
-        
+
         minimumLeafSizeSpinner = new Spinner(
             new SpinnerValueFactory.IntegerSpinnerValueFactory(4, 1000, 100, 50));
         minimumLeafSizeSpinner.setPrefWidth(SPINNER_PREF_WIDTH);
         minimumLeafSizeSpinner.setEditable(true);
-        
+
         parallelCheckBox = new CheckBox("Force Parallel");
         verboseCheckBox = new CheckBox("Verbose Output");
-        
+
         ToggleGroup covarianceToggleGroup = new ToggleGroup();
         diagonalRadioButton = new RadioButton("Diagonal");
         diagonalRadioButton.setToggleGroup(covarianceToggleGroup);
         fullCovarianceRadioButton = new RadioButton("Full");
         fullCovarianceRadioButton.setToggleGroup(covarianceToggleGroup);
         diagonalRadioButton.setSelected(true);
-        
+
         ToggleGroup datasourceToggleGroup = new ToggleGroup();
         hypersurfaceRadioButton = new RadioButton("Hypersurface");
         hypersurfaceRadioButton.setToggleGroup(datasourceToggleGroup);
@@ -192,10 +193,10 @@ public class Shape3DControlPane extends LitPathPane {
         MenuItem kmedoids = new MenuItem("KMedoids");
         MenuItem exmax = new MenuItem("Expectation Maximization");
         MenuItem affinity = new MenuItem("Affinity Propagation");
-        clusterMethodMenuButton = new SplitMenuButton(dbscan, hdbscan, 
-            kmeans, kmedoids, exmax, affinity);  
+        clusterMethodMenuButton = new SplitMenuButton(dbscan, hdbscan,
+            kmeans, kmedoids, exmax, affinity);
         clusterMethodMenuButton.setText("Select method");
-        clusterMethodMenuButton.setOnAction(e->findClusters());
+        clusterMethodMenuButton.setOnAction(e -> findClusters());
 
         dbscan.setOnAction((e) -> {
             selectedMethod = ClusterMethod.DBSCAN;
@@ -222,7 +223,7 @@ public class Shape3DControlPane extends LitPathPane {
             clusterMethodMenuButton.setText(affinity.getText());
         });
         clusterMethodMenuButton.setPrefWidth(SELECTION_PREF_WIDTH);
-        
+
         Label sourceLabel = new Label("Data Source");
         sourceLabel.setPrefWidth(SPINNER_PREF_WIDTH);
         Label componentsLabel = new Label("Components");
@@ -241,7 +242,7 @@ public class Shape3DControlPane extends LitPathPane {
         minimumClusterSizeLabel.setPrefWidth(SPINNER_PREF_WIDTH);
         Label minimumLeafSizeLabel = new Label("Minimum Leaf Size");
         minimumLeafSizeLabel.setPrefWidth(SPINNER_PREF_WIDTH);
-        Label clusteringLabel = new Label("Clustering Method");        
+        Label clusteringLabel = new Label("Clustering Method");
         clusteringLabel.setPrefWidth(SPINNER_PREF_WIDTH);
 
         VBox vbox = new VBox(10,
@@ -250,21 +251,21 @@ public class Shape3DControlPane extends LitPathPane {
             new HBox(10, componentsLabel, componentsSpinner),
             new HBox(10, iterationsLabel, iterationsSpinner),
             new HBox(10, convergenceLabel, convergenceSpinner),
-            new HBox(10, epsilonAlphaLabel, epsilonAlphaSpinner),    
-            new HBox(10, minimumPointsLabel, minimumPointsSpinner),    
-            new HBox(10, minimumClusterSizeLabel, minimumClusterSizeSpinner),    
-            new HBox(10, minimumLeafSizeLabel, minimumLeafSizeSpinner),    
-            new HBox(10, parallelCheckBox, verboseCheckBox),    
+            new HBox(10, epsilonAlphaLabel, epsilonAlphaSpinner),
+            new HBox(10, minimumPointsLabel, minimumPointsSpinner),
+            new HBox(10, minimumClusterSizeLabel, minimumClusterSizeSpinner),
+            new HBox(10, minimumLeafSizeLabel, minimumLeafSizeSpinner),
+            new HBox(10, parallelCheckBox, verboseCheckBox),
             new HBox(10, covarianceLabel, diagonalRadioButton, fullCovarianceRadioButton)
         );
-        vbox.setPadding(new Insets(10,5,5,5));
+        vbox.setPadding(new Insets(10, 5, 5, 5));
         findClusterBorderPane.setCenter(vbox);
     }
 
     public void findClusters() {
         System.out.println("Find Clusters...");
         ProjectionConfig pc = new ProjectionConfig();
-        pc.dataSource = hypersurfaceRadioButton.isSelected() 
+        pc.dataSource = hypersurfaceRadioButton.isSelected()
             ? ProjectionConfig.DATA_SOURCE.HYPERSURFACE
             : ProjectionConfig.DATA_SOURCE.PROJECTIONS;
         pc.components = (int) componentsSpinner.getValue();
@@ -280,15 +281,15 @@ public class Shape3DControlPane extends LitPathPane {
         pc.minimumPoints = (int) minimumPointsSpinner.getValue();
         pc.minimumClusterSize = (int) minimumClusterSizeSpinner.getValue();
         pc.minimumLeafSize = (int) minimumLeafSizeSpinner.getValue();
-        
-        if(hypersurfaceRadioButton.isSelected())
+
+        if (hypersurfaceRadioButton.isSelected())
             clusterMethodMenuButton.getScene().getRoot().fireEvent(
-            new ManifoldEvent(ManifoldEvent.FIND_HYPERSURFACE_CLUSTERS, pc));
+                new ManifoldEvent(ManifoldEvent.FIND_HYPERSURFACE_CLUSTERS, pc));
         else
             clusterMethodMenuButton.getScene().getRoot().fireEvent(
-            new ManifoldEvent(ManifoldEvent.FIND_PROJECTION_CLUSTERS, pc));
-    }    
-    
+                new ManifoldEvent(ManifoldEvent.FIND_PROJECTION_CLUSTERS, pc));
+    }
+
     private void buildClusterBuilderTab() {
         clusterBuilderTab = new Tab("Cluster Builder");
         BorderPane clusterBorderPane = new BorderPane();

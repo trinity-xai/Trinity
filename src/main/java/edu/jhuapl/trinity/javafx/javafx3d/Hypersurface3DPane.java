@@ -55,12 +55,6 @@ import edu.jhuapl.trinity.javafx.renderers.ShapleyVectorRenderer;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import edu.jhuapl.trinity.utils.Utils;
-import static edu.jhuapl.trinity.utils.clustering.ClusterMethod.AFFINITY;
-import static edu.jhuapl.trinity.utils.clustering.ClusterMethod.DBSCAN;
-import static edu.jhuapl.trinity.utils.clustering.ClusterMethod.EX_MAX;
-import static edu.jhuapl.trinity.utils.clustering.ClusterMethod.HDDBSCAN;
-import static edu.jhuapl.trinity.utils.clustering.ClusterMethod.KMEANS;
-import static edu.jhuapl.trinity.utils.clustering.ClusterMethod.KMEDIODS;
 import javafx.animation.AnimationTimer;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
@@ -94,6 +88,7 @@ import javafx.scene.control.ToggleGroup;
 import javafx.scene.effect.Glow;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.image.PixelReader;
 import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
 import javafx.scene.input.Clipboard;
@@ -142,7 +137,6 @@ import java.util.Random;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javafx.scene.image.PixelReader;
 
 /**
  * @author Sean Phillips
@@ -195,7 +189,9 @@ public class Hypersurface3DPane extends StackPane
     boolean animated = false;
     boolean heightChanged = false;
     public boolean surfaceRender = true;
-    enum COLORATION { COLOR_BY_IMAGE, COLOR_BY_FEATURE, COLOR_BY_SHAPLEY }
+
+    enum COLORATION {COLOR_BY_IMAGE, COLOR_BY_FEATURE, COLOR_BY_SHAPLEY}
+
     COLORATION colorationMethod = COLORATION.COLOR_BY_FEATURE;
     boolean hoverInteractionsEnabled = false;
     boolean surfaceChartsEnabled = false;
@@ -204,7 +200,7 @@ public class Hypersurface3DPane extends StackPane
     private Image lastImage = null;
     private String lastImageSource = null;
     public List<ShapleyVector> shapleyVectors = new ArrayList<>();
-    
+
     WritableImage diffusePaintImage;
     PhongMaterial paintPhong;
     TriangleMesh paintTriangleMesh;
@@ -270,12 +266,12 @@ public class Hypersurface3DPane extends StackPane
     SurfaceChartPane surfaceChartPane;
     public AmbientLight ambientLight;
     public PointLight pointLight;
-    
+
     public Hypersurface3DPane(Scene scene) {
         this.scene = scene;
         shape3DToCalloutMap = new HashMap<>();
         ambientLight = new AmbientLight(Color.WHITE);
-        
+
         setBackground(Background.EMPTY);
         subScene = new SubScene(sceneRoot, sceneWidth, sceneHeight, true, SceneAntialiasing.BALANCED);
         subScene.widthProperty().bind(widthProperty());
@@ -703,7 +699,7 @@ public class Hypersurface3DPane extends StackPane
             nodeGroup.setVisible((boolean) e.object);
             labelGroup.setVisible((boolean) e.object);
         });
-        scene.addEventHandler(ApplicationEvent.SET_IMAGERY_BASEPATH, e -> 
+        scene.addEventHandler(ApplicationEvent.SET_IMAGERY_BASEPATH, e ->
             imageryBasePath = (String) e.object);
         Platform.runLater(() -> {
             updateLabels();
@@ -821,7 +817,7 @@ public class Hypersurface3DPane extends StackPane
             surfPlot.updateMeshRaw(xWidth, zWidth, surfScale, yScale, surfScale);
         } else {
             sceneRoot.getChildren().removeIf(n -> n instanceof TessellationTube);
-            TessellationTube tube = new TessellationTube(dataGrid, Color.WHITE, yScale*10, surfScale, yScale);
+            TessellationTube tube = new TessellationTube(dataGrid, Color.WHITE, yScale * 10, surfScale, yScale);
             tube.setMouseTransparent(true);
             if (null != lastImage) {
                 tube.meshView.setDrawMode(DrawMode.FILL);
@@ -987,6 +983,7 @@ public class Hypersurface3DPane extends StackPane
                 + xFactorIndex + ", " + yFactorIndex + ", " + zFactorIndex + ")",
                 new Font("Consolas", 20), Color.GREEN));
     }
+
     public void resetView(double milliseconds, boolean rightNow) {
         if (!rightNow) {
             Timeline timeline = JavaFX3DUtils.transitionCameraTo(milliseconds, camera, cameraTransform,
@@ -1065,7 +1062,8 @@ public class Hypersurface3DPane extends StackPane
             image = ResourceUtils.loadIconAsWritableImage("noimage");
         }
         return image;
-    }    
+    }
+
     private ImageView loadImageView(FeatureVector featureVector, boolean bboxOnly) {
         ImageView iv = null;
         try {
@@ -1117,11 +1115,12 @@ public class Hypersurface3DPane extends StackPane
             dataGrid.add(xList);
         }
     }
+
     private Number lookupShapley(Point3D p) {
-        if(null != shapleyVectors && null != dataGrid) {
+        if (null != shapleyVectors && null != dataGrid) {
 //@SMP This approach won't work because it is dependent on translation and scaling
 //            //number of rows multiplied by width of rows (stride length)
-//            //plus column index 
+//            //plus column index
 //            return shapleyVectors.get(
 //                Float.valueOf(
 //                    ((p.z/surfScale * dataGrid.size()) * dataGrid.get(0).size()) + p.x/surfScale
@@ -1129,6 +1128,7 @@ public class Hypersurface3DPane extends StackPane
         }
         return 0.0;
     }
+
     private Number vertToHeight(Vert3D p) {
         if (null != dataGrid) {
             if (surfaceRender)
@@ -1382,11 +1382,11 @@ public class Hypersurface3DPane extends StackPane
         colorByShapleyValueRadioButton.setToggleGroup(colorationToggle);
 
         colorationToggle.selectedToggleProperty().addListener(cl -> {
-            if(colorByImageRadioButton.isSelected()) {
+            if (colorByImageRadioButton.isSelected()) {
                 colorationMethod = COLORATION.COLOR_BY_IMAGE;
                 File imageFile = new File(imageryBasePath + lastImageSource);
                 surfPlot.setTextureModeImage(imageFile.toURI().toString());
-            } else if(colorByFeatureValueRadioButton.isSelected()) {
+            } else if (colorByFeatureValueRadioButton.isSelected()) {
                 colorationMethod = COLORATION.COLOR_BY_FEATURE;
                 surfPlot.setTextureModeVertices3D(TOTAL_COLORS, colorByHeight, 0.0, 360.0);
             } else {
@@ -1395,7 +1395,7 @@ public class Hypersurface3DPane extends StackPane
             }
             updateTheMesh();
         });
-        HBox colorationHBox = new HBox(10, colorByImageRadioButton, 
+        HBox colorationHBox = new HBox(10, colorByImageRadioButton,
             colorByFeatureValueRadioButton, colorByShapleyValueRadioButton);
 
         ToggleGroup meshTypeToggle = new ToggleGroup();
@@ -1459,9 +1459,9 @@ public class Hypersurface3DPane extends StackPane
 
         ColorPicker specPicker = new ColorPicker(Color.CYAN);
         specPicker.setOnAction(e -> {
-            ((PhongMaterial)surfPlot.getMaterial()).setSpecularColor(specPicker.getValue());
+            ((PhongMaterial) surfPlot.getMaterial()).setSpecularColor(specPicker.getValue());
         });
-        
+
         CheckBox enableAmbient = new CheckBox("Enable Ambient Light");
         enableAmbient.setSelected(true);
         enableAmbient.setOnAction(e -> {
@@ -1510,7 +1510,7 @@ public class Hypersurface3DPane extends StackPane
             new HBox(10, yScaleLabel, yScaleSpinner),
             new HBox(10, surfScaleLabel, surfScaleSpinner),
             new Label("Color Method"),
-       colorationHBox,                
+            colorationHBox,
             new Label("Draw Mode"),
             meshTypeHBox,
             drawModeHBox,
@@ -1617,9 +1617,10 @@ public class Hypersurface3DPane extends StackPane
     public void setFeatureCollection(FeatureCollection fc) {
         featureVectors = fc.getFeatures();
     }
+
     public void findClusters(ManifoldEvent.ProjectionConfig pc) {
         //safety check
-        if(pc.dataSource != ManifoldEvent.ProjectionConfig.DATA_SOURCE.HYPERSURFACE) return;
+        if (pc.dataSource != ManifoldEvent.ProjectionConfig.DATA_SOURCE.HYPERSURFACE) return;
         //convert featurevector space into 2D array of doubles
         double[][] observations = FeatureCollection.toData(featureVectors);
         double projectionScalar = 1000.0;
@@ -1633,7 +1634,7 @@ public class Hypersurface3DPane extends StackPane
                     t.setDaemon(true);
                     t.start();
                 }
-                break;                
+                break;
             }
             case HDDBSCAN -> {
                 HDDBSCANClusterTask hddbscanClusterTask = new HDDBSCANClusterTask(
@@ -1643,7 +1644,7 @@ public class Hypersurface3DPane extends StackPane
                     t.setDaemon(true);
                     t.start();
                 }
-                break;                
+                break;
             }
             case KMEANS -> {
                 KMeansClusterTask kmeansClusterTask = new KMeansClusterTask(
@@ -1653,7 +1654,7 @@ public class Hypersurface3DPane extends StackPane
                     t.setDaemon(true);
                     t.start();
                 }
-                break; 
+                break;
             }
             case KMEDIODS -> {
                 KMediodsClusterTask kmediodsClusterTask = new KMediodsClusterTask(
@@ -1663,9 +1664,9 @@ public class Hypersurface3DPane extends StackPane
                     t.setDaemon(true);
                     t.start();
                 }
-                break; 
+                break;
             }
-            
+
             case EX_MAX -> {
                 ExMaxClusterTask exMaxClusterTask = new ExMaxClusterTask(
                     scene, camera, projectionScalar, observations, pc);
@@ -1674,7 +1675,7 @@ public class Hypersurface3DPane extends StackPane
                     t.setDaemon(true);
                     t.start();
                 }
-                break; 
+                break;
             }
             case AFFINITY -> {
                 AffinityClusterTask affinityClusterTask = new AffinityClusterTask(
@@ -1684,7 +1685,7 @@ public class Hypersurface3DPane extends StackPane
                     t.setDaemon(true);
                     t.start();
                 }
-                break;                
+                break;
             }
         }
     }
@@ -1827,6 +1828,7 @@ public class Hypersurface3DPane extends StackPane
     public void setSpheroidAnchor(boolean animate, int index) {
         //throw new UnsupportedOperationException("Not supported yet.");
     }
+
     private void tessellateImage(Image image) {
         lastImage = image;
         long startTime = System.nanoTime();
@@ -1836,26 +1838,26 @@ public class Hypersurface3DPane extends StackPane
         int columns = Double.valueOf(image.getWidth()).intValue();
         PixelReader pr = image.getPixelReader();
         Color color = null;
-        int rgb, r, g, b =0;
+        int rgb, r, g, b = 0;
         double dataValue = 0;
         if (null == dataGrid) {
             dataGrid = new ArrayList<>(rows);
         } else
             dataGrid.clear();
         featureVectors.clear();
-        for(int rowIndex = 0; rowIndex < rows; rowIndex++) {
+        for (int rowIndex = 0; rowIndex < rows; rowIndex++) {
             List<Double> currentDataRow = new ArrayList<>();
-            for(int colIndex = 0; colIndex < columns; colIndex++) {
+            for (int colIndex = 0; colIndex < columns; colIndex++) {
                 color = pr.getColor(colIndex, rowIndex);
                 rgb = ((int) pr.getArgb(colIndex, rowIndex));
                 FeatureVector fv = FeatureVector.EMPTY_FEATURE_VECTOR(color.toString(), 3);
-                fv.getData().set(0, Double.valueOf(colIndex)/columns);
-                fv.getData().set(1, Double.valueOf(rowIndex)/rows);
+                fv.getData().set(0, Double.valueOf(colIndex) / columns);
+                fv.getData().set(1, Double.valueOf(rowIndex) / rows);
                 r = (rgb >> 16) & 0xFF;
                 g = (rgb >> 8) & 0xFF;
                 b = rgb & 0xFF;
                 dataValue = (((r + g + b) / 3.0) / 255.0);
-                fv.getData().set(2, dataValue); 
+                fv.getData().set(2, dataValue);
                 featureVectors.add(fv);
                 currentDataRow.add(dataValue);
             }
@@ -1873,6 +1875,7 @@ public class Hypersurface3DPane extends StackPane
         zSphere.setTranslateZ((zWidth * surfScale) / 2.0);
         Utils.printTotalTime(startTime);
     }
+
     @Override
     public void addShapleyCollection(ShapleyCollection shapleyCollection) {
         shapleyVectors.clear();
@@ -1881,25 +1884,25 @@ public class Hypersurface3DPane extends StackPane
         try {
             //method will automatically prepend base path for imagery
             WritableImage wi = loadImage(shapleyCollection.getSourceInput());
-            if(null != wi) {
+            if (null != wi) {
                 tessellateImage(wi);
                 lastImage = wi;
                 //sneakily insert current function values (shapley) into vertices
                 System.out.print("injecting Shapley function values into Vertices... ");
                 long startTime = System.nanoTime();
                 surfPlot.functionValues.clear();
-                for(int i=0;i<shapleyVectors.size();i++){
+                for (int i = 0; i < shapleyVectors.size(); i++) {
                     surfPlot.functionValues.add(
                         shapleyVectors.get(i).getData().get(0) * yScale);
                 }
                 Utils.printTotalTime(startTime);
-                if(null == colorationMethod) 
+                if (null == colorationMethod)
                     surfPlot.setTextureModeVertices3D(TOTAL_COLORS, colorByHeight, 0.0, 360.0);
                 switch (colorationMethod) {
                     case COLOR_BY_IMAGE -> surfPlot.setTextureModeImage(imageryBasePath + lastImageSource);
                     case COLOR_BY_FEATURE -> surfPlot.setTextureModeVertices3D(TOTAL_COLORS, colorByHeight, 0.0, 360.0);
                     default -> surfPlot.setTextureModeVertices3D(TOTAL_COLORS, colorByShapley, 0.0, 360.0);
-                }                
+                }
             }
         } catch (IOException ex) {
             Logger.getLogger(Hypersurface3DPane.class.getName()).log(Level.SEVERE, null, ex);
@@ -1908,7 +1911,7 @@ public class Hypersurface3DPane extends StackPane
 
     @Override
     public void addShapleyVector(ShapleyVector shapleyVector) {
-        shapleyVectors.add(shapleyVector); 
+        shapleyVectors.add(shapleyVector);
     }
 
     @Override

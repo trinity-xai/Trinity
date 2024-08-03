@@ -61,7 +61,6 @@ import edu.jhuapl.trinity.javafx.renderers.GaussianMixtureRenderer;
 import edu.jhuapl.trinity.javafx.renderers.ManifoldRenderer;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
-import edu.jhuapl.trinity.utils.Utils;
 import edu.jhuapl.trinity.utils.VisibilityMap;
 import javafx.animation.AnimationTimer;
 import javafx.animation.Timeline;
@@ -2056,7 +2055,7 @@ public class Hyperspace3DPane extends StackPane implements
     public void findClusters(ManifoldEvent.ProjectionConfig pc) {
         System.out.println("Find Clusters for Hyperspace view.");
         //safety check
-        if(pc.dataSource != ProjectionConfig.DATA_SOURCE.HYPERSPACE) return;
+        if (pc.dataSource != ProjectionConfig.DATA_SOURCE.HYPERSPACE) return;
         //convert featurevector space into 2D array of doubles
         double[][] observations = FeatureCollection.toData(featureVectors);
         double projectionScalar = scatterBuffScaling;
@@ -2070,7 +2069,7 @@ public class Hyperspace3DPane extends StackPane implements
                     t.setDaemon(true);
                     t.start();
                 }
-                break;                
+                break;
             }
             case HDDBSCAN -> {
                 HDDBSCANClusterTask hddbscanClusterTask = new HDDBSCANClusterTask(
@@ -2080,7 +2079,7 @@ public class Hyperspace3DPane extends StackPane implements
                     t.setDaemon(true);
                     t.start();
                 }
-                break;                
+                break;
             }
             case KMEANS -> {
                 KMeansClusterTask kmeansClusterTask = new KMeansClusterTask(
@@ -2090,7 +2089,7 @@ public class Hyperspace3DPane extends StackPane implements
                     t.setDaemon(true);
                     t.start();
                 }
-                break; 
+                break;
             }
             case KMEDIODS -> {
                 KMediodsClusterTask kmediodsClusterTask = new KMediodsClusterTask(
@@ -2100,9 +2099,9 @@ public class Hyperspace3DPane extends StackPane implements
                     t.setDaemon(true);
                     t.start();
                 }
-                break; 
+                break;
             }
-            
+
             case EX_MAX -> {
                 ExMaxClusterTask exMaxClusterTask = new ExMaxClusterTask(
                     scene, camera, projectionScalar, observations, pc);
@@ -2111,7 +2110,7 @@ public class Hyperspace3DPane extends StackPane implements
                     t.setDaemon(true);
                     t.start();
                 }
-                break; 
+                break;
             }
             case AFFINITY -> {
                 AffinityClusterTask affinityClusterTask = new AffinityClusterTask(
@@ -2121,7 +2120,7 @@ public class Hyperspace3DPane extends StackPane implements
                     t.setDaemon(true);
                     t.start();
                 }
-                break;                
+                break;
             }
         }
     }

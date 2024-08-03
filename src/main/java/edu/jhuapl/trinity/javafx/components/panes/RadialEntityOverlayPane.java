@@ -177,7 +177,7 @@ public class RadialEntityOverlayPane extends Pane {
             new Label(String.valueOf(featureVector.getLayer())));
         tp1.setContent(detailsGridPane);
 
-        if(vbox.getChildren().size()>5) {
+        if (vbox.getChildren().size() > 5) {
             //update metadata (child 5)
             StringBuilder sb = new StringBuilder();
             for (Entry<String, String> entry : featureVector.getMetaData().entrySet()) {

@@ -222,6 +222,7 @@ public enum ResourceUtils {
         WritableImage wi = SwingFXUtils.toFXImage(subImage, null);
         return wi;
     }
+
     public static WritableImage loadIconAsWritableImage(String iconName) throws IOException {
         InputStream is = ResourceUtils.class.getResourceAsStream("/edu/jhuapl/trinity/icons/" + iconName + ".png");
         BufferedImage image = ImageIO.read(is);

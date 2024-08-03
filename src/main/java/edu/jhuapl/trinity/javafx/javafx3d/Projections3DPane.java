@@ -2850,7 +2850,7 @@ public class Projections3DPane extends StackPane implements
     @Override
     public void findClusters(ProjectionConfig pc) {
         //safety check
-        if(pc.dataSource != ProjectionConfig.DATA_SOURCE.PROJECTIONS) return;
+        if (pc.dataSource != ProjectionConfig.DATA_SOURCE.PROJECTIONS) return;
         //convert featurevector space into 2D array of doubles
         double[][] observations = FeatureCollection.toData(featureVectors);
         //find clusters
@@ -2863,7 +2863,7 @@ public class Projections3DPane extends StackPane implements
                     t.setDaemon(true);
                     t.start();
                 }
-                break;                
+                break;
             }
             case HDDBSCAN -> {
                 HDDBSCANClusterTask hddbscanClusterTask = new HDDBSCANClusterTask(
@@ -2873,7 +2873,7 @@ public class Projections3DPane extends StackPane implements
                     t.setDaemon(true);
                     t.start();
                 }
-                break;                
+                break;
             }
             case KMEANS -> {
                 KMeansClusterTask kmeansClusterTask = new KMeansClusterTask(
@@ -2883,7 +2883,7 @@ public class Projections3DPane extends StackPane implements
                     t.setDaemon(true);
                     t.start();
                 }
-                break; 
+                break;
             }
             case KMEDIODS -> {
                 KMediodsClusterTask kmediodsClusterTask = new KMediodsClusterTask(
@@ -2893,9 +2893,9 @@ public class Projections3DPane extends StackPane implements
                     t.setDaemon(true);
                     t.start();
                 }
-                break; 
+                break;
             }
-            
+
             case EX_MAX -> {
                 ExMaxClusterTask exMaxClusterTask = new ExMaxClusterTask(
                     scene, camera, projectionScalar, observations, pc);
@@ -2904,7 +2904,7 @@ public class Projections3DPane extends StackPane implements
                     t.setDaemon(true);
                     t.start();
                 }
-                break; 
+                break;
             }
             case AFFINITY -> {
                 AffinityClusterTask affinityClusterTask = new AffinityClusterTask(
@@ -2914,7 +2914,7 @@ public class Projections3DPane extends StackPane implements
                     t.setDaemon(true);
                     t.start();
                 }
-                break;                
+                break;
             }
         }
     }
