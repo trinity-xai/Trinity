@@ -45,16 +45,22 @@ import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.events.HyperspaceEvent;
 import edu.jhuapl.trinity.javafx.events.HyperspaceEvent.COLOR_MODE;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
+import edu.jhuapl.trinity.javafx.events.ManifoldEvent.ProjectionConfig;
 import edu.jhuapl.trinity.javafx.events.ShadowEvent;
 import edu.jhuapl.trinity.javafx.events.TimelineEvent;
 import edu.jhuapl.trinity.javafx.events.TrajectoryEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.ShadowCubeWorld.PROJECTION_TYPE;
+import edu.jhuapl.trinity.javafx.javafx3d.tasks.AffinityClusterTask;
+import edu.jhuapl.trinity.javafx.javafx3d.tasks.DBSCANClusterTask;
+import edu.jhuapl.trinity.javafx.javafx3d.tasks.ExMaxClusterTask;
+import edu.jhuapl.trinity.javafx.javafx3d.tasks.HDDBSCANClusterTask;
+import edu.jhuapl.trinity.javafx.javafx3d.tasks.KMeansClusterTask;
+import edu.jhuapl.trinity.javafx.javafx3d.tasks.KMediodsClusterTask;
 import edu.jhuapl.trinity.javafx.renderers.FeatureVectorRenderer;
 import edu.jhuapl.trinity.javafx.renderers.GaussianMixtureRenderer;
 import edu.jhuapl.trinity.javafx.renderers.ManifoldRenderer;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
-import edu.jhuapl.trinity.utils.Utils;
 import edu.jhuapl.trinity.utils.VisibilityMap;
 import javafx.animation.AnimationTimer;
 import javafx.animation.Timeline;
@@ -2048,27 +2054,73 @@ public class Hyperspace3DPane extends StackPane implements
     @Override
     public void findClusters(ManifoldEvent.ProjectionConfig pc) {
         System.out.println("Find Clusters for Hyperspace view.");
+        //safety check
+        if (pc.dataSource != ProjectionConfig.DATA_SOURCE.HYPERSPACE) return;
         //convert featurevector space into 2D array of doubles
-        System.out.print("Convert features to data array... ");
-        long startTime = System.nanoTime();
         double[][] observations = FeatureCollection.toData(featureVectors);
-        Utils.printTotalTime(startTime);
+        double projectionScalar = scatterBuffScaling;
         //find clusters
         switch (pc.clusterMethod) {
-//            case KMEANS -> {
-//                System.out.print("Kmeans fit... ");
-//                startTime = System.nanoTime();
-//                var kmeansClusters = KMeans.fit(observations, 50);
-//                Utils.printTotalTime(startTime);
-//                System.out.println("\n===============================================\n");
-//                System.out.println("KMeans Clusters: " + kmeansClusters.k
-//                    + " Distortion: " + kmeansClusters.distortion);
-//            }
+            case DBSCAN -> {
+                DBSCANClusterTask dbscanClusterTask = new DBSCANClusterTask(
+                    scene, camera, projectionScalar, observations, pc);
+                if (!dbscanClusterTask.isCancelledByUser()) {
+                    Thread t = new Thread(dbscanClusterTask);
+                    t.setDaemon(true);
+                    t.start();
+                }
+                break;
+            }
+            case HDDBSCAN -> {
+                HDDBSCANClusterTask hddbscanClusterTask = new HDDBSCANClusterTask(
+                    scene, camera, projectionScalar, observations, pc);
+                if (!hddbscanClusterTask.isCancelledByUser()) {
+                    Thread t = new Thread(hddbscanClusterTask);
+                    t.setDaemon(true);
+                    t.start();
+                }
+                break;
+            }
+            case KMEANS -> {
+                KMeansClusterTask kmeansClusterTask = new KMeansClusterTask(
+                    scene, camera, projectionScalar, observations, pc);
+                if (!kmeansClusterTask.isCancelledByUser()) {
+                    Thread t = new Thread(kmeansClusterTask);
+                    t.setDaemon(true);
+                    t.start();
+                }
+                break;
+            }
+            case KMEDIODS -> {
+                KMediodsClusterTask kmediodsClusterTask = new KMediodsClusterTask(
+                    scene, camera, projectionScalar, observations, pc);
+                if (!kmediodsClusterTask.isCancelledByUser()) {
+                    Thread t = new Thread(kmediodsClusterTask);
+                    t.setDaemon(true);
+                    t.start();
+                }
+                break;
+            }
+
             case EX_MAX -> {
-                System.out.print("Expectation Maximization... ");
-                startTime = System.nanoTime();
-                Utils.printTotalTime(startTime);
-                System.out.println("\n===============================================\n");
+                ExMaxClusterTask exMaxClusterTask = new ExMaxClusterTask(
+                    scene, camera, projectionScalar, observations, pc);
+                if (!exMaxClusterTask.isCancelledByUser()) {
+                    Thread t = new Thread(exMaxClusterTask);
+                    t.setDaemon(true);
+                    t.start();
+                }
+                break;
+            }
+            case AFFINITY -> {
+                AffinityClusterTask affinityClusterTask = new AffinityClusterTask(
+                    scene, camera, projectionScalar, observations, pc);
+                if (!affinityClusterTask.isCancelledByUser()) {
+                    Thread t = new Thread(affinityClusterTask);
+                    t.setDaemon(true);
+                    t.start();
+                }
+                break;
             }
         }
     }

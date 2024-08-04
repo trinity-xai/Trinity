@@ -4,7 +4,7 @@ package edu.jhuapl.trinity.javafx.javafx3d.tasks;
  * #%L
  * trinity
  * %%
- * Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC
+ * Copyright (C) 2021 - 2024 Sean Phillips
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,7 +25,6 @@ import com.clust4j.algo.KMedoidsParameters;
 import edu.jhuapl.trinity.javafx.components.radial.ProgressStatus;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
-import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent.ProjectionConfig;
 import edu.jhuapl.trinity.utils.Utils;
 import javafx.application.Platform;
@@ -41,14 +40,14 @@ import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 public class KMediodsClusterTask extends ClusterTask {
 
     ProjectionConfig pc;
-    double [][] observations;
-    
+    double[][] observations;
+
     public KMediodsClusterTask(Scene scene, PerspectiveCamera camera,
-        double projectionScalar, double[][] observations, ProjectionConfig pc) {
+                               double projectionScalar, double[][] observations, ProjectionConfig pc) {
         super(scene, camera);
         setProjectionScalar(projectionScalar);
         this.observations = observations;
-        this.pc = pc;        
+        this.pc = pc;
     }
 
     @Override
@@ -78,11 +77,11 @@ public class KMediodsClusterTask extends ClusterTask {
         startTime = System.nanoTime();
         convertToManifoldGeometry(observations, labels, clusters, "KMedoids Cluster ");
         Utils.printTotalTime(startTime);
-        System.out.println("===============================================");        
+        System.out.println("===============================================");
         Platform.runLater(() -> {
             scene.getRoot().fireEvent(
                 new CommandTerminalEvent("Completed KMedoids Fit and Manifold Geometry Task.",
                     new Font("Consolas", 20), Color.GREEN));
-        });        
+        });
     }
 }

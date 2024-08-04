@@ -4,7 +4,7 @@ package edu.jhuapl.trinity.javafx.javafx3d.tasks;
  * #%L
  * trinity
  * %%
- * Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC
+ * Copyright (C) 2021 - 2024 Sean Phillips
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -169,6 +169,7 @@ public class ProjectPcaFeaturesTask extends Task {
         });
         return projectedFC;
     }
+
     /**
      * @return the cancelledByUser
      */

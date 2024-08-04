@@ -4,7 +4,7 @@ package edu.jhuapl.trinity.javafx.javafx3d.tasks;
  * #%L
  * trinity
  * %%
- * Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC
+ * Copyright (C) 2021 - 2024 Sean Phillips
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -40,10 +40,10 @@ import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 public class HDDBSCANClusterTask extends ClusterTask {
 
     ProjectionConfig pc;
-    double [][] observations;
-    
+    double[][] observations;
+
     public HDDBSCANClusterTask(Scene scene, PerspectiveCamera camera,
-        double projectionScalar, double[][] observations, ProjectionConfig pc) {
+                               double projectionScalar, double[][] observations, ProjectionConfig pc) {
         super(scene, camera);
         setProjectionScalar(projectionScalar);
         this.pc = pc;
@@ -77,11 +77,11 @@ public class HDDBSCANClusterTask extends ClusterTask {
         startTime = System.nanoTime();
         convertToManifoldGeometry(observations, labels, clusters, "HDDBSCAN Cluster ");
         Utils.printTotalTime(startTime);
-        System.out.println("\n===============================================\n");        
+        System.out.println("\n===============================================\n");
         Platform.runLater(() -> {
             scene.getRoot().fireEvent(
                 new CommandTerminalEvent("Completed HDDBSCAN Fit and Manifold Geometry Task.",
                     new Font("Consolas", 20), Color.GREEN));
-        });        
+        });
     }
 }

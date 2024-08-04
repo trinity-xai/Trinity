@@ -41,6 +41,11 @@ public class ManifoldEvent extends Event {
             DIAGONAL, FULL
         }
 
+        public static enum DATA_SOURCE {
+            HYPERSPACE, HYPERSURFACE, PROJECTIONS
+        }
+
+        public DATA_SOURCE dataSource = DATA_SOURCE.PROJECTIONS;
         public boolean useVisiblePoints = true;
         public ClusterMethod clusterMethod = ClusterMethod.EX_MAX;
         public int components = 5;
@@ -84,6 +89,7 @@ public class ManifoldEvent extends Event {
     public static final EventType<ManifoldEvent> NEW_PROJECTION_VECTOR = new EventType(ANY, "NEW_PROJECTION_VECTOR");
 
     //Clustering
+    public static final EventType<ManifoldEvent> FIND_HYPERSURFACE_CLUSTERS = new EventType(ANY, "FIND_HYPERSURFACE_CLUSTERS");
     public static final EventType<ManifoldEvent> FIND_PROJECTION_CLUSTERS = new EventType(ANY, "FIND_PROJECTION_CLUSTERS");
     public static final EventType<ManifoldEvent> NEW_CLUSTER_COLLECTION = new EventType(ANY, "NEW_CLUSTER_COLLECTION");
 

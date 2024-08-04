@@ -22,14 +22,13 @@ package edu.jhuapl.trinity.utils.clustering;
 
 import com.clust4j.algo.KMeans;
 import com.clust4j.algo.KMeansParameters;
-import edu.jhuapl.trinity.utils.AnalysisUtils;
+import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
 
 import java.util.Random;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 
 /**
  * Gaussian mixture model that provides methods for fitting to observation
@@ -152,7 +151,7 @@ public class GaussianMixtureModel extends GaussianMixture {
 //        }
         Array2DRowRealMatrix obsMatrix = new Array2DRowRealMatrix(data);
         KMeans kmeans = new KMeansParameters(k)
-                    .setMaxIter(100)
+            .setMaxIter(100)
 //                    .setConvergenceCriteria(0.01)
 //                    .setInitializationStrategy(AbstractCentroidClusterer.InitializationStrategy.AUTO)
 //                    .setMetric(new CauchyKernel())

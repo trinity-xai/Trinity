@@ -11,6 +11,7 @@ Without this configuration present, some functionality in the IDE may be limited
             <configuration id="OutRun" profiles=""/>
             <configuration id="DalleWalle" profiles=""/>
             <configuration id="GraalVM" profiles=""/>
+            <configuration id="4kMemory" profiles=""/>
         </configurations>
     </config-data>
     <properties xmlns="http://www.netbeans.org/ns/maven-properties-data/1">

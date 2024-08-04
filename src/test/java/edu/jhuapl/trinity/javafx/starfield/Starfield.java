@@ -34,8 +34,6 @@ import javafx.util.Duration;
 public class Starfield extends Application {
 
     public static ObservableList<Node> child;
-    //
-    private static final String title = "JellyBeanci";
     public static final int width = 800;
     public static final int height = 800;
     public static double speed = 0;
@@ -91,7 +89,6 @@ public class Starfield extends Application {
         update.setAutoReverse(false);
         //update.play(); //uncomment for play when start
         //
-        stage.setTitle(title);
         stage.setResizable(false);
         stage.setScene(new Scene(root, width - 10, height - 10, backcolor));
         stage.show();

@@ -28,6 +28,8 @@ import edu.jhuapl.trinity.data.messages.SemanticMap;
 import edu.jhuapl.trinity.data.messages.SemanticMapCollection;
 import edu.jhuapl.trinity.data.messages.SemanticReconstruction;
 import edu.jhuapl.trinity.data.messages.SemanticReconstructionMap;
+import edu.jhuapl.trinity.data.messages.ShapleyCollection;
+import edu.jhuapl.trinity.data.messages.ShapleyVector;
 import edu.jhuapl.trinity.javafx.components.callouts.Callout;
 import edu.jhuapl.trinity.javafx.components.callouts.CalloutBuilder;
 import edu.jhuapl.trinity.javafx.components.panes.SurfaceChartPane;
@@ -37,10 +39,19 @@ import edu.jhuapl.trinity.javafx.events.FactorAnalysisEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.events.HyperspaceEvent;
 import edu.jhuapl.trinity.javafx.events.ImageEvent;
+import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.javafx.events.ShadowEvent;
 import edu.jhuapl.trinity.javafx.events.TimelineEvent;
+import edu.jhuapl.trinity.javafx.javafx3d.animated.TessellationTube;
+import edu.jhuapl.trinity.javafx.javafx3d.tasks.AffinityClusterTask;
+import edu.jhuapl.trinity.javafx.javafx3d.tasks.DBSCANClusterTask;
+import edu.jhuapl.trinity.javafx.javafx3d.tasks.ExMaxClusterTask;
+import edu.jhuapl.trinity.javafx.javafx3d.tasks.HDDBSCANClusterTask;
+import edu.jhuapl.trinity.javafx.javafx3d.tasks.KMeansClusterTask;
+import edu.jhuapl.trinity.javafx.javafx3d.tasks.KMediodsClusterTask;
 import edu.jhuapl.trinity.javafx.renderers.FeatureVectorRenderer;
 import edu.jhuapl.trinity.javafx.renderers.SemanticMapRenderer;
+import edu.jhuapl.trinity.javafx.renderers.ShapleyVectorRenderer;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import edu.jhuapl.trinity.utils.Utils;
@@ -77,6 +88,7 @@ import javafx.scene.control.ToggleGroup;
 import javafx.scene.effect.Glow;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.image.PixelReader;
 import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
 import javafx.scene.input.Clipboard;
@@ -123,15 +135,15 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.function.Function;
-
-//import static edu.jhuapl.trinity.javafx.components.radial.HyperspaceMenu.slideInPane;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author Sean Phillips
  */
 
 public class Hypersurface3DPane extends StackPane
-    implements SemanticMapRenderer, FeatureVectorRenderer {
+    implements SemanticMapRenderer, FeatureVectorRenderer, ShapleyVectorRenderer {
     public static double DEFAULT_INTRO_DISTANCE = -30000.0;
     public static double DEFAULT_ZOOM_TIME_MS = 500.0;
     public static double CHIP_FIT_WIDTH = 200;
@@ -162,9 +174,6 @@ public class Hypersurface3DPane extends StackPane
     public Group ellipsoidGroup = new Group();
     public SubScene subScene;
 
-    public double point3dSize = 10.0; //size of 3d tetrahedra
-    public double pointScale = 1.0; //scales parameter value in transform
-    public double scatterBuffScaling = 1.0; //scales domain range in transform
     public long hypersurfaceRefreshRate = 500; //milliseconds
     public int queueLimit = 20000;
 
@@ -179,9 +188,18 @@ public class Hypersurface3DPane extends StackPane
     boolean computeRandos = false;
     boolean animated = false;
     boolean heightChanged = false;
-    boolean rawMeshRender = true;
+    public boolean surfaceRender = true;
+
+    enum COLORATION {COLOR_BY_IMAGE, COLOR_BY_FEATURE, COLOR_BY_SHAPLEY}
+
+    COLORATION colorationMethod = COLORATION.COLOR_BY_FEATURE;
     boolean hoverInteractionsEnabled = false;
     boolean surfaceChartsEnabled = false;
+
+    //Shapley value support
+    private Image lastImage = null;
+    private String lastImageSource = null;
+    public List<ShapleyVector> shapleyVectors = new ArrayList<>();
 
     WritableImage diffusePaintImage;
     PhongMaterial paintPhong;
@@ -190,23 +208,28 @@ public class Hypersurface3DPane extends StackPane
 
     //allows 2D labels to track their 3D counterparts
     HashMap<Shape3D, Node> shape3DToLabel = new HashMap<>();
-
     public List<FeatureVector> featureVectors = new ArrayList<>();
-    private Random rando = new Random();
-    private HyperSurfacePlotMesh surfPlot;
-
-    private int xWidth = DEFAULT_XWIDTH;
-    private int zWidth = DEFAULT_ZWIDTH;
-    private float yScale = DEFAULT_YSCALE;
-    private float surfScale = DEFAULT_SURFSCALE;
-
-    int TOTAL_COLORS = 1530; //colors used by map function
-    Function<Point3D, Number> colorByLabel = p -> p.f; //Color mapping function
-    Function<Point3D, Number> colorByHeight = p -> p.y; //Color mapping function
-    Function<Vert3D, Number> vert3DLookup = p -> vertToHeight(p);
-
     public List<List<Double>> dataGrid = new ArrayList<>();
 
+    private Random rando = new Random();
+    public HyperSurfacePlotMesh surfPlot;
+
+    public int xWidth = DEFAULT_XWIDTH;
+    public int zWidth = DEFAULT_ZWIDTH;
+    public float yScale = DEFAULT_YSCALE;
+    public float surfScale = DEFAULT_SURFSCALE;
+
+    int TOTAL_COLORS = 1530; //colors used by map function
+    Function<Point3D, Number> colorByHeight = p -> {
+        return p.y; //Color mapping function
+    };
+    Function<Point3D, Number> colorByShapley = p -> {
+        return p.f;
+    };
+
+    Function<Vert3D, Number> vert3DLookup = p -> {
+        return vertToHeight(p);
+    };
     // initial rotation
     private final Rotate rotateX = new Rotate(0, Rotate.X_AXIS);
     private final Rotate rotateY = new Rotate(0, Rotate.Y_AXIS);
@@ -236,15 +259,19 @@ public class Hypersurface3DPane extends StackPane
     Text hoverText = new Text("Coordinates: ");
 
     public List<String> featureLabels = new ArrayList<>();
-    Spinner xWidthSpinner, zWidthSpinner;
+    public Spinner xWidthSpinner, zWidthSpinner;
     public Scene scene;
     HashMap<Shape3D, Callout> shape3DToCalloutMap;
     public String imageryBasePath = "imagery/";
     SurfaceChartPane surfaceChartPane;
+    public AmbientLight ambientLight;
+    public PointLight pointLight;
 
     public Hypersurface3DPane(Scene scene) {
-        shape3DToCalloutMap = new HashMap<>();
         this.scene = scene;
+        shape3DToCalloutMap = new HashMap<>();
+        ambientLight = new AmbientLight(Color.WHITE);
+
         setBackground(Background.EMPTY);
         subScene = new SubScene(sceneRoot, sceneWidth, sceneHeight, true, SceneAntialiasing.BALANCED);
         subScene.widthProperty().bind(widthProperty());
@@ -312,11 +339,11 @@ public class Hypersurface3DPane extends StackPane
 
         subScene.setCamera(camera);
         //add a Point Light for better viewing of the grid coordinate system
-        PointLight light = new PointLight(Color.WHITE);
-        cameraTransform.getChildren().add(light);
-        light.setTranslateX(camera.getTranslateX());
-        light.setTranslateY(camera.getTranslateY());
-        light.setTranslateZ(camera.getTranslateZ() + 500.0);
+        pointLight = new PointLight(Color.WHITE);
+        cameraTransform.getChildren().add(pointLight);
+        pointLight.setTranslateX(camera.getTranslateX());
+        pointLight.setTranslateY(camera.getTranslateY());
+        pointLight.setTranslateZ(camera.getTranslateZ() + 500.0);
 
         //Some camera controls...
         subScene.setOnMouseEntered(event -> subScene.requestFocus());
@@ -626,14 +653,9 @@ public class Hypersurface3DPane extends StackPane
         });
         this.scene.addEventHandler(ImageEvent.NEW_TEXTURE_SURFACE, e -> {
             Image image = (Image) e.object;
-            Float pSkip = 5.0f;
-            float scale = 1.0f;
-            TriangleMesh tm = JavaFX3DUtils.createHeightMap(image, pSkip.intValue(), 250, scale);
-            surfPlot.injectMesh(tm);
-
-            ((PhongMaterial) surfPlot.getMaterial()).setDiffuseMap(image);
-            surfPlot.setTranslateX(-(image.getWidth() / (pSkip * 2)) / 2.0);
-            surfPlot.setTranslateZ(-(image.getHeight() / (pSkip * 2)) / 2.0);
+            tessellateImage(image);
+            lastImage = image;
+            lastImageSource = image.getUrl();
         });
         this.scene.addEventHandler(HyperspaceEvent.FACTOR_COORDINATES_GUI, e -> {
             CoordinateSet coords = (CoordinateSet) e.object;
@@ -672,26 +694,13 @@ public class Hypersurface3DPane extends StackPane
 
         scene.addEventHandler(HyperspaceEvent.NODE_QUEUELIMIT_GUI, e -> queueLimit = (int) e.object);
         scene.addEventHandler(HyperspaceEvent.REFRESH_RATE_GUI, e -> hypersurfaceRefreshRate = (long) e.object);
-        scene.addEventHandler(HyperspaceEvent.POINT3D_SIZE_GUI, e -> {
-            point3dSize = (double) e.object;
-            updateView(false);
-        });
-        scene.addEventHandler(HyperspaceEvent.POINT_SCALE_GUI, e -> {
-            pointScale = (double) e.object;
-            notifyScaleChange();
-            updateView(false);
-        });
-        scene.addEventHandler(HyperspaceEvent.SCATTERBUFF_SCALING_GUI, e -> {
-            scatterBuffScaling = (double) e.object;
-            notifyScaleChange();
-            updateView(false);
-        });
 
         scene.addEventHandler(ShadowEvent.SHOW_AXES_LABELS, e -> {
             nodeGroup.setVisible((boolean) e.object);
             labelGroup.setVisible((boolean) e.object);
         });
-        scene.addEventHandler(ApplicationEvent.SET_IMAGERY_BASEPATH, e -> imageryBasePath = (String) e.object);
+        scene.addEventHandler(ApplicationEvent.SET_IMAGERY_BASEPATH, e ->
+            imageryBasePath = (String) e.object);
         Platform.runLater(() -> {
             updateLabels();
             updateView(true);
@@ -802,10 +811,22 @@ public class Hypersurface3DPane extends StackPane
     }
 
     public void updateTheMesh() {
-        if (rawMeshRender) {
+        surfPlot.setVisible(surfaceRender);
+        sceneRoot.getChildren().removeIf(n -> n instanceof TessellationTube);
+        if (surfaceRender) {
             surfPlot.updateMeshRaw(xWidth, zWidth, surfScale, yScale, surfScale);
         } else {
-            surfPlot.updateMeshSmooth(xWidth, zWidth);
+            sceneRoot.getChildren().removeIf(n -> n instanceof TessellationTube);
+            TessellationTube tube = new TessellationTube(dataGrid, Color.WHITE, yScale * 10, surfScale, yScale);
+            tube.setMouseTransparent(true);
+            if (null != lastImage) {
+                tube.meshView.setDrawMode(DrawMode.FILL);
+                tube.colorByImage = colorationMethod == COLORATION.COLOR_BY_IMAGE;
+                tube.updateMaterial(lastImage);
+            }
+            Platform.runLater(() -> {
+                sceneRoot.getChildren().add(tube);
+            });
         }
         Platform.runLater(() -> {
             updatePaintMesh();
@@ -816,8 +837,6 @@ public class Hypersurface3DPane extends StackPane
         //in case the data grid dimensions have changed
         //make the painting image the same dimension as the data grid for easy math
         diffusePaintImage = new WritableImage(
-//            Double.valueOf(xWidth*surfScale).intValue(),
-//            Double.valueOf(zWidth*surfScale).intValue()
             Double.valueOf(xWidth).intValue(),
             Double.valueOf(zWidth).intValue()
         );
@@ -954,9 +973,7 @@ public class Hypersurface3DPane extends StackPane
         );
         sceneRoot.getChildren().add(skybox);
         //Add some ambient light so folks can see it
-        AmbientLight light = new AmbientLight(Color.WHITE);
-        light.getScope().addAll(skybox);
-        sceneRoot.getChildren().add(light);
+        ambientLight.getScope().addAll(skybox);
         skybox.setVisible(false);
     }
 
@@ -964,13 +981,6 @@ public class Hypersurface3DPane extends StackPane
         getScene().getRoot().fireEvent(
             new CommandTerminalEvent("X,Y,Z Indices = ("
                 + xFactorIndex + ", " + yFactorIndex + ", " + zFactorIndex + ")",
-                new Font("Consolas", 20), Color.GREEN));
-    }
-
-    private void notifyScaleChange() {
-        getScene().getRoot().fireEvent(
-            new CommandTerminalEvent("Point Scale = "
-                + pointScale + ", Scatter Range = " + scatterBuffScaling,
                 new Font("Consolas", 20), Color.GREEN));
     }
 
@@ -982,7 +992,6 @@ public class Hypersurface3DPane extends StackPane
         } else {
             dataXForm.reset();
         }
-
     }
 
     public void intro(double milliseconds) {
@@ -1043,7 +1052,16 @@ public class Hypersurface3DPane extends StackPane
             //update the local transform of the label.
             node.getTransforms().setAll(new Translate(x, y));
         });
-        int i = 0;
+    }
+
+    private WritableImage loadImage(String fileSource) throws IOException {
+        WritableImage image = null;
+        try {
+            image = ResourceUtils.loadImageFile(imageryBasePath + fileSource);
+        } catch (IOException ex) {
+            image = ResourceUtils.loadIconAsWritableImage("noimage");
+        }
+        return image;
     }
 
     private ImageView loadImageView(FeatureVector featureVector, boolean bboxOnly) {
@@ -1070,7 +1088,6 @@ public class Hypersurface3DPane extends StackPane
         if (null != surfPlot) {
             Platform.runLater(() -> {
                 if (heightChanged) { //if it hasn't changed, don't call expensive height change
-
                     heightChanged = false;
                 }
                 //@DEBUG SMP Rendering timing print
@@ -1079,8 +1096,6 @@ public class Hypersurface3DPane extends StackPane
                 //Since we changed the mesh unfortunately we have to reset the color mode
                 //otherwise the triangles won't have color.
                 //5ms for 20k points
-                surfPlot.setTextureModeVertices3D(TOTAL_COLORS, colorByHeight, 0.0, 360.0);
-//                surfPlot.setTextureModeVertices3D(TOTAL_COLORS, colorByLabel, 0.0, 360.0);
                 isDirty = false;
             });
         }
@@ -1101,9 +1116,22 @@ public class Hypersurface3DPane extends StackPane
         }
     }
 
+    private Number lookupShapley(Point3D p) {
+        if (null != shapleyVectors && null != dataGrid) {
+//@SMP This approach won't work because it is dependent on translation and scaling
+//            //number of rows multiplied by width of rows (stride length)
+//            //plus column index
+//            return shapleyVectors.get(
+//                Float.valueOf(
+//                    ((p.z/surfScale * dataGrid.size()) * dataGrid.get(0).size()) + p.x/surfScale
+//                ).intValue()).getData().get(0);
+        }
+        return 0.0;
+    }
+
     private Number vertToHeight(Vert3D p) {
         if (null != dataGrid) {
-            if (rawMeshRender)
+            if (surfaceRender)
                 return lookupPoint(p);
             else
                 return findBlerpHeight(p);
@@ -1160,7 +1188,6 @@ public class Hypersurface3DPane extends StackPane
         generateRandos(xWidth, zWidth, yScale);
         surfPlot = new HyperSurfacePlotMesh(xWidth, zWidth,
             1, 1, yScale, surfScale, vert3DLookup);
-        PhongMaterial material = new PhongMaterial(Color.BLUE);
         surfPlot.setTextureModeVertices3D(TOTAL_COLORS, colorByHeight, 0.0, 360.0);
 
         surfPlot.setDrawMode(DrawMode.LINE);
@@ -1341,17 +1368,47 @@ public class Hypersurface3DPane extends StackPane
             surfPlot.setTranslateZ(-(zWidth * surfScale) / 2.0);
         });
         zWidthSpinner.setPrefWidth(125);
-        ToggleGroup meshTypeToggle = new ToggleGroup();
-        RadioButton rawMesh = new RadioButton("Raw Mesh");
-        rawMesh.setSelected(true);
-        rawMesh.setToggleGroup(meshTypeToggle);
-        RadioButton smoothMesh = new RadioButton("Smooth Mesh");
-        smoothMesh.setToggleGroup(meshTypeToggle);
-        meshTypeToggle.selectedToggleProperty().addListener(cl -> {
-            rawMeshRender = rawMesh.isSelected();
+
+        ToggleGroup colorationToggle = new ToggleGroup();
+        RadioButton colorByImageRadioButton = new RadioButton("Color by Image");
+        colorByImageRadioButton.setToggleGroup(colorationToggle);
+
+        RadioButton colorByFeatureValueRadioButton = new RadioButton("Color by Feature Value");
+        colorByFeatureValueRadioButton.setSelected(true);
+        colorByFeatureValueRadioButton.setToggleGroup(colorationToggle);
+
+        RadioButton colorByShapleyValueRadioButton = new RadioButton("Color by Shapley Value");
+        colorByShapleyValueRadioButton.setSelected(false);
+        colorByShapleyValueRadioButton.setToggleGroup(colorationToggle);
+
+        colorationToggle.selectedToggleProperty().addListener(cl -> {
+            if (colorByImageRadioButton.isSelected()) {
+                colorationMethod = COLORATION.COLOR_BY_IMAGE;
+                File imageFile = new File(imageryBasePath + lastImageSource);
+                surfPlot.setTextureModeImage(imageFile.toURI().toString());
+            } else if (colorByFeatureValueRadioButton.isSelected()) {
+                colorationMethod = COLORATION.COLOR_BY_FEATURE;
+                surfPlot.setTextureModeVertices3D(TOTAL_COLORS, colorByHeight, 0.0, 360.0);
+            } else {
+                colorationMethod = COLORATION.COLOR_BY_SHAPLEY;
+                surfPlot.setTextureModeVertices3D(TOTAL_COLORS, colorByShapley, 0.0, 360.0);
+            }
             updateTheMesh();
         });
-        HBox meshTypeHBox = new HBox(10, rawMesh, smoothMesh);
+        HBox colorationHBox = new HBox(10, colorByImageRadioButton,
+            colorByFeatureValueRadioButton, colorByShapleyValueRadioButton);
+
+        ToggleGroup meshTypeToggle = new ToggleGroup();
+        RadioButton surfaceRadioButton = new RadioButton("Surface Projection");
+        surfaceRadioButton.setSelected(true);
+        surfaceRadioButton.setToggleGroup(meshTypeToggle);
+        RadioButton cylinderRadioButton = new RadioButton("Cylindrical");
+        cylinderRadioButton.setToggleGroup(meshTypeToggle);
+        meshTypeToggle.selectedToggleProperty().addListener(cl -> {
+            surfaceRender = surfaceRadioButton.isSelected();
+            updateTheMesh();
+        });
+        HBox meshTypeHBox = new HBox(10, surfaceRadioButton, cylinderRadioButton);
 
         ToggleGroup drawModeToggle = new ToggleGroup();
         RadioButton drawModeLine = new RadioButton("Line");
@@ -1388,14 +1445,12 @@ public class Hypersurface3DPane extends StackPane
         HBox cullFaceHBox = new HBox(10, cullFaceFront, cullFaceBack, cullFaceNone);
 
         //add a Point Light for better viewing of the grid coordinate system
-        PointLight pointLight = new PointLight(Color.WHITE);
         pointLight.getScope().addAll(surfPlot);
         sceneRoot.getChildren().add(pointLight);
         pointLight.translateXProperty().bind(camera.translateXProperty());
         pointLight.translateYProperty().bind(camera.translateYProperty());
         pointLight.translateZProperty().bind(camera.translateZProperty().add(500));
 
-        AmbientLight ambientLight = new AmbientLight(Color.WHITE);
         ambientLight.getScope().addAll(surfPlot);
         sceneRoot.getChildren().add(ambientLight);
 
@@ -1403,7 +1458,9 @@ public class Hypersurface3DPane extends StackPane
         ambientLight.colorProperty().bind(lightPicker.valueProperty());
 
         ColorPicker specPicker = new ColorPicker(Color.CYAN);
-        material.specularColorProperty().bind(specPicker.valueProperty());
+        specPicker.setOnAction(e -> {
+            ((PhongMaterial) surfPlot.getMaterial()).setSpecularColor(specPicker.getValue());
+        });
 
         CheckBox enableAmbient = new CheckBox("Enable Ambient Light");
         enableAmbient.setSelected(true);
@@ -1452,6 +1509,8 @@ public class Hypersurface3DPane extends StackPane
             new HBox(10, zWidthLabel, zWidthSpinner),
             new HBox(10, yScaleLabel, yScaleSpinner),
             new HBox(10, surfScaleLabel, surfScaleSpinner),
+            new Label("Color Method"),
+            colorationHBox,
             new Label("Draw Mode"),
             meshTypeHBox,
             drawModeHBox,
@@ -1559,6 +1618,78 @@ public class Hypersurface3DPane extends StackPane
         featureVectors = fc.getFeatures();
     }
 
+    public void findClusters(ManifoldEvent.ProjectionConfig pc) {
+        //safety check
+        if (pc.dataSource != ManifoldEvent.ProjectionConfig.DATA_SOURCE.HYPERSURFACE) return;
+        //convert featurevector space into 2D array of doubles
+        double[][] observations = FeatureCollection.toData(featureVectors);
+        double projectionScalar = 1000.0;
+        //find clusters
+        switch (pc.clusterMethod) {
+            case DBSCAN -> {
+                DBSCANClusterTask dbscanClusterTask = new DBSCANClusterTask(
+                    scene, camera, projectionScalar, observations, pc);
+                if (!dbscanClusterTask.isCancelledByUser()) {
+                    Thread t = new Thread(dbscanClusterTask);
+                    t.setDaemon(true);
+                    t.start();
+                }
+                break;
+            }
+            case HDDBSCAN -> {
+                HDDBSCANClusterTask hddbscanClusterTask = new HDDBSCANClusterTask(
+                    scene, camera, projectionScalar, observations, pc);
+                if (!hddbscanClusterTask.isCancelledByUser()) {
+                    Thread t = new Thread(hddbscanClusterTask);
+                    t.setDaemon(true);
+                    t.start();
+                }
+                break;
+            }
+            case KMEANS -> {
+                KMeansClusterTask kmeansClusterTask = new KMeansClusterTask(
+                    scene, camera, projectionScalar, observations, pc);
+                if (!kmeansClusterTask.isCancelledByUser()) {
+                    Thread t = new Thread(kmeansClusterTask);
+                    t.setDaemon(true);
+                    t.start();
+                }
+                break;
+            }
+            case KMEDIODS -> {
+                KMediodsClusterTask kmediodsClusterTask = new KMediodsClusterTask(
+                    scene, camera, projectionScalar, observations, pc);
+                if (!kmediodsClusterTask.isCancelledByUser()) {
+                    Thread t = new Thread(kmediodsClusterTask);
+                    t.setDaemon(true);
+                    t.start();
+                }
+                break;
+            }
+
+            case EX_MAX -> {
+                ExMaxClusterTask exMaxClusterTask = new ExMaxClusterTask(
+                    scene, camera, projectionScalar, observations, pc);
+                if (!exMaxClusterTask.isCancelledByUser()) {
+                    Thread t = new Thread(exMaxClusterTask);
+                    t.setDaemon(true);
+                    t.start();
+                }
+                break;
+            }
+            case AFFINITY -> {
+                AffinityClusterTask affinityClusterTask = new AffinityClusterTask(
+                    scene, camera, projectionScalar, observations, pc);
+                if (!affinityClusterTask.isCancelledByUser()) {
+                    Thread t = new Thread(affinityClusterTask);
+                    t.setDaemon(true);
+                    t.start();
+                }
+                break;
+            }
+        }
+    }
+
     @Override
     public void addSemanticMapCollection(SemanticMapCollection semanticMapCollection) {
         SemanticReconstruction reconstruction = semanticMapCollection.getReconstruction();
@@ -1631,8 +1762,6 @@ public class Hypersurface3DPane extends StackPane
 
     @Override
     public void addFeatureCollection(FeatureCollection featureCollection) {
-        dataGrid.clear();
-
         if (null == dataGrid) {
             dataGrid = new ArrayList<>(featureCollection.getFeatures().size());
         } else
@@ -1698,5 +1827,95 @@ public class Hypersurface3DPane extends StackPane
     @Override
     public void setSpheroidAnchor(boolean animate, int index) {
         //throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    private void tessellateImage(Image image) {
+        lastImage = image;
+        long startTime = System.nanoTime();
+        System.out.print("Mapping Image Raster to Feature Vector... ");
+        startTime = System.nanoTime();
+        int rows = Double.valueOf(image.getHeight()).intValue();
+        int columns = Double.valueOf(image.getWidth()).intValue();
+        PixelReader pr = image.getPixelReader();
+        Color color = null;
+        int rgb, r, g, b = 0;
+        double dataValue = 0;
+        if (null == dataGrid) {
+            dataGrid = new ArrayList<>(rows);
+        } else
+            dataGrid.clear();
+        featureVectors.clear();
+        for (int rowIndex = 0; rowIndex < rows; rowIndex++) {
+            List<Double> currentDataRow = new ArrayList<>();
+            for (int colIndex = 0; colIndex < columns; colIndex++) {
+                color = pr.getColor(colIndex, rowIndex);
+                rgb = ((int) pr.getArgb(colIndex, rowIndex));
+                FeatureVector fv = FeatureVector.EMPTY_FEATURE_VECTOR(color.toString(), 3);
+                fv.getData().set(0, Double.valueOf(colIndex) / columns);
+                fv.getData().set(1, Double.valueOf(rowIndex) / rows);
+                r = (rgb >> 16) & 0xFF;
+                g = (rgb >> 8) & 0xFF;
+                b = rgb & 0xFF;
+                dataValue = (((r + g + b) / 3.0) / 255.0);
+                fv.getData().set(2, dataValue);
+                featureVectors.add(fv);
+                currentDataRow.add(dataValue);
+            }
+            dataGrid.add(currentDataRow);
+        }
+        Utils.printTotalTime(startTime);
+        System.out.print("Injecting Mesh into Hypersurface... ");
+        startTime = System.nanoTime();
+        zWidth = rows;
+        xWidth = columns;
+        zWidthSpinner.getValueFactory().setValue(zWidth);
+        xWidthSpinner.getValueFactory().setValue(xWidth);
+        updateTheMesh();
+        xSphere.setTranslateX((xWidth * surfScale) / 2.0);
+        zSphere.setTranslateZ((zWidth * surfScale) / 2.0);
+        Utils.printTotalTime(startTime);
+    }
+
+    @Override
+    public void addShapleyCollection(ShapleyCollection shapleyCollection) {
+        shapleyVectors.clear();
+        lastImageSource = shapleyCollection.getSourceInput();
+        shapleyVectors.addAll(shapleyCollection.getValues());
+        try {
+            //method will automatically prepend base path for imagery
+            WritableImage wi = loadImage(shapleyCollection.getSourceInput());
+            if (null != wi) {
+                tessellateImage(wi);
+                lastImage = wi;
+                //sneakily insert current function values (shapley) into vertices
+                System.out.print("injecting Shapley function values into Vertices... ");
+                long startTime = System.nanoTime();
+                surfPlot.functionValues.clear();
+                for (int i = 0; i < shapleyVectors.size(); i++) {
+                    surfPlot.functionValues.add(
+                        shapleyVectors.get(i).getData().get(0) * yScale);
+                }
+                Utils.printTotalTime(startTime);
+                if (null == colorationMethod)
+                    surfPlot.setTextureModeVertices3D(TOTAL_COLORS, colorByHeight, 0.0, 360.0);
+                switch (colorationMethod) {
+                    case COLOR_BY_IMAGE -> surfPlot.setTextureModeImage(imageryBasePath + lastImageSource);
+                    case COLOR_BY_FEATURE -> surfPlot.setTextureModeVertices3D(TOTAL_COLORS, colorByHeight, 0.0, 360.0);
+                    default -> surfPlot.setTextureModeVertices3D(TOTAL_COLORS, colorByShapley, 0.0, 360.0);
+                }
+            }
+        } catch (IOException ex) {
+            Logger.getLogger(Hypersurface3DPane.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+
+    @Override
+    public void addShapleyVector(ShapleyVector shapleyVector) {
+        shapleyVectors.add(shapleyVector);
+    }
+
+    @Override
+    public void clearShapleyVectors() {
+        shapleyVectors.clear();
     }
 }

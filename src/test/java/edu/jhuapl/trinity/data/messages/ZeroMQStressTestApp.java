@@ -1,4 +1,4 @@
-package edu.jhuapl.trinity.messages;
+package edu.jhuapl.trinity.data.messages;
 
 /*-
  * #%L
@@ -37,8 +37,9 @@ import java.util.logging.Logger;
 /**
  * @author Sean Phillips
  */
-public class ZeroMQManifoldTestApp {
-
+public class ZeroMQStressTestApp {
+    public static final int BURST_SIZE = 100;  //messages sent per sleep
+    public static long MESSAGE_DELAY_MS = 60;
     public static final String TOPIC = "ZeroMQ Test Topic";
     public static String PUSH_CONNECT = "tcp://localhost:5563";
 
@@ -46,47 +47,54 @@ public class ZeroMQManifoldTestApp {
 
     static List<String> imageURLS;
     static Random rando = new Random();
-    public static long MESSAGE_DELAY_MS = 50;
 
     public static void main(String[] args) throws Exception {
         /** Provides serialization support for JSON messages */
         ObjectMapper mapper = new ObjectMapper();
         imageURLS = new ArrayList<>();
-        imageURLS.add("c:/dev/OnyxBeerBottle.jpg");
-        imageURLS.add("c:/dev/OnyxFetchBall.jpg");
-        imageURLS.add("c:/dev/OnyxHappyFace.jpg");
-        imageURLS.add("c:/dev/OnyxToyBasket.jpg");
+        imageURLS.add("OnyxBeerBottle.jpg");
+        imageURLS.add("OnyxFetchBall.jpg");
+        imageURLS.add("OnyxHappyFace.jpg");
+        imageURLS.add("OnyxToyBasket.jpg");
 
         Thread thread = new Thread(() -> {
             System.out.println("Starting Publisher Thread...");
             // Prepare our context and publisher
             try (ZContext context = new ZContext()) {
                 Socket pusher = context.createSocket(SocketType.PUSH);
-                pusher.setSendTimeOut(10);
+                pusher.setSndHWM(0);
+                pusher.setSendTimeOut(0);
                 pusher.connect(PUSH_CONNECT);
                 int update_nbr = 0;
 
                 System.out.println("Factor Analysis Publisher starting send loop...");
                 while (!Thread.currentThread().isInterrupted()) {
-                    try {
-                        FeatureVector featureVector = makeFeatureVector(update_nbr);
-                        double x = rando.nextDouble() * 1;
-                        double y = rando.nextDouble() * 0.2;
-                        double z = rando.nextDouble() * 0.35;
-                        featureVector.getData().set(0, x);
-                        featureVector.getData().set(1, y);
-                        featureVector.getData().set(2, z);
-                        String fvAsString = mapper.writeValueAsString(featureVector);
-                        System.out.println(fvAsString);
-                        pusher.send(fvAsString, ZMQ.DONTWAIT);
-                    } catch (JsonProcessingException ex) {
-                        Logger.getLogger(ZeroMQManifoldTestApp.class.getName()).log(Level.SEVERE, null, ex);
+                    for (int burstIndex = 0; burstIndex < BURST_SIZE; burstIndex++) {
+                        try {
+                            FeatureVector featureVector = makeFeatureVector(update_nbr);
+                            double x = rando.nextGaussian();
+                            double y = rando.nextGaussian();
+                            double z = rando.nextGaussian();
+                            double normalise = 1.0 / (Math.sqrt(x * x + y * y + z * z));
+                            x *= normalise * 0.333;
+                            y *= normalise * 0.333;
+                            z *= normalise * 0.333;
+                            featureVector.getData().set(0, x);
+                            featureVector.getData().set(1, y);
+                            featureVector.getData().set(2, z);
+                            String fvAsString = mapper.writeValueAsString(featureVector);
+                            pusher.send(fvAsString, ZMQ.DONTWAIT);
+                        } catch (JsonProcessingException ex) {
+                            Logger.getLogger(ZeroMQStressTestApp.class.getName()).log(Level.SEVERE, null, ex);
+                        }
                     }
+                    System.out.println("Pushed burst number " + update_nbr);
                     update_nbr++;
+
                     Thread.sleep(MESSAGE_DELAY_MS);
                 }
             } catch (InterruptedException ex) {
-                Logger.getLogger(ZeroMQManifoldTestApp.class.getName()).log(Level.SEVERE, null, ex);
+                Logger.getLogger(ZeroMQStressTestApp.class.getName()).log(Level.SEVERE, null, ex);
             }
         }, "ZeroMQFactorAnalysisStateTestApp Publisher Thread");
 //        thread.setDaemon(true);
@@ -106,16 +114,10 @@ public class ZeroMQManifoldTestApp {
             else
                 data.add(-rando.nextDouble());
         }
-//                    for(int i=0;i<81;i++)
-//                        data.add(Math.cos(i) + rando.nextDouble()*0.25);
-
         featureVector.setData(data);
         featureVector.setEntityId("EntityID001");
         featureVector.setFrameId(update_nbr);
         featureVector.setImageId(3101);
-//        featureVector.setLabel(randomLabel());
-//        featureVector.setImageURL(randomImage());
-
         String randomLabel = randomLabel();
         featureVector.setLabel(randomLabel);
         if (randomLabel.contentEquals(LABELS.BeerBottle.name())) {

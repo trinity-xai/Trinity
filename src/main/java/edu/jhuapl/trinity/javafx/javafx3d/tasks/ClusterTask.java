@@ -4,7 +4,7 @@ package edu.jhuapl.trinity.javafx.javafx3d.tasks;
  * #%L
  * trinity
  * %%
- * Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC
+ * Copyright (C) 2021 - 2024 Sean Phillips
  * %%
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -24,19 +24,20 @@ import edu.jhuapl.trinity.data.Manifold;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.Manifold3D;
-import java.util.ArrayList;
-import java.util.List;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.scene.PerspectiveCamera;
 import javafx.scene.Scene;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.stream.Collectors;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.CullFace;
 import org.fxyz3d.geometry.Point3D;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.stream.Collectors;
 
 /**
  * @author Sean Phillips
@@ -47,7 +48,7 @@ public abstract class ClusterTask extends Task {
     PerspectiveCamera camera;
     private boolean cancelledByUser = false;
     boolean filterByLabel = false;
-    String filterLabel = "";    
+    String filterLabel = "";
     //used for sizing values to 3D scene later but most do.
     private Color diffuseColor = Color.CYAN;
     private double projectionScalar = 100.0; //used for sizing values to 3D scene later
@@ -74,9 +75,10 @@ public abstract class ClusterTask extends Task {
                     new ApplicationEvent(ApplicationEvent.HIDE_BUSY_INDICATOR));
             });
         });
-   
+
     }
-    protected abstract void processTask() throws Exception;    
+
+    protected abstract void processTask() throws Exception;
 
     @Override
     protected Void call() throws Exception {
@@ -84,15 +86,16 @@ public abstract class ClusterTask extends Task {
         processTask();
         return null;
     }
+
     protected void createManifold(List<Point3D> points, String label) {
         ArrayList<javafx.geometry.Point3D> fxPoints = points.stream()
             .map(p3D -> new javafx.geometry.Point3D(p3D.x, p3D.y, p3D.z))
             .collect(Collectors.toCollection(ArrayList::new));
         Manifold manifold = new Manifold(fxPoints, label, label, getDiffuseColor());
         //Create the 3D manifold shape
-        Manifold3D manifold3D = new Manifold3D(points, 
-        true, true, true, null
-        );                
+        Manifold3D manifold3D = new Manifold3D(points,
+            true, true, true, null
+        );
         manifold3D.quickhullMeshView.setCullFace(CullFace.FRONT);
         manifold3D.setManifold(manifold);
         ((PhongMaterial) manifold3D.quickhullMeshView.getMaterial()).setDiffuseColor(getDiffuseColor());
@@ -100,22 +103,23 @@ public abstract class ClusterTask extends Task {
         manifold3D.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
             scene.getRoot().fireEvent(
                 new ManifoldEvent(ManifoldEvent.MANIFOLD_3D_SELECTED, manifold));
-        });                
+        });
         //Add this Manifold data object to the global tracker
         Manifold.addManifold(manifold);
         //update the manifold to manifold3D mapping
         Manifold.globalManifoldToManifold3DMap.put(manifold, manifold3D);
         //announce to the world of the new manifold and its shape
         //System.out.println("Manifold3D generation complete for " + label);
-        Platform.runLater(() -> {                
+        Platform.runLater(() -> {
             scene.getRoot().fireEvent(new ManifoldEvent(
-            ManifoldEvent.NEW_MANIFOLD_CLUSTER, manifold, manifold3D));                    
+                ManifoldEvent.NEW_MANIFOLD_CLUSTER, manifold, manifold3D));
             scene.getRoot().fireEvent(new ManifoldEvent(
                 ManifoldEvent.MANIFOLD3D_OBJECT_GENERATED, manifold, manifold3D));
-        });        
-}
-    protected void convertToManifoldGeometry(double[][] observations, 
-        int[] labels, int clusters, String prefix) {
+        });
+    }
+
+    protected void convertToManifoldGeometry(double[][] observations,
+                                             int[] labels, int clusters, String prefix) {
         for (int clusterIndex = 0; clusterIndex < clusters; clusterIndex++) {
             String label = prefix + clusterIndex;
             List<Point3D> points = new ArrayList<>();
@@ -133,9 +137,9 @@ public abstract class ClusterTask extends Task {
             } else {
                 System.out.println("Cluster has less than 4 points");
             }
-        }        
+        }
     }
-    
+
     /**
      * @return the cancelledByUser
      */

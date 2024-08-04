@@ -1,4 +1,4 @@
-package edu.jhuapl.trinity.messages;
+package edu.jhuapl.trinity.data.messages;
 
 /*-
  * #%L
@@ -37,7 +37,7 @@ import java.util.logging.Logger;
 /**
  * @author Sean Phillips
  */
-public class ZeroMQShadowTestApp {
+public class ZeroMQPushPullTestApp {
 
     public static final String TOPIC = "ZeroMQ Test Topic";
     public static String PUSH_CONNECT = "tcp://localhost:5563";
@@ -46,39 +46,59 @@ public class ZeroMQShadowTestApp {
 
     static List<String> imageURLS;
     static Random rando = new Random();
-    public static long MESSAGE_DELAY_MS = 250;
+    //    public static long MESSAGE_DELAY_MS = 1000;
+    public static long MESSAGE_DELAY_MS = 50;
 
     public static void main(String[] args) throws Exception {
         /** Provides serialization support for JSON messages */
         ObjectMapper mapper = new ObjectMapper();
         imageURLS = new ArrayList<>();
-        imageURLS.add("c:/dev/OnyxBeerBottle.jpg");
-        imageURLS.add("c:/dev/OnyxFetchBall.jpg");
-        imageURLS.add("c:/dev/OnyxHappyFace.jpg");
-        imageURLS.add("c:/dev/OnyxToyBasket.jpg");
+        imageURLS.add("OnyxBeerBottle.jpg");
+        imageURLS.add("OnyxFetchBall.jpg");
+        imageURLS.add("OnyxHappyFace.jpg");
+        imageURLS.add("OnyxToyBasket.jpg");
 
-        System.out.println("Starting Shadow Test Publisher Thread...");
-        // Prepare our context and publisher
-        try (ZContext context = new ZContext()) {
-            Socket pusher = context.createSocket(SocketType.PUSH);
-            pusher.setSendTimeOut(10);
-            pusher.connect(PUSH_CONNECT);
-            int update_nbr = 0;
+        Thread thread = new Thread(() -> {
+            System.out.println("Starting Publisher Thread...");
+            // Prepare our context and publisher
+            try (ZContext context = new ZContext()) {
+                Socket pusher = context.createSocket(SocketType.PUSH);
+                pusher.setSendTimeOut(10);
+                pusher.connect(PUSH_CONNECT);
+                int update_nbr = 0;
 
-            try {
-                for (int i = 0; i < 10; i++) {
-                    FeatureVector featureVector = makeFeatureVector(update_nbr);
-                    featureVector.getData().set(0, i * 0.1);
-                    featureVector.getData().set(1, i * 0.1);
-                    featureVector.getData().set(2, i * 0.1);
-                    String fvAsString = mapper.writeValueAsString(featureVector);
-                    pusher.send(fvAsString, ZMQ.DONTWAIT);
-                    update_nbr++;
+                System.out.println("Factor Analysis Publisher starting send loop...");
+                while (!Thread.currentThread().isInterrupted()) {
+                    for (int i = 0; i < 1000; i++) {
+                        try {
+                            FeatureVector featureVector = makeFeatureVector(update_nbr);
+                            double x = rando.nextGaussian();
+                            double y = rando.nextGaussian();
+                            double z = rando.nextGaussian();
+                            double normalise = 1.0 / (Math.sqrt(x * x + y * y + z * z));
+                            x *= normalise * 0.333;
+                            y *= normalise * 0.333;
+                            z *= normalise * 0.333;
+                            featureVector.getData().set(0, x);
+                            featureVector.getData().set(1, y);
+                            featureVector.getData().set(2, z);
+
+                            String fvAsString = mapper.writeValueAsString(featureVector);
+                            //System.out.println(fvAsString);
+                            pusher.send(fvAsString, ZMQ.DONTWAIT);
+                        } catch (JsonProcessingException ex) {
+                            Logger.getLogger(ZeroMQPushPullTestApp.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+                        update_nbr++;
+                    }
+                    Thread.sleep(MESSAGE_DELAY_MS);
                 }
-            } catch (JsonProcessingException ex) {
-                Logger.getLogger(ZeroMQShadowTestApp.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (InterruptedException ex) {
+                Logger.getLogger(ZeroMQPushPullTestApp.class.getName()).log(Level.SEVERE, null, ex);
             }
-        }
+        }, "ZeroMQFactorAnalysisStateTestApp Publisher Thread");
+//        thread.setDaemon(true);
+        thread.start();
     }
 
     private static FeatureVector makeFeatureVector(int update_nbr) {
@@ -94,15 +114,11 @@ public class ZeroMQShadowTestApp {
             else
                 data.add(-rando.nextDouble());
         }
-//                    for(int i=0;i<81;i++)
-//                        data.add(Math.cos(i) + rando.nextDouble()*0.25);
 
         featureVector.setData(data);
         featureVector.setEntityId("EntityID001");
         featureVector.setFrameId(update_nbr);
         featureVector.setImageId(3101);
-//        featureVector.setLabel(randomLabel());
-//        featureVector.setImageURL(randomImage());
 
         String randomLabel = randomLabel();
         featureVector.setLabel(randomLabel);
@@ -116,7 +132,9 @@ public class ZeroMQShadowTestApp {
             featureVector.setImageURL(imageURLS.get(3));
 
         featureVector.setBbox(randomBBox(1400, 1400, 100, 500));
-        featureVector.setMessageId(0);
+        featureVector.setMessageId(update_nbr);
+        featureVector.setScore(rando.nextDouble());
+        featureVector.setLayer(rando.nextInt(15));
         featureVector.setTopic("some_topic");
         featureVector.setVersion("0.1");
         return featureVector;
