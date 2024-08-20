@@ -28,6 +28,7 @@ import edu.jhuapl.trinity.data.files.ManifoldDataFile;
 import edu.jhuapl.trinity.data.messages.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.FeatureVector;
 import edu.jhuapl.trinity.javafx.components.MatrixOverlay;
+import edu.jhuapl.trinity.javafx.components.panes.NavigatorPane;
 import edu.jhuapl.trinity.javafx.components.panes.Shape3DControlPane;
 import edu.jhuapl.trinity.javafx.components.panes.SparkLinesPane;
 import edu.jhuapl.trinity.javafx.components.panes.TextPane;
@@ -134,6 +135,7 @@ public class App extends Application {
     SparkLinesPane sparkLinesPane;
     TextPane textConsolePane;
     VideoPane videoPane;
+    NavigatorPane navigatorPane;
     WaveformPane waveformPane;
     Shape3DControlPane shape3DControlPane;
     CircleProgressIndicator circleSpinner;
@@ -546,10 +548,23 @@ public class App extends Application {
                 String caption = (String) e.object2;
                 videoPane.mainTitleText2Property.set(caption);
             }
-
             videoPane.setVideo();
         });
-
+        scene.addEventHandler(ApplicationEvent.SHOW_NAVIGATOR_PANE, e -> {
+            if (null == navigatorPane) {
+                navigatorPane = new NavigatorPane(scene, pathPane);
+            }
+            if (!pathPane.getChildren().contains(navigatorPane)) {
+                pathPane.getChildren().add(navigatorPane);
+                navigatorPane.slideInPane();
+            } else {
+                navigatorPane.show();
+            }
+            if (null != e.object) {
+                Platform.runLater(() -> navigatorPane.setImage((Image) e.object));
+            }
+        });
+        
         scene.addEventHandler(ApplicationEvent.SHOW_WAVEFORM_PANE, e -> {
             if (null == waveformPane) {
                 waveformPane = new WaveformPane(scene, pathPane);

@@ -925,8 +925,6 @@ public class Hyperspace3DPane extends StackPane implements
                     isDirty = false;
                 }
             }
-
-            ;
         };
         animationTimer.start();
         Platform.runLater(() -> {

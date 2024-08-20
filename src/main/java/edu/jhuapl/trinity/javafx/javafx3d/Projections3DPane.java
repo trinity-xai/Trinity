@@ -821,6 +821,15 @@ public class Projections3DPane extends StackPane implements
                 radarPlotPane.show();
             }
         });
+        
+        ImageView navigator = ResourceUtils.loadIcon("navigator", ICON_FIT_HEIGHT);
+        navigator.setEffect(glow);
+        MenuItem navigatorItem = new MenuItem("Content Navigator", navigator);
+        navigatorItem.setOnAction(e -> {
+            subScene.getParent().getScene().getRoot().fireEvent(
+                new ApplicationEvent(ApplicationEvent.SHOW_NAVIGATOR_PANE));
+        });
+        
         ImageView clearProjection = ResourceUtils.loadIcon("clear", ICON_FIT_HEIGHT);
         radar.setEffect(glow);
         MenuItem clearProjectionItem = new MenuItem("Clear Projection Data", clearProjection);
@@ -850,7 +859,7 @@ public class Projections3DPane extends StackPane implements
             updatingTrajectories = updatingTrajectoriesItem.isSelected());
 
         ContextMenu cm = new ContextMenu(selectPointsItem,
-            resetViewItem, manifoldsItem, radarItem,
+            resetViewItem, manifoldsItem, radarItem, navigatorItem,
             clearCalloutsItem, clearProjectionItem,
             animatingProjectionsItem, updatingTrajectoriesItem);
 
