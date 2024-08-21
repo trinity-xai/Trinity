@@ -21,9 +21,11 @@ package edu.jhuapl.trinity.javafx.components.panes;
  */
 
 import edu.jhuapl.trinity.data.messages.FeatureVector;
+import edu.jhuapl.trinity.data.messages.VectorMaskCollection;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
+import edu.jhuapl.trinity.javafx.events.ImageEvent;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import java.io.File;
 import java.io.IOException;
@@ -114,6 +116,10 @@ public class NavigatorPane extends LitPathPane {
         
         scene.addEventHandler(ApplicationEvent.SET_IMAGERY_BASEPATH, e -> {
             this.imageryBasePath = (String) e.object;
+        });        
+        scene.addEventHandler(ImageEvent.NEW_VECTORMASK_COLLECTION, e -> {
+            VectorMaskCollection vmc = (VectorMaskCollection) e.object;
+            
         });        
         scene.addEventHandler(FeatureVectorEvent.SELECT_FEATURE_VECTOR, e-> {
             FeatureVector fv = (FeatureVector) e.object;

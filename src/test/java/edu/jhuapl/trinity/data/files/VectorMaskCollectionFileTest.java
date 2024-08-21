@@ -1,6 +1,6 @@
 package edu.jhuapl.trinity.data.files;
 
-import edu.jhuapl.trinity.data.messages.ShapleyCollection;
+import edu.jhuapl.trinity.data.messages.VectorMaskCollection;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.BeforeEach;
@@ -11,9 +11,9 @@ import org.junit.jupiter.api.Test;
  *
  * @author sean phillips
  */
-public class ShapleyCollectionFileTest {
+public class VectorMaskCollectionFileTest {
     
-    public ShapleyCollectionFileTest() {
+    public VectorMaskCollectionFileTest() {
     }
     
     @BeforeAll
@@ -39,10 +39,9 @@ public class ShapleyCollectionFileTest {
     @Test
     public void testWriteContent() throws Exception {
         System.out.println("writeContent");
-        ShapleyCollectionFile instance = new ShapleyCollectionFile("./ShapleyFile.json");
-        ShapleyCollection sc = ShapleyCollection.fakeCollection(512, 512);
-        sc.setSourceInput("OnyxHappyFace.png");
-        instance.shapleyCollection = sc;
+        VectorMaskCollectionFile instance = new VectorMaskCollectionFile("./VectorMask.json");
+        VectorMaskCollection sc = VectorMaskCollection.fakeCollection(512, 512, 1.0);
+        instance.vectorMaskCollection = sc;
         instance.writeContent();
     }
     

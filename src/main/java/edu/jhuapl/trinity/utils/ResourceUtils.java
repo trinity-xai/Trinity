@@ -32,6 +32,7 @@ import edu.jhuapl.trinity.data.files.McclodSplitDataTsvFile;
 import edu.jhuapl.trinity.data.files.SemanticMapCollectionFile;
 import edu.jhuapl.trinity.data.files.ShapleyCollectionFile;
 import edu.jhuapl.trinity.data.files.TextEmbeddingCollectionFile;
+import edu.jhuapl.trinity.data.files.VectorMaskCollectionFile;
 import edu.jhuapl.trinity.data.files.ZeroPilotLatentsFile;
 import edu.jhuapl.trinity.data.messages.FeatureCollection;
 import edu.jhuapl.trinity.data.terrain.FireAreaTextFile;
@@ -51,6 +52,7 @@ import edu.jhuapl.trinity.utils.loaders.FeatureCollectionLoader;
 import edu.jhuapl.trinity.utils.loaders.McclodSplitDataLoader;
 import edu.jhuapl.trinity.utils.loaders.ShapleyCollectionLoader;
 import edu.jhuapl.trinity.utils.loaders.TextEmbeddingsLoader;
+import edu.jhuapl.trinity.utils.loaders.VectorMaskCollectionLoader;
 import edu.jhuapl.trinity.utils.loaders.ZeroPilotLatentsLoader;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
@@ -346,6 +348,11 @@ public enum ResourceUtils {
                                 thread.start();
                             } else if (ShapleyCollectionFile.isShapleyCollectionFile(file)) {
                                 ShapleyCollectionLoader task = new ShapleyCollectionLoader(scene, file);
+                                Thread thread = new Thread(task);
+                                thread.setDaemon(true);
+                                thread.start();
+                            } else if (VectorMaskCollectionFile.isVectorMaskCollectionFile(file)) {
+                                VectorMaskCollectionLoader task = new VectorMaskCollectionLoader(scene, file);
                                 Thread thread = new Thread(task);
                                 thread.setDaemon(true);
                                 thread.start();
