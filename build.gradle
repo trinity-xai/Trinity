@@ -130,6 +130,9 @@ extraJavaModuleInfo {
         requires('java.desktop')
         exportAllPackages()
     }
+    module('net.sf.py4j:py4j', 'py4j') {
+        exportAllPackages()
+    }
 }
 
 // </editor-fold>
