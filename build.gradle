@@ -67,6 +67,7 @@ dependencies {
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.17.2'
     implementation group: 'com.github.sarxos', name: 'webcam-capture', version: '0.3.12'
     implementation group: 'org.jflac', name: 'jflac-codec', version: '1.5.2'
+    implementation group: 'net.sf.py4j', name: 'py4j', version: '0.10.9.7'
 
     // Enforce slf4j-api version across dependencies (although we're using JUL)
     implementation group: 'org.slf4j', name: 'slf4j-api', version: '2.0.13'

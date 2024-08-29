@@ -864,9 +864,7 @@ public class App extends Application {
         intro();
         missionTimerX.updateTime(0, "1");
     }
-    public void injectFeatureCollection(String messageBody) {
-        MessageUtils.injectFeatureCollection(theScene, messageBody);
-    }
+
     public void injectMessage(String messageBody) {
         try {
             processor.process(messageBody);
