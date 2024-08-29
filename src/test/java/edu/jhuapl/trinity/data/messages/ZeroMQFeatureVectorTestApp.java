@@ -65,15 +65,9 @@ public class ZeroMQFeatureVectorTestApp {
                     featureVector.setComponentType("neural_network");
 
                     List<Double> data = new ArrayList<>(81);
-                    for (int i = 0; i < 81; i++) {
-                        if (rando.nextBoolean())
-                            data.add(rando.nextDouble());
-                        else
-                            data.add(-rando.nextDouble());
+                    for (int i = 0; i < 512; i++) {
+                        data.add(rando.nextGaussian());
                     }
-//                    for(int i=0;i<81;i++)
-//                        data.add(Math.cos(i) + rando.nextDouble()*0.25);
-
                     featureVector.setData(data);
                     featureVector.setEntityId("EntityID001");
                     featureVector.setFrameId(update_nbr);
@@ -94,7 +88,7 @@ public class ZeroMQFeatureVectorTestApp {
                     }
 
                     update_nbr++;
-                    Thread.sleep(50);
+                    Thread.sleep(16);
                 }
             } catch (InterruptedException ex) {
                 Logger.getLogger(ZeroMQFeatureVectorTestApp.class.getName()).log(Level.SEVERE, null, ex);

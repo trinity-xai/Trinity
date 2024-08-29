@@ -72,6 +72,7 @@ import edu.jhuapl.trinity.messages.ZeroMQFeedManager;
 import edu.jhuapl.trinity.messages.ZeroMQSubscriberConfig;
 import edu.jhuapl.trinity.utils.AnalysisUtils;
 import edu.jhuapl.trinity.utils.Configuration;
+import edu.jhuapl.trinity.utils.MessageUtils;
 import edu.jhuapl.trinity.utils.PCAConfig;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import edu.jhuapl.trinity.utils.umap.Umap;
@@ -116,6 +117,7 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import py4j.GatewayServer;
 
 public class App extends Application {
 
@@ -167,9 +169,13 @@ public class App extends Application {
     MissionTimerX missionTimerX;
     TimelineAnimation timelineAnimation;
     boolean is4k = false;
-
+    
     @Override
     public void start(Stage stage) throws IOException {
+        System.out.println("Creating Py4J GatewayServer...");
+        GatewayServer server = new GatewayServer(this);       
+        System.out.println("Starting Py4J service...");
+        server.start();
         System.out.println("Attempting to read defaults...");
         try {
             System.out.println("Build Date: " + Configuration.getBuildDate());
@@ -401,11 +407,11 @@ public class App extends Application {
                     //example: 200x100+800+800
                     String[] tokens = geometryParamString.split("\\+");
                     String[] sizeTokens = tokens[0].split("x");
-                    stage.setWidth(Double.valueOf(sizeTokens[0]));
-                    stage.setHeight(Double.valueOf(sizeTokens[1]));
-                    stage.setX(Double.valueOf(tokens[1]));
-                    stage.setY(Double.valueOf(tokens[2]));
-                } catch (Exception ex) {
+                    stage.setWidth(Double.parseDouble(sizeTokens[0]));
+                    stage.setHeight(Double.parseDouble(sizeTokens[1]));
+                    stage.setX(Double.parseDouble(tokens[1]));
+                    stage.setY(Double.parseDouble(tokens[2]));
+                } catch (NumberFormatException ex) {
                     System.out.println("Exception thrown parsing: " + geometryParamString
                         + ". Setting to Maximized.");
                     stage.setMaximized(true);
@@ -769,39 +775,7 @@ public class App extends Application {
         scene.getRoot().addEventHandler(CovalentPaneEvent.COVALENT_PANE_CLOSE, covalentEvent -> {
             desktopPane.getChildren().remove(covalentEvent.pathPane);
         });
-        System.out.println("Establishing Messaging Feed...");
-        processor = new MessageProcessor(scene);
-        subscriberConfig = new ZeroMQSubscriberConfig(
-            "ZeroMQ Subscriber", "Testing ZeroMQFeedManager.",
-            "tcp://localhost:5563", "ALL", "SomeIDValue", 250);
-        feed = new ZeroMQFeedManager(2, subscriberConfig, processor);
-        scene.getRoot().addEventHandler(ZeroMQEvent.ZEROMQ_ESTABLISH_CONNECTION, e -> {
-            subscriberConfig = e.subscriberConfig;
-            if (null != subscriberConfig) {
-                Task task = new Task() {
-                    @Override
-                    protected Void call() throws Exception {
-                        feed.setConfig(subscriberConfig);
-                        feed.startProcessing();
-                        return null;
-                    }
-                };
-                Thread thread = new Thread(task);
-                thread.setDaemon(true);
-                thread.start();
-            }
-        });
-        scene.getRoot().addEventHandler(ZeroMQEvent.ZEROMQ_TERMINATE_CONNECTION, e -> {
-            if (null != feed) {
-                feed.disconnect(false);
-            }
-        });
-        scene.getRoot().addEventHandler(ZeroMQEvent.ZEROMQ_START_PROCESSING, e -> {
-            feed.setEnableProcessing(true);
-        });
-        scene.getRoot().addEventHandler(ZeroMQEvent.ZEROMQ_STOP_PROCESSING, e -> {
-            feed.setEnableProcessing(false);
-        });
+
         scene.addEventHandler(CommandTerminalEvent.FOLLOWUP, e -> {
             animatedConsoleText.setVisible(true);
             animatedConsoleText.setOpacity(1.0);
@@ -842,11 +816,65 @@ public class App extends Application {
             animatedConsoleText.animate("> " + e.text);
         });
         scene.addEventHandler(CommandTerminalEvent.FADE_OUT, e -> fadeOutConsole(e.timeMS));
+        System.out.println("Establishing Messaging Feed...");
+        processor = new MessageProcessor(scene);
+        subscriberConfig = new ZeroMQSubscriberConfig(
+            "ZeroMQ Subscriber", "ZeroMQFeedManager.",
+            "tcp://localhost:5563", "ALL", "SomeIDValue", 250);
+        feed = new ZeroMQFeedManager(2, subscriberConfig, processor);
+        scene.getRoot().addEventHandler(ZeroMQEvent.ZEROMQ_ESTABLISH_CONNECTION, e -> {
+            subscriberConfig = e.subscriberConfig;
+            if (null != subscriberConfig) {
+                Task task = new Task() {
+                    @Override
+                    protected Void call() throws Exception {
+                        feed.setConfig(subscriberConfig);
+                        feed.startProcessing();
+                        return null;
+                    }
+                };
+                Thread thread = new Thread(task);
+                thread.setDaemon(true);
+                thread.start();
+            }
+        });
+        scene.getRoot().addEventHandler(ZeroMQEvent.ZEROMQ_TERMINATE_CONNECTION, e -> {
+            if (null != feed) {
+                feed.disconnect(false);
+            }
+        });
+        scene.getRoot().addEventHandler(ZeroMQEvent.ZEROMQ_START_PROCESSING, e -> {
+            feed.setEnableProcessing(true);
+        });
+        scene.getRoot().addEventHandler(ZeroMQEvent.ZEROMQ_STOP_PROCESSING, e -> {
+            feed.setEnableProcessing(false);
+        });        
+        System.out.println("Checking to auto-enable ZeroMQ Listener...");
+        if(null != namedParameters && namedParameters.containsKey("zeromq")) {
+            String zeroMQ = namedParameters.get("zeromq");
+            if(null != zeroMQ) {
+                System.out.println("ZeroMQ Status: " + zeroMQ);
+            }
+            Platform.runLater(()->scene.getRoot().fireEvent(
+                new ZeroMQEvent(ZeroMQEvent.ZEROMQ_ESTABLISH_CONNECTION, subscriberConfig)));
+        }        
+
         System.out.println("User Interface Lit...");
         //animatedConsoleText.animate("User Inteface Lit...");
         intro();
         missionTimerX.updateTime(0, "1");
     }
+    public void injectFeatureCollection(String messageBody) {
+        MessageUtils.injectFeatureCollection(theScene, messageBody);
+    }
+    public void injectMessage(String messageBody) {
+        try {
+            processor.process(messageBody);
+        } catch (IOException ex) {
+            //Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+            System.out.println("Malformed JSON from injectMessage");
+        }
+    }    
 
     private FeatureCollection getFeaturesBySource(ManifoldEvent.POINT_SOURCE source) {
         FeatureCollection originalFC = new FeatureCollection();
@@ -992,6 +1020,7 @@ public class App extends Application {
         }
     }
 
+    
     @Override
     public void stop() throws Exception {
         System.out.println("Application Shutdown commenced...");

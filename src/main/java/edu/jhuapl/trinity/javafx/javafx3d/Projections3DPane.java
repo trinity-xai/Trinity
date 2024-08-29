@@ -1168,9 +1168,9 @@ public class Projections3DPane extends StackPane implements
                     vp.setVideo();
                     Pane desktopPane = App.getAppPathPaneStack();
                     App.getAppPathPaneStack().getChildren().add(vp);
-                    vp.setTranslateX(desktopPane.getWidth() / 2.0
-                        - vp.getBoundsInLocal().getWidth() / 2.0);
-                    vp.setTranslateY(desktopPane.getHeight() / 2.0
+                    vp.moveTo(desktopPane.getWidth() / 2.0
+                        - vp.getBoundsInLocal().getWidth() / 2.0, 
+                            desktopPane.getHeight() / 2.0
                         - vp.getBoundsInLocal().getHeight() / 2.0);
                     vp.restore();
                     vp.show();

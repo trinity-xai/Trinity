@@ -42,6 +42,7 @@ module edu.jhuapl.trinity {
     requires jdk.crypto.ec;
     requires jflac.codec;
     requires org.slf4j;
+    requires py4j;
     opens edu.jhuapl.trinity.javafx.components.radial to lit.litfx.controls;
     opens edu.jhuapl.trinity to webcam.capture;
     opens edu.jhuapl.trinity.data to javafx.base;

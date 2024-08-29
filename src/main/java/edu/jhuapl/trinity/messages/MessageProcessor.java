@@ -25,6 +25,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.jhuapl.trinity.data.FactorAnalysisState;
 import edu.jhuapl.trinity.data.messages.ChannelFrame;
+import edu.jhuapl.trinity.data.messages.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.FeatureVector;
 import edu.jhuapl.trinity.data.messages.GaussianMixture;
 import edu.jhuapl.trinity.data.messages.LabelConfig;
@@ -65,7 +66,30 @@ public class MessageProcessor {
     }
 
     public void process(String message) throws JsonProcessingException, IOException {
-        if (ChannelFrame.isChannelFrame(message)) {
+        if (FeatureCollection.isFeatureCollection(message)) {
+            FeatureCollection featureCollection = mapper.readValue(message, FeatureCollection.class);
+            Platform.runLater(()-> {
+                scene.getRoot().fireEvent(new FeatureVectorEvent(
+                FeatureVectorEvent.NEW_FEATURE_COLLECTION, featureCollection));
+            });            
+        } else if (FeatureVector.isFeatureVector(message)) {
+            FeatureVector featureVector = getMapper().readValue(message, FeatureVector.class);
+            //fire event to load data in JavaFX Scene
+            scene.getRoot().fireEvent(new FeatureVectorEvent(
+                FeatureVectorEvent.NEW_FEATURE_VECTOR, featureVector));
+        } else if (GaussianMixture.isGaussianMixture(message)) {
+            GaussianMixture gaussianMixture = getMapper().readValue(message, GaussianMixture.class);
+            Platform.runLater(() -> {
+                scene.getRoot().fireEvent(new GaussianMixtureEvent(
+                    GaussianMixtureEvent.NEW_GAUSSIAN_MIXTURE, gaussianMixture));
+            });
+        } else if (LabelConfig.isLabelConfig(message)) {
+            LabelConfig labelConfig = getMapper().readValue(message, LabelConfig.class);
+            Platform.runLater(() -> {
+                scene.getRoot().fireEvent(new FeatureVectorEvent(
+                    FeatureVectorEvent.NEW_LABEL_CONFIG, labelConfig));
+            });
+        } else if(ChannelFrame.isChannelFrame(message)) {
             ChannelFrame frame = getMapper().readValue(message, ChannelFrame.class);
             System.out.println("Frame: " + frame.getFrameId());
             System.out.println("Channel Values: " + frame.getChannelData());
@@ -81,35 +105,7 @@ public class MessageProcessor {
             Platform.runLater(() -> {
                 scene.getRoot().fireEvent(new FactorAnalysisDataEvent(fas));
             });
-        } else if (FeatureVector.isFeatureVector(message)) {
-            FeatureVector featureVector = getMapper().readValue(message, FeatureVector.class);
-            //@DEBUG SMP helpful debug prints
-            //System.out.println("Image URL: " + object.getImageURL());
-            //System.out.println("Feature Vector: " + object.getData());
-            //fire event to load data in JavaFX Scene
-            //Platform.runLater(() -> {
-            scene.getRoot().fireEvent(new FeatureVectorEvent(
-                FeatureVectorEvent.NEW_FEATURE_VECTOR, featureVector));
-            //});
-        } else if (GaussianMixture.isGaussianMixture(message)) {
-            GaussianMixture gaussianMixture = getMapper().readValue(message, GaussianMixture.class);
-            //@DEBUG SMP helpful debug prints
-            //System.out.println("GaussianMixture Msg Received: " + gaussianMixture.getCovarianceMode());
-            //fire event to load data in JavaFX Scene
-            Platform.runLater(() -> {
-                scene.getRoot().fireEvent(new GaussianMixtureEvent(
-                    GaussianMixtureEvent.NEW_GAUSSIAN_MIXTURE, gaussianMixture));
-            });
-        } else if (LabelConfig.isLabelConfig(message)) {
-            LabelConfig labelConfig = getMapper().readValue(message, LabelConfig.class);
-            //@DEBUG SMP helpful debug prints
-            //System.out.println("GaussianMixture Msg Received: " + gaussianMixture.getCovarianceMode());
-            //fire event to load data in JavaFX Scene
-            Platform.runLater(() -> {
-                scene.getRoot().fireEvent(new FeatureVectorEvent(
-                    FeatureVectorEvent.NEW_LABEL_CONFIG, labelConfig));
-            });
-        }
+        } 
     }
 
     /**
