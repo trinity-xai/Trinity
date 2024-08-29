@@ -172,15 +172,19 @@ public class App extends Application {
     
     @Override
     public void start(Stage stage) throws IOException {
-        System.out.println("Creating Py4J GatewayServer...");
-        GatewayServer server = new GatewayServer(this);       
-        System.out.println("Starting Py4J service...");
-        server.start();
+        try {
+            System.out.println("Creating Py4J GatewayServer...");
+            GatewayServer server = new GatewayServer(this);       
+            System.out.println("Starting Py4J service...");
+            server.start();
+        } catch(Exception ex) {
+            Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+        }
         System.out.println("Attempting to read defaults...");
         try {
             System.out.println("Build Date: " + Configuration.getBuildDate());
         } catch (Exception ex) {
-            ex.printStackTrace();
+            Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
         }
         //theConfig = Configuration.defaultConfiguration();
         System.out.println("Starting JavaFX rendering...");
