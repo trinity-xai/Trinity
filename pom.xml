@@ -178,6 +178,12 @@
             <artifactId>py4j</artifactId>
             <version>${py4j.version}</version>
         </dependency>
+        <dependency>
+            <groupId>io.netty</groupId>
+            <artifactId>netty-all</artifactId>
+            <version>4.1.36.Final</version>
+            <type>jar</type>
+        </dependency>
     </dependencies>
     <reporting>
         <plugins>

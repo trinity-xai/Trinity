@@ -106,6 +106,9 @@ public class MessageProcessor {
                 scene.getRoot().fireEvent(new FactorAnalysisDataEvent(fas));
             });
         } 
+        if(message.equalsIgnoreCase("howdy")){
+            System.out.println("Well hello...");
+        }
     }
 
     /**

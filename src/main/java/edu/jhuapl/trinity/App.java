@@ -68,11 +68,11 @@ import edu.jhuapl.trinity.javafx.javafx3d.Manifold3D;
 import edu.jhuapl.trinity.javafx.javafx3d.Projections3DPane;
 import edu.jhuapl.trinity.javafx.javafx3d.RetroWavePane;
 import edu.jhuapl.trinity.messages.MessageProcessor;
+import edu.jhuapl.trinity.messages.NettyServer;
 import edu.jhuapl.trinity.messages.ZeroMQFeedManager;
 import edu.jhuapl.trinity.messages.ZeroMQSubscriberConfig;
 import edu.jhuapl.trinity.utils.AnalysisUtils;
 import edu.jhuapl.trinity.utils.Configuration;
-import edu.jhuapl.trinity.utils.MessageUtils;
 import edu.jhuapl.trinity.utils.PCAConfig;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import edu.jhuapl.trinity.utils.umap.Umap;
@@ -118,6 +118,8 @@ import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import py4j.GatewayServer;
+import py4j.GatewayServerListener;
+import py4j.Py4JServerConnection;
 
 public class App extends Application {
 
@@ -169,10 +171,17 @@ public class App extends Application {
     MissionTimerX missionTimerX;
     TimelineAnimation timelineAnimation;
     boolean is4k = false;
+    NettyServer nettyServer;
     
     @Override
     public void start(Stage stage) throws IOException {
         try {
+            System.out.println("Creating Netty Server...");
+            nettyServer = new NettyServer();
+            Thread nettyThreaddy = new Thread(nettyServer, "Trinity Netty");
+            nettyThreaddy.setDaemon(true);
+            nettyThreaddy.start();
+            
             System.out.println("Creating Py4J GatewayServer...");
             GatewayServer server = new GatewayServer(this);       
             System.out.println("Starting Py4J service...");
