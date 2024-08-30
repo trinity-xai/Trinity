@@ -83,7 +83,7 @@ dependencies {
 // it doesn't yield the same quality of results.
 extraJavaModuleInfo {
     // Avoid automatic modules
-    failOnAutomaticModules.set(false) // @TODO(samypr100) Fix this
+    failOnAutomaticModules.set(true)
     // Transitive of org.fxyz3d:fxyz3d
     module('eu.mihosoft.vvecmath:vvecmath', 'vvecmath') {
         exports('eu.mihosoft.vvecmath')
@@ -130,6 +130,42 @@ extraJavaModuleInfo {
     module('org.jflac:jflac-codec', 'jflac.codec') {
         requires('java.desktop')
         exportAllPackages()
+    }
+    // Netty
+    module("io.netty:netty-common", "io.netty.common") {
+        requires('java.logging')
+        requires('jdk.unsupported')
+        exportAllPackages()
+        requireAllDefinedDependencies()
+        ignoreServiceProvider("reactor.blockhound.integration.BlockHoundIntegration")
+    }
+    module("io.netty:netty-buffer", "io.netty.buffer") {
+        exportAllPackages()
+        requireAllDefinedDependencies()
+    }
+    module("io.netty:netty-handler", "io.netty.handler") {
+        exportAllPackages()
+        requireAllDefinedDependencies()
+    }
+    module("io.netty:netty-resolver", "io.netty.resolver") {
+        exportAllPackages()
+        requireAllDefinedDependencies()
+    }
+    module("io.netty:netty-transport", "io.netty.transport") {
+        exportAllPackages()
+        requireAllDefinedDependencies()
+    }
+    module("io.netty:netty-transport-native-unix-common", "io.netty.transport.unix.common") {
+        exportAllPackages()
+        requireAllDefinedDependencies()
+    }
+    module("io.netty:netty-codec", "io.netty.codec") {
+        exportAllPackages()
+        requireAllDefinedDependencies()
+    }
+    module("io.netty:netty-codec-http", "io.netty.codec.http") {
+        exportAllPackages()
+        requireAllDefinedDependencies()
     }
 }
 
@@ -289,6 +325,7 @@ tasks.withType(Jar).configureEach {
     // Exclude problematic duplicates (to avoid duplications strategy issues)
     exclude 'META-INF/*LICENSE*', 'META-INF/*NOTICE*', 'META-INF/INDEX.LIST', 'META-INF/maven/**'
     exclude 'META-INF/3rd-party-licenses/**', 'META-INF/substrate/**', 'LICENSE.txt'
+    exclude 'META-INF/io.netty.versions.properties'
     // Include some top-level files for now...
     from(layout.projectDirectory) {
         include 'LICENSE.md', 'README.md'
