@@ -325,6 +325,7 @@ tasks.withType(Jar).configureEach {
     // Exclude problematic duplicates (to avoid duplications strategy issues)
     exclude 'META-INF/*LICENSE*', 'META-INF/*NOTICE*', 'META-INF/INDEX.LIST', 'META-INF/maven/**'
     exclude 'META-INF/3rd-party-licenses/**', 'META-INF/substrate/**', 'LICENSE.txt'
+    exclude 'META-INF/io.netty.versions.properties'
     // Include some top-level files for now...
     from(layout.projectDirectory) {
         include 'LICENSE.md', 'README.md'
