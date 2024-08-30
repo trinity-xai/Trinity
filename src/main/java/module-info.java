@@ -43,6 +43,7 @@ module edu.jhuapl.trinity {
     requires jflac.codec;
     requires org.slf4j;
     requires io.netty.buffer;
+    requires io.netty.codec;
     requires io.netty.codec.http;
     requires io.netty.common;
     requires io.netty.transport;

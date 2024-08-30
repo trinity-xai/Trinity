@@ -28,6 +28,7 @@ import java.util.logging.Logger;
  */
 public class TrinityHttpServer implements Runnable {
 
+    private static final String HTTP_HOST = "0.0.0.0";
     private static final int HTTP_PORT = 8080;
 
     public TrinityHttpServer() {
@@ -45,11 +46,11 @@ public class TrinityHttpServer implements Runnable {
                     @Override
                     protected void initChannel(SocketChannel ch) {
                         ch.pipeline().addLast(new HttpServerCodec());
-                        ch.pipeline().addLast(new HttpObjectAggregator(65536));
+                        ch.pipeline().addLast(new HttpObjectAggregator(Integer.MAX_VALUE));
                         ch.pipeline().addLast(new EchoServerHandler());
                     }
                 });
-            ChannelFuture future = bootstrap.bind(HTTP_PORT).sync();
+            ChannelFuture future = bootstrap.bind(HTTP_HOST, HTTP_PORT).sync();
             future.channel().closeFuture().sync();
         } catch (InterruptedException ex) {
             Logger.getLogger(TrinityHttpServer.class.getName()).log(Level.SEVERE, null, ex);
