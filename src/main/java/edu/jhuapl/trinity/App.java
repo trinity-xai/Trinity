@@ -68,7 +68,7 @@ import edu.jhuapl.trinity.javafx.javafx3d.Manifold3D;
 import edu.jhuapl.trinity.javafx.javafx3d.Projections3DPane;
 import edu.jhuapl.trinity.javafx.javafx3d.RetroWavePane;
 import edu.jhuapl.trinity.messages.MessageProcessor;
-import edu.jhuapl.trinity.messages.NettyServer;
+import edu.jhuapl.trinity.messages.TrinityHttpServer;
 import edu.jhuapl.trinity.messages.ZeroMQFeedManager;
 import edu.jhuapl.trinity.messages.ZeroMQSubscriberConfig;
 import edu.jhuapl.trinity.utils.AnalysisUtils;
@@ -168,16 +168,16 @@ public class App extends Application {
     MissionTimerX missionTimerX;
     TimelineAnimation timelineAnimation;
     boolean is4k = false;
-    NettyServer nettyServer;
+    TrinityHttpServer trinityHttpServer;
 
     @Override
     public void start(Stage stage) throws IOException {
         try {
             System.out.println("Creating Netty Server...");
-            nettyServer = new NettyServer();
-            Thread nettyThreaddy = new Thread(nettyServer, "Trinity Netty");
-            nettyThreaddy.setDaemon(true);
-            nettyThreaddy.start();
+            trinityHttpServer = new TrinityHttpServer();
+            Thread serverThread = new Thread(trinityHttpServer, "Trinity Netty");
+            serverThread.setDaemon(true);
+            serverThread.start();
         } catch(Exception ex) {
             Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
         }

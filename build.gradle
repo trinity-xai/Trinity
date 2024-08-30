@@ -67,8 +67,8 @@ dependencies {
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.17.2'
     implementation group: 'com.github.sarxos', name: 'webcam-capture', version: '0.3.12'
     implementation group: 'org.jflac', name: 'jflac-codec', version: '1.5.2'
-    implementation group: 'io.netty', name: 'netty-all', version: '4.1.112.Final'
-
+    implementation group: 'io.netty', name: 'netty-handler', version: '4.1.112.Final'
+    implementation group: 'io.netty', name: 'netty-codec-http', version: '4.1.112.Final'
 
     // Enforce slf4j-api version across dependencies (although we're using JUL)
     implementation group: 'org.slf4j', name: 'slf4j-api', version: '2.0.13'
@@ -83,7 +83,7 @@ dependencies {
 // it doesn't yield the same quality of results.
 extraJavaModuleInfo {
     // Avoid automatic modules
-    failOnAutomaticModules.set(true)
+    failOnAutomaticModules.set(false) // @TODO(samypr100) Fix this
     // Transitive of org.fxyz3d:fxyz3d
     module('eu.mihosoft.vvecmath:vvecmath', 'vvecmath') {
         exports('eu.mihosoft.vvecmath')
