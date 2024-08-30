@@ -117,9 +117,6 @@ import java.util.List;
 import java.util.Map;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import py4j.GatewayServer;
-import py4j.GatewayServerListener;
-import py4j.Py4JServerConnection;
 
 public class App extends Application {
 
@@ -172,7 +169,7 @@ public class App extends Application {
     TimelineAnimation timelineAnimation;
     boolean is4k = false;
     NettyServer nettyServer;
-    
+
     @Override
     public void start(Stage stage) throws IOException {
         try {
@@ -181,11 +178,6 @@ public class App extends Application {
             Thread nettyThreaddy = new Thread(nettyServer, "Trinity Netty");
             nettyThreaddy.setDaemon(true);
             nettyThreaddy.start();
-            
-            System.out.println("Creating Py4J GatewayServer...");
-            GatewayServer server = new GatewayServer(this);       
-            System.out.println("Starting Py4J service...");
-            server.start();
         } catch(Exception ex) {
             Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
         }
@@ -583,7 +575,7 @@ public class App extends Application {
                 Platform.runLater(() -> navigatorPane.setImage((Image) e.object));
             }
         });
-        
+
         scene.addEventHandler(ApplicationEvent.SHOW_WAVEFORM_PANE, e -> {
             if (null == waveformPane) {
                 waveformPane = new WaveformPane(scene, pathPane);
@@ -861,7 +853,7 @@ public class App extends Application {
         });
         scene.getRoot().addEventHandler(ZeroMQEvent.ZEROMQ_STOP_PROCESSING, e -> {
             feed.setEnableProcessing(false);
-        });        
+        });
         System.out.println("Checking to auto-enable ZeroMQ Listener...");
         if(null != namedParameters && namedParameters.containsKey("zeromq")) {
             String zeroMQ = namedParameters.get("zeromq");
@@ -870,7 +862,7 @@ public class App extends Application {
             }
             Platform.runLater(()->scene.getRoot().fireEvent(
                 new ZeroMQEvent(ZeroMQEvent.ZEROMQ_ESTABLISH_CONNECTION, subscriberConfig)));
-        }        
+        }
 
         System.out.println("User Interface Lit...");
         //animatedConsoleText.animate("User Inteface Lit...");
@@ -885,7 +877,7 @@ public class App extends Application {
             //Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
             System.out.println("Malformed JSON from injectMessage");
         }
-    }    
+    }
 
     private FeatureCollection getFeaturesBySource(ManifoldEvent.POINT_SOURCE source) {
         FeatureCollection originalFC = new FeatureCollection();
@@ -1031,7 +1023,7 @@ public class App extends Application {
         }
     }
 
-    
+
     @Override
     public void stop() throws Exception {
         System.out.println("Application Shutdown commenced...");

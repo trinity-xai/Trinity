@@ -53,6 +53,7 @@
         <org.jflac.jflac-codec.version>1.5.2</org.jflac.jflac-codec.version>
         <slf4j.version>2.0.13</slf4j.version>
         <py4j.version>0.10.9.7</py4j.version>
+        <netty.version>4.1.112.Final</netty.version>
         <mainClassName>edu.jhuapl.trinity.TrinityMain</mainClassName>
         <!-- Values for build.properties -->
         <trinity.title>Trinity</trinity.title>
@@ -174,15 +175,9 @@
             <version>${slf4j.version}</version>
         </dependency>
         <dependency>
-            <groupId>net.sf.py4j</groupId>
-            <artifactId>py4j</artifactId>
-            <version>${py4j.version}</version>
-        </dependency>
-        <dependency>
             <groupId>io.netty</groupId>
             <artifactId>netty-all</artifactId>
-            <version>4.1.36.Final</version>
-            <type>jar</type>
+            <version>${netty.version}</version>
         </dependency>
     </dependencies>
     <reporting>
