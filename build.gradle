@@ -131,6 +131,7 @@ extraJavaModuleInfo {
         exportAllPackages()
     }
     module('net.sf.py4j:py4j', 'py4j') {
+        requires('java.logging')
         exportAllPackages()
     }
 }
