@@ -172,15 +172,6 @@ public class App extends Application {
 
     @Override
     public void start(Stage stage) throws IOException {
-        try {
-            System.out.println("Creating Netty Server...");
-            trinityHttpServer = new TrinityHttpServer();
-            Thread serverThread = new Thread(trinityHttpServer, "Trinity Netty");
-            serverThread.setDaemon(true);
-            serverThread.start();
-        } catch(Exception ex) {
-            Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
-        }
         System.out.println("Attempting to read defaults...");
         try {
             System.out.println("Build Date: " + Configuration.getBuildDate());
@@ -863,20 +854,19 @@ public class App extends Application {
             Platform.runLater(()->scene.getRoot().fireEvent(
                 new ZeroMQEvent(ZeroMQEvent.ZEROMQ_ESTABLISH_CONNECTION, subscriberConfig)));
         }
-
+        try {
+            System.out.println("Creating Netty Server...");
+            trinityHttpServer = new TrinityHttpServer(scene);
+            Thread serverThread = new Thread(trinityHttpServer, "Trinity Netty");
+            serverThread.setDaemon(true);
+            serverThread.start();
+        } catch(Exception ex) {
+            Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+        }
         System.out.println("User Interface Lit...");
         //animatedConsoleText.animate("User Inteface Lit...");
         intro();
         missionTimerX.updateTime(0, "1");
-    }
-
-    public void injectMessage(String messageBody) {
-        try {
-            processor.process(messageBody);
-        } catch (IOException ex) {
-            //Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
-            System.out.println("Malformed JSON from injectMessage");
-        }
     }
 
     private FeatureCollection getFeaturesBySource(ManifoldEvent.POINT_SOURCE source) {
