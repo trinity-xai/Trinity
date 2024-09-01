@@ -52,7 +52,6 @@
         <sarxos.webcam.capture.version>0.3.12</sarxos.webcam.capture.version>
         <org.jflac.jflac-codec.version>1.5.2</org.jflac.jflac-codec.version>
         <slf4j.version>2.0.13</slf4j.version>
-        <py4j.version>0.10.9.7</py4j.version>
         <netty.version>4.1.112.Final</netty.version>
         <mainClassName>edu.jhuapl.trinity.TrinityMain</mainClassName>
         <!-- Values for build.properties -->
