@@ -49,6 +49,7 @@ import edu.jhuapl.trinity.javafx.events.FullscreenEvent;
 import edu.jhuapl.trinity.javafx.events.GaussianMixtureEvent;
 import edu.jhuapl.trinity.javafx.events.HitEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
+import edu.jhuapl.trinity.javafx.events.RestEvent;
 import edu.jhuapl.trinity.javafx.events.SearchEvent;
 import edu.jhuapl.trinity.javafx.events.SemanticMapEvent;
 import edu.jhuapl.trinity.javafx.events.ShapleyEvent;
@@ -59,6 +60,7 @@ import edu.jhuapl.trinity.javafx.handlers.FeatureVectorEventHandler;
 import edu.jhuapl.trinity.javafx.handlers.GaussianMixtureEventHandler;
 import edu.jhuapl.trinity.javafx.handlers.HitEventHandler;
 import edu.jhuapl.trinity.javafx.handlers.ManifoldEventHandler;
+import edu.jhuapl.trinity.javafx.handlers.RestEventHandler;
 import edu.jhuapl.trinity.javafx.handlers.SearchEventHandler;
 import edu.jhuapl.trinity.javafx.handlers.SemanticMapEventHandler;
 import edu.jhuapl.trinity.javafx.handlers.ShapleyEventHandler;
@@ -159,6 +161,7 @@ public class App extends Application {
     SemanticMapEventHandler smeh;
     SearchEventHandler seh;
     HitEventHandler heh;
+    RestEventHandler reh;
 
     boolean hyperspaceIntroShown = false;
     boolean hypersurfaceIntroShown = false;
@@ -467,6 +470,13 @@ public class App extends Application {
             }
 
         }
+        reh = new RestEventHandler(scene);
+        scene.addEventHandler(RestEvent.START_RESTSERVER_THREAD, reh);
+        scene.addEventHandler(RestEvent.TERMINATE_RESTSERVER_THREAD, reh);
+        if(enableHttp) {
+            reh.startHttpService();
+        }
+        
         setupMissionTimer(scene);
         //add helper tools and overlays
         circleSpinner = new CircleProgressIndicator();
@@ -861,17 +871,7 @@ public class App extends Application {
             Platform.runLater(()->scene.getRoot().fireEvent(
                 new ZeroMQEvent(ZeroMQEvent.ZEROMQ_ESTABLISH_CONNECTION, subscriberConfig)));
         }
-        try {
-            if(enableHttp) {
-                System.out.println("Creating Trinity HTTP Server...");
-                trinityHttpServer = new TrinityHttpServer(scene);
-                Thread serverThread = new Thread(trinityHttpServer, "Trinity HTTP Server");
-                serverThread.setDaemon(true);
-                serverThread.start();
-            }
-        } catch(Exception ex) {
-            Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
-        }
+
         System.out.println("User Interface Lit...");
         //animatedConsoleText.animate("User Inteface Lit...");
         intro();

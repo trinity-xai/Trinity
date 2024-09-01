@@ -20,8 +20,6 @@ package edu.jhuapl.trinity.javafx.handlers;
  * #L%
  */
 
-import edu.jhuapl.trinity.App;
-import edu.jhuapl.trinity.data.Dimension;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.RestEvent;
 import edu.jhuapl.trinity.messages.TrinityHttpServer;
@@ -30,8 +28,6 @@ import javafx.event.EventHandler;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 
-import java.util.ArrayList;
-import java.util.List;
 import javafx.scene.Scene;
 
 /**
@@ -67,7 +63,6 @@ public class RestEventHandler implements EventHandler<RestEvent> {
                     new CommandTerminalEvent("Stopping Trinity HTTP Server...",
                         new Font("Consolas", 20), Color.YELLOW));
             });
-            
             trinityHttpServer.stop(); //will kill future inside the runnable.
             trinityHttpServer = null;
             serverThread = null;
@@ -76,10 +71,10 @@ public class RestEventHandler implements EventHandler<RestEvent> {
 
     @Override
     public void handle(RestEvent t) {
-        if(t.getEventType() == RestEvent.START_RESTSERVER_PROCESSING) {
+        if(t.getEventType() == RestEvent.START_RESTSERVER_THREAD) {
             if(null == trinityHttpServer && null == serverThread)
                 startHttpService();
-        } else if(t.getEventType() == RestEvent.STOP_RESTSERVER_PROCESSING) {
+        } else if(t.getEventType() == RestEvent.TERMINATE_RESTSERVER_THREAD) {
             if(null != trinityHttpServer && null != serverThread)
                 stopHttpService();
         }

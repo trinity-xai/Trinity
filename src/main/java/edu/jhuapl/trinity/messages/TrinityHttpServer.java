@@ -36,19 +36,24 @@ public class TrinityHttpServer implements Runnable {
     private static final int HTTP_PORT = 8080;
     private final Scene scene;
     ChannelFuture future;
+    EventLoopGroup parentGroup;
+    EventLoopGroup childGroup;      
+    ServerBootstrap bootstrap;
         
     public TrinityHttpServer(Scene scene) {
         this.scene = scene;
     }
     public void stop() {
         future.cancel(true);
+        childGroup.shutdownGracefully();
+        parentGroup.shutdownGracefully();
     }
     @Override
     public void run() {
-        EventLoopGroup parentGroup = new NioEventLoopGroup();
-        EventLoopGroup childGroup = new NioEventLoopGroup();
+        parentGroup = new NioEventLoopGroup();
+        childGroup = new NioEventLoopGroup();
         try {
-            ServerBootstrap bootstrap = new ServerBootstrap()
+            bootstrap = new ServerBootstrap()
                 .group(parentGroup, childGroup)
                 .channel(NioServerSocketChannel.class)
                 .childHandler(new ChannelInitializer<SocketChannel>() {
@@ -68,17 +73,6 @@ public class TrinityHttpServer implements Runnable {
             parentGroup.shutdownGracefully();
         }
     }
-//
-//    @Override
-//    public void handle(RestEvent t) {
-//        if(t.getEventType() == RestEvent.START_RESTSERVER_PROCESSING) {
-//            if(null != future) {
-//                future.cancel(true);
-//            }
-//        } else if(t.getEventType() == RestEvent.STOP_RESTSERVER_PROCESSING) {
-//            future.cancel(true);
-//        }
-//    }
 
     public static class TrinityServerHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
 

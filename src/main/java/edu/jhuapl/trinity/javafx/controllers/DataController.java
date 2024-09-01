@@ -64,8 +64,6 @@ public class DataController implements Initializable {
     @FXML
     private ToggleButton restInjectToggleButton;
     @FXML
-    private ToggleButton restProcessingToggleButton;
-    @FXML
     private ProgressIndicator restProgressIndicator;
 
     //// ZeroMQ stuff
@@ -151,10 +149,8 @@ public class DataController implements Initializable {
         });
         trajectorySizeSpinner.disableProperty().bind(
             showStateTrajectoryCheckBox.selectedProperty().not());
-        
-        restProcessingToggleButton.disableProperty().bind(restInjectToggleButton.selectedProperty().not());
-        restProgressIndicator.visibleProperty().bind(restProcessingToggleButton.selectedProperty());
-        
+
+        restProgressIndicator.visibleProperty().bind(restInjectToggleButton.selectedProperty());
     }
 
     @FXML
@@ -165,15 +161,6 @@ public class DataController implements Initializable {
         else
             scene.getRoot().fireEvent(new RestEvent(
             RestEvent.TERMINATE_RESTSERVER_THREAD, null));
-    }
-    @FXML
-    public void toggleRestProcessing() {
-        if(restProcessingToggleButton.isSelected())
-            scene.getRoot().fireEvent(new RestEvent(
-            RestEvent.START_RESTSERVER_PROCESSING, null));
-        else
-            scene.getRoot().fireEvent(new RestEvent(
-            RestEvent.STOP_RESTSERVER_PROCESSING, null));
     }
 
     @FXML
