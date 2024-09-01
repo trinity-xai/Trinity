@@ -2,14 +2,17 @@
   "resources": {
     "includes": [
       {
-        "pattern": ".*\\.md$"
+        "pattern": "\\Qlogback.xml\\E"
       },
       {
-        "pattern": ".*\\.properties$"
+        "pattern": "edu.jhuapl.trinity:.*"
       }
     ]
   },
   "bundles": [
+    {
+      "name": "MediaErrors"
+    },
     {
       "name": "com.sun.javafx.tk.quantum.QuantumMessagesBundle",
       "locales": [

@@ -3,6 +3,35 @@
     "name": "[Lcom.sun.glass.ui.Screen;"
   },
   {
+    "name": "[Ljava.lang.String;"
+  },
+  {
+    "name": "com.sun.glass.ui.CommonDialogs",
+    "methods": [
+      {
+        "name": "createFileChooserResult",
+        "parameterTypes": [
+          "java.lang.String[]",
+          "com.sun.glass.ui.CommonDialogs$ExtensionFilter[]",
+          "int"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "com.sun.glass.ui.CommonDialogs$ExtensionFilter",
+    "methods": [
+      {
+        "name": "extensionsToArray",
+        "parameterTypes": []
+      },
+      {
+        "name": "getDescription",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
     "name": "com.sun.glass.ui.Cursor",
     "methods": [
       {
@@ -240,6 +269,35 @@
     ]
   },
   {
+    "name": "com.sun.javafx.font.directwrite.DWRITE_MATRIX",
+    "fields": [
+      {
+        "name": "dx"
+      },
+      {
+        "name": "dy"
+      },
+      {
+        "name": "m11"
+      },
+      {
+        "name": "m12"
+      },
+      {
+        "name": "m21"
+      },
+      {
+        "name": "m22"
+      }
+    ],
+    "methods": [
+      {
+        "name": "<init>",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
     "name": "com.sun.javafx.font.directwrite.RECT",
     "fields": [
       {
@@ -278,6 +336,244 @@
     ]
   },
   {
+    "name": "com.sun.javafx.iio.common.ImageLoaderImpl",
+    "methods": [
+      {
+        "name": "emitWarning",
+        "parameterTypes": [
+          "java.lang.String"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "com.sun.javafx.iio.jpeg.JPEGImageLoader",
+    "methods": [
+      {
+        "name": "setInputAttributes",
+        "parameterTypes": [
+          "int",
+          "int",
+          "int",
+          "int",
+          "int",
+          "byte[]"
+        ]
+      },
+      {
+        "name": "setOutputAttributes",
+        "parameterTypes": [
+          "int",
+          "int"
+        ]
+      },
+      {
+        "name": "updateImageProgress",
+        "parameterTypes": [
+          "int"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "com.sun.media.jfxmedia.locator.ConnectionHolder",
+    "fields": [
+      {
+        "name": "buffer"
+      }
+    ],
+    "methods": [
+      {
+        "name": "closeConnection",
+        "parameterTypes": []
+      },
+      {
+        "name": "isRandomAccess",
+        "parameterTypes": []
+      },
+      {
+        "name": "isSeekable",
+        "parameterTypes": []
+      },
+      {
+        "name": "needBuffer",
+        "parameterTypes": []
+      },
+      {
+        "name": "property",
+        "parameterTypes": [
+          "int",
+          "int"
+        ]
+      },
+      {
+        "name": "readBlock",
+        "parameterTypes": [
+          "long",
+          "int"
+        ]
+      },
+      {
+        "name": "readNextBlock",
+        "parameterTypes": []
+      },
+      {
+        "name": "seek",
+        "parameterTypes": [
+          "long"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "com.sun.media.jfxmedia.locator.Locator",
+    "methods": [
+      {
+        "name": "createConnectionHolder",
+        "parameterTypes": []
+      },
+      {
+        "name": "getStringLocation",
+        "parameterTypes": []
+      }
+    ]
+  },
+  {
+    "name": "com.sun.media.jfxmedia.logging.Logger",
+    "methods": [
+      {
+        "name": "logMsg",
+        "parameterTypes": [
+          "int",
+          "java.lang.String"
+        ]
+      },
+      {
+        "name": "logMsg",
+        "parameterTypes": [
+          "int",
+          "java.lang.String",
+          "java.lang.String",
+          "java.lang.String"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "com.sun.media.jfxmediaimpl.NativeMediaPlayer",
+    "methods": [
+      {
+        "name": "sendAudioSpectrumEvent",
+        "parameterTypes": [
+          "double",
+          "double",
+          "boolean"
+        ]
+      },
+      {
+        "name": "sendAudioTrack",
+        "parameterTypes": [
+          "boolean",
+          "long",
+          "java.lang.String",
+          "int",
+          "java.lang.String",
+          "int",
+          "int",
+          "float"
+        ]
+      },
+      {
+        "name": "sendBufferProgressEvent",
+        "parameterTypes": [
+          "double",
+          "long",
+          "long",
+          "long"
+        ]
+      },
+      {
+        "name": "sendDurationUpdateEvent",
+        "parameterTypes": [
+          "double"
+        ]
+      },
+      {
+        "name": "sendFrameSizeChangedEvent",
+        "parameterTypes": [
+          "int",
+          "int"
+        ]
+      },
+      {
+        "name": "sendMarkerEvent",
+        "parameterTypes": [
+          "java.lang.String",
+          "double"
+        ]
+      },
+      {
+        "name": "sendNewFrameEvent",
+        "parameterTypes": [
+          "long"
+        ]
+      },
+      {
+        "name": "sendPlayerHaltEvent",
+        "parameterTypes": [
+          "java.lang.String",
+          "double"
+        ]
+      },
+      {
+        "name": "sendPlayerMediaErrorEvent",
+        "parameterTypes": [
+          "int"
+        ]
+      },
+      {
+        "name": "sendPlayerStateEvent",
+        "parameterTypes": [
+          "int",
+          "double"
+        ]
+      },
+      {
+        "name": "sendSubtitleTrack",
+        "parameterTypes": [
+          "boolean",
+          "long",
+          "java.lang.String",
+          "int",
+          "java.lang.String"
+        ]
+      },
+      {
+        "name": "sendVideoTrack",
+        "parameterTypes": [
+          "boolean",
+          "long",
+          "java.lang.String",
+          "int",
+          "int",
+          "int",
+          "float",
+          "boolean"
+        ]
+      },
+      {
+        "name": "sendWarning",
+        "parameterTypes": [
+          "int",
+          "java.lang.String"
+        ]
+      }
+    ]
+  },
+  {
+    "name": "com.sun.media.jfxmediaimpl.platform.gstreamer.GSTMediaPlayer"
+  },
+  {
     "name": "com.sun.prism.impl.PrismSettings",
     "fields": [
       {
@@ -290,10 +586,29 @@
         "name": "isVsyncEnabled"
       },
       {
-        "name": "verbose"
+        "name": "maxVram"
       },
       {
-        "name": "maxVram"
+        "name": "verbose"
+      }
+    ]
+  },
+  {
+    "name": "java.io.InputStream",
+    "methods": [
+      {
+        "name": "read",
+        "parameterTypes": [
+          "byte[]",
+          "int",
+          "int"
+        ]
+      },
+      {
+        "name": "skip",
+        "parameterTypes": [
+          "long"
+        ]
       }
     ]
   },
