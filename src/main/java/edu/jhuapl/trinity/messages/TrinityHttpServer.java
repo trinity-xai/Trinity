@@ -1,5 +1,6 @@
 package edu.jhuapl.trinity.messages;
 
+import edu.jhuapl.trinity.javafx.events.RestEvent;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
@@ -25,19 +26,22 @@ import javafx.scene.Scene;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.event.EventHandler;
 
 /**
  * @author phillsm1
  */
-public class TrinityHttpServer implements Runnable {
+public class TrinityHttpServer implements Runnable, EventHandler<RestEvent> {
 
     private static final Logger LOGGER = Logger.getLogger(TrinityServerHandler.class.getName());
     private static final String HTTP_HOST = "0.0.0.0";
     private static final int HTTP_PORT = 8080;
     private final Scene scene;
+    private TrinityServerHandler trinityServerHandler;
 
     public TrinityHttpServer(Scene scene) {
         this.scene = scene;
+        trinityServerHandler = new TrinityServerHandler(scene);
     }
 
     @Override
@@ -50,7 +54,7 @@ public class TrinityHttpServer implements Runnable {
                 protected void initChannel(SocketChannel ch) {
                     ch.pipeline().addLast(new HttpServerCodec());
                     ch.pipeline().addLast(new HttpObjectAggregator(Integer.MAX_VALUE));
-                    ch.pipeline().addLast(new TrinityServerHandler(scene));
+                    ch.pipeline().addLast(trinityServerHandler);
                 }
             });
             ChannelFuture future = bootstrap.bind(HTTP_HOST, HTTP_PORT).sync();
@@ -63,12 +67,22 @@ public class TrinityHttpServer implements Runnable {
         }
     }
 
+    @Override
+    public void handle(RestEvent t) {
+        if(t.getEventType() == RestEvent.START_RESTSERVER_PROCESSING) {
+            trinityServerHandler.processingMessages = true;
+        } else if(t.getEventType() == RestEvent.STOP_RESTSERVER_PROCESSING) {
+            trinityServerHandler.processingMessages = false;
+        }
+    }
+
     public static class TrinityServerHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
 
         private static final Logger LOGGER = Logger.getLogger(TrinityServerHandler.class.getName());
 
         private final MessageProcessor processor;
-
+        public boolean processingMessages = true;
+        
         public TrinityServerHandler(Scene scene) {
             this.processor = new MessageProcessor(scene);
         }
@@ -77,19 +91,23 @@ public class TrinityHttpServer implements Runnable {
         public void channelRead0(ChannelHandlerContext ctx, FullHttpRequest request) {
             // Check HTTP Method
             if (request.method() != HttpMethod.POST) {
-                this.handleInvalidMethodResponse(ctx, request);
+                handleInvalidMethodResponse(ctx, request);
                 return;
             }
-
+            //Don't process if we have paused processing
+            if(!processingMessages) {
+                handleErrorResponse(ctx, request, "Not Receiving.");
+                return;
+            } 
             // Process Request
             String rawContent = request.content().toString(CharsetUtil.UTF_8);
             boolean success = processMessage(rawContent);
 
             // Generate the response
             if (success) {
-                this.handleOkResponse(ctx, request);
+                handleOkResponse(ctx, request);
             } else {
-                this.handleErrorResponse(ctx, request, "Malformed JSON");
+                handleErrorResponse(ctx, request, "Malformed JSON");
             }
         }
 
