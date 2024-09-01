@@ -476,7 +476,7 @@ public class App extends Application {
         if(enableHttp) {
             reh.startHttpService();
         }
-        
+
         setupMissionTimer(scene);
         //add helper tools and overlays
         circleSpinner = new CircleProgressIndicator();

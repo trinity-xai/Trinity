@@ -60,7 +60,7 @@
                                         </HBox>
                                         <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="169.0" spacing="10.0">
                                             <children>
-                                                <Label prefWidth="150.0" text="REST Injection Service" />
+                                                <Label prefWidth="150.0" text="HTTP Service" />
                                                 <ToggleButton fx:id="restInjectToggleButton" minWidth="100.0" mnemonicParsing="false" onAction="#toggleRestInject" text="Enable" />
                                                 <ProgressIndicator fx:id="restProgressIndicator" prefHeight="32.0" prefWidth="32.0" style="-fx-background-color: #00000000;" />
                                             </children>

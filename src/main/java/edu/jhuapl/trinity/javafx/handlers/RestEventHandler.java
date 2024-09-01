@@ -25,58 +25,76 @@ import edu.jhuapl.trinity.javafx.events.RestEvent;
 import edu.jhuapl.trinity.messages.TrinityHttpServer;
 import javafx.application.Platform;
 import javafx.event.EventHandler;
+import javafx.scene.Scene;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 
-import javafx.scene.Scene;
+import java.util.concurrent.ExecutorService;
+import java.util.concurrent.Executors;
+import java.util.concurrent.Future;
+import java.util.logging.Logger;
 
 /**
  * @author Sean Phillips
  */
 public class RestEventHandler implements EventHandler<RestEvent> {
-    Scene scene;
-    TrinityHttpServer trinityHttpServer = null;
-    Thread serverThread = null;
-    
+
+    private static final Logger LOGGER = Logger.getLogger(RestEventHandler.class.getName());
+
+    private final Scene scene;
+    private ExecutorService executor;
+    private Future<?> serverFuture;
+
+
     public RestEventHandler(Scene scene) {
         this.scene = scene;
+        this.executor = Executors.newSingleThreadExecutor();
     }
-    
+
     public void startHttpService() {
-        if(null == trinityHttpServer && null == serverThread) {
-            System.out.println("Creating Trinity HTTP Server...");
-            trinityHttpServer = new TrinityHttpServer(scene);
-            serverThread = new Thread(trinityHttpServer, "Trinity HTTP Server");
-            serverThread.setDaemon(true);
-            serverThread.start();        
-            Platform.runLater(() -> {
-                scene.getRoot().fireEvent(
-                    new CommandTerminalEvent("Creating Trinity HTTP Server...",
-                        new Font("Consolas", 20), Color.GREEN));
-            });
+        if (serverFuture != null && !serverFuture.isDone()) {
+            LOGGER.warning("Trinity HTTP Server is already running.");
+            return;
         }
+
+        LOGGER.info("Creating Trinity HTTP Server...");
+        serverFuture = executor.submit(new TrinityHttpServer(scene));
+
+        Platform.runLater(() -> {
+            scene.getRoot().fireEvent(
+                new CommandTerminalEvent("Creating Trinity HTTP Server...",
+                    new Font("Consolas", 20), Color.GREEN));
+        });
     }
+
     public void stopHttpService() {
-        if(null != trinityHttpServer && null != serverThread) {
-            Platform.runLater(() -> {
-                scene.getRoot().fireEvent(
-                    new CommandTerminalEvent("Stopping Trinity HTTP Server...",
-                        new Font("Consolas", 20), Color.YELLOW));
-            });
-            trinityHttpServer.stop(); //will kill future inside the runnable.
-            trinityHttpServer = null;
-            serverThread = null;
+        if (serverFuture == null || serverFuture.isDone()) {
+            LOGGER.warning("Trinity HTTP Server is not running.");
+            return;
         }
+        Platform.runLater(() -> {
+            scene.getRoot().fireEvent(
+                new CommandTerminalEvent("Stopping Trinity HTTP Server...",
+                    new Font("Consolas", 20), Color.YELLOW));
+        });
+
+        // Cancel the running task and interrupt if running
+        serverFuture.cancel(true);
+        // Disable new tasks from being submitted
+        executor.shutdown();
+        // Cancel currently executing tasks (if any)
+        executor.shutdownNow();
+
+        // Reset the executor service for future use
+        executor = Executors.newSingleThreadExecutor();
     }
 
     @Override
     public void handle(RestEvent t) {
-        if(t.getEventType() == RestEvent.START_RESTSERVER_THREAD) {
-            if(null == trinityHttpServer && null == serverThread)
-                startHttpService();
-        } else if(t.getEventType() == RestEvent.TERMINATE_RESTSERVER_THREAD) {
-            if(null != trinityHttpServer && null != serverThread)
-                stopHttpService();
+        if (t.getEventType() == RestEvent.START_RESTSERVER_THREAD) {
+            startHttpService();
+        } else if (t.getEventType() == RestEvent.TERMINATE_RESTSERVER_THREAD) {
+            stopHttpService();
         }
     }
 }

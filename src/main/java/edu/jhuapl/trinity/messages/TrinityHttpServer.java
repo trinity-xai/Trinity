@@ -32,28 +32,20 @@ import java.util.logging.Logger;
 public class TrinityHttpServer implements Runnable {
 
     private static final Logger LOGGER = Logger.getLogger(TrinityHttpServer.class.getName());
-    private static final String HTTP_HOST = "0.0.0.0";
-    private static final int HTTP_PORT = 8080;
+    private static final String DEFAULT_HTTP_HOST = "0.0.0.0";
+    private static final int DEFAULT_HTTP_PORT = 8080;
     private final Scene scene;
-    ChannelFuture future;
-    EventLoopGroup parentGroup;
-    EventLoopGroup childGroup;      
-    ServerBootstrap bootstrap;
-        
+
     public TrinityHttpServer(Scene scene) {
         this.scene = scene;
     }
-    public void stop() {
-        future.cancel(true);
-        childGroup.shutdownGracefully();
-        parentGroup.shutdownGracefully();
-    }
+
     @Override
     public void run() {
-        parentGroup = new NioEventLoopGroup();
-        childGroup = new NioEventLoopGroup();
+        EventLoopGroup parentGroup = new NioEventLoopGroup();
+        EventLoopGroup childGroup = new NioEventLoopGroup();
         try {
-            bootstrap = new ServerBootstrap()
+            ServerBootstrap bootstrap = new ServerBootstrap()
                 .group(parentGroup, childGroup)
                 .channel(NioServerSocketChannel.class)
                 .childHandler(new ChannelInitializer<SocketChannel>() {
@@ -63,11 +55,11 @@ public class TrinityHttpServer implements Runnable {
                         ch.pipeline().addLast(new HttpObjectAggregator(Integer.MAX_VALUE));
                         ch.pipeline().addLast(new TrinityServerHandler(scene));
                     }
-            });
-            future = bootstrap.bind(HTTP_HOST, HTTP_PORT).sync();
+                });
+            ChannelFuture future = bootstrap.bind(DEFAULT_HTTP_HOST, DEFAULT_HTTP_PORT).sync();
             future.channel().closeFuture().sync();
         } catch (InterruptedException ex) {
-            LOGGER.log(Level.SEVERE, null, ex);
+            LOGGER.log(Level.WARNING, "Trinity HTTP Server Stopped.");
         } finally {
             childGroup.shutdownGracefully();
             parentGroup.shutdownGracefully();
@@ -79,7 +71,7 @@ public class TrinityHttpServer implements Runnable {
         private static final Logger LOGGER = Logger.getLogger(TrinityServerHandler.class.getName());
 
         private final MessageProcessor processor;
-        
+
         public TrinityServerHandler(Scene scene) {
             this.processor = new MessageProcessor(scene);
         }
