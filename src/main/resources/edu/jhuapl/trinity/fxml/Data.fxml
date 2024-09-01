@@ -55,19 +55,13 @@
                                         <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="37.0" spacing="10.0">
                                             <children>
                                                 <Label layoutX="10.0" layoutY="10.0" prefWidth="150.0" text="Port" />
-                                                <TextField fx:id="restPortTextField" text="8080" />
+                                                <TextField fx:id="restPortTextField" editable="false" text="8080" />
                                             </children>
                                         </HBox>
                                         <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="169.0" spacing="10.0">
                                             <children>
                                                 <Label prefWidth="150.0" text="REST Injection Service" />
                                                 <ToggleButton fx:id="restInjectToggleButton" minWidth="100.0" mnemonicParsing="false" onAction="#toggleRestInject" text="Enable" />
-                                            </children>
-                                        </HBox>
-                                        <HBox alignment="CENTER_LEFT" spacing="10.0">
-                                            <children>
-                                                <Label prefWidth="150.0" text="Message Processing" />
-                                                <ToggleButton fx:id="restProcessingToggleButton" minWidth="100.0" mnemonicParsing="false" onAction="#toggleRestProcessing" text="Enable" />
                                                 <ProgressIndicator fx:id="restProgressIndicator" prefHeight="32.0" prefWidth="32.0" style="-fx-background-color: #00000000;" />
                                             </children>
                                         </HBox>

@@ -12,7 +12,7 @@
             <properties>
                 <exec.vmArgs>-Dprism.maxvram=2G</exec.vmArgs>
                 <exec.args>${exec.vmArgs} -classpath %classpath ${exec.mainClass} ${exec.appArgs}</exec.args>
-                <exec.appArgs>--inject=true</exec.appArgs>
+                <exec.appArgs>--http=true</exec.appArgs>
                 <exec.mainClass>edu.jhuapl.trinity.TrinityMain</exec.mainClass>
                 <exec.executable>java</exec.executable>
             </properties>
@@ -29,7 +29,7 @@
             <properties>
                 <exec.vmArgs>-Dprism.maxvram=2G -agentlib:jdwp=transport=dt_socket,server=n,address=${jpda.address}</exec.vmArgs>
                 <exec.args>${exec.vmArgs} -classpath %classpath ${exec.mainClass} ${exec.appArgs}</exec.args>
-                <exec.appArgs>--inject=true</exec.appArgs>
+                <exec.appArgs>--http=true</exec.appArgs>
                 <exec.mainClass>edu.jhuapl.trinity.TrinityMain</exec.mainClass>
                 <exec.executable>java</exec.executable>
                 <jpda.listen>true</jpda.listen>
@@ -47,7 +47,7 @@
             <properties>
                 <exec.vmArgs>-Dprism.maxvram=2G</exec.vmArgs>
                 <exec.args>${exec.vmArgs} -classpath %classpath ${exec.mainClass} ${exec.appArgs}</exec.args>
-                <exec.appArgs>--inject=true</exec.appArgs>
+                <exec.appArgs>--http=true</exec.appArgs>
                 <exec.mainClass>edu.jhuapl.trinity.TrinityMain</exec.mainClass>
                 <exec.executable>java</exec.executable>
             </properties>

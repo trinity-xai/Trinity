@@ -1,6 +1,5 @@
 package edu.jhuapl.trinity.messages;
 
-import edu.jhuapl.trinity.javafx.events.RestEvent;
 import io.netty.bootstrap.ServerBootstrap;
 import io.netty.buffer.Unpooled;
 import io.netty.channel.ChannelFuture;
@@ -26,38 +25,41 @@ import javafx.scene.Scene;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javafx.event.EventHandler;
 
 /**
  * @author phillsm1
  */
-public class TrinityHttpServer implements Runnable, EventHandler<RestEvent> {
+public class TrinityHttpServer implements Runnable {
 
-    private static final Logger LOGGER = Logger.getLogger(TrinityServerHandler.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(TrinityHttpServer.class.getName());
     private static final String HTTP_HOST = "0.0.0.0";
     private static final int HTTP_PORT = 8080;
     private final Scene scene;
-    private TrinityServerHandler trinityServerHandler;
-
+    ChannelFuture future;
+        
     public TrinityHttpServer(Scene scene) {
         this.scene = scene;
-        trinityServerHandler = new TrinityServerHandler(scene);
     }
-
+    public void stop() {
+        future.cancel(true);
+    }
     @Override
     public void run() {
         EventLoopGroup parentGroup = new NioEventLoopGroup();
         EventLoopGroup childGroup = new NioEventLoopGroup();
         try {
-            ServerBootstrap bootstrap = new ServerBootstrap().group(parentGroup, childGroup).channel(NioServerSocketChannel.class).childHandler(new ChannelInitializer<SocketChannel>() {
-                @Override
-                protected void initChannel(SocketChannel ch) {
-                    ch.pipeline().addLast(new HttpServerCodec());
-                    ch.pipeline().addLast(new HttpObjectAggregator(Integer.MAX_VALUE));
-                    ch.pipeline().addLast(trinityServerHandler);
-                }
+            ServerBootstrap bootstrap = new ServerBootstrap()
+                .group(parentGroup, childGroup)
+                .channel(NioServerSocketChannel.class)
+                .childHandler(new ChannelInitializer<SocketChannel>() {
+                    @Override
+                    protected void initChannel(SocketChannel ch) {
+                        ch.pipeline().addLast(new HttpServerCodec());
+                        ch.pipeline().addLast(new HttpObjectAggregator(Integer.MAX_VALUE));
+                        ch.pipeline().addLast(new TrinityServerHandler(scene));
+                    }
             });
-            ChannelFuture future = bootstrap.bind(HTTP_HOST, HTTP_PORT).sync();
+            future = bootstrap.bind(HTTP_HOST, HTTP_PORT).sync();
             future.channel().closeFuture().sync();
         } catch (InterruptedException ex) {
             LOGGER.log(Level.SEVERE, null, ex);
@@ -66,22 +68,23 @@ public class TrinityHttpServer implements Runnable, EventHandler<RestEvent> {
             parentGroup.shutdownGracefully();
         }
     }
-
-    @Override
-    public void handle(RestEvent t) {
-        if(t.getEventType() == RestEvent.START_RESTSERVER_PROCESSING) {
-            trinityServerHandler.processingMessages = true;
-        } else if(t.getEventType() == RestEvent.STOP_RESTSERVER_PROCESSING) {
-            trinityServerHandler.processingMessages = false;
-        }
-    }
+//
+//    @Override
+//    public void handle(RestEvent t) {
+//        if(t.getEventType() == RestEvent.START_RESTSERVER_PROCESSING) {
+//            if(null != future) {
+//                future.cancel(true);
+//            }
+//        } else if(t.getEventType() == RestEvent.STOP_RESTSERVER_PROCESSING) {
+//            future.cancel(true);
+//        }
+//    }
 
     public static class TrinityServerHandler extends SimpleChannelInboundHandler<FullHttpRequest> {
 
         private static final Logger LOGGER = Logger.getLogger(TrinityServerHandler.class.getName());
 
         private final MessageProcessor processor;
-        public boolean processingMessages = true;
         
         public TrinityServerHandler(Scene scene) {
             this.processor = new MessageProcessor(scene);
@@ -94,11 +97,6 @@ public class TrinityHttpServer implements Runnable, EventHandler<RestEvent> {
                 handleInvalidMethodResponse(ctx, request);
                 return;
             }
-            //Don't process if we have paused processing
-            if(!processingMessages) {
-                handleErrorResponse(ctx, request, "Not Receiving.");
-                return;
-            } 
             // Process Request
             String rawContent = request.content().toString(CharsetUtil.UTF_8);
             boolean success = processMessage(rawContent);
@@ -149,7 +147,5 @@ public class TrinityHttpServer implements Runnable, EventHandler<RestEvent> {
                 return false;
             }
         }
-
     }
-
 }
