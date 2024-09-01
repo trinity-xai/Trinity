@@ -821,7 +821,7 @@ public class Projections3DPane extends StackPane implements
                 radarPlotPane.show();
             }
         });
-        
+
         ImageView navigator = ResourceUtils.loadIcon("navigator", ICON_FIT_HEIGHT);
         navigator.setEffect(glow);
         MenuItem navigatorItem = new MenuItem("Content Navigator", navigator);
@@ -829,7 +829,7 @@ public class Projections3DPane extends StackPane implements
             subScene.getParent().getScene().getRoot().fireEvent(
                 new ApplicationEvent(ApplicationEvent.SHOW_NAVIGATOR_PANE));
         });
-        
+
         ImageView clearProjection = ResourceUtils.loadIcon("clear", ICON_FIT_HEIGHT);
         radar.setEffect(glow);
         MenuItem clearProjectionItem = new MenuItem("Clear Projection Data", clearProjection);
@@ -1169,9 +1169,9 @@ public class Projections3DPane extends StackPane implements
                     Pane desktopPane = App.getAppPathPaneStack();
                     App.getAppPathPaneStack().getChildren().add(vp);
                     vp.moveTo(desktopPane.getWidth() / 2.0
-                        - vp.getBoundsInLocal().getWidth() / 2.0, 
-                            desktopPane.getHeight() / 2.0
-                        - vp.getBoundsInLocal().getHeight() / 2.0);
+                            - vp.getBoundsInLocal().getWidth() / 2.0,
+                        desktopPane.getHeight() / 2.0
+                            - vp.getBoundsInLocal().getHeight() / 2.0);
                     vp.restore();
                     vp.show();
                     vp.setOpacity(1);

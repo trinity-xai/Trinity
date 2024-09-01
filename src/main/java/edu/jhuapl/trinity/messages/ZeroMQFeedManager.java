@@ -77,8 +77,8 @@ public class ZeroMQFeedManager extends ScheduledThreadPoolExecutor {
     private Socket subscriber;
     private int threadGeneration = 0;
 
-    public ZeroMQFeedManager(int corePoolSize,ZeroMQSubscriberConfig config, 
-        MessageProcessor processor) {
+    public ZeroMQFeedManager(int corePoolSize, ZeroMQSubscriberConfig config,
+                             MessageProcessor processor) {
         super(corePoolSize);
         this.config = config;
         this.processor = processor;

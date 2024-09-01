@@ -22,8 +22,8 @@ package edu.jhuapl.trinity.data.messages;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import java.util.ArrayList;
 
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
 
@@ -37,7 +37,7 @@ public class VectorMask extends MessageData {
     public static final String TYPESTRING = "vector_mask";
 
     //<editor-fold defaultstate="collapsed" desc="Payload Fields">
-    private String entityId; 
+    private String entityId;
     private List<Double> data;
     private String color; //ex #FF0000FF == fully opaque Red in RGBA HEX form
     //</editor-fold>
@@ -63,6 +63,7 @@ public class VectorMask extends MessageData {
         }
         return states;
     };
+
     public static VectorMask fromData(double[] data, int width, double scaling) {
         VectorMask fv = new VectorMask();
         for (int vectorIndex = 0; vectorIndex < width; vectorIndex++) {
@@ -70,6 +71,7 @@ public class VectorMask extends MessageData {
         }
         return fv;
     }
+
     public double minDataValue() {
         return getData().stream().min(Double::compare).get();
     }
@@ -77,10 +79,12 @@ public class VectorMask extends MessageData {
     public double maxDataValue() {
         return getData().stream().max(Double::compare).get();
     }
+
     public double totalDataWidth() {
         return Math.abs(maxDataValue() - minDataValue());
     }
     //<editor-fold defaultstate="collapsed" desc="Properties">
+
     /**
      * @return the entityId
      */

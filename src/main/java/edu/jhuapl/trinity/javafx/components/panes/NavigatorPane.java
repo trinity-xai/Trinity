@@ -27,25 +27,25 @@ import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.events.ImageEvent;
 import edu.jhuapl.trinity.utils.ResourceUtils;
-import java.io.File;
-import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javafx.application.Platform;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.Tooltip;
 import javafx.scene.effect.InnerShadow;
+import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.scene.media.MediaView;
 import javafx.scene.paint.Color;
-
-import javafx.scene.image.Image;
 import javafx.scene.text.Font;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.logging.Level;
+import java.util.logging.Logger;
 
 /**
  * @author Sean Phillips
@@ -61,7 +61,7 @@ public class NavigatorPane extends LitPathPane {
     Label urlLabel;
     ImageView imageView;
     VBox contentVBox;
-    
+
     private static BorderPane createContent() {
         BorderPane bpOilSpill = new BorderPane();
         MediaView mediaView = new MediaView();
@@ -80,14 +80,14 @@ public class NavigatorPane extends LitPathPane {
         imageView.setFitWidth(DEFAULT_FIT_WIDTH);
         imageView.setFitHeight(DEFAULT_FIT_WIDTH);
         imageView.setPreserveRatio(true);
-        
+
         urlLabel = new Label("Waiting for Image");
         urlLabel.setMaxWidth(DEFAULT_FIT_WIDTH);
         urlLabel.setTooltip(new Tooltip("Waiting for Image"));
         imageLabel = new Label("No Label");
         imageLabel.setMaxWidth(DEFAULT_FIT_WIDTH);
         contentVBox = new VBox(5, imageView, urlLabel, imageLabel);
-        
+
         ImageView refresh = ResourceUtils.loadIcon("refresh", 32);
 
         VBox refreshVBox = new VBox(1, refresh, new Label("Refresh"));
@@ -113,21 +113,21 @@ public class NavigatorPane extends LitPathPane {
         });
 
         bp.setCenter(contentVBox);
-        
+
         scene.addEventHandler(ApplicationEvent.SET_IMAGERY_BASEPATH, e -> {
             this.imageryBasePath = (String) e.object;
-        });        
+        });
         scene.addEventHandler(ImageEvent.NEW_VECTORMASK_COLLECTION, e -> {
             VectorMaskCollection vmc = (VectorMaskCollection) e.object;
-            
-        });        
-        scene.addEventHandler(FeatureVectorEvent.SELECT_FEATURE_VECTOR, e-> {
+
+        });
+        scene.addEventHandler(FeatureVectorEvent.SELECT_FEATURE_VECTOR, e -> {
             FeatureVector fv = (FeatureVector) e.object;
-            if(null != fv.getLabel())
+            if (null != fv.getLabel())
                 imageLabel.setText(fv.getLabel());
             else
                 imageLabel.setText("No Label");
-            if(null != fv.getImageURL()) {
+            if (null != fv.getImageURL()) {
                 try {
                     File file = new File(imageryBasePath + fv.getImageURL());
                     currentImage = new Image(file.toURI().toURL().toExternalForm());
@@ -137,7 +137,7 @@ public class NavigatorPane extends LitPathPane {
                 } catch (IOException ex) {
                     Platform.runLater(() -> {
                         getScene().getRoot().fireEvent(
-                            new CommandTerminalEvent("Unable to load Image, check Path.", 
+                            new CommandTerminalEvent("Unable to load Image, check Path.",
                                 new Font("Consolas", 20), Color.RED));
                     });
 

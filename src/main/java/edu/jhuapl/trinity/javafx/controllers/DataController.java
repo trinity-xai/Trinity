@@ -155,12 +155,12 @@ public class DataController implements Initializable {
 
     @FXML
     public void toggleRestInject() {
-        if(restInjectToggleButton.isSelected())
+        if (restInjectToggleButton.isSelected())
             scene.getRoot().fireEvent(new RestEvent(
-            RestEvent.START_RESTSERVER_THREAD, null));
+                RestEvent.START_RESTSERVER_THREAD, null));
         else
             scene.getRoot().fireEvent(new RestEvent(
-            RestEvent.TERMINATE_RESTSERVER_THREAD, null));
+                RestEvent.TERMINATE_RESTSERVER_THREAD, null));
     }
 
     @FXML

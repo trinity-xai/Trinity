@@ -26,6 +26,9 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.jhuapl.trinity.data.messages.ChannelFrame;
 import edu.jhuapl.trinity.data.messages.FeatureCollection;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
+import javafx.application.Platform;
+import javafx.scene.Scene;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -33,8 +36,6 @@ import java.util.concurrent.atomic.AtomicLong;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import java.util.stream.Collectors;
-import javafx.application.Platform;
-import javafx.scene.Scene;
 
 /**
  * @author Sean Phillips
@@ -49,14 +50,15 @@ public enum MessageUtils {
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         try {
             FeatureCollection featureCollection = mapper.readValue(message, FeatureCollection.class);
-            Platform.runLater(()-> {
+            Platform.runLater(() -> {
                 scene.getRoot().fireEvent(new FeatureVectorEvent(
-                FeatureVectorEvent.NEW_FEATURE_COLLECTION, featureCollection));
-            });            
+                    FeatureVectorEvent.NEW_FEATURE_COLLECTION, featureCollection));
+            });
         } catch (JsonProcessingException ex) {
             Logger.getLogger(MessageUtils.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
+
     public static ChannelFrame buildSpikeyChannelFrame(int totalSize, double spikeHeightCap, int numberOfSpikes, int spikeSize) {
         ChannelFrame frame = new ChannelFrame(totalSize);
         if (spikeSize > totalSize)

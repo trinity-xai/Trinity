@@ -22,7 +22,6 @@ package edu.jhuapl.trinity.data.messages;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import edu.jhuapl.trinity.data.messages.ChannelFrame;
 import edu.jhuapl.trinity.utils.MessageUtils;
 import org.zeromq.SocketType;
 import org.zeromq.ZContext;

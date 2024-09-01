@@ -23,11 +23,11 @@ package edu.jhuapl.trinity.data.messages;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import edu.jhuapl.trinity.utils.Utils;
+import javafx.scene.paint.Color;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import javafx.scene.paint.Color;
 
 /**
  * @author Sean Phillips
@@ -145,8 +145,8 @@ public class VectorMaskCollection extends MessageData {
         for (int shapleyVectorIndex = 0; shapleyVectorIndex < rows; shapleyVectorIndex++) {
             for (int vectorIndex = 0; vectorIndex < columns; vectorIndex++) {
                 VectorMask sv = new VectorMask();
-                sv.getData().add(rando.nextDouble()*scale);
-                Color color = new Color(rando.nextDouble(),1.0, 1.0, 1.0);
+                sv.getData().add(rando.nextDouble() * scale);
+                Color color = new Color(rando.nextDouble(), 1.0, 1.0, 1.0);
                 sv.setColor("#" + Utils.convertColorToString(color));
                 vectorMasks.add(sv);
             }

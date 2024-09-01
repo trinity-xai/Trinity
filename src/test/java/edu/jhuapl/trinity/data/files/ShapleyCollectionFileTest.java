@@ -1,39 +1,39 @@
 package edu.jhuapl.trinity.data.files;
 
 import edu.jhuapl.trinity.data.messages.ShapleyCollection;
-import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.AfterAll;
-import org.junit.jupiter.api.BeforeEach;
+import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
+import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 
 /**
- *
  * @author sean phillips
  */
 public class ShapleyCollectionFileTest {
-    
+
     public ShapleyCollectionFileTest() {
     }
-    
+
     @BeforeAll
     public static void setUpClass() {
     }
-    
+
     @AfterAll
     public static void tearDownClass() {
     }
-    
+
     @BeforeEach
     public void setUp() {
     }
-    
+
     @AfterEach
     public void tearDown() {
     }
 
     /**
      * Test of writeContent method, of class ShapleyCollectionFile.
+     *
      * @throws java.lang.Exception
      */
     @Test
@@ -45,5 +45,5 @@ public class ShapleyCollectionFileTest {
         instance.shapleyCollection = sc;
         instance.writeContent();
     }
-    
+
 }

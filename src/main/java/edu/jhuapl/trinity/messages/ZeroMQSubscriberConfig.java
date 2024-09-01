@@ -25,7 +25,9 @@ package edu.jhuapl.trinity.messages;
  */
 public class ZeroMQSubscriberConfig {
 
-    public static enum CONNECTION {SUBSCRIBER, PULL};
+    public static enum CONNECTION {SUBSCRIBER, PULL}
+
+    ;
 
     public static final String DEFAULT_NAME = "ZeroMQ";
     public static final String DEFAULT_DESCRIPTION = "Default";

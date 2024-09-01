@@ -70,7 +70,6 @@ import edu.jhuapl.trinity.javafx.javafx3d.Manifold3D;
 import edu.jhuapl.trinity.javafx.javafx3d.Projections3DPane;
 import edu.jhuapl.trinity.javafx.javafx3d.RetroWavePane;
 import edu.jhuapl.trinity.messages.MessageProcessor;
-import edu.jhuapl.trinity.messages.TrinityHttpServer;
 import edu.jhuapl.trinity.messages.ZeroMQFeedManager;
 import edu.jhuapl.trinity.messages.ZeroMQSubscriberConfig;
 import edu.jhuapl.trinity.utils.AnalysisUtils;
@@ -172,7 +171,6 @@ public class App extends Application {
     TimelineAnimation timelineAnimation;
     boolean is4k = false;
     boolean enableHttp = false;
-    TrinityHttpServer trinityHttpServer;
 
     @Override
     public void start(Stage stage) throws IOException {
@@ -473,7 +471,7 @@ public class App extends Application {
         reh = new RestEventHandler(scene);
         scene.addEventHandler(RestEvent.START_RESTSERVER_THREAD, reh);
         scene.addEventHandler(RestEvent.TERMINATE_RESTSERVER_THREAD, reh);
-        if(enableHttp) {
+        if (enableHttp) {
             reh.startHttpService();
         }
 
@@ -863,12 +861,12 @@ public class App extends Application {
             feed.setEnableProcessing(false);
         });
         System.out.println("Checking to auto-enable ZeroMQ Listener...");
-        if(null != namedParameters && namedParameters.containsKey("zeromq")) {
+        if (null != namedParameters && namedParameters.containsKey("zeromq")) {
             String zeroMQ = namedParameters.get("zeromq");
-            if(null != zeroMQ) {
+            if (null != zeroMQ) {
                 System.out.println("ZeroMQ Status: " + zeroMQ);
             }
-            Platform.runLater(()->scene.getRoot().fireEvent(
+            Platform.runLater(() -> scene.getRoot().fireEvent(
                 new ZeroMQEvent(ZeroMQEvent.ZEROMQ_ESTABLISH_CONNECTION, subscriberConfig)));
         }
 

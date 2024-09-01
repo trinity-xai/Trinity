@@ -68,10 +68,10 @@ public class MessageProcessor {
     public void process(String message) throws JsonProcessingException, IOException {
         if (FeatureCollection.isFeatureCollection(message)) {
             FeatureCollection featureCollection = mapper.readValue(message, FeatureCollection.class);
-            Platform.runLater(()-> {
+            Platform.runLater(() -> {
                 scene.getRoot().fireEvent(new FeatureVectorEvent(
-                FeatureVectorEvent.NEW_FEATURE_COLLECTION, featureCollection));
-            });            
+                    FeatureVectorEvent.NEW_FEATURE_COLLECTION, featureCollection));
+            });
         } else if (FeatureVector.isFeatureVector(message)) {
             FeatureVector featureVector = getMapper().readValue(message, FeatureVector.class);
             //fire event to load data in JavaFX Scene
@@ -89,7 +89,7 @@ public class MessageProcessor {
                 scene.getRoot().fireEvent(new FeatureVectorEvent(
                     FeatureVectorEvent.NEW_LABEL_CONFIG, labelConfig));
             });
-        } else if(ChannelFrame.isChannelFrame(message)) {
+        } else if (ChannelFrame.isChannelFrame(message)) {
             ChannelFrame frame = getMapper().readValue(message, ChannelFrame.class);
             System.out.println("Frame: " + frame.getFrameId());
             System.out.println("Channel Values: " + frame.getChannelData());
@@ -105,8 +105,8 @@ public class MessageProcessor {
             Platform.runLater(() -> {
                 scene.getRoot().fireEvent(new FactorAnalysisDataEvent(fas));
             });
-        } 
-        if(message.equalsIgnoreCase("howdy")){
+        }
+        if (message.equalsIgnoreCase("howdy")) {
             System.out.println("Well hello...");
         }
     }
