@@ -168,6 +168,7 @@ public class App extends Application {
     MissionTimerX missionTimerX;
     TimelineAnimation timelineAnimation;
     boolean is4k = false;
+    boolean enableInject = false;
     TrinityHttpServer trinityHttpServer;
 
     @Override
@@ -459,6 +460,12 @@ public class App extends Application {
                     theConfig = Configuration.defaultConfiguration();
                 }
             }
+            if (namedParameters.containsKey("inject")) {
+                String inject = namedParameters.get("inject");
+                System.out.println("Inject found: " + inject);
+                enableInject = Boolean.valueOf(inject);
+            }
+            
         }
         setupMissionTimer(scene);
         //add helper tools and overlays
@@ -855,11 +862,13 @@ public class App extends Application {
                 new ZeroMQEvent(ZeroMQEvent.ZEROMQ_ESTABLISH_CONNECTION, subscriberConfig)));
         }
         try {
-            System.out.println("Creating Netty Server...");
-            trinityHttpServer = new TrinityHttpServer(scene);
-            Thread serverThread = new Thread(trinityHttpServer, "Trinity Netty");
-            serverThread.setDaemon(true);
-            serverThread.start();
+            if(enableInject) {
+                System.out.println("Creating Netty Server...");
+                trinityHttpServer = new TrinityHttpServer(scene);
+                Thread serverThread = new Thread(trinityHttpServer, "Trinity Netty");
+                serverThread.setDaemon(true);
+                serverThread.start();
+            }
         } catch(Exception ex) {
             Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
         }
