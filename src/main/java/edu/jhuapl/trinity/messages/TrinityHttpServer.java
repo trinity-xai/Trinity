@@ -33,7 +33,7 @@ import javafx.event.EventHandler;
  */
 public class TrinityHttpServer implements Runnable, EventHandler<RestEvent> {
 
-    private static final Logger LOGGER = Logger.getLogger(TrinityServerHandler.class.getName());
+    private static final Logger LOGGER = Logger.getLogger(TrinityHttpServer.class.getName());
     private static final String HTTP_HOST = "0.0.0.0";
     private static final int HTTP_PORT = 8080;
     private final Scene scene;
