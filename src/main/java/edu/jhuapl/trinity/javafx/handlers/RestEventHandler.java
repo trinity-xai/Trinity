@@ -22,7 +22,7 @@ package edu.jhuapl.trinity.javafx.handlers;
 
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.RestEvent;
-import edu.jhuapl.trinity.messages.TrinityHttpServer;
+import edu.jhuapl.trinity.messages.TrinityBasicHttpServer;
 import javafx.application.Platform;
 import javafx.event.EventHandler;
 import javafx.scene.Scene;
@@ -32,14 +32,15 @@ import javafx.scene.text.Font;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Sean Phillips
  */
 public class RestEventHandler implements EventHandler<RestEvent> {
 
-    private static final Logger LOGGER = Logger.getLogger(RestEventHandler.class.getName());
+    private static final Logger LOGGER = LoggerFactory.getLogger(RestEventHandler.class);
 
     private final Scene scene;
     private ExecutorService executor;
@@ -53,12 +54,12 @@ public class RestEventHandler implements EventHandler<RestEvent> {
 
     public void startHttpService() {
         if (serverFuture != null && !serverFuture.isDone()) {
-            LOGGER.warning("Trinity HTTP Server is already running.");
+            LOGGER.warn("Trinity HTTP Server is already running.");
             return;
         }
 
         LOGGER.info("Creating Trinity HTTP Server...");
-        serverFuture = executor.submit(new TrinityHttpServer(scene));
+        serverFuture = executor.submit(new TrinityBasicHttpServer(scene));
 
         Platform.runLater(() -> {
             scene.getRoot().fireEvent(
@@ -69,7 +70,7 @@ public class RestEventHandler implements EventHandler<RestEvent> {
 
     public void stopHttpService() {
         if (serverFuture == null || serverFuture.isDone()) {
-            LOGGER.warning("Trinity HTTP Server is not running.");
+            LOGGER.warn("Trinity HTTP Server is not running.");
             return;
         }
         Platform.runLater(() -> {

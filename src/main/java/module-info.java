@@ -22,6 +22,7 @@ module edu.jhuapl.trinity {
     requires java.logging;
     requires java.datatransfer;
     requires java.desktop;
+    requires jdk.httpserver;
     requires javafx.graphics;
     requires javafx.controls;
     requires javafx.media;
@@ -42,12 +43,6 @@ module edu.jhuapl.trinity {
     requires jdk.crypto.ec;
     requires jflac.codec;
     requires org.slf4j;
-    requires io.netty.buffer;
-    requires io.netty.codec;
-    requires io.netty.codec.http;
-    requires io.netty.common;
-    requires io.netty.handler;
-    requires io.netty.transport;
     opens edu.jhuapl.trinity.javafx.components.radial to lit.litfx.controls;
     opens edu.jhuapl.trinity to webcam.capture;
     opens edu.jhuapl.trinity.data to javafx.base;
