@@ -67,8 +67,12 @@ dependencies {
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.17.2'
     implementation group: 'com.github.sarxos', name: 'webcam-capture', version: '0.3.12'
     implementation group: 'org.jflac', name: 'jflac-codec', version: '1.5.2'
-    implementation group: 'io.netty', name: 'netty-handler', version: '4.1.112.Final'
-    implementation group: 'io.netty', name: 'netty-codec-http', version: '4.1.112.Final'
+    implementation(group: 'io.netty', name: 'netty-handler', version: '4.1.112.Final') {
+        exclude group: 'io.netty', module: 'netty-transport-native-unix-common'
+    }
+    implementation(group: 'io.netty', name: 'netty-codec-http', version: '4.1.112.Final'){
+        exclude group: 'io.netty', module: 'netty-transport-native-unix-common'
+    }
 
     // Enforce slf4j-api version across dependencies (although we're using JUL)
     implementation group: 'org.slf4j', name: 'slf4j-api', version: '2.0.13'
@@ -144,8 +148,13 @@ extraJavaModuleInfo {
         requireAllDefinedDependencies()
     }
     module("io.netty:netty-handler", "io.netty.handler") {
+        requiresTransitive('io.netty.common')
+        requiresTransitive('io.netty.resolver')
+        requiresTransitive('io.netty.buffer')
+        requiresTransitive('io.netty.transport')
+        //requiresTransitive('io.netty.transport.unix.common')
+        requiresTransitive('io.netty.codec')
         exportAllPackages()
-        requireAllDefinedDependencies()
     }
     module("io.netty:netty-resolver", "io.netty.resolver") {
         exportAllPackages()
@@ -155,10 +164,10 @@ extraJavaModuleInfo {
         exportAllPackages()
         requireAllDefinedDependencies()
     }
-    module("io.netty:netty-transport-native-unix-common", "io.netty.transport.unix.common") {
-        exportAllPackages()
-        requireAllDefinedDependencies()
-    }
+    //module("io.netty:netty-transport-native-unix-common", "io.netty.transport.unix.common") {
+    //    exportAllPackages()
+    //    requireAllDefinedDependencies()
+    //}
     module("io.netty:netty-codec", "io.netty.codec") {
         exportAllPackages()
         requireAllDefinedDependencies()
