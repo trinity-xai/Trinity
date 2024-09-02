@@ -182,6 +182,8 @@ compileJava {
     }
 }
 
+// List of Prism Settings
+// https://github.com/openjdk/jfx/blob/master/modules/javafx.graphics/src/main/java/com/sun/prism/impl/PrismSettings.java
 run {
     jvmArgs += ['-Dprism.maxvram=2G', '-Djavafx.animation.fullspeed=true']
 }
@@ -215,6 +217,17 @@ javafx {
 gluonfx {
     target = "host"
     javafxStaticSdkVersion = "$fxStaticVersion"
+    // Verbose logging
+    verbose = true
+    // Add default nativeCompile args
+    compilerArgs.add('-Dprism.maxvram=2G') // exposed for at-build-time visibility
+    compilerArgs.add('-Dprism.targetvram=256M') // exposed for at-build-time visibility
+    compilerArgs.add('-Dprism.verbose=false') // exposed for at-build-time visibility
+    compilerArgs.add('-Dprism.poolstats=false') // exposed for at-build-time visibility
+    compilerArgs.add('-Dprism.pooldebug=false') // exposed for at-build-time visibility
+    compilerArgs.add('-Djavafx.animation.fullspeed=true') // exposed for at-build-time visibility
+    compilerArgs.add('-J-XX:MaxRAMPercentage=80') // use 80% system ram to compile image
+    compilerArgs.add('-H:+UnlockExperimentalVMOptions')
 }
 
 // </editor-fold>

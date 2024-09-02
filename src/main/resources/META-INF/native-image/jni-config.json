@@ -589,6 +589,15 @@
         "name": "maxVram"
       },
       {
+        "name": "poolDebug"
+      },
+      {
+        "name": "poolStats"
+      },
+      {
+        "name": "targetVram"
+      },
+      {
         "name": "verbose"
       }
     ]
