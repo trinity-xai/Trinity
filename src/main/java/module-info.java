@@ -46,6 +46,7 @@ module edu.jhuapl.trinity {
     requires io.netty.codec;
     requires io.netty.codec.http;
     requires io.netty.common;
+    requires io.netty.handler;
     requires io.netty.transport;
     opens edu.jhuapl.trinity.javafx.components.radial to lit.litfx.controls;
     opens edu.jhuapl.trinity to webcam.capture;
