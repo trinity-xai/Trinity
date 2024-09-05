@@ -36,6 +36,7 @@ import edu.jhuapl.trinity.data.messages.GaussianMixture;
 import edu.jhuapl.trinity.data.messages.GaussianMixtureCollection;
 import edu.jhuapl.trinity.data.messages.GaussianMixtureData;
 import edu.jhuapl.trinity.data.messages.PointCluster;
+import edu.jhuapl.trinity.data.messages.UmapConfig;
 import edu.jhuapl.trinity.javafx.components.callouts.Callout;
 import edu.jhuapl.trinity.javafx.components.callouts.DistanceDataCallout;
 import edu.jhuapl.trinity.javafx.components.panes.JoystickPane;
@@ -793,6 +794,8 @@ public class Projections3DPane extends StackPane implements
         ImageView manifold = ResourceUtils.loadIcon("manifold", ICON_FIT_HEIGHT);
         manifold.setEffect(glow);
         MenuItem manifoldsItem = new MenuItem("Manifold Controls", manifold);
+
+        manifoldControlPane = new ManifoldControlPane(scene, App.getAppPathPaneStack());
         manifoldsItem.setOnAction(e -> {
             Pane pathPane = App.getAppPathPaneStack();
             if (null == manifoldControlPane) {
@@ -2982,4 +2985,21 @@ public class Projections3DPane extends StackPane implements
 //            if(i>0) break;
         }
     }
+    @Override
+    public void setUmapConfig(UmapConfig config) {
+//        latestUmap.setTargetWeight(config.getTargetWeight());
+//        latestUmap.setRepulsionStrength(config.getRepulsionStrength());
+//        latestUmap.setMinDist(config.getMinDist());
+//        latestUmap.setSpread(config.getSpread());
+//        latestUmap.setSetOpMixRatio(config.getOpMixRatio());
+//        latestUmap.setNumberComponents(config.getNumberComponents());
+//        latestUmap.setNumberEpochs(config.getNumberEpochs());
+//        latestUmap.setNumberNearestNeighbours(config.getNumberNearestNeighbours());
+//        latestUmap.setNegativeSampleRate(config.getNegativeSampleRate());
+//        latestUmap.setLocalConnectivity(config.getLocalConnectivity());
+//        latestUmap.setThreshold(config.getThreshold());
+//        latestUmap.setMetric(config.getMetric());
+//        latestUmap.setVerbose(config.getVerbose());
+        latestUmap = AnalysisUtils.umapConfigToUmap(config);
+    }    
 }

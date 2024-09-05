@@ -27,6 +27,7 @@ import edu.jhuapl.trinity.data.messages.ClusterCollection;
 import edu.jhuapl.trinity.data.messages.FeatureVector;
 import edu.jhuapl.trinity.data.messages.ManifoldData;
 import edu.jhuapl.trinity.data.messages.P3D;
+import edu.jhuapl.trinity.data.messages.UmapConfig;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent.ProjectionConfig;
@@ -353,6 +354,11 @@ public class ManifoldEventHandler implements EventHandler<ManifoldEvent> {
             Manifold3D manifold3D = (Manifold3D) event.object2;
             for (ManifoldRenderer renderer : manifoldRenderers) {
                 renderer.addManifold(manifold, manifold3D);
+            }
+        } else if (event.getEventType().equals(ManifoldEvent.NEW_UMAP_CONFIG)) {
+            UmapConfig config = (UmapConfig) event.object1;
+            for (ManifoldRenderer renderer : manifoldRenderers) {
+                renderer.setUmapConfig(config);
             }
         } else if (event.getEventType().equals(ManifoldEvent.NEW_PROJECTION_VECTOR)) {
             FeatureVector fv = (FeatureVector) event.object1;

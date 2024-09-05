@@ -30,6 +30,7 @@ import edu.jhuapl.trinity.data.messages.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.FeatureVector;
 import edu.jhuapl.trinity.data.messages.GaussianMixture;
 import edu.jhuapl.trinity.data.messages.LabelConfig;
+import edu.jhuapl.trinity.data.messages.UmapConfig;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.ChannelFrameDataEvent;
 import edu.jhuapl.trinity.javafx.events.FactorAnalysisDataEvent;
@@ -40,11 +41,13 @@ import javafx.application.Platform;
 import javafx.scene.Scene;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author Sean Phillips
  */
 public class MessageProcessor {
+    AtomicInteger ai;
     /**
      * Provides deserializaton support for JSON messages
      */
@@ -60,6 +63,7 @@ public class MessageProcessor {
 
     public MessageProcessor(Scene scene) {
         this.scene = scene;
+        ai = new AtomicInteger();
         mapper = new ObjectMapper();
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         // force serialization of timestamps as ISO-8601 standard. Assumption is most formats are ISO-8601 standard.
@@ -71,20 +75,10 @@ public class MessageProcessor {
     public void process(String message) throws JsonProcessingException, IOException {
         if(CommandRequest.isCommandRequest(message)){
             CommandRequest command = mapper.readValue(message, CommandRequest.class);
-            if(command.getRequest().contentEquals(CommandRequest.COMMANDS.VIEW_HYPERSPACE.name())){
-                Platform.runLater(() -> {
-                    scene.getRoot().fireEvent(new ApplicationEvent(ApplicationEvent.SHOW_HYPERSPACE));
-                });
-            } else if(command.getRequest().contentEquals(CommandRequest.COMMANDS.VIEW_PROJECTIONS.name())){
-                Platform.runLater(() -> {
-                    scene.getRoot().fireEvent(new ApplicationEvent(ApplicationEvent.SHOW_HYPERSURFACE));
-                });
-            } else if(command.getRequest().contentEquals(CommandRequest.COMMANDS.EXECUTE_UMAP.name())){
-                Platform.runLater(() -> {
-                    scene.getRoot().fireEvent(new ManifoldEvent(ManifoldEvent.GENERATE_NEW_UMAP));
-                });
-            }
-
+            CommandTask commandTask = new CommandTask(command, scene);
+            Thread t = new Thread(commandTask, "Trinity Command Task " + ai.incrementAndGet());
+            t.setDaemon(true);
+            t.start();
         }
         if (FeatureCollection.isFeatureCollection(message)) {
             FeatureCollection featureCollection = mapper.readValue(message, FeatureCollection.class);
@@ -108,6 +102,12 @@ public class MessageProcessor {
             Platform.runLater(() -> {
                 scene.getRoot().fireEvent(new FeatureVectorEvent(
                     FeatureVectorEvent.NEW_LABEL_CONFIG, labelConfig));
+            });
+        } else if (UmapConfig.isUmapConfig(message)) {
+            UmapConfig umapConfig = getMapper().readValue(message, UmapConfig.class);
+            Platform.runLater(() -> {
+                scene.getRoot().fireEvent(new ManifoldEvent(
+                    ManifoldEvent.NEW_UMAP_CONFIG, umapConfig));
             });
         } else if (ChannelFrame.isChannelFrame(message)) {
             ChannelFrame frame = getMapper().readValue(message, ChannelFrame.class);

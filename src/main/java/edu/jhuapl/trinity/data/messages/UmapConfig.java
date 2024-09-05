@@ -80,7 +80,7 @@ public class UmapConfig extends MessageData {
             && messageBody.contains("numberComponents")
             && messageBody.contains("numberNearestNeighbours");
     }
-
+    
     //<editor-fold defaultstate="collapsed" desc="Properties">
 
     /**

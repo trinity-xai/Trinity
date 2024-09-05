@@ -750,6 +750,7 @@ public class App extends Application {
         fveh.addFeatureVectorRenderer(hyperspace3DPane);
 
         meh = new ManifoldEventHandler();
+        scene.getRoot().addEventHandler(ManifoldEvent.NEW_UMAP_CONFIG, meh);
         scene.getRoot().addEventHandler(ManifoldEvent.NEW_MANIFOLD_CLUSTER, meh);
         scene.getRoot().addEventHandler(ManifoldEvent.NEW_MANIFOLD_DATA, meh);
         scene.getRoot().addEventHandler(ManifoldEvent.EXPORT_MANIFOLD_DATA, meh);
