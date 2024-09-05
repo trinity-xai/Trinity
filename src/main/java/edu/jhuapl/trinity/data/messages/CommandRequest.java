@@ -41,6 +41,7 @@ public class CommandRequest extends MessageData {
     '{
         "messageType": "command_request",
         "request": "SOME_ENUMERATED_COMMAND",
+        "delaySeconds" : 5.0,
         "properties": {
             "enabled" : "true",
             yada yada
@@ -51,6 +52,7 @@ public class CommandRequest extends MessageData {
 
     //<editor-fold defaultstate="collapsed" desc="Payload Fields">
     private String request;
+    private double delaySeconds = 0.0; //seconds
     private HashMap<String, String> properties;
     //</editor-fold>
 
@@ -92,5 +94,18 @@ public class CommandRequest extends MessageData {
     public void setProperties(HashMap<String, String> properties) {
         this.properties = properties;
     }
+    /**
+     * @return the delaySeconds
+     */
+    public double getDelaySeconds() {
+        return delaySeconds;
+    }
+
+    /**
+     * @param delaySeconds the delaySeconds to set
+     */
+    public void setDelaySeconds(double delaySeconds) {
+        this.delaySeconds = delaySeconds;
+    }    
    //</editor-fold>
 }

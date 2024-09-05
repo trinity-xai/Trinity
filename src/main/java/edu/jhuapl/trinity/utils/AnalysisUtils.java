@@ -338,8 +338,7 @@ public enum AnalysisUtils {
         }
         return svdValues;
     }
-
-    public static double[][] fitUMAP(FeatureCollection featureCollection) {
+    public static Umap getDefaultUmap() {
         Umap umap = new Umap();
         umap.setVerbose(true);
         umap.setNumberComponents(3);
@@ -348,6 +347,11 @@ public enum AnalysisUtils {
         umap.setMinDist(0.25f);
         umap.setSpread(0.75f);
         umap.setNegativeSampleRate(20);
+        return umap;
+
+    }
+    public static double[][] fitUMAP(FeatureCollection featureCollection) {
+        Umap umap = getDefaultUmap();
         return fitUMAP(featureCollection, umap);
     }
 

@@ -293,7 +293,7 @@ public class Projections3DPane extends StackPane implements
     private Label zLabel = new Label("Z Axis");
     public List<String> featureLabels = new ArrayList<>();
     public Scene scene;
-    Umap latestUmap = null;
+    public Umap latestUmap = null;
 
     Rectangle selectionRectangle;
     ProjectileSystem projectileSystem;

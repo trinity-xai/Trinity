@@ -257,9 +257,15 @@ public class App extends Application {
                 scene.getRoot().fireEvent(
                     new ApplicationEvent(ApplicationEvent.SHOW_BUSY_INDICATOR, ps));
             });
-            Umap umap = (Umap) event.object1;
+            Umap umap = AnalysisUtils.getDefaultUmap();
+            if(null != event.object1)
+                umap = (Umap) event.object1;
+            else if(null != projections3DPane.latestUmap)
+                umap = projections3DPane.latestUmap;
             umap.setThreads(12);
-            ManifoldEvent.POINT_SOURCE source = (ManifoldEvent.POINT_SOURCE) event.object2;
+            ManifoldEvent.POINT_SOURCE source = ManifoldEvent.POINT_SOURCE.HYPERSPACE;
+            if(null != event.object2)
+                source = (ManifoldEvent.POINT_SOURCE) event.object2;
             FeatureCollection originalFC = getFeaturesBySource(source);
             projections3DPane.projectFeatureCollection(originalFC, umap);
         });
@@ -460,6 +466,7 @@ public class App extends Application {
                     theConfig = Configuration.defaultConfiguration();
                 }
             }
+            System.out.println("Checking for enabling HTTP processor...");
             if (namedParameters.containsKey("http")) {
                 String httpValue = namedParameters.get("http");
                 System.out.println("HTTP found: " + httpValue);
@@ -467,6 +474,7 @@ public class App extends Application {
             }
 
         }
+        System.out.println("Setting up RestEventHandler...");
         reh = new RestEventHandler(scene);
         scene.addEventHandler(RestEvent.START_RESTSERVER_THREAD, reh);
         scene.addEventHandler(RestEvent.TERMINATE_RESTSERVER_THREAD, reh);
@@ -474,6 +482,7 @@ public class App extends Application {
             reh.startHttpService();
         }
 
+        System.out.println("Setting up Mission Timer...");
         setupMissionTimer(scene);
         //add helper tools and overlays
         circleSpinner = new CircleProgressIndicator();
@@ -486,6 +495,8 @@ public class App extends Application {
             missionTimerX, circleSpinner);
         centerStack.getChildren().add(animatedConsoleText);
 
+        
+        System.out.println("Setting up Matrix Digital Rain...");
         // fun matrix effect, use Alt + N
         matrixOverlay = new MatrixOverlay(scene, centerStack);
         bp.setOnSwipeUp(e -> {
@@ -506,6 +517,8 @@ public class App extends Application {
                 }
             }
         });
+
+        System.out.print("Adding Event handlers... ");
         scene.addEventHandler(ApplicationEvent.SHOW_BUSY_INDICATOR, e -> {
             if (null == e.object) {
                 return;
@@ -526,7 +539,7 @@ public class App extends Application {
         });
 
         scene.addEventHandler(ApplicationEvent.SHUTDOWN, e -> shutdown(false));
-
+        System.out.print("Text Console ");
         scene.addEventHandler(ApplicationEvent.SHOW_TEXT_CONSOLE, e -> {
             if (null == textConsolePane) {
                 textConsolePane = new TextPane(scene, pathPane);
@@ -541,6 +554,7 @@ public class App extends Application {
                 Platform.runLater(() -> textConsolePane.setText((String) e.object));
             }
         });
+        System.out.print("Video Pane ");
         scene.addEventHandler(ApplicationEvent.SHOW_VIDEO_PANE, e -> {
             if (null == videoPane) {
                 videoPane = new VideoPane(scene, pathPane);
@@ -566,6 +580,7 @@ public class App extends Application {
             }
             videoPane.setVideo();
         });
+        System.out.print("Image Navigator ");
         scene.addEventHandler(ApplicationEvent.SHOW_NAVIGATOR_PANE, e -> {
             if (null == navigatorPane) {
                 navigatorPane = new NavigatorPane(scene, pathPane);
@@ -580,6 +595,7 @@ public class App extends Application {
                 Platform.runLater(() -> navigatorPane.setImage((Image) e.object));
             }
         });
+        System.out.print("Waveform View ");
         scene.addEventHandler(ApplicationEvent.SHOW_WAVEFORM_PANE, e -> {
             if (null == waveformPane) {
                 waveformPane = new WaveformPane(scene, pathPane);
@@ -594,7 +610,7 @@ public class App extends Application {
                 Platform.runLater(() -> waveformPane.setWaveform((File) e.object));
             }
         });
-
+        System.out.print("Trajectory Tracker ");
         scene.addEventHandler(TrajectoryEvent.SHOW_TRAJECTORY_TRACKER, e -> {
             if (null == trajectoryTrackerPane) {
                 trajectoryTrackerPane = new TrajectoryTrackerPane(scene, pathPane);
@@ -606,6 +622,7 @@ public class App extends Application {
                 trajectoryTrackerPane.show();
             }
         });
+        System.out.print("Spark lines View ");
         scene.addEventHandler(ApplicationEvent.SHOW_SPARK_LINES, e -> {
             if (null == sparkLinesPane) {
                 sparkLinesPane = new SparkLinesPane(scene, pathPane);
@@ -617,7 +634,7 @@ public class App extends Application {
                 sparkLinesPane.show();
             }
         });
-
+        System.out.print("Projections ");
         scene.addEventHandler(ApplicationEvent.SHOW_PROJECTIONS, e -> {
             if (projections3DPane.isVisible()) {
                 projections3DPane.setVisible(false);
@@ -635,6 +652,7 @@ public class App extends Application {
                 });
             }
         });
+
         scene.addEventHandler(ApplicationEvent.AUTO_PROJECTION_MODE, e -> {
             boolean enabled = (boolean) e.object;
             if (enabled) {
@@ -650,6 +668,7 @@ public class App extends Application {
             projections3DPane.enableAutoProjection(enabled);
 
         });
+        System.out.print("Hypersurface ");
         scene.addEventHandler(ApplicationEvent.SHOW_HYPERSURFACE, e -> {
             if (hypersurface3DPane.isVisible()) {
                 //hypersurface3DPane.hideFA3D();
@@ -675,7 +694,7 @@ public class App extends Application {
 
             }
         });
-
+        System.out.print("Hyperspace ");
         scene.addEventHandler(ApplicationEvent.SHOW_HYPERSPACE, e -> {
             if (hyperspace3DPane.isVisible()) {
                 hyperspace3DPane.setVisible(false);
@@ -714,7 +733,7 @@ public class App extends Application {
                 shape3DControlPane.show();
             }
         });
-
+        System.out.print("Data Handlers ");
         gmeh = new GaussianMixtureEventHandler();
         scene.getRoot().addEventHandler(GaussianMixtureEvent.NEW_GAUSSIAN_MIXTURE, gmeh);
         scene.getRoot().addEventHandler(GaussianMixtureEvent.LOCATE_GAUSSIAN_MIXTURE, gmeh);
@@ -785,6 +804,7 @@ public class App extends Application {
             desktopPane.getChildren().remove(covalentEvent.pathPane);
         });
 
+        System.out.println("Command Terminal ");
         scene.addEventHandler(CommandTerminalEvent.FOLLOWUP, e -> {
             animatedConsoleText.setVisible(true);
             animatedConsoleText.setOpacity(1.0);
