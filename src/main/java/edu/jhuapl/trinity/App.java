@@ -385,7 +385,6 @@ public class App extends Application {
             }
         });
 
-
         //Add the base main tools
         //insert before animated console text
         centerStack.getChildren().add(0, hyperspace3DPane);
@@ -581,7 +580,6 @@ public class App extends Application {
                 Platform.runLater(() -> navigatorPane.setImage((Image) e.object));
             }
         });
-
         scene.addEventHandler(ApplicationEvent.SHOW_WAVEFORM_PANE, e -> {
             if (null == waveformPane) {
                 waveformPane = new WaveformPane(scene, pathPane);

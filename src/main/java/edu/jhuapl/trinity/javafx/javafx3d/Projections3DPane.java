@@ -1374,24 +1374,6 @@ public class Projections3DPane extends StackPane implements
         });
     }
 
-    public void projectHyperspace() {
-        getScene().getRoot().fireEvent(
-            new CommandTerminalEvent("Requesting Hyperspace Vectors...",
-                new Font("Consolas", 20), Color.GREEN));
-        getScene().getRoot().fireEvent(
-            new FeatureVectorEvent(FeatureVectorEvent.PROJECT_FEATURE_COLLECTION)
-        );
-    }
-
-    public void projectHypersurface() {
-        getScene().getRoot().fireEvent(
-            new CommandTerminalEvent("Requesting Hypersurface Grid...",
-                new Font("Consolas", 20), Color.GREEN));
-        getScene().getRoot().fireEvent(
-            new FeatureVectorEvent(FeatureVectorEvent.PROJECT_SURFACE_GRID)
-        );
-    }
-
     public void updateTrajectory3D(boolean overrideAuto) {
         //Clear out previous trajectory nodes
         boolean wasVisible = anchorTraj3D.isVisible();

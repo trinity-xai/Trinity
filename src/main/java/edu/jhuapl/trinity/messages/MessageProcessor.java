@@ -25,14 +25,17 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.jhuapl.trinity.data.FactorAnalysisState;
 import edu.jhuapl.trinity.data.messages.ChannelFrame;
+import edu.jhuapl.trinity.data.messages.CommandRequest;
 import edu.jhuapl.trinity.data.messages.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.FeatureVector;
 import edu.jhuapl.trinity.data.messages.GaussianMixture;
 import edu.jhuapl.trinity.data.messages.LabelConfig;
+import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.ChannelFrameDataEvent;
 import edu.jhuapl.trinity.javafx.events.FactorAnalysisDataEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.events.GaussianMixtureEvent;
+import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import javafx.application.Platform;
 import javafx.scene.Scene;
 
@@ -66,6 +69,23 @@ public class MessageProcessor {
     }
 
     public void process(String message) throws JsonProcessingException, IOException {
+        if(CommandRequest.isCommandRequest(message)){
+            CommandRequest command = mapper.readValue(message, CommandRequest.class);
+            if(command.getRequest().contentEquals(CommandRequest.COMMANDS.VIEW_HYPERSPACE.name())){
+                Platform.runLater(() -> {
+                    scene.getRoot().fireEvent(new ApplicationEvent(ApplicationEvent.SHOW_HYPERSPACE));
+                });
+            } else if(command.getRequest().contentEquals(CommandRequest.COMMANDS.VIEW_PROJECTIONS.name())){
+                Platform.runLater(() -> {
+                    scene.getRoot().fireEvent(new ApplicationEvent(ApplicationEvent.SHOW_HYPERSURFACE));
+                });
+            } else if(command.getRequest().contentEquals(CommandRequest.COMMANDS.EXECUTE_UMAP.name())){
+                Platform.runLater(() -> {
+                    scene.getRoot().fireEvent(new ManifoldEvent(ManifoldEvent.GENERATE_NEW_UMAP));
+                });
+            }
+
+        }
         if (FeatureCollection.isFeatureCollection(message)) {
             FeatureCollection featureCollection = mapper.readValue(message, FeatureCollection.class);
             Platform.runLater(() -> {
