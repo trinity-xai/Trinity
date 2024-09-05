@@ -6,13 +6,7 @@
       },
       {
         "pattern": "edu.jhuapl.trinity:.*"
-      },
-      {
-        "pattern": ".*\\.md$"
-      },
-      {
-        "pattern": ".*\\.properties$"
-      }      
+      }
     ]
   },
   "bundles": [
