@@ -6,6 +6,9 @@
     "name": "[Ljava.lang.String;"
   },
   {
+    "name": "com.sun.glass.ui.Application"
+  },
+  {
     "name": "com.sun.glass.ui.CommonDialogs",
     "methods": [
       {

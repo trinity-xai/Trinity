@@ -547,6 +547,18 @@
     ]
   },
   {
+    "name": "com.sun.prism.shader.DrawSemiRoundRect_Color_Loader",
+    "methods": [
+      {
+        "name": "loadShader",
+        "parameterTypes": [
+          "com.sun.prism.ps.ShaderFactory",
+          "java.io.InputStream"
+        ]
+      }
+    ]
+  },
+  {
     "name": "com.sun.prism.shader.FillCircle_Color_Loader",
     "methods": [
       {
@@ -852,6 +864,10 @@
         "parameterTypes": []
       },
       {
+        "name": "clearAllDimensionLabels",
+        "parameterTypes": []
+      },
+      {
         "name": "clearLabels",
         "parameterTypes": []
       },
@@ -860,7 +876,15 @@
         "parameterTypes": []
       },
       {
+        "name": "recomputeMaxAbs",
+        "parameterTypes": []
+      },
+      {
         "name": "rescanLabels",
+        "parameterTypes": []
+      },
+      {
+        "name": "resetMaxAbs",
         "parameterTypes": []
       }
     ]
@@ -1142,6 +1166,14 @@
     "fields": [
       {
         "name": "value"
+      }
+    ]
+  },
+  {
+    "name": "java.util.concurrent.atomic.AtomicMarkableReference",
+    "fields": [
+      {
+        "name": "pair"
       }
     ]
   },
