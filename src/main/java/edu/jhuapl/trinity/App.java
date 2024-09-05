@@ -825,51 +825,51 @@ public class App extends Application {
             animatedConsoleText.animate("> " + e.text);
         });
         scene.addEventHandler(CommandTerminalEvent.FADE_OUT, e -> fadeOutConsole(e.timeMS));
-//        System.out.println("Establishing Messaging Feed...");
-//        processor = new MessageProcessor(scene);
-//        subscriberConfig = new ZeroMQSubscriberConfig(
-//            "ZeroMQ Subscriber", "ZeroMQFeedManager.",
-//            "tcp://localhost:5563", "ALL", "SomeIDValue", 250);
-//        feed = new ZeroMQFeedManager(2, subscriberConfig, processor);
-//        scene.getRoot().addEventHandler(ZeroMQEvent.ZEROMQ_ESTABLISH_CONNECTION, e -> {
-//            subscriberConfig = e.subscriberConfig;
-//            if (null != subscriberConfig) {
-//                Task task = new Task() {
-//                    @Override
-//                    protected Void call() throws Exception {
-//                        feed.setConfig(subscriberConfig);
-//                        feed.startProcessing();
-//                        return null;
-//                    }
-//                };
-//                Thread thread = new Thread(task);
-//                thread.setDaemon(true);
-//                thread.start();
-//            }
-//        });
-//        scene.getRoot().addEventHandler(ZeroMQEvent.ZEROMQ_TERMINATE_CONNECTION, e -> {
-//            if (null != feed) {
-//                feed.disconnect(false);
-//            }
-//        });
-//        scene.getRoot().addEventHandler(ZeroMQEvent.ZEROMQ_START_PROCESSING, e -> {
-//            feed.setEnableProcessing(true);
-//        });
-//        scene.getRoot().addEventHandler(ZeroMQEvent.ZEROMQ_STOP_PROCESSING, e -> {
-//            feed.setEnableProcessing(false);
-//        });
-//        System.out.println("Checking to auto-enable ZeroMQ Listener...");
-//        if (null != namedParameters && namedParameters.containsKey("zeromq")) {
-//            String zeroMQ = namedParameters.get("zeromq");
-//            if (null != zeroMQ) {
-//                System.out.println("ZeroMQ Status: " + zeroMQ);
-//            }
-//            Platform.runLater(() -> scene.getRoot().fireEvent(
-//                new ZeroMQEvent(ZeroMQEvent.ZEROMQ_ESTABLISH_CONNECTION, subscriberConfig)));
-//        }
+        System.out.println("Establishing Messaging Feed...");
+        processor = new MessageProcessor(scene);
+        subscriberConfig = new ZeroMQSubscriberConfig(
+            "ZeroMQ Subscriber", "ZeroMQFeedManager.",
+            "tcp://localhost:5563", "ALL", "SomeIDValue", 250);
+        feed = new ZeroMQFeedManager(2, subscriberConfig, processor);
+        scene.getRoot().addEventHandler(ZeroMQEvent.ZEROMQ_ESTABLISH_CONNECTION, e -> {
+            subscriberConfig = e.subscriberConfig;
+            if (null != subscriberConfig) {
+                Task task = new Task() {
+                    @Override
+                    protected Void call() throws Exception {
+                        feed.setConfig(subscriberConfig);
+                        feed.startProcessing();
+                        return null;
+                    }
+                };
+                Thread thread = new Thread(task);
+                thread.setDaemon(true);
+                thread.start();
+            }
+        });
+        scene.getRoot().addEventHandler(ZeroMQEvent.ZEROMQ_TERMINATE_CONNECTION, e -> {
+            if (null != feed) {
+                feed.disconnect(false);
+            }
+        });
+        scene.getRoot().addEventHandler(ZeroMQEvent.ZEROMQ_START_PROCESSING, e -> {
+            feed.setEnableProcessing(true);
+        });
+        scene.getRoot().addEventHandler(ZeroMQEvent.ZEROMQ_STOP_PROCESSING, e -> {
+            feed.setEnableProcessing(false);
+        });
+        System.out.println("Checking to auto-enable ZeroMQ Listener...");
+        if (null != namedParameters && namedParameters.containsKey("zeromq")) {
+            String zeroMQ = namedParameters.get("zeromq");
+            if (null != zeroMQ) {
+                System.out.println("ZeroMQ Status: " + zeroMQ);
+            }
+            Platform.runLater(() -> scene.getRoot().fireEvent(
+                new ZeroMQEvent(ZeroMQEvent.ZEROMQ_ESTABLISH_CONNECTION, subscriberConfig)));
+        }
 
         System.out.println("User Interface Lit...");
-
+        //animatedConsoleText.animate("User Inteface Lit...");
         intro();
         missionTimerX.updateTime(0, "1");
     }
