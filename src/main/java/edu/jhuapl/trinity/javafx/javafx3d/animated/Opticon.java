@@ -142,12 +142,12 @@ public class Opticon extends Group {
         mainBody.setRotationAxis(Rotate.X_AXIS);
         mainBody.setRotate(SCANMODE_X_ANGLE);
 
-        scannerLight = new SpotLight(scanColor);
-        scannerLight.setDirection(new Point3D(0, 1, 0));
-        scannerLight.setInnerAngle(120);
-        scannerLight.setOuterAngle(30);
-        scannerLight.setFalloff(-0.4);
-        scannerLight.setTranslateZ(-scannerBaseRadius - 2);
+//        scannerLight = new SpotLight(scanColor);
+//        scannerLight.setDirection(new Point3D(0, 1, 0));
+//        scannerLight.setInnerAngle(120);
+//        scannerLight.setOuterAngle(30);
+//        scannerLight.setFalloff(-0.4);
+//        scannerLight.setTranslateZ(-scannerBaseRadius - 2);
 
         scannerConeMesh = new ConeMesh(8, 2 * scannerBaseRadius, 5 * scannerBaseRadius);
         scannerConeMesh.setCullFace(CullFace.NONE);
@@ -182,12 +182,13 @@ public class Opticon extends Group {
         scannerConeOutlineMesh.setRotate(CONE_MESH_ROTATE);
         scannerConeOutlineMesh.setTranslateZ(-scannerBaseRadius);
 
-        getChildren().addAll(mainBody, pointer, scannerConeMesh, scannerConeOutlineMesh, scannerLight);
+//        getChildren().addAll(mainBody, pointer, scannerConeMesh, scannerConeOutlineMesh, scannerLight);
+        getChildren().addAll(mainBody, pointer, scannerConeMesh, scannerConeOutlineMesh);
 
         Sphere debugSphere = new Sphere(1);
         debugSphere.setMaterial(new PhongMaterial(Color.WHITE));
         debugSphere.setTranslateZ(-scannerBaseRadius);
-        scannerLight.getScope().add(debugSphere);
+//        scannerLight.getScope().add(debugSphere);
         getChildren().addAll(debugSphere);
 
         scannerConeMesh.setRotationAxis(Rotate.Y_AXIS);

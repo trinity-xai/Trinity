@@ -37,6 +37,7 @@ import edu.jhuapl.trinity.data.files.ZeroPilotLatentsFile;
 import edu.jhuapl.trinity.data.messages.FeatureCollection;
 import edu.jhuapl.trinity.data.terrain.FireAreaTextFile;
 import edu.jhuapl.trinity.data.terrain.TerrainTextFile;
+import edu.jhuapl.trinity.icons.IconResourceProvider;
 import edu.jhuapl.trinity.javafx.components.radial.ProgressStatus;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.AudioEvent;
@@ -47,6 +48,7 @@ import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.javafx.events.SemanticMapEvent;
 import edu.jhuapl.trinity.javafx.events.TerrainEvent;
 import edu.jhuapl.trinity.javafx.events.TrajectoryEvent;
+import edu.jhuapl.trinity.javafx.javafx3d.images.ImageResourceProvider;
 import edu.jhuapl.trinity.utils.loaders.CdcTissueGenesLoader;
 import edu.jhuapl.trinity.utils.loaders.FeatureCollectionLoader;
 import edu.jhuapl.trinity.utils.loaders.McclodSplitDataLoader;
@@ -213,7 +215,11 @@ public enum ResourceUtils {
     }
 
     public static Image load3DTextureImage(String filename) throws IOException {
-        return new Image(ResourceUtils.class.getResourceAsStream("/edu/jhuapl/trinity/javafx/javafx3d/images/" + filename + ".png"));
+        try {
+            return new Image(ImageResourceProvider.getResourceAsStream(filename + ".png"));
+        } catch (NullPointerException e) {
+            throw new IOException("Failed to open " + filename + ".png");
+        }
     }
 
     public static WritableImage loadImageFileSubset(String filename,
@@ -226,14 +232,18 @@ public enum ResourceUtils {
     }
 
     public static WritableImage loadIconAsWritableImage(String iconName) throws IOException {
-        InputStream is = ResourceUtils.class.getResourceAsStream("/edu/jhuapl/trinity/icons/" + iconName + ".png");
+        InputStream is = IconResourceProvider.getResourceAsStream(iconName + ".png");
         BufferedImage image = ImageIO.read(is);
         WritableImage wi = SwingFXUtils.toFXImage(image, null);
         return wi;
     }
 
-    public static Image loadIconFile(String iconName) {
-        return new Image(ResourceUtils.class.getResourceAsStream("/edu/jhuapl/trinity/icons/" + iconName + ".png"));
+    public static Image loadIconFile(String iconName)  {
+        try {
+            return new Image(IconResourceProvider.getResourceAsStream(iconName + ".png"));
+        } catch (NullPointerException e) {
+            return new Image(IconResourceProvider.getResourceAsStream("noimage.png"));
+        }
     }
 
     public static ImageView loadIcon(String iconName, double FIT_WIDTH) {
