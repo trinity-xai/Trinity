@@ -20,6 +20,7 @@ package edu.jhuapl.trinity.utils;
  * #L%
  */
 
+import edu.jhuapl.trinity.audio.AudioResourceProvider;
 import edu.jhuapl.trinity.data.Trajectory;
 import edu.jhuapl.trinity.data.files.CdcCsvFile;
 import edu.jhuapl.trinity.data.files.CdcTissueGenesFile;
@@ -279,13 +280,11 @@ public enum ResourceUtils {
     }
 
     public static AudioClip loadAudioClipWav(String filename) {
-        return new AudioClip(ResourceUtils.class.getResource("/edu/jhuapl/trinity/audio/" + filename + ".wav")
-            .toExternalForm());
+        return new AudioClip(AudioResourceProvider.getResource(filename + ".wav").toExternalForm());
     }
 
     public static Media loadMediaWav(String filename) throws IOException {
-        return new Media(ResourceUtils.class.getResource("/edu/jhuapl/trinity/audio/" + filename + ".wav")
-            .toExternalForm());
+        return new Media(AudioResourceProvider.getResource(filename + ".wav").toExternalForm());
     }
 
     public static Media loadRandomMediaMp4() throws URISyntaxException, IOException {
