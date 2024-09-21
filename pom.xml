@@ -33,7 +33,6 @@
         <maven.surefire.plugin.version>3.3.1</maven.surefire.plugin.version>
         <maven.site.plugin.version>4.0.0-M16</maven.site.plugin.version>
         <javafx.maven.plugin.version>0.0.8</javafx.maven.plugin.version>
-        <gluonfx.maven.plugin.version>1.0.23</gluonfx.maven.plugin.version>
         <codehaus.license.plugin.version>2.4.0</codehaus.license.plugin.version>
         <codehaus.flatten.plugin.version>1.6.0</codehaus.flatten.plugin.version>
         <codehaus.build.helper.maven.plugin.version>3.6.0</codehaus.build.helper.maven.plugin.version>
@@ -263,18 +262,6 @@
                         </configuration>
                     </execution>
                 </executions>
-            </plugin>
-            <plugin>
-                <groupId>com.gluonhq</groupId>
-                <artifactId>gluonfx-maven-plugin</artifactId>
-                <version>${gluonfx.maven.plugin.version}</version>
-                <configuration>
-                    <nativeImageArgs>
-                        <arg>--allow-incomplete-classpath</arg>
-                    </nativeImageArgs>
-                    <javafxStaticSdkVersion>${javafx.static.version}</javafxStaticSdkVersion>
-                    <mainClass>${mainClassName}</mainClass>
-                </configuration>
             </plugin>
             <plugin>
                 <groupId>io.github.git-commit-id</groupId>
