@@ -30,6 +30,8 @@ import javafx.scene.shape.CullFace;
 import javafx.scene.shape.DrawMode;
 import javafx.scene.shape.MeshView;
 import javafx.scene.shape.TriangleMesh;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -40,6 +42,7 @@ import java.util.stream.IntStream;
  * @author Sean Phillips
  */
 public class TessellationTube extends Group {
+    private static final Logger LOG = LoggerFactory.getLogger(TessellationTube.class);
     public MeshView meshView;
     public TriangleMesh triangleMesh;
     public List<List<Double>> dataGrid = new ArrayList<>();
@@ -71,7 +74,7 @@ public class TessellationTube extends Group {
     }
 
     public TriangleMesh buildWarp(List<List<Double>> dataGrid, double radius, double rowYSpacing, double elevationScale) {
-        System.out.println("warping mesh...");
+        LOG.info("warping mesh...");
         long startTime = System.nanoTime();
         int faceGroupSize = 2; //2 for only outer wrap, 4 for sides.
         int columnWidth = dataGrid.get(0).size() - 1;
@@ -150,7 +153,7 @@ public class TessellationTube extends Group {
             currentY += rowYSpacing;
         }
         Utils.printTotalTime(startTime);
-        System.out.println("dude the warp is done.");
+        LOG.info("dude the warp is done.");
         float maxTex = Double.valueOf(
                 IntStream.range(0, texCoords.length)
                     .mapToDouble(i -> texCoords[i])
@@ -158,10 +161,7 @@ public class TessellationTube extends Group {
             .floatValue();
 
         int maxFace = Arrays.stream(faces).max().getAsInt();
-        System.out.println("pointFloats size: " + pointFloats.length
-            + " maxTex: " + maxTex
-            + " Total Faces: " + faces.length
-            + " : maxFace: " + maxFace);
+        LOG.info("pointFloats size: {} maxTex: {} Total Faces: {} : maxFace: {}", pointFloats.length, maxTex, faces.length, maxFace);
         TriangleMesh mesh = new TriangleMesh();
         mesh.getPoints().addAll(pointFloats);
         mesh.getTexCoords().addAll(texCoords);

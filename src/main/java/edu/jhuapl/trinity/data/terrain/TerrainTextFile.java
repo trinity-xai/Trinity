@@ -20,6 +20,9 @@ package edu.jhuapl.trinity.data.terrain;
  * #L%
  */
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
@@ -33,6 +36,7 @@ import java.util.List;
  * @author Sean Phillips
  */
 public class TerrainTextFile extends File implements Transferable {
+    private static final Logger LOG = LoggerFactory.getLogger(TerrainTextFile.class);
     public static final String TERRAIN_TEXT_MARKER = "TERRAIN_TEXT_FILE";
     public static final DataFlavor DATA_FLAVOR = new DataFlavor(TerrainTextFile.class, TERRAIN_TEXT_MARKER);
     public ArrayList<ArrayList<Double>> dataGrid = null;
@@ -112,7 +116,7 @@ public class TerrainTextFile extends File implements Transferable {
                 }
             }
         }
-        System.out.println("Terrain Text File parsing complete.");
+        LOG.info("Terrain Text File parsing complete.");
     }
 
     @Override

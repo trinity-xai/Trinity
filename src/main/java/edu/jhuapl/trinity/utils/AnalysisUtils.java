@@ -30,6 +30,8 @@ import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.linear.RealVector;
 import org.apache.commons.math3.linear.SingularValueDecomposition;
 import org.apache.commons.math3.stat.correlation.Covariance;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -43,6 +45,7 @@ import java.util.Random;
  */
 public enum AnalysisUtils {
     INSTANCE;
+    private static final Logger LOG = LoggerFactory.getLogger(AnalysisUtils.class);
 
     public static enum ANALYSIS_METHOD {PCA, SVD, KPCA}
 
@@ -227,7 +230,7 @@ public enum AnalysisUtils {
      * @link https://blog.clairvoyantsoft.com/eigen-decomposition-and-pca-c50f4ca15501
      */
     public static double[][] doCommonsPCA(double[][] array) {
-        System.out.print("centering matrix... ");
+        LOG.info("centering matrix... ");
         long startTime = System.nanoTime();
         //create real matrix
         RealMatrix originalMatrix = MatrixUtils.createRealMatrix(array);
@@ -235,14 +238,14 @@ public enum AnalysisUtils {
         RealMatrix centeredMatrix = centerMatrixByColumnMean(originalMatrix);
         Utils.printTotalTime(startTime);
 
-        System.out.print("Calculating covariance matrix... ");
+        LOG.info("Calculating covariance matrix... ");
         startTime = System.nanoTime();
         //Calculate covariance matrix of centered matrix
         Covariance covariance = new Covariance(centeredMatrix);
         RealMatrix covarianceMatrix = covariance.getCovarianceMatrix();
         Utils.printTotalTime(startTime);
 
-        System.out.print("EigenDecomposition... ");
+        LOG.info("EigenDecomposition... ");
         startTime = System.nanoTime();
         EigenDecomposition ed = new EigenDecomposition(covarianceMatrix);
         Utils.printTotalTime(startTime);
@@ -251,7 +254,7 @@ public enum AnalysisUtils {
         int rowCount = originalMatrix.getRowDimension();
         int columnCount = originalMatrix.getColumnDimension();
         double[][] projectedVectors = new double[rowCount][columnCount];
-        System.out.print("Projection... ");
+        LOG.info("Projection... ");
         startTime = System.nanoTime();
         for (int row = 0; row < rowCount; row++) {
             for (int column = 0; column < columnCount; column++) {
@@ -275,7 +278,7 @@ public enum AnalysisUtils {
      * @link https://blog.clairvoyantsoft.com/eigen-decomposition-and-pca-c50f4ca15501
      */
     public static double[][] doCommonsSVD(double[][] array) {
-        System.out.print("Starting SVD Process. Centering matrix... ");
+        LOG.info("Starting SVD Process. Centering matrix... ");
         long startTime = System.nanoTime();
         //create real matrix of original inputs
         RealMatrix originalMatrix = MatrixUtils.createRealMatrix(array);
@@ -283,18 +286,18 @@ public enum AnalysisUtils {
         RealMatrix centeredMatrix = centerMatrixByColumnMean(originalMatrix);
         Utils.printTotalTime(startTime);
 
-        System.out.print("Calculating covariance matrix... ");
+        LOG.info("Calculating covariance matrix... ");
         startTime = System.nanoTime();
         //Calculate covariance matrix of centered matrix
         Covariance covariance = new Covariance(centeredMatrix);
         RealMatrix covarianceMatrix = covariance.getCovarianceMatrix();
         Utils.printTotalTime(startTime);
 
-        System.out.print("Singular Value Decomposition... ");
+        LOG.info("Singular Value Decomposition... ");
         SingularValueDecomposition svd = new SingularValueDecomposition(covarianceMatrix);
         Utils.printTotalTime(startTime);
 
-        System.out.print("Projection... ");
+        LOG.info("Projection... ");
         //Project the original matrix against the new axes defined by the eigenvectors
         int rowCount = originalMatrix.getRowDimension();
         int columnCount = originalMatrix.getColumnDimension();
@@ -392,7 +395,7 @@ public enum AnalysisUtils {
     public static double[][] fitUMAP(FeatureCollection featureCollection, Umap umap) {
         //for each dimension extract transform via UMAP
         double[][] data = featureCollection.convertFeaturesToArray();
-        System.out.println("Starting UMAP Fit... ");
+        LOG.info("Starting UMAP Fit... ");
         long start = System.nanoTime();
         double[][] projected = umap.fitTransform(data);
         Utils.printTotalTime(start);
@@ -401,7 +404,7 @@ public enum AnalysisUtils {
 
     public static double[][] transformUMAP(FeatureCollection featureCollection, Umap umap) {
         double[][] data = featureCollection.convertFeaturesToArray();
-        System.out.println("Starting UMAP Transform... ");
+        LOG.info("Starting UMAP Transform... ");
         long start = System.nanoTime();
         double[][] projected = umap.transform(data);
         Utils.printTotalTime(start);

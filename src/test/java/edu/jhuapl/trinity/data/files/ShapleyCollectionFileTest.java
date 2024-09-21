@@ -6,11 +6,14 @@ import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author sean phillips
  */
 public class ShapleyCollectionFileTest {
+    private static final Logger LOG = LoggerFactory.getLogger(ShapleyCollectionFileTest.class);
 
     public ShapleyCollectionFileTest() {
     }
@@ -38,7 +41,7 @@ public class ShapleyCollectionFileTest {
      */
     @Test
     public void testWriteContent() throws Exception {
-        System.out.println("writeContent");
+        LOG.info("writeContent");
         ShapleyCollectionFile instance = new ShapleyCollectionFile("./ShapleyFile.json");
         ShapleyCollection sc = ShapleyCollection.fakeCollection(512, 512);
         sc.setSourceInput("OnyxHappyFace.png");

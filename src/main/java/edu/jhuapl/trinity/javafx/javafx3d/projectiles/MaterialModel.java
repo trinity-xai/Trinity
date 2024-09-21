@@ -12,12 +12,13 @@ import javafx.scene.input.TransferMode;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.Material;
 import javafx.util.Duration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+
 //import org.fxyz3d.importers.Model3D;
 //import org.fxyz3d.importers.obj.ObjImporter;
 
@@ -25,6 +26,7 @@ import java.util.logging.Logger;
  * @author Sean Phillips
  */
 public class MaterialModel extends Group {
+    private static final Logger LOG = LoggerFactory.getLogger(MaterialModel.class);
     public Color diffuseColor;
     public String modelResource;
     //    Model3D model;
@@ -76,7 +78,7 @@ public class MaterialModel extends Group {
 //                    }
                     event.setDropCompleted(true);
                 } catch (MalformedURLException ex) {
-                    Logger.getLogger(MaterialModel.class.getName()).log(Level.SEVERE, null, ex);
+                    LOG.error(null, ex);
                     event.setDropCompleted(false);
                 }
                 event.consume();

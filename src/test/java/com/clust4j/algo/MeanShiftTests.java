@@ -36,6 +36,8 @@ import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.util.Precision;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -51,6 +53,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class MeanShiftTests implements ClusterTest, ClassifierTest, ConvergeableTest, BaseModelTest {
+    private static final Logger LOG = LoggerFactory.getLogger(MeanShiftTests.class);
     final static Array2DRowRealMatrix data_ = TestSuite.IRIS_DATASET.getData();
     final static Array2DRowRealMatrix wine = TestSuite.WINE_DATASET.getData();
 
@@ -712,7 +715,7 @@ public class MeanShiftTests implements ClusterTest, ClassifierTest, Convergeable
     @Test
     public void testPredict() {
         MeanShift a = new MeanShift(data_).fit();
-        System.out.println("MeanShift prediction affinity: " + a.indexAffinityScore(a.predict(data_)));
+        LOG.info("MeanShift prediction affinity: {}", a.indexAffinityScore(a.predict(data_)));
     }
 
     @Test //travis may not be able to handle this...

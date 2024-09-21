@@ -32,6 +32,8 @@ import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.util.FastMath;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -44,6 +46,7 @@ import static com.clust4j.TestSuite.getRandom;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class KMedoidsTests implements ClusterTest, ClassifierTest, ConvergeableTest, BaseModelTest {
+    private static final Logger LOG = LoggerFactory.getLogger(KMedoidsTests.class);
     final Array2DRowRealMatrix irisdata = TestSuite.IRIS_DATASET.getData();
     final Array2DRowRealMatrix winedata = TestSuite.WINE_DATASET.getData();
     final Array2DRowRealMatrix bcdata = TestSuite.BC_DATASET.getData();
@@ -263,7 +266,7 @@ public class KMedoidsTests implements ClusterTest, ClassifierTest, ConvergeableT
         assertTrue(km.getLabels()[0] != km.getLabels()[3]);
         assertTrue(km.didConverge());
 
-        System.out.println(Arrays.toString(km.getCentroids().get(1)));
+        LOG.info(Arrays.toString(km.getCentroids().get(1)));
         assertTrue(VecUtils.equalsExactly(km.getCentroids().get(0), data[0]));
         assertTrue(VecUtils.equalsExactly(km.getCentroids().get(1), data[1]));
         assertTrue(VecUtils.equalsExactly(km.getCentroids().get(2), data[3]));
@@ -391,7 +394,7 @@ public class KMedoidsTests implements ClusterTest, ClassifierTest, ConvergeableT
             kmed = km.fitNewModel(d);
             i = kmed.indexAffinityScore(actual);
 
-            System.out.println(kmed.dist_metric.getName() + ", " + i);
+            LOG.info("{}, {}", kmed.dist_metric.getName(), i);
             if (i > ia) {
                 ia = i;
                 best = dist;
@@ -428,7 +431,7 @@ public class KMedoidsTests implements ClusterTest, ClassifierTest, ConvergeableT
             i = model.indexAffinityScore(actual);
 
 
-            System.out.println(model.getSeparabilityMetric().getName() + ", " + i);
+            LOG.info("{}, {}", model.getSeparabilityMetric().getName(), i);
             if (i > ia) {
                 ia = i;
                 best = model.getSeparabilityMetric();
@@ -436,7 +439,7 @@ public class KMedoidsTests implements ClusterTest, ClassifierTest, ConvergeableT
         }
 
 
-        System.out.println("BEST: " + best.getName() + ", " + ia);
+        LOG.info("BEST: {}, {}", best.getName(), ia);
     }
 
     /**

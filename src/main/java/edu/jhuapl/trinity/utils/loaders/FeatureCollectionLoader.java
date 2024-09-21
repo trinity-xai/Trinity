@@ -29,15 +29,16 @@ import edu.jhuapl.trinity.javafx.events.TrajectoryEvent;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.scene.Scene;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * @author Sean Phillips
  */
 public class FeatureCollectionLoader extends Task {
+    private static final Logger LOG = LoggerFactory.getLogger(FeatureCollectionLoader.class);
     Scene scene;
     File file;
 
@@ -83,7 +84,7 @@ public class FeatureCollectionLoader extends Task {
             Platform.runLater(() -> scene.getRoot().fireEvent(
                 new TrajectoryEvent(TrajectoryEvent.NEW_TRAJECTORY_OBJECT, trajectory, fcFile.featureCollection)));
         } catch (Exception ex) {
-            Logger.getLogger(FeatureCollectionLoader.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(null, ex);
         }
 
         return null;

@@ -22,7 +22,6 @@ package edu.jhuapl.trinity.javafx.javafx3d.animated;
 
 import edu.jhuapl.trinity.javafx.components.Crosshair;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
-import edu.jhuapl.trinity.javafx.javafx3d.RetroWavePane;
 import edu.jhuapl.trinity.utils.DataUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import javafx.animation.AnimationTimer;
@@ -50,11 +49,11 @@ import javafx.scene.text.Font;
 import javafx.scene.transform.Rotate;
 import javafx.util.Duration;
 import org.fxyz3d.shapes.primitives.ConeMesh;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.Random;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import static javafx.animation.Animation.INDEFINITE;
 
@@ -62,6 +61,7 @@ import static javafx.animation.Animation.INDEFINITE;
  * @author Sean Phillips
  */
 public class Opticon extends Group {
+    private static final Logger LOG = LoggerFactory.getLogger(Opticon.class);
     public static double CONE_MESH_ROTATE = -5;
     public static double SCANMODE_X_ANGLE = 30.0;
     public static double SEARCH_DESTROY_X_ANGLE = 0.0;
@@ -134,7 +134,7 @@ public class Opticon extends Group {
             Image specularImage = ResourceUtils.load3DTextureImage("inverseRetroline");
             mat = new PhongMaterial(Color.BLUE, diffuseImage, specularImage, specBumpImage, diffuseImage);
         } catch (IOException ex) {
-            Logger.getLogger(RetroWavePane.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(null, ex);
             mat = new PhongMaterial(Color.BLUE);
         }
         mainBody = new AnimatedSphere(mat, scannerBaseRadius, 32, true);
@@ -169,7 +169,7 @@ public class Opticon extends Group {
             scannerConeOutlineMesh.setDrawMode(DrawMode.LINE);
 
         } catch (IOException ex) {
-            Logger.getLogger(Opticon.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(null, ex);
             scannerConeMesh.setTextureModeNone(scanConeColor);
             scannerConeMesh.setDrawMode(DrawMode.LINE);
         }

@@ -42,6 +42,8 @@ import javafx.scene.layout.Background;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.stage.StageStyle;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.List;
@@ -51,6 +53,7 @@ import java.util.Optional;
  * @author Sean Phillips
  */
 public class ZeroPilotLatentsLoader extends Task {
+    private static final Logger LOG = LoggerFactory.getLogger(ZeroPilotLatentsLoader.class);
     Scene scene;
     File file;
 
@@ -106,7 +109,7 @@ public class ZeroPilotLatentsLoader extends Task {
         Platform.runLater(() -> {
             scene.getRoot().fireEvent(new CommandTerminalEvent(
                 "Done Loading ZERO Pilot Latents from File.", new Font("Consolas", 20), Color.GREEN));
-            System.out.println("ZERO pilot latents file read.");
+            LOG.info("ZERO pilot latents file read.");
 
             ProgressStatus ps = new ProgressStatus("Converting ZERO Pilot latent vectors to Feature Vectors...", -1);
             ps.fillStartColor = Color.CYAN;
@@ -167,7 +170,7 @@ public class ZeroPilotLatentsLoader extends Task {
                     new FeatureVectorEvent(FeatureVectorEvent.NEW_FEATURE_COLLECTION, fc));
             });
         } catch (Exception ex) {
-            ex.printStackTrace();
+            LOG.error("Exception", ex);
         }
         return null;
     }

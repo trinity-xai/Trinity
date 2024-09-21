@@ -24,12 +24,16 @@ import javafx.geometry.Point3D;
 import javafx.scene.Group;
 import javafx.scene.transform.Affine;
 import javafx.scene.transform.Rotate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Sean Phillips
  * Modified from https://stackoverflow.com/questions/46176489/javafx-3d-rotation-around-scene-fixed-axes
  */
 public class XFormGroup extends Group {
+    private static final Logger LOG = LoggerFactory.getLogger(XFormGroup.class);
+
     public XFormGroup() {
         super();
         getTransforms().add(new Affine());
@@ -82,7 +86,7 @@ public class XFormGroup extends Group {
         double delta = angle - getRotate();
         Rotate r = new Rotate(angle, Rotate.X_AXIS);
         Affine a = (Affine) getTransforms().get(0);
-        System.out.println("X rotate delta: " + delta);
+        LOG.info("X rotate delta: {}", delta);
         addRotation(delta, Rotate.X_AXIS);
     }
 
@@ -94,7 +98,7 @@ public class XFormGroup extends Group {
     public void setRotationY(double angle) {
         setRotationAxis(Rotate.Y_AXIS);
         double delta = angle - getRotate();
-        System.out.println("Y rotate delta: " + delta);
+        LOG.info("Y rotate delta: {}", delta);
         addRotation(delta, Rotate.Y_AXIS);
     }
 
@@ -106,7 +110,7 @@ public class XFormGroup extends Group {
     public void setRotationZ(double angle) {
         setRotationAxis(Rotate.Z_AXIS);
         double delta = angle - getRotate();
-        System.out.println("Z rotate delta: " + delta);
+        LOG.info("Z rotate delta: {}", delta);
         addRotation(delta, Rotate.Z_AXIS);
     }
 

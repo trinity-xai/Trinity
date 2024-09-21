@@ -25,6 +25,8 @@ import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Random;
 import java.util.function.BiFunction;
@@ -38,6 +40,7 @@ import java.util.function.BiFunction;
  * taken from LitFX
  */
 public class MatrixEffect {
+    private static final Logger LOG = LoggerFactory.getLogger(MatrixEffect.class);
     private int fontSize = 20; // width pixels
     private Canvas canvas;
     public Color backgroundFill = Color.rgb(0, 0, 0, 0.1);  //Color.web("#0001");
@@ -82,7 +85,7 @@ public class MatrixEffect {
                     w = (int) canvas.getWidth();
                     h = (int) canvas.getHeight();
                     if (w != prevWidth || h != prevHeight) {
-                        System.out.println("resizing " + w + " prevw " + prevWidth);
+                        LOG.info("resizing {} prevw {}", w, prevWidth);
                         ypos = resize(gc);
                         prevWidth = w;
                         prevHeight = h;

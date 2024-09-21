@@ -35,6 +35,8 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.util.Pair;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
@@ -44,6 +46,7 @@ import java.util.stream.Stream;
  * @author Sean Phillips
  */
 public class AffinityClusterTask extends ClusterTask {
+    private static final Logger LOG = LoggerFactory.getLogger(AffinityClusterTask.class);
 
     ProjectionConfig pc;
     double[][] observations;
@@ -68,8 +71,8 @@ public class AffinityClusterTask extends ClusterTask {
         double[][] shuffledObservations = null;
 
         if (observations.length > 1000) {
-            System.out.println("Total observations count too large for AffinityPropagation.");
-            System.out.println("Using random Resovoir sample of size 1000...");
+            LOG.info("Total observations count too large for AffinityPropagation.");
+            LOG.info("Using random Resovoir sample of size 1000...");
             Double[][] boxedObservations = AnalysisUtils.boxDoubleArrays(observations);
             ArrayList<Pair<Double[], Integer>> pairList = new ArrayList<>();
             for (int i = 0; i < observations.length; i++) {
@@ -87,7 +90,7 @@ public class AffinityClusterTask extends ClusterTask {
             obsMatrix = new Array2DRowRealMatrix(observations);
         }
 
-        System.out.print("Affinity Propagation fit... ");
+        LOG.info("Affinity Propagation fit... ");
         long startTime = System.nanoTime();
         try {
             AffinityPropagation aff = new AffinityPropagationParameters()
@@ -104,19 +107,19 @@ public class AffinityClusterTask extends ClusterTask {
             final int clusters = aff.getNumberOfIdentifiedClusters();
 
             Utils.printTotalTime(startTime);
-            System.out.println("===============================================");
+            LOG.info("===============================================");
 
-            System.out.print("Converting clusters to Manifold Geometry... ");
+            LOG.info("Converting clusters to Manifold Geometry... ");
             startTime = System.nanoTime();
             if (observations.length > 1000 && null != shuffledObservations)
                 convertToManifoldGeometry(shuffledObservations, labels, clusters, "Affinity Propagation Cluster ");
             else
                 convertToManifoldGeometry(observations, labels, clusters, "Affinity Propagation Cluster ");
         } catch (Exception ex) {
-            ex.printStackTrace();
+            LOG.error("Exception", ex);
         }
         Utils.printTotalTime(startTime);
-        System.out.println("===============================================");
+        LOG.info("===============================================");
         Platform.runLater(() -> {
             scene.getRoot().fireEvent(
                 new CommandTerminalEvent("Completed Affinity Propagation Fit and Manifold Geometry Task.",

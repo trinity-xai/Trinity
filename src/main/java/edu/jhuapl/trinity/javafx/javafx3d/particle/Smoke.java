@@ -22,13 +22,13 @@ package edu.jhuapl.trinity.javafx.javafx3d.particle;
 
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import javafx.scene.image.Image;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class Smoke extends DualTextureParticle {
-
+    private static final Logger LOG = LoggerFactory.getLogger(Smoke.class);
     public static final String DEFAULT_TEXTURE1_NAME = "smoke2_16";
     public static final String DEFAULT_TEXTURE2_NAME = "smoke2_16";
     public static Image image1 = null;
@@ -43,7 +43,7 @@ public class Smoke extends DualTextureParticle {
             image1 = ResourceUtils.load3DTextureImage(DEFAULT_TEXTURE1_NAME);
             image2 = ResourceUtils.load3DTextureImage(DEFAULT_TEXTURE2_NAME);
         } catch (IOException ex) {
-            Logger.getLogger(Smoke.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(null, ex);
         }
     }
 

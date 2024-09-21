@@ -43,6 +43,8 @@ import javafx.scene.layout.Background;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.stage.StageStyle;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -53,6 +55,7 @@ import java.util.Optional;
  * @author Sean Phillips
  */
 public class McclodSplitDataLoader extends Task {
+    private static final Logger LOG = LoggerFactory.getLogger(McclodSplitDataLoader.class);
     Scene scene;
     File file;
 
@@ -123,7 +126,7 @@ public class McclodSplitDataLoader extends Task {
                 scene.getRoot().fireEvent(new CommandTerminalEvent(
                     "Done loading split data.", new Font("Consolas", 20), Color.GREEN));
             });
-            System.out.println("Done loading split data.");
+            LOG.info("Done loading split data.");
             Platform.runLater(() -> {
                 ProgressStatus ps = new ProgressStatus("Injecting as FeatureCollection...", -1);
                 ps.fillStartColor = Color.CYAN;
@@ -154,7 +157,7 @@ public class McclodSplitDataLoader extends Task {
                     new FeatureVectorEvent(FeatureVectorEvent.NEW_FEATURE_COLLECTION, fc));
             });
         } catch (Exception ex) {
-            ex.printStackTrace();
+            LOG.error("Exception", ex);
         }
         return systemFeatures;
     }

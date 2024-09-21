@@ -33,6 +33,8 @@ import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.CullFace;
 import org.fxyz3d.geometry.Point3D;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -43,6 +45,7 @@ import java.util.stream.Collectors;
  * @author Sean Phillips
  */
 public abstract class ClusterTask extends Task {
+    private static final Logger LOG = LoggerFactory.getLogger(ClusterTask.class);
     static AtomicInteger ai = new AtomicInteger(0);
     Scene scene;
     PerspectiveCamera camera;
@@ -135,7 +138,7 @@ public abstract class ClusterTask extends Task {
             if (points.size() >= 4) {
                 createManifold(points, label);
             } else {
-                System.out.println("Cluster has less than 4 points");
+                LOG.info("Cluster has less than 4 points");
             }
         }
     }

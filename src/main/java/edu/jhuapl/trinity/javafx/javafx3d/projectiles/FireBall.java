@@ -7,15 +7,16 @@ import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.Shape3D;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * @author Sean Phillips
  */
 public class FireBall extends Projectile {
+    private static final Logger LOG = LoggerFactory.getLogger(FireBall.class);
     public static double DEFAULT_FIREBALL_RADIUS = 15;
     TriaxialSpheroidMesh ellipsoid;
     double distanceToLive = 2000;
@@ -33,7 +34,7 @@ public class FireBall extends Projectile {
             bump = ResourceUtils.load3DTextureImage("asteroidBumpNormalMap");
 //            self = ResourceUtils.load3DTextureImage("explosion");
         } catch (IOException ex) {
-            Logger.getLogger(FireBall.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(null, ex);
         }
         //diffuse color, diffuseMap, specularMap, bumpMap, selfIlluminationMap
         PhongMaterial material = new PhongMaterial(

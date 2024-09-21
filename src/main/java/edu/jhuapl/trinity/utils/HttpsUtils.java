@@ -21,6 +21,8 @@ package edu.jhuapl.trinity.utils;
  */
 
 import javafx.scene.image.Image;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.net.ssl.HttpsURLConnection;
 import javax.net.ssl.SSLContext;
@@ -34,6 +36,7 @@ import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 
 public class HttpsUtils {
+    private static final Logger LOG = LoggerFactory.getLogger(HttpsUtils.class);
 
     public static Image getImage(String urlPath) {
         try {
@@ -54,7 +57,7 @@ public class HttpsUtils {
             return new Image(in);
 
         } catch (Exception ex) {
-            ex.printStackTrace();
+            LOG.error("Exception", ex);
         }
         return new Image("");
     }
@@ -103,7 +106,7 @@ public class HttpsUtils {
             Image image = new Image(in);
             return image;
         } catch (Exception ex) {
-            ex.printStackTrace();
+            LOG.error("Exception", ex);
         }
         return new Image("");
     }

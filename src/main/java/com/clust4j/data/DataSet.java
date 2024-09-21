@@ -24,6 +24,8 @@ import com.clust4j.utils.TableFormatter;
 import com.clust4j.utils.VecUtils;
 import org.apache.commons.math3.exception.DimensionMismatchException;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -41,6 +43,7 @@ import java.util.Collections;
  * @author Taylor G Smith
  */
 public class DataSet extends Clust4j implements DeepCloneable, Serializable {
+    private static final Logger LOG = LoggerFactory.getLogger(DataSet.class);
     private static final long serialVersionUID = -1203771047711850121L;
 
     final static String COL_PREFIX = "V";
@@ -575,7 +578,7 @@ public class DataSet extends Clust4j implements DeepCloneable, Serializable {
      * View the dataset in the console
      */
     public void stdOut() {
-        System.out.println(this.toString());
+        LOG.info(this.toString());
     }
 
     /**

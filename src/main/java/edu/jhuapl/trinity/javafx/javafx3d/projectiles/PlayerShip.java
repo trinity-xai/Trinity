@@ -39,6 +39,8 @@ import javafx.scene.shape.DrawMode;
 import javafx.scene.transform.Affine;
 import javafx.scene.transform.Rotate;
 import org.fxyz3d.geometry.Vector3D;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -46,8 +48,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.IntStream;
 
 /**
@@ -55,6 +55,7 @@ import java.util.stream.IntStream;
  * Hokey tetrahedra that is artificially stretched to point in the Z+ axis
  */
 public class PlayerShip extends AnimatedTetrahedron implements Hittable {
+    private static final Logger LOG = LoggerFactory.getLogger(PlayerShip.class);
     public static final double smallDiff = 1.0E-11;
     public static double defaultThrustMagnitude = 1.0;
     public static double maxThrustMagnitude = 20.0;
@@ -95,7 +96,7 @@ public class PlayerShip extends AnimatedTetrahedron implements Hittable {
             cockpitMaterial = new PhongMaterial(Color.WHITE, cockpitImage, null, null, null);
 
         } catch (IOException ex) {
-            Logger.getLogger(PlayerShip.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(null, ex);
             playerMaterial = new PhongMaterial(Color.NAVAJOWHITE);
             cockpitMaterial = new PhongMaterial(Color.TRANSPARENT);
         }
@@ -124,7 +125,7 @@ public class PlayerShip extends AnimatedTetrahedron implements Hittable {
                     playerMaterial.setDiffuseMap(textureImage);
                     event.setDropCompleted(true);
                 } catch (MalformedURLException ex) {
-                    Logger.getLogger(PlayerShip.class.getName()).log(Level.SEVERE, null, ex);
+                    LOG.error(null, ex);
                     event.setDropCompleted(false);
                 }
                 event.consume();
@@ -240,7 +241,7 @@ public class PlayerShip extends AnimatedTetrahedron implements Hittable {
         Point3D velocityReflection = null;
         Double shortestDistance = null;
         //Go through each normal
-        System.out.print("Planar distances: ");
+        LOG.info("Planar distances: ");
         for (int i = 0; i < 6; i++) {
             //find the distance to the plane
             double d = -normals.get(i).dotProduct(positions.get(i));
@@ -249,7 +250,7 @@ public class PlayerShip extends AnimatedTetrahedron implements Hittable {
                 -(gloOriginInLoc.dotProduct(normals.get(i)) + d)
                     / (gloDirection.dotProduct(normals.get(i)))
             );
-            System.out.print("(" + d + ", " + t + ") ");
+            LOG.info("({}, {}) ", d, t);
             //only do the reflection if its a shorter distance
             if (null == shortestDistance || t < shortestDistance) {
                 shortestDistance = t;
@@ -263,7 +264,7 @@ public class PlayerShip extends AnimatedTetrahedron implements Hittable {
                 velocityReflection = new Point3D(nV.x, nV.y, nV.z);
             }
         }
-        System.out.println(".");
+        LOG.info(".");
         return velocityReflection;
     }
 
@@ -450,7 +451,7 @@ public class PlayerShip extends AnimatedTetrahedron implements Hittable {
         //@DEBUG SMP
         boolean hitPlane2 = intersectsPlane(line, xPlane2);
         if (hitPlane2) {
-            System.out.println("hitplane2");
+            LOG.info("hitplane2");
             boolean debugCheck = intersectsPlane(line, xPlane2);
         }
 

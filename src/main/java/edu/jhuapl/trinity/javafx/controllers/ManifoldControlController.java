@@ -64,6 +64,8 @@ import javafx.scene.text.Font;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import javafx.util.Duration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -72,8 +74,6 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * FXML Controller class
@@ -81,6 +81,7 @@ import java.util.logging.Logger;
  * @author Sean Phillips
  */
 public class ManifoldControlController implements Initializable {
+    private static final Logger LOG = LoggerFactory.getLogger(ManifoldControlController.class);
 
     @FXML
     private Node root;
@@ -231,7 +232,7 @@ public class ManifoldControlController implements Initializable {
                             setUmapConfig(uc);
                         }
                     } catch (IOException ex) {
-                        Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+                        LOG.error(null, ex);
                     }
                 }
             });
@@ -565,13 +566,12 @@ public class ManifoldControlController implements Initializable {
     public void exportMatrix() {
         if (null != latestUmapObject) {
             if (null != latestUmapObject.getmEmbedding()) {
-                System.out.println("latestUmapObject: " +
-                    latestUmapObject.getmEmbedding().toStringNumpy());
+                LOG.info("latestUmapObject: {}", latestUmapObject.getmEmbedding().toStringNumpy());
             } else {
-                System.out.println("UMAP Embeddings not generated yet.");
+                LOG.info("UMAP Embeddings not generated yet.");
             }
         } else {
-            System.out.println("UMAP object not yet established.");
+            LOG.info("UMAP object not yet established.");
         }
     }
 
@@ -592,7 +592,7 @@ public class ManifoldControlController implements Initializable {
                 uc = mapper.readValue(file, UmapConfig.class);
                 setUmapConfig(uc);
             } catch (IOException ex) {
-                Logger.getLogger(ManifoldControlController.class.getName()).log(Level.SEVERE, null, ex);
+                LOG.error(null, ex);
             }
         }
     }
@@ -646,7 +646,7 @@ public class ManifoldControlController implements Initializable {
             try {
                 mapper.writeValue(file, uc);
             } catch (IOException ex) {
-                Logger.getLogger(ManifoldControlController.class.getName()).log(Level.SEVERE, null, ex);
+                LOG.error(null, ex);
             }
         }
     }

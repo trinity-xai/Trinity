@@ -31,8 +31,11 @@ import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import javafx.util.Duration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Gleam extends Application {
+    private static final Logger LOG = LoggerFactory.getLogger(Gleam.class);
 
     public static ObservableList<Node> child;
     //
@@ -75,7 +78,7 @@ public class Gleam extends Application {
                 }
                 case F3: {
                     //Show Child Count
-                    System.out.println("Child Count: " + child.size());
+                    LOG.info("Child Count: {}", child.size());
                     break;
                 }
             }

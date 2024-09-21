@@ -25,6 +25,8 @@ import org.jflac.PCMProcessor;
 import org.jflac.metadata.StreamInfo;
 import org.jflac.util.ByteData;
 import org.jflac.util.WavWriter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -36,6 +38,7 @@ import java.io.IOException;
  * @author kc7bfi
  */
 public class FlacToWav implements PCMProcessor {
+    private static final Logger LOG = LoggerFactory.getLogger(FlacToWav.class);
     private WavWriter wav;
 
     public FlacToWav() {
@@ -50,7 +53,7 @@ public class FlacToWav implements PCMProcessor {
      * @throws IOException Thrown if error reading or writing files
      */
     public void decode(String inFileName, String outFileName) throws Exception {
-        System.out.println("Decode [" + inFileName + "][" + outFileName + "]");
+        LOG.info("Decode [{}][{}]", inFileName, outFileName);
         FileInputStream is = null;
         FileOutputStream os = null;
         try {
@@ -64,7 +67,7 @@ public class FlacToWav implements PCMProcessor {
             decoder.addPCMProcessor(this);
             //@DEBUG SMP System.out.println("Attempting to decode...");
             decoder.decode();
-            System.out.println("Decoding complete.");
+            LOG.info("Decoding complete.");
         } finally {
             if (is != null) {
                 is.close();
@@ -86,7 +89,7 @@ public class FlacToWav implements PCMProcessor {
         try {
             wav.writeHeader(info);
         } catch (IOException e) {
-            e.printStackTrace();
+            LOG.error("Exception", e);
         }
     }
 
@@ -101,7 +104,7 @@ public class FlacToWav implements PCMProcessor {
         try {
             wav.writePCM(pcm);
         } catch (IOException e) {
-            e.printStackTrace();
+            LOG.error("Exception", e);
         }
     }
 }

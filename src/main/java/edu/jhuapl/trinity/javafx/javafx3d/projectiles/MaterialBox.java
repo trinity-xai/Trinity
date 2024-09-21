@@ -34,15 +34,16 @@ import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.Box;
 import javafx.util.Duration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.MalformedURLException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * @author Sean Phillips
  */
 public class MaterialBox extends Box {
+    private static final Logger LOG = LoggerFactory.getLogger(MaterialBox.class);
     public Color color;
     public SimpleDoubleProperty scalingBind = null;
     public boolean animateOnHover = false;
@@ -81,7 +82,7 @@ public class MaterialBox extends Box {
                     setMaterial(material);
                     event.setDropCompleted(true);
                 } catch (MalformedURLException ex) {
-                    Logger.getLogger(MaterialBox.class.getName()).log(Level.SEVERE, null, ex);
+                    LOG.error(null, ex);
                     event.setDropCompleted(false);
                 }
                 event.consume();

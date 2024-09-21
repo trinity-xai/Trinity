@@ -37,11 +37,14 @@ import javafx.scene.control.DialogPane;
 import javafx.scene.layout.Background;
 import javafx.scene.paint.Color;
 import javafx.stage.StageStyle;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Sean Phillips
  */
 public class ProjectPcaFeaturesTask extends Task {
+    private static final Logger LOG = LoggerFactory.getLogger(ProjectPcaFeaturesTask.class);
     Scene scene;
     FeatureCollection originalFC;
     PCAConfig config;
@@ -110,19 +113,18 @@ public class ProjectPcaFeaturesTask extends Task {
         double[][] featureArray = originalFC.getFeatures().stream()
             .map(FeatureVector.mapToStateArray)
             .toArray(double[][]::new);
-        System.out.println("featureArray sizes: "
-            + featureArray.length + " " + featureArray[0].length);
+        LOG.info("featureArray sizes: {} {}", featureArray.length, featureArray[0].length);
 
         int start = config.startIndex;
         if (start < 0 || start >= featureArray.length) {
-            System.out.println("PCA Start index no bueno... setting to Zero.");
+            LOG.info("PCA Start index no bueno... setting to Zero.");
             start = 0;
         }
         int end = config.endIndex;
         if (end <= start
             || end >= originalFC.getFeatures().size()
             || end <= 0) {
-            System.out.println("PCA End index no bueno... setting to Max.");
+            LOG.info("PCA End index no bueno... setting to Max.");
             end = originalFC.getFeatures().size() - 1;
         }
 
@@ -137,10 +139,9 @@ public class ProjectPcaFeaturesTask extends Task {
                 return states;
             })
             .toArray(double[][]::new);
-        System.out.println("truncArray sizes: "
-            + truncArray.length + " " + truncArray[0].length);
+        LOG.info("truncArray sizes: {} {}", truncArray.length, truncArray[0].length);
 
-        System.out.print("PCA... ");
+        LOG.info("PCA... ");
         long startTime = System.nanoTime();
         double[][] pcaProjection = null;
         if (config.method == AnalysisUtils.ANALYSIS_METHOD.SVD)
@@ -149,7 +150,7 @@ public class ProjectPcaFeaturesTask extends Task {
             pcaProjection = AnalysisUtils.doCommonsPCA(truncArray);
         Utils.printTotalTime(startTime);
 
-        System.out.println("mapping projected PCA data back to FeatureVectors...");
+        LOG.info("mapping projected PCA data back to FeatureVectors...");
         FeatureCollection projectedFC = FeatureCollection.fromData(
             pcaProjection, config.pcaDimensions, config.scaling);
         for (int i = 0; i < projectedFC.getFeatures().size() - 1; i++) {

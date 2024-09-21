@@ -52,6 +52,8 @@ import lit.litfx.controls.menus.LitRadialMenuItem;
 import lit.litfx.core.components.BandEmitter;
 import lit.litfx.core.components.CircleQuadBandCreator;
 import lit.litfx.core.components.targeting.SpinningReticule;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -60,6 +62,7 @@ import java.util.List;
  * @author Sean Phillips
  */
 public class RadialEntity extends LitRadialMenu {
+    private static final Logger LOG = LoggerFactory.getLogger(RadialEntity.class);
     public static double ORBITING_CIRCLE_OFFSET = 20;
     public static double ITEM_SIZE = 180.0; //degrees
     public static double INNER_RADIUS = 150.0;
@@ -416,7 +419,7 @@ public class RadialEntity extends LitRadialMenu {
 
         double degreesPerItem = 360.0 / items.size();
         if (degreesPerItem > 180.0) {
-            System.out.println("Capping item size to 180 degrees.");
+            LOG.info("Capping item size to 180 degrees.");
             setMenuItemSize(180.0);
         } else {
             setMenuItemSize(degreesPerItem);

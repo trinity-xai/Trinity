@@ -21,6 +21,8 @@ package edu.jhuapl.trinity.messages;
  */
 
 import edu.jhuapl.trinity.messages.ZeroMQSubscriberConfig.CONNECTION;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.zeromq.SocketType;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
@@ -31,8 +33,6 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.ScheduledThreadPoolExecutor;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Asynchronous service that will subscribe to a ZeroMQ feed
@@ -40,6 +40,7 @@ import java.util.logging.Logger;
  * @author Sean Phillips
  */
 public class ZeroMQFeedManager extends ScheduledThreadPoolExecutor {
+    private static final Logger LOG = LoggerFactory.getLogger(ZeroMQFeedManager.class);
     /**
      * Provides interface to route messages into GUI events
      */
@@ -97,7 +98,7 @@ public class ZeroMQFeedManager extends ScheduledThreadPoolExecutor {
         if (null != subscriber) {
             disconnect(false);
         }
-        System.out.println("Creating ZeroMQ subscriber at " + config.host);
+        LOG.info("Creating ZeroMQ subscriber at {}", config.host);
         try (ZContext context = new ZContext()) {
             if (config.connection == CONNECTION.SUBSCRIBER) {
                 subscriber = context.createSocket(SocketType.SUB);
@@ -110,13 +111,13 @@ public class ZeroMQFeedManager extends ScheduledThreadPoolExecutor {
 
             currentHost = config.host;
             connected = true;
-            System.out.println("Starting ZeroMQ subscriber scheduled thread " + threadGeneration);
+            LOG.info("Starting ZeroMQ subscriber scheduled thread {}", threadGeneration);
             this.scheduleAtFixedRate(() -> {
                 if (enabled) {
                     try {
                         processQueue();
                     } catch (IOException ex) {
-                        Logger.getLogger(ZeroMQFeedManager.class.getName()).log(Level.SEVERE, null, ex);
+                        LOG.error(null, ex);
                     }
                 }
             }, 0, scheduledFixedRate, TimeUnit.MILLISECONDS);
@@ -144,9 +145,9 @@ public class ZeroMQFeedManager extends ScheduledThreadPoolExecutor {
                 }
                 Thread.sleep(scheduledFixedRate);
             }
-            System.out.println("Ending ZeroMQ subscriber scheduled thread " + threadGeneration);
+            LOG.info("Ending ZeroMQ subscriber scheduled thread {}", threadGeneration);
         } catch (Exception ex) {
-            Logger.getLogger(ZeroMQFeedManager.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(null, ex);
         } finally {
             disconnect(false);
         }
@@ -197,7 +198,7 @@ public class ZeroMQFeedManager extends ScheduledThreadPoolExecutor {
         }
         if (shutdown) {
             boolean status = shutdownAndAwaitTermination(this, 500, TimeUnit.MILLISECONDS);
-            System.out.println("Thread Termination status: " + status);
+            LOG.info("Thread Termination status: {}", status);
         }
     }
 

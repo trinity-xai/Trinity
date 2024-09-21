@@ -30,8 +30,11 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class GesturesTestApp extends Application {
+    private static final Logger LOG = LoggerFactory.getLogger(GesturesTestApp.class);
 
     //    RadialEntityOverlayPane radialPane;
     Pane touchPointOverlayPane;
@@ -54,16 +57,16 @@ public class GesturesTestApp extends Application {
         BorderPane bpOilSpill = new BorderPane(touchPointOverlayPane);
 //        bpOilSpill.setBackground(Background.EMPTY);
         bpOilSpill.addEventHandler(TouchEvent.TOUCH_PRESSED, e -> {
-            System.out.println("BP Oil Spill touch pressed.");
+            LOG.info("BP Oil Spill touch pressed.");
             e.consume();
         });
         Scene scene = new Scene(bpOilSpill, Color.BLACK);
         touchPointOverlayPane.addEventHandler(TouchEvent.TOUCH_PRESSED, e -> {
-            System.out.println("touchPointOverlay touch pressed.");
+            LOG.info("touchPointOverlay touch pressed.");
             e.consume();
         });
         touchPointOverlayPane.addEventHandler(ZoomEvent.ZOOM, e -> {
-            System.out.println("Overlay zoom.");
+            LOG.info("Overlay zoom.");
         });
 
 //        List<FeatureVector> featureVectors = new ArrayList<>();

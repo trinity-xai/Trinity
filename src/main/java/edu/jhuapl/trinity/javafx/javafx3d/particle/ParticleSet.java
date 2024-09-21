@@ -25,18 +25,19 @@ import javafx.application.Platform;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import org.fxyz3d.geometry.Point3D;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
 import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 
 /**
  * Class to manage a set of animated particles.
  */
 public class ParticleSet {
+    private static final Logger LOG = LoggerFactory.getLogger(ParticleSet.class);
 
     public static int DEFAULT_PARTICLE_COUNT = 50;
     private final Class<? extends Particle> particleType;
@@ -69,7 +70,7 @@ public class ParticleSet {
         } catch (NoSuchMethodException | IllegalArgumentException
                  | InvocationTargetException | InstantiationException
                  | IllegalAccessException ex) {
-            Logger.getLogger(ParticleSet.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(null, ex);
         }
 
     }
@@ -124,7 +125,7 @@ public class ParticleSet {
         }
         // Figure out how many particles we are suppose to make
         int particlesToCreate = (int) (particlesPerMS * msSinceSpawn);
-        System.out.println("Particles to Create: " + particlesToCreate);
+        LOG.info("Particles to Create: {}", particlesToCreate);
 
         // If we didn't create a single particle remember the time and bail
         if (particlesToCreate >= 1) {

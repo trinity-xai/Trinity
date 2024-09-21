@@ -3,6 +3,8 @@ package edu.jhuapl.trinity.utils.clustering;
 import javafx.util.Pair;
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /*-
  * #%L
@@ -29,6 +31,7 @@ import org.apache.commons.math3.linear.RealMatrix;
  * The EM algorithm can be used to learn the mixture model from data.
  */
 public class GaussianMixture {
+    private static final Logger LOG = LoggerFactory.getLogger(GaussianMixture.class);
 
     /**
      * The components of finite mixture model.
@@ -168,12 +171,11 @@ public class GaussianMixture {
             L = loglikelihood;
 
             if (iter % 10 == 0) {
-                System.out.println(
-                    String.format("The log-likelihood after %d iterations: %.4f", iter, L));
+                LOG.info("The log-likelihood after {} iterations: {}", iter, L);
             }
             iterationsComplete++;
         }
-        System.out.println("EM Iterations: " + iterationsComplete);
+        LOG.info("EM Iterations: {}", iterationsComplete);
         return new GaussianMixture(L, x.length, components);
     }
 

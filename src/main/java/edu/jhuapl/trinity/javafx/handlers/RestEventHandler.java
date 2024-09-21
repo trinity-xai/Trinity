@@ -40,7 +40,7 @@ import java.util.concurrent.Future;
  */
 public class RestEventHandler implements EventHandler<RestEvent> {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(RestEventHandler.class);
+    private static final Logger LOG = LoggerFactory.getLogger(RestEventHandler.class);
 
     private final Scene scene;
     private ExecutorService executor;
@@ -54,11 +54,11 @@ public class RestEventHandler implements EventHandler<RestEvent> {
 
     public void startHttpService() {
         if (serverFuture != null && !serverFuture.isDone()) {
-            LOGGER.warn("Trinity HTTP Server is already running.");
+            LOG.warn("Trinity HTTP Server is already running.");
             return;
         }
 
-        LOGGER.info("Creating Trinity HTTP Server...");
+        LOG.info("Creating Trinity HTTP Server...");
         serverFuture = executor.submit(new TrinityBasicHttpServer(scene));
 
         Platform.runLater(() -> {
@@ -70,7 +70,7 @@ public class RestEventHandler implements EventHandler<RestEvent> {
 
     public void stopHttpService() {
         if (serverFuture == null || serverFuture.isDone()) {
-            LOGGER.warn("Trinity HTTP Server is not running.");
+            LOG.warn("Trinity HTTP Server is not running.");
             return;
         }
         Platform.runLater(() -> {

@@ -24,6 +24,8 @@ import com.clust4j.utils.VecUtils;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.util.Precision;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.Random;
@@ -31,6 +33,7 @@ import java.util.Random;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class KernelTestCases {
+    private static final Logger LOG = LoggerFactory.getLogger(KernelTestCases.class);
 
     final static MatrixFormatter formatter = new MatrixFormatter();
     final static Random rand = new Random();
@@ -64,7 +67,7 @@ public class KernelTestCases {
     }
 
     public static void print(final String s) {
-        System.out.println(s);
+        LOG.info(s);
     }
 
     @Test
@@ -189,7 +192,7 @@ public class KernelTestCases {
             double[] fullSimilarities = new double[partialSimilarities.length];
             for (int i = 0; i < fullSimilarities.length; i++)
                 fullSimilarities[i] = kernel.partialSimilarityToSimilarity(partialSimilarities[i]);
-            System.out.println(Arrays.toString(fullSimilarities));
+            LOG.info(Arrays.toString(fullSimilarities));
             for (int i = 0; i < fullSimilarities.length - 1; i++)
                 assertTrue(fullSimilarities[i + 1] > fullSimilarities[i]);
         }
@@ -200,7 +203,7 @@ public class KernelTestCases {
             double[] fullSimilarities = new double[partialSimilarities.length];
             for (int i = 0; i < fullSimilarities.length; i++)
                 fullSimilarities[i] = kernel.partialSimilarityToSimilarity(partialSimilarities[i]);
-            System.out.println(Arrays.toString(fullSimilarities));
+            LOG.info(Arrays.toString(fullSimilarities));
             for (int i = 0; i < fullSimilarities.length - 1; i++)
                 assertTrue(fullSimilarities[i + 1] < fullSimilarities[i]);
 
@@ -272,11 +275,11 @@ public class KernelTestCases {
                 for (boolean partial : new boolean[]{true, false}) {
                     mat = Pairwise.getSimilarity(data, k, false, partial);
                     if (MatUtils.containsNaN(mat)) {
-                        System.out.println(k + " yields NaN in " + set + ", partial=" + partial);
+                        LOG.info("{} yields NaN in {}, partial={}", k, set, partial);
                     }
 
                     if (MatUtils.containsInf(mat)) {
-                        System.out.println(k + " yields Inf in " + set + ", partial=" + partial);
+                        LOG.info("{} yields Inf in {}, partial={}", k, set, partial);
                     }
                 }
             }

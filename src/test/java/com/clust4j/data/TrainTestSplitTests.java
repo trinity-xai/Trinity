@@ -6,10 +6,13 @@ import com.clust4j.algo.KMeansParameters;
 import com.clust4j.metrics.scoring.SupervisedMetric;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class TrainTestSplitTests {
+    private static final Logger LOG = LoggerFactory.getLogger(TrainTestSplitTests.class);
 
     @Test
     public void testIris() {
@@ -145,6 +148,6 @@ public class TrainTestSplitTests {
         int[] predictions = model.predict(test.getData());
 
         // examine affinity:
-        System.out.println("Affinity: " + SupervisedMetric.INDEX_AFFINITY.evaluate(test.getLabels(), predictions));
+        LOG.info("Affinity: {}", SupervisedMetric.INDEX_AFFINITY.evaluate(test.getLabels(), predictions));
     }
 }

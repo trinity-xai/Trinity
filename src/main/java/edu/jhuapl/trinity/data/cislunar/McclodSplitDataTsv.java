@@ -20,6 +20,9 @@ package edu.jhuapl.trinity.data.cislunar;
  * #L%
  */
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.function.Function;
 
 /**
@@ -27,6 +30,7 @@ import java.util.function.Function;
  */
 
 public class McclodSplitDataTsv {
+    private static final Logger LOG = LoggerFactory.getLogger(McclodSplitDataTsv.class);
 
     //This data is split by the zeta values:
     //0-0.5: It is represented in the Earth-Moon frame
@@ -79,7 +83,7 @@ public class McclodSplitDataTsv {
             mcclodSplitDataTsv.setZeta(Double.parseDouble(tokens[tokenIndex++]));
 
         } catch (NumberFormatException ex) {
-            ex.printStackTrace();
+            LOG.error("Exception", ex);
         }
         return mcclodSplitDataTsv;
     };

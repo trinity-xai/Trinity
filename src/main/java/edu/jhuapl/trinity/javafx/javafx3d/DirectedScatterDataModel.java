@@ -21,6 +21,8 @@ package edu.jhuapl.trinity.javafx.javafx3d;
  */
 
 import org.fxyz3d.geometry.Point3D;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -29,6 +31,7 @@ import java.util.Arrays;
  * @author Sean Phillips
  */
 public class DirectedScatterDataModel {
+    private static final Logger LOG = LoggerFactory.getLogger(DirectedScatterDataModel.class);
     public ArrayList<Perspective3DNode> pNodes;
     public ArrayList<Point3D> data;
     public ArrayList<Point3D> endPoints;
@@ -153,7 +156,7 @@ public class DirectedScatterDataModel {
         Point3D point3D;
         for (Perspective3DNode pNode : pNodes) {
             if (null == pNode) {
-                System.out.println("Null... wtf...");
+                LOG.info("Null... wtf...");
             } else if (pNode.visible) {
                 try {
                     //X ==> X Positive
@@ -171,7 +174,7 @@ public class DirectedScatterDataModel {
                     point3D.f = Double.valueOf(pNode.nodeColor.getHue()).floatValue();
                     data.add(point3D);
                 } catch (Exception ex) {
-                    ex.printStackTrace();
+                    LOG.error("Exception", ex);
                 }
             }
         }

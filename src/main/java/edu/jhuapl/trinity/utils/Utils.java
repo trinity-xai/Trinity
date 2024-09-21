@@ -21,6 +21,8 @@ package edu.jhuapl.trinity.utils;
  */
 
 import javafx.scene.paint.Color;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -47,6 +49,7 @@ import java.util.stream.Collectors;
  */
 public enum Utils {
     INSTANCE;
+    private static final Logger LOG = LoggerFactory.getLogger(Utils.class);
 
     public static final double EPSILON = 1E-10;
     public static String DEFAULT_SETTINGS_JSON = "settings.json";
@@ -140,7 +143,7 @@ public enum Utils {
     }
 
     public static void printTotalTime(long startTime) {
-        System.out.println(totalTimeString(startTime));
+        LOG.info(totalTimeString(startTime));
     }
 
     public static double roundTo(double value, int places) {

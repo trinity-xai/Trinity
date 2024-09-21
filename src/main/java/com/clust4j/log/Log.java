@@ -16,6 +16,7 @@
 package com.clust4j.log;
 
 import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.slf4j.event.Level;
 
 import java.io.File;
@@ -218,6 +219,7 @@ public abstract class Log {
      * 0XData Event class
      */
     static class LogEvent {
+        private static final Logger LOG = LoggerFactory.getLogger(LogEvent.class);
         Type type;
         Algo algo;
         Timer when;
@@ -336,7 +338,7 @@ public abstract class Log {
                 buf.append(lineSep);
                 Writer wr = new StringWriter();
                 PrintWriter pwr = new PrintWriter(wr);
-                ouch.printStackTrace(pwr);
+                LOG.error("Exception", ouch);
 
                 String mess = wr.toString();
                 String[] lines = mess.split("\n");
@@ -560,7 +562,7 @@ public abstract class Log {
 
         _logger.atLevel(l);
         String inf = "Set log level to " + l;
-        System.out.println(inf);
+        _logger.info(inf);
         _logger.info(inf);
     }
 

@@ -50,7 +50,8 @@
         <jackson.version>2.17.2</jackson.version>
         <sarxos.webcam.capture.version>0.3.12</sarxos.webcam.capture.version>
         <org.jflac.jflac-codec.version>1.5.2</org.jflac.jflac-codec.version>
-        <slf4j.version>2.0.13</slf4j.version>
+        <slf4j.version>2.0.15</slf4j.version>
+        <logback.version>1.5.8</logback.version>
         <mainClassName>edu.jhuapl.trinity.TrinityMain</mainClassName>
         <!-- Values for build.properties -->
         <trinity.title>Trinity</trinity.title>
@@ -165,11 +166,16 @@
           <artifactId>jflac-codec</artifactId>
           <version>${org.jflac.jflac-codec.version}</version>
         </dependency>
-        <!-- Enforce slf4j-api version across dependencies (although we're using JUL) -->
+        <!-- Enforce slf4j-api version across dependencies-->
         <dependency>
             <groupId>org.slf4j</groupId>
             <artifactId>slf4j-api</artifactId>
             <version>${slf4j.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>ch.qos.logback</groupId>
+            <artifactId>logback-classic</artifactId>
+            <version>${logback.version}</version>
         </dependency>
     </dependencies>
     <reporting>

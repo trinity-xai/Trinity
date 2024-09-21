@@ -29,6 +29,8 @@ import edu.jhuapl.trinity.javafx.renderers.FeatureVectorRenderer;
 import javafx.event.EventHandler;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -37,6 +39,7 @@ import java.util.List;
  * @author Sean Phillips
  */
 public class SearchEventHandler implements EventHandler<SearchEvent> {
+    private static final Logger LOG = LoggerFactory.getLogger(SearchEventHandler.class);
 
     List<FeatureVectorRenderer> renderers;
 
@@ -49,7 +52,7 @@ public class SearchEventHandler implements EventHandler<SearchEvent> {
     }
 
     public void handleClearAllFilters(SearchEvent event) {
-        System.out.print("Clearing Filters... ");
+        LOG.info("Clearing Filters... ");
         for (FeatureVectorRenderer renderer : renderers) {
             List<FeatureVector> fvList = renderer.getAllFeatureVectors();
             int size = fvList.size();
@@ -59,12 +62,12 @@ public class SearchEventHandler implements EventHandler<SearchEvent> {
             //request render update
             renderer.refresh();
         }
-        System.out.println("Complete.");
+        LOG.info("Complete.");
     }
 
     public void handleFilterByTerm(SearchEvent event) {
         String metadataTerm = (String) event.eventObject;
-        System.out.print("Filtering based on " + metadataTerm + "... ");
+        LOG.info("Filtering based on {}... ", metadataTerm);
         for (FeatureVectorRenderer renderer : renderers) {
             List<FeatureVector> fvList = renderer.getAllFeatureVectors();
             int size = fvList.size();
@@ -78,7 +81,7 @@ public class SearchEventHandler implements EventHandler<SearchEvent> {
             //request render update
             renderer.refresh();
         }
-        System.out.println("Filtering complete.");
+        LOG.info("Filtering complete.");
     }
 
     public void handleFilterByScore(SearchEvent event) {
@@ -86,7 +89,7 @@ public class SearchEventHandler implements EventHandler<SearchEvent> {
         String msg = "Score Filtering based on " + filterSet.toString() + "... ";
         App.getAppScene().getRoot().fireEvent(new CommandTerminalEvent(msg,
             new Font("Consolas", 20), Color.GREEN));
-        System.out.print(msg);
+        LOG.info(msg);
 
         for (FeatureVectorRenderer renderer : renderers) {
             List<FeatureVector> fvList = renderer.getAllFeatureVectors();
@@ -104,7 +107,7 @@ public class SearchEventHandler implements EventHandler<SearchEvent> {
             //request render update
             renderer.refresh();
             msg = filteredCount + " featureVectors filtered.";
-            System.out.println(msg);
+            LOG.info(msg);
             App.getAppScene().getRoot().fireEvent(new CommandTerminalEvent(msg));
         }
     }
@@ -114,7 +117,7 @@ public class SearchEventHandler implements EventHandler<SearchEvent> {
         String msg = "Probability Filtering based on " + filterSet.toString() + "... ";
         App.getAppScene().getRoot().fireEvent(new CommandTerminalEvent(msg,
             new Font("Consolas", 20), Color.GREEN));
-        System.out.print(msg);
+        LOG.info(msg);
 
         for (FeatureVectorRenderer renderer : renderers) {
             List<FeatureVector> fvList = renderer.getAllFeatureVectors();
@@ -132,7 +135,7 @@ public class SearchEventHandler implements EventHandler<SearchEvent> {
             //request render update
             renderer.refresh();
             msg = filteredCount + " featureVectors filtered.";
-            System.out.println(msg);
+            LOG.info(msg);
             App.getAppScene().getRoot().fireEvent(new CommandTerminalEvent(msg));
         }
     }

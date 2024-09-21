@@ -18,12 +18,15 @@ package com.clust4j.utils.parallel;
 import com.clust4j.GlobalState;
 import com.clust4j.utils.MatUtils;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.concurrent.RejectedExecutionException;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class ParallelTests {
+    private static final Logger LOG = LoggerFactory.getLogger(ParallelTests.class);
 
     /**
      * Only peform these tests if the environment will even allow it...
@@ -60,7 +63,7 @@ public class ParallelTests {
             long paraTime = System.currentTimeMillis() - start;
 
             assertTrue(MatUtils.equalsWithTolerance(ca, cb, 1e-6));
-            System.out.println("Dist MatMult test:\tParallel=" + paraTime + ", Serial=" + serialTime);
+            LOG.info("Dist MatMult test:\tParallel={}, Serial={}", paraTime, serialTime);
         } catch (OutOfMemoryError e) {
             // don't propagate these...
         } catch (RejectedExecutionException r) {
@@ -82,7 +85,7 @@ public class ParallelTests {
             long paraTime = System.currentTimeMillis() - start;
 
             assertTrue(MatUtils.equalsWithTolerance(ca, cb, 1e-8));
-            System.out.println("Dist MatMult test:\tParallel=" + paraTime + ", Serial=" + serialTime);
+            LOG.info("Dist MatMult test:\tParallel={}, Serial={}", paraTime, serialTime);
         } catch (OutOfMemoryError e) {
             // don't propagate these...
         } catch (RejectedExecutionException r) {

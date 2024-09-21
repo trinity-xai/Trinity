@@ -35,16 +35,17 @@ import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
 import javafx.scene.media.MediaView;
 import javafx.scene.paint.Color;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * @author Sean Phillips
  */
 public class VideoPane extends LitPathPane {
+    private static final Logger LOG = LoggerFactory.getLogger(VideoPane.class);
     BorderPane bp;
     public static int PANE_WIDTH = 1000;
     public static double NODE_WIDTH = PANE_WIDTH - 50;
@@ -157,7 +158,7 @@ public class VideoPane extends LitPathPane {
                 shutdown();
             }
         } catch (URISyntaxException | IOException ex) {
-            Logger.getLogger(VideoPane.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(null, ex);
         }
     }
 

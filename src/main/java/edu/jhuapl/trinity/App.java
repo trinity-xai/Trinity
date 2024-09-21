@@ -109,6 +109,8 @@ import javafx.stage.Stage;
 import javafx.util.Duration;
 import lit.litfx.controls.covalent.events.CovalentPaneEvent;
 import lit.litfx.controls.output.AnimatedText;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -116,10 +118,9 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class App extends Application {
+    private static final Logger LOG = LoggerFactory.getLogger(App.class);
 
     Pane desktopPane;
     StackPane centerStack;
@@ -174,14 +175,14 @@ public class App extends Application {
 
     @Override
     public void start(Stage stage) throws IOException {
-        System.out.println("Attempting to read defaults...");
+        LOG.info("Attempting to read defaults...");
         try {
-            System.out.println("Build Date: " + Configuration.getBuildDate());
+            LOG.info("Build Date: {}", Configuration.getBuildDate());
         } catch (Exception ex) {
-            Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(null, ex);
         }
         //theConfig = Configuration.defaultConfiguration();
-        System.out.println("Starting JavaFX rendering...");
+        LOG.info("Starting JavaFX rendering...");
         centerStack = new StackPane();
         centerStack.setBackground(transBack);
         Font font = new Font("Consolas", 30);
@@ -191,7 +192,7 @@ public class App extends Application {
         animatedConsoleText.setTranslateY(-100);
         centerStack.getChildren().add(animatedConsoleText);
 
-        System.out.println("Building Scene Stack...");
+        LOG.info("Building Scene Stack...");
         BorderPane bp = new BorderPane(centerStack);
         bp.setBackground(transBack);
         bp.getStyleClass().add("trinity-pane");
@@ -199,7 +200,7 @@ public class App extends Application {
         stage.setScene(scene);
         stage.show();
 
-        System.out.println("Styling Scene and Stage...");
+        LOG.info("Styling Scene and Stage...");
         //animatedConsoleText.animate("Styling Scene and Stage...");
         stage.setTitle("Trinity");
         //Set icon for stage for fun
@@ -225,7 +226,7 @@ public class App extends Application {
         theVideo = videoPane;
         matrixEnabled = enableMatrix;
         //</HACK>
-        System.out.println("Building menu system...");
+        LOG.info("Building menu system...");
         //animatedConsoleText.animate("Building menu system...");
         mainNavMenu = new MainNavMenu(scene);
         StackPane.setAlignment(mainNavMenu, Pos.BOTTOM_RIGHT);
@@ -233,7 +234,7 @@ public class App extends Application {
         mainNavMenu.setTranslateX(-mainNavMenu.getInnerRadius());
         mainNavMenu.setTranslateY(-mainNavMenu.getInnerRadius());
 
-        System.out.println("Constructing 3D subscenes...");
+        LOG.info("Constructing 3D subscenes...");
         //animatedConsoleText.animate("Constructing 3D subscenes...");
         projections3DPane = new Projections3DPane(scene);
         projections3DPane.setVisible(false); //start off hidden
@@ -243,7 +244,7 @@ public class App extends Application {
         hyperspace3DPane = new Hyperspace3DPane(scene);
         hyperspace3DPane.setVisible(false); //start off hidden
 
-        System.out.println("Registering Event Handlers...");
+        LOG.info("Registering Event Handlers...");
         //animatedConsoleText.animate("Registering Event Handlers...");
         scene.addEventHandler(FeatureVectorEvent.REQUEST_FEATURE_COLLECTION, event -> {
             FeatureCollection fc = new FeatureCollection();
@@ -330,7 +331,7 @@ public class App extends Application {
                 fcf.featureCollection = fc;
                 fcf.writeContent();
             } catch (IOException ex) {
-                Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+                LOG.error(null, ex);
             }
             event.consume();
         });
@@ -385,7 +386,7 @@ public class App extends Application {
                                 new ManifoldEvent(ManifoldEvent.NEW_MANIFOLD_DATA, mdFile.manifoldData)));
                         }
                     } catch (IOException ex) {
-                        Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+                        LOG.error(null, ex);
                     }
                 }
             }
@@ -397,15 +398,15 @@ public class App extends Application {
         centerStack.getChildren().add(0, projections3DPane);
         centerStack.getChildren().add(0, hypersurface3DPane);
 
-        System.out.println("Parsing command line...");
+        LOG.info("Parsing command line...");
         //animatedConsoleText.animate("Parsing command line...");
         parseCommandLine();
         //ex: --scenario="C:\dev\cameratests" --geometry=1024x768+100+100
         if (null != namedParameters) {
-            System.out.println("Checking for geometry arguments...");
+            LOG.info("Checking for geometry arguments...");
             if (namedParameters.containsKey("geometry")) {
                 String geometryParamString = namedParameters.get("geometry");
-                System.out.println("Attempting custom window geometry using " + geometryParamString);
+                LOG.info("Attempting custom window geometry using {}", geometryParamString);
                 try {
                     //example: 200x100+800+800
                     String[] tokens = geometryParamString.split("\\+");
@@ -415,25 +416,24 @@ public class App extends Application {
                     stage.setX(Double.parseDouble(tokens[1]));
                     stage.setY(Double.parseDouble(tokens[2]));
                 } catch (NumberFormatException ex) {
-                    System.out.println("Exception thrown parsing: " + geometryParamString
-                        + ". Setting to Maximized.");
+                    LOG.info("Exception thrown parsing: {}. Setting to Maximized.", geometryParamString);
                     stage.setMaximized(true);
                 }
             } else if (namedParameters.containsKey("fullscreen")) {
-                System.out.println("Fullscreen start requested.");
+                LOG.info("Fullscreen start requested.");
                 stage.setFullScreen(true);
             } else {
-                System.out.println("Defaulting to maximized.");
+                LOG.info("Defaulting to maximized.");
                 stage.setMaximized(true);
             }
-            System.out.println("Checking for special effects requests...");
+            LOG.info("Checking for special effects requests...");
             boolean surveillanceEnabled = namedParameters.containsKey("surveillance");
             if (surveillanceEnabled) {
-                System.out.println("Surveillance found... enabling Camera.");
+                LOG.info("Surveillance found... enabling Camera.");
             }
 
             if (namedParameters.containsKey("outrun")) {
-                System.out.println("Outrun found... enabling RetroWavePane.");
+                LOG.info("Outrun found... enabling RetroWavePane.");
                 try {
                     //Add optional RETROWAVE VIEW
                     retroWavePane = new RetroWavePane(scene, surveillanceEnabled);
@@ -444,37 +444,37 @@ public class App extends Application {
                 }
             }
             if (namedParameters.containsKey("display4k")) {
-                System.out.println("Display4k found... adjusting sizing.");
+                LOG.info("Display4k found... adjusting sizing.");
                 is4k = true;
             }
             if (namedParameters.containsKey("matrix")) {
-                System.out.println("Matrix found... enabling digital rain.");
+                LOG.info("Matrix found... enabling digital rain.");
                 enableMatrix = true;
                 matrixEnabled = enableMatrix;
             }
 
-            System.out.println("Checking for custom configuration...");
+            LOG.info("Checking for custom configuration...");
             if (namedParameters.containsKey("config")) {
                 String configFile = namedParameters.get("config");
-                System.out.println("Configuration file found: " + configFile);
+                LOG.info("Configuration file found: {}", configFile);
                 try {
                     theConfig = new Configuration(configFile);
                 } catch (IOException ex) {
-                    System.out.println("Exception thrown loading: " + configFile);
+                    LOG.info("Exception thrown loading: {}", configFile);
                     //Logger.getLogger(Configuration.class.getName()).log(Level.SEVERE, null, ex);
-                    System.out.println("Loading defaults.");
+                    LOG.info("Loading defaults.");
                     theConfig = Configuration.defaultConfiguration();
                 }
             }
-            System.out.println("Checking for enabling HTTP processor...");
+            LOG.info("Checking for enabling HTTP processor...");
             if (namedParameters.containsKey("http")) {
                 String httpValue = namedParameters.get("http");
-                System.out.println("HTTP found: " + httpValue);
+                LOG.info("HTTP found: {}", httpValue);
                 enableHttp = Boolean.parseBoolean(httpValue);
             }
 
         }
-        System.out.println("Setting up RestEventHandler...");
+        LOG.info("Setting up RestEventHandler...");
         reh = new RestEventHandler(scene);
         scene.addEventHandler(RestEvent.START_RESTSERVER_THREAD, reh);
         scene.addEventHandler(RestEvent.TERMINATE_RESTSERVER_THREAD, reh);
@@ -482,7 +482,7 @@ public class App extends Application {
             reh.startHttpService();
         }
 
-        System.out.println("Setting up Mission Timer...");
+        LOG.info("Setting up Mission Timer...");
         setupMissionTimer(scene);
         //add helper tools and overlays
         circleSpinner = new CircleProgressIndicator();
@@ -496,7 +496,7 @@ public class App extends Application {
         centerStack.getChildren().add(animatedConsoleText);
 
 
-        System.out.println("Setting up Matrix Digital Rain...");
+        LOG.info("Setting up Matrix Digital Rain...");
         // fun matrix effect, use Alt + N
         matrixOverlay = new MatrixOverlay(scene, centerStack);
         bp.setOnSwipeUp(e -> {
@@ -518,7 +518,7 @@ public class App extends Application {
             }
         });
 
-        System.out.print("Adding Event handlers... ");
+        LOG.info("Adding Event handlers... ");
         scene.addEventHandler(ApplicationEvent.SHOW_BUSY_INDICATOR, e -> {
             if (null == e.object) {
                 return;
@@ -539,7 +539,7 @@ public class App extends Application {
         });
 
         scene.addEventHandler(ApplicationEvent.SHUTDOWN, e -> shutdown(false));
-        System.out.print("Text Console ");
+        LOG.info("Text Console ");
         scene.addEventHandler(ApplicationEvent.SHOW_TEXT_CONSOLE, e -> {
             if (null == textConsolePane) {
                 textConsolePane = new TextPane(scene, pathPane);
@@ -554,7 +554,7 @@ public class App extends Application {
                 Platform.runLater(() -> textConsolePane.setText((String) e.object));
             }
         });
-        System.out.print("Video Pane ");
+        LOG.info("Video Pane ");
         scene.addEventHandler(ApplicationEvent.SHOW_VIDEO_PANE, e -> {
             if (null == videoPane) {
                 videoPane = new VideoPane(scene, pathPane);
@@ -580,7 +580,7 @@ public class App extends Application {
             }
             videoPane.setVideo();
         });
-        System.out.print("Image Navigator ");
+        LOG.info("Image Navigator ");
         scene.addEventHandler(ApplicationEvent.SHOW_NAVIGATOR_PANE, e -> {
             if (null == navigatorPane) {
                 navigatorPane = new NavigatorPane(scene, pathPane);
@@ -595,7 +595,7 @@ public class App extends Application {
                 Platform.runLater(() -> navigatorPane.setImage((Image) e.object));
             }
         });
-        System.out.print("Waveform View ");
+        LOG.info("Waveform View ");
         scene.addEventHandler(ApplicationEvent.SHOW_WAVEFORM_PANE, e -> {
             if (null == waveformPane) {
                 waveformPane = new WaveformPane(scene, pathPane);
@@ -610,7 +610,7 @@ public class App extends Application {
                 Platform.runLater(() -> waveformPane.setWaveform((File) e.object));
             }
         });
-        System.out.print("Trajectory Tracker ");
+        LOG.info("Trajectory Tracker ");
         scene.addEventHandler(TrajectoryEvent.SHOW_TRAJECTORY_TRACKER, e -> {
             if (null == trajectoryTrackerPane) {
                 trajectoryTrackerPane = new TrajectoryTrackerPane(scene, pathPane);
@@ -622,7 +622,7 @@ public class App extends Application {
                 trajectoryTrackerPane.show();
             }
         });
-        System.out.print("Spark lines View ");
+        LOG.info("Spark lines View ");
         scene.addEventHandler(ApplicationEvent.SHOW_SPARK_LINES, e -> {
             if (null == sparkLinesPane) {
                 sparkLinesPane = new SparkLinesPane(scene, pathPane);
@@ -634,7 +634,7 @@ public class App extends Application {
                 sparkLinesPane.show();
             }
         });
-        System.out.print("Projections ");
+        LOG.info("Projections ");
         scene.addEventHandler(ApplicationEvent.SHOW_PROJECTIONS, e -> {
             if (projections3DPane.isVisible()) {
                 projections3DPane.setVisible(false);
@@ -668,7 +668,7 @@ public class App extends Application {
             projections3DPane.enableAutoProjection(enabled);
 
         });
-        System.out.print("Hypersurface ");
+        LOG.info("Hypersurface ");
         scene.addEventHandler(ApplicationEvent.SHOW_HYPERSURFACE, e -> {
             if (hypersurface3DPane.isVisible()) {
                 //hypersurface3DPane.hideFA3D();
@@ -694,7 +694,7 @@ public class App extends Application {
 
             }
         });
-        System.out.print("Hyperspace ");
+        LOG.info("Hyperspace ");
         scene.addEventHandler(ApplicationEvent.SHOW_HYPERSPACE, e -> {
             if (hyperspace3DPane.isVisible()) {
                 hyperspace3DPane.setVisible(false);
@@ -733,7 +733,7 @@ public class App extends Application {
                 shape3DControlPane.show();
             }
         });
-        System.out.print("Data Handlers ");
+        LOG.info("Data Handlers ");
         gmeh = new GaussianMixtureEventHandler();
         scene.getRoot().addEventHandler(GaussianMixtureEvent.NEW_GAUSSIAN_MIXTURE, gmeh);
         scene.getRoot().addEventHandler(GaussianMixtureEvent.LOCATE_GAUSSIAN_MIXTURE, gmeh);
@@ -805,7 +805,7 @@ public class App extends Application {
             desktopPane.getChildren().remove(covalentEvent.pathPane);
         });
 
-        System.out.println("Command Terminal ");
+        LOG.info("Command Terminal ");
         scene.addEventHandler(CommandTerminalEvent.FOLLOWUP, e -> {
             animatedConsoleText.setVisible(true);
             animatedConsoleText.setOpacity(1.0);
@@ -846,7 +846,7 @@ public class App extends Application {
             animatedConsoleText.animate("> " + e.text);
         });
         scene.addEventHandler(CommandTerminalEvent.FADE_OUT, e -> fadeOutConsole(e.timeMS));
-        System.out.println("Establishing Messaging Feed...");
+        LOG.info("Establishing Messaging Feed...");
         processor = new MessageProcessor(scene);
         subscriberConfig = new ZeroMQSubscriberConfig(
             "ZeroMQ Subscriber", "ZeroMQFeedManager.",
@@ -879,17 +879,17 @@ public class App extends Application {
         scene.getRoot().addEventHandler(ZeroMQEvent.ZEROMQ_STOP_PROCESSING, e -> {
             feed.setEnableProcessing(false);
         });
-        System.out.println("Checking to auto-enable ZeroMQ Listener...");
+        LOG.info("Checking to auto-enable ZeroMQ Listener...");
         if (null != namedParameters && namedParameters.containsKey("zeromq")) {
             String zeroMQ = namedParameters.get("zeromq");
             if (null != zeroMQ) {
-                System.out.println("ZeroMQ Status: " + zeroMQ);
+                LOG.info("ZeroMQ Status: {}", zeroMQ);
             }
             Platform.runLater(() -> scene.getRoot().fireEvent(
                 new ZeroMQEvent(ZeroMQEvent.ZEROMQ_ESTABLISH_CONNECTION, subscriberConfig)));
         }
 
-        System.out.println("User Interface Lit...");
+        LOG.info("User Interface Lit...");
         //animatedConsoleText.animate("User Inteface Lit...");
         intro();
         missionTimerX.updateTime(0, "1");
@@ -1042,7 +1042,7 @@ public class App extends Application {
 
     @Override
     public void stop() throws Exception {
-        System.out.println("Application Shutdown commenced...");
+        LOG.info("Application Shutdown commenced...");
         shutdown(true);
     }
 
@@ -1077,13 +1077,13 @@ public class App extends Application {
         unnamedParameters = parameters.getUnnamed();
 
         if (!namedParameters.isEmpty()) {
-            System.out.println("NamedParameters :");
+            LOG.info("NamedParameters :");
             namedParameters.entrySet().forEach(entry -> {
-                System.out.println("\t" + entry.getKey() + " : " + entry.getValue());
+                LOG.info("\t{} : {}", entry.getKey(), entry.getValue());
             });
         }
         if (!unnamedParameters.isEmpty()) {
-            System.out.println("UnnamedParameters :");
+            LOG.info("UnnamedParameters :");
             unnamedParameters.forEach(System.out::println);
         }
     }

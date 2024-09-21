@@ -22,6 +22,8 @@ package edu.jhuapl.trinity.utils;
 
 import edu.jhuapl.trinity.data.messages.ChannelFrame;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
@@ -29,6 +31,7 @@ import java.util.List;
  * @author Sean Phillips
  */
 public class MessageUtilsTest {
+    private static final Logger LOG = LoggerFactory.getLogger(MessageUtilsTest.class);
 
     public MessageUtilsTest() {
     }
@@ -38,7 +41,7 @@ public class MessageUtilsTest {
      */
     @Test
     public void testBuildSpikeyChannelFrame() {
-        System.out.println("buildSpikeyChannelFrame");
+        LOG.info("buildSpikeyChannelFrame");
         String entityId = "";
         int size = 0;
         ChannelFrame expResult = null;
@@ -53,7 +56,7 @@ public class MessageUtilsTest {
      */
     //@Test
     public void testPureSortedGaussians() {
-        System.out.println("pureSortedGaussians");
+        LOG.info("pureSortedGaussians");
         int size = 10;
         List<Double> expResult = null;
         List<Double> result = MessageUtils.pureSortedGaussians(size);

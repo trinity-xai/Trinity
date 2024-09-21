@@ -25,16 +25,17 @@ import com.clust4j.algo.KMeansParameters;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.MatrixUtils;
 import org.apache.commons.math3.linear.RealMatrix;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Random;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Gaussian mixture model that provides methods for fitting to observation
  * samples using an Expectation Maximization process seeded by KMeans++.
  */
 public class GaussianMixtureModel extends GaussianMixture {
+    private static final Logger LOG = LoggerFactory.getLogger(GaussianMixtureModel.class);
     private static Random rando = new Random();
 
     /**
@@ -109,7 +110,7 @@ public class GaussianMixtureModel extends GaussianMixture {
             currentDistance[i] = Double.MAX_VALUE;
         }
 
-        System.out.println("Finding initial centroids using KMeans++...");
+        LOG.info("Finding initial centroids using KMeans++...");
 //        // pick the next center..
 //        //start at index 1 because we already computed
 //        //the first component above to get the common variance
@@ -195,13 +196,11 @@ public class GaussianMixtureModel extends GaussianMixture {
 
         GaussianMixtureModel mixture = new GaussianMixtureModel(new GaussianMixtureComponent(1.0, GaussianDistribution.fit(data, diagonal)));
         double bic = mixture.bic(data);
-        Logger.getLogger(GaussianMixtureModel.class.getName()).log(Level.FINE,
-            String.format("The BIC of %s = %.4f", mixture, bic));
+        LOG.debug("The BIC of {} = {}", mixture, bic);
 
         for (int k = 2; k < data.length / 20; k++) {
             GaussianMixture model = fit(k, data);
-            Logger.getLogger(GaussianMixtureModel.class.getName()).log(Level.FINE,
-                String.format("The BIC of %s = %.4f", model, model.bic));
+            LOG.debug("The BIC of {} = {}", model, model.bic);
 
             if (model.bic <= bic) break;
 

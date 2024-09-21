@@ -45,13 +45,13 @@ import javafx.scene.shape.DrawMode;
 import javafx.scene.shape.Sphere;
 import javafx.scene.text.Font;
 import javafx.scene.transform.Rotate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 import static java.util.stream.Collectors.toList;
@@ -60,6 +60,7 @@ import static java.util.stream.Collectors.toList;
  * @author Sean Phillips
  */
 public class ManifoldEventHandler implements EventHandler<ManifoldEvent> {
+    private static final Logger LOG = LoggerFactory.getLogger(ManifoldEventHandler.class);
 
     List<ManifoldRenderer> manifoldRenderers;
 
@@ -75,12 +76,12 @@ public class ManifoldEventHandler implements EventHandler<ManifoldEvent> {
         App.getAppScene().getRoot().fireEvent(new CommandTerminalEvent("Clearing Manifolds... ",
             new Font("Consolas", 20), Color.GREEN));
 
-        System.out.print("Clearing Manifolds... ");
+        LOG.info("Clearing Manifolds... ");
         for (ManifoldRenderer renderer : manifoldRenderers) {
             renderer.clearAllManifolds();
         }
         Manifold.removeAllManifolds();
-        System.out.println("Complete.");
+        LOG.info("Complete.");
         App.getAppScene().getRoot().fireEvent(new CommandTerminalEvent("Complete."));
     }
 
@@ -311,7 +312,7 @@ public class ManifoldEventHandler implements EventHandler<ManifoldEvent> {
             mdf.manifoldData = md;
             mdf.writeContent();
         } catch (IOException ex) {
-            Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(null, ex);
         }
         event.consume();
     }

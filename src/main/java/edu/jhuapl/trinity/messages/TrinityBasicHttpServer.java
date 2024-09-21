@@ -16,7 +16,7 @@ public class TrinityBasicHttpServer implements Runnable {
     public static final int DEFAULT_HTTP_PORT = 8080;
 
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(TrinityBasicHttpServer.class);
+    private static final Logger LOG = LoggerFactory.getLogger(TrinityBasicHttpServer.class);
     private final CountDownLatch stopSignal = new CountDownLatch(1);
     private final Scene scene;
 
@@ -30,7 +30,7 @@ public class TrinityBasicHttpServer implements Runnable {
         try {
             server = HttpServer.create(new InetSocketAddress(DEFAULT_HTTP_HOST, DEFAULT_HTTP_PORT), 1024);
         } catch (IOException e) {
-            LOGGER.error("Trinity HTTP Server failed to start.", e);
+            LOG.error("Trinity HTTP Server failed to start.", e);
             throw new RuntimeException(e);
         }
 
@@ -47,7 +47,7 @@ public class TrinityBasicHttpServer implements Runnable {
         try {
             stopSignal.await();
         } catch (InterruptedException e) {
-            LOGGER.warn("Trinity HTTP Server Stopped.");
+            LOG.warn("Trinity HTTP Server Stopped.");
         } finally {
             // Stop the server...
             server.stop(0);

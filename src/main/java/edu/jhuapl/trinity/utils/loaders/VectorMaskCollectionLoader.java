@@ -27,16 +27,17 @@ import edu.jhuapl.trinity.javafx.events.ImageEvent;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.scene.Scene;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * @author Sean Phillips
  */
 public class VectorMaskCollectionLoader extends Task {
+    private static final Logger LOG = LoggerFactory.getLogger(VectorMaskCollectionLoader.class);
     Scene scene;
     File file;
 
@@ -75,7 +76,7 @@ public class VectorMaskCollectionLoader extends Task {
             Platform.runLater(() -> scene.getRoot().fireEvent(
                 new ImageEvent(ImageEvent.NEW_VECTORMASK_COLLECTION, scFile.vectorMaskCollection)));
         } catch (IOException ex) {
-            Logger.getLogger(VectorMaskCollectionLoader.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(null, ex);
         }
         return null;
     }

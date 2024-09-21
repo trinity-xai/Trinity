@@ -20,6 +20,9 @@ package edu.jhuapl.trinity.utils.marchingcubes;
  * #L%
  */
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.DataInputStream;
 import java.io.File;
 import java.io.FileInputStream;
@@ -31,6 +34,7 @@ import java.util.ArrayList;
  * Created by Primoz on 11. 07. 2016.
  */
 public class BenchmarkHandler {
+    private static final Logger LOG = LoggerFactory.getLogger(BenchmarkHandler.class);
 
     public static void benchmarkChar(File inputFile, File outFile, final int[] size, final float voxSize[], final char isoValue, int nThreadsMin, int nThreadsMax, int iterations) {
         char[] scalarField;
@@ -133,7 +137,7 @@ public class BenchmarkHandler {
                     try {
                         threads.get(i).join();
                     } catch (InterruptedException e) {
-                        e.printStackTrace();
+                        LOG.error("Exception", e);
                     }
                 }
 
@@ -287,7 +291,7 @@ public class BenchmarkHandler {
                     try {
                         threads.get(i).join();
                     } catch (InterruptedException e) {
-                        e.printStackTrace();
+                        LOG.error("Exception", e);
                     }
                 }
 
@@ -441,7 +445,7 @@ public class BenchmarkHandler {
                     try {
                         threads.get(i).join();
                     } catch (InterruptedException e) {
-                        e.printStackTrace();
+                        LOG.error("Exception", e);
                     }
                 }
 
@@ -595,7 +599,7 @@ public class BenchmarkHandler {
                     try {
                         threads.get(i).join();
                     } catch (InterruptedException e) {
-                        e.printStackTrace();
+                        LOG.error("Exception", e);
                     }
                 }
 
@@ -748,7 +752,7 @@ public class BenchmarkHandler {
                     try {
                         threads.get(i).join();
                     } catch (InterruptedException e) {
-                        e.printStackTrace();
+                        LOG.error("Exception", e);
                     }
                 }
 
@@ -857,7 +861,7 @@ public class BenchmarkHandler {
             try {
                 threads.get(i).join();
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                LOG.error("Exception", e);
             }
         }
         return results;

@@ -27,6 +27,8 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import lit.litfx.controls.output.LitLog;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -36,8 +38,6 @@ import java.net.URL;
 import java.nio.charset.StandardCharsets;
 import java.util.Properties;
 import java.util.ResourceBundle;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * FXML Controller class
@@ -45,6 +45,7 @@ import java.util.logging.Logger;
  * @author Sean Phillips
  */
 public class AboutController implements Initializable {
+    private static final Logger LOG = LoggerFactory.getLogger(AboutController.class);
 
     @FXML
     public TextField titleTextField;
@@ -91,7 +92,7 @@ public class AboutController implements Initializable {
                     .reduce("", (t, u) -> t + u + System.lineSeparator());
             litLog.addLine(text);
         } catch (IOException ex) {
-            Logger.getLogger(AboutController.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(null, ex);
             String aboutMarkdown = "Unable to load about markdown. Check Exception log.";
             litLog.addLine(aboutMarkdown);
         }

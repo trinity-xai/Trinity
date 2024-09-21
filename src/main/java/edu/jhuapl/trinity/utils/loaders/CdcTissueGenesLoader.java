@@ -39,17 +39,18 @@ import javafx.scene.control.DialogPane;
 import javafx.scene.layout.Background;
 import javafx.scene.paint.Color;
 import javafx.stage.StageStyle;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * @author Sean Phillips
  */
 public class CdcTissueGenesLoader extends Task {
+    private static final Logger LOG = LoggerFactory.getLogger(CdcTissueGenesLoader.class);
     Scene scene;
     File file;
 
@@ -71,7 +72,7 @@ public class CdcTissueGenesLoader extends Task {
                         new FeatureVectorEvent(FeatureVectorEvent.NEW_FEATURE_COLLECTION, fc));
                 });
             } catch (InterruptedException | ExecutionException ex) {
-                Logger.getLogger(ResourceUtils.class.getName()).log(Level.SEVERE, null, ex);
+                LOG.error(null, ex);
             }
         });
 
@@ -122,7 +123,7 @@ public class CdcTissueGenesLoader extends Task {
                     new ApplicationEvent(ApplicationEvent.HIDE_BUSY_INDICATOR));
             });
         } catch (Exception ex) {
-            ex.printStackTrace();
+            LOG.error("Exception", ex);
         }
         return fc;
     }

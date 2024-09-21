@@ -64,6 +64,8 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.stage.FileChooser;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -74,8 +76,6 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.ResourceBundle;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * FXML Controller class
@@ -83,6 +83,8 @@ import java.util.logging.Logger;
  * @author Sean Phillips
  */
 public class ConfigurationController implements Initializable {
+
+    private static final Logger LOG = LoggerFactory.getLogger(ConfigurationController.class);
 
     @FXML
     private CheckBox enableEmittersCheckBox;
@@ -736,7 +738,7 @@ public class ConfigurationController implements Initializable {
                 lcf.labelConfig = lc;
                 lcf.writeContent();
             } catch (IOException ex) {
-                Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+                LOG.error(null, ex);
             }
             Platform.runLater(() -> {
                 App.getAppScene().getRoot().fireEvent(

@@ -28,15 +28,16 @@ import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.Shape3D;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * @author Sean Phillips
  */
 public class TracerRound extends Projectile {
+    private static final Logger LOG = LoggerFactory.getLogger(TracerRound.class);
     public static float DEFAULT_TRACER_WIDTH = 10;
     public static double DEFAULT_TRACER_LENGTH = 200;
     Tracer tracer;
@@ -57,7 +58,7 @@ public class TracerRound extends Projectile {
 //            bump = ResourceUtils.load3DTextureImage("asteroidBumpNormalMap");
 //            self = ResourceUtils.load3DTextureImage("explosion");
         } catch (IOException ex) {
-            Logger.getLogger(FireBall.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(null, ex);
         }
         //diffuse color, diffuseMap, specularMap, bumpMap, selfIlluminationMap
         PhongMaterial material = new PhongMaterial(

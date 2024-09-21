@@ -40,6 +40,8 @@ import javafx.scene.paint.LinearGradient;
 import javafx.scene.paint.Stop;
 import javafx.stage.FileChooser;
 import lit.litfx.controls.menus.LitRadialMenuItem;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.imageio.ImageIO;
 import java.io.File;
@@ -49,6 +51,7 @@ import java.io.IOException;
  * @author Sean Phillips
  */
 public class PointDistanceMenu extends RadialEntity {
+    private static final Logger LOG = LoggerFactory.getLogger(PointDistanceMenu.class);
     //momma view this will control and attach to
     Projections3DPane projections3DPane;
 
@@ -184,15 +187,15 @@ public class PointDistanceMenu extends RadialEntity {
         save.setEffect(glow);
 
         addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Metadata Search", search, e -> {
-            System.out.println("Search by Point Type...");
+            LOG.info("Search by Point Type...");
         }));
 
         addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Metadata Filter", filter, e -> {
-            System.out.println("Filter by Point Type...");
+            LOG.info("Filter by Point Type...");
         }));
 
         addMenuItem(new LitRadialMenuItem(ITEM_SIZE, "Manifolds", manifold, e -> {
-            System.out.println("Select nearest Manifold...");
+            LOG.info("Select nearest Manifold...");
         }));
 
         addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Copy Snapshot", copy, e -> {

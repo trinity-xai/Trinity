@@ -22,6 +22,8 @@ package edu.jhuapl.trinity.data.messages;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.zeromq.SocketType;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
@@ -30,13 +32,12 @@ import org.zeromq.ZMQ.Socket;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * @author Sean Phillips
  */
 public class ZeroMQStressTestApp {
+    private static final Logger LOG = LoggerFactory.getLogger(ZeroMQStressTestApp.class);
     public static final int BURST_SIZE = 100;  //messages sent per sleep
     public static long MESSAGE_DELAY_MS = 60;
     public static final String TOPIC = "ZeroMQ Test Topic";
@@ -57,7 +58,7 @@ public class ZeroMQStressTestApp {
         imageURLS.add("OnyxToyBasket.jpg");
 
         Thread thread = new Thread(() -> {
-            System.out.println("Starting Publisher Thread...");
+            LOG.info("Starting Publisher Thread...");
             // Prepare our context and publisher
             try (ZContext context = new ZContext()) {
                 Socket pusher = context.createSocket(SocketType.PUSH);
@@ -66,7 +67,7 @@ public class ZeroMQStressTestApp {
                 pusher.connect(PUSH_CONNECT);
                 int update_nbr = 0;
 
-                System.out.println("Factor Analysis Publisher starting send loop...");
+                LOG.info("Factor Analysis Publisher starting send loop...");
                 while (!Thread.currentThread().isInterrupted()) {
                     for (int burstIndex = 0; burstIndex < BURST_SIZE; burstIndex++) {
                         try {
@@ -84,16 +85,16 @@ public class ZeroMQStressTestApp {
                             String fvAsString = mapper.writeValueAsString(featureVector);
                             pusher.send(fvAsString, ZMQ.DONTWAIT);
                         } catch (JsonProcessingException ex) {
-                            Logger.getLogger(ZeroMQStressTestApp.class.getName()).log(Level.SEVERE, null, ex);
+                            LOG.error(null, ex);
                         }
                     }
-                    System.out.println("Pushed burst number " + update_nbr);
+                    LOG.info("Pushed burst number {}", update_nbr);
                     update_nbr++;
 
                     Thread.sleep(MESSAGE_DELAY_MS);
                 }
             } catch (InterruptedException ex) {
-                Logger.getLogger(ZeroMQStressTestApp.class.getName()).log(Level.SEVERE, null, ex);
+                LOG.error(null, ex);
             }
         }, "ZeroMQFactorAnalysisStateTestApp Publisher Thread");
 //        thread.setDaemon(true);

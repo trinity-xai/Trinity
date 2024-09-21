@@ -32,6 +32,8 @@ import javafx.application.Platform;
 import javafx.event.EventHandler;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -40,6 +42,7 @@ import java.util.List;
  * @author Sean Phillips
  */
 public class ShapleyEventHandler implements EventHandler<ShapleyEvent> {
+    private static final Logger LOG = LoggerFactory.getLogger(ShapleyEventHandler.class);
 
     List<ShapleyVectorRenderer> renderers;
 
@@ -95,10 +98,8 @@ public class ShapleyEventHandler implements EventHandler<ShapleyEvent> {
         ShapleyCollection shapleyCollection = (ShapleyCollection) event.object;
         if (null == shapleyCollection || shapleyCollection.getValues().isEmpty())
             return;
-        System.out.println("Imported ShapleyCollection size: " +
-            shapleyCollection.getValues().size());
-        System.out.println("Imported ShapleyVector width: " +
-            shapleyCollection.getValues().get(0).getData().size());
+        LOG.info("Imported ShapleyCollection size: {}", shapleyCollection.getValues().size());
+        LOG.info("Imported ShapleyVector width: {}", shapleyCollection.getValues().get(0).getData().size());
 
 //        Platform.runLater(() -> {
 //            App.getAppScene().getRoot().fireEvent(

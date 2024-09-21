@@ -19,6 +19,8 @@ import com.clust4j.data.BufferedMatrixReader.MatrixReaderSetup;
 import com.clust4j.except.MatrixParseException;
 import com.clust4j.utils.MatUtils;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.BufferedWriter;
 import java.io.File;
@@ -34,6 +36,7 @@ import static org.junit.jupiter.api.Assertions.*;
 
 
 public class BufferedMatrixReaderTests {
+    private static final Logger LOG = LoggerFactory.getLogger(BufferedMatrixReaderTests.class);
     final static boolean PARALLEL = false; //GlobalState.ParallelismConf.PARALLELISM_ALLOWED;
     final static String file = new String("tmpbmrtfile.csv");
     final static Path path = FileSystems.getDefault().getPath(file);
@@ -794,7 +797,7 @@ public class BufferedMatrixReaderTests {
 
         try {
             for (boolean parallel : new boolean[]{false, PARALLEL}) {
-                System.out.println((parallel ? "Parallel" : "Serial") + " parsing task");
+                LOG.info("{} parsing task", (parallel ? "Parallel" : "Serial"));
                 DataSet d = readCSV(parallel);
 
                 assertTrue(MatUtils.equalsExactly(g, d.getDataRef().getDataRef()));

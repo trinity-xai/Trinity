@@ -20,6 +20,9 @@ package edu.jhuapl.trinity.utils.marchingcubes;
  * #L%
  */
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.BufferedOutputStream;
 import java.io.DataInputStream;
 import java.io.File;
@@ -31,11 +34,13 @@ import java.util.ArrayList;
  * Created by Primoz on 11. 07. 2016.
  */
 public class ExtractHandler {
+    private static final Logger LOG = LoggerFactory.getLogger(ExtractHandler.class);
+
     public static void extractHandlerChar(File inputFile, File outFile, final int[] size, final float voxSize[], final char isoValue, int nThreads) {
         char[] scalarField;
 
         if (inputFile != null) {
-            System.out.println("PROGRESS: Reading input data.");
+            LOG.info("PROGRESS: Reading input data.");
             try {
                 int idx = 0;
                 scalarField = new char[size[0] * size[1] * size[2]];
@@ -45,7 +50,7 @@ public class ExtractHandler {
                     // Size does not match
                     if (idx >= scalarField.length) {
                         in.close();
-                        System.out.println("Invalid volume size was specified.");
+                        LOG.info("Invalid volume size was specified.");
                         return;
                     }
 
@@ -56,15 +61,15 @@ public class ExtractHandler {
 
                 // Size does not match
                 if (idx != scalarField.length) {
-                    System.out.println("Invalid volume size was specified.");
+                    LOG.info("Invalid volume size was specified.");
                     return;
                 }
             } catch (Exception e) {
-                System.out.println("Something went wrong while reading the volume");
+                LOG.info("Something went wrong while reading the volume");
                 return;
             }
         } else {
-            System.out.println("PROGRESS: Generating volume data.");
+            LOG.info("PROGRESS: Generating volume data.");
             scalarField = VolumeGenerator.generateScalarFieldChar(size);
         }
 
@@ -80,7 +85,7 @@ public class ExtractHandler {
         // Z axis offset for vertice position calculation
         int zAxisOffset = 0;
 
-        System.out.println("PROGRESS: Executing marching cubes.");
+        LOG.info("PROGRESS: Executing marching cubes.");
 
         for (int i = 0; i < nThreads; i++) {
             // Distribute remainder among first (remainder) threads
@@ -120,11 +125,11 @@ public class ExtractHandler {
             try {
                 threads.get(i).join();
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                LOG.error("Exception", e);
             }
         }
 
-        System.out.println("PROGRESS: Writing results to output file.");
+        LOG.info("PROGRESS: Writing results to output file.");
         outputToFile(results, outFile);
     }
 
@@ -132,7 +137,7 @@ public class ExtractHandler {
         short[] scalarField;
 
         if (inputFile != null) {
-            System.out.println("PROGRESS: Reading input data.");
+            LOG.info("PROGRESS: Reading input data.");
             try {
                 int idx = 0;
                 scalarField = new short[size[0] * size[1] * size[2]];
@@ -142,7 +147,7 @@ public class ExtractHandler {
                     // Size does not match
                     if (idx >= scalarField.length) {
                         in.close();
-                        System.out.println("Invalid volume size was specified.");
+                        LOG.info("Invalid volume size was specified.");
                         return;
                     }
 
@@ -153,15 +158,15 @@ public class ExtractHandler {
 
                 // Size does not match
                 if (idx != scalarField.length) {
-                    System.out.println("Invalid volume size was specified.");
+                    LOG.info("Invalid volume size was specified.");
                     return;
                 }
             } catch (Exception e) {
-                System.out.println("Something went wrong while reading the volume");
+                LOG.info("Something went wrong while reading the volume");
                 return;
             }
         } else {
-            System.out.println("PROGRESS: Generating volume data.");
+            LOG.info("PROGRESS: Generating volume data.");
             scalarField = VolumeGenerator.generateScalarFieldShort(size);
         }
 
@@ -177,7 +182,7 @@ public class ExtractHandler {
         // Z axis offset for vertice position calculation
         int zAxisOffset = 0;
 
-        System.out.println("PROGRESS: Executing marching cubes.");
+        LOG.info("PROGRESS: Executing marching cubes.");
 
         for (int i = 0; i < nThreads; i++) {
             // Distribute remainder among first (remainder) threads
@@ -217,11 +222,11 @@ public class ExtractHandler {
             try {
                 threads.get(i).join();
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                LOG.error("Exception", e);
             }
         }
 
-        System.out.println("PROGRESS: Writing results to output file.");
+        LOG.info("PROGRESS: Writing results to output file.");
         outputToFile(results, outFile);
     }
 
@@ -229,7 +234,7 @@ public class ExtractHandler {
         int[] scalarField;
 
         if (inputFile != null) {
-            System.out.println("PROGRESS: Reading input data.");
+            LOG.info("PROGRESS: Reading input data.");
             try {
                 int idx = 0;
                 scalarField = new int[size[0] * size[1] * size[2]];
@@ -239,7 +244,7 @@ public class ExtractHandler {
                     // Size does not match
                     if (idx >= scalarField.length) {
                         in.close();
-                        System.out.println("Invalid volume size was specified.");
+                        LOG.info("Invalid volume size was specified.");
                         return;
                     }
 
@@ -250,15 +255,15 @@ public class ExtractHandler {
 
                 // Size does not match
                 if (idx != scalarField.length) {
-                    System.out.println("Invalid volume size was specified.");
+                    LOG.info("Invalid volume size was specified.");
                     return;
                 }
             } catch (Exception e) {
-                System.out.println("Something went wrong while reading the volume");
+                LOG.info("Something went wrong while reading the volume");
                 return;
             }
         } else {
-            System.out.println("PROGRESS: Generating volume data.");
+            LOG.info("PROGRESS: Generating volume data.");
             scalarField = VolumeGenerator.generateScalarFieldInt(size);
         }
 
@@ -274,7 +279,7 @@ public class ExtractHandler {
         // Z axis offset for vertice position calculation
         int zAxisOffset = 0;
 
-        System.out.println("PROGRESS: Executing marching cubes.");
+        LOG.info("PROGRESS: Executing marching cubes.");
 
         for (int i = 0; i < nThreads; i++) {
             // Distribute remainder among first (remainder) threads
@@ -311,15 +316,15 @@ public class ExtractHandler {
 
         // Join the threads
         for (int i = 0; i < threads.size(); i++) {
-            System.out.println("PROGRESS: Reading input data.");
+            LOG.info("PROGRESS: Reading input data.");
             try {
                 threads.get(i).join();
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                LOG.error("Exception", e);
             }
         }
 
-        System.out.println("PROGRESS: Writing results to output file.");
+        LOG.info("PROGRESS: Writing results to output file.");
         outputToFile(results, outFile);
     }
 
@@ -327,7 +332,7 @@ public class ExtractHandler {
         float[] scalarField;
 
         if (inputFile != null) {
-            System.out.println("PROGRESS: Reading input data.");
+            LOG.info("PROGRESS: Reading input data.");
             try {
                 int idx = 0;
                 scalarField = new float[size[0] * size[1] * size[2]];
@@ -337,7 +342,7 @@ public class ExtractHandler {
                     // Size does not match
                     if (idx >= scalarField.length) {
                         in.close();
-                        System.out.println("Invalid volume size was specified.");
+                        LOG.info("Invalid volume size was specified.");
                         return;
                     }
 
@@ -348,15 +353,15 @@ public class ExtractHandler {
 
                 // Size does not match
                 if (idx != scalarField.length) {
-                    System.out.println("Invalid volume size was specified.");
+                    LOG.info("Invalid volume size was specified.");
                     return;
                 }
             } catch (Exception e) {
-                System.out.println("Something went wrong while reading the volume");
+                LOG.info("Something went wrong while reading the volume");
                 return;
             }
         } else {
-            System.out.println("PROGRESS: Generating volume data.");
+            LOG.info("PROGRESS: Generating volume data.");
             scalarField = VolumeGenerator.generateScalarFieldFloat(size);
         }
 
@@ -373,7 +378,7 @@ public class ExtractHandler {
         // Z axis offset for vertice position calculation
         int zAxisOffset = 0;
 
-        System.out.println("PROGRESS: Executing marching cubes.");
+        LOG.info("PROGRESS: Executing marching cubes.");
 
         for (int i = 0; i < nThreads; i++) {
             // Distribute remainder among first (remainder) threads
@@ -413,11 +418,11 @@ public class ExtractHandler {
             try {
                 threads.get(i).join();
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                LOG.error("Exception", e);
             }
         }
 
-        System.out.println("PROGRESS: Writing results to output file.");
+        LOG.info("PROGRESS: Writing results to output file.");
         outputToFile(results, outFile);
     }
 
@@ -434,7 +439,7 @@ public class ExtractHandler {
                     // Size does not match
                     if (idx >= scalarField.length) {
                         in.close();
-                        System.out.println("Invalid volume size was specified.");
+                        LOG.info("Invalid volume size was specified.");
                         return;
                     }
 
@@ -445,15 +450,15 @@ public class ExtractHandler {
 
                 // Size does not match
                 if (idx != scalarField.length) {
-                    System.out.println("Invalid volume size was specified.");
+                    LOG.info("Invalid volume size was specified.");
                     return;
                 }
             } catch (Exception e) {
-                System.out.println("Something went wrong while reading the volume");
+                LOG.info("Something went wrong while reading the volume");
                 return;
             }
         } else {
-            System.out.println("PROGRESS: Generating volume data.");
+            LOG.info("PROGRESS: Generating volume data.");
             scalarField = VolumeGenerator.generateScalarFieldDouble(size);
         }
 
@@ -470,7 +475,7 @@ public class ExtractHandler {
         // Z axis offset for vertice position calculation
         int zAxisOffset = 0;
 
-        System.out.println("PROGRESS: Executing marching cubes.");
+        LOG.info("PROGRESS: Executing marching cubes.");
         for (int i = 0; i < nThreads; i++) {
             // Distribute remainder among first (remainder) threads
             int segmentSize = (remainder-- > 0) ? segment + 1 : segment;
@@ -509,11 +514,11 @@ public class ExtractHandler {
             try {
                 threads.get(i).join();
             } catch (InterruptedException e) {
-                e.printStackTrace();
+                LOG.error("Exception", e);
             }
         }
 
-        System.out.println("PROGRESS: Writing results to output file.");
+        LOG.info("PROGRESS: Writing results to output file.");
         outputToFile(results, outFile);
     }
 
@@ -538,7 +543,7 @@ public class ExtractHandler {
             stream.flush();
             stream.close();
         } catch (Exception e) {
-            System.out.println("Something went wrong while writing to the output file");
+            LOG.info("Something went wrong while writing to the output file");
             return;
         }
     }

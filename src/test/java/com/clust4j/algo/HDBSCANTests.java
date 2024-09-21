@@ -45,6 +45,8 @@ import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.util.FastMath;
 import org.apache.commons.math3.util.Precision;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -60,6 +62,7 @@ import java.util.TreeMap;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class HDBSCANTests implements ClusterTest, ClassifierTest, BaseModelTest {
+    private static final Logger LOG = LoggerFactory.getLogger(HDBSCANTests.class);
     final Array2DRowRealMatrix DATA = TestSuite.IRIS_DATASET.getData();
     final Array2DRowRealMatrix iris = DATA;
     final static MatrixFormatter formatter = TestSuite.formatter;
@@ -569,7 +572,7 @@ public class HDBSCANTests implements ClusterTest, ClassifierTest, BaseModelTest 
         assertTrue(VecUtils.equalsExactly(expectedLabels, h.getLabels()));
 
         h = new HDBSCAN(X, new HDBSCANParameters().setAlgo(HDBSCAN_Algorithm.PRIMS_KDTREE)).fit();
-        System.out.println(Arrays.toString(h.getLabels()));
+        LOG.info(Arrays.toString(h.getLabels()));
     }
 
     @Test
@@ -1376,8 +1379,8 @@ public class HDBSCANTests implements ClusterTest, ClassifierTest, BaseModelTest 
             if (Double.isNaN(stab) && Double.isNaN(stability.get(key)))
                 continue;
             if (!Precision.equals(stab, stability.get(key), 1e-6)) {
-                System.out.println(key + ", " + stab);
-                System.out.println(key + ", " + stability.get(key));
+                LOG.info("{}, {}", key, stab);
+                LOG.info("{}, {}", key, stability.get(key));
                 fail();
             }
         }
@@ -1448,7 +1451,7 @@ public class HDBSCANTests implements ClusterTest, ClassifierTest, BaseModelTest 
 
                 if (model.hasWarnings()) {
                     warnings_thrown = true;
-                    System.out.println(d + ", " + model.getWarnings());
+                    LOG.info("{}, {}", d, model.getWarnings());
                 }
             }
 

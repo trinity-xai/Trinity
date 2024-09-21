@@ -19,6 +19,8 @@ import com.clust4j.log.Log.LogWrapper;
 import com.clust4j.log.Log.Tag.Algo;
 import com.clust4j.log.LogTimeFormatter.TimeSlots;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -35,6 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertThrows;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class LogTest {
+    private static final Logger LOG = LoggerFactory.getLogger(LogTest.class);
     final static String file = new String("tmpbmrtfile.csv");
     final static Path path = FileSystems.getDefault().getPath(file);
 
@@ -86,23 +89,23 @@ public class LogTest {
     public void testTimeSlots() {
         TimeSlots t = new LogTimeFormatter.TimeSlots(1, 1, 1, 1, 1);
         String millis = LogTimeFormatter.millis(t, true);
-        System.out.println("Truncated:\t" + millis);
+        LOG.info("Truncated:\t{}", millis);
         millis = LogTimeFormatter.millis(t, false);
-        System.out.println("Un-truncated:\t" + millis);
+        LOG.info("Un-truncated:\t{}", millis);
 
         // Where hr == 0 && min != 0
         t = new LogTimeFormatter.TimeSlots(0, 1, 1, 1, 1);
         millis = LogTimeFormatter.millis(t, true);
-        System.out.println("Truncated:\t" + millis);
+        LOG.info("Truncated:\t{}", millis);
         millis = LogTimeFormatter.millis(t, false);
-        System.out.println("Un-truncated:\t" + millis);
+        LOG.info("Un-truncated:\t{}", millis);
 
         // Where hr == 0 && min == 0
         t = new LogTimeFormatter.TimeSlots(0, 0, 1, 1, 1);
         millis = LogTimeFormatter.millis(t, true);
-        System.out.println("Truncated:\t" + millis);
+        LOG.info("Truncated:\t{}", millis);
         millis = LogTimeFormatter.millis(t, false);
-        System.out.println("Un-truncated:\t" + millis);
+        LOG.info("Un-truncated:\t{}", millis);
     }
 
     @Test
@@ -114,10 +117,10 @@ public class LogTest {
         long start = System.currentTimeMillis();
         Thread.sleep(100);
         long end = System.currentTimeMillis();
-        System.out.println(timer.formatTime(start, end));
-        System.out.println("Start short string: " + timer.startAsShortString());
-        System.out.println("Now as short string: " + timer.nowAsShortString());
-        System.out.println("Now as long string: " + timer.nowAsString());
+        LOG.info(timer.formatTime(start, end));
+        LOG.info("Start short string: {}", timer.startAsShortString());
+        LOG.info("Now as short string: {}", timer.nowAsShortString());
+        LOG.info("Now as long string: {}", timer.nowAsString());
     }
 
     @Test

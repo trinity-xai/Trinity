@@ -24,6 +24,8 @@ import edu.jhuapl.trinity.data.files.FeatureCollectionFile;
 import edu.jhuapl.trinity.utils.umap.Umap;
 import org.apache.commons.math3.linear.SingularValueDecomposition;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
@@ -34,6 +36,7 @@ import static org.junit.jupiter.api.Assertions.assertArrayEquals;
  * @author Sean Phillips
  */
 public class AnalysisUtilsTest {
+    private static final Logger LOG = LoggerFactory.getLogger(AnalysisUtilsTest.class);
 
     public AnalysisUtilsTest() {
     }
@@ -43,7 +46,7 @@ public class AnalysisUtilsTest {
      */
     @Test
     public void testDoCommonsPCA() {
-        System.out.println("doCommonsPca");
+        LOG.info("doCommonsPca");
         double[][] expected = new double[][]{
             {1.414213562373095, -1.1102230246251565E-16},
             {-1.1102230246251565E-16, -1.414213562373095},
@@ -66,7 +69,7 @@ public class AnalysisUtilsTest {
      */
     @Test
     public void testDoCommonsSVD() {
-        System.out.println("doCommonsSVD");
+        LOG.info("doCommonsSVD");
         double[][] expected = new double[][]{
             {-2.6666666666666665, -2.6666666666666665},
             {-1.3333333333333326, -1.3333333333333326},
@@ -87,8 +90,8 @@ public class AnalysisUtilsTest {
     //    @Test
     public void testUMAP() throws IOException {
         FeatureCollectionFile fcf = new FeatureCollectionFile("CLIP_data.json", true);
-        System.out.println("Feature Vectors discovered: " + fcf.featureCollection.getFeatures().size());
-        System.out.print("Converting to double 2D array... ");
+        LOG.info("Feature Vectors discovered: {}", fcf.featureCollection.getFeatures().size());
+        LOG.info("Converting to double 2D array... ");
         long startTime = System.nanoTime();
         // input data instances * attributes
         double[][] data = fcf.featureCollection.convertFeaturesToArray();
@@ -97,11 +100,11 @@ public class AnalysisUtilsTest {
         umap.setNumberComponents(3); // number of dimensions in result
         umap.setNumberNearestNeighbours(15);
         umap.setThreads(1);  // use > 1 to enable parallelism
-        System.out.print("Fitting Transform... ");
+        LOG.info("Fitting Transform... ");
         startTime = System.nanoTime();
         double[][] result = umap.fitTransform(data);
         Utils.printTotalTime(startTime);
-        System.out.println("UMAP Test complete.");
+        LOG.info("UMAP Test complete.");
     }
 
     /**
@@ -109,7 +112,7 @@ public class AnalysisUtilsTest {
      */
     @Test
     public void testSpikeySVD() {
-        System.out.println("spikeySVD");
+        LOG.info("spikeySVD");
         double[] expected = new double[]{0.20527110065548962};
         double[][] array = new double[][]{
             new double[]{0.0},

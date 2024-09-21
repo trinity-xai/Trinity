@@ -71,6 +71,8 @@ import javafx.stage.Stage;
 import org.fxyz3d.geometry.MathUtils;
 import org.fxyz3d.geometry.Point3D;
 import org.fxyz3d.utils.CameraTransformer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -80,6 +82,7 @@ import java.util.Random;
 import java.util.function.Function;
 
 public class VectorizeImageTest extends Application {
+    private static final Logger LOG = LoggerFactory.getLogger(VectorizeImageTest.class);
     PerspectiveCamera camera = new PerspectiveCamera(true);
     public Group sceneRoot = new Group();
     public SubScene subScene;
@@ -118,7 +121,7 @@ public class VectorizeImageTest extends Application {
         //Start Tracking mouse movements only when a button is pressed
         subScene.setOnMousePressed((MouseEvent me) -> {
             if (me.isSynthesized())
-                System.out.println("isSynthesized");
+                LOG.info("isSynthesized");
             mousePosX = me.getSceneX();
             mousePosY = me.getSceneY();
             mouseOldX = me.getSceneX();
@@ -276,7 +279,7 @@ public class VectorizeImageTest extends Application {
     }
 
     public Image captureImage() {
-        System.out.println("Capturing Web Cam Image...");
+        LOG.info("Capturing Web Cam Image...");
         BufferedImage img = null;
         WritableImage image = null;
         if ((img = webCam.getImage()) != null) {
@@ -288,7 +291,7 @@ public class VectorizeImageTest extends Application {
     }
 
     public void buildTerrain(List<List<Double>> dataGrid, float xScale, float yScale, float zScale) {
-        System.out.println("terrain file dropped...");
+        LOG.info("terrain file dropped...");
         this.dataGrid = dataGrid;
         int pskip = 1;
         int subDivX = dataGrid.get(0).size() / pskip;
@@ -349,7 +352,7 @@ public class VectorizeImageTest extends Application {
                 faceIndex += newFaces;
                 if (faceIndex >= surfMesh.getFaces().size()) {
                     this.stop();
-                    System.out.println("Tessellation Complete.");
+                    LOG.info("Tessellation Complete.");
                     animateTexture();
                 }
             }
@@ -525,7 +528,7 @@ public class VectorizeImageTest extends Application {
     }
 
     private void loadSurf3D() {
-        System.out.println("Rendering Surf3D Mesh...");
+        LOG.info("Rendering Surf3D Mesh...");
         int TOTAL_COLORS = 1530; //colors used by map function
         int xWidth = 200;
         int zWidth = 200;

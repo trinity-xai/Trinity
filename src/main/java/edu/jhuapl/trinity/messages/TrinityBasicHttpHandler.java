@@ -12,7 +12,7 @@ import java.nio.charset.StandardCharsets;
 
 public class TrinityBasicHttpHandler implements HttpHandler {
 
-    private static final Logger LOGGER = LoggerFactory.getLogger(TrinityBasicHttpHandler.class);
+    private static final Logger LOG = LoggerFactory.getLogger(TrinityBasicHttpHandler.class);
 
     private final MessageProcessor processor;
 
@@ -75,7 +75,7 @@ public class TrinityBasicHttpHandler implements HttpHandler {
             processor.process(messageBody);
             return true;
         } catch (IOException ex) {
-            LOGGER.info("Malformed JSON from injectMessage", ex);
+            LOG.info("Malformed JSON from injectMessage", ex);
             return false;
         }
     }

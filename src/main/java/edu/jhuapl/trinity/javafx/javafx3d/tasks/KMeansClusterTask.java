@@ -33,11 +33,14 @@ import javafx.scene.Scene;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Sean Phillips
  */
 public class KMeansClusterTask extends ClusterTask {
+    private static final Logger LOG = LoggerFactory.getLogger(KMeansClusterTask.class);
 
     ProjectionConfig pc;
     double[][] observations;
@@ -57,7 +60,7 @@ public class KMeansClusterTask extends ClusterTask {
             scene.getRoot().fireEvent(
                 new ApplicationEvent(ApplicationEvent.SHOW_BUSY_INDICATOR, ps));
         });
-        System.out.print("KMeans fit... ");
+        LOG.info("KMeans fit... ");
         long startTime = System.nanoTime();
         Array2DRowRealMatrix obsMatrix = new Array2DRowRealMatrix(observations);
         KMeans kmeans = new KMeansParameters(pc.components)
@@ -71,13 +74,13 @@ public class KMeansClusterTask extends ClusterTask {
         final int[] labels = kmeans.getLabels();
         final int clusters = kmeans.getK();
         Utils.printTotalTime(startTime);
-        System.out.println("===============================================");
+        LOG.info("===============================================");
 
-        System.out.print("Converting clusters to Manifold Geometry... ");
+        LOG.info("Converting clusters to Manifold Geometry... ");
         startTime = System.nanoTime();
         convertToManifoldGeometry(observations, labels, clusters, "KMeans Cluster ");
         Utils.printTotalTime(startTime);
-        System.out.println("===============================================");
+        LOG.info("===============================================");
         Platform.runLater(() -> {
             scene.getRoot().fireEvent(
                 new CommandTerminalEvent("Completed KMeans Fit and Manifold Geometry Task.",

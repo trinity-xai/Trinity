@@ -30,17 +30,18 @@ import javafx.scene.input.ScrollEvent;
 import javafx.scene.input.TransferMode;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * @author Sean Phillips
  */
 public class AnimatedStack extends Group {
+    private static final Logger LOG = LoggerFactory.getLogger(AnimatedStack.class);
     public double DEFAULT_RATEOFCHANGE = 0.01;
     public double rateOfChange = DEFAULT_RATEOFCHANGE;
     float[] uvCoords = {0, 0, 1, 0, 1, 1, 0, 1};
@@ -153,7 +154,7 @@ public class AnimatedStack extends Group {
                 boxes.get(0).setMaterial(material);
                 event.setDropCompleted(true);
             } catch (MalformedURLException ex) {
-                Logger.getLogger(AnimatedSphere.class.getName()).log(Level.SEVERE, null, ex);
+                LOG.error(null, ex);
                 event.setDropCompleted(false);
             }
             event.consume();
@@ -177,7 +178,7 @@ public class AnimatedStack extends Group {
                     boxes.get(i).setMaterial(material);
                 event.setDropCompleted(true);
             } catch (MalformedURLException ex) {
-                Logger.getLogger(AnimatedSphere.class.getName()).log(Level.SEVERE, null, ex);
+                LOG.error(null, ex);
                 event.setDropCompleted(false);
             }
             event.consume();

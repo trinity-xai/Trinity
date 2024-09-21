@@ -22,6 +22,8 @@ package edu.jhuapl.trinity.utils.mc;
 
 import javafx.scene.shape.TriangleMesh;
 import org.fxyz3d.geometry.Vector3D;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.DoubleBuffer;
 import java.nio.IntBuffer;
@@ -32,6 +34,7 @@ import java.util.List;
  * Factory for creating meshes out of a scalar field using the marching cubes algorithm. The reference is the back bottom left point, which is locally the point (0, 0, 0).
  */
 public class MarchingCubesMeshFactory {
+    private static final Logger LOG = LoggerFactory.getLogger(MarchingCubesMeshFactory.class);
     int SHARED_VERTICES_PER_CUBE = 8;
     int INDEX_BUFFER_COMPONENT_COUNT = 3;
     int NORMAL_BUFFER_COMPONENT_COUNT = 3;
@@ -97,7 +100,7 @@ public class MarchingCubesMeshFactory {
         int totalFaces = mesh.getPoints().size() / 3;
         for (int faceIndex = 0; faceIndex < totalFaces - 1; faceIndex++) {
             if (faceIndex + 2 > mesh.getPoints().size())
-                System.out.println("wft...");
+                LOG.info("wft...");
             mesh.getFaces().addAll(
                 faceIndex, faceIndex + 1, faceIndex + 2,
                 faceIndex + 2, faceIndex + 1, faceIndex

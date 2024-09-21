@@ -60,6 +60,8 @@ import javafx.scene.Node;
 import javafx.scene.shape.Shape3D;
 import javafx.scene.transform.Affine;
 import javafx.scene.transform.Transform;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Collection;
 
@@ -68,6 +70,7 @@ import java.util.Collection;
  * @author Jason Pollastrini aka jdub1581
  */
 public abstract class BillboardNode<T extends Node> extends Group {
+    private static final Logger LOG = LoggerFactory.getLogger(BillboardNode.class);
 
     public enum BillboardMode {
 
@@ -197,10 +200,10 @@ public abstract class BillboardNode<T extends Node> extends Group {
 
             if (getValue()) {
                 startBillboarding();
-                System.out.println("timer started");
+                LOG.info("timer started");
             } else if (!getValue()) {
                 stopBillboarding();
-                System.out.println("timer stopped");
+                LOG.info("timer stopped");
             }
 
         }

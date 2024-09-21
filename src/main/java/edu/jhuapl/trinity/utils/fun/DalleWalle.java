@@ -72,6 +72,8 @@ import javafx.stage.Stage;
 import javafx.util.Duration;
 import org.fxyz3d.geometry.MathUtils;
 import org.fxyz3d.utils.CameraTransformer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileInputStream;
@@ -87,12 +89,11 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Random;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import static java.nio.file.StandardWatchEventKinds.ENTRY_CREATE;
 
 public class DalleWalle extends Application {
+    private static final Logger LOG = LoggerFactory.getLogger(DalleWalle.class);
     PerspectiveCamera camera = new PerspectiveCamera(true);
     public Group sceneRoot = new Group();
     public SubScene subScene;
@@ -152,13 +153,13 @@ public class DalleWalle extends Application {
         //Default to just the current directory
         scanPath = new File(".").toPath();
         if (null != namedParameters) {
-            System.out.println("Checking for arguments...");
+            LOG.info("Checking for arguments...");
             if (namedParameters.containsKey("scanPath")) {
                 String scanPathString = namedParameters.get("scanPath");
-                System.out.println("Attempting to scan path: " + scanPathString);
+                LOG.info("Attempting to scan path: {}", scanPathString);
                 File scanPathFile = new File(scanPathString);
                 if (!scanPathFile.isDirectory() || !scanPathFile.canRead()) {
-                    System.out.println("Unable to access or read path as directory. Exiting...");
+                    LOG.info("Unable to access or read path as directory. Exiting...");
                     System.exit(-1);
                 }
                 scanPath = scanPathFile.toPath();
@@ -169,7 +170,7 @@ public class DalleWalle extends Application {
         //Start Tracking mouse movements only when a button is pressed
         subScene.setOnMousePressed((MouseEvent me) -> {
             if (me.isSynthesized())
-                System.out.println("isSynthesized");
+                LOG.info("isSynthesized");
             mousePosX = me.getSceneX();
             mousePosY = me.getSceneY();
             mouseOldX = me.getSceneX();
@@ -308,7 +309,7 @@ public class DalleWalle extends Application {
             randomIndices.add(i);
         Collections.shuffle(randomIndices);
 
-        System.out.println("Total Images Loaded: " + nodes.size());
+        LOG.info("Total Images Loaded: {}", nodes.size());
         sceneRoot.getChildren().addAll(nodes);
 
         Sphere origin = new Sphere(20.0);
@@ -404,7 +405,7 @@ public class DalleWalle extends Application {
                         java.nio.file.Path newPath = ((WatchEvent<java.nio.file.Path>) watchEvent).context();
                         kind = null;
                         watchEvent = null;
-                        System.out.println("New file created: " + newPath);
+                        LOG.info("New file created: {}", newPath);
                         if (newPath.toString().endsWith("png") || newPath.toString().endsWith("PNG")) {
                             try {
                                 String filePath = path.toString() + "/" + newPath.toString();
@@ -416,7 +417,7 @@ public class DalleWalle extends Application {
                                     imageIndex = 0;
                                 playNewImage(tempIndex, fixedPath);
                             } catch (Exception ex) {
-                                System.out.println(ex.getMessage());
+                                LOG.info("", ex);
                             }
                         }
                     }
@@ -428,7 +429,7 @@ public class DalleWalle extends Application {
             }
 
         } catch (IOException | InterruptedException ioe) {
-            ioe.printStackTrace();
+            LOG.error("Exception", ioe);
         }
     }
 
@@ -467,7 +468,7 @@ public class DalleWalle extends Application {
                 seq.setOnFinished(f -> flipTransition.playFromStart());
                 seq.playFromStart();
             } catch (FileNotFoundException | InterruptedException ex) {
-                Logger.getLogger(DalleWalle.class.getName()).log(Level.SEVERE, null, ex);
+                LOG.error(null, ex);
             }
         });
     }
@@ -636,13 +637,13 @@ public class DalleWalle extends Application {
         unnamedParameters = parameters.getUnnamed();
 
         if (!namedParameters.isEmpty()) {
-            System.out.println("NamedParameters :");
+            LOG.info("NamedParameters :");
             namedParameters.entrySet().forEach(entry -> {
-                System.out.println("\t" + entry.getKey() + " : " + entry.getValue());
+                LOG.info("\t{} : {}", entry.getKey(), entry.getValue());
             });
         }
         if (!unnamedParameters.isEmpty()) {
-            System.out.println("UnnamedParameters :");
+            LOG.info("UnnamedParameters :");
             unnamedParameters.forEach(System.out::println);
         }
     }

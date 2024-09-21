@@ -51,6 +51,8 @@ import javafx.util.Duration;
 import org.fxyz3d.geometry.MathUtils;
 import org.fxyz3d.geometry.Ray;
 import org.fxyz3d.utils.CameraTransformer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * RayShooting.java
@@ -96,6 +98,7 @@ import org.fxyz3d.utils.CameraTransformer;
  * @author Jason Pollastrini aka jdub1581
  */
 public class RayShooting extends Application {
+    private static final Logger LOG = LoggerFactory.getLogger(RayShooting.class);
 
 
     private final PhongMaterial red = new PhongMaterial(Color.ORCHID),
@@ -237,7 +240,7 @@ public class RayShooting extends Application {
 
         subScene.setOnMousePressed(e -> {
             if (e.isSynthesized())
-                System.out.println("isSynthesized");
+                LOG.info("isSynthesized");
             mousePosX = e.getSceneX();
             mousePosY = e.getSceneY();
             mouseOldX = e.getSceneX();
@@ -247,7 +250,7 @@ public class RayShooting extends Application {
 //                  Point2D p2D = subScene.screenToLocal(e.getX(), e.getY());
 
                 Point3D o = new Point3D(cameraTransform.t.getTx(), cameraTransform.t.getTy(), camera.getTranslateZ());
-                System.out.println(o.toString());
+                LOG.info(o.toString());
 //                Point3D o1 = subScene.sceneToLocal(e.getX(), e.getY(), camera.getTranslateZ());
 //                System.out.println(o1.toString());
                 if (e.isPrimaryButtonDown()) {

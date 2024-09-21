@@ -24,6 +24,8 @@ import com.github.sarxos.webcam.Webcam;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.image.Image;
 import javafx.scene.image.WritableImage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -36,6 +38,7 @@ import java.util.concurrent.TimeUnit;
  */
 public enum WebCamUtils {
     INSTANCE;
+    private static final Logger LOG = LoggerFactory.getLogger(WebCamUtils.class);
     public static Webcam webCam = null;
 
     public static void initialize() throws Exception {
@@ -49,7 +52,7 @@ public enum WebCamUtils {
 
     public static Image takePicture() throws Exception {
         if (null == webCam) {
-            System.out.println("Attempting to initialize camera...");
+            LOG.info("Attempting to initialize camera...");
             initialize();
         }
         BufferedImage img = null;

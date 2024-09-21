@@ -55,6 +55,8 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
@@ -69,6 +71,7 @@ import static java.util.stream.Collectors.toList;
  * @author Sean Phillips
  */
 public class Shape3DControlPane extends LitPathPane {
+    private static final Logger LOG = LoggerFactory.getLogger(Shape3DControlPane.class);
     public static double SPINNER_PREF_WIDTH = 150;
     public static double SELECTION_PREF_WIDTH = 250;
     BorderPane bp;
@@ -263,7 +266,7 @@ public class Shape3DControlPane extends LitPathPane {
     }
 
     public void findClusters() {
-        System.out.println("Find Clusters...");
+        LOG.info("Find Clusters...");
         ProjectionConfig pc = new ProjectionConfig();
         pc.dataSource = hypersurfaceRadioButton.isSelected()
             ? ProjectionConfig.DATA_SOURCE.HYPERSURFACE
@@ -514,17 +517,17 @@ public class Shape3DControlPane extends LitPathPane {
 //            Octree octree = new Octree();
 //            octree.buildIndex(points);
 //            int[] neighborIndices = octree.searchNearestNeighbors(n, i);
-        System.out.println("Octree stuff done.");
+        LOG.info("Octree stuff done.");
     }
 
     private void startNewManifold() {
-        System.out.println("Refreshing Manifold...");
+        LOG.info("Refreshing Manifold...");
         manifold3D = null;
         pointListView.getItems().clear();
     }
 
     private void updateManifold() {
-        System.out.println("Refreshing Manifold...");
+        LOG.info("Refreshing Manifold...");
         //build list of points from listview
         List<org.fxyz3d.geometry.Point3D> points = new ArrayList<>();
         pointListView.getItems().forEach(item -> {

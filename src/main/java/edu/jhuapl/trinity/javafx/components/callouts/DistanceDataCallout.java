@@ -35,6 +35,8 @@ import javafx.scene.layout.VBox;
 import javafx.scene.shape.Shape3D;
 import org.fxyz3d.geometry.Face3;
 import org.fxyz3d.geometry.Point3D;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
@@ -44,6 +46,8 @@ import java.util.List;
  * @author Sean Phillips
  */
 public class DistanceDataCallout extends VBox {
+    private static final Logger LOG = LoggerFactory.getLogger(DistanceDataCallout.class);
+
     /**
      * @param shape3D         3D anchor node to use for 2D transforms
      * @param manifold        The manifold to associate with this data
@@ -85,7 +89,7 @@ public class DistanceDataCallout extends VBox {
 
         javafx.geometry.Point3D fxStart = JavaFX3DUtils.toFX.apply(startingPoint3D);
         List<Face3> intersections = manifold3D.getIntersections(startingPoint3D);
-        System.out.println("Intersections with Manifold: " + intersections.size());
+        LOG.info("Intersections with Manifold: {}", intersections.size());
 
         TitledPane manifoldTP = new TitledPane();
         GridPane manifoldGridPane = new GridPane();

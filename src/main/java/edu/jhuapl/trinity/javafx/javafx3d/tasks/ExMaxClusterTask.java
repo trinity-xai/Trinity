@@ -36,6 +36,8 @@ import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.util.Pair;
 import org.fxyz3d.geometry.Point3D;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -46,6 +48,7 @@ import java.util.List;
  * @author Sean Phillips
  */
 public class ExMaxClusterTask extends ClusterTask {
+    private static final Logger LOG = LoggerFactory.getLogger(ExMaxClusterTask.class);
 
     ProjectionConfig pc;
     double[][] observations;
@@ -65,18 +68,18 @@ public class ExMaxClusterTask extends ClusterTask {
             scene.getRoot().fireEvent(
                 new ApplicationEvent(ApplicationEvent.SHOW_BUSY_INDICATOR, ps));
         });
-        System.out.println("Expectation Maximization... ");
+        LOG.info("Expectation Maximization... ");
         long startTime = System.nanoTime();
         boolean diagonal = pc.covariance == ProjectionConfig.COVARIANCE_MODE.DIAGONAL;
         GaussianMixtureModel gmm = GaussianMixtureModel.fit(pc.components, observations, diagonal);
         Utils.printTotalTime(startTime);
-        System.out.println("Components found: " + gmm.components.length);
-        System.out.println("Mapping observations to clusters by component probability... ");
+        LOG.info("Components found: {}", gmm.components.length);
+        LOG.info("Mapping observations to clusters by component probability... ");
         startTime = System.nanoTime();
         ArrayList<Cluster> clusters = new ArrayList<>();
         int i = 0;
         for (GaussianMixtureComponent c : gmm.components) {
-            System.out.println("After GMM Fit Centroid " + i + ": " + Arrays.toString(c.distribution.mu));
+            LOG.info("After GMM Fit Centroid {}: {}", i, Arrays.toString(c.distribution.mu));
             clusters.add(new Cluster(observations[0].length));
             i++;
         }
@@ -95,7 +98,7 @@ public class ExMaxClusterTask extends ClusterTask {
 //                    System.out.println(DataUtils.normalize(m, min, max))
 //                );
         Utils.printTotalTime(startTime);
-        System.out.print("Generating Hulls from Clusters... ");
+        LOG.info("Generating Hulls from Clusters... ");
         startTime = System.nanoTime();
         int index = 0;
         for (Cluster cluster : clusters) {
@@ -109,13 +112,13 @@ public class ExMaxClusterTask extends ClusterTask {
                     .toList();
                 createManifold(points, label);
             } else {
-                System.out.println("Cluster has less than 4 points");
+                LOG.info("Cluster has less than 4 points");
             }
             index++;
         }
 
         Utils.printTotalTime(startTime);
-        System.out.println("===============================================");
+        LOG.info("===============================================");
         //System.out.println("EmDriver Results : " + emDriver.learnedModel.toString());
         Platform.runLater(() -> {
             scene.getRoot().fireEvent(
