@@ -25,6 +25,7 @@ import com.clust4j.except.ModelNotFitException;
 import com.clust4j.except.NaNException;
 import com.clust4j.kernel.GaussianKernel;
 import com.clust4j.kernel.Kernel;
+import com.clust4j.kernel.KernelTestCases;
 import com.clust4j.metrics.pairwise.Distance;
 import com.clust4j.metrics.pairwise.DistanceMetric;
 import com.clust4j.metrics.pairwise.GeometricallySeparable;
@@ -502,7 +503,7 @@ public class KMeansTests implements ClassifierTest, ClusterTest, ConvergeableTes
         // it's not linearly separable, so most won't perform incredibly well...
         int count = 0;
         KMeans model;
-        for (Kernel dist : com.clust4j.kernel.KernelTestCases.all_kernels) {
+        for (Kernel dist : KernelTestCases.all_kernels) {
             if (KMeans.UNSUPPORTED_METRICS.contains(dist.getClass()))
                 continue;
 

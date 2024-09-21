@@ -226,7 +226,7 @@ public class ProjectileSystem {
 
     public void fire() {
         //default starting pointing direction is Z+.
-        javafx.geometry.Point3D velocity = new Point3D(0, 0, fireVelocity);
+        Point3D velocity = new Point3D(0, 0, fireVelocity);
         velocity = playerShip.getTransforms().get(0).transform(velocity);
         FireBall fireBall = new FireBall(FireBall.DEFAULT_FIREBALL_RADIUS,
             playerShip.getLocation(), velocity);
@@ -236,7 +236,7 @@ public class ProjectileSystem {
 
     public void fireTracer() {
         //default starting pointing direction is Z+.
-        javafx.geometry.Point3D velocity = new Point3D(0, 0, fireVelocity);
+        Point3D velocity = new Point3D(0, 0, fireVelocity);
         velocity = playerShip.getTransforms().get(0).transform(velocity);
         Point3D end = playerShip.getTransforms().get(0).transform(
             new Point3D(0, 0, TracerRound.DEFAULT_TRACER_LENGTH));
@@ -264,7 +264,7 @@ public class ProjectileSystem {
             man3D.texturedManifold.getFaces(),
             JavaFX3DUtils.toFX.apply(man3D.getBoundsCentroid())
         );
-        javafx.geometry.Point3D velocity = new javafx.geometry.Point3D(
+        Point3D velocity = new Point3D(
             Hittable.random.nextGaussian() * 0.25,
             Hittable.random.nextGaussian() * 2.1, //initial velocity mostly vertical
             Hittable.random.nextGaussian() * 0.25);
@@ -488,7 +488,7 @@ public class ProjectileSystem {
                 alienShip.getLocation(), false);
             if (random.nextDouble() >= 0.985) {
                 //Minus because the Alien is rotated 180 degrees ahead of time
-                javafx.geometry.Point3D velocity = new Point3D(0, 0, -fireVelocity);
+                Point3D velocity = new Point3D(0, 0, -fireVelocity);
                 velocity = alienShip.getTransforms().get(0).transform(velocity);
                 FireBall fireBall = new FireBall(15, alienShip.getLocation(), velocity);
                 addProjectile(fireBall);

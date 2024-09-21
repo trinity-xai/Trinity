@@ -21,6 +21,7 @@ package edu.jhuapl.trinity.utils;
  */
 
 import edu.jhuapl.trinity.data.messages.FeatureCollection;
+import edu.jhuapl.trinity.data.messages.UmapConfig;
 import edu.jhuapl.trinity.utils.umap.Umap;
 import javafx.geometry.Point2D;
 import org.apache.commons.math3.linear.EigenDecomposition;
@@ -339,7 +340,38 @@ public enum AnalysisUtils {
         return svdValues;
     }
 
-    public static double[][] fitUMAP(FeatureCollection featureCollection) {
+    public static Umap umapConfigToUmap(UmapConfig config) {
+        Umap latestUmap = new Umap();
+        if (null != config.getTargetWeight())
+            latestUmap.setTargetWeight(config.getTargetWeight());
+        if (null != config.getRepulsionStrength())
+            latestUmap.setRepulsionStrength(config.getRepulsionStrength());
+        if (null != config.getMinDist())
+            latestUmap.setMinDist(config.getMinDist());
+        if (null != config.getSpread())
+            latestUmap.setSpread(config.getSpread());
+        if (null != config.getOpMixRatio())
+            latestUmap.setSetOpMixRatio(config.getOpMixRatio());
+        if (null != config.getNumberComponents())
+            latestUmap.setNumberComponents(config.getNumberComponents());
+        if (null != config.getNumberEpochs())
+            latestUmap.setNumberEpochs(config.getNumberEpochs());
+        if (null != config.getNumberNearestNeighbours())
+            latestUmap.setNumberNearestNeighbours(config.getNumberNearestNeighbours());
+        if (null != config.getNegativeSampleRate())
+            latestUmap.setNegativeSampleRate(config.getNegativeSampleRate());
+        if (null != config.getLocalConnectivity())
+            latestUmap.setLocalConnectivity(config.getLocalConnectivity());
+        if (null != config.getThreshold())
+            latestUmap.setThreshold(config.getThreshold());
+        if (null != config.getMetric())
+            latestUmap.setMetric(config.getMetric());
+        if (null != config.getVerbose())
+            latestUmap.setVerbose(config.getVerbose());
+        return latestUmap;
+    }
+
+    public static Umap getDefaultUmap() {
         Umap umap = new Umap();
         umap.setVerbose(true);
         umap.setNumberComponents(3);
@@ -348,6 +380,12 @@ public enum AnalysisUtils {
         umap.setMinDist(0.25f);
         umap.setSpread(0.75f);
         umap.setNegativeSampleRate(20);
+        return umap;
+
+    }
+
+    public static double[][] fitUMAP(FeatureCollection featureCollection) {
+        Umap umap = getDefaultUmap();
         return fitUMAP(featureCollection, umap);
     }
 

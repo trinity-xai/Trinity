@@ -2,7 +2,11 @@
   <configuration default="false" name="trinity [versions:display-dependency-updates]" type="MavenRunConfiguration" factoryName="Maven" nameIsGenerated="true">
     <MavenSettings>
       <option name="myGeneralSettings" />
-      <option name="myRunnerSettings" />
+        <option name="myRunnerSettings">
+            <MavenRunnerSettings>
+                <option name="vmOptions" value="-DallowMajorUpdates=false" />
+            </MavenRunnerSettings>
+        </option>
       <option name="myRunnerParameters">
         <MavenRunnerParameters>
           <option name="profiles">

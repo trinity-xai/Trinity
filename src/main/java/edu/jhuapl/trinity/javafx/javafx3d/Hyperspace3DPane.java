@@ -33,6 +33,7 @@ import edu.jhuapl.trinity.data.messages.GaussianMixture;
 import edu.jhuapl.trinity.data.messages.GaussianMixtureCollection;
 import edu.jhuapl.trinity.data.messages.GaussianMixtureData;
 import edu.jhuapl.trinity.data.messages.PointCluster;
+import edu.jhuapl.trinity.data.messages.UmapConfig;
 import edu.jhuapl.trinity.javafx.components.callouts.Callout;
 import edu.jhuapl.trinity.javafx.components.panes.RadialEntityOverlayPane;
 import edu.jhuapl.trinity.javafx.components.radial.HyperspaceMenu;
@@ -925,8 +926,6 @@ public class Hyperspace3DPane extends StackPane implements
                     isDirty = false;
                 }
             }
-
-            ;
         };
         animationTimer.start();
         Platform.runLater(() -> {
@@ -2127,12 +2126,16 @@ public class Hyperspace3DPane extends StackPane implements
 
     @Override
     public void addClusters(List<PointCluster> clusters) {
-
+        //no/op
     }
 
     @Override
     public Point3D projectVector(FeatureVector featureVector) {
-        return null;
+        return null;         //no/op
     }
 
+    @Override
+    public void setUmapConfig(UmapConfig config) {
+        //no/op
+    }
 }

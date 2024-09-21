@@ -43,6 +43,7 @@ import org.junit.jupiter.api.Test;
 
 import java.io.File;
 import java.io.IOException;
+import java.io.Serializable;
 import java.nio.file.FileSystems;
 import java.nio.file.Files;
 import java.nio.file.Path;
@@ -50,8 +51,7 @@ import java.text.DecimalFormat;
 
 import static org.junit.jupiter.api.Assertions.*;
 
-public class TestDataSet
-    implements java.io.Serializable {
+public class TestDataSet implements Serializable {
     /**
      * This needs to be serializable for the anonymous class test
      */

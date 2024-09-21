@@ -18,6 +18,7 @@ package com.clust4j.algo;
 import com.clust4j.NamedEntity;
 import com.clust4j.kernel.CircularKernel;
 import com.clust4j.kernel.LogKernel;
+import com.clust4j.log.Log;
 import com.clust4j.log.Log.Tag.Algo;
 import com.clust4j.log.LogTimer;
 import com.clust4j.metrics.pairwise.Distance;
@@ -30,6 +31,7 @@ import org.apache.commons.math3.exception.DimensionMismatchException;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.util.FastMath;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashSet;
 
@@ -79,7 +81,7 @@ final public class HierarchicalAgglomerative extends AbstractPartitionalClustere
      *
      * @author Taylor G Smith
      */
-    public enum Linkage implements java.io.Serializable, LinkageTreeBuilder {
+    public enum Linkage implements Serializable, LinkageTreeBuilder {
         AVERAGE {
             @Override
             public AverageLinkageTree buildTree(HierarchicalAgglomerative h) {
@@ -185,7 +187,7 @@ final public class HierarchicalAgglomerative extends AbstractPartitionalClustere
      *
      * @author Taylor G Smith
      */
-    protected static class EfficientDistanceMatrix implements java.io.Serializable {
+    protected static class EfficientDistanceMatrix implements Serializable {
         private static final long serialVersionUID = -7329893729526766664L;
         final protected double[] dists;
 
@@ -295,7 +297,7 @@ final public class HierarchicalAgglomerative extends AbstractPartitionalClustere
         }
     }
 
-    abstract class HierarchicalDendrogram implements java.io.Serializable, NamedEntity {
+    abstract class HierarchicalDendrogram implements Serializable, NamedEntity {
         private static final long serialVersionUID = 5295537901834851676L;
         public final HierarchicalAgglomerative ref;
         public final GeometricallySeparable dist;
@@ -598,7 +600,7 @@ final public class HierarchicalAgglomerative extends AbstractPartitionalClustere
 
     @Override
     public Algo getLoggerTag() {
-        return com.clust4j.log.Log.Tag.Algo.AGGLOMERATIVE;
+        return Log.Tag.Algo.AGGLOMERATIVE;
     }
 
     @Override

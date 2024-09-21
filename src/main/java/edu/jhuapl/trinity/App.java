@@ -28,6 +28,7 @@ import edu.jhuapl.trinity.data.files.ManifoldDataFile;
 import edu.jhuapl.trinity.data.messages.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.FeatureVector;
 import edu.jhuapl.trinity.javafx.components.MatrixOverlay;
+import edu.jhuapl.trinity.javafx.components.panes.NavigatorPane;
 import edu.jhuapl.trinity.javafx.components.panes.Shape3DControlPane;
 import edu.jhuapl.trinity.javafx.components.panes.SparkLinesPane;
 import edu.jhuapl.trinity.javafx.components.panes.TextPane;
@@ -48,6 +49,7 @@ import edu.jhuapl.trinity.javafx.events.FullscreenEvent;
 import edu.jhuapl.trinity.javafx.events.GaussianMixtureEvent;
 import edu.jhuapl.trinity.javafx.events.HitEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
+import edu.jhuapl.trinity.javafx.events.RestEvent;
 import edu.jhuapl.trinity.javafx.events.SearchEvent;
 import edu.jhuapl.trinity.javafx.events.SemanticMapEvent;
 import edu.jhuapl.trinity.javafx.events.ShapleyEvent;
@@ -58,6 +60,7 @@ import edu.jhuapl.trinity.javafx.handlers.FeatureVectorEventHandler;
 import edu.jhuapl.trinity.javafx.handlers.GaussianMixtureEventHandler;
 import edu.jhuapl.trinity.javafx.handlers.HitEventHandler;
 import edu.jhuapl.trinity.javafx.handlers.ManifoldEventHandler;
+import edu.jhuapl.trinity.javafx.handlers.RestEventHandler;
 import edu.jhuapl.trinity.javafx.handlers.SearchEventHandler;
 import edu.jhuapl.trinity.javafx.handlers.SemanticMapEventHandler;
 import edu.jhuapl.trinity.javafx.handlers.ShapleyEventHandler;
@@ -134,6 +137,7 @@ public class App extends Application {
     SparkLinesPane sparkLinesPane;
     TextPane textConsolePane;
     VideoPane videoPane;
+    NavigatorPane navigatorPane;
     WaveformPane waveformPane;
     Shape3DControlPane shape3DControlPane;
     CircleProgressIndicator circleSpinner;
@@ -156,6 +160,7 @@ public class App extends Application {
     SemanticMapEventHandler smeh;
     SearchEventHandler seh;
     HitEventHandler heh;
+    RestEventHandler reh;
 
     boolean hyperspaceIntroShown = false;
     boolean hypersurfaceIntroShown = false;
@@ -165,6 +170,7 @@ public class App extends Application {
     MissionTimerX missionTimerX;
     TimelineAnimation timelineAnimation;
     boolean is4k = false;
+    boolean enableHttp = false;
 
     @Override
     public void start(Stage stage) throws IOException {
@@ -172,7 +178,7 @@ public class App extends Application {
         try {
             System.out.println("Build Date: " + Configuration.getBuildDate());
         } catch (Exception ex) {
-            ex.printStackTrace();
+            Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
         }
         //theConfig = Configuration.defaultConfiguration();
         System.out.println("Starting JavaFX rendering...");
@@ -251,9 +257,15 @@ public class App extends Application {
                 scene.getRoot().fireEvent(
                     new ApplicationEvent(ApplicationEvent.SHOW_BUSY_INDICATOR, ps));
             });
-            Umap umap = (Umap) event.object1;
+            Umap umap = AnalysisUtils.getDefaultUmap();
+            if (null != event.object1)
+                umap = (Umap) event.object1;
+            else if (null != projections3DPane.latestUmap)
+                umap = projections3DPane.latestUmap;
             umap.setThreads(12);
-            ManifoldEvent.POINT_SOURCE source = (ManifoldEvent.POINT_SOURCE) event.object2;
+            ManifoldEvent.POINT_SOURCE source = ManifoldEvent.POINT_SOURCE.HYPERSPACE;
+            if (null != event.object2)
+                source = (ManifoldEvent.POINT_SOURCE) event.object2;
             FeatureCollection originalFC = getFeaturesBySource(source);
             projections3DPane.projectFeatureCollection(originalFC, umap);
         });
@@ -379,7 +391,6 @@ public class App extends Application {
             }
         });
 
-
         //Add the base main tools
         //insert before animated console text
         centerStack.getChildren().add(0, hyperspace3DPane);
@@ -399,11 +410,11 @@ public class App extends Application {
                     //example: 200x100+800+800
                     String[] tokens = geometryParamString.split("\\+");
                     String[] sizeTokens = tokens[0].split("x");
-                    stage.setWidth(Double.valueOf(sizeTokens[0]));
-                    stage.setHeight(Double.valueOf(sizeTokens[1]));
-                    stage.setX(Double.valueOf(tokens[1]));
-                    stage.setY(Double.valueOf(tokens[2]));
-                } catch (Exception ex) {
+                    stage.setWidth(Double.parseDouble(sizeTokens[0]));
+                    stage.setHeight(Double.parseDouble(sizeTokens[1]));
+                    stage.setX(Double.parseDouble(tokens[1]));
+                    stage.setY(Double.parseDouble(tokens[2]));
+                } catch (NumberFormatException ex) {
                     System.out.println("Exception thrown parsing: " + geometryParamString
                         + ". Setting to Maximized.");
                     stage.setMaximized(true);
@@ -455,7 +466,23 @@ public class App extends Application {
                     theConfig = Configuration.defaultConfiguration();
                 }
             }
+            System.out.println("Checking for enabling HTTP processor...");
+            if (namedParameters.containsKey("http")) {
+                String httpValue = namedParameters.get("http");
+                System.out.println("HTTP found: " + httpValue);
+                enableHttp = Boolean.parseBoolean(httpValue);
+            }
+
         }
+        System.out.println("Setting up RestEventHandler...");
+        reh = new RestEventHandler(scene);
+        scene.addEventHandler(RestEvent.START_RESTSERVER_THREAD, reh);
+        scene.addEventHandler(RestEvent.TERMINATE_RESTSERVER_THREAD, reh);
+        if (enableHttp) {
+            reh.startHttpService();
+        }
+
+        System.out.println("Setting up Mission Timer...");
         setupMissionTimer(scene);
         //add helper tools and overlays
         circleSpinner = new CircleProgressIndicator();
@@ -468,6 +495,8 @@ public class App extends Application {
             missionTimerX, circleSpinner);
         centerStack.getChildren().add(animatedConsoleText);
 
+
+        System.out.println("Setting up Matrix Digital Rain...");
         // fun matrix effect, use Alt + N
         matrixOverlay = new MatrixOverlay(scene, centerStack);
         bp.setOnSwipeUp(e -> {
@@ -488,6 +517,8 @@ public class App extends Application {
                 }
             }
         });
+
+        System.out.print("Adding Event handlers... ");
         scene.addEventHandler(ApplicationEvent.SHOW_BUSY_INDICATOR, e -> {
             if (null == e.object) {
                 return;
@@ -508,7 +539,7 @@ public class App extends Application {
         });
 
         scene.addEventHandler(ApplicationEvent.SHUTDOWN, e -> shutdown(false));
-
+        System.out.print("Text Console ");
         scene.addEventHandler(ApplicationEvent.SHOW_TEXT_CONSOLE, e -> {
             if (null == textConsolePane) {
                 textConsolePane = new TextPane(scene, pathPane);
@@ -523,6 +554,7 @@ public class App extends Application {
                 Platform.runLater(() -> textConsolePane.setText((String) e.object));
             }
         });
+        System.out.print("Video Pane ");
         scene.addEventHandler(ApplicationEvent.SHOW_VIDEO_PANE, e -> {
             if (null == videoPane) {
                 videoPane = new VideoPane(scene, pathPane);
@@ -546,10 +578,24 @@ public class App extends Application {
                 String caption = (String) e.object2;
                 videoPane.mainTitleText2Property.set(caption);
             }
-
             videoPane.setVideo();
         });
-
+        System.out.print("Image Navigator ");
+        scene.addEventHandler(ApplicationEvent.SHOW_NAVIGATOR_PANE, e -> {
+            if (null == navigatorPane) {
+                navigatorPane = new NavigatorPane(scene, pathPane);
+            }
+            if (!pathPane.getChildren().contains(navigatorPane)) {
+                pathPane.getChildren().add(navigatorPane);
+                navigatorPane.slideInPane();
+            } else {
+                navigatorPane.show();
+            }
+            if (null != e.object) {
+                Platform.runLater(() -> navigatorPane.setImage((Image) e.object));
+            }
+        });
+        System.out.print("Waveform View ");
         scene.addEventHandler(ApplicationEvent.SHOW_WAVEFORM_PANE, e -> {
             if (null == waveformPane) {
                 waveformPane = new WaveformPane(scene, pathPane);
@@ -564,7 +610,7 @@ public class App extends Application {
                 Platform.runLater(() -> waveformPane.setWaveform((File) e.object));
             }
         });
-
+        System.out.print("Trajectory Tracker ");
         scene.addEventHandler(TrajectoryEvent.SHOW_TRAJECTORY_TRACKER, e -> {
             if (null == trajectoryTrackerPane) {
                 trajectoryTrackerPane = new TrajectoryTrackerPane(scene, pathPane);
@@ -576,6 +622,7 @@ public class App extends Application {
                 trajectoryTrackerPane.show();
             }
         });
+        System.out.print("Spark lines View ");
         scene.addEventHandler(ApplicationEvent.SHOW_SPARK_LINES, e -> {
             if (null == sparkLinesPane) {
                 sparkLinesPane = new SparkLinesPane(scene, pathPane);
@@ -587,7 +634,7 @@ public class App extends Application {
                 sparkLinesPane.show();
             }
         });
-
+        System.out.print("Projections ");
         scene.addEventHandler(ApplicationEvent.SHOW_PROJECTIONS, e -> {
             if (projections3DPane.isVisible()) {
                 projections3DPane.setVisible(false);
@@ -605,6 +652,7 @@ public class App extends Application {
                 });
             }
         });
+
         scene.addEventHandler(ApplicationEvent.AUTO_PROJECTION_MODE, e -> {
             boolean enabled = (boolean) e.object;
             if (enabled) {
@@ -620,6 +668,7 @@ public class App extends Application {
             projections3DPane.enableAutoProjection(enabled);
 
         });
+        System.out.print("Hypersurface ");
         scene.addEventHandler(ApplicationEvent.SHOW_HYPERSURFACE, e -> {
             if (hypersurface3DPane.isVisible()) {
                 //hypersurface3DPane.hideFA3D();
@@ -645,7 +694,7 @@ public class App extends Application {
 
             }
         });
-
+        System.out.print("Hyperspace ");
         scene.addEventHandler(ApplicationEvent.SHOW_HYPERSPACE, e -> {
             if (hyperspace3DPane.isVisible()) {
                 hyperspace3DPane.setVisible(false);
@@ -684,7 +733,7 @@ public class App extends Application {
                 shape3DControlPane.show();
             }
         });
-
+        System.out.print("Data Handlers ");
         gmeh = new GaussianMixtureEventHandler();
         scene.getRoot().addEventHandler(GaussianMixtureEvent.NEW_GAUSSIAN_MIXTURE, gmeh);
         scene.getRoot().addEventHandler(GaussianMixtureEvent.LOCATE_GAUSSIAN_MIXTURE, gmeh);
@@ -701,6 +750,7 @@ public class App extends Application {
         fveh.addFeatureVectorRenderer(hyperspace3DPane);
 
         meh = new ManifoldEventHandler();
+        scene.getRoot().addEventHandler(ManifoldEvent.NEW_UMAP_CONFIG, meh);
         scene.getRoot().addEventHandler(ManifoldEvent.NEW_MANIFOLD_CLUSTER, meh);
         scene.getRoot().addEventHandler(ManifoldEvent.NEW_MANIFOLD_DATA, meh);
         scene.getRoot().addEventHandler(ManifoldEvent.EXPORT_MANIFOLD_DATA, meh);
@@ -754,39 +804,8 @@ public class App extends Application {
         scene.getRoot().addEventHandler(CovalentPaneEvent.COVALENT_PANE_CLOSE, covalentEvent -> {
             desktopPane.getChildren().remove(covalentEvent.pathPane);
         });
-        System.out.println("Establishing Messaging Feed...");
-        processor = new MessageProcessor(scene);
-        subscriberConfig = new ZeroMQSubscriberConfig(
-            "ZeroMQ Subscriber", "Testing ZeroMQFeedManager.",
-            "tcp://localhost:5563", "ALL", "SomeIDValue", 250);
-        feed = new ZeroMQFeedManager(2, subscriberConfig, processor);
-        scene.getRoot().addEventHandler(ZeroMQEvent.ZEROMQ_ESTABLISH_CONNECTION, e -> {
-            subscriberConfig = e.subscriberConfig;
-            if (null != subscriberConfig) {
-                Task task = new Task() {
-                    @Override
-                    protected Void call() throws Exception {
-                        feed.setConfig(subscriberConfig);
-                        feed.startProcessing();
-                        return null;
-                    }
-                };
-                Thread thread = new Thread(task);
-                thread.setDaemon(true);
-                thread.start();
-            }
-        });
-        scene.getRoot().addEventHandler(ZeroMQEvent.ZEROMQ_TERMINATE_CONNECTION, e -> {
-            if (null != feed) {
-                feed.disconnect(false);
-            }
-        });
-        scene.getRoot().addEventHandler(ZeroMQEvent.ZEROMQ_START_PROCESSING, e -> {
-            feed.setEnableProcessing(true);
-        });
-        scene.getRoot().addEventHandler(ZeroMQEvent.ZEROMQ_STOP_PROCESSING, e -> {
-            feed.setEnableProcessing(false);
-        });
+
+        System.out.println("Command Terminal ");
         scene.addEventHandler(CommandTerminalEvent.FOLLOWUP, e -> {
             animatedConsoleText.setVisible(true);
             animatedConsoleText.setOpacity(1.0);
@@ -827,6 +846,49 @@ public class App extends Application {
             animatedConsoleText.animate("> " + e.text);
         });
         scene.addEventHandler(CommandTerminalEvent.FADE_OUT, e -> fadeOutConsole(e.timeMS));
+        System.out.println("Establishing Messaging Feed...");
+        processor = new MessageProcessor(scene);
+        subscriberConfig = new ZeroMQSubscriberConfig(
+            "ZeroMQ Subscriber", "ZeroMQFeedManager.",
+            "tcp://localhost:5563", "ALL", "SomeIDValue", 250);
+        feed = new ZeroMQFeedManager(2, subscriberConfig, processor);
+        scene.getRoot().addEventHandler(ZeroMQEvent.ZEROMQ_ESTABLISH_CONNECTION, e -> {
+            subscriberConfig = e.subscriberConfig;
+            if (null != subscriberConfig) {
+                Task task = new Task() {
+                    @Override
+                    protected Void call() throws Exception {
+                        feed.setConfig(subscriberConfig);
+                        feed.startProcessing();
+                        return null;
+                    }
+                };
+                Thread thread = new Thread(task);
+                thread.setDaemon(true);
+                thread.start();
+            }
+        });
+        scene.getRoot().addEventHandler(ZeroMQEvent.ZEROMQ_TERMINATE_CONNECTION, e -> {
+            if (null != feed) {
+                feed.disconnect(false);
+            }
+        });
+        scene.getRoot().addEventHandler(ZeroMQEvent.ZEROMQ_START_PROCESSING, e -> {
+            feed.setEnableProcessing(true);
+        });
+        scene.getRoot().addEventHandler(ZeroMQEvent.ZEROMQ_STOP_PROCESSING, e -> {
+            feed.setEnableProcessing(false);
+        });
+        System.out.println("Checking to auto-enable ZeroMQ Listener...");
+        if (null != namedParameters && namedParameters.containsKey("zeromq")) {
+            String zeroMQ = namedParameters.get("zeromq");
+            if (null != zeroMQ) {
+                System.out.println("ZeroMQ Status: " + zeroMQ);
+            }
+            Platform.runLater(() -> scene.getRoot().fireEvent(
+                new ZeroMQEvent(ZeroMQEvent.ZEROMQ_ESTABLISH_CONNECTION, subscriberConfig)));
+        }
+
         System.out.println("User Interface Lit...");
         //animatedConsoleText.animate("User Inteface Lit...");
         intro();
@@ -976,6 +1038,7 @@ public class App extends Application {
             }
         }
     }
+
 
     @Override
     public void stop() throws Exception {

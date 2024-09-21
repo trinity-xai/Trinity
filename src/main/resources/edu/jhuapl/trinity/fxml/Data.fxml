@@ -16,7 +16,6 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
-
 <AnchorPane style="-fx-background-color: #00000000;" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="edu.jhuapl.trinity.javafx.controllers.DataController">
     <children>
@@ -45,6 +44,39 @@
                         </VBox>
                     </content>
                 </Tab>
+                <Tab closable="false" text="REST">
+                    <content>
+                        <BorderPane fx:id="majorPane" minHeight="200.0" minWidth="400.0">
+                            <children>
+                            </children>
+                            <top>
+                                <VBox spacing="10.0" BorderPane.alignment="CENTER">
+                                    <children>
+                                        <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="37.0" spacing="10.0">
+                                            <children>
+                                                <Label layoutX="10.0" layoutY="10.0" prefWidth="150.0" text="Port"/>
+                                                <TextField fx:id="restPortTextField" editable="false" text="8080"/>
+                                            </children>
+                                        </HBox>
+                                        <HBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="169.0" spacing="10.0">
+                                            <children>
+                                                <Label prefWidth="150.0" text="HTTP Service"/>
+                                                <ToggleButton fx:id="restInjectToggleButton" minWidth="100.0" mnemonicParsing="false"
+                                                              onAction="#toggleRestInject" text="Enable"/>
+                                                <ProgressIndicator fx:id="restProgressIndicator" prefHeight="32.0" prefWidth="32.0"
+                                                                   style="-fx-background-color: #00000000;"/>
+                                            </children>
+                                        </HBox>
+                                    </children>
+                                    <padding>
+                                        <Insets bottom="5.0" left="5.0" right="5.0" top="15.0"/>
+                                    </padding>
+                                </VBox>
+                            </top>
+                        </BorderPane>
+                    </content>
+                </Tab>
+
                 <Tab closable="false" text="ZeroMQ">
                     <content>
                         <BorderPane fx:id="majorPane" minHeight="200.0" minWidth="400.0">

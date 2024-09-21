@@ -5,9 +5,11 @@ import com.clust4j.utils.EntryPair;
 import com.clust4j.utils.MatUtils;
 import com.clust4j.utils.MatrixFormatter;
 
+import java.io.Serializable;
+
 public class Neighborhood
     extends EntryPair<double[][], int[][]>
-    implements DeepCloneable, java.io.Serializable {
+    implements DeepCloneable, Serializable {
 
     private static final long serialVersionUID = 2016176782694689004L;
     private static final MatrixFormatter fmt = new MatrixFormatter();

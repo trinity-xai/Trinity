@@ -32,6 +32,8 @@ public class ImageEvent extends Event {
     public Object object;
 
     public static final EventType<ImageEvent> NEW_TEXTURE_SURFACE = new EventType(ANY, "NEW_TEXTURE_SURFACE");
+    public static final EventType<ImageEvent> NEW_VECTORMASK_COLLECTION = new EventType(ANY, "NEW_VECTORMASK_COLLECTION");
+
 
     public ImageEvent(EventType<? extends Event> arg0) {
         super(arg0);

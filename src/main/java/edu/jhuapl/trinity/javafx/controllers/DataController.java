@@ -22,6 +22,7 @@ package edu.jhuapl.trinity.javafx.controllers;
 
 import edu.jhuapl.trinity.App;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
+import edu.jhuapl.trinity.javafx.events.RestEvent;
 import edu.jhuapl.trinity.javafx.events.TimelineEvent;
 import edu.jhuapl.trinity.javafx.events.TrajectoryEvent;
 import edu.jhuapl.trinity.javafx.events.ZeroMQEvent;
@@ -57,6 +58,14 @@ public class DataController implements Initializable {
     private BorderPane majorPane;
     @FXML
     private TabPane tabPane;
+    //// REST Service
+    @FXML
+    private TextField restPortTextField;
+    @FXML
+    private ToggleButton restInjectToggleButton;
+    @FXML
+    private ProgressIndicator restProgressIndicator;
+
     //// ZeroMQ stuff
     @FXML
     private TextField hostTextField;
@@ -140,6 +149,18 @@ public class DataController implements Initializable {
         });
         trajectorySizeSpinner.disableProperty().bind(
             showStateTrajectoryCheckBox.selectedProperty().not());
+
+        restProgressIndicator.visibleProperty().bind(restInjectToggleButton.selectedProperty());
+    }
+
+    @FXML
+    public void toggleRestInject() {
+        if (restInjectToggleButton.isSelected())
+            scene.getRoot().fireEvent(new RestEvent(
+                RestEvent.START_RESTSERVER_THREAD, null));
+        else
+            scene.getRoot().fireEvent(new RestEvent(
+                RestEvent.TERMINATE_RESTSERVER_THREAD, null));
     }
 
     @FXML

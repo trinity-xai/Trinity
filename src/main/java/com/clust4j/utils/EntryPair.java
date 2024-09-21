@@ -15,9 +15,10 @@
  *******************************************************************************/
 package com.clust4j.utils;
 
+import java.io.Serializable;
 import java.util.Map;
 
-public class EntryPair<K, V> implements Map.Entry<K, V>, java.io.Serializable {
+public class EntryPair<K, V> implements Map.Entry<K, V>, Serializable {
     private static final long serialVersionUID = -8784924835828002971L;
     private final K key;
     private V value;

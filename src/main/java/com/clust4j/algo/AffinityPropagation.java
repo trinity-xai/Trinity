@@ -17,6 +17,7 @@ package com.clust4j.algo;
 
 import com.clust4j.GlobalState;
 import com.clust4j.except.ModelNotFitException;
+import com.clust4j.log.Log;
 import com.clust4j.log.Log.Tag.Algo;
 import com.clust4j.log.LogTimer;
 import com.clust4j.metrics.pairwise.GeometricallySeparable;
@@ -291,7 +292,7 @@ final public class AffinityPropagation extends AbstractAutonomousClusterer imple
 
     @Override
     public Algo getLoggerTag() {
-        return com.clust4j.log.Log.Tag.Algo.AFFINITY_PROP;
+        return Log.Tag.Algo.AFFINITY_PROP;
     }
 
     /**

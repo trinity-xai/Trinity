@@ -20,6 +20,7 @@ import com.clust4j.algo.preprocess.StandardScaler;
 import com.clust4j.data.DataSet;
 import com.clust4j.kernel.HyperbolicTangentKernel;
 import com.clust4j.kernel.Kernel;
+import com.clust4j.kernel.KernelTestCases;
 import com.clust4j.kernel.LaplacianKernel;
 import com.clust4j.metrics.pairwise.Distance;
 import com.clust4j.metrics.pairwise.DistanceMetric;
@@ -412,7 +413,7 @@ public class KMedoidsTests implements ClusterTest, ClassifierTest, ConvergeableT
 
         // it's not linearly separable, so most won't perform incredibly well...
         KMedoids model;
-        for (Kernel dist : com.clust4j.kernel.KernelTestCases.all_kernels) {
+        for (Kernel dist : KernelTestCases.all_kernels) {
             if (KMedoids.UNSUPPORTED_METRICS.contains(dist.getClass()))
                 continue;
 

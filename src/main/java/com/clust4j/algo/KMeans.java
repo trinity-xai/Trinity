@@ -16,6 +16,7 @@
 package com.clust4j.algo;
 
 import com.clust4j.except.NaNException;
+import com.clust4j.log.Log;
 import com.clust4j.log.Log.Tag.Algo;
 import com.clust4j.log.LogTimer;
 import com.clust4j.metrics.pairwise.Distance;
@@ -213,7 +214,7 @@ final public class KMeans extends AbstractCentroidClusterer {
 
     @Override
     public Algo getLoggerTag() {
-        return com.clust4j.log.Log.Tag.Algo.KMEANS;
+        return Log.Tag.Algo.KMEANS;
     }
 
     @Override

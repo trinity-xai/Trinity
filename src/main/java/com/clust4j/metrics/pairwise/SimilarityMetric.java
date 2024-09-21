@@ -15,7 +15,9 @@
  *******************************************************************************/
 package com.clust4j.metrics.pairwise;
 
-public interface SimilarityMetric extends GeometricallySeparable, java.io.Serializable {
+import java.io.Serializable;
+
+public interface SimilarityMetric extends GeometricallySeparable, Serializable {
     /**
      * Generally equal to negative {@link #getDistance(double[], double[])}
      *

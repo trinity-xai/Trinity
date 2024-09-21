@@ -235,6 +235,10 @@ public class ManifoldControlController implements Initializable {
                     }
                 }
             });
+            root.addEventHandler(ManifoldEvent.NEW_UMAP_CONFIG, event -> {
+                UmapConfig config = (UmapConfig) event.object1;
+                setUmapConfig(config);
+            });
         }
     }
 
@@ -640,10 +644,7 @@ public class ManifoldControlController implements Initializable {
             uc.setVerbose(verboseCheckBox.isSelected());
             ObjectMapper mapper = new ObjectMapper();
             try {
-
                 mapper.writeValue(file, uc);
-//                scene.getRoot().fireEvent(new ManifoldEvent(
-//                    ManifoldEvent.SAVE_PROJECTION_DATA, file));
             } catch (IOException ex) {
                 Logger.getLogger(ManifoldControlController.class.getName()).log(Level.SEVERE, null, ex);
             }

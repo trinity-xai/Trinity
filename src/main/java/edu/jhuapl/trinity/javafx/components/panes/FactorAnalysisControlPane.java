@@ -25,6 +25,7 @@ import edu.jhuapl.trinity.javafx.javafx3d.Trajectory3D;
 import javafx.animation.FadeTransition;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
+import javafx.geometry.Insets;
 import javafx.scene.Cursor;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
@@ -238,7 +239,7 @@ public class FactorAnalysisControlPane extends StackPane {
             label.setMinSize(Label.USE_PREF_SIZE, Label.USE_PREF_SIZE);
             label.setTranslateY(-30); //Move label 25 pixels up
             Color ALICEBLUETRANS = new Color(0.9411765f, 0.972549f, 1.0f, 0.3);
-            label.setBackground(new Background(new BackgroundFill(ALICEBLUETRANS, CornerRadii.EMPTY, javafx.geometry.Insets.EMPTY)));
+            label.setBackground(new Background(new BackgroundFill(ALICEBLUETRANS, CornerRadii.EMPTY, Insets.EMPTY)));
 
             setOnMouseEntered(e -> {
                 label.getStyleClass().add("onHover");

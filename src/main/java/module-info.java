@@ -22,6 +22,7 @@ module edu.jhuapl.trinity {
     requires java.logging;
     requires java.datatransfer;
     requires java.desktop;
+    requires jdk.httpserver;
     requires javafx.graphics;
     requires javafx.controls;
     requires javafx.media;

@@ -17,7 +17,9 @@ package com.clust4j.metrics.pairwise;
 
 import com.clust4j.NamedEntity;
 
-public interface GeometricallySeparable extends java.io.Serializable, NamedEntity {
+import java.io.Serializable;
+
+public interface GeometricallySeparable extends Serializable, NamedEntity {
 
     /**
      * Generally equal to negative {@link #getSimilarity(double[], double[])}

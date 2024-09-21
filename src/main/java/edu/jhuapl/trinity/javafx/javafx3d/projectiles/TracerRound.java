@@ -89,6 +89,6 @@ public class TracerRound extends Projectile {
         getShape3D().setTranslateY(location.getY());
         getShape3D().setTranslateZ(location.getZ());
         //mark to be culled if it has travelled this far without hitting anything
-        return Math.abs(location.distance(javafx.geometry.Point3D.ZERO)) < distanceToLive;
+        return Math.abs(location.distance(Point3D.ZERO)) < distanceToLive;
     }
 }

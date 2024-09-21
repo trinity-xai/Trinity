@@ -19,9 +19,10 @@ import com.clust4j.Clust4j;
 import com.clust4j.utils.SynchronicityLock;
 import com.clust4j.utils.TableFormatter;
 
+import java.io.Serializable;
 import java.text.NumberFormat;
 
-abstract public class BaseModel extends Clust4j implements java.io.Serializable {
+abstract public class BaseModel extends Clust4j implements Serializable {
     private static final long serialVersionUID = 4707757741169405063L;
     public final static TableFormatter formatter;
 

@@ -20,6 +20,7 @@ package edu.jhuapl.trinity.utils;
  * #L%
  */
 
+import edu.jhuapl.trinity.audio.AudioResourceProvider;
 import edu.jhuapl.trinity.data.Trajectory;
 import edu.jhuapl.trinity.data.files.CdcCsvFile;
 import edu.jhuapl.trinity.data.files.CdcTissueGenesFile;
@@ -32,10 +33,12 @@ import edu.jhuapl.trinity.data.files.McclodSplitDataTsvFile;
 import edu.jhuapl.trinity.data.files.SemanticMapCollectionFile;
 import edu.jhuapl.trinity.data.files.ShapleyCollectionFile;
 import edu.jhuapl.trinity.data.files.TextEmbeddingCollectionFile;
+import edu.jhuapl.trinity.data.files.VectorMaskCollectionFile;
 import edu.jhuapl.trinity.data.files.ZeroPilotLatentsFile;
 import edu.jhuapl.trinity.data.messages.FeatureCollection;
 import edu.jhuapl.trinity.data.terrain.FireAreaTextFile;
 import edu.jhuapl.trinity.data.terrain.TerrainTextFile;
+import edu.jhuapl.trinity.icons.IconResourceProvider;
 import edu.jhuapl.trinity.javafx.components.radial.ProgressStatus;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.AudioEvent;
@@ -46,11 +49,13 @@ import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.javafx.events.SemanticMapEvent;
 import edu.jhuapl.trinity.javafx.events.TerrainEvent;
 import edu.jhuapl.trinity.javafx.events.TrajectoryEvent;
+import edu.jhuapl.trinity.javafx.javafx3d.images.ImageResourceProvider;
 import edu.jhuapl.trinity.utils.loaders.CdcTissueGenesLoader;
 import edu.jhuapl.trinity.utils.loaders.FeatureCollectionLoader;
 import edu.jhuapl.trinity.utils.loaders.McclodSplitDataLoader;
 import edu.jhuapl.trinity.utils.loaders.ShapleyCollectionLoader;
 import edu.jhuapl.trinity.utils.loaders.TextEmbeddingsLoader;
+import edu.jhuapl.trinity.utils.loaders.VectorMaskCollectionLoader;
 import edu.jhuapl.trinity.utils.loaders.ZeroPilotLatentsLoader;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
@@ -211,7 +216,11 @@ public enum ResourceUtils {
     }
 
     public static Image load3DTextureImage(String filename) throws IOException {
-        return new Image(ResourceUtils.class.getResourceAsStream("/edu/jhuapl/trinity/javafx/javafx3d/images/" + filename + ".png"));
+        try {
+            return new Image(ImageResourceProvider.getResourceAsStream(filename + ".png"));
+        } catch (NullPointerException e) {
+            throw new IOException("Failed to open " + filename + ".png");
+        }
     }
 
     public static WritableImage loadImageFileSubset(String filename,
@@ -224,14 +233,18 @@ public enum ResourceUtils {
     }
 
     public static WritableImage loadIconAsWritableImage(String iconName) throws IOException {
-        InputStream is = ResourceUtils.class.getResourceAsStream("/edu/jhuapl/trinity/icons/" + iconName + ".png");
+        InputStream is = IconResourceProvider.getResourceAsStream(iconName + ".png");
         BufferedImage image = ImageIO.read(is);
         WritableImage wi = SwingFXUtils.toFXImage(image, null);
         return wi;
     }
 
     public static Image loadIconFile(String iconName) {
-        return new Image(ResourceUtils.class.getResourceAsStream("/edu/jhuapl/trinity/icons/" + iconName + ".png"));
+        try {
+            return new Image(IconResourceProvider.getResourceAsStream(iconName + ".png"));
+        } catch (NullPointerException e) {
+            return new Image(IconResourceProvider.getResourceAsStream("noimage.png"));
+        }
     }
 
     public static ImageView loadIcon(String iconName, double FIT_WIDTH) {
@@ -267,13 +280,11 @@ public enum ResourceUtils {
     }
 
     public static AudioClip loadAudioClipWav(String filename) {
-        return new AudioClip(ResourceUtils.class.getResource("/edu/jhuapl/trinity/audio/" + filename + ".wav")
-            .toExternalForm());
+        return new AudioClip(AudioResourceProvider.getResource(filename + ".wav").toExternalForm());
     }
 
     public static Media loadMediaWav(String filename) throws IOException {
-        return new Media(ResourceUtils.class.getResource("/edu/jhuapl/trinity/audio/" + filename + ".wav")
-            .toExternalForm());
+        return new Media(AudioResourceProvider.getResource(filename + ".wav").toExternalForm());
     }
 
     public static Media loadRandomMediaMp4() throws URISyntaxException, IOException {
@@ -346,6 +357,11 @@ public enum ResourceUtils {
                                 thread.start();
                             } else if (ShapleyCollectionFile.isShapleyCollectionFile(file)) {
                                 ShapleyCollectionLoader task = new ShapleyCollectionLoader(scene, file);
+                                Thread thread = new Thread(task);
+                                thread.setDaemon(true);
+                                thread.start();
+                            } else if (VectorMaskCollectionFile.isVectorMaskCollectionFile(file)) {
+                                VectorMaskCollectionLoader task = new VectorMaskCollectionLoader(scene, file);
                                 Thread thread = new Thread(task);
                                 thread.setDaemon(true);
                                 thread.start();

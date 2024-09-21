@@ -24,6 +24,8 @@ import com.clust4j.utils.VecUtils;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.util.FastMath;
 
+import java.io.Serializable;
+
 /**
  * A graph traversal algorithm used in identifying the minimum spanning tree
  * in a graph for which all edge weights are distinct. Used in conjunction with
@@ -32,7 +34,7 @@ import org.apache.commons.math3.util.FastMath;
  * @author Taylor G Smith
  * @see <a href="https://en.wikipedia.org/wiki/Bor%C5%AFvka%27s_algorithm">Boruvka's algorithm</a>
  */
-class BoruvkaAlgorithm implements java.io.Serializable {
+class BoruvkaAlgorithm implements Serializable {
     private static final long serialVersionUID = 3935595821188876442L;
 
     // the initialization reorganizes the trees

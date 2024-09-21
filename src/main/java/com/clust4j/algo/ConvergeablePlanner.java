@@ -15,7 +15,9 @@
  *******************************************************************************/
 package com.clust4j.algo;
 
-interface ConvergeablePlanner extends java.io.Serializable {
+import java.io.Serializable;
+
+interface ConvergeablePlanner extends Serializable {
     /**
      * The maximum number of iterations the algorithm
      * is permitted before aborting without converging

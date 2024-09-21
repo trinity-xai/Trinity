@@ -15,7 +15,9 @@
  *******************************************************************************/
 package com.clust4j.utils;
 
-public class QuadTup<C_ONE, C_TWO, C_THREE, C_FOUR> implements java.io.Serializable {
+import java.io.Serializable;
+
+public class QuadTup<C_ONE, C_TWO, C_THREE, C_FOUR> implements Serializable {
     private static final long serialVersionUID = -6231517018580071453L;
 
     protected final C_ONE one;

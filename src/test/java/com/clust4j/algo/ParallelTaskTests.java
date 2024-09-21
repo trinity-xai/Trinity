@@ -25,7 +25,7 @@ public class ParallelTaskTests {
             private static final long serialVersionUID = 1L;
 
             @Override
-            public Integer reduce(com.clust4j.algo.ParallelChunkingTask.Chunk chunk) {
+            public Integer reduce(ParallelChunkingTask.Chunk chunk) {
                 return -1;
             }
 

@@ -30,6 +30,7 @@ import java.io.InputStream;
 import java.net.HttpURLConnection;
 import java.net.URI;
 import java.net.URL;
+import java.security.SecureRandom;
 import java.security.cert.X509Certificate;
 
 public class HttpsUtils {
@@ -87,7 +88,7 @@ public class HttpsUtils {
 
             // Create an SSL context that uses the trust manager
             SSLContext sslContext = SSLContext.getInstance("TLS");
-            sslContext.init(null, trustAllCerts, new java.security.SecureRandom());
+            sslContext.init(null, trustAllCerts, new SecureRandom());
 
 
             // Set the SSL socket factory on the HTTPS connection

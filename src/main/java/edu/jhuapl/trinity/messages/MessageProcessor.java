@@ -25,22 +25,28 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.jhuapl.trinity.data.FactorAnalysisState;
 import edu.jhuapl.trinity.data.messages.ChannelFrame;
+import edu.jhuapl.trinity.data.messages.CommandRequest;
+import edu.jhuapl.trinity.data.messages.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.FeatureVector;
 import edu.jhuapl.trinity.data.messages.GaussianMixture;
 import edu.jhuapl.trinity.data.messages.LabelConfig;
+import edu.jhuapl.trinity.data.messages.UmapConfig;
 import edu.jhuapl.trinity.javafx.events.ChannelFrameDataEvent;
 import edu.jhuapl.trinity.javafx.events.FactorAnalysisDataEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.events.GaussianMixtureEvent;
+import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import javafx.application.Platform;
 import javafx.scene.Scene;
 
 import java.io.IOException;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author Sean Phillips
  */
 public class MessageProcessor {
+    AtomicInteger ai;
     /**
      * Provides deserializaton support for JSON messages
      */
@@ -56,6 +62,7 @@ public class MessageProcessor {
 
     public MessageProcessor(Scene scene) {
         this.scene = scene;
+        ai = new AtomicInteger();
         mapper = new ObjectMapper();
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         // force serialization of timestamps as ISO-8601 standard. Assumption is most formats are ISO-8601 standard.
@@ -65,7 +72,43 @@ public class MessageProcessor {
     }
 
     public void process(String message) throws JsonProcessingException, IOException {
-        if (ChannelFrame.isChannelFrame(message)) {
+        if (CommandRequest.isCommandRequest(message)) {
+            CommandRequest command = mapper.readValue(message, CommandRequest.class);
+            CommandTask commandTask = new CommandTask(command, scene);
+            Thread t = new Thread(commandTask, "Trinity Command Task " + ai.incrementAndGet());
+            t.setDaemon(true);
+            t.start();
+        }
+        if (FeatureCollection.isFeatureCollection(message)) {
+            FeatureCollection featureCollection = mapper.readValue(message, FeatureCollection.class);
+            Platform.runLater(() -> {
+                scene.getRoot().fireEvent(new FeatureVectorEvent(
+                    FeatureVectorEvent.NEW_FEATURE_COLLECTION, featureCollection));
+            });
+        } else if (FeatureVector.isFeatureVector(message)) {
+            FeatureVector featureVector = getMapper().readValue(message, FeatureVector.class);
+            //fire event to load data in JavaFX Scene
+            scene.getRoot().fireEvent(new FeatureVectorEvent(
+                FeatureVectorEvent.NEW_FEATURE_VECTOR, featureVector));
+        } else if (GaussianMixture.isGaussianMixture(message)) {
+            GaussianMixture gaussianMixture = getMapper().readValue(message, GaussianMixture.class);
+            Platform.runLater(() -> {
+                scene.getRoot().fireEvent(new GaussianMixtureEvent(
+                    GaussianMixtureEvent.NEW_GAUSSIAN_MIXTURE, gaussianMixture));
+            });
+        } else if (LabelConfig.isLabelConfig(message)) {
+            LabelConfig labelConfig = getMapper().readValue(message, LabelConfig.class);
+            Platform.runLater(() -> {
+                scene.getRoot().fireEvent(new FeatureVectorEvent(
+                    FeatureVectorEvent.NEW_LABEL_CONFIG, labelConfig));
+            });
+        } else if (UmapConfig.isUmapConfig(message)) {
+            UmapConfig umapConfig = getMapper().readValue(message, UmapConfig.class);
+            Platform.runLater(() -> {
+                scene.getRoot().fireEvent(new ManifoldEvent(
+                    ManifoldEvent.NEW_UMAP_CONFIG, umapConfig));
+            });
+        } else if (ChannelFrame.isChannelFrame(message)) {
             ChannelFrame frame = getMapper().readValue(message, ChannelFrame.class);
             System.out.println("Frame: " + frame.getFrameId());
             System.out.println("Channel Values: " + frame.getChannelData());
@@ -81,34 +124,9 @@ public class MessageProcessor {
             Platform.runLater(() -> {
                 scene.getRoot().fireEvent(new FactorAnalysisDataEvent(fas));
             });
-        } else if (FeatureVector.isFeatureVector(message)) {
-            FeatureVector featureVector = getMapper().readValue(message, FeatureVector.class);
-            //@DEBUG SMP helpful debug prints
-            //System.out.println("Image URL: " + object.getImageURL());
-            //System.out.println("Feature Vector: " + object.getData());
-            //fire event to load data in JavaFX Scene
-            //Platform.runLater(() -> {
-            scene.getRoot().fireEvent(new FeatureVectorEvent(
-                FeatureVectorEvent.NEW_FEATURE_VECTOR, featureVector));
-            //});
-        } else if (GaussianMixture.isGaussianMixture(message)) {
-            GaussianMixture gaussianMixture = getMapper().readValue(message, GaussianMixture.class);
-            //@DEBUG SMP helpful debug prints
-            //System.out.println("GaussianMixture Msg Received: " + gaussianMixture.getCovarianceMode());
-            //fire event to load data in JavaFX Scene
-            Platform.runLater(() -> {
-                scene.getRoot().fireEvent(new GaussianMixtureEvent(
-                    GaussianMixtureEvent.NEW_GAUSSIAN_MIXTURE, gaussianMixture));
-            });
-        } else if (LabelConfig.isLabelConfig(message)) {
-            LabelConfig labelConfig = getMapper().readValue(message, LabelConfig.class);
-            //@DEBUG SMP helpful debug prints
-            //System.out.println("GaussianMixture Msg Received: " + gaussianMixture.getCovarianceMode());
-            //fire event to load data in JavaFX Scene
-            Platform.runLater(() -> {
-                scene.getRoot().fireEvent(new FeatureVectorEvent(
-                    FeatureVectorEvent.NEW_LABEL_CONFIG, labelConfig));
-            });
+        }
+        if (message.equalsIgnoreCase("howdy")) {
+            System.out.println("Well hello...");
         }
     }
 

@@ -324,9 +324,9 @@ public class Manifold3D extends Group {
         return new Point3D(medianX, medianY, medianZ);
     }
 
-    public List<Face3> getIntersections(org.fxyz3d.geometry.Point3D startingPoint) {
+    public List<Face3> getIntersections(Point3D startingPoint) {
         TriangleMeshHelper helper = new TriangleMeshHelper();
-        org.fxyz3d.geometry.Point3D insideMeshPoint = getBoundsCentroid();
+        Point3D insideMeshPoint = getBoundsCentroid();
 
         List<Face3> listIntersections = helper.getListIntersections(startingPoint, insideMeshPoint, texturedManifold.getVertices(), texturedManifold.getFaces());
         return listIntersections;
@@ -378,7 +378,7 @@ public class Manifold3D extends Group {
         if (null != tolerance)
             hull.setExplicitDistanceTolerance(tolerance);
         //Construct an array of Point3D's
-        com.github.quickhull3d.Point3d[] points = point3DList.stream()
+        Point3d[] points = point3DList.stream()
             .map(point3DToHullPoint)
             .toArray(Point3d[]::new);
         hull.build(points);

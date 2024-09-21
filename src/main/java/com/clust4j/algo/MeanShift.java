@@ -19,6 +19,7 @@ import com.clust4j.except.IllegalClusterStateException;
 import com.clust4j.except.ModelNotFitException;
 import com.clust4j.kernel.GaussianKernel;
 import com.clust4j.kernel.RadialBasisKernel;
+import com.clust4j.log.Log;
 import com.clust4j.log.Log.Tag.Algo;
 import com.clust4j.log.LogTimer;
 import com.clust4j.log.Loggable;
@@ -32,6 +33,7 @@ import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.util.FastMath;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Iterator;
@@ -343,7 +345,7 @@ final public class MeanShift
      */
     static class ParallelBandwidthEstimator
         extends ParallelChunkingTask<Double>
-        implements java.io.Serializable {
+        implements Serializable {
 
         private static final long serialVersionUID = 1171269106158790138L;
         final NearestNeighbors nn;
@@ -577,7 +579,7 @@ final public class MeanShift
      *
      * @author Taylor G Smith
      */
-    static abstract class CenterIntensity implements java.io.Serializable, Iterable<MeanShiftSeed> {
+    static abstract class CenterIntensity implements Serializable, Iterable<MeanShiftSeed> {
         private static final long serialVersionUID = -6535787295158719610L;
 
         abstract int getIters();
@@ -860,7 +862,7 @@ final public class MeanShift
 
     @Override
     public Algo getLoggerTag() {
-        return com.clust4j.log.Log.Tag.Algo.MEANSHIFT;
+        return Log.Tag.Algo.MEANSHIFT;
     }
 
 

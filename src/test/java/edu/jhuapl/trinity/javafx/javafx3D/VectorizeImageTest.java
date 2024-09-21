@@ -69,6 +69,7 @@ import javafx.scene.shape.MeshView;
 import javafx.scene.shape.TriangleMesh;
 import javafx.stage.Stage;
 import org.fxyz3d.geometry.MathUtils;
+import org.fxyz3d.geometry.Point3D;
 import org.fxyz3d.utils.CameraTransformer;
 
 import java.awt.*;
@@ -489,7 +490,7 @@ public class VectorizeImageTest extends Application {
     }
 
     List<List<Double>> dataGrid = new ArrayList<>();
-    Function<org.fxyz3d.geometry.Point3D, Number> colorByHeight = p -> p.y; //Color mapping function
+    Function<Point3D, Number> colorByHeight = p -> p.y; //Color mapping function
     Function<Vert3D, Number> vert3DLookup = p -> vertToHeight(p);
 
     private Number vertToHeight(Vert3D p) {

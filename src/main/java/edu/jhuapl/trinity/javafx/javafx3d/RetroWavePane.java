@@ -663,7 +663,7 @@ public class RetroWavePane extends StackPane {
 
     private void updateLabels() {
         shape3DToLabel.forEach((node, label) -> {
-            javafx.geometry.Point3D coordinates = node.localToScene(javafx.geometry.Point3D.ZERO, true);
+            Point3D coordinates = node.localToScene(Point3D.ZERO, true);
             //@DEBUG SMP  useful debugging print
             //System.out.println("subSceneToScene Coordinates: " + coordinates.toString());
             //Clipping Logic

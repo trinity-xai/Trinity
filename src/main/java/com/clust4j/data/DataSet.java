@@ -29,6 +29,7 @@ import java.io.BufferedWriter;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
@@ -39,7 +40,7 @@ import java.util.Collections;
  *
  * @author Taylor G Smith
  */
-public class DataSet extends Clust4j implements DeepCloneable, java.io.Serializable {
+public class DataSet extends Clust4j implements DeepCloneable, Serializable {
     private static final long serialVersionUID = -1203771047711850121L;
 
     final static String COL_PREFIX = "V";
