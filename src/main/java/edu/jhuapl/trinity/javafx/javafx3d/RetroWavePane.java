@@ -880,7 +880,7 @@ public class RetroWavePane extends StackPane {
         double zTranslate = -totalDepth / 2.0;
         for (int i = 0; i < 6; i++) {
             Opticon opticon = new Opticon(Color.RED, 20);
-//            opticon.scannerLight.getScope().clear();
+            opticon.scannerLight.getScope().clear();
             opticon.setTranslateX(rando.nextDouble() * totalWidth + xTranslate);
             opticon.setTranslateY(-75);
             opticon.setTranslateZ(rando.nextDouble() * totalDepth + zTranslate);
