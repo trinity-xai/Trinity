@@ -15,6 +15,8 @@
  *******************************************************************************/
 package com.clust4j.algo;
 
+import java.io.Serializable;
+
 /**
  * Any cluster that does not force a prediction for every
  * single point is considered a "noisey clusterer." This interface
@@ -26,7 +28,7 @@ package com.clust4j.algo;
  * @see {@link DBSCAN}
  * @see {@link MeanShift}
  */
-public interface NoiseyClusterer extends java.io.Serializable {
+public interface NoiseyClusterer extends Serializable {
     final public static int NOISE_CLASS = -1;
 
     /**

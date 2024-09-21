@@ -18,6 +18,7 @@ package com.clust4j.sample;
 import com.clust4j.utils.MatUtils;
 import com.clust4j.utils.VecUtils;
 
+import java.io.Serializable;
 import java.util.Random;
 import java.util.TreeSet;
 
@@ -33,7 +34,7 @@ import java.util.TreeSet;
  *
  * @author Taylor G Smith
  */
-public enum Bootstrapper implements Sampler, java.io.Serializable {
+public enum Bootstrapper implements Sampler, Serializable {
 
     /**
      * Performs uniformly random (or seeded) sampling across a matrix.

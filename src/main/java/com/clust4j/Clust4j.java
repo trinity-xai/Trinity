@@ -20,6 +20,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.ObjectInputStream;
 import java.io.ObjectOutputStream;
+import java.io.Serializable;
 
 /**
  * The absolute super type for all clust4j objects (models and datasets)
@@ -27,7 +28,7 @@ import java.io.ObjectOutputStream;
  *
  * @author Taylor G Smith
  */
-public abstract class Clust4j implements java.io.Serializable {
+public abstract class Clust4j implements Serializable {
     private static final long serialVersionUID = -4522135376738501625L;
 
     /**

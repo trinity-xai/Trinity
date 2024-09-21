@@ -1,7 +1,8 @@
 package com.clust4j.algo.preprocess.impute;
 
-public enum CentralTendencyMethod implements java.io.Serializable {
+import java.io.Serializable;
+
+public enum CentralTendencyMethod implements Serializable {
     MEAN,
-    MEDIAN,
-    ;
+    MEDIAN
 }

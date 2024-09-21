@@ -29,6 +29,7 @@ import org.apache.commons.math3.exception.DimensionMismatchException;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.util.FastMath;
 
+import java.io.Serializable;
 import java.util.Arrays;
 
 import static com.clust4j.GlobalState.Mathematics.*;
@@ -41,7 +42,7 @@ import static com.clust4j.GlobalState.Mathematics.*;
  * @author Taylor G Smith
  * @see <a href="https://github.com/scikit-learn/scikit-learn/blob/master/sklearn/neighbors/binary_tree.pxi">sklearn BinaryTree</a>
  */
-abstract class NearestNeighborHeapSearch implements java.io.Serializable {
+abstract class NearestNeighborHeapSearch implements Serializable {
     private static final long serialVersionUID = -5617532034886067210L;
 
     final static public int DEF_LEAF_SIZE = 40;
@@ -202,7 +203,7 @@ abstract class NearestNeighborHeapSearch implements java.io.Serializable {
      *
      * @author Taylor G Smith
      */
-    public static enum PartialKernelDensity implements Density, java.io.Serializable {
+    public static enum PartialKernelDensity implements Density, Serializable {
         LOG_COSINE {
             @Override
             public double getDensity(double dist, double h) {
@@ -295,7 +296,7 @@ abstract class NearestNeighborHeapSearch implements java.io.Serializable {
      * @author Taylor G Smith
      */
     // Tested: passing
-    public static class MutableDouble implements Comparable<Double>, java.io.Serializable {
+    public static class MutableDouble implements Comparable<Double>, Serializable {
         private static final long serialVersionUID = -4636023903600763877L;
         public Double value = 0.0;
 
@@ -318,7 +319,7 @@ abstract class NearestNeighborHeapSearch implements java.io.Serializable {
      * @author Taylor G Smith
      */
     // Tested: passing
-    public static class NodeData implements DeepCloneable, java.io.Serializable {
+    public static class NodeData implements DeepCloneable, Serializable {
         private static final long serialVersionUID = -2469826821608908612L;
         int idx_start, idx_end;
         boolean is_leaf;
@@ -383,7 +384,7 @@ abstract class NearestNeighborHeapSearch implements java.io.Serializable {
      *
      * @author Taylor G Smith
      */
-    abstract static class Heap implements java.io.Serializable {
+    abstract static class Heap implements Serializable {
         private static final long serialVersionUID = 8073174366388667577L;
 
         abstract static class Node {

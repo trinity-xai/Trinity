@@ -19,10 +19,11 @@ import com.clust4j.except.ModelNotFitException;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.RealMatrix;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 
-public interface CentroidLearner extends java.io.Serializable {
+public interface CentroidLearner extends Serializable {
     /**
      * A standalone mixin class to handle predictions from {@link CentroidLearner}
      * classes that are also a {@link BaseClassifier} and a subclass of {@link AbstractClusterer}.

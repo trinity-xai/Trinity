@@ -27,6 +27,7 @@ import org.apache.commons.math3.exception.DimensionMismatchException;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.util.FastMath;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.HashSet;
 import java.util.Random;
@@ -95,7 +96,7 @@ public abstract class AbstractCentroidClusterer extends AbstractPartitionalClust
         int[] getInitialCentroidSeeds(AbstractCentroidClusterer model, double[][] X, int k, final Random seed);
     }
 
-    public static enum InitializationStrategy implements java.io.Serializable, Initializer, NamedEntity {
+    public static enum InitializationStrategy implements Serializable, Initializer, NamedEntity {
         AUTO {
             @Override
             public int[] getInitialCentroidSeeds(AbstractCentroidClusterer model, double[][] X, int k, final Random seed) {

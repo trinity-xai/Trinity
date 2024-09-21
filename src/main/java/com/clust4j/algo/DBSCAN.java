@@ -15,6 +15,7 @@
  *******************************************************************************/
 package com.clust4j.algo;
 
+import com.clust4j.log.Log;
 import com.clust4j.log.Log.Tag.Algo;
 import com.clust4j.log.LogTimer;
 import com.clust4j.metrics.pairwise.GeometricallySeparable;
@@ -297,7 +298,7 @@ final public class DBSCAN extends AbstractDBSCAN {
 
     @Override
     public Algo getLoggerTag() {
-        return com.clust4j.log.Log.Tag.Algo.DBSCAN;
+        return Log.Tag.Algo.DBSCAN;
     }
 
     @Override

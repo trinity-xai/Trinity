@@ -153,7 +153,7 @@ public class HitEventHandler implements EventHandler<HitEvent> {
                 score += hit.getPoints().size();
             scoreText.animate(String.format("%06d", score));
             Point3D coordinates = hit.localToScene(
-                javafx.geometry.Point3D.ZERO, true);
+                Point3D.ZERO, true);
             createFadeoutText(
                 String.valueOf(hit.getPoints().size()), coordinates);
         }

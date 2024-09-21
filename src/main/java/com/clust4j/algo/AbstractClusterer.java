@@ -35,6 +35,7 @@ import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.apache.commons.math3.util.FastMath;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.HashSet;
@@ -50,7 +51,7 @@ import java.util.UUID;
  */
 public abstract class AbstractClusterer
     extends BaseModel
-    implements Loggable, NamedEntity, java.io.Serializable, MetricValidator {
+    implements Loggable, NamedEntity, Serializable, MetricValidator {
 
     private static final long serialVersionUID = -3623527903903305017L;
 

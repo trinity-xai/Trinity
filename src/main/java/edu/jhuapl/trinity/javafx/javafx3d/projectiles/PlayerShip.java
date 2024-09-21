@@ -592,11 +592,11 @@ public class PlayerShip extends AnimatedTetrahedron implements Hittable {
 
     public void thrust() {
         //default starting pointing direction is Z+.
-        javafx.geometry.Point3D rotatedThrust = new Point3D(0, 0, defaultThrustMagnitude);
+        Point3D rotatedThrust = new Point3D(0, 0, defaultThrustMagnitude);
         velocity = velocity.add(getTransforms().get(0)
             .transform(rotatedThrust));
         if (velocity.magnitude() > maxThrustMagnitude) {
-            javafx.geometry.Point3D maxThrust = new Point3D(0, 0, maxThrustMagnitude);
+            Point3D maxThrust = new Point3D(0, 0, maxThrustMagnitude);
             velocity = getTransforms().get(0).transform(maxThrust);
         }
     }

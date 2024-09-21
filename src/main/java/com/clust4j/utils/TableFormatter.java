@@ -17,6 +17,7 @@ package com.clust4j.utils;
 
 import org.apache.commons.math3.util.FastMath;
 
+import java.io.Serializable;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,10 +26,10 @@ import java.util.Locale;
 import static com.clust4j.utils.TableFormatter.ColumnAlignment.LEFT;
 import static com.clust4j.utils.TableFormatter.ColumnAlignment.RIGHT;
 
-public class TableFormatter implements java.io.Serializable {
+public class TableFormatter implements Serializable {
     private static final long serialVersionUID = -4944015740188846236L;
 
-    public static enum ColumnAlignment implements java.io.Serializable {
+    public static enum ColumnAlignment implements Serializable {
         LEFT {
             @Override
             String justify(String appender, String f) {

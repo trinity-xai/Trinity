@@ -25,6 +25,7 @@ import java.io.StringWriter;
 import java.io.Writer;
 import java.util.ArrayList;
 import java.util.Locale;
+import java.util.Properties;
 
 import static com.clust4j.log.Log.Tag.Algo;
 import static com.clust4j.log.Log.Tag.Type;
@@ -428,7 +429,7 @@ public abstract class Log {
         return _logger;
     }
 
-    private static void setLog4jProperties(String logDirParent, java.util.Properties p) {
+    private static void setLog4jProperties(String logDirParent, Properties p) {
 //	    LOG_DIR = logDirParent + File.separator + "clust4jlogs";
 //	    String logPathFileName = getLogPathFileNameStem();
 //

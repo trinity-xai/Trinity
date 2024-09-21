@@ -19,6 +19,8 @@ import com.clust4j.metrics.scoring.SupervisedMetric;
 import com.clust4j.metrics.scoring.UnsupervisedMetric;
 import org.apache.commons.math3.linear.RealMatrix;
 
+import java.io.Serializable;
+
 import static com.clust4j.metrics.scoring.UnsupervisedMetric.SILHOUETTE;
 
 /**
@@ -26,7 +28,7 @@ import static com.clust4j.metrics.scoring.UnsupervisedMetric.SILHOUETTE;
  *
  * @author Taylor G Smith
  */
-public interface BaseClassifier extends java.io.Serializable {
+public interface BaseClassifier extends Serializable {
     public final static SupervisedMetric DEF_SUPERVISED_METRIC = SupervisedMetric.BINOMIAL_ACCURACY;
     public final static UnsupervisedMetric DEF_UNSUPERVISED_METRIC = SILHOUETTE;
 

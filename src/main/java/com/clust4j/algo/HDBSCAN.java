@@ -16,6 +16,7 @@
 package com.clust4j.algo;
 
 import com.clust4j.GlobalState;
+import com.clust4j.log.Log;
 import com.clust4j.log.Log.Tag.Algo;
 import com.clust4j.log.LogTimer;
 import com.clust4j.log.Loggable;
@@ -1457,7 +1458,7 @@ final public class HDBSCAN extends AbstractDBSCAN {
 
     @Override
     public Algo getLoggerTag() {
-        return com.clust4j.log.Log.Tag.Algo.HDBSCAN;
+        return Log.Tag.Algo.HDBSCAN;
     }
 
     @Override

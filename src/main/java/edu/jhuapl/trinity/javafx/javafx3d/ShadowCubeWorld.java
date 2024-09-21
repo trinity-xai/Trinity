@@ -117,7 +117,7 @@ public class ShadowCubeWorld extends CubeWorld {
     public ShadowCubeWorld(double size, double spacing, boolean selfLight, List<FeatureVector> featureVectors) {
         super(size, spacing, selfLight);
         this.featureVectors = featureVectors;
-        crosshair3D = new Crosshair3D(javafx.geometry.Point3D.ZERO, size, 10.0f);
+        crosshair3D = new Crosshair3D(Point3D.ZERO, size, 10.0f);
         getChildren().add(crosshair3D);
 
         x1AxisRectangle.setVisible(false);

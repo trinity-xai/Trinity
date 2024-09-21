@@ -18,10 +18,11 @@ package com.clust4j.metrics.pairwise;
 import com.clust4j.utils.VecUtils;
 import org.apache.commons.math3.util.FastMath;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collection;
 
-public enum Distance implements DistanceMetric, java.io.Serializable {
+public enum Distance implements DistanceMetric, Serializable {
     HAMMING {
         @Override
         public double getPartialDistance(final double[] a, final double[] b) {
@@ -373,7 +374,7 @@ public enum Distance implements DistanceMetric, java.io.Serializable {
      * @author Taylor G Smith
      * @throws IllegalArgumentException if the length does not equal two
      */
-    public enum HAVERSINE implements DistanceMetric, java.io.Serializable {
+    public enum HAVERSINE implements DistanceMetric, Serializable {
         MI(3959), KM(6371);
         private final int radius;
 

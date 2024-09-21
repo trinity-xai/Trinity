@@ -30,7 +30,7 @@ public interface Loggable {
 
     public void sayBye(LogTimer timer);
 
-    public com.clust4j.log.Log.Tag.Algo getLoggerTag();
+    public Log.Tag.Algo getLoggerTag();
 
     public boolean hasWarnings();
 }

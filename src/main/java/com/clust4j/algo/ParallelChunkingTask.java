@@ -22,6 +22,7 @@ import com.clust4j.log.LogTimer;
 import com.clust4j.utils.MatrixFormatter;
 import org.apache.commons.math3.util.FastMath;
 
+import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.concurrent.ForkJoinPool;
 import java.util.concurrent.RecursiveTask;
@@ -38,7 +39,7 @@ public abstract class ParallelChunkingTask<T> extends RecursiveTask<T> implement
      *
      * @author Taylor G Smith
      */
-    public static class Chunk implements java.io.Serializable {
+    public static class Chunk implements Serializable {
         private static final long serialVersionUID = -4981036399670388292L;
         final double[][] chunk;
         final public int start;
