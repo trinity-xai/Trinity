@@ -23,15 +23,14 @@ package edu.jhuapl.trinity.javafx.components.timeline;
 import edu.jhuapl.trinity.javafx.events.TimelineEvent;
 import javafx.application.Platform;
 import javafx.scene.Scene;
-
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Sean Phillips
  */
 public class TimelineAnimation implements Runnable {
-
+    private static final Logger LOG = LoggerFactory.getLogger(TimelineAnimation.class);
     public Thread animationThread;  // ANIMATION THREAD
     protected int delay;            // DELAY TIME IN MILLISECONDS FOR THREAD
     public Scene scene;
@@ -187,7 +186,7 @@ public class TimelineAnimation implements Runnable {
                 //System.out.println("Animation sleeping for: " + delay / propRates[propRateInd] + " ms...");
                 Thread.sleep((delay / sampleRate) / propRates[propRateIndex]);
             } catch (InterruptedException ex) {
-                Logger.getLogger(TimelineAnimation.class.getName()).log(Level.SEVERE, null, ex);
+                LOG.error(null, ex);
             }
         }
     }

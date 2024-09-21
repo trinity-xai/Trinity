@@ -35,17 +35,18 @@ import javafx.scene.media.MediaPlayer;
 import javafx.scene.paint.Color;
 import javafx.scene.transform.Rotate;
 import javafx.util.Pair;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import static javafx.scene.media.MediaPlayer.INDEFINITE;
 
 public class ProjectileSystem {
+    private static final Logger LOG = LoggerFactory.getLogger(ProjectileSystem.class);
 
     public AnimationTimer projectileTimer;
     private ArrayList<Projectile> projectiles;
@@ -119,7 +120,7 @@ public class ProjectileSystem {
 //            crowns3D.setRotate(180);
 
         } catch (IOException ex) {
-            Logger.getLogger(ProjectileSystem.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(null, ex);
         }
         projectileTimer = new AnimationTimer() {
             long msCounter = 0;
@@ -291,14 +292,14 @@ public class ProjectileSystem {
             try {
                 makeAsteroidFromPoints(southList);
             } catch (Exception ex) {
-                System.out.println("Could not make Asteroid: " + ex.getMessage());
+                LOG.info("Could not make Asteroid: {}", ex.getMessage(), ex);
             }
         }
         if (northList.size() > bigThreshold / 2) {
             try {
                 makeAsteroidFromPoints(northList);
             } catch (Exception ex) {
-                System.out.println("Could not make Asteroid: " + ex.getMessage());
+                LOG.info("Could not make Asteroid: {}", ex.getMessage(), ex);
             }
         }
     }
@@ -326,7 +327,7 @@ public class ProjectileSystem {
             //Will we split it?
             if (splittingEnabled) {
                 //Is this HitShape3D large enough to break up into chunks??
-                System.out.println("Splitting an biggun... ");
+                LOG.info("Splitting an biggun... ");
                 explodo(hit);
             }
         } else {

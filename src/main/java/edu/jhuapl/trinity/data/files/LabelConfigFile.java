@@ -23,6 +23,8 @@ package edu.jhuapl.trinity.data.files;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.jhuapl.trinity.data.messages.LabelConfig;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
@@ -35,6 +37,7 @@ import java.nio.file.Files;
  * @author Sean Phillips
  */
 public class LabelConfigFile extends File implements Transferable {
+    private static final Logger LOG = LoggerFactory.getLogger(LabelConfigFile.class);
     public static String FILE_DESC1 = "\"messageType\": \"label_config\"";
     public static String FILE_DESC2 = "\"messageType\":\"label_config\"";
 //{
@@ -116,7 +119,7 @@ public class LabelConfigFile extends File implements Transferable {
             ObjectMapper mapper = new ObjectMapper();
             //mapper.configure(SerializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
             mapper.writeValue(this, labelConfig);
-            System.out.println("LabelConfig serialized to file.");
+            LOG.info("LabelConfig serialized to file.");
         }
     }
 

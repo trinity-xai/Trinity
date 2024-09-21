@@ -21,6 +21,8 @@ package edu.jhuapl.trinity;
  */
 
 import javafx.application.Application;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class exists because of the current state of JavaFX in Java11+.
@@ -28,12 +30,13 @@ import javafx.application.Application;
  * for solution origin.
  */
 public class TrinityMain {
+    private static final Logger LOG = LoggerFactory.getLogger(TrinityMain.class);
 
     /**
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        System.out.println("Entering Trinity main...");
+        LOG.info("Entering Trinity main...");
         Application.launch(App.class, args);
     }
 }

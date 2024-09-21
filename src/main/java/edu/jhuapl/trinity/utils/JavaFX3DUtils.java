@@ -58,6 +58,8 @@ import org.fxyz3d.geometry.Point3D;
 import org.fxyz3d.shapes.primitives.helper.MeshHelper;
 import org.fxyz3d.utils.CameraTransformer;
 import org.fxyz3d.utils.MeshUtils;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -67,8 +69,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.function.Function;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Utilities used by various 3D rendering code.
@@ -78,6 +78,7 @@ import java.util.logging.Logger;
 public enum JavaFX3DUtils {
     INSTANCE;
     public static double EPSILON = 0.000000001;
+    private static final Logger LOG = LoggerFactory.getLogger(JavaFX3DUtils.class);
     static List<Image> tiles = null;
     public static Function<Point3D, javafx.geometry.Point3D> toFX =
         p -> new javafx.geometry.Point3D(p.x, p.y, p.z);
@@ -161,7 +162,7 @@ public enum JavaFX3DUtils {
                 indices.add(i);
             }
         }
-        System.out.println("screenBox contains " + totalContains + " shapes.");
+        LOG.info("screenBox contains {} shapes.", totalContains);
         return indices;
     }
 
@@ -643,7 +644,7 @@ public enum JavaFX3DUtils {
                 }
                 //System.out.println(contentType);
             } catch (IOException ex) {
-                Logger.getLogger(JavaFX3DUtils.class.getName()).log(Level.SEVERE, null, ex);
+                LOG.error(null, ex);
             }
         }
         return false;
@@ -675,7 +676,7 @@ public enum JavaFX3DUtils {
             }
             sampledPoints.add(traj.getPolyLinePoints().get(pointTotal - 1));
             sampledTrajs.add(new Trajectory3D(0, 0, traj.trajectory, sampledPoints, 4, Color.CORAL));
-            System.out.println("Sample Size: " + interpSize + " with " + sampledPoints.size() + " total sampled points");
+            LOG.info("Sample Size: {} with {} total sampled points", interpSize, sampledPoints.size());
         });
         //Create a new mesh to hold the tessalation
         TriangleMesh surfaceMesh = new TriangleMesh();
@@ -768,7 +769,7 @@ public enum JavaFX3DUtils {
             try {
                 MeshUtils.mesh2STL(file.getPath(), mesh);
             } catch (IOException ex) {
-                Logger.getLogger(JavaFX3DUtils.class.getName()).log(Level.SEVERE, null, ex);
+                LOG.error(null, ex);
             }
         }
     }

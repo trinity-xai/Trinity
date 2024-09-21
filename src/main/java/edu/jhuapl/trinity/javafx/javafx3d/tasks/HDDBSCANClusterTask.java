@@ -33,11 +33,14 @@ import javafx.scene.Scene;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Sean Phillips
  */
 public class HDDBSCANClusterTask extends ClusterTask {
+    private static final Logger LOG = LoggerFactory.getLogger(HDDBSCANClusterTask.class);
 
     ProjectionConfig pc;
     double[][] observations;
@@ -57,7 +60,7 @@ public class HDDBSCANClusterTask extends ClusterTask {
             scene.getRoot().fireEvent(
                 new ApplicationEvent(ApplicationEvent.SHOW_BUSY_INDICATOR, ps));
         });
-        System.out.print("HDBSCAN fit... ");
+        LOG.info("HDBSCAN fit... ");
         long startTime = System.nanoTime();
         Array2DRowRealMatrix obsMatrix = new Array2DRowRealMatrix(observations);
         HDBSCAN hdb = new HDBSCANParameters()
@@ -71,13 +74,13 @@ public class HDDBSCANClusterTask extends ClusterTask {
         final int[] labels = hdb.getLabels();
         final int clusters = hdb.getNumberOfIdentifiedClusters();
         Utils.printTotalTime(startTime);
-        System.out.println("\n===============================================\n");
+        LOG.info("\n===============================================\n");
 
-        System.out.print("Converting clusters to Manifold Geometry... ");
+        LOG.info("Converting clusters to Manifold Geometry... ");
         startTime = System.nanoTime();
         convertToManifoldGeometry(observations, labels, clusters, "HDDBSCAN Cluster ");
         Utils.printTotalTime(startTime);
-        System.out.println("\n===============================================\n");
+        LOG.info("\n===============================================\n");
         Platform.runLater(() -> {
             scene.getRoot().fireEvent(
                 new CommandTerminalEvent("Completed HDDBSCAN Fit and Manifold Geometry Task.",

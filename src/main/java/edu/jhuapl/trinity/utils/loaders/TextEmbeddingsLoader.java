@@ -40,6 +40,8 @@ import javafx.scene.control.DialogPane;
 import javafx.scene.layout.Background;
 import javafx.scene.paint.Color;
 import javafx.stage.StageStyle;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -50,6 +52,7 @@ import java.util.Optional;
  * @author Sean Phillips
  */
 public class TextEmbeddingsLoader extends Task {
+    private static final Logger LOG = LoggerFactory.getLogger(TextEmbeddingsLoader.class);
     Scene scene;
     File file;
 
@@ -101,7 +104,7 @@ public class TextEmbeddingsLoader extends Task {
             scene.getRoot().fireEvent(
                 new ApplicationEvent(ApplicationEvent.SHOW_BUSY_INDICATOR, ps));
         });
-        System.out.print("Reading TextEmbeddingCollectionFile... ");
+        LOG.info("Reading TextEmbeddingCollectionFile... ");
         TextEmbeddingCollectionFile textEmbeddingCollectionFile = new TextEmbeddingCollectionFile(file.getAbsolutePath(), true);
 
         try {
@@ -113,7 +116,7 @@ public class TextEmbeddingsLoader extends Task {
             final int n = embeddings.size(); //how many total
             int updatePercent = n / 10; //rounded percent progress
 
-            System.out.print("Mapping text embeddings to feature collection... ");
+            LOG.info("Mapping text embeddings to feature collection... ");
             for (int i = 0; i < embeddings.size(); i++) {
                 //First do the original embeddings as a special case
                 FeatureVector fv = new FeatureVector();
@@ -190,7 +193,7 @@ public class TextEmbeddingsLoader extends Task {
                     new FeatureVectorEvent(FeatureVectorEvent.NEW_FEATURE_COLLECTION, fc));
             });
         } catch (Exception ex) {
-            ex.printStackTrace();
+            LOG.error("Exception", ex);
         }
         return null;
     }

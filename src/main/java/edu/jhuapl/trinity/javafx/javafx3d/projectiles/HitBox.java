@@ -24,6 +24,8 @@ import javafx.geometry.Bounds;
 import javafx.geometry.Point3D;
 import javafx.scene.transform.Rotate;
 import org.fxyz3d.geometry.Vector3D;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -35,6 +37,7 @@ import java.util.stream.IntStream;
  * @author Sean Phillips
  */
 public class HitBox extends MaterialBox {
+    private static final Logger LOG = LoggerFactory.getLogger(HitBox.class);
 
     public long id = 0;
     public static final double smallDiff = 1.0E-11;
@@ -98,7 +101,7 @@ public class HitBox extends MaterialBox {
         Point3D velocityReflection = null;
         Double shortestDistance = null;
         //Go through each normal
-        System.out.print("Planar distances: ");
+        LOG.info("Planar distances: ");
         for (int i = 0; i < 6; i++) {
             //find the distance to the plane
             double d = -normals.get(i).dotProduct(positions.get(i));
@@ -107,7 +110,7 @@ public class HitBox extends MaterialBox {
                 -(gloOriginInLoc.dotProduct(normals.get(i)) + d)
                     / (gloDirection.dotProduct(normals.get(i)))
             );
-            System.out.print("(" + d + ", " + t + ") ");
+            LOG.info("({}, {}) ", d, t);
             //only do the reflection if its a shorter distance
             if (null == shortestDistance || t < shortestDistance) {
                 shortestDistance = t;
@@ -121,7 +124,7 @@ public class HitBox extends MaterialBox {
                 velocityReflection = new Point3D(nV.x, nV.y, nV.z);
             }
         }
-        System.out.println(".");
+        LOG.info(".");
         return velocityReflection;
     }
 
@@ -311,7 +314,7 @@ public class HitBox extends MaterialBox {
         //@DEBUG SMP
         boolean hitPlane2 = intersectsPlane(line, xPlane2);
         if (hitPlane2) {
-            System.out.println("hitplane2");
+            LOG.info("hitplane2");
             boolean debugCheck = intersectsPlane(line, xPlane2);
         }
 

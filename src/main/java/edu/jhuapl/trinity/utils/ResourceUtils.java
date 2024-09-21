@@ -70,6 +70,8 @@ import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
 import javafx.scene.media.AudioClip;
 import javafx.scene.media.Media;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
@@ -93,8 +95,6 @@ import java.util.Random;
 import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -102,6 +102,7 @@ import java.util.stream.Collectors;
  */
 public enum ResourceUtils {
     INSTANCE;
+    private static final Logger LOG = LoggerFactory.getLogger(ResourceUtils.class);
 
     public static List<String> getClasspathEntriesByPath(String path) throws NullPointerException, IOException {
         InputStream is = ResourceUtils.class.getClassLoader().getResourceAsStream(path);
@@ -132,13 +133,13 @@ public enum ResourceUtils {
     public static String[] getResourceListing(Class clazz, String path) throws URISyntaxException, IOException {
         URL dirURL = clazz.getClassLoader().getResource(path);
         if (dirURL != null && dirURL.getProtocol().equals("file")) {
-            System.out.println("dirURL " + dirURL.toString());
+            LOG.info("dirURL {}", dirURL.toString());
             /* A file path: easy enough */
             return new File(dirURL.toURI()).list();
         }
 
         if (dirURL == null) {
-            System.out.println("dirURL is null...");
+            LOG.info("dirURL is null...");
 
             /*
              * In case of a jar file, we can't actually find a directory.
@@ -273,7 +274,7 @@ public enum ResourceUtils {
                 }
                 //System.out.println(contentType);
             } catch (IOException ex) {
-                Logger.getLogger(ResourceUtils.class.getName()).log(Level.SEVERE, null, ex);
+                LOG.error(null, ex);
             }
         }
         return false;
@@ -316,7 +317,7 @@ public enum ResourceUtils {
                 event.consume();
             }
         } catch (Exception ex) {
-            Logger.getLogger(ResourceUtils.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(null, ex);
             event.consume();
         }
         return false;
@@ -428,7 +429,7 @@ public enum ResourceUtils {
                                     new ManifoldEvent(ManifoldEvent.NEW_MANIFOLD_DATA, mdFile.manifoldData)));
                             }
                         } catch (IOException ex) {
-                            Logger.getLogger(ResourceUtils.class.getName()).log(Level.SEVERE, null, ex);
+                            LOG.error(null, ex);
                         }
                     }
                     Platform.runLater(() -> {

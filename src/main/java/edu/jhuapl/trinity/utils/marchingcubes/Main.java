@@ -20,9 +20,13 @@ package edu.jhuapl.trinity.utils.marchingcubes;
  * #L%
  */
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 
 public class Main {
+    private static final Logger LOG = LoggerFactory.getLogger(Main.class);
 
     private static String usage = "This script may be executed in either benchmark or extract mode. Mode is specified by the first parameter [benchmark, extract].\nParameters: \n\t-input-vol\t Specifies path to the input volume. If this parameter is set volume dimensions(-vol-dim), data type(-data-type) and iso value(-iso) must also be given.\n\t-vol-dim\t Specifies the generated/read volume dimensions. Dimensions should be given as unsigned integers in format; -vol-dim X Y Z.\n\t-data-type\t Specifies the input file or generated data type. Options [char, uchar, short, ushort, int, uint, float, double].\n\t-vox-dim\t Specifies voxel dimensions used in mesh construction. Dimensions should be given as floating point numbers in format: -vox-dim X Y Z.\n\t-nThread\t Number of threads used in Marching cubes algorithm.This parameter can be either given as a single unsigned integer value or two unsigned integer values in benchmark mode, specifying the range of thread executions that will be tested.\n\t-iter\t\t Used only in benchmark mode to determine how many iterations should be executed for each configuration.\n\t-iso\t\t Isovalue that is used as a threshold for determining active voxels. Type should match the data type.\n\t-o\t\t Path to output file. In extract mode the mesh is written to file in .obj format [required]. In benchmark mode the results are written to file.\n";
     ;
@@ -50,18 +54,18 @@ public class Main {
         boolean benchmark = false;
 
         if (args.length < 1) {
-            System.out.println(usage);
+            LOG.info(usage);
 //            return;
-            System.out.println("\n\nAssuming Benchmark mode and generated volume...");
+            LOG.info("\n\nAssuming Benchmark mode and generated volume...");
             benchmark = true;
         } else if (args[0].equals("-help")) {
-            System.out.println(usage);
+            LOG.info(usage);
         }
         // Read execution type
         else if (args[0].equals("benchmark")) {
             benchmark = true;
         } else if (!args[0].equals("extract")) {
-            System.out.println("Invalid execution type. Valid options [extract, benchmark]");
+            LOG.info("Invalid execution type. Valid options [extract, benchmark]");
             return;
         }
 
@@ -89,7 +93,7 @@ public class Main {
                 // Volume path specified
                 // Output file path is specified
                 if (i + 1 >= args.length || args[i + 1].charAt(0) == '-') {
-                    System.out.println("Missing file path after -input-vol flag.");
+                    LOG.info("Missing file path after -input-vol flag.");
                     return;
                 }
 
@@ -97,13 +101,13 @@ public class Main {
                 inputFile = new File(args[++i]);
 
                 if (!inputFile.exists() || inputFile.isDirectory()) {
-                    System.out.println("Specified volume file does not exist.");
+                    LOG.info("Specified volume file does not exist.");
                     return;
                 }
             } else if (args[i].equals("-vol-dim")) {
                 // Volume dimensions are given
                 if (i + 3 >= args.length || args[i + 1].charAt(0) == '-' || args[i + 2].charAt(0) == '-' || args[i + 3].charAt(0) == '-') {
-                    System.out.println("Missing volume dimensions after -vol-dim flag.");
+                    LOG.info("Missing volume dimensions after -vol-dim flag.");
                     return;
                 }
 
@@ -112,7 +116,7 @@ public class Main {
                 String z = (args[++i]);
 
                 if (!isUint(x) || !isUint(y) || !isUint(z)) {
-                    System.out.println("Invalid volume dimensions format. Specify dimensions as three unsigned integers.");
+                    LOG.info("Invalid volume dimensions format. Specify dimensions as three unsigned integers.");
                     return;
                 }
 
@@ -123,7 +127,7 @@ public class Main {
             } else if (args[i].equals("-vox-dim")) {
                 // Voxel dimensions are given
                 if (i + 3 >= args.length) {
-                    System.out.println("Missing voxel dimensions after -vox-dim flag.");
+                    LOG.info("Missing voxel dimensions after -vox-dim flag.");
                     return;
                 }
 
@@ -132,7 +136,7 @@ public class Main {
                 String z = args[++i];
 
                 if (!isFloat(x) || !isFloat(y) || !isFloat(z)) {
-                    System.out.println("Invalid voxel dimensions format. Specify voxel dimensions as three positive floats.");
+                    LOG.info("Invalid voxel dimensions format. Specify voxel dimensions as three positive floats.");
                     return;
                 }
 
@@ -143,7 +147,7 @@ public class Main {
                 // Number of threads is given
                 // FIRST VALUE
                 if (i + 1 >= args.length || args[i + 1].charAt(0) == '-') {
-                    System.out.println("Missing number or range of threads after -nThread flag.");
+                    LOG.info("Missing number or range of threads after -nThread flag.");
                     return;
                 }
 
@@ -151,7 +155,7 @@ public class Main {
                 String tmp = args[++i];
 
                 if (!isUint(tmp)) {
-                    System.out.println("Invalid nThread value format. Specify unsigned integer value or two if range.");
+                    LOG.info("Invalid nThread value format. Specify unsigned integer value or two if range.");
                     return;
                 }
 
@@ -163,7 +167,7 @@ public class Main {
                     // Validate second number
                     tmp = args[++i];
                     if (!isUint(tmp)) {
-                        System.out.println("Invalid nThread value format. Specify unsigned integer value or two if range.");
+                        LOG.info("Invalid nThread value format. Specify unsigned integer value or two if range.");
                         return;
                     }
 
@@ -176,27 +180,27 @@ public class Main {
             } else if (args[i].equals("-iso")) {
                 // ISO value is given
                 if (i + 1 >= args.length) {
-                    System.out.println("Missing iso value after -iso flag.");
+                    LOG.info("Missing iso value after -iso flag.");
                     return;
                 }
 
                 isoValueStr = args[++i];
 
                 if (!isFloat(isoValueStr)) {
-                    System.out.println("Invalid iso value format. Please specify float.");
+                    LOG.info("Invalid iso value format. Please specify float.");
                     return;
                 }
             } else if (args[i].equals("-iter")) {
                 // ISO value is given
                 if (i + 1 >= args.length) {
-                    System.out.println("Missing number of iterations after -iter flag.");
+                    LOG.info("Missing number of iterations after -iter flag.");
                     return;
                 }
 
                 String iterationsStr = args[++i];
 
                 if (!isUint(iterationsStr)) {
-                    System.out.println("Invalid iterations value format. Please specify unsigned integer.");
+                    LOG.info("Invalid iterations value format. Please specify unsigned integer.");
                     return;
                 }
 
@@ -204,7 +208,7 @@ public class Main {
             } else if (args[i].equals("-o")) {
                 // Output file path is specified
                 if (i + 1 >= args.length || args[i + 1].charAt(0) == '-') {
-                    System.out.println("Missing file path after -o flag.");
+                    LOG.info("Missing file path after -o flag.");
                     return;
                 }
 
@@ -212,30 +216,30 @@ public class Main {
                 outFile = new File(args[++i]);
 
                 if (outFile.getParentFile() != null && !outFile.getParentFile().exists()) {
-                    System.out.println("Specified output file path is invaild.");
+                    LOG.info("Specified output file path is invaild.");
                 }
             } else if (args[i].equals("-data-type")) {
                 // Volume data type is specified
                 if (i + 1 >= args.length || args[i + 1].charAt(0) == '-') {
-                    System.out.println("Missing type after -data-type flag.");
+                    LOG.info("Missing type after -data-type flag.");
                     return;
                 }
 
                 // Data type is specified (char, uchar, short, ushort, int, uint, float, double)
                 if (!args[i + 1].equals("char") && !args[i + 1].equals("uchar") && !args[i + 1].equals("short") && !args[i + 1].equals("ushort") && args[i + 1].equals("uint") && args[i + 1].equals("float") && args[i + 1].equals("double")) {
-                    System.out.println("Invalid data type. Available data types: char, uchar, short, ushort, int, uint, float, double.");
+                    LOG.info("Invalid data type. Available data types: char, uchar, short, ushort, int, uint, float, double.");
                     return;
                 }
 
                 type = args[++i];
             } else {
-                System.out.println("Unknown parameter: " + args[i]);
+                LOG.info("Unknown parameter: {}", args[i]);
                 return;
             }
         }
 
         if (inputFile != null && (!customSizeSpecified || type == null || isoValueStr == null)) {
-            System.out.println("If custom volume is imported, you must input volume dimensions(-vol-dim), data type (-data-type) and iso value (-iso).");
+            LOG.info("If custom volume is imported, you must input volume dimensions(-vol-dim), data type (-data-type) and iso value (-iso).");
             return;
         }
         //endregion
@@ -261,7 +265,7 @@ public class Main {
             }
         } else {
             if (outFile == null) {
-                System.out.println("To extract the data the output file path is needed (-o).");
+                LOG.info("To extract the data the output file path is needed (-o).");
                 return;
             }
 

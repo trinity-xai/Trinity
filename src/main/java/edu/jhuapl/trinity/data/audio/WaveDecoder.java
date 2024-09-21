@@ -20,9 +20,11 @@ package edu.jhuapl.trinity.data.audio;
  * #L%
  */
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.BufferedInputStream;
 import java.io.InputStream;
-import java.util.logging.Logger;
 
 /**
  * A simple class that can read in the PCM data from a Wav file, converting the
@@ -33,6 +35,8 @@ import java.util.logging.Logger;
  * @author mzechner
  */
 public class WaveDecoder implements Decoder {
+
+    private static final Logger LOG = LoggerFactory.getLogger(WaveDecoder.class);
 
     /**
      * inverse max short value as float *
@@ -95,8 +99,7 @@ public class WaveDecoder implements Decoder {
         sampleRate = in.readIntLittleEndian();
         if (sampleRate != 44100) {
             //throw new IllegalArgumentException("Not 44100 sampling rate");
-            Logger.getLogger(WaveDecoder.class.getName()).warning(
-                "Not 44100 sampling rate.\nSome functions may not behave.");
+            LOG.warn("Not 44100 sampling rate.\nSome functions may not behave.");
         }
         in.readIntLittleEndian();
         in.readShortLittleEndian();

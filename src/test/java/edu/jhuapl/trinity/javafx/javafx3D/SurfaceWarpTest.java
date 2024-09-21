@@ -80,6 +80,8 @@ import javafx.stage.Stage;
 import org.fxyz3d.geometry.MathUtils;
 import org.fxyz3d.geometry.Point3D;
 import org.fxyz3d.utils.CameraTransformer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.awt.*;
 import java.awt.image.BufferedImage;
@@ -90,10 +92,9 @@ import java.util.List;
 import java.util.Random;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Function;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 public class SurfaceWarpTest extends Application {
+    private static final Logger LOG = LoggerFactory.getLogger(SurfaceWarpTest.class);
 
     PerspectiveCamera camera = new PerspectiveCamera(true);
     public Group sceneRoot = new Group();
@@ -145,7 +146,7 @@ public class SurfaceWarpTest extends Application {
         //Start Tracking mouse movements only when a button is pressed
         subScene.setOnMousePressed((MouseEvent me) -> {
             if (me.isSynthesized()) {
-                System.out.println("isSynthesized");
+                LOG.info("isSynthesized");
             }
             mousePosX = me.getSceneX();
             mousePosY = me.getSceneY();
@@ -348,7 +349,7 @@ public class SurfaceWarpTest extends Application {
                 sceneRoot.getChildren().add(iv);
 
             } catch (Exception ex) {
-                Logger.getLogger(SurfaceWarpTest.class.getName()).log(Level.SEVERE, null, ex);
+                LOG.error(null, ex);
             }
 
         });
@@ -410,7 +411,7 @@ public class SurfaceWarpTest extends Application {
     }
 
     public Image captureImage() {
-        System.out.println("Capturing Web Cam Image...");
+        LOG.info("Capturing Web Cam Image...");
         BufferedImage img = null;
         WritableImage image = null;
         if ((img = webCam.getImage()) != null) {
@@ -424,7 +425,7 @@ public class SurfaceWarpTest extends Application {
     }
 
     public void buildTerrain(List<List<Double>> dataGrid, float xScale, float yScale, float zScale) {
-        System.out.println("terrain file dropped...");
+        LOG.info("terrain file dropped...");
         this.dataGrid = dataGrid;
 
         int subDivX = dataGrid.get(0).size() / currentPskip;
@@ -438,7 +439,7 @@ public class SurfaceWarpTest extends Application {
     }
 
     public void buildWarp(List<List<Double>> dataGrid, int pskip, float xScale, float yScale, float zScale) {
-        System.out.println("warping mesh...");
+        LOG.info("warping mesh...");
         pNodes.clear();
         long startTime = System.nanoTime();
 //        int pskip = 1;
@@ -479,8 +480,8 @@ public class SurfaceWarpTest extends Application {
 //            warpedGrid.add(pointRow);
         }
         Utils.printTotalTime(startTime);
-        System.out.println("dude the warp is done.");
-        System.out.println("Updating the scatter mesh... ");
+        LOG.info("dude the warp is done.");
+        LOG.info("Updating the scatter mesh... ");
         updateView(true);
 //        surfPlot.setTranslateX(-subDivX * xScale);
 //
@@ -496,7 +497,7 @@ public class SurfaceWarpTest extends Application {
     }
 
     public void loadDirectedMesh() {
-        System.out.println("Loading Directed Mesh...");
+        LOG.info("Loading Directed Mesh...");
 //        //@TODO SMP this is where you might load some dank data from a file
 //        showAll();
 //        updatePNodes();
@@ -507,7 +508,7 @@ public class SurfaceWarpTest extends Application {
         Perspective3DNode[] pNodeArray = pNodes.toArray(Perspective3DNode[]::new);
         data = getVisiblePoints(pNodeArray);
         endPoints = getFixedEndPoints(pNodeArray, 0f);
-        System.out.println("Rendering 3D Mesh...");
+        LOG.info("Rendering 3D Mesh...");
 
         scatterMesh3D = new DirectedScatterMesh(data, endPoints, true, 10, 0);
         scatterMesh3D.setHeight(point3dSize);
@@ -694,7 +695,7 @@ public class SurfaceWarpTest extends Application {
                 faceIndex += newFaces;
                 if (faceIndex >= surfMesh.getFaces().size()) {
                     this.stop();
-                    System.out.println("Tessellation Complete.");
+                    LOG.info("Tessellation Complete.");
                     animateTexture();
                 }
             }
@@ -875,7 +876,7 @@ public class SurfaceWarpTest extends Application {
     }
 
     private void loadSurf3D() {
-        System.out.println("Rendering Surf3D Mesh...");
+        LOG.info("Rendering Surf3D Mesh...");
         int TOTAL_COLORS = 1530; //colors used by map function
         int xWidth = 200;
         int zWidth = 200;

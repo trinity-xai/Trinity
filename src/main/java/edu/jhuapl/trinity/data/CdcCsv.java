@@ -22,6 +22,8 @@ package edu.jhuapl.trinity.data;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.function.Function;
 
@@ -31,6 +33,7 @@ import java.util.function.Function;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CdcCsv {
+    private static final Logger LOG = LoggerFactory.getLogger(CdcCsv.class);
     //header:
     //county,county_fips,state,county_population,health_service_area_number,
     //health_service_area,health_service_area_population,covid_inpatient_bed_utilization,
@@ -155,7 +158,7 @@ public class CdcCsv {
                 cdcCsv.setDate_updated(tokens[11]);
             }
         } catch (Exception ex) {
-            ex.printStackTrace();
+            LOG.error("Exception", ex);
         }
         return cdcCsv;
     };

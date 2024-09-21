@@ -21,16 +21,17 @@ package edu.jhuapl.trinity.utils;
  */
 
 import javafx.util.StringConverter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.text.NumberFormat;
 import java.text.ParseException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * @author Sean Phillips
  */
 public class PrecisionConverter extends StringConverter<Double> {
+    private static final Logger LOG = LoggerFactory.getLogger(PrecisionConverter.class);
     int decimalPlaces = 7;
 
     public PrecisionConverter(int decimalPlaces) {
@@ -62,7 +63,7 @@ public class PrecisionConverter extends StringConverter<Double> {
         try {
             return nf.parse(s).doubleValue();
         } catch (ParseException ex) {
-            Logger.getLogger(PrecisionConverter.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(null, ex);
             return null;
         }
     }

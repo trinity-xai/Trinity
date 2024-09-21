@@ -77,6 +77,8 @@ import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Translate;
 import javafx.util.Duration;
 import org.fxyz3d.utils.CameraTransformer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.URISyntaxException;
@@ -85,8 +87,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Random;
 import java.util.function.Function;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import static javafx.animation.Animation.INDEFINITE;
 
@@ -94,6 +94,7 @@ import static javafx.animation.Animation.INDEFINITE;
  * @author Sean Phillips
  */
 public class RetroWavePane extends StackPane {
+    private static final Logger LOG = LoggerFactory.getLogger(RetroWavePane.class);
 
     public static double DEFAULT_INTRO_DISTANCE = -60000.0;
     public static double DEFAULT_ZOOM_TIME_MS = 500.0;
@@ -189,12 +190,12 @@ public class RetroWavePane extends StackPane {
         this.scene = scene;
         this.webcamEnabled = enableWebcam;
         if (enableWebcam) {
-            System.out.println("Initializing Surveillance system... ");
+            LOG.info("Initializing Surveillance system... ");
             try {
                 WebCamUtils.initialize();
-                System.out.println("Camera system ONLINE!");
+                LOG.info("Camera system ONLINE!");
             } catch (Exception ex) {
-                System.out.println("Camera system unreachable!");
+                LOG.info("Camera system unreachable!");
             }
         }
         setBackground(Background.EMPTY);
@@ -815,7 +816,7 @@ public class RetroWavePane extends StackPane {
         if (webcamEnabled) {
             try {
                 image = WebCamUtils.takePicture();
-                System.out.println("got your little soul...");
+                LOG.info("got your little soul...");
                 tessellationMeshView = new TessellationMesh(image,
                     Color.GREEN, 1f, 100.0f, 2, false);
                 ambientLight.getScope().add(tessellationMeshView);
@@ -826,7 +827,7 @@ public class RetroWavePane extends StackPane {
                         tessellationMeshView.setVisible(false);
                 });
             } catch (Exception ex) {
-                System.out.println("Unable to capture image.");
+                LOG.info("Unable to capture image.");
             }
         }
         final int top = (int) snappedTopInset();
@@ -987,7 +988,7 @@ public class RetroWavePane extends StackPane {
             List<AnimatedStack> strip = genCityStrip(buildingCount, stackMin, stackMax, (zWidth * surfScale) / 2.0, area);
             cityGroup.getChildren().addAll(strip);
         } catch (URISyntaxException | IOException ex) {
-            Logger.getLogger(RetroWavePane.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(null, ex);
         }
     }
 
@@ -999,7 +1000,7 @@ public class RetroWavePane extends StackPane {
             pyramid.setMaterial(new PhongMaterial(Color.WHITE, pyrDiffuseImage,
                 specImage, specImage, null));
         } catch (IOException ex) {
-            Logger.getLogger(RetroWavePane.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(null, ex);
             pyramid.setMaterial(new PhongMaterial(Color.CYAN));
         }
         pyramid.setRotationAxis(Rotate.Z_AXIS);
@@ -1020,7 +1021,7 @@ public class RetroWavePane extends StackPane {
             highDiffuseImage = ResourceUtils.load3DTextureImage("retrowavehighway");
             highMat = new PhongMaterial(Color.WHITE, highDiffuseImage, highDiffuseImage, highDiffuseImage, null);
         } catch (IOException ex) {
-            Logger.getLogger(RetroWavePane.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(null, ex);
             highMat = new PhongMaterial(Color.CYAN.deriveColor(1, 1, 1, 0.333));
         }
         retroHighway.setMaterial(highMat);
@@ -1035,7 +1036,7 @@ public class RetroWavePane extends StackPane {
             sunDiffuseImage = ResourceUtils.load3DTextureImage("retrowaveSun5");
             sunMat = new PhongMaterial(Color.YELLOW, sunDiffuseImage, specBumpImage, specBumpImage, sunDiffuseImage);
         } catch (IOException ex) {
-            Logger.getLogger(RetroWavePane.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(null, ex);
             sunMat = new PhongMaterial(Color.ORANGE);
         }
         retroSunSphere = new AnimatedSphere(sunMat, 400, 256, true);
@@ -1043,7 +1044,7 @@ public class RetroWavePane extends StackPane {
         retroSunSphere.setTranslateY(-sunTranslateY);
         //HIDDEN FEATURE EASTER EGG!!
         retroSunSphere.setOnMouseClicked(e -> {
-            System.out.println("Touched the Sun...");
+            LOG.info("Touched the Sun...");
             if (e.getClickCount() > 1) {
                 resetView(1000, false);
                 cameraMovementEnabled = false;
@@ -1059,7 +1060,7 @@ public class RetroWavePane extends StackPane {
             Image specBumpImage = ResourceUtils.load3DTextureImage("vaporwave");
             mat = new PhongMaterial(Color.CYAN, diffuseImage, specBumpImage, specBumpImage, null);
         } catch (IOException ex) {
-            Logger.getLogger(RetroWavePane.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(null, ex);
             mat = new PhongMaterial(Color.CYAN);
         }
         retroMoonSphere = new AnimatedSphere(mat, 200.0, 64, true);
@@ -1068,7 +1069,7 @@ public class RetroWavePane extends StackPane {
         retroMoonSphere.setTranslateZ((surfScale * zWidth) + 600);
         //HIDDEN FEATURE EASTER EGG!!
         retroMoonSphere.setOnMouseClicked(e -> {
-            System.out.println("Moon shot...");
+            LOG.info("Moon shot...");
             if (e.getClickCount() > 1) {
                 resetView(1000, false);
                 cameraMovementEnabled = false;
@@ -1114,7 +1115,7 @@ public class RetroWavePane extends StackPane {
     }
 
     private void loadHorizon() {
-        System.out.println("Rendering 3D Horizon...");
+        LOG.info("Rendering 3D Horizon...");
         float horizonSurfScale = surfScale;// * 2f;
         int horizonZWidth = 9;
         int numberOfSpikes = 3;
@@ -1187,7 +1188,7 @@ public class RetroWavePane extends StackPane {
     }
 
     private void loadSurf3D() {
-        System.out.println("Rendering Surf3D Mesh...");
+        LOG.info("Rendering Surf3D Mesh...");
         generateRandos(xWidth, zWidth, yScale);
         surfPlot = new HyperSurfacePlotMesh(xWidth, zWidth,
             64, 64, yScale, surfScale, vert3DLookup);
@@ -1197,7 +1198,7 @@ public class RetroWavePane extends StackPane {
             Image diffuseImage = ResourceUtils.load3DTextureImage("vaporwave");
             material = new PhongMaterial(Color.NAVY, null, diffuseImage, null, null);
         } catch (IOException ex) {
-            Logger.getLogger(RetroWavePane.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(null, ex);
             material = new PhongMaterial(Color.CYAN);
             surfPlot.setDrawMode(DrawMode.LINE);
             surfPlot.setCullFace(CullFace.NONE);

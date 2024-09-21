@@ -25,10 +25,13 @@ import javafx.scene.DepthTest;
 import javafx.scene.Node;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 
 public abstract class DualTextureParticle extends AgingParticle {
+    private static final Logger LOG = LoggerFactory.getLogger(DualTextureParticle.class);
 
     public static double DEFAULT_FIT_WIDTH = 16;
     public float[] color2 = new float[4]; // The Particle's Color
@@ -41,7 +44,7 @@ public abstract class DualTextureParticle extends AgingParticle {
             setTexture1(ResourceUtils.load3DTextureImage(t1));
             setTexture2(ResourceUtils.load3DTextureImage(t2));
         } catch (final IOException _e) {
-            System.out.println("Unable to load texture");
+            LOG.info("Unable to load texture");
         }
     }
 

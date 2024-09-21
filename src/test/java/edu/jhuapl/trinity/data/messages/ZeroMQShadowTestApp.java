@@ -22,6 +22,8 @@ package edu.jhuapl.trinity.data.messages;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.zeromq.SocketType;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
@@ -30,13 +32,12 @@ import org.zeromq.ZMQ.Socket;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * @author Sean Phillips
  */
 public class ZeroMQShadowTestApp {
+    private static final Logger LOG = LoggerFactory.getLogger(ZeroMQShadowTestApp.class);
 
     public static final String TOPIC = "ZeroMQ Test Topic";
     public static String PUSH_CONNECT = "tcp://localhost:5563";
@@ -56,7 +57,7 @@ public class ZeroMQShadowTestApp {
         imageURLS.add("c:/dev/OnyxHappyFace.jpg");
         imageURLS.add("c:/dev/OnyxToyBasket.jpg");
 
-        System.out.println("Starting Shadow Test Publisher Thread...");
+        LOG.info("Starting Shadow Test Publisher Thread...");
         // Prepare our context and publisher
         try (ZContext context = new ZContext()) {
             Socket pusher = context.createSocket(SocketType.PUSH);
@@ -75,7 +76,7 @@ public class ZeroMQShadowTestApp {
                     update_nbr++;
                 }
             } catch (JsonProcessingException ex) {
-                Logger.getLogger(ZeroMQShadowTestApp.class.getName()).log(Level.SEVERE, null, ex);
+                LOG.error(null, ex);
             }
         }
     }

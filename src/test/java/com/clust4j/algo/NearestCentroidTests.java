@@ -29,6 +29,8 @@ import com.clust4j.utils.VecUtils;
 import org.apache.commons.math3.exception.DimensionMismatchException;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -40,6 +42,7 @@ import java.util.Random;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class NearestCentroidTests implements ClassifierTest, ClusterTest, BaseModelTest {
+    private static final Logger LOG = LoggerFactory.getLogger(NearestCentroidTests.class);
     final Array2DRowRealMatrix data_ = TestSuite.IRIS_DATASET.getData();
     final int[] target_ = TestSuite.IRIS_DATASET.getLabels();
 
@@ -396,31 +399,31 @@ public class NearestCentroidTests implements ClassifierTest, ClusterTest, BaseMo
             planner.setMetric(d);
             model = planner.fitNewModel(data_, target_).fit();
             assertTrue(model.dist_metric.equals(d)); // assert no change
-            System.out.println(d + ", " + model.score());
+            LOG.info("{}, {}", d, model.score());
         }
 
         DistanceMetric d = new MinkowskiDistance(1.5);
         planner.setMetric(d);
         model = planner.fitNewModel(data_, target_).fit();
         assertTrue(model.dist_metric.equals(d)); // assert no change
-        System.out.println(d + ", " + model.score());
+        LOG.info("{}, {}", d, model.score());
 
         d = Distance.HAVERSINE.MI;
         planner.setMetric(d);
         model = planner.fitNewModel(small, target_).fit();
         assertTrue(model.dist_metric.equals(d)); // assert no change
-        System.out.println(d + ", " + model.score());
+        LOG.info("{}, {}", d, model.score());
 
         // do similarity metrics work??
         planner.setMetric(Similarity.COSINE);
         model = planner.fitNewModel(data_, target_).fit();
-        System.out.println(model.dist_metric + ", " + model.score());
+        LOG.info("{}, {}", model.dist_metric, model.score());
 
         // how bout kernels?
         for (Kernel k : KernelTestCases.all_kernels) {
             planner.setMetric(k);
             model = planner.fitNewModel(data_, target_).fit();
-            System.out.println(model.dist_metric + ", " + model.score());
+            LOG.info("{}, {}", model.dist_metric, model.score());
         }
     }
 }

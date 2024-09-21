@@ -51,8 +51,9 @@ dependencies {
     implementation(group: 'org.fxyz3d', name: 'fxyz3d', version: '0.6.0') {
         exclude group: 'org.openjfx'
     }
-    implementation(group: 'eu.hansolo.fx', name: 'charts', version: '21.0.17') {
+    implementation(group: 'eu.hansolo.fx', name: 'charts', version: '21.0.19') {
         exclude group: 'org.openjfx'
+        exclude group: 'ch.qos.logback'
     }
     implementation group: 'com.github.quickhull3d', name: 'quickhull3d', version: '1.0.0'
     implementation group: 'org.apache.commons', name: 'commons-math3', version: '3.6.1'
@@ -63,8 +64,9 @@ dependencies {
     implementation group: 'com.github.sarxos', name: 'webcam-capture', version: '0.3.12'
     implementation group: 'org.jflac', name: 'jflac-codec', version: '1.5.2'
 
-    // Enforce slf4j-api version across dependencies (although we're using JUL)
-    implementation group: 'org.slf4j', name: 'slf4j-api', version: '2.0.13'
+    // Enforce slf4j-api version across dependencies
+    implementation group: 'org.slf4j', name: 'slf4j-api', version: '2.0.15'
+    implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.5.8'
 
     testImplementation 'org.junit.jupiter:junit-jupiter:5.10.3'
     testImplementation 'org.junit.platform:junit-platform-suite:1.10.3'
@@ -218,7 +220,7 @@ processResources {
                     "title"    : artifactNameUpper,
                     "version"  : project.version,
                     "revision" : versioning.info.build,
-                    "timestamp": buildDate
+                    "timestamp": project.buildDate
             ]
     ]
     filesMatching("**/build.properties") {
@@ -235,7 +237,7 @@ processResources {
                     "context": artifactNameUpper,
                     "path"   : logPath,
                     "pattern": "${artifactName}-%d{yyyy-MM-dd}.%i.log",
-                    "level"  : '${LOGBACK_LOG_LEVEL:-WARN}'
+                    "level"  : '${LOGBACK_LOG_LEVEL:-INFO}'
             ]
     ]
     filesMatching("**/logback.xml") {
@@ -257,7 +259,7 @@ tasks.withType(Jar).configureEach {
                 'Created-By': "${System.getProperty('java.version')} (${System.getProperty('java.vendor')} ${System.getProperty('java.vm.version')})",
                 // https://docs.oracle.com/en/java/javase/20/docs/specs/jar/jar.html#main-attributes
                 'Main-Class': application.mainClass,
-                'Build-Date': buildDate,
+                'Build-Date': project.buildDate,
                 'Build-Revision': versioning.info.commit,
                 'Specification-Title': project.name,
                 'Specification-Version': project.version,
@@ -265,6 +267,7 @@ tasks.withType(Jar).configureEach {
                 'Implementation-Version': project.version,
                 // https://en.wikipedia.org/wiki/OSGi#Bundles
                 'Bundle-Name': project.name,
+                'Bundle-Version': project.version,
                 'Bundle-License': 'https://www.apache.org/licenses/LICENSE-2.0',
                 'Bundle-Description': project.description,
                 'Bundle-SymbolicName': application.mainModule,

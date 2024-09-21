@@ -20,18 +20,20 @@ package edu.jhuapl.trinity.data;
  * #L%
  */
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileReader;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * @author Sean Phillips
  */
 public class SpikeTrain {
+    private static final Logger LOG = LoggerFactory.getLogger(SpikeTrain.class);
     public String trialId;
     public ArrayList<ArrayList<Double>> spikeTrains;
 
@@ -93,7 +95,7 @@ public class SpikeTrain {
             System.out.println(spikeTrainList.size());
             //closes the stream and release the resources
         } catch (IOException ex) {
-            Logger.getLogger(SpikeTrain.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(null, ex);
         }
         return spikeTrainList;
     }

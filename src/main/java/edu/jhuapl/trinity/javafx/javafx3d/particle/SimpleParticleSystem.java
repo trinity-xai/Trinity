@@ -26,12 +26,13 @@ import javafx.application.Platform;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import org.fxyz3d.geometry.Point3D;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.lang.reflect.InvocationTargetException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
-public class SimpleParticleSystem { //extends BillboardNode {
+public class SimpleParticleSystem {
+    private static final Logger LOG = LoggerFactory.getLogger(SimpleParticleSystem.class); //extends BillboardNode {
 
     public AnimationTimer particleTimer;
     private ParticleSet particles;
@@ -63,7 +64,7 @@ public class SimpleParticleSystem { //extends BillboardNode {
         };
         long startTime = System.nanoTime();
         setParticle(_spawnType);
-        System.out.println("Particles generated: " + Utils.totalTimeString(startTime));
+        LOG.info("Particles generated: {}", Utils.totalTimeString(startTime));
         Platform.runLater(() -> {
             parentGroup.getChildren().addAll(particles.group);
         });
@@ -131,7 +132,7 @@ public class SimpleParticleSystem { //extends BillboardNode {
         try {
             particles.setMaxParticleCount(_maxParticles);
         } catch (NoSuchMethodException | IllegalArgumentException | InvocationTargetException | InstantiationException | IllegalAccessException ex) {
-            Logger.getLogger(SimpleParticleSystem.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(null, ex);
         }
     }
 

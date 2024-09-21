@@ -64,8 +64,11 @@ import javafx.scene.shape.Sphere;
 import javafx.stage.Stage;
 import org.fxyz3d.scene.CameraView;
 import org.fxyz3d.utils.CameraTransformer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class ParticleTest extends Application {
+    private static final Logger LOG = LoggerFactory.getLogger(ParticleTest.class);
     Box box;
     Sphere xSphere;
     Sphere ySphere;
@@ -98,7 +101,7 @@ public class ParticleTest extends Application {
         protected void invalidated() {
             if (billboard != null) {
                 billboard.setBillboardMode(getValue());
-                System.out.println("mode changed");
+                LOG.info("mode changed");
             }
         }
 
@@ -141,7 +144,7 @@ public class ParticleTest extends Application {
         //Start Tracking mouse movements only when a button is pressed
         subScene.setOnMousePressed((MouseEvent me) -> {
             if (me.isSynthesized())
-                System.out.println("isSynthesized");
+                LOG.info("isSynthesized");
             mousePosX = me.getSceneX();
             mousePosY = me.getSceneY();
             mouseOldX = me.getSceneX();

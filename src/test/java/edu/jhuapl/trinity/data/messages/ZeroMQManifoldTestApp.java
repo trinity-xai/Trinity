@@ -22,6 +22,8 @@ package edu.jhuapl.trinity.data.messages;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.zeromq.SocketType;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
@@ -30,13 +32,12 @@ import org.zeromq.ZMQ.Socket;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * @author Sean Phillips
  */
 public class ZeroMQManifoldTestApp {
+    private static final Logger LOG = LoggerFactory.getLogger(ZeroMQManifoldTestApp.class);
 
     public static final String TOPIC = "ZeroMQ Test Topic";
     public static String PUSH_CONNECT = "tcp://localhost:5563";
@@ -57,7 +58,7 @@ public class ZeroMQManifoldTestApp {
         imageURLS.add("c:/dev/OnyxToyBasket.jpg");
 
         Thread thread = new Thread(() -> {
-            System.out.println("Starting Publisher Thread...");
+            LOG.info("Starting Publisher Thread...");
             // Prepare our context and publisher
             try (ZContext context = new ZContext()) {
                 Socket pusher = context.createSocket(SocketType.PUSH);
@@ -65,7 +66,7 @@ public class ZeroMQManifoldTestApp {
                 pusher.connect(PUSH_CONNECT);
                 int update_nbr = 0;
 
-                System.out.println("Factor Analysis Publisher starting send loop...");
+                LOG.info("Factor Analysis Publisher starting send loop...");
                 while (!Thread.currentThread().isInterrupted()) {
                     try {
                         FeatureVector featureVector = makeFeatureVector(update_nbr);
@@ -76,16 +77,16 @@ public class ZeroMQManifoldTestApp {
                         featureVector.getData().set(1, y);
                         featureVector.getData().set(2, z);
                         String fvAsString = mapper.writeValueAsString(featureVector);
-                        System.out.println(fvAsString);
+                        LOG.info(fvAsString);
                         pusher.send(fvAsString, ZMQ.DONTWAIT);
                     } catch (JsonProcessingException ex) {
-                        Logger.getLogger(ZeroMQManifoldTestApp.class.getName()).log(Level.SEVERE, null, ex);
+                        LOG.error(null, ex);
                     }
                     update_nbr++;
                     Thread.sleep(MESSAGE_DELAY_MS);
                 }
             } catch (InterruptedException ex) {
-                Logger.getLogger(ZeroMQManifoldTestApp.class.getName()).log(Level.SEVERE, null, ex);
+                LOG.error(null, ex);
             }
         }, "ZeroMQFactorAnalysisStateTestApp Publisher Thread");
 //        thread.setDaemon(true);

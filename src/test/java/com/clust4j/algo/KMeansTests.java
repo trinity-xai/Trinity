@@ -36,6 +36,8 @@ import org.apache.commons.math3.exception.DimensionMismatchException;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -51,6 +53,7 @@ import static com.clust4j.TestSuite.getRandom;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class KMeansTests implements ClassifierTest, ClusterTest, ConvergeableTest, BaseModelTest {
+    private static final Logger LOG = LoggerFactory.getLogger(KMeansTests.class);
     final Array2DRowRealMatrix data_ = TestSuite.IRIS_DATASET.getData();
     final Array2DRowRealMatrix wine = TestSuite.WINE_DATASET.getData();
     final Array2DRowRealMatrix bc = TestSuite.BC_DATASET.getData();
@@ -217,7 +220,7 @@ public class KMeansTests implements ClassifierTest, ClusterTest, ConvergeableTes
             km = new KMeans(b ? X : mat, new KMeansParameters(1)).fit();
             assertTrue(km.didConverge());
 
-            System.out.println(Arrays.toString(km.getLabels()));
+            LOG.info(Arrays.toString(km.getLabels()));
             System.out.println(km.getTSS());
             if (b)
                 assertTrue(km.getTSS() == 9.0);
@@ -396,8 +399,8 @@ public class KMeansTests implements ClassifierTest, ClusterTest, ConvergeableTes
                 .setInitializationStrategy(s)
                 .setVerbose(true)).fit();
 
-            System.out.println("Silhouette score: " + model.silhouetteScore());
-            System.out.println("Idx affinity score: " + model.indexAffinityScore(labels));
+            LOG.info("Silhouette score: {}", model.silhouetteScore());
+            LOG.info("Idx affinity score: {}", model.indexAffinityScore(labels));
             System.out.println();
         }
 
@@ -488,7 +491,7 @@ public class KMeansTests implements ClassifierTest, ClusterTest, ConvergeableTes
         }
 
 
-        System.out.println("BEST: " + best.getName() + ", " + ia + ", successfully tried " + count);
+        LOG.info("BEST: {}, {}, successfully tried {}", best.getName(), ia, count);
     }
 
     static void findBestKernelMetric(DataSet ds, int k) {
@@ -526,7 +529,7 @@ public class KMeansTests implements ClassifierTest, ClusterTest, ConvergeableTes
         }
 
 
-        System.out.println("BEST: " + best.getName() + ", " + ia + ", successfully tried " + count);
+        LOG.info("BEST: {}, {}, successfully tried {}", best.getName(), ia, count);
     }
 
     /**
@@ -598,7 +601,7 @@ public class KMeansTests implements ClassifierTest, ClusterTest, ConvergeableTes
     @Test
     public void testPredict() {
         KMeans k = new KMeans(data_, 3).fit();
-        System.out.println("KMeans prediction affinity: " + k.indexAffinityScore(k.predict(data_)));
+        LOG.info("KMeans prediction affinity: {}", k.indexAffinityScore(k.predict(data_)));
     }
 
     @Test
@@ -761,7 +764,7 @@ public class KMeansTests implements ClassifierTest, ClusterTest, ConvergeableTes
                     this.model.fit();
                     this.hasRun = true;
                 } catch (InterruptedException e) {
-                    System.out.println("First failed!");
+                    LOG.info("First failed!");
                 } finally {
                     assertNotNull(this.model.getLabels());
                 }
@@ -781,7 +784,7 @@ public class KMeansTests implements ClassifierTest, ClusterTest, ConvergeableTes
                     this.labels = null;
                     was_fit = false;
                 } finally {
-                    System.out.println("Second");
+                    LOG.info("Second");
                     assertFalse(was_fit);
                     assertNull(this.labels);
                 }

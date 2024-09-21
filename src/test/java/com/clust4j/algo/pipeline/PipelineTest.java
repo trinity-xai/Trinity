@@ -45,6 +45,8 @@ import com.clust4j.utils.VecUtils;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
@@ -59,6 +61,7 @@ import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class PipelineTest implements BaseModelTest {
+    private static final Logger LOG = LoggerFactory.getLogger(PipelineTest.class);
 
     @Test
     public void testA() throws FileNotFoundException, IOException, ClassNotFoundException {
@@ -277,8 +280,8 @@ public class PipelineTest implements BaseModelTest {
          * Fit the pipe
          */
         pipeline.fit(training);
-        System.out.println("Silhouette: " + pipeline.silhouetteScore());
-        System.out.println("Affinity:   " + pipeline.indexAffinityScore(data.getLabels()));
+        LOG.info("Silhouette: {}", pipeline.silhouetteScore());
+        LOG.info("Affinity:   {}", pipeline.indexAffinityScore(data.getLabels()));
 
         // let's get predictions...
         int[] fit_labels = VecUtils.slice(pipeline.getLabels(), 0, holdout.getRowDimension()); // only first 50!!
@@ -286,7 +289,7 @@ public class PipelineTest implements BaseModelTest {
 
         // let's examine the affinity of the fit, and the predicted:
         double affinity = SupervisedMetric.INDEX_AFFINITY.evaluate(fit_labels, predicted_labels);
-        System.out.println("Predicted affinity: " + affinity);
+        LOG.info("Predicted affinity: {}", affinity);
     }
 
     @Test
@@ -324,8 +327,8 @@ public class PipelineTest implements BaseModelTest {
          * Fit the pipe
          */
         pipeline.fit(training, data.getLabels());
-        System.out.println("Default score: " + pipeline.score());
-        System.out.println("Metric score:  " + pipeline.score(BINOMIAL_ACCURACY));
+        LOG.info("Default score: {}", pipeline.score());
+        LOG.info("Metric score:  {}", pipeline.score(BINOMIAL_ACCURACY));
         assertNotNull(pipeline.getTrainingLabels());
         assertNotNull(pipeline.getLabels());
 
@@ -334,7 +337,7 @@ public class PipelineTest implements BaseModelTest {
         int[] predicted_labels = pipeline.predict(holdout);
 
         // let's examine the accuracy of the fit, and the predicted:
-        System.out.println("Predicted accuracy: " + BINOMIAL_ACCURACY.evaluate(fit_labels, predicted_labels));
+        LOG.info("Predicted accuracy: {}", BINOMIAL_ACCURACY.evaluate(fit_labels, predicted_labels));
     }
 
     @Test
@@ -365,7 +368,7 @@ public class PipelineTest implements BaseModelTest {
         int[] predicted_labels = pipeline.predict(holdout.getData());
 
         // let's examine the accuracy of the holdout, and the predicted:
-        System.out.println("Predicted accuracy: " + BINOMIAL_ACCURACY.evaluate(holdout.getLabels(), predicted_labels));
+        LOG.info("Predicted accuracy: {}", BINOMIAL_ACCURACY.evaluate(holdout.getLabels(), predicted_labels));
     }
 
     @Test
@@ -397,7 +400,7 @@ public class PipelineTest implements BaseModelTest {
         int[] predicted_labels = pipeline.predict(holdout.getData());
 
         // let's examine the accuracy of the holdout, and the predicted:
-        System.out.println("Predicted accuracy: " + BINOMIAL_ACCURACY.evaluate(holdout.getLabels(), predicted_labels));
+        LOG.info("Predicted accuracy: {}", BINOMIAL_ACCURACY.evaluate(holdout.getLabels(), predicted_labels));
     }
 
     @Test
@@ -430,7 +433,7 @@ public class PipelineTest implements BaseModelTest {
         int[] predicted_labels = pipeline.predict(holdout.getData());
 
         // let's examine the accuracy of the holdout, and the predicted:
-        System.out.println("Predicted accuracy: " + BINOMIAL_ACCURACY.evaluate(holdout.getLabels(), predicted_labels));
+        LOG.info("Predicted accuracy: {}", BINOMIAL_ACCURACY.evaluate(holdout.getLabels(), predicted_labels));
     }
 
     @Test
@@ -481,7 +484,7 @@ public class PipelineTest implements BaseModelTest {
         int[] predicted_labels = pipeline.predict(holdout.getData());
 
         // let's examine the accuracy of the holdout, and the predicted:
-        System.out.println("Predicted accuracy: " + BINOMIAL_ACCURACY.evaluate(holdout.getLabels(), predicted_labels));
+        LOG.info("Predicted accuracy: {}", BINOMIAL_ACCURACY.evaluate(holdout.getLabels(), predicted_labels));
 
         /*
          * This performs better than all of the other pipelines! This indicates we may not need all the features.
@@ -501,8 +504,8 @@ public class PipelineTest implements BaseModelTest {
 
         // Without any preprocessing:
         int[] predicted_labels = params.fitNewModel(data).getLabels();
-        System.out.println(Arrays.toString(predicted_labels));
-        System.out.println("Accuracy sans pre-processing: " + INDEX_AFFINITY.evaluate(actuals, predicted_labels));
+        LOG.info(Arrays.toString(predicted_labels));
+        LOG.info("Accuracy sans pre-processing: {}", INDEX_AFFINITY.evaluate(actuals, predicted_labels));
 
         // With weighting
         UnsupervisedPipeline<KMeans> pipe = new UnsupervisedPipeline<KMeans>(
@@ -511,7 +514,7 @@ public class PipelineTest implements BaseModelTest {
         );
 
         predicted_labels = pipe.fit(data).getLabels();
-        System.out.println(Arrays.toString(predicted_labels));
-        System.out.println("Accuracy with weighting: " + INDEX_AFFINITY.evaluate(actuals, predicted_labels));
+        LOG.info(Arrays.toString(predicted_labels));
+        LOG.info("Accuracy with weighting: {}", INDEX_AFFINITY.evaluate(actuals, predicted_labels));
     }
 }

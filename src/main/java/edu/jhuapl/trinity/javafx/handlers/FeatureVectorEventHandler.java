@@ -36,6 +36,8 @@ import javafx.application.Platform;
 import javafx.event.EventHandler;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -44,6 +46,7 @@ import java.util.List;
  * @author Sean Phillips
  */
 public class FeatureVectorEventHandler implements EventHandler<FeatureVectorEvent> {
+    private static final Logger LOG = LoggerFactory.getLogger(FeatureVectorEventHandler.class);
 
     List<FeatureVectorRenderer> renderers;
     public double[][] weights = null;
@@ -156,10 +159,8 @@ public class FeatureVectorEventHandler implements EventHandler<FeatureVectorEven
         FeatureCollection featureCollection = (FeatureCollection) event.object;
         if (null == featureCollection || featureCollection.getFeatures().isEmpty())
             return;
-        System.out.println("Imported FeatureCollection size: " +
-            featureCollection.getFeatures().size());
-        System.out.println("Imported FeatureVector width: " +
-            featureCollection.getFeatures().get(0).getData().size());
+        LOG.info("Imported FeatureCollection size: {}", featureCollection.getFeatures().size());
+        LOG.info("Imported FeatureVector width: {}", featureCollection.getFeatures().get(0).getData().size());
 
         Platform.runLater(() -> {
             App.getAppScene().getRoot().fireEvent(
@@ -228,7 +229,7 @@ public class FeatureVectorEventHandler implements EventHandler<FeatureVectorEven
                         }
                     } catch (Exception ex) {
                         //Matches....Matches?? We don't need no stinkin Matches!!
-                        System.out.println("Could not convert " + p + " : " + c + " to valid pattern map");
+                        LOG.info("Could not convert {} : {} to valid pattern map", p, c);
                     }
                 });
             });
@@ -252,7 +253,7 @@ public class FeatureVectorEventHandler implements EventHandler<FeatureVectorEven
                     FactorLabel fl = new FactorLabel(l, parsedColor);
                     newFactorLabels.add(fl);
                 } catch (Exception ex) {
-                    System.out.println("Could not convert " + l + " : " + c + " to a Factor Label");
+                    LOG.info("Could not convert {} : {} to a Factor Label", l, c);
                 }
             });
             if (!newFactorLabels.isEmpty())

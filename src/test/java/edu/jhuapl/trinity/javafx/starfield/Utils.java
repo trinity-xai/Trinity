@@ -41,6 +41,8 @@ package edu.jhuapl.trinity.javafx.starfield;
 
 import javafx.geometry.Point2D;
 import javafx.scene.shape.Line;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.nio.charset.StandardCharsets;
 import java.security.MessageDigest;
@@ -49,6 +51,7 @@ import java.util.Base64;
 import java.util.Random;
 
 public class Utils {
+    private static final Logger LOG = LoggerFactory.getLogger(Utils.class);
 
     private static Random random = new Random(); //static random generator //one generator for everything!
 
@@ -168,7 +171,7 @@ public class Utils {
         try {
             digest = MessageDigest.getInstance("SHA-256");
         } catch (NoSuchAlgorithmException e) {
-            e.printStackTrace(); //it means somethings went really wrong.
+            LOG.error("Exception", e); //it means somethings went really wrong.
         }
         byte[] hash = digest.digest(stringForEncode.getBytes(StandardCharsets.UTF_8));
         return Base64.getEncoder().encodeToString(hash);

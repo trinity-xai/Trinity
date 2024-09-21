@@ -33,6 +33,8 @@ import com.clust4j.utils.VecUtils;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.util.Precision;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
@@ -45,6 +47,7 @@ import static org.junit.jupiter.api.Assertions.assertFalse;
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class AffinityPropagationTests implements ClusterTest, ClassifierTest, ConvergeableTest, BaseModelTest {
+    private static final Logger LOG = LoggerFactory.getLogger(AffinityPropagationTests.class);
     final DataSet irisds = TestSuite.IRIS_DATASET.copy();
     final Array2DRowRealMatrix data = irisds.getData();
 
@@ -384,7 +387,7 @@ public class AffinityPropagationTests implements ClusterTest, ClassifierTest, Co
     @Test
     public void testPredict() {
         AffinityPropagation a = new AffinityPropagation(data).fit();
-        System.out.println("AffinityProp prediction affinity: " + a.indexAffinityScore(a.predict(data)));
+        LOG.info("AffinityProp prediction affinity: {}", a.indexAffinityScore(a.predict(data)));
     }
 
     @Test

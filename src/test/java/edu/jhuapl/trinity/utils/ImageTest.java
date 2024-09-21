@@ -20,6 +20,9 @@ package edu.jhuapl.trinity.utils;
  * #L%
  */
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -34,6 +37,7 @@ import static org.junit.jupiter.api.Assertions.assertTrue;
  * @author Sean Phillips
  */
 public class ImageTest {
+    private static final Logger LOG = LoggerFactory.getLogger(ImageTest.class);
 
     public ImageTest() {
     }
@@ -43,7 +47,7 @@ public class ImageTest {
      */
     //@Test
     public void scrapeFlags() throws MalformedURLException, IOException {
-        System.out.println("scrapeFlags");
+        LOG.info("scrapeFlags");
         DecimalFormat df = new DecimalFormat("##");
         df.setDecimalSeparatorAlwaysShown(false);
         df.setMaximumFractionDigits(0);

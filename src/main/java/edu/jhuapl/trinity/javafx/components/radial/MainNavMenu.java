@@ -46,11 +46,14 @@ import lit.litfx.controls.covalent.PathPane;
 import lit.litfx.controls.menus.LitRadialContainerMenuItem;
 import lit.litfx.controls.menus.LitRadialMenu;
 import lit.litfx.controls.menus.LitRadialMenuItem;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Sean Phillips
  */
 public class MainNavMenu extends LitRadialMenu {
+    private static final Logger LOG = LoggerFactory.getLogger(MainNavMenu.class);
 
     Scene scene;
 
@@ -284,7 +287,7 @@ public class MainNavMenu extends LitRadialMenu {
             }));
             addMenuItem(systemSubMenuItem);
         } catch (Exception ex) {
-            ex.printStackTrace();
+            LOG.error("Exception", ex);
         }
 
 

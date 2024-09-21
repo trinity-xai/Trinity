@@ -40,6 +40,8 @@ import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.paint.Color;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -54,6 +56,7 @@ import java.util.Set;
  */
 public enum DataUtils {
     INSTANCE;
+    private static final Logger LOG = LoggerFactory.getLogger(DataUtils.class);
     private static Random rando = new Random();
 
     public static int randomSign() {
@@ -158,10 +161,10 @@ public enum DataUtils {
 
     public static void generateProjectionPlane(List<FeatureVector> featureVectors) {
         int totalFeatureVectors = featureVectors.size();
-        System.out.println("total featurevectors: " + totalFeatureVectors);
+        LOG.info("total featurevectors: {}", totalFeatureVectors);
         int featureSize = featureVectors.get(0).getData().size();
-        System.out.println("featureSize: " + featureSize);
-        System.out.println("total combination pairs: " + featureSize * featureSize);
+        LOG.info("featureSize: {}", featureSize);
+        LOG.info("total combination pairs: {}", featureSize * featureSize);
 
         int width = 100;
         int height = 100;
@@ -184,11 +187,11 @@ public enum DataUtils {
                 projectors.add(projector);
             }
         }
-        System.out.println("Time to generate Projectors: " + Utils.totalTimeString(startTime));
+        LOG.info("Time to generate Projectors: {}", Utils.totalTimeString(startTime));
     }
 
     public static FeatureCollection convertCdcTissueGenes(List<CdcTissueGenes> cdcTissueGenesList, boolean normalize) {
-        System.out.println("Converting Tissue Gene CSVs to Feature Vectors...");
+        LOG.info("Converting Tissue Gene CSVs to Feature Vectors...");
         FeatureCollection fc = new FeatureCollection();
         List<FeatureVector> featureVectors = new ArrayList<>();
         cdcTissueGenesList.stream().forEach(c -> {
@@ -259,7 +262,7 @@ public enum DataUtils {
                 }
             }
 
-            System.out.println("cdc Tissue Gene normalization took: " + Utils.totalTimeString(startTime));
+            LOG.info("cdc Tissue Gene normalization took: {}", Utils.totalTimeString(startTime));
             //fc.getFeatures().stream().sorted(fvc).forEach(fv -> System.out.println(fv.getData().get(2)));
         }
         return fc;
@@ -312,7 +315,7 @@ public enum DataUtils {
             });
         fc.setFeatures(featureVectors);
         fc.setType(FeatureCollection.TYPESTRING);
-        System.out.println("cdccsv conversion took: " + Utils.totalTimeString(startTime));
+        LOG.info("cdccsv conversion took: {}", Utils.totalTimeString(startTime));
 
         //Normalize the values
         if (normalize) {
@@ -339,14 +342,14 @@ public enum DataUtils {
                 fv.getData().set(2,
                     DataUtils.normalize(fv.getData().get(2), min2, max2));
             });
-            System.out.println("cdccsv normalization took: " + Utils.totalTimeString(startTime));
+            LOG.info("cdccsv normalization took: {}", Utils.totalTimeString(startTime));
             //fc.getFeatures().stream().sorted(fvc).forEach(fv -> System.out.println(fv.getData().get(2)));
         }
         return fc;
     }
 
     public static List<SystemFeatures> convertSplitData(List<McclodSplitDataTsv> splitDataTsvList) {
-        System.out.println("Converting Split Data to System Features...");
+        LOG.info("Converting Split Data to System Features...");
 
         List<SystemFeatures> systemFeatures = new ArrayList<>();
         Scene scene = App.getAppScene();

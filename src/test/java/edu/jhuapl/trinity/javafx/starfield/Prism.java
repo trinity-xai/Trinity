@@ -34,11 +34,14 @@ import javafx.scene.shape.Line;
 import javafx.scene.shape.Polygon;
 import javafx.stage.Stage;
 import javafx.util.Duration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 
 
 public class Prism extends Application {
+    private static final Logger LOG = LoggerFactory.getLogger(Prism.class);
 
     public static ObservableList<Node> child;
     //
@@ -141,7 +144,7 @@ public class Prism extends Application {
                 }
                 case F3: {
                     //Show Child Count
-                    System.out.println("Child Count: " + child.size());
+                    LOG.info("Child Count: {}", child.size());
                     break;
                 }
                 case F5: {

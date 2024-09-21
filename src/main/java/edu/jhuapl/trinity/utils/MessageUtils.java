@@ -28,13 +28,13 @@ import edu.jhuapl.trinity.data.messages.FeatureCollection;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import javafx.application.Platform;
 import javafx.scene.Scene;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -42,6 +42,7 @@ import java.util.stream.Collectors;
  */
 public enum MessageUtils {
     INSTANCE;
+    private static final Logger LOG = LoggerFactory.getLogger(MessageUtils.class);
     static AtomicLong atomicLong = new AtomicLong();
 
     public static void injectFeatureCollection(Scene scene, String message) {
@@ -55,7 +56,7 @@ public enum MessageUtils {
                     FeatureVectorEvent.NEW_FEATURE_COLLECTION, featureCollection));
             });
         } catch (JsonProcessingException ex) {
-            Logger.getLogger(MessageUtils.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(null, ex);
         }
     }
 

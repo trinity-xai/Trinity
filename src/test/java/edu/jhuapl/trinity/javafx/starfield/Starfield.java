@@ -30,8 +30,11 @@ import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.stage.Stage;
 import javafx.util.Duration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 public class Starfield extends Application {
+    private static final Logger LOG = LoggerFactory.getLogger(Starfield.class);
 
     public static ObservableList<Node> child;
     public static final int width = 800;
@@ -72,7 +75,7 @@ public class Starfield extends Application {
                 }
                 case F3: {
                     //Show Child Count
-                    System.out.println("Child Count: " + child.size());
+                    LOG.info("Child Count: {}", child.size());
                     break;
                 }
             }

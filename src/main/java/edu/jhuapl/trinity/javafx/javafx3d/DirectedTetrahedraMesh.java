@@ -56,6 +56,8 @@ import javafx.scene.transform.Transform;
 import javafx.scene.transform.Translate;
 import org.fxyz3d.geometry.Face3;
 import org.fxyz3d.geometry.Point3D;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.HashMap;
@@ -72,6 +74,7 @@ import java.util.stream.IntStream;
  * 02/04/2020
  */
 public class DirectedTetrahedraMesh extends DirectedTexturedMesh {
+    private static final Logger LOG = LoggerFactory.getLogger(DirectedTetrahedraMesh.class);
 
     private final static double DEFAULT_HEIGHT = 10;
     private final static int DEFAULT_LEVEL = 1;
@@ -383,7 +386,7 @@ public class DirectedTetrahedraMesh extends DirectedTexturedMesh {
             javafx.geometry.Point3D ta = a.inverseTransform(p.x, p.y, p.z);
             return new Point3D((float) ta.getX(), (float) ta.getY(), (float) ta.getZ());
         } catch (NonInvertibleTransformException ex) {
-            System.out.println("p not invertible " + p);
+            LOG.info("p not invertible {}", p);
         }
         return p;
     }

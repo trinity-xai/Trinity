@@ -25,6 +25,9 @@ package edu.jhuapl.trinity.utils.umap;
  * #L%
  */
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.GregorianCalendar;
@@ -38,6 +41,7 @@ import java.util.Random;
  * @author Richard Littin
  */
 final class Utils {
+    private static final Logger LOG = LoggerFactory.getLogger(Utils.class);
 
     private Utils() {
     }
@@ -86,7 +90,7 @@ final class Utils {
      * @param message message to print
      */
     static void message(final String message) {
-        System.out.println(now() + message);
+        LOG.info("{}{}", now(), message);
     }
 
     /**

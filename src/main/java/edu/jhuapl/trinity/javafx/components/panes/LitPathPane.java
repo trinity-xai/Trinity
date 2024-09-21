@@ -52,16 +52,17 @@ import javafx.scene.text.Text;
 import javafx.util.Duration;
 import lit.litfx.controls.covalent.PathPane;
 import lit.litfx.controls.covalent.events.CovalentPaneEvent;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * @author Sean Phillips
  */
 public class LitPathPane extends PathPane {
+    private static final Logger LOG = LoggerFactory.getLogger(LitPathPane.class);
     Scene scene;
     Pane parent;
     boolean animating = false;
@@ -103,7 +104,7 @@ public class LitPathPane extends PathPane {
             sgRoot.setBackground(transBack);
         } catch (IOException ex) {
             sgRoot = new BorderPane(new Text("Unable to load FXML Controller: " + controllerLocation));
-            Logger.getLogger(LitPathPane.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(null, ex);
         }
         return sgRoot;
     }

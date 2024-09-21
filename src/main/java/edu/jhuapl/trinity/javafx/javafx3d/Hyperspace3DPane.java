@@ -101,6 +101,8 @@ import javafx.stage.StageStyle;
 import org.fxyz3d.geometry.Point3D;
 import org.fxyz3d.scene.Skybox;
 import org.fxyz3d.utils.CameraTransformer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -117,6 +119,7 @@ import java.util.function.Function;
 
 public class Hyperspace3DPane extends StackPane implements
     FeatureVectorRenderer, GaussianMixtureRenderer, ManifoldRenderer {
+    private static final Logger LOG = LoggerFactory.getLogger(Hyperspace3DPane.class);
     public static double ICON_FIT_HEIGHT = 64;
     public static double ICON_FIT_WIDTH = 64;
     public static double DEFAULT_INTRO_DISTANCE = -60000.0;
@@ -921,7 +924,7 @@ public class Hyperspace3DPane extends StackPane implements
                     try {
                         updateView(false); // isDirty set to false inside.
                     } catch (Exception ex) {
-                        System.out.println("Hyperspace Animation Timer: " + ex.getMessage());
+                        LOG.info("Hyperspace Animation Timer: {}", ex.getMessage(), ex);
                     }
                     isDirty = false;
                 }
@@ -1019,7 +1022,7 @@ public class Hyperspace3DPane extends StackPane implements
             data.subList(1, data.size()), true, true, true, tolerance
         );
 
-        System.out.println("scattermodel Manifold complete");
+        LOG.info("scattermodel Manifold complete");
         manifolds.add(manifold3D);
         manifoldGroup.getChildren().add(manifold3D);
         shape3DToLabel.putAll(manifold3D.shape3DToLabel);
@@ -2052,7 +2055,7 @@ public class Hyperspace3DPane extends StackPane implements
 
     @Override
     public void findClusters(ManifoldEvent.ProjectionConfig pc) {
-        System.out.println("Find Clusters for Hyperspace view.");
+        LOG.info("Find Clusters for Hyperspace view.");
         //safety check
         if (pc.dataSource != ProjectionConfig.DATA_SOURCE.HYPERSPACE) return;
         //convert featurevector space into 2D array of doubles

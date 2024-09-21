@@ -45,18 +45,19 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * @author Sean Phillips
  */
 public class WaveformPane extends LitPathPane {
+    private static final Logger LOG = LoggerFactory.getLogger(WaveformPane.class);
     public static Color transDarkCyan = Color.DARKCYAN.deriveColor(1, 1, 1, 0.1);
     Background transBackground = new Background(new BackgroundFill(
         transDarkCyan, CornerRadii.EMPTY, Insets.EMPTY));
@@ -268,7 +269,7 @@ public class WaveformPane extends LitPathPane {
     }
 
     public void setWaveform(File audioFile) {
-        System.out.println("Processing audio file...");
+        LOG.info("Processing audio file...");
         int indexOfPeriod = audioFile.getPath().lastIndexOf(".");
         if (indexOfPeriod > 0) {
             String ext = audioFile.getPath().substring(indexOfPeriod + 1);
@@ -287,7 +288,7 @@ public class WaveformPane extends LitPathPane {
                             getScene().getRoot().fireEvent(new CommandTerminalEvent(
                                 ex.getMessage(), new Font("Consolas", 20), Color.RED));
                         });
-                        Logger.getLogger(WaveformPane.class.getName()).log(Level.SEVERE, null, ex);
+                        LOG.error(null, ex);
                     }
                 } else {
                     waveformCanvas.startVisualization(audioFile);
@@ -298,7 +299,7 @@ public class WaveformPane extends LitPathPane {
                         "Could not load this file type. Types supported: .wav | .flac",
                         new Font("Consolas", 20), Color.YELLOW));
                 });
-                System.out.println("Could not load this file type.\nTypes supported: .wav | .flac");
+                LOG.info("Could not load this file type.\nTypes supported: .wav | .flac");
             }
         } else {
             Platform.runLater(() -> {
@@ -306,7 +307,7 @@ public class WaveformPane extends LitPathPane {
                     "Could not load this file type. Types supported: .wav | .flac",
                     new Font("Consolas", 20), Color.YELLOW));
             });
-            System.out.println("Could not determine audio file type.\nTypes supported: .wav | .flac");
+            LOG.info("Could not determine audio file type.\nTypes supported: .wav | .flac");
         }
     }
 }

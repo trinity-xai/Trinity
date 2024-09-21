@@ -129,6 +129,8 @@ import javafx.util.Duration;
 import org.fxyz3d.geometry.Point3D;
 import org.fxyz3d.scene.Skybox;
 import org.fxyz3d.utils.CameraTransformer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -143,8 +145,6 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 
 /**
@@ -153,6 +153,7 @@ import java.util.stream.Collectors;
 
 public class Projections3DPane extends StackPane implements
     FeatureVectorRenderer, GaussianMixtureRenderer, ManifoldRenderer {
+    private static final Logger LOG = LoggerFactory.getLogger(Projections3DPane.class);
     public static double ICON_FIT_HEIGHT = 64;
     public static double ICON_FIT_WIDTH = 64;
     public static double DEFAULT_INTRO_DISTANCE = -60000.0;
@@ -1063,7 +1064,7 @@ public class Projections3DPane extends StackPane implements
         scene.addEventHandler(ManifoldEvent.CLUSTER_SELECTION_MODE, e -> {
             boolean isActive = (boolean) e.object1;
             clusterSelectionMode = isActive;
-            System.out.println("Cluster Selection Mode: " + clusterSelectionMode);
+            LOG.info("Cluster Selection Mode: {}", clusterSelectionMode);
         });
 
         scene.addEventHandler(ManifoldEvent.SAVE_PROJECTION_DATA, e -> {
@@ -1076,7 +1077,7 @@ public class Projections3DPane extends StackPane implements
                 fcf.featureCollection = fc;
                 fcf.writeContent();
             } catch (IOException ex) {
-                Logger.getLogger(Projections3DPane.class.getName()).log(Level.SEVERE, null, ex);
+                LOG.error(null, ex);
             }
         });
         scene.addEventHandler(ManifoldEvent.CLEAR_DISTANCE_CONNECTORS, e -> {
@@ -1130,7 +1131,7 @@ public class Projections3DPane extends StackPane implements
                     try {
                         updateView(false); // isDirty set to false inside.
                     } catch (Exception ex) {
-                        System.out.println("Hyperspace Animation Timer: " + ex.getMessage());
+                        LOG.info("Hyperspace Animation Timer: {}", ex.getMessage(), ex);
                     }
                     isDirty = false;
                 }
@@ -1256,7 +1257,7 @@ public class Projections3DPane extends StackPane implements
         scene.addEventHandler(ApplicationEvent.SHOULDER_CAMERA_MODE, e -> {
             javafx.geometry.Point3D p = sceneRoot.localToScene(
                 projectileSystem.playerShip.getLocation(), false);
-            System.out.println("Pivoting for Shoulder Cam at: " + p.toString());
+            LOG.info("Pivoting for Shoulder Cam at: {}", p.toString());
             cameraTransform.setTranslateX(0);
             cameraTransform.setTranslateY(0);
             cameraTransform.setTranslateZ(0);
@@ -1338,7 +1339,7 @@ public class Projections3DPane extends StackPane implements
     }
 
     private void resetAsteroids() {
-        System.out.println("Resetting Shapes...");
+        LOG.info("Resetting Shapes...");
         projectileSystem.clearAllHitShapes();
         projectileSystem.clearAllHittables();
         debugGroup.getChildren().removeIf(c -> c instanceof HitShape3D);
@@ -1350,7 +1351,7 @@ public class Projections3DPane extends StackPane implements
                 try {
                     projectileSystem.makeAsteroidFromPoints(man3D);
                 } catch (Exception ex) {
-                    System.out.println("Could not make HitShape3D: " + ex.getMessage());
+                    LOG.info("Could not make HitShape3D: {}", ex.getMessage(), ex);
                 }
             });
     }
@@ -1615,7 +1616,7 @@ public class Projections3DPane extends StackPane implements
         if ((projectionType == PROJECTION_TYPE.FIXED_ORTHOGRAPHIC && enableXForm && me.isSecondaryButtonDown())) {
             double yChange = (((mouseDeltaX * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180);
             double xChange = (((-mouseDeltaY * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180);
-            System.out.println("BINDCAMERAROTATIONS Rotating data and not camera: " + yChange + " " + xChange);
+            LOG.info("BINDCAMERAROTATIONS Rotating data and not camera: {} {}", yChange, xChange);
             dataXForm.addRotation(yChange, Rotate.Y_AXIS);
             dataXForm.addRotation(xChange, Rotate.X_AXIS);
         }
@@ -2327,8 +2328,8 @@ public class Projections3DPane extends StackPane implements
             selectedSphereA.getTranslateY(),
             selectedSphereA.getTranslateZ());
         javafx.geometry.Point3D p2 = selectedManifoldA.getClosestHullPoint(p1);
-        System.out.println("Difference: " + p1.subtract(p2).toString());
-        System.out.println("Distance: " + p1.distance(p2));
+        LOG.info("Difference: {}", p1.subtract(p2).toString());
+        LOG.info("Distance: {}", p1.distance(p2));
         //Fire off event to create new distance object
         String distanceLabel =
             sphereToFeatureVectorMap.get(selectedSphereA).getLabel()
@@ -2362,8 +2363,8 @@ public class Projections3DPane extends StackPane implements
             selectedSphereB.getTranslateX(),
             selectedSphereB.getTranslateY(),
             selectedSphereB.getTranslateZ());
-        System.out.println("Difference: " + p1.subtract(p2).toString());
-        System.out.println("Distance: " + p1.distance(p2));
+        LOG.info("Difference: {}", p1.subtract(p2).toString());
+        LOG.info("Distance: {}", p1.distance(p2));
         //Fire off event to create new distance object
         String distanceLabel =
             sphereToFeatureVectorMap.get(selectedSphereA).getLabel()
@@ -2393,7 +2394,7 @@ public class Projections3DPane extends StackPane implements
     }
 
     private void processDistanceClick(Manifold3D manifold3D) {
-        System.out.println("Point: " + manifold3D.toString());
+        LOG.info("Point: {}", manifold3D.toString());
         if (null == selectedManifoldA) {
             selectedManifoldA = manifold3D;
             //add some sort of visual highlight
@@ -2409,7 +2410,7 @@ public class Projections3DPane extends StackPane implements
     }
 
     private void processDistanceClick(Sphere sphere) {
-        System.out.println("Point: " + sphere.toString());
+        LOG.info("Point: {}", sphere.toString());
         if (null == selectedSphereA) {
             selectedSphereA = sphere;
             //@TODO add some sort of visual highlight
@@ -2701,7 +2702,7 @@ public class Projections3DPane extends StackPane implements
         //update the manifold to manifold3D mapping
         Manifold.globalManifoldToManifold3DMap.put(manifold, manifold3D);
         //announce to the world of the new manifold and its shape
-        System.out.println("Manifold3D generation complete for " + label);
+        LOG.info("Manifold3D generation complete for {}", label);
         getScene().getRoot().fireEvent(new ManifoldEvent(
             ManifoldEvent.MANIFOLD3D_OBJECT_GENERATED, manifold, manifold3D));
     }
@@ -2745,7 +2746,7 @@ public class Projections3DPane extends StackPane implements
                 addFeatureCollection(fc);
                 updateTrajectory3D(false);
             } catch (InterruptedException | ExecutionException ex) {
-                Logger.getLogger(Projections3DPane.class.getName()).log(Level.SEVERE, null, ex);
+                LOG.error(null, ex);
             }
         });
         Thread thread = new Thread(task);
@@ -2833,7 +2834,7 @@ public class Projections3DPane extends StackPane implements
                 addFeatureCollection(fc);
                 updateTrajectory3D(false);
             } catch (InterruptedException | ExecutionException ex) {
-                Logger.getLogger(Projections3DPane.class.getName()).log(Level.SEVERE, null, ex);
+                LOG.error(null, ex);
             }
         });
         Thread thread = new Thread(task);
@@ -2979,7 +2980,7 @@ public class Projections3DPane extends StackPane implements
                 getScene().getRoot().fireEvent(new ManifoldEvent(
                     ManifoldEvent.MANIFOLD3D_OBJECT_GENERATED, manifold, manifold3D));
             } else {
-                System.out.println("Cluster has less than 4 points");
+                LOG.info("Cluster has less than 4 points");
             }
 //            i++;
 //            if(i>0) break;

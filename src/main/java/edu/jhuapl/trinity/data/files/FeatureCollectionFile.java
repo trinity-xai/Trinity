@@ -23,6 +23,8 @@ package edu.jhuapl.trinity.data.files;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.jhuapl.trinity.data.messages.FeatureCollection;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
@@ -35,6 +37,7 @@ import java.nio.file.Files;
  * @author Sean Phillips
  */
 public class FeatureCollectionFile extends File implements Transferable {
+    private static final Logger LOG = LoggerFactory.getLogger(FeatureCollectionFile.class);
     public static String FILE_DESC1 = "\"type\": \"FeatureCollection\"";
     public static String FILE_DESC2 = "\"type\":\"FeatureCollection\"";
     public static final DataFlavor DATA_FLAVOR = new DataFlavor(FeatureCollectionFile.class, "FEATURECOLLECTION");
@@ -108,7 +111,7 @@ public class FeatureCollectionFile extends File implements Transferable {
             ObjectMapper mapper = new ObjectMapper();
             //mapper.configure(SerializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
             mapper.writeValue(this, featureCollection);
-            System.out.println("FeatureCollection serialized to file.");
+            LOG.info("FeatureCollection serialized to file.");
         }
     }
 

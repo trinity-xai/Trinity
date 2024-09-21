@@ -63,6 +63,8 @@ import javafx.stage.Stage;
 import javafx.util.Duration;
 import org.fxyz3d.geometry.MathUtils;
 import org.fxyz3d.utils.CameraTransformer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -72,6 +74,7 @@ import java.util.Map;
 import java.util.Random;
 
 public class DalleWalleTest extends Application {
+    private static final Logger LOG = LoggerFactory.getLogger(DalleWalleTest.class);
     PerspectiveCamera camera = new PerspectiveCamera(true);
     public Group sceneRoot = new Group();
     public SubScene subScene;
@@ -114,13 +117,13 @@ public class DalleWalleTest extends Application {
         parseCommandLine();
         //ex: --scenario="C:\dev\cameratests" --geometry=1024x768+100+100
         if (null != namedParameters) {
-            System.out.println("Checking for arguments...");
+            LOG.info("Checking for arguments...");
             if (namedParameters.containsKey("scanpath")) {
                 String scanPathString = namedParameters.get("scanpath");
-                System.out.println("Attempting to scan path: " + scanPathString);
+                LOG.info("Attempting to scan path: {}", scanPathString);
                 File scanPathFile = new File(scanPathString);
                 if (!scanPathFile.isDirectory() || !scanPathFile.canRead()) {
-                    System.out.println("Unable to access or read path as directory. Exiting...");
+                    LOG.info("Unable to access or read path as directory. Exiting...");
                     System.exit(-1);
                 }
             }
@@ -129,7 +132,7 @@ public class DalleWalleTest extends Application {
         //Start Tracking mouse movements only when a button is pressed
         subScene.setOnMousePressed((MouseEvent me) -> {
             if (me.isSynthesized())
-                System.out.println("isSynthesized");
+                LOG.info("isSynthesized");
             mousePosX = me.getSceneX();
             mousePosY = me.getSceneY();
             mouseOldX = me.getSceneX();
@@ -251,7 +254,7 @@ public class DalleWalleTest extends Application {
         southPole.setTranslateY(originRadius);
 
         sceneRoot.getChildren().addAll(origin, northPole, southPole);
-        System.out.println("Total Images Loaded: " + nodes.size());
+        LOG.info("Total Images Loaded: {}", nodes.size());
         Platform.runLater(() -> {
             animateImages();
         });
@@ -447,13 +450,13 @@ public class DalleWalleTest extends Application {
         unnamedParameters = parameters.getUnnamed();
 
         if (!namedParameters.isEmpty()) {
-            System.out.println("NamedParameters :");
+            LOG.info("NamedParameters :");
             namedParameters.entrySet().forEach(entry -> {
-                System.out.println("\t" + entry.getKey() + " : " + entry.getValue());
+                LOG.info("\t{} : {}", entry.getKey(), entry.getValue());
             });
         }
         if (!unnamedParameters.isEmpty()) {
-            System.out.println("UnnamedParameters :");
+            LOG.info("UnnamedParameters :");
             unnamedParameters.forEach(System.out::println);
         }
     }

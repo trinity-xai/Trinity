@@ -22,6 +22,8 @@ package edu.jhuapl.trinity.data;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.function.Function;
@@ -32,6 +34,7 @@ import java.util.function.Function;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ZeroPilotLatents {
+    private static final Logger LOG = LoggerFactory.getLogger(ZeroPilotLatents.class);
     private int number;
     private ArrayList<Double> latents;
     private String labels;
@@ -51,7 +54,7 @@ public class ZeroPilotLatents {
             zeroPilotLatents.setLabels(tokens[tokens.length - 2]);
             zeroPilotLatents.setTraj_num(Double.parseDouble(tokens[tokens.length - 1]));
         } catch (NumberFormatException ex) {
-            ex.printStackTrace();
+            LOG.error("Exception", ex);
         }
         return zeroPilotLatents;
     };

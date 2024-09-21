@@ -42,6 +42,8 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.shape.Shape3D;
 import javafx.scene.text.Text;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.text.DecimalFormat;
@@ -52,6 +54,7 @@ import java.util.Map.Entry;
  * @author Sean Phillips
  */
 public class FeatureVectorCallout extends VBox {
+    private static final Logger LOG = LoggerFactory.getLogger(FeatureVectorCallout.class);
     public static double CHIP_FIT_WIDTH = 200;
     public static double IMAGE_FIT_HEIGHT = 200;
     public static double IMAGE_FIT_WIDTH = 200;
@@ -247,7 +250,7 @@ public class FeatureVectorCallout extends VBox {
                 //System.out.println("<Trinity Debug> HTTP Link: fv.getImageURL()== " + featureVector.getImageURL());
                 Image image = HttpsUtils.getImage(featureVector.getImageURL());
                 if (image.getException() != null)
-                    System.out.println("Exception info: " + image.getException().toString());
+                    LOG.info("Exception info: {}", image.getException().toString());
                 iv = new ImageView(image);
             } else {
                 if (bboxOnly) {
@@ -267,7 +270,7 @@ public class FeatureVectorCallout extends VBox {
                 }
             }
         } catch (Exception ex) {
-            System.out.println("Oops... problem getting image! " + ex.getMessage());
+            LOG.info("Oops... problem getting image! {}", ex.getMessage(), ex);
             iv = new ImageView(ResourceUtils.loadIconFile("noimage"));
         }
         if (iv == null)

@@ -23,6 +23,8 @@ package edu.jhuapl.trinity.data.files;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.jhuapl.trinity.data.messages.ManifoldData;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
@@ -35,6 +37,7 @@ import java.nio.file.Files;
  * @author Sean Phillips
  */
 public class ManifoldDataFile extends File implements Transferable {
+    private static final Logger LOG = LoggerFactory.getLogger(ManifoldDataFile.class);
     public static String FILE_DESC1 = "\"messageType\": \"manifold_data\"";
     public static String FILE_DESC2 = "\"messageType\":\"manifold_data\"";
     public static final DataFlavor DATA_FLAVOR = new DataFlavor(ManifoldDataFile.class, "ManifoldData");
@@ -106,7 +109,7 @@ public class ManifoldDataFile extends File implements Transferable {
             ObjectMapper mapper = new ObjectMapper();
             //mapper.configure(SerializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
             mapper.writeValue(this, manifoldData);
-            System.out.println("ManifoldData serialized to file.");
+            LOG.info("ManifoldData serialized to file.");
         }
     }
 

@@ -23,6 +23,8 @@ import org.apache.commons.math3.exception.DimensionMismatchException;
 import org.apache.commons.math3.util.FastMath;
 import org.apache.commons.math3.util.Precision;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -31,6 +33,7 @@ import java.util.Random;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class VectorTests {
+    private static final Logger LOG = LoggerFactory.getLogger(VectorTests.class);
     final static double[] empty = new double[]{};
 
     @Test
@@ -220,7 +223,7 @@ public class VectorTests {
             assertTrue(VecUtils.equalsExactly(VecUtils.arange(10, 0), new int[]{10, 9, 8, 7, 6, 5, 4, 3, 2, 1}));
             assertTrue(VecUtils.equalsExactly(VecUtils.arange(10, 0, -2), new int[]{10, 8, 6, 4, 2}));
 
-            System.out.println(Arrays.toString(VecUtils.arange(10, 0, -3)));
+            LOG.info(Arrays.toString(VecUtils.arange(10, 0, -3)));
         });
     }
 

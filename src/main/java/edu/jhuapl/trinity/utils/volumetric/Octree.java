@@ -22,6 +22,8 @@ package edu.jhuapl.trinity.utils.volumetric;
 
 import edu.jhuapl.trinity.utils.volumetric.VolumeUtils.Adjacency;
 import javafx.geometry.Point3D;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
@@ -42,6 +44,7 @@ import static java.lang.Math.sqrt;
  * the process of searching nearest neighbors of points.
  */
 public class Octree {
+    private static final Logger LOG = LoggerFactory.getLogger(Octree.class);
     /**
      * the root node of the octree,
      * the size of root node is the bounding box of point cloud
@@ -76,7 +79,7 @@ public class Octree {
      */
     public void buildIndex(List<Point3D> points) {
         if (points.size() < 1) {
-            System.err.println("Warning: input for buildIndex() is an empty list.");
+            LOG.error("Warning: input for buildIndex() is an empty list.");
             return;
         }
 

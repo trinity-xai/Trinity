@@ -20,6 +20,9 @@ package edu.jhuapl.trinity;
  * #L%
  */
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.util.LinkedList;
@@ -30,6 +33,8 @@ import java.util.Scanner;
  * @author Sean Phillips
  */
 public class SlocCounter {
+    private static final Logger LOG = LoggerFactory.getLogger(SlocCounter.class);
+
     public static void main(String[] args) throws FileNotFoundException {
 
         final String folderPath = "C:\\dev\\trinity\\trinity\\src";
@@ -40,7 +45,7 @@ public class SlocCounter {
         while (!folderList.isEmpty()) {
             final File folder = folderList.remove(0);
             if (folder.isDirectory() && folder.exists()) {
-                System.out.println("Scanning " + folder.getName());
+                LOG.info("Scanning {}", folder.getName());
                 final File[] fileList = folder.listFiles();
                 for (final File file : fileList) {
                     if (file.isDirectory()) {
@@ -62,11 +67,11 @@ public class SlocCounter {
                             final String temp = ("     " + lineCount);
                             lineCountString = temp.substring(temp.length() - 5);
                         }
-                        System.out.println(lineCountString + " lines in " + file.getName());
+                        LOG.info("{} lines in {}", lineCountString, file.getName());
                     }
                 }
             }
         }
-        System.out.println("Scan Complete: " + totalLineCount + " lines total");
+        LOG.info("Scan Complete: {} lines total", totalLineCount);
     }
 }

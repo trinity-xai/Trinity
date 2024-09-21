@@ -41,6 +41,8 @@ import javafx.scene.shape.MeshView;
 import javafx.scene.transform.Rotate;
 import org.fxyz3d.geometry.Face3;
 import org.fxyz3d.geometry.Vector3D;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -50,8 +52,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 import java.util.stream.Stream;
@@ -60,6 +60,7 @@ import java.util.stream.Stream;
  * @author Sean Phillips
  */
 public class HitShape3D extends MeshView implements Hittable {
+    private static final Logger LOG = LoggerFactory.getLogger(HitShape3D.class);
     TexturedManifold texturedManifold = null;
     public PhongMaterial asteroidMaterial = null;
     public long id = 0;
@@ -106,7 +107,7 @@ public class HitShape3D extends MeshView implements Hittable {
             asteroidMaterial = new PhongMaterial(Color.SLATEGRAY,
                 writableDiffuseImage, selfImage, bumpImage, null);
         } catch (IOException ex) {
-            Logger.getLogger(HitShape3D.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(null, ex);
             asteroidMaterial = new PhongMaterial(c);
         }
         setMaterial(asteroidMaterial);
@@ -143,7 +144,7 @@ public class HitShape3D extends MeshView implements Hittable {
                     asteroidMaterial.setDiffuseMap(textureImage);
                     event.setDropCompleted(true);
                 } catch (MalformedURLException ex) {
-                    Logger.getLogger(HitShape3D.class.getName()).log(Level.SEVERE, null, ex);
+                    LOG.error(null, ex);
                     event.setDropCompleted(false);
                 }
                 event.consume();
@@ -245,7 +246,7 @@ public class HitShape3D extends MeshView implements Hittable {
         Point3D velocityReflection = null;
         Double shortestDistance = null;
         //Go through each normal
-        System.out.print("Planar distances: ");
+        LOG.info("Planar distances: ");
         for (int i = 0; i < 6; i++) {
             //find the distance to the plane
             double d = -normals.get(i).dotProduct(positions.get(i));
@@ -254,7 +255,7 @@ public class HitShape3D extends MeshView implements Hittable {
                 -(gloOriginInLoc.dotProduct(normals.get(i)) + d)
                     / (gloDirection.dotProduct(normals.get(i)))
             );
-            System.out.print("(" + d + ", " + t + ") ");
+            LOG.info("({}, {}) ", d, t);
             //only do the reflection if its a shorter distance
             if (null == shortestDistance || t < shortestDistance) {
                 shortestDistance = t;
@@ -268,7 +269,7 @@ public class HitShape3D extends MeshView implements Hittable {
                 velocityReflection = new Point3D(nV.x, nV.y, nV.z);
             }
         }
-        System.out.println(".");
+        LOG.info(".");
         return velocityReflection;
     }
 
@@ -409,7 +410,7 @@ public class HitShape3D extends MeshView implements Hittable {
 
     public boolean intersectsPlanes(Point3D testPoint, Point3D velocity) {
         if (id == 9001) {
-            System.out.println("Over 9000... " + testPoint.getX());
+            LOG.info("Over 9000... {}", testPoint.getX());
         }
         //make line vector based on testPoint and velocity
         //test using previous point plus velocity
@@ -455,7 +456,7 @@ public class HitShape3D extends MeshView implements Hittable {
         //@DEBUG SMP
         boolean hitPlane2 = intersectsPlane(line, xPlane2);
         if (hitPlane2) {
-            System.out.println("hitplane2");
+            LOG.info("hitplane2");
             boolean debugCheck = intersectsPlane(line, xPlane2);
         }
 

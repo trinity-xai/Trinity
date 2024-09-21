@@ -38,6 +38,8 @@ import edu.jhuapl.trinity.javafx.events.GaussianMixtureEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import javafx.application.Platform;
 import javafx.scene.Scene;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.concurrent.atomic.AtomicInteger;
@@ -46,6 +48,7 @@ import java.util.concurrent.atomic.AtomicInteger;
  * @author Sean Phillips
  */
 public class MessageProcessor {
+    private static final Logger LOG = LoggerFactory.getLogger(MessageProcessor.class);
     AtomicInteger ai;
     /**
      * Provides deserializaton support for JSON messages
@@ -110,23 +113,23 @@ public class MessageProcessor {
             });
         } else if (ChannelFrame.isChannelFrame(message)) {
             ChannelFrame frame = getMapper().readValue(message, ChannelFrame.class);
-            System.out.println("Frame: " + frame.getFrameId());
-            System.out.println("Channel Values: " + frame.getChannelData());
+            LOG.info("Frame: {}", frame.getFrameId());
+            LOG.info("Channel Values: {}", frame.getChannelData());
             //@fire event to load data in JavaFX Scene
             Platform.runLater(() -> {
                 scene.getRoot().fireEvent(new ChannelFrameDataEvent(frame));
             });
         } else if (FactorAnalysisState.isFactorAnalysisState(message)) {
             FactorAnalysisState fas = getMapper().readValue(message, FactorAnalysisState.class);
-            System.out.println("Frame ID: " + fas.getFrameId());
-            System.out.println("Factor Values: " + fas.getFactors());
+            LOG.info("Frame ID: {}", fas.getFrameId());
+            LOG.info("Factor Values: {}", fas.getFactors());
             //@fire event to load data in JavaFX Scene
             Platform.runLater(() -> {
                 scene.getRoot().fireEvent(new FactorAnalysisDataEvent(fas));
             });
         }
         if (message.equalsIgnoreCase("howdy")) {
-            System.out.println("Well hello...");
+            LOG.info("Well hello...");
         }
     }
 

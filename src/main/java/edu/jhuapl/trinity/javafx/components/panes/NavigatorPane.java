@@ -41,16 +41,17 @@ import javafx.scene.layout.VBox;
 import javafx.scene.media.MediaView;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * @author Sean Phillips
  */
 public class NavigatorPane extends LitPathPane {
+    private static final Logger LOG = LoggerFactory.getLogger(NavigatorPane.class);
     BorderPane bp;
     public static double DEFAULT_FIT_WIDTH = 512;
     public static int PANE_WIDTH = 800;
@@ -141,7 +142,7 @@ public class NavigatorPane extends LitPathPane {
                                 new Font("Consolas", 20), Color.RED));
                     });
 
-                    Logger.getLogger(NavigatorPane.class.getName()).log(Level.SEVERE, null, ex);
+                    LOG.error(null, ex);
                 }
             }
         });

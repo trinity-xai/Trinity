@@ -36,11 +36,14 @@ import javafx.scene.control.DialogPane;
 import javafx.scene.layout.Background;
 import javafx.scene.paint.Color;
 import javafx.stage.StageStyle;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Sean Phillips
  */
 public class ProjectUmapFeaturesTask extends Task {
+    private static final Logger LOG = LoggerFactory.getLogger(ProjectUmapFeaturesTask.class);
     Scene scene;
     FeatureCollection originalFC;
     Umap umap;
@@ -117,7 +120,7 @@ public class ProjectUmapFeaturesTask extends Task {
             scene.getRoot().fireEvent(
                 new ApplicationEvent(ApplicationEvent.UPDATE_BUSY_INDICATOR, ps));
         });
-        System.out.println("mapping projected UMAP data back to FeatureVectors...");
+        LOG.info("mapping projected UMAP data back to FeatureVectors...");
         FeatureCollection projectedFC = FeatureCollection.fromData(umapMatrix);
         for (int i = 0; i < originalFC.getFeatures().size(); i++) {
             FeatureVector origFV = originalFC.getFeatures().get(i);

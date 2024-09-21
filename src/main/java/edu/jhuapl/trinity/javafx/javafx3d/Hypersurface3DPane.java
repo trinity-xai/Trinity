@@ -122,6 +122,8 @@ import javafx.util.Duration;
 import org.fxyz3d.geometry.Point3D;
 import org.fxyz3d.scene.Skybox;
 import org.fxyz3d.utils.CameraTransformer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.imageio.ImageIO;
 import java.io.File;
@@ -135,8 +137,6 @@ import java.util.List;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.function.Function;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * @author Sean Phillips
@@ -144,6 +144,7 @@ import java.util.logging.Logger;
 
 public class Hypersurface3DPane extends StackPane
     implements SemanticMapRenderer, FeatureVectorRenderer, ShapleyVectorRenderer {
+    private static final Logger LOG = LoggerFactory.getLogger(Hypersurface3DPane.class);
     public static double DEFAULT_INTRO_DISTANCE = -30000.0;
     public static double DEFAULT_ZOOM_TIME_MS = 500.0;
     public static double CHIP_FIT_WIDTH = 200;
@@ -503,7 +504,7 @@ public class Hypersurface3DPane extends StackPane
 
         subScene.setOnMousePressed((MouseEvent me) -> {
             if (me.isSynthesized())
-                System.out.println("isSynthesized");
+                LOG.info("isSynthesized");
             mousePosX = me.getSceneX();
             mousePosY = me.getSceneY();
             mouseOldX = me.getSceneX();
@@ -725,7 +726,7 @@ public class Hypersurface3DPane extends StackPane
                 if (animated || isDirty) {
                     startTime = System.nanoTime();
                     updateTheMesh();
-                    System.out.println("updateTheMesh(): " + Utils.totalTimeString(startTime));
+                    LOG.info("updateTheMesh(): {}", Utils.totalTimeString(startTime));
                 }
             }
         };
@@ -1183,7 +1184,7 @@ public class Hypersurface3DPane extends StackPane
     Point3D vertP3D;
 
     private void loadSurf3D() {
-        System.out.println("Rendering Hypersurface Mesh...");
+        LOG.info("Rendering Hypersurface Mesh...");
         long startTime = System.nanoTime();
         generateRandos(xWidth, zWidth, yScale);
         surfPlot = new HyperSurfacePlotMesh(xWidth, zWidth,
@@ -1695,8 +1696,7 @@ public class Hypersurface3DPane extends StackPane
         SemanticReconstruction reconstruction = semanticMapCollection.getReconstruction();
         SemanticReconstructionMap rMap = reconstruction.getData_vars().getNeural_timeseries();
         List<List<Double>> neuralData = rMap.getData();
-        System.out.println("Neural Data dimensions: " + neuralData.size()
-            + " entries at " + neuralData.get(0).size() + " frame width.");
+        LOG.info("Neural Data dimensions: {} entries at {} frame width.", neuralData.size(), neuralData.get(0).size());
         //need to add every other data point in the width dimension (goes in phase/mag pairs)
         long startTime = System.nanoTime();
         dataGrid.clear();
@@ -1708,7 +1708,7 @@ public class Hypersurface3DPane extends StackPane
             }
             dataGrid.add(justTheMags);
         }
-        System.out.println("Mapped Neural Magnitudes to Hypersurface: " + Utils.totalTimeString(startTime));
+        LOG.info("Mapped Neural Magnitudes to Hypersurface: {}", Utils.totalTimeString(startTime));
         zWidth = neuralData.size();
         xWidth = neuralData.get(0).size() / 2;
         zWidthSpinner.getValueFactory().setValue(zWidth);
@@ -1832,7 +1832,7 @@ public class Hypersurface3DPane extends StackPane
     private void tessellateImage(Image image) {
         lastImage = image;
         long startTime = System.nanoTime();
-        System.out.print("Mapping Image Raster to Feature Vector... ");
+        LOG.info("Mapping Image Raster to Feature Vector... ");
         startTime = System.nanoTime();
         int rows = Double.valueOf(image.getHeight()).intValue();
         int columns = Double.valueOf(image.getWidth()).intValue();
@@ -1864,7 +1864,7 @@ public class Hypersurface3DPane extends StackPane
             dataGrid.add(currentDataRow);
         }
         Utils.printTotalTime(startTime);
-        System.out.print("Injecting Mesh into Hypersurface... ");
+        LOG.info("Injecting Mesh into Hypersurface... ");
         startTime = System.nanoTime();
         zWidth = rows;
         xWidth = columns;
@@ -1888,7 +1888,7 @@ public class Hypersurface3DPane extends StackPane
                 tessellateImage(wi);
                 lastImage = wi;
                 //sneakily insert current function values (shapley) into vertices
-                System.out.print("injecting Shapley function values into Vertices... ");
+                LOG.info("injecting Shapley function values into Vertices... ");
                 long startTime = System.nanoTime();
                 surfPlot.functionValues.clear();
                 for (int i = 0; i < shapleyVectors.size(); i++) {
@@ -1905,7 +1905,7 @@ public class Hypersurface3DPane extends StackPane
                 }
             }
         } catch (IOException ex) {
-            Logger.getLogger(Hypersurface3DPane.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(null, ex);
         }
     }
 

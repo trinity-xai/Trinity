@@ -22,14 +22,14 @@ package edu.jhuapl.trinity.utils;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
 import java.util.Properties;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * @author Sean Phillips
@@ -38,7 +38,7 @@ import java.util.logging.Logger;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class Configuration {
-
+    private static final Logger LOG = LoggerFactory.getLogger(Configuration.class);
     public static String DEFAULT_PROPERTIES_FILENAME = "config_props.properties";
     public static String BUILD_PROPERTIES_FILENAME = "/edu/jhuapl/trinity/build.properties";
     public Properties configProps;
@@ -58,7 +58,7 @@ public class Configuration {
         try (InputStream is = Configuration.class.getResourceAsStream(BUILD_PROPERTIES_FILENAME)) {
             madProps.load(is);
         } catch (IOException ex) {
-            Logger.getLogger(Configuration.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(null, ex);
         }
         return madProps;
     }
@@ -68,7 +68,7 @@ public class Configuration {
         try (InputStream is = Configuration.class.getResourceAsStream(BUILD_PROPERTIES_FILENAME)) {
             madProps.load(is);
         } catch (IOException ex) {
-            Logger.getLogger(Configuration.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(null, ex);
         }
         return (String) madProps.get("timestamp");
     }
@@ -79,7 +79,7 @@ public class Configuration {
         try (InputStream is = Configuration.class.getResourceAsStream(DEFAULT_PROPERTIES_FILENAME)) {
             madProps.load(is);
         } catch (IOException ex) {
-            Logger.getLogger(Configuration.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(null, ex);
         }
         newConfig.configProps = madProps;
         return newConfig;

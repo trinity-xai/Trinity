@@ -22,6 +22,8 @@ package edu.jhuapl.trinity.data.messages;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.zeromq.SocketType;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ;
@@ -31,13 +33,12 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * @author Sean Phillips
  */
 public class ZeroMQGaussianMixtureTestApp {
+    private static final Logger LOG = LoggerFactory.getLogger(ZeroMQGaussianMixtureTestApp.class);
 
     public static final String TOPIC = "ZeroMQ Test Topic";
     public static String PUSH_CONNECT = "tcp://localhost:5563";
@@ -53,14 +54,14 @@ public class ZeroMQGaussianMixtureTestApp {
         ObjectMapper mapper = new ObjectMapper();
 
         Thread thread = new Thread(() -> {
-            System.out.println("Starting Publisher Thread...");
+            LOG.info("Starting Publisher Thread...");
             // Prepare our context and publisher
             try (ZContext context = new ZContext()) {
                 Socket pusher = context.createSocket(SocketType.PUSH);
                 pusher.setSendTimeOut(10);
                 pusher.connect(PUSH_CONNECT);
                 int update_nbr = 0;
-                System.out.println("Gaussian Mixutre Publisher starting send loop...");
+                LOG.info("Gaussian Mixutre Publisher starting send loop...");
 //                while (!Thread.currentThread().isInterrupted()) {
                 GaussianMixture gaussianMixture = new GaussianMixture();
                 gaussianMixture.setComponent("yolov4_hagerstown");
@@ -85,16 +86,16 @@ public class ZeroMQGaussianMixtureTestApp {
                 try {
                     String fvAsString = mapper.writeValueAsString(gaussianMixture);
                     pusher.send(fvAsString, ZMQ.DONTWAIT);
-                    System.out.println(fvAsString);
+                    LOG.info(fvAsString);
                 } catch (JsonProcessingException ex) {
-                    Logger.getLogger(ZeroMQGaussianMixtureTestApp.class.getName()).log(Level.SEVERE, null, ex);
+                    LOG.error(null, ex);
                 }
 
                 update_nbr++;
                 Thread.sleep(500);
 //                }
             } catch (InterruptedException ex) {
-                Logger.getLogger(ZeroMQGaussianMixtureTestApp.class.getName()).log(Level.SEVERE, null, ex);
+                LOG.error(null, ex);
             }
         }, "ZeroMQFactorAnalysisStateTestApp Publisher Thread");
 //        thread.setDaemon(true);

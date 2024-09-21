@@ -32,15 +32,16 @@ import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.Sphere;
 import javafx.util.Duration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.net.MalformedURLException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * @author Sean Phillips
  */
 public class AnimatedSphere extends Sphere implements Selectable3D {
+    private static final Logger LOG = LoggerFactory.getLogger(AnimatedSphere.class);
     public SimpleDoubleProperty scalingBind = null;
     private Color color;
     private PhongMaterial phongMaterial;
@@ -88,7 +89,7 @@ public class AnimatedSphere extends Sphere implements Selectable3D {
                     material.setDiffuseMap(textureImage);
                     event.setDropCompleted(true);
                 } catch (MalformedURLException ex) {
-                    Logger.getLogger(AnimatedSphere.class.getName()).log(Level.SEVERE, null, ex);
+                    LOG.error(null, ex);
                     event.setDropCompleted(false);
                 }
                 event.consume();

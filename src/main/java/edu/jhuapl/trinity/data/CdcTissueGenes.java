@@ -22,6 +22,8 @@ package edu.jhuapl.trinity.data;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.function.Function;
@@ -32,6 +34,7 @@ import java.util.function.Function;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CdcTissueGenes {
+    private static final Logger LOG = LoggerFactory.getLogger(CdcTissueGenes.class);
     //number	Tissue_name	source	ENSG00000157227	ENSG00000102226	ENSG00000133027	ENSG00000135269	ENSG00000175727	ENSG00000179776	ENSG00000125967	ENSG00000275832	ENSG00000000971	ENSG00000169116	ENSG00000169926	ENSG00000161013	ENSG00000064300	ENSG00000108829	ENSG00000144635
     //0	Blood	GTEx	1.075874867	3.293370484	2.339992484	5.100977648	3.681449265	0.15704371	2.195032565	0.232292362	0.539828811	0.634964929	3.960697039	4.008092421	1.704429352	3.504620392	4.498889087
     //1	Blood	GTEx	0.413810687	2.201006466	0.917775441	3.237104773	4.130107179	0.084554154	1.393965276	0.810072871	0.278341659	0.509138416	3.502075956	3.221722443	0.119953718	3.081169167	3.339992484
@@ -56,7 +59,7 @@ public class CdcTissueGenes {
                 cdcTissueGenes.genes.add(Double.valueOf(tokens[i]));
             }
         } catch (NumberFormatException ex) {
-            ex.printStackTrace();
+            LOG.error("Exception", ex);
         }
         return cdcTissueGenes;
     };

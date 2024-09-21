@@ -35,6 +35,8 @@ import javafx.scene.shape.CullFace;
 import javafx.scene.shape.DrawMode;
 import javafx.scene.shape.MeshView;
 import javafx.scene.shape.TriangleMesh;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -45,6 +47,7 @@ import java.util.function.Function;
  * @author Sean Phillips
  */
 public class TessellationMesh extends MeshView {
+    private static final Logger LOG = LoggerFactory.getLogger(TessellationMesh.class);
     public double DEFAULT_RATEOFCHANGE = 0.01;
     public double rateOfChange = DEFAULT_RATEOFCHANGE;
     public TriangleMesh triangleMesh;
@@ -172,7 +175,7 @@ public class TessellationMesh extends MeshView {
                 faceIndex += newFaces;
                 if (faceIndex >= surfPlotMesh.getFaces().size()) {
                     this.stop();
-                    System.out.println("Tessellation Complete.");
+                    LOG.info("Tessellation Complete.");
                 }
             }
 

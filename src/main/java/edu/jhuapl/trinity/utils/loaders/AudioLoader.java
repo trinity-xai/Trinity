@@ -35,16 +35,17 @@ import javafx.concurrent.Task;
 import javafx.scene.Scene;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * @author Sean Phillips
  */
 public class AudioLoader extends Task {
+    private static final Logger LOG = LoggerFactory.getLogger(AudioLoader.class);
     Scene scene;
     File file;
 
@@ -134,7 +135,7 @@ public class AudioLoader extends Task {
                     new FeatureVectorEvent(FeatureVectorEvent.REQUEST_FEATURE_COLLECTION));
             });
         } catch (Exception ex) {
-            Logger.getLogger(AudioLoader.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(null, ex);
         }
 
         return null;

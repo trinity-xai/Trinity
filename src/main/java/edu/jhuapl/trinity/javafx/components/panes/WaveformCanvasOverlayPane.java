@@ -35,6 +35,8 @@ import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
 import javafx.scene.paint.Color;
 import javafx.util.Duration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import javax.sound.sampled.AudioFormat;
 import javax.sound.sampled.AudioInputStream;
@@ -42,8 +44,6 @@ import javax.sound.sampled.AudioSystem;
 import javax.sound.sampled.UnsupportedAudioFileException;
 import java.io.File;
 import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * Amplitude over time style waveform viz
@@ -51,7 +51,7 @@ import java.util.logging.Logger;
  * @author Sean Phillips
  */
 public class WaveformCanvasOverlayPane extends CanvasOverlayPane {
-    private static final Logger LOGGER = Logger.getLogger(WaveformCanvasOverlayPane.class.getName());
+    private static final Logger LOG = LoggerFactory.getLogger(WaveformCanvasOverlayPane.class);
     public static final double DEFAULT_WAVEFORM_HEIGHT_COEFFICIENT = 1.5;
     private static final int BUFFER_SIZE = 4096;
     public static double AMPLITUDE_SCALE_MAX = 32767.0f; //65536.0f;
@@ -314,6 +314,7 @@ public class WaveformCanvasOverlayPane extends CanvasOverlayPane {
      * This class is in charge of calculating the waveform data from a audio file
      */
     private class WaveformVisualizationService extends Service<Boolean> {
+        private final Logger LOG = LoggerFactory.getLogger(WaveformVisualizationService.class);
         private MediaPlayer audioPlayer = null;
         private Media media = null;
         /**
@@ -342,7 +343,7 @@ public class WaveformCanvasOverlayPane extends CanvasOverlayPane {
                 protected Boolean call() {
                     try {
                         if (audioFile != null) {
-                            System.out.println("Attempting to load " + audioFile.toURI().toString());
+                            LOG.info("Attempting to load {}", audioFile.toURI().toString());
                             Media m = new Media(audioFile.toURI().toString());
                             setMedia(m);
                             //@DEBUG SMP System.out.println("Setting up media player...");
@@ -360,11 +361,11 @@ public class WaveformCanvasOverlayPane extends CanvasOverlayPane {
                             //@DEBUG SMP System.out.println("Waveform Visualization Service started.");
                             return true;
                         } else {
-                            System.out.println("Audio File is Null!");
+                            LOG.info("Audio File is Null!");
                             return false;
                         }
                     } catch (Exception ex) {
-                        ex.printStackTrace();
+                        LOG.error("Exception", ex);
                         return false;
                     }
                 }
@@ -520,7 +521,7 @@ public class WaveformCanvasOverlayPane extends CanvasOverlayPane {
         }
 
         private void onFailed() {
-            LOGGER.log(Level.SEVERE, "Visualization service failed!");
+            LOG.error("Visualization service failed!");
         }
 
         /**

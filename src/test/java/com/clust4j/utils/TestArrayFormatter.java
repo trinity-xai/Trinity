@@ -16,13 +16,17 @@
 package com.clust4j.utils;
 
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import static org.junit.jupiter.api.Assertions.assertNotNull;
 import static org.junit.jupiter.api.Assertions.assertNull;
 
 public class TestArrayFormatter {
+    private static final Logger LOG = LoggerFactory.getLogger(TestArrayFormatter.class);
+
     static void p(String s) {
-        System.out.println(s);
+        LOG.info(s);
     }
 
     @Test

@@ -32,11 +32,14 @@ import javafx.scene.input.KeyCodeCombination;
 import javafx.scene.input.KeyCombination;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Pane;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Sean Phillips
  */
 public class MatrixOverlay {
+    private static final Logger LOG = LoggerFactory.getLogger(MatrixOverlay.class);
     CanvasOverlayPane canvasOverlayPane;
     MatrixEffect neo;
     Canvas canvas;
@@ -65,13 +68,13 @@ public class MatrixOverlay {
         desktopPaneParent.getChildren().add(canvasOverlayPane);
 
         matrixOn = () -> {
-            System.out.println("matrix on");
+            LOG.info("matrix on");
             canvasOverlayPane.setVisible(true);
             neo.start();
             canvasOverlayPane.toFront();
         };
         matrixOff = () -> {
-            System.out.println("matrix off");
+            LOG.info("matrix off");
             neo.stop();
             canvasOverlayPane.setVisible(false);
             canvasOverlayPane.toBack();

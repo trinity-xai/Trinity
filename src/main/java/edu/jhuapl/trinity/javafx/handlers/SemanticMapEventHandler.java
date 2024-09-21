@@ -37,6 +37,8 @@ import edu.jhuapl.trinity.javafx.renderers.FeatureVectorRenderer;
 import edu.jhuapl.trinity.javafx.renderers.SemanticMapRenderer;
 import edu.jhuapl.trinity.utils.DataUtils;
 import javafx.event.EventHandler;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
@@ -47,6 +49,7 @@ import java.util.List;
  * @author Sean Phillips
  */
 public class SemanticMapEventHandler implements EventHandler<SemanticMapEvent> {
+    private static final Logger LOG = LoggerFactory.getLogger(SemanticMapEventHandler.class);
 
     public boolean pcaEnabled;
     List<SemanticMapRenderer> renderers;
@@ -91,18 +94,14 @@ public class SemanticMapEventHandler implements EventHandler<SemanticMapEvent> {
         App.getAppScene().getRoot().fireEvent(
             new TimelineEvent(TimelineEvent.TIMELINE_SET_VISIBLE, true));
         SemanticMapCollection semanticMapCollection = (SemanticMapCollection) event.object;
-        System.out.println("Semantic Space data is " +
-            semanticMapCollection.getSemantic_space().getData().size() + " x " +
-            semanticMapCollection.getSemantic_space().getData().get(0).size());
-        System.out.println("Reconstruction data is " +
-            semanticMapCollection.getReconstruction().getData_vars()
-                .getPrediction().getData().size() + " x " +
-            semanticMapCollection.getReconstruction().getData_vars()
-                .getPrediction().getData().get(0).size());
+        LOG.info("Semantic Space data is {} x {}", semanticMapCollection.getSemantic_space().getData().size(), semanticMapCollection.getSemantic_space().getData().get(0).size());
+        LOG.info("Reconstruction data is {} x {}", semanticMapCollection.getReconstruction().getData_vars()
+            .getPrediction().getData().size(), semanticMapCollection.getReconstruction().getData_vars()
+            .getPrediction().getData().get(0).size());
 
         GaussianMixture gm = DataUtils.convertSemanticSpace(
             semanticMapCollection.getSemantic_space(), 10.0);
-        System.out.println("GaussianMixture.getData().size(): " + gm.getData().size());
+        LOG.info("GaussianMixture.getData().size(): {}", gm.getData().size());
 
         //20220825T1416
         DateTimeFormatter formatter = DateTimeFormatter.ofPattern("yyyyMMdd'T'HHmm");
@@ -121,7 +120,7 @@ public class SemanticMapEventHandler implements EventHandler<SemanticMapEvent> {
 
         List<String> labelStrings = semanticMapCollection.getSemantic_space()
             .getCoords().getFeature_desc().getData();
-        System.out.println("FeatureVectors.size(): " + featureVectors.size());
+        LOG.info("FeatureVectors.size(): {}", featureVectors.size());
         FeatureCollection fc = new FeatureCollection();
         fc.setFeatures(featureVectors);
         fc.setType(FeatureCollection.TYPESTRING);
@@ -149,7 +148,7 @@ public class SemanticMapEventHandler implements EventHandler<SemanticMapEvent> {
         App.getAppScene().getRoot().fireEvent(
             new TrajectoryEvent(TrajectoryEvent.NEW_TRAJECTORY_OBJECT, trajectory, fc));
 
-        System.out.println("Total New Factor Labels: " + newlabels.size());
+        LOG.info("Total New Factor Labels: {}", newlabels.size());
         FactorLabel.addAllFactorLabels(newlabels);
 
         for (FeatureVectorRenderer renderer : fvRenderers) {

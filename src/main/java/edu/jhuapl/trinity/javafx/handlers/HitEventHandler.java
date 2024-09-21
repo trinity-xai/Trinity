@@ -40,17 +40,18 @@ import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.util.Duration;
 import lit.litfx.controls.output.AnimatedText;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Random;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * @author Sean Phillips
  */
 public class HitEventHandler implements EventHandler<HitEvent> {
+    private static final Logger LOG = LoggerFactory.getLogger(HitEventHandler.class);
     private static final Interpolator INTERPOLATOR =
         Interpolator.SPLINE(0.295, 0.800, 0.305, 1.000);
     private static final Random RANDOM = new Random();
@@ -107,7 +108,7 @@ public class HitEventHandler implements EventHandler<HitEvent> {
             death = ResourceUtils.loadMediaWav("death");
             deathMediaPlayer = new MediaPlayer(death);
         } catch (IOException ex) {
-            Logger.getLogger(HitEventHandler.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(null, ex);
         }
     }
 

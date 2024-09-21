@@ -23,19 +23,20 @@ package edu.jhuapl.trinity.data.messages;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.jhuapl.trinity.data.FactorAnalysisState;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 import org.zeromq.SocketType;
 import org.zeromq.ZContext;
 import org.zeromq.ZMQ.Socket;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * @author Sean Phillips
  */
 public class ZeroMQFactorAnalysisStateTestApp {
+    private static final Logger LOG = LoggerFactory.getLogger(ZeroMQFactorAnalysisStateTestApp.class);
 
     public static final String TOPIC = "ZeroMQ Test Topic";
     public static final int factorListSize = 8;
@@ -46,13 +47,13 @@ public class ZeroMQFactorAnalysisStateTestApp {
         ObjectMapper mapper = new ObjectMapper();
 
         Thread thread = new Thread(() -> {
-            System.out.println("Starting Publisher Thread...");
+            LOG.info("Starting Publisher Thread...");
             // Prepare our context and publisher
             try (ZContext context = new ZContext()) {
                 Socket publisher = context.createSocket(SocketType.PUB);
                 publisher.bind(PUB_BIND);
                 int update_nbr = 0;
-                System.out.println("Factor Analysis Publisher starting send loop...");
+                LOG.info("Factor Analysis Publisher starting send loop...");
                 while (!Thread.currentThread().isInterrupted()) {
 //                    publisher.sendMore(TOPIC);
                     List<Double> factors = new ArrayList<>();
@@ -68,14 +69,14 @@ public class ZeroMQFactorAnalysisStateTestApp {
                         String fasAsString = mapper.writeValueAsString(fas);
                         publisher.send(fasAsString);
                     } catch (JsonProcessingException ex) {
-                        Logger.getLogger(ZeroMQFactorAnalysisStateTestApp.class.getName()).log(Level.SEVERE, null, ex);
+                        LOG.error(null, ex);
                     }
 
                     update_nbr++;
                     Thread.sleep(500);
                 }
             } catch (InterruptedException ex) {
-                Logger.getLogger(ZeroMQFactorAnalysisStateTestApp.class.getName()).log(Level.SEVERE, null, ex);
+                LOG.error(null, ex);
             }
         }, "ZeroMQFactorAnalysisStateTestApp Publisher Thread");
 //        thread.setDaemon(true);

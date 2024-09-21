@@ -54,6 +54,8 @@ import javafx.scene.shape.Shape3D;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.util.Duration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
@@ -67,6 +69,7 @@ import static java.util.stream.Collectors.toList;
  * @author Sean Phillips
  */
 public class RadialEntityOverlayPane extends Pane {
+    private static final Logger LOG = LoggerFactory.getLogger(RadialEntityOverlayPane.class);
     public static double CHIP_FIT_WIDTH = 200;
     public static double IMAGE_FIT_HEIGHT = 200;
     public static double IMAGE_FIT_WIDTH = 200;
@@ -216,7 +219,7 @@ public class RadialEntityOverlayPane extends Pane {
                 //System.out.println("<Trinity Debug> HTTP Link: fv.getImageURL()== " + featureVector.getImageURL());
                 Image image = HttpsUtils.getImage(featureVector.getImageURL());
                 if (image.getException() != null)
-                    System.out.println("Exception info: " + image.getException().toString());
+                    LOG.info("Exception info: {}", image.getException().toString());
                 iv = new ImageView(image);
             } else {
                 if (bboxOnly) {
@@ -236,7 +239,7 @@ public class RadialEntityOverlayPane extends Pane {
                 }
             }
         } catch (Exception ex) {
-            System.out.println("Oops... problem getting image! " + ex.getMessage());
+            LOG.info("Oops... problem getting image! {}", ex.getMessage(), ex);
             iv = new ImageView(ResourceUtils.loadIconFile("noimage"));
         }
         if (iv == null)

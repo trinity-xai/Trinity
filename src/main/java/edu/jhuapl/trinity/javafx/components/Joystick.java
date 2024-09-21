@@ -48,6 +48,8 @@ import javafx.scene.shape.Circle;
 import javafx.scene.shape.StrokeLineCap;
 import javafx.scene.shape.StrokeLineJoin;
 import javafx.util.Duration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
@@ -58,6 +60,7 @@ import java.util.List;
  * Modified by Birdasaur
  */
 public class Joystick extends Region {
+    private static final Logger LOG = LoggerFactory.getLogger(Joystick.class);
     private static final double PREFERRED_WIDTH = 500;
     private static final double PREFERRED_HEIGHT = 500;
     private static final double MINIMUM_WIDTH = 50;
@@ -492,14 +495,14 @@ public class Joystick extends Region {
     }
 
     private void testStatus() {
-        System.out.println(value.get() + ", " + angle.get());
+        LOG.info("{}, {}", value.get(), angle.get());
         if (null != vectorActions) {
-            System.out.println("Testing value at " + value.get());
+            LOG.info("Testing value at {}", value.get());
             if (value.get() >= 1) {
                 Platform.runLater(() -> {
                     Scene scene = App.getAppScene();
                     VectorAction va = null;
-                    System.out.println("Testing angle at " + angle.getValue().intValue());
+                    LOG.info("Testing angle at {}", angle.getValue().intValue());
                     boolean sendEvent = false;
                     switch (angle.getValue().intValue()) {
                         case 0:

@@ -18,12 +18,15 @@ package com.clust4j.sample;
 import com.clust4j.utils.MatrixFormatter;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
 
 public class BootstrapTest {
+    private static final Logger LOG = LoggerFactory.getLogger(BootstrapTest.class);
     final static MatrixFormatter formatter = new MatrixFormatter();
 
     static Array2DRowRealMatrix toMatrix(final double[][] data) {
@@ -35,7 +38,7 @@ public class BootstrapTest {
     }
 
     public static void printArray(final double[] d) {
-        System.out.println(Arrays.toString(d));
+        LOG.info(Arrays.toString(d));
     }
 
     @Test

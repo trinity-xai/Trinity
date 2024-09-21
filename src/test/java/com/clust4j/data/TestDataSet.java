@@ -40,6 +40,8 @@ import org.apache.commons.math3.exception.DimensionMismatchException;
 import org.apache.commons.math3.linear.Array2DRowRealMatrix;
 import org.apache.commons.math3.linear.RealMatrix;
 import org.junit.jupiter.api.Test;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -52,6 +54,7 @@ import java.text.DecimalFormat;
 import static org.junit.jupiter.api.Assertions.*;
 
 public class TestDataSet implements Serializable {
+    private static final Logger LOG = LoggerFactory.getLogger(TestDataSet.class);
     /**
      * This needs to be serializable for the anonymous class test
      */
@@ -100,18 +103,16 @@ public class TestDataSet implements Serializable {
 
     private static void stdout(UnsupervisedClassifier model, boolean b, int[] labels) {
         String nm = ((AbstractClusterer) model).getName();
-        System.out.println(nm + " (scale = " + b + "):  " + formatPct(model.indexAffinityScore(labels)));
+        LOG.info("{} (scale = {}):  {}", nm, b, formatPct(model.indexAffinityScore(labels)));
     }
 
     private static void stdout(UnsupervisedClassifier model, boolean b) {
         String nm = ((AbstractClusterer) model).getName();
-        System.out.println(nm + " (scale = " + b + "):  " + model.silhouetteScore());
+        LOG.info("{} (scale = {}):  {}", nm, b, model.silhouetteScore());
     }
 
     private void testAlgos(boolean shuffle, DataSet ds, int k) {
-        System.out.println(" ========== " + "Testing with shuffle" +
-            (shuffle ? " enabled" : " disabled") +
-            " ========== ");
+        LOG.info(" ========== " + "Testing with shuffle{} ========== ", (shuffle ? " enabled" : " disabled"));
 
         DataSet shuffled = shuffle ? ds.shuffle() : ds;
         int[] labels = shuffled.getLabels();
