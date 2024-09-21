@@ -20,6 +20,7 @@ package edu.jhuapl.trinity.data.audio;
  * #L%
  */
 
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.BufferedInputStream;
@@ -34,6 +35,8 @@ import java.io.InputStream;
  * @author mzechner
  */
 public class WaveDecoder implements Decoder {
+
+    private static final Logger LOG = LoggerFactory.getLogger(WaveDecoder.class);
 
     /**
      * inverse max short value as float *
@@ -96,8 +99,7 @@ public class WaveDecoder implements Decoder {
         sampleRate = in.readIntLittleEndian();
         if (sampleRate != 44100) {
             //throw new IllegalArgumentException("Not 44100 sampling rate");
-            LoggerFactory.getLogger(WaveDecoder.class).warn(
-                "Not 44100 sampling rate.\nSome functions may not behave.");
+            LOG.warn("Not 44100 sampling rate.\nSome functions may not behave.");
         }
         in.readIntLittleEndian();
         in.readShortLittleEndian();
