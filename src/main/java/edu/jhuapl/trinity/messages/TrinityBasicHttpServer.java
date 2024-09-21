@@ -2,13 +2,13 @@ package edu.jhuapl.trinity.messages;
 
 import com.sun.net.httpserver.HttpServer;
 import javafx.scene.Scene;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.net.InetSocketAddress;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.Executors;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 public class TrinityBasicHttpServer implements Runnable {
 

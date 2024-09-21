@@ -239,7 +239,7 @@ public enum ResourceUtils {
         return wi;
     }
 
-    public static Image loadIconFile(String iconName)  {
+    public static Image loadIconFile(String iconName) {
         try {
             return new Image(IconResourceProvider.getResourceAsStream(iconName + ".png"));
         } catch (NullPointerException e) {

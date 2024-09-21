@@ -35,6 +35,7 @@ public class CommandRequest extends MessageData {
     public enum COMMANDS {
         VIEW_HYPERSPACE, VIEW_PROJECTIONS, EXECUTE_UMAP, AUTO_PROJECTION
     }
+
     public static final String TYPESTRING = "command_request";
     //<editor-fold defaultstate="collapsed" desc="JSON Payload">
     /*
@@ -66,7 +67,8 @@ public class CommandRequest extends MessageData {
             && messageBody.contains(TYPESTRING);
     }
 
-   //<editor-fold defaultstate="collapsed" desc="Properties">
+    //<editor-fold defaultstate="collapsed" desc="Properties">
+
     /**
      * @return the request
      */
@@ -94,6 +96,7 @@ public class CommandRequest extends MessageData {
     public void setProperties(HashMap<String, String> properties) {
         this.properties = properties;
     }
+
     /**
      * @return the delaySeconds
      */
@@ -106,6 +109,6 @@ public class CommandRequest extends MessageData {
      */
     public void setDelaySeconds(double delaySeconds) {
         this.delaySeconds = delaySeconds;
-    }    
-   //</editor-fold>
+    }
+    //</editor-fold>
 }

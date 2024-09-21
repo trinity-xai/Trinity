@@ -4,7 +4,7 @@ import java.io.InputStream;
 
 public class ImageResourceProvider {
 
-    public static InputStream getResourceAsStream(String name){
+    public static InputStream getResourceAsStream(String name) {
         return ImageResourceProvider.class.getResourceAsStream(name);
     }
 

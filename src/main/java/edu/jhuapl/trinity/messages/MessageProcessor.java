@@ -31,7 +31,6 @@ import edu.jhuapl.trinity.data.messages.FeatureVector;
 import edu.jhuapl.trinity.data.messages.GaussianMixture;
 import edu.jhuapl.trinity.data.messages.LabelConfig;
 import edu.jhuapl.trinity.data.messages.UmapConfig;
-import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.ChannelFrameDataEvent;
 import edu.jhuapl.trinity.javafx.events.FactorAnalysisDataEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
@@ -73,7 +72,7 @@ public class MessageProcessor {
     }
 
     public void process(String message) throws JsonProcessingException, IOException {
-        if(CommandRequest.isCommandRequest(message)){
+        if (CommandRequest.isCommandRequest(message)) {
             CommandRequest command = mapper.readValue(message, CommandRequest.class);
             CommandTask commandTask = new CommandTask(command, scene);
             Thread t = new Thread(commandTask, "Trinity Command Task " + ai.incrementAndGet());

@@ -258,13 +258,13 @@ public class App extends Application {
                     new ApplicationEvent(ApplicationEvent.SHOW_BUSY_INDICATOR, ps));
             });
             Umap umap = AnalysisUtils.getDefaultUmap();
-            if(null != event.object1)
+            if (null != event.object1)
                 umap = (Umap) event.object1;
-            else if(null != projections3DPane.latestUmap)
+            else if (null != projections3DPane.latestUmap)
                 umap = projections3DPane.latestUmap;
             umap.setThreads(12);
             ManifoldEvent.POINT_SOURCE source = ManifoldEvent.POINT_SOURCE.HYPERSPACE;
-            if(null != event.object2)
+            if (null != event.object2)
                 source = (ManifoldEvent.POINT_SOURCE) event.object2;
             FeatureCollection originalFC = getFeaturesBySource(source);
             projections3DPane.projectFeatureCollection(originalFC, umap);
@@ -495,7 +495,7 @@ public class App extends Application {
             missionTimerX, circleSpinner);
         centerStack.getChildren().add(animatedConsoleText);
 
-        
+
         System.out.println("Setting up Matrix Digital Rain...");
         // fun matrix effect, use Alt + N
         matrixOverlay = new MatrixOverlay(scene, centerStack);

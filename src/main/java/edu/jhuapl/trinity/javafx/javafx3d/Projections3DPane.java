@@ -2985,6 +2985,7 @@ public class Projections3DPane extends StackPane implements
 //            if(i>0) break;
         }
     }
+
     @Override
     public void setUmapConfig(UmapConfig config) {
 //        latestUmap.setTargetWeight(config.getTargetWeight());
@@ -3001,5 +3002,5 @@ public class Projections3DPane extends StackPane implements
 //        latestUmap.setMetric(config.getMetric());
 //        latestUmap.setVerbose(config.getVerbose());
         latestUmap = AnalysisUtils.umapConfigToUmap(config);
-    }    
+    }
 }
