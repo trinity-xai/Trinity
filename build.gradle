@@ -350,14 +350,14 @@ jlink {
         imageName = artifactNameUpper
         appVersion = project.version.toString().replaceAll("-SNAPSHOT", "")
         //resourceDir = file("$sourceSets.main.output.resourcesDir") // https://docs.oracle.com/en/java/javase/20/jpackage/override-jpackage-resources.html
-        imageOptions += '--verbose'
+        imageOptions += ['--verbose']
         jvmArgs = ['-Dprism.maxvram=2G', '-Djavafx.animation.fullspeed=true']
         jvmArgs += ["-Dlogback.configurationFile=\$APPDIR${fileSep}logback.xml"]
         jvmArgs += ['--module-path', '.']
         if (currentOS.windows) {
             skipInstaller = true
             targetPlatformName = 'windows' // required when targetPlatform is used
-            imageOptions += ['--win-console']
+            // imageOptions += ['--win-console'] // only useful when we want to have a console launched with our app
             // TODO
         }
         if (currentOS.macOsX) {
