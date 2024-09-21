@@ -78,6 +78,7 @@ import javafx.scene.shape.MeshView;
 import javafx.scene.shape.TriangleMesh;
 import javafx.stage.Stage;
 import org.fxyz3d.geometry.MathUtils;
+import org.fxyz3d.geometry.Point3D;
 import org.fxyz3d.utils.CameraTransformer;
 
 import java.awt.*;
@@ -121,12 +122,12 @@ public class SurfaceWarpTest extends Application {
     Box boundingBox;
     Webcam webCam = null;
     Image currentImage;
-    ArrayList<org.fxyz3d.geometry.Point3D> data;
-    ArrayList<org.fxyz3d.geometry.Point3D> endPoints;
+    ArrayList<Point3D> data;
+    ArrayList<Point3D> endPoints;
     public ConcurrentLinkedQueue<HyperspaceSeed> hyperspaceSeeds = new ConcurrentLinkedQueue<>();
     public ConcurrentLinkedQueue<Perspective3DNode> pNodes = new ConcurrentLinkedQueue<>();
     int TOTAL_COLORS = 1530; //colors used by map function
-    Function<org.fxyz3d.geometry.Point3D, Number> colorByLabelFunction = p -> p.f; //Color mapping function
+    Function<Point3D, Number> colorByLabelFunction = p -> p.f; //Color mapping function
     public double point3dSize = 5.0; //size of 3d tetrahedra
     int currentPskip = 1;
 
@@ -579,7 +580,7 @@ public class SurfaceWarpTest extends Application {
         }
     }
 
-    private ArrayList<org.fxyz3d.geometry.Point3D> getVisiblePoints(Perspective3DNode[] pNodeArray) {
+    private ArrayList<Point3D> getVisiblePoints(Perspective3DNode[] pNodeArray) {
         //Build scatter model
         if (null == scatterModel) {
             scatterModel = new DirectedScatterDataModel();
@@ -605,17 +606,17 @@ public class SurfaceWarpTest extends Application {
         }
     }
 
-    private ArrayList<org.fxyz3d.geometry.Point3D> getFixedEndPoints(Perspective3DNode[] pNodes, float fixedSize) {
-        org.fxyz3d.geometry.Point3D[] endArray = new org.fxyz3d.geometry.Point3D[pNodes.length];
+    private ArrayList<Point3D> getFixedEndPoints(Perspective3DNode[] pNodes, float fixedSize) {
+        Point3D[] endArray = new Point3D[pNodes.length];
         //Fix endpoints so they are just zero adds
-        Arrays.parallelSetAll(endArray, i -> new org.fxyz3d.geometry.Point3D(fixedSize, fixedSize, fixedSize));
+        Arrays.parallelSetAll(endArray, i -> new Point3D(fixedSize, fixedSize, fixedSize));
         return new ArrayList<>(Arrays.asList(endArray));
     }
 
-    private ArrayList<org.fxyz3d.geometry.Point3D> getEndPoints(Perspective3DNode[] pNodes, float fixedSize) {
-        ArrayList<org.fxyz3d.geometry.Point3D> ends = new ArrayList<>(pNodes.length);
+    private ArrayList<Point3D> getEndPoints(Perspective3DNode[] pNodes, float fixedSize) {
+        ArrayList<Point3D> ends = new ArrayList<>(pNodes.length);
         for (int i = 0; i < pNodes.length; i++) {
-            ends.add(new org.fxyz3d.geometry.Point3D(pNodes[i].xDirCoord * fixedSize,
+            ends.add(new Point3D(pNodes[i].xDirCoord * fixedSize,
                 pNodes[i].xDirCoord * fixedSize, pNodes[i].xDirCoord * fixedSize));
         }
         return ends;
@@ -836,7 +837,7 @@ public class SurfaceWarpTest extends Application {
     }
 
     List<List<Double>> dataGrid = new ArrayList<>();
-    Function<org.fxyz3d.geometry.Point3D, Number> colorByHeight = p -> p.y; //Color mapping function
+    Function<Point3D, Number> colorByHeight = p -> p.y; //Color mapping function
     Function<Vert3D, Number> vert3DLookup = p -> vertToHeight(p);
 
     private Number vertToHeight(Vert3D p) {
