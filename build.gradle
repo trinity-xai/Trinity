@@ -5,7 +5,6 @@ plugins {
     id 'com.github.ben-manes.versions' version '0.51.0'
     id 'net.nemerosa.versioning' version '3.1.0'
     id 'org.openjfx.javafxplugin' version '0.1.0'
-    id 'com.gluonhq.gluonfx-gradle-plugin' version '1.0.23'
     id 'org.gradlex.extra-java-module-info' version '1.8'
     id 'org.beryx.jlink' version '3.0.1'
 }
@@ -19,11 +18,7 @@ ext {
     mainClassJarLauncher = 'edu.jhuapl.trinity.TrinityMain'
     isProdJar = findProperty('env') == 'prod-jar'
     isProdJlink = findProperty('env') == 'prod-jlink'
-    isProdGraal = findProperty('env') == 'prod-graal'
     isDevelopment = findProperty('env') == 'dev'
-    // Only used for packaging on Intel hardware...
-    isAppleSiliconBuild = providers.environmentVariable('APPLE_SILICON').isPresent()
-    appleSiliconJavaHome = providers.environmentVariable('APPLE_SILICON_JAVA_HOME').getOrElse("")
     fxVersion = findProperty('javafx.version')
     fxStaticVersion = findProperty('javafx.static.version')
 }
@@ -152,7 +147,7 @@ idea {
 }
 
 tasks.named('wrapper', Wrapper) {
-    gradleVersion = '8.10'
+    gradleVersion = '8.10.1'
     distributionType = Wrapper.DistributionType.BIN
 }
 
@@ -208,26 +203,6 @@ tasks.register('debug', JavaExec) {
 javafx {
     version = "$fxVersion"
     modules = ['javafx.controls', 'javafx.fxml', 'javafx.swing', 'javafx.media']
-    // For custom packaging on Intel Hardware
-    if (project.isAppleSiliconBuild) {
-        platform = 'osx-aarch64'
-    }
-}
-
-gluonfx {
-    target = "host"
-    javafxStaticSdkVersion = "$fxStaticVersion"
-    // Verbose logging
-    verbose = true
-    // Add default nativeCompile args
-    compilerArgs.add('-Dprism.maxvram=2G') // exposed for at-build-time visibility
-    compilerArgs.add('-Dprism.targetvram=256M') // exposed for at-build-time visibility
-    compilerArgs.add('-Dprism.verbose=false') // exposed for at-build-time visibility
-    compilerArgs.add('-Dprism.poolstats=false') // exposed for at-build-time visibility
-    compilerArgs.add('-Dprism.pooldebug=false') // exposed for at-build-time visibility
-    compilerArgs.add('-Djavafx.animation.fullspeed=true') // exposed for at-build-time visibility
-    compilerArgs.add('-J-XX:MaxRAMPercentage=80') // use 80% system ram to compile image
-    compilerArgs.add('-H:+UnlockExperimentalVMOptions')
 }
 
 // </editor-fold>
@@ -365,11 +340,6 @@ jlink {
         jvmArgs += ["-Dlogback.configurationFile={{BIN_DIR}}${fileSep}logback.xml"]
         //jvmArgs += ["--add-exports external.module.name/external.package.name=$sModuleName", ...]
     }
-    if (project.isAppleSiliconBuild) {
-        targetPlatform("osx-arm64") {
-            jdkHome = project.appleSiliconJavaHome
-        }
-    }
     //forceMerge('javafx')
     //addExtraDependencies("javafx")
     jpackage {
@@ -409,12 +379,6 @@ tasks.jlink.doLast {
     copy {
         from("$sourceSets.main.output.resourcesDir/logback.xml")
         into("$imageDir/bin")
-    }
-    if (project.isAppleSiliconBuild) {
-        copy {
-            from("$sourceSets.main.output.resourcesDir/logback.xml")
-            into("$imageDir/${artifactNameUpper}-osx-arm64/bin")
-        }
     }
 }
 
