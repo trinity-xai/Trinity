@@ -521,7 +521,7 @@ public class WaveformCanvasOverlayPane extends CanvasOverlayPane {
         }
 
         private void onFailed() {
-            WaveformCanvasOverlayPane.LOG.error("Visualization service failed!");
+            LOG.error("Visualization service failed!");
         }
 
         /**
