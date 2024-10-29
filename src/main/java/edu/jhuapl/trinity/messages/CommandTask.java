@@ -2,11 +2,14 @@ package edu.jhuapl.trinity.messages;
 
 import edu.jhuapl.trinity.data.messages.CommandRequest;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
+import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import java.time.Duration;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.scene.Scene;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
 
 /**
  *
@@ -30,14 +33,23 @@ public class CommandTask extends Task {
         }
         if(command.contentEquals(CommandRequest.COMMANDS.VIEW_HYPERSPACE.name())){
             Platform.runLater(() -> {
+                scene.getRoot().fireEvent(
+                    new CommandTerminalEvent("Command Request: View Hyperspace.",
+                            new Font("Consolas", 20), Color.GREEN));
                 scene.getRoot().fireEvent(new ApplicationEvent(ApplicationEvent.SHOW_HYPERSPACE));
             });
         } else if(command.contentEquals(CommandRequest.COMMANDS.VIEW_PROJECTIONS.name())){
             Platform.runLater(() -> {
+                scene.getRoot().fireEvent(
+                    new CommandTerminalEvent("Command Request: View Projections.",
+                            new Font("Consolas", 20), Color.GREEN));
                 scene.getRoot().fireEvent(new ApplicationEvent(ApplicationEvent.SHOW_PROJECTIONS));
             });
         } else if(command.contentEquals(CommandRequest.COMMANDS.EXECUTE_UMAP.name())){
             Platform.runLater(() -> {
+                scene.getRoot().fireEvent(
+                    new CommandTerminalEvent("Command Request: Execute UMAP.",
+                            new Font("Consolas", 20), Color.GREEN));
                 scene.getRoot().fireEvent(new ManifoldEvent(ManifoldEvent.GENERATE_NEW_UMAP));
             });
         }
