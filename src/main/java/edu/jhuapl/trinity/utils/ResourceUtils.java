@@ -10,6 +10,7 @@ import edu.jhuapl.trinity.data.files.ClusterCollectionFile;
 import edu.jhuapl.trinity.data.files.CocoAnnotationFile;
 import edu.jhuapl.trinity.data.files.FeatureCollectionFile;
 import edu.jhuapl.trinity.data.files.GaussianMixtureCollectionFile;
+import edu.jhuapl.trinity.data.files.GraphDirectedCollectionFile;
 import edu.jhuapl.trinity.data.files.LabelConfigFile;
 import edu.jhuapl.trinity.data.files.ManifoldDataFile;
 import edu.jhuapl.trinity.data.files.McclodSplitDataTsvFile;
@@ -35,6 +36,7 @@ import edu.jhuapl.trinity.javafx.events.TrajectoryEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.images.ImageResourceProvider;
 import edu.jhuapl.trinity.utils.loaders.CdcTissueGenesLoader;
 import edu.jhuapl.trinity.utils.loaders.FeatureCollectionLoader;
+import edu.jhuapl.trinity.utils.loaders.GraphDirectedCollectionLoader;
 import edu.jhuapl.trinity.utils.loaders.McclodSplitDataLoader;
 import edu.jhuapl.trinity.utils.loaders.ShapleyCollectionLoader;
 import edu.jhuapl.trinity.utils.loaders.TextEmbeddingsLoader;
@@ -341,6 +343,11 @@ public enum ResourceUtils {
                                 thread.start();
                             } else if (ShapleyCollectionFile.isShapleyCollectionFile(file)) {
                                 ShapleyCollectionLoader task = new ShapleyCollectionLoader(scene, file);
+                                Thread thread = new Thread(task);
+                                thread.setDaemon(true);
+                                thread.start();
+                            } else if (GraphDirectedCollectionFile.isGraphDirectedCollectionFile(file)) {
+                                GraphDirectedCollectionLoader task = new GraphDirectedCollectionLoader(scene, file);
                                 Thread thread = new Thread(task);
                                 thread.setDaemon(true);
                                 thread.start();

@@ -10,31 +10,13 @@ import com.fasterxml.jackson.annotation.JsonInclude;
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class GraphSegment {
+public class GraphEdge {
     //<editor-fold defaultstate="collapsed" desc="JSON Payload">
     /**
      * {
-     * "start": {
-     * "identity": 12525037,
-     * "labels": [
-     * "Document"
-     * ],
-     * "properties": {
-     * "name": "7630a867296188c0566d0a73",
-     * "numberHashes": 276
-     * }
-     * },
-     * "relationship": {
-     * "identity": 32684,
      * "start": 12525037,
      * "end": 12487335,
-     * "type": "SIMILAR",
-     * "properties": {
-     * "jaccard": 1.0
-     * }
-     * },
-     * "end": {
-     * "identity": 12487335,
+     * "relationship": {
      * "labels": [
      * "Document"
      * ],
@@ -43,30 +25,33 @@ public class GraphSegment {
      * "numberHashes": 276
      * }
      * }
-     * }
      */
     //</editor-fold>
     //<editor-fold defaultstate="collapsed" desc="Payload Fields">
-    private GraphNode start;
-    private GraphRelationship relationship;
-    private GraphNode end;
+    private String startId; //maps to GraphNode indentity
+    private GraphRelationship relationship; //optional
+    private String color; //optional overrides default color 
+    //ex #FF0000FF == fully opaque Red in RGBA HEX form    
+    private String endId;
     //</editor-fold>
     
-    public GraphSegment() {
+    public GraphEdge() {
     }    
+    
     //<editor-fold defaultstate="collapsed" desc="Properties">
+
     /**
-     * @return the start
+     * @return the startId
      */
-    public GraphNode getStart() {
-        return start;
+    public String getStartId() {
+        return startId;
     }
 
     /**
-     * @param start the start to set
+     * @param startId the startId to set
      */
-    public void setStart(GraphNode start) {
-        this.start = start;
+    public void setStartId(String startId) {
+        this.startId = startId;
     }
 
     /**
@@ -84,17 +69,32 @@ public class GraphSegment {
     }
 
     /**
-     * @return the end
+     * @return the color
      */
-    public GraphNode getEnd() {
-        return end;
+    public String getColor() {
+        return color;
     }
 
     /**
-     * @param end the end to set
+     * @param color the color to set
      */
-    public void setEnd(GraphNode end) {
-        this.end = end;
+    public void setColor(String color) {
+        this.color = color;
     }
-    //</editor-fold>
+
+    /**
+     * @return the endId
+     */
+    public String getEndId() {
+        return endId;
+    }
+
+    /**
+     * @param endId the endId to set
+     */
+    public void setEndId(String endId) {
+        this.endId = endId;
+    }
+      
+    //</editor-fold>    
 }
