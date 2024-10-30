@@ -7,6 +7,7 @@ import edu.jhuapl.trinity.data.Trajectory;
 import edu.jhuapl.trinity.data.files.CdcCsvFile;
 import edu.jhuapl.trinity.data.files.CdcTissueGenesFile;
 import edu.jhuapl.trinity.data.files.ClusterCollectionFile;
+import edu.jhuapl.trinity.data.files.CocoAnnotationFile;
 import edu.jhuapl.trinity.data.files.FeatureCollectionFile;
 import edu.jhuapl.trinity.data.files.GaussianMixtureCollectionFile;
 import edu.jhuapl.trinity.data.files.LabelConfigFile;
@@ -409,6 +410,10 @@ public enum ResourceUtils {
                                 ManifoldDataFile mdFile = new ManifoldDataFile(file.getAbsolutePath(), true);
                                 Platform.runLater(() -> scene.getRoot().fireEvent(
                                     new ManifoldEvent(ManifoldEvent.NEW_MANIFOLD_DATA, mdFile.manifoldData)));
+                            } else if (CocoAnnotationFile.isCocoAnnotationFile(file)) {
+                                CocoAnnotationFile cocoFile = new CocoAnnotationFile(file.getAbsolutePath(), true);
+                                Platform.runLater(() -> scene.getRoot().fireEvent(
+                                    new ImageEvent(ImageEvent.NEW_COCO_ANNOTATION, cocoFile.cocoAnnotation)));
                             }
                         } catch (IOException ex) {
                             LOG.error(null, ex);
