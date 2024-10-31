@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Optional;
 
 /**
  * @author Sean Phillips
@@ -51,6 +52,13 @@ public class GraphDirectedCollection {
             && messageBody.contains("nodes")
             && messageBody.contains("edges");
     }
+    
+    public Optional<GraphNode> findNodeById(String nodeId)  {
+        return nodes.stream()
+            .filter(n -> n.getEntityId().contentEquals(nodeId))
+            .findFirst();
+    }
+    
     //<editor-fold defaultstate="collapsed" desc="Properties">
 
     /**
