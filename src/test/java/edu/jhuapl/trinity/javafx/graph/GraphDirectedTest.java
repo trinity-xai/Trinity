@@ -6,10 +6,7 @@ import edu.jhuapl.trinity.data.graph.GraphDirectedCollection;
 import edu.jhuapl.trinity.data.graph.GraphNode;
 import edu.jhuapl.trinity.javafx.events.GraphEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.AnimatedSphere;
-import edu.jhuapl.trinity.javafx.javafx3d.animated.BillboardNode;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.Tracer;
-import edu.jhuapl.trinity.javafx.javafx3d.particle.AgingParticle;
-import edu.jhuapl.trinity.javafx.javafx3d.particle.Particle;
 import static edu.jhuapl.trinity.utils.JavaFX3DUtils.getGraphNodePoint3D;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import javafx.animation.AnimationTimer;
@@ -54,18 +51,13 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
-import javafx.scene.DepthTest;
+import javafx.animation.FadeTransition;
+import javafx.animation.ScaleTransition;
 import javafx.scene.PointLight;
-import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
-import javafx.scene.control.RadioButton;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
-import javafx.scene.control.ToggleGroup;
-import javafx.scene.effect.BlendMode;
-import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import org.fxyz3d.geometry.Point3D;
 
@@ -97,6 +89,7 @@ public class GraphDirectedTest extends Application {
     double originRadius = 2300;
     double positionScalar = 1.0;
     double defaultRadius = 20;
+    float defaultEdgeWidth = 10;
     int defaultDivisions = 64;    
     
     @Override
@@ -206,7 +199,6 @@ public class GraphDirectedTest extends Application {
             }
         });
 
-//        BorderPane bpOilSpill = new BorderPane(subScene);
         BorderPane bpOilSpill = new BorderPane(stackPane);
         bpOilSpill.setBackground(new Background(new BackgroundFill(Color.BLACK, CornerRadii.EMPTY, Insets.EMPTY)));
 
@@ -227,7 +219,7 @@ public class GraphDirectedTest extends Application {
             graphDirectedCollection = (GraphDirectedCollection)e.object;
             clearAll();
             generateGraph(graphDirectedCollection);
-//            animate();
+            animate();
         });        
         
         String CSS = this.getClass().getResource("/edu/jhuapl/trinity/css/styles.css").toExternalForm();
@@ -250,74 +242,7 @@ public class GraphDirectedTest extends Application {
 
         sceneRoot.getChildren().addAll(origin, northPole, southPole);
     }
-    private void clearAll() {
-        sceneRoot.getChildren().removeIf(c -> c instanceof AnimatedSphere);
-        sceneRoot.getChildren().removeIf(c -> c instanceof Tracer);
-        transitionList.clear();        
-    }
-    private void generateGraph(GraphDirectedCollection graph) {
-        if(null == graph) return;
-        edges = generateEdges(graph);
-        sceneRoot.getChildren().addAll(edges);
-        nodes = generateNodes(graph);
-        sceneRoot.getChildren().addAll(nodes);
-        nodes.forEach(n -> transitionList.add(createTransition(n)));
-    }
     private VBox makeGraphControls() {
-//        CheckBox particleTimerCheckBox = new CheckBox("Enable Particle Timer");
-//        particleTimerCheckBox.setSelected(false);
-//        particleTimerCheckBox.selectedProperty().addListener(cl -> {
-//            particleSystem.setEnableParticleTimer(particleTimerCheckBox.isSelected());
-//        });
-//        CheckBox spawnParticlesCheckBox = new CheckBox("Enable Spawning Particles");
-//        spawnParticlesCheckBox.setSelected(false);
-//        spawnParticlesCheckBox.selectedProperty().addListener(cl -> {
-//            particleSystem.setRunning(spawnParticlesCheckBox.isSelected());
-//        });
-//
-//        CheckBox activeCheckBox = new CheckBox("BillBoard Active");
-//        activeCheckBox.setSelected(true);
-//        active.bind(activeCheckBox.selectedProperty());
-//        ToggleGroup tg = new ToggleGroup();
-//        RadioButton sphericalRadioButton = new RadioButton("Spherical Mode");
-//        sphericalRadioButton.setSelected(true);
-//        sphericalRadioButton.setToggleGroup(tg);
-//        RadioButton cylinderRadioButton = new RadioButton("Cylinder Mode");
-//        cylinderRadioButton.setToggleGroup(tg);
-//        tg.selectedToggleProperty().addListener(cl -> {
-//            if (sphericalRadioButton.isSelected())
-//                mode.set(BillboardNode.BillboardMode.SPHERICAL);
-//            else
-//                mode.set(BillboardNode.BillboardMode.CYLINDRICAL);
-//        });
-//
-//        CheckBox depthTestCheckBox = new CheckBox("Enable DepthTest");
-//        depthTestCheckBox.setSelected(true);
-//        depthTestCheckBox.selectedProperty().addListener(e -> {
-//            DepthTest dt = depthTestCheckBox.isSelected() ? DepthTest.ENABLE : DepthTest.DISABLE;
-//            for (Object object : particleSystem.getParticleArray()) {
-//                ((Particle) object).getNode().setDepthTest(dt);
-//            }
-//        });
-//
-//        CheckBox blendModeCheckBox = new CheckBox("Enable SRC_ATOP Blend");
-//        blendModeCheckBox.setSelected(false);
-//        blendModeCheckBox.selectedProperty().addListener(e -> {
-//            BlendMode bm = blendModeCheckBox.isSelected() ? BlendMode.SRC_ATOP : BlendMode.SRC_OVER;
-//            for (Object object : particleSystem.getParticleArray()) {
-//                ((Particle) object).getNode().setBlendMode(bm);
-//            }
-//        });
-//
-//        CheckBox viewOrderCheckBox = new CheckBox("Set View Order 1.0");
-//        viewOrderCheckBox.setSelected(false);
-//        viewOrderCheckBox.selectedProperty().addListener(e -> {
-//            double viewOrder = viewOrderCheckBox.isSelected() ? 1.0 : 0.0;
-//            for (Object object : particleSystem.getParticleArray()) {
-//                ((Particle) object).getNode().setViewOrder(viewOrder);
-//            }
-//        });
-
         Spinner<Double> scalarSpinner = new Spinner(
             new SpinnerValueFactory.DoubleSpinnerValueFactory(-200.0, 200.0, 1.0, 10.0));
         scalarSpinner.setEditable(true);
@@ -328,38 +253,60 @@ public class GraphDirectedTest extends Application {
             generateGraph(graphDirectedCollection);
         });
         scalarSpinner.setRepeatDelay(Duration.millis(64));
-        scalarSpinner.setMinWidth(100);
-        
+        scalarSpinner.setMinWidth(100);        
 
         Spinner<Double> radiusSpinner = new Spinner(
             new SpinnerValueFactory.DoubleSpinnerValueFactory(0.5, 50.0, defaultRadius, 0.5));
         radiusSpinner.setEditable(true);
-        //whenever the spinner value is changed...
         radiusSpinner.valueProperty().addListener(e -> {
             defaultRadius = radiusSpinner.getValue();
             nodes.forEach(n -> n.setRadius(defaultRadius));
         });
         radiusSpinner.setRepeatDelay(Duration.millis(64));
         radiusSpinner.setMinWidth(100);
+
+        // Edge Width /////////////////////////////////
+        Spinner<Double> edgeWidthSpinner = new Spinner(
+            new SpinnerValueFactory.DoubleSpinnerValueFactory(0.5, 50.0, defaultEdgeWidth, 0.5));
+        edgeWidthSpinner.setEditable(true);
+        edgeWidthSpinner.valueProperty().addListener(e -> {
+            defaultEdgeWidth = edgeWidthSpinner.getValue().floatValue();
+            if(null != graphDirectedCollection) {
+                sceneRoot.getChildren().removeIf(c -> c instanceof Tracer);
+                edges = generateEdges(graphDirectedCollection);
+                sceneRoot.getChildren().addAll(edges);            
+            }
+       });
+        edgeWidthSpinner.setRepeatDelay(Duration.millis(64));
+        edgeWidthSpinner.setMinWidth(100);
+
         
         VBox vbox = new VBox(10,
-//            particleTimerCheckBox,
-//            spawnParticlesCheckBox,
-//            depthTestCheckBox,
-//            blendModeCheckBox,
-//            viewOrderCheckBox,
-//            activeCheckBox,
-//            new HBox(5, sphericalRadioButton, cylinderRadioButton),
             new VBox(new Label("Node Radius"), radiusSpinner),
+            new VBox(new Label("Edge Width"), edgeWidthSpinner),
             new VBox(new Label("Position Scaling"), scalarSpinner)
         );
-//        vbox.setMinWidth(200);
+        return vbox;        
+    }
+    private void clearAll() {
+        sceneRoot.getChildren().removeIf(c -> c instanceof AnimatedSphere);
+        sceneRoot.getChildren().removeIf(c -> c instanceof Tracer);
+        transitionList.clear();        
+    }
+    private void generateGraph(GraphDirectedCollection graph) {
+        if(null == graph) return;
+        nodes = generateNodes(graph);
+        sceneRoot.getChildren().addAll(nodes);
 
-        return vbox;
+        edges = generateEdges(graph);
+        sceneRoot.getChildren().addAll(edges);
+
+        nodes.forEach(n -> transitionList.add(createTransition(n)));
+        edges.forEach(n -> transitionList.add(createVisibilityTransition(n)));
         
     }
     private ArrayList<Tracer> generateEdges(GraphDirectedCollection graph) {
-        ArrayList<Tracer> newNodes = new ArrayList<>();
+        ArrayList<Tracer> newEdges = new ArrayList<>();
         Color defaultDiffuseColor = Color.ALICEBLUE;
         if(null != graph.getDefaultEdgeColor()) {
             defaultDiffuseColor = Color.valueOf(graph.getDefaultEdgeColor());
@@ -372,12 +319,12 @@ public class GraphDirectedTest extends Application {
             if(startNodeOpt.isPresent() && endNodeOpt.isPresent()) {
                 Point3D startP3D = getGraphNodePoint3D(startNodeOpt.get(), positionScalar);
                 Point3D endP3D = getGraphNodePoint3D(endNodeOpt.get(), positionScalar);
-                Tracer tracer = new Tracer(startP3D, endP3D, 10, 
+                Tracer tracer = new Tracer(startP3D, endP3D, defaultEdgeWidth, 
                     null != edge.getColor() ? Color.valueOf(edge.getColor()) : defaultColor);
-                newNodes.add(tracer);
+                newEdges.add(tracer);
             }
         });
-        return newNodes;
+        return newEdges;
     }
 
     private ArrayList<AnimatedSphere> generateNodes(GraphDirectedCollection graph) {
@@ -408,30 +355,19 @@ public class GraphDirectedTest extends Application {
 
     public void animate() {
         nodes.forEach(n -> n.setVisible(false));
+        edges.forEach(n -> n.setVisible(false));
         AnimationTimer timer = createAnimation();
         timer.start();
     }
 
     private AnimationTimer createAnimation() {
-        Collections.sort(transitionList, (ParallelTransition arg0, ParallelTransition arg1) -> {
-            // bottom right to top left
-            Point2D ref = new Point2D(1000, 1000);
-            Point2D pt0 = new Point2D(arg0.getNode().getTranslateX(), arg0.getNode().getTranslateY());
-            Point2D pt1 = new Point2D(arg1.getNode().getTranslateX(), arg1.getNode().getTranslateY());
-
-            return Double.compare(ref.distance(pt0), ref.distance(pt1));
-            // bottom row first
-            // return -Double.compare( arg0.getNode().getTranslateY(), arg1.getNode().getTranslateY());
-        });
-
         AnimationTimer timer = new AnimationTimer() {
             long last = 0;
             int transitionIndex = 0;
 
             @Override
             public void handle(long now) {
-                //if( (now - last) > 1_000_000_000)
-                if ((now - last) > 30_000_000) {
+                if ((now - last) > 16_000_000) {
                     if (transitionIndex < transitionList.size()) {
                         ParallelTransition t = transitionList.get(transitionIndex);
                         t.getNode().setVisible(true);
@@ -449,26 +385,46 @@ public class GraphDirectedTest extends Application {
         return timer;
     }
 
-    private ParallelTransition createTransition(final Node node) {
+    private ParallelTransition createVisibilityTransition(final Node node) {
+        Duration duration = Duration.millis(100);
+        FadeTransition ft  = new FadeTransition(duration, node);
+        ft.setFromValue(0.0);
+        ft.setToValue(1.0);
+        ScaleTransition st = new ScaleTransition(duration, node);
+        st.setFromX(1.0);
+        st.setFromY(1.0);
+        st.setFromZ(1.0);
+        st.setToX(2.0);
+        st.setToY(2.0);
+        st.setToZ(2.0);
+        st.setAutoReverse(true);
+        st.setCycleCount(2);
+        RotateTransition rt = new RotateTransition(duration, node);
+        rt.setByAngle(720);
+        rt.setAutoReverse(true);
+        ParallelTransition parallelTransition = new ParallelTransition();
+        parallelTransition.setNode(node);
+        parallelTransition.getChildren().addAll(st);
+        return parallelTransition;
+    }
 
+    private ParallelTransition createTransition(final Node node) {
         Path path = new Path();
         path.getElements().add(new MoveToAbs(node,
             node.getTranslateX() + transitionXOffset,
             node.getTranslateY() + transitionYOffset));
-        path.getElements().add(new LineToAbs(node, node.getTranslateX(), node.getTranslateY()));
+        path.getElements().add(new LineToAbs(node, 
+            node.getTranslateX(), 
+            node.getTranslateY()));
 
-        Duration duration = Duration.millis(1000);
-
+        Duration duration = Duration.millis(500);
         PathTransition pt = new PathTransition(duration, path, node);
-
         RotateTransition rt = new RotateTransition(duration, node);
         rt.setByAngle(720);
         rt.setAutoReverse(true);
-
         ParallelTransition parallelTransition = new ParallelTransition();
         parallelTransition.setNode(node);
-        parallelTransition.getChildren().addAll(pt, rt);
-
+        parallelTransition.getChildren().addAll(pt); //, rt);
         return parallelTransition;
     }
 
@@ -517,10 +473,8 @@ public class GraphDirectedTest extends Application {
     }
 
     public static class LineToAbs extends LineTo {
-
         public LineToAbs(Node node, double x, double y) {
-            super(x - node.getLayoutX() + node.getLayoutBounds().getWidth() / 2,
-                y - node.getLayoutY() + node.getLayoutBounds().getHeight() / 2);
+            super(x,y);
         }
     }
 }
