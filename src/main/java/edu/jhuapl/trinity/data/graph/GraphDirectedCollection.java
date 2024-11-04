@@ -55,7 +55,7 @@ public class GraphDirectedCollection {
     
     public Optional<GraphNode> findNodeById(String nodeId)  {
         return nodes.stream()
-            .filter(n -> n.getEntityId().contentEquals(nodeId))
+            .filter(n -> n.getEntityID().contentEquals(nodeId))
             .findFirst();
     }
     

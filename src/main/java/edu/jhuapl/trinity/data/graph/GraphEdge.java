@@ -28,11 +28,11 @@ public class GraphEdge {
      */
     //</editor-fold>
     //<editor-fold defaultstate="collapsed" desc="Payload Fields">
-    private String startId; //maps to GraphNode indentity
+    private String startID; //maps to GraphNode indentity
     private GraphRelationship relationship; //optional
     private String color; //optional overrides default color 
     //ex #FF0000FF == fully opaque Red in RGBA HEX form    
-    private String endId;
+    private String endID;
     //</editor-fold>
     
     public GraphEdge() {
@@ -43,15 +43,15 @@ public class GraphEdge {
     /**
      * @return the startId
      */
-    public String getStartId() {
-        return startId;
+    public String getStartID() {
+        return startID;
     }
 
     /**
      * @param startId the startId to set
      */
-    public void setStartId(String startId) {
-        this.startId = startId;
+    public void setStartID(String startId) {
+        this.startID = startId;
     }
 
     /**
@@ -85,15 +85,15 @@ public class GraphEdge {
     /**
      * @return the endId
      */
-    public String getEndId() {
-        return endId;
+    public String getEndID() {
+        return endID;
     }
 
     /**
      * @param endId the endId to set
      */
-    public void setEndId(String endId) {
-        this.endId = endId;
+    public void setEndID(String endId) {
+        this.endID = endId;
     }
       
     //</editor-fold>    

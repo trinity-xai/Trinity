@@ -32,7 +32,7 @@ public class GraphNode {
     //</editor-fold>
     //<editor-fold defaultstate="collapsed" desc="Payload Fields">
     private long identity;
-    private String entityId;
+    private String entityID;
     private ArrayList<Double> vector; //required but optional length
     private ArrayList<String> labels; //optional
     private String color; //optional overrides default color 
@@ -63,15 +63,15 @@ public class GraphNode {
     /**
      * @return the entityId
      */
-    public String getEntityId() {
-        return entityId;
+    public String getEntityID() {
+        return entityID;
     }
 
     /**
      * @param entityId the entityId to set
      */
-    public void setEntityId(String entityId) {
-        this.entityId = entityId;
+    public void setEntityID(String entityId) {
+        this.entityID = entityId;
     }
 
     /**

@@ -6,7 +6,10 @@ import edu.jhuapl.trinity.data.graph.GraphDirectedCollection;
 import edu.jhuapl.trinity.data.graph.GraphNode;
 import edu.jhuapl.trinity.javafx.events.GraphEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.AnimatedSphere;
+import edu.jhuapl.trinity.javafx.javafx3d.animated.BillboardNode;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.Tracer;
+import edu.jhuapl.trinity.javafx.javafx3d.particle.AgingParticle;
+import edu.jhuapl.trinity.javafx.javafx3d.particle.Particle;
 import static edu.jhuapl.trinity.utils.JavaFX3DUtils.getGraphNodePoint3D;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import javafx.animation.AnimationTimer;
@@ -53,7 +56,17 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
+import javafx.scene.DepthTest;
 import javafx.scene.PointLight;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.RadioButton;
+import javafx.scene.control.Spinner;
+import javafx.scene.control.SpinnerValueFactory;
+import javafx.scene.control.ToggleGroup;
+import javafx.scene.effect.BlendMode;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 import org.fxyz3d.geometry.Point3D;
 
 public class GraphDirectedTest extends Application {
@@ -83,12 +96,13 @@ public class GraphDirectedTest extends Application {
     double transitionZOffset = 0;
     double originRadius = 2300;
     double positionScalar = 1.0;
-    //Command line argument support
-    Map<String, String> namedParameters;
-    List<String> unnamedParameters;
+    double defaultRadius = 20;
+    int defaultDivisions = 64;    
     
     @Override
     public void start(Stage primaryStage) throws Exception {
+        nodes = new ArrayList<>();
+        edges = new ArrayList<>();
         subScene = new SubScene(sceneRoot, sceneWidth, sceneHeight, true, SceneAntialiasing.BALANCED);
         //Start Tracking mouse movements only when a button is pressed
         subScene.setOnMousePressed((MouseEvent me) -> {
@@ -192,12 +206,13 @@ public class GraphDirectedTest extends Application {
             }
         });
 
-        BorderPane bpOilSpill = new BorderPane(subScene);
-        stackPane.getChildren().clear();
-        stackPane.getChildren().addAll(bpOilSpill);
-        stackPane.setPadding(new Insets(10));
-        stackPane.setBackground(new Background(new BackgroundFill(Color.rgb(255, 255, 255), CornerRadii.EMPTY, Insets.EMPTY)));
-        Scene scene = new Scene(stackPane, 1000, 1000);
+//        BorderPane bpOilSpill = new BorderPane(subScene);
+        BorderPane bpOilSpill = new BorderPane(stackPane);
+        bpOilSpill.setBackground(new Background(new BackgroundFill(Color.BLACK, CornerRadii.EMPTY, Insets.EMPTY)));
+
+        bpOilSpill.setLeft(makeGraphControls());
+        Scene scene = new Scene(bpOilSpill, 1024, 768, Color.BLACK);
+        
         scene.setOnMouseEntered(event -> subScene.requestFocus());
         scene.addEventHandler(DragEvent.DRAG_OVER, event -> {
             if (ResourceUtils.canDragOver(event))
@@ -209,20 +224,16 @@ public class GraphDirectedTest extends Application {
             ResourceUtils.onDragDropped(event, scene);
         });
         scene.getRoot().addEventHandler(GraphEvent.NEW_GRAPHDIRECTED_COLLECTION, e-> {
-            GraphDirectedCollection graph = (GraphDirectedCollection)e.object;
-            
-            sceneRoot.getChildren().removeIf(c -> c instanceof AnimatedSphere);
-            sceneRoot.getChildren().removeIf(c -> c instanceof Tracer);
-
-            edges = generateEdges(graph);
-            sceneRoot.getChildren().addAll(edges);
-            nodes = generateNodes(graph);
-            sceneRoot.getChildren().addAll(nodes);
-            nodes.forEach(n -> transitionList.add(createTransition(n)));
+            graphDirectedCollection = (GraphDirectedCollection)e.object;
+            clearAll();
+            generateGraph(graphDirectedCollection);
 //            animate();
         });        
-
-        primaryStage.setTitle("Dalle Walle");
+        
+        String CSS = this.getClass().getResource("/edu/jhuapl/trinity/css/styles.css").toExternalForm();
+        scene.getStylesheets().add(CSS);
+        
+        primaryStage.setTitle("3D Graph Demonstration");
         primaryStage.setScene(scene);
         primaryStage.show();
 
@@ -239,7 +250,115 @@ public class GraphDirectedTest extends Application {
 
         sceneRoot.getChildren().addAll(origin, northPole, southPole);
     }
-   private ArrayList<Tracer> generateEdges(GraphDirectedCollection graph) {
+    private void clearAll() {
+        sceneRoot.getChildren().removeIf(c -> c instanceof AnimatedSphere);
+        sceneRoot.getChildren().removeIf(c -> c instanceof Tracer);
+        transitionList.clear();        
+    }
+    private void generateGraph(GraphDirectedCollection graph) {
+        if(null == graph) return;
+        edges = generateEdges(graph);
+        sceneRoot.getChildren().addAll(edges);
+        nodes = generateNodes(graph);
+        sceneRoot.getChildren().addAll(nodes);
+        nodes.forEach(n -> transitionList.add(createTransition(n)));
+    }
+    private VBox makeGraphControls() {
+//        CheckBox particleTimerCheckBox = new CheckBox("Enable Particle Timer");
+//        particleTimerCheckBox.setSelected(false);
+//        particleTimerCheckBox.selectedProperty().addListener(cl -> {
+//            particleSystem.setEnableParticleTimer(particleTimerCheckBox.isSelected());
+//        });
+//        CheckBox spawnParticlesCheckBox = new CheckBox("Enable Spawning Particles");
+//        spawnParticlesCheckBox.setSelected(false);
+//        spawnParticlesCheckBox.selectedProperty().addListener(cl -> {
+//            particleSystem.setRunning(spawnParticlesCheckBox.isSelected());
+//        });
+//
+//        CheckBox activeCheckBox = new CheckBox("BillBoard Active");
+//        activeCheckBox.setSelected(true);
+//        active.bind(activeCheckBox.selectedProperty());
+//        ToggleGroup tg = new ToggleGroup();
+//        RadioButton sphericalRadioButton = new RadioButton("Spherical Mode");
+//        sphericalRadioButton.setSelected(true);
+//        sphericalRadioButton.setToggleGroup(tg);
+//        RadioButton cylinderRadioButton = new RadioButton("Cylinder Mode");
+//        cylinderRadioButton.setToggleGroup(tg);
+//        tg.selectedToggleProperty().addListener(cl -> {
+//            if (sphericalRadioButton.isSelected())
+//                mode.set(BillboardNode.BillboardMode.SPHERICAL);
+//            else
+//                mode.set(BillboardNode.BillboardMode.CYLINDRICAL);
+//        });
+//
+//        CheckBox depthTestCheckBox = new CheckBox("Enable DepthTest");
+//        depthTestCheckBox.setSelected(true);
+//        depthTestCheckBox.selectedProperty().addListener(e -> {
+//            DepthTest dt = depthTestCheckBox.isSelected() ? DepthTest.ENABLE : DepthTest.DISABLE;
+//            for (Object object : particleSystem.getParticleArray()) {
+//                ((Particle) object).getNode().setDepthTest(dt);
+//            }
+//        });
+//
+//        CheckBox blendModeCheckBox = new CheckBox("Enable SRC_ATOP Blend");
+//        blendModeCheckBox.setSelected(false);
+//        blendModeCheckBox.selectedProperty().addListener(e -> {
+//            BlendMode bm = blendModeCheckBox.isSelected() ? BlendMode.SRC_ATOP : BlendMode.SRC_OVER;
+//            for (Object object : particleSystem.getParticleArray()) {
+//                ((Particle) object).getNode().setBlendMode(bm);
+//            }
+//        });
+//
+//        CheckBox viewOrderCheckBox = new CheckBox("Set View Order 1.0");
+//        viewOrderCheckBox.setSelected(false);
+//        viewOrderCheckBox.selectedProperty().addListener(e -> {
+//            double viewOrder = viewOrderCheckBox.isSelected() ? 1.0 : 0.0;
+//            for (Object object : particleSystem.getParticleArray()) {
+//                ((Particle) object).getNode().setViewOrder(viewOrder);
+//            }
+//        });
+
+        Spinner<Double> scalarSpinner = new Spinner(
+            new SpinnerValueFactory.DoubleSpinnerValueFactory(-200.0, 200.0, 1.0, 10.0));
+        scalarSpinner.setEditable(true);
+        //whenever the spinner value is changed...
+        scalarSpinner.valueProperty().addListener(e -> {
+            positionScalar = scalarSpinner.getValue();
+            clearAll();
+            generateGraph(graphDirectedCollection);
+        });
+        scalarSpinner.setRepeatDelay(Duration.millis(64));
+        scalarSpinner.setMinWidth(100);
+        
+
+        Spinner<Double> radiusSpinner = new Spinner(
+            new SpinnerValueFactory.DoubleSpinnerValueFactory(0.5, 50.0, defaultRadius, 0.5));
+        radiusSpinner.setEditable(true);
+        //whenever the spinner value is changed...
+        radiusSpinner.valueProperty().addListener(e -> {
+            defaultRadius = radiusSpinner.getValue();
+            nodes.forEach(n -> n.setRadius(defaultRadius));
+        });
+        radiusSpinner.setRepeatDelay(Duration.millis(64));
+        radiusSpinner.setMinWidth(100);
+        
+        VBox vbox = new VBox(10,
+//            particleTimerCheckBox,
+//            spawnParticlesCheckBox,
+//            depthTestCheckBox,
+//            blendModeCheckBox,
+//            viewOrderCheckBox,
+//            activeCheckBox,
+//            new HBox(5, sphericalRadioButton, cylinderRadioButton),
+            new VBox(new Label("Node Radius"), radiusSpinner),
+            new VBox(new Label("Position Scaling"), scalarSpinner)
+        );
+//        vbox.setMinWidth(200);
+
+        return vbox;
+        
+    }
+    private ArrayList<Tracer> generateEdges(GraphDirectedCollection graph) {
         ArrayList<Tracer> newNodes = new ArrayList<>();
         Color defaultDiffuseColor = Color.ALICEBLUE;
         if(null != graph.getDefaultEdgeColor()) {
@@ -248,8 +367,8 @@ public class GraphDirectedTest extends Application {
         final Color defaultColor = defaultDiffuseColor;
         
         graph.getEdges().forEach(edge -> {
-            Optional<GraphNode> startNodeOpt = graph.findNodeById(edge.getStartId());
-            Optional<GraphNode> endNodeOpt = graph.findNodeById(edge.getEndId());
+            Optional<GraphNode> startNodeOpt = graph.findNodeById(edge.getStartID());
+            Optional<GraphNode> endNodeOpt = graph.findNodeById(edge.getEndID());
             if(startNodeOpt.isPresent() && endNodeOpt.isPresent()) {
                 Point3D startP3D = getGraphNodePoint3D(startNodeOpt.get(), positionScalar);
                 Point3D endP3D = getGraphNodePoint3D(endNodeOpt.get(), positionScalar);
@@ -268,8 +387,6 @@ public class GraphDirectedTest extends Application {
             defaultDiffuseColor = Color.valueOf(graph.getDefaultNodeColor());
         }
         final Color defaultColor = defaultDiffuseColor;
-        double defaultRadius = 25;
-        int defaultDivisions = 64;
         
         graph.getNodes().forEach(gN -> {
             PhongMaterial material;
