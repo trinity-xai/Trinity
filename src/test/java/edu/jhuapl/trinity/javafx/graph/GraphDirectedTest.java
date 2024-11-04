@@ -219,7 +219,7 @@ public class GraphDirectedTest extends Application {
             graphDirectedCollection = (GraphDirectedCollection)e.object;
             clearAll();
             generateGraph(graphDirectedCollection);
-            animate();
+            //animate();
         });        
         
         String CSS = this.getClass().getResource("/edu/jhuapl/trinity/css/styles.css").toExternalForm();
