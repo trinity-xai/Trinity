@@ -111,28 +111,46 @@ public class SpotLightTest extends Application {
             spotLight.setTranslateZ(2000 * i);
             spotLight.setTranslateY(-200);
         }
-        SpotLight spotLight = lights.get(1);
+        SpotLight spotLight1 = lights.get(0);
+        SpotLight spotLight2 = lights.get(1);
+        SpotLight spotLight3 = lights.get(2);
         // DEBUG CONTROLS //////////////////
-        var sliderX = createSlider(-15, 15, spotLight.directionProperty().get().getX());
-        var sliderY = createSlider(-15, 15, spotLight.directionProperty().get().getY());
-        var sliderZ = createSlider(-15, 15, spotLight.directionProperty().get().getZ());
-        spotLight.directionProperty().bind(Bindings.createObjectBinding(
+        var sliderX = createSlider(-15, 15, spotLight2.directionProperty().get().getX());
+        var sliderY = createSlider(-15, 15, spotLight2.directionProperty().get().getY());
+        var sliderZ = createSlider(-15, 15, spotLight2.directionProperty().get().getZ());
+        spotLight2.directionProperty().bind(Bindings.createObjectBinding(
             () -> new Point3D(sliderX.getValue(), sliderY.getValue(), sliderZ.getValue()),
             sliderX.valueProperty(), sliderY.valueProperty(), sliderZ.valueProperty()));
         var dirX = createSliderControl("dir x", sliderX);
         var dirY = createSliderControl("dir y", sliderY);
         var dirZ = createSliderControl("dir z", sliderZ);
 
-        var inner = createSliderControl("inner angle", spotLight.innerAngleProperty(), 0, 180, spotLight.getInnerAngle());
-        var outer = createSliderControl("outer angle", spotLight.outerAngleProperty(), 0, 180, spotLight.getOuterAngle());
-        var falloff = createSliderControl("falloff", spotLight.falloffProperty(), -10, 10, spotLight.getFalloff());
+        var inner = createSliderControl("inner angle", spotLight2.innerAngleProperty(), 0, 180, spotLight2.getInnerAngle());
+        var outer = createSliderControl("outer angle", spotLight2.outerAngleProperty(), 0, 180, spotLight2.getOuterAngle());
+        var falloff = createSliderControl("falloff", spotLight2.falloffProperty(), -10, 10, spotLight2.getFalloff());
 
-        ColorPicker spotLightPicker = new ColorPicker(spotLight.getColor());
-        spotLight.colorProperty().bind(spotLightPicker.valueProperty());
+        ColorPicker spotLight1Picker = new ColorPicker(spotLight1.getColor());
+        spotLight1.colorProperty().bind(spotLight1Picker.valueProperty());
 
-        VBox vbox = new VBox(10, //rotX, rotY, rotZ,
+        ColorPicker spotLight2Picker = new ColorPicker(spotLight2.getColor());
+        spotLight2.colorProperty().bind(spotLight2Picker.valueProperty());
+
+        ColorPicker spotLight3Picker = new ColorPicker(spotLight3.getColor());
+        spotLight3.colorProperty().bind(spotLight3Picker.valueProperty());
+        
+        ColorPicker surfaceColorPicker = new ColorPicker(Color.CYAN);
+        surfaceColorPicker.valueProperty().addListener(cl -> {
+            PhongMaterial phong = (PhongMaterial) box.getMaterial();
+            phong.setDiffuseColor(surfaceColorPicker.getValue());
+        });
+
+        VBox vbox = new VBox(10, 
             dirX, dirY, dirZ, inner, outer, falloff,
-            new VBox(5, new Label("Spot Light Color"), spotLightPicker)
+            new VBox(5, new Label("Spot Light 1 Color"), spotLight1Picker),
+            new VBox(5, new Label("Spot Light 2 Color"), spotLight2Picker),
+            new VBox(5, new Label("Spot Light 3 Color"), spotLight3Picker),
+            new VBox(5, new Label("Surface Color"), surfaceColorPicker)
+                
         );
         ScrollPane scrollPane = new ScrollPane(vbox);
         StackPane.setAlignment(vbox, Pos.BOTTOM_LEFT);
@@ -194,14 +212,14 @@ public class SpotLightTest extends Application {
         mousePosY = me.getSceneY();
         mouseDeltaX = (mousePosX - mouseOldX);
         mouseDeltaY = (mousePosY - mouseOldY);
-        double modifier = 10.0;
+        double modifier = 1.0;
         double modifierFactor = 0.1;
 
         if (me.isControlDown()) {
-            modifier = 1;
+            modifier = 0.1;
         }
         if (me.isShiftDown()) {
-            modifier = 50.0;
+            modifier = 10.0;
         }
         if (me.isPrimaryButtonDown()) {
             if (me.isAltDown()) { //roll
