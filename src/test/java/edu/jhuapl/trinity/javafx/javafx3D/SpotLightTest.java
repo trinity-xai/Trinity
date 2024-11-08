@@ -40,6 +40,8 @@ import org.fxyz3d.utils.CameraTransformer;
 
 import java.util.ArrayList;
 import java.util.List;
+import javafx.scene.AmbientLight;
+import javafx.scene.control.CheckBox;
 
 public class SpotLightTest extends Application {
     protected Box box;
@@ -94,6 +96,11 @@ public class SpotLightTest extends Application {
         cameraTransform.rx.setAngle(-10.0);
         subScene.setCamera(camera);
 
+        box = new Box(sceneWidth, 50, sceneWidth);
+        box.setDrawMode(DrawMode.FILL);
+        box.setCullFace(CullFace.BACK);
+        box.setMaterial(new PhongMaterial(Color.CYAN));
+        
         //create multiple spot lights
         List<SpotLight> lights = new ArrayList<>();
         lights.add(new SpotLight(Color.WHITE));
@@ -144,12 +151,30 @@ public class SpotLightTest extends Application {
             phong.setDiffuseColor(surfaceColorPicker.getValue());
         });
 
+        AmbientLight ambientLight = new AmbientLight();
+        CheckBox ambientLightCheckBox = new CheckBox("Enable Surface Ambient Light");
+        ambientLightCheckBox.setSelected(true);
+        ambientLight.getScope().add(box);
+        ambientLightCheckBox.selectedProperty().addListener(c -> {
+            if(ambientLightCheckBox.isSelected()) {
+                ambientLight.getScope().add(box);
+            } else {
+                ambientLight.getScope().remove(box);
+            }
+        });
+        ColorPicker ambientColorPicker = new ColorPicker(Color.WHITE);
+        ambientLight.colorProperty().bind(ambientColorPicker.valueProperty());
+        ambientColorPicker.disableProperty().bind(ambientLightCheckBox.selectedProperty().not());
+        
         VBox vbox = new VBox(10, 
             dirX, dirY, dirZ, inner, outer, falloff,
             new VBox(5, new Label("Spot Light 1 Color"), spotLight1Picker),
             new VBox(5, new Label("Spot Light 2 Color"), spotLight2Picker),
             new VBox(5, new Label("Spot Light 3 Color"), spotLight3Picker),
-            new VBox(5, new Label("Surface Color"), surfaceColorPicker)
+            new VBox(5, new Label("Surface Diffuse Color"), surfaceColorPicker),
+            ambientLightCheckBox,
+            new VBox(5, new Label("Ambient Light Color"), ambientColorPicker)
+            
                 
         );
         ScrollPane scrollPane = new ScrollPane(vbox);
@@ -159,13 +184,9 @@ public class SpotLightTest extends Application {
         scrollPane.setMaxSize(400, 800);
         StackPane.setAlignment(scrollPane, Pos.TOP_LEFT);
 
-        box = new Box(sceneWidth, 50, sceneWidth);
-        box.setDrawMode(DrawMode.FILL);
-        box.setCullFace(CullFace.BACK);
-        box.setMaterial(new PhongMaterial(Color.CYAN));
-
         sceneRoot.getChildren().addAll(cameraTransform, box);
         sceneRoot.getChildren().addAll(lights);
+        sceneRoot.getChildren().add(ambientLight);
 
         BorderPane bpOilSpill = new BorderPane(subScene);
         stackPane.getChildren().clear();

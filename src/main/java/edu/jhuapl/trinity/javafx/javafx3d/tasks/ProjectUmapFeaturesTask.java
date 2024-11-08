@@ -31,32 +31,36 @@ public class ProjectUmapFeaturesTask extends Task {
     Umap umap;
     private boolean cancelledByUser = false;
     private double projectionScalar = 100.0; //used for sizing values to 3D scene later
-
-    public ProjectUmapFeaturesTask(Scene scene, FeatureCollection originalFC, Umap umap) {
+    private boolean enableLoadingMedia = false;
+    
+    public ProjectUmapFeaturesTask(Scene scene, FeatureCollection originalFC, Umap umap, boolean enableLoadingMedia) {
         this.scene = scene;
         this.originalFC = originalFC;
         this.umap = umap;
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
-            "", ButtonType.YES, ButtonType.NO);
-        alert.setHeaderText("Watch a TV while you wait?");
-        alert.setGraphic(ResourceUtils.loadIcon("retrowave-tv", 100));
-        alert.initStyle(StageStyle.TRANSPARENT);
-        DialogPane dialogPane = alert.getDialogPane();
-        dialogPane.setBackground(Background.EMPTY);
-        dialogPane.getScene().setFill(Color.TRANSPARENT);
-        String DIALOGCSS = this.getClass().getResource("/edu/jhuapl/trinity/css/dialogstyles.css").toExternalForm();
-        dialogPane.getStylesheets().add(DIALOGCSS);
-        alert.setX(scene.getWidth() - 500);
-        alert.setY(500);
-        alert.resultProperty().addListener(r -> {
-            if (alert.getResult().equals(ButtonType.YES)) {
-//                manifoldControlPane.minimize();
-                scene.getRoot().fireEvent(
-                    new ApplicationEvent(ApplicationEvent.SHOW_VIDEO_PANE,
-                        "EMPTY VISION ", "A past never had for a Retrowave Future"));
-            }
-        });
-        alert.show();
+        this.enableLoadingMedia = enableLoadingMedia;
+        if(enableLoadingMedia) {
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
+                "", ButtonType.YES, ButtonType.NO);
+            alert.setHeaderText("Watch a TV while you wait?");
+            alert.setGraphic(ResourceUtils.loadIcon("retrowave-tv", 100));
+            alert.initStyle(StageStyle.TRANSPARENT);
+            DialogPane dialogPane = alert.getDialogPane();
+            dialogPane.setBackground(Background.EMPTY);
+            dialogPane.getScene().setFill(Color.TRANSPARENT);
+            String DIALOGCSS = this.getClass().getResource("/edu/jhuapl/trinity/css/dialogstyles.css").toExternalForm();
+            dialogPane.getStylesheets().add(DIALOGCSS);
+            alert.setX(scene.getWidth() - 500);
+            alert.setY(500);
+            alert.resultProperty().addListener(r -> {
+                if (alert.getResult().equals(ButtonType.YES)) {
+    //                manifoldControlPane.minimize();
+                    scene.getRoot().fireEvent(
+                        new ApplicationEvent(ApplicationEvent.SHOW_VIDEO_PANE,
+                            "EMPTY VISION ", "A past never had for a Retrowave Future"));
+                }
+            });
+            alert.show();
+        }
 
         setOnSucceeded(e -> {
             Platform.runLater(() -> {
@@ -146,5 +150,19 @@ public class ProjectUmapFeaturesTask extends Task {
      */
     public void setProjectionScalar(double projectionScalar) {
         this.projectionScalar = projectionScalar;
+    }
+
+    /**
+     * @return the enableLoadingMedia
+     */
+    public boolean isEnableLoadingMedia() {
+        return enableLoadingMedia;
+    }
+
+    /**
+     * @param enableLoadingMedia the enableLoadingMedia to set
+     */
+    public void setEnableLoadingMedia(boolean enableLoadingMedia) {
+        this.enableLoadingMedia = enableLoadingMedia;
     }
 }
