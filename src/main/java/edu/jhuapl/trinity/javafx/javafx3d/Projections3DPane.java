@@ -2255,9 +2255,9 @@ public class Projections3DPane extends StackPane implements
     }
 
     public void addProjectedFeatureVector(FeatureVector featureVector) {
-//        Sphere sphere = new Sphere(point3dSize);
-        PhongMaterial mat = new PhongMaterial(
-            FactorLabel.getColorByLabel(featureVector.getLabel()));
+        Color labelColor = FactorLabel.getColorByLabel(featureVector.getLabel());
+        PhongMaterial mat = new PhongMaterial(labelColor);
+        mat.setSpecularColor(labelColor); //fix for aarch64 Mac Ventura
         Sphere sphere = new AnimatedSphere(mat, point3dSize, 32, true);
 
         sphere.setMaterial(mat);
