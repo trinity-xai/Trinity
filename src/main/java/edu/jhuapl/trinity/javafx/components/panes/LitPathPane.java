@@ -39,6 +39,8 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import javafx.scene.control.ContentDisplay;
+import javafx.scene.layout.HBox;
 
 /**
  * @author Sean Phillips
@@ -49,9 +51,13 @@ public class LitPathPane extends PathPane {
     Pane parent;
     boolean animating = false;
     boolean fadeEnabled = true;
-    double fadeSideInset = -40;
+    boolean opaqueEnabled = false;
+    double fadeSideInset = -5;
     double hoverTopInset = -2;
-    double hoverSideInset = -38;
+    double hoverSideInset = -3;
+    double effectsFitWidth = 40;
+    public Background opaqueBackground; 
+    public Background defaultBackground; 
     public Color fillPreStartColor = Color.CADETBLUE;
     public Color fillStartColor = Color.TRANSPARENT;
     public Color fillMiddleColor = Color.CYAN;
@@ -64,7 +70,6 @@ public class LitPathPane extends PathPane {
     private double currentGradientMillis = 465; //This number was picked by Josh
     private long lastInsideMillis = 0;
     public static long enteredWaitTimeMillis = 5000;
-
     /**
      * Helper utility for loading a common FXML based Controller which assumes
      * an anchorpane node which is returned wrapped as a BorderPane
@@ -164,26 +169,19 @@ public class LitPathPane extends PathPane {
                 contentPane.setPrefHeight(mainContentBorderFrame.getHeight() - 100);
             }
         });
-
-//        int size;
-//        try {
-//            size = JavaFX3DUtils.getTiles().size();
-//            Random someRando = new Random();
-//            Background tileBackground = new Background(new BackgroundImage(
-//                JavaFX3DUtils.getTiles().get(someRando.nextInt(size)),
-//                    BackgroundRepeat.REPEAT, BackgroundRepeat.REPEAT,
-//                    BackgroundPosition.DEFAULT, BackgroundSize.DEFAULT
-//            ));
-//            mainContentBorderFrame.setBackground(tileBackground);
-//            mainContentBorderFrame.setBlendMode(BlendMode.COLOR_BURN);
-//        } catch (URISyntaxException | IOException ex) {
-//            Logger.getLogger(LitPathPane.class.getName()).log(Level.SEVERE, null, ex);
-//        }
+        opaqueBackground = new Background(new BackgroundFill(
+            Color.BLACK, CornerRadii.EMPTY, Insets.EMPTY));
+        defaultBackground = mainContentBorderFrame.getBackground();
     }
 
     private void setEffects() {
-        ImageView iv = ResourceUtils.loadIcon("fade", 50);
-        Label labelFadeout = new Label("Fadeout", iv);
+        ImageView fadeImageView = ResourceUtils.loadIcon("fade", effectsFitWidth);
+        Label fadeLabel = new Label("Fadeout", fadeImageView);
+        fadeLabel.setContentDisplay(ContentDisplay.TOP);
+        
+        ImageView opaqueImageView = ResourceUtils.loadIcon("opaque", effectsFitWidth);
+        Label opaqueLabel = new Label("Opaque", opaqueImageView);
+        opaqueLabel.setContentDisplay(ContentDisplay.TOP);
         Border activeBorder = new Border(new BorderStroke(
             Color.CYAN, BorderStrokeStyle.DOTTED,
             CornerRadii.EMPTY, new BorderWidths(1), new Insets(0, fadeSideInset, 0, fadeSideInset))
@@ -194,37 +192,63 @@ public class LitPathPane extends PathPane {
             new Insets(hoverTopInset, hoverSideInset, hoverTopInset, hoverSideInset))
         );
 
-        AnchorPane.setBottomAnchor(labelFadeout, -16.0);
-        AnchorPane.setRightAnchor(labelFadeout, 40.0);
-        this.mainContentBorderFrame.getChildren().add(labelFadeout);
+        HBox effectsHBox = new HBox(20, fadeLabel, opaqueLabel);
+        
+        AnchorPane.setBottomAnchor(effectsHBox, -24.0);
+        AnchorPane.setRightAnchor(effectsHBox, 40.0);
+        this.mainContentBorderFrame.getChildren().add(effectsHBox);
+
         Glow glow = new Glow(0.9);
-
-        labelFadeout.setOnMouseEntered(e -> labelFadeout.setBorder(hoverBorder));
-        labelFadeout.setOnMouseExited(e -> {
-            if (fadeEnabled)
-                labelFadeout.setBorder(activeBorder);
-            else
-                labelFadeout.setBorder(null);
-        });
-
         Background background = new Background(new BackgroundFill(
             Color.CYAN.deriveColor(1, 1, 1, 0.1),
             CornerRadii.EMPTY, new Insets(0, fadeSideInset, 0, fadeSideInset)));
-        labelFadeout.setEffect(glow);
-        labelFadeout.setBackground(background);
-        labelFadeout.setOnMouseClicked(e -> {
+
+        fadeLabel.setOnMouseEntered(e -> fadeLabel.setBorder(hoverBorder));
+        fadeLabel.setOnMouseExited(e -> {
+            if (fadeEnabled)
+                fadeLabel.setBorder(activeBorder);
+            else
+                fadeLabel.setBorder(null);
+        });
+        fadeLabel.setEffect(glow);
+        fadeLabel.setBackground(background);
+        fadeLabel.setOnMouseClicked(e -> {
             fadeEnabled = !fadeEnabled;
             if (fadeEnabled) {
-                labelFadeout.setEffect(glow);
-                labelFadeout.setBackground(background);
-                labelFadeout.setBorder(activeBorder);
+                fadeLabel.setEffect(glow);
+                fadeLabel.setBackground(background);
+                fadeLabel.setBorder(activeBorder);
             } else {
-                labelFadeout.setEffect(null);
-                labelFadeout.setBackground(null);
-                labelFadeout.setBorder(null);
+                fadeLabel.setEffect(null);
+                fadeLabel.setBackground(null);
+                fadeLabel.setBorder(null);
             }
         });
 
+        opaqueLabel.setOnMouseEntered(e -> opaqueLabel.setBorder(hoverBorder));
+        opaqueLabel.setOnMouseExited(e -> {
+            if (opaqueEnabled)
+                opaqueLabel.setBorder(activeBorder);
+            else
+                opaqueLabel.setBorder(null);
+        });
+        opaqueLabel.setEffect(glow);
+//        opaqueLabel.setBackground(background);
+        opaqueLabel.setOnMouseClicked(e -> {
+            opaqueEnabled = !opaqueEnabled;
+            if (opaqueEnabled) {
+                opaqueLabel.setEffect(glow);
+                opaqueLabel.setBackground(background);
+                opaqueLabel.setBorder(activeBorder);
+                mainContentBorderFrame.setBackground(opaqueBackground);
+            } else {
+                opaqueLabel.setEffect(null);
+                opaqueLabel.setBackground(null);
+                opaqueLabel.setBorder(null);
+                mainContentBorderFrame.setBackground(defaultBackground);
+            }
+        });        
+        
         this.scene.getRoot().addEventHandler(CovalentPaneEvent.COVALENT_PANE_CLOSE, e -> {
             if (e.pathPane == this)
                 parent.getChildren().remove(this);

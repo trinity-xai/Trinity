@@ -23,6 +23,7 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.RowConstraints?>
 <?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.SpinnerValueFactory.DoubleSpinnerValueFactory?>
 
 <AnchorPane fx:id="root" style="-fx-background-color: #00000000;" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="edu.jhuapl.trinity.javafx.controllers.ManifoldControlController">
     <children>
@@ -79,7 +80,12 @@
                                                 <VBox alignment="CENTER_LEFT" layoutX="10.0" layoutY="10.0" spacing="10.0">
                                                     <children>
                                                         <Label text="Threshold (if applicable)" />
-                                                        <Spinner fx:id="thresholdSpinner" editable="true" prefWidth="150.0" />
+                                                        <Spinner fx:id="thresholdSpinner" prefWidth="150.0" >
+                                                            <editable>true</editable>
+                                                            <valueFactory>
+                                                              <SpinnerValueFactory.DoubleSpinnerValueFactory  min="0.01" max="1.0" initialValue="0.1" amountToStepBy="0.01" />
+                                                            </valueFactory>                                                                                                                        
+                                                        </Spinner>
                                                     </children>
                                                 </VBox>
                                             </children>

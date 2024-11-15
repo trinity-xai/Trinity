@@ -174,8 +174,6 @@ public class SpotLightTest extends Application {
             new VBox(5, new Label("Surface Diffuse Color"), surfaceColorPicker),
             ambientLightCheckBox,
             new VBox(5, new Label("Ambient Light Color"), ambientColorPicker)
-            
-                
         );
         ScrollPane scrollPane = new ScrollPane(vbox);
         StackPane.setAlignment(vbox, Pos.BOTTOM_LEFT);
