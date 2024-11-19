@@ -233,7 +233,6 @@ public class LitPathPane extends PathPane {
                 opaqueLabel.setBorder(null);
         });
         opaqueLabel.setEffect(glow);
-//        opaqueLabel.setBackground(background);
         opaqueLabel.setOnMouseClicked(e -> {
             opaqueEnabled = !opaqueEnabled;
             if (opaqueEnabled) {

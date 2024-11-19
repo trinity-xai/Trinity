@@ -51,6 +51,7 @@ import edu.jhuapl.trinity.javafx.javafx3d.Hypersurface3DPane;
 import edu.jhuapl.trinity.javafx.javafx3d.Manifold3D;
 import edu.jhuapl.trinity.javafx.javafx3d.Projections3DPane;
 import edu.jhuapl.trinity.javafx.javafx3d.RetroWavePane;
+import edu.jhuapl.trinity.messages.CommandTask;
 import edu.jhuapl.trinity.messages.MessageProcessor;
 import edu.jhuapl.trinity.messages.ZeroMQFeedManager;
 import edu.jhuapl.trinity.messages.ZeroMQSubscriberConfig;
@@ -100,6 +101,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
 
 public class App extends Application {
     private static final Logger LOG = LoggerFactory.getLogger(App.class);
@@ -317,7 +319,33 @@ public class App extends Application {
             }
             event.consume();
         });
-
+        //some helpful handling for the main view
+        centerStack.addEventHandler(DragEvent.DRAG_OVER, event -> {
+            if (ResourceUtils.canDragOver(event)) {
+                event.acceptTransferModes(TransferMode.COPY);
+            } else {
+                event.consume();
+            }
+        });
+        centerStack.addEventHandler(DragEvent.DRAG_DROPPED, e -> {
+            String dropType = ResourceUtils.detectDropType(e);
+            if(!dropType.contentEquals("UNKNOWN")) {
+                if(ResourceUtils.promptUserOnCommand(dropType)){
+                    try {
+                        switch(dropType) {
+                            case "Hyperspace" -> CommandTask.execute(scene, "VIEW_HYPERSPACE", 0);
+                            case "Hypersurface" -> CommandTask.execute(scene, "VIEW_HYPERSURFACE", 0);
+                            case "Projections" -> CommandTask.execute(scene, "VIEW_PROJECTIONS", 0);
+                        }
+                    } catch (InterruptedException ex) {
+                        LOG.error(null, ex);
+                    }
+                }
+            }
+            ResourceUtils.onDragDropped(e, scene);
+        });
+        ////////////////////////
+        
         hyperspace3DPane.addEventHandler(DragEvent.DRAG_OVER, event -> {
             if (ResourceUtils.canDragOver(event)) {
                 event.acceptTransferModes(TransferMode.COPY);

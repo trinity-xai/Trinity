@@ -28,6 +28,7 @@ import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.AudioEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.events.GaussianMixtureEvent;
+import edu.jhuapl.trinity.javafx.events.HyperspaceEvent;
 import edu.jhuapl.trinity.javafx.events.ImageEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.javafx.events.SemanticMapEvent;
@@ -76,11 +77,18 @@ import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.stream.Collectors;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.DialogPane;
+import javafx.scene.layout.Background;
+import javafx.scene.paint.Color;
+import javafx.stage.StageStyle;
 
 /**
  * @author Sean Phillips
@@ -439,5 +447,72 @@ public enum ResourceUtils {
             event.setDropCompleted(true);
             event.consume();
         }
+    }
+
+    public static String detectDropType(DragEvent event) {
+        Dragboard db = event.getDragboard();
+        String type = "UNKNOWN";
+        if (db.hasFiles()) {
+            final File file = db.getFiles().get(0);
+            try {
+                if (JavaFX3DUtils.isTextureFile(file)) {
+                    type = "Hypersurface";
+                } else if (isAudioFile(file)) {
+                    type = "Hypersurface";
+                } else if (FeatureCollectionFile.isFeatureCollectionFile(file)) {
+                    type = "Hyperspace";
+                } else if (ShapleyCollectionFile.isShapleyCollectionFile(file)) {
+                    type = "Hypersurface";
+                } else if (GraphDirectedCollectionFile.isGraphDirectedCollectionFile(file)) {
+                    type = "Hypersurface";
+                } else if (VectorMaskCollectionFile.isVectorMaskCollectionFile(file)) {
+                    type = "Hypersurface";
+                } else if (LabelConfigFile.isLabelConfigFile(file)) {
+                    type = "Hyperspace";
+                } else if (TerrainTextFile.isTerrainTextFile(file)) {
+                    type = "Hypersurface";
+                } else if (FireAreaTextFile.isFireAreaTextFile(file)) {
+                    type = "Hypersurface";
+                } else if (SemanticMapCollectionFile.isSemanticMapCollectionFile(file)) {
+                    type = "Hyperspace";
+                } else if (ClusterCollectionFile.isClusterCollectionFile(file)) {
+                    type = "Projections";
+                } else if (GaussianMixtureCollectionFile.isGaussianMixtureCollectionFile(file)) {
+                    type = "Hyperspace";
+                } else if (TextEmbeddingCollectionFile.isTextEmbeddingCollection(file)) {
+                    type = "Hyperspace";
+                } else if (CdcCsvFile.isCdcCsvFile(file)) {
+                    type = "Hyperspace";
+                } else if (CdcTissueGenesFile.isCdcTissueGenesFile(file)) {
+                    type = "Hyperspace";
+                } else if (McclodSplitDataTsvFile.isMcclodSplitDataTsvFile(file)) {
+                    type = "Hyperspace";
+                } else if (ZeroPilotLatentsFile.isZeroPilotLatentsFile(file)) {
+                    type = "Hyperspace";
+                } else if (ManifoldDataFile.isManifoldDataFile(file)) {
+                    type = "Projections";
+                } else if (CocoAnnotationFile.isCocoAnnotationFile(file)) {
+                    type = "Hypersurface";
+                }
+            } catch (IOException ex) {
+                LOG.error(null, ex);
+            }
+        }
+        return type;
+    }    
+    public static boolean promptUserOnCommand(String commandType) {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
+            "Switch Views Now?",
+            ButtonType.YES, ButtonType.NO);
+        alert.setHeaderText("Your primary file type suggests using the " + commandType + " view.");
+        alert.setGraphic(ResourceUtils.loadIcon("alert", 75));
+        alert.initStyle(StageStyle.TRANSPARENT);
+        DialogPane dialogPane = alert.getDialogPane();
+        dialogPane.setBackground(Background.EMPTY);
+        dialogPane.getScene().setFill(Color.TRANSPARENT);
+        String DIALOGCSS = ResourceUtils.class.getResource("/edu/jhuapl/trinity/css/dialogstyles.css").toExternalForm();
+        dialogPane.getStylesheets().add(DIALOGCSS);
+        Optional<ButtonType> optBT = alert.showAndWait();
+        return optBT.get().equals(ButtonType.YES);
     }
 }

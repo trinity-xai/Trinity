@@ -15,7 +15,7 @@ import java.util.HashMap;
 public class CommandRequest extends MessageData {
 
     public enum COMMANDS {
-        VIEW_HYPERSPACE, VIEW_PROJECTIONS, EXECUTE_UMAP, AUTO_PROJECTION
+        VIEW_HYPERSPACE, VIEW_HYPERSURFACE, VIEW_PROJECTIONS, EXECUTE_UMAP, AUTO_PROJECTION
     }
 
     public static final String TYPESTRING = "command_request";
