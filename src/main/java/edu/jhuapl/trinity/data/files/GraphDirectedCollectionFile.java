@@ -56,8 +56,13 @@ public class GraphDirectedCollectionFile extends File implements Transferable {
      * @throws java.io.IOException
      */
     public static boolean isGraphDirectedCollectionFile(File file) throws IOException {
-        String body = Files.readString(file.toPath());
-        return GraphDirectedCollection.isGraphDirectedCollection(body);
+        String extension = file.getAbsolutePath().substring(
+            file.getAbsolutePath().lastIndexOf("."));
+        if(extension.equalsIgnoreCase(".json")) {
+            String body = Files.readString(file.toPath());
+            return GraphDirectedCollection.isGraphDirectedCollection(body);
+        }
+        return false;
     }
 
     /**

@@ -56,10 +56,15 @@ public class FeatureCollectionFile extends File implements Transferable {
      * @throws java.io.IOException
      */
     public static boolean isFeatureCollectionFile(File file) throws IOException {
-        String body = Files.readString(file.toPath());
-        return FeatureCollection.isFeatureCollection(body);
+        String extension = file.getAbsolutePath().substring(
+            file.getAbsolutePath().lastIndexOf("."));
+        if(extension.equalsIgnoreCase(".json")) {
+            String body = Files.readString(file.toPath());
+            return FeatureCollection.isFeatureCollection(body);
+        }
 //        return firstLine.isPresent() &&
 //        (firstLine.get().contains(FILE_DESC1) || firstLine.get().contains(FILE_DESC2));
+        return false;
     }
 
     /**

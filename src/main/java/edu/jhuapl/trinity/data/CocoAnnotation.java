@@ -11,12 +11,14 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CocoAnnotation {
+    public static final String TYPESTRING = "coco_annotation";
     private String content;
     
     public CocoAnnotation() { }
     
     public static boolean isCocoAnnotation(String messageBody) {
-        return true;
+        return messageBody.contains("messageType")
+            && messageBody.contains(TYPESTRING);
     }
 
     /**

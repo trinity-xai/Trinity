@@ -344,6 +344,21 @@ public enum ResourceUtils {
                             } else if (isAudioFile(file)) {
                                 Platform.runLater(() -> scene.getRoot().fireEvent(
                                     new AudioEvent(AudioEvent.NEW_AUDIO_FILE, file)));
+                            } else if (CdcCsvFile.isCdcCsvFile(file)) {
+                                CdcCsvFile cdcCsvFile = new CdcCsvFile(file.getAbsolutePath(), true);
+                                //convert to Feature Vector Collection for the lulz
+                                FeatureCollection fc = DataUtils.convertCdcCsv(cdcCsvFile.cdcCsvList, true);
+                                Platform.runLater(() -> scene.getRoot().fireEvent(
+                                    new FeatureVectorEvent(FeatureVectorEvent.NEW_FEATURE_COLLECTION, fc)));
+                                Trajectory trajectory = new Trajectory(file.getName());
+                                trajectory.totalStates = fc.getFeatures().size();
+                                Platform.runLater(() -> scene.getRoot().fireEvent(
+                                    new TrajectoryEvent(TrajectoryEvent.NEW_TRAJECTORY_OBJECT, trajectory, fc)));
+                            } else if (CdcTissueGenesFile.isCdcTissueGenesFile(file)) {
+                                CdcTissueGenesLoader task = new CdcTissueGenesLoader(scene, file);
+                                Thread thread = new Thread(task);
+                                thread.setDaemon(true);
+                                thread.start();
                             } else if (FeatureCollectionFile.isFeatureCollectionFile(file)) {
                                 FeatureCollectionLoader task = new FeatureCollectionLoader(scene, file);
                                 Thread thread = new Thread(task);
@@ -396,21 +411,6 @@ public enum ResourceUtils {
                                     thread.setDaemon(true);
                                     thread.start();
                                 });
-                            } else if (CdcCsvFile.isCdcCsvFile(file)) {
-                                CdcCsvFile cdcCsvFile = new CdcCsvFile(file.getAbsolutePath(), true);
-                                //convert to Feature Vector Collection for the lulz
-                                FeatureCollection fc = DataUtils.convertCdcCsv(cdcCsvFile.cdcCsvList, true);
-                                Platform.runLater(() -> scene.getRoot().fireEvent(
-                                    new FeatureVectorEvent(FeatureVectorEvent.NEW_FEATURE_COLLECTION, fc)));
-                                Trajectory trajectory = new Trajectory(file.getName());
-                                trajectory.totalStates = fc.getFeatures().size();
-                                Platform.runLater(() -> scene.getRoot().fireEvent(
-                                    new TrajectoryEvent(TrajectoryEvent.NEW_TRAJECTORY_OBJECT, trajectory, fc)));
-                            } else if (CdcTissueGenesFile.isCdcTissueGenesFile(file)) {
-                                CdcTissueGenesLoader task = new CdcTissueGenesLoader(scene, file);
-                                Thread thread = new Thread(task);
-                                thread.setDaemon(true);
-                                thread.start();
                             } else if (McclodSplitDataTsvFile.isMcclodSplitDataTsvFile(file)) {
                                 McclodSplitDataLoader task = new McclodSplitDataLoader(scene, file);
                                 Thread thread = new Thread(task);

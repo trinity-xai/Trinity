@@ -56,8 +56,13 @@ public class ShapleyCollectionFile extends File implements Transferable {
      * @throws java.io.IOException
      */
     public static boolean isShapleyCollectionFile(File file) throws IOException {
-        String body = Files.readString(file.toPath());
-        return ShapleyCollection.isShapleyCollection(body);
+        String extension = file.getAbsolutePath().substring(
+            file.getAbsolutePath().lastIndexOf("."));
+        if(extension.equalsIgnoreCase(".json")) {
+            String body = Files.readString(file.toPath());
+            return ShapleyCollection.isShapleyCollection(body);
+        }
+        return false;
     }
 
     /**
