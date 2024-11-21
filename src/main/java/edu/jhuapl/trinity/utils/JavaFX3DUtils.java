@@ -2,6 +2,7 @@
 
 package edu.jhuapl.trinity.utils;
 
+import com.clust4j.log.Log;
 import edu.jhuapl.trinity.data.Trajectory;
 import edu.jhuapl.trinity.data.graph.GraphNode;
 import edu.jhuapl.trinity.data.messages.FeatureVector;
@@ -46,12 +47,14 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.function.Function;
+import java.util.logging.Level;
 
 /**
  * Utilities used by various 3D rendering code.
@@ -188,9 +191,14 @@ public enum JavaFX3DUtils {
         File[] files = folder.listFiles();
 
         for (File file : files) {
-            Image image = new Image(file.getAbsolutePath());
-            images.add(image);
-        }
+            Image image;
+            try {
+                image = new Image(file.toURI().toURL().toExternalForm());
+                images.add(image);
+            } catch (MalformedURLException ex) {
+                LOG.error(null, ex);
+            }
+    }
         Timeline timeline = new Timeline();
         double timeIndex = 0;
         nodeGroup.getChildren().removeIf(n -> n instanceof TessellationMesh);
@@ -292,7 +300,7 @@ public enum JavaFX3DUtils {
             File[] files = folder.listFiles();
 
             for (File file : files) {
-                tiles.add(new Image(file.getAbsolutePath()));
+                tiles.add(new Image(file.toURI().toURL().toExternalForm()));
             }
         }
         return tiles;
@@ -307,7 +315,7 @@ public enum JavaFX3DUtils {
         }
         File[] files = folder.listFiles();
         for (File file : files) {
-            images.add(new Image(file.getAbsolutePath()));
+            images.add(new Image(file.toURI().toURL().toExternalForm()));
         }
         return images;
     }
