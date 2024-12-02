@@ -1,6 +1,6 @@
 /* Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC */
 
-package edu.jhuapl.trinity.javafx.javafx3D;
+package edu.jhuapl.trinity.javafx.javafx3d;
 
 import edu.jhuapl.trinity.javafx.javafx3d.animated.BillBoard;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.BillboardNode.BillboardMode;
@@ -182,7 +182,7 @@ public class ParticleTest extends Application {
         zSphere.setMaterial(new PhongMaterial(Color.BLUE));
 
 
-        pyramidImageView = new ImageView(ResourceUtils.load3DTextureImage("neoncyanpyramid-transparent"));
+        pyramidImageView = new ImageView(ResourceUtils.load3DTextureImage("Oak_Tree_0"));
         pyramidImageView.setDepthTest(DepthTest.ENABLE);
         pyramidImageView.setPreserveRatio(true);
         pyramidImageView.setFitWidth(100);

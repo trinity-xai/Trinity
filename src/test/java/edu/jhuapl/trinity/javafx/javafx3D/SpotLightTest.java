@@ -1,6 +1,6 @@
 /* Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC */
 
-package edu.jhuapl.trinity.javafx.javafx3D;
+package edu.jhuapl.trinity.javafx.javafx3d;
 
 import javafx.application.Application;
 import javafx.beans.binding.Bindings;

@@ -1132,7 +1132,7 @@ public class Projections3DPane extends StackPane implements
         projectileSystem = new ProjectileSystem(debugGroup, 15);
         projectileSystem.setRunning(false);
         projectileSystem.setEnableProjectileTimer(true);
-        viewControlsMenu = new ViewControlsMenu(this);
+        viewControlsMenu = new ViewControlsMenu(scene);
         radialOverlayPane.addEntity(viewControlsMenu);
         viewControlsMenu.setTranslateX(200);
         viewControlsMenu.setTranslateY(200);

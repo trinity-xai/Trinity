@@ -3,8 +3,8 @@
 package edu.jhuapl.trinity.javafx.components.radial;
 
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
-import edu.jhuapl.trinity.javafx.javafx3d.Projections3DPane;
 import edu.jhuapl.trinity.utils.ResourceUtils;
+import javafx.scene.Scene;
 import javafx.scene.effect.BlurType;
 import javafx.scene.effect.Glow;
 import javafx.scene.effect.Shadow;
@@ -23,9 +23,6 @@ import lit.litfx.controls.menus.LitRadialMenuItem;
  * @author Sean Phillips
  */
 public class ViewControlsMenu extends RadialEntity {
-    //momma view this will control and attach to
-    Projections3DPane projections3DPane;
-
     //defaults
     public static double IMAGE_FIT_HEIGHT = 64;
     public static double IMAGE_FIT_WIDTH = 64;
@@ -52,14 +49,13 @@ public class ViewControlsMenu extends RadialEntity {
         new Stop(0, bgMoLg1Color), new Stop(0.8, bgMoLg2Color));
     ImageView iv;
 
-    public ViewControlsMenu(Projections3DPane projections3DPane) {
-        this(INITIAL_ANGLE, ITEM_SIZE, MENU_RADIUS, OFFSET, projections3DPane);
+    public ViewControlsMenu(Scene scene) {
+        this(INITIAL_ANGLE, ITEM_SIZE, MENU_RADIUS, OFFSET, scene);
     }
 
-    public ViewControlsMenu(double initialAngle, double itemSize, double menuSize, double offset, Projections3DPane projections3DPane) {
+    public ViewControlsMenu(double initialAngle, double itemSize, double menuSize, double offset, Scene scene) {
         super("view", IMAGE_FIT_WIDTH);
-        this.projections3DPane = projections3DPane;
-        this.scene = projections3DPane.scene;
+        this.scene = scene;
         setScene(scene);
         buildMenu();
 
