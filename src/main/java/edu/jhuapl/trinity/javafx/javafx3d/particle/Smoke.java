@@ -11,7 +11,7 @@ import java.io.IOException;
 
 public class Smoke extends DualTextureParticle {
     private static final Logger LOG = LoggerFactory.getLogger(Smoke.class);
-    public static final String DEFAULT_TEXTURE1_NAME = "smoke2_16";
+    public static final String DEFAULT_TEXTURE1_NAME = "carl-b";
     public static final String DEFAULT_TEXTURE2_NAME = "smoke2_16";
     public static Image image1 = null;
     public static Image image2 = null;

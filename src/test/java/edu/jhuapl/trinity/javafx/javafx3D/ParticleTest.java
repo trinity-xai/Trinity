@@ -22,6 +22,7 @@ import javafx.scene.Scene;
 import javafx.scene.SceneAntialiasing;
 import javafx.scene.SubScene;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.ColorPicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.ScrollPane;
@@ -91,7 +92,7 @@ public class ParticleTest extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        subScene = new SubScene(sceneRoot, sceneWidth, sceneHeight, true, SceneAntialiasing.BALANCED);
+        subScene = new SubScene(sceneRoot, sceneWidth, sceneHeight, true, SceneAntialiasing.DISABLED);
         subScene.addEventHandler(MouseEvent.MOUSE_ENTERED, e -> subScene.requestFocus());
         subScene.setOnKeyPressed(event -> {
             //What key did the user press?
@@ -183,9 +184,10 @@ public class ParticleTest extends Application {
 
 
         pyramidImageView = new ImageView(ResourceUtils.load3DTextureImage("Oak_Tree_0"));
-        pyramidImageView.setDepthTest(DepthTest.ENABLE);
-        pyramidImageView.setPreserveRatio(true);
         pyramidImageView.setFitWidth(100);
+        pyramidImageView.setSmooth(true);        
+        pyramidImageView.setPreserveRatio(true);
+        pyramidImageView.setDepthTest(DepthTest.ENABLE);
         pyramidImageView.setTranslateZ(-500);
 
         sceneRoot.getChildren().addAll(cameraTransform, pyramidImageView,
@@ -221,8 +223,8 @@ public class ParticleTest extends Application {
             else
                 mode.set(BillboardMode.CYLINDRICAL);
         });
-
-        CheckBox depthTestCheckBox = new CheckBox("Enable DepthTest");
+ 
+       CheckBox depthTestCheckBox = new CheckBox("Enable DepthTest");
         depthTestCheckBox.setSelected(true);
         depthTestCheckBox.selectedProperty().addListener(e -> {
             DepthTest dt = depthTestCheckBox.isSelected() ? DepthTest.ENABLE : DepthTest.DISABLE;
@@ -231,23 +233,8 @@ public class ParticleTest extends Application {
             }
         });
 
-        CheckBox blendModeCheckBox = new CheckBox("Enable SRC_ATOP Blend");
-        blendModeCheckBox.setSelected(false);
-        blendModeCheckBox.selectedProperty().addListener(e -> {
-            BlendMode bm = blendModeCheckBox.isSelected() ? BlendMode.SRC_ATOP : BlendMode.SRC_OVER;
-            for (Object object : particleSystem.getParticleArray()) {
-                ((Particle) object).getNode().setBlendMode(bm);
-            }
-        });
-
-        CheckBox viewOrderCheckBox = new CheckBox("Set View Order 1.0");
-        viewOrderCheckBox.setSelected(false);
-        viewOrderCheckBox.selectedProperty().addListener(e -> {
-            double viewOrder = viewOrderCheckBox.isSelected() ? 1.0 : 0.0;
-            for (Object object : particleSystem.getParticleArray()) {
-                ((Particle) object).getNode().setViewOrder(viewOrder);
-            }
-        });
+        ColorPicker sceneFillPicker = new ColorPicker(Color.BLACK);
+        subScene.fillProperty().bind(sceneFillPicker.valueProperty());
 
         Spinner<Double> gravitySpinner = new Spinner(
             new SpinnerValueFactory.DoubleSpinnerValueFactory(-1.0, 1.0, -0.01, 0.005));
@@ -265,11 +252,9 @@ public class ParticleTest extends Application {
             particleTimerCheckBox,
             spawnParticlesCheckBox,
             depthTestCheckBox,
-            blendModeCheckBox,
-            viewOrderCheckBox,
             activeCheckBox,
-            new HBox(5, sphericalRadioButton, cylinderRadioButton),
-            new VBox(new Label("Gravity"), gravitySpinner)
+            new VBox(5, new Label("Scene Fill"), sceneFillPicker),
+            new VBox(5, new Label("Gravity"), gravitySpinner)
         );
         ScrollPane scrollPane = new ScrollPane(vbox);
         StackPane.setAlignment(vbox, Pos.BOTTOM_LEFT);
@@ -278,8 +263,9 @@ public class ParticleTest extends Application {
         scrollPane.setMaxSize(300, 300);
 
         bpOilSpill.setLeft(scrollPane);
-        Scene scene = new Scene(bpOilSpill, 1000, 1000);
-
+        Scene scene = new Scene(bpOilSpill, 1000, 1000, true, SceneAntialiasing.DISABLED);
+        scene.setFill(Color.TRANSPARENT);
+        
         scene.setOnMouseEntered(event -> subScene.requestFocus());
 
         primaryStage.setTitle("Particle Test");
