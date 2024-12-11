@@ -7,6 +7,7 @@ import edu.jhuapl.trinity.javafx.components.panes.ConfigurationPane;
 import edu.jhuapl.trinity.javafx.components.panes.ManifoldControlPane;
 import edu.jhuapl.trinity.javafx.components.panes.RadarPlotPane;
 import edu.jhuapl.trinity.javafx.components.panes.SearchPane;
+import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.Hyperspace3DPane;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import javafx.animation.KeyFrame;
@@ -56,10 +57,10 @@ public class HyperspaceMenu extends RadialEntity {
     //defaults
     public static double IMAGE_FIT_HEIGHT = 64;
     public static double IMAGE_FIT_WIDTH = 64;
-    public static double ITEM_SIZE = 40;
+    public static double ITEM_SIZE = 36;
     public static double INNER_RADIUS = 70.0;
     public static double ITEM_FIT_WIDTH = 64.0;
-    public static double MENU_RADIUS = 200.0;
+    public static double MENU_RADIUS = 216.0;
     public static double OFFSET = 10.0;
     public static double INITIAL_ANGLE = 0.0;
     public static double STROKE_WIDTH = 2.5;
@@ -244,6 +245,9 @@ public class HyperspaceMenu extends RadialEntity {
         ImageView callouts = ResourceUtils.loadIcon("callouts", ITEM_FIT_WIDTH);
         callouts.setEffect(glow);
 
+        ImageView navigator = ResourceUtils.loadIcon("navigator", ITEM_FIT_WIDTH);
+        navigator.setEffect(glow);
+        
         addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Metadata Search", search, e -> {
             Pane pathPane = App.getAppPathPaneStack();
             if (null == searchPane) {
@@ -324,8 +328,13 @@ public class HyperspaceMenu extends RadialEntity {
         addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Reset Camera View", camera, e -> {
             hyperspace3DPane.resetView(1000, false);
         }));
-        addMenuItem(new LitRadialMenuItem(ITEM_SIZE, "Clear Callouts", callouts, e -> {
+        addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Clear Callouts", callouts, e -> {
             hyperspace3DPane.clearCallouts();
+        }));
+
+        addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Content Navigator", navigator, e -> {
+            hyperspace3DPane.getScene().getRoot().fireEvent(
+                new ApplicationEvent(ApplicationEvent.SHOW_NAVIGATOR_PANE));            
         }));
     }
 }

@@ -228,6 +228,8 @@ public class App extends Application {
         hyperspace3DPane = new Hyperspace3DPane(scene);
         hyperspace3DPane.setVisible(false); //start off hidden
 
+         navigatorPane = new NavigatorPane(scene, pathPane);
+        
         LOG.info("Registering Event Handlers...");
         //animatedConsoleText.animate("Registering Event Handlers...");
         scene.addEventHandler(FeatureVectorEvent.REQUEST_FEATURE_COLLECTION, event -> {

@@ -92,7 +92,7 @@ public class ParticleTest extends Application {
 
     @Override
     public void start(Stage primaryStage) throws Exception {
-        subScene = new SubScene(sceneRoot, sceneWidth, sceneHeight, true, SceneAntialiasing.DISABLED);
+        subScene = new SubScene(sceneRoot, sceneWidth, sceneHeight, true, SceneAntialiasing.BALANCED);
         subScene.addEventHandler(MouseEvent.MOUSE_ENTERED, e -> subScene.requestFocus());
         subScene.setOnKeyPressed(event -> {
             //What key did the user press?
@@ -151,7 +151,7 @@ public class ParticleTest extends Application {
         StackPane subSceneStackPane = new StackPane(subScene);
         subScene.widthProperty().bind(subSceneStackPane.widthProperty());
         subScene.heightProperty().bind(subSceneStackPane.heightProperty());
-        subScene.setFill(Color.BLACK);
+        subScene.setFill(Color.TRANSPARENT);
 
         Image image = ResourceUtils.load3DTextureImage("retrowaveSun5");
 
@@ -183,15 +183,15 @@ public class ParticleTest extends Application {
         zSphere.setMaterial(new PhongMaterial(Color.BLUE));
 
 
-        pyramidImageView = new ImageView(ResourceUtils.load3DTextureImage("Oak_Tree_0"));
+        pyramidImageView = new ImageView(ResourceUtils.load3DTextureImage("carl-b"));
         pyramidImageView.setFitWidth(100);
         pyramidImageView.setSmooth(true);        
         pyramidImageView.setPreserveRatio(true);
         pyramidImageView.setDepthTest(DepthTest.ENABLE);
         pyramidImageView.setTranslateZ(-500);
-
-        sceneRoot.getChildren().addAll(cameraTransform, pyramidImageView,
-            box, xSphere, ySphere, zSphere);
+        
+        sceneRoot.getChildren().addAll(cameraTransform, 
+            box, xSphere, ySphere, zSphere, pyramidImageView);
         BorderPane bpOilSpill = new BorderPane(subSceneStackPane);
 
         smoke = new Smoke();
@@ -263,9 +263,8 @@ public class ParticleTest extends Application {
         scrollPane.setMaxSize(300, 300);
 
         bpOilSpill.setLeft(scrollPane);
-        Scene scene = new Scene(bpOilSpill, 1000, 1000, true, SceneAntialiasing.DISABLED);
+        Scene scene = new Scene(bpOilSpill, 1000, 1000, true, SceneAntialiasing.BALANCED);
         scene.setFill(Color.TRANSPARENT);
-        
         scene.setOnMouseEntered(event -> subScene.requestFocus());
 
         primaryStage.setTitle("Particle Test");

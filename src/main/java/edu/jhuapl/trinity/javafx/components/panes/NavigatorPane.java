@@ -3,6 +3,7 @@
 package edu.jhuapl.trinity.javafx.components.panes;
 
 import edu.jhuapl.trinity.data.messages.FeatureVector;
+import static edu.jhuapl.trinity.data.messages.FeatureVector.bboxToString;
 import edu.jhuapl.trinity.data.messages.VectorMaskCollection;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
@@ -28,6 +29,11 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.util.Map;
+import javafx.geometry.Insets;
+import javafx.scene.control.TitledPane;
+import javafx.scene.layout.GridPane;
+import javafx.scene.text.Text;
 
 /**
  * @author Sean Phillips
@@ -36,15 +42,23 @@ public class NavigatorPane extends LitPathPane {
     private static final Logger LOG = LoggerFactory.getLogger(NavigatorPane.class);
     BorderPane bp;
     public static double DEFAULT_FIT_WIDTH = 512;
-    public static int PANE_WIDTH = 800;
+    public static double DEFAULT_TITLEDPANE_WIDTH = 256;
+    public static double DEFAULT_LABEL_WIDTH = 64;
+    public static int PANE_WIDTH = 600;
+    public static int PANE_HEIGHT = 850;
+    
     public String imageryBasePath = "imagery/";
     boolean auto = false;
     Image currentImage = null;
     Label imageLabel;
     Label urlLabel;
+    TitledPane detailsTP;
+    TitledPane metaTP;
+    GridPane detailsGridPane;
     ImageView imageView;
     VBox contentVBox;
 
+    
     private static BorderPane createContent() {
         BorderPane bpOilSpill = new BorderPane();
         MediaView mediaView = new MediaView();
@@ -53,7 +67,7 @@ public class NavigatorPane extends LitPathPane {
     }
 
     public NavigatorPane(Scene scene, Pane parent) {
-        super(scene, parent, PANE_WIDTH, PANE_WIDTH, createContent(),
+        super(scene, parent, PANE_WIDTH, PANE_HEIGHT, createContent(),
             "Content Navigator", "", 300.0, 400.0);
         this.scene = scene;
         bp = (BorderPane) this.contentPane;
@@ -69,7 +83,17 @@ public class NavigatorPane extends LitPathPane {
         urlLabel.setTooltip(new Tooltip("Waiting for Image"));
         imageLabel = new Label("No Label");
         imageLabel.setMaxWidth(DEFAULT_FIT_WIDTH);
-        contentVBox = new VBox(5, imageView, urlLabel, imageLabel);
+        detailsGridPane = new GridPane();
+        detailsGridPane.setPadding(new Insets(1));
+        detailsGridPane.setHgap(5);
+        detailsTP = new TitledPane("Details", detailsGridPane);
+        detailsTP.setExpanded(false);
+        detailsTP.setPrefWidth(DEFAULT_TITLEDPANE_WIDTH);
+        metaTP = new TitledPane();
+        metaTP.setText("Metadata");
+        metaTP.setExpanded(false);  
+        metaTP.setPrefWidth(DEFAULT_TITLEDPANE_WIDTH);
+        contentVBox = new VBox(5, imageView, urlLabel, imageLabel, detailsTP, metaTP);
 
         ImageView refresh = ResourceUtils.loadIcon("refresh", 32);
 
@@ -117,6 +141,7 @@ public class NavigatorPane extends LitPathPane {
                     imageView.setImage(currentImage);
                     urlLabel.setText(fv.getImageURL());
                     urlLabel.setTooltip(new Tooltip(file.toURI().toURL().toExternalForm()));
+                    createDetails(fv);
                 } catch (IOException ex) {
                     Platform.runLater(() -> {
                         getScene().getRoot().fireEvent(
@@ -129,7 +154,36 @@ public class NavigatorPane extends LitPathPane {
             }
         });
     }
+    private void createDetails(FeatureVector featureVector) {
+        detailsGridPane.getChildren().clear();
+        detailsGridPane.addRow(0, new Label("imageURL"),
+            new Label(featureVector.getImageURL()));
+        String bboxStr = "";
+        if (null != featureVector.getBbox())
+            bboxStr = bboxToString(featureVector);        
+        Label bboxLabel = new Label("bbox");
+        bboxLabel.setMinWidth(DEFAULT_LABEL_WIDTH);
+        detailsGridPane.addRow(1, bboxLabel, new Label(bboxStr));
+        Label frameLabel = new Label("frameId");
+        frameLabel.setMinWidth(DEFAULT_LABEL_WIDTH);
+        detailsGridPane.addRow(2, frameLabel, new Label(String.valueOf(featureVector.getFrameId())));
+        Label scoreLabel = new Label("score");
+        scoreLabel.setMinWidth(DEFAULT_LABEL_WIDTH);
+        detailsGridPane.addRow(3, scoreLabel, new Label(String.valueOf(featureVector.getScore())));
+        Label layerLabel = new Label("layer");
+        layerLabel.setMinWidth(DEFAULT_LABEL_WIDTH);        
+        detailsGridPane.addRow(4, layerLabel, new Label(String.valueOf(featureVector.getLayer())));
+        Label messageLabel = new Label("messageId");
+        messageLabel.setMinWidth(DEFAULT_LABEL_WIDTH);        
+        detailsGridPane.addRow(5, messageLabel,new Label(String.valueOf(featureVector.getLayer())));
 
+        StringBuilder sb = new StringBuilder();
+        for (Map.Entry<String, String> entry : featureVector.getMetaData().entrySet()) {
+            sb.append(entry.getKey()).append(" : ").append(entry.getValue()).append("\n");
+        }
+        Text metaText = new Text(sb.toString());
+        metaTP.setContent(metaText);
+    }
     public void shutdown() {
         close();
         parent.getChildren().remove(this);
