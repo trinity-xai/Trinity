@@ -452,7 +452,7 @@ public class App extends Application {
                     retroWavePane.setVisible(true);
                     centerStack.getChildren().add(retroWavePane);
                 } catch (Exception ex) {
-                    System.out.println(ex.getMessage());
+                    LOG.error(null, ex);
                 }
             }
             if (namedParameters.containsKey("display4k")) {
