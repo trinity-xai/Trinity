@@ -48,11 +48,11 @@ jobs:
           java-version: ${{ matrix.jdk-version }}
           distribution: 'temurin'
 
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
       - name: Gradle Build Jar
-        uses: gradle/actions/setup-gradle@v3
-        with:
-          add-job-summary: 'on-failure'
-          arguments: clean assemble -Penv=prod-jar
+        run: ./gradlew clean assemble -Penv=prod-jar
 
       - name: Upload Jar
         uses: actions/upload-artifact@v4
@@ -111,11 +111,11 @@ jobs:
           java-version: ${{ matrix.jdk-version }}
           distribution: 'temurin'
 
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
       - name: Gradle Build JLink Zip
-        uses: gradle/actions/setup-gradle@v3
-        with:
-          add-job-summary: 'on-failure'
-          arguments: clean jlink -Penv=prod-jlink
+        run: ./gradlew clean jlink -Penv=prod-jlink
 
       - name: Upload JLink Zip
         uses: actions/upload-artifact@v4
@@ -173,11 +173,11 @@ jobs:
           java-version: ${{ matrix.jdk-version }}
           distribution: 'temurin'
 
+      - name: Setup Gradle
+        uses: gradle/actions/setup-gradle@v4
+
       - name: Gradle Build JPackage
-        uses: gradle/actions/setup-gradle@v3
-        with:
-          add-job-summary: 'on-failure'
-          arguments: clean jpackage -Penv=prod-jlink
+        run: ./gradlew clean jpackage -Penv=prod-jlink
 
       - name: Upload JPackage
         uses: actions/upload-artifact@v4
