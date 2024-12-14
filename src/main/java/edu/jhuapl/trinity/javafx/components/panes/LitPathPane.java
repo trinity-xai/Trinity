@@ -39,6 +39,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
+
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.layout.HBox;
 
@@ -56,8 +57,8 @@ public class LitPathPane extends PathPane {
     double hoverTopInset = -2;
     double hoverSideInset = -3;
     double effectsFitWidth = 40;
-    public Background opaqueBackground; 
-    public Background defaultBackground; 
+    public Background opaqueBackground;
+    public Background defaultBackground;
     public Color fillPreStartColor = Color.CADETBLUE;
     public Color fillStartColor = Color.TRANSPARENT;
     public Color fillMiddleColor = Color.CYAN;
@@ -70,6 +71,7 @@ public class LitPathPane extends PathPane {
     private double currentGradientMillis = 465; //This number was picked by Josh
     private long lastInsideMillis = 0;
     public static long enteredWaitTimeMillis = 5000;
+
     /**
      * Helper utility for loading a common FXML based Controller which assumes
      * an anchorpane node which is returned wrapped as a BorderPane
@@ -178,7 +180,7 @@ public class LitPathPane extends PathPane {
         ImageView fadeImageView = ResourceUtils.loadIcon("fade", effectsFitWidth);
         Label fadeLabel = new Label("Fadeout", fadeImageView);
         fadeLabel.setContentDisplay(ContentDisplay.TOP);
-        
+
         ImageView opaqueImageView = ResourceUtils.loadIcon("opaque", effectsFitWidth);
         Label opaqueLabel = new Label("Opaque", opaqueImageView);
         opaqueLabel.setContentDisplay(ContentDisplay.TOP);
@@ -193,7 +195,7 @@ public class LitPathPane extends PathPane {
         );
 
         HBox effectsHBox = new HBox(20, fadeLabel, opaqueLabel);
-        
+
         AnchorPane.setBottomAnchor(effectsHBox, -24.0);
         AnchorPane.setRightAnchor(effectsHBox, 40.0);
         this.mainContentBorderFrame.getChildren().add(effectsHBox);
@@ -246,8 +248,8 @@ public class LitPathPane extends PathPane {
                 opaqueLabel.setBorder(null);
                 mainContentBorderFrame.setBackground(defaultBackground);
             }
-        });        
-        
+        });
+
         this.scene.getRoot().addEventHandler(CovalentPaneEvent.COVALENT_PANE_CLOSE, e -> {
             if (e.pathPane == this)
                 parent.getChildren().remove(this);

@@ -3,7 +3,9 @@
 package edu.jhuapl.trinity.javafx.components.panes;
 
 import edu.jhuapl.trinity.data.messages.FeatureVector;
+
 import static edu.jhuapl.trinity.data.messages.FeatureVector.bboxToString;
+
 import edu.jhuapl.trinity.data.messages.VectorMaskCollection;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
@@ -30,6 +32,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.util.Map;
+
 import javafx.geometry.Insets;
 import javafx.scene.control.TitledPane;
 import javafx.scene.layout.GridPane;
@@ -46,7 +49,7 @@ public class NavigatorPane extends LitPathPane {
     public static double DEFAULT_LABEL_WIDTH = 64;
     public static int PANE_WIDTH = 600;
     public static int PANE_HEIGHT = 850;
-    
+
     public String imageryBasePath = "imagery/";
     boolean auto = false;
     Image currentImage = null;
@@ -58,7 +61,7 @@ public class NavigatorPane extends LitPathPane {
     ImageView imageView;
     VBox contentVBox;
 
-    
+
     private static BorderPane createContent() {
         BorderPane bpOilSpill = new BorderPane();
         MediaView mediaView = new MediaView();
@@ -91,7 +94,7 @@ public class NavigatorPane extends LitPathPane {
         detailsTP.setPrefWidth(DEFAULT_TITLEDPANE_WIDTH);
         metaTP = new TitledPane();
         metaTP.setText("Metadata");
-        metaTP.setExpanded(false);  
+        metaTP.setExpanded(false);
         metaTP.setPrefWidth(DEFAULT_TITLEDPANE_WIDTH);
         contentVBox = new VBox(5, imageView, urlLabel, imageLabel, detailsTP, metaTP);
 
@@ -154,13 +157,14 @@ public class NavigatorPane extends LitPathPane {
             }
         });
     }
+
     private void createDetails(FeatureVector featureVector) {
         detailsGridPane.getChildren().clear();
         detailsGridPane.addRow(0, new Label("imageURL"),
             new Label(featureVector.getImageURL()));
         String bboxStr = "";
         if (null != featureVector.getBbox())
-            bboxStr = bboxToString(featureVector);        
+            bboxStr = bboxToString(featureVector);
         Label bboxLabel = new Label("bbox");
         bboxLabel.setMinWidth(DEFAULT_LABEL_WIDTH);
         detailsGridPane.addRow(1, bboxLabel, new Label(bboxStr));
@@ -171,11 +175,11 @@ public class NavigatorPane extends LitPathPane {
         scoreLabel.setMinWidth(DEFAULT_LABEL_WIDTH);
         detailsGridPane.addRow(3, scoreLabel, new Label(String.valueOf(featureVector.getScore())));
         Label layerLabel = new Label("layer");
-        layerLabel.setMinWidth(DEFAULT_LABEL_WIDTH);        
+        layerLabel.setMinWidth(DEFAULT_LABEL_WIDTH);
         detailsGridPane.addRow(4, layerLabel, new Label(String.valueOf(featureVector.getLayer())));
         Label messageLabel = new Label("messageId");
-        messageLabel.setMinWidth(DEFAULT_LABEL_WIDTH);        
-        detailsGridPane.addRow(5, messageLabel,new Label(String.valueOf(featureVector.getLayer())));
+        messageLabel.setMinWidth(DEFAULT_LABEL_WIDTH);
+        detailsGridPane.addRow(5, messageLabel, new Label(String.valueOf(featureVector.getLayer())));
 
         StringBuilder sb = new StringBuilder();
         for (Map.Entry<String, String> entry : featureVector.getMetaData().entrySet()) {
@@ -184,6 +188,7 @@ public class NavigatorPane extends LitPathPane {
         Text metaText = new Text(sb.toString());
         metaTP.setContent(metaText);
     }
+
     public void shutdown() {
         close();
         parent.getChildren().remove(this);

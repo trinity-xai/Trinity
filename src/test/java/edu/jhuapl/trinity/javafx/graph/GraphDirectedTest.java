@@ -7,7 +7,9 @@ import edu.jhuapl.trinity.data.graph.GraphNode;
 import edu.jhuapl.trinity.javafx.events.GraphEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.AnimatedSphere;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.Tracer;
+
 import static edu.jhuapl.trinity.utils.JavaFX3DUtils.getGraphNodePoint3D;
+
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import javafx.animation.AnimationTimer;
 import javafx.animation.ParallelTransition;
@@ -52,6 +54,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
+
 import javafx.animation.FadeTransition;
 import javafx.animation.ScaleTransition;
 import javafx.scene.PointLight;
@@ -90,8 +93,8 @@ public class GraphDirectedTest extends Application {
     double positionScalar = 1.0;
     double defaultRadius = 20;
     float defaultEdgeWidth = 10;
-    int defaultDivisions = 64;    
-    
+    int defaultDivisions = 64;
+
     @Override
     public void start(Stage primaryStage) throws Exception {
         nodes = new ArrayList<>();
@@ -172,7 +175,7 @@ public class GraphDirectedTest extends Application {
         light.translateYProperty().bind(camera.translateYProperty());
         light.translateZProperty().bind(camera.translateZProperty());
 //        light.setMaxRange(100);
-               
+
         camera.setNearClip(0.1);
         camera.setFarClip(100000.0);
         camera.setTranslateZ(cameraDistance);
@@ -204,7 +207,7 @@ public class GraphDirectedTest extends Application {
 
         bpOilSpill.setLeft(makeGraphControls());
         Scene scene = new Scene(bpOilSpill, 1024, 768, Color.BLACK);
-        
+
         scene.setOnMouseEntered(event -> subScene.requestFocus());
         scene.addEventHandler(DragEvent.DRAG_OVER, event -> {
             if (ResourceUtils.canDragOver(event))
@@ -215,16 +218,16 @@ public class GraphDirectedTest extends Application {
         scene.addEventHandler(DragEvent.DRAG_DROPPED, event -> {
             ResourceUtils.onDragDropped(event, scene);
         });
-        scene.getRoot().addEventHandler(GraphEvent.NEW_GRAPHDIRECTED_COLLECTION, e-> {
-            graphDirectedCollection = (GraphDirectedCollection)e.object;
+        scene.getRoot().addEventHandler(GraphEvent.NEW_GRAPHDIRECTED_COLLECTION, e -> {
+            graphDirectedCollection = (GraphDirectedCollection) e.object;
             clearAll();
             generateGraph(graphDirectedCollection);
             //animate();
-        });        
-        
+        });
+
         String CSS = this.getClass().getResource("/edu/jhuapl/trinity/css/styles.css").toExternalForm();
         scene.getStylesheets().add(CSS);
-        
+
         primaryStage.setTitle("3D Graph Demonstration");
         primaryStage.setScene(scene);
         primaryStage.show();
@@ -242,6 +245,7 @@ public class GraphDirectedTest extends Application {
 
         sceneRoot.getChildren().addAll(origin, northPole, southPole);
     }
+
     private VBox makeGraphControls() {
         Spinner<Double> scalarSpinner = new Spinner(
             new SpinnerValueFactory.DoubleSpinnerValueFactory(-200.0, 200.0, 1.0, 10.0));
@@ -253,7 +257,7 @@ public class GraphDirectedTest extends Application {
             generateGraph(graphDirectedCollection);
         });
         scalarSpinner.setRepeatDelay(Duration.millis(64));
-        scalarSpinner.setMinWidth(100);        
+        scalarSpinner.setMinWidth(100);
 
         Spinner<Double> radiusSpinner = new Spinner(
             new SpinnerValueFactory.DoubleSpinnerValueFactory(0.5, 50.0, defaultRadius, 0.5));
@@ -271,30 +275,32 @@ public class GraphDirectedTest extends Application {
         edgeWidthSpinner.setEditable(true);
         edgeWidthSpinner.valueProperty().addListener(e -> {
             defaultEdgeWidth = edgeWidthSpinner.getValue().floatValue();
-            if(null != graphDirectedCollection) {
+            if (null != graphDirectedCollection) {
                 sceneRoot.getChildren().removeIf(c -> c instanceof Tracer);
                 edges = generateEdges(graphDirectedCollection);
-                sceneRoot.getChildren().addAll(edges);            
+                sceneRoot.getChildren().addAll(edges);
             }
-       });
+        });
         edgeWidthSpinner.setRepeatDelay(Duration.millis(64));
         edgeWidthSpinner.setMinWidth(100);
 
-        
+
         VBox vbox = new VBox(10,
             new VBox(new Label("Node Radius"), radiusSpinner),
             new VBox(new Label("Edge Width"), edgeWidthSpinner),
             new VBox(new Label("Position Scaling"), scalarSpinner)
         );
-        return vbox;        
+        return vbox;
     }
+
     private void clearAll() {
         sceneRoot.getChildren().removeIf(c -> c instanceof AnimatedSphere);
         sceneRoot.getChildren().removeIf(c -> c instanceof Tracer);
-        transitionList.clear();        
+        transitionList.clear();
     }
+
     private void generateGraph(GraphDirectedCollection graph) {
-        if(null == graph) return;
+        if (null == graph) return;
         nodes = generateNodes(graph);
         sceneRoot.getChildren().addAll(nodes);
 
@@ -303,23 +309,24 @@ public class GraphDirectedTest extends Application {
 
         nodes.forEach(n -> transitionList.add(createTransition(n)));
         edges.forEach(n -> transitionList.add(createVisibilityTransition(n)));
-        
+
     }
+
     private ArrayList<Tracer> generateEdges(GraphDirectedCollection graph) {
         ArrayList<Tracer> newEdges = new ArrayList<>();
         Color defaultDiffuseColor = Color.ALICEBLUE;
-        if(null != graph.getDefaultEdgeColor()) {
+        if (null != graph.getDefaultEdgeColor()) {
             defaultDiffuseColor = Color.valueOf(graph.getDefaultEdgeColor());
         }
         final Color defaultColor = defaultDiffuseColor;
-        
+
         graph.getEdges().forEach(edge -> {
             Optional<GraphNode> startNodeOpt = graph.findNodeById(edge.getStartID());
             Optional<GraphNode> endNodeOpt = graph.findNodeById(edge.getEndID());
-            if(startNodeOpt.isPresent() && endNodeOpt.isPresent()) {
+            if (startNodeOpt.isPresent() && endNodeOpt.isPresent()) {
                 Point3D startP3D = getGraphNodePoint3D(startNodeOpt.get(), positionScalar);
                 Point3D endP3D = getGraphNodePoint3D(endNodeOpt.get(), positionScalar);
-                Tracer tracer = new Tracer(startP3D, endP3D, defaultEdgeWidth, 
+                Tracer tracer = new Tracer(startP3D, endP3D, defaultEdgeWidth,
                     null != edge.getColor() ? Color.valueOf(edge.getColor()) : defaultColor);
                 newEdges.add(tracer);
             }
@@ -330,14 +337,14 @@ public class GraphDirectedTest extends Application {
     private ArrayList<AnimatedSphere> generateNodes(GraphDirectedCollection graph) {
         ArrayList<AnimatedSphere> newNodes = new ArrayList<>();
         Color defaultDiffuseColor = Color.CYAN;
-        if(null != graph.getDefaultNodeColor()) {
+        if (null != graph.getDefaultNodeColor()) {
             defaultDiffuseColor = Color.valueOf(graph.getDefaultNodeColor());
         }
         final Color defaultColor = defaultDiffuseColor;
-        
+
         graph.getNodes().forEach(gN -> {
             PhongMaterial material;
-            if(null != gN.getColor()) {
+            if (null != gN.getColor()) {
                 material = new PhongMaterial(Color.valueOf(gN.getColor()));
             } else {
                 material = new PhongMaterial(defaultColor);
@@ -347,7 +354,7 @@ public class GraphDirectedTest extends Application {
             Point3D p3d = getGraphNodePoint3D(gN, positionScalar);
             sphere.setTranslateX(p3d.getX());
             sphere.setTranslateY(p3d.getY());
-            sphere.setTranslateZ(p3d.getZ());  
+            sphere.setTranslateZ(p3d.getZ());
             newNodes.add(sphere);
         });
         return newNodes;
@@ -387,7 +394,7 @@ public class GraphDirectedTest extends Application {
 
     private ParallelTransition createVisibilityTransition(final Node node) {
         Duration duration = Duration.millis(100);
-        FadeTransition ft  = new FadeTransition(duration, node);
+        FadeTransition ft = new FadeTransition(duration, node);
         ft.setFromValue(0.0);
         ft.setToValue(1.0);
         ScaleTransition st = new ScaleTransition(duration, node);
@@ -413,8 +420,8 @@ public class GraphDirectedTest extends Application {
         path.getElements().add(new MoveToAbs(node,
             node.getTranslateX() + transitionXOffset,
             node.getTranslateY() + transitionYOffset));
-        path.getElements().add(new LineToAbs(node, 
-            node.getTranslateX(), 
+        path.getElements().add(new LineToAbs(node,
+            node.getTranslateX(),
             node.getTranslateY()));
 
         Duration duration = Duration.millis(500);
@@ -474,7 +481,7 @@ public class GraphDirectedTest extends Application {
 
     public static class LineToAbs extends LineTo {
         public LineToAbs(Node node, double x, double y) {
-            super(x,y);
+            super(x, y);
         }
     }
 }

@@ -93,18 +93,18 @@ public enum JavaFX3DUtils {
         else return 0;
     };
 
-    public static Point3D getGraphNodePoint3D(GraphNode gN, double positionScalar ){
+    public static Point3D getGraphNodePoint3D(GraphNode gN, double positionScalar) {
         double x = 0, y = 0, z = 0;
-        if(!gN.getVector().isEmpty())
-            x = gN.getVector().get(0)*positionScalar;
-        if(gN.getVector().size() > 1)
-            y = gN.getVector().get(1)*positionScalar;
-        if(gN.getVector().size() > 2)
-            z = gN.getVector().get(2)*positionScalar; 
-        return new Point3D(x, y, z);   
+        if (!gN.getVector().isEmpty())
+            x = gN.getVector().get(0) * positionScalar;
+        if (gN.getVector().size() > 1)
+            y = gN.getVector().get(1) * positionScalar;
+        if (gN.getVector().size() > 2)
+            z = gN.getVector().get(2) * positionScalar;
+        return new Point3D(x, y, z);
     }
-    
-    
+
+
     public static boolean matches(Point3D p1, Point3D p2, double tolerance) {
         return (p1.getX() - p2.getX() < tolerance)
             && (p1.getY() - p2.getY() < tolerance)
@@ -198,7 +198,7 @@ public enum JavaFX3DUtils {
             } catch (MalformedURLException ex) {
                 LOG.error(null, ex);
             }
-    }
+        }
         Timeline timeline = new Timeline();
         double timeIndex = 0;
         nodeGroup.getChildren().removeIf(n -> n instanceof TessellationMesh);

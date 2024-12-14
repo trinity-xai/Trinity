@@ -12,6 +12,6 @@ public class GraphDirectedTestMain {
      * @param args the command line arguments
      */
     public static void main(String[] args) {
-        Application.launch( GraphDirectedTest.class, args);
+        Application.launch(GraphDirectedTest.class, args);
     }
 }

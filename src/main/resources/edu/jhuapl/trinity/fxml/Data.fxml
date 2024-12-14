@@ -36,7 +36,7 @@
                                     </children>
                                 </HBox>
                                 <Region prefHeight="100.0" prefWidth="100.0"/>
-                                <Button mnemonicParsing="false" onAction="#showContentNavigator" prefWidth="200.0" text="Content Navigator"/>                                 
+                                <Button mnemonicParsing="false" onAction="#showContentNavigator" prefWidth="200.0" text="Content Navigator"/>
                                 <Button mnemonicParsing="false" onAction="#showWaveformDisplay" prefWidth="200.0" text="Waveform Display"/>
                             </children>
                             <padding>

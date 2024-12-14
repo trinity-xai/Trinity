@@ -40,6 +40,7 @@ import org.fxyz3d.utils.CameraTransformer;
 
 import java.util.ArrayList;
 import java.util.List;
+
 import javafx.scene.AmbientLight;
 import javafx.scene.control.CheckBox;
 
@@ -100,7 +101,7 @@ public class SpotLightTest extends Application {
         box.setDrawMode(DrawMode.FILL);
         box.setCullFace(CullFace.BACK);
         box.setMaterial(new PhongMaterial(Color.CYAN));
-        
+
         //create multiple spot lights
         List<SpotLight> lights = new ArrayList<>();
         lights.add(new SpotLight(Color.WHITE));
@@ -144,7 +145,7 @@ public class SpotLightTest extends Application {
 
         ColorPicker spotLight3Picker = new ColorPicker(spotLight3.getColor());
         spotLight3.colorProperty().bind(spotLight3Picker.valueProperty());
-        
+
         ColorPicker surfaceColorPicker = new ColorPicker(Color.CYAN);
         surfaceColorPicker.valueProperty().addListener(cl -> {
             PhongMaterial phong = (PhongMaterial) box.getMaterial();
@@ -156,7 +157,7 @@ public class SpotLightTest extends Application {
         ambientLightCheckBox.setSelected(true);
         ambientLight.getScope().add(box);
         ambientLightCheckBox.selectedProperty().addListener(c -> {
-            if(ambientLightCheckBox.isSelected()) {
+            if (ambientLightCheckBox.isSelected()) {
                 ambientLight.getScope().add(box);
             } else {
                 ambientLight.getScope().remove(box);
@@ -165,8 +166,8 @@ public class SpotLightTest extends Application {
         ColorPicker ambientColorPicker = new ColorPicker(Color.WHITE);
         ambientLight.colorProperty().bind(ambientColorPicker.valueProperty());
         ambientColorPicker.disableProperty().bind(ambientLightCheckBox.selectedProperty().not());
-        
-        VBox vbox = new VBox(10, 
+
+        VBox vbox = new VBox(10,
             dirX, dirY, dirZ, inner, outer, falloff,
             new VBox(5, new Label("Spot Light 1 Color"), spotLight1Picker),
             new VBox(5, new Label("Spot Light 2 Color"), spotLight2Picker),

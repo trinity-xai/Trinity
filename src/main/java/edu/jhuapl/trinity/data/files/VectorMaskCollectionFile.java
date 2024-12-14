@@ -57,8 +57,8 @@ public class VectorMaskCollectionFile extends File implements Transferable {
      */
     public static boolean isVectorMaskCollectionFile(File file) throws IOException {
         String extension = file.getAbsolutePath().substring(
-        file.getAbsolutePath().lastIndexOf("."));
-        if(extension.equalsIgnoreCase(".json")) {        
+            file.getAbsolutePath().lastIndexOf("."));
+        if (extension.equalsIgnoreCase(".json")) {
             String body = Files.readString(file.toPath());
             return VectorMaskCollection.isVectorMaskCollection(body);
         }

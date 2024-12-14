@@ -16,7 +16,6 @@ import java.util.HashMap;
 public class GraphNode {
     //<editor-fold defaultstate="collapsed" desc="JSON Payload">
     /**
-     * 
      * "identity": 12525037,
      * "entityId": "some-arbitrary-name-or-UUID,
      * "vector": [ 123.22, 100.6, 430.22 ],
@@ -27,7 +26,6 @@ public class GraphNode {
      * "name": "7630a867296188c0566d0a73",
      * "numberHashes": 276
      * }
-     * 
      */
     //</editor-fold>
     //<editor-fold defaultstate="collapsed" desc="Payload Fields">
@@ -35,7 +33,7 @@ public class GraphNode {
     private String entityID;
     private ArrayList<Double> vector; //required but optional length
     private ArrayList<String> labels; //optional
-    private String color; //optional overrides default color 
+    private String color; //optional overrides default color
     //ex #FF0000FF == fully opaque Red in RGBA HEX form
     private HashMap<String, Object> properties; //optional
 

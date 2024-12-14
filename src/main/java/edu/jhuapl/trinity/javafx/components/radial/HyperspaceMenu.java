@@ -247,7 +247,7 @@ public class HyperspaceMenu extends RadialEntity {
 
         ImageView navigator = ResourceUtils.loadIcon("navigator", ITEM_FIT_WIDTH);
         navigator.setEffect(glow);
-        
+
         addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Metadata Search", search, e -> {
             Pane pathPane = App.getAppPathPaneStack();
             if (null == searchPane) {
@@ -334,7 +334,7 @@ public class HyperspaceMenu extends RadialEntity {
 
         addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Content Navigator", navigator, e -> {
             hyperspace3DPane.getScene().getRoot().fireEvent(
-                new ApplicationEvent(ApplicationEvent.SHOW_NAVIGATOR_PANE));            
+                new ApplicationEvent(ApplicationEvent.SHOW_NAVIGATOR_PANE));
         }));
     }
 }

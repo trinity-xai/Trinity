@@ -228,8 +228,8 @@ public class App extends Application {
         hyperspace3DPane = new Hyperspace3DPane(scene);
         hyperspace3DPane.setVisible(false); //start off hidden
 
-         navigatorPane = new NavigatorPane(scene, pathPane);
-        
+        navigatorPane = new NavigatorPane(scene, pathPane);
+
         LOG.info("Registering Event Handlers...");
         //animatedConsoleText.animate("Registering Event Handlers...");
         scene.addEventHandler(FeatureVectorEvent.REQUEST_FEATURE_COLLECTION, event -> {
@@ -331,10 +331,10 @@ public class App extends Application {
         });
         centerStack.addEventHandler(DragEvent.DRAG_DROPPED, e -> {
             String dropType = ResourceUtils.detectDropType(e);
-            if(!dropType.contentEquals("UNKNOWN")) {
-                if(ResourceUtils.promptUserOnCommand(dropType)){
+            if (!dropType.contentEquals("UNKNOWN")) {
+                if (ResourceUtils.promptUserOnCommand(dropType)) {
                     try {
-                        switch(dropType) {
+                        switch (dropType) {
                             case "Hyperspace" -> CommandTask.execute(scene, "VIEW_HYPERSPACE", 0);
                             case "Hypersurface" -> CommandTask.execute(scene, "VIEW_HYPERSURFACE", 0);
                             case "Projections" -> CommandTask.execute(scene, "VIEW_PROJECTIONS", 0);
@@ -347,7 +347,7 @@ public class App extends Application {
             ResourceUtils.onDragDropped(e, scene);
         });
         ////////////////////////
-        
+
         hyperspace3DPane.addEventHandler(DragEvent.DRAG_OVER, event -> {
             if (ResourceUtils.canDragOver(event)) {
                 event.acceptTransferModes(TransferMode.COPY);

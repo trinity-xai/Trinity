@@ -32,13 +32,13 @@ public class ProjectUmapFeaturesTask extends Task {
     private boolean cancelledByUser = false;
     private double projectionScalar = 100.0; //used for sizing values to 3D scene later
     private boolean enableLoadingMedia = false;
-    
+
     public ProjectUmapFeaturesTask(Scene scene, FeatureCollection originalFC, Umap umap, boolean enableLoadingMedia) {
         this.scene = scene;
         this.originalFC = originalFC;
         this.umap = umap;
         this.enableLoadingMedia = enableLoadingMedia;
-        if(enableLoadingMedia) {
+        if (enableLoadingMedia) {
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
                 "", ButtonType.YES, ButtonType.NO);
             alert.setHeaderText("Watch a TV while you wait?");
@@ -53,7 +53,7 @@ public class ProjectUmapFeaturesTask extends Task {
             alert.setY(500);
             alert.resultProperty().addListener(r -> {
                 if (alert.getResult().equals(ButtonType.YES)) {
-    //                manifoldControlPane.minimize();
+                    //                manifoldControlPane.minimize();
                     scene.getRoot().fireEvent(
                         new ApplicationEvent(ApplicationEvent.SHOW_VIDEO_PANE,
                             "EMPTY VISION ", "A past never had for a Retrowave Future"));

@@ -23,6 +23,7 @@ public class CommandTask extends Task {
         delaySeconds = commandRequest.getDelaySeconds();
         command = commandRequest.getRequest();
     }
+
     public static void execute(Scene scene, String command, double delaySeconds) throws InterruptedException {
         if (delaySeconds > 0) {
             Thread.sleep(Duration.ofMillis(Double.valueOf(delaySeconds * 1000).longValue()));

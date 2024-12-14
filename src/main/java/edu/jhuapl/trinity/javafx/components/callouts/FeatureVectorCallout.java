@@ -3,7 +3,9 @@
 package edu.jhuapl.trinity.javafx.components.callouts;
 
 import edu.jhuapl.trinity.data.messages.FeatureVector;
+
 import static edu.jhuapl.trinity.data.messages.FeatureVector.bboxToString;
+
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.utils.HttpsUtils;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;

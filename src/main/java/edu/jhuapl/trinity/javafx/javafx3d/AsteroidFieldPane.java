@@ -21,7 +21,9 @@ import edu.jhuapl.trinity.javafx.javafx3d.projectiles.HitShape3D;
 import edu.jhuapl.trinity.javafx.javafx3d.projectiles.ProjectileSystem;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
+
 import java.io.IOException;
+
 import javafx.animation.AnimationTimer;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
@@ -78,8 +80,8 @@ import java.util.List;
  * @author Sean Phillips
  */
 
-public class AsteroidFieldPane extends StackPane { 
-//implements
+public class AsteroidFieldPane extends StackPane {
+    //implements
 //    FeatureVectorRenderer, GaussianMixtureRenderer, ManifoldRenderer {
     private static final Logger LOG = LoggerFactory.getLogger(AsteroidFieldPane.class);
     public static double ICON_FIT_HEIGHT = 64;
@@ -100,7 +102,7 @@ public class AsteroidFieldPane extends StackPane {
     private double mouseOldY;
     private double mouseDeltaX;
     private double mouseDeltaY;
-//    RadialEntityOverlayPane radialOverlayPane;
+    //    RadialEntityOverlayPane radialOverlayPane;
     ViewControlsMenu viewControlsMenu;
     JoystickPane joystickPane;
 
@@ -225,8 +227,8 @@ public class AsteroidFieldPane extends StackPane {
         debugGroup.setVisible(false);
 
         //Add 3D subscene stuff to 3D scene root object
-        sceneRoot.getChildren().addAll(cameraTransform, 
-            nodeGroup, manifoldGroup, debugGroup, 
+        sceneRoot.getChildren().addAll(cameraTransform,
+            nodeGroup, manifoldGroup, debugGroup,
             dataXForm, extrasGroup, connectorsGroup);
 
         PhongMaterial mat;
@@ -463,7 +465,7 @@ public class AsteroidFieldPane extends StackPane {
         highlighterNeonCircle.setManaged(false);
         highlighterNeonCircle.setMouseTransparent(true);
         getChildren().clear();
-        getChildren().addAll(bp, labelGroup, 
+        getChildren().addAll(bp, labelGroup,
             highlighterNeonCircle, selectionRectangle);
 
         Glow glow = new Glow(0.5);
@@ -487,7 +489,7 @@ public class AsteroidFieldPane extends StackPane {
 //            animatingProjections = animatingProjectionsItem.isSelected());
 
         ContextMenu cm = new ContextMenu(selectPointsItem,
-            resetViewItem 
+            resetViewItem
 //            animatingProjectionsItem
         );
 
@@ -587,7 +589,7 @@ public class AsteroidFieldPane extends StackPane {
         viewControlsMenu.setTranslateY(200);
         viewControlsMenu.setVisible(false);
         getChildren().addAll(viewControlsMenu);
-        
+
         subScene.addEventHandler(MouseEvent.MOUSE_DRAGGED, me -> {
             if (me.isSecondaryButtonDown())
                 projectileSystem.playerShip.mouseDragged(me, mouseDeltaX, mouseDeltaY);
@@ -601,7 +603,7 @@ public class AsteroidFieldPane extends StackPane {
             if (keycode == KeyCode.F12 && k.isControlDown()) {
                 resetAsteroids();
             } else if (keycode == KeyCode.F12 && k.isAltDown()) {
-                    toggleProjectileViews();
+                toggleProjectileViews();
             }
             if (keycode == KeyCode.Z && k.isControlDown()) {
                 projectileSystem.thrustPlayer();
@@ -757,6 +759,7 @@ public class AsteroidFieldPane extends StackPane {
                 }
             });
     }
+
     public Manifold3D makeHull(List<Point3D> labelMatchedPoints, String label, Double tolerance) {
         Manifold3D manifold3D = new Manifold3D(
             labelMatchedPoints, true, true, true, tolerance
@@ -774,6 +777,7 @@ public class AsteroidFieldPane extends StackPane {
         updateFloatingNodes();
         return manifold3D;
     }
+
     private void setupSkyBox() {
         // Load Skybox AFTER camera is initialized
         double size = 100000D;

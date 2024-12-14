@@ -5,7 +5,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
- *
  * @author sean phillips
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -13,9 +12,10 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 public class CocoAnnotation {
     public static final String TYPESTRING = "coco_annotation";
     private String content;
-    
-    public CocoAnnotation() { }
-    
+
+    public CocoAnnotation() {
+    }
+
     public static boolean isCocoAnnotation(String messageBody) {
         return messageBody.contains("messageType")
             && messageBody.contains(TYPESTRING);
@@ -34,5 +34,5 @@ public class CocoAnnotation {
     public void setContent(String content) {
         this.content = content;
     }
-    
+
 }

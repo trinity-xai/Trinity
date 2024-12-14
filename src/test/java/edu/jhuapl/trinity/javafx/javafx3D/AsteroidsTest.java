@@ -23,10 +23,13 @@ import javafx.stage.Stage;
 import org.fxyz3d.utils.CameraTransformer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
+
 import static java.util.stream.Collectors.toList;
+
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.DoubleProperty;
@@ -56,7 +59,7 @@ public class AsteroidsTest extends Application {
     private final double sceneHeight = 2000;
     AsteroidFieldPane asteroidsPane;
     Scene scene;
-    
+
     @Override
     public void start(Stage primaryStage) throws Exception {
         //stackPane.setBackground(new Background(new BackgroundFill(Color.rgb(255, 255, 255), CornerRadii.EMPTY, Insets.EMPTY)));
@@ -74,7 +77,7 @@ public class AsteroidsTest extends Application {
             ResourceUtils.onDragDropped(event, scene);
         });
 
-        scene.getRoot().addEventHandler(ManifoldEvent.NEW_MANIFOLD_DATA, e-> {
+        scene.getRoot().addEventHandler(ManifoldEvent.NEW_MANIFOLD_DATA, e -> {
             handleNewManifoldData(e);
         });
 
@@ -111,8 +114,8 @@ public class AsteroidsTest extends Application {
         var posX = createSliderControl("pos x", sliderXpos);
         var posY = createSliderControl("pos y", sliderYpos);
         var posZ = createSliderControl("pos z", sliderZpos);
-        
-        
+
+
         var inner = createSliderControl("inner angle", spotLight.innerAngleProperty(), 0, 180, spotLight.getInnerAngle());
         var outer = createSliderControl("outer angle", spotLight.outerAngleProperty(), 0, 180, spotLight.getOuterAngle());
         var falloff = createSliderControl("falloff", spotLight.falloffProperty(), -10, 10, spotLight.getFalloff());
@@ -130,7 +133,7 @@ public class AsteroidsTest extends Application {
         ambientLightCheckBox.setSelected(true);
         asteroidsPane.ambientLight.disableProperty().bind(
             ambientLightCheckBox.selectedProperty().not());
-  
+
         ColorPicker ambientColorPicker = new ColorPicker(Color.WHITE);
         asteroidsPane.ambientLight.colorProperty().bind(ambientColorPicker.valueProperty());
         ambientColorPicker.disableProperty().bind(ambientLightCheckBox.selectedProperty().not());
@@ -139,13 +142,13 @@ public class AsteroidsTest extends Application {
         pointLightCheckBox.setSelected(true);
         asteroidsPane.pointLight.disableProperty().bind(
             pointLightCheckBox.selectedProperty().not());
-  
+
         ColorPicker pointColorPicker = new ColorPicker(Color.WHITE);
         asteroidsPane.pointLight.colorProperty().bind(pointColorPicker.valueProperty());
         pointColorPicker.disableProperty().bind(pointLightCheckBox.selectedProperty().not());
 
-        
-        VBox vbox = new VBox(10, 
+
+        VBox vbox = new VBox(10,
             dirX, dirY, dirZ, inner, outer, falloff,
             new VBox(5, new Label("Spot Light Color"), spotLight1Picker),
             posX, posY, posZ,
@@ -163,7 +166,7 @@ public class AsteroidsTest extends Application {
         scrollPane.setMaxSize(400, 800);
         StackPane.setAlignment(scrollPane, Pos.TOP_LEFT);
         bpOilSpillNeverForget.setLeft(scrollPane);
-        
+
         primaryStage.setTitle("Asteroid Field");
         primaryStage.setScene(scene);
         primaryStage.show();
@@ -201,6 +204,7 @@ public class AsteroidsTest extends Application {
                 ManifoldEvent.MANIFOLD3D_OBJECT_GENERATED, manifold, manifold3D));
         });
     }
+
     private HBox createSliderControl(String name, DoubleProperty property, double min, double max, double start) {
         var slider = createSlider(min, max, start);
         property.bind(slider.valueProperty());
@@ -224,6 +228,6 @@ public class AsteroidsTest extends Application {
         slider.setShowTickMarks(true);
         slider.setShowTickLabels(true);
         return slider;
-    }    
+    }
 
 }

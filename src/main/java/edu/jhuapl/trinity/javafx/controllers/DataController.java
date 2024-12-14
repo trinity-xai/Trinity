@@ -169,11 +169,12 @@ public class DataController implements Initializable {
         scene.getRoot().fireEvent(
             new ApplicationEvent(ApplicationEvent.SHOW_WAVEFORM_PANE));
     }
+
     @FXML
     public void showContentNavigator() {
         scene.getRoot().fireEvent(
             new ApplicationEvent(ApplicationEvent.SHOW_NAVIGATOR_PANE));
-    }    
+    }
 
     @FXML
     public void browseBasePath() {

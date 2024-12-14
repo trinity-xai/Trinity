@@ -94,7 +94,7 @@ public class ZeroPilotLatentsLoader extends Task {
                     scene.getRoot().fireEvent(
                         new HyperspaceEvent(HyperspaceEvent.CLEAR_HYPERSPACE_NOW));
                 });
-            
+
             ProgressStatus ps = new ProgressStatus("Converting ZERO Pilot latent vectors to Feature Vectors...", -1);
             ps.fillStartColor = Color.CYAN;
             ps.fillEndColor = Color.CYAN;

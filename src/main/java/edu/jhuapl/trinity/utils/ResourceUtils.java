@@ -83,6 +83,7 @@ import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.stream.Collectors;
+
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.DialogPane;
@@ -499,7 +500,8 @@ public enum ResourceUtils {
             }
         }
         return type;
-    }    
+    }
+
     public static boolean promptUserOnCommand(String commandType) {
         Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
             "Switch Views Now?",

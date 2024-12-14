@@ -56,7 +56,7 @@ public class CocoAnnotationFile extends File implements Transferable {
     public static boolean isCocoAnnotationFile(File file) throws IOException {
         String extension = file.getAbsolutePath().substring(
             file.getAbsolutePath().lastIndexOf("."));
-        if(extension.equalsIgnoreCase(".json")) {
+        if (extension.equalsIgnoreCase(".json")) {
             String body = Files.readString(file.toPath());
             return CocoAnnotation.isCocoAnnotation(body);
         }

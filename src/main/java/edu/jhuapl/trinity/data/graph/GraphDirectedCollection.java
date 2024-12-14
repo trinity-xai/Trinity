@@ -52,13 +52,13 @@ public class GraphDirectedCollection {
             && messageBody.contains("nodes")
             && messageBody.contains("edges");
     }
-    
-    public Optional<GraphNode> findNodeById(String nodeId)  {
+
+    public Optional<GraphNode> findNodeById(String nodeId) {
         return nodes.stream()
             .filter(n -> n.getEntityID().contentEquals(nodeId))
             .findFirst();
     }
-    
+
     //<editor-fold defaultstate="collapsed" desc="Properties">
 
     /**
@@ -144,6 +144,6 @@ public class GraphDirectedCollection {
     public void setEdges(List<GraphEdge> edges) {
         this.edges = edges;
     }
-    
-    //</editor-fold>    
+
+    //</editor-fold>
 }

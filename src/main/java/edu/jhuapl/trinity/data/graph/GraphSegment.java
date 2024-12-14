@@ -51,10 +51,11 @@ public class GraphSegment {
     private GraphRelationship relationship;
     private GraphNode end;
     //</editor-fold>
-    
+
     public GraphSegment() {
-    }    
+    }
     //<editor-fold defaultstate="collapsed" desc="Properties">
+
     /**
      * @return the start
      */

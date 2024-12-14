@@ -185,12 +185,12 @@ public class ParticleTest extends Application {
 
         pyramidImageView = new ImageView(ResourceUtils.load3DTextureImage("carl-b"));
         pyramidImageView.setFitWidth(100);
-        pyramidImageView.setSmooth(true);        
+        pyramidImageView.setSmooth(true);
         pyramidImageView.setPreserveRatio(true);
         pyramidImageView.setDepthTest(DepthTest.ENABLE);
         pyramidImageView.setTranslateZ(-500);
-        
-        sceneRoot.getChildren().addAll(cameraTransform, 
+
+        sceneRoot.getChildren().addAll(cameraTransform,
             box, xSphere, ySphere, zSphere, pyramidImageView);
         BorderPane bpOilSpill = new BorderPane(subSceneStackPane);
 
@@ -223,8 +223,8 @@ public class ParticleTest extends Application {
             else
                 mode.set(BillboardMode.CYLINDRICAL);
         });
- 
-       CheckBox depthTestCheckBox = new CheckBox("Enable DepthTest");
+
+        CheckBox depthTestCheckBox = new CheckBox("Enable DepthTest");
         depthTestCheckBox.setSelected(true);
         depthTestCheckBox.selectedProperty().addListener(e -> {
             DepthTest dt = depthTestCheckBox.isSelected() ? DepthTest.ENABLE : DepthTest.DISABLE;

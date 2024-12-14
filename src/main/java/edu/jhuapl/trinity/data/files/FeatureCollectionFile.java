@@ -58,7 +58,7 @@ public class FeatureCollectionFile extends File implements Transferable {
     public static boolean isFeatureCollectionFile(File file) throws IOException {
         String extension = file.getAbsolutePath().substring(
             file.getAbsolutePath().lastIndexOf("."));
-        if(extension.equalsIgnoreCase(".json")) {
+        if (extension.equalsIgnoreCase(".json")) {
             String body = Files.readString(file.toPath());
             return FeatureCollection.isFeatureCollection(body);
         }

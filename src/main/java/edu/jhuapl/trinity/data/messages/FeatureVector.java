@@ -4,6 +4,7 @@ package edu.jhuapl.trinity.data.messages;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 
@@ -84,6 +85,7 @@ public class FeatureVector extends MessageData {
         return null != getBbox() && !getBbox().isEmpty() && getBbox().size() > 3
             && getBbox().get(2) > 0.0 && getBbox().get(3) > 0.0;
     }
+
     public static String bboxToString(FeatureVector featureVector) {
         NumberFormat format = new DecimalFormat("0.00");
         StringBuilder sb = new StringBuilder("[ ");
