@@ -90,6 +90,7 @@ public class Manifold3D extends Group {
 
         quickhullMeshView = new MeshView(quickhullTriangleMesh);
         PhongMaterial quickhullMaterial = new PhongMaterial(Color.SKYBLUE);
+        quickhullMaterial.setSpecularColor(Color.SKYBLUE); //fix for aarch64 Mac Ventura
         quickhullMeshView.setMaterial(quickhullMaterial);
         quickhullMeshView.setDrawMode(DrawMode.FILL);
         quickhullMeshView.setCullFace(CullFace.NONE);
@@ -457,6 +458,7 @@ public class Manifold3D extends Group {
 
         quickhullLinesMeshView = new MeshView(quickhullLinesTriangleMesh);
         PhongMaterial quickhullLinesMaterial = new PhongMaterial(Color.BLUE);
+        quickhullLinesMaterial.setSpecularColor(Color.BLUE); //fix for aarch64 Mac Ventura
         quickhullLinesMeshView.setMaterial(quickhullLinesMaterial);
         quickhullLinesMeshView.setDrawMode(DrawMode.LINE);
         quickhullLinesMeshView.setCullFace(CullFace.NONE);
@@ -481,6 +483,7 @@ public class Manifold3D extends Group {
             }
             Sphere sphere = new Sphere(2.5);
             PhongMaterial mat = new PhongMaterial(Color.BLUE);
+            mat.setSpecularColor(Color.BLUE); //fix for aarch64 Mac Ventura
             sphere.setMaterial(mat);
             sphere.setTranslateX(point3D.x);
             sphere.setTranslateY(point3D.y);

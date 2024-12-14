@@ -2,7 +2,9 @@
 
 package edu.jhuapl.trinity.utils;
 
+import com.clust4j.log.Log;
 import edu.jhuapl.trinity.data.Trajectory;
+import edu.jhuapl.trinity.data.graph.GraphNode;
 import edu.jhuapl.trinity.data.messages.FeatureVector;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.Perspective3DNode;
@@ -45,12 +47,14 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URISyntaxException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.function.Function;
+import java.util.logging.Level;
 
 /**
  * Utilities used by various 3D rendering code.
@@ -88,6 +92,18 @@ public enum JavaFX3DUtils {
         else if (p1.z > p2.z) return 1;
         else return 0;
     };
+
+    public static Point3D getGraphNodePoint3D(GraphNode gN, double positionScalar) {
+        double x = 0, y = 0, z = 0;
+        if (!gN.getVector().isEmpty())
+            x = gN.getVector().get(0) * positionScalar;
+        if (gN.getVector().size() > 1)
+            y = gN.getVector().get(1) * positionScalar;
+        if (gN.getVector().size() > 2)
+            z = gN.getVector().get(2) * positionScalar;
+        return new Point3D(x, y, z);
+    }
+
 
     public static boolean matches(Point3D p1, Point3D p2, double tolerance) {
         return (p1.getX() - p2.getX() < tolerance)
@@ -175,8 +191,13 @@ public enum JavaFX3DUtils {
         File[] files = folder.listFiles();
 
         for (File file : files) {
-            Image image = new Image(file.getAbsolutePath());
-            images.add(image);
+            Image image;
+            try {
+                image = new Image(file.toURI().toURL().toExternalForm());
+                images.add(image);
+            } catch (MalformedURLException ex) {
+                LOG.error(null, ex);
+            }
         }
         Timeline timeline = new Timeline();
         double timeIndex = 0;
@@ -279,7 +300,7 @@ public enum JavaFX3DUtils {
             File[] files = folder.listFiles();
 
             for (File file : files) {
-                tiles.add(new Image(file.getAbsolutePath()));
+                tiles.add(new Image(file.toURI().toURL().toExternalForm()));
             }
         }
         return tiles;
@@ -294,7 +315,7 @@ public enum JavaFX3DUtils {
         }
         File[] files = folder.listFiles();
         for (File file : files) {
-            images.add(new Image(file.getAbsolutePath()));
+            images.add(new Image(file.toURI().toURL().toExternalForm()));
         }
         return images;
     }

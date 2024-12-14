@@ -71,6 +71,8 @@ public class TessellationMesh extends MeshView {
             phongMaterial = new PhongMaterial(color, vectorizeImage, null, null, null);
         else
             phongMaterial = new PhongMaterial(color);
+        phongMaterial.setSpecularColor(color); //fix for aarch64 Mac Ventura
+
         setDrawMode(DrawMode.LINE);
         setCullFace(CullFace.NONE);
         tessellateImage(vectorizeImage, scale, maxH, pskip);
@@ -124,7 +126,7 @@ public class TessellationMesh extends MeshView {
             phongMaterial.setDiffuseColor(color);
         phongMaterial.setSelfIlluminationMap(image);
         phongMaterial.setBumpMap(image);
-        phongMaterial.setSpecularColor(Color.CYAN);
+        phongMaterial.setSpecularColor(color);
     }
 
     public void animateTessellation(long ms, int rows) {

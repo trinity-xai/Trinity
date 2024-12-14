@@ -1,6 +1,6 @@
 /* Copyright (C) 2021 - 2024 Sean Phillips */
 
-package edu.jhuapl.trinity.javafx.javafx3D;
+package edu.jhuapl.trinity.javafx.javafx3d;
 
 import com.github.sarxos.webcam.Webcam;
 import edu.jhuapl.trinity.data.HyperspaceSeed;
@@ -9,9 +9,14 @@ import edu.jhuapl.trinity.javafx.events.HyperspaceEvent;
 import edu.jhuapl.trinity.javafx.events.ImageEvent;
 import edu.jhuapl.trinity.javafx.events.TerrainEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.DirectedScatterDataModel;
+import edu.jhuapl.trinity.javafx.javafx3d.DirectedScatterDataModel;
+import edu.jhuapl.trinity.javafx.javafx3d.DirectedScatterMesh;
 import edu.jhuapl.trinity.javafx.javafx3d.DirectedScatterMesh;
 import edu.jhuapl.trinity.javafx.javafx3d.HyperSurfacePlotMesh;
+import edu.jhuapl.trinity.javafx.javafx3d.HyperSurfacePlotMesh;
 import edu.jhuapl.trinity.javafx.javafx3d.Perspective3DNode;
+import edu.jhuapl.trinity.javafx.javafx3d.Perspective3DNode;
+import edu.jhuapl.trinity.javafx.javafx3d.Vert3D;
 import edu.jhuapl.trinity.javafx.javafx3d.Vert3D;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.Opticon;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.TessellationTube;

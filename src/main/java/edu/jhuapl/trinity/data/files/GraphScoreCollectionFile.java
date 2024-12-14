@@ -1,9 +1,10 @@
 /* Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC */
 
-package edu.jhuapl.trinity.data.graph;
+package edu.jhuapl.trinity.data.files;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.jhuapl.trinity.data.graph.GraphScoreCollection;
 
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;

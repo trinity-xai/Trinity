@@ -1,3 +1,5 @@
+/* Copyright (C) 2021 - 2024 Sean Phillips */
+
 package edu.jhuapl.trinity.javafx.javafx3d.projectiles;
 
 import edu.jhuapl.trinity.javafx.javafx3d.animated.Opticon;

@@ -1,4 +1,4 @@
-/* Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC */
+/* Copyright (C) 2021 - 2024 Sean Phillips */
 
 package edu.jhuapl.trinity.data.graph;
 
@@ -50,5 +50,52 @@ public class GraphSegment {
     private GraphNode start;
     private GraphRelationship relationship;
     private GraphNode end;
+    //</editor-fold>
+
+    public GraphSegment() {
+    }
+    //<editor-fold defaultstate="collapsed" desc="Properties">
+
+    /**
+     * @return the start
+     */
+    public GraphNode getStart() {
+        return start;
+    }
+
+    /**
+     * @param start the start to set
+     */
+    public void setStart(GraphNode start) {
+        this.start = start;
+    }
+
+    /**
+     * @return the relationship
+     */
+    public GraphRelationship getRelationship() {
+        return relationship;
+    }
+
+    /**
+     * @param relationship the relationship to set
+     */
+    public void setRelationship(GraphRelationship relationship) {
+        this.relationship = relationship;
+    }
+
+    /**
+     * @return the end
+     */
+    public GraphNode getEnd() {
+        return end;
+    }
+
+    /**
+     * @param end the end to set
+     */
+    public void setEnd(GraphNode end) {
+        this.end = end;
+    }
     //</editor-fold>
 }
