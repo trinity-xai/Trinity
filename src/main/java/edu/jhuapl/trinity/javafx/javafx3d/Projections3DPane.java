@@ -30,6 +30,7 @@ import edu.jhuapl.trinity.javafx.components.radial.AnimatedNeonCircle;
 import edu.jhuapl.trinity.javafx.components.radial.ViewControlsMenu;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
+import edu.jhuapl.trinity.javafx.events.EffectEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.events.HyperspaceEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
@@ -246,6 +247,7 @@ public class Projections3DPane extends StackPane implements
     public boolean clusterSelectionMode = false;
     public boolean updatingTrajectories = false;
     public boolean animatingProjections = false;
+    public boolean emptyVisionEnabled = false;
     public SimpleBooleanProperty autoProjectionProperty = new SimpleBooleanProperty(false);
     Opticon projectionOpticon;
     public ConcurrentLinkedQueue<HyperspaceSeed> hyperspaceSeeds = new ConcurrentLinkedQueue<>();
@@ -412,6 +414,10 @@ public class Projections3DPane extends StackPane implements
                 updateTrajectory3D(false);
             });
         });
+        this.scene.addEventHandler(EffectEvent.ENABLE_EMPTY_VISION, e -> {
+            emptyVisionEnabled = (boolean) e.object;
+        });
+
 
         //Add 3D subscene stuff to 3D scene root object
         sceneRoot.getChildren().addAll(cameraTransform, highlightedPoint,
@@ -1126,7 +1132,7 @@ public class Projections3DPane extends StackPane implements
         projectileSystem = new ProjectileSystem(debugGroup, 15);
         projectileSystem.setRunning(false);
         projectileSystem.setEnableProjectileTimer(true);
-        viewControlsMenu = new ViewControlsMenu(this);
+        viewControlsMenu = new ViewControlsMenu(scene);
         radialOverlayPane.addEntity(viewControlsMenu);
         viewControlsMenu.setTranslateX(200);
         viewControlsMenu.setTranslateY(200);
@@ -2249,9 +2255,9 @@ public class Projections3DPane extends StackPane implements
     }
 
     public void addProjectedFeatureVector(FeatureVector featureVector) {
-//        Sphere sphere = new Sphere(point3dSize);
-        PhongMaterial mat = new PhongMaterial(
-            FactorLabel.getColorByLabel(featureVector.getLabel()));
+        Color labelColor = FactorLabel.getColorByLabel(featureVector.getLabel());
+        PhongMaterial mat = new PhongMaterial(labelColor);
+        mat.setSpecularColor(labelColor); //fix for aarch64 Mac Ventura
         Sphere sphere = new AnimatedSphere(mat, point3dSize, 32, true);
 
         sphere.setMaterial(mat);
@@ -2803,7 +2809,8 @@ public class Projections3DPane extends StackPane implements
 
     public void projectFeatureCollection(FeatureCollection originalFC, Umap umap) {
         latestUmap = umap;
-        ProjectUmapFeaturesTask task = new ProjectUmapFeaturesTask(scene, originalFC, umap);
+        ProjectUmapFeaturesTask task = new ProjectUmapFeaturesTask(
+            scene, originalFC, umap, emptyVisionEnabled);
         task.setOnSucceeded(e -> {
             FeatureCollection fc;
             try {

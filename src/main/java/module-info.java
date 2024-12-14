@@ -29,6 +29,7 @@ module edu.jhuapl.trinity {
     opens edu.jhuapl.trinity.javafx.components.radial to lit.litfx.controls;
     opens edu.jhuapl.trinity to webcam.capture;
     opens edu.jhuapl.trinity.data to javafx.base;
+    opens edu.jhuapl.trinity.data.graph to javafx.base;
     opens edu.jhuapl.trinity.data.terrain to javafx.base;
     opens edu.jhuapl.trinity.javafx.controllers to javafx.fxml;
     opens edu.jhuapl.trinity.javafx.javafx3d.particle to java.base;
@@ -49,6 +50,7 @@ module edu.jhuapl.trinity {
     exports edu.jhuapl.trinity;
     exports edu.jhuapl.trinity.data;
     exports edu.jhuapl.trinity.data.messages;
+    exports edu.jhuapl.trinity.data.graph;
     exports edu.jhuapl.trinity.data.files;
     exports edu.jhuapl.trinity.data.terrain;
 }

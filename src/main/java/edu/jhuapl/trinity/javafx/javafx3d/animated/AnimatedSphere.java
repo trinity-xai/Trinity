@@ -40,6 +40,7 @@ public class AnimatedSphere extends Sphere implements Selectable3D {
         this.animateOnHover = animated;
         setMaterial(this.phongMaterial);
         selectedMaterial = DEFAULT_SELECTED_MATERIAL;
+        selectedMaterial.setSpecularColor(Color.ALICEBLUE); //fix for aarch64 Mac Ventura
         setOnMouseEntered(mouseEnter -> {
             if (animateOnHover) {
                 expand();

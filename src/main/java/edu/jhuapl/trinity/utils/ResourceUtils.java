@@ -7,8 +7,10 @@ import edu.jhuapl.trinity.data.Trajectory;
 import edu.jhuapl.trinity.data.files.CdcCsvFile;
 import edu.jhuapl.trinity.data.files.CdcTissueGenesFile;
 import edu.jhuapl.trinity.data.files.ClusterCollectionFile;
+import edu.jhuapl.trinity.data.files.CocoAnnotationFile;
 import edu.jhuapl.trinity.data.files.FeatureCollectionFile;
 import edu.jhuapl.trinity.data.files.GaussianMixtureCollectionFile;
+import edu.jhuapl.trinity.data.files.GraphDirectedCollectionFile;
 import edu.jhuapl.trinity.data.files.LabelConfigFile;
 import edu.jhuapl.trinity.data.files.ManifoldDataFile;
 import edu.jhuapl.trinity.data.files.McclodSplitDataTsvFile;
@@ -26,6 +28,7 @@ import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.AudioEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.events.GaussianMixtureEvent;
+import edu.jhuapl.trinity.javafx.events.HyperspaceEvent;
 import edu.jhuapl.trinity.javafx.events.ImageEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.javafx.events.SemanticMapEvent;
@@ -34,6 +37,7 @@ import edu.jhuapl.trinity.javafx.events.TrajectoryEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.images.ImageResourceProvider;
 import edu.jhuapl.trinity.utils.loaders.CdcTissueGenesLoader;
 import edu.jhuapl.trinity.utils.loaders.FeatureCollectionLoader;
+import edu.jhuapl.trinity.utils.loaders.GraphDirectedCollectionLoader;
 import edu.jhuapl.trinity.utils.loaders.McclodSplitDataLoader;
 import edu.jhuapl.trinity.utils.loaders.ShapleyCollectionLoader;
 import edu.jhuapl.trinity.utils.loaders.TextEmbeddingsLoader;
@@ -73,11 +77,19 @@ import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.stream.Collectors;
+
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.DialogPane;
+import javafx.scene.layout.Background;
+import javafx.scene.paint.Color;
+import javafx.stage.StageStyle;
 
 /**
  * @author Sean Phillips
@@ -333,6 +345,21 @@ public enum ResourceUtils {
                             } else if (isAudioFile(file)) {
                                 Platform.runLater(() -> scene.getRoot().fireEvent(
                                     new AudioEvent(AudioEvent.NEW_AUDIO_FILE, file)));
+                            } else if (CdcCsvFile.isCdcCsvFile(file)) {
+                                CdcCsvFile cdcCsvFile = new CdcCsvFile(file.getAbsolutePath(), true);
+                                //convert to Feature Vector Collection for the lulz
+                                FeatureCollection fc = DataUtils.convertCdcCsv(cdcCsvFile.cdcCsvList, true);
+                                Platform.runLater(() -> scene.getRoot().fireEvent(
+                                    new FeatureVectorEvent(FeatureVectorEvent.NEW_FEATURE_COLLECTION, fc)));
+                                Trajectory trajectory = new Trajectory(file.getName());
+                                trajectory.totalStates = fc.getFeatures().size();
+                                Platform.runLater(() -> scene.getRoot().fireEvent(
+                                    new TrajectoryEvent(TrajectoryEvent.NEW_TRAJECTORY_OBJECT, trajectory, fc)));
+                            } else if (CdcTissueGenesFile.isCdcTissueGenesFile(file)) {
+                                CdcTissueGenesLoader task = new CdcTissueGenesLoader(scene, file);
+                                Thread thread = new Thread(task);
+                                thread.setDaemon(true);
+                                thread.start();
                             } else if (FeatureCollectionFile.isFeatureCollectionFile(file)) {
                                 FeatureCollectionLoader task = new FeatureCollectionLoader(scene, file);
                                 Thread thread = new Thread(task);
@@ -340,6 +367,11 @@ public enum ResourceUtils {
                                 thread.start();
                             } else if (ShapleyCollectionFile.isShapleyCollectionFile(file)) {
                                 ShapleyCollectionLoader task = new ShapleyCollectionLoader(scene, file);
+                                Thread thread = new Thread(task);
+                                thread.setDaemon(true);
+                                thread.start();
+                            } else if (GraphDirectedCollectionFile.isGraphDirectedCollectionFile(file)) {
+                                GraphDirectedCollectionLoader task = new GraphDirectedCollectionLoader(scene, file);
                                 Thread thread = new Thread(task);
                                 thread.setDaemon(true);
                                 thread.start();
@@ -380,21 +412,6 @@ public enum ResourceUtils {
                                     thread.setDaemon(true);
                                     thread.start();
                                 });
-                            } else if (CdcCsvFile.isCdcCsvFile(file)) {
-                                CdcCsvFile cdcCsvFile = new CdcCsvFile(file.getAbsolutePath(), true);
-                                //convert to Feature Vector Collection for the lulz
-                                FeatureCollection fc = DataUtils.convertCdcCsv(cdcCsvFile.cdcCsvList, true);
-                                Platform.runLater(() -> scene.getRoot().fireEvent(
-                                    new FeatureVectorEvent(FeatureVectorEvent.NEW_FEATURE_COLLECTION, fc)));
-                                Trajectory trajectory = new Trajectory(file.getName());
-                                trajectory.totalStates = fc.getFeatures().size();
-                                Platform.runLater(() -> scene.getRoot().fireEvent(
-                                    new TrajectoryEvent(TrajectoryEvent.NEW_TRAJECTORY_OBJECT, trajectory, fc)));
-                            } else if (CdcTissueGenesFile.isCdcTissueGenesFile(file)) {
-                                CdcTissueGenesLoader task = new CdcTissueGenesLoader(scene, file);
-                                Thread thread = new Thread(task);
-                                thread.setDaemon(true);
-                                thread.start();
                             } else if (McclodSplitDataTsvFile.isMcclodSplitDataTsvFile(file)) {
                                 McclodSplitDataLoader task = new McclodSplitDataLoader(scene, file);
                                 Thread thread = new Thread(task);
@@ -409,6 +426,10 @@ public enum ResourceUtils {
                                 ManifoldDataFile mdFile = new ManifoldDataFile(file.getAbsolutePath(), true);
                                 Platform.runLater(() -> scene.getRoot().fireEvent(
                                     new ManifoldEvent(ManifoldEvent.NEW_MANIFOLD_DATA, mdFile.manifoldData)));
+                            } else if (CocoAnnotationFile.isCocoAnnotationFile(file)) {
+                                CocoAnnotationFile cocoFile = new CocoAnnotationFile(file.getAbsolutePath(), true);
+                                Platform.runLater(() -> scene.getRoot().fireEvent(
+                                    new ImageEvent(ImageEvent.NEW_COCO_ANNOTATION, cocoFile.cocoAnnotation)));
                             }
                         } catch (IOException ex) {
                             LOG.error(null, ex);
@@ -427,5 +448,73 @@ public enum ResourceUtils {
             event.setDropCompleted(true);
             event.consume();
         }
+    }
+
+    public static String detectDropType(DragEvent event) {
+        Dragboard db = event.getDragboard();
+        String type = "UNKNOWN";
+        if (db.hasFiles()) {
+            final File file = db.getFiles().get(0);
+            try {
+                if (JavaFX3DUtils.isTextureFile(file)) {
+                    type = "Hypersurface";
+                } else if (isAudioFile(file)) {
+                    type = "Hypersurface";
+                } else if (FeatureCollectionFile.isFeatureCollectionFile(file)) {
+                    type = "Hyperspace";
+                } else if (ShapleyCollectionFile.isShapleyCollectionFile(file)) {
+                    type = "Hypersurface";
+                } else if (GraphDirectedCollectionFile.isGraphDirectedCollectionFile(file)) {
+                    type = "Hypersurface";
+                } else if (VectorMaskCollectionFile.isVectorMaskCollectionFile(file)) {
+                    type = "Hypersurface";
+                } else if (LabelConfigFile.isLabelConfigFile(file)) {
+                    type = "Hyperspace";
+                } else if (TerrainTextFile.isTerrainTextFile(file)) {
+                    type = "Hypersurface";
+                } else if (FireAreaTextFile.isFireAreaTextFile(file)) {
+                    type = "Hypersurface";
+                } else if (SemanticMapCollectionFile.isSemanticMapCollectionFile(file)) {
+                    type = "Hyperspace";
+                } else if (ClusterCollectionFile.isClusterCollectionFile(file)) {
+                    type = "Projections";
+                } else if (GaussianMixtureCollectionFile.isGaussianMixtureCollectionFile(file)) {
+                    type = "Hyperspace";
+                } else if (TextEmbeddingCollectionFile.isTextEmbeddingCollection(file)) {
+                    type = "Hyperspace";
+                } else if (CdcCsvFile.isCdcCsvFile(file)) {
+                    type = "Hyperspace";
+                } else if (CdcTissueGenesFile.isCdcTissueGenesFile(file)) {
+                    type = "Hyperspace";
+                } else if (McclodSplitDataTsvFile.isMcclodSplitDataTsvFile(file)) {
+                    type = "Hyperspace";
+                } else if (ZeroPilotLatentsFile.isZeroPilotLatentsFile(file)) {
+                    type = "Hyperspace";
+                } else if (ManifoldDataFile.isManifoldDataFile(file)) {
+                    type = "Projections";
+                } else if (CocoAnnotationFile.isCocoAnnotationFile(file)) {
+                    type = "Hypersurface";
+                }
+            } catch (IOException ex) {
+                LOG.error(null, ex);
+            }
+        }
+        return type;
+    }
+
+    public static boolean promptUserOnCommand(String commandType) {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
+            "Switch Views Now?",
+            ButtonType.YES, ButtonType.NO);
+        alert.setHeaderText("Your primary file type suggests using the " + commandType + " view.");
+        alert.setGraphic(ResourceUtils.loadIcon("alert", 75));
+        alert.initStyle(StageStyle.TRANSPARENT);
+        DialogPane dialogPane = alert.getDialogPane();
+        dialogPane.setBackground(Background.EMPTY);
+        dialogPane.getScene().setFill(Color.TRANSPARENT);
+        String DIALOGCSS = ResourceUtils.class.getResource("/edu/jhuapl/trinity/css/dialogstyles.css").toExternalForm();
+        dialogPane.getStylesheets().add(DIALOGCSS);
+        Optional<ButtonType> optBT = alert.showAndWait();
+        return optBT.get().equals(ButtonType.YES);
     }
 }

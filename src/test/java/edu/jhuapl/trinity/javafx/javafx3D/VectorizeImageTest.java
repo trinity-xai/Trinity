@@ -1,11 +1,13 @@
 /* Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC */
 
-package edu.jhuapl.trinity.javafx.javafx3D;
+package edu.jhuapl.trinity.javafx.javafx3d;
 
 import com.github.sarxos.webcam.Webcam;
 import edu.jhuapl.trinity.javafx.events.ImageEvent;
 import edu.jhuapl.trinity.javafx.events.TerrainEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.HyperSurfacePlotMesh;
+import edu.jhuapl.trinity.javafx.javafx3d.HyperSurfacePlotMesh;
+import edu.jhuapl.trinity.javafx.javafx3d.Vert3D;
 import edu.jhuapl.trinity.javafx.javafx3d.Vert3D;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.Opticon;
 import edu.jhuapl.trinity.utils.ResourceUtils;

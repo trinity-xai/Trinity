@@ -152,7 +152,7 @@ public class ManifoldControlController implements Initializable {
     @FXML
     private Spinner localConnectivitySpinner;
     @FXML
-    private Spinner thresholdSpinner;
+    private Spinner<Double> thresholdSpinner;
     @FXML
     private ChoiceBox metricChoiceBox;
     @FXML
@@ -353,9 +353,9 @@ public class ManifoldControlController implements Initializable {
             new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 250, 5, 1));
         localConnectivitySpinner.setValueFactory(
             new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 250, 1, 1));
-        thresholdSpinner.setValueFactory(
-            new SpinnerValueFactory.DoubleSpinnerValueFactory(0.001, 1.0, 0.001, 0.001));
-        thresholdSpinner.setEditable(true);
+//        thresholdSpinner.setValueFactory(
+//            new SpinnerValueFactory.DoubleSpinnerValueFactory(0.001, 1.0, 0.001, 0.001));
+//        thresholdSpinner.setEditable(true);
 
         hyperSourceGroup = new ToggleGroup();
         useHyperspaceButton.setToggleGroup(hyperSourceGroup);

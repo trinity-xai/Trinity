@@ -102,6 +102,7 @@ public abstract class Metric {
             sMETRICS.put("russellrao", RussellRaoMetric.SINGLETON);
             sMETRICS.put("sokalsneath", SokalSneathMetric.SINGLETON);
             sMETRICS.put("yule", YuleMetric.SINGLETON);
+            sMETRICS.put("yuleepsilon", YuleEpsilonMetric.SINGLETON);
             sMETRICS.put("yulethreshold", YuleThresholdMetric.SINGLETON);
             sMETRICS.put("yulehighbandthreshold", YuleHighBandThresholdMetric.SINGLETON);
         }

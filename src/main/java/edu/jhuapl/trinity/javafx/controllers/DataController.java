@@ -171,6 +171,12 @@ public class DataController implements Initializable {
     }
 
     @FXML
+    public void showContentNavigator() {
+        scene.getRoot().fireEvent(
+            new ApplicationEvent(ApplicationEvent.SHOW_NAVIGATOR_PANE));
+    }
+
+    @FXML
     public void browseBasePath() {
         final DirectoryChooser directoryChooser = new DirectoryChooser();
         directoryChooser.setTitle("Browse for base path...");

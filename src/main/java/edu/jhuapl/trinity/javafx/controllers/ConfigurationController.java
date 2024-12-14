@@ -71,6 +71,8 @@ public class ConfigurationController implements Initializable {
     @FXML
     private CheckBox enableEmittersCheckBox;
     @FXML
+    private CheckBox enableEmptyVisionCheckBox;
+    @FXML
     private Slider itemSizeSlider;
     @FXML
     private Slider innerRadiusSlider;
@@ -1027,6 +1029,10 @@ public class ConfigurationController implements Initializable {
         enableEmittersCheckBox.selectedProperty().addListener(cl -> {
             scene.getRoot().fireEvent(new EffectEvent(
                 EffectEvent.ENABLE_EMITTERS, enableEmittersCheckBox.isSelected()));
+        });
+        enableEmptyVisionCheckBox.selectedProperty().addListener(cl -> {
+            scene.getRoot().fireEvent(new EffectEvent(
+                EffectEvent.ENABLE_EMPTY_VISION, enableEmptyVisionCheckBox.isSelected()));
         });
     }
 }

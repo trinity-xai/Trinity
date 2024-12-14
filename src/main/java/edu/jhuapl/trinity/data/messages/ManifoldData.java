@@ -82,7 +82,7 @@ public class ManifoldData extends MessageData {
     public void setClearAll(Boolean clearAll) {
         this.clearAll = clearAll;
     }
-    //</editor-fold>
+
 
     /**
      * @return the points
@@ -97,5 +97,5 @@ public class ManifoldData extends MessageData {
     public void setPoints(ArrayList<P3D> points) {
         this.points = points;
     }
-
+    //</editor-fold>
 }

@@ -3,6 +3,9 @@
 package edu.jhuapl.trinity.javafx.components.callouts;
 
 import edu.jhuapl.trinity.data.messages.FeatureVector;
+
+import static edu.jhuapl.trinity.data.messages.FeatureVector.bboxToString;
+
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.utils.HttpsUtils;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
@@ -208,18 +211,6 @@ public class FeatureVectorCallout extends VBox {
             //System.out.println("Callout image base path set to " + featureVectorCallout.imageryBasePath);
         });
 
-    }
-
-    private static String bboxToString(FeatureVector featureVector) {
-        NumberFormat format = new DecimalFormat("0.00");
-        StringBuilder sb = new StringBuilder("[ ");
-        for (Double d : featureVector.getBbox()) {
-            sb.append(format.format(d));
-            sb.append(" ");
-        }
-        sb.append("]");
-        String bboxStr = sb.toString();
-        return bboxStr;
     }
 
     private ImageView loadImageView(FeatureVector featureVector, boolean bboxOnly) {
