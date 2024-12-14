@@ -50,6 +50,8 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          add-job-summary: 'on-failure'
 
       - name: Gradle Build Jar
         run: ./gradlew clean assemble -Penv=prod-jar
@@ -113,6 +115,8 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          add-job-summary: 'on-failure'
 
       - name: Gradle Build JLink Zip
         run: ./gradlew clean jlink -Penv=prod-jlink
@@ -175,6 +179,8 @@ jobs:
 
       - name: Setup Gradle
         uses: gradle/actions/setup-gradle@v4
+        with:
+          add-job-summary: 'on-failure'
 
       - name: Gradle Build JPackage
         run: ./gradlew clean jpackage -Penv=prod-jlink
