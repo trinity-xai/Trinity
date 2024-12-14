@@ -16,7 +16,8 @@
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.Region?>
 <?import javafx.scene.layout.VBox?>
-<AnchorPane style="-fx-background-color: #00000000;" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1"
+
+<AnchorPane style="-fx-background-color: #00000000;" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
             fx:controller="edu.jhuapl.trinity.javafx.controllers.DataController">
     <children>
         <TabPane fx:id="tabPane" tabClosingPolicy="UNAVAILABLE">
