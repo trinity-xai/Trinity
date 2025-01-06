@@ -2,7 +2,6 @@
 
 package edu.jhuapl.trinity.utils;
 
-import com.clust4j.log.Log;
 import edu.jhuapl.trinity.data.Trajectory;
 import edu.jhuapl.trinity.data.graph.GraphNode;
 import edu.jhuapl.trinity.data.messages.FeatureVector;
@@ -54,7 +53,6 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.function.Function;
-import java.util.logging.Level;
 
 /**
  * Utilities used by various 3D rendering code.
@@ -457,7 +455,6 @@ public enum JavaFX3DUtils {
         for (int y = 0; y < (int) tmp.getHeight(); y++) {
             for (int x = 0; x < (int) tmp.getWidth(); x++) {
                 tmp.getPixelWriter().setColor(x, y, image.getPixelReader().getColor(x, y).grayscale());
-//                updateMessage("Converting ... ");
             }
         }
         return tmp;
