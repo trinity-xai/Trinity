@@ -1,5 +1,4 @@
 /* Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC */
-
 package edu.jhuapl.trinity.javafx.components;
 
 /*
@@ -17,13 +16,12 @@ package edu.jhuapl.trinity.javafx.components;
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-
-import edu.jhuapl.trinity.data.audio.FFT;
-import edu.jhuapl.trinity.utils.DataUtils;
+import com.tambapps.fft4j.FastFourier2d;
+import com.tambapps.fft4j.Signal2d;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import edu.jhuapl.trinity.utils.Utils;
+import static edu.jhuapl.trinity.utils.Utils.clamp;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -31,8 +29,9 @@ import java.util.Arrays;
 import java.util.DoubleSummaryStatistics;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.IntStream;
 import javafx.application.Application;
+import javafx.geometry.Point2D;
+import javafx.scene.Cursor;
 import javafx.scene.Scene;
 import javafx.stage.Stage;
 
@@ -46,16 +45,18 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.PixelReader;
 import javafx.scene.image.PixelWriter;
-import javafx.scene.image.WritableImage;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Rectangle;
 
 public class ImageFFTTestApp extends Application {
+
     private Color fillColor = Color.SLATEGREY;
     private double imageSize = 512;
     private VBox controlsBox;
@@ -65,15 +66,20 @@ public class ImageFFTTestApp extends Application {
     private ImageView baseImageView;
     private Canvas imageFFTCanvas, inverseFFTCanvas, polarCanvas;
     private GraphicsContext imageFFTGC, inverseFFTGC, polarGC;
-    int binSize = 1024;
-    int sampleSize = binSize / 2 + 1;
-    float[][] samples; 
-    float[][] reals; 
-    float[][] imagines; 
-    float[][] spectrums; 
-    float[][] shifted; 
-    float[][] inverses; 
+
+    Signal2d greySignal2d;
+    Signal2d redChannelSignal2d;
+    Signal2d greenChannelSignal2d;
+    Signal2d blueChannelSignal2d;
+    double[][] masks;
     Spinner<Integer> polarScaleSpinner;
+    Rectangle selectionRectangle;
+    private double mousePosX;
+    private double mousePosY;
+    private double mouseOldX;
+    private double mouseOldY;
+    private double mouseDeltaX;
+    private double mouseDeltaY;
     
     @Override
     public void init() {
@@ -81,6 +87,10 @@ public class ImageFFTTestApp extends Application {
             baseImage = ResourceUtils.load3DTextureImage("carl-b-mono");
             baseImageView = new ImageView(baseImage);
             baseImagePR = baseImage.getPixelReader();
+            int height = Double.valueOf(baseImage.getHeight()).intValue();
+            int width = Double.valueOf(baseImage.getWidth()).intValue();            
+            masks = new double[height][width];
+            clearMask();
         } catch (IOException ex) {
             Logger.getLogger(ImageFFTTestApp.class.getName()).log(Level.SEVERE, null, ex);
             baseImageView = new ImageView();
@@ -103,17 +113,78 @@ public class ImageFFTTestApp extends Application {
                         baseImage = new Image(file.toURI().toURL().toExternalForm());
                         baseImageView.setImage(baseImage);
                         baseImagePR = baseImage.getPixelReader();
+                        int height = Double.valueOf(baseImage.getHeight()).intValue();
+                        int width = Double.valueOf(baseImage.getWidth()).intValue();            
+                        masks = new double[height][width];
+                        clearMask();
                     } catch (MalformedURLException ex) {
                         Logger.getLogger(ImageFFTTestApp.class.getName()).log(Level.SEVERE, null, ex);
                     }
-                }                
+                }
             }
-        });        
-        
+        });
+
         imageFFTCanvas = new Canvas(imageSize, imageSize);
         imageFFTGC = imageFFTCanvas.getGraphicsContext2D();
         imageFFTGC.setFill(fillColor);
         imageFFTGC.fillRect(0, 0, imageSize, imageSize);
+        imageFFTCanvas.setCursor(Cursor.CROSSHAIR);
+        //Setup selection rectangle and event handling
+        selectionRectangle = new Rectangle(1, 1,
+            Color.ALICEBLUE.deriveColor(1, 1, 1, 0.2));
+        selectionRectangle.setManaged(false);
+        selectionRectangle.setMouseTransparent(true);
+
+        selectionRectangle.setVisible(false);
+        imageFFTCanvas.setOnMousePressed((MouseEvent me) -> {
+            mousePosX = me.getSceneX();
+            mousePosY = me.getSceneY();
+            mouseOldX = me.getSceneX();
+            mouseOldY = me.getSceneY();
+            selectionRectangle.setWidth(1);
+            selectionRectangle.setHeight(1);
+            selectionRectangle.setX(mousePosX);
+            selectionRectangle.setY(mousePosY);
+            selectionRectangle.setVisible(true);
+        });
+        //Start Tracking mouse movements only when a button is pressed
+        imageFFTCanvas.setOnMouseDragged((MouseEvent me) -> {
+            mouseOldX = mousePosX;
+            mouseOldY = mousePosY;
+            mousePosX = me.getSceneX();
+            mousePosY = me.getSceneY();
+            mouseDeltaX = (mousePosX - mouseOldX);
+            mouseDeltaY = (mousePosY - mouseOldY);
+            selectionRectangle.setWidth(
+                mousePosX - selectionRectangle.getX());
+            selectionRectangle.setHeight(
+                mousePosY - selectionRectangle.getY());
+        });
+        imageFFTCanvas.setOnMouseReleased((MouseEvent me) -> {
+            //transform from scene to local
+            Point2D startLocal = imageFFTCanvas.sceneToLocal(selectionRectangle.getX(), selectionRectangle.getY());
+            Point2D endLocal = startLocal.add(selectionRectangle.getWidth(), selectionRectangle.getHeight());
+            //update masks
+            int startY = Double.valueOf(startLocal.getY()).intValue();
+            int endY = Double.valueOf(endLocal.getY()).intValue();
+            int startX = Double.valueOf(startLocal.getX()).intValue();
+            int endX = Double.valueOf(endLocal.getX()).intValue();
+            PixelWriter pw = imageFFTGC.getPixelWriter();
+            for(int y=startY;y<endY;y++){
+                for(int x=startX;x<endX;x++){
+                    masks[y][x] = 0.0;
+                    pw.setColor(x, y, Color.BLACK);
+                }
+            }
+            int height = Double.valueOf(baseImage.getHeight()).intValue();
+            int width = Double.valueOf(baseImage.getWidth()).intValue();              
+            plotInverseFFT(height, width);            
+
+            selectionRectangle.setVisible(false);
+            selectionRectangle.setWidth(1);
+            selectionRectangle.setHeight(1);
+            
+        });
         
         inverseFFTCanvas = new Canvas(imageSize, imageSize);
         inverseFFTGC = inverseFFTCanvas.getGraphicsContext2D();
@@ -124,31 +195,36 @@ public class ImageFFTTestApp extends Application {
         polarGC = polarCanvas.getGraphicsContext2D();
         polarGC.setFill(fillColor);
         polarGC.fillRect(0, 0, imageSize, imageSize);
-        
-        plotPane = new GridPane(2,2);
+
+        plotPane = new GridPane(2, 2);
         plotPane.setHgap(2);
         plotPane.setVgap(2);
         plotPane.addRow(0, baseImageView, inverseFFTCanvas);
-        plotPane.addRow(1, imageFFTCanvas, polarCanvas); 
-        
+        plotPane.addRow(1, imageFFTCanvas, polarCanvas);
         
         Button runFFTButton = new Button("Execute FFT");
         runFFTButton.setOnAction(e -> {
-            spaTofreq(baseImage);
+            spaToFreq2D(baseImage);
         });
+        
         polarScaleSpinner = new Spinner<>(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 1000, 10, 1));
-        polarScaleSpinner.valueProperty().addListener(c -> {
-            if(null != reals){
-                int height = Double.valueOf(baseImage.getHeight()).intValue();
-                int width = Double.valueOf(baseImage.getWidth()).intValue();
-                
-                polarPlot(polarScaleSpinner.getValue(), height, width, reals, imagines);
-            }
+//        polarScaleSpinner.valueProperty().addListener(c -> {
+//            if (null != reals) {
+//                int height = Double.valueOf(baseImage.getHeight()).intValue();
+//                int width = Double.valueOf(baseImage.getWidth()).intValue();
+//
+//                polarPlot(polarScaleSpinner.getValue(), height, width, reals, imagines);
+//            }
+//        });
+        Button clearMaskButton = new Button("Clear Mask");
+        clearMaskButton.setOnAction(e -> {
+            clearMask();
         });
-        controlsBox = new VBox(20, 
-            runFFTButton,
-            new Label("Polar scale"),
-            polarScaleSpinner
+        
+        controlsBox = new VBox(20,
+                runFFTButton,
+                new Label("Polar scale"),
+                polarScaleSpinner
         );
     }
 
@@ -156,6 +232,7 @@ public class ImageFFTTestApp extends Application {
     public void start(Stage stage) {
         BorderPane borderPane = new BorderPane(plotPane);
         borderPane.setLeft(controlsBox);
+        borderPane.getChildren().add(selectionRectangle); // a little hacky but...
         Scene scene = new Scene(borderPane);
 
         stage.setTitle("Image FFT Test");
@@ -167,133 +244,224 @@ public class ImageFFTTestApp extends Application {
     public void stop() {
         System.exit(0);
     }
-    public void spaTofreq(final Image image) {
-        //convert rgb image to gray image
-        //img1=rgb2gray(image)
-        WritableImage img1 = JavaFX3DUtils.convertToGreyScale(image);
-      
-        int height = Double.valueOf(img1.getHeight()).intValue();
-        int width = Double.valueOf(img1.getWidth()).intValue();
-//        //normalize the matrix of values
-//        img2=double(mat2gray(img1))
+    private void clearMask() {
+        Arrays.stream(masks).forEach(row->Arrays.fill(row,1.0));
+    }
+    private Signal2d fftShift2d_P(Signal2d inputSignal2d) { //, int mx, int rx, int my, int ry) {
 
-        //fft of the image
+        int xdim = inputSignal2d.getN();
+        int ydim = inputSignal2d.getM();
+        int mx = xdim / 2;
+        int rx = xdim - mx;
+        int my = ydim / 2;
+        int ry = ydim - my;
 
-        binSize = 1024;
-        sampleSize = binSize / 2 + 1;
-        FFT fft = new FFT(binSize, 1);
-        samples = new float[binSize][binSize];
-        reals = new float[height][sampleSize];
-        imagines = new float[height][sampleSize];
-        spectrums = new float[height][sampleSize];
-        shifted = new float[height][sampleSize];
-        inverses = new float[height][sampleSize];
-        
-        
-        PixelReader pixelReader = img1.getPixelReader();
-        Color       colorFromMonoChromeImage;
-        double      brightness, opacity;
-        for (int y = 0 ; y < height ; y++) {
-            for (int x = 0 ; x < width ; x++) {
-                colorFromMonoChromeImage = pixelReader.getColor(x, y);
-                opacity               = colorFromMonoChromeImage.getOpacity();
-                brightness               = colorFromMonoChromeImage.getBrightness();
-                samples[y][x] = Double.valueOf(brightness).floatValue();
+        Signal2d shiftedSignal2d = new Signal2d(inputSignal2d.getM(), inputSignal2d.getN());
+        // down right corner move to up left corner
+        for (int y = 0; y < ry; y++) {
+            for (int x = 0; x < rx; x++) {
+                shiftedSignal2d.setAt(x, y,
+                        inputSignal2d.getReAt(x + mx, y + my),
+                        inputSignal2d.getImAt(x + mx, y + my)
+                );
             }
-        }        
+        }
 
-        System.out.println("samples extracted.");
-        //do the fft
-        for (int y = 0 ; y < height ; y++) {
-            fft.forward(samples[y]);
-            System.arraycopy(fft.getSpectrum(), 0, spectrums[y], 0, spectrums[y].length);
-            System.arraycopy(fft.getRealPart(), 0, reals[y], 0, reals[y].length);
-            System.arraycopy(fft.getImaginaryPart(), 0, imagines[y], 0, imagines[y].length);
-            
-            //copies to simulate fftshift
-            System.arraycopy(fft.getRealPart(), 0, shifted[y], reals[y].length/2, reals[y].length/2);
-            System.arraycopy(fft.getRealPart(), reals[y].length/2, shifted[y], 0, reals[y].length/2);
-        }        
-
-        System.out.println("FFTs done.");
-        
-//        //center shift the fourier of the transformed image
-//        imgF=fftshift(fft2(img2))
-        
-//        //take a log of the image matrix
-//        I=log(1+abs(imgF))
-        PixelWriter pw = imageFFTGC.getPixelWriter();
-        imageFFTGC.clearRect(0, 0, imageFFTCanvas.getWidth(), imageFFTCanvas.getHeight());
-
-        double normalAbsFloat, normalAmp = 0; 
-        double logVal = 0;
-        
-        DoubleSummaryStatistics stats = Arrays
-          .stream(spectrums).parallel()
-          .flatMapToDouble(t -> IntStream.range(0, t.length).mapToDouble(i -> t[i]))
-          .summaryStatistics();        
-        
-        System.out.println("Max: " + stats.getMax() + " Min: " + stats.getMin());
-        baseImagePR = baseImage.getPixelReader();
-        double amplitude;
-        for (int y = 0 ; y < height ; y++) {
-            for (int x = 0 ; x < width ; x++) {
-//                normalAbsFloat = DataUtils.normalize(Math.abs(shifted[y][x]), -stats.getMax(), stats.getMax());
-                logVal = Math.log(Math.abs(spectrums[y][x]));
-                pw.setColor(x, y, Color.gray(Utils.clamp(0, logVal, 1)));
+        // down left corner move to up right corner
+        for (int y = 0; y < ry; y++) {
+            for (int x = rx; x < xdim; x++) {
+                shiftedSignal2d.setAt(x, y,
+                        inputSignal2d.getReAt(x - rx, y + my),
+                        inputSignal2d.getImAt(x - rx, y + my)
+                );
             }
-        }        
-        System.out.println("log of fourier transformed image.");        
+        }
 
-        polarPlot(polarScaleSpinner.getValue(), height, width, reals, imagines);
-        System.out.println("Polar Plot done."); 
-                
-        //Inverse Fourier Transform of image
-//        imginv=abs(ifft2(imgF))
-        PixelWriter inversePW = inverseFFTGC.getPixelWriter();
-        inverseFFTGC.clearRect(0, 0, inverseFFTCanvas.getWidth(), inverseFFTCanvas.getHeight());
-
-        for (int y = 0 ; y < height ; y++) {
-            fft.forward(samples[y]);
-            fft.inverse(inverses[y]);
-            for (int x = 0 ; x < inverses[y].length ; x++) {
-                inversePW.setColor(x, y, Color.gray(Utils.clamp(0.0, inverses[y][x], 1.0)));
+        // up right corner move to down left corner
+        for (int y = ry; y < ydim; y++) {
+            for (int x = 0; x < rx; x++) {
+                shiftedSignal2d.setAt(x, y,
+                        inputSignal2d.getReAt(x + mx, y - ry),
+                        inputSignal2d.getImAt(x + mx, y - ry)
+                );
             }
-        }        
-        System.out.println("Inverses done.");        
+        }
+
+        // up left corner move to down right corner
+        for (int y = ry; y < ydim; y++) {
+            for (int x = rx; x < xdim; x++) {
+                shiftedSignal2d.setAt(x, y,
+                        inputSignal2d.getReAt(x - rx, y - ry),
+                        inputSignal2d.getImAt(x - rx, y - ry)
+                );
+            }
+        }
+        return shiftedSignal2d;
     }
 
-    public void polarPlot(double scale, int height, int width, float [][]reals, float[][]imagines) {
-        PixelWriter polarPW = polarGC.getPixelWriter();
-        polarGC.clearRect(0, 0, polarCanvas.getWidth(), polarCanvas.getHeight());
+    public void spaToFreq2D(Image image) {
+        int height = Double.valueOf(image.getHeight()).intValue();
+        int width = Double.valueOf(image.getWidth()).intValue();
+        
+        greySignal2d = new Signal2d(height, width);
+        redChannelSignal2d = new Signal2d(height, width);
+        greenChannelSignal2d = new Signal2d(height, width);
+        blueChannelSignal2d = new Signal2d(height, width);
+        //do the red channel
+        PixelReader pixelReader = image.getPixelReader();
+        Color color = Color.BLACK;
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                color = pixelReader.getColor(x, y);
+                double grayLevel = (color.getRed() + color.getGreen() + color.getBlue()) / 3.0;
+                greySignal2d.setReAt(y, x, color.grayscale().getBrightness());
+                redChannelSignal2d.setReAt(y, x, color.getRed());
+                greenChannelSignal2d.setReAt(y, x, color.getGreen());
+                blueChannelSignal2d.setReAt(y, x, color.getBlue());
+            }
+        }
+        System.out.println("Signal2D values extracted.");
 
-        double magnitude,phaseAngle;
+        FastFourier2d transformer2D = new FastFourier2d();
+        System.out.print("FFT on Greyscale... ");
+        long startTime = System.nanoTime();
+        transformer2D.transform(greySignal2d);
+        Utils.printTotalTime(startTime);
+        transformer2D.transform(redChannelSignal2d);
+        transformer2D.transform(greenChannelSignal2d);
+        transformer2D.transform(blueChannelSignal2d);
+
+        //fshift = np.fft.fftshift(f_image)
+        System.out.print("FFTShift on Greyscale... ");
+        startTime = System.nanoTime();
+        Signal2d shiftedGreySignal2d = fftShift2d_P(greySignal2d);
+        Utils.printTotalTime(startTime);
+        Signal2d shiftedRedChannelSignal2d = fftShift2d_P(redChannelSignal2d);
+        Signal2d shiftedGreenChannelSignal2d = fftShift2d_P(greenChannelSignal2d);
+        Signal2d shiftedBlueChannelSignal2d = fftShift2d_P(blueChannelSignal2d);
+
+        //magnitude_spectrum = 20 * np.log(np.abs(fshift))
+        double redlogVal, greenlogVal, bluelogVal = 0;
+        DoubleSummaryStatistics stats = Arrays
+                .stream(greySignal2d.getRe())
+                .summaryStatistics();
+        System.out.println("Max: " + stats.getMax() + " Min: " + stats.getMin());
+
+        baseImagePR = baseImage.getPixelReader();
+        PixelWriter pw = imageFFTGC.getPixelWriter();
+        imageFFTGC.setFill(Color.BLACK);
+        imageFFTGC.fillRect(0, 0, imageFFTCanvas.getWidth(), imageFFTCanvas.getHeight());
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                redlogVal = Math.log10(Math.abs(shiftedRedChannelSignal2d.getReAt(y, x))/ polarScaleSpinner.getValue());
+                greenlogVal = Math.log10(Math.abs(shiftedGreenChannelSignal2d.getReAt(y, x))/ polarScaleSpinner.getValue());
+                bluelogVal = Math.log10(Math.abs(shiftedBlueChannelSignal2d.getReAt(y, x))/ polarScaleSpinner.getValue());
+
+                pw.setColor(x, y, Color.color(
+                    Utils.clamp(0,redlogVal,1), 
+                    Utils.clamp(0,greenlogVal,1),
+                    Utils.clamp(0,bluelogVal,1), 
+                    1)
+                );
+//This is good and correct for grayscale
+//                pw.setColor(x, y, Color.gray(Utils.clamp(0, 
+//                    Math.log10(Math.abs(shiftedGreySignal2d.getReAt(y, x))) / polarScaleSpinner.getValue(),
+//                    1)));
+            }
+        }
+        System.out.println("log of fourier transformed greyscale image done.");
+
+        System.out.println("Polar Plotting...");
+        polarGC.clearRect(0, 0, polarCanvas.getWidth(), polarCanvas.getHeight());
+        polarPlot2D(polarScaleSpinner.getValue(), height, width, shiftedRedChannelSignal2d);
+        polarPlot2D(polarScaleSpinner.getValue(), height, width, shiftedGreenChannelSignal2d);
+        polarPlot2D(polarScaleSpinner.getValue(), height, width, shiftedBlueChannelSignal2d);
+
+        startTime = System.nanoTime();
+        System.out.print("Inverse on Red Channel... ");
+        transformer2D.inverse(redChannelSignal2d);
+        Utils.printTotalTime(startTime);
+        transformer2D.inverse(greenChannelSignal2d);
+        transformer2D.inverse(blueChannelSignal2d);
+
+        plotInverseFFT(height,width);
+
+        // don't forget to shut it down as it uses an executor service
+        transformer2D.shutdown();
+    }
+    public void plotInverseFFT(int height, int width) {
+        PixelWriter pw = inverseFFTGC.getPixelWriter();
+        Color color = Color.BLACK;
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                color = new Color(
+                        clamp(0, redChannelSignal2d.getReAt(y, x), 1),
+                        clamp(0, greenChannelSignal2d.getReAt(y, x), 1),
+                        clamp(0, blueChannelSignal2d.getReAt(y, x), 1),
+                        masks[y][x]);
+                pw.setColor(x, y, color);
+            }
+        }        
+    }
+    public void polarPlot2D(double scale, int height, int width, Signal2d signal2D) {
+        PixelWriter polarPW = polarGC.getPixelWriter();
+        double magnitude, phaseAngle;
         int xCoord, yCoord;
-        int shiftX = Double.valueOf(polarCanvas.getWidth()/2.0).intValue();
-        int shiftY = Double.valueOf(polarCanvas.getHeight()/2.0).intValue();
-        for (int y = 0 ; y < height ; y++) {
-            for (int x = 0 ; x < width ; x++) {
+        int shiftX = Double.valueOf(polarCanvas.getWidth() / 2.0).intValue();
+        int shiftY = Double.valueOf(polarCanvas.getHeight() / 2.0).intValue();
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
                 //magnitude/radius = amplitude component
-                magnitude = reals[y][x] * scale;
+                magnitude = signal2D.getReAt(y, x) * scale;
                 //angle = phase component
                 //atan2(imag(X),real(X))*180/pi; %phase information
-                phaseAngle = Math.atan2(imagines[y][x],reals[y][x])*180.0/Math.PI; //%phase information
+                phaseAngle = Math.atan2(signal2D.getImAt(y, x), signal2D.getReAt(y, x))
+                        * 180.0 / Math.PI; //%phase information
 //Compute Polar Coordinates based on magnitude and phase                
 //return new Vector(magnitude * Math.cos(flippedAngle),
 //                magnitude * Math.sin(flippedAngle));
 
-                xCoord = Long.valueOf(Math.round(magnitude 
-                        * Math.cos(phaseAngle))).intValue() 
+                xCoord = Long.valueOf(Math.round(magnitude
+                        * Math.cos(phaseAngle))).intValue()
                         + shiftX;
-                yCoord = Long.valueOf(Math.round(magnitude 
+                yCoord = Long.valueOf(Math.round(magnitude
                         * Math.sin(phaseAngle))).intValue()
                         + shiftY;
                 polarPW.setColor(xCoord, yCoord, baseImagePR.getColor(x, y));
             }
-        }        
-       
-        
+        }
     }
+
+    public void polarPlot(double scale, int height, int width, float[][] reals, float[][] imagines) {
+        PixelWriter polarPW = polarGC.getPixelWriter();
+        polarGC.clearRect(0, 0, polarCanvas.getWidth(), polarCanvas.getHeight());
+
+        double magnitude, phaseAngle;
+        int xCoord, yCoord;
+        int shiftX = Double.valueOf(polarCanvas.getWidth() / 2.0).intValue();
+        int shiftY = Double.valueOf(polarCanvas.getHeight() / 2.0).intValue();
+        for (int y = 0; y < height; y++) {
+            for (int x = 0; x < width; x++) {
+                //magnitude/radius = amplitude component
+                magnitude = reals[y][x] * scale;
+                //angle = phase component
+                //atan2(imag(X),real(X))*180/pi; %phase information
+                phaseAngle = Math.atan2(imagines[y][x], reals[y][x]) * 180.0 / Math.PI; //%phase information
+//Compute Polar Coordinates based on magnitude and phase                
+//return new Vector(magnitude * Math.cos(flippedAngle),
+//                magnitude * Math.sin(flippedAngle));
+
+                xCoord = Long.valueOf(Math.round(magnitude
+                        * Math.cos(phaseAngle))).intValue()
+                        + shiftX;
+                yCoord = Long.valueOf(Math.round(magnitude
+                        * Math.sin(phaseAngle))).intValue()
+                        + shiftY;
+                polarPW.setColor(xCoord, yCoord, baseImagePR.getColor(x, y));
+            }
+        }
+    }
+
     public static void main(String[] args) {
         launch(args);
     }

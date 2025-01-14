@@ -164,6 +164,12 @@
           <artifactId>jflac-codec</artifactId>
           <version>${org.jflac.jflac-codec.version}</version>
         </dependency>
+        <dependency>
+          <groupId>com.tambapps.fft4j</groupId>
+          <artifactId>fft4j</artifactId>
+          <version>2.0</version>
+        </dependency>
+        
         <!-- Enforce slf4j-api version across dependencies-->
         <dependency>
             <groupId>org.slf4j</groupId>

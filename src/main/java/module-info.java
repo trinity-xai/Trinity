@@ -53,4 +53,5 @@ module edu.jhuapl.trinity {
     exports edu.jhuapl.trinity.data.graph;
     exports edu.jhuapl.trinity.data.files;
     exports edu.jhuapl.trinity.data.terrain;
+    requires fft4j;
 }
