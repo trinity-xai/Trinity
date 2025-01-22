@@ -153,7 +153,7 @@ public class FeatureVectorEventHandler implements EventHandler<FeatureVectorEven
         //update feature labels and colors
         scanLabelsAndLayers(featureCollection.getFeatures());
         for (FeatureVectorRenderer renderer : renderers) {
-            renderer.addFeatureCollection(featureCollection);
+            renderer.addFeatureCollection(featureCollection, event.clearExisting);
         }
         //Did the message specify any new dimensional label strings?
         if (null != featureCollection.getDimensionLabels() && !featureCollection.getDimensionLabels().isEmpty()) {

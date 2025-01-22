@@ -2232,7 +2232,7 @@ public class Projections3DPane extends StackPane implements
     }
 
     @Override
-    public void addFeatureCollection(FeatureCollection featureCollection) {
+    public void addFeatureCollection(FeatureCollection featureCollection, boolean clearQueue) {
         Platform.runLater(() -> {
             getScene().getRoot().fireEvent(
                 new CommandTerminalEvent("Projecting Feature Collection... ",
@@ -2731,7 +2731,7 @@ public class Projections3DPane extends StackPane implements
                     setDimensionLabels(originalFC.getDimensionLabels());
                     fc.setDimensionLabels(originalFC.getDimensionLabels());
                 }
-                addFeatureCollection(fc);
+                addFeatureCollection(fc, false);
                 updateTrajectory3D(false);
             } catch (InterruptedException | ExecutionException ex) {
                 LOG.error(null, ex);
@@ -2820,7 +2820,7 @@ public class Projections3DPane extends StackPane implements
                     setDimensionLabels(originalFC.getDimensionLabels());
                     fc.setDimensionLabels(originalFC.getDimensionLabels());
                 }
-                addFeatureCollection(fc);
+                addFeatureCollection(fc, false);
                 updateTrajectory3D(false);
             } catch (InterruptedException | ExecutionException ex) {
                 LOG.error(null, ex);

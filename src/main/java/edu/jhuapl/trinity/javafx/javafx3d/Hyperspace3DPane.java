@@ -1785,7 +1785,7 @@ public class Hyperspace3DPane extends StackPane implements
     }
 
     @Override
-    public void addFeatureCollection(FeatureCollection featureCollection) {
+    public void addFeatureCollection(FeatureCollection featureCollection, boolean clearQueue) {
         Platform.runLater(() -> {
             getScene().getRoot().fireEvent(
                 new CommandTerminalEvent("Loading Feature Collection... ",
@@ -1794,7 +1794,7 @@ public class Hyperspace3DPane extends StackPane implements
             getScene().getRoot().fireEvent(
                 new ApplicationEvent(ApplicationEvent.SHOW_BUSY_INDICATOR, ps1));
         });
-        if (!featureVectors.isEmpty()) {
+        if (!featureVectors.isEmpty() && clearQueue) {
             Alert alert = new Alert(AlertType.CONFIRMATION,
                 "Data queue currently has " + featureVectors.size() + " items.\n"
                     + "Clear the queue before import?",

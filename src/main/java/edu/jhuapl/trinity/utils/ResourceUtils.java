@@ -335,7 +335,8 @@ public enum ResourceUtils {
                         scene.getRoot().fireEvent(
                             new ApplicationEvent(ApplicationEvent.SHOW_BUSY_INDICATOR, ps1));
                     });
-
+                    //do we have multiple files? if so then don't offer to clear any queues
+                    boolean offerToClear = files.size()<=1; //if more than one file is detected... don't bother to ask to clear. (assume group load)
                     for (File file : files) {
                         try {
                             if (JavaFX3DUtils.isTextureFile(file)) {
@@ -362,6 +363,7 @@ public enum ResourceUtils {
                                 thread.start();
                             } else if (FeatureCollectionFile.isFeatureCollectionFile(file)) {
                                 FeatureCollectionLoader task = new FeatureCollectionLoader(scene, file);
+                                task.setClearQueue(offerToClear); //if there is more than one file just load all
                                 Thread thread = new Thread(task);
                                 thread.setDaemon(true);
                                 thread.start();

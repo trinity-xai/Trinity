@@ -1743,7 +1743,7 @@ public class Hypersurface3DPane extends StackPane
     }
 
     @Override
-    public void addFeatureCollection(FeatureCollection featureCollection) {
+    public void addFeatureCollection(FeatureCollection featureCollection, boolean clearQueue) {
         if (null == dataGrid) {
             dataGrid = new ArrayList<>(featureCollection.getFeatures().size());
         } else
@@ -1764,6 +1764,11 @@ public class Hypersurface3DPane extends StackPane
         getScene().getRoot().fireEvent(
             new CommandTerminalEvent("Hypersurface updated. ",
                 new Font("Consolas", 20), Color.GREEN));
+        //@TODO SMP fix so this works
+//        if(clearQueue)
+//            featureVectors = featureCollection.getFeatures();
+//        else
+//            featureVectors.addAll(featureCollection.getFeatures());
         featureVectors = featureCollection.getFeatures();
     }
 

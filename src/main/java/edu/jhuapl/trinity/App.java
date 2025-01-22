@@ -234,7 +234,7 @@ public class App extends Application {
         scene.addEventHandler(FeatureVectorEvent.REQUEST_FEATURE_COLLECTION, event -> {
             FeatureCollection fc = new FeatureCollection();
             fc.setFeatures(hyperspace3DPane.getAllFeatureVectors());
-            hypersurface3DPane.addFeatureCollection(fc);
+            hypersurface3DPane.addFeatureCollection(fc, false);
         });
 
         scene.addEventHandler(ManifoldEvent.GENERATE_NEW_UMAP, event -> {
@@ -284,7 +284,7 @@ public class App extends Application {
                 projections3DPane.setDimensionLabels(originalFC.getDimensionLabels());
             }
             projections3DPane.setHyperDimensionFeatures(originalFC);
-            projections3DPane.addFeatureCollection(projectedFC);
+            projections3DPane.addFeatureCollection(projectedFC, false);
 
         });
 
@@ -304,7 +304,7 @@ public class App extends Application {
                 projections3DPane.setDimensionLabels(originalFC.getDimensionLabels());
             }
             projections3DPane.setHyperDimensionFeatures(originalFC);
-            projections3DPane.addFeatureCollection(projectedFC);
+            projections3DPane.addFeatureCollection(projectedFC, false);
         });
 
         scene.addEventHandler(FeatureVectorEvent.EXPORT_FEATURE_COLLECTION, event -> {
