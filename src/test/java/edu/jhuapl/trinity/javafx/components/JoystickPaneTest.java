@@ -89,6 +89,7 @@ public class JoystickPaneTest extends Application {
         fastScatter3D.updatePositionsList(positions);
 
         octree = new Octree();
+        octree.setMaxPointsPerNode(totalPoints);
         refreshOctree();
         
         //make transparent so it doesn't interfere with subnode transparency effects
