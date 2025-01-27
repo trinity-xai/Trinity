@@ -50,6 +50,7 @@ import edu.jhuapl.trinity.javafx.javafx3d.Hyperspace3DPane;
 import edu.jhuapl.trinity.javafx.javafx3d.Hypersurface3DPane;
 import edu.jhuapl.trinity.javafx.javafx3d.Manifold3D;
 import edu.jhuapl.trinity.javafx.javafx3d.Projections3DPane;
+import edu.jhuapl.trinity.javafx.javafx3d.ProjectorPane;
 import edu.jhuapl.trinity.javafx.javafx3d.RetroWavePane;
 import edu.jhuapl.trinity.messages.CommandTask;
 import edu.jhuapl.trinity.messages.MessageProcessor;
@@ -116,6 +117,7 @@ public class App extends Application {
     RetroWavePane retroWavePane = null;
     Hyperspace3DPane hyperspace3DPane;
     Hypersurface3DPane hypersurface3DPane;
+    ProjectorPane projectorPane;
     Projections3DPane projections3DPane;
     TrajectoryTrackerPane trajectoryTrackerPane;
     SparkLinesPane sparkLinesPane;
@@ -221,13 +223,14 @@ public class App extends Application {
         //animatedConsoleText.animate("Constructing 3D subscenes...");
         projections3DPane = new Projections3DPane(scene);
         projections3DPane.setVisible(false); //start off hidden
-
         hypersurface3DPane = new Hypersurface3DPane(scene);
         hypersurface3DPane.setVisible(false); //start off hidden
         hyperspace3DPane = new Hyperspace3DPane(scene);
         hyperspace3DPane.setVisible(false); //start off hidden
-
         navigatorPane = new NavigatorPane(scene, pathPane);
+        
+        projectorPane = new ProjectorPane();
+        projectorPane.setVisible(false); //start off hidden
 
         LOG.info("Registering Event Handlers...");
         //animatedConsoleText.animate("Registering Event Handlers...");
@@ -408,7 +411,8 @@ public class App extends Application {
         centerStack.getChildren().add(0, hyperspace3DPane);
         centerStack.getChildren().add(0, projections3DPane);
         centerStack.getChildren().add(0, hypersurface3DPane);
-
+        centerStack.getChildren().add(0, projectorPane);
+ 
         LOG.info("Parsing command line...");
         //animatedConsoleText.animate("Parsing command line...");
         parseCommandLine();
@@ -1042,6 +1046,14 @@ public class App extends Application {
                 new ApplicationEvent(ApplicationEvent.SHOW_VIDEO_PANE,
                     "EMPTY VISION ", "A past never had for a Retrowave Future"));
         }
+        if (e.isAltDown() && e.isControlDown() && e.getCode().equals(KeyCode.P)) {
+            stage.getScene().getRoot().fireEvent(
+                new ApplicationEvent(ApplicationEvent.SHOW_PROJECTOR_PANE));
+                Platform.runLater(() -> {
+                    projectorPane.setVisible(!projectorPane.isVisible());
+                });            
+        }
+
         if (e.isAltDown() && e.getCode().equals(KeyCode.N)) {
             matrixShowing = !matrixShowing;
             if (!matrixShowing) {

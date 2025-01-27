@@ -53,6 +53,8 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -602,7 +604,7 @@ public class ManifoldControlController implements Initializable {
     public void saveUmapConfig() {
         FileChooser fc = new FileChooser();
         fc.setTitle("Choose UMAP Config file output...");
-        fc.setInitialFileName("UmapConfig.json");
+        fc.setInitialFileName(configToFilename().concat(".json"));
         if (!latestDir.isDirectory())
             latestDir = new File(".");
         fc.setInitialDirectory(latestDir);
@@ -610,26 +612,65 @@ public class ManifoldControlController implements Initializable {
         if (null != file) {
             if (file.getParentFile().isDirectory())
                 latestDir = file;
-            UmapConfig uc = new UmapConfig();
-            uc.setTargetWeight((float) targetWeightSlider.getValue());
-            uc.setRepulsionStrength((float) repulsionSlider.getValue());
-            uc.setMinDist((float) minDistanceSlider.getValue());
-            uc.setSpread((float) spreadSlider.getValue());
-            uc.setOpMixRatio((float) opMixSlider.getValue());
-            uc.setNumberComponents((int) numComponentsSpinner.getValue());
-            uc.setNumberEpochs((int) numEpochsSpinner.getValue());
-            uc.setNumberNearestNeighbours((int) nearestNeighborsSpinner.getValue());
-            uc.setNegativeSampleRate((int) negativeSampleRateSpinner.getValue());
-            uc.setLocalConnectivity((int) localConnectivitySpinner.getValue());
-            uc.setThreshold((double) thresholdSpinner.getValue());
-            uc.setMetric((String) metricChoiceBox.getValue());
-            uc.setVerbose(verboseCheckBox.isSelected());
-            ObjectMapper mapper = new ObjectMapper();
-            try {
-                mapper.writeValue(file, uc);
-            } catch (IOException ex) {
-                LOG.error(null, ex);
-            }
+            writeConfigFile(file);
+        }
+    }
+    private void writeConfigFile(File file) {
+        UmapConfig uc = new UmapConfig();
+        uc.setTargetWeight((float) targetWeightSlider.getValue());
+        uc.setRepulsionStrength((float) repulsionSlider.getValue());
+        uc.setMinDist((float) minDistanceSlider.getValue());
+        uc.setSpread((float) spreadSlider.getValue());
+        uc.setOpMixRatio((float) opMixSlider.getValue());
+        uc.setNumberComponents((int) numComponentsSpinner.getValue());
+        uc.setNumberEpochs((int) numEpochsSpinner.getValue());
+        uc.setNumberNearestNeighbours((int) nearestNeighborsSpinner.getValue());
+        uc.setNegativeSampleRate((int) negativeSampleRateSpinner.getValue());
+        uc.setLocalConnectivity((int) localConnectivitySpinner.getValue());
+        uc.setThreshold((double) thresholdSpinner.getValue());
+        uc.setMetric((String) metricChoiceBox.getValue());
+        uc.setVerbose(verboseCheckBox.isSelected());
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            mapper.writeValue(file, uc);
+        } catch (IOException ex) {
+            LOG.error(null, ex);
+        }        
+    }
+    private String configToFilename(){
+        NumberFormat format = new DecimalFormat("0.00");
+        
+        StringBuilder sb = new StringBuilder("UmapConfig-");
+//        sb.append(targetWeightSlider.getValue()).append("-");
+        sb.append((String) metricChoiceBox.getValue()).append("-");
+        sb.append("R").append(format.format(repulsionSlider.getValue())).append("-");
+        sb.append("MD").append(format.format(minDistanceSlider.getValue())).append("-");
+        sb.append("S").append(format.format(spreadSlider.getValue())).append("-");
+        sb.append("OPM").append(format.format(opMixSlider.getValue())).append("-");
+//        uc.setNumberComponents((int) numComponentsSpinner.getValue());
+//        uc.setNumberEpochs((int) numEpochsSpinner.getValue());
+        sb.append("NN").append(nearestNeighborsSpinner.getValue()).append("-");
+        sb.append("NSR").append(negativeSampleRateSpinner.getValue()).append("-");
+        sb.append("LC").append(localConnectivitySpinner.getValue());
+//        uc.setThreshold((double) thresholdSpinner.getValue());
+//        uc.setVerbose(verboseCheckBox.isSelected());
+        return sb.toString();
+    }
+    @FXML
+    public void exportScene() {
+        FileChooser fc = new FileChooser();
+        fc.setTitle("Choose Location file output...");
+        fc.setInitialFileName(configToFilename().concat(".json"));
+        if (!latestDir.isDirectory())
+            latestDir = new File(".");
+        fc.setInitialDirectory(latestDir);
+        File file = fc.showSaveDialog(scene.getWindow());
+        if (null != file) {
+            if (file.getParentFile().isDirectory())
+                latestDir = file.getParentFile();
+            writeConfigFile(file);
+            scene.getRoot().fireEvent(new ManifoldEvent(
+                ManifoldEvent.EXPORT_PROJECTION_SCENE, file));
         }
     }
 

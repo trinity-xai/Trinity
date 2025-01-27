@@ -50,10 +50,11 @@ public class JoystickPaneTest extends Application {
     double cameraDistance = -500;
     double sceneWidth = 4000;
     double sceneHeight = 4000;
+    double numericCenter = 0.5;
     double scale = 100;
     long hyperspaceRefreshRate = 15; //milliseconds
     int totalPoints = 10000;
-    double radius = 0.5;
+    double point3dSize = 0.5;
     int divisions = 8;    
     double mousePosX;
     double mousePosY;
@@ -67,6 +68,9 @@ public class JoystickPaneTest extends Application {
     Octree octree;
     int currentIndex = 0;
     double currentRadius = 10.0;
+    Color defaultColor = Color.BLACK;
+    Color currentIndexColor = Color.RED;
+    Color neighborColor = Color.CYAN;
 
     /**
      * Transform Management
@@ -75,21 +79,21 @@ public class JoystickPaneTest extends Application {
     
     @Override
     public void start(Stage stage) {
-        fastScatter3D = new FastScatter3D(totalPoints, radius, divisions);
+        fastScatter3D = new FastScatter3D(totalPoints, point3dSize, divisions);
         fastScatter3D.setAllVisible(true);
         int pointCount = fastScatter3D.getPointCount();
         positions = new ArrayList<>(pointCount);
         //generate some random positions
         for (int i = 0; i < pointCount; i++) {
             positions.add(new Point3D(
-                rando.nextGaussian(0.5, 0.25) * scale,
-                rando.nextGaussian(0.5, 0.25) * -scale,
-                rando.nextGaussian(0.5, 0.25) * scale));
+                rando.nextGaussian(numericCenter, numericCenter*0.5) * scale,
+                rando.nextGaussian(numericCenter, numericCenter*0.5) * -scale,
+                rando.nextGaussian(numericCenter, numericCenter*0.5) * scale));
         }
         fastScatter3D.updatePositionsList(positions);
 
         octree = new Octree();
-        octree.setMaxPointsPerNode(totalPoints);
+        octree.setMaxPointsPerNode(totalPoints+1);
         refreshOctree();
         
         //make transparent so it doesn't interfere with subnode transparency effects
@@ -101,7 +105,7 @@ public class JoystickPaneTest extends Application {
         sceneRoot = new Group();
         camera = new PerspectiveCamera(true);
         subScene = new SubScene(sceneRoot, sceneWidth, sceneHeight, true, SceneAntialiasing.BALANCED);
-        subScene.setFill(Color.DODGERBLUE);
+        subScene.setFill(Color.DARKSLATEGRAY);
         //Start Tracking mouse movements only when a button is pressed
         subScene.setOnMousePressed((MouseEvent me) -> {
             mousePosX = me.getSceneX();
@@ -124,7 +128,7 @@ public class JoystickPaneTest extends Application {
             double newZ = z + event.getDeltaY() * modifierFactor * modifier;
             camera.setTranslateZ(newZ);
         });
-
+        subScene.addEventHandler(MouseEvent.MOUSE_ENTERED, event -> subScene.requestFocus());
         
         camera = new PerspectiveCamera(true);
         //setup camera transform for rotational support
@@ -226,7 +230,18 @@ public class JoystickPaneTest extends Application {
             }
             if (moved)
                 fastScatter3D.setCenterPoint(new Point3D(x, y, z));
-
+            
+            //point size and scaling
+            if (keycode == KeyCode.O || (keycode == KeyCode.P && event.isControlDown())) {
+                point3dSize -= 0.1;
+                if(point3dSize < 0.1)
+                    point3dSize = 0.1;
+                fastScatter3D.setRadius(point3dSize);
+            }
+            if (keycode == KeyCode.P) {
+                point3dSize += 0.1;
+                fastScatter3D.setRadius(point3dSize);
+            }            
         });
 
         BorderPane bpOilSpill = new BorderPane(centerStack);
@@ -280,14 +295,10 @@ public class JoystickPaneTest extends Application {
         });
 
         joystickPane.valueproperty.subscribe(c -> {
-            
-            currentRadius = c.doubleValue() * (scale);
-            Platform.runLater(() -> {
+            currentRadius = c.doubleValue() * scale;
+//            Platform.runLater(() -> {
                 selectByRadius(currentRadius);
-            });
-//            projectileSystem.playerShip.mouseDragged(null,
-//                joystickPane.mouseDeltaX,
-//                joystickPane.mouseDeltaY);
+//            });
         });
         joystickPane.fireButton.setOnAction(e->refreshOctree());
         joystickPane.thrustButton.setOnAction(e->selectRandom());
@@ -306,6 +317,7 @@ public class JoystickPaneTest extends Application {
         stage.setMaximized(true);
         stage.show();
     }
+
     public void joystickDragged(boolean controlDown, boolean shiftDown, double mouseDeltaX, double mouseDeltaY) {
         double modifier = 1.0;
         double modifierFactor = 0.1;  //@TODO SMP connect to sensitivity property
@@ -339,25 +351,40 @@ public class JoystickPaneTest extends Application {
         affineTransform = (Affine) r.createConcatenation(affineTransform);
     }
     private void selectByRadius(double radius) {
-        fastScatter3D.setColorAll(Color.ALICEBLUE);
+        fastScatter3D.setColorAll(defaultColor);
+        
         if(radius > 0.0) {
-            List<Integer> indices = octree.searchAllNeighborsWithinDistance(currentIndex, radius);
+            Point3D centroid = octree.getCurrentPoints().get(currentIndex);
+            List<Integer> indices = octree.searchAllNeighborsWithinDistance(centroid, radius);
+            System.out.println(indices.size() + " " + radius);
             for(int i : indices) {
-                fastScatter3D.setColorByIndex(i, Color.BLUE);
+                fastScatter3D.setColorByIndex(i, neighborColor);
             }
         }   
-        fastScatter3D.setColorByIndex(currentIndex, Color.RED);
+        fastScatter3D.setColorByIndex(currentIndex, currentIndexColor);
     }
     private void selectRandom() {
-        fastScatter3D.setColorAll(Color.ALICEBLUE);
+        fastScatter3D.setColorAll(defaultColor);
         currentIndex = rando.nextInt(positions.size());
         int[] indices = octree.searchNearestNeighbors(20, currentIndex);
-        fastScatter3D.setColorByIndex(currentIndex, Color.RED);
+        fastScatter3D.setColorByIndex(currentIndex, currentIndexColor);
         for(int i : indices) 
-            fastScatter3D.setColorByIndex(i, Color.BLUE);
+            fastScatter3D.setColorByIndex(i, neighborColor);
     }
+    private void selectCentroid() {
+        fastScatter3D.setColorAll(defaultColor);
+        Point3D centroid = new Point3D(
+            numericCenter * scale, numericCenter * -scale, numericCenter * scale);
+        int[] indices = octree.searchNearestNeighbors(1, centroid);
+        currentIndex = indices[0];
+        indices = octree.searchNearestNeighbors(20, currentIndex);
+        for(int i : indices) 
+            fastScatter3D.setColorByIndex(i, neighborColor);
+        fastScatter3D.setColorByIndex(currentIndex, currentIndexColor);        
+    }    
     private void refreshOctree() {
         octree.buildIndex(positions);
+        selectCentroid();
         System.out.println("Octree stuff done.");
     }
     

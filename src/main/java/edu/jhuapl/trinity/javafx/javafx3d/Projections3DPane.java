@@ -59,6 +59,7 @@ import edu.jhuapl.trinity.utils.AnalysisUtils;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.PCAConfig;
 import edu.jhuapl.trinity.utils.ResourceUtils;
+import static edu.jhuapl.trinity.utils.ResourceUtils.removeExtension;
 import edu.jhuapl.trinity.utils.VisibilityMap;
 import edu.jhuapl.trinity.utils.umap.Umap;
 import javafx.animation.AnimationTimer;
@@ -117,6 +118,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -129,6 +131,11 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+import javafx.embed.swing.SwingFXUtils;
+import javafx.scene.SnapshotParameters;
+import javafx.scene.image.WritableImage;
+import javafx.stage.FileChooser;
+import javax.imageio.ImageIO;
 
 /**
  * @author Sean Phillips
@@ -283,7 +290,8 @@ public class Projections3DPane extends StackPane implements
 
     Rectangle selectionRectangle;
     ProjectileSystem projectileSystem;
-
+    File mostRecentPath = Paths.get(".").toFile();
+    
     public Projections3DPane(Scene scene) {
         this.scene = scene;
         cubeWorld = new ShadowCubeWorld(cubeSize, 100, true, featureVectors);
@@ -813,6 +821,27 @@ public class Projections3DPane extends StackPane implements
                 radarPlotPane.show();
             }
         });
+        ImageView export = ResourceUtils.loadIcon("export", ICON_FIT_HEIGHT);
+        export.setEffect(glow);
+        MenuItem exportItem = new MenuItem("Export", export);
+        exportItem.setOnAction(e -> {
+            final FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Save scene as...");
+            fileChooser.setInitialFileName("trinity_projection.png");
+            fileChooser.setInitialDirectory(mostRecentPath);
+            fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PNG", "*.png"));
+            File file = fileChooser.showSaveDialog(null);
+            if (file != null) {
+                mostRecentPath = file.getParentFile();
+                WritableImage image = this.snapshot(new SnapshotParameters(), null);
+                try {
+                    ImageIO.write(SwingFXUtils.fromFXImage(image, null), "png", file);
+                } catch (IOException ioe) {
+                    // TODO: handle exception here
+                    //drop it like its hot
+                }
+            }
+        });
 
         ImageView navigator = ResourceUtils.loadIcon("navigator", ICON_FIT_HEIGHT);
         navigator.setEffect(glow);
@@ -851,7 +880,7 @@ public class Projections3DPane extends StackPane implements
             updatingTrajectories = updatingTrajectoriesItem.isSelected());
 
         ContextMenu cm = new ContextMenu(selectPointsItem,
-            resetViewItem, manifoldsItem, radarItem, navigatorItem,
+            resetViewItem, manifoldsItem, radarItem, exportItem, navigatorItem,
             clearCalloutsItem, clearProjectionItem,
             animatingProjectionsItem, updatingTrajectoriesItem);
 
@@ -1054,7 +1083,21 @@ public class Projections3DPane extends StackPane implements
             clusterSelectionMode = isActive;
             LOG.info("Cluster Selection Mode: {}", clusterSelectionMode);
         });
-
+        scene.addEventHandler(ManifoldEvent.EXPORT_PROJECTION_SCENE, e -> {
+            File file = (File) e.object1;
+            if (file != null) {
+                mostRecentPath = file.getParentFile();
+                WritableImage image = this.snapshot(new SnapshotParameters(), null);
+                try {
+                    String newImageFile = mostRecentPath.getPath() + File.separator + removeExtension(file.getName())+".png";
+                    ImageIO.write(SwingFXUtils.fromFXImage(image, null), "png", 
+                            new File(newImageFile));
+                } catch (IOException ioe) {
+                    // TODO: handle exception here
+                    //drop it like its hot
+                }
+            }
+        });
         scene.addEventHandler(ManifoldEvent.SAVE_PROJECTION_DATA, e -> {
             File file = (File) e.object1;
             FeatureCollection fc = new FeatureCollection();

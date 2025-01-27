@@ -26,6 +26,7 @@ public class ApplicationEvent extends Event {
     public static final EventType<ApplicationEvent> SHOW_HYPERSPACE = new EventType(ANY, "SHOW_HYPERSPACE");
     public static final EventType<ApplicationEvent> SHOW_HYPERSURFACE = new EventType(ANY, "SHOW_HYPERSURFACE");
     public static final EventType<ApplicationEvent> SHOW_PROJECTIONS = new EventType(ANY, "SHOW_PROJECTIONS");
+    public static final EventType<ApplicationEvent> SHOW_PROJECTOR_PANE = new EventType(ANY, "SHOW_PROJECTOR_PANE");
     public static final EventType<ApplicationEvent> SHOW_BUSY_INDICATOR = new EventType(ANY, "SHOW_BUSY_INDICATOR");
     public static final EventType<ApplicationEvent> HIDE_BUSY_INDICATOR = new EventType(ANY, "HIDE_BUSY_INDICATOR");
     public static final EventType<ApplicationEvent> UPDATE_BUSY_INDICATOR = new EventType(ANY, "PROGRESS_BUSY_INDICATOR");

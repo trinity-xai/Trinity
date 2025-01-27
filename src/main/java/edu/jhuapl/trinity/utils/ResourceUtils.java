@@ -28,7 +28,6 @@ import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.AudioEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.events.GaussianMixtureEvent;
-import edu.jhuapl.trinity.javafx.events.HyperspaceEvent;
 import edu.jhuapl.trinity.javafx.events.ImageEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.javafx.events.SemanticMapEvent;
@@ -519,4 +518,9 @@ public enum ResourceUtils {
         Optional<ButtonType> optBT = alert.showAndWait();
         return optBT.get().equals(ButtonType.YES);
     }
+    public static String removeExtension(String filename) {
+        return filename.substring(0, filename.lastIndexOf("."));
+        
+    }    
+   
 }

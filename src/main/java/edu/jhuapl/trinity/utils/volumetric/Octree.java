@@ -388,7 +388,11 @@ public class Octree {
         }
         return result;
     }
+    public List<Point3D> getCurrentPoints() {
+        return this.points;
+    }
 
+    
     public int getMaxPointsPerNode() {
         return this.maxPointsPerNode;
     }
