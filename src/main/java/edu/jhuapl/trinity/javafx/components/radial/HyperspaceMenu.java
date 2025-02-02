@@ -1,10 +1,9 @@
 /* Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC */
+/* Copyright (C) 2021 - 2025 Sean Phillips */
 
 package edu.jhuapl.trinity.javafx.components.radial;
 
 import edu.jhuapl.trinity.App;
-import edu.jhuapl.trinity.javafx.components.panes.ConfigurationPane;
-import edu.jhuapl.trinity.javafx.components.panes.ManifoldControlPane;
 import edu.jhuapl.trinity.javafx.components.panes.RadarPlotPane;
 import edu.jhuapl.trinity.javafx.components.panes.SearchPane;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
@@ -48,12 +47,9 @@ public class HyperspaceMenu extends RadialEntity {
     //momma view this will control and attach to
     Hyperspace3DPane hyperspace3DPane;
 
-    //Various GUI views
-    ConfigurationPane configurationPane;
+    //Various special GUI views
     RadarPlotPane radarPlotPane;
     SearchPane searchPane;
-    ManifoldControlPane manifoldControlPane;
-
     //defaults
     public static double IMAGE_FIT_HEIGHT = 64;
     public static double IMAGE_FIT_WIDTH = 64;

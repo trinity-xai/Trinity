@@ -20,6 +20,7 @@ public class FeatureVectorEvent extends Event {
     public static final EventType<FeatureVectorEvent> NEW_SURFACE_COLLECTION = new EventType(ANY, "NEW_SURFACE_COLLECTION");
     public static final EventType<FeatureVectorEvent> REQUEST_FEATURE_COLLECTION = new EventType(ANY, "REQUEST_FEATURE_COLLECTION");
     public static final EventType<FeatureVectorEvent> EXPORT_FEATURE_COLLECTION = new EventType(ANY, "EXPORT_FEATURE_COLLECTION");
+    public static final EventType<FeatureVectorEvent> NEW_FEATURES_SOURCE = new EventType(ANY, "NEW_FEATURES_SOURCE");
     public static final EventType<FeatureVectorEvent> NEW_FEATURE_COLLECTION = new EventType(ANY, "NEW_FEATURE_COLLECTION");
     public static final EventType<FeatureVectorEvent> NEW_FEATURE_VECTOR = new EventType(ANY, "NEW_FEATURE_VECTOR");
     public static final EventType<FeatureVectorEvent> LOCATE_FEATURE_VECTOR = new EventType(ANY, "LOCATE_FEATURE_VECTOR");

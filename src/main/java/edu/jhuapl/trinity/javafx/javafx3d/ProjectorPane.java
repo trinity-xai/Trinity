@@ -2,6 +2,7 @@
 
 package edu.jhuapl.trinity.javafx.javafx3d;
 
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import javafx.scene.Group;
@@ -29,7 +30,6 @@ import org.slf4j.LoggerFactory;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
-import java.util.Map;
 import java.util.Random;
 import javafx.animation.AnimationTimer;
 import javafx.animation.FadeTransition;
@@ -49,6 +49,7 @@ import javafx.scene.shape.LineTo;
 import javafx.scene.shape.MoveTo;
 import javafx.scene.shape.Path;
 import javafx.scene.transform.Rotate;
+import javafx.stage.DirectoryChooser;
 import javafx.util.Duration;
 import org.fxyz3d.geometry.MathUtils;
 
@@ -95,6 +96,7 @@ public class ProjectorPane extends StackPane {
     ArrayList<Image> imageList;
     Image[] images;
     int imageIndex = 0;
+    File analysisDirectory = new File(".");
 
     double originRadius = 2300;
 
@@ -172,8 +174,6 @@ public class ProjectorPane extends StackPane {
         camera.setNearClip(0.1);
         camera.setFarClip(100000.0);
         camera.setTranslateZ(cameraDistance);
-//        cameraTransform.ry.setAngle(-45.0);
-//        cameraTransform.rx.setAngle(-10.0);
         subScene.setCamera(camera);
         sceneRoot.getChildren().addAll(cameraTransform);
         ContextMenu cm = new ContextMenu();
@@ -181,8 +181,25 @@ public class ProjectorPane extends StackPane {
         animateItem.setOnAction(e -> {
             animateImages();
         });
+        MenuItem basePathItem = new MenuItem("Set Analysis Directory");
+        basePathItem.setOnAction(e -> {
+            DirectoryChooser dc = new DirectoryChooser();
+            dc.setTitle("Choose Analysis Directory...");
+            if (!analysisDirectory.isDirectory())
+                analysisDirectory = new File(".");
+            dc.setInitialDirectory(analysisDirectory);
+            File file = dc.showDialog(getScene().getWindow());
+            if (null != file) {
+                if (file.isDirectory())
+                    analysisDirectory = file;
+            }
+        });
+        MenuItem scanItem = new MenuItem("Scan Folder");
+        scanItem.setOnAction(e -> {
+            scanAnalysisDirectory(analysisDirectory);
+        });
 
-        cm.getItems().addAll(animateItem);
+        cm.getItems().addAll(animateItem, basePathItem, scanItem);
         cm.setAutoFix(true);
         cm.setAutoHide(true);
         cm.setHideOnEscape(true);
@@ -214,6 +231,15 @@ public class ProjectorPane extends StackPane {
 //        Platform.runLater(() -> {
 //            animateImages();
 //        });
+    }
+    private void scanAnalysisDirectory(File directory) {
+        for (File file : directory.listFiles()) {
+            if(file.isDirectory()) {
+                //create new column 
+                //read all json files in and processs
+                //do not follow recursively
+            }  
+        }
     }
     private ArrayList<ImageView> generateNodes(boolean generateRandom) {
         ArrayList<ImageView> newNodes = new ArrayList<>();

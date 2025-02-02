@@ -1989,9 +1989,10 @@ public class Hyperspace3DPane extends StackPane implements
     public void setVisibleByIndex(int i, boolean b) {
         Perspective3DNode[] d = pNodes.toArray(Perspective3DNode[]::new);
         VisibilityMap.pNodeVisibilityMap.put(d[i], b);
-
-//        VisibilityMap.pNodeVisibilityMap.put(pNodes.toArray(Perspective3DNode[]::new)[i], b);
         VisibilityMap.visibilityList.set(i, b);
+    }
+    public boolean getVisibleByIndex(int i) {
+        return VisibilityMap.visibilityByIndex(i);
     }
 
     @Override

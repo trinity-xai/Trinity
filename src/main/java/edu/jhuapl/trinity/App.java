@@ -1,4 +1,5 @@
 /* Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC */
+/* Copyright (C) 2021 - 2025 Sean Phillips */
 
 package edu.jhuapl.trinity;
 
@@ -7,9 +8,11 @@ import edu.jhuapl.trinity.data.FactorLabel;
 import edu.jhuapl.trinity.data.files.ClusterCollectionFile;
 import edu.jhuapl.trinity.data.files.FeatureCollectionFile;
 import edu.jhuapl.trinity.data.files.ManifoldDataFile;
+import edu.jhuapl.trinity.data.messages.AnalysisConfig;
 import edu.jhuapl.trinity.data.messages.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.FeatureVector;
 import edu.jhuapl.trinity.javafx.components.MatrixOverlay;
+import edu.jhuapl.trinity.javafx.components.panes.AnalysisLogPane;
 import edu.jhuapl.trinity.javafx.components.panes.NavigatorPane;
 import edu.jhuapl.trinity.javafx.components.panes.Shape3DControlPane;
 import edu.jhuapl.trinity.javafx.components.panes.SparkLinesPane;
@@ -60,6 +63,7 @@ import edu.jhuapl.trinity.utils.AnalysisUtils;
 import edu.jhuapl.trinity.utils.Configuration;
 import edu.jhuapl.trinity.utils.PCAConfig;
 import edu.jhuapl.trinity.utils.ResourceUtils;
+import edu.jhuapl.trinity.utils.VisibilityMap;
 import edu.jhuapl.trinity.utils.umap.Umap;
 import javafx.animation.Animation;
 import javafx.animation.FadeTransition;
@@ -126,6 +130,7 @@ public class App extends Application {
     NavigatorPane navigatorPane;
     WaveformPane waveformPane;
     Shape3DControlPane shape3DControlPane;
+    AnalysisLogPane analysisLogPane;
     CircleProgressIndicator circleSpinner;
 
     static Configuration theConfig;
@@ -232,6 +237,8 @@ public class App extends Application {
         projectorPane = new ProjectorPane();
         projectorPane.setVisible(false); //start off hidden
 
+        analysisLogPane = new AnalysisLogPane(scene, desktopPane);
+        
         LOG.info("Registering Event Handlers...");
         //animatedConsoleText.animate("Registering Event Handlers...");
         scene.addEventHandler(FeatureVectorEvent.REQUEST_FEATURE_COLLECTION, event -> {
@@ -610,6 +617,22 @@ public class App extends Application {
                 Platform.runLater(() -> navigatorPane.setImage((Image) e.object));
             }
         });
+        LOG.info("Analysis Log View");
+        scene.addEventHandler(ApplicationEvent.SHOW_ANALYSISLOG_PANE, e -> {
+            if (null == analysisLogPane) {
+                analysisLogPane = new AnalysisLogPane(scene, pathPane);
+            }
+            if (!pathPane.getChildren().contains(analysisLogPane)) {
+                pathPane.getChildren().add(analysisLogPane);
+                analysisLogPane.slideInPane();
+            } else {
+                analysisLogPane.show();
+            }
+//            if (null != e.object) {
+//                Platform.runLater(() -> analysisLogPane.setAnalysisConfig((AnalysisConfig) e.object));
+//            }
+        });
+        
         LOG.info("Waveform View ");
         scene.addEventHandler(ApplicationEvent.SHOW_WAVEFORM_PANE, e -> {
             if (null == waveformPane) {
@@ -922,10 +945,22 @@ public class App extends Application {
             }
         } else {
             //filter to only use visible points
-            originalFC.setFeatures(
-                hyperspace3DPane.getAllFeatureVectors().stream().filter(fv -> {
-                    return FactorLabel.visibilityByLabel(fv.getLabel());
-                }).toList());
+//Original method only supports visibilty via labels
+//            originalFC.setFeatures(
+//                hyperspace3DPane.getAllFeatureVectors().stream().filter(fv -> {
+//                    return FactorLabel.visibilityByLabel(fv.getLabel());
+//                }).toList());
+
+            int size = hyperspace3DPane.getAllFeatureVectors().size();
+            List<FeatureVector> visibleFeatures = new ArrayList<>();
+            for(int i=0;i<size;i++){
+                if(FactorLabel.visibilityByLabel(
+                    hyperspace3DPane.getAllFeatureVectors().get(i).getLabel())
+                && VisibilityMap.visibilityByIndex(i)) {
+                    visibleFeatures.add(hyperspace3DPane.getAllFeatureVectors().get(i));
+                }
+            }
+            originalFC.setFeatures(visibleFeatures);
         }
         ArrayList<String> labels = new ArrayList<>();
         for (Dimension d : Dimension.getDimensions()) {

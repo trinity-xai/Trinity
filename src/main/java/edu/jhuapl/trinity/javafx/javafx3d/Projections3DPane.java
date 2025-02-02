@@ -850,7 +850,15 @@ public class Projections3DPane extends StackPane implements
             subScene.getParent().getScene().getRoot().fireEvent(
                 new ApplicationEvent(ApplicationEvent.SHOW_NAVIGATOR_PANE));
         });
-
+        
+        ImageView analysis = ResourceUtils.loadIcon("analysis", ICON_FIT_HEIGHT);
+        analysis.setEffect(glow);
+        MenuItem analysisItem = new MenuItem("Analysis Log", analysis);
+        analysisItem.setOnAction(e -> {
+            subScene.getParent().getScene().getRoot().fireEvent(
+                new ApplicationEvent(ApplicationEvent.SHOW_ANALYSISLOG_PANE));
+        });
+        
         ImageView clearProjection = ResourceUtils.loadIcon("clear", ICON_FIT_HEIGHT);
         radar.setEffect(glow);
         MenuItem clearProjectionItem = new MenuItem("Clear Projection Data", clearProjection);
@@ -880,7 +888,7 @@ public class Projections3DPane extends StackPane implements
             updatingTrajectories = updatingTrajectoriesItem.isSelected());
 
         ContextMenu cm = new ContextMenu(selectPointsItem,
-            resetViewItem, manifoldsItem, radarItem, exportItem, navigatorItem,
+            resetViewItem, manifoldsItem, radarItem, exportItem, analysisItem, navigatorItem,
             clearCalloutsItem, clearProjectionItem,
             animatingProjectionsItem, updatingTrajectoriesItem);
 
@@ -1082,6 +1090,14 @@ public class Projections3DPane extends StackPane implements
             boolean isActive = (boolean) e.object1;
             clusterSelectionMode = isActive;
             LOG.info("Cluster Selection Mode: {}", clusterSelectionMode);
+        });
+        scene.addEventHandler(ManifoldEvent.TAKESNAPSHOT_PROJECTION_SCENE, e-> {
+            WritableImage image = this.snapshot(new SnapshotParameters(), null);
+            Platform.runLater(()-> {
+                getScene().getRoot().fireEvent(
+                    new ManifoldEvent(ManifoldEvent.NEWSNAPSHOT_PROJECTION_SCENE, image)
+                );
+            });
         });
         scene.addEventHandler(ManifoldEvent.EXPORT_PROJECTION_SCENE, e -> {
             File file = (File) e.object1;
@@ -2034,7 +2050,10 @@ public class Projections3DPane extends StackPane implements
         HyperspaceSeed seed = new HyperspaceSeed(0, 1, 2, 3, 4, 5, features);
         hyperspaceSeeds.add(seed);
         addPNodeFromSeed(seed);
-        VisibilityMap.clearAll();
+        //@DIRTY BUG! SMP... since projections visibility is determined by 
+        //hyperspace visibility we should NOT be clearing this teensy hacky
+        //static method of tracking visibility by point.
+        //VisibilityMap.clearAll();
     }
 
     public void showAll() {

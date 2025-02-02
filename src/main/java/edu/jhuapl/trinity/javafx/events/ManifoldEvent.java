@@ -41,6 +41,10 @@ public class ManifoldEvent extends Event {
         public boolean verbose = false;
         public COVARIANCE_MODE covariance = COVARIANCE_MODE.DIAGONAL;
     }
+    //General Events
+    public static final EventType<ManifoldEvent> EXPORT_PROJECTION_SCENE = new EventType(ANY, "EXPORT_PROJECTION_SCENE");
+    public static final EventType<ManifoldEvent> TAKESNAPSHOT_PROJECTION_SCENE = new EventType(ANY, "TAKESNAPSHOT_PROJECTION_SCENE");
+    public static final EventType<ManifoldEvent> NEWSNAPSHOT_PROJECTION_SCENE = new EventType(ANY, "NEWSNAPSHOT_PROJECTION_SCENE");
 
     //Cluster selection events
     public static final EventType<ManifoldEvent> CLUSTER_SELECTION_MODE = new EventType(ANY, "CLUSTER_SELECTION_MODE");
@@ -70,7 +74,6 @@ public class ManifoldEvent extends Event {
     public static final EventType<ManifoldEvent> GENERATE_HYPERSPACE_MANIFOLD = new EventType(ANY, "GENERATE_HYPERSPACE_MANIFOLD");
     public static final EventType<ManifoldEvent> GENERATE_PROJECTION_MANIFOLD = new EventType(ANY, "GENERATE_PROJECTION_MANIFOLD");
     public static final EventType<ManifoldEvent> NEW_PROJECTION_VECTOR = new EventType(ANY, "NEW_PROJECTION_VECTOR");
-    public static final EventType<ManifoldEvent> EXPORT_PROJECTION_SCENE = new EventType(ANY, "EXPORT_PROJECTION_SCENE");
 
     //Clustering
     public static final EventType<ManifoldEvent> FIND_HYPERSURFACE_CLUSTERS = new EventType(ANY, "FIND_HYPERSURFACE_CLUSTERS");

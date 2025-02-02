@@ -17,6 +17,7 @@ public class ApplicationEvent extends Event {
     public static final EventType<ApplicationEvent> SHOW_ABOUT = new EventType(ANY, "SHOW_ABOUT");
     public static final EventType<ApplicationEvent> SHUTDOWN = new EventType(ANY, "SHUTDOWN");
     public static final EventType<ApplicationEvent> RESTORE_PANES = new EventType(ANY, "RESTORE_PANES");
+    public static final EventType<ApplicationEvent> SHOW_ANALYSISLOG_PANE = new EventType(ANY, "SHOW_ANALYSISLOG_PANE");
     public static final EventType<ApplicationEvent> SHOW_SPARK_LINES = new EventType(ANY, "SHOW_SPARK_LINES");
     public static final EventType<ApplicationEvent> SHOW_DATA = new EventType(ANY, "SHOW_DATA");
     public static final EventType<ApplicationEvent> SHOW_TEXT_CONSOLE = new EventType(ANY, "SHOW_TEXT_CONSOLE");

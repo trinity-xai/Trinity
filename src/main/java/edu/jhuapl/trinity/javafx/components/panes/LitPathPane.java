@@ -39,6 +39,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import javafx.fxml.Initializable;
 
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.layout.HBox;
@@ -71,7 +72,6 @@ public class LitPathPane extends PathPane {
     private double currentGradientMillis = 465; //This number was picked by Josh
     private long lastInsideMillis = 0;
     public static long enteredWaitTimeMillis = 5000;
-
     /**
      * Helper utility for loading a common FXML based Controller which assumes
      * an anchorpane node which is returned wrapped as a BorderPane

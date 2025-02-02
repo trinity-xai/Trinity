@@ -58,6 +58,8 @@ public class FeatureCollectionLoader extends Task {
 
         try {
             FeatureCollectionFile fcFile = new FeatureCollectionFile(file.getAbsolutePath(), true);
+            FeatureVectorEvent dataSourceEvent = new FeatureVectorEvent(FeatureVectorEvent.NEW_FEATURES_SOURCE, file);
+            Platform.runLater(() -> scene.getRoot().fireEvent(dataSourceEvent));
             FeatureVectorEvent event = new FeatureVectorEvent(FeatureVectorEvent.NEW_FEATURE_COLLECTION, fcFile.featureCollection);
             event.clearExisting = clearQueue;
             Platform.runLater(() -> scene.getRoot().fireEvent(event));
