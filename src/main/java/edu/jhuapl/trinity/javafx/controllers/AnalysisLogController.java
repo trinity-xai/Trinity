@@ -4,50 +4,24 @@ package edu.jhuapl.trinity.javafx.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.jhuapl.trinity.App;
-import edu.jhuapl.trinity.data.Distance;
-import edu.jhuapl.trinity.data.FactorLabel;
-import edu.jhuapl.trinity.data.Manifold;
 import edu.jhuapl.trinity.data.messages.AnalysisConfig;
 import edu.jhuapl.trinity.data.messages.UmapConfig;
-import edu.jhuapl.trinity.javafx.components.listviews.DistanceListItem;
-import edu.jhuapl.trinity.javafx.components.listviews.ManifoldListItem;
-import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
-import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
-import edu.jhuapl.trinity.javafx.javafx3d.Manifold3D;
-import edu.jhuapl.trinity.utils.AnalysisUtils;
-import edu.jhuapl.trinity.utils.PCAConfig;
 import edu.jhuapl.trinity.utils.ResourceUtils;
-import edu.jhuapl.trinity.utils.metric.Metric;
-import edu.jhuapl.trinity.utils.umap.Umap;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.scene.Scene;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.ColorPicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
-import javafx.scene.control.RadioButton;
-import javafx.scene.control.Slider;
-import javafx.scene.control.Spinner;
-import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.TextField;
-import javafx.scene.control.ToggleGroup;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
-import javafx.scene.layout.VBox;
-import javafx.scene.paint.Color;
-import javafx.scene.paint.PhongMaterial;
-import javafx.scene.text.Font;
-import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
-import javafx.util.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -55,16 +29,13 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
-import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
 import javafx.application.Platform;
 import javafx.scene.control.TextArea;
-import javafx.scene.image.Image;
 import javafx.scene.image.WritableImage;
 import javafx.scene.layout.HBox;
+import javafx.stage.DirectoryChooser;
 
 /**
  * FXML Controller class
@@ -78,7 +49,9 @@ public class AnalysisLogController implements Initializable {
     private Node root;
 
     @FXML
-    private TextField analysisFileTextField;
+    private TextField analysisBasePathTextField;
+    @FXML
+    private TextField analysisFilenameTextField;
     @FXML
     private TextField umapConfigurationTextField;
     @FXML
@@ -88,7 +61,7 @@ public class AnalysisLogController implements Initializable {
     @FXML
     private ImageView sceneImageView;
     
-    
+    UmapConfig currentUmapConfig = null;
     Scene scene;
     File latestDir = new File(".");
 
@@ -132,7 +105,9 @@ public class AnalysisLogController implements Initializable {
 //            });
             scene.addEventHandler(ManifoldEvent.NEW_UMAP_CONFIG, event -> {
                 UmapConfig config = (UmapConfig) event.object1;
+                String filename = (String) event.object2; //don't really need for this
                 setUmapConfig(config);
+                umapConfigurationTextField.setText(UmapConfig.configToFilename(config)+".json");
             });
             scene.addEventHandler(FeatureVectorEvent.NEW_FEATURES_SOURCE, event -> {
                  File file = (File) event.object;
@@ -175,7 +150,7 @@ public class AnalysisLogController implements Initializable {
         }        
     }
     public void setAnalysisConfig(AnalysisConfig acDC) {
-        analysisFileTextField.setText(acDC.getAnalysisName());
+        analysisFilenameTextField.setText(acDC.getAnalysisName());
         clearAllSources();
         dataSourcesListView.getItems().addAll(acDC.getDataSources());
         notesTextArea.setText(acDC.getNotes());
@@ -187,26 +162,29 @@ public class AnalysisLogController implements Initializable {
     }
     @FXML
     public void browseAnalysisConfig() {
-        FileChooser fc = new FileChooser();
-        fc.setTitle("Browse location...");
+        DirectoryChooser dc = new DirectoryChooser();
+        dc.setTitle("Browse Analysis Base Path Location...");
         if (!latestDir.isDirectory())
             latestDir = new File(".");
-        fc.setInitialDirectory(latestDir);
-        File file = fc.showOpenDialog(scene.getWindow());
+        dc.setInitialDirectory(latestDir);
+        File file = dc.showDialog(scene.getWindow());
         if (null != file) {
             if (file.getParentFile().isDirectory())
                 latestDir = file;
-            analysisFileTextField.setText(file.getAbsolutePath());
+            analysisBasePathTextField.setText(file.getAbsolutePath());
         }
     }
     @FXML
     public void browseUmapConfig() {
         FileChooser fc = new FileChooser();
-        fc.setTitle("Browse UMAP Configuration location...");
+        fc.setTitle("Select UMAP Configuration filename...");
         if (!latestDir.isDirectory())
             latestDir = new File(".");
         fc.setInitialDirectory(latestDir);
-        File file = fc.showOpenDialog(scene.getWindow());
+        fc.setSelectedExtensionFilter(new FileChooser.ExtensionFilter("JSON", ".json"));
+        if(null != currentUmapConfig)
+            fc.setInitialFileName(UmapConfig.configToFilename(currentUmapConfig)+".json");
+        File file = fc.showSaveDialog(scene.getWindow());
         if (null != file) {
             if (file.getParentFile().isDirectory())
                 latestDir = file;
@@ -256,13 +234,13 @@ public class AnalysisLogController implements Initializable {
     }
 
     public void setUmapConfig(UmapConfig uc) {
-
+        currentUmapConfig = uc;
     }
 
     @FXML
     public void exportAnalysisConfig() {
         AnalysisConfig acDC = new AnalysisConfig();
-        acDC.setAnalysisName(analysisFileTextField.getText());
+        acDC.setAnalysisName(analysisBasePathTextField.getText());
         acDC.setNotes(notesTextArea.getText());
         acDC.setUmapConfigFile(umapConfigurationTextField.getText());
         acDC.setDataSources(dataSourcesListView.getItems());

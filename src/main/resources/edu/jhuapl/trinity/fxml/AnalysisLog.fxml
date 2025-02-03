@@ -7,6 +7,7 @@
 <?import javafx.scene.control.ScrollPane?>
 <?import javafx.scene.control.TextArea?>
 <?import javafx.scene.control.TextField?>
+<?import javafx.scene.control.Tooltip?>
 <?import javafx.scene.effect.Glow?>
 <?import javafx.scene.image.Image?>
 <?import javafx.scene.image.ImageView?>
@@ -17,7 +18,7 @@
 
 <AnchorPane fx:id="root" style="-fx-background-color: #00000000;" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="edu.jhuapl.trinity.javafx.controllers.AnalysisLogController">
     <children>
-        <BorderPane fx:id="majorPane" prefWidth="800.0">
+        <BorderPane fx:id="majorPane" prefWidth="600.0">
             <children>
             </children>
             <top>
@@ -33,13 +34,13 @@
                               <Button mnemonicParsing="false" onAction="#clearAllNotes" prefWidth="150.0" text="Clear All" />
                            </children>
                         </HBox>
-                        <TextArea fx:id="notesTextArea" prefWidth="400.0" VBox.vgrow="ALWAYS" />
+                        <TextArea fx:id="notesTextArea" prefHeight="300.0" prefWidth="300.0" promptText="Free entry for context associated with this projection." wrapText="true" />
                             </children>
                             <padding>
                                 <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                             </padding>
                         </VBox>
-                  <VBox alignment="CENTER" layoutX="10.0" layoutY="10.0" spacing="5.0" HBox.hgrow="ALWAYS">
+                  <VBox layoutX="10.0" layoutY="10.0" spacing="5.0" HBox.hgrow="ALWAYS">
                      <children>
                         <HBox alignment="CENTER_LEFT" layoutX="15.0" layoutY="82.0" spacing="20.0">
                            <children>
@@ -47,7 +48,7 @@
                               <Button mnemonicParsing="false" onAction="#takeSnapshot" prefWidth="150.0" text="Snapshot" />
                            </children>
                         </HBox>
-                        <ImageView fx:id="sceneImageView" fitHeight="300.0" fitWidth="400.0" pickOnBounds="true" preserveRatio="true" VBox.vgrow="ALWAYS">
+                        <ImageView fx:id="sceneImageView" fitHeight="300.0" fitWidth="300.0" opacity="0.5" pickOnBounds="true" preserveRatio="true">
                            <image>
                               <Image url="@../icons/camera.png" />
                            </image>
@@ -79,18 +80,27 @@
                <children>
                   <HBox spacing="20.0">
                      <children>
-                                <Label prefWidth="150.0" text="Analysis File" />
+                                <Label prefWidth="150.0" text="Analysis Base Path" />
                         <Button mnemonicParsing="false" onAction="#browseAnalysisConfig" prefWidth="150.0" text="Browse" />
                      </children>
                   </HBox>
-                          <TextField fx:id="analysisFileTextField" minHeight="40.0" promptText="Select Distance From ListView" text="Trinity-Analysis-001.json" />
+                          <TextField fx:id="analysisBasePathTextField" minHeight="40.0" promptText="Select Distance From ListView" text="./analysis/" />
                   <HBox alignment="CENTER_LEFT" spacing="20.0">
                      <children>
-                        <Label prefWidth="150.0" text="UMAP Configuration" />
-                        <Button mnemonicParsing="false" onAction="#browseUmapConfig" prefWidth="150.0" text="Browse" />
+                        <VBox minWidth="200.0" spacing="5.0" HBox.hgrow="ALWAYS">
+                           <children>
+                              <Label prefWidth="150.0" text="Analysis Config Name" />
+                              <TextField fx:id="analysisFilenameTextField" minHeight="40.0" promptText="Select Distance From ListView" text="Trinity-Analysis-001.json" />
+                           </children>
+                        </VBox>
+                        <VBox layoutX="10.0" layoutY="10.0" minWidth="200.0" spacing="5.0" HBox.hgrow="ALWAYS">
+                           <children>
+                              <Label prefWidth="150.0" text="UMAP Configuration Name" />
+                              <TextField fx:id="umapConfigurationTextField" minHeight="40.0" promptText="Select Distance From ListView" text="UMAP-CONFIG.json" />
+                           </children>
+                        </VBox>
                      </children>
                   </HBox>
-                  <TextField fx:id="umapConfigurationTextField" minHeight="40.0" promptText="Select Distance From ListView" text="UMAP-CONFIG.json" />
                         <HBox alignment="CENTER_LEFT" spacing="20.0">
                             <children>
                                 <Label prefWidth="150.0" text="Data Sources" />
@@ -100,10 +110,13 @@
                         </HBox>
                         <ScrollPane fitToHeight="true" fitToWidth="true" pannable="true">
                             <content>
-                                <ListView fx:id="dataSourcesListView" prefHeight="75.0">
+                                <ListView fx:id="dataSourcesListView" prefHeight="100.0">
                                     <padding>
                                         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
                                     </padding>
+                           <tooltip>
+                              <Tooltip text="Manually add file based FeatureCollections here." />
+                           </tooltip>
                                 </ListView>
                             </content>
                         </ScrollPane>

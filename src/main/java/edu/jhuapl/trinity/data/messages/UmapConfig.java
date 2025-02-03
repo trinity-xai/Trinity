@@ -4,6 +4,8 @@ package edu.jhuapl.trinity.data.messages;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 
 
 /**
@@ -62,7 +64,24 @@ public class UmapConfig extends MessageData {
             && messageBody.contains("numberComponents")
             && messageBody.contains("numberNearestNeighbours");
     }
-
+    public static String configToFilename(UmapConfig uc) {
+        NumberFormat format = new DecimalFormat("0.00");
+        StringBuilder sb = new StringBuilder("UmapConfig-");
+//        sb.append(targetWeightSlider.getValue()).append("-");
+        sb.append((String) uc.getMetric()).append("-");
+        sb.append("R").append(format.format(uc.getRepulsionStrength())).append("-");
+        sb.append("MD").append(format.format(uc.getMinDist())).append("-");
+        sb.append("S").append(format.format(uc.getSpread())).append("-");
+        sb.append("OPM").append(format.format(uc.getOpMixRatio())).append("-");
+//        uc.setNumberComponents((int) numComponentsSpinner.getValue());
+//        uc.setNumberEpochs((int) numEpochsSpinner.getValue());
+        sb.append("NN").append(uc.getNumberNearestNeighbours()).append("-");
+        sb.append("NSR").append(uc.getNegativeSampleRate()).append("-");
+        sb.append("LC").append(uc.getLocalConnectivity());
+//        uc.setThreshold((double) thresholdSpinner.getValue());
+//        uc.setVerbose(verboseCheckBox.isSelected());
+        return sb.toString();        
+    }
     //<editor-fold defaultstate="collapsed" desc="Properties">
 
     /**
