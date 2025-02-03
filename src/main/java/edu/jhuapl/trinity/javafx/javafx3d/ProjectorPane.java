@@ -2,9 +2,18 @@
 
 package edu.jhuapl.trinity.javafx.javafx3d;
 
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.jhuapl.trinity.data.messages.AnalysisConfig;
+import edu.jhuapl.trinity.data.messages.UmapConfig;
+import edu.jhuapl.trinity.javafx.components.ProjectorNode;
+import edu.jhuapl.trinity.utils.ResourceUtils;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.nio.file.Files;
 import javafx.scene.Group;
 import javafx.scene.PerspectiveCamera;
 import javafx.scene.SceneAntialiasing;
@@ -31,6 +40,7 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Random;
+import java.util.logging.Level;
 import javafx.animation.AnimationTimer;
 import javafx.animation.FadeTransition;
 import javafx.animation.ParallelTransition;
@@ -63,7 +73,7 @@ public class ProjectorPane extends StackPane {
     public Group sceneRoot = new Group();
     public SubScene subScene;
     public CameraTransformer cameraTransform = new CameraTransformer();
-    private double cameraDistance = -2000;
+    private double cameraDistance = -4000;
     private final double sceneWidth = 10000;
     private final double sceneHeight = 4000;
     private double mousePosX;
@@ -73,43 +83,28 @@ public class ProjectorPane extends StackPane {
     private double mouseDeltaX;
     private double mouseDeltaY;
 
-    ArrayList<ImageView> nodes;
+    ArrayList<ProjectorNode> nodes;
     ArrayList<Integer> randomIndices;
     List<ParallelTransition> transitionList = new ArrayList<>();
-    double transitionXOffset = -2000;
-    double transitionYOffset = -2000;
+    double transitionXOffset = -15000;
+    double transitionYOffset = -15000;
     double transitionZOffset = 0;
     ImageView overlayImageView;
-
-//    Image[] images = new Image[]{
-//        new Image(ResourceUtils.class.getResourceAsStream("/edu/jhuapl/trinity/javafx/dalle/arcadesign.png"))
-//        , new Image(ResourceUtils.class.getResourceAsStream("/edu/jhuapl/trinity/javafx/dalle/clubbarsign.png"))
-//        , new Image(ResourceUtils.class.getResourceAsStream("/edu/jhuapl/trinity/javafx/dalle/motel.png"))
-//        , new Image(ResourceUtils.class.getResourceAsStream("/edu/jhuapl/trinity/javafx/dalle/tiki.png"))
-//        , new Image(ResourceUtils.class.getResourceAsStream("/edu/jhuapl/trinity/javafx/dalle/retrowaveSun1.png"))
-//        , new Image(ResourceUtils.class.getResourceAsStream("/edu/jhuapl/trinity/javafx/dalle/retrowaveSun2.png"))
-//        , new Image(ResourceUtils.class.getResourceAsStream("/edu/jhuapl/trinity/javafx/dalle/retrowaveSun3.png"))
-//        , new Image(ResourceUtils.class.getResourceAsStream("/edu/jhuapl/trinity/javafx/dalle/retrowaveSun4.png"))
-//        , new Image(ResourceUtils.class.getResourceAsStream("/edu/jhuapl/trinity/javafx/dalle/retrowaveSun5.png"))
-//        , new Image(ResourceUtils.class.getResourceAsStream("/edu/jhuapl/trinity/javafx/dalle/retrowaveSun6.png"))
-//    };
-    ArrayList<Image> imageList;
-    Image[] images;
-    int imageIndex = 0;
-    File analysisDirectory = new File(".");
-
-    double originRadius = 2300;
-
-    BorderPane bp;
-    public Color sceneColor = Color.ALICEBLUE;
-
+    File analysisDirectory = new File("./analysis");
+    double originRadius = 9001;
+    public Color sceneColor = Color.TRANSPARENT;
+    /** Provides deserialization support for JSON messages */
+    ObjectMapper mapper;
+        
     public ProjectorPane() {
-
+        mapper = new ObjectMapper();
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        
         setBackground(new Background(new BackgroundFill(sceneColor, CornerRadii.EMPTY, Insets.EMPTY)));
         subScene = new SubScene(sceneRoot, sceneWidth, sceneHeight, true, SceneAntialiasing.BALANCED);
         subScene.widthProperty().bind(widthProperty());
         subScene.heightProperty().bind(heightProperty());
-        subScene.setFill(Color.CYAN);
+        subScene.setFill(Color.TRANSPARENT);
         getChildren().add(subScene);
         //Start Tracking mouse movements only when a button is pressed
         subScene.setOnMousePressed((MouseEvent me) -> {
@@ -196,6 +191,9 @@ public class ProjectorPane extends StackPane {
         });
         MenuItem scanItem = new MenuItem("Scan Folder");
         scanItem.setOnAction(e -> {
+            sceneRoot.getChildren().removeIf(n -> n instanceof ProjectorNode);
+            nodes.clear();
+            transitionList.clear();            
             scanAnalysisDirectory(analysisDirectory);
         });
 
@@ -214,84 +212,138 @@ public class ProjectorPane extends StackPane {
             }
         });
 
-        nodes = generateNodes(false);
+        nodes = new ArrayList<>();
         sceneRoot.getChildren().addAll(nodes);
-        Sphere origin = new Sphere(200.0);
-        Sphere northPole = new Sphere(200.0);
+        Sphere origin = new Sphere(20.0);
+        Sphere northPole = new Sphere(20.0);
         PhongMaterial northPhong = new PhongMaterial(Color.DODGERBLUE);
         northPole.setMaterial(northPhong);
         northPole.setTranslateY(-originRadius);
 
-        Sphere southPole = new Sphere(200.0);
+        Sphere southPole = new Sphere(20.0);
         PhongMaterial southPhong = new PhongMaterial(Color.TOMATO);
         southPole.setMaterial(southPhong);
         southPole.setTranslateY(originRadius);
 
         sceneRoot.getChildren().addAll(origin, northPole, southPole);
-//        Platform.runLater(() -> {
-//            animateImages();
-//        });
     }
     private void scanAnalysisDirectory(File directory) {
-        for (File file : directory.listFiles()) {
-            if(file.isDirectory()) {
-                //create new column 
-                //read all json files in and processs
-                //do not follow recursively
+        originRadius = 9001;
+        double angle1 = -Math.PI * 0.35; //@TODO SMP Dynamically figure this out
+        double angleStepSize = 0.25; //@TODO SMP Dynamically figure this out
+        for (File subDirectory : directory.listFiles()) {
+            if(subDirectory.isDirectory()) {
+                //We will recognize three different file types...
+                //map images to their respective UMAP and Analysis config names
+                List<ProjectorNode> projectorNodes = new ArrayList<>();
+                //search for and use image files as pivot points, do NOT follow recursively
+                for(File subDirFile : subDirectory.listFiles()) {
+                    if(ResourceUtils.isImageFile(subDirFile)) {
+                        Image image;
+                        try {
+                            image = new Image(subDirFile.toURI().toURL().toExternalForm());
+                            //Can we find linked umap and analysis configs?
+                            UmapConfig ucForMe = findUmapConfigByName(subDirectory, subDirFile.getName());
+                            AnalysisConfig acDC = findAnalysisConfigByName(subDirectory, subDirFile.getName());
+                            //the configs may be null but that is ok
+                            projectorNodes.add(new ProjectorNode(image, ucForMe, acDC));                            
+                        } catch (MalformedURLException ex) {
+                            java.util.logging.Logger.getLogger(ProjectorPane.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+                    }
+                }
+                //should we create create new column
+                if(!projectorNodes.isEmpty()) {
+                    int row = projectorNodes.size()/2;
+                    if(row > 0)
+                        row *= -1;
+                    //add each projector node to the column
+                    for(ProjectorNode pn : projectorNodes) {
+                        addNodeToScene(pn, row, projectorNodes.size()/2, angle1);
+                        row++;
+                    }
+                    //only bump the directional angle if the subdir had nodes in it
+                    angle1 += angleStepSize;
+                }                
             }  
         }
     }
-    private ArrayList<ImageView> generateNodes(boolean generateRandom) {
-        ArrayList<ImageView> newNodes = new ArrayList<>();
-
-        double yOffset = 150;
+    
+    private void addNodeToScene(ProjectorNode projectorNode, int row, int max, double angle1) {
+        double yOffset = 1300; //a bit more than 1080p height
         double angle2 = Math.PI;
-        int min = -3;
-        int max = 3;
         Reflection refl = new Reflection();
         refl.setFraction(0.9f);
         Glow glow = new Glow();
         glow.setLevel(0.9);
         glow.setInput(refl);
 
-        Random rando = new Random();
-        // full ring angle1+=0.1 about 440 images
-        for (double angle1 = -Math.PI; angle1 <= Math.PI; angle1 += 0.1) {
-            // only a wall
-            //for( double angle1=Math.toRadians(angleOffsetDeg); angle1 <= Math.toRadians(90-angleOffsetDeg); angle1+=0.1) {
-            for (int i = min; i <= max; i++) {
-                ImageView newImageView;
-                if (generateRandom)
-                    newImageView = makeRandomImageView();
-                else
-                    newImageView = new ImageView(); //Image will be filled in later
-// Ring formula
-                double x = originRadius * Math.sin(angle1) * Math.cos(angle2);
-                //double y = r * Math.sin(angle1) * Math.sin(angle2);
-                double y = yOffset * i;
-                double z = originRadius * Math.cos(angle1);
+        // Ring formula
+        double x = originRadius * Math.sin(angle1) * Math.cos(angle2);
+        //double y = r * Math.sin(angle1) * Math.sin(angle2);
+        double y = yOffset * row;
+        double z = originRadius * Math.cos(angle1);
 
-                newImageView.setTranslateX(x);
-                newImageView.setTranslateY(y);
-                newImageView.setTranslateZ(z);
+        projectorNode.setTranslateX(x);
+        projectorNode.setTranslateY(y);
+        projectorNode.setTranslateZ(z);
 
-                Rotate ry = new Rotate();
-                ry.setAxis(Rotate.Y_AXIS);
-                ry.setAngle(Math.toDegrees(-angle1));
-                newImageView.getTransforms().addAll(ry);
+        Rotate ry = new Rotate();
+        ry.setAxis(Rotate.Y_AXIS);
+        ry.setAngle(Math.toDegrees(-angle1));
+        projectorNode.getTransforms().addAll(ry);
 
-                // reflection on bottom row
-                if (i == max) {
-                    newImageView.setEffect(glow);
-                }
-                newImageView.setVisible(false);
-                transitionList.add(createTransition(newImageView));
-                newNodes.add(newImageView);
+//        // reflection on bottom row
+//        if (row == max) {
+//            projectorNode.setEffect(glow);
+//        }
+//        projectorNode.setVisible(false);
+        nodes.add(projectorNode);
+        sceneRoot.getChildren().add(projectorNode);
+        transitionList.add(createTransition(projectorNode));
+    }    
+    
+    private AnalysisConfig findAnalysisConfigByName(File directory, String name) {
+        String filenameOnly = ResourceUtils.removeExtension(name);
+        //read all json files, do NOT follow recursively
+        for(File jsonFile : directory.listFiles(f -> 
+                f.getName().endsWith(".json")
+            ||  f.getName().endsWith(".JSON"))) {
+            String jsonFileName = ResourceUtils.removeExtension(jsonFile.getName());
+            if(jsonFileName.contentEquals(filenameOnly)){
+                try {
+                    String messageBody = Files.readString(jsonFile.toPath());
+                    if(AnalysisConfig.isAnalysisConfig(messageBody)) {
+                        return mapper.readValue(messageBody, AnalysisConfig.class);
+                    } 
+                } catch (IOException ex) {
+                    java.util.logging.Logger.getLogger(ProjectorPane.class.getName()).log(Level.SEVERE, null, ex);
+                }                      
             }
         }
-        return newNodes;
+        return null; //if you get this far its because the file isn't there
     }
- 
+    private UmapConfig findUmapConfigByName(File directory, String name) {
+        String filenameOnly = ResourceUtils.removeExtension(name);
+        //read all json files, do NOT follow recursively
+        for(File jsonFile : directory.listFiles(f -> 
+                f.getName().endsWith(".json")
+            ||  f.getName().endsWith(".JSON"))) {
+            String jsonFileName = ResourceUtils.removeExtension(jsonFile.getName());
+            if(jsonFileName.contentEquals(filenameOnly)){
+                try {
+                    String messageBody = Files.readString(jsonFile.toPath());
+                    if(UmapConfig.isUmapConfig(messageBody)) {
+                        return mapper.readValue(messageBody, UmapConfig.class);
+                    } 
+                } catch (IOException ex) {
+                    java.util.logging.Logger.getLogger(ProjectorPane.class.getName()).log(Level.SEVERE, null, ex);
+                }                      
+            }
+        }
+        return null; //if you get this far its because the file isn't there
+    }
+    
     private void playNewImage(int index, String fixedPath) {
         Platform.runLater(() -> {
             try {
@@ -330,16 +382,6 @@ public class ProjectorPane extends StackPane {
                 LOG.error(null, ex);
             }
         });
-    }
-
-
-    public ImageView makeRandomImageView() {
-        Random rando = new Random();
-        Image image = imageList.get(rando.nextInt(imageList.size()));
-        ImageView iv = new ImageView(image);
-        iv.setFitHeight(150);
-        iv.setFitWidth(200);
-        return iv;
     }
 
     public void animateImages() {

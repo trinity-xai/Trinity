@@ -247,7 +247,32 @@ public enum ResourceUtils {
         iv.setFitWidth(FIT_WIDTH);
         return iv;
     }
-
+    /**
+     * Checks whether the file can be used as an image.
+     *
+     * @param file The File object to check.
+     * @return boolean true if it is an Image that JavaFX supports
+     */
+    public static boolean isImageFile(File file) {
+        if (file.isFile() && file.canRead()) {
+            try {
+                String contentType = Files.probeContentType(file.toPath());
+                switch (contentType) {
+                    case "image/png":
+                    case "image/bmp":
+                    case "image/gif":
+                    case "image/tiff":
+                    case "image/jpg":
+                    case "image/jpeg":
+                        return true;
+                }
+                //System.out.println(contentType);
+            } catch (IOException ex) {
+                LOG.error(null, ex);
+            }
+        }
+        return false;
+    }
     /**
      * Checks whether the file can be used as audio.
      *

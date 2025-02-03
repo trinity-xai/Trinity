@@ -244,13 +244,17 @@ public class MainNavMenu extends LitRadialMenu {
         ImageView shutdown = ResourceUtils.loadIcon("shutdown", ITEM_FIT_WIDTH);
         shutdown.setEffect(glow);
 
-        //System.out.println("attempting submenus...");
-        /* System submenus */
-
+        addMenuItem(new LitRadialMenuItem(ITEM_SIZE, "Configuration", configuration, e -> {
+            Pane pathPane = App.getAppPathPaneStack();
+            if (null == configurationPane)
+                configurationPane = new ConfigurationPane(scene, pathPane);
+            if (!pathPane.getChildren().contains(configurationPane))
+                pathPane.getChildren().add(configurationPane);
+            configurationPane.show();
+            slideInPane(configurationPane);
+        }));
         try {
             LitRadialContainerMenuItem systemSubMenuItem = new LitRadialContainerMenuItem(ITEM_SIZE, "System", system);
-            //System.out.println("LitRadialContainerMenuItem created...");
-
             systemSubMenuItem.addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "About", about, e -> {
                 scene.getRoot().fireEvent(new ApplicationEvent(ApplicationEvent.SHOW_ABOUT));
                 Pane pathPane = App.getAppPathPaneStack();
@@ -260,7 +264,6 @@ public class MainNavMenu extends LitRadialMenu {
                     pathPane.getChildren().add(aboutPane);
                 slideInPane(aboutPane);
             }));
-            //System.out.println("attempting restore item...");
             systemSubMenuItem.addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Restore Panes", restoreAll, e -> {
                 scene.getRoot().fireEvent(new ApplicationEvent(ApplicationEvent.RESTORE_PANES));
             }));
@@ -272,18 +275,6 @@ public class MainNavMenu extends LitRadialMenu {
             LOG.error("Exception", ex);
         }
 
-
-        //System.out.println("attempting Configuration item...");
-        addMenuItem(new LitRadialMenuItem(ITEM_SIZE, "Configuration", configuration, e -> {
-            Pane pathPane = App.getAppPathPaneStack();
-            if (null == configurationPane)
-                configurationPane = new ConfigurationPane(scene, pathPane);
-            if (!pathPane.getChildren().contains(configurationPane))
-                pathPane.getChildren().add(configurationPane);
-            configurationPane.show();
-            slideInPane(configurationPane);
-        }));
-
         addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Hypersurface", hypersurface, e -> {
             scene.getRoot().fireEvent(new ApplicationEvent(ApplicationEvent.SHOW_HYPERSURFACE));
         }));
@@ -294,7 +285,16 @@ public class MainNavMenu extends LitRadialMenu {
         addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Hyperspace", hyperspace, e -> {
             scene.getRoot().fireEvent(new ApplicationEvent(ApplicationEvent.SHOW_HYPERSPACE));
         }));
-        addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Data", data, e -> {
+
+        ImageView analysis = ResourceUtils.loadIcon("analysis", ITEM_FIT_WIDTH);
+        analysis.setEffect(glow);
+        ImageView projector = ResourceUtils.loadIcon("projector", ITEM_FIT_WIDTH);
+//        projector.setEffect(glow); //looks better without the glow
+        ImageView datasources = ResourceUtils.loadIcon("datasources", ITEM_FIT_WIDTH);
+//        datasources.setEffect(glow);
+
+        LitRadialContainerMenuItem dataSubMenuItem = new LitRadialContainerMenuItem(ITEM_SIZE, "Data", data);
+        dataSubMenuItem.addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Data Sources", datasources, e -> {
             scene.getRoot().fireEvent(new ApplicationEvent(ApplicationEvent.SHOW_DATA));
             Pane pathPane = App.getAppPathPaneStack();
             if (null == dataPane)
@@ -303,5 +303,14 @@ public class MainNavMenu extends LitRadialMenu {
                 pathPane.getChildren().add(dataPane);
             slideInPane(dataPane);
         }));
+        dataSubMenuItem.addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Analysis Log", analysis, e -> {
+            scene.getRoot().fireEvent(new ApplicationEvent(ApplicationEvent.SHOW_ANALYSISLOG_PANE));
+        }));
+        dataSubMenuItem.addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Projector Room", projector, e -> {
+            scene.getRoot().fireEvent(new ApplicationEvent(ApplicationEvent.SHOW_PROJECTOR_PANE));
+        }));
+        
+        addMenuItem(dataSubMenuItem);        
+        
     }
 }

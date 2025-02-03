@@ -628,9 +628,6 @@ public class App extends Application {
             } else {
                 analysisLogPane.show();
             }
-//            if (null != e.object) {
-//                Platform.runLater(() -> analysisLogPane.setAnalysisConfig((AnalysisConfig) e.object));
-//            }
         });
         
         LOG.info("Waveform View ");
@@ -771,6 +768,14 @@ public class App extends Application {
                 shape3DControlPane.show();
             }
         });
+        scene.addEventHandler(ApplicationEvent.SHOW_PROJECTOR_PANE, e -> {
+            boolean visible = !projectorPane.isVisible();
+            if(null != e.object)
+                visible = (boolean) e.object;
+            projectorPane.setVisible(visible);
+        
+        });
+                
         LOG.info("Data Handlers ");
         gmeh = new GaussianMixtureEventHandler();
         scene.getRoot().addEventHandler(GaussianMixtureEvent.NEW_GAUSSIAN_MIXTURE, gmeh);
@@ -1084,9 +1089,9 @@ public class App extends Application {
         if (e.isAltDown() && e.isControlDown() && e.getCode().equals(KeyCode.P)) {
             stage.getScene().getRoot().fireEvent(
                 new ApplicationEvent(ApplicationEvent.SHOW_PROJECTOR_PANE));
-                Platform.runLater(() -> {
-                    projectorPane.setVisible(!projectorPane.isVisible());
-                });            
+//                Platform.runLater(() -> {
+//                    projectorPane.setVisible(!projectorPane.isVisible());
+//                });            
         }
 
         if (e.isAltDown() && e.getCode().equals(KeyCode.N)) {

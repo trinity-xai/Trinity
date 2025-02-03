@@ -6,6 +6,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.jhuapl.trinity.App;
 import edu.jhuapl.trinity.data.messages.AnalysisConfig;
 import edu.jhuapl.trinity.data.messages.UmapConfig;
+import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.utils.ResourceUtils;
@@ -99,10 +100,10 @@ public class AnalysisLogController implements Initializable {
                 }
             });
             
-//            root.addEventHandler(ManifoldEvent.NEW_ANALYSIS_CONFIG, event -> {
-//                AnalysisConfig config = (AnalysisConfig) event.object1;
-//                setAnalysisConfig(config);
-//            });
+            scene.addEventHandler(ApplicationEvent.SHOW_ANALYSISLOG_PANE, event -> {
+                AnalysisConfig config = (AnalysisConfig) event.object;
+                setAnalysisConfig(config);
+            });
             scene.addEventHandler(ManifoldEvent.NEW_UMAP_CONFIG, event -> {
                 UmapConfig config = (UmapConfig) event.object1;
                 String filename = (String) event.object2; //don't really need for this
