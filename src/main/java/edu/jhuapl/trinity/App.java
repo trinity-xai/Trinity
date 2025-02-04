@@ -790,6 +790,7 @@ public class App extends Application {
         scene.getRoot().addEventHandler(FeatureVectorEvent.RESCAN_FACTOR_LABELS, fveh);
         scene.getRoot().addEventHandler(FeatureVectorEvent.RESCAN_FEATURE_LAYERS, fveh);
         scene.getRoot().addEventHandler(FeatureVectorEvent.NEW_LABEL_CONFIG, fveh);
+        scene.getRoot().addEventHandler(FeatureVectorEvent.CLEAR_ALL_FEATUREVECTORS, fveh);
         fveh.addFeatureVectorRenderer(hyperspace3DPane);
 
         meh = new ManifoldEventHandler();

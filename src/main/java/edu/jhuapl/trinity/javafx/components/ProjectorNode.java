@@ -69,7 +69,7 @@ public class ProjectorNode extends Pane {
             } else if(e.getClickCount()==1) {
                 if(null != analysisConfig) {
                     getScene().getRoot().fireEvent(new ApplicationEvent(                
-                        ApplicationEvent.SHOW_ANALYSISLOG_PANE, analysisConfig));
+                        ApplicationEvent.SHOW_ANALYSISLOG_PANE, analysisConfig, umapConfig));
                 }
             } 
         });

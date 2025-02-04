@@ -9,6 +9,7 @@ import edu.jhuapl.trinity.data.messages.UmapConfig;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
+import edu.jhuapl.trinity.javafx.javafx3d.tasks.AutomaticUmapForThePeopleTask;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
@@ -63,6 +64,7 @@ public class AnalysisLogController implements Initializable {
     private ImageView sceneImageView;
     
     UmapConfig currentUmapConfig = null;
+    AnalysisConfig currentAnalysisConfig = null;
     Scene scene;
     File latestDir = new File(".");
 
@@ -107,8 +109,11 @@ public class AnalysisLogController implements Initializable {
             });
             
             scene.addEventHandler(ApplicationEvent.SHOW_ANALYSISLOG_PANE, event -> {
-                AnalysisConfig config = (AnalysisConfig) event.object;
-                setAnalysisConfig(config);
+                AnalysisConfig analysisConfig = (AnalysisConfig) event.object;
+                setAnalysisConfig(analysisConfig);
+                UmapConfig umapConfig = (UmapConfig) event.object2;
+                setUmapConfig(umapConfig);
+
             });
             scene.addEventHandler(ManifoldEvent.NEW_UMAP_CONFIG, event -> {
                 UmapConfig config = (UmapConfig) event.object1;
@@ -127,6 +132,24 @@ public class AnalysisLogController implements Initializable {
         dataSourcesListView.setPlaceholder(placeholder);
         
     }
+    @FXML 
+    public void execute() {
+        if(null != currentAnalysisConfig && null != currentUmapConfig) {
+//            //first try to process data
+//            Platform.runLater(()-> {
+//                sceneImageView.getScene().getRoot().fireEvent(
+//                    new ManifoldEvent(ManifoldEvent.AUTOMATIC_UMAP_FORTHEPEOPLE,
+//                        currentAnalysisConfig, currentUmapConfig)          
+//                );
+//            });            
+            AutomaticUmapForThePeopleTask autoTask = new AutomaticUmapForThePeopleTask(
+                scene, currentAnalysisConfig, currentUmapConfig, true, true);
+            Thread t = new Thread(autoTask, "Automatic UMAP For the People");
+            t.setDaemon(true);
+            t.start();
+        }
+    }
+    
     @FXML
     public void takeSnapshot() {
         Platform.runLater(()-> {
@@ -158,6 +181,7 @@ public class AnalysisLogController implements Initializable {
     }
     public void setAnalysisConfig(AnalysisConfig acDC) {
         if(null != acDC) {
+            currentAnalysisConfig = acDC;
             analysisFilenameTextField.setText(acDC.getAnalysisName());
             clearAllSources();
             dataSourcesListView.getItems().addAll(acDC.getDataSources());
@@ -181,6 +205,14 @@ public class AnalysisLogController implements Initializable {
             if (file.getParentFile().isDirectory())
                 latestDir = file;
             analysisBasePathTextField.setText(file.getAbsolutePath());
+            ObjectMapper mapper = new ObjectMapper();
+            AnalysisConfig acDC;
+            try {
+                acDC = mapper.readValue(file, AnalysisConfig.class);
+                setAnalysisConfig(acDC);
+            } catch (IOException ex) {
+                LOG.error(null, ex);
+            }            
         }
     }
     @FXML
@@ -259,6 +291,7 @@ public class AnalysisLogController implements Initializable {
                 analysisBasePathTextField.getText()+File.separator+acDC.getAnalysisName()), acDC);
         } catch (IOException ex) {
             LOG.error(null, ex);
-        }        
+        }
+        currentAnalysisConfig = acDC;
     }
 }

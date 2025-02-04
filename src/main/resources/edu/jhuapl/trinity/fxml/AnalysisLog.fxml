@@ -159,6 +159,7 @@
                     <children>
                         <Button mnemonicParsing="false" onAction="#importAnalysisConfig" prefWidth="150.0" text="Import" />
                         <Button defaultButton="true" layoutX="10.0" layoutY="10.0" mnemonicParsing="false" onAction="#exportAnalysisConfig" prefWidth="150.0" text="Export" />
+                  <Button layoutX="270.0" layoutY="15.0" mnemonicParsing="false" onAction="#execute" prefWidth="150.0" style="-fx-background-color: #FF000088;" text=".execute." />
                     </children>
                     <padding>
                         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />

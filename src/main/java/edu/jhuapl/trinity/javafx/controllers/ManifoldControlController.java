@@ -53,8 +53,6 @@ import java.io.File;
 import java.io.IOException;
 import java.net.URL;
 import java.nio.file.Files;
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
@@ -221,7 +219,7 @@ public class ManifoldControlController implements Initializable {
                     }
                 }
             });
-            root.addEventHandler(ManifoldEvent.NEW_UMAP_CONFIG, event -> {
+            scene.addEventHandler(ManifoldEvent.NEW_UMAP_CONFIG, event -> {
                 UmapConfig config = (UmapConfig) event.object1;
                 setUmapConfig(config);
             });

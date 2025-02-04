@@ -345,20 +345,26 @@ public class ProjectorPane extends StackPane {
     }    
     private AnalysisConfig findAnalysisConfigByName(File directory, String name) {
         String filenameOnly = ResourceUtils.removeExtension(name);
+        if(directory.getName().contains("People Only")) {
+            System.out.println("People Only");
+        }
         //read all json files, do NOT follow recursively
         for(File jsonFile : directory.listFiles(f -> 
                 f.getName().endsWith(".json")
             ||  f.getName().endsWith(".JSON"))) {
             String jsonFileName = ResourceUtils.removeExtension(jsonFile.getName());
-            if(jsonFileName.contentEquals(filenameOnly)){
-                try {
-                    String messageBody = Files.readString(jsonFile.toPath());
-                    if(AnalysisConfig.isAnalysisConfig(messageBody)) {
-                        return mapper.readValue(messageBody, AnalysisConfig.class);
-                    } 
-                } catch (IOException ex) {
-                    java.util.logging.Logger.getLogger(ProjectorPane.class.getName()).log(Level.SEVERE, null, ex);
-                }                      
+            if(jsonFileName.startsWith("AnalysisConfig-")) {
+                jsonFileName = jsonFileName.replaceFirst("AnalysisConfig-", "");
+                if(filenameOnly.endsWith(jsonFileName)){
+                    try {
+                        String messageBody = Files.readString(jsonFile.toPath());
+                        if(AnalysisConfig.isAnalysisConfig(messageBody)) {
+                            return mapper.readValue(messageBody, AnalysisConfig.class);
+                        } 
+                    } catch (IOException ex) {
+                        java.util.logging.Logger.getLogger(ProjectorPane.class.getName()).log(Level.SEVERE, null, ex);
+                    }                      
+                }
             }
         }
         return null; //if you get this far its because the file isn't there
