@@ -88,12 +88,18 @@ public class AnalysisLogController implements Initializable {
                 if (db.hasFiles()) {
                     File file = db.getFiles().get(0);
                     try {
-
                         if (AnalysisConfig.isAnalysisConfig(Files.readString(file.toPath()))) {
                             ObjectMapper mapper = new ObjectMapper();
                             AnalysisConfig acDC = mapper.readValue(file, AnalysisConfig.class);
                             setAnalysisConfig(acDC);
                         }
+                        if (UmapConfig.isUmapConfig(Files.readString(file.toPath()))) {
+                            ObjectMapper mapper = new ObjectMapper();
+                            UmapConfig ucForMe = mapper.readValue(file, UmapConfig.class);
+                            setUmapConfig(ucForMe);
+                            umapConfigurationTextField.setText(UmapConfig.configToFilename(ucForMe)+".json");
+                        }
+                        
                     } catch (IOException ex) {
                         LOG.error(null, ex);
                     }
@@ -151,11 +157,13 @@ public class AnalysisLogController implements Initializable {
         }        
     }
     public void setAnalysisConfig(AnalysisConfig acDC) {
-        analysisFilenameTextField.setText(acDC.getAnalysisName());
-        clearAllSources();
-        dataSourcesListView.getItems().addAll(acDC.getDataSources());
-        notesTextArea.setText(acDC.getNotes());
-        umapConfigurationTextField.setText(acDC.getUmapConfigFile());
+        if(null != acDC) {
+            analysisFilenameTextField.setText(acDC.getAnalysisName());
+            clearAllSources();
+            dataSourcesListView.getItems().addAll(acDC.getDataSources());
+            notesTextArea.setText(acDC.getNotes());
+            umapConfigurationTextField.setText(acDC.getUmapConfigFile());
+        }
     }
     @FXML
     public void clearAllSources() {
@@ -241,13 +249,14 @@ public class AnalysisLogController implements Initializable {
     @FXML
     public void exportAnalysisConfig() {
         AnalysisConfig acDC = new AnalysisConfig();
-        acDC.setAnalysisName(analysisBasePathTextField.getText());
+        acDC.setAnalysisName(analysisFilenameTextField.getText());
         acDC.setNotes(notesTextArea.getText());
         acDC.setUmapConfigFile(umapConfigurationTextField.getText());
         acDC.setDataSources(dataSourcesListView.getItems());
         ObjectMapper mapper = new ObjectMapper();
         try {
-            mapper.writeValue(new File(acDC.getAnalysisName()), acDC);
+            mapper.writerWithDefaultPrettyPrinter().writeValue(new File(
+                analysisBasePathTextField.getText()+File.separator+acDC.getAnalysisName()), acDC);
         } catch (IOException ex) {
             LOG.error(null, ex);
         }        

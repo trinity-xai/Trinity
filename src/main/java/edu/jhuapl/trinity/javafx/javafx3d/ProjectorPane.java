@@ -27,7 +27,6 @@ import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.Background;
-import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
@@ -38,8 +37,8 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
+import java.util.HashMap;
 import java.util.List;
-import java.util.Random;
 import java.util.logging.Level;
 import javafx.animation.AnimationTimer;
 import javafx.animation.FadeTransition;
@@ -51,6 +50,7 @@ import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.scene.Node;
+import javafx.scene.control.Label;
 import javafx.scene.effect.Glow;
 import javafx.scene.effect.Reflection;
 import javafx.scene.layout.BackgroundFill;
@@ -58,7 +58,10 @@ import javafx.scene.layout.CornerRadii;
 import javafx.scene.shape.LineTo;
 import javafx.scene.shape.MoveTo;
 import javafx.scene.shape.Path;
+import javafx.scene.shape.Shape3D;
+import javafx.scene.text.Font;
 import javafx.scene.transform.Rotate;
+import javafx.scene.transform.Translate;
 import javafx.stage.DirectoryChooser;
 import javafx.util.Duration;
 import org.fxyz3d.geometry.MathUtils;
@@ -71,9 +74,10 @@ public class ProjectorPane extends StackPane {
     private static final Logger LOG = LoggerFactory.getLogger(ProjectorPane.class);
     PerspectiveCamera camera = new PerspectiveCamera(true);
     public Group sceneRoot = new Group();
+    private Group labelGroup;    
     public SubScene subScene;
     public CameraTransformer cameraTransform = new CameraTransformer();
-    private double cameraDistance = -4000;
+    private double cameraDistance = -10000;
     private final double sceneWidth = 10000;
     private final double sceneHeight = 4000;
     private double mousePosX;
@@ -95,6 +99,8 @@ public class ProjectorPane extends StackPane {
     public Color sceneColor = Color.TRANSPARENT;
     /** Provides deserialization support for JSON messages */
     ObjectMapper mapper;
+    //allows 2D labels to track their 3D counterparts
+    HashMap<Shape3D, Label> shape3DToLabel = new HashMap<>();    
         
     public ProjectorPane() {
         mapper = new ObjectMapper();
@@ -129,6 +135,7 @@ public class ProjectorPane extends StackPane {
             double z = camera.getTranslateZ();
             double newZ = z + event.getDeltaY() * modifierFactor * modifier;
             camera.setTranslateZ(newZ);
+            updateLabels();            
         });
         subScene.setOnKeyPressed(event -> {
             //What key did the user press?
@@ -160,7 +167,7 @@ public class ProjectorPane extends StackPane {
             if (keycode == KeyCode.C) {
                 camera.setTranslateY(camera.getTranslateY() + change);
             }
-
+            updateLabels();
         });
         camera = new PerspectiveCamera(true);
         //setup camera transform for rotational support
@@ -195,6 +202,8 @@ public class ProjectorPane extends StackPane {
             nodes.clear();
             transitionList.clear();            
             scanAnalysisDirectory(analysisDirectory);
+            updateLabels();
+            animateImages();
         });
 
         cm.getItems().addAll(animateItem, basePathItem, scanItem);
@@ -226,8 +235,15 @@ public class ProjectorPane extends StackPane {
         southPole.setTranslateY(originRadius);
 
         sceneRoot.getChildren().addAll(origin, northPole, southPole);
+        //add our labels to the group that will be added to the StackPane
+        labelGroup = new Group();
+        labelGroup.setManaged(false);
+        getChildren().add(labelGroup);        
     }
     private void scanAnalysisDirectory(File directory) {
+        sceneRoot.getChildren().removeIf(n -> n instanceof Sphere);
+        labelGroup.getChildren().clear();
+        shape3DToLabel.clear();
         originRadius = 9001;
         double angle1 = -Math.PI * 0.35; //@TODO SMP Dynamically figure this out
         double angleStepSize = 0.25; //@TODO SMP Dynamically figure this out
@@ -262,13 +278,39 @@ public class ProjectorPane extends StackPane {
                         addNodeToScene(pn, row, projectorNodes.size()/2, angle1);
                         row++;
                     }
+                    //Add header Label based on directory name
+                    //Add to hashmap so updateLabels() can manage the label position
+                    Sphere columnLabelSphere = new Sphere(0.5, 1);
+                    columnLabelSphere.setMaterial(new PhongMaterial(Color.GREEN));
+                    
+                    // Ring formula
+                    //bump the x coordinate a bit the left to left justify the label
+                    double x = originRadius * Math.sin(angle1*1.1) * Math.cos(Math.PI);
+                    double y = 1800 * -(projectorNodes.size()/2); //extra offset
+                    double z = originRadius * Math.cos(angle1);
+                    columnLabelSphere.setTranslateX(x);
+                    columnLabelSphere.setTranslateY(y);
+                    columnLabelSphere.setTranslateZ(z);
+                    sceneRoot.getChildren().add(columnLabelSphere);
+                    Label columnLabel = new Label(subDirectory.getName());
+                    columnLabel.setFont(new Font("Consolas", 20));
+                    columnLabel.setTextFill(Color.SKYBLUE);
+                    labelGroup.getChildren().add(columnLabel);
+                    shape3DToLabel.put(columnLabelSphere, columnLabel);                    
                     //only bump the directional angle if the subdir had nodes in it
                     angle1 += angleStepSize;
                 }                
             }  
         }
+        updateLabels();        
     }
-    
+    private void animateLabelVisibility(long ms) {
+        //sweet music reference: https://en.wikipedia.org/wiki/Street_Spirit_(Fade_Out)
+        FadeTransition streetSpiritFadeIn = new FadeTransition(Duration.millis(ms), labelGroup);
+        streetSpiritFadeIn.setFromValue(0.0);
+        streetSpiritFadeIn.setToValue(1);
+        streetSpiritFadeIn.playFromStart();
+    }
     private void addNodeToScene(ProjectorNode projectorNode, int row, int max, double angle1) {
         double yOffset = 1300; //a bit more than 1080p height
         double angle2 = Math.PI;
@@ -280,7 +322,6 @@ public class ProjectorPane extends StackPane {
 
         // Ring formula
         double x = originRadius * Math.sin(angle1) * Math.cos(angle2);
-        //double y = r * Math.sin(angle1) * Math.sin(angle2);
         double y = yOffset * row;
         double z = originRadius * Math.cos(angle1);
 
@@ -297,12 +338,11 @@ public class ProjectorPane extends StackPane {
 //        if (row == max) {
 //            projectorNode.setEffect(glow);
 //        }
-//        projectorNode.setVisible(false);
+        projectorNode.setVisible(false); //must animate or manually set visible later
         nodes.add(projectorNode);
         sceneRoot.getChildren().add(projectorNode);
         transitionList.add(createTransition(projectorNode));
     }    
-    
     private AnalysisConfig findAnalysisConfigByName(File directory, String name) {
         String filenameOnly = ResourceUtils.removeExtension(name);
         //read all json files, do NOT follow recursively
@@ -343,7 +383,6 @@ public class ProjectorPane extends StackPane {
         }
         return null; //if you get this far its because the file isn't there
     }
-    
     private void playNewImage(int index, String fixedPath) {
         Platform.runLater(() -> {
             try {
@@ -383,13 +422,12 @@ public class ProjectorPane extends StackPane {
             }
         });
     }
-
     public void animateImages() {
+        labelGroup.setOpacity(0.0);
         nodes.forEach(n -> n.setVisible(false));
         AnimationTimer timer = createAnimation();
         timer.start();
     }
-
     private AnimationTimer createAnimation() {
         Collections.sort(transitionList, (ParallelTransition arg0, ParallelTransition arg1) -> {
             // bottom right to top left
@@ -408,7 +446,6 @@ public class ProjectorPane extends StackPane {
 
             @Override
             public void handle(long now) {
-                //if( (now - last) > 1_000_000_000)
                 if ((now - last) > 30_000_000) {
                     if (transitionIndex < transitionList.size()) {
                         ParallelTransition t = transitionList.get(transitionIndex);
@@ -420,13 +457,13 @@ public class ProjectorPane extends StackPane {
                 }
                 if (transitionIndex >= transitionList.size()) {
                     stop();
+                    animateLabelVisibility(1000);        
                 }
             }
         };
 
         return timer;
     }
-
     private ParallelTransition createTransition(final Node node) {
         Path path = new Path();
         path.getElements().add(new MoveToAbs(node,
@@ -479,7 +516,39 @@ public class ProjectorPane extends StackPane {
             cameraTransform.t.setX(cameraTransform.t.getX() + mouseDeltaX * modifierFactor * modifier * 0.3); // -
             cameraTransform.t.setY(cameraTransform.t.getY() + mouseDeltaY * modifierFactor * modifier * 0.3); // -
         }
+        updateLabels();        
     }
+    private void updateLabels() {
+        shape3DToLabel.forEach((node, label) -> {
+            javafx.geometry.Point3D coordinates = node.localToScene(javafx.geometry.Point3D.ZERO, true);
+            //@DEBUG SMP  useful debugging print
+            //System.out.println("subSceneToScene Coordinates: " + coordinates.toString());
+            //Clipping Logic
+            //if coordinates are outside of the scene it could
+            //stretch the screen so don't transform them
+            double x = coordinates.getX();
+            double y = coordinates.getY();
+            //is it left of the view?
+            if (x < 0) {
+                x = 0;
+            }
+            //is it right of the view?
+            if ((x + label.getWidth() + 5) > subScene.getWidth()) {
+                x = subScene.getWidth() - (label.getWidth() + 5);
+            }
+            //is it above the view?
+            if (y < 0) {
+                y = 0;
+            }
+            //is it below the view
+            if ((y + label.getHeight()) > subScene.getHeight())
+                y = subScene.getHeight() - (label.getHeight() + 5);
+            //@DEBUG SMP  useful debugging print
+            //System.out.println("clipping Coordinates: " + x + ", " + y);
+            //update the local transform of the label.
+            label.getTransforms().setAll(new Translate(x, y));
+        });
+    }    
     public static class MoveToAbs extends MoveTo {
 
         public MoveToAbs(Node node, double x, double y) {

@@ -17,6 +17,6 @@ public class AnalysisLogPane extends LitPathPane {
     }
 
     public AnalysisLogPane(Scene scene, Pane parent, String controller) {
-        super(scene, parent, 500, 600, createContent(controller), "Analysis ", "Log", 200.0, 300.0);
+        super(scene, parent, 500, 500, createContent(controller), "Analysis ", "Log", 200.0, 300.0);
     }
 }

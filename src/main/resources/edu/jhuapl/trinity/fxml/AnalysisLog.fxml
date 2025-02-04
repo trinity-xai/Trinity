@@ -4,7 +4,8 @@
 <?import javafx.scene.control.Button?>
 <?import javafx.scene.control.Label?>
 <?import javafx.scene.control.ListView?>
-<?import javafx.scene.control.ScrollPane?>
+<?import javafx.scene.control.Tab?>
+<?import javafx.scene.control.TabPane?>
 <?import javafx.scene.control.TextArea?>
 <?import javafx.scene.control.TextField?>
 <?import javafx.scene.control.Tooltip?>
@@ -18,111 +19,153 @@
 
 <AnchorPane fx:id="root" style="-fx-background-color: #00000000;" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1" fx:controller="edu.jhuapl.trinity.javafx.controllers.AnalysisLogController">
     <children>
-        <BorderPane fx:id="majorPane" prefWidth="600.0">
+        <BorderPane fx:id="majorPane" prefHeight="300.0" prefWidth="500.0">
             <children>
             </children>
-            <top>
-            </top>
-         <center>
-            <HBox BorderPane.alignment="CENTER">
-               <children>
-                        <VBox spacing="5.0">
-                            <children>
-                        <HBox alignment="CENTER_LEFT" layoutX="15.0" layoutY="82.0" spacing="20.0">
-                           <children>
-                              <Label prefWidth="150.0" text="Notes" />
-                              <Button mnemonicParsing="false" onAction="#clearAllNotes" prefWidth="150.0" text="Clear All" />
-                           </children>
-                        </HBox>
-                        <TextArea fx:id="notesTextArea" prefHeight="300.0" prefWidth="300.0" promptText="Free entry for context associated with this projection." wrapText="true" />
-                            </children>
-                            <padding>
-                                <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                            </padding>
-                        </VBox>
-                  <VBox layoutX="10.0" layoutY="10.0" spacing="5.0" HBox.hgrow="ALWAYS">
-                     <children>
-                        <HBox alignment="CENTER_LEFT" layoutX="15.0" layoutY="82.0" spacing="20.0">
-                           <children>
-                              <Label prefWidth="150.0" text="Scene Capture" />
-                              <Button mnemonicParsing="false" onAction="#takeSnapshot" prefWidth="150.0" text="Snapshot" />
-                           </children>
-                        </HBox>
-                        <ImageView fx:id="sceneImageView" fitHeight="300.0" fitWidth="300.0" opacity="0.5" pickOnBounds="true" preserveRatio="true">
-                           <image>
-                              <Image url="@../icons/camera.png" />
-                           </image>
-                           <effect>
-                              <Glow level="0.66" />
-                           </effect>
-                        </ImageView>
-                     </children>
-                     <padding>
-                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                     </padding>
-                  </VBox>
-               </children>
-            </HBox>
-         </center>
-         <bottom>
-            <HBox alignment="CENTER" spacing="20.0" BorderPane.alignment="CENTER">
-               <children>
-                  <Button mnemonicParsing="false" onAction="#importAnalysisConfig" prefWidth="150.0" text="Import" />
-                  <Button defaultButton="true" layoutX="10.0" layoutY="10.0" mnemonicParsing="false" onAction="#exportAnalysisConfig" prefWidth="150.0" text="Export" />
-               </children>
-               <padding>
-                  <Insets bottom="10.0" left="10.0" right="10.0" top="10.0" />
-               </padding>
-            </HBox>
-         </bottom>
-         <top>
-            <VBox spacing="5.0" BorderPane.alignment="CENTER">
-               <children>
-                  <HBox spacing="20.0">
-                     <children>
-                                <Label prefWidth="150.0" text="Analysis Base Path" />
-                        <Button mnemonicParsing="false" onAction="#browseAnalysisConfig" prefWidth="150.0" text="Browse" />
-                     </children>
-                  </HBox>
-                          <TextField fx:id="analysisBasePathTextField" minHeight="40.0" promptText="Select Distance From ListView" text="./analysis/" />
-                  <HBox alignment="CENTER_LEFT" spacing="20.0">
-                     <children>
-                        <VBox minWidth="200.0" spacing="5.0" HBox.hgrow="ALWAYS">
-                           <children>
-                              <Label prefWidth="150.0" text="Analysis Config Name" />
-                              <TextField fx:id="analysisFilenameTextField" minHeight="40.0" promptText="Select Distance From ListView" text="Trinity-Analysis-001.json" />
-                           </children>
-                        </VBox>
-                        <VBox layoutX="10.0" layoutY="10.0" minWidth="200.0" spacing="5.0" HBox.hgrow="ALWAYS">
-                           <children>
-                              <Label prefWidth="150.0" text="UMAP Configuration Name" />
-                              <TextField fx:id="umapConfigurationTextField" minHeight="40.0" promptText="Select Distance From ListView" text="UMAP-CONFIG.json" />
-                           </children>
-                        </VBox>
-                     </children>
-                  </HBox>
-                        <HBox alignment="CENTER_LEFT" spacing="20.0">
-                            <children>
-                                <Label prefWidth="150.0" text="Data Sources" />
-                                <Button mnemonicParsing="false" onAction="#addDataSource" prefWidth="150.0" text="Add" />
-                        <Button layoutX="180.0" layoutY="10.0" mnemonicParsing="false" onAction="#clearAllSources" prefWidth="150.0" text="Clear All" />
-                            </children>
-                        </HBox>
-                        <ScrollPane fitToHeight="true" fitToWidth="true" pannable="true">
+            <center>
+                <TabPane tabClosingPolicy="UNAVAILABLE">
+                    <tabs>
+                        <Tab closable="false" text="Links">
                             <content>
-                                <ListView fx:id="dataSourcesListView" prefHeight="100.0">
-                                    <padding>
-                                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
-                                    </padding>
-                           <tooltip>
-                              <Tooltip text="Manually add file based FeatureCollections here." />
-                           </tooltip>
-                                </ListView>
+                                <BorderPane>
+                                    <children>
+                                    </children>
+                                    <top>
+                                    </top>
+                                    <center>
+                                        <VBox spacing="5.0" BorderPane.alignment="CENTER">
+                                            <children>
+                                                <HBox spacing="20.0">
+                                                    <children>
+                                                        <Label prefWidth="150.0" text="Analysis Base Path" />
+                                                        <Button mnemonicParsing="false" onAction="#browseAnalysisConfig" prefWidth="150.0" text="Browse" />
+                                                    </children>
+                                                </HBox>
+                                                <TextField fx:id="analysisBasePathTextField" minHeight="40.0" promptText="Select Distance From ListView" text="./analysis/" />
+                                                <VBox minWidth="200.0" spacing="5.0">
+                                                    <children>
+                                                        <Label prefWidth="150.0" text="Analysis Config Name" />
+                                                        <TextField fx:id="analysisFilenameTextField" minHeight="40.0" promptText="Select Distance From ListView" text="Trinity-Analysis-001.json" />
+                                                    </children>
+                                                </VBox>
+                                                <VBox minWidth="200.0" spacing="5.0">
+                                                    <children>
+                                                        <Label prefWidth="150.0" text="UMAP Configuration Name" />
+                                                        <TextField fx:id="umapConfigurationTextField" minHeight="40.0" promptText="Select Distance From ListView" text="UMAP-CONFIG.json" />
+                                                    </children>
+                                                </VBox>
+                                            </children>
+                                        </VBox>
+                                    </center>
+                           <padding>
+                              <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                           </padding>
+                                </BorderPane>
                             </content>
-                        </ScrollPane>
-               </children>
-            </VBox>
-         </top>
+                        </Tab>
+                        <Tab closable="false" text="Data">
+                            <content>
+                                <BorderPane>
+                                    <top>
+                                    </top>
+                                    <center>
+                                    </center>
+                           <top>
+                                          <HBox alignment="CENTER_LEFT" spacing="20.0" BorderPane.alignment="CENTER">
+                                              <children>
+                                                  <Label prefWidth="150.0" text="Data Sources" />
+                                                  <Button mnemonicParsing="false" onAction="#addDataSource" prefWidth="150.0" text="Add" />
+                                                  <Button layoutX="180.0" layoutY="10.0" mnemonicParsing="false" onAction="#clearAllSources" prefWidth="150.0" text="Clear All" />
+                                              </children>
+                                 <padding>
+                                    <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                                 </padding>
+                                          </HBox>
+                           </top>
+                           <center>
+                                            <ListView fx:id="dataSourcesListView" prefHeight="150.0" BorderPane.alignment="CENTER">
+                                                <padding>
+                                                    <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                                                </padding>
+                                                <tooltip>
+                                                    <Tooltip text="Manually add file based FeatureCollections here." />
+                                                </tooltip>
+                                            </ListView>
+                           </center>
+                           <padding>
+                              <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                           </padding>
+                                </BorderPane>
+                            </content>
+                        </Tab>                        
+                        <Tab closable="false" text="Notes">
+                            <content>
+                                <BorderPane>
+                                    <top>
+                                        <HBox alignment="CENTER_LEFT" spacing="20.0" BorderPane.alignment="CENTER">
+                                            <children>
+                                                <Label prefWidth="150.0" text="Notes" />
+                                                <Button mnemonicParsing="false" onAction="#clearAllNotes" prefWidth="150.0" text="Clear All" />
+                                            </children>
+                                 <padding>
+                                    <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                                 </padding>
+                                        </HBox>
+                                    </top>
+                                    <center>
+                                        <TextArea fx:id="notesTextArea" prefHeight="300.0" prefWidth="300.0" promptText="Free entry for context associated with this projection." wrapText="true" BorderPane.alignment="CENTER" />
+                                    </center>
+                           <padding>
+                              <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                           </padding>
+                                </BorderPane>
+                            </content>
+                        </Tab>
+                        <Tab closable="false" text="Scene">
+                            <content>
+                                <BorderPane>
+                                    <top>
+                                        <HBox alignment="CENTER_LEFT" spacing="20.0" BorderPane.alignment="CENTER">
+                                            <children>
+                                                <Label prefWidth="150.0" text="Scene Capture" />
+                                                <Button mnemonicParsing="false" onAction="#takeSnapshot" prefWidth="150.0" text="Snapshot" />
+                                            </children>
+                                 <padding>
+                                    <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                                 </padding>
+                                        </HBox>
+                                    </top>
+                                    <center>
+                                        <ImageView fx:id="sceneImageView" fitHeight="200.0" fitWidth="300.0" opacity="0.5" pickOnBounds="true" preserveRatio="true" BorderPane.alignment="CENTER">
+                                            <image>
+                                                <Image url="@../icons/camera.png" />
+                                            </image>
+                                            <effect>
+                                                <Glow level="0.66" />
+                                            </effect>
+                                        </ImageView>
+                                    </center>
+                           <padding>
+                              <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                           </padding>
+                                </BorderPane>
+                            </content>
+                        </Tab>
+                    </tabs>
+                </TabPane>                                
+            </center>
+            <bottom>
+                <HBox alignment="CENTER" spacing="20.0" BorderPane.alignment="CENTER">
+                    <children>
+                        <Button mnemonicParsing="false" onAction="#importAnalysisConfig" prefWidth="150.0" text="Import" />
+                        <Button defaultButton="true" layoutX="10.0" layoutY="10.0" mnemonicParsing="false" onAction="#exportAnalysisConfig" prefWidth="150.0" text="Export" />
+                    </children>
+                    <padding>
+                        <Insets bottom="5.0" left="5.0" right="5.0" top="5.0" />
+                    </padding>
+                </HBox>
+            </bottom>
         </BorderPane>
+
     </children>
 </AnchorPane>

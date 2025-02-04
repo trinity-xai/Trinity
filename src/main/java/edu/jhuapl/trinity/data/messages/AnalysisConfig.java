@@ -4,6 +4,9 @@ package edu.jhuapl.trinity.data.messages;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
 import java.util.ArrayList;
 import java.util.List;
 
@@ -44,7 +47,16 @@ TBD SMP
             && messageBody.contains("analysisName")
             && messageBody.contains("umapConfigFile");
     }
-
+    public String prettyPrint() throws JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(this);
+    }
+    public String print() throws JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        return mapper.writeValueAsString(this);
+    }
     //<editor-fold defaultstate="collapsed" desc="Properties">
     /**
      * @return the analysisName

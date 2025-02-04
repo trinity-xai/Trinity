@@ -32,6 +32,7 @@ public class ProjectorNode extends Pane {
     Border emptyBorder;
     Border selectedBorder;
     int borderWidth = 50;
+    
     public ProjectorNode(Image image, UmapConfig umapConfig, AnalysisConfig analysisConfig) {
         imageView = new ImageView(image);
         this.umapConfig = umapConfig;
