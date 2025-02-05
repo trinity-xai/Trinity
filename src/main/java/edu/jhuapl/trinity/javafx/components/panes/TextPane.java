@@ -53,7 +53,8 @@ public class TextPane extends LitPathPane {
         logToolbar.fontChoiceBox.setPrefHeight(50);
         logToolbar.picker.setPrefSize(150, 50);
         logToolbar.fontSizeSpinner.setPrefSize(75, 50);
-
+        logToolbar.picker.setValue(Color.CYAN);
+        
         LitLog litLog = new LitLog(5, 50);
         litLog.scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         litLog.vbox.setAlignment(Pos.TOP_CENTER);

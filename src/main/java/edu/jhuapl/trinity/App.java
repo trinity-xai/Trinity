@@ -258,7 +258,7 @@ public class App extends Application {
                 umap = (Umap) event.object1;
             else if (null != projections3DPane.latestUmap)
                 umap = projections3DPane.latestUmap;
-            umap.setThreads(12);
+            umap.setThreads(24);
             ManifoldEvent.POINT_SOURCE source = ManifoldEvent.POINT_SOURCE.HYPERSPACE;
             if (null != event.object2)
                 source = (ManifoldEvent.POINT_SOURCE) event.object2;
@@ -565,6 +565,7 @@ public class App extends Application {
         scene.addEventHandler(ApplicationEvent.SHOW_TEXT_CONSOLE, e -> {
             if (null == textConsolePane) {
                 textConsolePane = new TextPane(scene, pathPane);
+                textConsolePane.setOpaqueEnabled(true);
             }
             if (!pathPane.getChildren().contains(textConsolePane)) {
                 pathPane.getChildren().add(textConsolePane);

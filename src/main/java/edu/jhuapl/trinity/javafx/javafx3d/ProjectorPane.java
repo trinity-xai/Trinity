@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.jhuapl.trinity.data.messages.AnalysisConfig;
 import edu.jhuapl.trinity.data.messages.UmapConfig;
 import edu.jhuapl.trinity.javafx.components.ProjectorNode;
+import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import java.io.File;
 import java.io.FileInputStream;
@@ -42,13 +43,17 @@ import java.util.List;
 import java.util.logging.Level;
 import javafx.animation.AnimationTimer;
 import javafx.animation.FadeTransition;
+import javafx.animation.KeyFrame;
+import javafx.animation.KeyValue;
 import javafx.animation.ParallelTransition;
 import javafx.animation.PathTransition;
 import javafx.animation.RotateTransition;
 import javafx.animation.SequentialTransition;
+import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
+import javafx.geometry.Point3D;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.effect.Glow;
@@ -109,6 +114,8 @@ public class ProjectorPane extends StackPane {
         
         setBackground(new Background(new BackgroundFill(sceneColor, CornerRadii.EMPTY, Insets.EMPTY)));
         subScene = new SubScene(sceneRoot, sceneWidth, sceneHeight, true, SceneAntialiasing.BALANCED);
+        subScene.setOnMouseEntered(event -> subScene.requestFocus());
+        setOnMouseEntered(event -> subScene.requestFocus());
         subScene.widthProperty().bind(widthProperty());
         subScene.heightProperty().bind(heightProperty());
         subScene.setFill(Color.TRANSPARENT);
@@ -180,6 +187,11 @@ public class ProjectorPane extends StackPane {
         subScene.setCamera(camera);
         sceneRoot.getChildren().addAll(cameraTransform);
         ContextMenu cm = new ContextMenu();
+        MenuItem resetViewItem = new MenuItem("Reset View");
+        resetViewItem.setOnAction(e -> {
+            resetView(1000, false);
+        });
+
         MenuItem animateItem = new MenuItem("Animate");
         animateItem.setOnAction(e -> {
             animateImages();
@@ -205,7 +217,7 @@ public class ProjectorPane extends StackPane {
             scanAndAnimate();
         });
 
-        cm.getItems().addAll(animateItem, basePathItem, scanItem);
+        cm.getItems().addAll(resetViewItem, animateItem, basePathItem, scanItem);
         cm.setAutoFix(true);
         cm.setAutoHide(true);
         cm.setHideOnEscape(true);
@@ -266,7 +278,8 @@ public class ProjectorPane extends StackPane {
                             UmapConfig ucForMe = findUmapConfigByName(subDirectory, subDirFile.getName());
                             AnalysisConfig acDC = findAnalysisConfigByName(subDirectory, subDirFile.getName());
                             //the configs may be null but that is ok
-                            projectorNodes.add(new ProjectorNode(image, ucForMe, acDC));                            
+                            ProjectorNode pn = new ProjectorNode(image, ucForMe, acDC);
+                            projectorNodes.add(pn);                            
                         } catch (MalformedURLException ex) {
                             java.util.logging.Logger.getLogger(ProjectorPane.class.getName()).log(Level.SEVERE, null, ex);
                         }
@@ -325,9 +338,9 @@ public class ProjectorPane extends StackPane {
         glow.setInput(refl);
 
         // Ring formula
-        double x = originRadius * Math.sin(angle1) * Math.cos(angle2);
-        double y = yOffset * row;
-        double z = originRadius * Math.cos(angle1);
+        final double x = originRadius * Math.sin(angle1) * Math.cos(angle2);
+        final double y = yOffset * row;
+        final double z = originRadius * Math.cos(angle1);
 
         projectorNode.setTranslateX(x);
         projectorNode.setTranslateY(y);
@@ -337,11 +350,37 @@ public class ProjectorPane extends StackPane {
         ry.setAxis(Rotate.Y_AXIS);
         ry.setAngle(Math.toDegrees(-angle1));
         projectorNode.getTransforms().addAll(ry);
+        final double ryAngle = ry.getAngle();
 
 //        // reflection on bottom row
 //        if (row == max) {
 //            projectorNode.setEffect(glow);
 //        }
+        //Add special click handler to zoom camera
+        projectorNode.addEventHandler(MouseEvent.MOUSE_CLICKED, e-> {
+            if(e.getButton() == MouseButton.MIDDLE) {
+                long milliseconds = 500;
+                Timeline rotateTimeline = JavaFX3DUtils.transitionCameraTo(milliseconds, camera, cameraTransform,
+                    0, 0, 0, 0.0, ryAngle, 0.0);
+                rotateTimeline.setOnFinished(eh -> {
+                    updateLabels();
+                    Point3D p3D = new Point3D(x, y, z);
+                    Point3D lessP3D = p3D.subtract(x*0.5, y*0.5, z*0.5);
+                    cameraTransform.setPivot(0, 0, 0);
+                    Timeline timeline = new Timeline(
+                        new KeyFrame(Duration.millis(milliseconds),
+                            new KeyValue(cameraTransform.translateXProperty(), lessP3D.getX()),
+                            new KeyValue(cameraTransform.translateYProperty(), y),
+                            new KeyValue(cameraTransform.translateZProperty(), lessP3D.getZ())
+                        )
+                    );
+                    timeline.setOnFinished(fin -> updateLabels());
+                    timeline.playFromStart();
+                });
+                rotateTimeline.playFromStart();
+            }
+        });
+
         projectorNode.setVisible(false); //must animate or manually set visible later
         nodes.add(projectorNode);
         sceneRoot.getChildren().add(projectorNode);
@@ -492,7 +531,34 @@ public class ProjectorPane extends StackPane {
         parallelTransition.setCycleCount(1);
         return parallelTransition;
     }
-
+    public void resetView(double milliseconds, boolean rightNow) {
+        if (!rightNow) {
+            cameraTransform.setPivot(0, 0, 0);
+            Timeline timeline = new Timeline(
+                new KeyFrame(Duration.millis(milliseconds),
+                    new KeyValue(cameraTransform.translateXProperty(), 0),
+                    new KeyValue(cameraTransform.translateYProperty(), 0),
+                    new KeyValue(cameraTransform.translateZProperty(), 0)
+                )
+            );
+            timeline.setOnFinished(eh -> {
+                updateLabels();
+                Timeline zoomTimeline = JavaFX3DUtils.transitionCameraTo(milliseconds, camera, cameraTransform,
+                    0, 0, cameraDistance, 0.0, 0.0, 0.0);
+                zoomTimeline.setOnFinished(fin -> updateLabels());
+            });
+            timeline.playFromStart();
+        } else {
+            cameraTransform.setPivot(0, 0, 0);
+                cameraTransform.rx.setAngle(-10);
+                cameraTransform.ry.setAngle(-45.0);
+                cameraTransform.rz.setAngle(0.0);
+                camera.setTranslateX(0);
+                camera.setTranslateY(0);
+                camera.setTranslateZ(cameraDistance);
+            cameraTransform.setPivot(0, 0, 0);
+        }
+    }
     private void mouseDragCamera(MouseEvent me) {
         mouseOldX = mousePosX;
         mouseOldY = mousePosY;

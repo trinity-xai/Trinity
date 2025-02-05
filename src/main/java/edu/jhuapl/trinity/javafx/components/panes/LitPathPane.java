@@ -39,7 +39,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
-import javafx.fxml.Initializable;
 
 import javafx.scene.control.ContentDisplay;
 import javafx.scene.layout.HBox;
@@ -53,13 +52,14 @@ public class LitPathPane extends PathPane {
     Pane parent;
     boolean animating = false;
     boolean fadeEnabled = true;
-    boolean opaqueEnabled = false;
+    private boolean opaqueEnabled = false;
     double fadeSideInset = -5;
     double hoverTopInset = -2;
     double hoverSideInset = -3;
     double effectsFitWidth = 40;
     public Background opaqueBackground;
     public Background defaultBackground;
+    public Background background;
     public Color fillPreStartColor = Color.CADETBLUE;
     public Color fillStartColor = Color.TRANSPARENT;
     public Color fillMiddleColor = Color.CYAN;
@@ -72,6 +72,8 @@ public class LitPathPane extends PathPane {
     private double currentGradientMillis = 465; //This number was picked by Josh
     private long lastInsideMillis = 0;
     public static long enteredWaitTimeMillis = 5000;
+    Label opaqueLabel, fadeLabel;
+    Border activeBorder, hoverBorder;
     /**
      * Helper utility for loading a common FXML based Controller which assumes
      * an anchorpane node which is returned wrapped as a BorderPane
@@ -178,17 +180,17 @@ public class LitPathPane extends PathPane {
 
     private void setEffects() {
         ImageView fadeImageView = ResourceUtils.loadIcon("fade", effectsFitWidth);
-        Label fadeLabel = new Label("Fadeout", fadeImageView);
+        fadeLabel = new Label("Fadeout", fadeImageView);
         fadeLabel.setContentDisplay(ContentDisplay.TOP);
 
         ImageView opaqueImageView = ResourceUtils.loadIcon("opaque", effectsFitWidth);
-        Label opaqueLabel = new Label("Opaque", opaqueImageView);
+        opaqueLabel = new Label("Opaque", opaqueImageView);
         opaqueLabel.setContentDisplay(ContentDisplay.TOP);
-        Border activeBorder = new Border(new BorderStroke(
+        activeBorder = new Border(new BorderStroke(
             Color.CYAN, BorderStrokeStyle.DOTTED,
             CornerRadii.EMPTY, new BorderWidths(1), new Insets(0, fadeSideInset, 0, fadeSideInset))
         );
-        Border hoverBorder = new Border(new BorderStroke(
+        hoverBorder = new Border(new BorderStroke(
             Color.WHITE, BorderStrokeStyle.SOLID,
             CornerRadii.EMPTY, new BorderWidths(1),
             new Insets(hoverTopInset, hoverSideInset, hoverTopInset, hoverSideInset))
@@ -201,7 +203,7 @@ public class LitPathPane extends PathPane {
         this.mainContentBorderFrame.getChildren().add(effectsHBox);
 
         Glow glow = new Glow(0.9);
-        Background background = new Background(new BackgroundFill(
+        background = new Background(new BackgroundFill(
             Color.CYAN.deriveColor(1, 1, 1, 0.1),
             CornerRadii.EMPTY, new Insets(0, fadeSideInset, 0, fadeSideInset)));
 
@@ -229,25 +231,14 @@ public class LitPathPane extends PathPane {
 
         opaqueLabel.setOnMouseEntered(e -> opaqueLabel.setBorder(hoverBorder));
         opaqueLabel.setOnMouseExited(e -> {
-            if (opaqueEnabled)
+            if (isOpaqueEnabled())
                 opaqueLabel.setBorder(activeBorder);
             else
                 opaqueLabel.setBorder(null);
         });
         opaqueLabel.setEffect(glow);
         opaqueLabel.setOnMouseClicked(e -> {
-            opaqueEnabled = !opaqueEnabled;
-            if (opaqueEnabled) {
-                opaqueLabel.setEffect(glow);
-                opaqueLabel.setBackground(background);
-                opaqueLabel.setBorder(activeBorder);
-                mainContentBorderFrame.setBackground(opaqueBackground);
-            } else {
-                opaqueLabel.setEffect(null);
-                opaqueLabel.setBackground(null);
-                opaqueLabel.setBorder(null);
-                mainContentBorderFrame.setBackground(defaultBackground);
-            }
+            setOpaqueEnabled(!isOpaqueEnabled());
         });
 
         this.scene.getRoot().addEventHandler(CovalentPaneEvent.COVALENT_PANE_CLOSE, e -> {
@@ -322,5 +313,31 @@ public class LitPathPane extends PathPane {
         fadeTransition.setToValue(toValue);
         fadeTransition.setOnFinished(e -> contentPane.setOpacity(toValue));
         fadeTransition.play();
+    }
+
+    /**
+     * @return the opaqueEnabled
+     */
+    public boolean isOpaqueEnabled() {
+        return opaqueEnabled;
+    }
+
+    /**
+     * @param opaqueEnabled the opaqueEnabled to set
+     */
+    public void setOpaqueEnabled(boolean opaqueEnabled) {
+        this.opaqueEnabled = opaqueEnabled;
+        if (isOpaqueEnabled()) {
+            Glow glow = new Glow(0.9);
+            opaqueLabel.setEffect(glow);
+            opaqueLabel.setBackground(background);
+            opaqueLabel.setBorder(activeBorder);
+            mainContentBorderFrame.setBackground(opaqueBackground);
+        } else {
+            opaqueLabel.setEffect(null);
+            opaqueLabel.setBackground(null);
+            opaqueLabel.setBorder(null);
+            mainContentBorderFrame.setBackground(defaultBackground);
+        }        
     }
 }

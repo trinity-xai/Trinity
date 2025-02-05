@@ -11,6 +11,7 @@ import java.util.logging.Logger;
 import javafx.geometry.Insets;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Border;
 import javafx.scene.layout.BorderStroke;
@@ -57,21 +58,23 @@ public class ProjectorNode extends Pane {
         });
         addEventHandler(MouseEvent.MOUSE_CLICKED, e-> {
             setBorder(selectedBorder);
-            if(e.getClickCount()==1 && e.isControlDown()) {
-                if(null != umapConfig) {
-                    try {
+            if(e.getButton() == MouseButton.PRIMARY) {
+                if(e.getClickCount()==1 && e.isControlDown()) {
+                    if(null != umapConfig) {
+                        try {
+                            getScene().getRoot().fireEvent(new ApplicationEvent(                
+                                ApplicationEvent.SHOW_TEXT_CONSOLE, umapConfig.prettyPrint()));
+                        } catch (JsonProcessingException ex) {
+                            Logger.getLogger(ProjectorNode.class.getName()).log(Level.SEVERE, null, ex);
+                        }
+                    }
+                } else if(e.getClickCount()==1) {
+                    if(null != analysisConfig) {
                         getScene().getRoot().fireEvent(new ApplicationEvent(                
-                            ApplicationEvent.SHOW_TEXT_CONSOLE, umapConfig.prettyPrint()));
-                    } catch (JsonProcessingException ex) {
-                        Logger.getLogger(ProjectorNode.class.getName()).log(Level.SEVERE, null, ex);
+                            ApplicationEvent.SHOW_ANALYSISLOG_PANE, analysisConfig, umapConfig));
                     }
                 }
-            } else if(e.getClickCount()==1) {
-                if(null != analysisConfig) {
-                    getScene().getRoot().fireEvent(new ApplicationEvent(                
-                        ApplicationEvent.SHOW_ANALYSISLOG_PANE, analysisConfig, umapConfig));
-                }
-            } 
+            }
         });
     }
 }
