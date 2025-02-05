@@ -95,9 +95,14 @@ public class AutomaticUmapForThePeopleTask extends Task {
     protected Void call() throws Exception {
         if (isCancelled()) return null;
         Platform.runLater(() -> {
+            scene.getRoot().fireEvent(new ManifoldEvent(
+                ManifoldEvent.NEW_UMAP_CONFIG, umapConfig));
+        });         
+        Platform.runLater(() -> {
             scene.getRoot().fireEvent(new FeatureVectorEvent(
                 FeatureVectorEvent.CLEAR_ALL_FEATUREVECTORS));
-        });          
+        });
+        Thread.sleep(Duration.ofMillis(500));
         Platform.runLater(() -> {
             ProgressStatus ps = new ProgressStatus("Loading Data...", 0.5);
             ps.fillStartColor = Color.AZURE;
@@ -114,33 +119,21 @@ public class AutomaticUmapForThePeopleTask extends Task {
                     FeatureVectorEvent.NEW_FEATURE_COLLECTION, fcf.featureCollection));
             });            
         }
+        if(null != analysisConfig.getContentBasePath()) {
+            Platform.runLater(() -> {
+                scene.getRoot().fireEvent(new ApplicationEvent(
+                    ApplicationEvent.SET_IMAGERY_BASEPATH, 
+                        analysisConfig.getContentBasePath()));
+            });            
+        }
         Thread.sleep(Duration.ofSeconds(1));
         Platform.runLater(() -> {
             scene.getRoot().fireEvent(new ApplicationEvent(ApplicationEvent.SHOW_PROJECTIONS));
         });        
-        Platform.runLater(() -> {
-            scene.getRoot().fireEvent(new ManifoldEvent(
-                ManifoldEvent.NEW_UMAP_CONFIG, umapConfig));
-        });        
-        Platform.runLater(() -> {
-            ProgressStatus ps = new ProgressStatus("Fitting UMAP Transform...", 0.5);
-            ps.fillStartColor = Color.AZURE;
-            ps.fillEndColor = Color.LIME;
-            ps.innerStrokeColor = Color.AZURE;
-            ps.outerStrokeColor = Color.LIME;
-            scene.getRoot().fireEvent(
-                new ApplicationEvent(ApplicationEvent.UPDATE_BUSY_INDICATOR, ps));
-        });
-
+        Thread.sleep(Duration.ofSeconds(1));
         Platform.runLater(() -> {
             scene.getRoot().fireEvent(new ManifoldEvent(ManifoldEvent.GENERATE_NEW_UMAP));
         });
-
-//        Platform.runLater(() -> {
-//            ProgressStatus ps = new ProgressStatus("", -1);
-//            scene.getRoot().fireEvent(
-//                new ApplicationEvent(ApplicationEvent.HIDE_BUSY_INDICATOR, ps));
-//        });
         return null;
     }
 

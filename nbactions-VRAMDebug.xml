@@ -26,7 +26,7 @@
                 <goal>org.codehaus.mojo:exec-maven-plugin:3.4.1:exec</goal>
             </goals>
             <properties>
-                <exec.vmArgs>-Dprism.maxvram=2G -agentlib:jdwp=transport=dt_socket,server=n,address=${jpda.address}</exec.vmArgs>
+                <exec.vmArgs>-Dprism.maxvram=2G -Dprism.poolstats=true -agentlib:jdwp=transport=dt_socket,server=n,address=${jpda.address}</exec.vmArgs>
                 <exec.args>${exec.vmArgs} -Xmx6g -classpath %classpath ${exec.mainClass} ${exec.appArgs}</exec.args>
                 <exec.mainClass>edu.jhuapl.trinity.TrinityMain</exec.mainClass>
                 <exec.executable>java</exec.executable>

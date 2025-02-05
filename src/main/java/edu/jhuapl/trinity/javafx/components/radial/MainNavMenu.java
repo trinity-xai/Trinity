@@ -77,11 +77,7 @@ public class MainNavMenu extends LitRadialMenu {
             background, backgroundMouseOn, strokeColor, strokeMouseOnColor,
             false, LitRadialMenu.CenterVisibility.ALWAYS, iv);
         this.scene = scene;
-        //System.out.println("MainNavMenu constructor...");
         buildMenu();
-
-        //System.out.println("buildMenu() complete ");
-
         Glow glow = new Glow(0.5);
         iv.setEffect(glow);
         iv.setTranslateX(-ITEM_FIT_WIDTH / 2.0);
@@ -289,9 +285,7 @@ public class MainNavMenu extends LitRadialMenu {
         ImageView analysis = ResourceUtils.loadIcon("analysis", ITEM_FIT_WIDTH);
         analysis.setEffect(glow);
         ImageView projector = ResourceUtils.loadIcon("projector", ITEM_FIT_WIDTH);
-//        projector.setEffect(glow); //looks better without the glow
         ImageView datasources = ResourceUtils.loadIcon("datasources", ITEM_FIT_WIDTH);
-//        datasources.setEffect(glow);
 
         LitRadialContainerMenuItem dataSubMenuItem = new LitRadialContainerMenuItem(ITEM_SIZE, "Data", data);
         dataSubMenuItem.addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Data Sources", datasources, e -> {
@@ -309,8 +303,6 @@ public class MainNavMenu extends LitRadialMenu {
         dataSubMenuItem.addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Projector Room", projector, e -> {
             scene.getRoot().fireEvent(new ApplicationEvent(ApplicationEvent.SHOW_PROJECTOR_PANE));
         }));
-        
         addMenuItem(dataSubMenuItem);        
-        
     }
 }

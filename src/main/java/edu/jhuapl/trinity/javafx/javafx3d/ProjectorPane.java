@@ -101,7 +101,8 @@ public class ProjectorPane extends StackPane {
     ObjectMapper mapper;
     //allows 2D labels to track their 3D counterparts
     HashMap<Shape3D, Label> shape3DToLabel = new HashMap<>();    
-        
+    public boolean firstTime = true;    
+    
     public ProjectorPane() {
         mapper = new ObjectMapper();
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -201,9 +202,7 @@ public class ProjectorPane extends StackPane {
             sceneRoot.getChildren().removeIf(n -> n instanceof ProjectorNode);
             nodes.clear();
             transitionList.clear();            
-            scanAnalysisDirectory(analysisDirectory);
-            updateLabels();
-            animateImages();
+            scanAndAnimate();
         });
 
         cm.getItems().addAll(animateItem, basePathItem, scanItem);
@@ -239,6 +238,11 @@ public class ProjectorPane extends StackPane {
         labelGroup = new Group();
         labelGroup.setManaged(false);
         getChildren().add(labelGroup);        
+    }
+    public void scanAndAnimate() {
+        scanAnalysisDirectory(analysisDirectory);
+        updateLabels();
+        animateImages();        
     }
     private void scanAnalysisDirectory(File directory) {
         sceneRoot.getChildren().removeIf(n -> n instanceof Sphere);
@@ -345,9 +349,6 @@ public class ProjectorPane extends StackPane {
     }    
     private AnalysisConfig findAnalysisConfigByName(File directory, String name) {
         String filenameOnly = ResourceUtils.removeExtension(name);
-        if(directory.getName().contains("People Only")) {
-            System.out.println("People Only");
-        }
         //read all json files, do NOT follow recursively
         for(File jsonFile : directory.listFiles(f -> 
                 f.getName().endsWith(".json")

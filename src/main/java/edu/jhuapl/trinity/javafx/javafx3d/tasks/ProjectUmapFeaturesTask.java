@@ -9,6 +9,7 @@ import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.utils.AnalysisUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import edu.jhuapl.trinity.utils.umap.Umap;
+import java.time.Duration;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.scene.Scene;
@@ -95,7 +96,7 @@ public class ProjectUmapFeaturesTask extends Task {
             scene.getRoot().fireEvent(
                 new ApplicationEvent(ApplicationEvent.UPDATE_BUSY_INDICATOR, ps));
         });
-
+        Thread.sleep(Duration.ofSeconds(1));
         double[][] umapMatrix = AnalysisUtils.fitUMAP(originalFC, umap);
         Platform.runLater(() -> {
             ProgressStatus ps = new ProgressStatus("Converting to FeatureCollection...", 0.5);

@@ -135,13 +135,6 @@ public class AnalysisLogController implements Initializable {
     @FXML 
     public void execute() {
         if(null != currentAnalysisConfig && null != currentUmapConfig) {
-//            //first try to process data
-//            Platform.runLater(()-> {
-//                sceneImageView.getScene().getRoot().fireEvent(
-//                    new ManifoldEvent(ManifoldEvent.AUTOMATIC_UMAP_FORTHEPEOPLE,
-//                        currentAnalysisConfig, currentUmapConfig)          
-//                );
-//            });            
             AutomaticUmapForThePeopleTask autoTask = new AutomaticUmapForThePeopleTask(
                 scene, currentAnalysisConfig, currentUmapConfig, true, true);
             Thread t = new Thread(autoTask, "Automatic UMAP For the People");

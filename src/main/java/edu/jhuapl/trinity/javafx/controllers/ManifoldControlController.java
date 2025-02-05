@@ -728,9 +728,9 @@ public class ManifoldControlController implements Initializable {
         umap.setVerbose(verboseCheckBox.isSelected());
         ManifoldEvent.POINT_SOURCE pointSource = useHypersurfaceButton.isSelected() ?
             ManifoldEvent.POINT_SOURCE.HYPERSURFACE : ManifoldEvent.POINT_SOURCE.HYPERSPACE;
+        latestUmapObject = umap;
         scene.getRoot().fireEvent(new ManifoldEvent(
             ManifoldEvent.GENERATE_NEW_UMAP, umap, pointSource));
-        latestUmapObject = umap;
     }
 
     @FXML

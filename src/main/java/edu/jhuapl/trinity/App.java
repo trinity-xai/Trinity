@@ -773,7 +773,10 @@ public class App extends Application {
             if(null != e.object)
                 visible = (boolean) e.object;
             projectorPane.setVisible(visible);
-        
+            if(visible && projectorPane.firstTime == true) {
+                projectorPane.firstTime = false;
+                projectorPane.scanAndAnimate();
+            }
         });
                 
         LOG.info("Data Handlers ");
@@ -1090,9 +1093,6 @@ public class App extends Application {
         if (e.isAltDown() && e.isControlDown() && e.getCode().equals(KeyCode.P)) {
             stage.getScene().getRoot().fireEvent(
                 new ApplicationEvent(ApplicationEvent.SHOW_PROJECTOR_PANE));
-//                Platform.runLater(() -> {
-//                    projectorPane.setVisible(!projectorPane.isVisible());
-//                });            
         }
 
         if (e.isAltDown() && e.getCode().equals(KeyCode.N)) {
