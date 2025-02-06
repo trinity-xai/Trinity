@@ -1,12 +1,11 @@
-/* Copyright (C) 2021 - 2024 Sean Phillips */
+/* Copyright (C) 2021 - 2025 Sean Phillips */
 
 package edu.jhuapl.trinity.javafx.components.callouts;
 
 import edu.jhuapl.trinity.data.messages.FeatureVector;
-
 import static edu.jhuapl.trinity.data.messages.FeatureVector.bboxToString;
-
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
+import edu.jhuapl.trinity.javafx.events.ImageEvent;
 import edu.jhuapl.trinity.utils.HttpsUtils;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
@@ -29,10 +28,7 @@ import javafx.scene.shape.Shape3D;
 import javafx.scene.text.Text;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.io.File;
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
 import java.util.Map.Entry;
 
 /**
@@ -109,8 +105,21 @@ public class FeatureVectorCallout extends VBox {
 //            radialEntity.setTranslateX(getWidth() / 2.0);
 //            radialEntity.setTranslateY(getHeight() / 2.0);
 //        });
+        Glow glow = new Glow(0.95);
         TitledPane imageTP = new TitledPane();
-        imageTP.setContent(iv);
+        ImageView imageToolsIV = ResourceUtils.loadIcon("defaultimage", 30);
+        VBox imageToolsVBox = new VBox(imageToolsIV);
+        imageToolsVBox.setOnMouseEntered(e -> imageToolsVBox.setEffect(glow));
+        imageToolsVBox.setOnMouseExited(e -> imageToolsVBox.setEffect(null));
+        imageToolsVBox.setOnMouseClicked(e -> {
+            imageToolsVBox.getScene().getRoot().fireEvent(
+                new ApplicationEvent(ApplicationEvent.SHOW_HYPERSURFACE, true));            
+            imageToolsVBox.getScene().getRoot().fireEvent(
+                new ImageEvent(ImageEvent.NEW_TEXTURE_SURFACE, iv.getImage()));
+        });
+        HBox imageToolsVBoxHBox = new HBox(15, imageToolsVBox);
+        imageToolsVBoxHBox.setAlignment(Pos.TOP_LEFT);
+        imageTP.setContent(new VBox(imageToolsVBoxHBox, iv));
         imageTP.setText("Imagery");
         imageTP.setExpanded(false);
 
@@ -152,7 +161,6 @@ public class FeatureVectorCallout extends VBox {
         textArea.setPrefHeight(200);
         textArea.setWrapText(true);
 
-        Glow glow = new Glow(0.95);
         ImageView selectAllIV = ResourceUtils.loadIcon("selectall", 30);
         VBox selectAllVBox = new VBox(selectAllIV);
         selectAllVBox.setOnMouseEntered(e -> selectAllIV.setEffect(glow));

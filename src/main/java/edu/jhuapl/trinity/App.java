@@ -14,6 +14,7 @@ import edu.jhuapl.trinity.data.messages.FeatureVector;
 import edu.jhuapl.trinity.javafx.components.MatrixOverlay;
 import edu.jhuapl.trinity.javafx.components.panes.AnalysisLogPane;
 import edu.jhuapl.trinity.javafx.components.panes.NavigatorPane;
+import edu.jhuapl.trinity.javafx.components.panes.PixelSelectionPane;
 import edu.jhuapl.trinity.javafx.components.panes.Shape3DControlPane;
 import edu.jhuapl.trinity.javafx.components.panes.SparkLinesPane;
 import edu.jhuapl.trinity.javafx.components.panes.TextPane;
@@ -131,6 +132,7 @@ public class App extends Application {
     WaveformPane waveformPane;
     Shape3DControlPane shape3DControlPane;
     AnalysisLogPane analysisLogPane;
+    PixelSelectionPane pixelSelectionPane;   
     CircleProgressIndicator circleSpinner;
 
     static Configuration theConfig;
@@ -236,8 +238,8 @@ public class App extends Application {
         
         projectorPane = new ProjectorPane();
         projectorPane.setVisible(false); //start off hidden
-
         analysisLogPane = new AnalysisLogPane(scene, desktopPane);
+        pixelSelectionPane = new PixelSelectionPane(scene, pathPane);
         
         LOG.info("Registering Event Handlers...");
         //animatedConsoleText.animate("Registering Event Handlers...");
@@ -630,6 +632,23 @@ public class App extends Application {
                 analysisLogPane.show();
             }
         });
+        LOG.info("Pixel Selection Pane");
+        scene.addEventHandler(ApplicationEvent.SHOW_PIXEL_SELECTION, e -> {
+            if (null == pixelSelectionPane) {
+                pixelSelectionPane = new PixelSelectionPane(scene, pathPane);
+            }
+            if (!pathPane.getChildren().contains(pixelSelectionPane)) {
+                pathPane.getChildren().add(pixelSelectionPane);
+                pixelSelectionPane.slideInPane();
+            } else {
+                pixelSelectionPane.show();
+            }
+            if(null != e.object) {
+                Image image = (Image) e.object;
+                pixelSelectionPane.setImage(image);
+            }
+        });
+        
         
         LOG.info("Waveform View ");
         scene.addEventHandler(ApplicationEvent.SHOW_WAVEFORM_PANE, e -> {

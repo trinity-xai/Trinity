@@ -17,7 +17,6 @@ public class ImageEvent extends Event {
     public static final EventType<ImageEvent> NEW_VECTORMASK_COLLECTION = new EventType(ANY, "NEW_VECTORMASK_COLLECTION");
     public static final EventType<ImageEvent> NEW_COCO_ANNOTATION = new EventType(ANY, "NEW_COCO_ANNOTATION");
 
-
     public ImageEvent(EventType<? extends Event> arg0) {
         super(arg0);
     }

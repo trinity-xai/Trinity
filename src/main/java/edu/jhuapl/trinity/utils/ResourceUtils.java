@@ -67,6 +67,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.nio.IntBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -86,6 +87,10 @@ import java.util.stream.Collectors;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.DialogPane;
+import javafx.scene.image.PixelFormat;
+import javafx.scene.image.PixelReader;
+import javafx.scene.image.PixelWriter;
+import javafx.scene.image.WritablePixelFormat;
 import javafx.scene.layout.Background;
 import javafx.scene.paint.Color;
 import javafx.stage.StageStyle;
@@ -221,11 +226,29 @@ public enum ResourceUtils {
                                                     int x1, int y1, int x2, int y2) throws IOException {
         File imageFile = new File(filename);
         BufferedImage image = ImageIO.read(imageFile);
+        return loadImageSubset(image, x1, y1, x2, y2);
+    }
+    public static WritableImage loadImageSubset(BufferedImage image, int x1, int y1, int x2, int y2) {
         BufferedImage subImage = image.getSubimage(x1, y1, x2 - x1, y2 - y1);
         WritableImage wi = SwingFXUtils.toFXImage(subImage, null);
-        return wi;
+        return wi;        
     }
-
+    public static WritableImage cropImage(Image image, double x1, double y1, double x2, double y2) {
+        PixelReader r = image.getPixelReader();
+        WritablePixelFormat<IntBuffer> pixelFormat = PixelFormat.getIntArgbInstance() ;
+        int x1Index = Double.valueOf(x1).intValue();
+        int y1Index = Double.valueOf(y1).intValue();
+        int x2Index = Double.valueOf(x2).intValue();
+        int y2Index = Double.valueOf(y2).intValue();
+        int width = x2Index-x1Index;
+        int height = y2Index-y1Index;
+        int[] pixels = new int[width * height];
+        r.getPixels(x1Index, y1Index, width, height, pixelFormat, pixels, 0, width);
+        WritableImage out = new WritableImage(width, height);
+        PixelWriter w = out.getPixelWriter();
+        w.setPixels(0, 0, width, height, pixelFormat, pixels, 0, width);
+        return out ;
+    }
     public static WritableImage loadIconAsWritableImage(String iconName) throws IOException {
         InputStream is = IconResourceProvider.getResourceAsStream(iconName + ".png");
         BufferedImage image = ImageIO.read(is);

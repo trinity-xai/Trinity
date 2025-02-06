@@ -9,6 +9,7 @@ import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.geometry.Insets;
+import javafx.scene.control.Tooltip;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseButton;
@@ -49,14 +50,16 @@ public class ProjectorNode extends Pane {
             new BorderWidths(borderWidth), 
             new Insets(-borderWidth/2.0, -borderWidth/2.0, -borderWidth/2.0, -borderWidth/2.0)));
 
-        this.setBorder(Border.EMPTY);
+        setBorder(Border.EMPTY);
         addEventHandler(MouseEvent.MOUSE_ENTERED, e-> {
+            requestFocus();
             setBorder(hoverBorder);
         });
         addEventHandler(MouseEvent.MOUSE_EXITED, e-> {
             setBorder(emptyBorder);
         });
         addEventHandler(MouseEvent.MOUSE_CLICKED, e-> {
+            requestFocus();
             setBorder(selectedBorder);
             if(e.getButton() == MouseButton.PRIMARY) {
                 if(e.getClickCount()==1 && e.isControlDown()) {
@@ -76,5 +79,6 @@ public class ProjectorNode extends Pane {
                 }
             }
         });
+        Tooltip.install(imageView, new Tooltip(analysisConfig.getAnalysisName()));
     }
 }
