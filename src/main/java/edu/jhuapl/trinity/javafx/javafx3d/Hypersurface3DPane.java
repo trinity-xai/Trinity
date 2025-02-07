@@ -1334,14 +1334,28 @@ public class Hypersurface3DPane extends StackPane
         extrasGroup.getChildren().addAll(eastPole, eastKnob, westPole, westKnob, glowLineBox);
 
         Spinner yScaleSpinner = new Spinner(
-            new SpinnerValueFactory.DoubleSpinnerValueFactory(0.0, 100.0, yScale, 1.00));
+            new SpinnerValueFactory.DoubleSpinnerValueFactory(0.0, 500.0, yScale, 1.00));
         yScaleSpinner.setEditable(true);
-        //whenever the spinner value is changed...
-        yScaleSpinner.valueProperty().addListener(e -> {
+//        //whenever the spinner value is changed...
+//        yScaleSpinner.valueProperty().addListener(e -> {
+//            yScale = ((Double) yScaleSpinner.getValue()).floatValue();
+//            surfPlot.setFunctionScale(yScale);
+//            updateTheMesh();
+//        });
+        yScaleSpinner.getValueFactory().valueProperty().addListener(e -> {
             yScale = ((Double) yScaleSpinner.getValue()).floatValue();
             surfPlot.setFunctionScale(yScale);
             updateTheMesh();
         });
+        //whenever the spinner value is changed...
+        yScaleSpinner.setOnKeyTyped(e -> {
+            if(e.getCode()==KeyCode.ENTER) {
+                yScale = ((Double) yScaleSpinner.getValue()).floatValue();
+                surfPlot.setFunctionScale(yScale);
+                updateTheMesh();
+            }
+        });
+
         yScaleSpinner.setPrefWidth(125);
         Spinner surfScaleSpinner = new Spinner(
             new SpinnerValueFactory.DoubleSpinnerValueFactory(0.0, 100.0, surfScale, 1.0));

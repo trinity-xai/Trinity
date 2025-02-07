@@ -1,4 +1,5 @@
 /* Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC */
+/* Copyright (C) 2021 - 2025 Sean Phillips */
 
 package edu.jhuapl.trinity.javafx.javafx3d;
 
@@ -878,6 +879,12 @@ public class Projections3DPane extends StackPane implements
                 ManifoldEvent.CLUSTER_SELECTION_MODE, true));
         });
 
+        CheckMenuItem showCubeItem = new CheckMenuItem("Show Cube");
+        showCubeItem.setSelected(true);
+        showCubeItem.selectedProperty().addListener(cl -> {
+            cubeWorld.showDataAndCrosshairsOnly(showCubeItem.isSelected());
+        });
+
         CheckMenuItem animatingProjectionsItem = new CheckMenuItem("Animating Projections");
         animatingProjectionsItem.setSelected(animatingProjections);
         animatingProjectionsItem.selectedProperty().addListener(cl ->
@@ -890,7 +897,7 @@ public class Projections3DPane extends StackPane implements
         ContextMenu cm = new ContextMenu(selectPointsItem,
             resetViewItem, manifoldsItem, radarItem, exportItem, analysisItem, navigatorItem,
             clearCalloutsItem, clearProjectionItem,
-            animatingProjectionsItem, updatingTrajectoriesItem);
+            showCubeItem, animatingProjectionsItem, updatingTrajectoriesItem);
 
         cm.setAutoFix(true);
         cm.setAutoHide(true);

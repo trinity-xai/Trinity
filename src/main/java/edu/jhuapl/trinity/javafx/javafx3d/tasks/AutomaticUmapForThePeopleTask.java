@@ -4,14 +4,11 @@ package edu.jhuapl.trinity.javafx.javafx3d.tasks;
 
 import edu.jhuapl.trinity.data.files.FeatureCollectionFile;
 import edu.jhuapl.trinity.data.messages.AnalysisConfig;
-import edu.jhuapl.trinity.data.messages.FeatureCollection;
-import edu.jhuapl.trinity.data.messages.FeatureVector;
 import edu.jhuapl.trinity.data.messages.UmapConfig;
 import edu.jhuapl.trinity.javafx.components.radial.ProgressStatus;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
-import edu.jhuapl.trinity.utils.AnalysisUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import edu.jhuapl.trinity.utils.umap.Umap;
 import java.time.Duration;
@@ -95,6 +92,10 @@ public class AutomaticUmapForThePeopleTask extends Task {
     protected Void call() throws Exception {
         if (isCancelled()) return null;
         Platform.runLater(() -> {
+            scene.getRoot().fireEvent(new ApplicationEvent(
+                ApplicationEvent.SHOW_HYPERSPACE));
+        });
+        Platform.runLater(() -> {
             scene.getRoot().fireEvent(new ManifoldEvent(
                 ManifoldEvent.NEW_UMAP_CONFIG, umapConfig));
         });         
@@ -102,7 +103,7 @@ public class AutomaticUmapForThePeopleTask extends Task {
             scene.getRoot().fireEvent(new FeatureVectorEvent(
                 FeatureVectorEvent.CLEAR_ALL_FEATUREVECTORS));
         });
-        Thread.sleep(Duration.ofMillis(500));
+        Thread.sleep(Duration.ofMillis(1000));
         Platform.runLater(() -> {
             ProgressStatus ps = new ProgressStatus("Loading Data...", 0.5);
             ps.fillStartColor = Color.AZURE;
