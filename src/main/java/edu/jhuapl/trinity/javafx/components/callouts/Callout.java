@@ -14,14 +14,17 @@
  * limitations under the License.
  */
 /* Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC */
+/* Copyright (C) 2021 - 2025 Sean Phillips */
 
 package edu.jhuapl.trinity.javafx.components.callouts;
 
+import edu.jhuapl.trinity.utils.ResourceUtils;
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.SequentialTransition;
 import javafx.animation.Timeline;
+import javafx.event.EventType;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
@@ -29,8 +32,13 @@ import javafx.geometry.Rectangle2D;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.Scene;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.MenuItem;
 import javafx.scene.effect.BlendMode;
 import javafx.scene.effect.Glow;
+import javafx.scene.image.ImageView;
+import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.Border;
@@ -61,6 +69,8 @@ import javafx.util.Duration;
 public class Callout extends Group {
     public static int LEFT = -1;
     public static int RIGHT = 1;
+    public static double ICON_FIT_HEIGHT = 32;
+    public static double ICON_FIT_WIDTH = 32;
     public static double DEFAULT_HEAD_RADIUS = 5;
     private Point2D headPoint;
     private Point2D leaderLineToPoint;
@@ -82,6 +92,7 @@ public class Callout extends Group {
     public Text mainTitleTextNode;
     public Text subTitleTextNode;
     public Node mainTitleNode = null;
+    public ContextMenu contextMenu;
 
     private double mousePosX, mousePosY, mouseOldX, mouseOldY, mouseDeltaX, mouseDeltaY;
 
@@ -95,7 +106,6 @@ public class Callout extends Group {
 
     public void build() {
         getStyleClass().add("callout");
-//        setManaged(false);
 
         // Create head
         head = new Circle(getHeadPoint().getX(), getHeadPoint().getY(), DEFAULT_HEAD_RADIUS);
@@ -255,6 +265,29 @@ public class Callout extends Group {
         subTitleHBox.setPickOnBounds(false);
 
         this.setPickOnBounds(false);
+//        Glow glow = new Glow(0.5);
+        ImageView callouts = ResourceUtils.loadIcon("callouts", ICON_FIT_HEIGHT);
+        callouts.setEffect(glow);
+        MenuItem closeThisItem = new MenuItem("Close This", callouts);
+        closeThisItem.setOnAction(e -> {
+          hide(); 
+        });
+        
+        contextMenu = new ContextMenu(closeThisItem);
+        contextMenu.setAutoFix(true);
+        contextMenu.setAutoHide(true);
+        contextMenu.setHideOnEscape(true);
+        contextMenu.setOpacity(0.85);
+        mainTitleHBox.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
+            if (e.getButton() == MouseButton.SECONDARY) {
+                if (!contextMenu.isShowing())
+                    contextMenu.show(this.getParent(), e.getScreenX(), e.getScreenY());
+                else
+                    contextMenu.hide();
+                e.consume();
+            }
+        });
+                
         //Hide at the start
         getChildren().forEach(node -> node.setVisible(false));
     }
