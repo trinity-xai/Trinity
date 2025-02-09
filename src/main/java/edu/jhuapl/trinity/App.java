@@ -1,5 +1,4 @@
 /* Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC */
-/* Copyright (C) 2021 - 2025 Sean Phillips */
 
 package edu.jhuapl.trinity;
 
@@ -8,7 +7,6 @@ import edu.jhuapl.trinity.data.FactorLabel;
 import edu.jhuapl.trinity.data.files.ClusterCollectionFile;
 import edu.jhuapl.trinity.data.files.FeatureCollectionFile;
 import edu.jhuapl.trinity.data.files.ManifoldDataFile;
-import edu.jhuapl.trinity.data.messages.AnalysisConfig;
 import edu.jhuapl.trinity.data.messages.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.FeatureVector;
 import edu.jhuapl.trinity.javafx.components.MatrixOverlay;

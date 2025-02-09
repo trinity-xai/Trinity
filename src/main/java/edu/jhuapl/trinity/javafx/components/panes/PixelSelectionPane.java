@@ -1,11 +1,9 @@
-/* Copyright (C) 2021 - 2025 Sean Phillips */
+/* Copyright (C) 2025 Sean Phillips */
  
 package edu.jhuapl.trinity.javafx.components.panes;
 
 import edu.jhuapl.trinity.javafx.events.ImageEvent;
 import edu.jhuapl.trinity.utils.ResourceUtils;
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.geometry.Pos;

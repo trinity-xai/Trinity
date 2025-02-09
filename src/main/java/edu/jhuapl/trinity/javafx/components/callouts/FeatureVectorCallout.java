@@ -1,4 +1,4 @@
-/* Copyright (C) 2021 - 2025 Sean Phillips */
+/* Copyright (C) 2021 - 2024 Sean Phillips */
 
 package edu.jhuapl.trinity.javafx.components.callouts;
 
