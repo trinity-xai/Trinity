@@ -13,6 +13,7 @@ import edu.jhuapl.trinity.javafx.components.MatrixOverlay;
 import edu.jhuapl.trinity.javafx.components.panes.AnalysisLogPane;
 import edu.jhuapl.trinity.javafx.components.panes.NavigatorPane;
 import edu.jhuapl.trinity.javafx.components.panes.PixelSelectionPane;
+import edu.jhuapl.trinity.javafx.components.panes.ImageInspectorPane;
 import edu.jhuapl.trinity.javafx.components.panes.Shape3DControlPane;
 import edu.jhuapl.trinity.javafx.components.panes.SparkLinesPane;
 import edu.jhuapl.trinity.javafx.components.panes.TextPane;
@@ -130,7 +131,8 @@ public class App extends Application {
     WaveformPane waveformPane;
     Shape3DControlPane shape3DControlPane;
     AnalysisLogPane analysisLogPane;
-    PixelSelectionPane pixelSelectionPane;   
+    PixelSelectionPane pixelSelectionPane;
+    ImageInspectorPane imageInspectorPane;
     CircleProgressIndicator circleSpinner;
 
     static Configuration theConfig;
@@ -238,6 +240,7 @@ public class App extends Application {
         projectorPane.setVisible(false); //start off hidden
         analysisLogPane = new AnalysisLogPane(scene, desktopPane);
         pixelSelectionPane = new PixelSelectionPane(scene, pathPane);
+        imageInspectorPane = new ImageInspectorPane(scene, pathPane);
         
         LOG.info("Registering Event Handlers...");
         //animatedConsoleText.animate("Registering Event Handlers...");
@@ -1111,6 +1114,16 @@ public class App extends Application {
         if (e.isAltDown() && e.isControlDown() && e.getCode().equals(KeyCode.P)) {
             stage.getScene().getRoot().fireEvent(
                 new ApplicationEvent(ApplicationEvent.SHOW_PROJECTOR_PANE));
+        }
+        if (e.isAltDown() && e.isControlDown() && e.getCode().equals(KeyCode.I)) {
+            if (!pathPane.getChildren().contains(imageInspectorPane)) {
+                pathPane.getChildren().add(imageInspectorPane);
+                imageInspectorPane.slideInPane();
+            } else {
+                imageInspectorPane.show();
+            }
+//            stage.getScene().getRoot().fireEvent(
+//                new ApplicationEvent(ApplicationEvent.SHOW_PROJECTOR_PANE));
         }
 
         if (e.isAltDown() && e.getCode().equals(KeyCode.N)) {

@@ -3,7 +3,11 @@
 package edu.jhuapl.trinity.javafx.components.panes;
 
 import edu.jhuapl.trinity.javafx.events.ImageEvent;
+import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
+import java.io.File;
+import java.net.MalformedURLException;
+import java.util.logging.Level;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
@@ -14,7 +18,10 @@ import javafx.scene.control.ScrollPane;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
+import javafx.scene.input.DragEvent;
+import javafx.scene.input.Dragboard;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.input.TransferMode;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
@@ -33,8 +40,6 @@ public class PixelSelectionPane extends LitPathPane {
     private static final Logger LOG = LoggerFactory.getLogger(PixelSelectionPane.class);
     public static int PANE_WIDTH = 550;
     public static int PANE_HEIGHT = 550;
-    public static double IMAGE_FIT_HEIGHT = 256;
-    public static double IMAGE_FIT_WIDTH = 256;
     public BorderPane borderPane;
     public StackPane centerStack;
     public ImageView imageView;
@@ -130,6 +135,26 @@ public class PixelSelectionPane extends LitPathPane {
                 me.consume();
             }
         });
+       borderPane.addEventHandler(DragEvent.DRAG_OVER, event -> {
+            if (ResourceUtils.canDragOver(event)) {
+                event.acceptTransferModes(TransferMode.COPY);
+            } else {
+                event.consume();
+            }
+        });
+        borderPane.addEventHandler(DragEvent.DRAG_DROPPED, event -> {
+            Dragboard db = event.getDragboard();
+            if (db.hasFiles()) {
+                final File file = db.getFiles().get(0);
+                if (JavaFX3DUtils.isTextureFile(file)) {
+                    try {
+                        setImage(new Image(file.toURI().toURL().toExternalForm()));
+                    } catch (MalformedURLException ex) {
+                        java.util.logging.Logger.getLogger(PixelSelectionPane.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+            }
+        });        
     }
     
     public void setImage(Image image) {

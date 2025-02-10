@@ -522,6 +522,12 @@ public class Projections3DPane extends StackPane implements
             if (keycode == KeyCode.D) {
                 camera.setTranslateX(camera.getTranslateX() + change);
             }
+            if (keycode == KeyCode.SPACE) {
+                camera.setTranslateY(camera.getTranslateY() + change);
+            }
+            if (keycode == KeyCode.X) {
+                camera.setTranslateY(camera.getTranslateY() - change);
+            }            
             //rotate controls  use less sensitive modifiers
             change = event.isShiftDown() ? 10.0 : 1.0;
 

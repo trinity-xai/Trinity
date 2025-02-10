@@ -172,7 +172,7 @@ public class ProjectorPane extends StackPane {
             if (keycode == KeyCode.SPACE) {
                 camera.setTranslateY(camera.getTranslateY() - change);
             }
-            if (keycode == KeyCode.C) {
+            if (keycode == KeyCode.X) {
                 camera.setTranslateY(camera.getTranslateY() + change);
             }
             updateLabels();

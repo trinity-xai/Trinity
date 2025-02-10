@@ -1,117 +1,195 @@
-/* Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC */
-package edu.jhuapl.trinity.javafx.components;
+/* Copyright (C) 2025 Sean Phillips */
+ 
+package edu.jhuapl.trinity.javafx.components.panes;
 
 import com.tambapps.fft4j.FastFourier2d;
 import com.tambapps.fft4j.Signal2d;
+import edu.jhuapl.trinity.javafx.events.ImageEvent;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import edu.jhuapl.trinity.utils.Utils;
 import static edu.jhuapl.trinity.utils.Utils.clamp;
 import java.io.File;
-import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.Arrays;
 import java.util.DoubleSummaryStatistics;
 import java.util.logging.Level;
-import java.util.logging.Logger;
-import javafx.application.Application;
+import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
+import javafx.geometry.Pos;
 import javafx.scene.Cursor;
 import javafx.scene.Scene;
-import javafx.stage.Stage;
-
+import javafx.scene.SnapshotParameters;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.PixelReader;
 import javafx.scene.image.PixelWriter;
+import javafx.scene.image.WritableImage;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.TransferMode;
+import javafx.scene.layout.Background;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Pane;
+import javafx.scene.layout.StackPane;
+import javafx.scene.layout.TilePane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-public class ImageFFTTestApp extends Application {
 
+/**
+ * @author Sean Phillips
+ */
+public class ImageInspectorPane extends LitPathPane {
+    private static final Logger LOG = LoggerFactory.getLogger(ImageInspectorPane.class);
+    public static int PANE_WIDTH = 1600;
+    public static int PANE_HEIGHT = 550;
+    private double imageSize = 512;    
     private Color fillColor = Color.SLATEGREY;
-    private double imageSize = 512;
-    private VBox controlsBox;
-    private GridPane plotPane;
-    private Image baseImage;
+    public BorderPane borderPane;
+    private TilePane tilePane;
+    private BorderPane imageViewBorderPane;
+    BorderPane imageFFTBorderPane;    
+    public StackPane centerStack;
+    public Image baseImage;
     private PixelReader baseImagePR;
-    private ImageView baseImageView;
-    private Canvas imageFFTCanvas, inverseFFTCanvas, polarCanvas;
-    private GraphicsContext imageFFTGC, inverseFFTGC, polarGC;
-
+    public ImageView baseImageView;
+    private Canvas imageFFTCanvas, inverseFFTCanvas;
+    private GraphicsContext imageFFTGC, inverseFFTGC;
+    Rectangle fftSelectionRectangle;
+    ScrollPane scrollPane;    
+    public Rectangle selectionRectangle;
+    private double mousePosX;
+    private double mousePosY;
     Signal2d greySignal2d;
     Signal2d redChannelSignal2d;
     Signal2d greenChannelSignal2d;
     Signal2d blueChannelSignal2d;
-//    Signal2d shiftedGreySignal2d;
+    double[][] masks;    
     Signal2d shiftedRedChannelSignal2d;
     Signal2d shiftedGreenChannelSignal2d;
-    Signal2d shiftedBlueChannelSignal2d;    
-    double[][] masks;
-    Spinner<Integer> polarScaleSpinner;
+    Signal2d shiftedBlueChannelSignal2d; 
     Spinner<Double> transparencySpinner;
-    Rectangle fftSelectionRectangle;
-    private double mousePosX;
-    private double mousePosY;
-    private double mouseOldX;
-    private double mouseOldY;
+    Spinner<Integer> brightnessDownscalerSpinner;
+       
     
-    @Override
-    public void init() {
-        try {
-            baseImage = ResourceUtils.load3DTextureImage("carl-b-mono");
-            baseImageView = new ImageView(baseImage);
-            baseImagePR = baseImage.getPixelReader();
-            int height = Double.valueOf(baseImage.getHeight()).intValue();
-            int width = Double.valueOf(baseImage.getWidth()).intValue();            
-            masks = new double[height][width];
-            clearMask();
-        } catch (IOException ex) {
-            Logger.getLogger(ImageFFTTestApp.class.getName()).log(Level.SEVERE, null, ex);
-            baseImageView = new ImageView();
-        }
-        baseImageView.setFitWidth(imageSize);
+    private static BorderPane createContent() {
+        BorderPane bpOilSpill = new BorderPane();
+        return bpOilSpill;
+    }
+    
+    public ImageInspectorPane(Scene scene, Pane parent) {
+        super(scene, parent, PANE_WIDTH, PANE_HEIGHT, createContent(),
+            "Image Inspector", "", 300.0, 400.0);  
+        setBackground(Background.EMPTY);
+        this.scene = scene;
+        baseImage = ResourceUtils.loadIconFile("waitingforimage");
+        borderPane = (BorderPane) this.contentPane;
+        tilePane = new TilePane();
+        tilePane.setPrefColumns(3);
+//        tilePane.setPrefRows(1);
+        tilePane.setHgap(10);
+        tilePane.setAlignment(Pos.CENTER_LEFT);
+        borderPane.setCenter(tilePane);
+        
+        
+        centerStack = new StackPane();
+        centerStack.setAlignment(Pos.CENTER);
+        imageViewBorderPane = new BorderPane(centerStack);
+//        tilePane.getChildren().add(imageViewBorderPane);
+        
+        baseImageView = new ImageView(baseImage);
         baseImageView.setPreserveRatio(true);
-        baseImageView.addEventHandler(DragEvent.DRAG_OVER, event -> {
-            if (ResourceUtils.canDragOver(event)) {
-                event.acceptTransferModes(TransferMode.COPY);
-            } else {
-                event.consume();
-            }
-        });
-        baseImageView.addEventHandler(DragEvent.DRAG_DROPPED, event -> {
-            Dragboard db = event.getDragboard();
-            if (db.hasFiles()) {
-                final File file = db.getFiles().get(0);
-                if (JavaFX3DUtils.isTextureFile(file)) {
-                    try {
-                        baseImage = new Image(file.toURI().toURL().toExternalForm());
-                        baseImageView.setImage(baseImage);
-                        baseImagePR = baseImage.getPixelReader();
-                        int height = Double.valueOf(baseImage.getHeight()).intValue();
-                        int width = Double.valueOf(baseImage.getWidth()).intValue();            
-                        masks = new double[height][width];
-                        clearMask();
-                    } catch (MalformedURLException ex) {
-                        Logger.getLogger(ImageFFTTestApp.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                }
-            }
-        });
+        scrollPane = new ScrollPane(baseImageView);
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        scrollPane.setPannable(true);
+        scrollPane.setFitToHeight(true);
+        scrollPane.setFitToWidth(true);
+        scrollPane.setPrefSize(512, 512);
+        centerStack.getChildren().add(scrollPane);
 
+        Button tessellateSelectionButton = new Button("Tessellate");
+        tessellateSelectionButton.setOnAction(e-> {
+            //select a subregion
+            if(selectionRectangle.getWidth() > 1 && selectionRectangle.getHeight() > 1) {
+                Point2D sceneP2D = selectionRectangle.localToScene(
+                    selectionRectangle.getX(), selectionRectangle.getY());
+                Point2D localP2D = baseImageView.sceneToLocal(sceneP2D);
+                WritableImage wi = ResourceUtils.cropImage(baseImage, 
+                    localP2D.getX(), localP2D.getY(), 
+                    localP2D.getX() + selectionRectangle.getWidth(), 
+                    localP2D.getY() + selectionRectangle.getHeight());
+                tessellateSelectionButton.getScene().getRoot().fireEvent(
+                    new ImageEvent(ImageEvent.NEW_TEXTURE_SURFACE, wi));
+            } else { //just use the whole dang thing
+                tessellateSelectionButton.getScene().getRoot().fireEvent(
+                    new ImageEvent(ImageEvent.NEW_TEXTURE_SURFACE, baseImage));
+            }
+        });
+        Button runFFTButton = new Button("Execute FFT");
+        runFFTButton.setOnAction(e -> {
+            spaToFreq2D(baseImage);
+        });        
+        HBox powerBottomHBox = new HBox(10, tessellateSelectionButton, runFFTButton);
+        powerBottomHBox.setPadding(new Insets(10));
+        powerBottomHBox.setAlignment(Pos.CENTER);
+        imageViewBorderPane.setBottom(powerBottomHBox);
+        
+        //Setup selection rectangle and event handling
+        selectionRectangle = new Rectangle(1, 1, Color.CYAN.deriveColor(1, 1, 1, 0.5));
+        selectionRectangle.setManaged(false);
+        selectionRectangle.setMouseTransparent(true);
+        selectionRectangle.setVisible(false);
+        imageViewBorderPane.getChildren().add(selectionRectangle); // a little hacky but...
+        
+        baseImageView.setOnMouseEntered(e-> baseImageView.setCursor(Cursor.CROSSHAIR));
+        baseImageView.setOnMouseExited(e-> baseImageView.setCursor(Cursor.DEFAULT));
+        
+        baseImageView.setOnMousePressed((MouseEvent me) -> {
+            if(me.isPrimaryButtonDown()) {
+                me.consume();
+                mousePosX = me.getSceneX();
+                mousePosY = me.getSceneY();
+                selectionRectangle.setWidth(1);
+                selectionRectangle.setHeight(1);
+                Point2D localP2D = imageViewBorderPane.sceneToLocal(mousePosX, mousePosY);
+                selectionRectangle.setX(localP2D.getX());
+                selectionRectangle.setY(localP2D.getY());
+                selectionRectangle.setVisible(true);
+            }
+        });
+        //Start Tracking mouse movements only when a button is pressed
+        baseImageView.setOnMouseDragged((MouseEvent me) -> {
+            if(me.isPrimaryButtonDown()) {
+                me.consume();
+                mousePosX = me.getSceneX();
+                mousePosY = me.getSceneY();
+                Point2D localP2D = imageViewBorderPane.sceneToLocal(mousePosX, mousePosY);
+                selectionRectangle.setWidth(
+                    localP2D.getX() - selectionRectangle.getX());
+                selectionRectangle.setHeight(
+                    localP2D.getY() - selectionRectangle.getY());
+            }
+        });        
+        baseImageView.setOnMouseReleased((MouseEvent me) -> {
+            if(me.isPrimaryButtonDown()) {
+                me.consume();
+            }
+        });
+        
         imageFFTCanvas = new Canvas(imageSize, imageSize);
         imageFFTGC = imageFFTCanvas.getGraphicsContext2D();
         imageFFTGC.setFill(fillColor);
@@ -126,32 +204,29 @@ public class ImageFFTTestApp extends Application {
         imageFFTCanvas.setOnMousePressed((MouseEvent me) -> {
             mousePosX = me.getSceneX();
             mousePosY = me.getSceneY();
-            mouseOldX = me.getSceneX();
-            mouseOldY = me.getSceneY();
+            Point2D localP2D = imageFFTCanvas.sceneToLocal(mousePosX, mousePosY);            
             fftSelectionRectangle.setWidth(1);
             fftSelectionRectangle.setHeight(1);
-            fftSelectionRectangle.setX(mousePosX);
-            fftSelectionRectangle.setY(mousePosY);
+            fftSelectionRectangle.setX(localP2D.getX());
+            fftSelectionRectangle.setY(localP2D.getY());
             fftSelectionRectangle.setVisible(true);
         });
         //Start Tracking mouse movements only when a button is pressed
         imageFFTCanvas.setOnMouseDragged((MouseEvent me) -> {
-            mouseOldX = mousePosX;
-            mouseOldY = mousePosY;
             mousePosX = me.getSceneX();
             mousePosY = me.getSceneY();
-            fftSelectionRectangle.setWidth(mousePosX - fftSelectionRectangle.getX());
-            fftSelectionRectangle.setHeight(mousePosY - fftSelectionRectangle.getY());
+            Point2D localP2D = imageFFTCanvas.sceneToLocal(mousePosX, mousePosY);   
+            fftSelectionRectangle.setWidth(localP2D.getX() - fftSelectionRectangle.getX());
+            fftSelectionRectangle.setHeight(localP2D.getY() - fftSelectionRectangle.getY());
         });
         imageFFTCanvas.setOnMouseReleased((MouseEvent me) -> {
-            //transform from scene to local
-            Point2D startLocal = imageFFTCanvas.sceneToLocal(fftSelectionRectangle.getX(), fftSelectionRectangle.getY());
-            Point2D endLocal = startLocal.add(fftSelectionRectangle.getWidth(), fftSelectionRectangle.getHeight());
             //update masks
-            int startY = Double.valueOf(startLocal.getY()).intValue();
-            int endY = Double.valueOf(endLocal.getY()).intValue();
-            int startX = Double.valueOf(startLocal.getX()).intValue();
-            int endX = Double.valueOf(endLocal.getX()).intValue();
+            int startY = Double.valueOf(fftSelectionRectangle.getY()).intValue();
+            int endY = Double.valueOf(fftSelectionRectangle.getY() 
+                    + fftSelectionRectangle.getHeight()).intValue();
+            int startX = Double.valueOf(fftSelectionRectangle.getX()).intValue();
+            int endX = Double.valueOf(fftSelectionRectangle.getX() 
+                    + fftSelectionRectangle.getHeight()).intValue();
             PixelWriter pw = imageFFTGC.getPixelWriter();
             for(int y=startY;y<endY;y++){
                 for(int x=startX;x<endX;x++){
@@ -200,73 +275,91 @@ public class ImageFFTTestApp extends Application {
             
         });
         
-        inverseFFTCanvas = new Canvas(imageSize, imageSize);
-        inverseFFTGC = inverseFFTCanvas.getGraphicsContext2D();
-        inverseFFTGC.setFill(fillColor);
-        inverseFFTGC.fillRect(0, 0, imageSize, imageSize);
-
-        polarCanvas = new Canvas(imageSize, imageSize);
-        polarGC = polarCanvas.getGraphicsContext2D();
-        polarGC.setFill(fillColor);
-        polarGC.fillRect(0, 0, imageSize, imageSize);
-
-        plotPane = new GridPane(2, 2);
-        plotPane.setHgap(2);
-        plotPane.setVgap(2);
-        plotPane.addRow(0, baseImageView, inverseFFTCanvas);
-        plotPane.addRow(1, imageFFTCanvas, polarCanvas);
-        
-        Button runFFTButton = new Button("Execute FFT");
-        runFFTButton.setOnAction(e -> {
-            spaToFreq2D(baseImage);
-        });
-        
-        polarScaleSpinner = new Spinner<>(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 1000, 10, 1));
-//        polarScaleSpinner.valueProperty().addListener(c -> {
-//            if (null != reals) {
-//                int height = Double.valueOf(baseImage.getHeight()).intValue();
-//                int width = Double.valueOf(baseImage.getWidth()).intValue();
-//
-//                polarPlot(polarScaleSpinner.getValue(), height, width, reals, imagines);
-//            }
-//        });
+        brightnessDownscalerSpinner = new Spinner<>(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 1000, 10, 1));
+        brightnessDownscalerSpinner.setPrefWidth(100);
         transparencySpinner = new Spinner<>(new SpinnerValueFactory.DoubleSpinnerValueFactory(0, 1, 0.666, 0.1));
-
-
+        transparencySpinner.setPrefWidth(100);
         Button clearMaskButton = new Button("Clear Mask");
         clearMaskButton.setOnAction(e -> {
             clearMask();
         });
+        Button tessellateFFTButton = new Button("Tessellate FFT");
+        tessellateFFTButton.setOnAction(e-> {
+            SnapshotParameters snapshotParameters = new SnapshotParameters();
+            snapshotParameters.setFill(Color.TRANSPARENT);
+            Image image = imageFFTCanvas.snapshot(snapshotParameters, null);
+            tessellateFFTButton.getScene().getRoot().fireEvent(
+                new ImageEvent(ImageEvent.NEW_TEXTURE_SURFACE, image));
+        });
         
-        controlsBox = new VBox(10,
-            runFFTButton,
-            new Label("Polar scale"),
-            polarScaleSpinner,
-            new Label("Transparency"),
-            transparencySpinner, 
-            clearMaskButton
-        );
-    }
+        HBox controlsBox = new HBox(10,
+            clearMaskButton,
+            new VBox(5, new Label("Brightness Downscale"), brightnessDownscalerSpinner),
+            new VBox(5, new Label("Alpha Channel"), transparencySpinner), 
+            tessellateFFTButton
+        );        
+        controlsBox.setAlignment(Pos.CENTER);
+        
+        inverseFFTCanvas = new Canvas(imageSize, imageSize);
+        inverseFFTGC = inverseFFTCanvas.getGraphicsContext2D();
+        inverseFFTGC.setFill(fillColor);
+        inverseFFTGC.fillRect(0, 0, imageSize, imageSize);  
+        
+        imageFFTBorderPane = new BorderPane(imageFFTCanvas);
+        imageFFTBorderPane.setBottom(controlsBox);
+        imageFFTBorderPane.getChildren().add(fftSelectionRectangle); // a little hacky but...
 
-    @Override
-    public void start(Stage stage) {
-        BorderPane borderPane = new BorderPane(plotPane);
-        borderPane.setLeft(controlsBox);
-        borderPane.getChildren().add(fftSelectionRectangle); // a little hacky but...
-        Scene scene = new Scene(borderPane);
+        BorderPane inverseFFTBorderPane = new BorderPane(inverseFFTCanvas);
+        Button tessellateInverseFFTButton = new Button("Tessellate Inverse");
+        tessellateInverseFFTButton.setOnAction(e-> {
+//            if(fftSelectionRectangle.getWidth() > 1 && fftSelectionRectangle.getHeight() > 1) {
+//                Point2D sceneP2D = fftSelectionRectangle.localToScene(
+//                    fftSelectionRectangle.getX(), fftSelectionRectangle.getY());
+//                Point2D localP2D = baseImageView.sceneToLocal(sceneP2D);
+//                WritableImage wi = ResourceUtils.cropImage(baseImage, 
+//                    localP2D.getX(), localP2D.getY(), 
+//                    localP2D.getX() + fftSelectionRectangle.getWidth(), 
+//                    localP2D.getY() + fftSelectionRectangle.getHeight());
 
-        stage.setTitle("Image FFT Test");
-        stage.setScene(scene);
-        stage.show();
-    }
-
-    @Override
-    public void stop() {
-        System.exit(0);
+                SnapshotParameters snapshotParameters = new SnapshotParameters();
+                snapshotParameters.setFill(Color.TRANSPARENT);
+                Image image = inverseFFTCanvas.snapshot(snapshotParameters, null);
+                tessellateInverseFFTButton.getScene().getRoot().fireEvent(
+                    new ImageEvent(ImageEvent.NEW_TEXTURE_SURFACE, image));
+//            }
+        });
+        HBox inversePowerBottomHBox = new HBox(10, tessellateInverseFFTButton);
+        inversePowerBottomHBox.setPadding(new Insets(10));
+        inversePowerBottomHBox.setAlignment(Pos.CENTER);
+        inverseFFTBorderPane.setBottom(inversePowerBottomHBox);        
+        
+        tilePane.getChildren().addAll(
+            imageViewBorderPane, imageFFTBorderPane, inverseFFTBorderPane);
+        
+        borderPane.addEventHandler(DragEvent.DRAG_OVER, event -> {
+            if (ResourceUtils.canDragOver(event)) {
+                event.acceptTransferModes(TransferMode.COPY);
+            } else {
+                event.consume();
+            }
+        });
+        borderPane.addEventHandler(DragEvent.DRAG_DROPPED, event -> {
+            Dragboard db = event.getDragboard();
+            if (db.hasFiles()) {
+                final File file = db.getFiles().get(0);
+                if (JavaFX3DUtils.isTextureFile(file)) {
+                    try {
+                        setImage(new Image(file.toURI().toURL().toExternalForm()));
+                    } catch (MalformedURLException ex) {
+                        java.util.logging.Logger.getLogger(PixelSelectionPane.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+            }
+        });                
     }
     private void clearMask() {
         Arrays.stream(masks).forEach(row->Arrays.fill(row,1.0));
-    }
+    } 
     private Signal2d fftShift2d(Signal2d inputSignal2d, boolean inverse) { 
 
         int totalColumns = inputSignal2d.getN();
@@ -345,8 +438,7 @@ public class ImageFFTTestApp extends Application {
                 blueChannelSignal2d.setReAt(y, x, color.getBlue());
             }
         }        
-    }
-    
+    }    
     public void spaToFreq2D(Image image) {
         extractSignals(image);
         System.out.println("Signal2D values extracted.");
@@ -376,7 +468,7 @@ public class ImageFFTTestApp extends Application {
                 .summaryStatistics();
         System.out.println("Max: " + stats.getMax() + " Min: " + stats.getMin());
 
-        baseImagePR = baseImage.getPixelReader();
+        baseImagePR = image.getPixelReader();
         PixelWriter pw = imageFFTGC.getPixelWriter();
         imageFFTGC.setFill(Color.BLACK);
         imageFFTGC.fillRect(0, 0, imageFFTCanvas.getWidth(), imageFFTCanvas.getHeight());
@@ -385,9 +477,9 @@ public class ImageFFTTestApp extends Application {
         double opacity = transparencySpinner.getValue();
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
-                redlogVal = Math.log10(Math.abs(shiftedRedChannelSignal2d.getReAt(y, x))/ polarScaleSpinner.getValue());
-                greenlogVal = Math.log10(Math.abs(shiftedGreenChannelSignal2d.getReAt(y, x))/ polarScaleSpinner.getValue());
-                bluelogVal = Math.log10(Math.abs(shiftedBlueChannelSignal2d.getReAt(y, x))/ polarScaleSpinner.getValue());
+                redlogVal = Math.log10(Math.abs(shiftedRedChannelSignal2d.getReAt(y, x))/ brightnessDownscalerSpinner.getValue());
+                greenlogVal = Math.log10(Math.abs(shiftedGreenChannelSignal2d.getReAt(y, x))/ brightnessDownscalerSpinner.getValue());
+                bluelogVal = Math.log10(Math.abs(shiftedBlueChannelSignal2d.getReAt(y, x))/ brightnessDownscalerSpinner.getValue());
 
                 pw.setColor(x, y, Color.color(
                     Utils.clamp(0,redlogVal,1), 
@@ -403,12 +495,6 @@ public class ImageFFTTestApp extends Application {
         }
         System.out.println("log of fourier transformed greyscale image done.");
 
-        System.out.println("Polar Plotting...");
-        polarGC.clearRect(0, 0, polarCanvas.getWidth(), polarCanvas.getHeight());
-        polarPlot2D(polarScaleSpinner.getValue(), height, width, shiftedRedChannelSignal2d);
-        polarPlot2D(polarScaleSpinner.getValue(), height, width, shiftedGreenChannelSignal2d);
-        polarPlot2D(polarScaleSpinner.getValue(), height, width, shiftedBlueChannelSignal2d);
-
         startTime = System.nanoTime();
         System.out.print("Inverse on Red Channel... ");
         transformer2D.inverse(redChannelSignal2d);
@@ -417,10 +503,9 @@ public class ImageFFTTestApp extends Application {
         transformer2D.inverse(blueChannelSignal2d);
 
         plotInverseFFT(height,width, redChannelSignal2d, greenChannelSignal2d, blueChannelSignal2d);
-
         // don't forget to shut it down as it uses an executor service
         transformer2D.shutdown();
-    }
+    }    
     public void plotInverseFFT(int height, int width, Signal2d redChannel, Signal2d greenChannel, Signal2d blueChannel) {
         PixelWriter pw = inverseFFTGC.getPixelWriter();
         PixelReader pr = baseImage.getPixelReader();
@@ -440,36 +525,16 @@ public class ImageFFTTestApp extends Application {
                 pw.setColor(x, y, originalColor.deriveColor(1, 1, level, 1));
             }
         }        
-    }
-    public void polarPlot2D(double scale, int height, int width, Signal2d signal2D) {
-        PixelWriter polarPW = polarGC.getPixelWriter();
-        double magnitude, phaseAngle;
-        int xCoord, yCoord;
-        int shiftX = Double.valueOf(polarCanvas.getWidth() / 2.0).intValue();
-        int shiftY = Double.valueOf(polarCanvas.getHeight() / 2.0).intValue();
-        for (int y = 0; y < height; y++) {
-            for (int x = 0; x < width; x++) {
-                //magnitude/radius = amplitude component
-                magnitude = signal2D.getReAt(y, x) * scale;
-                //angle = phase component
-                //atan2(imag(X),real(X))*180/pi; %phase information
-                phaseAngle = Math.atan2(signal2D.getImAt(y, x), signal2D.getReAt(y, x))
-                        * 180.0 / Math.PI; //%phase information
-                //Compute Polar Coordinates based on magnitude and phase                
-                //return new Vector(magnitude * Math.cos(flippedAngle),
-                //                magnitude * Math.sin(flippedAngle));
-                xCoord = Long.valueOf(Math.round(magnitude
-                        * Math.cos(phaseAngle))).intValue()
-                        + shiftX;
-                yCoord = Long.valueOf(Math.round(magnitude
-                        * Math.sin(phaseAngle))).intValue()
-                        + shiftY;
-                polarPW.setColor(xCoord, yCoord, baseImagePR.getColor(x, y));
-            }
-        }
-    }
-
-    public static void main(String[] args) {
-        launch(args);
+    }   
+    public void setImage(Image image) {
+        this.baseImage = image;
+        baseImageView.setImage(this.baseImage);
+        scrollPane.setHvalue(0);
+        scrollPane.setVvalue(0);
+        baseImagePR = baseImage.getPixelReader();
+        int height = Double.valueOf(baseImage.getHeight()).intValue();
+        int width = Double.valueOf(baseImage.getWidth()).intValue();            
+        masks = new double[height][width];
+        clearMask();        
     }
 }
