@@ -55,7 +55,7 @@ import org.slf4j.LoggerFactory;
 public class ImageInspectorPane extends LitPathPane {
     private static final Logger LOG = LoggerFactory.getLogger(ImageInspectorPane.class);
     public static int PANE_WIDTH = 1600;
-    public static int PANE_HEIGHT = 550;
+    public static int PANE_HEIGHT = 575;
     private double imageSize = 512;    
     private Color fillColor = Color.SLATEGREY;
     public BorderPane borderPane;
@@ -102,19 +102,26 @@ public class ImageInspectorPane extends LitPathPane {
 //        tilePane.setPrefRows(1);
         tilePane.setHgap(10);
         tilePane.setAlignment(Pos.CENTER_LEFT);
-        borderPane.setCenter(tilePane);
+        ScrollPane tileScrollPane = new ScrollPane(tilePane);
+        tileScrollPane.setPannable(true);
+        tileScrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        tileScrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        tileScrollPane.setFitToHeight(true);
+        tileScrollPane.setFitToWidth(true);
+//        tileScrollPane.setPrefSize(512, 512);
+
+        borderPane.setCenter(tileScrollPane);
         
         
         centerStack = new StackPane();
         centerStack.setAlignment(Pos.CENTER);
         imageViewBorderPane = new BorderPane(centerStack);
-//        tilePane.getChildren().add(imageViewBorderPane);
         
         baseImageView = new ImageView(baseImage);
         baseImageView.setPreserveRatio(true);
         scrollPane = new ScrollPane(baseImageView);
-        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
-        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         scrollPane.setPannable(true);
         scrollPane.setFitToHeight(true);
         scrollPane.setFitToWidth(true);
@@ -202,77 +209,100 @@ public class ImageInspectorPane extends LitPathPane {
         fftSelectionRectangle.setMouseTransparent(true);
         fftSelectionRectangle.setVisible(false);
         imageFFTCanvas.setOnMousePressed((MouseEvent me) -> {
-            mousePosX = me.getSceneX();
-            mousePosY = me.getSceneY();
-            Point2D localP2D = imageFFTCanvas.sceneToLocal(mousePosX, mousePosY);            
-            fftSelectionRectangle.setWidth(1);
-            fftSelectionRectangle.setHeight(1);
-            fftSelectionRectangle.setX(localP2D.getX());
-            fftSelectionRectangle.setY(localP2D.getY());
-            fftSelectionRectangle.setVisible(true);
+            if(me.isPrimaryButtonDown()) {
+                me.consume();
+                mousePosX = me.getSceneX();
+                mousePosY = me.getSceneY();
+//                Point2D localP2D = imageFFTCanvas.sceneToLocal(mousePosX, mousePosY);            
+                Point2D localP2D = imageFFTBorderPane.sceneToLocal(mousePosX, mousePosY);            
+                fftSelectionRectangle.setWidth(1);
+                fftSelectionRectangle.setHeight(1);
+                fftSelectionRectangle.setX(localP2D.getX());
+                fftSelectionRectangle.setY(localP2D.getY());
+                fftSelectionRectangle.setVisible(true);
+            }
         });
         //Start Tracking mouse movements only when a button is pressed
         imageFFTCanvas.setOnMouseDragged((MouseEvent me) -> {
-            mousePosX = me.getSceneX();
-            mousePosY = me.getSceneY();
-            Point2D localP2D = imageFFTCanvas.sceneToLocal(mousePosX, mousePosY);   
-            fftSelectionRectangle.setWidth(localP2D.getX() - fftSelectionRectangle.getX());
-            fftSelectionRectangle.setHeight(localP2D.getY() - fftSelectionRectangle.getY());
+            if(me.isPrimaryButtonDown()) {
+                me.consume();
+                mousePosX = me.getSceneX();
+                mousePosY = me.getSceneY();
+//                Point2D localP2D = imageFFTCanvas.sceneToLocal(mousePosX, mousePosY);            
+                Point2D localP2D = imageFFTBorderPane.sceneToLocal(mousePosX, mousePosY);   
+                fftSelectionRectangle.setWidth(localP2D.getX() - fftSelectionRectangle.getX());
+                fftSelectionRectangle.setHeight(localP2D.getY() - fftSelectionRectangle.getY());
+            }
         });
         imageFFTCanvas.setOnMouseReleased((MouseEvent me) -> {
-            //update masks
-            int startY = Double.valueOf(fftSelectionRectangle.getY()).intValue();
-            int endY = Double.valueOf(fftSelectionRectangle.getY() 
-                    + fftSelectionRectangle.getHeight()).intValue();
-            int startX = Double.valueOf(fftSelectionRectangle.getX()).intValue();
-            int endX = Double.valueOf(fftSelectionRectangle.getX() 
-                    + fftSelectionRectangle.getHeight()).intValue();
-            PixelWriter pw = imageFFTGC.getPixelWriter();
-            for(int y=startY;y<endY;y++){
-                for(int x=startX;x<endX;x++){
-                    masks[y][x] = 0.0;
-                    pw.setColor(x, y, Color.BLACK.deriveColor(1, 1, 1, 0.5));
-                }
-            }
-            
-            //copy the current shifted FFT image
-            //shiftedGreySignal2d = fftShift2d_P(greySignal2d, false);
-            Signal2d redShiftCopy = new Signal2d(shiftedRedChannelSignal2d.getM(), shiftedRedChannelSignal2d.getN());
-            shiftedRedChannelSignal2d.copyInto(redShiftCopy);
-            Signal2d greenShiftCopy = new Signal2d(shiftedGreenChannelSignal2d.getM(), shiftedGreenChannelSignal2d.getN());
-            shiftedRedChannelSignal2d.copyInto(greenShiftCopy);
-            Signal2d blueShiftCopy = new Signal2d(shiftedBlueChannelSignal2d.getM(), shiftedBlueChannelSignal2d.getN());
-            shiftedRedChannelSignal2d.copyInto(blueShiftCopy);
-            //apply masks, 
-            for(int y=startY;y<endY;y++){
-                for(int x=startX;x<endX;x++){
-                    redShiftCopy.setAt(y, x, masks[y][x],masks[y][x]);
-                    greenShiftCopy.setAt(y, x, masks[y][x],masks[y][x]);
-                    blueShiftCopy.setAt(y, x, masks[y][x],masks[y][x]);
-                }
-            }            
-            //invert fftshift
-            Signal2d inverseShiftedRedChannelSignal2d = fftShift2d(redShiftCopy, true);
-            Signal2d inverseShiftedGreenChannelSignal2d = fftShift2d(greenShiftCopy, true);
-            Signal2d inverseShiftedBlueChannelSignal2d = fftShift2d(blueShiftCopy, true);              
-            //do inverse fft
-            int height = Double.valueOf(baseImage.getHeight()).intValue();
-            int width = Double.valueOf(baseImage.getWidth()).intValue();              
-            FastFourier2d transformer2D = new FastFourier2d();
-            transformer2D.inverse(inverseShiftedRedChannelSignal2d);
-            transformer2D.inverse(inverseShiftedGreenChannelSignal2d);
-            transformer2D.inverse(inverseShiftedBlueChannelSignal2d);
-            transformer2D.shutdown();
-            plotInverseFFT(height, width, 
-                inverseShiftedRedChannelSignal2d, 
-                inverseShiftedGreenChannelSignal2d, 
-                inverseShiftedBlueChannelSignal2d
-            );            
+//            if(me.isPrimaryButtonDown()) {
+                me.consume();
+                //update masks
+                int startY = Double.valueOf(fftSelectionRectangle.getY()).intValue();
+                int endY = Double.valueOf(fftSelectionRectangle.getY() 
+                        + fftSelectionRectangle.getHeight()).intValue();
+                int startX = Double.valueOf(fftSelectionRectangle.getX()).intValue();
+                int endX = Double.valueOf(fftSelectionRectangle.getX() 
+                        + fftSelectionRectangle.getHeight()).intValue();
 
-            fftSelectionRectangle.setVisible(false);
-            fftSelectionRectangle.setWidth(1);
-            fftSelectionRectangle.setHeight(1);
-            
+                Point2D sceneStart = fftSelectionRectangle.localToScene(fftSelectionRectangle.getX(),fftSelectionRectangle.getY());
+                Point2D localStart = imageFFTCanvas.sceneToLocal(sceneStart);
+                Point2D sceneEnd = fftSelectionRectangle.localToScene(
+                        fftSelectionRectangle.getX() + fftSelectionRectangle.getHeight(),
+                        fftSelectionRectangle.getY() + fftSelectionRectangle.getHeight());
+                Point2D localEnd = imageFFTCanvas.sceneToLocal(sceneEnd);
+                
+                startY = Double.valueOf(localStart.getY()).intValue();
+                endY = Double.valueOf(localEnd.getY()).intValue();
+                startX = Double.valueOf(localStart.getX()).intValue();
+                endX = Double.valueOf(localEnd.getX()).intValue();
+                
+                PixelWriter pw = imageFFTGC.getPixelWriter();
+                for(int y=startY;y<endY;y++){
+                    for(int x=startX;x<endX;x++){
+                        masks[y][x] = 0.0;
+                        pw.setColor(x, y, Color.BLACK.deriveColor(1, 1, 1, 0.5));
+                    }
+                }
+
+                //copy the current shifted FFT image
+                //shiftedGreySignal2d = fftShift2d_P(greySignal2d, false);
+                Signal2d redShiftCopy = new Signal2d(shiftedRedChannelSignal2d.getM(), shiftedRedChannelSignal2d.getN());
+                shiftedRedChannelSignal2d.copyInto(redShiftCopy);
+                Signal2d greenShiftCopy = new Signal2d(shiftedGreenChannelSignal2d.getM(), shiftedGreenChannelSignal2d.getN());
+                shiftedRedChannelSignal2d.copyInto(greenShiftCopy);
+                Signal2d blueShiftCopy = new Signal2d(shiftedBlueChannelSignal2d.getM(), shiftedBlueChannelSignal2d.getN());
+                shiftedRedChannelSignal2d.copyInto(blueShiftCopy);
+                //apply masks, 
+                for(int y=startY;y<endY;y++){
+                    for(int x=startX;x<endX;x++){
+                        redShiftCopy.setAt(y, x, masks[y][x],masks[y][x]);
+                        greenShiftCopy.setAt(y, x, masks[y][x],masks[y][x]);
+                        blueShiftCopy.setAt(y, x, masks[y][x],masks[y][x]);
+                    }
+                }            
+                //invert fftshift
+                Signal2d inverseShiftedRedChannelSignal2d = fftShift2d(redShiftCopy, true);
+                Signal2d inverseShiftedGreenChannelSignal2d = fftShift2d(greenShiftCopy, true);
+                Signal2d inverseShiftedBlueChannelSignal2d = fftShift2d(blueShiftCopy, true);              
+                //do inverse fft
+                int height = Double.valueOf(baseImage.getHeight()).intValue();
+                int width = Double.valueOf(baseImage.getWidth()).intValue();              
+                FastFourier2d transformer2D = new FastFourier2d();
+                transformer2D.inverse(inverseShiftedRedChannelSignal2d);
+                transformer2D.inverse(inverseShiftedGreenChannelSignal2d);
+                transformer2D.inverse(inverseShiftedBlueChannelSignal2d);
+                transformer2D.shutdown();
+                plotInverseFFT(height, width, 
+                    inverseShiftedRedChannelSignal2d, 
+                    inverseShiftedGreenChannelSignal2d, 
+                    inverseShiftedBlueChannelSignal2d
+                );            
+
+                fftSelectionRectangle.setVisible(false);
+                fftSelectionRectangle.setWidth(1);
+                fftSelectionRectangle.setHeight(1);
+//            }
         });
         
         brightnessDownscalerSpinner = new Spinner<>(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 1000, 10, 1));
@@ -305,11 +335,25 @@ public class ImageInspectorPane extends LitPathPane {
         inverseFFTGC.setFill(fillColor);
         inverseFFTGC.fillRect(0, 0, imageSize, imageSize);  
         
-        imageFFTBorderPane = new BorderPane(imageFFTCanvas);
+        ScrollPane imageFFTScrollPane = new ScrollPane(imageFFTCanvas);
+        imageFFTScrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        imageFFTScrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+//        imageFFTScrollPane.setPannable(true);
+        imageFFTScrollPane.setFitToHeight(true);
+        imageFFTScrollPane.setFitToWidth(true);
+        imageFFTScrollPane.setPrefSize(512, 512);
+        imageFFTBorderPane = new BorderPane(imageFFTScrollPane);
         imageFFTBorderPane.setBottom(controlsBox);
         imageFFTBorderPane.getChildren().add(fftSelectionRectangle); // a little hacky but...
 
-        BorderPane inverseFFTBorderPane = new BorderPane(inverseFFTCanvas);
+        ScrollPane inverseScrollPane = new ScrollPane(inverseFFTCanvas);
+        inverseScrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        inverseScrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        inverseScrollPane.setPannable(true);
+        inverseScrollPane.setFitToHeight(true);
+        inverseScrollPane.setFitToWidth(true);
+        inverseScrollPane.setPrefSize(512, 512);
+        BorderPane inverseFFTBorderPane = new BorderPane(inverseScrollPane);
         Button tessellateInverseFFTButton = new Button("Tessellate Inverse");
         tessellateInverseFFTButton.setOnAction(e-> {
 //            if(fftSelectionRectangle.getWidth() > 1 && fftSelectionRectangle.getHeight() > 1) {
@@ -344,6 +388,7 @@ public class ImageInspectorPane extends LitPathPane {
             }
         });
         borderPane.addEventHandler(DragEvent.DRAG_DROPPED, event -> {
+            event.consume();
             Dragboard db = event.getDragboard();
             if (db.hasFiles()) {
                 final File file = db.getFiles().get(0);
@@ -536,5 +581,10 @@ public class ImageInspectorPane extends LitPathPane {
         int width = Double.valueOf(baseImage.getWidth()).intValue();            
         masks = new double[height][width];
         clearMask();        
+        imageFFTCanvas.setWidth(baseImage.getWidth());
+        imageFFTCanvas.setHeight(baseImage.getHeight());
+        inverseFFTCanvas.setWidth(baseImage.getWidth());
+        inverseFFTCanvas.setHeight(baseImage.getHeight());
+        imageSize = width;
     }
 }
