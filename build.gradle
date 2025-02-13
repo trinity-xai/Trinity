@@ -63,6 +63,7 @@ dependencies {
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.18.2'
     implementation group: 'com.github.sarxos', name: 'webcam-capture', version: '0.3.12'
     implementation group: 'org.jflac', name: 'jflac-codec', version: '1.5.2'
+    implementation group: 'com.tambapps.fft4j', name: 'fft4j', version: '2.0'
 
     // Enforce slf4j-api version across dependencies
     implementation group: 'org.slf4j', name: 'slf4j-api', version: '2.0.16'
@@ -126,6 +127,10 @@ extraJavaModuleInfo {
         requires('java.desktop')
         exportAllPackages()
     }
+    module('com.tambapps.fft4j', 'fft4j') {
+        exportAllPackages()
+    }
+
 }
 
 // </editor-fold>

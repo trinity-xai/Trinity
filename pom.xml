@@ -48,6 +48,7 @@
         <jackson.version>2.18.2</jackson.version>
         <sarxos.webcam.capture.version>0.3.12</sarxos.webcam.capture.version>
         <org.jflac.jflac-codec.version>1.5.2</org.jflac.jflac-codec.version>
+        <com.tambapps.fft4j.version>2.0</com.tambapps.fft4j.version>
         <slf4j.version>2.0.16</slf4j.version>
         <logback.version>1.5.12</logback.version>
         <mainClassName>edu.jhuapl.trinity.TrinityMain</mainClassName>
@@ -167,7 +168,7 @@
         <dependency>
           <groupId>com.tambapps.fft4j</groupId>
           <artifactId>fft4j</artifactId>
-          <version>2.0</version>
+          <version>${com.tambapps.fft4j.version}</version>
         </dependency>
         
         <!-- Enforce slf4j-api version across dependencies-->
