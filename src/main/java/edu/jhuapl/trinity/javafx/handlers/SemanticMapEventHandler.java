@@ -135,7 +135,7 @@ public class SemanticMapEventHandler implements EventHandler<SemanticMapEvent> {
 
         for (FeatureVectorRenderer renderer : fvRenderers) {
             renderer.setDimensionLabels(labelStrings);
-            renderer.addFeatureCollection(fc);
+            renderer.addFeatureCollection(fc, false);
             renderer.setSpheroidAnchor(true, 0);
         }
 

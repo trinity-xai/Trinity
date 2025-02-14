@@ -10,20 +10,15 @@ import edu.jhuapl.trinity.javafx.components.panes.JoystickPane;
 import edu.jhuapl.trinity.javafx.components.radial.AnimatedNeonCircle;
 import edu.jhuapl.trinity.javafx.components.radial.ViewControlsMenu;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
-import edu.jhuapl.trinity.javafx.events.EffectEvent;
 import edu.jhuapl.trinity.javafx.events.HyperspaceEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.javafx.events.ShadowEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.ShadowCubeWorld.PROJECTION_TYPE;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.AnimatedSphere;
-import edu.jhuapl.trinity.javafx.javafx3d.animated.Opticon;
 import edu.jhuapl.trinity.javafx.javafx3d.projectiles.HitShape3D;
 import edu.jhuapl.trinity.javafx.javafx3d.projectiles.ProjectileSystem;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
-
-import java.io.IOException;
-
 import javafx.animation.AnimationTimer;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
@@ -70,6 +65,7 @@ import org.fxyz3d.utils.CameraTransformer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -1018,7 +1014,7 @@ public class AsteroidFieldPane extends StackPane {
         updateView(true);
     }
 
-////    @Override
+    /// /    @Override
 //    public void setSpheroidAnchor(boolean animate, int index) {
 //        if (index >= featureVectors.size()) {
 //            return;
@@ -1053,7 +1049,6 @@ public class AsteroidFieldPane extends StackPane {
 //            radialOverlayPane.updateCalloutHeadPoint(anchorTSM, anchorCallout, subScene);
 //        }
 //    }
-
     private void pointToManifold(javafx.geometry.Point3D p1, Manifold3D manifold3D) {
 //        javafx.geometry.Point3D p1 = new javafx.geometry.Point3D(
 //            selectedSphereA.getTranslateX(),

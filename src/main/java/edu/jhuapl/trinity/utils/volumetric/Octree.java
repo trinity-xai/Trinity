@@ -295,16 +295,17 @@ public class Octree {
         List<Integer> neighborIndices = new ArrayList<>();
         List<Long> candidateLeaves = new ArrayList<>();
         determineCandidatesWithinRadius(radius, point, candidateLeaves);
+        if (!candidateLeaves.isEmpty()) {
+            PriorityQueue<Integer> queue = searchNeighborsInNodes(candidateLeaves, point);
 
-        PriorityQueue<Integer> queue = searchNeighborsInNodes(candidateLeaves, point);
-
-        while (queue.size() > 0) {
-            Integer nextIndex = queue.poll();
-            Point3D neighboringPoint = points.get(nextIndex);
-            if (point.distance(neighboringPoint) >= radius) {
-                break;
-            } else {
-                neighborIndices.add(nextIndex);
+            while (queue.size() > 0) {
+                Integer nextIndex = queue.poll();
+                Point3D neighboringPoint = points.get(nextIndex);
+                if (point.distance(neighboringPoint) >= radius) {
+                    break;
+                } else {
+                    neighborIndices.add(nextIndex);
+                }
             }
         }
         return neighborIndices;
@@ -387,6 +388,11 @@ public class Octree {
         }
         return result;
     }
+
+    public List<Point3D> getCurrentPoints() {
+        return this.points;
+    }
+
 
     public int getMaxPointsPerNode() {
         return this.maxPointsPerNode;

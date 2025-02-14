@@ -11,7 +11,7 @@ import java.util.List;
  * @author Sean Phillips
  */
 public interface FeatureVectorRenderer {
-    public void addFeatureCollection(FeatureCollection featureCollection);
+    public void addFeatureCollection(FeatureCollection featureCollection, boolean clearQueue);
 
     public void addFeatureVector(FeatureVector featureVector);
 

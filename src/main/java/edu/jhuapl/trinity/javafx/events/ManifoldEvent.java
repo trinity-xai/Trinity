@@ -42,6 +42,13 @@ public class ManifoldEvent extends Event {
         public COVARIANCE_MODE covariance = COVARIANCE_MODE.DIAGONAL;
     }
 
+    //General Events
+    public static final EventType<ManifoldEvent> EXPORT_PROJECTION_SCENE = new EventType(ANY, "EXPORT_PROJECTION_SCENE");
+    public static final EventType<ManifoldEvent> TAKESNAPSHOT_PROJECTION_SCENE = new EventType(ANY, "TAKESNAPSHOT_PROJECTION_SCENE");
+    public static final EventType<ManifoldEvent> NEWSNAPSHOT_PROJECTION_SCENE = new EventType(ANY, "NEWSNAPSHOT_PROJECTION_SCENE");
+    public static final EventType<ManifoldEvent> AUTOMATIC_UMAP_FORTHEPEOPLE = new EventType(ANY, "AUTOMATIC_UMAP_FORTHEPEOPLE");
+
+
     //Cluster selection events
     public static final EventType<ManifoldEvent> CLUSTER_SELECTION_MODE = new EventType(ANY, "CLUSTER_SELECTION_MODE");
     public static final EventType<ManifoldEvent> ADD_CLUSTER_SELECTION = new EventType(ANY, "ADD_CLUSTER_SELECTION");

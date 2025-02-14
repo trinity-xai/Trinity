@@ -527,8 +527,9 @@ public abstract class Log {
 //                        } else {
 //                            java.util.Properties p = new java.util.Properties();
 //                            setLog4jProperties(logDirParent, p);
-////				PropertyConfigurator.configure(p);
-////                            context.setConfiguration()
+
+    /// /				PropertyConfigurator.configure(p);
+    /// /                            context.setConfiguration()
 //                            //@TODO SMP
 //
 //                        }
@@ -536,7 +537,6 @@ public abstract class Log {
 //
 //		return _logger = LogManager.getLogger(Log.class.getName());
 //	}
-
     public static void setLogLevel(int log_level) throws IllegalArgumentException {
         Level l;
 

@@ -8,12 +8,14 @@ import javafx.beans.property.DoubleProperty;
 import javafx.geometry.Insets;
 import javafx.geometry.Point3D;
 import javafx.geometry.Pos;
+import javafx.scene.AmbientLight;
 import javafx.scene.Group;
 import javafx.scene.PerspectiveCamera;
 import javafx.scene.Scene;
 import javafx.scene.SceneAntialiasing;
 import javafx.scene.SpotLight;
 import javafx.scene.SubScene;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.ColorPicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
@@ -40,9 +42,6 @@ import org.fxyz3d.utils.CameraTransformer;
 
 import java.util.ArrayList;
 import java.util.List;
-
-import javafx.scene.AmbientLight;
-import javafx.scene.control.CheckBox;
 
 public class SpotLightTest extends Application {
     protected Box box;

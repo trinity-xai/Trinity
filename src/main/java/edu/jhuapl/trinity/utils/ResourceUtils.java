@@ -28,7 +28,6 @@ import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.AudioEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.events.GaussianMixtureEvent;
-import edu.jhuapl.trinity.javafx.events.HyperspaceEvent;
 import edu.jhuapl.trinity.javafx.events.ImageEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.javafx.events.SemanticMapEvent;
@@ -47,15 +46,25 @@ import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.DialogPane;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.image.PixelFormat;
+import javafx.scene.image.PixelReader;
+import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
+import javafx.scene.image.WritablePixelFormat;
 import javafx.scene.input.DataFormat;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
+import javafx.scene.layout.Background;
 import javafx.scene.media.AudioClip;
 import javafx.scene.media.Media;
+import javafx.scene.paint.Color;
+import javafx.stage.StageStyle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -68,6 +77,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.nio.IntBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -83,13 +93,6 @@ import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.stream.Collectors;
-
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.DialogPane;
-import javafx.scene.layout.Background;
-import javafx.scene.paint.Color;
-import javafx.stage.StageStyle;
 
 /**
  * @author Sean Phillips
@@ -222,9 +225,30 @@ public enum ResourceUtils {
                                                     int x1, int y1, int x2, int y2) throws IOException {
         File imageFile = new File(filename);
         BufferedImage image = ImageIO.read(imageFile);
+        return loadImageSubset(image, x1, y1, x2, y2);
+    }
+
+    public static WritableImage loadImageSubset(BufferedImage image, int x1, int y1, int x2, int y2) {
         BufferedImage subImage = image.getSubimage(x1, y1, x2 - x1, y2 - y1);
         WritableImage wi = SwingFXUtils.toFXImage(subImage, null);
         return wi;
+    }
+
+    public static WritableImage cropImage(Image image, double x1, double y1, double x2, double y2) {
+        PixelReader r = image.getPixelReader();
+        WritablePixelFormat<IntBuffer> pixelFormat = PixelFormat.getIntArgbInstance();
+        int x1Index = Double.valueOf(x1).intValue();
+        int y1Index = Double.valueOf(y1).intValue();
+        int x2Index = Double.valueOf(x2).intValue();
+        int y2Index = Double.valueOf(y2).intValue();
+        int width = x2Index - x1Index;
+        int height = y2Index - y1Index;
+        int[] pixels = new int[width * height];
+        r.getPixels(x1Index, y1Index, width, height, pixelFormat, pixels, 0, width);
+        WritableImage out = new WritableImage(width, height);
+        PixelWriter w = out.getPixelWriter();
+        w.setPixels(0, 0, width, height, pixelFormat, pixels, 0, width);
+        return out;
     }
 
     public static WritableImage loadIconAsWritableImage(String iconName) throws IOException {
@@ -247,6 +271,33 @@ public enum ResourceUtils {
         iv.setPreserveRatio(true);
         iv.setFitWidth(FIT_WIDTH);
         return iv;
+    }
+
+    /**
+     * Checks whether the file can be used as an image.
+     *
+     * @param file The File object to check.
+     * @return boolean true if it is an Image that JavaFX supports
+     */
+    public static boolean isImageFile(File file) {
+        if (file.isFile() && file.canRead()) {
+            try {
+                String contentType = Files.probeContentType(file.toPath());
+                switch (contentType) {
+                    case "image/png":
+                    case "image/bmp":
+                    case "image/gif":
+                    case "image/tiff":
+                    case "image/jpg":
+                    case "image/jpeg":
+                        return true;
+                }
+                //System.out.println(contentType);
+            } catch (IOException ex) {
+                LOG.error(null, ex);
+            }
+        }
+        return false;
     }
 
     /**
@@ -335,7 +386,8 @@ public enum ResourceUtils {
                         scene.getRoot().fireEvent(
                             new ApplicationEvent(ApplicationEvent.SHOW_BUSY_INDICATOR, ps1));
                     });
-
+                    //do we have multiple files? if so then don't offer to clear any queues
+                    boolean offerToClear = files.size() <= 1; //if more than one file is detected... don't bother to ask to clear. (assume group load)
                     for (File file : files) {
                         try {
                             if (JavaFX3DUtils.isTextureFile(file)) {
@@ -362,6 +414,7 @@ public enum ResourceUtils {
                                 thread.start();
                             } else if (FeatureCollectionFile.isFeatureCollectionFile(file)) {
                                 FeatureCollectionLoader task = new FeatureCollectionLoader(scene, file);
+                                task.setClearQueue(offerToClear); //if there is more than one file just load all
                                 Thread thread = new Thread(task);
                                 thread.setDaemon(true);
                                 thread.start();
@@ -517,4 +570,10 @@ public enum ResourceUtils {
         Optional<ButtonType> optBT = alert.showAndWait();
         return optBT.get().equals(ButtonType.YES);
     }
+
+    public static String removeExtension(String filename) {
+        return filename.substring(0, filename.lastIndexOf("."));
+
+    }
+
 }

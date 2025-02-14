@@ -7,13 +7,11 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.function.Function;
-import java.util.stream.DoubleStream;
 
 /**
  * @author Sean Phillips
@@ -167,13 +165,9 @@ public class FeatureVector extends MessageData {
         }
     }
 
-    private double getGlobalMean(List<FeatureVector> featureVectors) {
-        return featureVectors.stream().flatMapToDouble(new Function<FeatureVector, DoubleStream>() {
-            @Override
-            public DoubleStream apply(FeatureVector t) {
-                return t.getData().stream().mapToDouble(Double::doubleValue);
-            }
-        }).average().getAsDouble();
+    public double getGlobalMean(List<FeatureVector> featureVectors) {
+        return featureVectors.stream().flatMapToDouble(t ->
+            t.getData().stream().mapToDouble(Double::doubleValue)).average().getAsDouble();
     }
 
     public static Function<FeatureVector, String> mapDataToString = (state) -> {

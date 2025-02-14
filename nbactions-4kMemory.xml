@@ -11,7 +11,7 @@
             </goals>
             <properties>
                 <exec.vmArgs>-Dprism.maxvram=2G</exec.vmArgs>
-                <exec.args>${exec.vmArgs} -classpath %classpath ${exec.mainClass} ${exec.appArgs}</exec.args>
+                <exec.args>${exec.vmArgs} -Xmx6g -classpath %classpath ${exec.mainClass} ${exec.appArgs}</exec.args>
                 <exec.mainClass>edu.jhuapl.trinity.TrinityMain</exec.mainClass>
                 <exec.executable>java</exec.executable>
             </properties>
@@ -26,8 +26,8 @@
                 <goal>org.codehaus.mojo:exec-maven-plugin:3.4.1:exec</goal>
             </goals>
             <properties>
-                <exec.vmArgs>-Dprism.maxvram=2G -Dprism.poolstats=true -agentlib:jdwp=transport=dt_socket,server=n,address=${jpda.address}</exec.vmArgs>
-                <exec.args>${exec.vmArgs} -classpath %classpath ${exec.mainClass} ${exec.appArgs}</exec.args>
+                <exec.vmArgs>-Dprism.maxvram=2G -agentlib:jdwp=transport=dt_socket,server=n,address=${jpda.address}</exec.vmArgs>
+                <exec.args>${exec.vmArgs} -Xmx6g -classpath %classpath ${exec.mainClass} ${exec.appArgs}</exec.args>
                 <exec.mainClass>edu.jhuapl.trinity.TrinityMain</exec.mainClass>
                 <exec.executable>java</exec.executable>
                 <jpda.listen>true</jpda.listen>
@@ -44,7 +44,7 @@
             </goals>
             <properties>
                 <exec.vmArgs>-Dprism.maxvram=2G</exec.vmArgs>
-                <exec.args>${exec.vmArgs} -classpath %classpath ${exec.mainClass} ${exec.appArgs}</exec.args>
+                <exec.args>${exec.vmArgs} -Xmx6g -classpath %classpath ${exec.mainClass} ${exec.appArgs}</exec.args>
                 <exec.mainClass>edu.jhuapl.trinity.TrinityMain</exec.mainClass>
                 <exec.executable>java</exec.executable>
                 <exec.appArgs>--outrun=true --matrix=true</exec.appArgs>

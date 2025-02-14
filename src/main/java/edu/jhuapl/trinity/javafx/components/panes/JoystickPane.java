@@ -36,6 +36,9 @@ public class JoystickPane extends LitPathPane {
     public SimpleDoubleProperty angleproperty = new SimpleDoubleProperty(0.0);
     public SimpleDoubleProperty valueproperty = new SimpleDoubleProperty(0.0);
     public Button fireButton, thrustButton;
+    BorderPane bpOilSpillNeverForget;
+    HBox topHBox;
+    HBox bottomButtonHBox;
 
     private static BorderPane createContent() {
         //make transparent so it doesn't interfere with subnode transparency effects
@@ -48,26 +51,6 @@ public class JoystickPane extends LitPathPane {
         joystick.setDurationMillis(1000);
         joystick.setLockState(LockState.UNLOCKED);
 
-//
-//        Label value = new Label("Value: ");
-//        value.setTextFill(Color.WHITE);
-//
-//        Label angle = new Label("Angle: ");
-//        angle.setTextFill(Color.WHITE);
-//
-//        Label valueX = new Label("x: ");
-//        valueX.setTextFill(Color.WHITE);
-//
-//        Label valueY = new Label("y: ");
-//        valueY.setTextFill(Color.WHITE);
-//
-//        joystick.valueProperty().addListener((o, ov, nv) -> value.setText(String.format(Locale.US, "Value: %.2f", nv)));
-//        joystick.angleProperty().addListener((o, ov, nv) -> angle.setText(String.format(Locale.US, "Angle: %.0f", nv)));
-//        joystick.xProperty().addListener((o, ov, nv) -> valueX.setText(String.format(Locale.US, "x: %.2f", nv)));
-//        joystick.yProperty().addListener((o, ov, nv) -> valueY.setText(String.format(Locale.US, "y: %.2f", nv)));
-//
-//        VBox properties = new VBox(10, unlocked, lockedX, lockedY, stepButtonsVisible, stickyMode, value, angle, valueX, valueY);
-//
         BorderPane ctRoot = new BorderPane();
         ctRoot.setCenter(joystick);
         ctRoot.setBackground(transBack);
@@ -81,8 +64,8 @@ public class JoystickPane extends LitPathPane {
         // must be set to prevent user from resizing too small.
         setMinWidth(300);
         setMinHeight(200);
-        BorderPane bp = (BorderPane) this.contentPane;
-        joystick = (Joystick) bp.getCenter();
+        bpOilSpillNeverForget = (BorderPane) this.contentPane;
+        joystick = (Joystick) bpOilSpillNeverForget.getCenter();
         angleproperty.bind(joystick.angle);
         valueproperty.bind(joystick.value);
         angleproperty.addListener(c -> updateTransforms());
@@ -93,9 +76,9 @@ public class JoystickPane extends LitPathPane {
         thrustButton = new Button("THRUST!!");
         thrustButton.setPrefWidth(150);
 
-        HBox hbox = new HBox(50, fireButton, thrustButton);
-        hbox.setAlignment(Pos.CENTER);
-        bp.setBottom(hbox);
+        bottomButtonHBox = new HBox(50, fireButton, thrustButton);
+        bottomButtonHBox.setAlignment(Pos.CENTER);
+        bpOilSpillNeverForget.setBottom(bottomButtonHBox);
 
         RadioButton unlocked = new RadioButton("Unlocked");
         unlocked.setTextFill(Color.WHITE);
@@ -122,14 +105,27 @@ public class JoystickPane extends LitPathPane {
         stickyMode.setTextFill(Color.WHITE);
         stickyMode.setOnAction(e -> joystick.setStickyMode(stickyMode.isSelected()));
 
-        HBox topHBox = new HBox(15, unlocked, lockedX, lockedY,
+        topHBox = new HBox(15, unlocked, lockedX, lockedY,
             stepButtonsVisible, stickyMode);
         topHBox.setAlignment(Pos.BOTTOM_CENTER);
         mainTitleArea.getChildren().add(topHBox);
         topHBox.setTranslateY(30); //not sure why I have to do this...
         topHBox.prefWidthProperty().bind(mainTitleArea.widthProperty().subtract(10));
+    }
 
-//        this.setManaged(false);
+    public void toggleTopControls(boolean add) {
+        if (add)
+            if (mainTitleArea.getChildren().contains(topHBox))
+                mainTitleArea.getChildren().add(topHBox);
+            else
+                mainTitleArea.getChildren().remove(topHBox);
+    }
+
+    public void toggleBottomControls(boolean add) {
+        if (add)
+            bpOilSpillNeverForget.setBottom(bottomButtonHBox);
+        else
+            bpOilSpillNeverForget.setBottom(null);
     }
 
     private void updateTransforms() {

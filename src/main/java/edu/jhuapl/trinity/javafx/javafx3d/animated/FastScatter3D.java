@@ -52,6 +52,13 @@ public class FastScatter3D extends Group {
         }
     }
 
+    public void setColorAll(Color color) {
+        for (int i = 0; i < points.size(); i++) {
+            ((PhongMaterial) points.get(i).getMaterial())
+                .setDiffuseColor(color);
+        }
+    }
+
     public void setAllVisible(Boolean isVisible) {
         Collections.fill(visible, isVisible);
         updateVisibility();

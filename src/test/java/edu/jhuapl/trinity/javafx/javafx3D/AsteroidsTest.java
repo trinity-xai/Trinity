@@ -2,40 +2,19 @@
 
 package edu.jhuapl.trinity.javafx.javafx3d;
 
-import edu.jhuapl.trinity.App;
 import edu.jhuapl.trinity.data.Manifold;
 import edu.jhuapl.trinity.data.messages.ManifoldData;
 import edu.jhuapl.trinity.data.messages.P3D;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
-import edu.jhuapl.trinity.javafx.javafx3d.AsteroidFieldPane;
-import edu.jhuapl.trinity.javafx.javafx3d.Manifold3D;
-import edu.jhuapl.trinity.javafx.renderers.ManifoldRenderer;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
-import javafx.animation.ParallelTransition;
 import javafx.application.Application;
-import javafx.scene.Group;
-import javafx.scene.PerspectiveCamera;
-import javafx.scene.Scene;
-import javafx.scene.SubScene;
-import javafx.scene.image.ImageView;
-import javafx.stage.Stage;
-import org.fxyz3d.utils.CameraTransformer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import static java.util.stream.Collectors.toList;
-
 import javafx.application.Platform;
 import javafx.beans.binding.Bindings;
 import javafx.beans.property.DoubleProperty;
 import javafx.geometry.Point3D;
 import javafx.geometry.Pos;
-import javafx.scene.AmbientLight;
+import javafx.scene.Scene;
 import javafx.scene.SpotLight;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ColorPicker;
@@ -51,7 +30,16 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
+import javafx.stage.Stage;
 import javafx.util.converter.NumberStringConverter;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.stream.Collectors;
+
+import static java.util.stream.Collectors.toList;
 
 public class AsteroidsTest extends Application {
     private static final Logger LOG = LoggerFactory.getLogger(AsteroidsTest.class);

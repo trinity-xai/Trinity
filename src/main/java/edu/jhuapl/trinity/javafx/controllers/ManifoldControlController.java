@@ -212,13 +212,14 @@ public class ManifoldControlController implements Initializable {
                             ObjectMapper mapper = new ObjectMapper();
                             UmapConfig uc = mapper.readValue(file, UmapConfig.class);
                             setUmapConfig(uc);
+                            sendUmapConfig();
                         }
                     } catch (IOException ex) {
                         LOG.error(null, ex);
                     }
                 }
             });
-            root.addEventHandler(ManifoldEvent.NEW_UMAP_CONFIG, event -> {
+            scene.addEventHandler(ManifoldEvent.NEW_UMAP_CONFIG, event -> {
                 UmapConfig config = (UmapConfig) event.object1;
                 setUmapConfig(config);
             });
@@ -528,22 +529,6 @@ public class ManifoldControlController implements Initializable {
         reactive = true;
     }
 
-//    @FXML
-//    public void findClusters() {
-//        System.out.println("Find Clusters...");
-//        ProjectionConfig pc = new ProjectionConfig();
-//        pc.components = (int) gmmComponentsSpinner.getValue();
-//        pc.clusterMethod = selectedMethod;
-//        pc.useVisiblePoints = useVisibleRadioButton.isSelected();
-//        pc.covariance = diagonalRadioButton.isSelected()
-//            ? ProjectionConfig.COVARIANCE_MODE.DIAGONAL
-//            : ProjectionConfig.COVARIANCE_MODE.FULL;
-//        pc.tolerance = (double) gmmConvergenceSpinner.getValue();
-//        pc.maxIterations = (int) gmmIterationsSpinner.getValue();
-//        clusterMethodMenuButton.getScene().getRoot().fireEvent(
-//            new ManifoldEvent(ManifoldEvent.FIND_PROJECTION_CLUSTERS, pc));
-//    }
-
     @FXML
     public void exportMatrix() {
         if (null != latestUmapObject) {
@@ -602,7 +587,7 @@ public class ManifoldControlController implements Initializable {
     public void saveUmapConfig() {
         FileChooser fc = new FileChooser();
         fc.setTitle("Choose UMAP Config file output...");
-        fc.setInitialFileName("UmapConfig.json");
+        fc.setInitialFileName(UmapConfig.configToFilename(getCurrentUmapConfig()).concat(".json"));
         if (!latestDir.isDirectory())
             latestDir = new File(".");
         fc.setInitialDirectory(latestDir);
@@ -610,26 +595,80 @@ public class ManifoldControlController implements Initializable {
         if (null != file) {
             if (file.getParentFile().isDirectory())
                 latestDir = file;
-            UmapConfig uc = new UmapConfig();
-            uc.setTargetWeight((float) targetWeightSlider.getValue());
-            uc.setRepulsionStrength((float) repulsionSlider.getValue());
-            uc.setMinDist((float) minDistanceSlider.getValue());
-            uc.setSpread((float) spreadSlider.getValue());
-            uc.setOpMixRatio((float) opMixSlider.getValue());
-            uc.setNumberComponents((int) numComponentsSpinner.getValue());
-            uc.setNumberEpochs((int) numEpochsSpinner.getValue());
-            uc.setNumberNearestNeighbours((int) nearestNeighborsSpinner.getValue());
-            uc.setNegativeSampleRate((int) negativeSampleRateSpinner.getValue());
-            uc.setLocalConnectivity((int) localConnectivitySpinner.getValue());
-            uc.setThreshold((double) thresholdSpinner.getValue());
-            uc.setMetric((String) metricChoiceBox.getValue());
-            uc.setVerbose(verboseCheckBox.isSelected());
-            ObjectMapper mapper = new ObjectMapper();
-            try {
-                mapper.writeValue(file, uc);
-            } catch (IOException ex) {
-                LOG.error(null, ex);
-            }
+            writeConfigFile(file);
+        }
+    }
+
+    public UmapConfig getCurrentUmapConfig() {
+        UmapConfig uc = new UmapConfig();
+        uc.setTargetWeight((float) targetWeightSlider.getValue());
+        uc.setRepulsionStrength((float) repulsionSlider.getValue());
+        uc.setMinDist((float) minDistanceSlider.getValue());
+        uc.setSpread((float) spreadSlider.getValue());
+        uc.setOpMixRatio((float) opMixSlider.getValue());
+        uc.setNumberComponents((int) numComponentsSpinner.getValue());
+        uc.setNumberEpochs((int) numEpochsSpinner.getValue());
+        uc.setNumberNearestNeighbours((int) nearestNeighborsSpinner.getValue());
+        uc.setNegativeSampleRate((int) negativeSampleRateSpinner.getValue());
+        uc.setLocalConnectivity((int) localConnectivitySpinner.getValue());
+        uc.setThreshold((double) thresholdSpinner.getValue());
+        uc.setMetric((String) metricChoiceBox.getValue());
+        uc.setVerbose(verboseCheckBox.isSelected());
+        return uc;
+    }
+
+    private void writeConfigFile(File file) {
+        UmapConfig uc = getCurrentUmapConfig();
+        ObjectMapper mapper = new ObjectMapper();
+        try {
+            mapper.writeValue(file, uc);
+        } catch (IOException ex) {
+            LOG.error(null, ex);
+        }
+    }
+//    private String configToFilename(){
+//        NumberFormat format = new DecimalFormat("0.00");
+//        StringBuilder sb = new StringBuilder("UmapConfig-");
+////        sb.append(targetWeightSlider.getValue()).append("-");
+//        sb.append((String) metricChoiceBox.getValue()).append("-");
+//        sb.append("R").append(format.format(repulsionSlider.getValue())).append("-");
+//        sb.append("MD").append(format.format(minDistanceSlider.getValue())).append("-");
+//        sb.append("S").append(format.format(spreadSlider.getValue())).append("-");
+//        sb.append("OPM").append(format.format(opMixSlider.getValue())).append("-");
+////        uc.setNumberComponents((int) numComponentsSpinner.getValue());
+////        uc.setNumberEpochs((int) numEpochsSpinner.getValue());
+//        sb.append("NN").append(nearestNeighborsSpinner.getValue()).append("-");
+//        sb.append("NSR").append(negativeSampleRateSpinner.getValue()).append("-");
+//        sb.append("LC").append(localConnectivitySpinner.getValue());
+
+    /// /        uc.setThreshold((double) thresholdSpinner.getValue());
+    /// /        uc.setVerbose(verboseCheckBox.isSelected());
+//        return sb.toString();
+//    }
+    private void sendUmapConfig() {
+        String name = latestDir.getAbsolutePath() + File.separator
+            + UmapConfig.configToFilename(getCurrentUmapConfig()).concat(".json");
+        scene.getRoot().fireEvent(new ManifoldEvent(
+            ManifoldEvent.NEW_UMAP_CONFIG, getCurrentUmapConfig(), name));
+
+
+    }
+
+    @FXML
+    public void exportScene() {
+        FileChooser fc = new FileChooser();
+        fc.setTitle("Choose Location file output...");
+        fc.setInitialFileName(UmapConfig.configToFilename(getCurrentUmapConfig()).concat(".json"));
+        if (!latestDir.isDirectory())
+            latestDir = new File(".");
+        fc.setInitialDirectory(latestDir);
+        File file = fc.showSaveDialog(scene.getWindow());
+        if (null != file) {
+            if (file.getParentFile().isDirectory())
+                latestDir = file.getParentFile();
+            writeConfigFile(file);
+            scene.getRoot().fireEvent(new ManifoldEvent(
+                ManifoldEvent.EXPORT_PROJECTION_SCENE, file));
         }
     }
 
@@ -693,9 +732,9 @@ public class ManifoldControlController implements Initializable {
         umap.setVerbose(verboseCheckBox.isSelected());
         ManifoldEvent.POINT_SOURCE pointSource = useHypersurfaceButton.isSelected() ?
             ManifoldEvent.POINT_SOURCE.HYPERSURFACE : ManifoldEvent.POINT_SOURCE.HYPERSPACE;
+        latestUmapObject = umap;
         scene.getRoot().fireEvent(new ManifoldEvent(
             ManifoldEvent.GENERATE_NEW_UMAP, umap, pointSource));
-        latestUmapObject = umap;
     }
 
     @FXML

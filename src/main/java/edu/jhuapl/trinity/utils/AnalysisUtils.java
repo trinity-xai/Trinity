@@ -2,6 +2,8 @@
 
 package edu.jhuapl.trinity.utils;
 
+import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.jhuapl.trinity.data.messages.AnalysisConfig;
 import edu.jhuapl.trinity.data.messages.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.UmapConfig;
 import edu.jhuapl.trinity.utils.umap.Umap;
@@ -15,6 +17,9 @@ import org.apache.commons.math3.stat.correlation.Covariance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -28,6 +33,7 @@ import java.util.Random;
 public enum AnalysisUtils {
     INSTANCE;
     private static final Logger LOG = LoggerFactory.getLogger(AnalysisUtils.class);
+    public static AnalysisConfig currentAnalysisConfig = new AnalysisConfig();
 
     public static enum ANALYSIS_METHOD {PCA, SVD, KPCA}
 
@@ -45,6 +51,22 @@ public enum AnalysisUtils {
 
     ;
     public static double EPISILON = 0.0000000001;
+
+    public static void clearAnalysisConfig() {
+        currentAnalysisConfig = new AnalysisConfig();
+    }
+
+    public static void readAnalysisConfig(File file) throws IOException {
+        if (AnalysisConfig.isAnalysisConfig(Files.readString(file.toPath()))) {
+            ObjectMapper mapper = new ObjectMapper();
+            currentAnalysisConfig = mapper.readValue(file, AnalysisConfig.class);
+        }
+    }
+
+    public static void writeAnalysisConfig(File file) throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.writeValue(file, currentAnalysisConfig);
+    }
 
     public static double lerp1(double start, double end, double ratio) {
         return start * (1 - ratio) + end * ratio;
