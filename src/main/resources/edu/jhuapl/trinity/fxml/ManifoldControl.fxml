@@ -4,7 +4,7 @@
 <?import javafx.scene.control.*?>
 <?import javafx.scene.layout.*?>
 
-<AnchorPane fx:id="root" style="-fx-background-color: #00000000;" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
+<AnchorPane fx:id="root" style="-fx-background-color: #00000000;" xmlns="http://javafx.com/javafx/23.0.1" xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="edu.jhuapl.trinity.javafx.controllers.ManifoldControlController">
     <children>
         <TabPane fx:id="tabPane" tabClosingPolicy="UNAVAILABLE">
@@ -63,8 +63,8 @@
                                                         <Spinner fx:id="thresholdSpinner" prefWidth="150.0">
                                                             <editable>true</editable>
                                                             <valueFactory>
-                                                                <SpinnerValueFactory.DoubleSpinnerValueFactory min="0.01" max="1.0" initialValue="0.1"
-                                                                                                               amountToStepBy="0.01"/>
+                                                                <SpinnerValueFactory.DoubleSpinnerValueFactory amountToStepBy="0.01" initialValue="0.1"
+                                                                                                               max="1.0" min="0.01"/>
                                                             </valueFactory>
                                                         </Spinner>
                                                     </children>
@@ -94,6 +94,8 @@
                                                         <Button mnemonicParsing="false" onAction="#loadUmapConfig" prefWidth="200.0" text="Load New Config"/>
                                                         <Button mnemonicParsing="false" onAction="#saveUmapConfig" prefWidth="200.0"
                                                                 text="Save Current Config"/>
+                                                        <Button defaultButton="true" mnemonicParsing="false" onAction="#project" prefWidth="200.0"
+                                                                text="Run UMAP"/>
                                                     </children>
                                                 </VBox>
                                                 <VBox alignment="CENTER_LEFT" spacing="10.0">
@@ -108,11 +110,11 @@
                                                 </VBox>
                                                 <VBox alignment="CENTER" spacing="10.0">
                                                     <children>
-                                                        <Button defaultButton="true" mnemonicParsing="false" onAction="#project" prefWidth="200.0"
-                                                                text="Run UMAP"/>
-                                                        <Button mnemonicParsing="false" onAction="#exportMatrix" prefWidth="200.0" text="Export TMatrix"/>
+                                                        <Button mnemonicParsing="false" onAction="#exportScene" prefWidth="200.0" text="Export Scene"/>
                                                         <Button mnemonicParsing="false" onAction="#saveProjections" prefWidth="200.0"
                                                                 text="Export Projections"/>
+                                                        <Button layoutX="10.0" layoutY="28.0" mnemonicParsing="false" onAction="#exportMatrix" prefWidth="200.0"
+                                                                text="Export TMatrix"/>
                                                     </children>
                                                 </VBox>
                                             </children>
@@ -197,7 +199,7 @@
                                             </padding>
                                         </HBox>
                                         <Label text="Input Data Source" GridPane.columnIndex="1" GridPane.rowIndex="3"/>
-                                        <CheckBox fx:id="rangedFittingCheckBox" mnemonicParsing="false" text="Enabled Ranged Fitting (Experimental)"
+                                        <CheckBox fx:id="rangedFittingCheckBox" mnemonicParsing="false" text="Enable Ranged Fitting (Experimental)"
                                                   GridPane.rowIndex="2"/>
                                     </children>
                                     <padding>

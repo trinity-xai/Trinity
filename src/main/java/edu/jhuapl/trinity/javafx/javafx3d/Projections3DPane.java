@@ -69,6 +69,7 @@ import javafx.animation.Transition;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.concurrent.Task;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.AmbientLight;
 import javafx.scene.Group;
 import javafx.scene.Node;
@@ -76,6 +77,7 @@ import javafx.scene.PerspectiveCamera;
 import javafx.scene.PointLight;
 import javafx.scene.Scene;
 import javafx.scene.SceneAntialiasing;
+import javafx.scene.SnapshotParameters;
 import javafx.scene.SubScene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
@@ -87,6 +89,7 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.effect.Glow;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.image.WritableImage;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
@@ -108,6 +111,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Translate;
+import javafx.stage.FileChooser;
 import javafx.util.Duration;
 import org.fxyz3d.geometry.Point3D;
 import org.fxyz3d.scene.Skybox;
@@ -115,8 +119,10 @@ import org.fxyz3d.utils.CameraTransformer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.imageio.ImageIO;
 import java.io.File;
 import java.io.IOException;
+import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -129,6 +135,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
+
+import static edu.jhuapl.trinity.utils.ResourceUtils.removeExtension;
 
 /**
  * @author Sean Phillips
@@ -283,6 +291,7 @@ public class Projections3DPane extends StackPane implements
 
     Rectangle selectionRectangle;
     ProjectileSystem projectileSystem;
+    File mostRecentPath = Paths.get(".").toFile();
 
     public Projections3DPane(Scene scene) {
         this.scene = scene;
@@ -513,6 +522,12 @@ public class Projections3DPane extends StackPane implements
             }
             if (keycode == KeyCode.D) {
                 camera.setTranslateX(camera.getTranslateX() + change);
+            }
+            if (keycode == KeyCode.SPACE) {
+                camera.setTranslateY(camera.getTranslateY() + change);
+            }
+            if (keycode == KeyCode.X) {
+                camera.setTranslateY(camera.getTranslateY() - change);
             }
             //rotate controls  use less sensitive modifiers
             change = event.isShiftDown() ? 10.0 : 1.0;
@@ -813,6 +828,27 @@ public class Projections3DPane extends StackPane implements
                 radarPlotPane.show();
             }
         });
+        ImageView export = ResourceUtils.loadIcon("export", ICON_FIT_HEIGHT);
+        export.setEffect(glow);
+        MenuItem exportItem = new MenuItem("Export", export);
+        exportItem.setOnAction(e -> {
+            final FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Save scene as...");
+            fileChooser.setInitialFileName("trinity_projection.png");
+            fileChooser.setInitialDirectory(mostRecentPath);
+            fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("PNG", "*.png"));
+            File file = fileChooser.showSaveDialog(null);
+            if (file != null) {
+                mostRecentPath = file.getParentFile();
+                WritableImage image = this.snapshot(new SnapshotParameters(), null);
+                try {
+                    ImageIO.write(SwingFXUtils.fromFXImage(image, null), "png", file);
+                } catch (IOException ioe) {
+                    // TODO: handle exception here
+                    //drop it like its hot
+                }
+            }
+        });
 
         ImageView navigator = ResourceUtils.loadIcon("navigator", ICON_FIT_HEIGHT);
         navigator.setEffect(glow);
@@ -820,6 +856,14 @@ public class Projections3DPane extends StackPane implements
         navigatorItem.setOnAction(e -> {
             subScene.getParent().getScene().getRoot().fireEvent(
                 new ApplicationEvent(ApplicationEvent.SHOW_NAVIGATOR_PANE));
+        });
+
+        ImageView analysis = ResourceUtils.loadIcon("analysis", ICON_FIT_HEIGHT);
+        analysis.setEffect(glow);
+        MenuItem analysisItem = new MenuItem("Analysis Log", analysis);
+        analysisItem.setOnAction(e -> {
+            subScene.getParent().getScene().getRoot().fireEvent(
+                new ApplicationEvent(ApplicationEvent.SHOW_ANALYSISLOG_PANE));
         });
 
         ImageView clearProjection = ResourceUtils.loadIcon("clear", ICON_FIT_HEIGHT);
@@ -841,6 +885,12 @@ public class Projections3DPane extends StackPane implements
                 ManifoldEvent.CLUSTER_SELECTION_MODE, true));
         });
 
+        CheckMenuItem showCubeItem = new CheckMenuItem("Show Cube");
+        showCubeItem.setSelected(true);
+        showCubeItem.selectedProperty().addListener(cl -> {
+            cubeWorld.showDataAndCrosshairsOnly(showCubeItem.isSelected());
+        });
+
         CheckMenuItem animatingProjectionsItem = new CheckMenuItem("Animating Projections");
         animatingProjectionsItem.setSelected(animatingProjections);
         animatingProjectionsItem.selectedProperty().addListener(cl ->
@@ -851,9 +901,9 @@ public class Projections3DPane extends StackPane implements
             updatingTrajectories = updatingTrajectoriesItem.isSelected());
 
         ContextMenu cm = new ContextMenu(selectPointsItem,
-            resetViewItem, manifoldsItem, radarItem, navigatorItem,
+            resetViewItem, manifoldsItem, radarItem, exportItem, analysisItem, navigatorItem,
             clearCalloutsItem, clearProjectionItem,
-            animatingProjectionsItem, updatingTrajectoriesItem);
+            showCubeItem, animatingProjectionsItem, updatingTrajectoriesItem);
 
         cm.setAutoFix(true);
         cm.setAutoHide(true);
@@ -1054,7 +1104,29 @@ public class Projections3DPane extends StackPane implements
             clusterSelectionMode = isActive;
             LOG.info("Cluster Selection Mode: {}", clusterSelectionMode);
         });
-
+        scene.addEventHandler(ManifoldEvent.TAKESNAPSHOT_PROJECTION_SCENE, e -> {
+            WritableImage image = this.snapshot(new SnapshotParameters(), null);
+            Platform.runLater(() -> {
+                getScene().getRoot().fireEvent(
+                    new ManifoldEvent(ManifoldEvent.NEWSNAPSHOT_PROJECTION_SCENE, image)
+                );
+            });
+        });
+        scene.addEventHandler(ManifoldEvent.EXPORT_PROJECTION_SCENE, e -> {
+            File file = (File) e.object1;
+            if (file != null) {
+                mostRecentPath = file.getParentFile();
+                WritableImage image = this.snapshot(new SnapshotParameters(), null);
+                try {
+                    String newImageFile = mostRecentPath.getPath() + File.separator + removeExtension(file.getName()) + ".png";
+                    ImageIO.write(SwingFXUtils.fromFXImage(image, null), "png",
+                        new File(newImageFile));
+                } catch (IOException ioe) {
+                    // TODO: handle exception here
+                    //drop it like its hot
+                }
+            }
+        });
         scene.addEventHandler(ManifoldEvent.SAVE_PROJECTION_DATA, e -> {
             File file = (File) e.object1;
             FeatureCollection fc = new FeatureCollection();
@@ -1991,7 +2063,10 @@ public class Projections3DPane extends StackPane implements
         HyperspaceSeed seed = new HyperspaceSeed(0, 1, 2, 3, 4, 5, features);
         hyperspaceSeeds.add(seed);
         addPNodeFromSeed(seed);
-        VisibilityMap.clearAll();
+        //@DIRTY BUG! SMP... since projections visibility is determined by
+        //hyperspace visibility we should NOT be clearing this teensy hacky
+        //static method of tracking visibility by point.
+        //VisibilityMap.clearAll();
     }
 
     public void showAll() {
@@ -2232,7 +2307,7 @@ public class Projections3DPane extends StackPane implements
     }
 
     @Override
-    public void addFeatureCollection(FeatureCollection featureCollection) {
+    public void addFeatureCollection(FeatureCollection featureCollection, boolean clearQueue) {
         Platform.runLater(() -> {
             getScene().getRoot().fireEvent(
                 new CommandTerminalEvent("Projecting Feature Collection... ",
@@ -2731,7 +2806,7 @@ public class Projections3DPane extends StackPane implements
                     setDimensionLabels(originalFC.getDimensionLabels());
                     fc.setDimensionLabels(originalFC.getDimensionLabels());
                 }
-                addFeatureCollection(fc);
+                addFeatureCollection(fc, false);
                 updateTrajectory3D(false);
             } catch (InterruptedException | ExecutionException ex) {
                 LOG.error(null, ex);
@@ -2820,7 +2895,7 @@ public class Projections3DPane extends StackPane implements
                     setDimensionLabels(originalFC.getDimensionLabels());
                     fc.setDimensionLabels(originalFC.getDimensionLabels());
                 }
-                addFeatureCollection(fc);
+                addFeatureCollection(fc, false);
                 updateTrajectory3D(false);
             } catch (InterruptedException | ExecutionException ex) {
                 LOG.error(null, ex);

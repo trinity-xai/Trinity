@@ -137,6 +137,14 @@ public class FeatureVectorEventHandler implements EventHandler<FeatureVectorEven
 
     }
 
+    public void handleClearAllEvent(FeatureVectorEvent event) {
+        LOG.info("Clearing All Feature Vectors By Request.");
+        for (FeatureVectorRenderer renderer : renderers) {
+            renderer.clearFeatureVectors();
+            renderer.refresh();
+        }
+    }
+
     public void handleFeatureCollectionEvent(FeatureVectorEvent event) {
         FeatureCollection featureCollection = (FeatureCollection) event.object;
         if (null == featureCollection || featureCollection.getFeatures().isEmpty())
@@ -153,7 +161,7 @@ public class FeatureVectorEventHandler implements EventHandler<FeatureVectorEven
         //update feature labels and colors
         scanLabelsAndLayers(featureCollection.getFeatures());
         for (FeatureVectorRenderer renderer : renderers) {
-            renderer.addFeatureCollection(featureCollection);
+            renderer.addFeatureCollection(featureCollection, event.clearExisting);
         }
         //Did the message specify any new dimensional label strings?
         if (null != featureCollection.getDimensionLabels() && !featureCollection.getDimensionLabels().isEmpty()) {
@@ -258,6 +266,8 @@ public class FeatureVectorEventHandler implements EventHandler<FeatureVectorEven
             handleFeatureVectorEvent(event);
         else if (event.getEventType().equals(FeatureVectorEvent.NEW_FEATURE_COLLECTION))
             handleFeatureCollectionEvent(event);
+        else if (event.getEventType().equals(FeatureVectorEvent.CLEAR_ALL_FEATUREVECTORS))
+            handleClearAllEvent(event);
         else if (event.getEventType().equals(FeatureVectorEvent.NEW_LABEL_CONFIG))
             handleLabelConfigEvent(event);
         else if (event.getEventType().equals(FeatureVectorEvent.RESCAN_FACTOR_LABELS)

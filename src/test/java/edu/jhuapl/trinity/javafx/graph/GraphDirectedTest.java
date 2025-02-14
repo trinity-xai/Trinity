@@ -7,25 +7,27 @@ import edu.jhuapl.trinity.data.graph.GraphNode;
 import edu.jhuapl.trinity.javafx.events.GraphEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.AnimatedSphere;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.Tracer;
-
-import static edu.jhuapl.trinity.utils.JavaFX3DUtils.getGraphNodePoint3D;
-
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import javafx.animation.AnimationTimer;
+import javafx.animation.FadeTransition;
 import javafx.animation.ParallelTransition;
 import javafx.animation.PathTransition;
 import javafx.animation.RotateTransition;
+import javafx.animation.ScaleTransition;
 import javafx.application.Application;
 import javafx.geometry.Insets;
-import javafx.geometry.Point2D;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.PerspectiveCamera;
+import javafx.scene.PointLight;
 import javafx.scene.Scene;
 import javafx.scene.SceneAntialiasing;
 import javafx.scene.SubScene;
 import javafx.scene.control.ContextMenu;
+import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.Spinner;
+import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
@@ -37,6 +39,7 @@ import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.LineTo;
@@ -46,23 +49,16 @@ import javafx.scene.shape.Sphere;
 import javafx.stage.Stage;
 import javafx.util.Duration;
 import org.fxyz3d.geometry.MathUtils;
+import org.fxyz3d.geometry.Point3D;
 import org.fxyz3d.utils.CameraTransformer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.Collections;
 import java.util.List;
 import java.util.Optional;
 
-import javafx.animation.FadeTransition;
-import javafx.animation.ScaleTransition;
-import javafx.scene.PointLight;
-import javafx.scene.control.Label;
-import javafx.scene.control.Spinner;
-import javafx.scene.control.SpinnerValueFactory;
-import javafx.scene.layout.VBox;
-import org.fxyz3d.geometry.Point3D;
+import static edu.jhuapl.trinity.utils.JavaFX3DUtils.getGraphNodePoint3D;
 
 public class GraphDirectedTest extends Application {
     private static final Logger LOG = LoggerFactory.getLogger(GraphDirectedTest.class);

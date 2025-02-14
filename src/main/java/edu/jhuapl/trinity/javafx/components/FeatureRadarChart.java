@@ -269,7 +269,7 @@ public class FeatureRadarChart extends VBox {
     }
 
     //     private void updateCalcs() {
-////        HEIGHT = WIDTH + (WIDTH * REFLECTION_SIZE);
+    /// /        HEIGHT = WIDTH + (WIDTH * REFLECTION_SIZE);
 //        HEIGHT = HEIGHT;
 //
 //        RADIUS_H = WIDTH / 2;

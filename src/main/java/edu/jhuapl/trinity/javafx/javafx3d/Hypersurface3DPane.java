@@ -55,10 +55,13 @@ import javafx.scene.Scene;
 import javafx.scene.SceneAntialiasing;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.SubScene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.ColorPicker;
 import javafx.scene.control.ContextMenu;
+import javafx.scene.control.DialogPane;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.RadioButton;
@@ -100,6 +103,7 @@ import javafx.scene.text.Text;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Translate;
 import javafx.stage.FileChooser;
+import javafx.stage.StageStyle;
 import javafx.util.Duration;
 import org.fxyz3d.geometry.Point3D;
 import org.fxyz3d.scene.Skybox;
@@ -117,6 +121,7 @@ import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.Optional;
 import java.util.Random;
 import java.util.function.Function;
 
@@ -378,6 +383,12 @@ public class Hypersurface3DPane extends StackPane
             if (keycode == KeyCode.D) {
                 camera.setTranslateX(camera.getTranslateX() + change);
             }
+            if (keycode == KeyCode.SPACE) {
+                camera.setTranslateY(camera.getTranslateY() + change);
+            }
+            if (keycode == KeyCode.X) {
+                camera.setTranslateY(camera.getTranslateY() - change);
+            }
             //rotate controls  use less sensitive modifiers
             change = event.isShiftDown() ? 10.0 : 1.0;
 
@@ -636,7 +647,40 @@ public class Hypersurface3DPane extends StackPane
         });
         this.scene.addEventHandler(ImageEvent.NEW_TEXTURE_SURFACE, e -> {
             Image image = (Image) e.object;
-            tessellateImage(image);
+            int x1 = 0;
+            int y1 = 0;
+            int x2 = Double.valueOf(image.getWidth()).intValue();
+            int y2 = Double.valueOf(image.getHeight()).intValue();
+            if (x2 > 512 || y2 > 512) {
+                boolean split = false;
+                Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
+                    "Image has " + x2 + " rows and " + y2 + " columns.\n"
+                        + "Split the image before tessellation?",
+                    ButtonType.YES, ButtonType.NO, ButtonType.CANCEL);
+                alert.setTitle("Image Tessellation Import");
+                alert.setHeaderText("Image has " + x2 + " rows  and " + y2 + " columns.\n");
+                alert.setContentText("Select subregion from image before tessellation?");
+                alert.setGraphic(ResourceUtils.loadIcon("alert", 75));
+                alert.initStyle(StageStyle.TRANSPARENT);
+                DialogPane dialogPane = alert.getDialogPane();
+                dialogPane.setBackground(Background.EMPTY);
+                dialogPane.getScene().setFill(Color.TRANSPARENT);
+
+                String DIALOGCSS = this.getClass().getResource("/edu/jhuapl/trinity/css/dialogstyles.css").toExternalForm();
+                dialogPane.getStylesheets().add(DIALOGCSS);
+
+                Optional<ButtonType> optBT = alert.showAndWait();
+                if (optBT.get().equals(ButtonType.CANCEL))
+                    return;
+                split = optBT.get().equals(ButtonType.YES);
+                if (split) {
+                    //@TODO SMP popup helper tool to select region
+                    scene.getRoot().fireEvent(new ApplicationEvent(
+                        ApplicationEvent.SHOW_PIXEL_SELECTION, image));
+                    return;
+                }
+            }
+            tessellateImage(image, x1, y1, x2, y2);
             lastImage = image;
             lastImageSource = image.getUrl();
         });
@@ -851,7 +895,7 @@ public class Hypersurface3DPane extends StackPane
         paintTriangleMesh.getTexCoords().clear();
         final int texCoordSize = 2;
 
-        Float pSkip = 1.0f;
+        Float pSkip = 2.0f;
         int pskip = pSkip.intValue();
         int subDivX = (int) diffusePaintImage.getWidth() / pskip;
         int subDivZ = (int) diffusePaintImage.getHeight() / pskip;
@@ -1296,14 +1340,28 @@ public class Hypersurface3DPane extends StackPane
         extrasGroup.getChildren().addAll(eastPole, eastKnob, westPole, westKnob, glowLineBox);
 
         Spinner yScaleSpinner = new Spinner(
-            new SpinnerValueFactory.DoubleSpinnerValueFactory(0.0, 100.0, yScale, 1.00));
+            new SpinnerValueFactory.DoubleSpinnerValueFactory(0.0, 500.0, yScale, 1.00));
         yScaleSpinner.setEditable(true);
-        //whenever the spinner value is changed...
-        yScaleSpinner.valueProperty().addListener(e -> {
+//        //whenever the spinner value is changed...
+//        yScaleSpinner.valueProperty().addListener(e -> {
+//            yScale = ((Double) yScaleSpinner.getValue()).floatValue();
+//            surfPlot.setFunctionScale(yScale);
+//            updateTheMesh();
+//        });
+        yScaleSpinner.getValueFactory().valueProperty().addListener(e -> {
             yScale = ((Double) yScaleSpinner.getValue()).floatValue();
             surfPlot.setFunctionScale(yScale);
             updateTheMesh();
         });
+        //whenever the spinner value is changed...
+        yScaleSpinner.setOnKeyTyped(e -> {
+            if (e.getCode() == KeyCode.ENTER) {
+                yScale = ((Double) yScaleSpinner.getValue()).floatValue();
+                surfPlot.setFunctionScale(yScale);
+                updateTheMesh();
+            }
+        });
+
         yScaleSpinner.setPrefWidth(125);
         Spinner surfScaleSpinner = new Spinner(
             new SpinnerValueFactory.DoubleSpinnerValueFactory(0.0, 100.0, surfScale, 1.0));
@@ -1743,7 +1801,7 @@ public class Hypersurface3DPane extends StackPane
     }
 
     @Override
-    public void addFeatureCollection(FeatureCollection featureCollection) {
+    public void addFeatureCollection(FeatureCollection featureCollection, boolean clearQueue) {
         if (null == dataGrid) {
             dataGrid = new ArrayList<>(featureCollection.getFeatures().size());
         } else
@@ -1764,6 +1822,11 @@ public class Hypersurface3DPane extends StackPane
         getScene().getRoot().fireEvent(
             new CommandTerminalEvent("Hypersurface updated. ",
                 new Font("Consolas", 20), Color.GREEN));
+        //@TODO SMP fix so this works
+//        if(clearQueue)
+//            featureVectors = featureCollection.getFeatures();
+//        else
+//            featureVectors.addAll(featureCollection.getFeatures());
         featureVectors = featureCollection.getFeatures();
     }
 
@@ -1811,7 +1874,7 @@ public class Hypersurface3DPane extends StackPane
         //throw new UnsupportedOperationException("Not supported yet.");
     }
 
-    private void tessellateImage(Image image) {
+    private void tessellateImage(Image image, int x1, int y1, int x2, int y2) {
         lastImage = image;
         long startTime = System.nanoTime();
         LOG.info("Mapping Image Raster to Feature Vector... ");
@@ -1827,9 +1890,9 @@ public class Hypersurface3DPane extends StackPane
         } else
             dataGrid.clear();
         featureVectors.clear();
-        for (int rowIndex = 0; rowIndex < rows; rowIndex++) {
+        for (int rowIndex = y1; rowIndex < y2; rowIndex++) {
             List<Double> currentDataRow = new ArrayList<>();
-            for (int colIndex = 0; colIndex < columns; colIndex++) {
+            for (int colIndex = x1; colIndex < x2; colIndex++) {
                 color = pr.getColor(colIndex, rowIndex);
                 rgb = ((int) pr.getArgb(colIndex, rowIndex));
                 FeatureVector fv = FeatureVector.EMPTY_FEATURE_VECTOR(color.toString(), 3);
@@ -1867,7 +1930,9 @@ public class Hypersurface3DPane extends StackPane
             //method will automatically prepend base path for imagery
             WritableImage wi = loadImage(shapleyCollection.getSourceInput());
             if (null != wi) {
-                tessellateImage(wi);
+                int x2 = Double.valueOf(wi.getWidth()).intValue();
+                int y2 = Double.valueOf(wi.getHeight()).intValue();
+                tessellateImage(wi, 0, 0, x2, y2);
                 lastImage = wi;
                 //sneakily insert current function values (shapley) into vertices
                 LOG.info("injecting Shapley function values into Vertices... ");

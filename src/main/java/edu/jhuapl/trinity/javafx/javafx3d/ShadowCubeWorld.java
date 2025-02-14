@@ -835,4 +835,26 @@ public class ShadowCubeWorld extends CubeWorld {
         showZY1GridLinesGroup(show);
         showZY2GridLinesGroup(show);
     }
+
+    public void showDataAndCrosshairsOnly(boolean show) {
+        showX1Panel(show);
+        showX2Panel(show);
+        showY1Panel(show);
+        showY2Panel(show);
+        showZ1Panel(show);
+        showZ2Panel(show);
+        x1ShadowPane.showNearsidePoints.set(showNearsidePoints);
+        x2ShadowPane.showNearsidePoints.set(showNearsidePoints);
+        y1ShadowPane.showNearsidePoints.set(showNearsidePoints);
+        y2ShadowPane.showNearsidePoints.set(showNearsidePoints);
+        z1ShadowPane.showNearsidePoints.set(showNearsidePoints);
+        z2ShadowPane.showNearsidePoints.set(showNearsidePoints);
+        getChildren().filtered((Node t) -> t instanceof Sphere)
+            .forEach(s -> s.setVisible(show));
+        renderingEnabled = show;
+        showAllGridLines(show);
+        showXAxesGroup(show);
+        showYAxesGroup(show);
+        showZAxesGroup(show);
+    }
 }

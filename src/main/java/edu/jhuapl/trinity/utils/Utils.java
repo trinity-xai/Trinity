@@ -124,8 +124,12 @@ public enum Utils {
         return "Total elapsed time: " + s + ":s:" + ms + ":ms:" + us + ":us:" + totalNanos + ":ns";
     }
 
-    public static void printTotalTime(long startTime) {
+    public static void logTotalTime(long startTime) {
         LOG.info(totalTimeString(startTime));
+    }
+
+    public static void printTotalTime(long startTime) {
+        System.out.println(totalTimeString(startTime));
     }
 
     public static double roundTo(double value, int places) {

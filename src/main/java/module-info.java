@@ -26,6 +26,7 @@ module edu.jhuapl.trinity {
     requires jflac.codec;
     requires org.slf4j;
     requires ch.qos.logback.classic;
+    requires fft4j;
     opens edu.jhuapl.trinity.javafx.components.radial to lit.litfx.controls;
     opens edu.jhuapl.trinity to webcam.capture;
     opens edu.jhuapl.trinity.data to javafx.base;

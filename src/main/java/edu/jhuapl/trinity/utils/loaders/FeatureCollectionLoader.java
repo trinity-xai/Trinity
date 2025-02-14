@@ -23,6 +23,7 @@ public class FeatureCollectionLoader extends Task {
     private static final Logger LOG = LoggerFactory.getLogger(FeatureCollectionLoader.class);
     Scene scene;
     File file;
+    private boolean clearQueue = false;
 
     public FeatureCollectionLoader(Scene scene, File file) {
         this.scene = scene;
@@ -57,8 +58,11 @@ public class FeatureCollectionLoader extends Task {
 
         try {
             FeatureCollectionFile fcFile = new FeatureCollectionFile(file.getAbsolutePath(), true);
-            Platform.runLater(() -> scene.getRoot().fireEvent(
-                new FeatureVectorEvent(FeatureVectorEvent.NEW_FEATURE_COLLECTION, fcFile.featureCollection)));
+            FeatureVectorEvent dataSourceEvent = new FeatureVectorEvent(FeatureVectorEvent.NEW_FEATURES_SOURCE, file);
+            Platform.runLater(() -> scene.getRoot().fireEvent(dataSourceEvent));
+            FeatureVectorEvent event = new FeatureVectorEvent(FeatureVectorEvent.NEW_FEATURE_COLLECTION, fcFile.featureCollection);
+            event.clearExisting = clearQueue;
+            Platform.runLater(() -> scene.getRoot().fireEvent(event));
             Trajectory trajectory = new Trajectory(file.getName());
             trajectory.totalStates = fcFile.featureCollection.getFeatures().size();
             Trajectory.addTrajectory(trajectory);
@@ -70,5 +74,19 @@ public class FeatureCollectionLoader extends Task {
         }
 
         return null;
+    }
+
+    /**
+     * @return the clearQueue
+     */
+    public boolean isClearQueue() {
+        return clearQueue;
+    }
+
+    /**
+     * @param clearQueue the clearQueue to set
+     */
+    public void setClearQueue(boolean clearQueue) {
+        this.clearQueue = clearQueue;
     }
 }

@@ -21,6 +21,8 @@ import javafx.stage.StageStyle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
+
 /**
  * @author Sean Phillips
  */
@@ -95,7 +97,7 @@ public class ProjectUmapFeaturesTask extends Task {
             scene.getRoot().fireEvent(
                 new ApplicationEvent(ApplicationEvent.UPDATE_BUSY_INDICATOR, ps));
         });
-
+        Thread.sleep(Duration.ofSeconds(1));
         double[][] umapMatrix = AnalysisUtils.fitUMAP(originalFC, umap);
         Platform.runLater(() -> {
             ProgressStatus ps = new ProgressStatus("Converting to FeatureCollection...", 0.5);
