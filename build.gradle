@@ -127,7 +127,7 @@ extraJavaModuleInfo {
         requires('java.desktop')
         exportAllPackages()
     }
-    module('com.tambapps.fft4j', 'fft4j') {
+    module('com.tambapps.fft4j:fft4j', 'fft4j') {
         exportAllPackages()
     }
 
