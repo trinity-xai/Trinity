@@ -2,10 +2,10 @@ plugins {
     id 'java'
     id 'idea'
     id 'application'
-    id 'com.github.ben-manes.versions' version '0.51.0'
+    id 'com.github.ben-manes.versions' version '0.52.0'
     id 'net.nemerosa.versioning' version '3.1.0'
     id 'org.openjfx.javafxplugin' version '0.1.0'
-    id 'org.gradlex.extra-java-module-info' version '1.9'
+    id 'org.gradlex.extra-java-module-info' version '1.10.1'
     id 'org.beryx.jlink' version '3.1.1'
 }
 
@@ -67,11 +67,11 @@ dependencies {
 
     // Enforce slf4j-api version across dependencies
     implementation group: 'org.slf4j', name: 'slf4j-api', version: '2.0.16'
-    implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.5.12'
+    implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.5.16'
 
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.3'
-    testImplementation 'org.junit.platform:junit-platform-suite:1.11.3'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.11.3'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
+    testImplementation 'org.junit.platform:junit-platform-suite:1.11.4'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.11.4'
 }
 
 // Make sure every single dependency is modularized.
