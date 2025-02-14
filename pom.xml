@@ -161,16 +161,16 @@
             <version>${sarxos.webcam.capture.version}</version>
         </dependency>
         <dependency>
-          <groupId>org.jflac</groupId>
-          <artifactId>jflac-codec</artifactId>
-          <version>${org.jflac.jflac-codec.version}</version>
+            <groupId>org.jflac</groupId>
+            <artifactId>jflac-codec</artifactId>
+            <version>${org.jflac.jflac-codec.version}</version>
         </dependency>
         <dependency>
-          <groupId>com.tambapps.fft4j</groupId>
-          <artifactId>fft4j</artifactId>
-          <version>${com.tambapps.fft4j.version}</version>
+            <groupId>com.tambapps.fft4j</groupId>
+            <artifactId>fft4j</artifactId>
+            <version>${com.tambapps.fft4j.version}</version>
         </dependency>
-        
+
         <!-- Enforce slf4j-api version across dependencies-->
         <dependency>
             <groupId>org.slf4j</groupId>
