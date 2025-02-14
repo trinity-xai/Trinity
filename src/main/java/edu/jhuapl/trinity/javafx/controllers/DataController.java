@@ -28,7 +28,6 @@ import javafx.stage.DirectoryChooser;
 import java.io.File;
 import java.net.URL;
 import java.util.ResourceBundle;
-import javafx.event.EventType;
 
 /**
  * FXML Controller class
@@ -41,7 +40,7 @@ public class DataController implements Initializable {
     private BorderPane majorPane;
     @FXML
     private TabPane tabPane;
-    //// REST Service
+    /// / REST Service
     @FXML
     private TextField restPortTextField;
     @FXML
@@ -49,7 +48,7 @@ public class DataController implements Initializable {
     @FXML
     private ProgressIndicator restProgressIndicator;
 
-    //// ZeroMQ stuff
+    /// / ZeroMQ stuff
     @FXML
     private TextField hostTextField;
     @FXML
@@ -66,11 +65,11 @@ public class DataController implements Initializable {
     private RadioButton pubsubRadioButton;
     @FXML
     private RadioButton pushpullRadioButton;
-    //// Imagery /////
+    /// / Imagery /////
     @FXML
     private TextField imageryBasePathTextField;
 
-    //// Timeline controls /////
+    /// / Timeline controls /////
     @FXML
     private CheckBox showTimelineCheckBox;
     @FXML
@@ -79,7 +78,7 @@ public class DataController implements Initializable {
     private CheckBox showLeadCalloutCheckBox;
     @FXML
     private Spinner trajectorySizeSpinner;
-    //// Projections /////
+    /// / Projections /////
     @FXML
     ToggleButton autoProjectionToggleButton;
     @FXML
@@ -134,10 +133,10 @@ public class DataController implements Initializable {
             showStateTrajectoryCheckBox.selectedProperty().not());
 
         restProgressIndicator.visibleProperty().bind(restInjectToggleButton.selectedProperty());
-        scene.getRoot().addEventHandler(ApplicationEvent.SET_IMAGERY_BASEPATH, e-> {
-            String newBasePath = (String)e.object;
-            imageryBasePathTextField.setText(newBasePath);    
-        });        
+        scene.getRoot().addEventHandler(ApplicationEvent.SET_IMAGERY_BASEPATH, e -> {
+            String newBasePath = (String) e.object;
+            imageryBasePathTextField.setText(newBasePath);
+        });
     }
 
     @FXML

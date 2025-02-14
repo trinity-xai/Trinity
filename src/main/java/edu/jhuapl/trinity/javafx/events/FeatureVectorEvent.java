@@ -14,7 +14,7 @@ public class FeatureVectorEvent extends Event {
     public Object object;
     public Object object2;
     public boolean clearExisting = false;
-    
+
     public static final EventType<FeatureVectorEvent> PROJECT_SURFACE_GRID = new EventType(ANY, "PROJECT_SURFACE_GRID");
     public static final EventType<FeatureVectorEvent> PROJECT_FEATURE_COLLECTION = new EventType(ANY, "PROJECT_FEATURE_COLLECTION");
     public static final EventType<FeatureVectorEvent> NEW_SURFACE_COLLECTION = new EventType(ANY, "NEW_SURFACE_COLLECTION");

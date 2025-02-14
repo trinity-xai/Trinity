@@ -6,8 +6,6 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import edu.jhuapl.trinity.data.messages.AnalysisConfig;
 import edu.jhuapl.trinity.data.messages.UmapConfig;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javafx.geometry.Insets;
 import javafx.scene.control.Tooltip;
 import javafx.scene.image.Image;
@@ -22,8 +20,10 @@ import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 /**
- *
  * @author Sean Phillips
  */
 public class ProjectorNode extends Pane {
@@ -34,46 +34,46 @@ public class ProjectorNode extends Pane {
     Border emptyBorder;
     Border selectedBorder;
     int borderWidth = 50;
-    
+
     public ProjectorNode(Image image, UmapConfig umapConfig, AnalysisConfig analysisConfig) {
         imageView = new ImageView(image);
         this.umapConfig = umapConfig;
         this.analysisConfig = analysisConfig;
         getChildren().add(imageView);
         emptyBorder = Border.EMPTY;
-        hoverBorder = new Border(new BorderStroke(Color.LIGHTCYAN.deriveColor(1, 1, 1, 0.75), 
-            BorderStrokeStyle.SOLID, CornerRadii.EMPTY, 
-            new BorderWidths(borderWidth), 
-            new Insets(-borderWidth/2.0, -borderWidth/2.0, -borderWidth/2.0, -borderWidth/2.0)));
-        selectedBorder = new Border(new BorderStroke(Color.CYAN.deriveColor(1, 1, 1, 0.75), 
-            BorderStrokeStyle.SOLID, CornerRadii.EMPTY, 
-            new BorderWidths(borderWidth), 
-            new Insets(-borderWidth/2.0, -borderWidth/2.0, -borderWidth/2.0, -borderWidth/2.0)));
+        hoverBorder = new Border(new BorderStroke(Color.LIGHTCYAN.deriveColor(1, 1, 1, 0.75),
+            BorderStrokeStyle.SOLID, CornerRadii.EMPTY,
+            new BorderWidths(borderWidth),
+            new Insets(-borderWidth / 2.0, -borderWidth / 2.0, -borderWidth / 2.0, -borderWidth / 2.0)));
+        selectedBorder = new Border(new BorderStroke(Color.CYAN.deriveColor(1, 1, 1, 0.75),
+            BorderStrokeStyle.SOLID, CornerRadii.EMPTY,
+            new BorderWidths(borderWidth),
+            new Insets(-borderWidth / 2.0, -borderWidth / 2.0, -borderWidth / 2.0, -borderWidth / 2.0)));
 
         setBorder(Border.EMPTY);
-        addEventHandler(MouseEvent.MOUSE_ENTERED, e-> {
+        addEventHandler(MouseEvent.MOUSE_ENTERED, e -> {
             requestFocus();
             setBorder(hoverBorder);
         });
-        addEventHandler(MouseEvent.MOUSE_EXITED, e-> {
+        addEventHandler(MouseEvent.MOUSE_EXITED, e -> {
             setBorder(emptyBorder);
         });
-        addEventHandler(MouseEvent.MOUSE_CLICKED, e-> {
+        addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
             requestFocus();
             setBorder(selectedBorder);
-            if(e.getButton() == MouseButton.PRIMARY) {
-                if(e.getClickCount()==1 && e.isControlDown()) {
-                    if(null != umapConfig) {
+            if (e.getButton() == MouseButton.PRIMARY) {
+                if (e.getClickCount() == 1 && e.isControlDown()) {
+                    if (null != umapConfig) {
                         try {
-                            getScene().getRoot().fireEvent(new ApplicationEvent(                
+                            getScene().getRoot().fireEvent(new ApplicationEvent(
                                 ApplicationEvent.SHOW_TEXT_CONSOLE, umapConfig.prettyPrint()));
                         } catch (JsonProcessingException ex) {
                             Logger.getLogger(ProjectorNode.class.getName()).log(Level.SEVERE, null, ex);
                         }
                     }
-                } else if(e.getClickCount()==1) {
-                    if(null != analysisConfig) {
-                        getScene().getRoot().fireEvent(new ApplicationEvent(                
+                } else if (e.getClickCount() == 1) {
+                    if (null != analysisConfig) {
+                        getScene().getRoot().fireEvent(new ApplicationEvent(
                             ApplicationEvent.SHOW_ANALYSISLOG_PANE, analysisConfig, umapConfig));
                     }
                 }

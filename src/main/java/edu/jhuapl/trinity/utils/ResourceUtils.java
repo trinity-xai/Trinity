@@ -46,15 +46,25 @@ import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.DialogPane;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.image.PixelFormat;
+import javafx.scene.image.PixelReader;
+import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
+import javafx.scene.image.WritablePixelFormat;
 import javafx.scene.input.DataFormat;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
+import javafx.scene.layout.Background;
 import javafx.scene.media.AudioClip;
 import javafx.scene.media.Media;
+import javafx.scene.paint.Color;
+import javafx.stage.StageStyle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,17 +93,6 @@ import java.util.Set;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.stream.Collectors;
-
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.DialogPane;
-import javafx.scene.image.PixelFormat;
-import javafx.scene.image.PixelReader;
-import javafx.scene.image.PixelWriter;
-import javafx.scene.image.WritablePixelFormat;
-import javafx.scene.layout.Background;
-import javafx.scene.paint.Color;
-import javafx.stage.StageStyle;
 
 /**
  * @author Sean Phillips
@@ -228,27 +227,30 @@ public enum ResourceUtils {
         BufferedImage image = ImageIO.read(imageFile);
         return loadImageSubset(image, x1, y1, x2, y2);
     }
+
     public static WritableImage loadImageSubset(BufferedImage image, int x1, int y1, int x2, int y2) {
         BufferedImage subImage = image.getSubimage(x1, y1, x2 - x1, y2 - y1);
         WritableImage wi = SwingFXUtils.toFXImage(subImage, null);
-        return wi;        
+        return wi;
     }
+
     public static WritableImage cropImage(Image image, double x1, double y1, double x2, double y2) {
         PixelReader r = image.getPixelReader();
-        WritablePixelFormat<IntBuffer> pixelFormat = PixelFormat.getIntArgbInstance() ;
+        WritablePixelFormat<IntBuffer> pixelFormat = PixelFormat.getIntArgbInstance();
         int x1Index = Double.valueOf(x1).intValue();
         int y1Index = Double.valueOf(y1).intValue();
         int x2Index = Double.valueOf(x2).intValue();
         int y2Index = Double.valueOf(y2).intValue();
-        int width = x2Index-x1Index;
-        int height = y2Index-y1Index;
+        int width = x2Index - x1Index;
+        int height = y2Index - y1Index;
         int[] pixels = new int[width * height];
         r.getPixels(x1Index, y1Index, width, height, pixelFormat, pixels, 0, width);
         WritableImage out = new WritableImage(width, height);
         PixelWriter w = out.getPixelWriter();
         w.setPixels(0, 0, width, height, pixelFormat, pixels, 0, width);
-        return out ;
+        return out;
     }
+
     public static WritableImage loadIconAsWritableImage(String iconName) throws IOException {
         InputStream is = IconResourceProvider.getResourceAsStream(iconName + ".png");
         BufferedImage image = ImageIO.read(is);
@@ -270,6 +272,7 @@ public enum ResourceUtils {
         iv.setFitWidth(FIT_WIDTH);
         return iv;
     }
+
     /**
      * Checks whether the file can be used as an image.
      *
@@ -296,6 +299,7 @@ public enum ResourceUtils {
         }
         return false;
     }
+
     /**
      * Checks whether the file can be used as audio.
      *
@@ -383,7 +387,7 @@ public enum ResourceUtils {
                             new ApplicationEvent(ApplicationEvent.SHOW_BUSY_INDICATOR, ps1));
                     });
                     //do we have multiple files? if so then don't offer to clear any queues
-                    boolean offerToClear = files.size()<=1; //if more than one file is detected... don't bother to ask to clear. (assume group load)
+                    boolean offerToClear = files.size() <= 1; //if more than one file is detected... don't bother to ask to clear. (assume group load)
                     for (File file : files) {
                         try {
                             if (JavaFX3DUtils.isTextureFile(file)) {
@@ -566,9 +570,10 @@ public enum ResourceUtils {
         Optional<ButtonType> optBT = alert.showAndWait();
         return optBT.get().equals(ButtonType.YES);
     }
+
     public static String removeExtension(String filename) {
         return filename.substring(0, filename.lastIndexOf("."));
-        
-    }    
-   
+
+    }
+
 }

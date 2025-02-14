@@ -127,6 +127,7 @@ public enum Utils {
     public static void logTotalTime(long startTime) {
         LOG.info(totalTimeString(startTime));
     }
+
     public static void printTotalTime(long startTime) {
         System.out.println(totalTimeString(startTime));
     }

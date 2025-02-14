@@ -303,6 +303,6 @@ public class MainNavMenu extends LitRadialMenu {
         dataSubMenuItem.addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Projector Room", projector, e -> {
             scene.getRoot().fireEvent(new ApplicationEvent(ApplicationEvent.SHOW_PROJECTOR_PANE));
         }));
-        addMenuItem(dataSubMenuItem);        
+        addMenuItem(dataSubMenuItem);
     }
 }

@@ -7,9 +7,6 @@ import edu.jhuapl.trinity.data.messages.AnalysisConfig;
 import edu.jhuapl.trinity.data.messages.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.UmapConfig;
 import edu.jhuapl.trinity.utils.umap.Umap;
-import java.io.File;
-import java.io.IOException;
-import java.nio.file.Files;
 import javafx.geometry.Point2D;
 import org.apache.commons.math3.linear.EigenDecomposition;
 import org.apache.commons.math3.linear.MatrixUtils;
@@ -20,6 +17,9 @@ import org.apache.commons.math3.stat.correlation.Covariance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -34,27 +34,40 @@ public enum AnalysisUtils {
     INSTANCE;
     private static final Logger LOG = LoggerFactory.getLogger(AnalysisUtils.class);
     public static AnalysisConfig currentAnalysisConfig = new AnalysisConfig();
-    
-    public static enum ANALYSIS_METHOD {PCA, SVD, KPCA};
-    public static enum SOURCE {HYPERSPACE, HYPERSURFACE};
-    public static enum KERNEL {Gaussian, Laplacian, Linear, Pearson, Polynomial};
-    public static enum RANGE {MINIMUM, MAXIMUM};
+
+    public static enum ANALYSIS_METHOD {PCA, SVD, KPCA}
+
+    ;
+
+    public static enum SOURCE {HYPERSPACE, HYPERSURFACE}
+
+    ;
+
+    public static enum KERNEL {Gaussian, Laplacian, Linear, Pearson, Polynomial}
+
+    ;
+
+    public static enum RANGE {MINIMUM, MAXIMUM}
+
+    ;
     public static double EPISILON = 0.0000000001;
 
     public static void clearAnalysisConfig() {
         currentAnalysisConfig = new AnalysisConfig();
     }
+
     public static void readAnalysisConfig(File file) throws IOException {
         if (AnalysisConfig.isAnalysisConfig(Files.readString(file.toPath()))) {
             ObjectMapper mapper = new ObjectMapper();
             currentAnalysisConfig = mapper.readValue(file, AnalysisConfig.class);
         }
     }
+
     public static void writeAnalysisConfig(File file) throws IOException {
         ObjectMapper mapper = new ObjectMapper();
         mapper.writeValue(file, currentAnalysisConfig);
     }
-    
+
     public static double lerp1(double start, double end, double ratio) {
         return start * (1 - ratio) + end * ratio;
     }

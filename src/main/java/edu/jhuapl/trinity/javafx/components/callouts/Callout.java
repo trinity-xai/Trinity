@@ -24,7 +24,6 @@ import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.SequentialTransition;
 import javafx.animation.Timeline;
-import javafx.event.EventType;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
@@ -270,9 +269,9 @@ public class Callout extends Group {
         callouts.setEffect(glow);
         MenuItem closeThisItem = new MenuItem("Close This", callouts);
         closeThisItem.setOnAction(e -> {
-          hide(); 
+            hide();
         });
-        
+
         contextMenu = new ContextMenu(closeThisItem);
         contextMenu.setAutoFix(true);
         contextMenu.setAutoHide(true);
@@ -287,7 +286,7 @@ public class Callout extends Group {
                 e.consume();
             }
         });
-                
+
         //Hide at the start
         getChildren().forEach(node -> node.setVisible(false));
     }

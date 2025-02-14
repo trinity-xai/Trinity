@@ -1,13 +1,10 @@
 /* Copyright (C) 2025 Sean Phillips */
- 
+
 package edu.jhuapl.trinity.javafx.components.panes;
 
 import edu.jhuapl.trinity.javafx.events.ImageEvent;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
-import java.io.File;
-import java.net.MalformedURLException;
-import java.util.logging.Level;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.geometry.Pos;
@@ -32,6 +29,10 @@ import javafx.scene.shape.Rectangle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.net.MalformedURLException;
+import java.util.logging.Level;
+
 
 /**
  * @author Sean Phillips
@@ -44,7 +45,7 @@ public class PixelSelectionPane extends LitPathPane {
     public StackPane centerStack;
     public ImageView imageView;
     public Image image;
-    ScrollPane scrollPane;    
+    ScrollPane scrollPane;
     public Rectangle selectionRectangle;
     private double mousePosX;
     private double mousePosY;
@@ -53,10 +54,10 @@ public class PixelSelectionPane extends LitPathPane {
         BorderPane bpOilSpill = new BorderPane();
         return bpOilSpill;
     }
-    
+
     public PixelSelectionPane(Scene scene, Pane parent) {
         super(scene, parent, PANE_WIDTH, PANE_HEIGHT, createContent(),
-            "Pixel Selection", "", 300.0, 400.0);  
+            "Pixel Selection", "", 300.0, 400.0);
         setBackground(Background.EMPTY);
         this.scene = scene;
         image = ResourceUtils.loadIconFile("waitingforimage");
@@ -76,14 +77,14 @@ public class PixelSelectionPane extends LitPathPane {
         centerStack.getChildren().add(scrollPane);
 
         Button tessellateSelectionButton = new Button("Tessellate");
-        tessellateSelectionButton.setOnAction(e-> {
-            if(selectionRectangle.getWidth() > 1 && selectionRectangle.getHeight() > 1) {
+        tessellateSelectionButton.setOnAction(e -> {
+            if (selectionRectangle.getWidth() > 1 && selectionRectangle.getHeight() > 1) {
                 Point2D sceneP2D = selectionRectangle.localToScene(
                     selectionRectangle.getX(), selectionRectangle.getY());
                 Point2D localP2D = imageView.sceneToLocal(sceneP2D);
-                WritableImage wi = ResourceUtils.cropImage(image, 
-                    localP2D.getX(), localP2D.getY(), 
-                    localP2D.getX() + selectionRectangle.getWidth(), 
+                WritableImage wi = ResourceUtils.cropImage(image,
+                    localP2D.getX(), localP2D.getY(),
+                    localP2D.getX() + selectionRectangle.getWidth(),
                     localP2D.getY() + selectionRectangle.getHeight());
                 tessellateSelectionButton.getScene().getRoot().fireEvent(
                     new ImageEvent(ImageEvent.NEW_TEXTURE_SURFACE, wi));
@@ -93,19 +94,19 @@ public class PixelSelectionPane extends LitPathPane {
         powerBottomHBox.setPadding(new Insets(10));
         powerBottomHBox.setAlignment(Pos.CENTER);
         borderPane.setBottom(powerBottomHBox);
-        
+
         //Setup selection rectangle and event handling
         selectionRectangle = new Rectangle(1, 1, Color.CYAN.deriveColor(1, 1, 1, 0.5));
         selectionRectangle.setManaged(false);
         selectionRectangle.setMouseTransparent(true);
         selectionRectangle.setVisible(false);
         borderPane.getChildren().add(selectionRectangle); // a little hacky but...
-        
-        imageView.setOnMouseEntered(e-> imageView.setCursor(Cursor.CROSSHAIR));
-        imageView.setOnMouseExited(e-> imageView.setCursor(Cursor.DEFAULT));
-        
+
+        imageView.setOnMouseEntered(e -> imageView.setCursor(Cursor.CROSSHAIR));
+        imageView.setOnMouseExited(e -> imageView.setCursor(Cursor.DEFAULT));
+
         imageView.setOnMousePressed((MouseEvent me) -> {
-            if(me.isPrimaryButtonDown()) {
+            if (me.isPrimaryButtonDown()) {
                 me.consume();
                 mousePosX = me.getSceneX();
                 mousePosY = me.getSceneY();
@@ -119,7 +120,7 @@ public class PixelSelectionPane extends LitPathPane {
         });
         //Start Tracking mouse movements only when a button is pressed
         imageView.setOnMouseDragged((MouseEvent me) -> {
-            if(me.isPrimaryButtonDown()) {
+            if (me.isPrimaryButtonDown()) {
                 me.consume();
                 mousePosX = me.getSceneX();
                 mousePosY = me.getSceneY();
@@ -129,13 +130,13 @@ public class PixelSelectionPane extends LitPathPane {
                 selectionRectangle.setHeight(
                     localP2D.getY() - selectionRectangle.getY());
             }
-        });        
+        });
         imageView.setOnMouseReleased((MouseEvent me) -> {
-            if(me.isPrimaryButtonDown()) {
+            if (me.isPrimaryButtonDown()) {
                 me.consume();
             }
         });
-       borderPane.addEventHandler(DragEvent.DRAG_OVER, event -> {
+        borderPane.addEventHandler(DragEvent.DRAG_OVER, event -> {
             if (ResourceUtils.canDragOver(event)) {
                 event.acceptTransferModes(TransferMode.COPY);
             } else {
@@ -154,9 +155,9 @@ public class PixelSelectionPane extends LitPathPane {
                     }
                 }
             }
-        });        
+        });
     }
-    
+
     public void setImage(Image image) {
         this.image = image;
         imageView.setImage(this.image);

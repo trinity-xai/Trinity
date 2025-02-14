@@ -11,7 +11,6 @@ import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import edu.jhuapl.trinity.utils.umap.Umap;
-import java.time.Duration;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.scene.Scene;
@@ -24,6 +23,8 @@ import javafx.stage.StageStyle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
+
 /**
  * @author Sean Phillips
  */
@@ -32,7 +33,7 @@ public class AutomaticUmapForThePeopleTask extends Task {
     Scene scene;
     AnalysisConfig analysisConfig;
     UmapConfig umapConfig;
-    
+
     Umap umap;
     private boolean cancelledByUser = false;
     private double projectionScalar = 100.0; //used for sizing values to 3D scene later
@@ -98,7 +99,7 @@ public class AutomaticUmapForThePeopleTask extends Task {
         Platform.runLater(() -> {
             scene.getRoot().fireEvent(new ManifoldEvent(
                 ManifoldEvent.NEW_UMAP_CONFIG, umapConfig));
-        });         
+        });
         Platform.runLater(() -> {
             scene.getRoot().fireEvent(new FeatureVectorEvent(
                 FeatureVectorEvent.CLEAR_ALL_FEATUREVECTORS));
@@ -113,24 +114,24 @@ public class AutomaticUmapForThePeopleTask extends Task {
             scene.getRoot().fireEvent(
                 new ApplicationEvent(ApplicationEvent.UPDATE_BUSY_INDICATOR, ps));
         });
-        for(String data : analysisConfig.getDataSources()) {
+        for (String data : analysisConfig.getDataSources()) {
             FeatureCollectionFile fcf = new FeatureCollectionFile(data, true);
             Platform.runLater(() -> {
                 scene.getRoot().fireEvent(new FeatureVectorEvent(
                     FeatureVectorEvent.NEW_FEATURE_COLLECTION, fcf.featureCollection));
-            });            
+            });
         }
-        if(null != analysisConfig.getContentBasePath()) {
+        if (null != analysisConfig.getContentBasePath()) {
             Platform.runLater(() -> {
                 scene.getRoot().fireEvent(new ApplicationEvent(
-                    ApplicationEvent.SET_IMAGERY_BASEPATH, 
-                        analysisConfig.getContentBasePath()));
-            });            
+                    ApplicationEvent.SET_IMAGERY_BASEPATH,
+                    analysisConfig.getContentBasePath()));
+            });
         }
         Thread.sleep(Duration.ofSeconds(1));
         Platform.runLater(() -> {
             scene.getRoot().fireEvent(new ApplicationEvent(ApplicationEvent.SHOW_PROJECTIONS));
-        });        
+        });
         Thread.sleep(Duration.ofSeconds(1));
         Platform.runLater(() -> {
             scene.getRoot().fireEvent(new ManifoldEvent(ManifoldEvent.GENERATE_NEW_UMAP));

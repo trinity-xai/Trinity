@@ -6,20 +6,10 @@ import com.tambapps.fft4j.Signal2d;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import edu.jhuapl.trinity.utils.Utils;
-import static edu.jhuapl.trinity.utils.Utils.clamp;
-import java.io.File;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.util.Arrays;
-import java.util.DoubleSummaryStatistics;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javafx.application.Application;
 import javafx.geometry.Point2D;
 import javafx.scene.Cursor;
 import javafx.scene.Scene;
-import javafx.stage.Stage;
-
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
@@ -39,6 +29,17 @@ import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
+import javafx.stage.Stage;
+
+import java.io.File;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.util.Arrays;
+import java.util.DoubleSummaryStatistics;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
+import static edu.jhuapl.trinity.utils.Utils.clamp;
 
 public class ImageFFTTestApp extends Application {
 
@@ -56,10 +57,10 @@ public class ImageFFTTestApp extends Application {
     Signal2d redChannelSignal2d;
     Signal2d greenChannelSignal2d;
     Signal2d blueChannelSignal2d;
-//    Signal2d shiftedGreySignal2d;
+    //    Signal2d shiftedGreySignal2d;
     Signal2d shiftedRedChannelSignal2d;
     Signal2d shiftedGreenChannelSignal2d;
-    Signal2d shiftedBlueChannelSignal2d;    
+    Signal2d shiftedBlueChannelSignal2d;
     double[][] masks;
     Spinner<Integer> polarScaleSpinner;
     Spinner<Double> transparencySpinner;
@@ -68,7 +69,7 @@ public class ImageFFTTestApp extends Application {
     private double mousePosY;
     private double mouseOldX;
     private double mouseOldY;
-    
+
     @Override
     public void init() {
         try {
@@ -76,7 +77,7 @@ public class ImageFFTTestApp extends Application {
             baseImageView = new ImageView(baseImage);
             baseImagePR = baseImage.getPixelReader();
             int height = Double.valueOf(baseImage.getHeight()).intValue();
-            int width = Double.valueOf(baseImage.getWidth()).intValue();            
+            int width = Double.valueOf(baseImage.getWidth()).intValue();
             masks = new double[height][width];
             clearMask();
         } catch (IOException ex) {
@@ -102,7 +103,7 @@ public class ImageFFTTestApp extends Application {
                         baseImageView.setImage(baseImage);
                         baseImagePR = baseImage.getPixelReader();
                         int height = Double.valueOf(baseImage.getHeight()).intValue();
-                        int width = Double.valueOf(baseImage.getWidth()).intValue();            
+                        int width = Double.valueOf(baseImage.getWidth()).intValue();
                         masks = new double[height][width];
                         clearMask();
                     } catch (MalformedURLException ex) {
@@ -153,13 +154,13 @@ public class ImageFFTTestApp extends Application {
             int startX = Double.valueOf(startLocal.getX()).intValue();
             int endX = Double.valueOf(endLocal.getX()).intValue();
             PixelWriter pw = imageFFTGC.getPixelWriter();
-            for(int y=startY;y<endY;y++){
-                for(int x=startX;x<endX;x++){
+            for (int y = startY; y < endY; y++) {
+                for (int x = startX; x < endX; x++) {
                     masks[y][x] = 0.0;
                     pw.setColor(x, y, Color.BLACK.deriveColor(1, 1, 1, 0.5));
                 }
             }
-            
+
             //copy the current shifted FFT image
             //shiftedGreySignal2d = fftShift2d_P(greySignal2d, false);
             Signal2d redShiftCopy = new Signal2d(shiftedRedChannelSignal2d.getM(), shiftedRedChannelSignal2d.getN());
@@ -168,38 +169,38 @@ public class ImageFFTTestApp extends Application {
             shiftedRedChannelSignal2d.copyInto(greenShiftCopy);
             Signal2d blueShiftCopy = new Signal2d(shiftedBlueChannelSignal2d.getM(), shiftedBlueChannelSignal2d.getN());
             shiftedRedChannelSignal2d.copyInto(blueShiftCopy);
-            //apply masks, 
-            for(int y=startY;y<endY;y++){
-                for(int x=startX;x<endX;x++){
-                    redShiftCopy.setAt(y, x, masks[y][x],masks[y][x]);
-                    greenShiftCopy.setAt(y, x, masks[y][x],masks[y][x]);
-                    blueShiftCopy.setAt(y, x, masks[y][x],masks[y][x]);
+            //apply masks,
+            for (int y = startY; y < endY; y++) {
+                for (int x = startX; x < endX; x++) {
+                    redShiftCopy.setAt(y, x, masks[y][x], masks[y][x]);
+                    greenShiftCopy.setAt(y, x, masks[y][x], masks[y][x]);
+                    blueShiftCopy.setAt(y, x, masks[y][x], masks[y][x]);
                 }
-            }            
+            }
             //invert fftshift
             Signal2d inverseShiftedRedChannelSignal2d = fftShift2d(redShiftCopy, true);
             Signal2d inverseShiftedGreenChannelSignal2d = fftShift2d(greenShiftCopy, true);
-            Signal2d inverseShiftedBlueChannelSignal2d = fftShift2d(blueShiftCopy, true);              
+            Signal2d inverseShiftedBlueChannelSignal2d = fftShift2d(blueShiftCopy, true);
             //do inverse fft
             int height = Double.valueOf(baseImage.getHeight()).intValue();
-            int width = Double.valueOf(baseImage.getWidth()).intValue();              
+            int width = Double.valueOf(baseImage.getWidth()).intValue();
             FastFourier2d transformer2D = new FastFourier2d();
             transformer2D.inverse(inverseShiftedRedChannelSignal2d);
             transformer2D.inverse(inverseShiftedGreenChannelSignal2d);
             transformer2D.inverse(inverseShiftedBlueChannelSignal2d);
             transformer2D.shutdown();
-            plotInverseFFT(height, width, 
-                inverseShiftedRedChannelSignal2d, 
-                inverseShiftedGreenChannelSignal2d, 
+            plotInverseFFT(height, width,
+                inverseShiftedRedChannelSignal2d,
+                inverseShiftedGreenChannelSignal2d,
                 inverseShiftedBlueChannelSignal2d
-            );            
+            );
 
             fftSelectionRectangle.setVisible(false);
             fftSelectionRectangle.setWidth(1);
             fftSelectionRectangle.setHeight(1);
-            
+
         });
-        
+
         inverseFFTCanvas = new Canvas(imageSize, imageSize);
         inverseFFTGC = inverseFFTCanvas.getGraphicsContext2D();
         inverseFFTGC.setFill(fillColor);
@@ -215,12 +216,12 @@ public class ImageFFTTestApp extends Application {
         plotPane.setVgap(2);
         plotPane.addRow(0, baseImageView, inverseFFTCanvas);
         plotPane.addRow(1, imageFFTCanvas, polarCanvas);
-        
+
         Button runFFTButton = new Button("Execute FFT");
         runFFTButton.setOnAction(e -> {
             spaToFreq2D(baseImage);
         });
-        
+
         polarScaleSpinner = new Spinner<>(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 1000, 10, 1));
 //        polarScaleSpinner.valueProperty().addListener(c -> {
 //            if (null != reals) {
@@ -237,13 +238,13 @@ public class ImageFFTTestApp extends Application {
         clearMaskButton.setOnAction(e -> {
             clearMask();
         });
-        
+
         controlsBox = new VBox(10,
             runFFTButton,
             new Label("Polar scale"),
             polarScaleSpinner,
             new Label("Transparency"),
-            transparencySpinner, 
+            transparencySpinner,
             clearMaskButton
         );
     }
@@ -264,10 +265,12 @@ public class ImageFFTTestApp extends Application {
     public void stop() {
         System.exit(0);
     }
+
     private void clearMask() {
-        Arrays.stream(masks).forEach(row->Arrays.fill(row,1.0));
+        Arrays.stream(masks).forEach(row -> Arrays.fill(row, 1.0));
     }
-    private Signal2d fftShift2d(Signal2d inputSignal2d, boolean inverse) { 
+
+    private Signal2d fftShift2d(Signal2d inputSignal2d, boolean inverse) {
 
         int totalColumns = inputSignal2d.getN();
         int totalRows = inputSignal2d.getM();
@@ -276,13 +279,13 @@ public class ImageFFTTestApp extends Application {
         int middleRow = totalRows / 2;
         int rowRange = totalRows - middleRow;
 
-        if(inverse) {
+        if (inverse) {
             middleColumn = totalColumns - middleColumn;
             columnRange = totalColumns / 2;
             middleRow = totalRows - middleRow;
             rowRange = totalRows / 2;
         }
-        
+
         Signal2d shiftedSignal2d = new Signal2d(inputSignal2d.getM(), inputSignal2d.getN());
         // down right corner move to up left corner
         for (int y = 0; y < rowRange; y++) {
@@ -325,10 +328,11 @@ public class ImageFFTTestApp extends Application {
         }
         return shiftedSignal2d;
     }
+
     public void extractSignals(Image image) {
         int height = Double.valueOf(image.getHeight()).intValue();
         int width = Double.valueOf(image.getWidth()).intValue();
-        
+
         greySignal2d = new Signal2d(height, width);
         redChannelSignal2d = new Signal2d(height, width);
         greenChannelSignal2d = new Signal2d(height, width);
@@ -344,9 +348,9 @@ public class ImageFFTTestApp extends Application {
                 greenChannelSignal2d.setReAt(y, x, color.getGreen());
                 blueChannelSignal2d.setReAt(y, x, color.getBlue());
             }
-        }        
+        }
     }
-    
+
     public void spaToFreq2D(Image image) {
         extractSignals(image);
         System.out.println("Signal2D values extracted.");
@@ -372,8 +376,8 @@ public class ImageFFTTestApp extends Application {
         //magnitude_spectrum = 20 * np.log(np.abs(fshift))
         double redlogVal, greenlogVal, bluelogVal = 0;
         DoubleSummaryStatistics stats = Arrays
-                .stream(greySignal2d.getRe())
-                .summaryStatistics();
+            .stream(greySignal2d.getRe())
+            .summaryStatistics();
         System.out.println("Max: " + stats.getMax() + " Min: " + stats.getMin());
 
         baseImagePR = baseImage.getPixelReader();
@@ -385,18 +389,18 @@ public class ImageFFTTestApp extends Application {
         double opacity = transparencySpinner.getValue();
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
-                redlogVal = Math.log10(Math.abs(shiftedRedChannelSignal2d.getReAt(y, x))/ polarScaleSpinner.getValue());
-                greenlogVal = Math.log10(Math.abs(shiftedGreenChannelSignal2d.getReAt(y, x))/ polarScaleSpinner.getValue());
-                bluelogVal = Math.log10(Math.abs(shiftedBlueChannelSignal2d.getReAt(y, x))/ polarScaleSpinner.getValue());
+                redlogVal = Math.log10(Math.abs(shiftedRedChannelSignal2d.getReAt(y, x)) / polarScaleSpinner.getValue());
+                greenlogVal = Math.log10(Math.abs(shiftedGreenChannelSignal2d.getReAt(y, x)) / polarScaleSpinner.getValue());
+                bluelogVal = Math.log10(Math.abs(shiftedBlueChannelSignal2d.getReAt(y, x)) / polarScaleSpinner.getValue());
 
                 pw.setColor(x, y, Color.color(
-                    Utils.clamp(0,redlogVal,1), 
-                    Utils.clamp(0,greenlogVal,1),
-                    Utils.clamp(0,bluelogVal,1), 
+                    Utils.clamp(0, redlogVal, 1),
+                    Utils.clamp(0, greenlogVal, 1),
+                    Utils.clamp(0, bluelogVal, 1),
                     opacity)
                 );
                 //This is good and correct for grayscale
-                //                pw.setColor(x, y, Color.gray(Utils.clamp(0, 
+                //                pw.setColor(x, y, Color.gray(Utils.clamp(0,
                 //                    Math.log10(Math.abs(shiftedGreySignal2d.getReAt(y, x))) / polarScaleSpinner.getValue(),
                 //                    1)));
             }
@@ -416,11 +420,12 @@ public class ImageFFTTestApp extends Application {
         transformer2D.inverse(greenChannelSignal2d);
         transformer2D.inverse(blueChannelSignal2d);
 
-        plotInverseFFT(height,width, redChannelSignal2d, greenChannelSignal2d, blueChannelSignal2d);
+        plotInverseFFT(height, width, redChannelSignal2d, greenChannelSignal2d, blueChannelSignal2d);
 
         // don't forget to shut it down as it uses an executor service
         transformer2D.shutdown();
     }
+
     public void plotInverseFFT(int height, int width, Signal2d redChannel, Signal2d greenChannel, Signal2d blueChannel) {
         PixelWriter pw = inverseFFTGC.getPixelWriter();
         PixelReader pr = baseImage.getPixelReader();
@@ -436,11 +441,12 @@ public class ImageFFTTestApp extends Application {
                 //        1);//masks[y][x]);
                 originalColor = pr.getColor(x, y);
                 level = clamp(0, (redChannel.getReAt(y, x) + greenChannel.getReAt(y, x)
-                    + blueChannel.getReAt(y, x))/1.0, 1);
+                    + blueChannel.getReAt(y, x)) / 1.0, 1);
                 pw.setColor(x, y, originalColor.deriveColor(1, 1, level, 1));
             }
-        }        
+        }
     }
+
     public void polarPlot2D(double scale, int height, int width, Signal2d signal2D) {
         PixelWriter polarPW = polarGC.getPixelWriter();
         double magnitude, phaseAngle;
@@ -454,16 +460,16 @@ public class ImageFFTTestApp extends Application {
                 //angle = phase component
                 //atan2(imag(X),real(X))*180/pi; %phase information
                 phaseAngle = Math.atan2(signal2D.getImAt(y, x), signal2D.getReAt(y, x))
-                        * 180.0 / Math.PI; //%phase information
-                //Compute Polar Coordinates based on magnitude and phase                
+                    * 180.0 / Math.PI; //%phase information
+                //Compute Polar Coordinates based on magnitude and phase
                 //return new Vector(magnitude * Math.cos(flippedAngle),
                 //                magnitude * Math.sin(flippedAngle));
                 xCoord = Long.valueOf(Math.round(magnitude
-                        * Math.cos(phaseAngle))).intValue()
-                        + shiftX;
+                    * Math.cos(phaseAngle))).intValue()
+                    + shiftX;
                 yCoord = Long.valueOf(Math.round(magnitude
-                        * Math.sin(phaseAngle))).intValue()
-                        + shiftY;
+                    * Math.sin(phaseAngle))).intValue()
+                    + shiftY;
                 polarPW.setColor(xCoord, yCoord, baseImagePR.getColor(x, y));
             }
         }

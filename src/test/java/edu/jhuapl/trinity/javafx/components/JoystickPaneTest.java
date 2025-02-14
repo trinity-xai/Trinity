@@ -5,11 +5,7 @@ package edu.jhuapl.trinity.javafx.components;
 import edu.jhuapl.trinity.javafx.components.panes.JoystickPane;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.FastScatter3D;
 import edu.jhuapl.trinity.utils.volumetric.Octree;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
 import javafx.application.Application;
-import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Point3D;
 import javafx.scene.AmbientLight;
@@ -38,6 +34,10 @@ import javafx.scene.transform.Rotate;
 import javafx.stage.Stage;
 import org.fxyz3d.utils.CameraTransformer;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Random;
+
 public class JoystickPaneTest extends Application {
     PerspectiveCamera camera;
     CameraTransformer cameraTransform;
@@ -55,7 +55,7 @@ public class JoystickPaneTest extends Application {
     long hyperspaceRefreshRate = 15; //milliseconds
     int totalPoints = 10000;
     double point3dSize = 0.5;
-    int divisions = 8;    
+    int divisions = 8;
     double mousePosX;
     double mousePosY;
     double mouseOldX;
@@ -76,7 +76,7 @@ public class JoystickPaneTest extends Application {
      * Transform Management
      */
     public Affine affineTransform;
-    
+
     @Override
     public void start(Stage stage) {
         fastScatter3D = new FastScatter3D(totalPoints, point3dSize, divisions);
@@ -86,16 +86,16 @@ public class JoystickPaneTest extends Application {
         //generate some random positions
         for (int i = 0; i < pointCount; i++) {
             positions.add(new Point3D(
-                rando.nextGaussian(numericCenter, numericCenter*0.5) * scale,
-                rando.nextGaussian(numericCenter, numericCenter*0.5) * -scale,
-                rando.nextGaussian(numericCenter, numericCenter*0.5) * scale));
+                rando.nextGaussian(numericCenter, numericCenter * 0.5) * scale,
+                rando.nextGaussian(numericCenter, numericCenter * 0.5) * -scale,
+                rando.nextGaussian(numericCenter, numericCenter * 0.5) * scale));
         }
         fastScatter3D.updatePositionsList(positions);
 
         octree = new Octree();
-        octree.setMaxPointsPerNode(totalPoints+1);
+        octree.setMaxPointsPerNode(totalPoints + 1);
         refreshOctree();
-        
+
         //make transparent so it doesn't interfere with subnode transparency effects
         Background transBack = new Background(new BackgroundFill(
             Color.TRANSPARENT, CornerRadii.EMPTY, Insets.EMPTY));
@@ -129,7 +129,7 @@ public class JoystickPaneTest extends Application {
             camera.setTranslateZ(newZ);
         });
         subScene.addEventHandler(MouseEvent.MOUSE_ENTERED, event -> subScene.requestFocus());
-        
+
         camera = new PerspectiveCamera(true);
         //setup camera transform for rotational support
         cameraTransform = new CameraTransformer();
@@ -140,13 +140,13 @@ public class JoystickPaneTest extends Application {
         camera.setTranslateZ(cameraDistance);
         cameraTransform.ry.setAngle(-45.0);
         cameraTransform.rx.setAngle(-10.0);
-        subScene.setCamera(camera);        
-        
+        subScene.setCamera(camera);
+
         centerStack = new StackPane(subScene, pathPane);
         centerStack.setBackground(transBack);
         subScene.widthProperty().bind(centerStack.widthProperty());
         subScene.heightProperty().bind(centerStack.heightProperty());
-        
+
         Sphere sphereX = new Sphere(5);
         sphereX.setTranslateX(scale);
         sphereX.setMaterial(new PhongMaterial(Color.RED));
@@ -158,7 +158,7 @@ public class JoystickPaneTest extends Application {
         Sphere sphereZ = new Sphere(5);
         sphereZ.setTranslateZ(scale);
         sphereZ.setMaterial(new PhongMaterial(Color.BLUE));
-        
+
         AmbientLight ambientLight = new AmbientLight(Color.WHITE);
 
         sceneRoot.getChildren().addAll(cameraTransform, ambientLight,
@@ -230,18 +230,18 @@ public class JoystickPaneTest extends Application {
             }
             if (moved)
                 fastScatter3D.setCenterPoint(new Point3D(x, y, z));
-            
+
             //point size and scaling
             if (keycode == KeyCode.O || (keycode == KeyCode.P && event.isControlDown())) {
                 point3dSize -= 0.1;
-                if(point3dSize < 0.1)
+                if (point3dSize < 0.1)
                     point3dSize = 0.1;
                 fastScatter3D.setRadius(point3dSize);
             }
             if (keycode == KeyCode.P) {
                 point3dSize += 0.1;
                 fastScatter3D.setRadius(point3dSize);
-            }            
+            }
         });
 
         BorderPane bpOilSpill = new BorderPane(centerStack);
@@ -249,7 +249,7 @@ public class JoystickPaneTest extends Application {
 
         CheckMenuItem toggleJoystickMenuItem = new CheckMenuItem("Enable Joystick Pane");
         toggleJoystickMenuItem.setOnAction(e -> {
-            if(toggleJoystickMenuItem.isSelected()) {
+            if (toggleJoystickMenuItem.isSelected()) {
                 pathPane.getChildren().add(joystickPane);
                 joystickPane.slideInPane();
             } else
@@ -297,12 +297,12 @@ public class JoystickPaneTest extends Application {
         joystickPane.valueproperty.subscribe(c -> {
             currentRadius = c.doubleValue() * scale;
 //            Platform.runLater(() -> {
-                selectByRadius(currentRadius);
+            selectByRadius(currentRadius);
 //            });
         });
-        joystickPane.fireButton.setOnAction(e->refreshOctree());
-        joystickPane.thrustButton.setOnAction(e->selectRandom());
-        
+        joystickPane.fireButton.setOnAction(e -> refreshOctree());
+        joystickPane.thrustButton.setOnAction(e -> selectRandom());
+
         affineTransform = new Affine();
 
         //Make everything pretty
@@ -333,7 +333,8 @@ public class JoystickPaneTest extends Application {
 
         addRotation(yChange, Rotate.Y_AXIS);
         addRotation(xChange, Rotate.X_AXIS);
-    }    
+    }
+
     /**
      * Accumulate rotation about specified axis
      *
@@ -350,27 +351,30 @@ public class JoystickPaneTest extends Application {
          */
         affineTransform = (Affine) r.createConcatenation(affineTransform);
     }
+
     private void selectByRadius(double radius) {
         fastScatter3D.setColorAll(defaultColor);
-        
-        if(radius > 0.0) {
+
+        if (radius > 0.0) {
             Point3D centroid = octree.getCurrentPoints().get(currentIndex);
             List<Integer> indices = octree.searchAllNeighborsWithinDistance(centroid, radius);
             System.out.println(indices.size() + " " + radius);
-            for(int i : indices) {
+            for (int i : indices) {
                 fastScatter3D.setColorByIndex(i, neighborColor);
             }
-        }   
+        }
         fastScatter3D.setColorByIndex(currentIndex, currentIndexColor);
     }
+
     private void selectRandom() {
         fastScatter3D.setColorAll(defaultColor);
         currentIndex = rando.nextInt(positions.size());
         int[] indices = octree.searchNearestNeighbors(20, currentIndex);
         fastScatter3D.setColorByIndex(currentIndex, currentIndexColor);
-        for(int i : indices) 
+        for (int i : indices)
             fastScatter3D.setColorByIndex(i, neighborColor);
     }
+
     private void selectCentroid() {
         fastScatter3D.setColorAll(defaultColor);
         Point3D centroid = new Point3D(
@@ -378,16 +382,17 @@ public class JoystickPaneTest extends Application {
         int[] indices = octree.searchNearestNeighbors(1, centroid);
         currentIndex = indices[0];
         indices = octree.searchNearestNeighbors(20, currentIndex);
-        for(int i : indices) 
+        for (int i : indices)
             fastScatter3D.setColorByIndex(i, neighborColor);
-        fastScatter3D.setColorByIndex(currentIndex, currentIndexColor);        
-    }    
+        fastScatter3D.setColorByIndex(currentIndex, currentIndexColor);
+    }
+
     private void refreshOctree() {
         octree.buildIndex(positions);
         selectCentroid();
         System.out.println("Octree stuff done.");
     }
-    
+
     private void mouseDragCamera(MouseEvent me) {
         mouseOldX = mousePosX;
         mouseOldY = mousePosY;
@@ -420,6 +425,7 @@ public class JoystickPaneTest extends Application {
             cameraTransform.t.setY(cameraTransform.t.getY() + mouseDeltaY * modifierFactor * modifier * 0.3); // -
         }
     }
+
     public static void main(String[] args) {
         launch(args);
     }

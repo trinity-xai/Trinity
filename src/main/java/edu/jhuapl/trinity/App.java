@@ -11,9 +11,9 @@ import edu.jhuapl.trinity.data.messages.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.FeatureVector;
 import edu.jhuapl.trinity.javafx.components.MatrixOverlay;
 import edu.jhuapl.trinity.javafx.components.panes.AnalysisLogPane;
+import edu.jhuapl.trinity.javafx.components.panes.ImageInspectorPane;
 import edu.jhuapl.trinity.javafx.components.panes.NavigatorPane;
 import edu.jhuapl.trinity.javafx.components.panes.PixelSelectionPane;
-import edu.jhuapl.trinity.javafx.components.panes.ImageInspectorPane;
 import edu.jhuapl.trinity.javafx.components.panes.Shape3DControlPane;
 import edu.jhuapl.trinity.javafx.components.panes.SparkLinesPane;
 import edu.jhuapl.trinity.javafx.components.panes.TextPane;
@@ -235,13 +235,13 @@ public class App extends Application {
         hyperspace3DPane = new Hyperspace3DPane(scene);
         hyperspace3DPane.setVisible(false); //start off hidden
         navigatorPane = new NavigatorPane(scene, pathPane);
-        
+
         projectorPane = new ProjectorPane();
         projectorPane.setVisible(false); //start off hidden
         analysisLogPane = new AnalysisLogPane(scene, desktopPane);
         pixelSelectionPane = new PixelSelectionPane(scene, pathPane);
         imageInspectorPane = new ImageInspectorPane(scene, pathPane);
-        
+
         LOG.info("Registering Event Handlers...");
         //animatedConsoleText.animate("Registering Event Handlers...");
         scene.addEventHandler(FeatureVectorEvent.REQUEST_FEATURE_COLLECTION, event -> {
@@ -422,7 +422,7 @@ public class App extends Application {
         centerStack.getChildren().add(0, projections3DPane);
         centerStack.getChildren().add(0, hypersurface3DPane);
         centerStack.getChildren().add(0, projectorPane);
- 
+
         LOG.info("Parsing command line...");
         //animatedConsoleText.animate("Parsing command line...");
         parseCommandLine();
@@ -644,13 +644,13 @@ public class App extends Application {
             } else {
                 pixelSelectionPane.show();
             }
-            if(null != e.object) {
+            if (null != e.object) {
                 Image image = (Image) e.object;
                 pixelSelectionPane.setImage(image);
             }
         });
-        
-        
+
+
         LOG.info("Waveform View ");
         scene.addEventHandler(ApplicationEvent.SHOW_WAVEFORM_PANE, e -> {
             if (null == waveformPane) {
@@ -791,15 +791,15 @@ public class App extends Application {
         });
         scene.addEventHandler(ApplicationEvent.SHOW_PROJECTOR_PANE, e -> {
             boolean visible = !projectorPane.isVisible();
-            if(null != e.object)
+            if (null != e.object)
                 visible = (boolean) e.object;
             projectorPane.setVisible(visible);
-            if(visible && projectorPane.firstTime == true) {
+            if (visible && projectorPane.firstTime == true) {
                 projectorPane.firstTime = false;
                 projectorPane.scanAndAnimate();
             }
         });
-                
+
         LOG.info("Data Handlers ");
         gmeh = new GaussianMixtureEventHandler();
         scene.getRoot().addEventHandler(GaussianMixtureEvent.NEW_GAUSSIAN_MIXTURE, gmeh);
@@ -983,10 +983,10 @@ public class App extends Application {
 
             int size = hyperspace3DPane.getAllFeatureVectors().size();
             List<FeatureVector> visibleFeatures = new ArrayList<>();
-            for(int i=0;i<size;i++){
-                if(FactorLabel.visibilityByLabel(
+            for (int i = 0; i < size; i++) {
+                if (FactorLabel.visibilityByLabel(
                     hyperspace3DPane.getAllFeatureVectors().get(i).getLabel())
-                && VisibilityMap.visibilityByIndex(i)) {
+                    && VisibilityMap.visibilityByIndex(i)) {
                     visibleFeatures.add(hyperspace3DPane.getAllFeatureVectors().get(i));
                 }
             }

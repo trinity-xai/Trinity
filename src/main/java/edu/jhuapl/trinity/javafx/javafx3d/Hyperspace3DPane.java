@@ -1997,6 +1997,7 @@ public class Hyperspace3DPane extends StackPane implements
         VisibilityMap.pNodeVisibilityMap.put(d[i], b);
         VisibilityMap.visibilityList.set(i, b);
     }
+
     public boolean getVisibleByIndex(int i) {
         return VisibilityMap.visibilityByIndex(i);
     }

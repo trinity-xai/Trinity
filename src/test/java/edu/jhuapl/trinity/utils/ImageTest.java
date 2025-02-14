@@ -10,8 +10,8 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.net.URL;
 import java.net.URI;
+import java.net.URL;
 import java.text.DecimalFormat;
 
 import static org.junit.jupiter.api.Assertions.assertTrue;
@@ -27,6 +27,7 @@ public class ImageTest {
 
     /**
      * Test of doCommonsPca method, of class AnalysisUtils.
+     *
      * @throws java.net.MalformedURLException
      */
     //@Test

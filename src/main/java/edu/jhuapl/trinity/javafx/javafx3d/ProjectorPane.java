@@ -9,38 +9,6 @@ import edu.jhuapl.trinity.data.messages.UmapConfig;
 import edu.jhuapl.trinity.javafx.components.ProjectorNode;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
-import java.io.IOException;
-import java.net.MalformedURLException;
-import java.nio.file.Files;
-import javafx.scene.Group;
-import javafx.scene.PerspectiveCamera;
-import javafx.scene.SceneAntialiasing;
-import javafx.scene.SubScene;
-import javafx.scene.control.ContextMenu;
-import javafx.scene.control.MenuItem;
-import javafx.scene.image.Image;
-import javafx.scene.image.ImageView;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.MouseButton;
-import javafx.scene.input.MouseEvent;
-import javafx.scene.input.ScrollEvent;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.StackPane;
-import javafx.scene.paint.Color;
-import javafx.scene.paint.PhongMaterial;
-import javafx.scene.shape.Sphere;
-import org.fxyz3d.utils.CameraTransformer;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.logging.Level;
 import javafx.animation.AnimationTimer;
 import javafx.animation.FadeTransition;
 import javafx.animation.KeyFrame;
@@ -54,22 +22,54 @@ import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Point2D;
 import javafx.geometry.Point3D;
+import javafx.scene.Group;
 import javafx.scene.Node;
+import javafx.scene.PerspectiveCamera;
+import javafx.scene.SceneAntialiasing;
+import javafx.scene.SubScene;
+import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
+import javafx.scene.control.MenuItem;
 import javafx.scene.effect.Glow;
 import javafx.scene.effect.Reflection;
+import javafx.scene.image.Image;
+import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.MouseButton;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.input.ScrollEvent;
+import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.CornerRadii;
+import javafx.scene.layout.StackPane;
+import javafx.scene.paint.Color;
+import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.LineTo;
 import javafx.scene.shape.MoveTo;
 import javafx.scene.shape.Path;
 import javafx.scene.shape.Shape3D;
+import javafx.scene.shape.Sphere;
 import javafx.scene.text.Font;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Translate;
 import javafx.stage.DirectoryChooser;
 import javafx.util.Duration;
 import org.fxyz3d.geometry.MathUtils;
+import org.fxyz3d.utils.CameraTransformer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
+import java.io.IOException;
+import java.net.MalformedURLException;
+import java.nio.file.Files;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.logging.Level;
 
 /**
  * @author Sean Phillips
@@ -79,7 +79,7 @@ public class ProjectorPane extends StackPane {
     private static final Logger LOG = LoggerFactory.getLogger(ProjectorPane.class);
     PerspectiveCamera camera = new PerspectiveCamera(true);
     public Group sceneRoot = new Group();
-    private Group labelGroup;    
+    private Group labelGroup;
     public SubScene subScene;
     public CameraTransformer cameraTransform = new CameraTransformer();
     private double cameraDistance = -10000;
@@ -102,16 +102,18 @@ public class ProjectorPane extends StackPane {
     File analysisDirectory = new File("./analysis");
     double originRadius = 9001;
     public Color sceneColor = Color.TRANSPARENT;
-    /** Provides deserialization support for JSON messages */
+    /**
+     * Provides deserialization support for JSON messages
+     */
     ObjectMapper mapper;
     //allows 2D labels to track their 3D counterparts
-    HashMap<Shape3D, Label> shape3DToLabel = new HashMap<>();    
-    public boolean firstTime = true;    
-    
+    HashMap<Shape3D, Label> shape3DToLabel = new HashMap<>();
+    public boolean firstTime = true;
+
     public ProjectorPane() {
         mapper = new ObjectMapper();
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-        
+
         setBackground(new Background(new BackgroundFill(sceneColor, CornerRadii.EMPTY, Insets.EMPTY)));
         subScene = new SubScene(sceneRoot, sceneWidth, sceneHeight, true, SceneAntialiasing.BALANCED);
         subScene.setOnMouseEntered(event -> subScene.requestFocus());
@@ -143,7 +145,7 @@ public class ProjectorPane extends StackPane {
             double z = camera.getTranslateZ();
             double newZ = z + event.getDeltaY() * modifierFactor * modifier;
             camera.setTranslateZ(newZ);
-            updateLabels();            
+            updateLabels();
         });
         subScene.setOnKeyPressed(event -> {
             //What key did the user press?
@@ -213,7 +215,7 @@ public class ProjectorPane extends StackPane {
         scanItem.setOnAction(e -> {
             sceneRoot.getChildren().removeIf(n -> n instanceof ProjectorNode);
             nodes.clear();
-            transitionList.clear();            
+            transitionList.clear();
             scanAndAnimate();
         });
 
@@ -249,13 +251,15 @@ public class ProjectorPane extends StackPane {
         //add our labels to the group that will be added to the StackPane
         labelGroup = new Group();
         labelGroup.setManaged(false);
-        getChildren().add(labelGroup);        
+        getChildren().add(labelGroup);
     }
+
     public void scanAndAnimate() {
         scanAnalysisDirectory(analysisDirectory);
         updateLabels();
-        animateImages();        
+        animateImages();
     }
+
     private void scanAnalysisDirectory(File directory) {
         sceneRoot.getChildren().removeIf(n -> n instanceof Sphere);
         labelGroup.getChildren().clear();
@@ -264,13 +268,13 @@ public class ProjectorPane extends StackPane {
         double angle1 = -Math.PI * 0.35; //@TODO SMP Dynamically figure this out
         double angleStepSize = 0.25; //@TODO SMP Dynamically figure this out
         for (File subDirectory : directory.listFiles()) {
-            if(subDirectory.isDirectory()) {
+            if (subDirectory.isDirectory()) {
                 //We will recognize three different file types...
                 //map images to their respective UMAP and Analysis config names
                 List<ProjectorNode> projectorNodes = new ArrayList<>();
                 //search for and use image files as pivot points, do NOT follow recursively
-                for(File subDirFile : subDirectory.listFiles()) {
-                    if(ResourceUtils.isImageFile(subDirFile)) {
+                for (File subDirFile : subDirectory.listFiles()) {
+                    if (ResourceUtils.isImageFile(subDirFile)) {
                         Image image;
                         try {
                             image = new Image(subDirFile.toURI().toURL().toExternalForm());
@@ -279,31 +283,31 @@ public class ProjectorPane extends StackPane {
                             AnalysisConfig acDC = findAnalysisConfigByName(subDirectory, subDirFile.getName());
                             //the configs may be null but that is ok
                             ProjectorNode pn = new ProjectorNode(image, ucForMe, acDC);
-                            projectorNodes.add(pn);                            
+                            projectorNodes.add(pn);
                         } catch (MalformedURLException ex) {
                             java.util.logging.Logger.getLogger(ProjectorPane.class.getName()).log(Level.SEVERE, null, ex);
                         }
                     }
                 }
                 //should we create create new column
-                if(!projectorNodes.isEmpty()) {
-                    int row = projectorNodes.size()/2;
-                    if(row > 0)
+                if (!projectorNodes.isEmpty()) {
+                    int row = projectorNodes.size() / 2;
+                    if (row > 0)
                         row *= -1;
                     //add each projector node to the column
-                    for(ProjectorNode pn : projectorNodes) {
-                        addNodeToScene(pn, row, projectorNodes.size()/2, angle1);
+                    for (ProjectorNode pn : projectorNodes) {
+                        addNodeToScene(pn, row, projectorNodes.size() / 2, angle1);
                         row++;
                     }
                     //Add header Label based on directory name
                     //Add to hashmap so updateLabels() can manage the label position
                     Sphere columnLabelSphere = new Sphere(0.5, 1);
                     columnLabelSphere.setMaterial(new PhongMaterial(Color.GREEN));
-                    
+
                     // Ring formula
                     //bump the x coordinate a bit the left to left justify the label
-                    double x = originRadius * Math.sin(angle1*1.1) * Math.cos(Math.PI);
-                    double y = 1800 * -(projectorNodes.size()/2); //extra offset
+                    double x = originRadius * Math.sin(angle1 * 1.1) * Math.cos(Math.PI);
+                    double y = 1800 * -(projectorNodes.size() / 2); //extra offset
                     double z = originRadius * Math.cos(angle1);
                     columnLabelSphere.setTranslateX(x);
                     columnLabelSphere.setTranslateY(y);
@@ -313,14 +317,15 @@ public class ProjectorPane extends StackPane {
                     columnLabel.setFont(new Font("Consolas", 20));
                     columnLabel.setTextFill(Color.SKYBLUE);
                     labelGroup.getChildren().add(columnLabel);
-                    shape3DToLabel.put(columnLabelSphere, columnLabel);                    
+                    shape3DToLabel.put(columnLabelSphere, columnLabel);
                     //only bump the directional angle if the subdir had nodes in it
                     angle1 += angleStepSize;
-                }                
-            }  
+                }
+            }
         }
-        updateLabels();        
+        updateLabels();
     }
+
     private void animateLabelVisibility(long ms) {
         //sweet music reference: https://en.wikipedia.org/wiki/Street_Spirit_(Fade_Out)
         FadeTransition streetSpiritFadeIn = new FadeTransition(Duration.millis(ms), labelGroup);
@@ -328,6 +333,7 @@ public class ProjectorPane extends StackPane {
         streetSpiritFadeIn.setToValue(1);
         streetSpiritFadeIn.playFromStart();
     }
+
     private void addNodeToScene(ProjectorNode projectorNode, int row, int max, double angle1) {
         double yOffset = 1300; //a bit more than 1080p height
         double angle2 = Math.PI;
@@ -357,15 +363,15 @@ public class ProjectorPane extends StackPane {
 //            projectorNode.setEffect(glow);
 //        }
         //Add special click handler to zoom camera
-        projectorNode.addEventHandler(MouseEvent.MOUSE_CLICKED, e-> {
-            if(e.getButton() == MouseButton.MIDDLE) {
+        projectorNode.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
+            if (e.getButton() == MouseButton.MIDDLE) {
                 long milliseconds = 500;
                 Timeline rotateTimeline = JavaFX3DUtils.transitionCameraTo(milliseconds, camera, cameraTransform,
                     0, 0, 0, 0.0, ryAngle, 0.0);
                 rotateTimeline.setOnFinished(eh -> {
                     updateLabels();
                     Point3D p3D = new Point3D(x, y, z);
-                    Point3D lessP3D = p3D.subtract(x*0.5, y*0.5, z*0.5);
+                    Point3D lessP3D = p3D.subtract(x * 0.5, y * 0.5, z * 0.5);
                     cameraTransform.setPivot(0, 0, 0);
                     Timeline timeline = new Timeline(
                         new KeyFrame(Duration.millis(milliseconds),
@@ -385,50 +391,53 @@ public class ProjectorPane extends StackPane {
         nodes.add(projectorNode);
         sceneRoot.getChildren().add(projectorNode);
         transitionList.add(createTransition(projectorNode));
-    }    
+    }
+
     private AnalysisConfig findAnalysisConfigByName(File directory, String name) {
         String filenameOnly = ResourceUtils.removeExtension(name);
         //read all json files, do NOT follow recursively
-        for(File jsonFile : directory.listFiles(f -> 
-                f.getName().endsWith(".json")
-            ||  f.getName().endsWith(".JSON"))) {
+        for (File jsonFile : directory.listFiles(f ->
+            f.getName().endsWith(".json")
+                || f.getName().endsWith(".JSON"))) {
             String jsonFileName = ResourceUtils.removeExtension(jsonFile.getName());
-            if(jsonFileName.startsWith("AnalysisConfig-")) {
+            if (jsonFileName.startsWith("AnalysisConfig-")) {
                 jsonFileName = jsonFileName.replaceFirst("AnalysisConfig-", "");
-                if(filenameOnly.endsWith(jsonFileName)){
+                if (filenameOnly.endsWith(jsonFileName)) {
                     try {
                         String messageBody = Files.readString(jsonFile.toPath());
-                        if(AnalysisConfig.isAnalysisConfig(messageBody)) {
+                        if (AnalysisConfig.isAnalysisConfig(messageBody)) {
                             return mapper.readValue(messageBody, AnalysisConfig.class);
-                        } 
+                        }
                     } catch (IOException ex) {
                         java.util.logging.Logger.getLogger(ProjectorPane.class.getName()).log(Level.SEVERE, null, ex);
-                    }                      
+                    }
                 }
             }
         }
         return null; //if you get this far its because the file isn't there
     }
+
     private UmapConfig findUmapConfigByName(File directory, String name) {
         String filenameOnly = ResourceUtils.removeExtension(name);
         //read all json files, do NOT follow recursively
-        for(File jsonFile : directory.listFiles(f -> 
-                f.getName().endsWith(".json")
-            ||  f.getName().endsWith(".JSON"))) {
+        for (File jsonFile : directory.listFiles(f ->
+            f.getName().endsWith(".json")
+                || f.getName().endsWith(".JSON"))) {
             String jsonFileName = ResourceUtils.removeExtension(jsonFile.getName());
-            if(jsonFileName.contentEquals(filenameOnly)){
+            if (jsonFileName.contentEquals(filenameOnly)) {
                 try {
                     String messageBody = Files.readString(jsonFile.toPath());
-                    if(UmapConfig.isUmapConfig(messageBody)) {
+                    if (UmapConfig.isUmapConfig(messageBody)) {
                         return mapper.readValue(messageBody, UmapConfig.class);
-                    } 
+                    }
                 } catch (IOException ex) {
                     java.util.logging.Logger.getLogger(ProjectorPane.class.getName()).log(Level.SEVERE, null, ex);
-                }                      
+                }
             }
         }
         return null; //if you get this far its because the file isn't there
     }
+
     private void playNewImage(int index, String fixedPath) {
         Platform.runLater(() -> {
             try {
@@ -468,12 +477,14 @@ public class ProjectorPane extends StackPane {
             }
         });
     }
+
     public void animateImages() {
         labelGroup.setOpacity(0.0);
         nodes.forEach(n -> n.setVisible(false));
         AnimationTimer timer = createAnimation();
         timer.start();
     }
+
     private AnimationTimer createAnimation() {
         Collections.sort(transitionList, (ParallelTransition arg0, ParallelTransition arg1) -> {
             // bottom right to top left
@@ -503,13 +514,14 @@ public class ProjectorPane extends StackPane {
                 }
                 if (transitionIndex >= transitionList.size()) {
                     stop();
-                    animateLabelVisibility(1000);        
+                    animateLabelVisibility(1000);
                 }
             }
         };
 
         return timer;
     }
+
     private ParallelTransition createTransition(final Node node) {
         Path path = new Path();
         path.getElements().add(new MoveToAbs(node,
@@ -531,6 +543,7 @@ public class ProjectorPane extends StackPane {
         parallelTransition.setCycleCount(1);
         return parallelTransition;
     }
+
     public void resetView(double milliseconds, boolean rightNow) {
         if (!rightNow) {
             cameraTransform.setPivot(0, 0, 0);
@@ -550,15 +563,16 @@ public class ProjectorPane extends StackPane {
             timeline.playFromStart();
         } else {
             cameraTransform.setPivot(0, 0, 0);
-                cameraTransform.rx.setAngle(-10);
-                cameraTransform.ry.setAngle(-45.0);
-                cameraTransform.rz.setAngle(0.0);
-                camera.setTranslateX(0);
-                camera.setTranslateY(0);
-                camera.setTranslateZ(cameraDistance);
+            cameraTransform.rx.setAngle(-10);
+            cameraTransform.ry.setAngle(-45.0);
+            cameraTransform.rz.setAngle(0.0);
+            camera.setTranslateX(0);
+            camera.setTranslateY(0);
+            camera.setTranslateZ(cameraDistance);
             cameraTransform.setPivot(0, 0, 0);
         }
     }
+
     private void mouseDragCamera(MouseEvent me) {
         mouseOldX = mousePosX;
         mouseOldY = mousePosY;
@@ -589,8 +603,9 @@ public class ProjectorPane extends StackPane {
             cameraTransform.t.setX(cameraTransform.t.getX() + mouseDeltaX * modifierFactor * modifier * 0.3); // -
             cameraTransform.t.setY(cameraTransform.t.getY() + mouseDeltaY * modifierFactor * modifier * 0.3); // -
         }
-        updateLabels();        
+        updateLabels();
     }
+
     private void updateLabels() {
         shape3DToLabel.forEach((node, label) -> {
             javafx.geometry.Point3D coordinates = node.localToScene(javafx.geometry.Point3D.ZERO, true);
@@ -621,7 +636,8 @@ public class ProjectorPane extends StackPane {
             //update the local transform of the label.
             label.getTransforms().setAll(new Translate(x, y));
         });
-    }    
+    }
+
     public static class MoveToAbs extends MoveTo {
 
         public MoveToAbs(Node node, double x, double y) {
@@ -636,5 +652,5 @@ public class ProjectorPane extends StackPane {
             super(x - node.getLayoutX() + node.getLayoutBounds().getWidth() / 2,
                 y - node.getLayoutY() + node.getLayoutBounds().getHeight() / 2);
         }
-    }    
+    }
 }

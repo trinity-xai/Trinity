@@ -142,8 +142,9 @@ public class FeatureVectorEventHandler implements EventHandler<FeatureVectorEven
         for (FeatureVectorRenderer renderer : renderers) {
             renderer.clearFeatureVectors();
             renderer.refresh();
-        }        
+        }
     }
+
     public void handleFeatureCollectionEvent(FeatureVectorEvent event) {
         FeatureCollection featureCollection = (FeatureCollection) event.object;
         if (null == featureCollection || featureCollection.getFeatures().isEmpty())

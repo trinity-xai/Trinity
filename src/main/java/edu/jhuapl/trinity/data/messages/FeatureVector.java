@@ -7,7 +7,6 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
-
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -167,7 +166,7 @@ public class FeatureVector extends MessageData {
     }
 
     public double getGlobalMean(List<FeatureVector> featureVectors) {
-        return featureVectors.stream().flatMapToDouble(t -> 
+        return featureVectors.stream().flatMapToDouble(t ->
             t.getData().stream().mapToDouble(Double::doubleValue)).average().getAsDouble();
     }
 

@@ -835,13 +835,14 @@ public class ShadowCubeWorld extends CubeWorld {
         showZY1GridLinesGroup(show);
         showZY2GridLinesGroup(show);
     }
+
     public void showDataAndCrosshairsOnly(boolean show) {
         showX1Panel(show);
         showX2Panel(show);
         showY1Panel(show);
         showY2Panel(show);
         showZ1Panel(show);
-        showZ2Panel(show);        
+        showZ2Panel(show);
         x1ShadowPane.showNearsidePoints.set(showNearsidePoints);
         x2ShadowPane.showNearsidePoints.set(showNearsidePoints);
         y1ShadowPane.showNearsidePoints.set(showNearsidePoints);

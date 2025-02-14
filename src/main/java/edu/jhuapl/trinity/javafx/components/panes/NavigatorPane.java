@@ -3,7 +3,6 @@
 package edu.jhuapl.trinity.javafx.components.panes;
 
 import edu.jhuapl.trinity.data.messages.FeatureVector;
-import static edu.jhuapl.trinity.data.messages.FeatureVector.bboxToString;
 import edu.jhuapl.trinity.data.messages.VectorMaskCollection;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
@@ -11,19 +10,24 @@ import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.events.ImageEvent;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import javafx.application.Platform;
+import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.TitledPane;
 import javafx.scene.control.Tooltip;
 import javafx.scene.effect.InnerShadow;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.scene.media.MediaView;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
+import javafx.scene.text.Text;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -31,11 +35,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 
-import javafx.geometry.Insets;
-import javafx.scene.control.Button;
-import javafx.scene.control.TitledPane;
-import javafx.scene.layout.GridPane;
-import javafx.scene.text.Text;
+import static edu.jhuapl.trinity.data.messages.FeatureVector.bboxToString;
 
 /**
  * @author Sean Phillips
@@ -85,9 +85,9 @@ public class NavigatorPane extends LitPathPane {
         imageLabel = new Label("No Label");
         imageLabel.setMaxWidth(DEFAULT_FIT_WIDTH);
         Button hypersurfaceButton = new Button("Hypersurface");
-        hypersurfaceButton.setOnAction(e-> {
+        hypersurfaceButton.setOnAction(e -> {
             hypersurfaceButton.getScene().getRoot().fireEvent(
-                new ApplicationEvent(ApplicationEvent.SHOW_HYPERSURFACE, true));            
+                new ApplicationEvent(ApplicationEvent.SHOW_HYPERSURFACE, true));
             hypersurfaceButton.getScene().getRoot().fireEvent(
                 new ImageEvent(ImageEvent.NEW_TEXTURE_SURFACE, currentImage));
         });
@@ -101,7 +101,7 @@ public class NavigatorPane extends LitPathPane {
         metaTP.setText("Metadata");
         metaTP.setExpanded(false);
         metaTP.setPrefWidth(DEFAULT_TITLEDPANE_WIDTH);
-        contentVBox = new VBox(5, imageView, urlLabel, imageLabel, 
+        contentVBox = new VBox(5, imageView, urlLabel, imageLabel,
             hypersurfaceButton, detailsTP, metaTP);
 
         ImageView refresh = ResourceUtils.loadIcon("refresh", 32);

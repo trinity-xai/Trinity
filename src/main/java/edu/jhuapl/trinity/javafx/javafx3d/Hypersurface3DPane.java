@@ -55,10 +55,13 @@ import javafx.scene.Scene;
 import javafx.scene.SceneAntialiasing;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.SubScene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.ColorPicker;
 import javafx.scene.control.ContextMenu;
+import javafx.scene.control.DialogPane;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.RadioButton;
@@ -100,6 +103,7 @@ import javafx.scene.text.Text;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Translate;
 import javafx.stage.FileChooser;
+import javafx.stage.StageStyle;
 import javafx.util.Duration;
 import org.fxyz3d.geometry.Point3D;
 import org.fxyz3d.scene.Skybox;
@@ -120,10 +124,6 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Random;
 import java.util.function.Function;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.DialogPane;
-import javafx.stage.StageStyle;
 
 /**
  * @author Sean Phillips
@@ -651,7 +651,7 @@ public class Hypersurface3DPane extends StackPane
             int y1 = 0;
             int x2 = Double.valueOf(image.getWidth()).intValue();
             int y2 = Double.valueOf(image.getHeight()).intValue();
-            if(x2 > 512 || y2 > 512) {
+            if (x2 > 512 || y2 > 512) {
                 boolean split = false;
                 Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
                     "Image has " + x2 + " rows and " + y2 + " columns.\n"
@@ -673,7 +673,7 @@ public class Hypersurface3DPane extends StackPane
                 if (optBT.get().equals(ButtonType.CANCEL))
                     return;
                 split = optBT.get().equals(ButtonType.YES);
-                if(split) {
+                if (split) {
                     //@TODO SMP popup helper tool to select region
                     scene.getRoot().fireEvent(new ApplicationEvent(
                         ApplicationEvent.SHOW_PIXEL_SELECTION, image));
@@ -1355,7 +1355,7 @@ public class Hypersurface3DPane extends StackPane
         });
         //whenever the spinner value is changed...
         yScaleSpinner.setOnKeyTyped(e -> {
-            if(e.getCode()==KeyCode.ENTER) {
+            if (e.getCode() == KeyCode.ENTER) {
                 yScale = ((Double) yScaleSpinner.getValue()).floatValue();
                 surfPlot.setFunctionScale(yScale);
                 updateTheMesh();
@@ -1931,7 +1931,7 @@ public class Hypersurface3DPane extends StackPane
             WritableImage wi = loadImage(shapleyCollection.getSourceInput());
             if (null != wi) {
                 int x2 = Double.valueOf(wi.getWidth()).intValue();
-                int y2 = Double.valueOf(wi.getHeight()).intValue();                
+                int y2 = Double.valueOf(wi.getHeight()).intValue();
                 tessellateImage(wi, 0, 0, x2, y2);
                 lastImage = wi;
                 //sneakily insert current function values (shapley) into vertices

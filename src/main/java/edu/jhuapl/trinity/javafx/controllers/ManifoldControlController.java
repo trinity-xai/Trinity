@@ -598,7 +598,8 @@ public class ManifoldControlController implements Initializable {
             writeConfigFile(file);
         }
     }
-    public UmapConfig getCurrentUmapConfig(){
+
+    public UmapConfig getCurrentUmapConfig() {
         UmapConfig uc = new UmapConfig();
         uc.setTargetWeight((float) targetWeightSlider.getValue());
         uc.setRepulsionStrength((float) repulsionSlider.getValue());
@@ -615,6 +616,7 @@ public class ManifoldControlController implements Initializable {
         uc.setVerbose(verboseCheckBox.isSelected());
         return uc;
     }
+
     private void writeConfigFile(File file) {
         UmapConfig uc = getCurrentUmapConfig();
         ObjectMapper mapper = new ObjectMapper();
@@ -622,7 +624,7 @@ public class ManifoldControlController implements Initializable {
             mapper.writeValue(file, uc);
         } catch (IOException ex) {
             LOG.error(null, ex);
-        }        
+        }
     }
 //    private String configToFilename(){
 //        NumberFormat format = new DecimalFormat("0.00");
@@ -638,18 +640,20 @@ public class ManifoldControlController implements Initializable {
 //        sb.append("NN").append(nearestNeighborsSpinner.getValue()).append("-");
 //        sb.append("NSR").append(negativeSampleRateSpinner.getValue()).append("-");
 //        sb.append("LC").append(localConnectivitySpinner.getValue());
-////        uc.setThreshold((double) thresholdSpinner.getValue());
-////        uc.setVerbose(verboseCheckBox.isSelected());
+
+    /// /        uc.setThreshold((double) thresholdSpinner.getValue());
+    /// /        uc.setVerbose(verboseCheckBox.isSelected());
 //        return sb.toString();
 //    }
     private void sendUmapConfig() {
-        String name = latestDir.getAbsolutePath() + File.separator 
+        String name = latestDir.getAbsolutePath() + File.separator
             + UmapConfig.configToFilename(getCurrentUmapConfig()).concat(".json");
         scene.getRoot().fireEvent(new ManifoldEvent(
             ManifoldEvent.NEW_UMAP_CONFIG, getCurrentUmapConfig(), name));
-        
-        
+
+
     }
+
     @FXML
     public void exportScene() {
         FileChooser fc = new FileChooser();

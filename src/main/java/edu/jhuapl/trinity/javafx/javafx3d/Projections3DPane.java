@@ -59,7 +59,6 @@ import edu.jhuapl.trinity.utils.AnalysisUtils;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.PCAConfig;
 import edu.jhuapl.trinity.utils.ResourceUtils;
-import static edu.jhuapl.trinity.utils.ResourceUtils.removeExtension;
 import edu.jhuapl.trinity.utils.VisibilityMap;
 import edu.jhuapl.trinity.utils.umap.Umap;
 import javafx.animation.AnimationTimer;
@@ -70,6 +69,7 @@ import javafx.animation.Transition;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.concurrent.Task;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.AmbientLight;
 import javafx.scene.Group;
 import javafx.scene.Node;
@@ -77,6 +77,7 @@ import javafx.scene.PerspectiveCamera;
 import javafx.scene.PointLight;
 import javafx.scene.Scene;
 import javafx.scene.SceneAntialiasing;
+import javafx.scene.SnapshotParameters;
 import javafx.scene.SubScene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
@@ -88,6 +89,7 @@ import javafx.scene.control.MenuItem;
 import javafx.scene.effect.Glow;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.image.WritableImage;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
@@ -109,6 +111,7 @@ import javafx.scene.text.Font;
 import javafx.scene.text.TextAlignment;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Translate;
+import javafx.stage.FileChooser;
 import javafx.util.Duration;
 import org.fxyz3d.geometry.Point3D;
 import org.fxyz3d.scene.Skybox;
@@ -116,6 +119,7 @@ import org.fxyz3d.utils.CameraTransformer;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.imageio.ImageIO;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
@@ -131,11 +135,8 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
-import javafx.embed.swing.SwingFXUtils;
-import javafx.scene.SnapshotParameters;
-import javafx.scene.image.WritableImage;
-import javafx.stage.FileChooser;
-import javax.imageio.ImageIO;
+
+import static edu.jhuapl.trinity.utils.ResourceUtils.removeExtension;
 
 /**
  * @author Sean Phillips
@@ -291,7 +292,7 @@ public class Projections3DPane extends StackPane implements
     Rectangle selectionRectangle;
     ProjectileSystem projectileSystem;
     File mostRecentPath = Paths.get(".").toFile();
-    
+
     public Projections3DPane(Scene scene) {
         this.scene = scene;
         cubeWorld = new ShadowCubeWorld(cubeSize, 100, true, featureVectors);
@@ -527,7 +528,7 @@ public class Projections3DPane extends StackPane implements
             }
             if (keycode == KeyCode.X) {
                 camera.setTranslateY(camera.getTranslateY() - change);
-            }            
+            }
             //rotate controls  use less sensitive modifiers
             change = event.isShiftDown() ? 10.0 : 1.0;
 
@@ -856,7 +857,7 @@ public class Projections3DPane extends StackPane implements
             subScene.getParent().getScene().getRoot().fireEvent(
                 new ApplicationEvent(ApplicationEvent.SHOW_NAVIGATOR_PANE));
         });
-        
+
         ImageView analysis = ResourceUtils.loadIcon("analysis", ICON_FIT_HEIGHT);
         analysis.setEffect(glow);
         MenuItem analysisItem = new MenuItem("Analysis Log", analysis);
@@ -864,7 +865,7 @@ public class Projections3DPane extends StackPane implements
             subScene.getParent().getScene().getRoot().fireEvent(
                 new ApplicationEvent(ApplicationEvent.SHOW_ANALYSISLOG_PANE));
         });
-        
+
         ImageView clearProjection = ResourceUtils.loadIcon("clear", ICON_FIT_HEIGHT);
         radar.setEffect(glow);
         MenuItem clearProjectionItem = new MenuItem("Clear Projection Data", clearProjection);
@@ -1103,9 +1104,9 @@ public class Projections3DPane extends StackPane implements
             clusterSelectionMode = isActive;
             LOG.info("Cluster Selection Mode: {}", clusterSelectionMode);
         });
-        scene.addEventHandler(ManifoldEvent.TAKESNAPSHOT_PROJECTION_SCENE, e-> {
+        scene.addEventHandler(ManifoldEvent.TAKESNAPSHOT_PROJECTION_SCENE, e -> {
             WritableImage image = this.snapshot(new SnapshotParameters(), null);
-            Platform.runLater(()-> {
+            Platform.runLater(() -> {
                 getScene().getRoot().fireEvent(
                     new ManifoldEvent(ManifoldEvent.NEWSNAPSHOT_PROJECTION_SCENE, image)
                 );
@@ -1117,9 +1118,9 @@ public class Projections3DPane extends StackPane implements
                 mostRecentPath = file.getParentFile();
                 WritableImage image = this.snapshot(new SnapshotParameters(), null);
                 try {
-                    String newImageFile = mostRecentPath.getPath() + File.separator + removeExtension(file.getName())+".png";
-                    ImageIO.write(SwingFXUtils.fromFXImage(image, null), "png", 
-                            new File(newImageFile));
+                    String newImageFile = mostRecentPath.getPath() + File.separator + removeExtension(file.getName()) + ".png";
+                    ImageIO.write(SwingFXUtils.fromFXImage(image, null), "png",
+                        new File(newImageFile));
                 } catch (IOException ioe) {
                     // TODO: handle exception here
                     //drop it like its hot
@@ -2062,7 +2063,7 @@ public class Projections3DPane extends StackPane implements
         HyperspaceSeed seed = new HyperspaceSeed(0, 1, 2, 3, 4, 5, features);
         hyperspaceSeeds.add(seed);
         addPNodeFromSeed(seed);
-        //@DIRTY BUG! SMP... since projections visibility is determined by 
+        //@DIRTY BUG! SMP... since projections visibility is determined by
         //hyperspace visibility we should NOT be clearing this teensy hacky
         //static method of tracking visibility by point.
         //VisibilityMap.clearAll();

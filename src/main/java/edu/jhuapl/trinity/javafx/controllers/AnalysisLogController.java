@@ -11,6 +11,7 @@ import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.tasks.AutomaticUmapForThePeopleTask;
 import edu.jhuapl.trinity.utils.ResourceUtils;
+import javafx.application.Platform;
 import javafx.fxml.FXML;
 import javafx.fxml.Initializable;
 import javafx.geometry.Pos;
@@ -18,11 +19,15 @@ import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.image.ImageView;
+import javafx.scene.image.WritableImage;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
+import javafx.scene.layout.HBox;
+import javafx.stage.DirectoryChooser;
 import javafx.stage.FileChooser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -33,11 +38,6 @@ import java.net.URL;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.ResourceBundle;
-import javafx.application.Platform;
-import javafx.scene.control.TextArea;
-import javafx.scene.image.WritableImage;
-import javafx.scene.layout.HBox;
-import javafx.stage.DirectoryChooser;
 
 /**
  * FXML Controller class
@@ -62,7 +62,7 @@ public class AnalysisLogController implements Initializable {
     private TextArea notesTextArea;
     @FXML
     private ImageView sceneImageView;
-    
+
     UmapConfig currentUmapConfig = null;
     AnalysisConfig currentAnalysisConfig = null;
     Scene scene;
@@ -77,7 +77,7 @@ public class AnalysisLogController implements Initializable {
     @Override
     public void initialize(URL url, ResourceBundle rb) {
         scene = App.getAppScene();
-        scene.addEventHandler(ManifoldEvent.NEWSNAPSHOT_PROJECTION_SCENE, e-> {
+        scene.addEventHandler(ManifoldEvent.NEWSNAPSHOT_PROJECTION_SCENE, e -> {
             WritableImage image = (WritableImage) e.object1;
             sceneImageView.setImage(image);
         });
@@ -99,15 +99,15 @@ public class AnalysisLogController implements Initializable {
                             ObjectMapper mapper = new ObjectMapper();
                             UmapConfig ucForMe = mapper.readValue(file, UmapConfig.class);
                             setUmapConfig(ucForMe);
-                            umapConfigurationTextField.setText(UmapConfig.configToFilename(ucForMe)+".json");
+                            umapConfigurationTextField.setText(UmapConfig.configToFilename(ucForMe) + ".json");
                         }
-                        
+
                     } catch (IOException ex) {
                         LOG.error(null, ex);
                     }
                 }
             });
-            
+
             scene.addEventHandler(ApplicationEvent.SHOW_ANALYSISLOG_PANE, event -> {
                 AnalysisConfig analysisConfig = (AnalysisConfig) event.object;
                 setAnalysisConfig(analysisConfig);
@@ -119,10 +119,10 @@ public class AnalysisLogController implements Initializable {
                 UmapConfig config = (UmapConfig) event.object1;
                 String filename = (String) event.object2; //don't really need for this
                 setUmapConfig(config);
-                umapConfigurationTextField.setText(UmapConfig.configToFilename(config)+".json");
+                umapConfigurationTextField.setText(UmapConfig.configToFilename(config) + ".json");
             });
             scene.addEventHandler(FeatureVectorEvent.NEW_FEATURES_SOURCE, event -> {
-                 File file = (File) event.object;
+                File file = (File) event.object;
                 dataSourcesListView.getItems().add(file.getAbsolutePath());
             });
         }
@@ -130,11 +130,12 @@ public class AnalysisLogController implements Initializable {
         HBox placeholder = new HBox(10, iv, new Label("No Data Sources Marked"));
         placeholder.setAlignment(Pos.CENTER);
         dataSourcesListView.setPlaceholder(placeholder);
-        
+
     }
-    @FXML 
+
+    @FXML
     public void execute() {
-        if(null != currentAnalysisConfig && null != currentUmapConfig) {
+        if (null != currentAnalysisConfig && null != currentUmapConfig) {
             AutomaticUmapForThePeopleTask autoTask = new AutomaticUmapForThePeopleTask(
                 scene, currentAnalysisConfig, currentUmapConfig, true, true);
             Thread t = new Thread(autoTask, "Automatic UMAP For the People");
@@ -142,17 +143,18 @@ public class AnalysisLogController implements Initializable {
             t.start();
         }
     }
-    
+
     @FXML
     public void takeSnapshot() {
-        Platform.runLater(()-> {
+        Platform.runLater(() -> {
             sceneImageView.getScene().getRoot().fireEvent(
-                new ManifoldEvent(ManifoldEvent.TAKESNAPSHOT_PROJECTION_SCENE)          
+                new ManifoldEvent(ManifoldEvent.TAKESNAPSHOT_PROJECTION_SCENE)
             );
-        });        
+        });
     }
+
     @FXML
-    public void importAnalysisConfig(){
+    public void importAnalysisConfig() {
         FileChooser fc = new FileChooser();
         fc.setTitle("Import Existing Analysis Config File...");
         if (!latestDir.isDirectory())
@@ -170,10 +172,11 @@ public class AnalysisLogController implements Initializable {
             } catch (IOException ex) {
                 LOG.error(null, ex);
             }
-        }        
+        }
     }
+
     public void setAnalysisConfig(AnalysisConfig acDC) {
-        if(null != acDC) {
+        if (null != acDC) {
             currentAnalysisConfig = acDC;
             analysisFilenameTextField.setText(acDC.getAnalysisName());
             clearAllSources();
@@ -182,10 +185,12 @@ public class AnalysisLogController implements Initializable {
             umapConfigurationTextField.setText(acDC.getUmapConfigFile());
         }
     }
+
     @FXML
     public void clearAllSources() {
         dataSourcesListView.getItems().clear();
     }
+
     @FXML
     public void browseAnalysisConfig() {
         DirectoryChooser dc = new DirectoryChooser();
@@ -205,9 +210,10 @@ public class AnalysisLogController implements Initializable {
                 setAnalysisConfig(acDC);
             } catch (IOException ex) {
                 LOG.error(null, ex);
-            }            
+            }
         }
     }
+
     @FXML
     public void browseUmapConfig() {
         FileChooser fc = new FileChooser();
@@ -216,8 +222,8 @@ public class AnalysisLogController implements Initializable {
             latestDir = new File(".");
         fc.setInitialDirectory(latestDir);
         fc.setSelectedExtensionFilter(new FileChooser.ExtensionFilter("JSON", ".json"));
-        if(null != currentUmapConfig)
-            fc.setInitialFileName(UmapConfig.configToFilename(currentUmapConfig)+".json");
+        if (null != currentUmapConfig)
+            fc.setInitialFileName(UmapConfig.configToFilename(currentUmapConfig) + ".json");
         File file = fc.showSaveDialog(scene.getWindow());
         if (null != file) {
             if (file.getParentFile().isDirectory())
@@ -225,6 +231,7 @@ public class AnalysisLogController implements Initializable {
             umapConfigurationTextField.setText(file.getAbsolutePath());
         }
     }
+
     @FXML
     public void addDataSource() {
         FileChooser fc = new FileChooser();
@@ -236,11 +243,11 @@ public class AnalysisLogController implements Initializable {
         if (null != files) {
             if (files.get(0).getParentFile().isDirectory())
                 latestDir = files.get(0);
-            for(File file : files)
+            for (File file : files)
                 dataSourcesListView.getItems().add(file.getAbsolutePath());
         }
     }
-    
+
     @FXML
     public void loadUmapConfig() {
         FileChooser fc = new FileChooser();
@@ -262,6 +269,7 @@ public class AnalysisLogController implements Initializable {
             }
         }
     }
+
     @FXML
     public void clearAllNotes() {
         notesTextArea.clear();
@@ -281,7 +289,7 @@ public class AnalysisLogController implements Initializable {
         ObjectMapper mapper = new ObjectMapper();
         try {
             mapper.writerWithDefaultPrettyPrinter().writeValue(new File(
-                analysisBasePathTextField.getText()+File.separator+acDC.getAnalysisName()), acDC);
+                analysisBasePathTextField.getText() + File.separator + acDC.getAnalysisName()), acDC);
         } catch (IOException ex) {
             LOG.error(null, ex);
         }

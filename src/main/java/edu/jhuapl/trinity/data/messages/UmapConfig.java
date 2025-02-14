@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 
@@ -67,6 +68,7 @@ public class UmapConfig extends MessageData {
             && messageBody.contains("numberComponents")
             && messageBody.contains("numberNearestNeighbours");
     }
+
     public static String configToFilename(UmapConfig uc) {
         NumberFormat format = new DecimalFormat("0.00");
         StringBuilder sb = new StringBuilder("UmapConfig-");
@@ -83,13 +85,15 @@ public class UmapConfig extends MessageData {
         sb.append("LC").append(uc.getLocalConnectivity());
 //        uc.setThreshold((double) thresholdSpinner.getValue());
 //        uc.setVerbose(verboseCheckBox.isSelected());
-        return sb.toString();        
+        return sb.toString();
     }
+
     public String prettyPrint() throws JsonProcessingException {
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(this);
     }
+
     public String print() throws JsonProcessingException {
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);

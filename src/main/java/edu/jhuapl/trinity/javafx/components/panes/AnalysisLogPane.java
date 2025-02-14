@@ -11,7 +11,7 @@ import javafx.scene.layout.Pane;
 public class AnalysisLogPane extends LitPathPane {
 
     public static String CONTROLLER = "/edu/jhuapl/trinity/fxml/AnalysisLog.fxml";
-    
+
     public AnalysisLogPane(Scene scene, Pane parent) {
         this(scene, parent, CONTROLLER);
     }

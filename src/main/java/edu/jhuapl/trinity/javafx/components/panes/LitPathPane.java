@@ -11,6 +11,7 @@ import javafx.beans.property.SimpleDoubleProperty;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
+import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
 import javafx.scene.effect.Glow;
 import javafx.scene.effect.PerspectiveTransform;
@@ -25,6 +26,7 @@ import javafx.scene.layout.BorderStroke;
 import javafx.scene.layout.BorderStrokeStyle;
 import javafx.scene.layout.BorderWidths;
 import javafx.scene.layout.CornerRadii;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.CycleMethod;
@@ -39,9 +41,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
 import java.util.ArrayList;
-
-import javafx.scene.control.ContentDisplay;
-import javafx.scene.layout.HBox;
 
 /**
  * @author Sean Phillips
@@ -74,6 +73,7 @@ public class LitPathPane extends PathPane {
     public static long enteredWaitTimeMillis = 5000;
     Label opaqueLabel, fadeLabel;
     Border activeBorder, hoverBorder;
+
     /**
      * Helper utility for loading a common FXML based Controller which assumes
      * an anchorpane node which is returned wrapped as a BorderPane
@@ -338,6 +338,6 @@ public class LitPathPane extends PathPane {
             opaqueLabel.setBackground(null);
             opaqueLabel.setBorder(null);
             mainContentBorderFrame.setBackground(defaultBackground);
-        }        
+        }
     }
 }

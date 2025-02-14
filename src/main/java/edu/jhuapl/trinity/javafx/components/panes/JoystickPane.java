@@ -39,7 +39,7 @@ public class JoystickPane extends LitPathPane {
     BorderPane bpOilSpillNeverForget;
     HBox topHBox;
     HBox bottomButtonHBox;
-            
+
     private static BorderPane createContent() {
         //make transparent so it doesn't interfere with subnode transparency effects
         Background transBack = new Background(new BackgroundFill(
@@ -112,20 +112,22 @@ public class JoystickPane extends LitPathPane {
         topHBox.setTranslateY(30); //not sure why I have to do this...
         topHBox.prefWidthProperty().bind(mainTitleArea.widthProperty().subtract(10));
     }
-    
+
     public void toggleTopControls(boolean add) {
-        if(add)
-            if(mainTitleArea.getChildren().contains(topHBox))
+        if (add)
+            if (mainTitleArea.getChildren().contains(topHBox))
                 mainTitleArea.getChildren().add(topHBox);
-        else
-            mainTitleArea.getChildren().remove(topHBox);
+            else
+                mainTitleArea.getChildren().remove(topHBox);
     }
+
     public void toggleBottomControls(boolean add) {
-        if(add)
+        if (add)
             bpOilSpillNeverForget.setBottom(bottomButtonHBox);
         else
             bpOilSpillNeverForget.setBottom(null);
     }
+
     private void updateTransforms() {
         double scalar = 1000.0;
 
