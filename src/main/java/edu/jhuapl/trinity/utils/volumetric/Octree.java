@@ -1,24 +1,6 @@
-package edu.jhuapl.trinity.utils.volumetric;
+/* Copyright (C) 2021 - 2024 Sean Phillips */
 
-/*-
- * #%L
- * trinity
- * %%
- * Copyright (C) 2021 - 2024 The Johns Hopkins University Applied Physics Laboratory LLC
- * %%
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * #L%
- */
+package edu.jhuapl.trinity.utils.volumetric;
 
 import edu.jhuapl.trinity.utils.volumetric.VolumeUtils.Adjacency;
 import javafx.geometry.Point3D;
@@ -313,16 +295,17 @@ public class Octree {
         List<Integer> neighborIndices = new ArrayList<>();
         List<Long> candidateLeaves = new ArrayList<>();
         determineCandidatesWithinRadius(radius, point, candidateLeaves);
+        if (!candidateLeaves.isEmpty()) {
+            PriorityQueue<Integer> queue = searchNeighborsInNodes(candidateLeaves, point);
 
-        PriorityQueue<Integer> queue = searchNeighborsInNodes(candidateLeaves, point);
-
-        while (queue.size() > 0) {
-            Integer nextIndex = queue.poll();
-            Point3D neighboringPoint = points.get(nextIndex);
-            if (point.distance(neighboringPoint) >= radius) {
-                break;
-            } else {
-                neighborIndices.add(nextIndex);
+            while (queue.size() > 0) {
+                Integer nextIndex = queue.poll();
+                Point3D neighboringPoint = points.get(nextIndex);
+                if (point.distance(neighboringPoint) >= radius) {
+                    break;
+                } else {
+                    neighborIndices.add(nextIndex);
+                }
             }
         }
         return neighborIndices;
@@ -405,6 +388,11 @@ public class Octree {
         }
         return result;
     }
+
+    public List<Point3D> getCurrentPoints() {
+        return this.points;
+    }
+
 
     public int getMaxPointsPerNode() {
         return this.maxPointsPerNode;

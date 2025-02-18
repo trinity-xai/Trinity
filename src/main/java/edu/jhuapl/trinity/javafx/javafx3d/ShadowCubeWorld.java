@@ -1,24 +1,6 @@
-package edu.jhuapl.trinity.javafx.javafx3d;
+/* Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC */
 
-/*-
- * #%L
- * trinity
- * %%
- * Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC
- * %%
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * #L%
- */
+package edu.jhuapl.trinity.javafx.javafx3d;
 
 import edu.jhuapl.trinity.data.CoordinateSet;
 import edu.jhuapl.trinity.data.FactorLabel;
@@ -852,5 +834,27 @@ public class ShadowCubeWorld extends CubeWorld {
         showZX2GridLinesGroup(show);
         showZY1GridLinesGroup(show);
         showZY2GridLinesGroup(show);
+    }
+
+    public void showDataAndCrosshairsOnly(boolean show) {
+        showX1Panel(show);
+        showX2Panel(show);
+        showY1Panel(show);
+        showY2Panel(show);
+        showZ1Panel(show);
+        showZ2Panel(show);
+        x1ShadowPane.showNearsidePoints.set(showNearsidePoints);
+        x2ShadowPane.showNearsidePoints.set(showNearsidePoints);
+        y1ShadowPane.showNearsidePoints.set(showNearsidePoints);
+        y2ShadowPane.showNearsidePoints.set(showNearsidePoints);
+        z1ShadowPane.showNearsidePoints.set(showNearsidePoints);
+        z2ShadowPane.showNearsidePoints.set(showNearsidePoints);
+        getChildren().filtered((Node t) -> t instanceof Sphere)
+            .forEach(s -> s.setVisible(show));
+        renderingEnabled = show;
+        showAllGridLines(show);
+        showXAxesGroup(show);
+        showYAxesGroup(show);
+        showZAxesGroup(show);
     }
 }

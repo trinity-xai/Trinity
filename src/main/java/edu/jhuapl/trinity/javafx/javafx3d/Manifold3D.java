@@ -1,24 +1,6 @@
-package edu.jhuapl.trinity.javafx.javafx3d;
+/* Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC */
 
-/*-
- * #%L
- * trinity
- * %%
- * Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC
- * %%
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * #L%
- */
+package edu.jhuapl.trinity.javafx.javafx3d;
 
 import com.github.quickhull3d.Point3d;
 import com.github.quickhull3d.QuickHull3D;
@@ -108,6 +90,7 @@ public class Manifold3D extends Group {
 
         quickhullMeshView = new MeshView(quickhullTriangleMesh);
         PhongMaterial quickhullMaterial = new PhongMaterial(Color.SKYBLUE);
+        quickhullMaterial.setSpecularColor(Color.SKYBLUE); //fix for aarch64 Mac Ventura
         quickhullMeshView.setMaterial(quickhullMaterial);
         quickhullMeshView.setDrawMode(DrawMode.FILL);
         quickhullMeshView.setCullFace(CullFace.NONE);
@@ -475,6 +458,7 @@ public class Manifold3D extends Group {
 
         quickhullLinesMeshView = new MeshView(quickhullLinesTriangleMesh);
         PhongMaterial quickhullLinesMaterial = new PhongMaterial(Color.BLUE);
+        quickhullLinesMaterial.setSpecularColor(Color.BLUE); //fix for aarch64 Mac Ventura
         quickhullLinesMeshView.setMaterial(quickhullLinesMaterial);
         quickhullLinesMeshView.setDrawMode(DrawMode.LINE);
         quickhullLinesMeshView.setCullFace(CullFace.NONE);
@@ -499,6 +483,7 @@ public class Manifold3D extends Group {
             }
             Sphere sphere = new Sphere(2.5);
             PhongMaterial mat = new PhongMaterial(Color.BLUE);
+            mat.setSpecularColor(Color.BLUE); //fix for aarch64 Mac Ventura
             sphere.setMaterial(mat);
             sphere.setTranslateX(point3D.x);
             sphere.setTranslateY(point3D.y);

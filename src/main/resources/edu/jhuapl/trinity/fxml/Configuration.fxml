@@ -1,29 +1,10 @@
 <?xml version="1.0" encoding="UTF-8"?>
 
 <?import javafx.geometry.Insets?>
-<?import javafx.scene.control.Button?>
-<?import javafx.scene.control.CheckBox?>
-<?import javafx.scene.control.ChoiceBox?>
-<?import javafx.scene.control.ColorPicker?>
-<?import javafx.scene.control.Label?>
-<?import javafx.scene.control.ListView?>
-<?import javafx.scene.control.RadioButton?>
-<?import javafx.scene.control.ScrollPane?>
-<?import javafx.scene.control.Separator?>
-<?import javafx.scene.control.Slider?>
-<?import javafx.scene.control.Spinner?>
-<?import javafx.scene.control.Tab?>
-<?import javafx.scene.control.TabPane?>
-<?import javafx.scene.control.TextField?>
-<?import javafx.scene.layout.AnchorPane?>
-<?import javafx.scene.layout.BorderPane?>
-<?import javafx.scene.layout.ColumnConstraints?>
-<?import javafx.scene.layout.GridPane?>
-<?import javafx.scene.layout.HBox?>
-<?import javafx.scene.layout.RowConstraints?>
-<?import javafx.scene.layout.VBox?>
+<?import javafx.scene.control.*?>
+<?import javafx.scene.layout.*?>
 
-<AnchorPane style="-fx-background-color: #00000000;" xmlns="http://javafx.com/javafx/19" xmlns:fx="http://javafx.com/fxml/1"
+<AnchorPane style="-fx-background-color: #00000000;" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
             fx:controller="edu.jhuapl.trinity.javafx.controllers.ConfigurationController">
     <children>
         <TabPane prefHeight="500.0" tabClosingPolicy="UNAVAILABLE">
@@ -251,6 +232,11 @@
                                         <Label fx:id="offsetLabel" text="Size" GridPane.columnIndex="2" GridPane.rowIndex="9"/>
                                         <Label fx:id="initialAngleLabel" text="Size" GridPane.columnIndex="2" GridPane.rowIndex="11"/>
                                         <Label fx:id="strokeWidthLabel" text="Size" GridPane.columnIndex="2" GridPane.rowIndex="13"/>
+                                        <CheckBox fx:id="enableEmptyVisionCheckBox" mnemonicParsing="false" text="Enable EmptyVision" GridPane.columnIndex="1">
+                                            <padding>
+                                                <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
+                                            </padding>
+                                        </CheckBox>
                                     </children>
                                     <padding>
                                         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>

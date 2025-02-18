@@ -1,27 +1,15 @@
-package edu.jhuapl.trinity.data.messages;
+/* Copyright (C) 2021 - 2024 Sean Phillips */
 
-/*-
- * #%L
- * trinity
- * %%
- * Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC
- * %%
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * #L%
- */
+package edu.jhuapl.trinity.data.messages;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.DeserializationFeature;
+import com.fasterxml.jackson.databind.ObjectMapper;
+
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 
 
 /**
@@ -81,6 +69,36 @@ public class UmapConfig extends MessageData {
             && messageBody.contains("numberNearestNeighbours");
     }
 
+    public static String configToFilename(UmapConfig uc) {
+        NumberFormat format = new DecimalFormat("0.00");
+        StringBuilder sb = new StringBuilder("UmapConfig-");
+//        sb.append(targetWeightSlider.getValue()).append("-");
+        sb.append((String) uc.getMetric()).append("-");
+        sb.append("R").append(format.format(uc.getRepulsionStrength())).append("-");
+        sb.append("MD").append(format.format(uc.getMinDist())).append("-");
+        sb.append("S").append(format.format(uc.getSpread())).append("-");
+        sb.append("OPM").append(format.format(uc.getOpMixRatio())).append("-");
+//        uc.setNumberComponents((int) numComponentsSpinner.getValue());
+//        uc.setNumberEpochs((int) numEpochsSpinner.getValue());
+        sb.append("NN").append(uc.getNumberNearestNeighbours()).append("-");
+        sb.append("NSR").append(uc.getNegativeSampleRate()).append("-");
+        sb.append("LC").append(uc.getLocalConnectivity());
+//        uc.setThreshold((double) thresholdSpinner.getValue());
+//        uc.setVerbose(verboseCheckBox.isSelected());
+        return sb.toString();
+    }
+
+    public String prettyPrint() throws JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        return mapper.writerWithDefaultPrettyPrinter().writeValueAsString(this);
+    }
+
+    public String print() throws JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        return mapper.writeValueAsString(this);
+    }
     //<editor-fold defaultstate="collapsed" desc="Properties">
 
     /**

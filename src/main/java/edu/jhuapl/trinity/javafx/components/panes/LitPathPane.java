@@ -1,24 +1,6 @@
-package edu.jhuapl.trinity.javafx.components.panes;
+/* Copyright (C) 2021 - 2024 Sean Phillips */
 
-/*-
- * #%L
- * trinity
- * %%
- * Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC
- * %%
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * #L%
- */
+package edu.jhuapl.trinity.javafx.components.panes;
 
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import javafx.animation.FadeTransition;
@@ -29,6 +11,7 @@ import javafx.beans.property.SimpleDoubleProperty;
 import javafx.fxml.FXMLLoader;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
+import javafx.scene.control.ContentDisplay;
 import javafx.scene.control.Label;
 import javafx.scene.effect.Glow;
 import javafx.scene.effect.PerspectiveTransform;
@@ -43,6 +26,7 @@ import javafx.scene.layout.BorderStroke;
 import javafx.scene.layout.BorderStrokeStyle;
 import javafx.scene.layout.BorderWidths;
 import javafx.scene.layout.CornerRadii;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.CycleMethod;
@@ -67,9 +51,14 @@ public class LitPathPane extends PathPane {
     Pane parent;
     boolean animating = false;
     boolean fadeEnabled = true;
-    double fadeSideInset = -40;
+    private boolean opaqueEnabled = false;
+    double fadeSideInset = -5;
     double hoverTopInset = -2;
-    double hoverSideInset = -38;
+    double hoverSideInset = -3;
+    double effectsFitWidth = 40;
+    public Background opaqueBackground;
+    public Background defaultBackground;
+    public Background background;
     public Color fillPreStartColor = Color.CADETBLUE;
     public Color fillStartColor = Color.TRANSPARENT;
     public Color fillMiddleColor = Color.CYAN;
@@ -82,6 +71,8 @@ public class LitPathPane extends PathPane {
     private double currentGradientMillis = 465; //This number was picked by Josh
     private long lastInsideMillis = 0;
     public static long enteredWaitTimeMillis = 5000;
+    Label opaqueLabel, fadeLabel;
+    Border activeBorder, hoverBorder;
 
     /**
      * Helper utility for loading a common FXML based Controller which assumes
@@ -182,65 +173,72 @@ public class LitPathPane extends PathPane {
                 contentPane.setPrefHeight(mainContentBorderFrame.getHeight() - 100);
             }
         });
-
-//        int size;
-//        try {
-//            size = JavaFX3DUtils.getTiles().size();
-//            Random someRando = new Random();
-//            Background tileBackground = new Background(new BackgroundImage(
-//                JavaFX3DUtils.getTiles().get(someRando.nextInt(size)),
-//                    BackgroundRepeat.REPEAT, BackgroundRepeat.REPEAT,
-//                    BackgroundPosition.DEFAULT, BackgroundSize.DEFAULT
-//            ));
-//            mainContentBorderFrame.setBackground(tileBackground);
-//            mainContentBorderFrame.setBlendMode(BlendMode.COLOR_BURN);
-//        } catch (URISyntaxException | IOException ex) {
-//            Logger.getLogger(LitPathPane.class.getName()).log(Level.SEVERE, null, ex);
-//        }
+        opaqueBackground = new Background(new BackgroundFill(
+            Color.BLACK, CornerRadii.EMPTY, Insets.EMPTY));
+        defaultBackground = mainContentBorderFrame.getBackground();
     }
 
     private void setEffects() {
-        ImageView iv = ResourceUtils.loadIcon("fade", 50);
-        Label labelFadeout = new Label("Fadeout", iv);
-        Border activeBorder = new Border(new BorderStroke(
+        ImageView fadeImageView = ResourceUtils.loadIcon("fade", effectsFitWidth);
+        fadeLabel = new Label("Fadeout", fadeImageView);
+        fadeLabel.setContentDisplay(ContentDisplay.TOP);
+
+        ImageView opaqueImageView = ResourceUtils.loadIcon("opaque", effectsFitWidth);
+        opaqueLabel = new Label("Opaque", opaqueImageView);
+        opaqueLabel.setContentDisplay(ContentDisplay.TOP);
+        activeBorder = new Border(new BorderStroke(
             Color.CYAN, BorderStrokeStyle.DOTTED,
             CornerRadii.EMPTY, new BorderWidths(1), new Insets(0, fadeSideInset, 0, fadeSideInset))
         );
-        Border hoverBorder = new Border(new BorderStroke(
+        hoverBorder = new Border(new BorderStroke(
             Color.WHITE, BorderStrokeStyle.SOLID,
             CornerRadii.EMPTY, new BorderWidths(1),
             new Insets(hoverTopInset, hoverSideInset, hoverTopInset, hoverSideInset))
         );
 
-        AnchorPane.setBottomAnchor(labelFadeout, -16.0);
-        AnchorPane.setRightAnchor(labelFadeout, 40.0);
-        this.mainContentBorderFrame.getChildren().add(labelFadeout);
+        HBox effectsHBox = new HBox(20, fadeLabel, opaqueLabel);
+
+        AnchorPane.setBottomAnchor(effectsHBox, -24.0);
+        AnchorPane.setRightAnchor(effectsHBox, 40.0);
+        this.mainContentBorderFrame.getChildren().add(effectsHBox);
+
         Glow glow = new Glow(0.9);
-
-        labelFadeout.setOnMouseEntered(e -> labelFadeout.setBorder(hoverBorder));
-        labelFadeout.setOnMouseExited(e -> {
-            if (fadeEnabled)
-                labelFadeout.setBorder(activeBorder);
-            else
-                labelFadeout.setBorder(null);
-        });
-
-        Background background = new Background(new BackgroundFill(
+        background = new Background(new BackgroundFill(
             Color.CYAN.deriveColor(1, 1, 1, 0.1),
             CornerRadii.EMPTY, new Insets(0, fadeSideInset, 0, fadeSideInset)));
-        labelFadeout.setEffect(glow);
-        labelFadeout.setBackground(background);
-        labelFadeout.setOnMouseClicked(e -> {
+
+        fadeLabel.setOnMouseEntered(e -> fadeLabel.setBorder(hoverBorder));
+        fadeLabel.setOnMouseExited(e -> {
+            if (fadeEnabled)
+                fadeLabel.setBorder(activeBorder);
+            else
+                fadeLabel.setBorder(null);
+        });
+        fadeLabel.setEffect(glow);
+        fadeLabel.setBackground(background);
+        fadeLabel.setOnMouseClicked(e -> {
             fadeEnabled = !fadeEnabled;
             if (fadeEnabled) {
-                labelFadeout.setEffect(glow);
-                labelFadeout.setBackground(background);
-                labelFadeout.setBorder(activeBorder);
+                fadeLabel.setEffect(glow);
+                fadeLabel.setBackground(background);
+                fadeLabel.setBorder(activeBorder);
             } else {
-                labelFadeout.setEffect(null);
-                labelFadeout.setBackground(null);
-                labelFadeout.setBorder(null);
+                fadeLabel.setEffect(null);
+                fadeLabel.setBackground(null);
+                fadeLabel.setBorder(null);
             }
+        });
+
+        opaqueLabel.setOnMouseEntered(e -> opaqueLabel.setBorder(hoverBorder));
+        opaqueLabel.setOnMouseExited(e -> {
+            if (isOpaqueEnabled())
+                opaqueLabel.setBorder(activeBorder);
+            else
+                opaqueLabel.setBorder(null);
+        });
+        opaqueLabel.setEffect(glow);
+        opaqueLabel.setOnMouseClicked(e -> {
+            setOpaqueEnabled(!isOpaqueEnabled());
         });
 
         this.scene.getRoot().addEventHandler(CovalentPaneEvent.COVALENT_PANE_CLOSE, e -> {
@@ -315,5 +313,31 @@ public class LitPathPane extends PathPane {
         fadeTransition.setToValue(toValue);
         fadeTransition.setOnFinished(e -> contentPane.setOpacity(toValue));
         fadeTransition.play();
+    }
+
+    /**
+     * @return the opaqueEnabled
+     */
+    public boolean isOpaqueEnabled() {
+        return opaqueEnabled;
+    }
+
+    /**
+     * @param opaqueEnabled the opaqueEnabled to set
+     */
+    public void setOpaqueEnabled(boolean opaqueEnabled) {
+        this.opaqueEnabled = opaqueEnabled;
+        if (isOpaqueEnabled()) {
+            Glow glow = new Glow(0.9);
+            opaqueLabel.setEffect(glow);
+            opaqueLabel.setBackground(background);
+            opaqueLabel.setBorder(activeBorder);
+            mainContentBorderFrame.setBackground(opaqueBackground);
+        } else {
+            opaqueLabel.setEffect(null);
+            opaqueLabel.setBackground(null);
+            opaqueLabel.setBorder(null);
+            mainContentBorderFrame.setBackground(defaultBackground);
+        }
     }
 }

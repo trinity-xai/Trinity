@@ -1,24 +1,6 @@
-package edu.jhuapl.trinity.utils.loaders;
+/* Copyright (C) 2021 - 2024 Sean Phillips */
 
-/*-
- * #%L
- * trinity
- * %%
- * Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC
- * %%
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * #L%
- */
+package edu.jhuapl.trinity.utils.loaders;
 
 import edu.jhuapl.trinity.data.Trajectory;
 import edu.jhuapl.trinity.data.ZeroPilotLatents;
@@ -79,23 +61,7 @@ public class ZeroPilotLatentsLoader extends Task {
             });
         });
 
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
-            "Clear existing data?",
-            ButtonType.YES, ButtonType.NO);
-        alert.setHeaderText("Loading ZERO Pilot Latents...");
-        alert.setGraphic(ResourceUtils.loadIcon("alert", 75));
-        alert.initStyle(StageStyle.TRANSPARENT);
-        DialogPane dialogPane = alert.getDialogPane();
-        dialogPane.setBackground(Background.EMPTY);
-        dialogPane.getScene().setFill(Color.TRANSPARENT);
-        String DIALOGCSS = ResourceUtils.class.getResource("/edu/jhuapl/trinity/css/dialogstyles.css").toExternalForm();
-        dialogPane.getStylesheets().add(DIALOGCSS);
-        Optional<ButtonType> optBT = alert.showAndWait();
-        if (optBT.get().equals(ButtonType.YES))
-            Platform.runLater(() -> {
-                scene.getRoot().fireEvent(
-                    new HyperspaceEvent(HyperspaceEvent.CLEAR_HYPERSPACE_NOW));
-            });
+
     }
 
     @Override
@@ -110,6 +76,24 @@ public class ZeroPilotLatentsLoader extends Task {
             scene.getRoot().fireEvent(new CommandTerminalEvent(
                 "Done Loading ZERO Pilot Latents from File.", new Font("Consolas", 20), Color.GREEN));
             LOG.info("ZERO pilot latents file read.");
+
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
+                "Clear existing data?",
+                ButtonType.YES, ButtonType.NO);
+            alert.setHeaderText("Loading ZERO Pilot Latents...");
+            alert.setGraphic(ResourceUtils.loadIcon("alert", 75));
+            alert.initStyle(StageStyle.TRANSPARENT);
+            DialogPane dialogPane = alert.getDialogPane();
+            dialogPane.setBackground(Background.EMPTY);
+            dialogPane.getScene().setFill(Color.TRANSPARENT);
+            String DIALOGCSS = ResourceUtils.class.getResource("/edu/jhuapl/trinity/css/dialogstyles.css").toExternalForm();
+            dialogPane.getStylesheets().add(DIALOGCSS);
+            Optional<ButtonType> optBT = alert.showAndWait();
+            if (optBT.get().equals(ButtonType.YES))
+                Platform.runLater(() -> {
+                    scene.getRoot().fireEvent(
+                        new HyperspaceEvent(HyperspaceEvent.CLEAR_HYPERSPACE_NOW));
+                });
 
             ProgressStatus ps = new ProgressStatus("Converting ZERO Pilot latent vectors to Feature Vectors...", -1);
             ps.fillStartColor = Color.CYAN;

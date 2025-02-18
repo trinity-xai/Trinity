@@ -1,24 +1,6 @@
-package edu.jhuapl.trinity.data.graph;
+/* Copyright (C) 2021 - 2024 Sean Phillips */
 
-/*-
- * #%L
- * trinity
- * %%
- * Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC
- * %%
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * #L%
- */
+package edu.jhuapl.trinity.data.graph;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
@@ -34,8 +16,9 @@ import java.util.HashMap;
 public class GraphNode {
     //<editor-fold defaultstate="collapsed" desc="JSON Payload">
     /**
-     * "start": {
      * "identity": 12525037,
+     * "entityId": "some-arbitrary-name-or-UUID,
+     * "vector": [ 123.22, 100.6, 430.22 ],
      * "labels": [
      * "Document"
      * ],
@@ -43,13 +26,16 @@ public class GraphNode {
      * "name": "7630a867296188c0566d0a73",
      * "numberHashes": 276
      * }
-     * }
      */
     //</editor-fold>
     //<editor-fold defaultstate="collapsed" desc="Payload Fields">
     private long identity;
-    private ArrayList<String> labels;
-    private HashMap<String, Object> properties;
+    private String entityID;
+    private ArrayList<Double> vector; //required but optional length
+    private ArrayList<String> labels; //optional
+    private String color; //optional overrides default color
+    //ex #FF0000FF == fully opaque Red in RGBA HEX form
+    private HashMap<String, Object> properties; //optional
 
     //</editor-fold>
     public GraphNode() {
@@ -73,6 +59,34 @@ public class GraphNode {
     }
 
     /**
+     * @return the entityId
+     */
+    public String getEntityID() {
+        return entityID;
+    }
+
+    /**
+     * @param entityId the entityId to set
+     */
+    public void setEntityID(String entityId) {
+        this.entityID = entityId;
+    }
+
+    /**
+     * @return the vector
+     */
+    public ArrayList<Double> getVector() {
+        return vector;
+    }
+
+    /**
+     * @param vector the vector to set
+     */
+    public void setVector(ArrayList<Double> vector) {
+        this.vector = vector;
+    }
+
+    /**
      * @return the labels
      */
     public ArrayList<String> getLabels() {
@@ -84,6 +98,20 @@ public class GraphNode {
      */
     public void setLabels(ArrayList<String> labels) {
         this.labels = labels;
+    }
+
+    /**
+     * @return the color
+     */
+    public String getColor() {
+        return color;
+    }
+
+    /**
+     * @param color the color to set
+     */
+    public void setColor(String color) {
+        this.color = color;
     }
 
     /**

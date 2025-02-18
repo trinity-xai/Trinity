@@ -1,34 +1,17 @@
-package edu.jhuapl.trinity.data.messages;
+/* Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC */
 
-/*-
- * #%L
- * trinity
- * %%
- * Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC
- * %%
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * #L%
- */
+package edu.jhuapl.trinity.data.messages;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
+import java.text.DecimalFormat;
+import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
 import java.util.function.Function;
-import java.util.stream.DoubleStream;
 
 /**
  * @author Sean Phillips
@@ -101,6 +84,18 @@ public class FeatureVector extends MessageData {
             && getBbox().get(2) > 0.0 && getBbox().get(3) > 0.0;
     }
 
+    public static String bboxToString(FeatureVector featureVector) {
+        NumberFormat format = new DecimalFormat("0.00");
+        StringBuilder sb = new StringBuilder("[ ");
+        for (Double d : featureVector.getBbox()) {
+            sb.append(format.format(d));
+            sb.append(" ");
+        }
+        sb.append("]");
+        String bboxStr = sb.toString();
+        return bboxStr;
+    }
+
     public double getMin() {
         return getData().stream().min(Double::compare).get();
     }
@@ -170,13 +165,9 @@ public class FeatureVector extends MessageData {
         }
     }
 
-    private double getGlobalMean(List<FeatureVector> featureVectors) {
-        return featureVectors.stream().flatMapToDouble(new Function<FeatureVector, DoubleStream>() {
-            @Override
-            public DoubleStream apply(FeatureVector t) {
-                return t.getData().stream().mapToDouble(Double::doubleValue);
-            }
-        }).average().getAsDouble();
+    public double getGlobalMean(List<FeatureVector> featureVectors) {
+        return featureVectors.stream().flatMapToDouble(t ->
+            t.getData().stream().mapToDouble(Double::doubleValue)).average().getAsDouble();
     }
 
     public static Function<FeatureVector, String> mapDataToString = (state) -> {

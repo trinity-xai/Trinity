@@ -1,24 +1,6 @@
-package edu.jhuapl.trinity.javafx.controllers;
+/* Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC */
 
-/*-
- * #%L
- * trinity
- * %%
- * Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC
- * %%
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * #L%
- */
+package edu.jhuapl.trinity.javafx.controllers;
 
 import edu.jhuapl.trinity.App;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
@@ -58,7 +40,7 @@ public class DataController implements Initializable {
     private BorderPane majorPane;
     @FXML
     private TabPane tabPane;
-    //// REST Service
+    /// / REST Service
     @FXML
     private TextField restPortTextField;
     @FXML
@@ -66,7 +48,7 @@ public class DataController implements Initializable {
     @FXML
     private ProgressIndicator restProgressIndicator;
 
-    //// ZeroMQ stuff
+    /// / ZeroMQ stuff
     @FXML
     private TextField hostTextField;
     @FXML
@@ -83,11 +65,11 @@ public class DataController implements Initializable {
     private RadioButton pubsubRadioButton;
     @FXML
     private RadioButton pushpullRadioButton;
-    //// Imagery /////
+    /// / Imagery /////
     @FXML
     private TextField imageryBasePathTextField;
 
-    //// Timeline controls /////
+    /// / Timeline controls /////
     @FXML
     private CheckBox showTimelineCheckBox;
     @FXML
@@ -96,7 +78,7 @@ public class DataController implements Initializable {
     private CheckBox showLeadCalloutCheckBox;
     @FXML
     private Spinner trajectorySizeSpinner;
-    //// Projections /////
+    /// / Projections /////
     @FXML
     ToggleButton autoProjectionToggleButton;
     @FXML
@@ -151,6 +133,10 @@ public class DataController implements Initializable {
             showStateTrajectoryCheckBox.selectedProperty().not());
 
         restProgressIndicator.visibleProperty().bind(restInjectToggleButton.selectedProperty());
+        scene.getRoot().addEventHandler(ApplicationEvent.SET_IMAGERY_BASEPATH, e -> {
+            String newBasePath = (String) e.object;
+            imageryBasePathTextField.setText(newBasePath);
+        });
     }
 
     @FXML
@@ -186,6 +172,12 @@ public class DataController implements Initializable {
     public void showWaveformDisplay() {
         scene.getRoot().fireEvent(
             new ApplicationEvent(ApplicationEvent.SHOW_WAVEFORM_PANE));
+    }
+
+    @FXML
+    public void showContentNavigator() {
+        scene.getRoot().fireEvent(
+            new ApplicationEvent(ApplicationEvent.SHOW_NAVIGATOR_PANE));
     }
 
     @FXML

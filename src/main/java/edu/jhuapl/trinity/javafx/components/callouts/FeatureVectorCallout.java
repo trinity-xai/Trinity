@@ -1,27 +1,10 @@
-package edu.jhuapl.trinity.javafx.components.callouts;
+/* Copyright (C) 2021 - 2024 Sean Phillips */
 
-/*-
- * #%L
- * trinity
- * %%
- * Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC
- * %%
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * #L%
- */
+package edu.jhuapl.trinity.javafx.components.callouts;
 
 import edu.jhuapl.trinity.data.messages.FeatureVector;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
+import edu.jhuapl.trinity.javafx.events.ImageEvent;
 import edu.jhuapl.trinity.utils.HttpsUtils;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
@@ -46,9 +29,9 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.text.DecimalFormat;
-import java.text.NumberFormat;
 import java.util.Map.Entry;
+
+import static edu.jhuapl.trinity.data.messages.FeatureVector.bboxToString;
 
 /**
  * @author Sean Phillips
@@ -124,8 +107,21 @@ public class FeatureVectorCallout extends VBox {
 //            radialEntity.setTranslateX(getWidth() / 2.0);
 //            radialEntity.setTranslateY(getHeight() / 2.0);
 //        });
+        Glow glow = new Glow(0.95);
         TitledPane imageTP = new TitledPane();
-        imageTP.setContent(iv);
+        ImageView imageToolsIV = ResourceUtils.loadIcon("defaultimage", 30);
+        VBox imageToolsVBox = new VBox(imageToolsIV);
+        imageToolsVBox.setOnMouseEntered(e -> imageToolsVBox.setEffect(glow));
+        imageToolsVBox.setOnMouseExited(e -> imageToolsVBox.setEffect(null));
+        imageToolsVBox.setOnMouseClicked(e -> {
+            imageToolsVBox.getScene().getRoot().fireEvent(
+                new ApplicationEvent(ApplicationEvent.SHOW_HYPERSURFACE, true));
+            imageToolsVBox.getScene().getRoot().fireEvent(
+                new ImageEvent(ImageEvent.NEW_TEXTURE_SURFACE, iv.getImage()));
+        });
+        HBox imageToolsVBoxHBox = new HBox(15, imageToolsVBox);
+        imageToolsVBoxHBox.setAlignment(Pos.TOP_LEFT);
+        imageTP.setContent(new VBox(imageToolsVBoxHBox, iv));
         imageTP.setText("Imagery");
         imageTP.setExpanded(false);
 
@@ -167,7 +163,6 @@ public class FeatureVectorCallout extends VBox {
         textArea.setPrefHeight(200);
         textArea.setWrapText(true);
 
-        Glow glow = new Glow(0.95);
         ImageView selectAllIV = ResourceUtils.loadIcon("selectall", 30);
         VBox selectAllVBox = new VBox(selectAllIV);
         selectAllVBox.setOnMouseEntered(e -> selectAllIV.setEffect(glow));
@@ -226,18 +221,6 @@ public class FeatureVectorCallout extends VBox {
             //System.out.println("Callout image base path set to " + featureVectorCallout.imageryBasePath);
         });
 
-    }
-
-    private static String bboxToString(FeatureVector featureVector) {
-        NumberFormat format = new DecimalFormat("0.00");
-        StringBuilder sb = new StringBuilder("[ ");
-        for (Double d : featureVector.getBbox()) {
-            sb.append(format.format(d));
-            sb.append(" ");
-        }
-        sb.append("]");
-        String bboxStr = sb.toString();
-        return bboxStr;
     }
 
     private ImageView loadImageView(FeatureVector featureVector, boolean bboxOnly) {

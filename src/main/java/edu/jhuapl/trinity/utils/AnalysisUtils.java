@@ -1,25 +1,9 @@
+/* Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC */
+
 package edu.jhuapl.trinity.utils;
 
-/*-
- * #%L
- * trinity
- * %%
- * Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC
- * %%
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * #L%
- */
-
+import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.jhuapl.trinity.data.messages.AnalysisConfig;
 import edu.jhuapl.trinity.data.messages.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.UmapConfig;
 import edu.jhuapl.trinity.utils.umap.Umap;
@@ -33,6 +17,9 @@ import org.apache.commons.math3.stat.correlation.Covariance;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.IOException;
+import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -46,6 +33,7 @@ import java.util.Random;
 public enum AnalysisUtils {
     INSTANCE;
     private static final Logger LOG = LoggerFactory.getLogger(AnalysisUtils.class);
+    public static AnalysisConfig currentAnalysisConfig = new AnalysisConfig();
 
     public static enum ANALYSIS_METHOD {PCA, SVD, KPCA}
 
@@ -63,6 +51,22 @@ public enum AnalysisUtils {
 
     ;
     public static double EPISILON = 0.0000000001;
+
+    public static void clearAnalysisConfig() {
+        currentAnalysisConfig = new AnalysisConfig();
+    }
+
+    public static void readAnalysisConfig(File file) throws IOException {
+        if (AnalysisConfig.isAnalysisConfig(Files.readString(file.toPath()))) {
+            ObjectMapper mapper = new ObjectMapper();
+            currentAnalysisConfig = mapper.readValue(file, AnalysisConfig.class);
+        }
+    }
+
+    public static void writeAnalysisConfig(File file) throws IOException {
+        ObjectMapper mapper = new ObjectMapper();
+        mapper.writeValue(file, currentAnalysisConfig);
+    }
 
     public static double lerp1(double start, double end, double ratio) {
         return start * (1 - ratio) + end * ratio;

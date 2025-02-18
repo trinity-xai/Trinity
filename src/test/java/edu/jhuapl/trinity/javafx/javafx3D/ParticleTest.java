@@ -1,24 +1,6 @@
-package edu.jhuapl.trinity.javafx.javafx3D;
+/* Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC */
 
-/*-
- * #%L
- * trinity
- * %%
- * Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC
- * %%
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * #L%
- */
+package edu.jhuapl.trinity.javafx.javafx3d;
 
 import edu.jhuapl.trinity.javafx.javafx3d.animated.BillBoard;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.BillboardNode.BillboardMode;
@@ -40,20 +22,19 @@ import javafx.scene.Scene;
 import javafx.scene.SceneAntialiasing;
 import javafx.scene.SubScene;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.ColorPicker;
 import javafx.scene.control.Label;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.ToggleGroup;
-import javafx.scene.effect.BlendMode;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
@@ -168,7 +149,7 @@ public class ParticleTest extends Application {
         StackPane subSceneStackPane = new StackPane(subScene);
         subScene.widthProperty().bind(subSceneStackPane.widthProperty());
         subScene.heightProperty().bind(subSceneStackPane.heightProperty());
-        subScene.setFill(Color.BLACK);
+        subScene.setFill(Color.TRANSPARENT);
 
         Image image = ResourceUtils.load3DTextureImage("retrowaveSun5");
 
@@ -200,14 +181,15 @@ public class ParticleTest extends Application {
         zSphere.setMaterial(new PhongMaterial(Color.BLUE));
 
 
-        pyramidImageView = new ImageView(ResourceUtils.load3DTextureImage("neoncyanpyramid-transparent"));
-        pyramidImageView.setDepthTest(DepthTest.ENABLE);
-        pyramidImageView.setPreserveRatio(true);
+        pyramidImageView = new ImageView(ResourceUtils.load3DTextureImage("carl-b"));
         pyramidImageView.setFitWidth(100);
+        pyramidImageView.setSmooth(true);
+        pyramidImageView.setPreserveRatio(true);
+        pyramidImageView.setDepthTest(DepthTest.ENABLE);
         pyramidImageView.setTranslateZ(-500);
 
-        sceneRoot.getChildren().addAll(cameraTransform, pyramidImageView,
-            box, xSphere, ySphere, zSphere);
+        sceneRoot.getChildren().addAll(cameraTransform,
+            box, xSphere, ySphere, zSphere, pyramidImageView);
         BorderPane bpOilSpill = new BorderPane(subSceneStackPane);
 
         smoke = new Smoke();
@@ -249,23 +231,8 @@ public class ParticleTest extends Application {
             }
         });
 
-        CheckBox blendModeCheckBox = new CheckBox("Enable SRC_ATOP Blend");
-        blendModeCheckBox.setSelected(false);
-        blendModeCheckBox.selectedProperty().addListener(e -> {
-            BlendMode bm = blendModeCheckBox.isSelected() ? BlendMode.SRC_ATOP : BlendMode.SRC_OVER;
-            for (Object object : particleSystem.getParticleArray()) {
-                ((Particle) object).getNode().setBlendMode(bm);
-            }
-        });
-
-        CheckBox viewOrderCheckBox = new CheckBox("Set View Order 1.0");
-        viewOrderCheckBox.setSelected(false);
-        viewOrderCheckBox.selectedProperty().addListener(e -> {
-            double viewOrder = viewOrderCheckBox.isSelected() ? 1.0 : 0.0;
-            for (Object object : particleSystem.getParticleArray()) {
-                ((Particle) object).getNode().setViewOrder(viewOrder);
-            }
-        });
+        ColorPicker sceneFillPicker = new ColorPicker(Color.BLACK);
+        subScene.fillProperty().bind(sceneFillPicker.valueProperty());
 
         Spinner<Double> gravitySpinner = new Spinner(
             new SpinnerValueFactory.DoubleSpinnerValueFactory(-1.0, 1.0, -0.01, 0.005));
@@ -283,11 +250,9 @@ public class ParticleTest extends Application {
             particleTimerCheckBox,
             spawnParticlesCheckBox,
             depthTestCheckBox,
-            blendModeCheckBox,
-            viewOrderCheckBox,
             activeCheckBox,
-            new HBox(5, sphericalRadioButton, cylinderRadioButton),
-            new VBox(new Label("Gravity"), gravitySpinner)
+            new VBox(5, new Label("Scene Fill"), sceneFillPicker),
+            new VBox(5, new Label("Gravity"), gravitySpinner)
         );
         ScrollPane scrollPane = new ScrollPane(vbox);
         StackPane.setAlignment(vbox, Pos.BOTTOM_LEFT);
@@ -296,8 +261,8 @@ public class ParticleTest extends Application {
         scrollPane.setMaxSize(300, 300);
 
         bpOilSpill.setLeft(scrollPane);
-        Scene scene = new Scene(bpOilSpill, 1000, 1000);
-
+        Scene scene = new Scene(bpOilSpill, 1000, 1000, true, SceneAntialiasing.BALANCED);
+        scene.setFill(Color.TRANSPARENT);
         scene.setOnMouseEntered(event -> subScene.requestFocus());
 
         primaryStage.setTitle("Particle Test");

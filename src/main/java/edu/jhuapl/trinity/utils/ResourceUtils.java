@@ -1,32 +1,16 @@
-package edu.jhuapl.trinity.utils;
+/* Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC */
 
-/*-
- * #%L
- * trinity
- * %%
- * Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC
- * %%
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * #L%
- */
+package edu.jhuapl.trinity.utils;
 
 import edu.jhuapl.trinity.audio.AudioResourceProvider;
 import edu.jhuapl.trinity.data.Trajectory;
 import edu.jhuapl.trinity.data.files.CdcCsvFile;
 import edu.jhuapl.trinity.data.files.CdcTissueGenesFile;
 import edu.jhuapl.trinity.data.files.ClusterCollectionFile;
+import edu.jhuapl.trinity.data.files.CocoAnnotationFile;
 import edu.jhuapl.trinity.data.files.FeatureCollectionFile;
 import edu.jhuapl.trinity.data.files.GaussianMixtureCollectionFile;
+import edu.jhuapl.trinity.data.files.GraphDirectedCollectionFile;
 import edu.jhuapl.trinity.data.files.LabelConfigFile;
 import edu.jhuapl.trinity.data.files.ManifoldDataFile;
 import edu.jhuapl.trinity.data.files.McclodSplitDataTsvFile;
@@ -52,6 +36,7 @@ import edu.jhuapl.trinity.javafx.events.TrajectoryEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.images.ImageResourceProvider;
 import edu.jhuapl.trinity.utils.loaders.CdcTissueGenesLoader;
 import edu.jhuapl.trinity.utils.loaders.FeatureCollectionLoader;
+import edu.jhuapl.trinity.utils.loaders.GraphDirectedCollectionLoader;
 import edu.jhuapl.trinity.utils.loaders.McclodSplitDataLoader;
 import edu.jhuapl.trinity.utils.loaders.ShapleyCollectionLoader;
 import edu.jhuapl.trinity.utils.loaders.TextEmbeddingsLoader;
@@ -61,15 +46,25 @@ import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.Scene;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
+import javafx.scene.control.DialogPane;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.image.PixelFormat;
+import javafx.scene.image.PixelReader;
+import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
+import javafx.scene.image.WritablePixelFormat;
 import javafx.scene.input.DataFormat;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
+import javafx.scene.layout.Background;
 import javafx.scene.media.AudioClip;
 import javafx.scene.media.Media;
+import javafx.scene.paint.Color;
+import javafx.stage.StageStyle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -82,6 +77,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.nio.IntBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
@@ -91,6 +87,7 @@ import java.util.Arrays;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
+import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
 import java.util.jar.JarEntry;
@@ -228,9 +225,30 @@ public enum ResourceUtils {
                                                     int x1, int y1, int x2, int y2) throws IOException {
         File imageFile = new File(filename);
         BufferedImage image = ImageIO.read(imageFile);
+        return loadImageSubset(image, x1, y1, x2, y2);
+    }
+
+    public static WritableImage loadImageSubset(BufferedImage image, int x1, int y1, int x2, int y2) {
         BufferedImage subImage = image.getSubimage(x1, y1, x2 - x1, y2 - y1);
         WritableImage wi = SwingFXUtils.toFXImage(subImage, null);
         return wi;
+    }
+
+    public static WritableImage cropImage(Image image, double x1, double y1, double x2, double y2) {
+        PixelReader r = image.getPixelReader();
+        WritablePixelFormat<IntBuffer> pixelFormat = PixelFormat.getIntArgbInstance();
+        int x1Index = Double.valueOf(x1).intValue();
+        int y1Index = Double.valueOf(y1).intValue();
+        int x2Index = Double.valueOf(x2).intValue();
+        int y2Index = Double.valueOf(y2).intValue();
+        int width = x2Index - x1Index;
+        int height = y2Index - y1Index;
+        int[] pixels = new int[width * height];
+        r.getPixels(x1Index, y1Index, width, height, pixelFormat, pixels, 0, width);
+        WritableImage out = new WritableImage(width, height);
+        PixelWriter w = out.getPixelWriter();
+        w.setPixels(0, 0, width, height, pixelFormat, pixels, 0, width);
+        return out;
     }
 
     public static WritableImage loadIconAsWritableImage(String iconName) throws IOException {
@@ -253,6 +271,33 @@ public enum ResourceUtils {
         iv.setPreserveRatio(true);
         iv.setFitWidth(FIT_WIDTH);
         return iv;
+    }
+
+    /**
+     * Checks whether the file can be used as an image.
+     *
+     * @param file The File object to check.
+     * @return boolean true if it is an Image that JavaFX supports
+     */
+    public static boolean isImageFile(File file) {
+        if (file.isFile() && file.canRead()) {
+            try {
+                String contentType = Files.probeContentType(file.toPath());
+                switch (contentType) {
+                    case "image/png":
+                    case "image/bmp":
+                    case "image/gif":
+                    case "image/tiff":
+                    case "image/jpg":
+                    case "image/jpeg":
+                        return true;
+                }
+                //System.out.println(contentType);
+            } catch (IOException ex) {
+                LOG.error(null, ex);
+            }
+        }
+        return false;
     }
 
     /**
@@ -341,7 +386,8 @@ public enum ResourceUtils {
                         scene.getRoot().fireEvent(
                             new ApplicationEvent(ApplicationEvent.SHOW_BUSY_INDICATOR, ps1));
                     });
-
+                    //do we have multiple files? if so then don't offer to clear any queues
+                    boolean offerToClear = files.size() <= 1; //if more than one file is detected... don't bother to ask to clear. (assume group load)
                     for (File file : files) {
                         try {
                             if (JavaFX3DUtils.isTextureFile(file)) {
@@ -351,13 +397,34 @@ public enum ResourceUtils {
                             } else if (isAudioFile(file)) {
                                 Platform.runLater(() -> scene.getRoot().fireEvent(
                                     new AudioEvent(AudioEvent.NEW_AUDIO_FILE, file)));
+                            } else if (CdcCsvFile.isCdcCsvFile(file)) {
+                                CdcCsvFile cdcCsvFile = new CdcCsvFile(file.getAbsolutePath(), true);
+                                //convert to Feature Vector Collection for the lulz
+                                FeatureCollection fc = DataUtils.convertCdcCsv(cdcCsvFile.cdcCsvList, true);
+                                Platform.runLater(() -> scene.getRoot().fireEvent(
+                                    new FeatureVectorEvent(FeatureVectorEvent.NEW_FEATURE_COLLECTION, fc)));
+                                Trajectory trajectory = new Trajectory(file.getName());
+                                trajectory.totalStates = fc.getFeatures().size();
+                                Platform.runLater(() -> scene.getRoot().fireEvent(
+                                    new TrajectoryEvent(TrajectoryEvent.NEW_TRAJECTORY_OBJECT, trajectory, fc)));
+                            } else if (CdcTissueGenesFile.isCdcTissueGenesFile(file)) {
+                                CdcTissueGenesLoader task = new CdcTissueGenesLoader(scene, file);
+                                Thread thread = new Thread(task);
+                                thread.setDaemon(true);
+                                thread.start();
                             } else if (FeatureCollectionFile.isFeatureCollectionFile(file)) {
                                 FeatureCollectionLoader task = new FeatureCollectionLoader(scene, file);
+                                task.setClearQueue(offerToClear); //if there is more than one file just load all
                                 Thread thread = new Thread(task);
                                 thread.setDaemon(true);
                                 thread.start();
                             } else if (ShapleyCollectionFile.isShapleyCollectionFile(file)) {
                                 ShapleyCollectionLoader task = new ShapleyCollectionLoader(scene, file);
+                                Thread thread = new Thread(task);
+                                thread.setDaemon(true);
+                                thread.start();
+                            } else if (GraphDirectedCollectionFile.isGraphDirectedCollectionFile(file)) {
+                                GraphDirectedCollectionLoader task = new GraphDirectedCollectionLoader(scene, file);
                                 Thread thread = new Thread(task);
                                 thread.setDaemon(true);
                                 thread.start();
@@ -398,21 +465,6 @@ public enum ResourceUtils {
                                     thread.setDaemon(true);
                                     thread.start();
                                 });
-                            } else if (CdcCsvFile.isCdcCsvFile(file)) {
-                                CdcCsvFile cdcCsvFile = new CdcCsvFile(file.getAbsolutePath(), true);
-                                //convert to Feature Vector Collection for the lulz
-                                FeatureCollection fc = DataUtils.convertCdcCsv(cdcCsvFile.cdcCsvList, true);
-                                Platform.runLater(() -> scene.getRoot().fireEvent(
-                                    new FeatureVectorEvent(FeatureVectorEvent.NEW_FEATURE_COLLECTION, fc)));
-                                Trajectory trajectory = new Trajectory(file.getName());
-                                trajectory.totalStates = fc.getFeatures().size();
-                                Platform.runLater(() -> scene.getRoot().fireEvent(
-                                    new TrajectoryEvent(TrajectoryEvent.NEW_TRAJECTORY_OBJECT, trajectory, fc)));
-                            } else if (CdcTissueGenesFile.isCdcTissueGenesFile(file)) {
-                                CdcTissueGenesLoader task = new CdcTissueGenesLoader(scene, file);
-                                Thread thread = new Thread(task);
-                                thread.setDaemon(true);
-                                thread.start();
                             } else if (McclodSplitDataTsvFile.isMcclodSplitDataTsvFile(file)) {
                                 McclodSplitDataLoader task = new McclodSplitDataLoader(scene, file);
                                 Thread thread = new Thread(task);
@@ -427,6 +479,10 @@ public enum ResourceUtils {
                                 ManifoldDataFile mdFile = new ManifoldDataFile(file.getAbsolutePath(), true);
                                 Platform.runLater(() -> scene.getRoot().fireEvent(
                                     new ManifoldEvent(ManifoldEvent.NEW_MANIFOLD_DATA, mdFile.manifoldData)));
+                            } else if (CocoAnnotationFile.isCocoAnnotationFile(file)) {
+                                CocoAnnotationFile cocoFile = new CocoAnnotationFile(file.getAbsolutePath(), true);
+                                Platform.runLater(() -> scene.getRoot().fireEvent(
+                                    new ImageEvent(ImageEvent.NEW_COCO_ANNOTATION, cocoFile.cocoAnnotation)));
                             }
                         } catch (IOException ex) {
                             LOG.error(null, ex);
@@ -446,4 +502,78 @@ public enum ResourceUtils {
             event.consume();
         }
     }
+
+    public static String detectDropType(DragEvent event) {
+        Dragboard db = event.getDragboard();
+        String type = "UNKNOWN";
+        if (db.hasFiles()) {
+            final File file = db.getFiles().get(0);
+            try {
+                if (JavaFX3DUtils.isTextureFile(file)) {
+                    type = "Hypersurface";
+                } else if (isAudioFile(file)) {
+                    type = "Hypersurface";
+                } else if (FeatureCollectionFile.isFeatureCollectionFile(file)) {
+                    type = "Hyperspace";
+                } else if (ShapleyCollectionFile.isShapleyCollectionFile(file)) {
+                    type = "Hypersurface";
+                } else if (GraphDirectedCollectionFile.isGraphDirectedCollectionFile(file)) {
+                    type = "Hypersurface";
+                } else if (VectorMaskCollectionFile.isVectorMaskCollectionFile(file)) {
+                    type = "Hypersurface";
+                } else if (LabelConfigFile.isLabelConfigFile(file)) {
+                    type = "Hyperspace";
+                } else if (TerrainTextFile.isTerrainTextFile(file)) {
+                    type = "Hypersurface";
+                } else if (FireAreaTextFile.isFireAreaTextFile(file)) {
+                    type = "Hypersurface";
+                } else if (SemanticMapCollectionFile.isSemanticMapCollectionFile(file)) {
+                    type = "Hyperspace";
+                } else if (ClusterCollectionFile.isClusterCollectionFile(file)) {
+                    type = "Projections";
+                } else if (GaussianMixtureCollectionFile.isGaussianMixtureCollectionFile(file)) {
+                    type = "Hyperspace";
+                } else if (TextEmbeddingCollectionFile.isTextEmbeddingCollection(file)) {
+                    type = "Hyperspace";
+                } else if (CdcCsvFile.isCdcCsvFile(file)) {
+                    type = "Hyperspace";
+                } else if (CdcTissueGenesFile.isCdcTissueGenesFile(file)) {
+                    type = "Hyperspace";
+                } else if (McclodSplitDataTsvFile.isMcclodSplitDataTsvFile(file)) {
+                    type = "Hyperspace";
+                } else if (ZeroPilotLatentsFile.isZeroPilotLatentsFile(file)) {
+                    type = "Hyperspace";
+                } else if (ManifoldDataFile.isManifoldDataFile(file)) {
+                    type = "Projections";
+                } else if (CocoAnnotationFile.isCocoAnnotationFile(file)) {
+                    type = "Hypersurface";
+                }
+            } catch (IOException ex) {
+                LOG.error(null, ex);
+            }
+        }
+        return type;
+    }
+
+    public static boolean promptUserOnCommand(String commandType) {
+        Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
+            "Switch Views Now?",
+            ButtonType.YES, ButtonType.NO);
+        alert.setHeaderText("Your primary file type suggests using the " + commandType + " view.");
+        alert.setGraphic(ResourceUtils.loadIcon("alert", 75));
+        alert.initStyle(StageStyle.TRANSPARENT);
+        DialogPane dialogPane = alert.getDialogPane();
+        dialogPane.setBackground(Background.EMPTY);
+        dialogPane.getScene().setFill(Color.TRANSPARENT);
+        String DIALOGCSS = ResourceUtils.class.getResource("/edu/jhuapl/trinity/css/dialogstyles.css").toExternalForm();
+        dialogPane.getStylesheets().add(DIALOGCSS);
+        Optional<ButtonType> optBT = alert.showAndWait();
+        return optBT.get().equals(ButtonType.YES);
+    }
+
+    public static String removeExtension(String filename) {
+        return filename.substring(0, filename.lastIndexOf("."));
+
+    }
+
 }

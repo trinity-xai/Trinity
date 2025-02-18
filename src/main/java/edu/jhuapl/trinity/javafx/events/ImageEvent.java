@@ -1,24 +1,6 @@
-package edu.jhuapl.trinity.javafx.events;
+/* Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC */
 
-/*-
- * #%L
- * trinity
- * %%
- * Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC
- * %%
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * #L%
- */
+package edu.jhuapl.trinity.javafx.events;
 
 import javafx.event.Event;
 import javafx.event.EventTarget;
@@ -33,7 +15,7 @@ public class ImageEvent extends Event {
 
     public static final EventType<ImageEvent> NEW_TEXTURE_SURFACE = new EventType(ANY, "NEW_TEXTURE_SURFACE");
     public static final EventType<ImageEvent> NEW_VECTORMASK_COLLECTION = new EventType(ANY, "NEW_VECTORMASK_COLLECTION");
-
+    public static final EventType<ImageEvent> NEW_COCO_ANNOTATION = new EventType(ANY, "NEW_COCO_ANNOTATION");
 
     public ImageEvent(EventType<? extends Event> arg0) {
         super(arg0);

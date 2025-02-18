@@ -1,30 +1,11 @@
+/* Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC */
+
 package edu.jhuapl.trinity.javafx.components.radial;
 
-/*-
- * #%L
- * trinity
- * %%
- * Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC
- * %%
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * #L%
- */
-
 import edu.jhuapl.trinity.App;
-import edu.jhuapl.trinity.javafx.components.panes.ConfigurationPane;
-import edu.jhuapl.trinity.javafx.components.panes.ManifoldControlPane;
 import edu.jhuapl.trinity.javafx.components.panes.RadarPlotPane;
 import edu.jhuapl.trinity.javafx.components.panes.SearchPane;
+import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.Hyperspace3DPane;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import javafx.animation.KeyFrame;
@@ -65,19 +46,16 @@ public class HyperspaceMenu extends RadialEntity {
     //momma view this will control and attach to
     Hyperspace3DPane hyperspace3DPane;
 
-    //Various GUI views
-    ConfigurationPane configurationPane;
+    //Various special GUI views
     RadarPlotPane radarPlotPane;
     SearchPane searchPane;
-    ManifoldControlPane manifoldControlPane;
-
     //defaults
     public static double IMAGE_FIT_HEIGHT = 64;
     public static double IMAGE_FIT_WIDTH = 64;
-    public static double ITEM_SIZE = 40;
+    public static double ITEM_SIZE = 36;
     public static double INNER_RADIUS = 70.0;
     public static double ITEM_FIT_WIDTH = 64.0;
-    public static double MENU_RADIUS = 200.0;
+    public static double MENU_RADIUS = 216.0;
     public static double OFFSET = 10.0;
     public static double INITIAL_ANGLE = 0.0;
     public static double STROKE_WIDTH = 2.5;
@@ -262,6 +240,9 @@ public class HyperspaceMenu extends RadialEntity {
         ImageView callouts = ResourceUtils.loadIcon("callouts", ITEM_FIT_WIDTH);
         callouts.setEffect(glow);
 
+        ImageView navigator = ResourceUtils.loadIcon("navigator", ITEM_FIT_WIDTH);
+        navigator.setEffect(glow);
+
         addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Metadata Search", search, e -> {
             Pane pathPane = App.getAppPathPaneStack();
             if (null == searchPane) {
@@ -342,8 +323,13 @@ public class HyperspaceMenu extends RadialEntity {
         addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Reset Camera View", camera, e -> {
             hyperspace3DPane.resetView(1000, false);
         }));
-        addMenuItem(new LitRadialMenuItem(ITEM_SIZE, "Clear Callouts", callouts, e -> {
+        addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Clear Callouts", callouts, e -> {
             hyperspace3DPane.clearCallouts();
+        }));
+
+        addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Content Navigator", navigator, e -> {
+            hyperspace3DPane.getScene().getRoot().fireEvent(
+                new ApplicationEvent(ApplicationEvent.SHOW_NAVIGATOR_PANE));
         }));
     }
 }

@@ -1,24 +1,6 @@
-package edu.jhuapl.trinity.javafx.controllers;
+/* Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC */
 
-/*-
- * #%L
- * trinity
- * %%
- * Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC
- * %%
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * #L%
- */
+package edu.jhuapl.trinity.javafx.controllers;
 
 import edu.jhuapl.trinity.App;
 import edu.jhuapl.trinity.data.CoordinateSet;
@@ -88,6 +70,8 @@ public class ConfigurationController implements Initializable {
 
     @FXML
     private CheckBox enableEmittersCheckBox;
+    @FXML
+    private CheckBox enableEmptyVisionCheckBox;
     @FXML
     private Slider itemSizeSlider;
     @FXML
@@ -1045,6 +1029,10 @@ public class ConfigurationController implements Initializable {
         enableEmittersCheckBox.selectedProperty().addListener(cl -> {
             scene.getRoot().fireEvent(new EffectEvent(
                 EffectEvent.ENABLE_EMITTERS, enableEmittersCheckBox.isSelected()));
+        });
+        enableEmptyVisionCheckBox.selectedProperty().addListener(cl -> {
+            scene.getRoot().fireEvent(new EffectEvent(
+                EffectEvent.ENABLE_EMPTY_VISION, enableEmptyVisionCheckBox.isSelected()));
         });
     }
 }

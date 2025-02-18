@@ -1,24 +1,6 @@
-package edu.jhuapl.trinity.javafx.events;
+/* Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC */
 
-/*-
- * #%L
- * trinity
- * %%
- * Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC
- * %%
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * #L%
- */
+package edu.jhuapl.trinity.javafx.events;
 
 import javafx.event.Event;
 import javafx.event.EventTarget;
@@ -31,12 +13,14 @@ public class FeatureVectorEvent extends Event {
 
     public Object object;
     public Object object2;
+    public boolean clearExisting = false;
 
     public static final EventType<FeatureVectorEvent> PROJECT_SURFACE_GRID = new EventType(ANY, "PROJECT_SURFACE_GRID");
     public static final EventType<FeatureVectorEvent> PROJECT_FEATURE_COLLECTION = new EventType(ANY, "PROJECT_FEATURE_COLLECTION");
     public static final EventType<FeatureVectorEvent> NEW_SURFACE_COLLECTION = new EventType(ANY, "NEW_SURFACE_COLLECTION");
     public static final EventType<FeatureVectorEvent> REQUEST_FEATURE_COLLECTION = new EventType(ANY, "REQUEST_FEATURE_COLLECTION");
     public static final EventType<FeatureVectorEvent> EXPORT_FEATURE_COLLECTION = new EventType(ANY, "EXPORT_FEATURE_COLLECTION");
+    public static final EventType<FeatureVectorEvent> NEW_FEATURES_SOURCE = new EventType(ANY, "NEW_FEATURES_SOURCE");
     public static final EventType<FeatureVectorEvent> NEW_FEATURE_COLLECTION = new EventType(ANY, "NEW_FEATURE_COLLECTION");
     public static final EventType<FeatureVectorEvent> NEW_FEATURE_VECTOR = new EventType(ANY, "NEW_FEATURE_VECTOR");
     public static final EventType<FeatureVectorEvent> LOCATE_FEATURE_VECTOR = new EventType(ANY, "LOCATE_FEATURE_VECTOR");
@@ -44,6 +28,7 @@ public class FeatureVectorEvent extends Event {
     public static final EventType<FeatureVectorEvent> RESCAN_FEATURE_LAYERS = new EventType(ANY, "RESCAN_FEATURE_LAYERS");
     public static final EventType<FeatureVectorEvent> RESCAN_FACTOR_LABELS = new EventType(ANY, "RESCAN_FACTOR_LABELS");
     public static final EventType<FeatureVectorEvent> NEW_LABEL_CONFIG = new EventType(ANY, "NEW_LABEL_CONFIG");
+    public static final EventType<FeatureVectorEvent> CLEAR_ALL_FEATUREVECTORS = new EventType(ANY, "CLEAR_ALL_FEATUREVECTORS");
 
     public FeatureVectorEvent(EventType<? extends Event> arg0) {
         super(arg0);

@@ -1,24 +1,6 @@
-package edu.jhuapl.trinity.javafx.handlers;
+/* Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC */
 
-/*-
- * #%L
- * trinity
- * %%
- * Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC
- * %%
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * #L%
- */
+package edu.jhuapl.trinity.javafx.handlers;
 
 import edu.jhuapl.trinity.App;
 import edu.jhuapl.trinity.data.Dimension;
@@ -155,6 +137,14 @@ public class FeatureVectorEventHandler implements EventHandler<FeatureVectorEven
 
     }
 
+    public void handleClearAllEvent(FeatureVectorEvent event) {
+        LOG.info("Clearing All Feature Vectors By Request.");
+        for (FeatureVectorRenderer renderer : renderers) {
+            renderer.clearFeatureVectors();
+            renderer.refresh();
+        }
+    }
+
     public void handleFeatureCollectionEvent(FeatureVectorEvent event) {
         FeatureCollection featureCollection = (FeatureCollection) event.object;
         if (null == featureCollection || featureCollection.getFeatures().isEmpty())
@@ -171,7 +161,7 @@ public class FeatureVectorEventHandler implements EventHandler<FeatureVectorEven
         //update feature labels and colors
         scanLabelsAndLayers(featureCollection.getFeatures());
         for (FeatureVectorRenderer renderer : renderers) {
-            renderer.addFeatureCollection(featureCollection);
+            renderer.addFeatureCollection(featureCollection, event.clearExisting);
         }
         //Did the message specify any new dimensional label strings?
         if (null != featureCollection.getDimensionLabels() && !featureCollection.getDimensionLabels().isEmpty()) {
@@ -276,6 +266,8 @@ public class FeatureVectorEventHandler implements EventHandler<FeatureVectorEven
             handleFeatureVectorEvent(event);
         else if (event.getEventType().equals(FeatureVectorEvent.NEW_FEATURE_COLLECTION))
             handleFeatureCollectionEvent(event);
+        else if (event.getEventType().equals(FeatureVectorEvent.CLEAR_ALL_FEATUREVECTORS))
+            handleClearAllEvent(event);
         else if (event.getEventType().equals(FeatureVectorEvent.NEW_LABEL_CONFIG))
             handleLabelConfigEvent(event);
         else if (event.getEventType().equals(FeatureVectorEvent.RESCAN_FACTOR_LABELS)

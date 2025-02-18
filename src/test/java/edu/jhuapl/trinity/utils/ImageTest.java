@@ -1,24 +1,6 @@
-package edu.jhuapl.trinity.utils;
+/* Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC */
 
-/*-
- * #%L
- * trinity
- * %%
- * Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC
- * %%
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * #L%
- */
+package edu.jhuapl.trinity.utils;
 
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -28,6 +10,7 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.net.URI;
 import java.net.URL;
 import java.text.DecimalFormat;
 
@@ -44,6 +27,8 @@ public class ImageTest {
 
     /**
      * Test of doCommonsPca method, of class AnalysisUtils.
+     *
+     * @throws java.net.MalformedURLException
      */
     //@Test
     public void scrapeFlags() throws MalformedURLException, IOException {
@@ -55,13 +40,10 @@ public class ImageTest {
         df.setMaximumIntegerDigits(2);
         for (int i = 0; i < 51; i++) {
             String imageName = "UNST01" + df.format(i);
-            URL url = new URL("http://www.flags.net/images/largeflags/" + imageName + ".GIF");
+            URL url = URI.create("http://www.flags.net/images/largeflags/" + imageName + ".GIF").toURL();
             BufferedImage image = ImageIO.read(url);
-            ImageIO.write(image, "png", new File("c:/dev/trinity/imagery/" + imageName + ".PNG"));
-
+            ImageIO.write(image, "png", new File("/imagery/" + imageName + ".PNG"));
         }
-
         assertTrue(true);
     }
-
 }

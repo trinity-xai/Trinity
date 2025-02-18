@@ -1,24 +1,6 @@
-package edu.jhuapl.trinity.javafx.javafx3d.tasks;
+/* Copyright (C) 2021 - 2024 Sean Phillips */
 
-/*-
- * #%L
- * trinity
- * %%
- * Copyright (C) 2021 - 2024 Sean Phillips
- * %%
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * #L%
- */
+package edu.jhuapl.trinity.javafx.javafx3d.tasks;
 
 import edu.jhuapl.trinity.data.messages.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.FeatureVector;
@@ -39,6 +21,8 @@ import javafx.stage.StageStyle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.time.Duration;
+
 /**
  * @author Sean Phillips
  */
@@ -49,32 +33,36 @@ public class ProjectUmapFeaturesTask extends Task {
     Umap umap;
     private boolean cancelledByUser = false;
     private double projectionScalar = 100.0; //used for sizing values to 3D scene later
+    private boolean enableLoadingMedia = false;
 
-    public ProjectUmapFeaturesTask(Scene scene, FeatureCollection originalFC, Umap umap) {
+    public ProjectUmapFeaturesTask(Scene scene, FeatureCollection originalFC, Umap umap, boolean enableLoadingMedia) {
         this.scene = scene;
         this.originalFC = originalFC;
         this.umap = umap;
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
-            "", ButtonType.YES, ButtonType.NO);
-        alert.setHeaderText("Watch a TV while you wait?");
-        alert.setGraphic(ResourceUtils.loadIcon("retrowave-tv", 100));
-        alert.initStyle(StageStyle.TRANSPARENT);
-        DialogPane dialogPane = alert.getDialogPane();
-        dialogPane.setBackground(Background.EMPTY);
-        dialogPane.getScene().setFill(Color.TRANSPARENT);
-        String DIALOGCSS = this.getClass().getResource("/edu/jhuapl/trinity/css/dialogstyles.css").toExternalForm();
-        dialogPane.getStylesheets().add(DIALOGCSS);
-        alert.setX(scene.getWidth() - 500);
-        alert.setY(500);
-        alert.resultProperty().addListener(r -> {
-            if (alert.getResult().equals(ButtonType.YES)) {
-//                manifoldControlPane.minimize();
-                scene.getRoot().fireEvent(
-                    new ApplicationEvent(ApplicationEvent.SHOW_VIDEO_PANE,
-                        "EMPTY VISION ", "A past never had for a Retrowave Future"));
-            }
-        });
-        alert.show();
+        this.enableLoadingMedia = enableLoadingMedia;
+        if (enableLoadingMedia) {
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
+                "", ButtonType.YES, ButtonType.NO);
+            alert.setHeaderText("Watch a TV while you wait?");
+            alert.setGraphic(ResourceUtils.loadIcon("retrowave-tv", 100));
+            alert.initStyle(StageStyle.TRANSPARENT);
+            DialogPane dialogPane = alert.getDialogPane();
+            dialogPane.setBackground(Background.EMPTY);
+            dialogPane.getScene().setFill(Color.TRANSPARENT);
+            String DIALOGCSS = this.getClass().getResource("/edu/jhuapl/trinity/css/dialogstyles.css").toExternalForm();
+            dialogPane.getStylesheets().add(DIALOGCSS);
+            alert.setX(scene.getWidth() - 500);
+            alert.setY(500);
+            alert.resultProperty().addListener(r -> {
+                if (alert.getResult().equals(ButtonType.YES)) {
+                    //                manifoldControlPane.minimize();
+                    scene.getRoot().fireEvent(
+                        new ApplicationEvent(ApplicationEvent.SHOW_VIDEO_PANE,
+                            "EMPTY VISION ", "A past never had for a Retrowave Future"));
+                }
+            });
+            alert.show();
+        }
 
         setOnSucceeded(e -> {
             Platform.runLater(() -> {
@@ -109,7 +97,7 @@ public class ProjectUmapFeaturesTask extends Task {
             scene.getRoot().fireEvent(
                 new ApplicationEvent(ApplicationEvent.UPDATE_BUSY_INDICATOR, ps));
         });
-
+        Thread.sleep(Duration.ofSeconds(1));
         double[][] umapMatrix = AnalysisUtils.fitUMAP(originalFC, umap);
         Platform.runLater(() -> {
             ProgressStatus ps = new ProgressStatus("Converting to FeatureCollection...", 0.5);
@@ -164,5 +152,19 @@ public class ProjectUmapFeaturesTask extends Task {
      */
     public void setProjectionScalar(double projectionScalar) {
         this.projectionScalar = projectionScalar;
+    }
+
+    /**
+     * @return the enableLoadingMedia
+     */
+    public boolean isEnableLoadingMedia() {
+        return enableLoadingMedia;
+    }
+
+    /**
+     * @param enableLoadingMedia the enableLoadingMedia to set
+     */
+    public void setEnableLoadingMedia(boolean enableLoadingMedia) {
+        this.enableLoadingMedia = enableLoadingMedia;
     }
 }

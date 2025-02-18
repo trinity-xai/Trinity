@@ -1,24 +1,6 @@
-package edu.jhuapl.trinity.utils.loaders;
+/* Copyright (C) 2021 - 2024 Sean Phillips */
 
-/*-
- * #%L
- * trinity
- * %%
- * Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC
- * %%
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * #L%
- */
+package edu.jhuapl.trinity.utils.loaders;
 
 import edu.jhuapl.trinity.data.Trajectory;
 import edu.jhuapl.trinity.data.files.FeatureCollectionFile;
@@ -41,6 +23,7 @@ public class FeatureCollectionLoader extends Task {
     private static final Logger LOG = LoggerFactory.getLogger(FeatureCollectionLoader.class);
     Scene scene;
     File file;
+    private boolean clearQueue = false;
 
     public FeatureCollectionLoader(Scene scene, File file) {
         this.scene = scene;
@@ -75,8 +58,11 @@ public class FeatureCollectionLoader extends Task {
 
         try {
             FeatureCollectionFile fcFile = new FeatureCollectionFile(file.getAbsolutePath(), true);
-            Platform.runLater(() -> scene.getRoot().fireEvent(
-                new FeatureVectorEvent(FeatureVectorEvent.NEW_FEATURE_COLLECTION, fcFile.featureCollection)));
+            FeatureVectorEvent dataSourceEvent = new FeatureVectorEvent(FeatureVectorEvent.NEW_FEATURES_SOURCE, file);
+            Platform.runLater(() -> scene.getRoot().fireEvent(dataSourceEvent));
+            FeatureVectorEvent event = new FeatureVectorEvent(FeatureVectorEvent.NEW_FEATURE_COLLECTION, fcFile.featureCollection);
+            event.clearExisting = clearQueue;
+            Platform.runLater(() -> scene.getRoot().fireEvent(event));
             Trajectory trajectory = new Trajectory(file.getName());
             trajectory.totalStates = fcFile.featureCollection.getFeatures().size();
             Trajectory.addTrajectory(trajectory);
@@ -88,5 +74,19 @@ public class FeatureCollectionLoader extends Task {
         }
 
         return null;
+    }
+
+    /**
+     * @return the clearQueue
+     */
+    public boolean isClearQueue() {
+        return clearQueue;
+    }
+
+    /**
+     * @param clearQueue the clearQueue to set
+     */
+    public void setClearQueue(boolean clearQueue) {
+        this.clearQueue = clearQueue;
     }
 }

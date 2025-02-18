@@ -1,24 +1,6 @@
-package edu.jhuapl.trinity.javafx.components.panes;
+/* Copyright (C) 2021 - 2024 Sean Phillips */
 
-/*-
- * #%L
- * trinity
- * %%
- * Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC
- * %%
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * #L%
- */
+package edu.jhuapl.trinity.javafx.components.panes;
 
 import edu.jhuapl.trinity.javafx.components.Joystick;
 import edu.jhuapl.trinity.javafx.components.LockState;
@@ -54,6 +36,9 @@ public class JoystickPane extends LitPathPane {
     public SimpleDoubleProperty angleproperty = new SimpleDoubleProperty(0.0);
     public SimpleDoubleProperty valueproperty = new SimpleDoubleProperty(0.0);
     public Button fireButton, thrustButton;
+    BorderPane bpOilSpillNeverForget;
+    HBox topHBox;
+    HBox bottomButtonHBox;
 
     private static BorderPane createContent() {
         //make transparent so it doesn't interfere with subnode transparency effects
@@ -66,26 +51,6 @@ public class JoystickPane extends LitPathPane {
         joystick.setDurationMillis(1000);
         joystick.setLockState(LockState.UNLOCKED);
 
-//
-//        Label value = new Label("Value: ");
-//        value.setTextFill(Color.WHITE);
-//
-//        Label angle = new Label("Angle: ");
-//        angle.setTextFill(Color.WHITE);
-//
-//        Label valueX = new Label("x: ");
-//        valueX.setTextFill(Color.WHITE);
-//
-//        Label valueY = new Label("y: ");
-//        valueY.setTextFill(Color.WHITE);
-//
-//        joystick.valueProperty().addListener((o, ov, nv) -> value.setText(String.format(Locale.US, "Value: %.2f", nv)));
-//        joystick.angleProperty().addListener((o, ov, nv) -> angle.setText(String.format(Locale.US, "Angle: %.0f", nv)));
-//        joystick.xProperty().addListener((o, ov, nv) -> valueX.setText(String.format(Locale.US, "x: %.2f", nv)));
-//        joystick.yProperty().addListener((o, ov, nv) -> valueY.setText(String.format(Locale.US, "y: %.2f", nv)));
-//
-//        VBox properties = new VBox(10, unlocked, lockedX, lockedY, stepButtonsVisible, stickyMode, value, angle, valueX, valueY);
-//
         BorderPane ctRoot = new BorderPane();
         ctRoot.setCenter(joystick);
         ctRoot.setBackground(transBack);
@@ -99,8 +64,8 @@ public class JoystickPane extends LitPathPane {
         // must be set to prevent user from resizing too small.
         setMinWidth(300);
         setMinHeight(200);
-        BorderPane bp = (BorderPane) this.contentPane;
-        joystick = (Joystick) bp.getCenter();
+        bpOilSpillNeverForget = (BorderPane) this.contentPane;
+        joystick = (Joystick) bpOilSpillNeverForget.getCenter();
         angleproperty.bind(joystick.angle);
         valueproperty.bind(joystick.value);
         angleproperty.addListener(c -> updateTransforms());
@@ -111,9 +76,9 @@ public class JoystickPane extends LitPathPane {
         thrustButton = new Button("THRUST!!");
         thrustButton.setPrefWidth(150);
 
-        HBox hbox = new HBox(50, fireButton, thrustButton);
-        hbox.setAlignment(Pos.CENTER);
-        bp.setBottom(hbox);
+        bottomButtonHBox = new HBox(50, fireButton, thrustButton);
+        bottomButtonHBox.setAlignment(Pos.CENTER);
+        bpOilSpillNeverForget.setBottom(bottomButtonHBox);
 
         RadioButton unlocked = new RadioButton("Unlocked");
         unlocked.setTextFill(Color.WHITE);
@@ -140,14 +105,27 @@ public class JoystickPane extends LitPathPane {
         stickyMode.setTextFill(Color.WHITE);
         stickyMode.setOnAction(e -> joystick.setStickyMode(stickyMode.isSelected()));
 
-        HBox topHBox = new HBox(15, unlocked, lockedX, lockedY,
+        topHBox = new HBox(15, unlocked, lockedX, lockedY,
             stepButtonsVisible, stickyMode);
         topHBox.setAlignment(Pos.BOTTOM_CENTER);
         mainTitleArea.getChildren().add(topHBox);
         topHBox.setTranslateY(30); //not sure why I have to do this...
         topHBox.prefWidthProperty().bind(mainTitleArea.widthProperty().subtract(10));
+    }
 
-//        this.setManaged(false);
+    public void toggleTopControls(boolean add) {
+        if (add)
+            if (mainTitleArea.getChildren().contains(topHBox))
+                mainTitleArea.getChildren().add(topHBox);
+            else
+                mainTitleArea.getChildren().remove(topHBox);
+    }
+
+    public void toggleBottomControls(boolean add) {
+        if (add)
+            bpOilSpillNeverForget.setBottom(bottomButtonHBox);
+        else
+            bpOilSpillNeverForget.setBottom(null);
     }
 
     private void updateTransforms() {

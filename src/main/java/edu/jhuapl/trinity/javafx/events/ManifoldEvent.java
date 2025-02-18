@@ -1,24 +1,6 @@
-package edu.jhuapl.trinity.javafx.events;
+/* Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC */
 
-/*-
- * #%L
- * trinity
- * %%
- * Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC
- * %%
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * #L%
- */
+package edu.jhuapl.trinity.javafx.events;
 
 import edu.jhuapl.trinity.utils.clustering.ClusterMethod;
 import javafx.event.Event;
@@ -59,6 +41,13 @@ public class ManifoldEvent extends Event {
         public boolean verbose = false;
         public COVARIANCE_MODE covariance = COVARIANCE_MODE.DIAGONAL;
     }
+
+    //General Events
+    public static final EventType<ManifoldEvent> EXPORT_PROJECTION_SCENE = new EventType(ANY, "EXPORT_PROJECTION_SCENE");
+    public static final EventType<ManifoldEvent> TAKESNAPSHOT_PROJECTION_SCENE = new EventType(ANY, "TAKESNAPSHOT_PROJECTION_SCENE");
+    public static final EventType<ManifoldEvent> NEWSNAPSHOT_PROJECTION_SCENE = new EventType(ANY, "NEWSNAPSHOT_PROJECTION_SCENE");
+    public static final EventType<ManifoldEvent> AUTOMATIC_UMAP_FORTHEPEOPLE = new EventType(ANY, "AUTOMATIC_UMAP_FORTHEPEOPLE");
+
 
     //Cluster selection events
     public static final EventType<ManifoldEvent> CLUSTER_SELECTION_MODE = new EventType(ANY, "CLUSTER_SELECTION_MODE");

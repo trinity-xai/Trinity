@@ -1,24 +1,6 @@
-package edu.jhuapl.trinity.utils.loaders;
+/* Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC */
 
-/*-
- * #%L
- * trinity
- * %%
- * Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC
- * %%
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * #L%
- */
+package edu.jhuapl.trinity.utils.loaders;
 
 import edu.jhuapl.trinity.data.Trajectory;
 import edu.jhuapl.trinity.data.files.CdcTissueGenesFile;
@@ -26,24 +8,16 @@ import edu.jhuapl.trinity.data.messages.FeatureCollection;
 import edu.jhuapl.trinity.javafx.components.radial.ProgressStatus;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
-import edu.jhuapl.trinity.javafx.events.HyperspaceEvent;
 import edu.jhuapl.trinity.javafx.events.TrajectoryEvent;
 import edu.jhuapl.trinity.utils.DataUtils;
-import edu.jhuapl.trinity.utils.ResourceUtils;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.scene.Scene;
-import javafx.scene.control.Alert;
-import javafx.scene.control.ButtonType;
-import javafx.scene.control.DialogPane;
-import javafx.scene.layout.Background;
 import javafx.scene.paint.Color;
-import javafx.stage.StageStyle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 
 /**
@@ -75,24 +49,25 @@ public class CdcTissueGenesLoader extends Task {
                 LOG.error(null, ex);
             }
         });
-
-        Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
-            "Clear existing data?",
-            ButtonType.YES, ButtonType.NO);
-        alert.setHeaderText("Loading Gene Tissue Data");
-        alert.setGraphic(ResourceUtils.loadIcon("alert", 75));
-        alert.initStyle(StageStyle.TRANSPARENT);
-        DialogPane dialogPane = alert.getDialogPane();
-        dialogPane.setBackground(Background.EMPTY);
-        dialogPane.getScene().setFill(Color.TRANSPARENT);
-        String DIALOGCSS = ResourceUtils.class.getResource("/edu/jhuapl/trinity/css/dialogstyles.css").toExternalForm();
-        dialogPane.getStylesheets().add(DIALOGCSS);
-        Optional<ButtonType> optBT = alert.showAndWait();
-        if (optBT.get().equals(ButtonType.YES))
-            Platform.runLater(() -> {
-                scene.getRoot().fireEvent(
-                    new HyperspaceEvent(HyperspaceEvent.CLEAR_HYPERSPACE_NOW));
-            });
+//        Platform.runLater(() -> {
+//            Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
+//                "Clear existing data?",
+//                ButtonType.YES, ButtonType.NO);
+//            alert.setHeaderText("Loading Gene Tissue Data");
+//            alert.setGraphic(ResourceUtils.loadIcon("alert", 75));
+//            alert.initStyle(StageStyle.TRANSPARENT);
+//            DialogPane dialogPane = alert.getDialogPane();
+//            dialogPane.setBackground(Background.EMPTY);
+//            dialogPane.getScene().setFill(Color.TRANSPARENT);
+//            String DIALOGCSS = ResourceUtils.class.getResource("/edu/jhuapl/trinity/css/dialogstyles.css").toExternalForm();
+//            dialogPane.getStylesheets().add(DIALOGCSS);
+//            Optional<ButtonType> optBT = alert.showAndWait();
+//            if (optBT.get().equals(ButtonType.YES))
+//    //            Platform.runLater(() -> {
+//                    scene.getRoot().fireEvent(
+//                        new HyperspaceEvent(HyperspaceEvent.CLEAR_HYPERSPACE_NOW));
+//    //            });
+//        });
     }
 
     @Override

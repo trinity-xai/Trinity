@@ -1,24 +1,6 @@
-package edu.jhuapl.trinity.javafx.javafx3d;
+/* Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC */
 
-/*-
- * #%L
- * trinity
- * %%
- * Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC
- * %%
- * Licensed under the Apache License, Version 2.0 (the "License");
- * you may not use this file except in compliance with the License.
- * You may obtain a copy of the License at
- *
- *      http://www.apache.org/licenses/LICENSE-2.0
- *
- * Unless required by applicable law or agreed to in writing, software
- * distributed under the License is distributed on an "AS IS" BASIS,
- * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
- * See the License for the specific language governing permissions and
- * limitations under the License.
- * #L%
- */
+package edu.jhuapl.trinity.javafx.javafx3d;
 
 import edu.jhuapl.trinity.data.CoordinateSet;
 import edu.jhuapl.trinity.data.Dimension;
@@ -426,6 +408,12 @@ public class Hyperspace3DPane extends StackPane implements
             }
             if (keycode == KeyCode.D) {
                 camera.setTranslateX(camera.getTranslateX() + change);
+            }
+            if (keycode == KeyCode.SPACE) {
+                camera.setTranslateY(camera.getTranslateY() + change);
+            }
+            if (keycode == KeyCode.X) {
+                camera.setTranslateY(camera.getTranslateY() - change);
             }
             //rotate controls  use less sensitive modifiers
             change = event.isShiftDown() ? 10.0 : 1.0;
@@ -1803,7 +1791,7 @@ public class Hyperspace3DPane extends StackPane implements
     }
 
     @Override
-    public void addFeatureCollection(FeatureCollection featureCollection) {
+    public void addFeatureCollection(FeatureCollection featureCollection, boolean clearQueue) {
         Platform.runLater(() -> {
             getScene().getRoot().fireEvent(
                 new CommandTerminalEvent("Loading Feature Collection... ",
@@ -1812,7 +1800,7 @@ public class Hyperspace3DPane extends StackPane implements
             getScene().getRoot().fireEvent(
                 new ApplicationEvent(ApplicationEvent.SHOW_BUSY_INDICATOR, ps1));
         });
-        if (!featureVectors.isEmpty()) {
+        if (!featureVectors.isEmpty() && clearQueue) {
             Alert alert = new Alert(AlertType.CONFIRMATION,
                 "Data queue currently has " + featureVectors.size() + " items.\n"
                     + "Clear the queue before import?",
@@ -2007,9 +1995,11 @@ public class Hyperspace3DPane extends StackPane implements
     public void setVisibleByIndex(int i, boolean b) {
         Perspective3DNode[] d = pNodes.toArray(Perspective3DNode[]::new);
         VisibilityMap.pNodeVisibilityMap.put(d[i], b);
-
-//        VisibilityMap.pNodeVisibilityMap.put(pNodes.toArray(Perspective3DNode[]::new)[i], b);
         VisibilityMap.visibilityList.set(i, b);
+    }
+
+    public boolean getVisibleByIndex(int i) {
+        return VisibilityMap.visibilityByIndex(i);
     }
 
     @Override
