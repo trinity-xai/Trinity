@@ -2,11 +2,13 @@
 
 package edu.jhuapl.trinity;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import edu.jhuapl.trinity.data.Dimension;
 import edu.jhuapl.trinity.data.FactorLabel;
 import edu.jhuapl.trinity.data.files.ClusterCollectionFile;
 import edu.jhuapl.trinity.data.files.FeatureCollectionFile;
 import edu.jhuapl.trinity.data.files.ManifoldDataFile;
+import edu.jhuapl.trinity.data.messages.EmbeddingsImageInput;
 import edu.jhuapl.trinity.data.messages.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.FeatureVector;
 import edu.jhuapl.trinity.javafx.components.MatrixOverlay;
@@ -57,6 +59,7 @@ import edu.jhuapl.trinity.javafx.javafx3d.ProjectorPane;
 import edu.jhuapl.trinity.javafx.javafx3d.RetroWavePane;
 import edu.jhuapl.trinity.messages.CommandTask;
 import edu.jhuapl.trinity.messages.MessageProcessor;
+import edu.jhuapl.trinity.messages.RestAccessLayer;
 import edu.jhuapl.trinity.messages.ZeroMQFeedManager;
 import edu.jhuapl.trinity.messages.ZeroMQSubscriberConfig;
 import edu.jhuapl.trinity.utils.AnalysisUtils;
@@ -106,6 +109,7 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+import java.util.logging.Level;
 
 public class App extends Application {
     private static final Logger LOG = LoggerFactory.getLogger(App.class);
@@ -649,8 +653,23 @@ public class App extends Application {
                 pixelSelectionPane.setImage(image);
             }
         });
-
-
+        LOG.info("Image Inspection Pane");
+        scene.addEventHandler(ApplicationEvent.SHOW_IMAGE_INSPECTION, e -> {
+            if (null != e.object) {
+                Boolean show = (Boolean) e.object;
+                if(show) {
+                    if (null == imageInspectorPane) {
+                        imageInspectorPane = new ImageInspectorPane(scene, pathPane);
+                    }
+                    if (!pathPane.getChildren().contains(imageInspectorPane)) {
+                        pathPane.getChildren().add(imageInspectorPane);
+                        imageInspectorPane.slideInPane();
+                    } else {
+                        imageInspectorPane.show();
+                    }
+                }
+            }
+        });
         LOG.info("Waveform View ");
         scene.addEventHandler(ApplicationEvent.SHOW_WAVEFORM_PANE, e -> {
             if (null == waveformPane) {
@@ -1122,10 +1141,30 @@ public class App extends Application {
             } else {
                 imageInspectorPane.show();
             }
-//            stage.getScene().getRoot().fireEvent(
-//                new ApplicationEvent(ApplicationEvent.SHOW_PROJECTOR_PANE));
         }
-
+        if (e.isAltDown() && e.isControlDown() && e.getCode().equals(KeyCode.Q)) {
+            System.out.println("Requesting REST Is Alive...");
+            RestAccessLayer.requestRestIsAlive(stage.getScene());
+        }
+        if (e.isAltDown() && e.isControlDown() && e.getCode().equals(KeyCode.Z)) {
+            System.out.println("Requesting Image Embedding...");
+            EmbeddingsImageInput input = new EmbeddingsImageInput();
+            try {
+                Image carlImage = ResourceUtils.load3DTextureImage("carl-b-portrait");
+                input.setInput(EmbeddingsImageInput.BASE64_PREFIX_PNG 
+                        + ResourceUtils.imageToBase64(carlImage));
+                input.setDimensions(Double.valueOf(carlImage.getWidth()).intValue());
+                input.setEmbedding_type("all");
+                input.setEncoding_format("float");
+                input.setModel("openai/clip-vit-large-patch14");
+                input.setUser("string");
+                RestAccessLayer.requestImageEmbeddings(input, stage.getScene());
+            } catch (JsonProcessingException ex) {
+                java.util.logging.Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (IOException ex) {
+                java.util.logging.Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        }
         if (e.isAltDown() && e.getCode().equals(KeyCode.N)) {
             matrixShowing = !matrixShowing;
             if (!matrixShowing) {

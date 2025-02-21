@@ -13,6 +13,7 @@ public class ImageEvent extends Event {
 
     public Object object;
 
+    public static final EventType<ImageEvent> NEW_IMAGE_INSPECTION = new EventType(ANY, "NEW_IMAGE_INSPECTION");
     public static final EventType<ImageEvent> NEW_TEXTURE_SURFACE = new EventType(ANY, "NEW_TEXTURE_SURFACE");
     public static final EventType<ImageEvent> NEW_VECTORMASK_COLLECTION = new EventType(ANY, "NEW_VECTORMASK_COLLECTION");
     public static final EventType<ImageEvent> NEW_COCO_ANNOTATION = new EventType(ANY, "NEW_COCO_ANNOTATION");

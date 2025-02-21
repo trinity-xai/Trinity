@@ -40,6 +40,7 @@ public class ApplicationEvent extends Event {
     public static final EventType<ApplicationEvent> FREE_CAMERA_MODE = new EventType(ANY, "FREE_CAMERA_MODE");
     public static final EventType<ApplicationEvent> SHOULDER_CAMERA_MODE = new EventType(ANY, "SHOULDER_CAMERA_MODE");
     public static final EventType<ApplicationEvent> SHOW_PIXEL_SELECTION = new EventType(ANY, "SHOW_PIXEL_SELECTION");
+    public static final EventType<ApplicationEvent> SHOW_IMAGE_INSPECTION = new EventType(ANY, "SHOW_IMAGE_INSPECTION");
 
     public ApplicationEvent(EventType<? extends Event> eventType, Object object) {
         this(eventType);

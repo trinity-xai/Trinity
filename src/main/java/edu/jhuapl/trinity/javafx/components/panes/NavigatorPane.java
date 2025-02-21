@@ -36,6 +36,7 @@ import java.io.IOException;
 import java.util.Map;
 
 import static edu.jhuapl.trinity.data.messages.FeatureVector.bboxToString;
+import javafx.scene.layout.HBox;
 
 /**
  * @author Sean Phillips
@@ -91,6 +92,14 @@ public class NavigatorPane extends LitPathPane {
             hypersurfaceButton.getScene().getRoot().fireEvent(
                 new ImageEvent(ImageEvent.NEW_TEXTURE_SURFACE, currentImage));
         });
+        Button imageInspectionButton = new Button("Image Inspection");
+        imageInspectionButton.setOnAction(e -> {
+            imageInspectionButton.getScene().getRoot().fireEvent(
+                new ApplicationEvent(ApplicationEvent.SHOW_IMAGE_INSPECTION, true));
+            imageInspectionButton.getScene().getRoot().fireEvent(
+                new ImageEvent(ImageEvent.NEW_IMAGE_INSPECTION, currentImage));
+        });
+        
         detailsGridPane = new GridPane();
         detailsGridPane.setPadding(new Insets(1));
         detailsGridPane.setHgap(5);
@@ -101,8 +110,10 @@ public class NavigatorPane extends LitPathPane {
         metaTP.setText("Metadata");
         metaTP.setExpanded(false);
         metaTP.setPrefWidth(DEFAULT_TITLEDPANE_WIDTH);
-        contentVBox = new VBox(5, imageView, urlLabel, imageLabel,
-            hypersurfaceButton, detailsTP, metaTP);
+        contentVBox = new VBox(5, 
+            imageView, urlLabel, imageLabel,
+            new HBox(10, hypersurfaceButton, imageInspectionButton), 
+            detailsTP, metaTP);
 
         ImageView refresh = ResourceUtils.loadIcon("refresh", 32);
 

@@ -70,6 +70,8 @@ import org.slf4j.LoggerFactory;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
+import java.io.ByteArrayInputStream;
+import java.io.ByteArrayOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -84,6 +86,7 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.Base64;
 import java.util.Enumeration;
 import java.util.HashSet;
 import java.util.List;
@@ -573,7 +576,27 @@ public enum ResourceUtils {
 
     public static String removeExtension(String filename) {
         return filename.substring(0, filename.lastIndexOf("."));
-
     }
-
+    public static  Image bytesToImage(byte[] image) {
+        byte [] rayray = new byte[image.length];
+        System.arraycopy(image, 0, 
+            rayray, 0, rayray.length);
+        Image imageObject = new Image(new ByteArrayInputStream(rayray));
+        return imageObject;
+    }
+    
+    /**
+     * https://stackoverflow.com/questions/24038524/how-to-get-byte-from-javafx-imageview
+     * @param image
+     * @return byte [] da bytes
+     */
+    public static byte[] imageToBytes(Image image) throws IOException {
+        ByteArrayOutputStream byteOutput = new ByteArrayOutputStream();
+        ImageIO.write(SwingFXUtils.fromFXImage(image, null), "png", byteOutput);
+        return byteOutput.toByteArray();
+    }
+    public static String imageToBase64(Image image) throws IOException {
+        return Base64.getEncoder().encodeToString(imageToBytes(image));
+    }
+    
 }

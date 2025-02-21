@@ -101,7 +101,6 @@ public class ImageInspectorPane extends LitPathPane {
         borderPane = (BorderPane) this.contentPane;
         tilePane = new TilePane();
         tilePane.setPrefColumns(3);
-//        tilePane.setPrefRows(1);
         tilePane.setHgap(10);
         tilePane.setAlignment(Pos.CENTER_LEFT);
         ScrollPane tileScrollPane = new ScrollPane(tilePane);
@@ -110,10 +109,8 @@ public class ImageInspectorPane extends LitPathPane {
         tileScrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         tileScrollPane.setFitToHeight(true);
         tileScrollPane.setFitToWidth(true);
-//        tileScrollPane.setPrefSize(512, 512);
 
         borderPane.setCenter(tileScrollPane);
-
 
         centerStack = new StackPane();
         centerStack.setAlignment(Pos.CENTER);
@@ -237,16 +234,8 @@ public class ImageInspectorPane extends LitPathPane {
             }
         });
         imageFFTCanvas.setOnMouseReleased((MouseEvent me) -> {
-//            if(me.isPrimaryButtonDown()) {
             me.consume();
             //update masks
-            int startY = Double.valueOf(fftSelectionRectangle.getY()).intValue();
-            int endY = Double.valueOf(fftSelectionRectangle.getY()
-                + fftSelectionRectangle.getHeight()).intValue();
-            int startX = Double.valueOf(fftSelectionRectangle.getX()).intValue();
-            int endX = Double.valueOf(fftSelectionRectangle.getX()
-                + fftSelectionRectangle.getHeight()).intValue();
-
             Point2D sceneStart = fftSelectionRectangle.localToScene(fftSelectionRectangle.getX(), fftSelectionRectangle.getY());
             Point2D localStart = imageFFTCanvas.sceneToLocal(sceneStart);
             Point2D sceneEnd = fftSelectionRectangle.localToScene(
@@ -254,10 +243,10 @@ public class ImageInspectorPane extends LitPathPane {
                 fftSelectionRectangle.getY() + fftSelectionRectangle.getHeight());
             Point2D localEnd = imageFFTCanvas.sceneToLocal(sceneEnd);
 
-            startY = Double.valueOf(localStart.getY()).intValue();
-            endY = Double.valueOf(localEnd.getY()).intValue();
-            startX = Double.valueOf(localStart.getX()).intValue();
-            endX = Double.valueOf(localEnd.getX()).intValue();
+            int startY = Double.valueOf(localStart.getY()).intValue();
+            int endY = Double.valueOf(localEnd.getY()).intValue();
+            int startX = Double.valueOf(localStart.getX()).intValue();
+            int endX = Double.valueOf(localEnd.getX()).intValue();
 
             PixelWriter pw = imageFFTGC.getPixelWriter();
             for (int y = startY; y < endY; y++) {
@@ -304,7 +293,6 @@ public class ImageInspectorPane extends LitPathPane {
             fftSelectionRectangle.setVisible(false);
             fftSelectionRectangle.setWidth(1);
             fftSelectionRectangle.setHeight(1);
-//            }
         });
 
         brightnessDownscalerSpinner = new Spinner<>(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 1000, 10, 1));
@@ -358,21 +346,11 @@ public class ImageInspectorPane extends LitPathPane {
         BorderPane inverseFFTBorderPane = new BorderPane(inverseScrollPane);
         Button tessellateInverseFFTButton = new Button("Tessellate Inverse");
         tessellateInverseFFTButton.setOnAction(e -> {
-//            if(fftSelectionRectangle.getWidth() > 1 && fftSelectionRectangle.getHeight() > 1) {
-//                Point2D sceneP2D = fftSelectionRectangle.localToScene(
-//                    fftSelectionRectangle.getX(), fftSelectionRectangle.getY());
-//                Point2D localP2D = baseImageView.sceneToLocal(sceneP2D);
-//                WritableImage wi = ResourceUtils.cropImage(baseImage,
-//                    localP2D.getX(), localP2D.getY(),
-//                    localP2D.getX() + fftSelectionRectangle.getWidth(),
-//                    localP2D.getY() + fftSelectionRectangle.getHeight());
-
             SnapshotParameters snapshotParameters = new SnapshotParameters();
             snapshotParameters.setFill(Color.TRANSPARENT);
             Image image = inverseFFTCanvas.snapshot(snapshotParameters, null);
             tessellateInverseFFTButton.getScene().getRoot().fireEvent(
                 new ImageEvent(ImageEvent.NEW_TEXTURE_SURFACE, image));
-//            }
         });
         HBox inversePowerBottomHBox = new HBox(10, tessellateInverseFFTButton);
         inversePowerBottomHBox.setPadding(new Insets(10));
@@ -401,6 +379,14 @@ public class ImageInspectorPane extends LitPathPane {
                         java.util.logging.Logger.getLogger(PixelSelectionPane.class.getName()).log(Level.SEVERE, null, ex);
                     }
                 }
+            }
+        });
+        scene.getRoot().addEventHandler(ImageEvent.NEW_IMAGE_INSPECTION, event -> {
+            try {
+                Image image = (Image)event.object;
+                setImage(image);
+            } catch (Exception ex) {
+                LOG.error("dude...");
             }
         });
     }
