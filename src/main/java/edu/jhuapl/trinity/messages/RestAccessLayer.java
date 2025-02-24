@@ -16,6 +16,7 @@ import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
+import okhttp3.ConnectionPool;
 import okhttp3.HttpUrl;
 import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
@@ -33,7 +34,7 @@ public enum RestAccessLayer {
     public static final String SERVICES_DEFAULT_PATH = "services/"; //default to local relative path
     public static final String SERVICES_DEFAULT_CONFIG = "defaultRestAccessLayer.json";
     public static RestAccessLayerConfig restAccessLayerconfig = null;
-    public static int DEFAULT_TIMEOUT_SECONDS = 60;
+    public static final int DEFAULT_TIMEOUT_SECONDS = 60;
       
     public static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
     
@@ -41,11 +42,14 @@ public enum RestAccessLayer {
         objectMapper = new ObjectMapper();
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         client = new OkHttpClient.Builder()
-            .connectTimeout(5, TimeUnit.SECONDS)
-            .writeTimeout(10, TimeUnit.SECONDS)
+            .connectTimeout(DEFAULT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .writeTimeout(DEFAULT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
+            .callTimeout(DEFAULT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .readTimeout(300, TimeUnit.SECONDS)
             .followRedirects(true)
             .followSslRedirects(true)
+            .retryOnConnectionFailure(true)
+            .connectionPool(new ConnectionPool(50, DEFAULT_TIMEOUT_SECONDS, TimeUnit.SECONDS))
             .build();
         try {
             restAccessLayerconfig = loadDefaultRestConfig();
@@ -76,6 +80,8 @@ public enum RestAccessLayer {
         }
         String inputJSON = objectMapper.writeValueAsString(input);
         Request request = makePostRequest(inputJSON, restAccessLayerconfig.getImageEmbeddingsEndpoint());
+        System.out.println("Embeddings Request\n" + request.toString());
+        System.out.println("Embeddings Request Hard Body\n" + request.body().toString());
         client.newCall(request).enqueue(new EmbeddingsImageCallback(scene));
     }
     
@@ -88,12 +94,20 @@ public enum RestAccessLayer {
         Request request = new Request.Builder().url(url).build();
         client.newCall(request).enqueue(new IsAliveCallback(scene));
     }
-    private static Request makePostRequest(String prompt, String endPoint) {
+    private static Request makePostRequest(String payload, String endPoint) {
         HttpUrl url = HttpUrl.parse(restAccessLayerconfig.getBaseRestURL() + endPoint)
             .newBuilder()
             .build();
-        RequestBody hardBody = RequestBody.create(prompt, JSON );
-        return new Request.Builder().url(url).post(hardBody).build();        
+        RequestBody hardBody = RequestBody.create(payload, JSON);
+        //  -H 'accept: application/json' \
+        //  -H 'Content-Type: application/json'
+        return new Request.Builder()
+            .addHeader("accept", "application/json")
+            .addHeader("Content-Type", "application/json")
+            .url(url)
+//            .method("POST", hardBody)
+            .post(hardBody)
+            .build();        
     }    
     private static void notifyTerminalError(String message, Scene scene) {
         Platform.runLater(() -> {

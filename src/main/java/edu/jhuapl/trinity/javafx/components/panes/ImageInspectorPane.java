@@ -45,7 +45,6 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.util.Arrays;
-import java.util.DoubleSummaryStatistics;
 import java.util.logging.Level;
 
 import static edu.jhuapl.trinity.utils.Utils.clamp;
@@ -490,21 +489,16 @@ public class ImageInspectorPane extends LitPathPane {
         transformer2D.transform(blueChannelSignal2d);
 
         //fshift = np.fft.fftshift(f_image)
-        System.out.print("FFTShift on Greyscale... ");
-        startTime = System.nanoTime();
+//        System.out.print("FFTShift on Greyscale... ");
+//        startTime = System.nanoTime();
 //        shiftedGreySignal2d = fftShift2d(greySignal2d, false);
-        Utils.printTotalTime(startTime);
+//        Utils.printTotalTime(startTime);
         shiftedRedChannelSignal2d = fftShift2d(redChannelSignal2d, false);
         shiftedGreenChannelSignal2d = fftShift2d(greenChannelSignal2d, false);
         shiftedBlueChannelSignal2d = fftShift2d(blueChannelSignal2d, false);
 
         //magnitude_spectrum = 20 * np.log(np.abs(fshift))
         double redlogVal, greenlogVal, bluelogVal = 0;
-        DoubleSummaryStatistics stats = Arrays
-            .stream(greySignal2d.getRe())
-            .summaryStatistics();
-        System.out.println("Max: " + stats.getMax() + " Min: " + stats.getMin());
-
         baseImagePR = image.getPixelReader();
         PixelWriter pw = imageFFTGC.getPixelWriter();
         imageFFTGC.setFill(Color.BLACK);

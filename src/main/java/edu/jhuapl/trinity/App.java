@@ -13,6 +13,7 @@ import edu.jhuapl.trinity.data.messages.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.FeatureVector;
 import edu.jhuapl.trinity.javafx.components.MatrixOverlay;
 import edu.jhuapl.trinity.javafx.components.panes.AnalysisLogPane;
+import edu.jhuapl.trinity.javafx.components.panes.HyperdrivePane;
 import edu.jhuapl.trinity.javafx.components.panes.ImageInspectorPane;
 import edu.jhuapl.trinity.javafx.components.panes.NavigatorPane;
 import edu.jhuapl.trinity.javafx.components.panes.PixelSelectionPane;
@@ -137,6 +138,7 @@ public class App extends Application {
     AnalysisLogPane analysisLogPane;
     PixelSelectionPane pixelSelectionPane;
     ImageInspectorPane imageInspectorPane;
+    HyperdrivePane hyperdrivePane;
     CircleProgressIndicator circleSpinner;
 
     static Configuration theConfig;
@@ -245,7 +247,8 @@ public class App extends Application {
         analysisLogPane = new AnalysisLogPane(scene, desktopPane);
         pixelSelectionPane = new PixelSelectionPane(scene, pathPane);
         imageInspectorPane = new ImageInspectorPane(scene, pathPane);
-
+        hyperdrivePane = new HyperdrivePane(scene, pathPane);
+        
         LOG.info("Registering Event Handlers...");
         //animatedConsoleText.animate("Registering Event Handlers...");
         scene.addEventHandler(FeatureVectorEvent.REQUEST_FEATURE_COLLECTION, event -> {
@@ -1142,6 +1145,14 @@ public class App extends Application {
                 imageInspectorPane.show();
             }
         }
+        if (e.isAltDown() && e.isControlDown() && e.getCode().equals(KeyCode.H)) {
+            if (!pathPane.getChildren().contains(hyperdrivePane)) {
+                pathPane.getChildren().add(hyperdrivePane);
+                hyperdrivePane.slideInPane();
+            } else {
+                hyperdrivePane.show();
+            }
+        }        
         if (e.isAltDown() && e.isControlDown() && e.getCode().equals(KeyCode.Q)) {
             System.out.println("Requesting REST Is Alive...");
             RestAccessLayer.requestRestIsAlive(stage.getScene());

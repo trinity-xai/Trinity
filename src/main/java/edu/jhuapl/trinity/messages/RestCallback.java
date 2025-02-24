@@ -57,18 +57,20 @@ public abstract class RestCallback extends Task implements Callback {
     @Override
     protected Object call() throws Exception {
         try ( ResponseBody responseBody = response.body()) {
-            if (!response.isSuccessful()) {
-                Platform.runLater(() -> {
-                    CommandTerminalEvent cte = new CommandTerminalEvent(
-                    "REST Request Error: " + response.code() + " - " + response.message(), 
-                        new Font("Consolas", 20), Color.RED);
-                        scene.getRoot().fireEvent(cte);
-                });                                
-                throw new IOException("Unexpected code " + response);
-            }
             if(!response.isRedirect()) {
+                if (!response.isSuccessful()) {
+                    Platform.runLater(() -> {
+                        CommandTerminalEvent cte = new CommandTerminalEvent(
+                        "REST Request Error: " + response.code() + " - " + response.message(), 
+                            new Font("Consolas", 20), Color.RED);
+                            scene.getRoot().fireEvent(cte);
+                    });                                
+                    throw new IOException("Unexpected code " + response);
+                }
                 String responseBodyString = response.body().string();
                 processResponse(responseBodyString);                
+            } else {
+                System.out.println("Redirected...");
             }
         } catch (Exception ex) {
             Logger.getLogger(RestCallback.class.getName())

@@ -64,13 +64,13 @@ public class IsAliveCallback extends Task implements Callback {
             if (!response.isSuccessful()) {
                 Platform.runLater(() -> {
                     CommandTerminalEvent cte = new CommandTerminalEvent(
-                    "LLM Could not be Reached: " + response.code() + " - " + response.message(), 
+                    "Embedding service could not be reached: " + response.code() + " - " + response.message(), 
                         new Font("Consolas", 20), Color.RED);
                         scene.getRoot().fireEvent(cte);
                     Alert alert = new Alert(Alert.AlertType.WARNING,
-                        "Functionality will be limited without LLM Service access.",
+                        "Functionality will be limited without Embedding Service access.",
                         ButtonType.OK );
-                           alert.setTitle("LLM Service Failure");
+                           alert.setTitle("Embedding Service Failure");
                            alert.setHeaderText("Is Alive check for LLM Service failed");
                    //            alert.setContentText("Clear the queue before import?");
                            alert.setGraphic(ResourceUtils.loadIcon("alert", 75));
@@ -78,7 +78,7 @@ public class IsAliveCallback extends Task implements Callback {
                            DialogPane dialogPane = alert.getDialogPane();
                            dialogPane.setBackground(Background.EMPTY);
                            dialogPane.getScene().setFill(Color.TRANSPARENT);
-                           String DIALOGCSS = IsAliveCallback.class.getResource("/edu/jhuapl/hedgemonyfx/css/dialogstyles.css").toExternalForm();
+                           String DIALOGCSS = IsAliveCallback.class.getResource("/edu/jhuapl/trinity/css/dialogstyles.css").toExternalForm();
                            dialogPane.getStylesheets().add(DIALOGCSS);
                            alert.showAndWait();
                 });                
@@ -88,10 +88,10 @@ public class IsAliveCallback extends Task implements Callback {
             String responseBodyString = response.body().string();
             //fire track listing event
             try {
-                System.out.println("Response from is alive: " + responseBodyString);
+                System.out.println("Response from 'is alive' check: " + responseBodyString);
                 Platform.runLater(() -> {
                     CommandTerminalEvent cte = new CommandTerminalEvent(
-                    "Hedgenomy LLM Service is alive.", 
+                    "Embedding Service is alive.", 
                         new Font("Consolas", 20), Color.LIME);
                         scene.getRoot().fireEvent(cte);
                 });  
