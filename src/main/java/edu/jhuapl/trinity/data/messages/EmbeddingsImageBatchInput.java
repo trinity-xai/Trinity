@@ -2,56 +2,48 @@ package edu.jhuapl.trinity.data.messages;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Sean Phillips
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
-public class EmbeddingsImageInput {
+public class EmbeddingsImageBatchInput {
 
     public static final String TYPESTRING = "embeddingImageInput";
     public static final String BASE64_PREFIX_PNG = "data:image/png;base64,";
     //<editor-fold defaultstate="collapsed" desc="JSON Payload">
     /*
         {
-          "input": "string",
+          "input": [
+                {"type":"image_url","image_url": {"url": "data:image/png;base64,image1bytesencoded64"}},
+                {"type":"image_url","image_url": {"url": "data:image/jpeg;base64,image2bytesencoded64"}},
+                {"type":"image_url","image_url": {"url": "data:image/webp;base64,image3bytesencoded64"}}
+              ]
           "model": "intfloat/multilingual-e5-large",
           "encoding_format": "float",
           "embedding_type": "all",
           "dimensions": 512,
           "user": "string"
         }
-    
-{
-  "input": [
-    {"type":"image_url","image_url": {"url": "data:image/png;base64,image1bytesencoded64"}},
-    {"type":"image_url","image_url": {"url": "data:image/jpeg;base64,image2bytesencoded64"}},
-    {"type":"image_url","image_url": {"url": "data:image/webp;base64,image3bytesencoded64"}}
-  ],
-  "model": "intfloat/multilingual-e5-large",
-  "encoding_format": "float"
-}
-    
      */
     //</editor-fold>
 
     //<editor-fold defaultstate="collapsed" desc="Payload Fields">
     private String model; 
-    private String input; //base64 image to get embeddings for
+    private List<EmbeddingsImageUrl> input;
     private String encoding_format;
     private String embedding_type;
     private int dimensions;
     private String user;
     //</editor-fold>
 
-    public EmbeddingsImageInput() {
+    public EmbeddingsImageBatchInput() {
+        input = new ArrayList<>();
     }
 
-    public static boolean isEmbeddingsImageInput(String messageBody) {
-        return messageBody.contains("input") && messageBody.contains("model") 
-            && messageBody.contains("encoding_format") && messageBody.contains("embedding_type");
-    }
     //<editor-fold defaultstate="collapsed" desc="Properties">
 
     /**
@@ -68,19 +60,6 @@ public class EmbeddingsImageInput {
         this.model = model;
     }
 
-    /**
-     * @return the input
-     */
-    public String getInput() {
-        return input;
-    }
-
-    /**
-     * @param input the input to set
-     */
-    public void setInput(String input) {
-        this.input = input;
-    }
 
     /**
      * @return the encoding_format
@@ -137,6 +116,20 @@ public class EmbeddingsImageInput {
     public void setUser(String user) {
         this.user = user;
     }
+    /**
+     * @return the input
+     */
+    public List<EmbeddingsImageUrl> getInput() {
+        return input;
+    }
+
+    /**
+     * @param input the input to set
+     */
+    public void setInput(List<EmbeddingsImageUrl> input) {
+        this.input = input;
+    }
 
     //</editor-fold>    
+
 }

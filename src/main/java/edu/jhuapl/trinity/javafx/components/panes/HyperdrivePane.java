@@ -3,9 +3,13 @@
 package edu.jhuapl.trinity.javafx.components.panes;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import edu.jhuapl.trinity.data.messages.EmbeddingsImageBatchInput;
 import edu.jhuapl.trinity.data.messages.EmbeddingsImageInput;
 import edu.jhuapl.trinity.data.messages.EmbeddingsImageOutput;
+import edu.jhuapl.trinity.data.messages.EmbeddingsImageUrl;
 import edu.jhuapl.trinity.data.messages.FeatureVector;
+import edu.jhuapl.trinity.data.messages.ImageUrl;
+import edu.jhuapl.trinity.javafx.components.listviews.EmbeddingsImageListItem;
 import edu.jhuapl.trinity.javafx.events.RestEvent;
 import edu.jhuapl.trinity.messages.RestAccessLayer;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
@@ -13,10 +17,7 @@ import static edu.jhuapl.trinity.utils.MessageUtils.embeddingsToFeatureVector;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Cursor;
 import javafx.scene.Scene;
-import javafx.scene.canvas.Canvas;
-import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.control.Button;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.image.Image;
@@ -39,6 +40,7 @@ import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.function.Function;
 import java.util.logging.Level;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
@@ -64,8 +66,8 @@ public class HyperdrivePane extends LitPathPane {
     ScrollPane scrollPane;
     List<FeatureVector> currentFeatureList;   
     List<File> imageFilesList;
-//    ListView<EmbeddingsListItem> embeddingsListView;
-    ListView<String> embeddingsListView;
+    ListView<EmbeddingsImageListItem> embeddingsListView;
+//    ListView<String> embeddingsListView;
     
     private static BorderPane createContent() {
         BorderPane bpOilSpill = new BorderPane();
@@ -123,20 +125,37 @@ public class HyperdrivePane extends LitPathPane {
 
         Button embeddingsButton = new Button("Request Embeddings");
         embeddingsButton.setOnAction(e -> {
-            EmbeddingsImageInput input = new EmbeddingsImageInput();
-            try {
-                input.setInput(EmbeddingsImageInput.BASE64_PREFIX_PNG 
-                        + ResourceUtils.imageToBase64(baseImage));
+//            EmbeddingsImageInput input = new EmbeddingsImageInput();
+//            try {
+//                input.setInput(EmbeddingsImageInput.BASE64_PREFIX_PNG 
+//                        + ResourceUtils.imageToBase64(baseImage));
+//                input.setDimensions(Double.valueOf(baseImage.getWidth()).intValue());
+//                input.setEmbedding_type("all");
+//                input.setEncoding_format("float");
+//                input.setModel("openai/clip-vit-large-patch14");
+//                input.setUser("string");
+//                RestAccessLayer.requestImageEmbeddings(input, embeddingsButton.getScene());
+//            } catch (JsonProcessingException ex) {
+//                java.util.logging.Logger.getLogger(HyperdrivePane.class.getName()).log(Level.SEVERE, null, ex);
+//            } catch (IOException ex) {
+//                java.util.logging.Logger.getLogger(HyperdrivePane.class.getName()).log(Level.SEVERE, null, ex);
+//            }
+
+            if(!imageFilesList.isEmpty()) {
+                List<EmbeddingsImageUrl> inputs = 
+                    imageFilesList.stream().map(imageUrlFromFile).toList();
+                EmbeddingsImageBatchInput input = new EmbeddingsImageBatchInput();
+                input.setInput(inputs);
                 input.setDimensions(Double.valueOf(baseImage.getWidth()).intValue());
                 input.setEmbedding_type("all");
                 input.setEncoding_format("float");
                 input.setModel("openai/clip-vit-large-patch14");
                 input.setUser("string");
-                RestAccessLayer.requestImageEmbeddings(input, embeddingsButton.getScene());
-            } catch (JsonProcessingException ex) {
-                java.util.logging.Logger.getLogger(HyperdrivePane.class.getName()).log(Level.SEVERE, null, ex);
-            } catch (IOException ex) {
-                java.util.logging.Logger.getLogger(HyperdrivePane.class.getName()).log(Level.SEVERE, null, ex);
+                try {
+                    RestAccessLayer.requestImageEmbeddings(input, embeddingsButton.getScene());
+                } catch (JsonProcessingException ex) {
+                    java.util.logging.Logger.getLogger(HyperdrivePane.class.getName()).log(Level.SEVERE, null, ex);
+                }
             }
         });
 
@@ -145,16 +164,17 @@ public class HyperdrivePane extends LitPathPane {
         powerBottomHBox.setAlignment(Pos.CENTER);
         imageViewBorderPane.setBottom(powerBottomHBox);
 
-        baseImageView.setOnMouseEntered(e -> baseImageView.setCursor(Cursor.CROSSHAIR));
-        baseImageView.setOnMouseExited(e -> baseImageView.setCursor(Cursor.DEFAULT));
-
-
-        Button clearMaskButton = new Button("Clear Mask");
-        clearMaskButton.setOnAction(e -> {
-//            clearMask();
+        Button clearEmbeddingsButton = new Button("Clear embeddings");
+        clearEmbeddingsButton.setOnAction(e -> {
+            currentFeatureList.clear();
+            embeddingsListView.getItems().clear();
+        });
+        Button clearFilesButton = new Button("Clear Files");
+        clearFilesButton.setOnAction(e -> {
+            imageFilesList.clear();
         });
         HBox controlsBox = new HBox(10,
-            clearMaskButton
+            clearFilesButton, clearEmbeddingsButton
         );
         controlsBox.setAlignment(Pos.CENTER);
         ImageView iv = ResourceUtils.loadIcon("data", 50);
@@ -201,26 +221,64 @@ public class HyperdrivePane extends LitPathPane {
             }
         });
         scene.getRoot().addEventHandler(RestEvent.NEW_EMBEDDINGS_IMAGE, event -> {
+            embeddingsListView.getItems().clear();
+            currentFeatureList.clear();
             EmbeddingsImageOutput output = (EmbeddingsImageOutput) event.object;
             List<FeatureVector> fvList = output.getData().stream()
                 .map(embeddingsToFeatureVector).toList();
-//            fvList.forEach(fv -> fv.setMediaURL(baseImage.getUrl()));
             if(fvList.size() >= imageFilesList.size()) {
                 for(int imageIndex=0; imageIndex<fvList.size();imageIndex++){
-                    try {
+//                    try {
                         fvList.get(imageIndex).setMediaURL(
-                            imageFilesList.get(imageIndex).toURI().toURL().toExternalForm());
-                    } catch (MalformedURLException ex) {
-                        java.util.logging.Logger.getLogger(HyperdrivePane.class.getName()).log(Level.SEVERE, null, ex);
-                    }
+//                            imageFilesList.get(imageIndex).toURI().toURL().toExternalForm());
+                            imageFilesList.get(imageIndex).getAbsolutePath());
+//                    } catch (MalformedURLException ex) {
+//                        java.util.logging.Logger.getLogger(HyperdrivePane.class.getName()).log(Level.SEVERE, null, ex);
+//                    }
                 }
             }
-            currentFeatureList.clear();
+            List<EmbeddingsImageListItem> listItems = fvList.stream()
+                .map(EmbeddingsImageListItem::new).toList();
+            
             currentFeatureList.addAll(fvList);
+            embeddingsListView.getItems().setAll(listItems);
             System.out.println("New Feature Vector List obtained.");
         });
     }
-
+    public static Function<File, EmbeddingsImageUrl> imageUrlFromFile = file -> {
+        EmbeddingsImageUrl input = new EmbeddingsImageUrl();
+        try {
+            Image image = ResourceUtils.loadImageFile(file);
+            ImageUrl imageUrl = new ImageUrl();
+            imageUrl.setUrl(EmbeddingsImageInput.BASE64_PREFIX_PNG 
+                    + ResourceUtils.imageToBase64(image));
+            input.setImage_url(imageUrl);
+        } catch (JsonProcessingException ex) {
+            java.util.logging.Logger.getLogger(HyperdrivePane.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
+            java.util.logging.Logger.getLogger(HyperdrivePane.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return input;
+    };
+    
+    public static Function<File, EmbeddingsImageInput> inputFromFile = file -> {
+        EmbeddingsImageInput input = new EmbeddingsImageInput();
+        try {
+            Image image = ResourceUtils.loadImageFile(file);
+            input.setInput(EmbeddingsImageInput.BASE64_PREFIX_PNG 
+                    + ResourceUtils.imageToBase64(image));
+            input.setDimensions(Double.valueOf(image.getWidth()).intValue());
+            input.setEmbedding_type("all");
+            input.setEncoding_format("float");
+            input.setModel("openai/clip-vit-large-patch14");
+            input.setUser("string");
+        } catch (JsonProcessingException ex) {
+            java.util.logging.Logger.getLogger(HyperdrivePane.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
+            java.util.logging.Logger.getLogger(HyperdrivePane.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return input;
+    };
     public void setImage(Image image) {
         this.baseImage = image;
         baseImageView.setImage(this.baseImage);

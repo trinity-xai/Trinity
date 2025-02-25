@@ -208,12 +208,15 @@ public enum ResourceUtils {
         }
         return filenames;
     }
-
-    public static WritableImage loadImageFile(String filename) throws IOException {
-        File imageFile = new File(filename);
-        BufferedImage image = ImageIO.read(imageFile);
+    public static WritableImage loadImageFile(File file) throws IOException {
+        BufferedImage image = ImageIO.read(file);
         WritableImage wi = SwingFXUtils.toFXImage(image, null);
         return wi;
+    }
+    public static WritableImage loadImageFile(String filename) throws IOException {
+        File imageFile = new File(filename);
+        return loadImageFile(imageFile);
+
     }
 
     public static Image load3DTextureImage(String filename) throws IOException {
