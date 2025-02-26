@@ -5,12 +5,12 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.jhuapl.trinity.data.messages.EmbeddingsImageBatchInput;
 import edu.jhuapl.trinity.data.messages.EmbeddingsImageInput;
-import edu.jhuapl.trinity.data.messages.EmbeddingsImageInputCollection;
 import edu.jhuapl.trinity.data.messages.RestAccessLayerConfig;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.List;
 import java.util.concurrent.TimeUnit;
 import java.util.logging.Level;
 import java.util.logging.Logger;
@@ -73,20 +73,7 @@ public enum RestAccessLayer {
     }    
     
     //Event and Image REST calls
-    public static void requestImageEmbeddings(EmbeddingsImageInput input, Scene scene) throws JsonProcessingException {
-        if(!checkRestServiceInitialized()) {
-            notifyTerminalError(
-                "REST Request Error: Current REST URL or End Point not initialized properly.", 
-                scene
-            );            
-        }
-        String inputJSON = objectMapper.writeValueAsString(input);
-        Request request = makePostRequest(inputJSON, restAccessLayerconfig.getImageEmbeddingsEndpoint());
-        System.out.println("Embeddings Request\n" + request.toString());
-        System.out.println("Embeddings Request Hard Body\n" + request.body().toString());
-        client.newCall(request).enqueue(new EmbeddingsImageCallback(scene));
-    }
-    public static void requestImageEmbeddings(EmbeddingsImageBatchInput input, Scene scene) throws JsonProcessingException {
+    public static void requestImageEmbeddings(List<File> inputFiles, EmbeddingsImageBatchInput input, Scene scene) throws JsonProcessingException {
         if(!checkRestServiceInitialized()) {
             notifyTerminalError(
                 "REST Request Error: Current REST URL or End Point not initialized properly.", 
@@ -97,7 +84,7 @@ public enum RestAccessLayer {
         Request request = makePostRequest(inputJSON, restAccessLayerconfig.getImageEmbeddingsEndpoint());
 //        System.out.println("Embeddings Request\n" + request.toString());
 //        System.out.println("Embeddings Request Hard Body\n" + request.body().toString());
-        client.newCall(request).enqueue(new EmbeddingsImageCallback(scene));
+        client.newCall(request).enqueue(new EmbeddingsImageCallback(inputFiles, scene));
     }
     
     //Utilities

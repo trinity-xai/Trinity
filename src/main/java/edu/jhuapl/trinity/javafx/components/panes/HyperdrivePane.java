@@ -10,11 +10,12 @@ import edu.jhuapl.trinity.data.messages.EmbeddingsImageUrl;
 import edu.jhuapl.trinity.data.messages.FeatureVector;
 import edu.jhuapl.trinity.data.messages.ImageUrl;
 import edu.jhuapl.trinity.javafx.components.listviews.EmbeddingsImageListItem;
+import edu.jhuapl.trinity.javafx.components.listviews.ImageFileListItem;
 import edu.jhuapl.trinity.javafx.events.RestEvent;
 import edu.jhuapl.trinity.messages.RestAccessLayer;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
-import static edu.jhuapl.trinity.utils.MessageUtils.embeddingsToFeatureVector;
 import edu.jhuapl.trinity.utils.ResourceUtils;
+import edu.jhuapl.trinity.utils.Utils;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -37,7 +38,7 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
+import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
@@ -61,13 +62,13 @@ public class HyperdrivePane extends LitPathPane {
     private BorderPane imageViewBorderPane;
     BorderPane imageFFTBorderPane;
     public StackPane centerStack;
-    public Image baseImage;
-    public ImageView baseImageView;
-    ScrollPane scrollPane;
-    List<FeatureVector> currentFeatureList;   
-    List<File> imageFilesList;
+//    public Image baseImage;
+//    public ImageView baseImageView;
+//    ScrollPane scrollPane;
+    ArrayList<FeatureVector> currentFeatureList;   
+    ArrayList<File> imageFilesList;
+    ListView<ImageFileListItem> imageFileListView;
     ListView<EmbeddingsImageListItem> embeddingsListView;
-//    ListView<String> embeddingsListView;
     
     private static BorderPane createContent() {
         BorderPane bpOilSpill = new BorderPane();
@@ -76,7 +77,7 @@ public class HyperdrivePane extends LitPathPane {
 
     public HyperdrivePane(Scene scene, Pane parent) {
         super(scene, parent, PANE_WIDTH, PANE_HEIGHT, createContent(),
-            "Image Inspector", "", 300.0, 400.0);
+            "Hyperdrive", " Embeddings Service", 300.0, 400.0);
         currentFeatureList = new ArrayList<>();
         imageFilesList = new ArrayList<>();
         setBackground(Background.EMPTY);
@@ -100,23 +101,23 @@ public class HyperdrivePane extends LitPathPane {
         centerStack.setAlignment(Pos.CENTER);
         imageViewBorderPane = new BorderPane(centerStack);
 
-        try {
-            baseImage = (ResourceUtils.load3DTextureImage("carl-b-portrait"));
-        } catch (IOException ex) {
-            java.util.logging.Logger.getLogger(HyperdrivePane.class.getName()).log(Level.SEVERE, null, ex);
-            baseImage = ResourceUtils.loadIconFile("waitingforimage");
-        }
+//        baseImage = ResourceUtils.loadIconFile("waitingforimage");
+//        baseImageView.setPreserveRatio(true);
+        imageFileListView = new ListView<>();
+        ImageView iv = ResourceUtils.loadIcon("noimage", 50);
+        HBox placeholder = new HBox(10, iv, new Label("No Files Loaded"));
+        placeholder.setAlignment(Pos.CENTER);
+        imageFileListView.setPlaceholder(placeholder);
+//        scrollPane = new ScrollPane(baseImageView);
+//        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+//        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+//        scrollPane.setPannable(true);
+//        scrollPane.setFitToHeight(true);
+//        scrollPane.setFitToWidth(true);
+//        scrollPane.setPrefSize(512, 512);
+//        centerStack.getChildren().add(scrollPane);
+        centerStack.getChildren().add(imageFileListView);
         
-        baseImageView = new ImageView(baseImage);
-        baseImageView.setPreserveRatio(true);
-        scrollPane = new ScrollPane(baseImageView);
-        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-        scrollPane.setPannable(true);
-        scrollPane.setFitToHeight(true);
-        scrollPane.setFitToWidth(true);
-        scrollPane.setPrefSize(512, 512);
-        centerStack.getChildren().add(scrollPane);
 
         Button runFFTButton = new Button("Check Status");
         runFFTButton.setOnAction(e -> {
@@ -125,34 +126,23 @@ public class HyperdrivePane extends LitPathPane {
 
         Button embeddingsButton = new Button("Request Embeddings");
         embeddingsButton.setOnAction(e -> {
-//            EmbeddingsImageInput input = new EmbeddingsImageInput();
-//            try {
-//                input.setInput(EmbeddingsImageInput.BASE64_PREFIX_PNG 
-//                        + ResourceUtils.imageToBase64(baseImage));
-//                input.setDimensions(Double.valueOf(baseImage.getWidth()).intValue());
-//                input.setEmbedding_type("all");
-//                input.setEncoding_format("float");
-//                input.setModel("openai/clip-vit-large-patch14");
-//                input.setUser("string");
-//                RestAccessLayer.requestImageEmbeddings(input, embeddingsButton.getScene());
-//            } catch (JsonProcessingException ex) {
-//                java.util.logging.Logger.getLogger(HyperdrivePane.class.getName()).log(Level.SEVERE, null, ex);
-//            } catch (IOException ex) {
-//                java.util.logging.Logger.getLogger(HyperdrivePane.class.getName()).log(Level.SEVERE, null, ex);
-//            }
-
             if(!imageFilesList.isEmpty()) {
+                System.out.println("Loading and Encoding Images...");
+                long startTime = System.nanoTime();
                 List<EmbeddingsImageUrl> inputs = 
                     imageFilesList.stream().map(imageUrlFromFile).toList();
+                Utils.printTotalTime(startTime);
+                
                 EmbeddingsImageBatchInput input = new EmbeddingsImageBatchInput();
                 input.setInput(inputs);
-                input.setDimensions(Double.valueOf(baseImage.getWidth()).intValue());
+                input.setDimensions(512);
                 input.setEmbedding_type("all");
                 input.setEncoding_format("float");
                 input.setModel("openai/clip-vit-large-patch14");
                 input.setUser("string");
                 try {
-                    RestAccessLayer.requestImageEmbeddings(input, embeddingsButton.getScene());
+                    System.out.println("Sending " + inputs.size() + " images for processing at " + LocalDateTime.now());
+                    RestAccessLayer.requestImageEmbeddings(imageFilesList, input, embeddingsButton.getScene());
                 } catch (JsonProcessingException ex) {
                     java.util.logging.Logger.getLogger(HyperdrivePane.class.getName()).log(Level.SEVERE, null, ex);
                 }
@@ -177,11 +167,11 @@ public class HyperdrivePane extends LitPathPane {
             clearFilesButton, clearEmbeddingsButton
         );
         controlsBox.setAlignment(Pos.CENTER);
-        ImageView iv = ResourceUtils.loadIcon("data", 50);
-        HBox placeholder = new HBox(10, iv, new Label("No Data Sources Marked"));
-        placeholder.setAlignment(Pos.CENTER);
+        ImageView embeddingsPlaceholderIV = ResourceUtils.loadIcon("data", 50);
+        HBox embeddingsPlaceholder = new HBox(10, embeddingsPlaceholderIV, new Label("No Data Sources Marked"));
+        embeddingsPlaceholder.setAlignment(Pos.CENTER);
         embeddingsListView = new ListView<>();
-        embeddingsListView.setPlaceholder(placeholder);
+        embeddingsListView.setPlaceholder(embeddingsPlaceholder);
         ScrollPane imageFFTScrollPane = new ScrollPane(embeddingsListView);
         imageFFTScrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         imageFFTScrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
@@ -207,41 +197,32 @@ public class HyperdrivePane extends LitPathPane {
             if (db.hasFiles()) {
                 currentFeatureList.clear();
                 imageFilesList.clear();
-                final File file = db.getFiles().get(0);
-                if (JavaFX3DUtils.isTextureFile(file)) {
-                    try {
-                        setImage(new Image(file.toURI().toURL().toExternalForm()));
-                    } catch (MalformedURLException ex) {
-                        java.util.logging.Logger.getLogger(PixelSelectionPane.class.getName()).log(Level.SEVERE, null, ex);
-                    }
-                }
-                imageFilesList = db.getFiles().stream()
+//                final File file = db.getFiles().get(0);
+//                if (JavaFX3DUtils.isTextureFile(file)) {
+//                    try {
+//                        setImage(new Image(file.toURI().toURL().toExternalForm()));
+//                    } catch (MalformedURLException ex) {
+//                        java.util.logging.Logger.getLogger(PixelSelectionPane.class.getName()).log(Level.SEVERE, null, ex);
+//                    }
+//                }
+                imageFilesList.addAll(db.getFiles().stream()
                     .filter(f-> JavaFX3DUtils.isTextureFile(f))
-                    .toList();
+                    .toList());
+                imageFileListView.getItems().addAll(
+                    imageFilesList.stream().map(itemFromFile).toList());
             }
         });
         scene.getRoot().addEventHandler(RestEvent.NEW_EMBEDDINGS_IMAGE, event -> {
             embeddingsListView.getItems().clear();
             currentFeatureList.clear();
             EmbeddingsImageOutput output = (EmbeddingsImageOutput) event.object;
-            List<FeatureVector> fvList = output.getData().stream()
-                .map(embeddingsToFeatureVector).toList();
-            if(fvList.size() >= imageFilesList.size()) {
-                for(int imageIndex=0; imageIndex<fvList.size();imageIndex++){
-//                    try {
-                        fvList.get(imageIndex).setMediaURL(
-//                            imageFilesList.get(imageIndex).toURI().toURL().toExternalForm());
-                            imageFilesList.get(imageIndex).getAbsolutePath());
-//                    } catch (MalformedURLException ex) {
-//                        java.util.logging.Logger.getLogger(HyperdrivePane.class.getName()).log(Level.SEVERE, null, ex);
-//                    }
-                }
-            }
+            System.out.println("Received " + output.getData().size() + " embeddings at " + LocalDateTime.now());
+            
+            List<FeatureVector> fvList = (List<FeatureVector>) event.object2;
             List<EmbeddingsImageListItem> listItems = fvList.stream()
                 .map(EmbeddingsImageListItem::new).toList();
-            
             currentFeatureList.addAll(fvList);
-            embeddingsListView.getItems().setAll(listItems);
+            embeddingsListView.getItems().addAll(listItems);
             System.out.println("New Feature Vector List obtained.");
         });
     }
@@ -259,6 +240,9 @@ public class HyperdrivePane extends LitPathPane {
             java.util.logging.Logger.getLogger(HyperdrivePane.class.getName()).log(Level.SEVERE, null, ex);
         }
         return input;
+    };
+    public static Function<File, ImageFileListItem> itemFromFile = file -> {
+        return new ImageFileListItem(file);
     };
     
     public static Function<File, EmbeddingsImageInput> inputFromFile = file -> {
@@ -279,13 +263,13 @@ public class HyperdrivePane extends LitPathPane {
         }
         return input;
     };
-    public void setImage(Image image) {
-        this.baseImage = image;
-        baseImageView.setImage(this.baseImage);
-        scrollPane.setHvalue(0);
-        scrollPane.setVvalue(0);
-        int height = Double.valueOf(baseImage.getHeight()).intValue();
-        int width = Double.valueOf(baseImage.getWidth()).intValue();
-        imageSize = width;
-    }
+//    public void setImage(Image image) {
+//        this.baseImage = image;
+//        baseImageView.setImage(this.baseImage);
+//        scrollPane.setHvalue(0);
+//        scrollPane.setVvalue(0);
+//        int height = Double.valueOf(baseImage.getHeight()).intValue();
+//        int width = Double.valueOf(baseImage.getWidth()).intValue();
+//        imageSize = width;
+//    }
 }

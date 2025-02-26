@@ -21,7 +21,7 @@ public class EmbeddingsImageListItem extends HBox {
         label = new Label(sb.toString());
         label.setPrefWidth(PREF_LABEL_WIDTH);
 
-//        getChildren().addAll(label, colorPicker, visibleCheckBox);
+        getChildren().addAll(label);
         setSpacing(20);
 //        colorPicker.valueProperty().addListener(cl -> {
 //            if (null != colorPicker.getScene()) {

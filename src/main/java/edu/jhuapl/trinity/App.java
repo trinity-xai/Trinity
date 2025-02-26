@@ -1157,25 +1157,6 @@ public class App extends Application {
             System.out.println("Requesting REST Is Alive...");
             RestAccessLayer.requestRestIsAlive(stage.getScene());
         }
-        if (e.isAltDown() && e.isControlDown() && e.getCode().equals(KeyCode.Z)) {
-            System.out.println("Requesting Image Embedding...");
-            EmbeddingsImageInput input = new EmbeddingsImageInput();
-            try {
-                Image carlImage = ResourceUtils.load3DTextureImage("carl-b-portrait");
-                input.setInput(EmbeddingsImageInput.BASE64_PREFIX_PNG 
-                        + ResourceUtils.imageToBase64(carlImage));
-                input.setDimensions(Double.valueOf(carlImage.getWidth()).intValue());
-                input.setEmbedding_type("all");
-                input.setEncoding_format("float");
-                input.setModel("openai/clip-vit-large-patch14");
-                input.setUser("string");
-                RestAccessLayer.requestImageEmbeddings(input, stage.getScene());
-            } catch (JsonProcessingException ex) {
-                java.util.logging.Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
-            } catch (IOException ex) {
-                java.util.logging.Logger.getLogger(App.class.getName()).log(Level.SEVERE, null, ex);
-            }
-        }
         if (e.isAltDown() && e.getCode().equals(KeyCode.N)) {
             matrixShowing = !matrixShowing;
             if (!matrixShowing) {
