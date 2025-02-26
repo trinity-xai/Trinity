@@ -2,6 +2,13 @@ package edu.jhuapl.trinity.data.messages;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import edu.jhuapl.trinity.utils.ResourceUtils;
+import java.io.File;
+import java.io.IOException;
+import java.util.function.Function;
+import java.util.logging.Level;
+import javafx.scene.image.Image;
 
 /**
  * @author Sean Phillips
@@ -30,7 +37,23 @@ public class EmbeddingsImageUrl {
     public EmbeddingsImageUrl() {
         type = "image_url";
     }
+    public static Function<File, EmbeddingsImageUrl> imageUrlFromFile = file -> {
+        EmbeddingsImageUrl input = new EmbeddingsImageUrl();
+        try {
+            Image image = ResourceUtils.loadImageFile(file);
+            ImageUrl imageUrl = new ImageUrl();
+            imageUrl.setUrl(BASE64_PREFIX_PNG 
+                    + ResourceUtils.imageToBase64(image));
+            input.setImage_url(imageUrl);
+        } catch (JsonProcessingException ex) {
+            java.util.logging.Logger.getLogger(EmbeddingsImageUrl.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
+            java.util.logging.Logger.getLogger(EmbeddingsImageUrl.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return input;
+    };
 
+    
     /**
      * @return the type
      */

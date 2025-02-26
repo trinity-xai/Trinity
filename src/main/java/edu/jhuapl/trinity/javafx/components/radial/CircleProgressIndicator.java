@@ -30,7 +30,6 @@ public class CircleProgressIndicator extends StackPane {
     public CircleProgressIndicator() {
         setMouseTransparent(true);
         setAlignment(Pos.CENTER);
-
         outerNeonCircle = new AnimatedNeonCircle(
             new AnimatedNeonCircle.Animation(
                 Duration.millis(2000), Transition.INDEFINITE, false),
@@ -45,6 +44,7 @@ public class CircleProgressIndicator extends StackPane {
 
         progressLabel.setText("Loading...");
         progressLabel.setTextAlignment(TextAlignment.CENTER);
+        progressLabel.setAlignment(Pos.CENTER);
         labelString.set("Loading...");
         progressLabel.textProperty().bind(labelString);
         progressLabel.setFont(new Font("Consolas", 24));
@@ -88,7 +88,9 @@ public class CircleProgressIndicator extends StackPane {
         outerNeonCircle.play(spin);
         innerNeonCircle.play(spin);
     }
-
+    public void setFadeTimeMS(long millis){
+        ft.setDuration(Duration.millis(millis));
+    }
     public void fadeBusy(boolean fadeOut) {
         if (fadeOut) {
             ft.setFromValue(defaultOpacity);

@@ -29,7 +29,7 @@ public class EmbeddingsImageCallback extends RestCallback {
              .map(embeddingsToFeatureVector).toList();
         if(null != inputFiles && inputFiles.size()>=fvList.size()) {
             for(int imageIndex=0; imageIndex<fvList.size();imageIndex++){
-                fvList.get(imageIndex).setMediaURL(
+                fvList.get(imageIndex).setImageURL(
                     inputFiles.get(imageIndex).getAbsolutePath());
             }
         }

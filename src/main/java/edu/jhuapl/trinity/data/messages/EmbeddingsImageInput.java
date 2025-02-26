@@ -2,6 +2,13 @@ package edu.jhuapl.trinity.data.messages;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import edu.jhuapl.trinity.utils.ResourceUtils;
+import java.io.File;
+import java.io.IOException;
+import java.util.function.Function;
+import java.util.logging.Level;
+import javafx.scene.image.Image;
 
 /**
  * @author Sean Phillips
@@ -47,7 +54,24 @@ public class EmbeddingsImageInput {
 
     public EmbeddingsImageInput() {
     }
-
+    public static Function<File, EmbeddingsImageInput> inputFromFile = file -> {
+        EmbeddingsImageInput input = new EmbeddingsImageInput();
+        try {
+            Image image = ResourceUtils.loadImageFile(file);
+            input.setInput(EmbeddingsImageInput.BASE64_PREFIX_PNG 
+                    + ResourceUtils.imageToBase64(image));
+            input.setDimensions(Double.valueOf(image.getWidth()).intValue());
+            input.setEmbedding_type("all");
+            input.setEncoding_format("float");
+            input.setModel("openai/clip-vit-large-patch14");
+            input.setUser("string");
+        } catch (JsonProcessingException ex) {
+            java.util.logging.Logger.getLogger(EmbeddingsImageInput.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
+            java.util.logging.Logger.getLogger(EmbeddingsImageInput.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return input;
+    };
     public static boolean isEmbeddingsImageInput(String messageBody) {
         return messageBody.contains("input") && messageBody.contains("model") 
             && messageBody.contains("encoding_format") && messageBody.contains("embedding_type");
