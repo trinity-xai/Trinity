@@ -36,9 +36,10 @@ public class EmbeddingsImageOutput extends MessageData {
     private String object;
     private String model;
     private List<EmbeddingsImageData> data;
-    
     //</editor-fold>
-
+    //extra helper fields
+    private int requestNumber;
+    
     public EmbeddingsImageOutput() {
         this.messageType = TYPESTRING;
         data = new ArrayList<>();
@@ -90,6 +91,20 @@ public class EmbeddingsImageOutput extends MessageData {
      */
     public void setData(List<EmbeddingsImageData> data) {
         this.data = data;
+    }
+
+    /**
+     * @return the requestNumber
+     */
+    public int getRequestNumber() {
+        return requestNumber;
+    }
+
+    /**
+     * @param requestNumber the requestNumber to set
+     */
+    public void setRequestNumber(int requestNumber) {
+        this.requestNumber = requestNumber;
     }
   
 }

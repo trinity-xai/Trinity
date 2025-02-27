@@ -14,6 +14,7 @@ import edu.jhuapl.trinity.javafx.components.listviews.ImageFileListItem;
 import edu.jhuapl.trinity.javafx.components.radial.CircleProgressIndicator;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.events.RestEvent;
+import edu.jhuapl.trinity.messages.EmbeddingsImageCallback.STATUS;
 import edu.jhuapl.trinity.messages.RestAccessLayer;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
@@ -33,26 +34,24 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.TilePane;
-import javafx.scene.paint.Color;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.logging.Level;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
-import javafx.event.EventType;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
-
-
 
 /**
  * @author Sean Phillips
@@ -74,7 +73,9 @@ public class HyperdrivePane extends LitPathPane {
     Label imageFilesCountLabel;
     CircleProgressIndicator imageLoadingIndicator;    
     CircleProgressIndicator embeddingRequestIndicator;
-        
+    AtomicInteger requestNumber;
+    HashMap<Integer, STATUS> outstandingRequests;    
+    
     private static BorderPane createContent() {
         BorderPane bpOilSpill = new BorderPane();
         return bpOilSpill;
@@ -85,6 +86,8 @@ public class HyperdrivePane extends LitPathPane {
             "Hyperdrive", " Embeddings Service", 300.0, 400.0);
         currentFeatureList = new ArrayList<>();
         imageFilesList = new ArrayList<>();
+        outstandingRequests = new HashMap<>();
+        requestNumber = new AtomicInteger();
         setBackground(Background.EMPTY);
         this.scene = scene;
         
@@ -97,8 +100,6 @@ public class HyperdrivePane extends LitPathPane {
         tileScrollPane.setPannable(true);
         tileScrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         tileScrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
-//        tileScrollPane.setFitToHeight(true);
-//        tileScrollPane.setFitToWidth(true);
         borderPane.setCenter(tileScrollPane);
 
         imageFilesCenterStack = new StackPane();
@@ -186,10 +187,6 @@ public class HyperdrivePane extends LitPathPane {
         injectFeaturesButton.setOnAction(e -> {
             FeatureCollection fc = new FeatureCollection();
             fc.setFeatures(currentFeatureList);
-//            Platform.runLater(() -> {
-//                scene.getRoot().fireEvent(new RestEvent(RestEvent.NEW_EMBEDDINGS_IMAGE, output, fvList));
-//            });  
-            
             injectFeaturesButton.getScene().getRoot().fireEvent(
                 new FeatureVectorEvent(FeatureVectorEvent.NEW_FEATURE_COLLECTION, fc));
         });
@@ -251,6 +248,7 @@ public class HyperdrivePane extends LitPathPane {
         scene.getRoot().addEventHandler(RestEvent.NEW_EMBEDDINGS_IMAGE, event -> {
             EmbeddingsImageOutput output = (EmbeddingsImageOutput) event.object;
             String msg = "Received " + output.getData().size() + " embeddings at " + LocalDateTime.now();
+            outstandingRequests.put(output.getRequestNumber(), STATUS.SUCCEEDED);
             embeddingRequestIndicator.setLabelLater(msg);
             System.out.println(msg);
             embeddingsListView.getItems().clear();
@@ -265,6 +263,13 @@ public class HyperdrivePane extends LitPathPane {
             embeddingRequestIndicator.spin(false);
             embeddingRequestIndicator.fadeBusy(true);            
         });
+        scene.getRoot().addEventHandler(RestEvent.ERROR_EMBEDDINGS_IMAGE, event -> {
+            List<File> inputFiles = (List<File>) event.object;
+            int request = (int) event.object2;
+            outstandingRequests.put(request, STATUS.FAILED);
+
+        });
+        
     }
     public void loadImagesTask(List<File> files) {
         
@@ -317,9 +322,11 @@ public class HyperdrivePane extends LitPathPane {
                 input.setModel("openai/clip-vit-large-patch14");
                 input.setUser("string");
                 try {
-                    embeddingRequestIndicator.setLabelLater("Requesting Embeddings...");
+                    int rn = requestNumber.incrementAndGet();
+                    embeddingRequestIndicator.setLabelLater("Embeddings Request " + rn + "...");
                     System.out.println("Sending " + inputs.size() + " images for processing at " + LocalDateTime.now());
-                    RestAccessLayer.requestImageEmbeddings(imageFilesList, input, embeddingRequestIndicator.getScene());
+                    RestAccessLayer.requestImageEmbeddings(imageFilesList, input, embeddingRequestIndicator.getScene(), rn);
+                    outstandingRequests.put(rn, STATUS.REQUESTED);
                 } catch (JsonProcessingException ex) {
                     java.util.logging.Logger.getLogger(HyperdrivePane.class.getName()).log(Level.SEVERE, null, ex);
                 }

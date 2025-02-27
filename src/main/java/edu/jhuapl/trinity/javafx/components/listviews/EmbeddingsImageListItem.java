@@ -18,7 +18,7 @@ public class EmbeddingsImageListItem extends HBox {
     public EmbeddingsImageListItem(FeatureVector featureVector) {
         this.featureVector = featureVector;
         StringBuilder sb = new StringBuilder("Index: " + featureVector.getMessageId());
-        sb.append(" Embeddings: ").append(featureVector.getData().size());
+        sb.append(" Dimensions: ").append(featureVector.getData().size());
         
         descriptionLabel = new Label(sb.toString());
         descriptionLabel.setPrefWidth(PREF_LABEL_WIDTH);
@@ -27,6 +27,8 @@ public class EmbeddingsImageListItem extends HBox {
         labelTextField = new TextField();
         labelTextField.setEditable(true);
         labelTextField.setPrefWidth(PREF_LABEL_WIDTH);
+        labelTextField.setOnAction(e -> featureVector.setLabel(labelTextField.getText()));
+        labelTextField.textProperty().addListener(e -> featureVector.setLabel(labelTextField.getText()));
         getChildren().addAll(descriptionLabel, labelLabel, labelTextField);
         setSpacing(20);
         setPrefHeight(32);
