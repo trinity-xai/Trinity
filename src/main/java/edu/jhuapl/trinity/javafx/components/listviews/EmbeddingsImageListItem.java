@@ -17,10 +17,7 @@ public class EmbeddingsImageListItem extends HBox {
 
     public EmbeddingsImageListItem(FeatureVector featureVector) {
         this.featureVector = featureVector;
-        StringBuilder sb = new StringBuilder("Index: " + featureVector.getMessageId());
-        sb.append(" Dimensions: ").append(featureVector.getData().size());
-        
-        descriptionLabel = new Label(sb.toString());
+        descriptionLabel = new Label("Dimensions: " + featureVector.getData().size());
         descriptionLabel.setPrefWidth(PREF_LABEL_WIDTH);
         labelLabel = new Label("Label");
 

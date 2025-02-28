@@ -15,7 +15,7 @@ import javafx.scene.layout.HBox;
  * @author Sean Phillips
  */
 public class ImageFileListItem extends HBox {
-    public static double PREF_LABEL_WIDTH = 400;
+    public static double PREF_LABEL_WIDTH = 500;
     private ImageView imageView;
     private Label label;
     private File file;
@@ -29,7 +29,7 @@ public class ImageFileListItem extends HBox {
         this.file = file;
         this.renderIcon = renderIcon;
         label = new Label(file.getAbsolutePath());
-//        label.setPrefWidth(PREF_LABEL_WIDTH);
+        label.setPrefWidth(PREF_LABEL_WIDTH);
         if(renderIcon) {
             try {
                 imageView = new ImageView(ResourceUtils.loadImageFile(file));
@@ -45,5 +45,8 @@ public class ImageFileListItem extends HBox {
         getChildren().addAll(imageView, label);
         setSpacing(20);
         Tooltip.install(this, new Tooltip(file.getAbsolutePath()));
+    }
+    public void setLabelWidth(double width) {
+        label.setPrefWidth(width);
     }
 }
