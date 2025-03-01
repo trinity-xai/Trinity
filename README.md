@@ -118,7 +118,7 @@ Trinity has been applied to a series of use cases including:
 - David Newcomer
 - Luis Puche Rondon
 
-## Building and Running
+## Building and Running ##
 
 You can build with either `Maven` or `Gradle` with a modern version of Java (>=17).
 There's already a set of scripts for building and running if you use a Jetbrains IDE or Netbeans to facilitate a cold start on the project.
@@ -126,11 +126,26 @@ To run the project from a jar after building, you can take a look at the `script
 Otherwise, make sure to use at least `-Dprism.maxvram=2G` on your JVM parameters when starting it up.
 For JLink/JPackage builds those JVM args are baked in already into the packages.
 
-## Troubleshooting
+## Troubleshooting ##
 
+**Execution Permissions **
 Execution permissions might need to be needed to run the `JPackage`, `JLink`, or `Native` builds
 depending on which system you're running from. For example on OSX systems you might get
 `Unknown error: 111` or launch errors, hence you need to allow the app through GateKeeper via
 `xattr -r -d com.apple.quarantine /path/to/Trinity.app`. You might also need to add execution
 permissions in some cases via `chmod +x /path/to/Trinity.app/Contents/MacOS/Trinity` when using
 the `JPackage` build.
+
+** Enabling 3D Rendering on Ubuntu Systems **
+Sometimes when running JavaFX applications with 3D scenes on a Ubuntu machine you get the Scene3D.conditionalfeature error at runtime.
+The application and all 2D components will continue to function but any 3D subscenes and nodes will simply not render, while the log will be getting crushed by the above error.  
+
+The following config tweak for Ubuntu to enable 3D rendering for JavaFX comes from this post:
+https://stackoverflow.com/questions/30288837/warning-system-cant-support-conditionalfeature-scene3d-vmware-ubuntu
+
+When running from a jar file the cmdline arguments that help linux ubuntu render 3D scenes in trinity:
+-Dprism.forceGPU=true
+
+For the Jpackage native executable you can update a cfg file under the trinity/app folder called Trinity.cfg
+It is here you can add the forceGPU flag as another option on its own line. This basically forces Ubuntu to do the GPU voodoo.
+After making this change simply run trinity and 3D scenes should work.
