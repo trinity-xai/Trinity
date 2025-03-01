@@ -42,7 +42,7 @@ public class EmbeddingsImageCallback extends RestCallback {
 
     @Override
     protected void processResponse(String responseBodyString) throws Exception {
-        System.out.println("EmbeddingsImageCallback response...");
+        //System.out.println("EmbeddingsImageCallback response...");
         EmbeddingsImageOutput output = objectMapper.readValue(responseBodyString, EmbeddingsImageOutput.class);
         output.setRequestNumber(requestNumber);
         List<FeatureVector> fvList = output.getData().stream()

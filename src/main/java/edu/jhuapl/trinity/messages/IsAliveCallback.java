@@ -2,8 +2,10 @@ package edu.jhuapl.trinity.messages;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.jhuapl.trinity.data.messages.AliveModels;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.ErrorEvent;
+import edu.jhuapl.trinity.javafx.events.RestEvent;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import java.io.IOException;
 import java.util.logging.Level;
@@ -86,14 +88,19 @@ public class IsAliveCallback extends Task implements Callback {
                 throw new IOException("Unexpected code " + response);
             }
             String responseBodyString = response.body().string();
-            //fire track listing event
             try {
                 System.out.println("Response from 'is alive' check: " + responseBodyString);
+                AliveModels isAliveReesponse = objectMapper.readValue(responseBodyString, AliveModels.class);
+
                 Platform.runLater(() -> {
                     CommandTerminalEvent cte = new CommandTerminalEvent(
                     "Embedding Service is alive.", 
                         new Font("Consolas", 20), Color.LIME);
-                        scene.getRoot().fireEvent(cte);
+                    scene.getRoot().fireEvent(cte);
+                    
+                    scene.getRoot().fireEvent(
+                        new RestEvent(RestEvent.IS_ALIVE_MODELS, isAliveReesponse));
+
                 });  
             } catch (Exception ex) {
                 Logger.getLogger(IsAliveCallback.class.getName()).log(Level.SEVERE, null, ex);

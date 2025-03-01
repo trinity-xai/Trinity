@@ -3,6 +3,8 @@
 package edu.jhuapl.trinity.javafx.components.panes;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import edu.jhuapl.trinity.data.messages.AiModel;
+import edu.jhuapl.trinity.data.messages.AliveModels;
 import edu.jhuapl.trinity.data.messages.EmbeddingsImageBatchInput;
 import edu.jhuapl.trinity.data.messages.EmbeddingsImageOutput;
 import edu.jhuapl.trinity.data.messages.EmbeddingsImageUrl;
@@ -48,11 +50,15 @@ import java.util.logging.Level;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.Spinner;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
+import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 
 /**
@@ -68,6 +74,10 @@ public class HyperdrivePane extends LitPathPane {
     BorderPane embeddingsBorderPane;
     StackPane imageFilesCenterStack;
     StackPane embeddingsCenterStack;
+    TabPane tabPane;
+    Tab embeddingsTab;
+    Tab servicesTab;
+    
     ArrayList<FeatureVector> currentFeatureList;   
     ArrayList<File> imageFilesList;
     ListView<ImageFileListItem> imageFileListView;
@@ -79,6 +89,7 @@ public class HyperdrivePane extends LitPathPane {
     HashMap<Integer, STATUS> outstandingRequests;    
     int batchSize = 10;
     long requestDelay = 50;
+    String currentModel = null;
     
     private static BorderPane createContent() {
         BorderPane bpOilSpill = new BorderPane();
@@ -88,14 +99,23 @@ public class HyperdrivePane extends LitPathPane {
     public HyperdrivePane(Scene scene, Pane parent) {
         super(scene, parent, PANE_WIDTH, PANE_HEIGHT, createContent(),
             "Hyperdrive", " Embeddings Service", 300.0, 400.0);
+        this.scene = scene;
         currentFeatureList = new ArrayList<>();
         imageFilesList = new ArrayList<>();
         outstandingRequests = new HashMap<>();
         requestNumber = new AtomicInteger();
+        currentModel = RestAccessLayer.restAccessLayerconfig.getDefaultImageModel();        
         setBackground(Background.EMPTY);
-        this.scene = scene;
-        
+        //container for the floating window itself
         borderPane = (BorderPane) this.contentPane;
+        embeddingsTab = new Tab("Embeddings");
+        servicesTab = new Tab("Services");
+        tabPane = new TabPane(embeddingsTab, servicesTab);
+        tabPane.setPadding(Insets.EMPTY);
+        tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
+        tabPane.setTabDragPolicy(TabPane.TabDragPolicy.FIXED);
+        borderPane.setCenter(tabPane);
+        
         tilePane = new TilePane();
         tilePane.setPrefColumns(2);
         tilePane.setHgap(10);
@@ -104,7 +124,7 @@ public class HyperdrivePane extends LitPathPane {
         tileScrollPane.setPannable(true);
         tileScrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         tileScrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
-        borderPane.setCenter(tileScrollPane);
+        embeddingsTab.setContent(tileScrollPane);
 
         imageFilesCenterStack = new StackPane();
         imageFilesCenterStack.setAlignment(Pos.CENTER);
@@ -147,10 +167,6 @@ public class HyperdrivePane extends LitPathPane {
         fileControlsBox.setAlignment(Pos.CENTER);        
         imageFilesBorderPane.setTop(fileControlsBox);
         
-        Button isAliveButton = new Button("Check Status");
-        isAliveButton.setOnAction(e -> {
-            RestAccessLayer.requestRestIsAlive(isAliveButton.getScene());
-        });
 
         Button embeddingsButton = new Button("Request Embeddings");
         embeddingsButton.setOnAction(e -> {
@@ -158,25 +174,8 @@ public class HyperdrivePane extends LitPathPane {
                 requestEmbeddingsTask();
             }
         });
-        Spinner<Integer> batchSizeSpinner = new Spinner(1, 256, batchSize, 1);
-        batchSizeSpinner.valueProperty().addListener(c -> {
-            batchSize = batchSizeSpinner.getValue();
-        });
-        batchSizeSpinner.setEditable(true);
-        batchSizeSpinner.setPrefWidth(100);
-        
-        Spinner<Long> requestDelaySpinner = new Spinner(1, 250, requestDelay, 1);
-        requestDelaySpinner.valueProperty().addListener(c -> {
-            requestDelay = requestDelaySpinner.getValue();
-        });
-        requestDelaySpinner.setEditable(true);
-        requestDelaySpinner.setPrefWidth(100);
 
-        HBox powerBottomHBox = new HBox(10, isAliveButton, 
-            new VBox(5,new Label("Request Batch Size"), batchSizeSpinner),
-            new VBox(5,new Label("Request Delay ms"), requestDelaySpinner),
-            embeddingsButton
-        );
+        HBox powerBottomHBox = new HBox(10, embeddingsButton);
         powerBottomHBox.setPadding(new Insets(10));
         powerBottomHBox.setAlignment(Pos.CENTER);
         imageFilesBorderPane.setBottom(powerBottomHBox);
@@ -247,6 +246,71 @@ public class HyperdrivePane extends LitPathPane {
         embeddingsBorderPane.setPrefWidth(600);
         tilePane.getChildren().addAll(imageFilesBorderPane, embeddingsBorderPane);
 
+        //Services Tab ////////////////////////////////////////////////
+        Button isAliveButton = new Button("Check Status");
+        isAliveButton.setOnAction(e -> {
+            RestAccessLayer.requestRestIsAlive(isAliveButton.getScene());
+        });
+        
+        Spinner<Integer> batchSizeSpinner = new Spinner(1, 256, batchSize, 1);
+        batchSizeSpinner.valueProperty().addListener(c -> {
+            batchSize = batchSizeSpinner.getValue();
+        });
+        batchSizeSpinner.setEditable(true);
+        batchSizeSpinner.setPrefWidth(100);
+        
+        Spinner<Long> requestDelaySpinner = new Spinner(1, 250, requestDelay, 1);
+        requestDelaySpinner.valueProperty().addListener(c -> {
+            requestDelay = requestDelaySpinner.getValue();
+        });
+        requestDelaySpinner.setEditable(true);
+        requestDelaySpinner.setPrefWidth(100);
+        
+        HBox spinnerHBox = new HBox(50, 
+            new VBox(5,new Label("Request Batch Size"), batchSizeSpinner), 
+            new VBox(5,new Label("Request Delay ms"), requestDelaySpinner)
+        );
+        
+        GridPane servicesGrid = new GridPane(20, 10);
+        servicesGrid.setPadding(new Insets(10));
+        servicesGrid.setAlignment(Pos.TOP_LEFT);
+        servicesTab.setContent(servicesGrid);
+        TextField serviceLocationTextField = new TextField(
+            RestAccessLayer.restAccessLayerconfig.getBaseRestURL() +
+            RestAccessLayer.restAccessLayerconfig.getImageEmbeddingsEndpoint()        
+        );
+        serviceLocationTextField.setPrefWidth(500);
+        serviceLocationTextField.setEditable(false);
+
+        ChoiceBox<String> modelChoiceBox = new ChoiceBox();
+        modelChoiceBox.getItems().add(currentModel);
+        modelChoiceBox.getSelectionModel().selectFirst();
+        modelChoiceBox.setPrefWidth(400);
+
+        Button refreshModelsButton = new Button("Refresh");
+        refreshModelsButton.setOnAction(e -> {
+            RestAccessLayer.requestRestIsAlive(refreshModelsButton.getScene());
+        });        
+        Button updateModelsButton = new Button("Update");
+        updateModelsButton.setOnAction(e -> {
+            String selectedModel = modelChoiceBox.getSelectionModel().getSelectedItem();
+            if(null != selectedModel && !selectedModel.isBlank())
+                currentModel = selectedModel;
+        });        
+        
+        GridPane.setColumnSpan(serviceLocationTextField, 2);
+        servicesGrid.add(new VBox(5,new Label("Service Location & Endpoint"), serviceLocationTextField), 0, 0);
+        servicesGrid.add(isAliveButton, 2, 0); //third column
+        
+        GridPane.setColumnSpan(modelChoiceBox, 2);
+        servicesGrid.add(new VBox(5,new Label("Current Model"), modelChoiceBox), 0, 1);
+        servicesGrid.add(refreshModelsButton, 2, 1); //third column
+        servicesGrid.add(updateModelsButton, 3, 1); //fourth column
+
+        GridPane.setColumnSpan(spinnerHBox, GridPane.REMAINING);
+        spinnerHBox.setAlignment(Pos.CENTER_LEFT);
+        servicesGrid.add(spinnerHBox, 0, 2);
+                
         borderPane.addEventHandler(DragEvent.DRAG_OVER, event -> {
             if (ResourceUtils.canDragOver(event)) {
                 event.acceptTransferModes(TransferMode.COPY);
@@ -261,6 +325,20 @@ public class HyperdrivePane extends LitPathPane {
                 loadImagesTask(db.getFiles());
             }
         });
+        
+        scene.getRoot().addEventHandler(RestEvent.IS_ALIVE_MODELS, event -> {
+            AliveModels models = (AliveModels)event.object;
+            modelChoiceBox.getItems().clear();
+            for(AiModel model : models.getAlive_models()){
+                modelChoiceBox.getItems().add(model.getId());
+            }
+            if(modelChoiceBox.getItems().contains(currentModel)){
+                modelChoiceBox.getSelectionModel().select(currentModel);
+            } else if(!modelChoiceBox.getItems().isEmpty()) {
+                modelChoiceBox.getSelectionModel().selectFirst();
+            }
+        });
+        
         scene.getRoot().addEventHandler(RestEvent.NEW_EMBEDDINGS_IMAGE, event -> {
             EmbeddingsImageOutput output = (EmbeddingsImageOutput) event.object;
             String msg = "Received " + output.getData().size() + " embeddings at " + LocalDateTime.now();
@@ -322,7 +400,7 @@ public class HyperdrivePane extends LitPathPane {
         input.setDimensions(512);
         input.setEmbedding_type("all");
         input.setEncoding_format("float");
-        input.setModel("openai/clip-vit-large-patch14");
+        input.setModel(currentModel);
         input.setUser("string");
         try {
             int rn = requestNumber.incrementAndGet();

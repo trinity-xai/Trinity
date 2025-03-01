@@ -11,6 +11,8 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 public class RestAccessLayerConfig extends MessageData {
 
     public static final String TYPESTRING = "RestAccessLayerConfig";
+    public static final String DEFAULT_IMAGE_MODEL = "openai/clip-vit-large-patch14";
+    
     //<editor-fold defaultstate="collapsed" desc="JSON Payload">
     /*
         {
@@ -29,7 +31,7 @@ public class RestAccessLayerConfig extends MessageData {
     private String isAliveEndpoint = null;
     private String imageEmbeddingsEndpoint = null;
     private String notes = null;
-
+    private String defaultImageModel = "openai/clip-vit-large-patch14";
     //</editor-fold>
 
     public RestAccessLayerConfig() {
@@ -99,5 +101,19 @@ public class RestAccessLayerConfig extends MessageData {
     }
     
     //</editor-fold>    
+
+    /**
+     * @return the defaultImageModel
+     */
+    public String getDefaultImageModel() {
+        return defaultImageModel;
+    }
+
+    /**
+     * @param defaultImageModel the defaultImageModel to set
+     */
+    public void setDefaultImageModel(String defaultImageModel) {
+        this.defaultImageModel = defaultImageModel;
+    }
     
 }
