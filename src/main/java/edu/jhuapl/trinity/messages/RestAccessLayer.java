@@ -82,12 +82,31 @@ public enum RestAccessLayer {
         }
         String inputJSON = objectMapper.writeValueAsString(input);
         Request request = makePostRequest(inputJSON, restAccessLayerconfig.getImageEmbeddingsEndpoint());
-//        System.out.println("Embeddings Request\n" + request.toString());
-//        System.out.println("Embeddings Request Hard Body\n" + request.body().toString());
+        client.newCall(request).enqueue(new EmbeddingsImageCallback(inputFiles, scene, requestNumber));
+    }
+    public static void requestChatCompletion(List<File> inputFiles, 
+        EmbeddingsImageBatchInput input, Scene scene, int requestNumber) throws JsonProcessingException {
+        if(!checkRestServiceInitialized()) {
+            notifyTerminalError(
+                "REST Request Error: Current REST URL or End Point not initialized properly.", 
+                scene
+            );            
+        }
+        String inputJSON = objectMapper.writeValueAsString(input);
+        Request request = makePostRequest(inputJSON, restAccessLayerconfig.getImageEmbeddingsEndpoint());
         client.newCall(request).enqueue(new EmbeddingsImageCallback(inputFiles, scene, requestNumber));
     }
     
     //Utilities
+    public static void requestChatModels(Scene scene) {
+        HttpUrl url = HttpUrl.parse(restAccessLayerconfig.getBaseRestURL() 
+                + restAccessLayerconfig.getChatModelsEndpoint())
+            .newBuilder()
+            .build();
+        Request request = new Request.Builder().url(url).build();
+        client.newCall(request).enqueue(new ChatModelsAliveCallback(scene));
+    }
+    
     public static void requestRestIsAlive(Scene scene) {
         HttpUrl url = HttpUrl.parse(restAccessLayerconfig.getBaseRestURL() 
                 + restAccessLayerconfig.getIsAliveEndpoint())

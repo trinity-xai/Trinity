@@ -22,6 +22,7 @@ public class RestEvent extends Event {
     public static final EventType<RestEvent> NEW_EMBEDDINGS_IMAGE = new EventType(ANY, "NEW_EMBEDDINGS_IMAGE");
     public static final EventType<RestEvent> ERROR_EMBEDDINGS_IMAGE = new EventType(ANY, "ERROR_EMBEDDINGS_IMAGE");
     public static final EventType<RestEvent> IS_ALIVE_MODELS = new EventType(ANY, "IS_ALIVE_MODELS");
+    public static final EventType<RestEvent> CHAT_MODELS_ALIVE = new EventType(ANY, "CHAT_MODELS_ALIVE");
 
     public RestEvent(EventType<? extends Event> arg0, Object t) {
         super(arg0);

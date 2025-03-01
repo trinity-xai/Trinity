@@ -18,31 +18,39 @@ public class RestAccessLayerConfig extends MessageData {
         {
           "messageType" : "RestAccessLayerConfig",
           "messageId" : 0,
-          "baseRestURL" : "https://some.url.org",
-          "isAliveEndpoint" : "/alive/",
-          "imageEmbeddingsEndpoint" : "/embeddings/image/",
-          "notes" : "My favorite multimodal services",
-        }
-     */
+          "baseRestURL" : "https://my.multimodal.model.org",
+          "isAliveEndpoint" : "/embeddings/alive/",
+          "imageEmbeddingsEndpoint" : "/embeddings/",
+          "defaultImageModel" : "opensourceorg/embedding-model-name-version",
+
+          "chatModelsEndpoint" : "/chat/models",
+          "chatCompletionsEndpoint" : "/chat/completions",
+          "defaultCaptionModel" : "opensourceorg/opensourcemodel-versionnumber-Vision-Instruct",
+
+          "notes" : "My happy funtime model that I host"
+        } 
+    */
     //</editor-fold>
 
     //<editor-fold defaultstate="collapsed" desc="Payload Fields">
     private String baseRestURL = null;
     private String isAliveEndpoint = null;
     private String imageEmbeddingsEndpoint = null;
+    private String defaultImageModel = DEFAULT_IMAGE_MODEL;
+    private String chatModelsEndpoint;
+    private String chatCompletionEndpoint;
+    private String defaultCaptionModel;
     private String notes = null;
-    private String defaultImageModel = "openai/clip-vit-large-patch14";
     //</editor-fold>
 
     public RestAccessLayerConfig() {
         this.messageType = TYPESTRING;
     }
 
-    public static boolean isEmbeddingsImageInput(String messageBody) {
+    public static boolean isRestAccessLayerConfig(String messageBody) {
         return messageBody.contains("messageType")
                 && messageBody.contains(TYPESTRING);
     }
-    //<editor-fold defaultstate="collapsed" desc="Properties">
 
     /**
      * @return the baseRestURL
@@ -115,5 +123,48 @@ public class RestAccessLayerConfig extends MessageData {
     public void setDefaultImageModel(String defaultImageModel) {
         this.defaultImageModel = defaultImageModel;
     }
+
+    /**
+     * @return the chatModelsEndpoint
+     */
+    public String getChatModelsEndpoint() {
+        return chatModelsEndpoint;
+    }
+
+    /**
+     * @param chatModelsEndpoint the chatModelsEndpoint to set
+     */
+    public void setChatModelsEndpoint(String chatModelsEndpoint) {
+        this.chatModelsEndpoint = chatModelsEndpoint;
+    }
+
+    /**
+     * @return the chatCompletionEndpoint
+     */
+    public String getChatCompletionEndpoint() {
+        return chatCompletionEndpoint;
+    }
+
+    /**
+     * @param chatCompletionEndpoint the chatCompletionEndpoint to set
+     */
+    public void setChatCompletionEndpoint(String chatCompletionEndpoint) {
+        this.chatCompletionEndpoint = chatCompletionEndpoint;
+    }
+
+    /**
+     * @return the defaultCaptionModel
+     */
+    public String getDefaultCaptionModel() {
+        return defaultCaptionModel;
+    }
+
+    /**
+     * @param defaultCaptionModel the defaultCaptionModel to set
+     */
+    public void setDefaultCaptionModel(String defaultCaptionModel) {
+        this.defaultCaptionModel = defaultCaptionModel;
+    }
+    //<editor-fold defaultstate="collapsed" desc="Properties">
     
 }

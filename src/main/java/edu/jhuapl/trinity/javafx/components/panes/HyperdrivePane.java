@@ -53,6 +53,7 @@ import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
+import javafx.scene.control.Separator;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
@@ -89,7 +90,8 @@ public class HyperdrivePane extends LitPathPane {
     HashMap<Integer, STATUS> outstandingRequests;    
     int batchSize = 10;
     long requestDelay = 50;
-    String currentModel = null;
+    String currentEmbeddingsModel = null;
+    String currentChatModel = null;
     
     private static BorderPane createContent() {
         BorderPane bpOilSpill = new BorderPane();
@@ -104,7 +106,8 @@ public class HyperdrivePane extends LitPathPane {
         imageFilesList = new ArrayList<>();
         outstandingRequests = new HashMap<>();
         requestNumber = new AtomicInteger();
-        currentModel = RestAccessLayer.restAccessLayerconfig.getDefaultImageModel();        
+        currentEmbeddingsModel = RestAccessLayer.restAccessLayerconfig.getDefaultImageModel();        
+        currentChatModel = RestAccessLayer.restAccessLayerconfig.getDefaultCaptionModel();        
         setBackground(Background.EMPTY);
         //container for the floating window itself
         borderPane = (BorderPane) this.contentPane;
@@ -251,6 +254,10 @@ public class HyperdrivePane extends LitPathPane {
         isAliveButton.setOnAction(e -> {
             RestAccessLayer.requestRestIsAlive(isAliveButton.getScene());
         });
+        Button chatStatusButton = new Button("Check Status");
+        chatStatusButton.setOnAction(e -> {
+            RestAccessLayer.requestChatModels(chatStatusButton.getScene());
+        });
         
         Spinner<Integer> batchSizeSpinner = new Spinner(1, 256, batchSize, 1);
         batchSizeSpinner.valueProperty().addListener(c -> {
@@ -275,41 +282,84 @@ public class HyperdrivePane extends LitPathPane {
         servicesGrid.setPadding(new Insets(10));
         servicesGrid.setAlignment(Pos.TOP_LEFT);
         servicesTab.setContent(servicesGrid);
-        TextField serviceLocationTextField = new TextField(
+        
+        //Image Embeddings Service
+        TextField embeddingsLocationTextField = new TextField(
             RestAccessLayer.restAccessLayerconfig.getBaseRestURL() +
             RestAccessLayer.restAccessLayerconfig.getImageEmbeddingsEndpoint()        
         );
-        serviceLocationTextField.setPrefWidth(500);
-        serviceLocationTextField.setEditable(false);
+        embeddingsLocationTextField.setPrefWidth(500);
+        embeddingsLocationTextField.setEditable(false);
 
-        ChoiceBox<String> modelChoiceBox = new ChoiceBox();
-        modelChoiceBox.getItems().add(currentModel);
-        modelChoiceBox.getSelectionModel().selectFirst();
-        modelChoiceBox.setPrefWidth(400);
-
-        Button refreshModelsButton = new Button("Refresh");
-        refreshModelsButton.setOnAction(e -> {
-            RestAccessLayer.requestRestIsAlive(refreshModelsButton.getScene());
-        });        
-        Button updateModelsButton = new Button("Update");
-        updateModelsButton.setOnAction(e -> {
-            String selectedModel = modelChoiceBox.getSelectionModel().getSelectedItem();
+        ChoiceBox<String> embeddingsModelChoiceBox = new ChoiceBox();
+        embeddingsModelChoiceBox.getItems().add(currentEmbeddingsModel);
+        embeddingsModelChoiceBox.getSelectionModel().selectFirst();
+        embeddingsModelChoiceBox.setPrefWidth(400);
+        embeddingsModelChoiceBox.setOnAction(e -> {
+            String selectedModel = embeddingsModelChoiceBox.getSelectionModel().getSelectedItem();
             if(null != selectedModel && !selectedModel.isBlank())
-                currentModel = selectedModel;
+                currentEmbeddingsModel = selectedModel;
         });        
+
+        Button refreshEmbeddingsModelsButton = new Button("Refresh");
+        refreshEmbeddingsModelsButton.setOnAction(e -> {
+            RestAccessLayer.requestRestIsAlive(refreshEmbeddingsModelsButton.getScene());
+        });        
+
+        //Chat Completion Service
+        TextField chatLocationTextField = new TextField(
+            RestAccessLayer.restAccessLayerconfig.getBaseRestURL() +
+            RestAccessLayer.restAccessLayerconfig.getChatCompletionEndpoint()        
+        );
+        chatLocationTextField.setPrefWidth(500);
+        chatLocationTextField.setEditable(false);
+
+        ChoiceBox<String> chatModelChoiceBox = new ChoiceBox();
+        chatModelChoiceBox.getItems().add(currentChatModel);
+        chatModelChoiceBox.getSelectionModel().selectFirst();
+        chatModelChoiceBox.setPrefWidth(400);
+        chatModelChoiceBox.setOnAction(e -> {
+            String selectedModel = embeddingsModelChoiceBox.getSelectionModel().getSelectedItem();
+            if(null != selectedModel && !selectedModel.isBlank())
+                currentChatModel = selectedModel;
+        });        
+
+        Button refreshChatModelsButton = new Button("Refresh");
+        refreshChatModelsButton.setOnAction(e -> {
+            RestAccessLayer.requestChatModels(refreshChatModelsButton.getScene());
+        });        
+
+        //Map components into GridPane container
+//        GridPane.setColumnSpan(embeddingsLocationTextField, 2);
+        servicesGrid.add(new VBox(5, 
+            new Label("Embeddings Service Location"), 
+            embeddingsLocationTextField, 
+            isAliveButton), 0, 0);
         
-        GridPane.setColumnSpan(serviceLocationTextField, 2);
-        servicesGrid.add(new VBox(5,new Label("Service Location & Endpoint"), serviceLocationTextField), 0, 0);
-        servicesGrid.add(isAliveButton, 2, 0); //third column
+//        GridPane.setColumnSpan(embeddingsModelChoiceBox, 2);
+        servicesGrid.add(new VBox(5,
+            new Label("Current Embeddings Model"), 
+            embeddingsModelChoiceBox,
+            refreshEmbeddingsModelsButton), 1, 0);
         
-        GridPane.setColumnSpan(modelChoiceBox, 2);
-        servicesGrid.add(new VBox(5,new Label("Current Model"), modelChoiceBox), 0, 1);
-        servicesGrid.add(refreshModelsButton, 2, 1); //third column
-        servicesGrid.add(updateModelsButton, 3, 1); //fourth column
+        servicesGrid.add(new VBox(5, 
+            new Label("Chat Service Location"), 
+            chatLocationTextField,
+            chatStatusButton ), 0, 1);
+        
+        servicesGrid.add(new VBox(5,
+            new Label("Current Chat Model"), 
+            chatModelChoiceBox,
+            refreshChatModelsButton), 1, 1);
+
+        Separator separator = new Separator();
+        GridPane.setColumnSpan(separator, GridPane.REMAINING);
+//        spinnerHBox.setAlignment(Pos.CENTER_LEFT);
+        servicesGrid.add(separator, 0, 2);
 
         GridPane.setColumnSpan(spinnerHBox, GridPane.REMAINING);
         spinnerHBox.setAlignment(Pos.CENTER_LEFT);
-        servicesGrid.add(spinnerHBox, 0, 2);
+        servicesGrid.add(spinnerHBox, 0, 3);
                 
         borderPane.addEventHandler(DragEvent.DRAG_OVER, event -> {
             if (ResourceUtils.canDragOver(event)) {
@@ -328,14 +378,26 @@ public class HyperdrivePane extends LitPathPane {
         
         scene.getRoot().addEventHandler(RestEvent.IS_ALIVE_MODELS, event -> {
             AliveModels models = (AliveModels)event.object;
-            modelChoiceBox.getItems().clear();
+            embeddingsModelChoiceBox.getItems().clear();
             for(AiModel model : models.getAlive_models()){
-                modelChoiceBox.getItems().add(model.getId());
+                embeddingsModelChoiceBox.getItems().add(model.getId());
             }
-            if(modelChoiceBox.getItems().contains(currentModel)){
-                modelChoiceBox.getSelectionModel().select(currentModel);
-            } else if(!modelChoiceBox.getItems().isEmpty()) {
-                modelChoiceBox.getSelectionModel().selectFirst();
+            if(embeddingsModelChoiceBox.getItems().contains(currentEmbeddingsModel)){
+                embeddingsModelChoiceBox.getSelectionModel().select(currentEmbeddingsModel);
+            } else if(!embeddingsModelChoiceBox.getItems().isEmpty()) {
+                embeddingsModelChoiceBox.getSelectionModel().selectFirst();
+            }
+        });
+        scene.getRoot().addEventHandler(RestEvent.CHAT_MODELS_ALIVE, event -> {
+            AliveModels models = (AliveModels)event.object;
+            chatModelChoiceBox.getItems().clear();
+            for(AiModel model : models.getAlive_models()){
+                chatModelChoiceBox.getItems().add(model.getId());
+            }
+            if(chatModelChoiceBox.getItems().contains(currentChatModel)){
+                chatModelChoiceBox.getSelectionModel().select(currentChatModel);
+            } else if(!chatModelChoiceBox.getItems().isEmpty()) {
+                chatModelChoiceBox.getSelectionModel().selectFirst();
             }
         });
         
@@ -400,7 +462,7 @@ public class HyperdrivePane extends LitPathPane {
         input.setDimensions(512);
         input.setEmbedding_type("all");
         input.setEncoding_format("float");
-        input.setModel(currentModel);
+        input.setModel(currentEmbeddingsModel);
         input.setUser("string");
         try {
             int rn = requestNumber.incrementAndGet();
