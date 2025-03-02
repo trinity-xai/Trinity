@@ -3,8 +3,8 @@
 package edu.jhuapl.trinity.javafx.components;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import edu.jhuapl.trinity.data.messages.AnalysisConfig;
-import edu.jhuapl.trinity.data.messages.UmapConfig;
+import edu.jhuapl.trinity.data.messages.xai.AnalysisConfig;
+import edu.jhuapl.trinity.data.messages.xai.UmapConfig;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import javafx.geometry.Insets;
 import javafx.scene.control.Tooltip;

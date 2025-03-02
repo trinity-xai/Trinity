@@ -1,8 +1,8 @@
 package edu.jhuapl.trinity.messages;
 
 import static edu.jhuapl.trinity.utils.MessageUtils.embeddingsToFeatureVector;
-import edu.jhuapl.trinity.data.messages.EmbeddingsImageOutput;
-import edu.jhuapl.trinity.data.messages.FeatureVector;
+import edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageOutput;
+import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.javafx.events.ErrorEvent;
 import edu.jhuapl.trinity.javafx.events.RestEvent;
 import java.io.File;

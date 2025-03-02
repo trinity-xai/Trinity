@@ -2,7 +2,7 @@
 
 package edu.jhuapl.trinity.utils;
 
-import edu.jhuapl.trinity.data.messages.ChannelFrame;
+import edu.jhuapl.trinity.data.messages.bci.ChannelFrame;
 import org.junit.jupiter.api.Test;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;

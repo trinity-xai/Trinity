@@ -2,8 +2,8 @@
 
 package edu.jhuapl.trinity.javafx.components.panes;
 
-import edu.jhuapl.trinity.data.messages.FeatureVector;
-import edu.jhuapl.trinity.data.messages.VectorMaskCollection;
+import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
+import edu.jhuapl.trinity.data.messages.xai.VectorMaskCollection;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
@@ -35,7 +35,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 
-import static edu.jhuapl.trinity.data.messages.FeatureVector.bboxToString;
+import static edu.jhuapl.trinity.data.messages.xai.FeatureVector.bboxToString;
 import javafx.scene.layout.HBox;
 
 /**

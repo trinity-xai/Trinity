@@ -2,8 +2,8 @@
 
 package edu.jhuapl.trinity.javafx.renderers;
 
-import edu.jhuapl.trinity.data.messages.FeatureCollection;
-import edu.jhuapl.trinity.data.messages.FeatureVector;
+import edu.jhuapl.trinity.data.messages.xai.FeatureCollection;
+import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 
 import java.util.List;
 

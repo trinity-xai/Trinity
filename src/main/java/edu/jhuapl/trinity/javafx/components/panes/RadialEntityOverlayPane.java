@@ -2,7 +2,7 @@
 
 package edu.jhuapl.trinity.javafx.components.panes;
 
-import edu.jhuapl.trinity.data.messages.FeatureVector;
+import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.javafx.components.callouts.Callout;
 import edu.jhuapl.trinity.javafx.components.callouts.FeatureVectorCallout;
 import edu.jhuapl.trinity.javafx.components.radial.RadialEntity;

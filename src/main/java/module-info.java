@@ -53,6 +53,9 @@ module edu.jhuapl.trinity {
     exports edu.jhuapl.trinity;
     exports edu.jhuapl.trinity.data;
     exports edu.jhuapl.trinity.data.messages;
+    exports edu.jhuapl.trinity.data.messages.llm;
+    exports edu.jhuapl.trinity.data.messages.bci;
+    exports edu.jhuapl.trinity.data.messages.xai;
     exports edu.jhuapl.trinity.data.graph;
     exports edu.jhuapl.trinity.data.files;
     exports edu.jhuapl.trinity.data.terrain;

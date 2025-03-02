@@ -4,7 +4,7 @@ package edu.jhuapl.trinity.data.files;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import edu.jhuapl.trinity.data.messages.GaussianMixtureCollection;
+import edu.jhuapl.trinity.data.messages.xai.GaussianMixtureCollection;
 
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;

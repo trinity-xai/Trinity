@@ -4,7 +4,7 @@ package edu.jhuapl.trinity.data.files;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import edu.jhuapl.trinity.data.messages.FeatureCollection;
+import edu.jhuapl.trinity.data.messages.xai.FeatureCollection;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 

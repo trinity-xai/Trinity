@@ -2,8 +2,8 @@
 
 package edu.jhuapl.trinity.javafx.renderers;
 
-import edu.jhuapl.trinity.data.messages.GaussianMixture;
-import edu.jhuapl.trinity.data.messages.GaussianMixtureCollection;
+import edu.jhuapl.trinity.data.messages.xai.GaussianMixture;
+import edu.jhuapl.trinity.data.messages.xai.GaussianMixtureCollection;
 
 import java.util.List;
 

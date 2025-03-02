@@ -2,7 +2,7 @@
 
 package edu.jhuapl.trinity.data;
 
-import edu.jhuapl.trinity.data.messages.FeatureCollection;
+import edu.jhuapl.trinity.data.messages.xai.FeatureCollection;
 import javafx.scene.paint.Color;
 
 import java.util.ArrayList;

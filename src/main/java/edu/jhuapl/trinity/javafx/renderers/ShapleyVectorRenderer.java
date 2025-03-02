@@ -2,8 +2,8 @@
 
 package edu.jhuapl.trinity.javafx.renderers;
 
-import edu.jhuapl.trinity.data.messages.ShapleyCollection;
-import edu.jhuapl.trinity.data.messages.ShapleyVector;
+import edu.jhuapl.trinity.data.messages.xai.ShapleyCollection;
+import edu.jhuapl.trinity.data.messages.xai.ShapleyVector;
 
 /**
  * @author Sean Phillips

@@ -19,7 +19,7 @@ import edu.jhuapl.trinity.data.files.ShapleyCollectionFile;
 import edu.jhuapl.trinity.data.files.TextEmbeddingCollectionFile;
 import edu.jhuapl.trinity.data.files.VectorMaskCollectionFile;
 import edu.jhuapl.trinity.data.files.ZeroPilotLatentsFile;
-import edu.jhuapl.trinity.data.messages.FeatureCollection;
+import edu.jhuapl.trinity.data.messages.xai.FeatureCollection;
 import edu.jhuapl.trinity.data.terrain.FireAreaTextFile;
 import edu.jhuapl.trinity.data.terrain.TerrainTextFile;
 import edu.jhuapl.trinity.icons.IconResourceProvider;

@@ -4,7 +4,7 @@ package edu.jhuapl.trinity.javafx.handlers;
 
 import edu.jhuapl.trinity.App;
 import edu.jhuapl.trinity.data.FilterSet;
-import edu.jhuapl.trinity.data.messages.FeatureVector;
+import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.SearchEvent;
 import edu.jhuapl.trinity.javafx.renderers.FeatureVectorRenderer;

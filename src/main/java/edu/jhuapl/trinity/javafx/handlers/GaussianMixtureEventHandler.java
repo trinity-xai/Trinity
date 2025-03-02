@@ -3,10 +3,10 @@
 package edu.jhuapl.trinity.javafx.handlers;
 
 import edu.jhuapl.trinity.data.FactorLabel;
-import edu.jhuapl.trinity.data.messages.GaussianMixture;
-import edu.jhuapl.trinity.data.messages.GaussianMixture.COVARIANCE_MODE;
-import edu.jhuapl.trinity.data.messages.GaussianMixtureCollection;
-import edu.jhuapl.trinity.data.messages.GaussianMixtureData;
+import edu.jhuapl.trinity.data.messages.xai.GaussianMixture;
+import edu.jhuapl.trinity.data.messages.xai.GaussianMixture.COVARIANCE_MODE;
+import edu.jhuapl.trinity.data.messages.xai.GaussianMixtureCollection;
+import edu.jhuapl.trinity.data.messages.xai.GaussianMixtureData;
 import edu.jhuapl.trinity.javafx.components.ColorMap;
 import edu.jhuapl.trinity.javafx.events.GaussianMixtureEvent;
 import edu.jhuapl.trinity.javafx.renderers.GaussianMixtureRenderer;

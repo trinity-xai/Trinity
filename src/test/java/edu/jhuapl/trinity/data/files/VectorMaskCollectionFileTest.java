@@ -1,6 +1,6 @@
 package edu.jhuapl.trinity.data.files;
 
-import edu.jhuapl.trinity.data.messages.VectorMaskCollection;
+import edu.jhuapl.trinity.data.messages.xai.VectorMaskCollection;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;

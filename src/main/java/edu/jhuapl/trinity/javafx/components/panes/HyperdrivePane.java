@@ -3,14 +3,14 @@
 package edu.jhuapl.trinity.javafx.components.panes;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import edu.jhuapl.trinity.data.messages.AiModel;
-import edu.jhuapl.trinity.data.messages.AliveModels;
-import edu.jhuapl.trinity.data.messages.EmbeddingsImageBatchInput;
-import edu.jhuapl.trinity.data.messages.EmbeddingsImageOutput;
-import edu.jhuapl.trinity.data.messages.EmbeddingsImageUrl;
-import static edu.jhuapl.trinity.data.messages.EmbeddingsImageUrl.imageUrlFromFile;
-import edu.jhuapl.trinity.data.messages.FeatureCollection;
-import edu.jhuapl.trinity.data.messages.FeatureVector;
+import edu.jhuapl.trinity.data.messages.llm.AiModel;
+import edu.jhuapl.trinity.data.messages.llm.AliveModels;
+import edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageBatchInput;
+import edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageOutput;
+import edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageUrl;
+import static edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageUrl.imageUrlFromFile;
+import edu.jhuapl.trinity.data.messages.xai.FeatureCollection;
+import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.javafx.components.listviews.EmbeddingsImageListItem;
 import edu.jhuapl.trinity.javafx.components.listviews.ImageFileListItem;
 import edu.jhuapl.trinity.javafx.components.radial.CircleProgressIndicator;

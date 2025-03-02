@@ -2,7 +2,7 @@
 
 package edu.jhuapl.trinity.javafx.components.callouts;
 
-import edu.jhuapl.trinity.data.messages.FeatureVector;
+import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.ImageEvent;
 import edu.jhuapl.trinity.utils.HttpsUtils;
@@ -31,7 +31,7 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.util.Map.Entry;
 
-import static edu.jhuapl.trinity.data.messages.FeatureVector.bboxToString;
+import static edu.jhuapl.trinity.data.messages.xai.FeatureVector.bboxToString;
 
 /**
  * @author Sean Phillips

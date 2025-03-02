@@ -8,7 +8,7 @@ import edu.jhuapl.trinity.data.Dimension;
 import edu.jhuapl.trinity.data.FactorLabel;
 import edu.jhuapl.trinity.data.FeatureLayer;
 import edu.jhuapl.trinity.data.files.LabelConfigFile;
-import edu.jhuapl.trinity.data.messages.LabelConfig;
+import edu.jhuapl.trinity.data.messages.xai.LabelConfig;
 import edu.jhuapl.trinity.javafx.components.ColorMap;
 import edu.jhuapl.trinity.javafx.components.listviews.DimensionLabelItem;
 import edu.jhuapl.trinity.javafx.components.listviews.FactorLabelListItem;

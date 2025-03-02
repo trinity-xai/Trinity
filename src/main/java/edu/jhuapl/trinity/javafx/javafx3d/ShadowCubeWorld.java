@@ -5,7 +5,7 @@ package edu.jhuapl.trinity.javafx.javafx3d;
 import edu.jhuapl.trinity.data.CoordinateSet;
 import edu.jhuapl.trinity.data.FactorLabel;
 import edu.jhuapl.trinity.data.FeatureLayer;
-import edu.jhuapl.trinity.data.messages.FeatureVector;
+import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.javafx.components.ColorMap;
 import edu.jhuapl.trinity.javafx.components.panes.ShadowPane;
 import edu.jhuapl.trinity.javafx.events.ColorMapEvent;
