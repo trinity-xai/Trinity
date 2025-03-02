@@ -3,6 +3,7 @@ package edu.jhuapl.trinity.messages;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import edu.jhuapl.trinity.data.messages.llm.ChatCompletionsInput;
 import edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageBatchInput;
 import edu.jhuapl.trinity.data.messages.llm.RestAccessLayerConfig;
@@ -43,6 +44,8 @@ public enum RestAccessLayer {
     static {
         objectMapper = new ObjectMapper();
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        objectMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
+        
         client = new OkHttpClient.Builder()
             .connectTimeout(DEFAULT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
             .writeTimeout(DEFAULT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
@@ -85,8 +88,7 @@ public enum RestAccessLayer {
         Request request = makePostRequest(inputJSON, restAccessLayerconfig.getImageEmbeddingsEndpoint());
         client.newCall(request).enqueue(new EmbeddingsImageCallback(inputFiles, scene, requestNumber));
     }
-    public static void requestChatCompletion(List<File> inputFiles, 
-        ChatCompletionsInput input, Scene scene, int requestNumber) throws JsonProcessingException {
+    public static void requestChatCompletion(ChatCompletionsInput input, Scene scene, int requestNumber) throws JsonProcessingException {
         if(!checkRestServiceInitialized()) {
             notifyTerminalError(
                 "REST Request Error: Current REST URL or End Point not initialized properly.", 
@@ -94,8 +96,10 @@ public enum RestAccessLayer {
             );            
         }
         String inputJSON = objectMapper.writeValueAsString(input);
+        System.out.println("Pretty Print of ChatCompletionsInput: \n" 
+            + objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(input));
         Request request = makePostRequest(inputJSON, restAccessLayerconfig.getChatCompletionEndpoint());
-        client.newCall(request).enqueue(new ChatCompletionCallback(inputFiles, scene, requestNumber));
+        client.newCall(request).enqueue(new ChatCompletionCallback(scene, requestNumber));
     }
     
     //Utilities

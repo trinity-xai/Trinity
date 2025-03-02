@@ -19,14 +19,12 @@ import okhttp3.Call;
  * @author Sean Phillips
  */
 public class ChatCompletionCallback extends RestCallback {
-    List<File> inputFiles;
     int requestNumber;
     
     public enum STATUS { REQUESTED, SUCCEEDED, FAILED };
     
-    public ChatCompletionCallback(List<File> inputFiles, Scene scene, int requestNumber) {
+    public ChatCompletionCallback( Scene scene, int requestNumber) {
         super(scene);
-        this.inputFiles = inputFiles;
         this.requestNumber = requestNumber;
     }
 
@@ -35,26 +33,27 @@ public class ChatCompletionCallback extends RestCallback {
         Logger.getLogger(RestCallback.class.getName()).log(Level.SEVERE, null, e);
         ErrorEvent error = new ErrorEvent(ErrorEvent.REST_ERROR, getClass().getName() + " has failed.");
         scene.getRoot().fireEvent(error);
-        Platform.runLater(() -> {
-            scene.getRoot().fireEvent(new RestEvent(RestEvent.ERROR_EMBEDDINGS_IMAGE, inputFiles, requestNumber));
-        });  
+//        Platform.runLater(() -> {
+//            scene.getRoot().fireEvent(new RestEvent(RestEvent.ERROR_EMBEDDINGS_IMAGE, requestNumber));
+//        });  
     }
 
     @Override
     protected void processResponse(String responseBodyString) throws Exception {
-        //System.out.println("EmbeddingsImageCallback response...");
-        EmbeddingsImageOutput output = objectMapper.readValue(responseBodyString, EmbeddingsImageOutput.class);
-        output.setRequestNumber(requestNumber);
-        List<FeatureVector> fvList = output.getData().stream()
-             .map(embeddingsToFeatureVector).toList();
-        if(null != inputFiles && inputFiles.size()>=fvList.size()) {
-            for(int imageIndex=0; imageIndex<fvList.size();imageIndex++){
-                fvList.get(imageIndex).setImageURL(
-                    inputFiles.get(imageIndex).getAbsolutePath());
-            }
-        }
-        Platform.runLater(() -> {
-            scene.getRoot().fireEvent(new RestEvent(RestEvent.NEW_EMBEDDINGS_IMAGE, output, fvList));
-        });  
+        System.out.println("ChatCompletionCallback response...");
+        System.out.println(responseBodyString);
+//        ChatCompletionsOutput output = objectMapper.readValue(responseBodyString, ChatCompletionsOutput.class);
+//        output.setRequestNumber(requestNumber);
+//        List<FeatureVector> fvList = output.getData().stream()
+//             .map(embeddingsToFeatureVector).toList();
+//        if(null != inputFiles && inputFiles.size()>=fvList.size()) {
+//            for(int imageIndex=0; imageIndex<fvList.size();imageIndex++){
+//                fvList.get(imageIndex).setImageURL(
+//                    inputFiles.get(imageIndex).getAbsolutePath());
+//            }
+//        }
+//        Platform.runLater(() -> {
+//            scene.getRoot().fireEvent(new RestEvent(RestEvent.NEW_EMBEDDINGS_IMAGE, output, fvList));
+//        });  
     }
 }

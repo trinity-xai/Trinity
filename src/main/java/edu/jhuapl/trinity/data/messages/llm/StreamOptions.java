@@ -2,7 +2,7 @@ package edu.jhuapl.trinity.data.messages.llm;
 
 /**
  *
- * @author phillsm1
+ * @author Sean Phillips
  */
 public class StreamOptions {
     private boolean include_usage = false;

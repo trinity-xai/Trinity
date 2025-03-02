@@ -5,6 +5,7 @@ package edu.jhuapl.trinity.javafx.components.panes;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import edu.jhuapl.trinity.data.messages.llm.AiModel;
 import edu.jhuapl.trinity.data.messages.llm.AliveModels;
+import edu.jhuapl.trinity.data.messages.llm.ChatCompletionsInput;
 import edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageBatchInput;
 import edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageOutput;
 import edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageUrl;
@@ -327,16 +328,24 @@ public class HyperdrivePane extends LitPathPane {
         Button refreshChatModelsButton = new Button("Refresh");
         refreshChatModelsButton.setOnAction(e -> {
             RestAccessLayer.requestChatModels(refreshChatModelsButton.getScene());
-        });        
+        });   
+        Button testChatModelButton = new Button("Test");
+        testChatModelButton.setOnAction(e -> {
+            ChatCompletionsInput input = ChatCompletionsInput.defaultChatCompletionsInput();
+            try {
+                RestAccessLayer.requestChatCompletion(input, testChatModelButton.getScene(), 666);
+            } catch (JsonProcessingException ex) {
+                java.util.logging.Logger.getLogger(HyperdrivePane.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        });   
+        
 
         //Map components into GridPane container
-//        GridPane.setColumnSpan(embeddingsLocationTextField, 2);
         servicesGrid.add(new VBox(5, 
             new Label("Embeddings Service Location"), 
             embeddingsLocationTextField, 
             isAliveButton), 0, 0);
         
-//        GridPane.setColumnSpan(embeddingsModelChoiceBox, 2);
         servicesGrid.add(new VBox(5,
             new Label("Current Embeddings Model"), 
             embeddingsModelChoiceBox,
@@ -350,11 +359,10 @@ public class HyperdrivePane extends LitPathPane {
         servicesGrid.add(new VBox(5,
             new Label("Current Chat Model"), 
             chatModelChoiceBox,
-            refreshChatModelsButton), 1, 1);
+            new HBox(10, refreshChatModelsButton, testChatModelButton)), 1, 1);
 
         Separator separator = new Separator();
         GridPane.setColumnSpan(separator, GridPane.REMAINING);
-//        spinnerHBox.setAlignment(Pos.CENTER_LEFT);
         servicesGrid.add(separator, 0, 2);
 
         GridPane.setColumnSpan(spinnerHBox, GridPane.REMAINING);

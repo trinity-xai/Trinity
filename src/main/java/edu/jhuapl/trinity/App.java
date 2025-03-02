@@ -2,13 +2,11 @@
 
 package edu.jhuapl.trinity;
 
-import com.fasterxml.jackson.core.JsonProcessingException;
 import edu.jhuapl.trinity.data.Dimension;
 import edu.jhuapl.trinity.data.FactorLabel;
 import edu.jhuapl.trinity.data.files.ClusterCollectionFile;
 import edu.jhuapl.trinity.data.files.FeatureCollectionFile;
 import edu.jhuapl.trinity.data.files.ManifoldDataFile;
-import edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageInput;
 import edu.jhuapl.trinity.data.messages.xai.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.javafx.components.MatrixOverlay;
@@ -110,7 +108,6 @@ import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
-import java.util.logging.Level;
 
 public class App extends Application {
     private static final Logger LOG = LoggerFactory.getLogger(App.class);

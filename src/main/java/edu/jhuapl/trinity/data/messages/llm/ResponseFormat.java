@@ -5,20 +5,37 @@ import java.util.List;
 
 /**
  *
- * @author phillsm1
+ * @author Sean Phillips
  */
 public class ResponseFormat {
+
+    //<editor-fold defaultstate="collapsed" desc="JSON Payload">
+    /*
+        "response_format": {
+           "type": "text",
+           "json_schema": {},
+           "regex": "string",
+           "multiple_choice": [
+             "string"
+           ]
+         }
+    */
+    //</editor-fold>
+    
+    //<editor-fold defaultstate="collapsed" desc="Payload Fields">
     private String type = "text";
     private JsonSchema json_schema;
     private String regex = "string";
     private List<String> multiple_choice;
+    //</editor-fold>    
 
     public ResponseFormat() {
+        json_schema = new JsonSchema();
         multiple_choice = new ArrayList<>();
         multiple_choice.add("string");
-        json_schema = new JsonSchema();
     }
 
+    //<editor-fold defaultstate="collapsed" desc="Properties">
     /**
      * @return the type
      */
@@ -78,4 +95,6 @@ public class ResponseFormat {
         public JsonSchema(){
         }
     }    
+        //</editor-fold>    
+
 }
