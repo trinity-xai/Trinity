@@ -99,7 +99,7 @@ public class IsAliveCallback extends Task implements Callback {
                     scene.getRoot().fireEvent(cte);
                     
                     scene.getRoot().fireEvent(
-                        new RestEvent(RestEvent.IS_ALIVE_MODELS, isAliveReesponse));
+                        new RestEvent(RestEvent.EMBEDDING_MODELS_ALIVE, isAliveReesponse));
 
                 });  
             } catch (Exception ex) {

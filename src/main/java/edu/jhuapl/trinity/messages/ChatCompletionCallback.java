@@ -1,5 +1,6 @@
 package edu.jhuapl.trinity.messages;
 
+import edu.jhuapl.trinity.data.messages.llm.ChatCompletionsOutput;
 import static edu.jhuapl.trinity.utils.MessageUtils.embeddingsToFeatureVector;
 import edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageOutput;
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
@@ -33,17 +34,17 @@ public class ChatCompletionCallback extends RestCallback {
         Logger.getLogger(RestCallback.class.getName()).log(Level.SEVERE, null, e);
         ErrorEvent error = new ErrorEvent(ErrorEvent.REST_ERROR, getClass().getName() + " has failed.");
         scene.getRoot().fireEvent(error);
-//        Platform.runLater(() -> {
-//            scene.getRoot().fireEvent(new RestEvent(RestEvent.ERROR_EMBEDDINGS_IMAGE, requestNumber));
-//        });  
+        Platform.runLater(() -> {
+            scene.getRoot().fireEvent(new RestEvent(RestEvent.ERROR_CHAT_COMPLETIONS, requestNumber));
+        });  
     }
 
     @Override
     protected void processResponse(String responseBodyString) throws Exception {
-        System.out.println("ChatCompletionCallback response...");
-        System.out.println(responseBodyString);
-//        ChatCompletionsOutput output = objectMapper.readValue(responseBodyString, ChatCompletionsOutput.class);
-//        output.setRequestNumber(requestNumber);
+//        System.out.println("ChatCompletionCallback response...");
+//        System.out.println(responseBodyString);
+        ChatCompletionsOutput output = objectMapper.readValue(responseBodyString, ChatCompletionsOutput.class);
+        output.setRequestNumber(requestNumber);
 //        List<FeatureVector> fvList = output.getData().stream()
 //             .map(embeddingsToFeatureVector).toList();
 //        if(null != inputFiles && inputFiles.size()>=fvList.size()) {
@@ -52,8 +53,8 @@ public class ChatCompletionCallback extends RestCallback {
 //                    inputFiles.get(imageIndex).getAbsolutePath());
 //            }
 //        }
-//        Platform.runLater(() -> {
-//            scene.getRoot().fireEvent(new RestEvent(RestEvent.NEW_EMBEDDINGS_IMAGE, output, fvList));
-//        });  
+        Platform.runLater(() -> {
+            scene.getRoot().fireEvent(new RestEvent(RestEvent.NEW_CHAT_COMPLETION, output));
+        });  
     }
 }

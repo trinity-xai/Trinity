@@ -6,6 +6,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import edu.jhuapl.trinity.data.messages.llm.AiModel;
 import edu.jhuapl.trinity.data.messages.llm.AliveModels;
 import edu.jhuapl.trinity.data.messages.llm.ChatCompletionsInput;
+import edu.jhuapl.trinity.data.messages.llm.ChatCompletionsOutput;
 import edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageBatchInput;
 import edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageOutput;
 import edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageUrl;
@@ -320,7 +321,7 @@ public class HyperdrivePane extends LitPathPane {
         chatModelChoiceBox.getSelectionModel().selectFirst();
         chatModelChoiceBox.setPrefWidth(400);
         chatModelChoiceBox.setOnAction(e -> {
-            String selectedModel = embeddingsModelChoiceBox.getSelectionModel().getSelectedItem();
+            String selectedModel = chatModelChoiceBox.getSelectionModel().getSelectedItem();
             if(null != selectedModel && !selectedModel.isBlank())
                 currentChatModel = selectedModel;
         });        
@@ -331,7 +332,9 @@ public class HyperdrivePane extends LitPathPane {
         });   
         Button testChatModelButton = new Button("Test");
         testChatModelButton.setOnAction(e -> {
-            ChatCompletionsInput input = ChatCompletionsInput.defaultChatCompletionsInput();
+            ChatCompletionsInput input = ChatCompletionsInput.helloworldChatCompletionsInput();
+            if(null != currentChatModel)
+                input.setModel(currentChatModel);
             try {
                 RestAccessLayer.requestChatCompletion(input, testChatModelButton.getScene(), 666);
             } catch (JsonProcessingException ex) {
@@ -384,7 +387,7 @@ public class HyperdrivePane extends LitPathPane {
             }
         });
         
-        scene.getRoot().addEventHandler(RestEvent.IS_ALIVE_MODELS, event -> {
+        scene.getRoot().addEventHandler(RestEvent.EMBEDDING_MODELS_ALIVE, event -> {
             AliveModels models = (AliveModels)event.object;
             embeddingsModelChoiceBox.getItems().clear();
             for(AiModel model : models.getAlive_models()){
@@ -433,6 +436,32 @@ public class HyperdrivePane extends LitPathPane {
             int request = (int) event.object2;
             outstandingRequests.put(request, STATUS.FAILED);
         });
+        scene.getRoot().addEventHandler(RestEvent.NEW_CHAT_COMPLETION, event -> {
+            ChatCompletionsOutput output = (ChatCompletionsOutput) event.object;
+            String msg = "Received " + output.getChoices().size() + " Chat Choices at " + LocalDateTime.now();
+            outstandingRequests.put(output.getRequestNumber(), STATUS.SUCCEEDED);
+//            embeddingRequestIndicator.setLabelLater(msg);
+            System.out.println(msg);
+            System.out.println(output.getChoices().get(0).getText());
+//            List<FeatureVector> fvList = (List<FeatureVector>) event.object2;
+//            List<EmbeddingsImageListItem> listItems = fvList.stream()
+//                .map(EmbeddingsImageListItem::new).toList();
+//            currentFeatureList.addAll(fvList);
+//            embeddingsListView.getItems().addAll(listItems);
+//            embeddingRequestIndicator.setLabelLater("Feature Vector List Obtained.");
+//            System.out.println("New Feature Vector List obtained.");
+//            outstandingRequests.remove(output.getRequestNumber());
+//            if(!outstandingRequests.containsValue(STATUS.REQUESTED)) {
+//                embeddingRequestIndicator.spin(false);
+//                embeddingRequestIndicator.fadeBusy(true);            
+//            }
+        });
+        scene.getRoot().addEventHandler(RestEvent.ERROR_CHAT_COMPLETIONS, event -> {
+//            List<File> inputFiles = (List<File>) event.object;
+            int request = (int) event.object2;
+            outstandingRequests.put(request, STATUS.FAILED);
+        });
+        
     }
     public void loadImagesTask(List<File> files) {
         

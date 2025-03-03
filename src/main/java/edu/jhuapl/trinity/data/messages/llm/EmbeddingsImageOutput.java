@@ -107,5 +107,5 @@ public class EmbeddingsImageOutput extends MessageData {
     public void setRequestNumber(int requestNumber) {
         this.requestNumber = requestNumber;
     }
-  
+    //</editor-fold>
 }

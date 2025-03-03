@@ -64,59 +64,84 @@ public class ChatCompletionsInput {
     //<editor-fold defaultstate="collapsed" desc="Payload Fields">
     private List<ChatMessage> messages;
     private String model; 
-    private double frequency_penalty;
+    private Double frequency_penalty;
     private LogitBias logit_bias;
-    private boolean logprobs;
-    private double top_logprobs;
-    private int max_tokens;
-    private int n;
-    private double presence_penalty;
+    private Boolean logprobs;
+    private Double top_logprobs;
+    private Integer max_tokens;
+    private Integer n;
+    private Double presence_penalty;
     private ResponseFormat response_format;
-    private long seed;
+    private Long seed;
     private List<String> stop;
-    private boolean stream;
+    private Boolean stream;
     private StreamOptions stream_options;
-    private double temperature;
-    private double top_p;
+    private Double temperature;
+    private Double top_p;
     private List<String> tools;
     private String tool_choice;
     private String user;
-    private int min_tokens;
+    private Integer min_tokens;
     private List<String> bad_words;
-    private int top_k;
+    private Integer top_k;
     //</editor-fold>
 
     public ChatCompletionsInput() {
         messages = new ArrayList<>();
-        response_format = new ResponseFormat();
-        logit_bias = new LogitBias();
-        stop = new ArrayList<>();
-        stream_options = new StreamOptions();
-        tools = new ArrayList<>();
-        bad_words = new ArrayList<>();
-        bad_words.add("string");
+//Leave null as they are unnecessary 99% of the time
+//        response_format = new ResponseFormat();
+//        logit_bias = new LogitBias();
+//        stop = new ArrayList<>();
+//        stream_options = new StreamOptions();
+//        tools = new ArrayList<>();
+//        bad_words = new ArrayList<>();
+//        bad_words.add("string");
+    }
+    public static ChatCompletionsInput helloworldChatCompletionsInput() {
+        /*    
+        {
+          "messages": [
+            {
+              "role": "user",
+              "content": "Say hello in 3 languages"
+            }
+          ],
+          "model": "meta-llama/Llama-3.2-90B-Vision-Instruct",
+          "max_tokens": 150,
+          "temperature": 0.0
+        }
+        */
+        ChatCompletionsInput input = new ChatCompletionsInput();
+        ChatMessage msg = new ChatMessage();
+        msg.setRole("user");
+        msg.setContent("Say Hello in 3 languages. You choose the languages.");
+        input.getMessages().add(msg);
+        input.setModel("meta-llama/Llama-3.2-90B-Vision-Instruct");
+        input.setMax_tokens(150);
+        input.setTemperature(1.0);
+        return input;
     }
 
-    public static ChatCompletionsInput defaultChatCompletionsInput() {
+    public static ChatCompletionsInput defaultFullChatCompletionsInput() {
         ChatCompletionsInput input = new ChatCompletionsInput();
         ChatMessage msg = new ChatMessage();
         msg.setRole("user");
         msg.setContent("This is an example message");
         input.getMessages().add(msg);
         input.setModel("meta-llama/Llama-3.2-90B-Vision-Instruct");
-        input.setFrequency_penalty(0);
+        input.setFrequency_penalty(0.0);
         //default logit_bias object should be sufficient
         input.setLogprobs(false);
         input.setMax_tokens(150);
         input.setN(1);
-        input.setPresence_penalty(0);
+        input.setPresence_penalty(0.0);
         //default response_format object should be sufficient
-        input.setSeed(-1);
+        input.setSeed(-1L);
         input.getStop().add("string");
         input.setStream(false);
         //default stream_options object should be sufficient
-        input.setTemperature(1);
-        input.setTop_p(1);
+        input.setTemperature(1.0);
+        input.setTop_p(1.0);
         //default tools object should be sufficient
         input.setTool_choice("string");
         input.setUser("");
@@ -127,6 +152,10 @@ public class ChatCompletionsInput {
     }
     
     //<editor-fold defaultstate="collapsed" desc="Properties">
+
+    
+    //</editor-fold>    
+
     /**
      * @return the messages
      */
@@ -158,14 +187,14 @@ public class ChatCompletionsInput {
     /**
      * @return the frequency_penalty
      */
-    public double getFrequency_penalty() {
+    public Double getFrequency_penalty() {
         return frequency_penalty;
     }
 
     /**
      * @param frequency_penalty the frequency_penalty to set
      */
-    public void setFrequency_penalty(double frequency_penalty) {
+    public void setFrequency_penalty(Double frequency_penalty) {
         this.frequency_penalty = frequency_penalty;
     }
 
@@ -186,70 +215,70 @@ public class ChatCompletionsInput {
     /**
      * @return the logprobs
      */
-    public boolean isLogprobs() {
+    public Boolean getLogprobs() {
         return logprobs;
     }
 
     /**
      * @param logprobs the logprobs to set
      */
-    public void setLogprobs(boolean logprobs) {
+    public void setLogprobs(Boolean logprobs) {
         this.logprobs = logprobs;
     }
 
     /**
      * @return the top_logprobs
      */
-    public double getTop_logprobs() {
+    public Double getTop_logprobs() {
         return top_logprobs;
     }
 
     /**
      * @param top_logprobs the top_logprobs to set
      */
-    public void setTop_logprobs(double top_logprobs) {
+    public void setTop_logprobs(Double top_logprobs) {
         this.top_logprobs = top_logprobs;
     }
 
     /**
      * @return the max_tokens
      */
-    public int getMax_tokens() {
+    public Integer getMax_tokens() {
         return max_tokens;
     }
 
     /**
      * @param max_tokens the max_tokens to set
      */
-    public void setMax_tokens(int max_tokens) {
+    public void setMax_tokens(Integer max_tokens) {
         this.max_tokens = max_tokens;
     }
 
     /**
      * @return the n
      */
-    public int getN() {
+    public Integer getN() {
         return n;
     }
 
     /**
      * @param n the n to set
      */
-    public void setN(int n) {
+    public void setN(Integer n) {
         this.n = n;
     }
 
     /**
      * @return the presence_penalty
      */
-    public double getPresence_penalty() {
+    public Double getPresence_penalty() {
         return presence_penalty;
     }
 
     /**
      * @param presence_penalty the presence_penalty to set
      */
-    public void setPresence_penalty(double presence_penalty) {
+    public void setPresence_penalty(Double presence_penalty) {
         this.presence_penalty = presence_penalty;
     }
 
@@ -270,14 +299,14 @@ public class ChatCompletionsInput {
     /**
      * @return the seed
      */
-    public long getSeed() {
+    public Long getSeed() {
         return seed;
     }
 
     /**
      * @param seed the seed to set
      */
-    public void setSeed(long seed) {
+    public void setSeed(Long seed) {
         this.seed = seed;
     }
 
@@ -298,14 +327,14 @@ public class ChatCompletionsInput {
     /**
      * @return the stream
      */
-    public boolean isStream() {
+    public Boolean getStream() {
         return stream;
     }
 
     /**
      * @param stream the stream to set
      */
-    public void setStream(boolean stream) {
+    public void setStream(Boolean stream) {
         this.stream = stream;
     }
 
@@ -326,28 +355,28 @@ public class ChatCompletionsInput {
     /**
      * @return the temperature
      */
-    public double getTemperature() {
+    public Double getTemperature() {
         return temperature;
     }
 
     /**
      * @param temperature the temperature to set
      */
-    public void setTemperature(double temperature) {
+    public void setTemperature(Double temperature) {
         this.temperature = temperature;
     }
 
     /**
      * @return the top_p
      */
-    public double getTop_p() {
+    public Double getTop_p() {
         return top_p;
     }
 
     /**
      * @param top_p the top_p to set
      */
-    public void setTop_p(double top_p) {
+    public void setTop_p(Double top_p) {
         this.top_p = top_p;
     }
 
@@ -396,14 +425,14 @@ public class ChatCompletionsInput {
     /**
      * @return the min_tokens
      */
-    public int getMin_tokens() {
+    public Integer getMin_tokens() {
         return min_tokens;
     }
 
     /**
      * @param min_tokens the min_tokens to set
      */
-    public void setMin_tokens(int min_tokens) {
+    public void setMin_tokens(Integer min_tokens) {
         this.min_tokens = min_tokens;
     }
 
@@ -424,16 +453,14 @@ public class ChatCompletionsInput {
     /**
      * @return the top_k
      */
-    public int getTop_k() {
+    public Integer getTop_k() {
         return top_k;
     }
 
     /**
      * @param top_k the top_k to set
      */
-    public void setTop_k(int top_k) {
+    public void setTop_k(Integer top_k) {
         this.top_k = top_k;
     }
-    
-    //</editor-fold>    
 }
