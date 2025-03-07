@@ -130,7 +130,8 @@ public class ChatCompletionsInput {
         msg.setRole("user");
         Content promptContent = new Content();
         promptContent.setTypeByEnum(Content.TYPE_ENUM.text);
-        promptContent.setText("What is in this image?");
+        String promptString = Prompts.loadDefaultCaptionPrompt();
+        promptContent.setText(promptString);
         msg.addContent(promptContent);
         Content imageContent = new Content();
         imageContent.setTypeByEnum(Content.TYPE_ENUM.image_url);
@@ -142,7 +143,7 @@ public class ChatCompletionsInput {
         msg.addContent(imageContent);
         input.getMessages().add(msg);
         input.setModel("meta-llama/Llama-3.2-90B-Vision-Instruct");
-        input.setMax_tokens(150);
+        input.setMax_tokens(300);
         input.setTemperature(1.0);
         return input;
     }        

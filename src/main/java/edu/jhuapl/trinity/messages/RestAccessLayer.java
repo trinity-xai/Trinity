@@ -96,8 +96,8 @@ public enum RestAccessLayer {
             );            
         }
         String inputJSON = objectMapper.writeValueAsString(input);
-        System.out.println("Pretty Print of ChatCompletionsInput: \n" 
-            + objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(input));
+//        System.out.println("Pretty Print of ChatCompletionsInput: \n" 
+//            + objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(input));
         Request request = makePostRequest(inputJSON, restAccessLayerconfig.getChatCompletionEndpoint());
         client.newCall(request).enqueue(new ChatCompletionCallback(scene, requestNumber));
     }
