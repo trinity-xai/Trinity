@@ -42,6 +42,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
+import java.io.IOException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -53,8 +54,10 @@ import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
+import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
+import javafx.scene.control.SelectionMode;
 import javafx.scene.control.Separator;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.Tab;
@@ -189,7 +192,13 @@ public class HyperdrivePane extends LitPathPane {
         HBox embeddingsPlaceholder = new HBox(10, embeddingsPlaceholderIV, new Label("No Data Sources Marked"));
         embeddingsPlaceholder.setAlignment(Pos.CENTER);
         embeddingsListView = new ListView<>();
+        embeddingsListView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         embeddingsListView.setPlaceholder(embeddingsPlaceholder);
+
+        ContextMenu embeddingsContextMenu = new ContextMenu();
+        embeddingsListView.setContextMenu(embeddingsContextMenu);
+        //@TODO SMP
+
         embeddingsCenterStack = new StackPane();
         embeddingsCenterStack.setAlignment(Pos.CENTER);
         embeddingsBorderPane = new BorderPane(embeddingsCenterStack);
@@ -330,7 +339,7 @@ public class HyperdrivePane extends LitPathPane {
         refreshChatModelsButton.setOnAction(e -> {
             RestAccessLayer.requestChatModels(refreshChatModelsButton.getScene());
         });   
-        Button testChatModelButton = new Button("Test");
+        Button testChatModelButton = new Button("Test Chat");
         testChatModelButton.setOnAction(e -> {
             ChatCompletionsInput input = ChatCompletionsInput.helloworldChatCompletionsInput();
             if(null != currentChatModel)
@@ -338,6 +347,19 @@ public class HyperdrivePane extends LitPathPane {
             try {
                 RestAccessLayer.requestChatCompletion(input, testChatModelButton.getScene(), 666);
             } catch (JsonProcessingException ex) {
+                java.util.logging.Logger.getLogger(HyperdrivePane.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        });   
+        Button testVisionModelButton = new Button("Test Vision");
+        testVisionModelButton.setOnAction(e -> {
+            try {
+                ChatCompletionsInput input = ChatCompletionsInput.hellocarlChatCompletionsInput();
+                if(null != currentChatModel)
+                    input.setModel(currentChatModel);
+                RestAccessLayer.requestChatCompletion(input, testVisionModelButton.getScene(), 666);
+            } catch (JsonProcessingException ex) {
+                java.util.logging.Logger.getLogger(HyperdrivePane.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (IOException ex) {
                 java.util.logging.Logger.getLogger(HyperdrivePane.class.getName()).log(Level.SEVERE, null, ex);
             }
         });   
@@ -362,7 +384,8 @@ public class HyperdrivePane extends LitPathPane {
         servicesGrid.add(new VBox(5,
             new Label("Current Chat Model"), 
             chatModelChoiceBox,
-            new HBox(10, refreshChatModelsButton, testChatModelButton)), 1, 1);
+            new HBox(10, refreshChatModelsButton, testChatModelButton, testVisionModelButton)), 
+            1, 1);
 
         Separator separator = new Separator();
         GridPane.setColumnSpan(separator, GridPane.REMAINING);

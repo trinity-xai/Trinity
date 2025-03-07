@@ -9,6 +9,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ImageUrl {
+    public static final String BASE64_PREFIX_PNG = "data:image/png;base64,";
     //<editor-fold defaultstate="collapsed" desc="JSON Payload">
     /*
         "image_url": {"url": "data:image/png;base64,image1bytesencoded64"}},

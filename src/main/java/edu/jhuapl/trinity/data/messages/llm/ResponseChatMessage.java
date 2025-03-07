@@ -7,18 +7,15 @@ import java.util.List;
  *
  * @author Sean Phillips
  */
-public class ChatMessage {
+public class ResponseChatMessage {
     private String role;
-    private List<Content> content;
+    private String content;
     private List<String> tool_calls;
     
-    public ChatMessage(){
+    public ResponseChatMessage(){
         tool_calls = new ArrayList<>();
-        content = new ArrayList<>();
     }
-    public void addContent(Content newContent) {
-        getContent().add(newContent);
-    }
+
     /**
      * @return the role
      */
@@ -51,14 +48,14 @@ public class ChatMessage {
     /**
      * @return the content
      */
-    public List<Content> getContent() {
+    public String getContent() {
         return content;
     }
 
     /**
      * @param content the content to set
      */
-    public void setContent(List<Content> content) {
+    public void setContent(String content) {
         this.content = content;
     }
 }

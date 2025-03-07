@@ -53,6 +53,8 @@ public class RestAccessLayerConfig extends MessageData {
                 && messageBody.contains(TYPESTRING);
     }
 
+    //<editor-fold defaultstate="collapsed" desc="Properties">
+
     /**
      * @return the baseRestURL
      */
@@ -108,8 +110,6 @@ public class RestAccessLayerConfig extends MessageData {
     public void setNotes(String notes) {
         this.notes = notes;
     }
-    
-    //</editor-fold>    
 
     /**
      * @return the defaultImageModel
@@ -166,6 +166,6 @@ public class RestAccessLayerConfig extends MessageData {
     public void setDefaultCaptionModel(String defaultCaptionModel) {
         this.defaultCaptionModel = defaultCaptionModel;
     }
-    //<editor-fold defaultstate="collapsed" desc="Properties">
-    
+        
+    //</editor-fold>   
 }

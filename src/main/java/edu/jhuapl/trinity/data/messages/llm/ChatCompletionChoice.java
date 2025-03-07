@@ -13,7 +13,7 @@ import java.util.List;
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ChatCompletionChoice {
     private String text;
-    private ChatMessage message;
+    private ResponseChatMessage message;
     private String raw;
     private Integer index;
     private Double logprobs;
@@ -42,14 +42,14 @@ public class ChatCompletionChoice {
     /**
      * @return the message
      */
-    public ChatMessage getMessage() {
+    public ResponseChatMessage getMessage() {
         return message;
     }
 
     /**
      * @param message the message to set
      */
-    public void setMessage(ChatMessage message) {
+    public void setMessage(ResponseChatMessage message) {
         this.message = message;
     }
 

@@ -2,8 +2,12 @@ package edu.jhuapl.trinity.data.messages.llm;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import static edu.jhuapl.trinity.data.messages.llm.ImageUrl.BASE64_PREFIX_PNG;
+import edu.jhuapl.trinity.utils.ResourceUtils;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import javafx.scene.image.Image;
 
 /**
  * @author Sean Phillips
@@ -97,6 +101,51 @@ public class ChatCompletionsInput {
 //        bad_words = new ArrayList<>();
 //        bad_words.add("string");
     }
+
+    public static ChatCompletionsInput hellocarlChatCompletionsInput() throws IOException {
+        /*    
+        {
+            "model": "meta-llama/Llama-3.2-90B-Vision-Instruct",
+            "messages": [
+              {
+                "role": "user",
+                "content": [
+                  {
+                    "type": "text",
+                    "text": "What is in this image?"
+                  },
+                  {
+                    "type": "image_url",
+                    "image_url": {
+                      "url": "https://upload.wikimedia.org/wikipedia/commons/thumb/d/dd/Gfp-wisconsin-madison-the-nature-boardwalk.jpg/2560px-Gfp-wisconsin-madison-the-nature-boardwalk.jpg"
+                    }
+                  }
+                ]
+              }
+            ]
+          }
+        */
+        ChatCompletionsInput input = new ChatCompletionsInput();
+        ChatMessage msg = new ChatMessage();
+        msg.setRole("user");
+        Content promptContent = new Content();
+        promptContent.setTypeByEnum(Content.TYPE_ENUM.text);
+        promptContent.setText("What is in this image?");
+        msg.addContent(promptContent);
+        Content imageContent = new Content();
+        imageContent.setTypeByEnum(Content.TYPE_ENUM.image_url);
+
+        Image image = ResourceUtils.load3DTextureImage("carl-b-portrait");
+        ImageUrl imageUrl = new ImageUrl();
+        imageUrl.setUrl(BASE64_PREFIX_PNG + ResourceUtils.imageToBase64(image));
+        imageContent.setImage_url(imageUrl);
+        msg.addContent(imageContent);
+        input.getMessages().add(msg);
+        input.setModel("meta-llama/Llama-3.2-90B-Vision-Instruct");
+        input.setMax_tokens(150);
+        input.setTemperature(1.0);
+        return input;
+    }        
     public static ChatCompletionsInput helloworldChatCompletionsInput() {
         /*    
         {
@@ -114,7 +163,10 @@ public class ChatCompletionsInput {
         ChatCompletionsInput input = new ChatCompletionsInput();
         ChatMessage msg = new ChatMessage();
         msg.setRole("user");
-        msg.setContent("Say Hello in 3 languages. You choose the languages.");
+        Content content = new Content();
+        content.setTypeByEnum(Content.TYPE_ENUM.text);
+        content.setText("Say Hello in 3 languages. You choose the languages.");
+        msg.addContent(content);
         input.getMessages().add(msg);
         input.setModel("meta-llama/Llama-3.2-90B-Vision-Instruct");
         input.setMax_tokens(150);
@@ -126,7 +178,10 @@ public class ChatCompletionsInput {
         ChatCompletionsInput input = new ChatCompletionsInput();
         ChatMessage msg = new ChatMessage();
         msg.setRole("user");
-        msg.setContent("This is an example message");
+        Content content = new Content();
+        content.setTypeByEnum(Content.TYPE_ENUM.text);
+        content.setText("This is an example message");
+        msg.addContent(content);
         input.getMessages().add(msg);
         input.setModel("meta-llama/Llama-3.2-90B-Vision-Instruct");
         input.setFrequency_penalty(0.0);

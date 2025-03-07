@@ -41,8 +41,9 @@ public class ChatCompletionCallback extends RestCallback {
 
     @Override
     protected void processResponse(String responseBodyString) throws Exception {
-//        System.out.println("ChatCompletionCallback response...");
-//        System.out.println(responseBodyString);
+        System.out.println("Pretty Print of ChatCompletionCallback response... \n"
+            + objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(responseBodyString));
+
         ChatCompletionsOutput output = objectMapper.readValue(responseBodyString, ChatCompletionsOutput.class);
         output.setRequestNumber(requestNumber);
 //        List<FeatureVector> fvList = output.getData().stream()
