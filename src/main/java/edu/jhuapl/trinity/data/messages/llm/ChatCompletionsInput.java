@@ -101,8 +101,16 @@ public class ChatCompletionsInput {
 //        bad_words = new ArrayList<>();
 //        bad_words.add("string");
     }
-
     public static ChatCompletionsInput hellocarlChatCompletionsInput() throws IOException {
+        Image image = ResourceUtils.load3DTextureImage("carl-b-portrait");
+        return defaultImageInput(image);
+    }          
+    public static ChatCompletionsInput defaultImageInput(Image image) throws IOException {
+        ImageUrl imageUrl = new ImageUrl();
+        imageUrl.setUrl(BASE64_PREFIX_PNG + ResourceUtils.imageToBase64(image));
+        return defaultImageInput(imageUrl);        
+    }
+    public static ChatCompletionsInput defaultImageInput(ImageUrl imageUrl) throws IOException {
         /*    
         {
             "model": "meta-llama/Llama-3.2-90B-Vision-Instruct",
@@ -135,18 +143,15 @@ public class ChatCompletionsInput {
         msg.addContent(promptContent);
         Content imageContent = new Content();
         imageContent.setTypeByEnum(Content.TYPE_ENUM.image_url);
-
-        Image image = ResourceUtils.load3DTextureImage("carl-b-portrait");
-        ImageUrl imageUrl = new ImageUrl();
-        imageUrl.setUrl(BASE64_PREFIX_PNG + ResourceUtils.imageToBase64(image));
         imageContent.setImage_url(imageUrl);
         msg.addContent(imageContent);
         input.getMessages().add(msg);
         input.setModel("meta-llama/Llama-3.2-90B-Vision-Instruct");
         input.setMax_tokens(300);
         input.setTemperature(1.0);
-        return input;
-    }        
+        return input;             
+    }
+  
     public static ChatCompletionsInput helloworldChatCompletionsInput() {
         /*    
         {
@@ -174,7 +179,6 @@ public class ChatCompletionsInput {
         input.setTemperature(1.0);
         return input;
     }
-
     public static ChatCompletionsInput defaultFullChatCompletionsInput() {
         ChatCompletionsInput input = new ChatCompletionsInput();
         ChatMessage msg = new ChatMessage();

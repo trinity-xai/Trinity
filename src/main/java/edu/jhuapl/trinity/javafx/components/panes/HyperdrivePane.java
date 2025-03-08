@@ -5,21 +5,25 @@ package edu.jhuapl.trinity.javafx.components.panes;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import edu.jhuapl.trinity.data.messages.llm.AiModel;
 import edu.jhuapl.trinity.data.messages.llm.AliveModels;
+import edu.jhuapl.trinity.data.messages.llm.ChatCaptionResponse;
 import edu.jhuapl.trinity.data.messages.llm.ChatCompletionsInput;
 import edu.jhuapl.trinity.data.messages.llm.ChatCompletionsOutput;
 import edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageBatchInput;
 import edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageOutput;
 import edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageUrl;
 import static edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageUrl.imageUrlFromFile;
+import static edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageUrl.imageUrlFromImage;
 import edu.jhuapl.trinity.data.messages.xai.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.javafx.components.listviews.EmbeddingsImageListItem;
-import edu.jhuapl.trinity.javafx.components.listviews.ImageFileListItem;
+import static edu.jhuapl.trinity.javafx.components.listviews.EmbeddingsImageListItem.itemFromFile;
 import edu.jhuapl.trinity.javafx.components.radial.CircleProgressIndicator;
+import edu.jhuapl.trinity.javafx.components.radial.ProgressStatus;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.events.RestEvent;
 import edu.jhuapl.trinity.messages.EmbeddingsImageCallback.STATUS;
 import edu.jhuapl.trinity.messages.RestAccessLayer;
+import static edu.jhuapl.trinity.messages.RestAccessLayer.stringToChatCaptionResponse;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import edu.jhuapl.trinity.utils.Utils;
@@ -37,35 +41,42 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
-import javafx.scene.layout.TilePane;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Function;
+import java.util.function.Predicate;
 import java.util.logging.Level;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ContextMenu;
+import javafx.scene.control.DialogPane;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.SelectionMode;
 import javafx.scene.control.Separator;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
 import javafx.scene.control.TextField;
+import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.Tooltip;
+import javafx.scene.image.Image;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
+import javafx.stage.StageStyle;
 
 /**
  * @author Sean Phillips
@@ -75,10 +86,13 @@ public class HyperdrivePane extends LitPathPane {
     public static int PANE_WIDTH = 1200;
     public static int PANE_HEIGHT = 575;
     public BorderPane borderPane;
-    private TilePane tilePane;
-    BorderPane imageFilesBorderPane;
+//    TilePane tilePane;
+    HBox mainHBox;
+    Image baseImage;
+    ImageView baseImageView;    
+//    BorderPane imageFilesBorderPane;
     BorderPane embeddingsBorderPane;
-    StackPane imageFilesCenterStack;
+//    StackPane imageFilesCenterStack;
     StackPane embeddingsCenterStack;
     TabPane tabPane;
     Tab embeddingsTab;
@@ -86,10 +100,10 @@ public class HyperdrivePane extends LitPathPane {
     
     ArrayList<FeatureVector> currentFeatureList;   
     ArrayList<File> imageFilesList;
-    ListView<ImageFileListItem> imageFileListView;
+//    ListView<ImageFileListItem> imageFileListView;
     ListView<EmbeddingsImageListItem> embeddingsListView;
     Label imageFilesCountLabel;
-    CircleProgressIndicator imageLoadingIndicator;    
+//    CircleProgressIndicator imageLoadingIndicator;    
     CircleProgressIndicator embeddingRequestIndicator;
     AtomicInteger requestNumber;
     HashMap<Integer, STATUS> outstandingRequests;    
@@ -124,57 +138,58 @@ public class HyperdrivePane extends LitPathPane {
         tabPane.setTabDragPolicy(TabPane.TabDragPolicy.FIXED);
         borderPane.setCenter(tabPane);
         
-        tilePane = new TilePane();
-        tilePane.setPrefColumns(2);
-        tilePane.setHgap(10);
-        tilePane.setAlignment(Pos.CENTER_LEFT);
-        ScrollPane tileScrollPane = new ScrollPane(tilePane);
-        tileScrollPane.setPannable(true);
-        tileScrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
-        tileScrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
-        embeddingsTab.setContent(tileScrollPane);
+//        tilePane = new TilePane();
+//        tilePane.setPrefColumns(3);
+//        tilePane.setHgap(10);
+//        tilePane.setAlignment(Pos.CENTER_LEFT);
+//        ScrollPane tileScrollPane = new ScrollPane(tilePane);
+//        tileScrollPane.setPannable(true);
+//        tileScrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+//        tileScrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+//        embeddingsTab.setContent(tileScrollPane);
+        mainHBox = new HBox(20);
+        mainHBox.setAlignment(Pos.CENTER);
+        embeddingsTab.setContent(mainHBox);
 
-        imageFilesCenterStack = new StackPane();
-        imageFilesCenterStack.setAlignment(Pos.CENTER);
-        imageFilesBorderPane = new BorderPane(imageFilesCenterStack);
-        imageLoadingIndicator = new CircleProgressIndicator();
-        imageLoadingIndicator.setLabelLater("...Working...");
-        imageLoadingIndicator.defaultOpacity = 1.0;
-        imageLoadingIndicator.setOpacity(0.0); ///instead of setVisible(false)
+//        imageFilesCenterStack = new StackPane();
+//        imageFilesCenterStack.setAlignment(Pos.CENTER);
+//        imageFilesBorderPane = new BorderPane(imageFilesCenterStack);
+//        imageLoadingIndicator = new CircleProgressIndicator();
+//        imageLoadingIndicator.setLabelLater("...Working...");
+//        imageLoadingIndicator.defaultOpacity = 1.0;
+//        imageLoadingIndicator.setOpacity(0.0); ///instead of setVisible(false)
 
-        imageFileListView = new ListView<>();
-        ImageView iv = ResourceUtils.loadIcon("noimage", 50);
-        HBox placeholder = new HBox(10, iv, new Label("No Files Loaded"));
-        placeholder.setAlignment(Pos.CENTER);
-        imageFileListView.setPlaceholder(placeholder);
-        imageFilesCenterStack.getChildren().addAll(imageLoadingIndicator, imageFileListView);
+//        imageFileListView = new ListView<>();
+//        ImageView iv = ResourceUtils.loadIcon("noimage", 50);
+//        HBox placeholder = new HBox(10, iv, new Label("No Files Loaded"));
+//        placeholder.setAlignment(Pos.CENTER);
+//        imageFileListView.setPlaceholder(placeholder);
+//        imageFilesCenterStack.getChildren().addAll(imageLoadingIndicator, imageFileListView);
         //Add controls to manipulate Image File ListView on the top
         Label imageFilesLabel = new Label("Total Image Files: ");
         imageFilesCountLabel = new Label("0");
         CheckBox renderIconsCheckBox = new CheckBox("Render Icons");
         renderIconsCheckBox.setSelected(true);
-        Button refreshButton = new Button("Refresh");
-        refreshButton.setOnAction(e -> {
-            imageLoadingIndicator.setFadeTimeMS(250);
-            imageLoadingIndicator.setLabelLater("Loading images...");
-            imageLoadingIndicator.fadeBusy(false);
-            imageLoadingIndicator.spin(true);
-            refreshImageFiles(renderIconsCheckBox.isSelected());
-            imageLoadingIndicator.setLabelLater("Complete");
-            imageLoadingIndicator.spin(false);
-            imageLoadingIndicator.fadeBusy(true);
-        });
-        Button clearButton = new Button("Clear");
-        clearButton.setOnAction(e -> {
-            imageFileListView.getItems().clear();
-        });
-        
+//        Button refreshButton = new Button("Refresh");
+//        refreshButton.setOnAction(e -> {
+//            embeddingRequestIndicator.setFadeTimeMS(250);
+//            embeddingRequestIndicator.setLabelLater("Loading images...");
+//            embeddingRequestIndicator.fadeBusy(false);
+//            embeddingRequestIndicator.spin(true);
+//            refreshImageFiles(renderIconsCheckBox.isSelected());
+//            embeddingRequestIndicator.setLabelLater("Complete");
+//            embeddingRequestIndicator.spin(false);
+//            embeddingRequestIndicator.fadeBusy(true);
+//        });
+//        Button clearButton = new Button("Clear");
+//        clearButton.setOnAction(e -> {
+//            embeddingsListView.getItems().clear();
+//        });
+//        
         HBox fileControlsBox = new HBox(10,
-            imageFilesLabel, imageFilesCountLabel, renderIconsCheckBox, refreshButton, clearButton
+            imageFilesLabel, imageFilesCountLabel, renderIconsCheckBox
         );
         fileControlsBox.setAlignment(Pos.CENTER);        
-        imageFilesBorderPane.setTop(fileControlsBox);
-        
 
         Button embeddingsButton = new Button("Request Embeddings");
         embeddingsButton.setOnAction(e -> {
@@ -183,11 +198,6 @@ public class HyperdrivePane extends LitPathPane {
             }
         });
 
-        HBox powerBottomHBox = new HBox(10, embeddingsButton);
-        powerBottomHBox.setPadding(new Insets(10));
-        powerBottomHBox.setAlignment(Pos.CENTER);
-        imageFilesBorderPane.setBottom(powerBottomHBox);
-
         ImageView embeddingsPlaceholderIV = ResourceUtils.loadIcon("data", 50);
         HBox embeddingsPlaceholder = new HBox(10, embeddingsPlaceholderIV, new Label("No Data Sources Marked"));
         embeddingsPlaceholder.setAlignment(Pos.CENTER);
@@ -195,15 +205,52 @@ public class HyperdrivePane extends LitPathPane {
         embeddingsListView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         embeddingsListView.setPlaceholder(embeddingsPlaceholder);
 
-        ContextMenu embeddingsContextMenu = new ContextMenu();
+        MenuItem selectAllMenuItem = new MenuItem("Select All");
+        selectAllMenuItem.setOnAction(e -> 
+            embeddingsListView.getSelectionModel().selectAll());        
+
+        MenuItem setCaptionItem = new MenuItem("Set Caption");
+        setCaptionItem.setOnAction(e -> {
+            if(!embeddingsListView.getSelectionModel().getSelectedItems().isEmpty()) {
+                TextInputDialog td = new TextInputDialog("enter any text"); 
+                td.setHeaderText("Manually set caption for " 
+                    + embeddingsListView.getSelectionModel().getSelectedItems().size()
+                    + " items.");
+                td.setGraphic(ResourceUtils.loadIcon("console", 75));
+                td.initStyle(StageStyle.TRANSPARENT);
+                DialogPane dialogPane = td.getDialogPane();
+                dialogPane.setBackground(Background.EMPTY);
+                dialogPane.getScene().setFill(Color.TRANSPARENT);
+                String DIALOGCSS = this.getClass().getResource("/edu/jhuapl/trinity/css/dialogstyles.css").toExternalForm();
+                dialogPane.getStylesheets().add(DIALOGCSS);
+                Optional<String> captionOptional = td.showAndWait();
+                if(captionOptional.isPresent()) {
+                    embeddingsListView.getSelectionModel().getSelectedItems()
+                        .forEach(i -> i.setFeatureVectorLabel(captionOptional.get()));
+                }
+            }
+        });
+
+        MenuItem requestCaptionItem = new MenuItem("Request Caption");
+        requestCaptionItem.setOnAction(e -> {
+            if(!embeddingsListView.getSelectionModel().getSelectedItems().isEmpty())
+                requestCaptionsTask(embeddingsListView.getSelectionModel().getSelectedItems());
+        });
+        ContextMenu embeddingsContextMenu = 
+            new ContextMenu(selectAllMenuItem, setCaptionItem, requestCaptionItem);
         embeddingsListView.setContextMenu(embeddingsContextMenu);
-        //@TODO SMP
 
         embeddingsCenterStack = new StackPane();
         embeddingsCenterStack.setAlignment(Pos.CENTER);
         embeddingsBorderPane = new BorderPane(embeddingsCenterStack);
         embeddingRequestIndicator = new CircleProgressIndicator();
-        embeddingRequestIndicator.setLabelLater("...Working...");
+        ProgressStatus ps = new ProgressStatus("Working",0.5);
+        ps.fillStartColor = Color.AZURE;
+        ps.fillEndColor = Color.LIME;
+        ps.innerStrokeColor = Color.AZURE;
+        ps.outerStrokeColor = Color.LIME;
+        embeddingRequestIndicator.updateStatus(ps);
+//        embeddingRequestIndicator.setLabelLater("...Working...");
         embeddingRequestIndicator.defaultOpacity = 1.0;
         embeddingRequestIndicator.setOpacity(0.0); ///instead of setVisible(false)
         embeddingsCenterStack.getChildren().addAll(embeddingRequestIndicator, embeddingsListView);
@@ -225,7 +272,7 @@ public class HyperdrivePane extends LitPathPane {
         });
         
         HBox controlsBox = new HBox(10,
-            clearEmbeddingsButton, injectFeaturesButton
+            embeddingsButton, clearEmbeddingsButton, injectFeaturesButton
         );
         controlsBox.setAlignment(Pos.CENTER);
         embeddingsBorderPane.setBottom(controlsBox);
@@ -253,12 +300,66 @@ public class HyperdrivePane extends LitPathPane {
         HBox labelControlsBox = new HBox(10,
             labelLabel, batchLabelTextField, overwriteCheckBox, setSelectedButton, setAllButton
         );
-        labelControlsBox.setAlignment(Pos.CENTER);        
-        embeddingsBorderPane.setTop(labelControlsBox);
-
-        imageFilesBorderPane.setPrefWidth(500);
+        labelControlsBox.setAlignment(Pos.CENTER);    
+        
+        
+        embeddingsBorderPane.setTop(new VBox(5, fileControlsBox, labelControlsBox));
+        
+        
+        baseImage = ResourceUtils.loadIconFile("waitingforimage");
+        baseImageView = new ImageView(baseImage);
+        baseImageView.setPreserveRatio(true);
+        ScrollPane baseImageScrollPane = new ScrollPane(baseImageView);
+        baseImageScrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        baseImageScrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        baseImageScrollPane.setPannable(true);
+        baseImageScrollPane.setFitToHeight(true);
+        baseImageScrollPane.setFitToWidth(true);
+        baseImageScrollPane.setPrefSize(512, 512);
+        MenuItem visionTestMenuItem = new MenuItem("Caption");
+        visionTestMenuItem.setOnAction(e-> {
+            ChatCompletionsInput input;
+            try {
+                input = ChatCompletionsInput.defaultImageInput(baseImage);
+                if(null != currentChatModel)
+                    input.setModel(currentChatModel);
+                RestAccessLayer.requestChatCompletion(input, baseImageScrollPane.getScene(), 666, 9001); 
+            } catch (IOException ex) {
+                java.util.logging.Logger.getLogger(HyperdrivePane.class.getName()).log(Level.SEVERE, null, ex);
+            }
+        });
+        ContextMenu baseImageContextMenu = new ContextMenu(visionTestMenuItem);
+        baseImageScrollPane.setContextMenu(baseImageContextMenu);
+        baseImageScrollPane.addEventHandler(DragEvent.DRAG_OVER, event -> {
+            if (ResourceUtils.canDragOver(event)) {
+                event.acceptTransferModes(TransferMode.COPY);
+            } else {
+                event.consume();
+            }
+        });
+        baseImageScrollPane.addEventHandler(DragEvent.DRAG_DROPPED, event -> {
+            event.consume();
+            Dragboard db = event.getDragboard();
+            if (db.hasFiles()) {
+                final File file = db.getFiles().get(0);
+                if (JavaFX3DUtils.isTextureFile(file)) {
+                    try {
+                        baseImage = new Image(file.toURI().toURL().toExternalForm());
+                        baseImageView.setImage(baseImage);
+                        baseImageScrollPane.setHvalue(0);
+                        baseImageScrollPane.setVvalue(0);
+                    } catch (MalformedURLException ex) {
+                        java.util.logging.Logger.getLogger(PixelSelectionPane.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+            }
+        });
+        
+//        imageFilesBorderPane.setPrefWidth(500);
         embeddingsBorderPane.setPrefWidth(600);
-        tilePane.getChildren().addAll(imageFilesBorderPane, embeddingsBorderPane);
+//        tilePane.getChildren().addAll(
+//            imageFilesBorderPane, embeddingsBorderPane, baseImageScrollPane);
+        mainHBox.getChildren().addAll(embeddingsBorderPane, baseImageScrollPane);
 
         //Services Tab ////////////////////////////////////////////////
         Button isAliveButton = new Button("Check Status");
@@ -345,7 +446,7 @@ public class HyperdrivePane extends LitPathPane {
             if(null != currentChatModel)
                 input.setModel(currentChatModel);
             try {
-                RestAccessLayer.requestChatCompletion(input, testChatModelButton.getScene(), 666);
+                RestAccessLayer.requestChatCompletion(input, testChatModelButton.getScene(), 666, 9001);
             } catch (JsonProcessingException ex) {
                 java.util.logging.Logger.getLogger(HyperdrivePane.class.getName()).log(Level.SEVERE, null, ex);
             }
@@ -356,7 +457,7 @@ public class HyperdrivePane extends LitPathPane {
                 ChatCompletionsInput input = ChatCompletionsInput.hellocarlChatCompletionsInput();
                 if(null != currentChatModel)
                     input.setModel(currentChatModel);
-                RestAccessLayer.requestChatCompletion(input, testVisionModelButton.getScene(), 666);
+                RestAccessLayer.requestChatCompletion(input, testVisionModelButton.getScene(), 666, 9001);
             } catch (JsonProcessingException ex) {
                 java.util.logging.Logger.getLogger(HyperdrivePane.class.getName()).log(Level.SEVERE, null, ex);
             } catch (IOException ex) {
@@ -441,13 +542,13 @@ public class HyperdrivePane extends LitPathPane {
             outstandingRequests.put(output.getRequestNumber(), STATUS.SUCCEEDED);
             embeddingRequestIndicator.setLabelLater(msg);
             System.out.println(msg);
-            List<FeatureVector> fvList = (List<FeatureVector>) event.object2;
-            List<EmbeddingsImageListItem> listItems = fvList.stream()
-                .map(EmbeddingsImageListItem::new).toList();
-            currentFeatureList.addAll(fvList);
-            embeddingsListView.getItems().addAll(listItems);
-            embeddingRequestIndicator.setLabelLater("Feature Vector List Obtained.");
-            System.out.println("New Feature Vector List obtained.");
+//            List<FeatureVector> fvList = (List<FeatureVector>) event.object2;
+//            List<EmbeddingsImageListItem> listItems = fvList.stream()
+//                .map(EmbeddingsImageListItem::new).toList();
+//            currentFeatureList.addAll(fvList);
+//            embeddingsListView.getItems().addAll(listItems);
+//            embeddingRequestIndicator.setLabelLater("Feature Vector List Obtained.");
+//            System.out.println("New Feature Vector List obtained.");
             outstandingRequests.remove(output.getRequestNumber());
             if(!outstandingRequests.containsValue(STATUS.REQUESTED)) {
                 embeddingRequestIndicator.spin(false);
@@ -463,21 +564,24 @@ public class HyperdrivePane extends LitPathPane {
             ChatCompletionsOutput output = (ChatCompletionsOutput) event.object;
             String msg = "Received " + output.getChoices().size() + " Chat Choices at " + LocalDateTime.now();
             outstandingRequests.put(output.getRequestNumber(), STATUS.SUCCEEDED);
-//            embeddingRequestIndicator.setLabelLater(msg);
             System.out.println(msg);
             System.out.println(output.getChoices().get(0).getText());
-//            List<FeatureVector> fvList = (List<FeatureVector>) event.object2;
-//            List<EmbeddingsImageListItem> listItems = fvList.stream()
-//                .map(EmbeddingsImageListItem::new).toList();
-//            currentFeatureList.addAll(fvList);
-//            embeddingsListView.getItems().addAll(listItems);
-//            embeddingRequestIndicator.setLabelLater("Feature Vector List Obtained.");
-//            System.out.println("New Feature Vector List obtained.");
-//            outstandingRequests.remove(output.getRequestNumber());
-//            if(!outstandingRequests.containsValue(STATUS.REQUESTED)) {
-//                embeddingRequestIndicator.spin(false);
-//                embeddingRequestIndicator.fadeBusy(true);            
-//            }
+            
+            embeddingsListView.getItems().stream()
+                .filter(t -> t.imageID == output.getInputID())
+                .forEach(item -> {
+                    ChatCaptionResponse response = stringToChatCaptionResponse
+                        .apply(output.getChoices().get(0).getRaw());
+                    if(null != response) {
+                        if(null != response.getCaption())
+                            item.setFeatureVectorLabel(response.getCaption());
+                        if(null != response.getDescription())
+                            item.addDescription(response.getDescription());
+                        if(null != response.getExplanation())
+                            item.addExplanation(response.getExplanation());
+                    }
+                });
+            
         });
         scene.getRoot().addEventHandler(RestEvent.ERROR_CHAT_COMPLETIONS, event -> {
 //            List<File> inputFiles = (List<File>) event.object;
@@ -486,29 +590,82 @@ public class HyperdrivePane extends LitPathPane {
         });
         
     }
+    public void requestCaptionsTask(List<EmbeddingsImageListItem> items) {
+        Task requestTask = new Task() {
+            @Override
+            protected Void call() throws Exception {
+                embeddingRequestIndicator.setLabelLater("Requesting Captions...");
+                embeddingRequestIndicator.spin(true);
+                embeddingRequestIndicator.fadeBusy(false);
+                System.out.println("Requesting Captions...");
+//                long startTime = System.nanoTime();
+//                List<EmbeddingsImageUrl> inputs = 
+//                    items.stream().map(imageUrlFromImage).toList();
+//                Utils.printTotalTime(startTime);
+                
+                for(EmbeddingsImageListItem item : items) {
+                    EmbeddingsImageUrl url = imageUrlFromImage.apply(item.getCurrentImage());
+                    try {
+                        ChatCompletionsInput input = ChatCompletionsInput.defaultImageInput(url.getImage_url());
+                        if(null != currentChatModel)
+                            input.setModel(currentChatModel);
+                        RestAccessLayer.requestChatCompletion(input, 
+                            embeddingRequestIndicator.getScene(), 
+                            item.imageID , requestNumber.getAndIncrement());
+                    } catch (JsonProcessingException ex) {
+                        java.util.logging.Logger.getLogger(HyperdrivePane.class.getName()).log(Level.SEVERE, null, ex);
+                    } catch (IOException ex) {
+                        java.util.logging.Logger.getLogger(HyperdrivePane.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                    Thread.sleep(requestDelay);
+                }
+                return null;
+            }
+        };
+        Thread t = new Thread(requestTask, "Trinity Image Captioning Request");
+        t.setDaemon(true);
+        t.start();
+    }    
     public void loadImagesTask(List<File> files) {
         
         Task loadTask = new Task() {
             @Override
             protected Void call() throws Exception {
-                imageLoadingIndicator.setFadeTimeMS(250);
-                imageLoadingIndicator.setLabelLater("Loading images...");
-                imageLoadingIndicator.fadeBusy(false);
-                imageLoadingIndicator.spin(true);
+                AtomicInteger atomicCount = new AtomicInteger(0);
+                embeddingRequestIndicator.setFadeTimeMS(250);
+                embeddingRequestIndicator.setLabelLater("Loading " + atomicCount.toString() + " images...");
+                embeddingRequestIndicator.fadeBusy(false);
+                embeddingRequestIndicator.spin(true);
                 
                 currentFeatureList.clear();
                 imageFilesList.clear();
+                System.out.println("Filtering images....");
+                long startTime = System.nanoTime();
                 imageFilesList.addAll(files.stream()
                     .filter(f-> JavaFX3DUtils.isTextureFile(f))
                     .toList());
+                final double total = imageFilesList.size();
+                Utils.printTotalTime(startTime);
+                System.out.println("Loading images into listitems....");
+                startTime = System.nanoTime();
+                List<EmbeddingsImageListItem> newItems = 
+                    imageFilesList.parallelStream().map(itemFromFile).peek(i -> {
+                        double completed =atomicCount.incrementAndGet();
+                        embeddingRequestIndicator.setPercentComplete(completed / total); 
+                        embeddingRequestIndicator.setLabelLater(completed + " of " + total);
+                    }).toList();
+                Utils.printTotalTime(startTime);
+                
                 Platform.runLater(()-> {
-                    imageFileListView.getItems().addAll(
-                        imageFilesList.stream().map(itemFromFile).toList());
+                    System.out.println("Populating ListView....");
+                    long start = System.nanoTime();
+                    embeddingsListView.getItems().addAll(newItems);
                     imageFilesCountLabel.setText(String.valueOf(imageFilesList.size()));
+                    Utils.printTotalTime(start);
                 });
-                imageLoadingIndicator.setLabelLater("Complete");
-                imageLoadingIndicator.spin(false);
-                imageLoadingIndicator.fadeBusy(true);
+                embeddingRequestIndicator.setLabelLater("Complete");
+                embeddingRequestIndicator.spin(false);
+                embeddingRequestIndicator.fadeBusy(true);
                 return null;
             }
         };
@@ -568,12 +725,13 @@ public class HyperdrivePane extends LitPathPane {
         t.start();
     }
     private void refreshImageFiles(boolean renderIcons) {
-        imageFileListView.getItems().clear();
-        imageFileListView.getItems().addAll(
-            imageFilesList.stream()
-                .map(t -> new ImageFileListItem(t, renderIcons))
-                .peek(item -> item.setLabelWidth(imageFileListView.getWidth()-100))
-                .toList());
+//        imageFileListView.getItems().clear();
+//        imageFileListView.getItems().addAll(
+//            imageFilesList.stream()
+//                .map(t -> new ImageFileListItem(t, renderIcons))
+//                .peek(item -> item.setLabelWidth(imageFileListView.getWidth()-100))
+//                .toList());
+        embeddingsListView.getItems().forEach(item -> item.reloadImage(renderIcons));
     }
     public void updateLabels(String labelText, boolean onlySelected, boolean overwrite) {
         if(onlySelected && overwrite) {
@@ -592,8 +750,5 @@ public class HyperdrivePane extends LitPathPane {
                 .forEach(i -> i.setFeatureVectorLabel(labelText));
         }
     }
-    
-    public static Function<File, ImageFileListItem> itemFromFile = file -> {
-        return new ImageFileListItem(file);
-    };
+
 }

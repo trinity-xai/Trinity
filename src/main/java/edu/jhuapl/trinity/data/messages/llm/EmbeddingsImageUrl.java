@@ -37,6 +37,21 @@ public class EmbeddingsImageUrl {
     public EmbeddingsImageUrl() {
         type = "image_url";
     }
+    public static Function<Image, EmbeddingsImageUrl> imageUrlFromImage = image -> {
+        EmbeddingsImageUrl input = new EmbeddingsImageUrl();
+        try {
+            ImageUrl imageUrl = new ImageUrl();
+            imageUrl.setUrl(BASE64_PREFIX_PNG 
+                    + ResourceUtils.imageToBase64(image));
+            input.setImage_url(imageUrl);
+        } catch (JsonProcessingException ex) {
+            java.util.logging.Logger.getLogger(EmbeddingsImageUrl.class.getName()).log(Level.SEVERE, null, ex);
+        } catch (IOException ex) {
+            java.util.logging.Logger.getLogger(EmbeddingsImageUrl.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return input;
+    };
+    
     public static Function<File, EmbeddingsImageUrl> imageUrlFromFile = file -> {
         EmbeddingsImageUrl input = new EmbeddingsImageUrl();
         try {

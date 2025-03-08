@@ -1,14 +1,9 @@
 package edu.jhuapl.trinity.messages;
 
 import edu.jhuapl.trinity.data.messages.llm.ChatCompletionsOutput;
-import static edu.jhuapl.trinity.utils.MessageUtils.embeddingsToFeatureVector;
-import edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageOutput;
-import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.javafx.events.ErrorEvent;
 import edu.jhuapl.trinity.javafx.events.RestEvent;
-import java.io.File;
 import java.io.IOException;
-import java.util.List;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.application.Platform;
@@ -21,12 +16,14 @@ import okhttp3.Call;
  */
 public class ChatCompletionCallback extends RestCallback {
     int requestNumber;
+    int inputID;
     
     public enum STATUS { REQUESTED, SUCCEEDED, FAILED };
     
-    public ChatCompletionCallback( Scene scene, int requestNumber) {
+    public ChatCompletionCallback( Scene scene, int inputID, int requestNumber) {
         super(scene);
         this.requestNumber = requestNumber;
+        this.inputID = inputID;
     }
 
     @Override
@@ -35,7 +32,7 @@ public class ChatCompletionCallback extends RestCallback {
         ErrorEvent error = new ErrorEvent(ErrorEvent.REST_ERROR, getClass().getName() + " has failed.");
         scene.getRoot().fireEvent(error);
         Platform.runLater(() -> {
-            scene.getRoot().fireEvent(new RestEvent(RestEvent.ERROR_CHAT_COMPLETIONS, requestNumber));
+            scene.getRoot().fireEvent(new RestEvent(RestEvent.ERROR_CHAT_COMPLETIONS, requestNumber, inputID));
         });  
     }
 
@@ -45,6 +42,7 @@ public class ChatCompletionCallback extends RestCallback {
 //            + objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(responseBodyString));
 
         ChatCompletionsOutput output = objectMapper.readValue(responseBodyString, ChatCompletionsOutput.class);
+        output.setInputID(inputID);
         output.setRequestNumber(requestNumber);
 //        List<FeatureVector> fvList = output.getData().stream()
 //             .map(embeddingsToFeatureVector).toList();

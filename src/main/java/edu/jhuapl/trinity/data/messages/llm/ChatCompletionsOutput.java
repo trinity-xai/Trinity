@@ -63,6 +63,7 @@ public class ChatCompletionsOutput extends MessageData {
     
     //</editor-fold>
     //extra helper fields
+    private int inputID;
     private int requestNumber;
     
     public ChatCompletionsOutput() {
@@ -157,4 +158,18 @@ public class ChatCompletionsOutput extends MessageData {
         this.generation_parameters = generation_parameters;
     }
   //</editor-fold>
+
+    /**
+     * @return the inputID
+     */
+    public int getInputID() {
+        return inputID;
+    }
+
+    /**
+     * @param inputID the inputID to set
+     */
+    public void setInputID(int inputID) {
+        this.inputID = inputID;
+    }
 }

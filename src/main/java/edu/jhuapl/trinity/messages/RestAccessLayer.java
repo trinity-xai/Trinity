@@ -4,6 +4,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+import edu.jhuapl.trinity.data.messages.llm.ChatCaptionResponse;
 import edu.jhuapl.trinity.data.messages.llm.ChatCompletionsInput;
 import edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageBatchInput;
 import edu.jhuapl.trinity.data.messages.llm.RestAccessLayerConfig;
@@ -13,8 +14,7 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;
 import java.util.concurrent.TimeUnit;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import java.util.function.Function;
 import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.paint.Color;
@@ -25,6 +25,8 @@ import okhttp3.MediaType;
 import okhttp3.OkHttpClient;
 import okhttp3.Request;
 import okhttp3.RequestBody;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -32,6 +34,7 @@ import okhttp3.RequestBody;
  */
 public enum RestAccessLayer {
     INSTANCE;
+    private static final Logger LOG = LoggerFactory.getLogger(RestAccessLayer.class);
     private static OkHttpClient client;
     private static ObjectMapper objectMapper;
     public static final String SERVICES_DEFAULT_PATH = "services/"; //default to local relative path
@@ -59,7 +62,7 @@ public enum RestAccessLayer {
         try {
             restAccessLayerconfig = loadDefaultRestConfig();
         } catch (IOException ex) {
-            Logger.getLogger(RestAccessLayer.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(ex.getMessage());
             System.out.println("Error attempting to find and load REST Services Config: " 
                 + SERVICES_DEFAULT_PATH + SERVICES_DEFAULT_CONFIG);
         }
@@ -88,7 +91,7 @@ public enum RestAccessLayer {
         Request request = makePostRequest(inputJSON, restAccessLayerconfig.getImageEmbeddingsEndpoint());
         client.newCall(request).enqueue(new EmbeddingsImageCallback(inputFiles, scene, requestNumber));
     }
-    public static void requestChatCompletion(ChatCompletionsInput input, Scene scene, int requestNumber) throws JsonProcessingException {
+    public static void requestChatCompletion(ChatCompletionsInput input, Scene scene, int inputID, int requestNumber) throws JsonProcessingException {
         if(!checkRestServiceInitialized()) {
             notifyTerminalError(
                 "REST Request Error: Current REST URL or End Point not initialized properly.", 
@@ -99,7 +102,7 @@ public enum RestAccessLayer {
 //        System.out.println("Pretty Print of ChatCompletionsInput: \n" 
 //            + objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(input));
         Request request = makePostRequest(inputJSON, restAccessLayerconfig.getChatCompletionEndpoint());
-        client.newCall(request).enqueue(new ChatCompletionCallback(scene, requestNumber));
+        client.newCall(request).enqueue(new ChatCompletionCallback(scene, inputID, requestNumber));
     }
     
     //Utilities
@@ -144,4 +147,20 @@ public enum RestAccessLayer {
     private static boolean checkRestServiceInitialized() {
         return null != restAccessLayerconfig || null != restAccessLayerconfig.getBaseRestURL();
     }
+    public static Function <String, ChatCaptionResponse> stringToChatCaptionResponse = rawText -> {
+        ChatCaptionResponse response = null;
+        //attempts to naively extract out a json object based on enclosing brackets
+        int startIndex = rawText.indexOf("{");
+        int endIndex = rawText.lastIndexOf("}");
+        if(startIndex >= 0 && endIndex > startIndex) {
+            try {
+                response = objectMapper.readValue(
+                    rawText.substring(startIndex, endIndex+1), ChatCaptionResponse.class);
+            } catch (JsonProcessingException ex) {
+                LOG.error(null, ex);
+            }
+        }
+        return response;
+    };
+    
 }
