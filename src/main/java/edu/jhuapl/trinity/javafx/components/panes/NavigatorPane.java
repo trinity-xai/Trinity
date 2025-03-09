@@ -203,6 +203,8 @@ public class NavigatorPane extends LitPathPane {
             sb.append(entry.getKey()).append(" : ").append(entry.getValue()).append("\n");
         }
         Text metaText = new Text(sb.toString());
+        metaText.setWrappingWidth(50); //something smallish just to initialize
+        metaText.wrappingWidthProperty().bind(metaTP.widthProperty().subtract(10));
         metaText.setFont(new Font("Consolas", 18));
         metaText.setStroke(Color.ALICEBLUE);
         metaTP.setContent(metaText);

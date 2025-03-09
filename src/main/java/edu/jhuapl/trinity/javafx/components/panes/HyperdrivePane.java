@@ -9,6 +9,7 @@ import edu.jhuapl.trinity.data.messages.llm.ChatCaptionResponse;
 import edu.jhuapl.trinity.data.messages.llm.ChatCompletionsInput;
 import edu.jhuapl.trinity.data.messages.llm.ChatCompletionsOutput;
 import edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageBatchInput;
+import edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageData;
 import edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageOutput;
 import edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageUrl;
 import static edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageUrl.imageUrlFromFile;
@@ -25,6 +26,7 @@ import edu.jhuapl.trinity.messages.EmbeddingsImageCallback.STATUS;
 import edu.jhuapl.trinity.messages.RestAccessLayer;
 import static edu.jhuapl.trinity.messages.RestAccessLayer.stringToChatCaptionResponse;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
+import static edu.jhuapl.trinity.utils.MessageUtils.embeddingsToFeatureVector;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import edu.jhuapl.trinity.utils.Utils;
 import javafx.geometry.Insets;
@@ -53,6 +55,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import java.util.function.Predicate;
 import java.util.logging.Level;
 import javafx.application.Platform;
@@ -151,41 +154,12 @@ public class HyperdrivePane extends LitPathPane {
         mainHBox.setAlignment(Pos.CENTER);
         embeddingsTab.setContent(mainHBox);
 
-//        imageFilesCenterStack = new StackPane();
-//        imageFilesCenterStack.setAlignment(Pos.CENTER);
-//        imageFilesBorderPane = new BorderPane(imageFilesCenterStack);
-//        imageLoadingIndicator = new CircleProgressIndicator();
-//        imageLoadingIndicator.setLabelLater("...Working...");
-//        imageLoadingIndicator.defaultOpacity = 1.0;
-//        imageLoadingIndicator.setOpacity(0.0); ///instead of setVisible(false)
-
-//        imageFileListView = new ListView<>();
-//        ImageView iv = ResourceUtils.loadIcon("noimage", 50);
-//        HBox placeholder = new HBox(10, iv, new Label("No Files Loaded"));
-//        placeholder.setAlignment(Pos.CENTER);
-//        imageFileListView.setPlaceholder(placeholder);
-//        imageFilesCenterStack.getChildren().addAll(imageLoadingIndicator, imageFileListView);
         //Add controls to manipulate Image File ListView on the top
         Label imageFilesLabel = new Label("Total Image Files: ");
         imageFilesCountLabel = new Label("0");
         CheckBox renderIconsCheckBox = new CheckBox("Render Icons");
         renderIconsCheckBox.setSelected(true);
-//        Button refreshButton = new Button("Refresh");
-//        refreshButton.setOnAction(e -> {
-//            embeddingRequestIndicator.setFadeTimeMS(250);
-//            embeddingRequestIndicator.setLabelLater("Loading images...");
-//            embeddingRequestIndicator.fadeBusy(false);
-//            embeddingRequestIndicator.spin(true);
-//            refreshImageFiles(renderIconsCheckBox.isSelected());
-//            embeddingRequestIndicator.setLabelLater("Complete");
-//            embeddingRequestIndicator.spin(false);
-//            embeddingRequestIndicator.fadeBusy(true);
-//        });
-//        Button clearButton = new Button("Clear");
-//        clearButton.setOnAction(e -> {
-//            embeddingsListView.getItems().clear();
-//        });
-//        
+
         HBox fileControlsBox = new HBox(10,
             imageFilesLabel, imageFilesCountLabel, renderIconsCheckBox
         );
@@ -193,7 +167,7 @@ public class HyperdrivePane extends LitPathPane {
 
         Button embeddingsButton = new Button("Request Embeddings");
         embeddingsButton.setOnAction(e -> {
-            if(!imageFilesList.isEmpty()) {
+            if(!embeddingsListView.getItems().isEmpty()) {
                 requestEmbeddingsTask();
             }
         });
@@ -265,6 +239,9 @@ public class HyperdrivePane extends LitPathPane {
 
         Button injectFeaturesButton = new Button("Inject Features");
         injectFeaturesButton.setOnAction(e -> {
+             currentFeatureList.clear();
+             currentFeatureList.addAll(embeddingsListView.getItems().stream()
+                .map(EmbeddingsImageListItem::getFeatureVector).toList());
             FeatureCollection fc = new FeatureCollection();
             fc.setFeatures(currentFeatureList);
             injectFeaturesButton.getScene().getRoot().fireEvent(
@@ -277,33 +254,7 @@ public class HyperdrivePane extends LitPathPane {
         controlsBox.setAlignment(Pos.CENTER);
         embeddingsBorderPane.setBottom(controlsBox);
 
-        //Add controls to manipulate feature vector labels on the top
-        Label labelLabel = new Label("Label");
-        CheckBox overwriteCheckBox = new CheckBox("Overwrite");
-        TextField batchLabelTextField = new TextField();
-        batchLabelTextField.setPrefWidth(150);
-        batchLabelTextField.setOnAction(e -> {
-            updateLabels(labelLabel.getText(), true, overwriteCheckBox.isSelected());
-        });
-        batchLabelTextField.setTooltip(new Tooltip("Use this field to set FeatureVector Label fields in groups"));
-        Button setSelectedButton = new Button("Selected");
-        setSelectedButton.setPrefWidth(125);
-        setSelectedButton.setOnAction(e -> {
-            updateLabels(labelLabel.getText(), true, overwriteCheckBox.isSelected());
-        });
-        Button setAllButton = new Button("All");
-        setAllButton.setPrefWidth(125);
-        setAllButton.setOnAction(e -> {
-            updateLabels(batchLabelTextField.getText(), false, overwriteCheckBox.isSelected());
-        });
-
-        HBox labelControlsBox = new HBox(10,
-            labelLabel, batchLabelTextField, overwriteCheckBox, setSelectedButton, setAllButton
-        );
-        labelControlsBox.setAlignment(Pos.CENTER);    
-        
-        
-        embeddingsBorderPane.setTop(new VBox(5, fileControlsBox, labelControlsBox));
+        embeddingsBorderPane.setTop(new VBox(5, fileControlsBox));
         
         
         baseImage = ResourceUtils.loadIconFile("waitingforimage");
@@ -538,17 +489,28 @@ public class HyperdrivePane extends LitPathPane {
         
         scene.getRoot().addEventHandler(RestEvent.NEW_EMBEDDINGS_IMAGE, event -> {
             EmbeddingsImageOutput output = (EmbeddingsImageOutput) event.object;
+            List<Integer> inputIDs = (List<Integer>) event.object2;
             String msg = "Received " + output.getData().size() + " embeddings at " + LocalDateTime.now();
+
+            int totalListItems = embeddingsListView.getItems().size();
+            for(int i=0;i<output.getData().size();i++){
+                if(i<=totalListItems) {
+                    EmbeddingsImageData currentOutput = output.getData().get(i);
+                    int currentInputID = inputIDs.get(i);
+                    embeddingsListView.getItems()
+                        .filtered(fi -> fi.imageID == currentInputID)
+                        .forEach(item -> {
+                            item.setEmbeddings(currentOutput.getEmbedding());
+                            item.addMetaData("object", currentOutput.getObject());
+                            item.addMetaData("type", currentOutput.getType());
+                        });
+                }
+                
+            }
+            
             outstandingRequests.put(output.getRequestNumber(), STATUS.SUCCEEDED);
             embeddingRequestIndicator.setLabelLater(msg);
             System.out.println(msg);
-//            List<FeatureVector> fvList = (List<FeatureVector>) event.object2;
-//            List<EmbeddingsImageListItem> listItems = fvList.stream()
-//                .map(EmbeddingsImageListItem::new).toList();
-//            currentFeatureList.addAll(fvList);
-//            embeddingsListView.getItems().addAll(listItems);
-//            embeddingRequestIndicator.setLabelLater("Feature Vector List Obtained.");
-//            System.out.println("New Feature Vector List obtained.");
             outstandingRequests.remove(output.getRequestNumber());
             if(!outstandingRequests.containsValue(STATUS.REQUESTED)) {
                 embeddingRequestIndicator.spin(false);
@@ -599,10 +561,7 @@ public class HyperdrivePane extends LitPathPane {
                 embeddingRequestIndicator.fadeBusy(false);
                 System.out.println("Requesting Captions...");
 //                long startTime = System.nanoTime();
-//                List<EmbeddingsImageUrl> inputs = 
-//                    items.stream().map(imageUrlFromImage).toList();
 //                Utils.printTotalTime(startTime);
-                
                 for(EmbeddingsImageListItem item : items) {
                     EmbeddingsImageUrl url = imageUrlFromImage.apply(item.getCurrentImage());
                     try {
@@ -673,7 +632,7 @@ public class HyperdrivePane extends LitPathPane {
         t.setDaemon(true);
         t.start();
     }
-    private void requestEmbeddings(List<EmbeddingsImageUrl> currentBatch) {
+    private void requestEmbeddings(List<EmbeddingsImageUrl> currentBatch, List<Integer> inputIDs) {
         EmbeddingsImageBatchInput input = new EmbeddingsImageBatchInput();
         input.setInput(currentBatch);
         input.setDimensions(512);
@@ -685,12 +644,12 @@ public class HyperdrivePane extends LitPathPane {
             int rn = requestNumber.incrementAndGet();
             embeddingRequestIndicator.setLabelLater("Embeddings Request " + rn + "...");
             System.out.println("Sending " + currentBatch.size() + " images for processing at " + LocalDateTime.now());
-            RestAccessLayer.requestImageEmbeddings(imageFilesList, input, embeddingRequestIndicator.getScene(), rn);
+            RestAccessLayer.requestImageEmbeddings(input, 
+                embeddingRequestIndicator.getScene(), inputIDs, rn);
             outstandingRequests.put(rn, STATUS.REQUESTED);
         } catch (JsonProcessingException ex) {
             java.util.logging.Logger.getLogger(HyperdrivePane.class.getName()).log(Level.SEVERE, null, ex);
         }
-        
     }
     public void requestEmbeddingsTask() {
         Task requestTask = new Task() {
@@ -701,9 +660,17 @@ public class HyperdrivePane extends LitPathPane {
                 embeddingRequestIndicator.fadeBusy(false);
                 System.out.println("Loading and Encoding Images...");
                 long startTime = System.nanoTime();
-                List<EmbeddingsImageUrl> inputs = 
-                    imageFilesList.stream().map(imageUrlFromFile).toList();
+//                List<EmbeddingsImageUrl> inputs = 
+//                    imageFilesList.stream().map(imageUrlFromFile).toList();
+                
+                List<EmbeddingsImageUrl> inputs = new ArrayList<>();
+                List<Integer> inputIDs = new ArrayList<>();
+                for(EmbeddingsImageListItem item : embeddingsListView.getItems()) {
+                    inputs.add(imageUrlFromImage.apply(item.getCurrentImage()));
+                    inputIDs.add(item.imageID);
+                }
                 Utils.printTotalTime(startTime);
+                
                 //break up the requests based on batch size
                 int currentIndex = 0;
                 while(currentIndex < inputs.size()) {
@@ -712,9 +679,9 @@ public class HyperdrivePane extends LitPathPane {
                         endCurrentIndex = inputs.size();
                     List<EmbeddingsImageUrl> currentBatch = 
                         inputs.subList(currentIndex, endCurrentIndex);
-                    currentIndex += batchSize;
                     System.out.println("Batch created: " + currentBatch.size());
-                    requestEmbeddings(currentBatch);
+                    requestEmbeddings(currentBatch, inputIDs.subList(currentIndex, endCurrentIndex));
+                    currentIndex += batchSize;
                     Thread.sleep(requestDelay);
                 }
                 return null;

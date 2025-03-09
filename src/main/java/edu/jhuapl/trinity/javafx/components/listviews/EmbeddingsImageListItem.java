@@ -25,7 +25,7 @@ import javafx.util.converter.IntegerStringConverter;
  */
 public class EmbeddingsImageListItem extends HBox {
     public static Image DEFAULT_ICON = ResourceUtils.loadIconFile("noimage");
-    public static double PREF_DIMLABEL_WIDTH = 75;
+    public static double PREF_DIMLABEL_WIDTH = 150;
     public static double PREF_FILELABEL_WIDTH = 250;
     public static AtomicInteger atomicID = new AtomicInteger();
     public static NumberFormat format = new DecimalFormat("0000");
@@ -35,7 +35,7 @@ public class EmbeddingsImageListItem extends HBox {
     private Label fileLabel;
     private File file;
     public boolean renderIcon;
-    private Label diminsionsLabel;
+    private Label dimensionsLabel;
     private TextField labelTextField;
     private FeatureVector featureVector = null;
 
@@ -58,13 +58,13 @@ public class EmbeddingsImageListItem extends HBox {
         labelTextField.setOnAction(e -> featureVector.setLabel(labelTextField.getText()));
         labelTextField.textProperty().addListener(e -> featureVector.setLabel(labelTextField.getText()));
 
-        diminsionsLabel = new Label(format.format(0));
-        diminsionsLabel.setPrefWidth(PREF_DIMLABEL_WIDTH);
+        dimensionsLabel = new Label(format.format(0));
 
-        getChildren().addAll(imageView, fileLabel, diminsionsLabel, labelTextField);
+        getChildren().addAll(imageView, fileLabel, dimensionsLabel, labelTextField);
         setSpacing(20);
         setPrefHeight(32);
         featureVector = FeatureVector.EMPTY_FEATURE_VECTOR("", 3);
+        featureVector.setImageURL(file.getAbsolutePath());
         Tooltip.install(this, new Tooltip(file.getAbsolutePath()));
     }
     public void reloadImage(boolean renderIcon) {
@@ -82,7 +82,7 @@ public class EmbeddingsImageListItem extends HBox {
     public void setEmbeddings(List<Double> data) {
         featureVector.getData().clear();
         featureVector.getData().addAll(data);
-        diminsionsLabel.setText(format.format(data.size()));
+        dimensionsLabel.setText(format.format(data.size()));
     }
     public void setFeatureVectorLabel(String text) {
         labelTextField.setText(text);
@@ -97,13 +97,18 @@ public class EmbeddingsImageListItem extends HBox {
     public Image getCurrentImage() {
         return imageView.getImage();
     }
+    public void addMetaData(String key, String value){
+        featureVector.getMetaData().put(key, value);
+    }
     public void addExplanation(String explanation) {
-        featureVector.getMetaData().put("explanation", explanation);
+        addMetaData("explanation", explanation);
     }
     public void addDescription(String description) {
         featureVector.setText(description);
     }
-    
+    public FeatureVector getFeatureVector(){
+        return featureVector;
+    }
     public static Function<File, EmbeddingsImageListItem> itemFromFile = file -> {
         return new EmbeddingsImageListItem(file);
     };     
