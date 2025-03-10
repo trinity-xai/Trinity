@@ -17,6 +17,7 @@ import javafx.scene.image.Image;
 public class ChatCompletionsInput {
 
     public static final String TYPESTRING = "chatCompletionsInput";
+    public static enum CAPTION_TYPE { DEFAULT, AUTOCHOOOSE }
     //<editor-fold defaultstate="collapsed" desc="JSON Payload">
     /*
         {
@@ -108,9 +109,9 @@ public class ChatCompletionsInput {
     public static ChatCompletionsInput defaultImageInput(Image image) throws IOException {
         ImageUrl imageUrl = new ImageUrl();
         imageUrl.setUrl(BASE64_PREFIX_PNG + ResourceUtils.imageToBase64(image));
-        return defaultImageInput(imageUrl);        
+        return defaultImageInput(imageUrl, CAPTION_TYPE.DEFAULT);        
     }
-    public static ChatCompletionsInput defaultImageInput(ImageUrl imageUrl) throws IOException {
+    public static ChatCompletionsInput defaultImageInput(ImageUrl imageUrl, CAPTION_TYPE type) throws IOException {
         /*    
         {
             "model": "meta-llama/Llama-3.2-90B-Vision-Instruct",
@@ -139,6 +140,8 @@ public class ChatCompletionsInput {
         Content promptContent = new Content();
         promptContent.setTypeByEnum(Content.TYPE_ENUM.text);
         String promptString = Prompts.loadDefaultCaptionPrompt();
+        if(type == CAPTION_TYPE.AUTOCHOOOSE)
+            promptString = Prompts.loadAutochooseCaptionPrompt();
         promptContent.setText(promptString);
         msg.addContent(promptContent);
         Content imageContent = new Content();

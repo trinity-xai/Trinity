@@ -7,14 +7,17 @@ import edu.jhuapl.trinity.data.messages.llm.AiModel;
 import edu.jhuapl.trinity.data.messages.llm.AliveModels;
 import edu.jhuapl.trinity.data.messages.llm.ChatCaptionResponse;
 import edu.jhuapl.trinity.data.messages.llm.ChatCompletionsInput;
+import edu.jhuapl.trinity.data.messages.llm.ChatCompletionsInput.CAPTION_TYPE;
 import edu.jhuapl.trinity.data.messages.llm.ChatCompletionsOutput;
 import edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageBatchInput;
 import edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageData;
 import edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageOutput;
 import edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageUrl;
 import static edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageUrl.imageUrlFromImage;
+import edu.jhuapl.trinity.data.messages.llm.Prompts;
 import edu.jhuapl.trinity.data.messages.xai.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
+import edu.jhuapl.trinity.javafx.components.CaptionChooserBox;
 import edu.jhuapl.trinity.javafx.components.listviews.EmbeddingsImageListItem;
 import static edu.jhuapl.trinity.javafx.components.listviews.EmbeddingsImageListItem.itemFromFile;
 import edu.jhuapl.trinity.javafx.components.radial.CircleProgressIndicator;
@@ -56,6 +59,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.logging.Level;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
+import javafx.scene.control.Alert;
+import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.ContextMenu;
@@ -99,6 +104,7 @@ public class HyperdrivePane extends LitPathPane {
     ListView<EmbeddingsImageListItem> embeddingsListView;
     Label imageFilesCountLabel;
     CircleProgressIndicator embeddingRequestIndicator;
+    CaptionChooserBox captionChooserBox;
     AtomicInteger requestNumber;
     HashMap<Integer, STATUS> outstandingRequests;    
     int batchSize = 10;
@@ -195,11 +201,46 @@ public class HyperdrivePane extends LitPathPane {
             }
         });
 
-        MenuItem requestCaptionItem = new MenuItem("Request Caption");
+        MenuItem requestCaptionItem = new MenuItem("Request Captions");
         requestCaptionItem.setOnAction(e -> {
             if(!embeddingsListView.getSelectionModel().getSelectedItems().isEmpty())
                 requestCaptionsTask(embeddingsListView.getSelectionModel().getSelectedItems());
         });
+        MenuItem chooseCaptionItem = new MenuItem("Auto-choose Caption");
+        chooseCaptionItem.setOnAction(e -> {
+            if(!embeddingsListView.getSelectionModel().getSelectedItems().isEmpty()) {
+                embeddingRequestIndicator.setLabelLater("Choose Captions...");
+                embeddingRequestIndicator.spin(true);
+                embeddingRequestIndicator.fadeBusy(false);
+                System.out.println("Prompting User for Captions...");
+                Platform.runLater(()-> {
+                    CaptionChooserBox box = new CaptionChooserBox();
+                    box.setChoices(captionChooserBox.getChoices());
+                    Alert alert = new Alert(Alert.AlertType.CONFIRMATION); 
+                    alert.setHeaderText("Add Captions for model to choose from");
+                    alert.setGraphic(ResourceUtils.loadIcon("console", 75));
+                    alert.initStyle(StageStyle.TRANSPARENT);
+                    DialogPane dialogPane = alert.getDialogPane();
+                    dialogPane.setBackground(Background.EMPTY);
+                    dialogPane.getScene().setFill(Color.TRANSPARENT);
+                    dialogPane.setContent(box);
+                    String DIALOGCSS = HyperdrivePane.class.getResource("/edu/jhuapl/trinity/css/dialogstyles.css").toExternalForm();
+                    dialogPane.getStylesheets().add(DIALOGCSS);
+                    Optional<ButtonType> captionOptional = alert.showAndWait();
+                    if(captionOptional.get() == ButtonType.OK) {
+                        System.out.println("Choices from user: " + box.getChoices());
+                        captionChooserBox.setChoices(box.getChoices());
+                        if(!box.getChoices().isEmpty()){
+                            chooseCaptionsTask(
+                                embeddingsListView.getSelectionModel().getSelectedItems(),
+                                box.getChoices());                        
+                        }
+                    }
+                });
+            }
+
+        });
+        
         MenuItem clearRequestsItem = new MenuItem("Clear Requests");
         clearRequestsItem.setOnAction(e -> {
             outstandingRequests.clear();
@@ -207,7 +248,8 @@ public class HyperdrivePane extends LitPathPane {
             embeddingRequestIndicator.fadeBusy(true);            
         });
         ContextMenu embeddingsContextMenu = 
-            new ContextMenu(selectAllMenuItem, setCaptionItem, requestCaptionItem, clearRequestsItem);
+            new ContextMenu(selectAllMenuItem, setCaptionItem, requestCaptionItem, 
+                chooseCaptionItem, clearRequestsItem);
         embeddingsListView.setContextMenu(embeddingsContextMenu);
 
         embeddingsCenterStack = new StackPane();
@@ -327,10 +369,11 @@ public class HyperdrivePane extends LitPathPane {
         requestDelaySpinner.setEditable(true);
         requestDelaySpinner.setPrefWidth(100);
         
-        HBox spinnerHBox = new HBox(50, 
+        VBox spinnerVBox = new VBox(20, 
             new VBox(5,new Label("Request Batch Size"), batchSizeSpinner), 
             new VBox(5,new Label("Request Delay ms"), requestDelaySpinner)
         );
+        captionChooserBox = new CaptionChooserBox();
         
         GridPane servicesGrid = new GridPane(20, 10);
         servicesGrid.setPadding(new Insets(10));
@@ -434,9 +477,9 @@ public class HyperdrivePane extends LitPathPane {
         GridPane.setColumnSpan(separator, GridPane.REMAINING);
         servicesGrid.add(separator, 0, 2);
 
-        GridPane.setColumnSpan(spinnerHBox, GridPane.REMAINING);
-        spinnerHBox.setAlignment(Pos.CENTER_LEFT);
-        servicesGrid.add(spinnerHBox, 0, 3);
+        spinnerVBox.setAlignment(Pos.CENTER_LEFT);
+        servicesGrid.add(spinnerVBox, 0, 3);
+        servicesGrid.add(captionChooserBox, 1, 3);
                 
         borderPane.addEventHandler(DragEvent.DRAG_OVER, event -> {
             if (ResourceUtils.canDragOver(event)) {
@@ -548,6 +591,43 @@ public class HyperdrivePane extends LitPathPane {
         });
         
     }
+
+    public void chooseCaptionsTask(List<EmbeddingsImageListItem> items, List<String> choices) {
+        Task requestTask = new Task() {
+            @Override
+            protected Void call() throws Exception {
+                for(EmbeddingsImageListItem item : items) {
+                    EmbeddingsImageUrl url = imageUrlFromImage.apply(item.getCurrentImage());
+                    try {
+                        ChatCompletionsInput input = ChatCompletionsInput.defaultImageInput(
+                            url.getImage_url(), CAPTION_TYPE.AUTOCHOOOSE);
+                        String choosePrompt = input.getMessages().get(0).getContent().get(0).getText();
+                        choosePrompt = Prompts.insertAutochooseChoices(choosePrompt, choices);
+                        input.getMessages().get(0).getContent().get(0).setText(choosePrompt);
+                        if(null != currentChatModel)
+                            input.setModel(currentChatModel);
+                        RestAccessLayer.requestChatCompletion(input, 
+                            embeddingRequestIndicator.getScene(), 
+                            item.imageID , requestNumber.getAndIncrement());
+                    } catch (JsonProcessingException ex) {
+                        java.util.logging.Logger.getLogger(HyperdrivePane.class.getName()).log(Level.SEVERE, null, ex);
+                    } catch (IOException ex) {
+                        java.util.logging.Logger.getLogger(HyperdrivePane.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                    try {
+                        Thread.sleep(requestDelay);
+                    } catch (InterruptedException ex) {
+                        java.util.logging.Logger.getLogger(HyperdrivePane.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }
+                return null;
+            }
+        };
+        Thread t = new Thread(requestTask, "Trinity Image Auto-choose Captions Request");
+        t.setDaemon(true);
+        t.start();
+    }    
+        
     public void requestCaptionsTask(List<EmbeddingsImageListItem> items) {
         Task requestTask = new Task() {
             @Override
@@ -561,7 +641,7 @@ public class HyperdrivePane extends LitPathPane {
                 for(EmbeddingsImageListItem item : items) {
                     EmbeddingsImageUrl url = imageUrlFromImage.apply(item.getCurrentImage());
                     try {
-                        ChatCompletionsInput input = ChatCompletionsInput.defaultImageInput(url.getImage_url());
+                        ChatCompletionsInput input = ChatCompletionsInput.defaultImageInput(url.getImage_url(), CAPTION_TYPE.DEFAULT);
                         if(null != currentChatModel)
                             input.setModel(currentChatModel);
                         RestAccessLayer.requestChatCompletion(input, 

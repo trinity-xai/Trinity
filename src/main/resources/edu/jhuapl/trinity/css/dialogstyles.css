@@ -181,7 +181,7 @@
     -fx-background-insets: 0;
     -fx-background-color: -var-background_color;
     -fx-font-family: "Segoe UI Semilight";
-    -fx-font-size: 1.333333em; /* 16 */
+    -fx-font-size: 1.0em; 
     -fx-text-fill: -var-text_color;
 }
 
@@ -608,6 +608,47 @@
     -fx-shape: "M221.738,305.873l6.135,6.16l-2.875,2.863l-6.135-6.159l-6.263,6.237l-2.864-2.875l6.263-6.238l-6.177-6.202l2.875-2.863l6.177,6.201l6.244-6.22l2.864,2.876L221.738,305.873z";
     -fx-padding: 0.5em 0.5em; /*TODO: put the real number here 18 18 */
     -fx-background-color: black;
+}
+
+/*******************************************************************************
+ *                                                                             *
+ * ListView                                                                    *
+ *                                                                             *
+ ******************************************************************************/
+
+.dialog-pane .list-view {
+    -fx-text-fill: aliceblue;
+    -fx-background-color: transparent;
+    -fx-font-size: 12pt;
+}
+
+.dialog-pane .list-cell {
+    -var-text_color: white;
+    -var-border_color: #494949;
+    /*-var-arrow_color: #6495ED;  CornflowerBlue*/
+    /*    -var-content_background_color: #6495ED88;
+        -var-content_background_odd_color: #4a9ec388;*/
+    -var-content_background_color: #6495ED22;
+    -var-content_background_odd_color: transparent;
+    -fx-background-color: -var-content_background_color;
+    -fx-text-fill: -var-text_color;
+    -fx-font-size: 12pt;
+    -fx-font-family: "Segoe UI Semibold";
+}
+
+.dialog-pane .list-cell:odd {
+    -fx-background-color: -var-content_background_odd_color;
+}
+
+.dialog-pane .list-cell:filled:selected:focused,
+.dialog-pane .list-cell:filled:selected {
+    -fx-background-color: linear-gradient(#328BDB 0%, #207BCF 25%, #1973C9 75%, #0A65BF 100%);
+    /*-fx-text-fill: aliceblue;*/
+}
+
+.dialog-pane .list-cell:filled:hover {
+    -fx-background-color: #55C4FE;
+    /*-fx-text-fill: aliceblue;*/
 }
 
 /*******************************************************************************
