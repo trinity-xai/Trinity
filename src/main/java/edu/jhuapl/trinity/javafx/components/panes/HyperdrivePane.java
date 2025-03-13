@@ -20,6 +20,7 @@ import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.javafx.components.CaptionChooserBox;
 import edu.jhuapl.trinity.javafx.components.listviews.EmbeddingsImageListItem;
 import static edu.jhuapl.trinity.javafx.components.listviews.EmbeddingsImageListItem.itemFromFile;
+import static edu.jhuapl.trinity.javafx.components.listviews.EmbeddingsImageListItem.itemNoRenderFromFile;
 import edu.jhuapl.trinity.javafx.components.radial.CircleProgressIndicator;
 import edu.jhuapl.trinity.javafx.components.radial.ProgressStatus;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
@@ -101,6 +102,7 @@ public class HyperdrivePane extends LitPathPane {
     TabPane tabPane;
     Tab embeddingsTab;
     Tab servicesTab;
+    CheckBox renderIconsCheckBox;
     
     ArrayList<FeatureVector> currentFeatureList;   
     ArrayList<File> imageFilesList;
@@ -149,7 +151,7 @@ public class HyperdrivePane extends LitPathPane {
         //Add controls to manipulate Image File ListView on the top
         Label imageFilesLabel = new Label("Total Image Files: ");
         imageFilesCountLabel = new Label("0");
-        CheckBox renderIconsCheckBox = new CheckBox("Render Icons");
+        renderIconsCheckBox = new CheckBox("Render Icons");
         renderIconsCheckBox.setSelected(true);
 
         HBox fileControlsBox = new HBox(10,
@@ -685,7 +687,7 @@ public class HyperdrivePane extends LitPathPane {
                             imageFilesList.addAll(
                                 Files.walk(file.toPath())
                                     .map(Path::toFile)
-    //                                .filter(f -> JavaFX3DUtils.isTextureFile(f))
+                                    .filter(f -> JavaFX3DUtils.isTextureFile(f))
                                     .toList());
                         } else {
                             if(JavaFX3DUtils.isTextureFile(file))
@@ -700,12 +702,15 @@ public class HyperdrivePane extends LitPathPane {
                 final double total = imageFilesList.size();
                 System.out.println("Loading images into listitems....");
                 startTime = System.nanoTime();
+                final boolean renderIcons = renderIconsCheckBox.isSelected();
                 List<EmbeddingsImageListItem> newItems = 
-                    imageFilesList.parallelStream().map(itemFromFile).peek(i -> {
-                        double completed = atomicCount.incrementAndGet();
-                        embeddingRequestIndicator.setPercentComplete(completed / total); 
-                        embeddingRequestIndicator.setLabelLater(completed + " of " + total);
-                    }).toList();
+                    imageFilesList.parallelStream()
+                        .map(renderIcons ? itemFromFile : itemNoRenderFromFile)
+                        .peek(i -> {
+                            double completed = atomicCount.incrementAndGet();
+                            embeddingRequestIndicator.setPercentComplete(completed / total); 
+                            embeddingRequestIndicator.setLabelLater(completed + " of " + total);
+                        }).toList();
                 Utils.printTotalTime(startTime);
                 
                 System.out.println("Populating ListView....");

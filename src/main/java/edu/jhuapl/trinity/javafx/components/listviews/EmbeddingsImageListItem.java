@@ -13,12 +13,10 @@ import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
-import javafx.scene.control.TextFormatter;
 import javafx.scene.control.Tooltip;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
-import javafx.util.converter.IntegerStringConverter;
 
 /**
  * @author Sean Phillips
@@ -111,5 +109,8 @@ public class EmbeddingsImageListItem extends HBox {
     }
     public static Function<File, EmbeddingsImageListItem> itemFromFile = file -> {
         return new EmbeddingsImageListItem(file);
+    };     
+    public static Function<File, EmbeddingsImageListItem> itemNoRenderFromFile = file -> {
+        return new EmbeddingsImageListItem(file, false);
     };     
 }
