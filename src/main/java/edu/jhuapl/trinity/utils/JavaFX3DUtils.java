@@ -638,12 +638,12 @@ public enum JavaFX3DUtils {
             try {
                 String contentType = Files.probeContentType(file.toPath());
                 switch (contentType) {
-                    case "image/jpeg":
-                    case "image/png":
+                    case "image/jpeg", "image/png" -> {
                         return true;
+                    }
                 }
                 //System.out.println(contentType);
-            } catch (IOException ex) {
+            } catch (Exception ex) {
                 LOG.error(null, ex);
             }
         }

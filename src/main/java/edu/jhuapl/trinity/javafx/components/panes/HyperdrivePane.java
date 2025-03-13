@@ -50,12 +50,15 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
+import java.nio.file.Files;
+import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Function;
 import java.util.logging.Level;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
@@ -673,13 +676,28 @@ public class HyperdrivePane extends LitPathPane {
                 
                 currentFeatureList.clear();
                 imageFilesList.clear();
-                System.out.println("Filtering images....");
+                System.out.println("Searching for files, filtering images....");
                 long startTime = System.nanoTime();
-                imageFilesList.addAll(files.stream()
-                    .filter(f-> JavaFX3DUtils.isTextureFile(f))
-                    .toList());
-                final double total = imageFilesList.size();
+                try {
+                    for(File file : files) {
+                        System.out.println(file.getAbsolutePath());
+                        if(file.isDirectory()) {
+                            imageFilesList.addAll(
+                                Files.walk(file.toPath())
+                                    .map(Path::toFile)
+    //                                .filter(f -> JavaFX3DUtils.isTextureFile(f))
+                                    .toList());
+                        } else {
+                            if(JavaFX3DUtils.isTextureFile(file))
+                                imageFilesList.add(file);
+                        }
+                    }
+                } catch(Exception e) {
+                    System.out.println("Dude...");
+                }
+                imageFilesList.removeIf(f -> !JavaFX3DUtils.isTextureFile(f));
                 Utils.printTotalTime(startTime);
+                final double total = imageFilesList.size();
                 System.out.println("Loading images into listitems....");
                 startTime = System.nanoTime();
                 List<EmbeddingsImageListItem> newItems = 
