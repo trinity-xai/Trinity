@@ -54,6 +54,38 @@ public class EmbeddingsImageInput {
 
     public EmbeddingsImageInput() {
     }
+//    public static EmbeddingsImageInput hellocarlImageEmbeddingsImageInput() throws IOException {
+//        Image image = ResourceUtils.load3DTextureImage("carl-b-portrait");
+//        return defaultImageInput(image);
+//    }    
+    public static EmbeddingsImageInput hellocarlTextEmbeddingsImageInput() throws IOException {
+        return defaultTextInput("carl-b");
+    }       
+    public static EmbeddingsImageInput defaultTextInput(String text) {
+        EmbeddingsImageInput input = new EmbeddingsImageInput();
+        input.setInput(text);
+        input.setDimensions(512);
+        input.setEmbedding_type("all");
+        input.setEncoding_format("float");
+        input.setModel("meta-llama/Llama-3.2-90B-Vision-Instruct");
+        input.setUser("string");
+        return input;        
+    }
+//    public static EmbeddingsImageInput defaultImageInput(Image image) throws IOException {
+//        ImageUrl imageUrl = new ImageUrl();
+//        imageUrl.setUrl(BASE64_PREFIX_PNG + ResourceUtils.imageToBase64(image));
+////        return defaultImageInput(imageUrl, CAPTION_TYPE.DEFAULT);     
+//        EmbeddingsImageInput input = new EmbeddingsImageInput();
+//        input.setInput(imageUrl);
+//        input.setDimensions(512);
+//        input.setEmbedding_type("all");
+//        input.setEncoding_format("float");
+//        input.setModel(currentEmbeddingsModel);
+//        input.setUser("string");
+//        return input;
+//    }    
+//    
+    
     public static Function<File, EmbeddingsImageInput> inputFromFile = file -> {
         EmbeddingsImageInput input = new EmbeddingsImageInput();
         try {

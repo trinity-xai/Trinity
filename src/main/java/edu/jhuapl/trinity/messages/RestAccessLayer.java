@@ -7,6 +7,7 @@ import com.fasterxml.jackson.databind.SerializationFeature;
 import edu.jhuapl.trinity.data.messages.llm.ChatCaptionResponse;
 import edu.jhuapl.trinity.data.messages.llm.ChatCompletionsInput;
 import edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageBatchInput;
+import edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageInput;
 import edu.jhuapl.trinity.data.messages.llm.RestAccessLayerConfig;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import java.io.File;
@@ -79,6 +80,19 @@ public enum RestAccessLayer {
     }    
     
     //Event and Image REST calls
+    public static void requestTextEmbeddings(EmbeddingsImageInput input, 
+        Scene scene, List<Integer> inputIDs, int requestNumber) throws JsonProcessingException {
+        if(!checkRestServiceInitialized()) {
+            notifyTerminalError(
+                "REST Request Error: Current REST URL or End Point not initialized properly.", 
+                scene
+            );            
+        }
+        String inputJSON = objectMapper.writeValueAsString(input);
+        System.out.println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(input));
+        Request request = makePostRequest(inputJSON, restAccessLayerconfig.getImageEmbeddingsEndpoint());
+        client.newCall(request).enqueue(new EmbeddingsTextCallback(scene, inputIDs, requestNumber));
+    }
     public static void requestImageEmbeddings(EmbeddingsImageBatchInput input, 
         Scene scene, List<Integer> inputIDs, int requestNumber) throws JsonProcessingException {
         if(!checkRestServiceInitialized()) {
