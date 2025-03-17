@@ -32,7 +32,7 @@ public class LandmarkBuilderBox extends VBox {
     Background transFillBack = new Background(new BackgroundFill(
         Color.ALICEBLUE.deriveColor(1, 1, 1, 0.222), CornerRadii.EMPTY, Insets.EMPTY));
 
-    ListView<LandmarkListItem> landmarksListView;
+    protected ListView<LandmarkListItem> landmarksListView;
 
     public LandmarkBuilderBox() {
         TextField entryTextField = new TextField();

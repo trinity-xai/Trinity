@@ -4,6 +4,7 @@ import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
@@ -14,6 +15,7 @@ import javafx.scene.layout.HBox;
 public class LandmarkListItem extends HBox {
     public static double PREF_DIMLABEL_WIDTH = 150;
     public static NumberFormat format = new DecimalFormat("0000");
+    public static AtomicInteger atomicID = new AtomicInteger();
     public int landmarkID;    
     private String landmarkLabel;
     private Label fileLabel;
@@ -23,19 +25,21 @@ public class LandmarkListItem extends HBox {
 
     public LandmarkListItem(String landmarkLabel) {
         this.landmarkLabel = landmarkLabel;
+        landmarkID = atomicID.getAndIncrement();
+        featureVector = FeatureVector.EMPTY_FEATURE_VECTOR("", 3);
+        featureVector.setLabel(landmarkLabel);        
         
         labelTextField = new TextField();
         labelTextField.setEditable(true);
         labelTextField.setPrefWidth(PREF_DIMLABEL_WIDTH);
         labelTextField.setOnAction(e -> featureVector.setLabel(labelTextField.getText()));
         labelTextField.textProperty().addListener(e -> featureVector.setLabel(labelTextField.getText()));
-
+        labelTextField.setText(landmarkLabel);
         dimensionsLabel = new Label(format.format(0));
 
         getChildren().addAll(labelTextField, dimensionsLabel);
         setSpacing(20);
         setPrefHeight(32);
-        featureVector = FeatureVector.EMPTY_FEATURE_VECTOR("", 3);
 //        featureVector.setImageURL(file.getAbsolutePath());
 //        Tooltip.install(this, new Tooltip(file.getAbsolutePath()));
     }
