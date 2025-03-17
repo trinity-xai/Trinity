@@ -2149,6 +2149,10 @@
  * Custom                                                                      *
  *                                                                             *
  ******************************************************************************/
+.circle-progress-indicator {
+    -fx-font-family: "Segoe UI", Helvetica, Arial, sans-serif;
+    -fx-font-size: 20pt;    
+}
 
 #bounding-box {
     -fx-stroke: #C7CFC5;

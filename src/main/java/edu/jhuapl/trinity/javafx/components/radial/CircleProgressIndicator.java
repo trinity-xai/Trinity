@@ -58,6 +58,8 @@ public class CircleProgressIndicator extends StackPane {
         ft.setCycleCount(0);
 
         fillCircle.percentComplete.bind(percentComplete);
+        getStyleClass().add("circle-progress-indicator");
+        
     }
 
     public void updateStatus(ProgressStatus ps) {

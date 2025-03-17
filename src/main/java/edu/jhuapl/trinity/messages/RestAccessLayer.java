@@ -89,7 +89,8 @@ public enum RestAccessLayer {
             );            
         }
         String inputJSON = objectMapper.writeValueAsString(input);
-        System.out.println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(input));
+        //@DEBUG SMP
+        //System.out.println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(input));
         Request request = makePostRequest(inputJSON, restAccessLayerconfig.getImageEmbeddingsEndpoint());
         client.newCall(request).enqueue(new EmbeddingsTextCallback(scene, inputIDs, requestNumber));
     }
@@ -102,6 +103,10 @@ public enum RestAccessLayer {
             );            
         }
         String inputJSON = objectMapper.writeValueAsString(input);
+//@DEBUG SMP
+//        System.out.println("Pretty Print of ChatCompletionsInput: \n" 
+//            + objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(input));
+        
         Request request = makePostRequest(inputJSON, restAccessLayerconfig.getImageEmbeddingsEndpoint());
         client.newCall(request).enqueue(new EmbeddingsImageCallback(scene, inputIDs, requestNumber));
     }
@@ -113,6 +118,7 @@ public enum RestAccessLayer {
             );            
         }
         String inputJSON = objectMapper.writeValueAsString(input);
+//@DEBUG SMP
 //        System.out.println("Pretty Print of ChatCompletionsInput: \n" 
 //            + objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(input));
         Request request = makePostRequest(inputJSON, restAccessLayerconfig.getChatCompletionEndpoint());

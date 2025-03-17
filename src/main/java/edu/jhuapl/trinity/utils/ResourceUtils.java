@@ -70,8 +70,10 @@ import org.slf4j.LoggerFactory;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
+import java.awt.image.DataBufferInt;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
+import java.io.DataOutputStream;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
@@ -79,6 +81,7 @@ import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
+import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -598,8 +601,22 @@ public enum ResourceUtils {
         ImageIO.write(SwingFXUtils.fromFXImage(image, null), "png", byteOutput);
         return byteOutput.toByteArray();
     }
+    public static byte[] byteMe(Image me) throws IOException {
+        int w = (int)me.getWidth();
+        int h = (int)me.getHeight();
+        int[] intBuf = new int[w * h];
+        me.getPixelReader().getPixels(0, 0, w, h, PixelFormat.getIntArgbPreInstance(), intBuf , 0, w);
+        ByteArrayOutputStream baos = new ByteArrayOutputStream();
+        DataOutputStream dos = new DataOutputStream(baos);
+        for(int i=0; i < intBuf.length; ++i) {
+             dos.writeInt(intBuf[i]);
+        }
+        return baos.toByteArray();
+    }
+    
     public static String imageToBase64(Image image) throws IOException {
         return Base64.getEncoder().encodeToString(imageToBytes(image));
+//        return Base64.getEncoder().encodeToString(byteMe(image));
     }
     
 }
