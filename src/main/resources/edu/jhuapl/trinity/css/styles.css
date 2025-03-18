@@ -2151,7 +2151,7 @@
  ******************************************************************************/
 .circle-progress-indicator {
     -fx-font-family: "Segoe UI", Helvetica, Arial, sans-serif;
-    -fx-font-size: 20pt;    
+    -fx-font-size: 14pt;    
 }
 
 #bounding-box {

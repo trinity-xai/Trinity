@@ -19,8 +19,10 @@ import javafx.util.Duration;
  */
 public class CircleProgressIndicator extends StackPane {
 
-    public Label progressLabel = new Label();
-    public SimpleStringProperty labelString = new SimpleStringProperty();
+    public Label progressLabel;
+    public SimpleStringProperty labelString; 
+    public Label topLabel;
+    public SimpleStringProperty topLabelString;
     public double defaultOpacity = 0.75;
     private FadeTransition ft = new FadeTransition(Duration.seconds(1), this);
     public AnimatedNeonCircle outerNeonCircle, innerNeonCircle;
@@ -28,19 +30,42 @@ public class CircleProgressIndicator extends StackPane {
     public SimpleDoubleProperty percentComplete = new SimpleDoubleProperty(0.0);
 
     public CircleProgressIndicator() {
+        this(100.0, 70.0);
+    }    
+    public CircleProgressIndicator(double outerRadius, double innerRadius) {
         setMouseTransparent(true);
         setAlignment(Pos.CENTER);
+        progressLabel = new Label();
+        labelString = new SimpleStringProperty();
+        topLabel = new Label();
+        topLabelString = new SimpleStringProperty();
+        
         outerNeonCircle = new AnimatedNeonCircle(
             new AnimatedNeonCircle.Animation(
                 Duration.millis(2000), Transition.INDEFINITE, false),
-            100, 3, 50.0, 100.0);
+            outerRadius, 3, outerRadius*0.5, outerRadius);
+        //outerRadius, 3, outerRadius*0.75, outerRadius*0.5);
+        outerNeonCircle.getStyleClass().add("outer-neon-circle");
 
         innerNeonCircle = new AnimatedNeonCircle(
             new AnimatedNeonCircle.Animation(
                 Duration.millis(3000), Transition.INDEFINITE, false),
-            70, 1.5, 50.0, 20.0);
+            innerRadius, 1.5, innerRadius*0.8, innerRadius*0.3);
+        innerNeonCircle.getStyleClass().add("inner-neon-circle");
+//            70, 1.5, 50.0, 20.0);
 
-        fillCircle = new AnimatedFillCircle(65.0, 0.0, 2.0, 1.0);
+        fillCircle = new AnimatedFillCircle(innerRadius*0.9, 0.0, 2.0, 1.0);
+        fillCircle.getStyleClass().add("fill-circle");
+//        fillCircle = new AnimatedFillCircle(65.0, 0.0, 2.0, 1.0);
+
+        topLabel.setText("...executing...");
+        topLabel.setTextAlignment(TextAlignment.CENTER);
+        topLabel.setAlignment(Pos.CENTER);
+        topLabelString.set("...executing...");
+        topLabel.textProperty().bind(topLabelString);
+        topLabel.setFont(new Font("Consolas", 24));
+        topLabel.setMinSize(outerRadius, 25);
+
 
         progressLabel.setText("Loading...");
         progressLabel.setTextAlignment(TextAlignment.CENTER);
@@ -48,24 +73,28 @@ public class CircleProgressIndicator extends StackPane {
         labelString.set("Loading...");
         progressLabel.textProperty().bind(labelString);
         progressLabel.setFont(new Font("Consolas", 24));
-        progressLabel.setMinSize(200, 25);
+        progressLabel.setMinSize(outerRadius, 25);
         setAlignment(Pos.CENTER);
         getChildren().addAll(fillCircle, innerNeonCircle,
-            outerNeonCircle, progressLabel);
-        progressLabel.setTranslateY(120);
+            outerNeonCircle, progressLabel, topLabel);
+        
+        topLabel.setTranslateY(-outerRadius-5);
+        topLabel.getStyleClass().add("progress-label");
+        progressLabel.setTranslateY(outerRadius+5);
+        progressLabel.getStyleClass().add("progress-label");
 
         ft.setAutoReverse(false);
         ft.setCycleCount(0);
 
         fillCircle.percentComplete.bind(percentComplete);
         getStyleClass().add("circle-progress-indicator");
-        
     }
 
     public void updateStatus(ProgressStatus ps) {
         if (null == ps)
             return;
         setLabelLater(ps.statusMessage);
+        setTopLabelLater(ps.topMessage);
         if (ps.percentComplete < 0) {
             //@TODO SMP something fancier for indeterminate
             setPercentComplete(0);
@@ -76,6 +105,9 @@ public class CircleProgressIndicator extends StackPane {
         outerNeonCircle.setStroke(ps.outerStrokeColor);
         fillCircle.fillStartColor = ps.fillStartColor;
         fillCircle.fillEndColor = ps.fillEndColor;
+    }
+    public void setTopLabelLater(final String newText) {
+        Platform.runLater(() -> topLabelString.set(newText));
     }
 
     public void setLabelLater(final String newText) {

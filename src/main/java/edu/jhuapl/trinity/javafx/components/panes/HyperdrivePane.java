@@ -59,6 +59,7 @@ import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -86,7 +87,6 @@ import javafx.scene.image.Image;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
-import javafx.scene.text.Font;
 import javafx.stage.StageStyle;
 
 /**
@@ -118,11 +118,11 @@ public class HyperdrivePane extends LitPathPane {
     ChoiceBox<String> metricChoiceBox;
     AtomicInteger requestNumber;
     HashMap<Integer, STATUS> outstandingRequests;    
-    int batchSize = 10;
-    long requestDelay = 200;
+    int batchSize = 1;
+    long requestDelay = 25;
     String currentEmbeddingsModel = null;
     String currentChatModel = null;
-    
+    DateTimeFormatter format; 
     private static BorderPane createContent() {
         BorderPane bpOilSpill = new BorderPane();
         return bpOilSpill;
@@ -132,6 +132,7 @@ public class HyperdrivePane extends LitPathPane {
         super(scene, parent, PANE_WIDTH, PANE_HEIGHT, createContent(),
             "Hyperdrive", " Embeddings Service", 300.0, 400.0);
         this.scene = scene;
+        format = DateTimeFormatter.ofPattern("HH.mm.ss");
         currentFeatureList = new ArrayList<>();
         imageFilesList = new ArrayList<>();
         outstandingRequests = new HashMap<>();
@@ -611,7 +612,8 @@ public class HyperdrivePane extends LitPathPane {
         scene.getRoot().addEventHandler(RestEvent.NEW_EMBEDDINGS_IMAGE, event -> {
             EmbeddingsImageOutput output = (EmbeddingsImageOutput) event.object;
             List<Integer> inputIDs = (List<Integer>) event.object2;
-            String msg = "Received " + output.getData().size() + " embeddings at " + LocalDateTime.now();
+            String msg = "Received " + output.getData().size() + " embeddings at " 
+                + format.format(LocalDateTime.now());
 
             int totalListItems = embeddingsListView.getItems().size();
             for(int i=0;i<output.getData().size();i++){
@@ -630,7 +632,7 @@ public class HyperdrivePane extends LitPathPane {
             }
             
             outstandingRequests.put(output.getRequestNumber(), STATUS.SUCCEEDED);
-            embeddingRequestIndicator.setLabelLater(msg);
+            embeddingRequestIndicator.setTopLabelLater(msg);
             System.out.println(msg);
             outstandingRequests.remove(output.getRequestNumber());
             if(!outstandingRequests.containsValue(STATUS.REQUESTED)) {
@@ -680,7 +682,8 @@ public class HyperdrivePane extends LitPathPane {
             //Even though its a text embeddings event we reuse the same output data structure
             EmbeddingsImageOutput output = (EmbeddingsImageOutput) event.object;
             List<Integer> inputIDs = (List<Integer>) event.object2;
-            String msg = "Received " + output.getData().size() + " embeddings at " + LocalDateTime.now();
+            String msg = "Received " + output.getData().size() + " embeddings at " 
+                + format.format(LocalDateTime.now());
             
             int totalListItems = landmarkBuilderBox.getItems().size();
             for(int i=0;i<output.getData().size();i++){
@@ -698,7 +701,7 @@ public class HyperdrivePane extends LitPathPane {
             }
             
             outstandingRequests.put(output.getRequestNumber(), STATUS.SUCCEEDED);
-            embeddingRequestIndicator.setLabelLater(msg);
+            embeddingRequestIndicator.setTopLabelLater(msg);
             System.out.println(msg);
             outstandingRequests.remove(output.getRequestNumber());
             if(!outstandingRequests.containsValue(STATUS.REQUESTED)) {
@@ -923,7 +926,7 @@ public class HyperdrivePane extends LitPathPane {
                         inputIDs.add(item.imageID);
                         double completed = inputs.size();
                         embeddingRequestIndicator.setPercentComplete(completed / total); 
-                        embeddingRequestIndicator.setLabelLater(completed + " of " + total);
+                        embeddingRequestIndicator.setLabelLater("Encoding " + completed + " of " + total);
                         
                 });
                 Utils.printTotalTime(startTime);
