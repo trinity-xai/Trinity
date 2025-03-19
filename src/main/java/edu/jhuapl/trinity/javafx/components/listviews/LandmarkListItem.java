@@ -40,21 +40,9 @@ public class LandmarkListItem extends HBox {
         getChildren().addAll(labelTextField, dimensionsLabel);
         setSpacing(20);
         setPrefHeight(32);
-//        featureVector.setImageURL(file.getAbsolutePath());
-//        Tooltip.install(this, new Tooltip(file.getAbsolutePath()));
+
     }
-//    public void reloadImage(boolean renderIcon) {
-//        if(renderIcon) {
-//            try {
-//                imageView = new ImageView(ResourceUtils.loadImageFile(file));
-//            } catch (IOException ex) {
-//                Logger.getLogger(ImageFileListItem.class.getName()).log(Level.SEVERE, null, ex);
-//                imageView = new ImageView(DEFAULT_ICON);
-//            }
-//        } else {
-//            imageView = new ImageView(DEFAULT_ICON);
-//        }
-//    }
+
     public void setEmbeddings(List<Double> data) {
         featureVector.getData().clear();
         featureVector.getData().addAll(data);
@@ -70,9 +58,7 @@ public class LandmarkListItem extends HBox {
     public void setLabelWidth(double width) {
         fileLabel.setPrefWidth(width);
     }    
-//    public Image getCurrentImage() {
-//        return imageView.getImage();
-//    }
+
     public void addMetaData(String key, String value){
         featureVector.getMetaData().put(key, value);
     }
@@ -85,10 +71,5 @@ public class LandmarkListItem extends HBox {
     public FeatureVector getFeatureVector(){
         return featureVector;
     }
-//    public static Function<File, LandmarkListItem> itemFromFile = file -> {
-//        return new LandmarkListItem(file);
-//    };     
-//    public static Function<File, LandmarkListItem> itemNoRenderFromFile = file -> {
-//        return new LandmarkListItem(file, false);
-//    };     
+ 
 }

@@ -556,7 +556,7 @@ public class Hyperspace3DPane extends StackPane implements
                 updateView(false);
             }
 
-            if (event.isAltDown() && keycode == KeyCode.H) {
+            if (!event.isControlDown() && event.isAltDown() && keycode == KeyCode.H) {
                 makeHull(false, null, null);
             }
             if (keycode == KeyCode.F) {
@@ -1548,17 +1548,19 @@ public class Hyperspace3DPane extends StackPane implements
         anchorTSM.setTranslateY(p3d.y);
         anchorTSM.setTranslateZ(p3d.z);
 
-        //make sure we have the latest states using the latest feature indices
-        anchorTrajectory.states.clear();
-        List<Point3D> p3ds = scatterModel.data;
-        if (index < scatterModel.data.size())
-            p3ds = scatterModel.data.subList(0, index + 1);
-        if (!p3ds.isEmpty()) {
-            for (Point3D p : p3ds) {
-                anchorTrajectory.states.add(new double[]{p.x, p.y, p.z});
+        if(animate) {
+            //make sure we have the latest states using the latest feature indices
+            anchorTrajectory.states.clear();
+            List<Point3D> p3ds = scatterModel.data;
+            if (index < scatterModel.data.size())
+                p3ds = scatterModel.data.subList(0, index + 1);
+            if (!p3ds.isEmpty()) {
+                for (Point3D p : p3ds) {
+                    anchorTrajectory.states.add(new double[]{p.x, p.y, p.z});
+                }
+                //recreate and add to the scene the 3D trajectory
+                updateTrajectory3D(false);
             }
-            //recreate and add to the scene the 3D trajectory
-            updateTrajectory3D(false);
         }
         if (index < featureVectors.size()) {
             scene.getRoot().fireEvent(new FeatureVectorEvent(
@@ -1953,32 +1955,22 @@ public class Hyperspace3DPane extends StackPane implements
 
     @Override
     public void locateFeatureVector(FeatureVector featureVector) {
-        //pixel ranges we wish to fit our scaling to
-        double halfSceneWidth = sceneWidth / 2.0;
-        double halfSceneHeight = sceneHeight / 2.0;
-        //offset used to center placement of points in scene after scaling
-        double quarterSceneWidth = sceneWidth / 4.0;
-        //modifiers used to manually adjust scaling by user
-        double buff = pointScale * scatterBuffScaling;
-        //formula bounds
-        double minX = -buff;
-        double rangeX = 2 * buff;
-        double minY = -buff;
-        double rangeY = 2 * buff;
-        double minZ = -buff;
-        double rangeZ = 2 * buff;
-        //Determine origin location of 3D object in 3D scene coordinates
-        //linear coordinate transformation of each mean to match our 3D scene
-        //X ==> X Positive
-        double xCoord = (((pointScale * featureVector.getData().get(xFactorIndex) - minX) * halfSceneWidth) / rangeX);
-        //Y ==> Z Positive
-        double yCoord = (((pointScale * featureVector.getData().get(yFactorIndex) - minY) * halfSceneHeight) / rangeY);
-        //Z ==> Y Positive
-        double zCoord = (((pointScale * featureVector.getData().get(zFactorIndex) - minZ) * halfSceneWidth) / rangeZ);
-        //subtracting centering offset because numbers are in 3D scene coordinates now
-        JavaFX3DUtils.transitionCameraTo(1000, camera, cameraTransform,
-            xCoord - quarterSceneWidth, yCoord - quarterSceneWidth,
-            zCoord - quarterSceneWidth - 750, 0, 0, 0); //subtract 750 from Z to pull the camera back
+        //find the feature in all the features
+        if(null == featureVector.getEntityId()) return;
+        
+        int i = featureVectors.indexOf(featureVector);
+        if(i < 0) {
+            //try to manually find it via string compare (more expensive)
+            for(int index=0;index<featureVectors.size();index++) {
+                if(featureVectors.get(index).getEntityId()
+                    .contentEquals(featureVector.getEntityId())){
+                    i = index;
+                    break;
+                }
+            }
+        }        
+        if(i<0) return; //couldn't find it
+        setSpheroidAnchor(false, i);
     }
 
     @Override

@@ -1,12 +1,14 @@
 package edu.jhuapl.trinity.javafx.components.listviews;
 
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
+import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import java.io.File;
 import java.io.IOException;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.logging.Level;
@@ -16,6 +18,7 @@ import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
 
 /**
@@ -64,6 +67,24 @@ public class EmbeddingsImageListItem extends HBox {
         featureVector = FeatureVector.EMPTY_FEATURE_VECTOR("", 3);
         featureVector.setImageURL(file.getAbsolutePath());
         Tooltip.install(this, new Tooltip(file.getAbsolutePath()));
+        
+        imageView.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
+            if (e.getClickCount() > 1) {
+                getScene().getRoot().fireEvent(new FeatureVectorEvent(
+                    FeatureVectorEvent.SELECT_FEATURE_VECTOR, featureVector));
+                getScene().getRoot().fireEvent(
+                    new FeatureVectorEvent(FeatureVectorEvent.LOCATE_FEATURE_VECTOR, featureVector));
+            }
+        });
+        setOnMouseClicked(e -> {
+            if (e.getClickCount() > 1) {
+                getScene().getRoot().fireEvent(new FeatureVectorEvent(
+                    FeatureVectorEvent.SELECT_FEATURE_VECTOR, featureVector));
+                getScene().getRoot().fireEvent(
+                    new FeatureVectorEvent(FeatureVectorEvent.LOCATE_FEATURE_VECTOR, featureVector));
+            }
+        });        
+        
     }
     public void reloadImage(boolean renderIcon) {
         if(renderIcon) {
@@ -106,6 +127,12 @@ public class EmbeddingsImageListItem extends HBox {
     }
     public FeatureVector getFeatureVector(){
         return featureVector;
+    }
+    public String getFeatureVectorEntityID() {
+        return featureVector.getEntityId();
+    }
+    public void setFeatureVectorEntityID(String entityID) {
+        featureVector.setEntityId(entityID);
     }
     public static Function<File, EmbeddingsImageListItem> itemFromFile = file -> {
         return new EmbeddingsImageListItem(file);

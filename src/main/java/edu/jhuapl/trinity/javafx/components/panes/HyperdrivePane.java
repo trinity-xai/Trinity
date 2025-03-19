@@ -64,6 +64,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
+import java.util.UUID;
 import java.util.concurrent.atomic.AtomicInteger;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
@@ -614,7 +615,6 @@ public class HyperdrivePane extends LitPathPane {
             List<Integer> inputIDs = (List<Integer>) event.object2;
             String msg = "Received " + output.getData().size() + " embeddings at " 
                 + format.format(LocalDateTime.now());
-
             int totalListItems = embeddingsListView.getItems().size();
             for(int i=0;i<output.getData().size();i++){
                 if(i<=totalListItems) {
@@ -628,16 +628,20 @@ public class HyperdrivePane extends LitPathPane {
                             item.addMetaData("type", currentOutput.getType());
                         });
                 }
-                
             }
             
             outstandingRequests.put(output.getRequestNumber(), STATUS.SUCCEEDED);
-            embeddingRequestIndicator.setTopLabelLater(msg);
             System.out.println(msg);
-            outstandingRequests.remove(output.getRequestNumber());
+            int totalRequests = outstandingRequests.size();
+            long remainingRequests = outstandingRequests.entrySet().stream()
+                .filter(t -> t.getValue() == STATUS.REQUESTED).count();
+            embeddingRequestIndicator.setTopLabelLater("Received " 
+                + (totalRequests-remainingRequests) + " of " + totalRequests);
+
             if(!outstandingRequests.containsValue(STATUS.REQUESTED)) {
                 embeddingRequestIndicator.spin(false);
-                embeddingRequestIndicator.fadeBusy(true);            
+                embeddingRequestIndicator.fadeBusy(true);
+                outstandingRequests.clear();
             }
         });
         scene.getRoot().addEventHandler(RestEvent.ERROR_EMBEDDINGS_IMAGE, event -> {
@@ -795,8 +799,6 @@ public class HyperdrivePane extends LitPathPane {
                 embeddingRequestIndicator.spin(true);
                 embeddingRequestIndicator.fadeBusy(false);
                 System.out.println("Requesting Captions...");
-//                long startTime = System.nanoTime();
-//                Utils.printTotalTime(startTime);
                 for(EmbeddingsImageListItem item : items) {
                     EmbeddingsImageUrl url = imageUrlFromImage.apply(item.getCurrentImage());
                     try {

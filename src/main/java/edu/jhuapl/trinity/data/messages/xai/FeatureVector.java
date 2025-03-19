@@ -12,6 +12,7 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map.Entry;
+import java.util.UUID;
 import java.util.function.Function;
 
 /**
@@ -78,6 +79,8 @@ public class FeatureVector extends MessageData {
         this.messageType = TYPESTRING;
         this.data = new ArrayList<>();
         this.metaData = new HashMap<>();
+        entityId = UUID.randomUUID().toString();
+        metaData.put("uuid", entityId);
     }
 
     public boolean isBBoxValid() {

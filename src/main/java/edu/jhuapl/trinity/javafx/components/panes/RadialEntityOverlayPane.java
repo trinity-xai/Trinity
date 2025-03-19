@@ -137,7 +137,9 @@ public class RadialEntityOverlayPane extends Pane {
         TitledPane tp0 = (TitledPane) vbox.getChildren().get(0);
         ImageView iv = loadImageView(featureVector, featureVector.isBBoxValid());
         Image image = iv.getImage();
-        ((ImageView) tp0.getContent()).setImage(image);
+        VBox temp = ((VBox) tp0.getContent());
+        temp.getChildren().filtered(n->n instanceof ImageView)
+            .forEach(i -> ((ImageView)i).setImage(image));
 
         //update details (child 2)
         //@TODO SMP Create enum for index of children
