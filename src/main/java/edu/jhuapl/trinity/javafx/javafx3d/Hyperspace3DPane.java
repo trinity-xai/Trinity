@@ -24,6 +24,7 @@ import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.ColorMapEvent;
 import edu.jhuapl.trinity.javafx.events.ColorMapEvent.COLOR_MAP;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
+import edu.jhuapl.trinity.javafx.events.EffectEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.events.HyperspaceEvent;
 import edu.jhuapl.trinity.javafx.events.HyperspaceEvent.COLOR_MODE;
@@ -33,6 +34,7 @@ import edu.jhuapl.trinity.javafx.events.ShadowEvent;
 import edu.jhuapl.trinity.javafx.events.TimelineEvent;
 import edu.jhuapl.trinity.javafx.events.TrajectoryEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.ShadowCubeWorld.PROJECTION_TYPE;
+import edu.jhuapl.trinity.javafx.javafx3d.animated.Opticon;
 import edu.jhuapl.trinity.javafx.javafx3d.tasks.AffinityClusterTask;
 import edu.jhuapl.trinity.javafx.javafx3d.tasks.DBSCANClusterTask;
 import edu.jhuapl.trinity.javafx.javafx3d.tasks.ExMaxClusterTask;
@@ -45,6 +47,7 @@ import edu.jhuapl.trinity.javafx.renderers.ManifoldRenderer;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import edu.jhuapl.trinity.utils.VisibilityMap;
+import edu.jhuapl.trinity.utils.WebCamUtils;
 import javafx.animation.AnimationTimer;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
@@ -187,6 +190,8 @@ public class Hyperspace3DPane extends StackPane implements
     public List<Double> meanVector = new ArrayList<>();
     public double maxAbsValue = 1.0;
     public double meanCenteredMaxAbsValue = 1.0;
+    
+    Opticon projectionOpticon; //something fun
 
     public ConcurrentLinkedQueue<HyperspaceSeed> hyperspaceSeeds = new ConcurrentLinkedQueue<>();
     public ConcurrentLinkedQueue<Perspective3DNode> pNodes = new ConcurrentLinkedQueue<>();
@@ -328,6 +333,13 @@ public class Hyperspace3DPane extends StackPane implements
         //Add 3D subscene stuff to 3D scene root object
         sceneRoot.getChildren().addAll(cameraTransform, highlightedPoint, nodeGroup,
             manifoldGroup, debugGroup, cubeWorld, dataXForm, extrasGroup, anchorTSM);
+        
+        projectionOpticon = new Opticon(Color.CYAN, 100);
+        extrasGroup.getChildren().add(projectionOpticon);
+//        projectionOpticon.visibleProperty().bind(autoProjectionProperty);
+//        projectionOpticon.orbitingProperty.bind(autoProjectionProperty);
+        projectionOpticon.enableOrbiting(true);
+        projectionOpticon.setScanning(false);
 
         highlightedPoint.setMaterial(new PhongMaterial(Color.ALICEBLUE));
         highlightedPoint.setDrawMode(DrawMode.LINE);
@@ -657,6 +669,10 @@ public class Hyperspace3DPane extends StackPane implements
         //load empty mesh (except single 0'ed point.
         loadDirectedMesh();
 
+        this.scene.addEventHandler(EffectEvent.OPTICON_LASER_SWEEP, e -> {
+            opticonScan(projectionOpticon);
+        });
+
         this.scene.addEventHandler(HyperspaceEvent.ADDED_FEATURE_LAYER, e ->
             changeFeatureLayer((FeatureLayer) e.object));
         this.scene.addEventHandler(HyperspaceEvent.ADDEDALL_FEATURE_LAYER, e ->
@@ -930,6 +946,93 @@ public class Hyperspace3DPane extends StackPane implements
             anchorCallout.play();
             anchorCallout.setVisible(false);
         });
+    }
+    private void opticonScan(Opticon opticon) {
+//        if (null != tessellationMeshView) {
+//            tessellationMeshView.enableMatrix(false);
+//            nodeGroup.getChildren().remove(tessellationMeshView);
+//        }
+        Image image = null;
+//        if (webcamInitialized) {
+//            LOG.info("Initializing Surveillance system... ");
+//            try {
+//                WebCamUtils.initialize();
+//                webcamInitialized;
+//                LOG.info("Camera system ONLINE!");
+//            } catch (Exception ex) {
+//                LOG.info("Camera system unreachable!");
+//            }
+//        }            
+            try {
+                image = WebCamUtils.takePicture();
+                System.out.println("Would you take my picture cuz I won't remember...");
+                LOG.info("got your little soul...");
+//                tessellationMeshView = new TessellationMesh(image,
+//                    Color.GREEN, 1f, 100.0f, 2, false);
+//                ambientLight.getScope().add(tessellationMeshView);
+//                tessellationMeshView.setOnMouseClicked(click -> {
+//                    if (click.getClickCount() == 1 && click.isControlDown())
+//                        tessellationMeshView.enableMatrix(!tessellationMeshView.matrixEnabled);
+//                    if (click.getClickCount() > 1)
+//                        tessellationMeshView.setVisible(false);
+//                });
+            } catch (Exception ex) {
+                LOG.info("Unable to capture image.");
+            }
+//        }
+        final int top = (int) snappedTopInset();
+        final int right = (int) snappedRightInset();
+        final int bottom = (int) snappedBottomInset();
+        final int left = (int) snappedLeftInset();
+        final double w = getWidth() - left - right;
+        final double h = getHeight() - top - bottom;
+        javafx.geometry.Point3D opticonP3D = new javafx.geometry.Point3D(
+            projectionOpticon.getTranslateX(), projectionOpticon.getTranslateY(),
+            projectionOpticon.getTranslateZ());
+        javafx.geometry.Point3D cameraP3D = cameraTransform.localToScene(
+            camera.getTranslateX(), camera.getTranslateY(),
+            camera.getTranslateZ() + 750, false);
+        javafx.geometry.Point3D camLookP3D = cameraTransform.localToScene(
+            camera.getTranslateX(), camera.getTranslateY(),
+            camera.getTranslateZ(), false);
+
+        JavaFX3DUtils.lookAt(projectionOpticon,camLookP3D, opticonP3D, false, true);
+
+        opticon.scanMode(this, cameraP3D.getX(), cameraP3D.getY(), cameraP3D.getZ(), w, h);
+//        if (null != tessellationMeshView) {
+//            nodeGroup.getChildren().add(tessellationMeshView);
+//            tessellationMeshView.setRotationAxis(Rotate.X_AXIS);
+//            tessellationMeshView.setRotate(-90);
+//            tessellationMeshView.setTranslateZ(camera.getTranslateZ() + 150);
+//            if (null != image) {
+//                tessellationMeshView.setTranslateX(-image.getWidth() / 4.0);
+//                tessellationMeshView.setTranslateY(-image.getHeight() / 4.0);
+//            }
+//            pointLight.getScope().add(tessellationMeshView);
+//            pointLight.setTranslateZ(camera.getTranslateZ());
+//            Timeline scanTimeline = new Timeline(
+//                //Synch with Opticon laser sweep that starts at 3.5 seconds into timeline
+//                new KeyFrame(Duration.seconds(3.25), kv ->
+//                    tessellationMeshView.animateTessellation(15, 2)),
+//                new KeyFrame(Duration.seconds(9), kv ->
+//                    tessellationMeshView.enableMatrix(true)),
+//                new KeyFrame(Duration.seconds(9.0),
+//                    new KeyValue(tessellationMeshView.scaleXProperty(), 1.0)),
+//                new KeyFrame(Duration.seconds(9.0),
+//                    new KeyValue(tessellationMeshView.scaleYProperty(), 1.0)),
+//                new KeyFrame(Duration.seconds(9.0),
+//                    new KeyValue(tessellationMeshView.scaleZProperty(), 1.0)),
+//                new KeyFrame(Duration.seconds(10.0),
+//                    new KeyValue(tessellationMeshView.scaleXProperty(), 0.5)),
+//                new KeyFrame(Duration.seconds(10.0),
+//                    new KeyValue(tessellationMeshView.scaleYProperty(), 0.5)),
+//                new KeyFrame(Duration.seconds(10.0),
+//                    new KeyValue(tessellationMeshView.scaleZProperty(), 0.5))
+//            );
+//
+//            scanTimeline.setCycleCount(1);
+//            scanTimeline.playFromStart();
+//        }
     }
 
     public void updateOnLabelChange(List<FactorLabel> labels) {

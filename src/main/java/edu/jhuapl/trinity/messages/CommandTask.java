@@ -2,6 +2,7 @@ package edu.jhuapl.trinity.messages;
 
 import edu.jhuapl.trinity.data.messages.CommandRequest;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
+import edu.jhuapl.trinity.javafx.events.EffectEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
@@ -44,6 +45,16 @@ public class CommandTask extends Task {
             Platform.runLater(() -> {
                 scene.getRoot().fireEvent(new ManifoldEvent(ManifoldEvent.GENERATE_NEW_UMAP));
             });
+        } else if (command.contentEquals(CommandRequest.COMMANDS.USER_ATTENTION.name())) {
+            Platform.runLater(() -> {
+                scene.getRoot().fireEvent(new EffectEvent(EffectEvent.OPTICON_USER_ATTENTION));
+            });
+        } else if (command.contentEquals(CommandRequest.COMMANDS.LASER_SWEEP.name())) {
+            Platform.runLater(() -> {
+                scene.getRoot().fireEvent(new EffectEvent(EffectEvent.OPTICON_LASER_SWEEP));
+            });
+        } else {
+            System.out.println("Unknown command received: " + command);
         }
     }
 

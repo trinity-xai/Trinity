@@ -427,7 +427,6 @@ public class Projections3DPane extends StackPane implements
             emptyVisionEnabled = (boolean) e.object;
         });
 
-
         //Add 3D subscene stuff to 3D scene root object
         sceneRoot.getChildren().addAll(cameraTransform, highlightedPoint,
             nodeGroup, manifoldGroup, debugGroup, cubeWorld,

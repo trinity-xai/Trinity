@@ -363,11 +363,15 @@ public enum JavaFX3DUtils {
         return new double[]{angleX, angleY, angleZ};
     }
 
-    public static Affine lookAt(Node node, javafx.geometry.Point3D from, javafx.geometry.Point3D to, boolean applyTranslate) {
+    public static Affine lookAt(Node node, 
+        javafx.geometry.Point3D from, javafx.geometry.Point3D to, 
+        boolean applyTranslate, boolean flipY) {
         //zVec is "forward"
         javafx.geometry.Point3D zVec = to.subtract(from).normalize();
         //ydir is "up"
         javafx.geometry.Point3D ydir = Rotate.Y_AXIS;
+        if(flipY)
+            ydir = new javafx.geometry.Point3D(0,-1,0); 
         javafx.geometry.Point3D tangent0 = zVec.crossProduct(ydir);
         //handle edge case where to location is precisely the "up" direction
         if (tangent0.magnitude() < 0.001) {
@@ -380,7 +384,7 @@ public enum JavaFX3DUtils {
 
         javafx.geometry.Point3D xVec = ydir.normalize().crossProduct(zVec).normalize();
         javafx.geometry.Point3D yVec = zVec.crossProduct(xVec).normalize();
-
+        
         Affine affine = new Affine(
             xVec.getX(), yVec.getX(), zVec.getX(), 0,
             xVec.getY(), yVec.getY(), zVec.getY(), 0,
