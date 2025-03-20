@@ -28,6 +28,7 @@ import edu.jhuapl.trinity.javafx.events.EffectEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.events.HyperspaceEvent;
 import edu.jhuapl.trinity.javafx.events.HyperspaceEvent.COLOR_MODE;
+import edu.jhuapl.trinity.javafx.events.ImageEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent.ProjectionConfig;
 import edu.jhuapl.trinity.javafx.events.ShadowEvent;
@@ -97,6 +98,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Function;
+import javafx.animation.KeyFrame;
+import javafx.util.Duration;
 
 /**
  * @author Sean Phillips
@@ -666,6 +669,8 @@ public class Hyperspace3DPane extends StackPane implements
         HyperspaceSeed seed = new HyperspaceSeed(0, 1, 2, 3, 4, 5, features);
         hyperspaceSeeds.add(seed);
         addPNodeFromSeed(seed);
+//        FeatureVector dummy = FeatureVector.EMPTY_FEATURE_VECTOR("", 6);
+//        featureVectors.add(dummy);
         //load empty mesh (except single 0'ed point.
         loadDirectedMesh();
 
@@ -941,8 +946,8 @@ public class Hyperspace3DPane extends StackPane implements
             updateLabels();
             updateView(true);
             //create callout automatically puts the callout and node into a managed map
-            FeatureVector dummy = FeatureVector.EMPTY_FEATURE_VECTOR("", 3);
-            anchorCallout = radialOverlayPane.createCallout(anchorTSM, dummy, subScene);
+            FeatureVector anchorFV = FeatureVector.EMPTY_FEATURE_VECTOR("", 6);
+            anchorCallout = radialOverlayPane.createCallout(anchorTSM, anchorFV, subScene);
             anchorCallout.play();
             anchorCallout.setVisible(false);
         });
@@ -980,6 +985,7 @@ public class Hyperspace3DPane extends StackPane implements
                 LOG.info("Unable to capture image.");
             }
 //        }
+        final Image finalImage = image;
         final int top = (int) snappedTopInset();
         final int right = (int) snappedRightInset();
         final int bottom = (int) snappedBottomInset();
@@ -999,6 +1005,16 @@ public class Hyperspace3DPane extends StackPane implements
         JavaFX3DUtils.lookAt(projectionOpticon,camLookP3D, opticonP3D, false, true);
 
         opticon.scanMode(this, cameraP3D.getX(), cameraP3D.getY(), cameraP3D.getZ(), w, h);
+        //Doofus hack but after 8 seconds the lasersweep is done
+        Timeline scanTimeline = new Timeline(
+            //Synch with Opticon laser sweep that starts at 3.5 seconds into timeline
+            new KeyFrame(Duration.seconds(8), kv ->
+                camera.getScene().getRoot().fireEvent(
+                    new ImageEvent(ImageEvent.NEW_SCAN_IMAGE, finalImage)))
+        );
+        scanTimeline.setCycleCount(1);
+        scanTimeline.playFromStart();
+
 //        if (null != tessellationMeshView) {
 //            nodeGroup.getChildren().add(tessellationMeshView);
 //            tessellationMeshView.setRotationAxis(Rotate.X_AXIS);
@@ -1628,6 +1644,8 @@ public class Hyperspace3DPane extends StackPane implements
         HyperspaceSeed seed = new HyperspaceSeed(0, 1, 2, 3, 4, 5, features);
         hyperspaceSeeds.add(seed);
         addPNodeFromSeed(seed);
+//        FeatureVector dummy = FeatureVector.EMPTY_FEATURE_VECTOR("", 6);
+//        featureVectors.add(dummy);        
         VisibilityMap.clearAll();
         updateLabels(); //make sure all remaining floating labels and strings are updated
     }
@@ -1646,7 +1664,8 @@ public class Hyperspace3DPane extends StackPane implements
             //System.out.println("Requested anchor index of " + index + " less than zero.");
             return;
         }
-        Point3D p3d = scatterModel.data.get(index);
+        //SUPER IMPORTANT HACK... always add 1 to the index to account for dummy pNode
+        Point3D p3d = scatterModel.data.get(index+1); //plus one to account for dummy seed
         anchorTSM.setTranslateX(p3d.x);
         anchorTSM.setTranslateY(p3d.y);
         anchorTSM.setTranslateZ(p3d.z);
@@ -2073,6 +2092,7 @@ public class Hyperspace3DPane extends StackPane implements
             }
         }        
         if(i<0) return; //couldn't find it
+
         setSpheroidAnchor(false, i);
     }
 

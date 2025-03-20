@@ -70,7 +70,6 @@ import org.slf4j.LoggerFactory;
 
 import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
-import java.awt.image.DataBufferInt;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
@@ -81,7 +80,6 @@ import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
-import java.nio.ByteBuffer;
 import java.nio.IntBuffer;
 import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
@@ -96,6 +94,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.Random;
 import java.util.Set;
+import java.util.UUID;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
 import java.util.stream.Collectors;
@@ -211,6 +210,14 @@ public enum ResourceUtils {
         }
         return filenames;
     }
+
+    public static File saveImageFile(Image image) throws IOException {
+        
+        File newFile = new File("imagery/Trinity-scan-" + UUID.randomUUID().toString()+".png");
+        BufferedImage buff = SwingFXUtils.fromFXImage(image, null);
+        ImageIO.write(buff, "PNG", newFile);
+        return newFile;
+    }
     public static WritableImage loadImageFile(File file) throws IOException {
         BufferedImage image = ImageIO.read(file);
         WritableImage wi = SwingFXUtils.toFXImage(image, null);
@@ -219,7 +226,6 @@ public enum ResourceUtils {
     public static WritableImage loadImageFile(String filename) throws IOException {
         File imageFile = new File(filename);
         return loadImageFile(imageFile);
-
     }
 
     public static Image load3DTextureImage(String filename) throws IOException {

@@ -13,6 +13,7 @@ import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 import java.util.logging.Level;
 import java.util.logging.Logger;
+import javafx.application.Platform;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
@@ -104,7 +105,7 @@ public class EmbeddingsImageListItem extends HBox {
         dimensionsLabel.setText(format.format(data.size()));
     }
     public void setFeatureVectorLabel(String text) {
-        labelTextField.setText(text);
+        Platform.runLater(()->{labelTextField.setText(text);});
         featureVector.setLabel(text);
     }
     public String getFeatureVectorLabel() {

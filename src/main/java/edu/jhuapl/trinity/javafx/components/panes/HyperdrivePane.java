@@ -28,6 +28,7 @@ import edu.jhuapl.trinity.javafx.components.listviews.LandmarkListItem;
 import edu.jhuapl.trinity.javafx.components.radial.CircleProgressIndicator;
 import edu.jhuapl.trinity.javafx.components.radial.ProgressStatus;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
+import edu.jhuapl.trinity.javafx.events.ImageEvent;
 import edu.jhuapl.trinity.javafx.events.RestEvent;
 import edu.jhuapl.trinity.messages.EmbeddingsImageCallback.STATUS;
 import edu.jhuapl.trinity.messages.RestAccessLayer;
@@ -65,6 +66,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
+import java.util.logging.Level;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.scene.control.Alert;
@@ -712,6 +714,27 @@ public class HyperdrivePane extends LitPathPane {
                 embeddingRequestIndicator.fadeBusy(true);            
             }
         });
+        scene.getRoot().addEventHandler(ImageEvent.NEW_SCAN_IMAGE, event -> {
+            Image scanImage = (Image) event.object;
+            //write out image to file
+            File newFile;
+            try {
+                newFile = ResourceUtils.saveImageFile(scanImage);
+                EmbeddingsImageListItem newItem = new EmbeddingsImageListItem(newFile, renderIconsCheckBox.isSelected());
+                embeddingsListView.getItems().add(0, newItem);
+                imageFilesCountLabel.setText(String.valueOf(imageFilesList.size()));
+                if(!embeddingsListView.getItems().isEmpty()) {
+                    //trigger baseImageView to change
+                    embeddingsListView.getSelectionModel().selectFirst();
+                } else {
+                    baseImage = waitingImage;
+                    baseImageView.setImage(baseImage);
+                }        
+            } catch (IOException ex) {
+                LOG.error(ex.getMessage());
+            }
+        });
+        
     }
 
     public void chooseCaptionsTask(List<EmbeddingsImageListItem> items, List<String> choices) {
