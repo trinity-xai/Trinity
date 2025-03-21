@@ -520,7 +520,7 @@ public class Hyperspace3DPane extends StackPane implements
             }
 
             //point size and scaling
-            if (keycode == KeyCode.T) {
+            if (!event.isControlDown() && keycode == KeyCode.T) {
                 scatterBuffScaling -= 0.1;
                 Platform.runLater(() -> scene.getRoot().fireEvent(
                     new HyperspaceEvent(HyperspaceEvent.SCATTERBUFF_SCALING_KEYPRESS, scatterBuffScaling)));
@@ -529,7 +529,7 @@ public class Hyperspace3DPane extends StackPane implements
                 updateView(false);
                 updateEllipsoids();
             }
-            if (keycode == KeyCode.Y) {
+            if (!event.isControlDown() && keycode == KeyCode.Y) {
                 scatterBuffScaling += 0.1;
                 Platform.runLater(() -> scene.getRoot().fireEvent(
                     new HyperspaceEvent(HyperspaceEvent.SCATTERBUFF_SCALING_KEYPRESS, scatterBuffScaling)));

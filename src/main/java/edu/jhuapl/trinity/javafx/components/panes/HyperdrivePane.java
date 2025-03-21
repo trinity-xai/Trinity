@@ -32,6 +32,8 @@ import edu.jhuapl.trinity.javafx.events.ImageEvent;
 import edu.jhuapl.trinity.javafx.events.RestEvent;
 import edu.jhuapl.trinity.messages.EmbeddingsImageCallback.STATUS;
 import edu.jhuapl.trinity.messages.RestAccessLayer;
+import static edu.jhuapl.trinity.messages.RestAccessLayer.currentChatModel;
+import static edu.jhuapl.trinity.messages.RestAccessLayer.currentEmbeddingsModel;
 import static edu.jhuapl.trinity.messages.RestAccessLayer.stringToChatCaptionResponse;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
@@ -66,7 +68,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.logging.Level;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.scene.control.Alert;
@@ -122,8 +123,8 @@ public class HyperdrivePane extends LitPathPane {
     HashMap<Integer, STATUS> outstandingRequests;    
     int batchSize = 1;
     long requestDelay = 25;
-    String currentEmbeddingsModel = null;
-    String currentChatModel = null;
+//    String currentEmbeddingsModel = null;
+//    String currentChatModel = null;
     DateTimeFormatter format; 
     private static BorderPane createContent() {
         BorderPane bpOilSpill = new BorderPane();
@@ -139,8 +140,8 @@ public class HyperdrivePane extends LitPathPane {
         imageFilesList = new ArrayList<>();
         outstandingRequests = new HashMap<>();
         requestNumber = new AtomicInteger();
-        currentEmbeddingsModel = RestAccessLayer.restAccessLayerconfig.getDefaultImageModel();        
-        currentChatModel = RestAccessLayer.restAccessLayerconfig.getDefaultCaptionModel();        
+//        currentEmbeddingsModel = RestAccessLayer.restAccessLayerconfig.getDefaultImageModel();        
+//        currentChatModel = RestAccessLayer.restAccessLayerconfig.getDefaultCaptionModel();        
         waitingImage = ResourceUtils.loadIconFile("waitingforimage");
         setBackground(Background.EMPTY);
         //container for the floating window itself

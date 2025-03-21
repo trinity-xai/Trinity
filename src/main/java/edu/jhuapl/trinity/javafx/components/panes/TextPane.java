@@ -6,7 +6,6 @@ import edu.jhuapl.trinity.data.messages.CommandRequest;
 import edu.jhuapl.trinity.messages.CommandTask;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import java.util.ArrayList;
-import java.util.concurrent.LinkedBlockingQueue;
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
@@ -125,12 +124,16 @@ public class TextPane extends LitPathPane {
             }
         });
         commandTextField.setOnAction(e -> {
-            String cmd = commandTextField.getText();
-            commandList.add(0, cmd);
+            String fullCommand = commandTextField.getText();
+            commandList.add(0, fullCommand);
             CommandRequest request = new CommandRequest();
-            request.setRequest(cmd);
+            String [] tokens = fullCommand.split(" ");
+            request.setRequest(tokens[0]);
+            if(tokens.length > 1){
+                request.getProperties().put(CommandRequest.PAYLOAD, fullCommand.replaceFirst(tokens[0], ""));
+            }
             CommandTask commandTask = new CommandTask(request, scene);
-            Thread t = new Thread(commandTask, "Trinity Command Task " + cmd);
+            Thread t = new Thread(commandTask, "Trinity Command Task " + fullCommand);
             t.setDaemon(true);
             t.start();
             addLine(commandTextField.getText(), 

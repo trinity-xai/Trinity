@@ -42,8 +42,9 @@ public enum RestAccessLayer {
     public static final String SERVICES_DEFAULT_CONFIG = "defaultRestAccessLayer.json";
     public static RestAccessLayerConfig restAccessLayerconfig = null;
     public static final int DEFAULT_TIMEOUT_SECONDS = 60;
-      
     public static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
+    public static String currentEmbeddingsModel = null;
+    public static String currentChatModel = null;
     
     static {
         objectMapper = new ObjectMapper();
@@ -67,6 +68,8 @@ public enum RestAccessLayer {
             System.out.println("Error attempting to find and load REST Services Config: " 
                 + SERVICES_DEFAULT_PATH + SERVICES_DEFAULT_CONFIG);
         }
+        currentEmbeddingsModel = restAccessLayerconfig.getDefaultImageModel();        
+        currentChatModel = restAccessLayerconfig.getDefaultCaptionModel();        
     }
 
     public static RestAccessLayerConfig loadDefaultRestConfig() throws IOException {
@@ -79,7 +82,22 @@ public enum RestAccessLayer {
         return config;
     }    
     
-    //Event and Image REST calls
+    //Text and Image REST calls
+
+    public static void requestQueryTextEmbeddings(EmbeddingsImageInput input, 
+        Scene scene, List<Integer> inputIDs, int requestNumber) throws JsonProcessingException {
+        if(!checkRestServiceInitialized()) {
+            notifyTerminalError(
+                "REST Request Error: Current REST URL or End Point not initialized properly.", 
+                scene
+            );            
+        }
+        String inputJSON = objectMapper.writeValueAsString(input);
+        //@DEBUG SMP
+        System.out.println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(input));
+        Request request = makePostRequest(inputJSON, restAccessLayerconfig.getImageEmbeddingsEndpoint());
+        client.newCall(request).enqueue(new EmbeddingsTextQueryCallback(scene, inputIDs, requestNumber));
+    }
     public static void requestTextEmbeddings(EmbeddingsImageInput input, 
         Scene scene, List<Integer> inputIDs, int requestNumber) throws JsonProcessingException {
         if(!checkRestServiceInitialized()) {

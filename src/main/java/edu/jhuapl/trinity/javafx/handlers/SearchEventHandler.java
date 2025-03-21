@@ -4,10 +4,15 @@ package edu.jhuapl.trinity.javafx.handlers;
 
 import edu.jhuapl.trinity.App;
 import edu.jhuapl.trinity.data.FilterSet;
+import edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageInput;
+import edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageOutput;
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.SearchEvent;
 import edu.jhuapl.trinity.javafx.renderers.FeatureVectorRenderer;
+import edu.jhuapl.trinity.messages.RestAccessLayer;
+import static edu.jhuapl.trinity.messages.RestAccessLayer.currentEmbeddingsModel;
+import java.io.IOException;
 import javafx.event.EventHandler;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
@@ -16,6 +21,7 @@ import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
 
 /**
  * @author Sean Phillips
@@ -24,9 +30,11 @@ public class SearchEventHandler implements EventHandler<SearchEvent> {
     private static final Logger LOG = LoggerFactory.getLogger(SearchEventHandler.class);
 
     List<FeatureVectorRenderer> renderers;
+    AtomicInteger requestNumber;
 
     public SearchEventHandler() {
         renderers = new ArrayList<>();
+        requestNumber = new AtomicInteger();
     }
 
     public void addFeatureVectorRenderer(FeatureVectorRenderer renderer) {
@@ -121,6 +129,49 @@ public class SearchEventHandler implements EventHandler<SearchEvent> {
             App.getAppScene().getRoot().fireEvent(new CommandTerminalEvent(msg));
         }
     }
+    public void handleFindByQuery(SearchEvent event) {
+        String query = (String) event.eventObject;
+        String msg = "Finding closest vector matches to '" + query + "'... ";
+        App.getAppScene().getRoot().fireEvent(new CommandTerminalEvent(msg,
+            new Font("Consolas", 20), Color.GREEN));
+        LOG.info(msg);
+        System.out.println("Requesting embedding vector for query...");
+        try {
+            EmbeddingsImageInput input = EmbeddingsImageInput.defaultTextInput(query);
+            if(null != currentEmbeddingsModel)
+                input.setModel(currentEmbeddingsModel);
+            List<Integer> inputIDs = new ArrayList<>();
+            inputIDs.add(-1);
+            RestAccessLayer.requestQueryTextEmbeddings(
+                input, App.getAppScene(), inputIDs, requestNumber.getAndIncrement());
+        } catch (IOException ex) {
+            LOG.error(null, ex);
+        }
+    }
+    public void handleQueryEmbeddingsResponse(SearchEvent event) {
+        EmbeddingsImageOutput output = (EmbeddingsImageOutput) event.eventObject;
+        System.out.println("Query Embedding Response... " + output.getData().get(0).getType());
+//        for (FeatureVectorRenderer renderer : renderers) {
+//            List<FeatureVector> fvList = renderer.getAllFeatureVectors();
+//            int size = fvList.size();
+//
+////            int filteredCount = 0;
+////            double probability;
+////            for (int i = 0; i < size; i++) {
+////                probability = fvList.get(i).getPfa();
+////                if (probability < filterSet.minimum.doubleValue()
+////                    || probability > filterSet.maximum.doubleValue()) {
+////                    renderer.setVisibleByIndex(i, false);
+////                    filteredCount++;
+////                }
+////            }
+//            //request render update
+//            renderer.refresh();
+//            msg = "Query on featureVectors executed.";
+//            LOG.info(msg);
+//            App.getAppScene().getRoot().fireEvent(new CommandTerminalEvent(msg));
+//        }
+    }
 
     @Override
     public void handle(SearchEvent event) {
@@ -132,5 +183,9 @@ public class SearchEventHandler implements EventHandler<SearchEvent> {
             handleFilterByScore(event);
         else if (event.getEventType().equals(SearchEvent.FILTER_BY_PROBABILITY))
             handleFilterByProbability(event);
+        else if (event.getEventType().equals(SearchEvent.FIND_BY_QUERY))
+            handleFindByQuery(event);
+        else if (event.getEventType().equals(SearchEvent.QUERY_EMBEDDINGS_RESPONSE))
+            handleQueryEmbeddingsResponse(event);
     }
 }

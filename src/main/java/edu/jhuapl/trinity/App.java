@@ -351,9 +351,9 @@ public class App extends Application {
                 if (ResourceUtils.promptUserOnCommand(dropType)) {
                     try {
                         switch (dropType) {
-                            case "Hyperspace" -> CommandTask.execute(scene, "VIEW_HYPERSPACE", 0);
-                            case "Hypersurface" -> CommandTask.execute(scene, "VIEW_HYPERSURFACE", 0);
-                            case "Projections" -> CommandTask.execute(scene, "VIEW_PROJECTIONS", 0);
+                            case "Hyperspace" -> CommandTask.execute(scene, "VIEW_HYPERSPACE", 0, null);
+                            case "Hypersurface" -> CommandTask.execute(scene, "VIEW_HYPERSURFACE", 0, null);
+                            case "Projections" -> CommandTask.execute(scene, "VIEW_PROJECTIONS", 0, null);
                         }
                     } catch (InterruptedException ex) {
                         LOG.error(null, ex);
@@ -886,6 +886,8 @@ public class App extends Application {
         scene.getRoot().addEventHandler(SearchEvent.FILTER_BY_TERM, seh);
         scene.getRoot().addEventHandler(SearchEvent.FILTER_BY_SCORE, seh);
         scene.getRoot().addEventHandler(SearchEvent.CLEAR_ALL_FILTERS, seh);
+        scene.getRoot().addEventHandler(SearchEvent.FIND_BY_QUERY, seh);
+        scene.getRoot().addEventHandler(SearchEvent.QUERY_EMBEDDINGS_RESPONSE, seh);
         seh.addFeatureVectorRenderer(hyperspace3DPane);
 
         scene.getRoot().addEventHandler(CovalentPaneEvent.COVALENT_PANE_CLOSE, covalentEvent -> {

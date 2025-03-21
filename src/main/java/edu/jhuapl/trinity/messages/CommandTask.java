@@ -4,11 +4,13 @@ import edu.jhuapl.trinity.data.messages.CommandRequest;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.EffectEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
+import edu.jhuapl.trinity.javafx.events.SearchEvent;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.scene.Scene;
 
 import java.time.Duration;
+import java.util.HashMap;
 
 /**
  * @author Sean Phillips
@@ -18,14 +20,18 @@ public class CommandTask extends Task {
     double delaySeconds = 0.0;
     String command;
     Scene scene;
-
+    HashMap<String, String> properties;
+    
     public CommandTask(CommandRequest commandRequest, Scene scene) {
         this.scene = scene;
         delaySeconds = commandRequest.getDelaySeconds();
         command = commandRequest.getRequest();
+        properties = commandRequest.getProperties();
+        
     }
 
-    public static void execute(Scene scene, String command, double delaySeconds) throws InterruptedException {
+    public static void execute(Scene scene, String command, double delaySeconds, 
+        HashMap<String, String> properties) throws InterruptedException {
         if (delaySeconds > 0) {
             Thread.sleep(Duration.ofMillis(Double.valueOf(delaySeconds * 1000).longValue()));
         }
@@ -53,6 +59,13 @@ public class CommandTask extends Task {
             Platform.runLater(() -> {
                 scene.getRoot().fireEvent(new EffectEvent(EffectEvent.OPTICON_LASER_SWEEP));
             });
+        } else if (command.contentEquals(CommandRequest.COMMANDS.FIND.name())) {
+            if(null != properties && properties.containsKey(CommandRequest.PAYLOAD)) {
+                System.out.println("need to find: " + properties.get(CommandRequest.PAYLOAD));
+                Platform.runLater(() -> {
+                    scene.getRoot().fireEvent(new SearchEvent(SearchEvent.FIND_BY_QUERY, properties.get(CommandRequest.PAYLOAD)));
+                });
+            }
         } else {
             System.out.println("Unknown command received: " + command);
         }
@@ -60,7 +73,7 @@ public class CommandTask extends Task {
 
     @Override
     protected Object call() throws Exception {
-        execute(scene, command, delaySeconds);
+        execute(scene, command, delaySeconds, properties);
         return null;
     }
 
