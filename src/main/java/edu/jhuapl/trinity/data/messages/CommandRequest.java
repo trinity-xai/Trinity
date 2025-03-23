@@ -17,7 +17,7 @@ public class CommandRequest extends MessageData {
     public enum COMMANDS {
         VIEW_HYPERSPACE, VIEW_HYPERSURFACE, VIEW_PROJECTIONS, EXECUTE_UMAP, AUTO_PROJECTION,
         ENABLE_OPTICON, DISABLE_OPTICON, LASER_SWEEP, SCAN_MODE, USER_ATTENTION,
-        FIND
+        FIND, CLEAR_FILTERS
     }
 
     public static final String TYPESTRING = "command_request";

@@ -143,7 +143,7 @@ public class FeatureVectorEventHandler implements EventHandler<FeatureVectorEven
         LOG.info("Clearing All Feature Vectors By Request.");
         for (FeatureVectorRenderer renderer : renderers) {
             renderer.clearFeatureVectors();
-            renderer.refresh();
+            renderer.refresh(true);
         }
     }
 
@@ -185,7 +185,7 @@ public class FeatureVectorEventHandler implements EventHandler<FeatureVectorEven
             //update the renderers with the new arraylist of strings
             for (FeatureVectorRenderer renderer : renderers) {
                 renderer.setDimensionLabels(featureCollection.getDimensionLabels());
-                renderer.refresh();
+                renderer.refresh(true);
             }
         }
     }
@@ -256,7 +256,7 @@ public class FeatureVectorEventHandler implements EventHandler<FeatureVectorEven
             //update the renderers with the new arraylist of strings
             for (FeatureVectorRenderer renderer : renderers) {
                 renderer.setDimensionLabels(labelConfig.getDimensionLabels());
-                renderer.refresh();
+                renderer.refresh(true);
             }
         }
     }

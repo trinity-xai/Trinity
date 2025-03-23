@@ -66,6 +66,10 @@ public class CommandTask extends Task {
                     scene.getRoot().fireEvent(new SearchEvent(SearchEvent.FIND_BY_QUERY, properties.get(CommandRequest.PAYLOAD)));
                 });
             }
+        } else if (command.contentEquals(CommandRequest.COMMANDS.CLEAR_FILTERS.name())) {
+            Platform.runLater(() -> {
+                scene.getRoot().fireEvent(new SearchEvent(SearchEvent.CLEAR_ALL_FILTERS));
+            });
         } else {
             System.out.println("Unknown command received: " + command);
         }

@@ -179,7 +179,6 @@ public class Hypersurface3DPane extends StackPane
     public boolean surfaceRender = true;
 
     enum COLORATION {COLOR_BY_IMAGE, COLOR_BY_FEATURE, COLOR_BY_SHAPLEY}
-
     COLORATION colorationMethod = COLORATION.COLOR_BY_FEATURE;
     boolean hoverInteractionsEnabled = false;
     boolean surfaceChartsEnabled = false;
@@ -1853,7 +1852,10 @@ public class Hypersurface3DPane extends StackPane
             return Collections.EMPTY_LIST;
         return featureVectors;
     }
-
+    @Override
+    public void setColorByIndex(int i, Color color) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
     @Override
     public void setVisibleByIndex(int i, boolean b) {
         throw new UnsupportedOperationException("Not supported yet.");
@@ -1861,6 +1863,11 @@ public class Hypersurface3DPane extends StackPane
 
     @Override
     public void refresh() {
+        refresh(true);
+    }
+
+    @Override
+    public void refresh(boolean forceNodeUpdate) {
         updateTheMesh();
     }
 

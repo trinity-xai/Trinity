@@ -873,7 +873,7 @@ public class Projections3DPane extends StackPane implements
             sphereToFeatureVectorMap.clear();
             ellipsoidGroup.getChildren().clear();
             clearAll();
-            refresh();
+            refresh(true);
         });
 
         ImageView selectPoints = ResourceUtils.loadIcon("boundingbox", ICON_FIT_HEIGHT);
@@ -941,10 +941,10 @@ public class Projections3DPane extends StackPane implements
             }
         });
         this.scene.addEventHandler(HyperspaceEvent.CLEARED_FACTOR_LABELS, e -> {
-            refresh();
+            refresh(true);
         });
         this.scene.addEventHandler(HyperspaceEvent.CLEARED_FEATURE_LAYERS, e -> {
-            refresh();
+            refresh(true);
         });
 
         this.scene.addEventHandler(HyperspaceEvent.ADDED_FACTOR_LABEL, e ->
@@ -2675,7 +2675,20 @@ public class Projections3DPane extends StackPane implements
     public List<FeatureVector> getAllFeatureVectors() {
         return featureVectors;
     }
-
+    @Override
+    public void setColorByIndex(int i, Color color) {
+//        Perspective3DNode[] d = pNodes.toArray(Perspective3DNode[]::new);
+//        d[i].nodeColor = color;
+        
+        int index = 0;
+        for(Perspective3DNode pNode : pNodes) {
+            if(i == index) {
+                pNode.nodeColor = color;
+                return;
+            }
+            index++;
+        }
+    }
     @Override
     public void setVisibleByIndex(int i, boolean b) {
         VisibilityMap.pNodeVisibilityMap.put(pNodes.toArray(Perspective3DNode[]::new)[i], b);
@@ -2683,7 +2696,7 @@ public class Projections3DPane extends StackPane implements
     }
 
     @Override
-    public void refresh() {
+    public void refresh(boolean forceNodeUpdate) {
         updatePNodeColorsAndVisibility();
         updateView(true);
         updateEllipsoids();

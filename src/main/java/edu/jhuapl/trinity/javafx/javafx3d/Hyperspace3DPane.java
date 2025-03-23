@@ -715,10 +715,10 @@ public class Hyperspace3DPane extends StackPane implements
             cubeWorld.clearAll();
         });
         this.scene.addEventHandler(HyperspaceEvent.CLEARED_FACTOR_LABELS, e -> {
-            refresh();
+            refresh(true);
         });
         this.scene.addEventHandler(HyperspaceEvent.CLEARED_FEATURE_LAYERS, e -> {
-            refresh();
+            refresh(true);
         });
         this.scene.addEventHandler(HyperspaceEvent.HYPERSPACE_BACKGROUND_COLOR, e -> {
             Color color = (Color) e.object;
@@ -1644,8 +1644,6 @@ public class Hyperspace3DPane extends StackPane implements
         HyperspaceSeed seed = new HyperspaceSeed(0, 1, 2, 3, 4, 5, features);
         hyperspaceSeeds.add(seed);
         addPNodeFromSeed(seed);
-//        FeatureVector dummy = FeatureVector.EMPTY_FEATURE_VECTOR("", 6);
-//        featureVectors.add(dummy);        
         VisibilityMap.clearAll();
         updateLabels(); //make sure all remaining floating labels and strings are updated
     }
@@ -2040,7 +2038,9 @@ public class Hyperspace3DPane extends StackPane implements
 
     @Override
     public void clearGaussianMixtures() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        ellipsoidGroup.getChildren().clear();
+        ellipsoidToGMMessageMap.clear();
+        ellipsoidToGMDataMap.clear();
     }
 
     @Override
@@ -2065,9 +2065,7 @@ public class Hyperspace3DPane extends StackPane implements
             if (optBT.get().equals(ButtonType.CANCEL))
                 return;
             else if (optBT.get().equals(ButtonType.YES)) {
-                ellipsoidGroup.getChildren().clear();
-                ellipsoidToGMMessageMap.clear();
-                ellipsoidToGMDataMap.clear();
+                clearGaussianMixtures();
             }
         }
         gaussianMixtureCollection.getMixtures().parallelStream().forEach(gm -> {
@@ -2107,6 +2105,19 @@ public class Hyperspace3DPane extends StackPane implements
     }
 
     @Override
+    public void setColorByIndex(int i, Color color) {
+        int index = 0;
+        for(Perspective3DNode pNode : pNodes) {
+            if(i == index) {
+                pNode.nodeColor = color;
+                return;
+            }
+            index++;
+        }
+
+    }
+
+    @Override
     public void setVisibleByIndex(int i, boolean b) {
         Perspective3DNode[] d = pNodes.toArray(Perspective3DNode[]::new);
         VisibilityMap.pNodeVisibilityMap.put(d[i], b);
@@ -2118,9 +2129,10 @@ public class Hyperspace3DPane extends StackPane implements
     }
 
     @Override
-    public void refresh() {
-        updatePNodeColorsAndVisibility();
-        updateView(true);
+    public void refresh(boolean forceNodeUpdate) {
+        if(forceNodeUpdate)
+            updatePNodeColorsAndVisibility();
+        updateView(forceNodeUpdate);
         updateEllipsoids();
         cubeWorld.redraw(true);
         updateLabels();

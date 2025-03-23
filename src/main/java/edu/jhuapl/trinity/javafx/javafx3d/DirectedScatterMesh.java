@@ -300,8 +300,8 @@ public class DirectedScatterMesh extends Group implements TextureMode {
             DirectedTexturedMesh dot1 = new DirectedTetrahedraMesh(height.get(), level.get(), null, null);
             DirectedMeshHelper mh1 = new DirectedMeshHelper((TriangleMesh) dot1.getMesh());
             mh.addMesh(mh1,
-                scatterData.get().stream().skip(1).collect(Collectors.toList()),
-                endPoints.get().stream().skip(1).collect(Collectors.toList()));
+                scatterData.get().stream().skip(1).toList(),
+                endPoints.get().stream().skip(1).toList());
 //            mh.addMesh(mh1,
 //                scatterData.get().subList(1, scatterData.get().size()),
 //                endPoints.get().subList(1, endPoints.get().size()));
