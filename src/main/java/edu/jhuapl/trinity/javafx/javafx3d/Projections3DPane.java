@@ -2675,10 +2675,21 @@ public class Projections3DPane extends StackPane implements
     public List<FeatureVector> getAllFeatureVectors() {
         return featureVectors;
     }
+
+    @Override
+    public void setColorByID(String iGotID, Color color) {
+        featureVectors.stream()
+            .filter(fv -> fv.getEntityId().contentEquals(iGotID))
+            .forEach(f -> {
+                setColorByIndex(featureVectors.indexOf(f), color);
+            });
+    }    
     @Override
     public void setColorByIndex(int i, Color color) {
-//        Perspective3DNode[] d = pNodes.toArray(Perspective3DNode[]::new);
-//        d[i].nodeColor = color;
+        //I'm thinking this is the ugliest thing I've ever written
+        ((PhongMaterial)sphereToFeatureVectorMap.keySet()
+            .toArray(Sphere[]::new)[i]
+            .getMaterial()).setDiffuseColor(color);
         
         int index = 0;
         for(Perspective3DNode pNode : pNodes) {
@@ -3065,19 +3076,6 @@ public class Projections3DPane extends StackPane implements
 
     @Override
     public void setUmapConfig(UmapConfig config) {
-//        latestUmap.setTargetWeight(config.getTargetWeight());
-//        latestUmap.setRepulsionStrength(config.getRepulsionStrength());
-//        latestUmap.setMinDist(config.getMinDist());
-//        latestUmap.setSpread(config.getSpread());
-//        latestUmap.setSetOpMixRatio(config.getOpMixRatio());
-//        latestUmap.setNumberComponents(config.getNumberComponents());
-//        latestUmap.setNumberEpochs(config.getNumberEpochs());
-//        latestUmap.setNumberNearestNeighbours(config.getNumberNearestNeighbours());
-//        latestUmap.setNegativeSampleRate(config.getNegativeSampleRate());
-//        latestUmap.setLocalConnectivity(config.getLocalConnectivity());
-//        latestUmap.setThreshold(config.getThreshold());
-//        latestUmap.setMetric(config.getMetric());
-//        latestUmap.setVerbose(config.getVerbose());
         latestUmap = AnalysisUtils.umapConfigToUmap(config);
     }
 }

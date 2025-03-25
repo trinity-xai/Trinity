@@ -27,17 +27,8 @@
 .callout-subTitleHBox {
     -fx-border-color: #87CEEBEE;
     -fx-border-width: 1;
-    /*    -fx-background-radius: 0;
-        -fx-background-insets: 0;*/
     -fx-background-color: #87CEEB88;
     -fx-font-size: 16;
-    /*
-        -fx-font-family: "Consolas";
-        -fx-fill: #F0F8FF88;
-        -fx-stroke: #FFFFFF;
-        -fx-stroke-width: 2;
-        -fx-font-size: 48;
-    */
 }
 
 .callout-head {
@@ -68,24 +59,6 @@
 
 .trinity-pane {
     -fx-background-color: radial-gradient(center 50% 50%, radius 35%, #6495ED77, #000000);
-}
-
-.zoom-grid-axes {
-    /*-fx-background-color: radial-gradient(center 50% 50% , radius 95% , #6495ED77, #000000);*/
-}
-
-.zoom-grid-axes .axis {
-    -fx-font-size: 1.4em;
-    /*#F0F8FF88 == AliceBlue with transparency*/
-    -fx-tick-label-fill: #F0F8FF88;
-    -fx-font-family: Tahoma;
-    -fx-tick-length: 5;
-    /*-fx-minor-tick-length: 5;*/
-}
-
-.zoom-grid-axes .axis-label {
-    /*#F0F8FF88 == AliceBlue with transparency*/
-    -fx-text-fill: #F0F8FF88;
 }
 
 /*******************************************************************************
@@ -2149,6 +2122,10 @@
  * Custom                                                                      *
  *                                                                             *
  ******************************************************************************/
+.hyperdrive-pane .tab-pane .tab {
+    -fx-pref-width: 150px;
+} 
+ 
 .circle-progress-indicator {
     -fx-font-family: "Segoe UI", Helvetica, Arial, sans-serif;
     -fx-font-size: 14pt;    

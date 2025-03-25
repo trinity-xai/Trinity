@@ -1853,6 +1853,10 @@ public class Hypersurface3DPane extends StackPane
         return featureVectors;
     }
     @Override
+    public void setColorByID(String iGotID, Color color) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+    @Override
     public void setColorByIndex(int i, Color color) {
         throw new UnsupportedOperationException("Not supported yet.");
     }

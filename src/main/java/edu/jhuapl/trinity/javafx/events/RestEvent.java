@@ -21,6 +21,8 @@ public class RestEvent extends Event {
 
     public static final EventType<RestEvent> NEW_EMBEDDINGS_TEXT = new EventType(ANY, "NEW_EMBEDDINGS_TEXT");
     public static final EventType<RestEvent> NEW_EMBEDDINGS_IMAGE = new EventType(ANY, "NEW_EMBEDDINGS_IMAGE");
+    public static final EventType<RestEvent> NEW_EMBEDDINGS_LANDMARKIMAGE = new EventType(ANY, "NEW_EMBEDDINGS_LANDMARKIMAGE");
+
     public static final EventType<RestEvent> NEW_CHAT_COMPLETION = new EventType(ANY, "NEW_CHAT_COMPLETION");
     public static final EventType<RestEvent> ERROR_EMBEDDINGS_TEXT = new EventType(ANY, "ERROR_EMBEDDINGS_TEXT");
     public static final EventType<RestEvent> ERROR_EMBEDDINGS_IMAGE = new EventType(ANY, "ERROR_EMBEDDINGS_IMAGE");

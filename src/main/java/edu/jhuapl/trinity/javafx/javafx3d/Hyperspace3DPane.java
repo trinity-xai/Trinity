@@ -2105,6 +2105,15 @@ public class Hyperspace3DPane extends StackPane implements
     }
 
     @Override
+    public void setColorByID(String iGotID, Color color) {
+        featureVectors.stream()
+            .filter(fv -> fv.getEntityId().contentEquals(iGotID))
+            .forEach(f -> {
+                setColorByIndex(featureVectors.indexOf(f), color);
+            });
+    }
+    
+    @Override
     public void setColorByIndex(int i, Color color) {
         int index = 0;
         for(Perspective3DNode pNode : pNodes) {
@@ -2114,7 +2123,6 @@ public class Hyperspace3DPane extends StackPane implements
             }
             index++;
         }
-
     }
 
     @Override

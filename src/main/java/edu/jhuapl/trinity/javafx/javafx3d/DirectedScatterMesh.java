@@ -47,7 +47,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * @author José Pereda
@@ -70,7 +69,6 @@ public class DirectedScatterMesh extends Group implements TextureMode {
     public DirectedScatterMesh(List<Point3D> scatterData) {
         this(scatterData, DEFAULT_JOIN_SEGMENTS, DEFAULT_HEIGHT, DEFAULT_LEVEL);
     }
-
 
     public DirectedScatterMesh(List<Point3D> scatterData, double height) {
         this(scatterData, DEFAULT_JOIN_SEGMENTS, height, DEFAULT_LEVEL);
@@ -230,7 +228,6 @@ public class DirectedScatterMesh extends Group implements TextureMode {
     }
 
     protected final void updateMesh() {
-//        meshes=FXCollections.<DirectedTexturedMesh>observableArrayList();
         meshes.clear();
         createDots();
         getChildren().setAll(meshes);

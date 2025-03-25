@@ -1,5 +1,4 @@
 /* Copyright (C) 2025 Sean Phillips */
-
 package edu.jhuapl.trinity.javafx.components.panes;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
@@ -20,10 +19,11 @@ import edu.jhuapl.trinity.data.messages.xai.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import static edu.jhuapl.trinity.data.messages.xai.FeatureVector.mapToStateArray;
 import edu.jhuapl.trinity.javafx.components.CaptionChooserBox;
-import edu.jhuapl.trinity.javafx.components.LandmarkBuilderBox;
+import edu.jhuapl.trinity.javafx.components.listviews.LandmarkTextBuilderBox;
 import edu.jhuapl.trinity.javafx.components.listviews.EmbeddingsImageListItem;
 import static edu.jhuapl.trinity.javafx.components.listviews.EmbeddingsImageListItem.itemFromFile;
 import static edu.jhuapl.trinity.javafx.components.listviews.EmbeddingsImageListItem.itemNoRenderFromFile;
+import edu.jhuapl.trinity.javafx.components.listviews.LandmarkImageBuilderBox;
 import edu.jhuapl.trinity.javafx.components.listviews.LandmarkListItem;
 import edu.jhuapl.trinity.javafx.components.radial.CircleProgressIndicator;
 import edu.jhuapl.trinity.javafx.components.radial.ProgressStatus;
@@ -108,7 +108,7 @@ public class HyperdrivePane extends LitPathPane {
     StackPane embeddingsCenterStack;
     TabPane tabPane;
     Tab embeddingsTab;
-    Tab visionTab;
+    Tab similarityTab;
     Tab servicesTab;
     CheckBox renderIconsCheckBox;
     
@@ -117,14 +117,13 @@ public class HyperdrivePane extends LitPathPane {
     ListView<EmbeddingsImageListItem> embeddingsListView;
     Label imageFilesCountLabel;
     CircleProgressIndicator embeddingRequestIndicator;
-    LandmarkBuilderBox landmarkBuilderBox;
+    LandmarkTextBuilderBox landmarkTextBuilderBox;
+    LandmarkImageBuilderBox landmarkImageBuilderBox;    
     ChoiceBox<String> metricChoiceBox;
     AtomicInteger requestNumber;
     HashMap<Integer, STATUS> outstandingRequests;    
     int batchSize = 1;
     long requestDelay = 25;
-//    String currentEmbeddingsModel = null;
-//    String currentChatModel = null;
     DateTimeFormatter format; 
     private static BorderPane createContent() {
         BorderPane bpOilSpill = new BorderPane();
@@ -140,16 +139,15 @@ public class HyperdrivePane extends LitPathPane {
         imageFilesList = new ArrayList<>();
         outstandingRequests = new HashMap<>();
         requestNumber = new AtomicInteger();
-//        currentEmbeddingsModel = RestAccessLayer.restAccessLayerconfig.getDefaultImageModel();        
-//        currentChatModel = RestAccessLayer.restAccessLayerconfig.getDefaultCaptionModel();        
         waitingImage = ResourceUtils.loadIconFile("waitingforimage");
         setBackground(Background.EMPTY);
         //container for the floating window itself
         borderPane = (BorderPane) this.contentPane;
         embeddingsTab = new Tab("Embeddings");
-        visionTab = new Tab("Vision");
+        similarityTab = new Tab("Similarity");
         servicesTab = new Tab("Services");
-        tabPane = new TabPane(embeddingsTab, visionTab, servicesTab);
+        
+        tabPane = new TabPane(embeddingsTab, similarityTab, servicesTab);
         tabPane.setPadding(Insets.EMPTY);
         tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
         tabPane.setTabDragPolicy(TabPane.TabDragPolicy.FIXED);
@@ -195,11 +193,11 @@ public class HyperdrivePane extends LitPathPane {
         selectAllMenuItem.setOnAction(e -> 
             embeddingsListView.getSelectionModel().selectAll());        
 
-        MenuItem setCaptionItem = new MenuItem("Set Caption");
+        MenuItem setCaptionItem = new MenuItem("Set Label");
         setCaptionItem.setOnAction(e -> {
             if(!embeddingsListView.getSelectionModel().getSelectedItems().isEmpty()) {
                 TextInputDialog td = new TextInputDialog("enter any text"); 
-                td.setHeaderText("Manually set caption for " 
+                td.setHeaderText("Manually set Label for " 
                     + embeddingsListView.getSelectionModel().getSelectedItems().size()
                     + " items.");
                 td.setGraphic(ResourceUtils.loadIcon("console", 75));
@@ -217,7 +215,7 @@ public class HyperdrivePane extends LitPathPane {
             }
         });
 
-        MenuItem requestCaptionItem = new MenuItem("Request Captions");
+        MenuItem requestCaptionItem = new MenuItem("Request Label/Captions");
         requestCaptionItem.setOnAction(e -> {
             if(!embeddingsListView.getSelectionModel().getSelectedItems().isEmpty())
                 requestCaptionsTask(embeddingsListView.getSelectionModel().getSelectedItems());
@@ -228,12 +226,12 @@ public class HyperdrivePane extends LitPathPane {
                 embeddingRequestIndicator.setLabelLater("Choose Captions...");
                 embeddingRequestIndicator.spin(true);
                 embeddingRequestIndicator.fadeBusy(false);
-                System.out.println("Prompting User for Captions...");
+                System.out.println("Prompting User for Labels...");
                 Platform.runLater(()-> {
                     CaptionChooserBox box = new CaptionChooserBox();
-                    box.setChoices(landmarkBuilderBox.getChoices());
+                    box.setChoices(landmarkTextBuilderBox.getChoices());
                     Alert alert = new Alert(Alert.AlertType.CONFIRMATION); 
-                    alert.setHeaderText("Add Captions for model to choose from");
+                    alert.setHeaderText("Add Labels for model to choose from");
                     alert.setGraphic(ResourceUtils.loadIcon("console", 75));
                     alert.initStyle(StageStyle.TRANSPARENT);
                     DialogPane dialogPane = alert.getDialogPane();
@@ -245,7 +243,7 @@ public class HyperdrivePane extends LitPathPane {
                     Optional<ButtonType> captionOptional = alert.showAndWait();
                     if(captionOptional.get() == ButtonType.OK) {
                         System.out.println("Choices from user: " + box.getChoices());
-                        landmarkBuilderBox.setChoices(box.getChoices());
+                        landmarkTextBuilderBox.setChoices(box.getChoices());
                         if(!box.getChoices().isEmpty()){
                             chooseCaptionsTask(
                                 embeddingsListView.getSelectionModel().getSelectedItems(),
@@ -255,13 +253,23 @@ public class HyperdrivePane extends LitPathPane {
                 });
             }
         });
-        MenuItem landmarkCaptionItem = new MenuItem("Caption by Landmark Similarity");
-        landmarkCaptionItem.setOnAction(e -> {
+        
+        MenuItem textLandmarkCaptionItem = new MenuItem("Label by Text Landmark Similarity");
+        textLandmarkCaptionItem.setOnAction(e -> {
             if(!embeddingsListView.getSelectionModel().getSelectedItems().isEmpty())
-                requestLandmarkSimilarityTask(
-                    embeddingsListView.getSelectionModel().getSelectedItems()
-                    , landmarkBuilderBox.getItems().stream()
+                requestLandmarkSimilarityTask(embeddingsListView.getSelectionModel().getSelectedItems()
+                    , landmarkTextBuilderBox.getItems().stream()
                         .map(LandmarkListItem::getFeatureVector).toList());
+        });
+        MenuItem imageLandmarkCaptionItem = new MenuItem("Label by Image Landmark Similarity");
+        imageLandmarkCaptionItem.setOnAction(e -> {
+            if(!embeddingsListView.getSelectionModel().getSelectedItems().isEmpty()) {
+                requestLandmarkSimilarityTask(
+                    embeddingsListView.getSelectionModel().getSelectedItems(), 
+                    landmarkImageBuilderBox.getItems().stream()
+                        .map(LandmarkListItem::getFeatureVector).toList()
+                );
+            }
         });
         
         
@@ -273,7 +281,8 @@ public class HyperdrivePane extends LitPathPane {
         });
         ContextMenu embeddingsContextMenu = 
             new ContextMenu(selectAllMenuItem, setCaptionItem, requestCaptionItem, 
-                chooseCaptionItem, landmarkCaptionItem, clearRequestsItem);
+                chooseCaptionItem, textLandmarkCaptionItem, imageLandmarkCaptionItem,
+                clearRequestsItem);
         embeddingsListView.setContextMenu(embeddingsContextMenu);
 
         embeddingsCenterStack = new StackPane();
@@ -372,9 +381,8 @@ public class HyperdrivePane extends LitPathPane {
         embeddingsBorderPane.setPrefWidth(600);
         mainHBox.getChildren().addAll(embeddingsBorderPane, baseImageStackPane);
 
-        //Vision Tab ////////////////////////////////////////////////
-        
-        landmarkBuilderBox = new LandmarkBuilderBox();
+        //Landmarks And Similarity Tab ////////////////////////////////////////////////
+        landmarkTextBuilderBox = new LandmarkTextBuilderBox();
         metricChoiceBox = new ChoiceBox<>();
         metricChoiceBox.getItems().addAll(Metric.getMetricNames());
         int defaultSelection = metricChoiceBox.getItems().indexOf("cosine");
@@ -382,11 +390,13 @@ public class HyperdrivePane extends LitPathPane {
             metricChoiceBox.getSelectionModel().select(defaultSelection);
         else
             metricChoiceBox.getSelectionModel().selectFirst();
+
+        landmarkImageBuilderBox = new LandmarkImageBuilderBox();        
         
         //Controls to choose metric and refresh current landmark embeddings
         Button refreshLandmarkEmbeddingsButton = new Button("Refresh Embeddings");
         refreshLandmarkEmbeddingsButton.setOnAction(e -> {
-            landmarkBuilderBox.getItems().stream()
+            landmarkTextBuilderBox.getItems().stream()
                 .filter(i -> !i.getFeatureVectorLabel().isBlank())
                 .forEach(item -> {
                 try {
@@ -402,13 +412,41 @@ public class HyperdrivePane extends LitPathPane {
                 }
             });
         }); 
+        Button refreshImageLandmarkEmbeddingsButton = new Button("Refresh Embeddings");
+        refreshImageLandmarkEmbeddingsButton.setOnAction(e -> {
+            landmarkImageBuilderBox.getItems().stream()
+                .filter(i -> !i.getFeatureVectorLabel().isBlank())
+                .forEach(item -> {
+                try {
+                    List<EmbeddingsImageUrl> inputs = new ArrayList<>();
+                    inputs.add(imageUrlFromImage.apply(item.getCurrentImage()));
+                    EmbeddingsImageBatchInput input = new EmbeddingsImageBatchInput();
+                    input.setInput(inputs);
+                    input.setDimensions(512);
+                    input.setEmbedding_type("all");
+                    input.setEncoding_format("float");
+                    input.setModel(currentEmbeddingsModel);
+                    input.setUser("string");
+
+                    if(null != currentEmbeddingsModel)
+                        input.setModel(currentEmbeddingsModel);
+                    List<Integer> inputIDs = new ArrayList<>();
+                    inputIDs.add(item.landmarkID);
+                    RestAccessLayer.requestLandmarkImageEmbeddings(
+                        input, scene, inputIDs, requestNumber.getAndIncrement());
+                } catch (IOException ex) {
+                    LOG.error(null, ex);
+                }
+            });
+        }); 
         
         HBox visionHBox = new HBox(20,
-            new VBox(5, new Label("Landmarks / Caption Labels"), landmarkBuilderBox, refreshLandmarkEmbeddingsButton),
+            new VBox(5, new Label("Text Landmarks / Caption Labels"), landmarkTextBuilderBox, refreshLandmarkEmbeddingsButton),
+            new VBox(5, new Label("Image Landmarks"), landmarkImageBuilderBox, refreshImageLandmarkEmbeddingsButton),
             new VBox(5, new Label("Distance Metric"), metricChoiceBox)
         );
         visionHBox.setPadding(new Insets(10));
-        visionTab.setContent(visionHBox);
+        similarityTab.setContent(visionHBox);
         
         
         //Services Tab ////////////////////////////////////////////////
@@ -611,6 +649,30 @@ public class HyperdrivePane extends LitPathPane {
                 chatModelChoiceBox.getSelectionModel().selectFirst();
             }
         });
+   
+        scene.getRoot().addEventHandler(RestEvent.NEW_EMBEDDINGS_LANDMARKIMAGE, event -> {
+            EmbeddingsImageOutput output = (EmbeddingsImageOutput) event.object;
+            List<Integer> inputIDs = (List<Integer>) event.object2;
+            String msg = "Received " + output.getData().size() + " embeddings at " 
+                + format.format(LocalDateTime.now());
+            
+            int totalListItems = landmarkImageBuilderBox.getItems().size();
+            for(int i=0;i<output.getData().size();i++){
+                if(i<=totalListItems) {
+                    EmbeddingsImageData currentOutput = output.getData().get(i);
+                    int currentInputID = inputIDs.get(i);
+                    landmarkImageBuilderBox.getItems().stream()
+                        .filter(fi -> fi.landmarkID == currentInputID)
+                        .forEach(item -> {
+                            item.setEmbeddings(currentOutput.getEmbedding());
+                            item.addMetaData("object", currentOutput.getObject());
+                            item.addMetaData("type", currentOutput.getType());
+                        });
+                }
+            }
+            outstandingRequests.put(output.getRequestNumber(), STATUS.SUCCEEDED);
+            System.out.println(msg);
+        });
         
         scene.getRoot().addEventHandler(RestEvent.NEW_EMBEDDINGS_IMAGE, event -> {
             EmbeddingsImageOutput output = (EmbeddingsImageOutput) event.object;
@@ -691,12 +753,12 @@ public class HyperdrivePane extends LitPathPane {
             String msg = "Received " + output.getData().size() + " embeddings at " 
                 + format.format(LocalDateTime.now());
             
-            int totalListItems = landmarkBuilderBox.getItems().size();
+            int totalListItems = landmarkTextBuilderBox.getItems().size();
             for(int i=0;i<output.getData().size();i++){
                 if(i<=totalListItems) {
                     EmbeddingsImageData currentOutput = output.getData().get(i);
                     int currentInputID = inputIDs.get(i);
-                    landmarkBuilderBox.getItems().stream()
+                    landmarkTextBuilderBox.getItems().stream()
                         .filter(li -> li.landmarkID == currentInputID)
                         .forEach(item -> {
                             item.setEmbeddings(currentOutput.getEmbedding());
@@ -735,7 +797,7 @@ public class HyperdrivePane extends LitPathPane {
                 LOG.error(ex.getMessage());
             }
         });
-        
+        getStyleClass().add("hyperdrive-pane");
     }
 
     public void chooseCaptionsTask(List<EmbeddingsImageListItem> items, List<String> choices) {

@@ -6,7 +6,6 @@ import java.text.NumberFormat;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 
 /**
@@ -18,9 +17,7 @@ public class LandmarkListItem extends HBox {
     public static AtomicInteger atomicID = new AtomicInteger();
     public int landmarkID;    
     private String landmarkLabel;
-    private Label fileLabel;
     private Label dimensionsLabel;
-    private TextField labelTextField;
     private FeatureVector featureVector = null;
 
     public LandmarkListItem(String landmarkLabel) {
@@ -29,18 +26,10 @@ public class LandmarkListItem extends HBox {
         featureVector = FeatureVector.EMPTY_FEATURE_VECTOR("", 3);
         featureVector.setLabel(landmarkLabel);        
         
-        labelTextField = new TextField();
-        labelTextField.setEditable(true);
-        labelTextField.setPrefWidth(PREF_DIMLABEL_WIDTH);
-        labelTextField.setOnAction(e -> featureVector.setLabel(labelTextField.getText()));
-        labelTextField.textProperty().addListener(e -> featureVector.setLabel(labelTextField.getText()));
-        labelTextField.setText(landmarkLabel);
         dimensionsLabel = new Label(format.format(0));
-
-        getChildren().addAll(labelTextField, dimensionsLabel);
+        getChildren().addAll(dimensionsLabel);
         setSpacing(20);
         setPrefHeight(32);
-
     }
 
     public void setEmbeddings(List<Double> data) {
@@ -49,15 +38,11 @@ public class LandmarkListItem extends HBox {
         dimensionsLabel.setText(format.format(data.size()));
     }
     public void setFeatureVectorLabel(String text) {
-        labelTextField.setText(text);
         featureVector.setLabel(text);
     }
     public String getFeatureVectorLabel() {
-        return labelTextField.getText();
+        return featureVector.getLabel();
     }
-    public void setLabelWidth(double width) {
-        fileLabel.setPrefWidth(width);
-    }    
 
     public void addMetaData(String key, String value){
         featureVector.getMetaData().put(key, value);
@@ -71,5 +56,4 @@ public class LandmarkListItem extends HBox {
     public FeatureVector getFeatureVector(){
         return featureVector;
     }
- 
 }

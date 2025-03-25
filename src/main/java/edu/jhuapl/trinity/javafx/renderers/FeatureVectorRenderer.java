@@ -25,6 +25,8 @@ public interface FeatureVectorRenderer {
     public void setVisibleByIndex(int i, boolean b);
 
     public void setColorByIndex(int i, Color color);
+
+    public void setColorByID(String iGotID, Color color);    
     
     public void refresh(boolean forceNodeUpdate);
 
