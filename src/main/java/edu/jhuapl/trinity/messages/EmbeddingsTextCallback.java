@@ -28,6 +28,20 @@ public class EmbeddingsTextCallback extends RestCallback {
     }
 
     @Override
+    protected Object call() throws Exception {
+        try {
+            super.call();
+        } catch (Exception ex) {
+            ErrorEvent error = new ErrorEvent(ErrorEvent.REST_ERROR, getClass().getName() + " has failed.");
+            scene.getRoot().fireEvent(error);
+            Platform.runLater(() -> {
+                scene.getRoot().fireEvent(new RestEvent(RestEvent.ERROR_EMBEDDINGS_TEXT, inputIDs, requestNumber));
+            });  
+        }
+        return null;
+    }
+    
+    @Override
     public void onFailure(Call call, IOException e) {
         Logger.getLogger(RestCallback.class.getName()).log(Level.SEVERE, null, e);
         ErrorEvent error = new ErrorEvent(ErrorEvent.REST_ERROR, getClass().getName() + " has failed.");

@@ -7,6 +7,7 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 import edu.jhuapl.trinity.data.messages.MessageData;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 
 /**
@@ -51,8 +52,13 @@ public class FeatureCollection extends MessageData {
         int vectorWidth = features.get(0).getData().size();
         float[][] data = new float[vectorCount][vectorWidth];
         for (int featureVectorIndex = 0; featureVectorIndex < vectorCount; featureVectorIndex++) {
+            Arrays.fill(data[featureVectorIndex], 0);
             for (int vectorIndex = 0; vectorIndex < vectorWidth; vectorIndex++) {
-                data[featureVectorIndex][vectorIndex] = features.get(featureVectorIndex).getData().get(vectorIndex).floatValue();
+                if(features.get(featureVectorIndex).getData().size()>vectorIndex)
+                    data[featureVectorIndex][vectorIndex] = 
+                        features.get(featureVectorIndex).getData().get(vectorIndex).floatValue();
+                else
+                    break;
             }
         }
         return data;
@@ -63,8 +69,13 @@ public class FeatureCollection extends MessageData {
         int vectorWidth = features.get(0).getData().size();
         double[][] data = new double[vectorCount][vectorWidth];
         for (int featureVectorIndex = 0; featureVectorIndex < vectorCount; featureVectorIndex++) {
+            Arrays.fill(data[featureVectorIndex], 0);
             for (int vectorIndex = 0; vectorIndex < vectorWidth; vectorIndex++) {
-                data[featureVectorIndex][vectorIndex] = features.get(featureVectorIndex).getData().get(vectorIndex);
+                if(features.get(featureVectorIndex).getData().size()>vectorIndex)
+                    data[featureVectorIndex][vectorIndex] = 
+                        features.get(featureVectorIndex).getData().get(vectorIndex);
+                else
+                    break;
             }
         }
         return data;

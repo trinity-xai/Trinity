@@ -110,7 +110,11 @@ public enum RestAccessLayer {
         //@DEBUG SMP
         //System.out.println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(input));
         Request request = makePostRequest(inputJSON, restAccessLayerconfig.getImageEmbeddingsEndpoint());
-        client.newCall(request).enqueue(new EmbeddingsTextCallback(scene, inputIDs, requestNumber));
+        try {
+            client.newCall(request).enqueue(new EmbeddingsTextCallback(scene, inputIDs, requestNumber));
+        } catch(Exception ex) {
+            System.out.println("dude...");
+        }
     }
     public static void requestLandmarkTextEmbeddings(EmbeddingsImageInput input, 
         Scene scene, List<Integer> inputIDs, int requestNumber) throws JsonProcessingException {

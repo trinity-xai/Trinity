@@ -7,11 +7,10 @@ import java.io.IOException;
 import java.nio.file.Files;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javafx.application.Platform;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
@@ -24,9 +23,11 @@ import javafx.scene.layout.HBox;
 public class EmbeddingsTextListItem extends HBox {
     public static double PREF_DIMLABEL_WIDTH = 150;
     public static double PREF_FILELABEL_WIDTH = 250;
+    public static int LARGEFILE_SPLIT_SIZE = 10000;
     public static AtomicInteger atomicID = new AtomicInteger();
     public static NumberFormat format = new DecimalFormat("0000");
         
+    public boolean embeddingsReceived = false;
     public boolean parseFile = false;
     public int textID;
     public String contents = null;
@@ -35,7 +36,6 @@ public class EmbeddingsTextListItem extends HBox {
     private Label dimensionsLabel;
     private TextField labelTextField;
     private FeatureVector featureVector = null;
-    
 
     public EmbeddingsTextListItem(File file) {
         this(file, true);
@@ -46,6 +46,9 @@ public class EmbeddingsTextListItem extends HBox {
         this.parseFile = parseFile;
         fileLabel = new Label(file.getName());
         fileLabel.setPrefWidth(PREF_FILELABEL_WIDTH);
+        featureVector = FeatureVector.EMPTY_FEATURE_VECTOR("", 3);
+        featureVector.setImageURL(file.getAbsolutePath());
+        
         if(parseFile)
             readText();
         
@@ -59,10 +62,9 @@ public class EmbeddingsTextListItem extends HBox {
         getChildren().addAll( fileLabel, dimensionsLabel, labelTextField);
         setSpacing(20);
         setPrefHeight(32);
-        featureVector = FeatureVector.EMPTY_FEATURE_VECTOR("", 3);
-        featureVector.setImageURL(file.getAbsolutePath());
-        setFeatureVectorLabel(file.getName());
         Tooltip.install(this, new Tooltip(file.getAbsolutePath()));
+
+        setFeatureVectorLabel(file.getName());
         
 //        imageView.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
 //            if (e.getClickCount() > 1) {
@@ -80,7 +82,9 @@ public class EmbeddingsTextListItem extends HBox {
                     new FeatureVectorEvent(FeatureVectorEvent.LOCATE_FEATURE_VECTOR, featureVector));
             }
         });        
-        
+    }
+    public boolean embeddingsReceived() {
+        return embeddingsReceived;
     }
     public void readText() {
         if(null != file  && file.isFile() && file.canRead()){
@@ -97,6 +101,7 @@ public class EmbeddingsTextListItem extends HBox {
         featureVector.getData().clear();
         featureVector.getData().addAll(data);
         dimensionsLabel.setText(format.format(data.size()));
+        embeddingsReceived = true;
     }
     public void setFeatureVectorLabel(String text) {
         Platform.runLater(()->{labelTextField.setText(text);});
@@ -132,4 +137,33 @@ public class EmbeddingsTextListItem extends HBox {
     public static Function<File, EmbeddingsTextListItem> itemNoParseFromFile = file -> {
         return new EmbeddingsTextListItem(file, false);
     };     
+    public static Function<File, List<EmbeddingsTextListItem>> itemsSplitFromFile = file -> {
+        long total = file.length();
+        List<EmbeddingsTextListItem> list = new ArrayList<>();
+        
+        if(total <= LARGEFILE_SPLIT_SIZE) {
+            list.add(new EmbeddingsTextListItem(file, true));
+            return list;
+        }
+        try {
+            String fileString = Files.readString(file.toPath());
+            int len = fileString.length();
+            int currentStart = 0;
+            int currentEnd = LARGEFILE_SPLIT_SIZE;
+            while(currentStart <= len) {
+                if(currentEnd > len)
+                    currentEnd = len;
+                String sub = fileString.substring(currentStart, currentEnd);
+                EmbeddingsTextListItem item = new EmbeddingsTextListItem(file, false);
+                item.contents = sub;
+                item.getFeatureVector().setText(sub);
+                item.setFeatureVectorLabel(file.getName());                
+                list.add(item);
+                currentStart+=LARGEFILE_SPLIT_SIZE;
+                currentEnd+=LARGEFILE_SPLIT_SIZE;
+            }
+        } catch (Exception ex) { }
+        return list;
+    };     
+    
 }

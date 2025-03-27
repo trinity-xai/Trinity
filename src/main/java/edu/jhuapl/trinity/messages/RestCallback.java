@@ -72,10 +72,10 @@ public abstract class RestCallback extends Task implements Callback {
             } else {
                 System.out.println("Redirected...");
             }
-        } catch (Exception ex) {
-            Logger.getLogger(RestCallback.class.getName())
-                .log(Level.SEVERE, null, ex);
-        }
+        } 
+//        catch (Exception ex) {
+//            throw ex;
+//        }
         return null;
     }
     protected abstract void processResponse(String responseBodyString) throws Exception;    
