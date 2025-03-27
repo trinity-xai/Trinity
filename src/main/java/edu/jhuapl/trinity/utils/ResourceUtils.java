@@ -100,6 +100,7 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
+import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 /**
@@ -299,30 +300,50 @@ public enum ResourceUtils {
     public static boolean isTextFile(File file) {
         if (file.isFile() && file.canRead()) {
             try {
-//                boolean ascii = asciiBytesCheck(file);
                 String contentType = Files.probeContentType(file.toPath());
                 if(null != contentType) {
+                    //check for explicit mime types we want to guarantee work
                     switch (contentType) {
-                        case "text/plain":
-                        case "application/json":
+                        case "text/plain", "application/json" -> {
                             return true;
+                        }
                     }
+                    //now look explicitly for type categories we like
                     if(contentType.startsWith("text") || contentType.endsWith("json"))
                         return true;
                 }                
-                //System.out.println(contentType);
             } catch (IOException ex) {
                 LOG.error(null, ex);
             }
+            //now fuck it just check for certain byte types. (good but not guaranteed)
+            boolean ascii = asciiBytesCheck(file);
+            return ascii;
         }
         return false;
     }
 
-    public static boolean asciiBytesCheck(File file) throws FileNotFoundException {
-//        FileInputStream fis = new FileInputStream(file);
-        InputStreamReader isr = new InputStreamReader(new FileInputStream(file));
-        String encoding = isr.getEncoding();
-        return true;
+    public static boolean asciiBytesCheck(File f) {
+        if(!f.exists())
+            return false;
+        byte[] data;
+        try (FileInputStream in = new FileInputStream(f)) {
+            int size = in.available();
+            if(size > 1000)
+                size = 1000;
+            data = new byte[size];
+            in.read(data);
+            String s = new String(data, "ISO-8859-1");
+            String s2 = s.replaceAll(
+                    "[a-zA-Z0-9ßöäü\\.\\*!\"§\\$\\%&/()=\\?@~'#:,;\\"+
+                    "+><\\|\\[\\]\\{\\}\\^°²³\\\\ \\n\\r\\t_\\-`´âêîô"+
+                    "ÂÊÔÎáéíóàèìòÁÉÍÓÀÈÌÒ©‰¢£¥€±¿»«¼½¾™ª]", "");
+            // will delete all text signs
+            double d = (double)(s.length() - s2.length()) / (double)(s.length());
+            // percentage of text signs in the text
+            return d > 0.95;
+        } catch (IOException ex) {
+            return false;
+        }
     }
     /**
      * Checks whether the file can be used as an image.

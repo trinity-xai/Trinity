@@ -83,8 +83,6 @@ public class EmbeddingsTextListItem extends HBox {
         
     }
     public void readText() {
-        //TODO
-        System.out.println("load file stub...");
         if(null != file  && file.isFile() && file.canRead()){
             try {
                 contents = Files.readString(file.toPath());

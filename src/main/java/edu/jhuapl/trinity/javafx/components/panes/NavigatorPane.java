@@ -36,6 +36,9 @@ import java.io.IOException;
 import java.util.Map;
 
 import static edu.jhuapl.trinity.data.messages.xai.FeatureVector.bboxToString;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
+import javafx.scene.control.TextArea;
 import javafx.scene.layout.HBox;
 
 /**
@@ -59,6 +62,7 @@ public class NavigatorPane extends LitPathPane {
     TitledPane metaTP;
     GridPane detailsGridPane;
     ImageView imageView;
+    TextArea textArea;
     VBox contentVBox;
 
     private static BorderPane createContent() {
@@ -79,6 +83,10 @@ public class NavigatorPane extends LitPathPane {
         imageView.setFitWidth(DEFAULT_FIT_WIDTH);
         imageView.setFitHeight(DEFAULT_FIT_WIDTH);
         imageView.setPreserveRatio(true);
+        
+        textArea = new TextArea();
+        textArea.setPrefWidth(DEFAULT_FIT_WIDTH);
+        textArea.setPrefHeight(DEFAULT_FIT_WIDTH);
 
         urlLabel = new Label("Waiting for Image");
         urlLabel.setMaxWidth(DEFAULT_FIT_WIDTH);
@@ -110,8 +118,17 @@ public class NavigatorPane extends LitPathPane {
         metaTP.setText("Metadata");
         metaTP.setExpanded(false);
         metaTP.setPrefWidth(DEFAULT_TITLEDPANE_WIDTH);
+        Tab imageTab = new Tab("Image");
+        imageTab.setClosable(false);
+        imageTab.setContent(imageView);
+        Tab textTab = new Tab("Text");
+        textTab.setClosable(false);
+        textTab.setContent(textArea);
+        TabPane tabPane = new TabPane(imageTab, textTab);
+        
         contentVBox = new VBox(5, 
-            imageView, urlLabel, imageLabel,
+//            imageView, urlLabel, imageLabel,
+            tabPane, urlLabel, imageLabel,
             new HBox(10, hypersurfaceButton, imageInspectionButton), 
             detailsTP, metaTP);
 
@@ -159,6 +176,7 @@ public class NavigatorPane extends LitPathPane {
                     File file = new File(imageryBasePath + fv.getImageURL());
                     currentImage = new Image(file.toURI().toURL().toExternalForm());
                     imageView.setImage(currentImage);
+                    textArea.setText(fv.getText());
                     urlLabel.setText(fv.getImageURL());
                     urlLabel.setTooltip(new Tooltip(file.toURI().toURL().toExternalForm()));
                     createDetails(fv);
