@@ -74,8 +74,11 @@ import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
+import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -287,7 +290,40 @@ public enum ResourceUtils {
         iv.setFitWidth(FIT_WIDTH);
         return iv;
     }
+    /**
+     * Checks whether the file can read as ASCII text.
+     *
+     * @param file The File object to check.
+     * @return boolean true if it is a file, can be read and is a supported text type
+     */
+    public static boolean isTextFile(File file) {
+        if (file.isFile() && file.canRead()) {
+            try {
+//                boolean ascii = asciiBytesCheck(file);
+                String contentType = Files.probeContentType(file.toPath());
+                if(null != contentType) {
+                    switch (contentType) {
+                        case "text/plain":
+                        case "application/json":
+                            return true;
+                    }
+                    if(contentType.startsWith("text") || contentType.endsWith("json"))
+                        return true;
+                }                
+                //System.out.println(contentType);
+            } catch (IOException ex) {
+                LOG.error(null, ex);
+            }
+        }
+        return false;
+    }
 
+    public static boolean asciiBytesCheck(File file) throws FileNotFoundException {
+//        FileInputStream fis = new FileInputStream(file);
+        InputStreamReader isr = new InputStreamReader(new FileInputStream(file));
+        String encoding = isr.getEncoding();
+        return true;
+    }
     /**
      * Checks whether the file can be used as an image.
      *

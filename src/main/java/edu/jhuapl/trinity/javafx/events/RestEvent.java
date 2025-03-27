@@ -20,6 +20,7 @@ public class RestEvent extends Event {
     public static final EventType<RestEvent> STOP_RESTSERVER_PROCESSING = new EventType(ANY, "STOP_RESTSERVER_PROCESSING");
 
     public static final EventType<RestEvent> NEW_EMBEDDINGS_TEXT = new EventType(ANY, "NEW_EMBEDDINGS_TEXT");
+    public static final EventType<RestEvent> NEW_EMBEDDINGS_LANDMARKTEXT = new EventType(ANY, "NEW_EMBEDDINGS_LANDMARKTEXT");
     public static final EventType<RestEvent> NEW_EMBEDDINGS_IMAGE = new EventType(ANY, "NEW_EMBEDDINGS_IMAGE");
     public static final EventType<RestEvent> NEW_EMBEDDINGS_LANDMARKIMAGE = new EventType(ANY, "NEW_EMBEDDINGS_LANDMARKIMAGE");
 

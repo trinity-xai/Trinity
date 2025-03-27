@@ -37,6 +37,7 @@ import edu.jhuapl.trinity.javafx.renderers.ShapleyVectorRenderer;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import edu.jhuapl.trinity.utils.Utils;
+import edu.jhuapl.trinity.utils.metric.Metric;
 import javafx.animation.AnimationTimer;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
@@ -124,6 +125,7 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Random;
 import java.util.function.Function;
+import org.fxyz3d.shapes.primitives.helper.TriangleMeshHelper;
 
 /**
  * @author Sean Phillips
@@ -182,6 +184,7 @@ public class Hypersurface3DPane extends StackPane
     COLORATION colorationMethod = COLORATION.COLOR_BY_FEATURE;
     boolean hoverInteractionsEnabled = false;
     boolean surfaceChartsEnabled = false;
+    boolean crosshairsEnabled = false;
 
     //Shapley value support
     private Image lastImage = null;
@@ -568,6 +571,9 @@ public class Hypersurface3DPane extends StackPane
         MenuItem unrollHyperspaceItem = new MenuItem("Unroll Hyperspace Data");
         unrollHyperspaceItem.setOnAction(e -> unrollHyperspace());
 
+        MenuItem vectorDistanceItem = new MenuItem("Show Vector Distances");
+        vectorDistanceItem.setOnAction(e -> computeVectorDistances());
+
         CheckMenuItem enableHoverItem = new CheckMenuItem("Hover Interactions");
         enableHoverItem.setOnAction(e -> {
             hoverInteractionsEnabled = enableHoverItem.isSelected();
@@ -575,6 +581,7 @@ public class Hypersurface3DPane extends StackPane
                 //TODO Make coordinate labels visible
             }
         });
+        
         CheckMenuItem surfaceChartsItem = new CheckMenuItem("Surface Charts");
         surfaceChartsItem.setOnAction(e -> {
             surfaceChartsEnabled = surfaceChartsItem.isSelected();
@@ -615,11 +622,16 @@ public class Hypersurface3DPane extends StackPane
             if (null != anchorCallout)
                 anchorCallout.setVisible(showDataMarkersItem.isSelected());
         });
+        CheckMenuItem enableCrosshairsItem = new CheckMenuItem("Enable Crosshairs");
+        enableCrosshairsItem.setOnAction(e -> {
+            crosshairsEnabled = enableCrosshairsItem.isSelected();
+        });
 
         MenuItem resetViewItem = new MenuItem("Reset View");
         resetViewItem.setOnAction(e -> resetView(1000, false));
         ContextMenu cm = new ContextMenu(copyAsImageItem, saveSnapshotItem,
-            unrollHyperspaceItem, enableHoverItem, surfaceChartsItem, showDataMarkersItem,
+            unrollHyperspaceItem, vectorDistanceItem, enableHoverItem, 
+            surfaceChartsItem, showDataMarkersItem, enableCrosshairsItem,
             updateAllItem, clearDataItem, resetViewItem);
         cm.setAutoFix(true);
         cm.setAutoHide(true);
@@ -757,7 +769,38 @@ public class Hypersurface3DPane extends StackPane
         };
         surfUpdateAnimationTimer.start();
     }
+    
+    public void computeVectorDistances() {
+        System.out.println("Computing Vector Distances... ");
+        long startTime = System.nanoTime();
+        Metric metric = Metric.getMetric("cosine");
+        List<List<Double>> distancesGrid = new ArrayList<>();
+        
+        //get all the values in this row
+        dataGrid.stream().forEach(row -> {
+            double[] rowVector = row.stream().mapToDouble(Double::doubleValue).toArray();
+            List<Double> distanceVector = new ArrayList<>();
+            for(int i=0; i<dataGrid.size();i++) {
+                double [] xVector = dataGrid.get(i).stream()
+                    .mapToDouble(Double::doubleValue).toArray();
+                double currentDistance = metric.distance(xVector, rowVector);
+                distanceVector.add(currentDistance);
+            }
+            distancesGrid.add(distanceVector);
+        });
+        Utils.printTotalTime(startTime);
 
+        dataGrid.clear();
+        dataGrid.addAll(distancesGrid);
+        xWidth = dataGrid.get(0).size();
+        zWidth = dataGrid.size();
+        xWidthSpinner.getValueFactory().setValue(xWidth);
+        zWidthSpinner.getValueFactory().setValue(zWidth);
+        updateTheMesh();
+        updateView(true);
+        
+        
+    }    
     public void unrollHyperspace() {
         getScene().getRoot().fireEvent(
             new CommandTerminalEvent("Requesting Hyperspace Vectors...",
@@ -1210,34 +1253,61 @@ public class Hypersurface3DPane extends StackPane
 
     private void loadSurf3D() {
         LOG.info("Rendering Hypersurface Mesh...");
-        long startTime = System.nanoTime();
         generateRandos(xWidth, zWidth, yScale);
         surfPlot = new HyperSurfacePlotMesh(xWidth, zWidth,
             1, 1, yScale, surfScale, vert3DLookup);
         surfPlot.setTextureModeVertices3D(TOTAL_COLORS, colorByHeight, 0.0, 360.0);
-
         surfPlot.setDrawMode(DrawMode.LINE);
         sceneRoot.getChildren().add(surfPlot);
         surfPlot.setCullFace(CullFace.NONE);
         surfPlot.setTranslateX(-(xWidth * surfScale) / 2.0);
         surfPlot.setTranslateZ(-(zWidth * surfScale) / 2.0);
-
         surfPlot.addEventHandler(MouseEvent.MOUSE_MOVED, e -> {
             if (hoverInteractionsEnabled) {
                 javafx.geometry.Point3D p3D = e.getPickResult().getIntersectedPoint();
                 vertP3D = Point3D.convertFromJavaFXPoint3D(p3D);
+                highlightedPoint.setTranslateX(vertP3D.x - (xWidth * surfScale) / 2.0);
+                highlightedPoint.setTranslateY(vertP3D.y);
+                highlightedPoint.setTranslateZ(vertP3D.z - (zWidth * surfScale) / 2.0);
+                updateCalloutHeadPoints(subScene);
+                updateLabels();
                 int row = Float.valueOf(vertP3D.getZ() / surfScale).intValue();
                 int column = Float.valueOf(vertP3D.getX() / surfScale).intValue();
-
-                //get all the values in this row
-                List<Double> xlist = dataGrid.get(row);
-                Double[] xRay = xlist.toArray(Double[]::new);
-                //get the column values in time.
-                Double[] zRay = new Double[dataGrid.size()];
-                for (int i = 0; i < dataGrid.size(); i++) {
-                    zRay[i] = dataGrid.get(i).get(column);
+                if (null != anchorCallout) {
+                    updateCalloutByFeatureVector(anchorCallout, featureVectors.get(row));
+                    setSpheroidAnchor(false, row);
                 }
+                
+                if(crosshairsEnabled) {
+                    paintSingleColor(Color.TRANSPARENT);
+                    illuminateCrosshair(vertP3D);
+                }
+            
                 if (surfaceChartsEnabled) {
+                    //get all the values in this row
+                    List<Double> xlist = dataGrid.get(row);
+                    Double[] xRay = xlist.toArray(Double[]::new);
+                    //get the column values in time.
+                    Double[] zRay = new Double[dataGrid.size()];
+                    for (int i = 0; i < dataGrid.size(); i++) {
+                        zRay[i] = dataGrid.get(i).get(column);
+                    }
+                    String text = "Coordinates: " + column + ", " + row + System.lineSeparator();
+                    text = text.concat("Value: ").concat(String.valueOf(dataGrid.get(row).get(column))).concat(System.lineSeparator());
+                    double maxX = xlist.stream().max(Double::compare).get();
+                    text = text.concat("Max X: ").concat(String.valueOf(maxX)).concat(System.lineSeparator());
+                    double minX = xlist.stream().min(Double::compare).get();
+                    text = text.concat("Min X: ").concat(String.valueOf(minX)).concat(System.lineSeparator());
+                    double maxZ = Arrays.stream(zRay).max(Double::compare).get();
+                    text = text.concat("Max Z: ").concat(String.valueOf(maxZ)).concat(System.lineSeparator());
+                    double minZ = Arrays.stream(zRay).min(Double::compare).get();
+                    text = text.concat("Min Z: ").concat(String.valueOf(minZ)).concat(System.lineSeparator());
+
+                    hoverText.setText(text);
+                    hoverText.setStrokeWidth(1);
+                    hoverText.setLayoutX(50);
+                    hoverText.setLayoutY(50);
+                    
                     scene.getRoot().fireEvent(new FactorAnalysisEvent(
                         FactorAnalysisEvent.SURFACE_XFACTOR_VECTOR, xRay));
 
@@ -1245,27 +1315,6 @@ public class Hypersurface3DPane extends StackPane
                         FactorAnalysisEvent.SURFACE_ZFACTOR_VECTOR, zRay));
                 }
 
-                paintSingleColor(Color.TRANSPARENT);
-                illuminateCrosshair(vertP3D);
-                highlightedPoint.setTranslateX(vertP3D.x - (xWidth * surfScale) / 2.0);
-                highlightedPoint.setTranslateY(vertP3D.y);
-                highlightedPoint.setTranslateZ(vertP3D.z - (zWidth * surfScale) / 2.0);
-                String text = "Coordinates: " + column + ", " + row + System.lineSeparator();
-                text = text.concat("Value: ").concat(String.valueOf(dataGrid.get(row).get(column))).concat(System.lineSeparator());
-                double maxX = xlist.stream().max(Double::compare).get();
-                text = text.concat("Max X: ").concat(String.valueOf(maxX)).concat(System.lineSeparator());
-                double minX = xlist.stream().min(Double::compare).get();
-                text = text.concat("Min X: ").concat(String.valueOf(minX)).concat(System.lineSeparator());
-                double maxZ = Arrays.stream(zRay).max(Double::compare).get();
-                text = text.concat("Max Z: ").concat(String.valueOf(maxZ)).concat(System.lineSeparator());
-                double minZ = Arrays.stream(zRay).min(Double::compare).get();
-                text = text.concat("Min Z: ").concat(String.valueOf(minZ)).concat(System.lineSeparator());
-
-                hoverText.setText(text);
-                hoverText.setStrokeWidth(1);
-                hoverText.setLayoutX(50);
-                hoverText.setLayoutY(50);
-                updateLabels();
                 e.consume();
             }
         });
@@ -1341,12 +1390,7 @@ public class Hypersurface3DPane extends StackPane
         Spinner yScaleSpinner = new Spinner(
             new SpinnerValueFactory.DoubleSpinnerValueFactory(0.0, 500.0, yScale, 1.00));
         yScaleSpinner.setEditable(true);
-//        //whenever the spinner value is changed...
-//        yScaleSpinner.valueProperty().addListener(e -> {
-//            yScale = ((Double) yScaleSpinner.getValue()).floatValue();
-//            surfPlot.setFunctionScale(yScale);
-//            updateTheMesh();
-//        });
+        //whenever the spinner value is changed...
         yScaleSpinner.getValueFactory().valueProperty().addListener(e -> {
             yScale = ((Double) yScaleSpinner.getValue()).floatValue();
             surfPlot.setFunctionScale(yScale);
@@ -1570,6 +1614,14 @@ public class Hypersurface3DPane extends StackPane
         getChildren().add(vbox);
 //        Utils.printTotalTime(startTime);
         updateLabels();
+
+        //create callout automatically puts the callout and node into a managed map
+        Platform.runLater(() -> {
+            FeatureVector dummy = FeatureVector.EMPTY_FEATURE_VECTOR("", 3);
+            anchorCallout = createCallout(highlightedPoint, dummy, subScene);
+            anchorCallout.setVisible(extrasGroup.isVisible()); //align with moving poles/fence thingy
+            anchorCallout.play();        
+        });        
     }
 
     public void updateCalloutByFeatureVector(Callout callout, FeatureVector featureVector) {
@@ -1771,12 +1823,6 @@ public class Hypersurface3DPane extends StackPane
         eastLabel.setText("Sample: " + anchorIndex + ", Neural Feature: " + xWidth);
         westLabel.setText("Sample: " + anchorIndex + ", Neural Feature: 0");
         updateLabels();
-
-        //create callout automatically puts the callout and node into a managed map
-        FeatureVector dummy = FeatureVector.EMPTY_FEATURE_VECTOR("", 3);
-        anchorCallout = createCallout(westKnob, dummy, subScene);
-        anchorCallout.setVisible(extrasGroup.isVisible()); //align with moving poles/fence thingy
-        anchorCallout.play();
     }
 
     @Override
@@ -1882,7 +1928,8 @@ public class Hypersurface3DPane extends StackPane
 
     @Override
     public void setSpheroidAnchor(boolean animate, int index) {
-        //throw new UnsupportedOperationException("Not supported yet.");
+        double z = index * surfScale;
+//        int column = Float.valueOf(vertP3D.getX() / surfScale).intValue();
     }
 
     private void tessellateImage(Image image, int x1, int y1, int x2, int y2) {

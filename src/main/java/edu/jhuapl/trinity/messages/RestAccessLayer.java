@@ -112,6 +112,20 @@ public enum RestAccessLayer {
         Request request = makePostRequest(inputJSON, restAccessLayerconfig.getImageEmbeddingsEndpoint());
         client.newCall(request).enqueue(new EmbeddingsTextCallback(scene, inputIDs, requestNumber));
     }
+    public static void requestLandmarkTextEmbeddings(EmbeddingsImageInput input, 
+        Scene scene, List<Integer> inputIDs, int requestNumber) throws JsonProcessingException {
+        if(!checkRestServiceInitialized()) {
+            notifyTerminalError(
+                "REST Request Error: Current REST URL or End Point not initialized properly.", 
+                scene
+            );            
+        }
+        String inputJSON = objectMapper.writeValueAsString(input);
+        //@DEBUG SMP
+        //System.out.println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(input));
+        Request request = makePostRequest(inputJSON, restAccessLayerconfig.getImageEmbeddingsEndpoint());
+        client.newCall(request).enqueue(new EmbeddingsTextLandmarkCallback(scene, inputIDs, requestNumber));
+    }
     public static void requestImageEmbeddings(EmbeddingsImageBatchInput input, 
         Scene scene, List<Integer> inputIDs, int requestNumber) throws JsonProcessingException {
         if(!checkRestServiceInitialized()) {
