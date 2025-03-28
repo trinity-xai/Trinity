@@ -221,9 +221,12 @@ public class HyperdrivePane extends LitPathPane {
         clearCompleteTextEmbeddingsButton.setWrapText(true);
         clearCompleteTextEmbeddingsButton.setTextAlignment(TextAlignment.CENTER);        
         clearCompleteTextEmbeddingsButton.setOnAction(e -> {
+
+            List<EmbeddingsTextListItem> keep = textEmbeddingsListView.getItems()
+                .stream().filter(i-> !i.embeddingsReceived()).toList();
+            textEmbeddingsListView.getItems().clear();
             currentTextFeatureList.clear();
-            textEmbeddingsListView.getItems().removeIf(
-                EmbeddingsTextListItem::embeddingsReceived);
+            textEmbeddingsListView.getItems().addAll(keep);
         });
 
         Button injectTextFeaturesButton = new Button("Inject Features");
@@ -1205,8 +1208,8 @@ public class HyperdrivePane extends LitPathPane {
                     completed++;
                     if (completed % updatePercent == 0) {
                         textEmbeddingRequestIndicator.setPercentComplete(completed / total); 
-                        textEmbeddingRequestIndicator.setLabelLater("Encoding " + completed + " of " + total);
                     }
+                    textEmbeddingRequestIndicator.setLabelLater("Encoding " + completed + " of " + total);
                     Thread.sleep(requestDelay);
                 }
                 Utils.printTotalTime(startTime);
