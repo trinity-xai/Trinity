@@ -67,7 +67,8 @@ public class SearchEventHandler implements EventHandler<SearchEvent> {
             List<FeatureVector> fvList = renderer.getAllFeatureVectors();
             int size = fvList.size();
             for (int i = 0; i < size; i++) {
-                if (!fvList.get(i).metaContainsTerm(metadataTerm))
+                if (!fvList.get(i).metaContainsTerm(metadataTerm) ||
+                    (null != fvList.get(i).getText() && !fvList.get(i).getText().contains(metadataTerm)))
                     renderer.setVisibleByIndex(i, false);
 //@DEBUG SMP useful print... but it is very slow
 //                else

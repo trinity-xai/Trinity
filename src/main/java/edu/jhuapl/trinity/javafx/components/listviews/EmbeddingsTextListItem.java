@@ -23,7 +23,7 @@ import javafx.scene.layout.HBox;
 public class EmbeddingsTextListItem extends HBox {
     public static double PREF_DIMLABEL_WIDTH = 150;
     public static double PREF_FILELABEL_WIDTH = 250;
-    public static int LARGEFILE_SPLIT_SIZE = 10000;
+    public static int LARGEFILE_SPLIT_SIZE = 16384;
     public static AtomicInteger atomicID = new AtomicInteger();
     public static NumberFormat format = new DecimalFormat("0000");
         
@@ -165,5 +165,4 @@ public class EmbeddingsTextListItem extends HBox {
         } catch (Exception ex) { }
         return list;
     };     
-    
 }

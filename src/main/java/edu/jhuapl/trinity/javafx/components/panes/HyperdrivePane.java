@@ -135,6 +135,7 @@ public class HyperdrivePane extends LitPathPane {
     HashMap<Integer, STATUS> outstandingRequests;    
     int batchSize = 1;
     long requestDelay = 25;
+    int chunkSize = 16384;
     DateTimeFormatter format; 
     
     private static BorderPane createContent() {
@@ -179,6 +180,18 @@ public class HyperdrivePane extends LitPathPane {
         textEmbeddingsListView = new ListView<>();
         textEmbeddingsListView.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         textEmbeddingsListView.setPlaceholder(textEmbeddingsPlaceholder);
+        textEmbeddingsListView.getSelectionModel().selectedIndexProperty().addListener(cl -> {
+            if(!textEmbeddingsListView.getSelectionModel().isEmpty()) {
+                String text = textEmbeddingsListView.getSelectionModel()
+                    .getSelectedItems().get(0).contents;
+                if(null == text) {
+                    textEmbeddingsListView.getSelectionModel()
+                    .getSelectedItems().get(0).readText();
+                }
+                baseTextArea.setText(text);
+            }
+        });        
+        
         MenuItem selectAllTextMenuItem = new MenuItem("Select All");
         selectAllTextMenuItem.setOnAction(e -> 
             textEmbeddingsListView.getSelectionModel().selectAll());        
@@ -221,7 +234,6 @@ public class HyperdrivePane extends LitPathPane {
         clearCompleteTextEmbeddingsButton.setWrapText(true);
         clearCompleteTextEmbeddingsButton.setTextAlignment(TextAlignment.CENTER);        
         clearCompleteTextEmbeddingsButton.setOnAction(e -> {
-
             List<EmbeddingsTextListItem> keep = textEmbeddingsListView.getItems()
                 .stream().filter(i-> !i.embeddingsReceived()).toList();
             textEmbeddingsListView.getItems().clear();
@@ -590,9 +602,21 @@ public class HyperdrivePane extends LitPathPane {
         requestDelaySpinner.setEditable(true);
         requestDelaySpinner.setPrefWidth(100);
         
-        VBox spinnerVBox = new VBox(20, 
+        VBox requestsSpinnerVBox = new VBox(20, 
             new VBox(5,new Label("Request Batch Size"), batchSizeSpinner), 
             new VBox(5,new Label("Request Delay ms"), requestDelaySpinner)
+        );
+
+        Spinner<Integer> chunkSizeSpinner = new Spinner(256, 262144, chunkSize, 256);
+        chunkSizeSpinner.valueProperty().addListener(c -> {
+            chunkSize = chunkSizeSpinner.getValue();
+            EmbeddingsTextListItem.LARGEFILE_SPLIT_SIZE = chunkSize;
+        });
+        chunkSizeSpinner.setEditable(true);
+        chunkSizeSpinner.setPrefWidth(100);
+
+        VBox chunkingSpinnerVBox = new VBox(20, 
+            new VBox(5,new Label("Chunk Size (bytes)"), chunkSizeSpinner)
         );
         
         GridPane servicesGrid = new GridPane(20, 10);
@@ -723,9 +747,13 @@ public class HyperdrivePane extends LitPathPane {
         GridPane.setColumnSpan(separator, GridPane.REMAINING);
         servicesGrid.add(separator, 0, 2);
 
-        spinnerVBox.setAlignment(Pos.CENTER_LEFT);
-        servicesGrid.add(spinnerVBox, 0, 3);
+        requestsSpinnerVBox.setAlignment(Pos.CENTER_LEFT);
+        servicesGrid.add(requestsSpinnerVBox, 0, 3);
 
+        chunkingSpinnerVBox.setAlignment(Pos.CENTER_LEFT);
+        servicesGrid.add(chunkingSpinnerVBox, 1, 3);
+        
+        
         textEmbeddingsBorderPane.addEventHandler(DragEvent.DRAG_OVER, event -> {
             if (ResourceUtils.canDragOver(event)) {
                 event.acceptTransferModes(TransferMode.COPY);
@@ -1141,7 +1169,6 @@ public class HyperdrivePane extends LitPathPane {
                         .flatMap(List::stream)
                         .peek(i -> {
                             double completed = atomicCount.incrementAndGet();
-//                            textEmbeddingRequestIndicator.setPercentComplete(completed / total); 
                             textEmbeddingRequestIndicator.setLabelLater(completed + " of " + total);
                         }).toList();
                 Utils.printTotalTime(startTime);
@@ -1172,7 +1199,6 @@ public class HyperdrivePane extends LitPathPane {
         Task requestTask = new Task() {
             @Override
             protected Void call() throws Exception {
-                AtomicInteger atomicCount = new AtomicInteger(0);
                 textEmbeddingRequestIndicator.setFadeTimeMS(250);
                 textEmbeddingRequestIndicator.setLabelLater("Encoding Text...");
                 textEmbeddingRequestIndicator.spin(true);
@@ -1213,7 +1239,6 @@ public class HyperdrivePane extends LitPathPane {
                     Thread.sleep(requestDelay);
                 }
                 Utils.printTotalTime(startTime);
-//                completed = atomicCount.get();
                 textEmbeddingRequestIndicator.setPercentComplete(completed / total); 
                 textEmbeddingRequestIndicator.setLabelLater("Requested " + completed + " of " + total);
                 return null;
@@ -1309,7 +1334,6 @@ public class HyperdrivePane extends LitPathPane {
             LOG.error(null, ex);
         }
     }
-
     public void requestEmbeddingsTask() {
         Task requestTask = new Task() {
             @Override
@@ -1382,5 +1406,4 @@ public class HyperdrivePane extends LitPathPane {
                 .forEach(i -> i.setFeatureVectorLabel(labelText));
         }
     }
-
 }
