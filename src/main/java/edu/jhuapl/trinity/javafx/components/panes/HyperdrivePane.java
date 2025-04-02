@@ -533,7 +533,7 @@ public class HyperdrivePane extends LitPathPane {
                         input.setModel(currentEmbeddingsModel);
                     List<Integer> inputIDs = new ArrayList<>();
                     inputIDs.add(item.landmarkID);
-                    RestAccessLayer.requestTextEmbeddings(
+                    RestAccessLayer.requestLandmarkTextEmbeddings(
                         input, scene, inputIDs, requestNumber.getAndIncrement());
                 } catch (IOException ex) {
                     LOG.error(null, ex);
@@ -831,6 +831,9 @@ public class HyperdrivePane extends LitPathPane {
             }
             outstandingRequests.put(output.getRequestNumber(), STATUS.SUCCEEDED);
             System.out.println(msg);
+            if(!outstandingRequests.containsValue(STATUS.REQUESTED)) {
+                outstandingRequests.clear();
+            }            
         });
         
         scene.getRoot().addEventHandler(RestEvent.NEW_EMBEDDINGS_IMAGE, event -> {

@@ -4,6 +4,7 @@ package edu.jhuapl.trinity.javafx.javafx3d;
 
 import edu.jhuapl.trinity.App;
 import edu.jhuapl.trinity.data.CoordinateSet;
+import edu.jhuapl.trinity.data.files.FeatureCollectionFile;
 import edu.jhuapl.trinity.data.messages.xai.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.data.messages.bci.SemanticMap;
@@ -125,6 +126,7 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Random;
 import java.util.function.Function;
+import java.util.logging.Level;
 import org.fxyz3d.shapes.primitives.helper.TriangleMeshHelper;
 
 /**
@@ -574,6 +576,24 @@ public class Hypersurface3DPane extends StackPane
         MenuItem vectorDistanceItem = new MenuItem("Show Vector Distances");
         vectorDistanceItem.setOnAction(e -> computeVectorDistances());
 
+        MenuItem collectionDifferenceItem = new MenuItem("Compare Feature Collection");
+        collectionDifferenceItem.setOnAction(e -> {
+            final FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Load FeatureCollection to Compare...");
+            fileChooser.setInitialDirectory(Paths.get(".").toFile());
+            fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("JSON", "*.json"));
+            File file = fileChooser.showOpenDialog(null);
+            if (file != null) {
+                FeatureCollectionFile fcf;
+                try {
+                    fcf = new FeatureCollectionFile(file.getAbsolutePath(), true);
+                    computeSurfaceDifference(fcf.featureCollection);
+                } catch (IOException ex) {
+                    LOG.error(ex.getMessage());
+                }
+            }
+        });
+        
         CheckMenuItem enableHoverItem = new CheckMenuItem("Hover Interactions");
         enableHoverItem.setOnAction(e -> {
             hoverInteractionsEnabled = enableHoverItem.isSelected();
@@ -622,6 +642,7 @@ public class Hypersurface3DPane extends StackPane
             if (null != anchorCallout)
                 anchorCallout.setVisible(showDataMarkersItem.isSelected());
         });
+
         CheckMenuItem enableCrosshairsItem = new CheckMenuItem("Enable Crosshairs");
         enableCrosshairsItem.setOnAction(e -> {
             crosshairsEnabled = enableCrosshairsItem.isSelected();
@@ -630,8 +651,8 @@ public class Hypersurface3DPane extends StackPane
         MenuItem resetViewItem = new MenuItem("Reset View");
         resetViewItem.setOnAction(e -> resetView(1000, false));
         ContextMenu cm = new ContextMenu(copyAsImageItem, saveSnapshotItem,
-            unrollHyperspaceItem, vectorDistanceItem, enableHoverItem, 
-            surfaceChartsItem, showDataMarkersItem, enableCrosshairsItem,
+            unrollHyperspaceItem, collectionDifferenceItem, vectorDistanceItem, 
+            enableHoverItem, surfaceChartsItem, showDataMarkersItem, enableCrosshairsItem,
             updateAllItem, clearDataItem, resetViewItem);
         cm.setAutoFix(true);
         cm.setAutoHide(true);
@@ -798,8 +819,37 @@ public class Hypersurface3DPane extends StackPane
         zWidthSpinner.getValueFactory().setValue(zWidth);
         updateTheMesh();
         updateView(true);
+    }
+    public void computeSurfaceDifference(FeatureCollection collection) {
+        double [][] newRayRay = collection.convertFeaturesToArray();
+        System.out.println("Computing Surface Differences... ");
+        long startTime = System.nanoTime();
+        List<List<Double>> differencesGrid = new ArrayList<>();
         
-        
+        for(int rowIndex=0;rowIndex<dataGrid.size();rowIndex++) {
+            List<Double> differenceVector = new ArrayList<>();
+            List<Double> currentRow = dataGrid.get(rowIndex);
+            int width = currentRow.size();
+            for(int colIndex=0; colIndex<width; colIndex++) {
+                if(rowIndex < newRayRay.length  && colIndex < newRayRay[rowIndex].length) {
+                    differenceVector.add(
+                        currentRow.get(colIndex) - newRayRay[rowIndex][colIndex]);
+                } else {
+                    differenceVector.add(0.0);
+                }
+            }
+            differencesGrid.add(differenceVector);
+        }
+        Utils.printTotalTime(startTime);
+
+        dataGrid.clear();
+        dataGrid.addAll(differencesGrid);
+        xWidth = dataGrid.get(0).size();
+        zWidth = dataGrid.size();
+        xWidthSpinner.getValueFactory().setValue(xWidth);
+        zWidthSpinner.getValueFactory().setValue(zWidth);
+        updateTheMesh();
+        updateView(true);
     }    
     public void unrollHyperspace() {
         getScene().getRoot().fireEvent(
@@ -1619,7 +1669,7 @@ public class Hypersurface3DPane extends StackPane
         Platform.runLater(() -> {
             FeatureVector dummy = FeatureVector.EMPTY_FEATURE_VECTOR("", 3);
             anchorCallout = createCallout(highlightedPoint, dummy, subScene);
-            anchorCallout.setVisible(extrasGroup.isVisible()); //align with moving poles/fence thingy
+            anchorCallout.setVisible(false); 
             anchorCallout.play();        
         });        
     }
