@@ -798,7 +798,14 @@ public class App extends Application {
                 projectorPane.scanAndAnimate();
             }
         });
-
+        scene.addEventHandler(ApplicationEvent.SHOW_HYPERDRIVE_PANE, e -> {
+            if (!pathPane.getChildren().contains(hyperdrivePane)) {
+                pathPane.getChildren().add(hyperdrivePane);
+                hyperdrivePane.slideInPane();
+            } else {
+                hyperdrivePane.show();            
+            }
+        });
         LOG.info("Data Handlers ");
         gmeh = new GaussianMixtureEventHandler();
         scene.getRoot().addEventHandler(GaussianMixtureEvent.NEW_GAUSSIAN_MIXTURE, gmeh);
@@ -1125,12 +1132,8 @@ public class App extends Application {
             }
         }
         if (e.isAltDown() && e.isControlDown() && e.getCode().equals(KeyCode.H)) {
-            if (!pathPane.getChildren().contains(hyperdrivePane)) {
-                pathPane.getChildren().add(hyperdrivePane);
-                hyperdrivePane.slideInPane();
-            } else {
-                hyperdrivePane.show();
-            }
+            stage.getScene().getRoot().fireEvent(
+                new ApplicationEvent(ApplicationEvent.SHOW_HYPERDRIVE_PANE));            
         }        
         if (e.isAltDown() && e.isControlDown() && e.getCode().equals(KeyCode.Q)) {
             System.out.println("Requesting REST Is Alive...");
@@ -1143,7 +1146,6 @@ public class App extends Application {
             }
         }
     }
-
 
     @Override
     public void stop() throws Exception {
@@ -1177,7 +1179,6 @@ public class App extends Application {
 
     private void parseCommandLine() {
         Parameters parameters = getParameters();
-
         namedParameters = parameters.getNamed();
         unnamedParameters = parameters.getUnnamed();
 
