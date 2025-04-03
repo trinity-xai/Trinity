@@ -71,6 +71,8 @@ public class ConfigurationController implements Initializable {
     @FXML
     private CheckBox enableEmittersCheckBox;
     @FXML
+    private CheckBox enableOrbitingCheckBox;
+    @FXML
     private CheckBox enableEmptyVisionCheckBox;
     @FXML
     private Slider itemSizeSlider;
@@ -1025,7 +1027,10 @@ public class ConfigurationController implements Initializable {
                 RadialEntityEvent.RADIAL_ENTITY_STROKE_WIDTH,
                 t.doubleValue(), t1.doubleValue()));
         });
-
+        enableOrbitingCheckBox.selectedProperty().addListener(cl -> {
+            scene.getRoot().fireEvent(new EffectEvent(
+                EffectEvent.OPTICON_ENABLE_ORBITING, enableOrbitingCheckBox.isSelected()));
+        });
         enableEmittersCheckBox.selectedProperty().addListener(cl -> {
             scene.getRoot().fireEvent(new EffectEvent(
                 EffectEvent.ENABLE_EMITTERS, enableEmittersCheckBox.isSelected()));

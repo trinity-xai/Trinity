@@ -99,6 +99,7 @@ import java.util.Optional;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Function;
 import javafx.animation.KeyFrame;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.util.Duration;
 
 /**
@@ -211,7 +212,7 @@ public class Hyperspace3DPane extends StackPane implements
     private Group labelGroup = new Group();
     private Group manifoldGroup = new Group();
     private ArrayList<Manifold3D> manifolds = new ArrayList<>();
-
+    public SimpleBooleanProperty autoProjectionProperty = new SimpleBooleanProperty(false);
     BorderPane bp;
     //For each label you'll need some Shape3D to derive a point3d from.
     //For this we will use simple spheres.  These can be optionally invisible.
@@ -339,9 +340,7 @@ public class Hyperspace3DPane extends StackPane implements
         
         projectionOpticon = new Opticon(Color.CYAN, 100);
         extrasGroup.getChildren().add(projectionOpticon);
-//        projectionOpticon.visibleProperty().bind(autoProjectionProperty);
-//        projectionOpticon.orbitingProperty.bind(autoProjectionProperty);
-        projectionOpticon.enableOrbiting(true);
+        projectionOpticon.visibleProperty().bind(autoProjectionProperty);
         projectionOpticon.setScanning(false);
 
         highlightedPoint.setMaterial(new PhongMaterial(Color.ALICEBLUE));
@@ -906,7 +905,6 @@ public class Hyperspace3DPane extends StackPane implements
                     sceneRoot.getChildren().remove(scatterMesh3D);
                     dataXForm.getChildren().add(scatterMesh3D);
                 });
-
             }
         });
 
@@ -918,7 +916,9 @@ public class Hyperspace3DPane extends StackPane implements
                 anchorIndex = scatterModel.data.size();
             setSpheroidAnchor(true, anchorIndex);
         });
-
+        scene.addEventHandler(EffectEvent.OPTICON_ENABLE_ORBITING, e -> {
+            projectionOpticon.enableOrbiting((boolean) e.object);
+        });
         AnimationTimer animationTimer = new AnimationTimer() {
             long sleepNs = 0;
             long prevTime = 0;
@@ -952,39 +952,18 @@ public class Hyperspace3DPane extends StackPane implements
             anchorCallout.setVisible(false);
         });
     }
+    public void enableAutoProjection(boolean enabled) {
+        autoProjectionProperty.set(enabled);
+    }    
     private void opticonScan(Opticon opticon) {
-//        if (null != tessellationMeshView) {
-//            tessellationMeshView.enableMatrix(false);
-//            nodeGroup.getChildren().remove(tessellationMeshView);
-//        }
         Image image = null;
-//        if (webcamInitialized) {
-//            LOG.info("Initializing Surveillance system... ");
-//            try {
-//                WebCamUtils.initialize();
-//                webcamInitialized;
-//                LOG.info("Camera system ONLINE!");
-//            } catch (Exception ex) {
-//                LOG.info("Camera system unreachable!");
-//            }
-//        }            
-            try {
-                image = WebCamUtils.takePicture();
-                System.out.println("Would you take my picture cuz I won't remember...");
-                LOG.info("got your little soul...");
-//                tessellationMeshView = new TessellationMesh(image,
-//                    Color.GREEN, 1f, 100.0f, 2, false);
-//                ambientLight.getScope().add(tessellationMeshView);
-//                tessellationMeshView.setOnMouseClicked(click -> {
-//                    if (click.getClickCount() == 1 && click.isControlDown())
-//                        tessellationMeshView.enableMatrix(!tessellationMeshView.matrixEnabled);
-//                    if (click.getClickCount() > 1)
-//                        tessellationMeshView.setVisible(false);
-//                });
-            } catch (Exception ex) {
-                LOG.info("Unable to capture image.");
-            }
-//        }
+        try {
+            image = WebCamUtils.takePicture();
+            System.out.println("Would you take my picture cuz I won't remember...");
+            LOG.info("got your little soul...");
+        } catch (Exception ex) {
+            LOG.info("Unable to capture image.");
+        }
         final Image finalImage = image;
         final int top = (int) snappedTopInset();
         final int right = (int) snappedRightInset();
@@ -1014,41 +993,6 @@ public class Hyperspace3DPane extends StackPane implements
         );
         scanTimeline.setCycleCount(1);
         scanTimeline.playFromStart();
-
-//        if (null != tessellationMeshView) {
-//            nodeGroup.getChildren().add(tessellationMeshView);
-//            tessellationMeshView.setRotationAxis(Rotate.X_AXIS);
-//            tessellationMeshView.setRotate(-90);
-//            tessellationMeshView.setTranslateZ(camera.getTranslateZ() + 150);
-//            if (null != image) {
-//                tessellationMeshView.setTranslateX(-image.getWidth() / 4.0);
-//                tessellationMeshView.setTranslateY(-image.getHeight() / 4.0);
-//            }
-//            pointLight.getScope().add(tessellationMeshView);
-//            pointLight.setTranslateZ(camera.getTranslateZ());
-//            Timeline scanTimeline = new Timeline(
-//                //Synch with Opticon laser sweep that starts at 3.5 seconds into timeline
-//                new KeyFrame(Duration.seconds(3.25), kv ->
-//                    tessellationMeshView.animateTessellation(15, 2)),
-//                new KeyFrame(Duration.seconds(9), kv ->
-//                    tessellationMeshView.enableMatrix(true)),
-//                new KeyFrame(Duration.seconds(9.0),
-//                    new KeyValue(tessellationMeshView.scaleXProperty(), 1.0)),
-//                new KeyFrame(Duration.seconds(9.0),
-//                    new KeyValue(tessellationMeshView.scaleYProperty(), 1.0)),
-//                new KeyFrame(Duration.seconds(9.0),
-//                    new KeyValue(tessellationMeshView.scaleZProperty(), 1.0)),
-//                new KeyFrame(Duration.seconds(10.0),
-//                    new KeyValue(tessellationMeshView.scaleXProperty(), 0.5)),
-//                new KeyFrame(Duration.seconds(10.0),
-//                    new KeyValue(tessellationMeshView.scaleYProperty(), 0.5)),
-//                new KeyFrame(Duration.seconds(10.0),
-//                    new KeyValue(tessellationMeshView.scaleZProperty(), 0.5))
-//            );
-//
-//            scanTimeline.setCycleCount(1);
-//            scanTimeline.playFromStart();
-//        }
     }
 
     public void updateOnLabelChange(List<FactorLabel> labels) {

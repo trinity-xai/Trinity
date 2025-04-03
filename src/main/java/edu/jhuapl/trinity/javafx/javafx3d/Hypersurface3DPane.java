@@ -126,8 +126,6 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Random;
 import java.util.function.Function;
-import java.util.logging.Level;
-import org.fxyz3d.shapes.primitives.helper.TriangleMeshHelper;
 
 /**
  * @author Sean Phillips
@@ -777,10 +775,8 @@ public class Hypersurface3DPane extends StackPane
                 prevTime = now;
                 long startTime;
                 if (computeRandos) {
-//                    startTime = System.nanoTime();
                     generateRandos(xWidth, zWidth, yScale);
                 }
-//                    System.out.println("generateRandos(): " + Utils.totalTimeString(startTime));
                 if (animated || isDirty) {
                     startTime = System.nanoTime();
                     updateTheMesh();
@@ -899,17 +895,6 @@ public class Hypersurface3DPane extends StackPane
             .subTitle(featureVector.getEntityId())
             .pause(10)
             .build();
-
-//        infoCallout.setOnMouseClicked(e -> {
-//            if(e.getClickCount() > 1) {
-//                infoCallout.hide();
-//            }
-//        });
-//        infoCallout.setOnZoom(e -> {
-//            if(e.getZoomFactor() < 1)
-//                infoCallout.hide(); //pinch hides it
-//        });
-
         infoCallout.setPickOnBounds(false);
         infoCallout.setManaged(false);
         addCallout(infoCallout, shape3D);
@@ -1324,7 +1309,8 @@ public class Hypersurface3DPane extends StackPane
                 int row = Float.valueOf(vertP3D.getZ() / surfScale).intValue();
                 int column = Float.valueOf(vertP3D.getX() / surfScale).intValue();
                 if (null != anchorCallout) {
-                    updateCalloutByFeatureVector(anchorCallout, featureVectors.get(row));
+                    if(row < featureVectors.size())
+                        updateCalloutByFeatureVector(anchorCallout, featureVectors.get(row));
                     setSpheroidAnchor(false, row);
                 }
                 
@@ -1669,8 +1655,7 @@ public class Hypersurface3DPane extends StackPane
         Platform.runLater(() -> {
             FeatureVector dummy = FeatureVector.EMPTY_FEATURE_VECTOR("", 3);
             anchorCallout = createCallout(highlightedPoint, dummy, subScene);
-            anchorCallout.setVisible(false); 
-            anchorCallout.play();        
+            anchorCallout.play().setOnFinished(fin -> anchorCallout.setVisible(false));        
         });        
     }
 

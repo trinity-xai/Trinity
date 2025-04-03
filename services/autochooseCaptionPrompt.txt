@@ -1,4 +1,4 @@
-Generate a text caption for this image. The caption you generate should be in the English language. The caption should be a noun limited to a single word. You must choose your caption from the following list of comma seperated words: $CAPTION_CHOICES
+Generate a text caption for this image. The caption you generate should be in the English language. The caption should be a noun limited to a single word. You must choose your caption from the following list of comma separated words: $CAPTION_CHOICES
 
 Write your response as formatted json data. The formatted json response should have a field for "caption" which is where you put the word you are generating to describe the image.
 The formatted json response should have an "explanation" field and "description" field.

@@ -426,7 +426,10 @@ public class Projections3DPane extends StackPane implements
         this.scene.addEventHandler(EffectEvent.ENABLE_EMPTY_VISION, e -> {
             emptyVisionEnabled = (boolean) e.object;
         });
-
+        this.scene.addEventHandler(EffectEvent.OPTICON_ENABLE_ORBITING, e -> {
+            projectionOpticon.enableOrbiting((boolean) e.object);
+        });
+                
         //Add 3D subscene stuff to 3D scene root object
         sceneRoot.getChildren().addAll(cameraTransform, highlightedPoint,
             nodeGroup, manifoldGroup, debugGroup, cubeWorld,
@@ -435,7 +438,6 @@ public class Projections3DPane extends StackPane implements
         projectionOpticon = new Opticon(Color.CYAN, 100);
         extrasGroup.getChildren().add(projectionOpticon);
         projectionOpticon.visibleProperty().bind(autoProjectionProperty);
-        projectionOpticon.orbitingProperty.bind(autoProjectionProperty);
 
         miniCrosshair = new Crosshair3D(javafx.geometry.Point3D.ZERO,
             2, 1.0f);
@@ -2902,7 +2904,7 @@ public class Projections3DPane extends StackPane implements
 
     public void enableAutoProjection(boolean enabled) {
         autoProjectionProperty.set(enabled);
-        projectionOpticon.enableOrbiting(enabled);
+//        projectionOpticon.enableOrbiting(enabled);
     }
 
     public void projectFeatureCollection(FeatureCollection originalFC, Umap umap) {

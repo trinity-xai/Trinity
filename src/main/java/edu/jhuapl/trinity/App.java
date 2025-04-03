@@ -111,6 +111,10 @@ import java.util.Map;
 
 public class App extends Application {
     private static final Logger LOG = LoggerFactory.getLogger(App.class);
+    static Configuration theConfig;
+    static Pane pathPane;
+    static Scene theScene;
+    static VideoPane theVideo = null;
 
     Pane desktopPane;
     StackPane centerStack;
@@ -137,11 +141,6 @@ public class App extends Application {
     ImageInspectorPane imageInspectorPane;
     HyperdrivePane hyperdrivePane;
     CircleProgressIndicator circleSpinner;
-
-    static Configuration theConfig;
-    static Pane pathPane;
-    static Scene theScene;
-    static VideoPane theVideo = null;
     //Command line argument support
     Map<String, String> namedParameters;
     List<String> unnamedParameters;
@@ -736,17 +735,14 @@ public class App extends Application {
                 }
                 hyperspace3DPane.setVisible(false);
                 hypersurface3DPane.setVisible(false);
-//                Platform.runLater(() -> {
                 projections3DPane.setVisible(true);
-//                });
             }
             projections3DPane.enableAutoProjection(enabled);
-
+            hyperspace3DPane.enableAutoProjection(enabled);
         });
         LOG.info("Hypersurface ");
         scene.addEventHandler(ApplicationEvent.SHOW_HYPERSURFACE, e -> {
             if (hypersurface3DPane.isVisible()) {
-                //hypersurface3DPane.hideFA3D();
                 Platform.runLater(() -> hypersurface3DPane.setVisible(false));
                 if (null != retroWavePane) {
                     retroWavePane.animateShow();
@@ -766,7 +762,6 @@ public class App extends Application {
                 } else {
                     Platform.runLater(() -> hypersurface3DPane.setVisible(true));
                 }
-
             }
         });
         LOG.info("Hyperspace ");
