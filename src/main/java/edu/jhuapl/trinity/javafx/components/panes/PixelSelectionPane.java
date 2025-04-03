@@ -151,7 +151,7 @@ public class PixelSelectionPane extends LitPathPane {
                     try {
                         setImage(new Image(file.toURI().toURL().toExternalForm()));
                     } catch (MalformedURLException ex) {
-                        java.util.logging.Logger.getLogger(PixelSelectionPane.class.getName()).log(Level.SEVERE, null, ex);
+                        LOG.error(ex.getMessage());
                     }
                 }
             }

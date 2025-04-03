@@ -285,7 +285,7 @@ public class ProjectorPane extends StackPane {
                             ProjectorNode pn = new ProjectorNode(image, ucForMe, acDC);
                             projectorNodes.add(pn);
                         } catch (MalformedURLException ex) {
-                            java.util.logging.Logger.getLogger(ProjectorPane.class.getName()).log(Level.SEVERE, null, ex);
+                            LOG.error(ex.getMessage());
                         }
                     }
                 }
@@ -409,7 +409,7 @@ public class ProjectorPane extends StackPane {
                             return mapper.readValue(messageBody, AnalysisConfig.class);
                         }
                     } catch (IOException ex) {
-                        java.util.logging.Logger.getLogger(ProjectorPane.class.getName()).log(Level.SEVERE, null, ex);
+                        LOG.error(ex.getMessage());
                     }
                 }
             }
@@ -431,7 +431,7 @@ public class ProjectorPane extends StackPane {
                         return mapper.readValue(messageBody, UmapConfig.class);
                     }
                 } catch (IOException ex) {
-                    java.util.logging.Logger.getLogger(ProjectorPane.class.getName()).log(Level.SEVERE, null, ex);
+                    LOG.error(ex.getMessage());
                 }
             }
         }
@@ -468,7 +468,6 @@ public class ProjectorPane extends StackPane {
 
                 //play in order
                 SequentialTransition seq = new SequentialTransition(
-//                    fadeOutTransition, ivFadeTransition, flipTransition);
                     fadeOutTransition, ivFadeTransition);
                 seq.setOnFinished(f -> flipTransition.playFromStart());
                 seq.playFromStart();

@@ -16,7 +16,6 @@ import edu.jhuapl.trinity.javafx.components.panes.ImageInspectorPane;
 import edu.jhuapl.trinity.javafx.components.panes.NavigatorPane;
 import edu.jhuapl.trinity.javafx.components.panes.PixelSelectionPane;
 import edu.jhuapl.trinity.javafx.components.panes.Shape3DControlPane;
-import edu.jhuapl.trinity.javafx.components.panes.SparkLinesPane;
 import edu.jhuapl.trinity.javafx.components.panes.TextPane;
 import edu.jhuapl.trinity.javafx.components.panes.TrajectoryTrackerPane;
 import edu.jhuapl.trinity.javafx.components.panes.VideoPane;
@@ -130,7 +129,6 @@ public class App extends Application {
     ProjectorPane projectorPane;
     Projections3DPane projections3DPane;
     TrajectoryTrackerPane trajectoryTrackerPane;
-    SparkLinesPane sparkLinesPane;
     TextPane textConsolePane;
     VideoPane videoPane;
     NavigatorPane navigatorPane;
@@ -489,7 +487,6 @@ public class App extends Application {
                     theConfig = new Configuration(configFile);
                 } catch (IOException ex) {
                     LOG.info("Exception thrown loading: {}", configFile);
-                    //Logger.getLogger(Configuration.class.getName()).log(Level.SEVERE, null, ex);
                     LOG.info("Loading defaults.");
                     theConfig = Configuration.defaultConfiguration();
                 }
@@ -694,18 +691,6 @@ public class App extends Application {
                 trajectoryTrackerPane.slideInPane();
             } else {
                 trajectoryTrackerPane.show();
-            }
-        });
-        LOG.info("Spark lines View ");
-        scene.addEventHandler(ApplicationEvent.SHOW_SPARK_LINES, e -> {
-            if (null == sparkLinesPane) {
-                sparkLinesPane = new SparkLinesPane(scene, pathPane);
-            }
-            if (!pathPane.getChildren().contains(sparkLinesPane)) {
-                pathPane.getChildren().add(sparkLinesPane);
-                sparkLinesPane.slideInPane();
-            } else {
-                sparkLinesPane.show();
             }
         });
         LOG.info("Projections ");

@@ -7,8 +7,9 @@ import edu.jhuapl.trinity.utils.ResourceUtils;
 import java.io.File;
 import java.io.IOException;
 import java.util.function.Function;
-import java.util.logging.Level;
 import javafx.scene.image.Image;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Sean Phillips
@@ -16,7 +17,7 @@ import javafx.scene.image.Image;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class EmbeddingsImageUrl {
-
+    private static final Logger LOG = LoggerFactory.getLogger(EmbeddingsImageUrl.class);
     public static final String TYPESTRING = "embeddingImageInput";
     public static final String BASE64_PREFIX_PNG = "data:image/png;base64,";
     public static final String BASE64_PREFIX_JPEG = "data:image/jpegng;base64,";
@@ -45,9 +46,9 @@ public class EmbeddingsImageUrl {
                     + ResourceUtils.imageToBase64(image));
             input.setImage_url(imageUrl);
         } catch (JsonProcessingException ex) {
-            java.util.logging.Logger.getLogger(EmbeddingsImageUrl.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(ex.getMessage());
         } catch (IOException ex) {
-            java.util.logging.Logger.getLogger(EmbeddingsImageUrl.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(ex.getMessage());
         }
         return input;
     };
@@ -61,9 +62,9 @@ public class EmbeddingsImageUrl {
                     + ResourceUtils.imageToBase64(image));
             input.setImage_url(imageUrl);
         } catch (JsonProcessingException ex) {
-            java.util.logging.Logger.getLogger(EmbeddingsImageUrl.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(ex.getMessage());
         } catch (IOException ex) {
-            java.util.logging.Logger.getLogger(EmbeddingsImageUrl.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(ex.getMessage());
         }
         return input;
     };

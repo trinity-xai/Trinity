@@ -4,8 +4,6 @@ import edu.jhuapl.trinity.data.messages.llm.ChatCompletionsOutput;
 import edu.jhuapl.trinity.javafx.events.ErrorEvent;
 import edu.jhuapl.trinity.javafx.events.RestEvent;
 import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javafx.application.Platform;
 import javafx.scene.Scene;
 import okhttp3.Call;
@@ -28,7 +26,7 @@ public class ChatCompletionCallback extends RestCallback {
 
     @Override
     public void onFailure(Call call, IOException e) {
-        Logger.getLogger(RestCallback.class.getName()).log(Level.SEVERE, null, e);
+        LOG.error(e.getMessage());
         ErrorEvent error = new ErrorEvent(ErrorEvent.REST_ERROR, getClass().getName() + " has failed.");
         scene.getRoot().fireEvent(error);
         Platform.runLater(() -> {
@@ -40,18 +38,10 @@ public class ChatCompletionCallback extends RestCallback {
     protected void processResponse(String responseBodyString) throws Exception {
 //        System.out.println("Pretty Print of ChatCompletionCallback response... \n"
 //            + objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(responseBodyString));
-
         ChatCompletionsOutput output = objectMapper.readValue(responseBodyString, ChatCompletionsOutput.class);
         output.setInputID(inputID);
         output.setRequestNumber(requestNumber);
-//        List<FeatureVector> fvList = output.getData().stream()
-//             .map(embeddingsToFeatureVector).toList();
-//        if(null != inputFiles && inputFiles.size()>=fvList.size()) {
-//            for(int imageIndex=0; imageIndex<fvList.size();imageIndex++){
-//                fvList.get(imageIndex).setImageURL(
-//                    inputFiles.get(imageIndex).getAbsolutePath());
-//            }
-//        }
+
         Platform.runLater(() -> {
             scene.getRoot().fireEvent(new RestEvent(RestEvent.NEW_CHAT_COMPLETION, output));
         });  

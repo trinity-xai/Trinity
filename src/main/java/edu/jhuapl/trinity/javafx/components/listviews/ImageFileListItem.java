@@ -4,18 +4,19 @@ import edu.jhuapl.trinity.utils.ResourceUtils;
 import java.io.File;
 import java.io.IOException;
 import java.util.function.Function;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javafx.scene.control.Label;
 import javafx.scene.control.Tooltip;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Sean Phillips
  */
 public class ImageFileListItem extends HBox {
+    private static final Logger LOG = LoggerFactory.getLogger(ImageFileListItem.class);
     public static double PREF_LABEL_WIDTH = 500;
     private ImageView imageView;
     private Label fileLabel;
@@ -35,7 +36,7 @@ public class ImageFileListItem extends HBox {
             try {
                 imageView = new ImageView(ResourceUtils.loadImageFile(file));
             } catch (IOException ex) {
-                Logger.getLogger(ImageFileListItem.class.getName()).log(Level.SEVERE, null, ex);
+                LOG.error(ex.getMessage());
                 imageView = new ImageView(DEFAULT_ICON);
             }
         } else {

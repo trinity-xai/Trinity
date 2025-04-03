@@ -6,8 +6,6 @@ import edu.jhuapl.trinity.javafx.events.RestEvent;
 import edu.jhuapl.trinity.javafx.events.SearchEvent;
 import java.io.IOException;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javafx.application.Platform;
 import javafx.scene.Scene;
 import okhttp3.Call;
@@ -30,7 +28,7 @@ public class EmbeddingsTextQueryCallback extends RestCallback {
 
     @Override
     public void onFailure(Call call, IOException e) {
-        Logger.getLogger(RestCallback.class.getName()).log(Level.SEVERE, null, e);
+        LOG.error(e.getMessage());
         ErrorEvent error = new ErrorEvent(ErrorEvent.REST_ERROR, getClass().getName() + " has failed.");
         scene.getRoot().fireEvent(error);
         Platform.runLater(() -> {

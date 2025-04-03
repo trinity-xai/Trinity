@@ -7,8 +7,9 @@ import edu.jhuapl.trinity.utils.ResourceUtils;
 import java.io.File;
 import java.io.IOException;
 import java.util.function.Function;
-import java.util.logging.Level;
 import javafx.scene.image.Image;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Sean Phillips
@@ -16,7 +17,7 @@ import javafx.scene.image.Image;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class EmbeddingsImageInput {
-
+    private static final Logger LOG = LoggerFactory.getLogger(EmbeddingsImageInput.class);
     public static final String TYPESTRING = "embeddingImageInput";
     public static final String BASE64_PREFIX_PNG = "data:image/png;base64,";
     //<editor-fold defaultstate="collapsed" desc="JSON Payload">
@@ -81,9 +82,9 @@ public class EmbeddingsImageInput {
             input.setModel("openai/clip-vit-large-patch14");
             input.setUser("string");
         } catch (JsonProcessingException ex) {
-            java.util.logging.Logger.getLogger(EmbeddingsImageInput.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(ex.getMessage());
         } catch (IOException ex) {
-            java.util.logging.Logger.getLogger(EmbeddingsImageInput.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(ex.getMessage());
         }
         return input;
     };

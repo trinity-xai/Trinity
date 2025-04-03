@@ -25,13 +25,14 @@ import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author Sean Phillips
  */
 public class IsAliveCallback extends Task implements Callback {
-
+    private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(RestCallback.class);
     Response response;
     ObjectMapper objectMapper;
     Scene scene;
@@ -44,7 +45,7 @@ public class IsAliveCallback extends Task implements Callback {
 
     @Override
     public void onFailure(Call call, IOException e) {
-        Logger.getLogger(IsAliveCallback.class.getName()).log(Level.SEVERE, null, e);
+        LOG.error(e.getMessage());
         ErrorEvent error = new ErrorEvent(ErrorEvent.REST_ERROR,"The IsAlive callback has failed.");
         SwingNode errorNode = new SwingNode();
         errorNode.fireEvent(error);
@@ -74,7 +75,6 @@ public class IsAliveCallback extends Task implements Callback {
                         ButtonType.OK );
                            alert.setTitle("Embedding Service Failure");
                            alert.setHeaderText("Is Alive check for LLM Service failed");
-                   //            alert.setContentText("Clear the queue before import?");
                            alert.setGraphic(ResourceUtils.loadIcon("alert", 75));
                            alert.initStyle(StageStyle.TRANSPARENT);
                            DialogPane dialogPane = alert.getDialogPane();
@@ -103,7 +103,7 @@ public class IsAliveCallback extends Task implements Callback {
 
                 });  
             } catch (Exception ex) {
-                Logger.getLogger(IsAliveCallback.class.getName()).log(Level.SEVERE, null, ex);
+                LOG.error(ex.getMessage());
             }
         }
         return null;

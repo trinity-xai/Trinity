@@ -43,7 +43,7 @@ public class EmbeddingsTextCallback extends RestCallback {
     
     @Override
     public void onFailure(Call call, IOException e) {
-        Logger.getLogger(RestCallback.class.getName()).log(Level.SEVERE, null, e);
+        LOG.error(e.getMessage());
         ErrorEvent error = new ErrorEvent(ErrorEvent.REST_ERROR, getClass().getName() + " has failed.");
         scene.getRoot().fireEvent(error);
         Platform.runLater(() -> {

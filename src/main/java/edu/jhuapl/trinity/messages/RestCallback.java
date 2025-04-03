@@ -10,8 +10,6 @@ import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.ErrorEvent;
 import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.scene.Scene;
@@ -21,13 +19,15 @@ import okhttp3.Call;
 import okhttp3.Callback;
 import okhttp3.Response;
 import okhttp3.ResponseBody;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author phillsm1
  */
 public abstract class RestCallback extends Task implements Callback {
-    
+    static final Logger LOG = LoggerFactory.getLogger(RestCallback.class);
     Response response;
     ObjectMapper objectMapper;
     Scene scene;
@@ -40,7 +40,7 @@ public abstract class RestCallback extends Task implements Callback {
 
     @Override
     public void onFailure(Call call, IOException e) {
-        Logger.getLogger(RestCallback.class.getName()).log(Level.SEVERE, null, e);
+        LOG.error(e.getMessage());
         ErrorEvent error = new ErrorEvent(ErrorEvent.REST_ERROR, getClass().getName() + " has failed.");
         scene.getRoot().fireEvent(error);
     }

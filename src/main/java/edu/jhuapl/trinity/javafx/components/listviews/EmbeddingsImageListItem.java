@@ -10,8 +10,6 @@ import java.text.NumberFormat;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javafx.application.Platform;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
@@ -20,11 +18,14 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.HBox;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Sean Phillips
  */
 public class EmbeddingsImageListItem extends HBox {
+    private static final Logger LOG = LoggerFactory.getLogger(EmbeddingsImageListItem.class);
     public static Image DEFAULT_ICON = ResourceUtils.loadIconFile("noimage");
     public static double PREF_DIMLABEL_WIDTH = 150;
     public static double PREF_FILELABEL_WIDTH = 250;
@@ -91,7 +92,7 @@ public class EmbeddingsImageListItem extends HBox {
             try {
                 imageView = new ImageView(ResourceUtils.loadImageFile(file));
             } catch (IOException ex) {
-                Logger.getLogger(ImageFileListItem.class.getName()).log(Level.SEVERE, null, ex);
+                LOG.error(ex.getMessage());
                 imageView = new ImageView(DEFAULT_ICON);
             }
         } else {
