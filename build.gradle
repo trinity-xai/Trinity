@@ -65,6 +65,7 @@ dependencies {
     implementation group: 'org.jflac', name: 'jflac-codec', version: '1.5.2'
     implementation group: 'com.tambapps.fft4j', name: 'fft4j', version: '2.0'
     implementation group: 'com.squareup.okhttp3', name: 'okhttp', version: '5.0.0-alpha.14'
+    implementation group: 'com.squareup.okio', name: 'okio-jvm', version: '3.9.0'
 
     // Enforce slf4j-api version across dependencies
     implementation group: 'org.slf4j', name: 'slf4j-api', version: '2.0.16'
@@ -134,7 +135,9 @@ extraJavaModuleInfo {
     module('com.squareup.okhttp3:okhttp', 'okhttp3') {
         exportAllPackages()
     }
-
+    module('com.squareup.okio:okio-jvm', 'okio') {
+        exportAllPackages()
+    }
 }
 
 // </editor-fold>
