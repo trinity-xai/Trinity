@@ -131,7 +131,7 @@ extraJavaModuleInfo {
     module('com.tambapps.fft4j:fft4j', 'fft4j') {
         exportAllPackages()
     }
-    module('com.squareup.okhttp3', 'okhttp') {
+    module('com.squareup.okhttp3:okhttp', 'okhttp') {
         exportAllPackages()
     }
 
