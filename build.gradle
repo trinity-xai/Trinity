@@ -138,6 +138,9 @@ extraJavaModuleInfo {
     module('com.squareup.okio:okio-jvm', 'okio') {
         exportAllPackages()
     }
+    module('org.jetbrains:annotations', 'annotations') {
+        exportAllPackages()
+    }
 }
 
 // </editor-fold>
