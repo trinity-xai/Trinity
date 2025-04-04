@@ -66,6 +66,7 @@ dependencies {
     implementation group: 'com.tambapps.fft4j', name: 'fft4j', version: '2.0'
     implementation group: 'com.squareup.okhttp3', name: 'okhttp', version: '5.0.0-alpha.14'
     implementation group: 'com.squareup.okio', name: 'okio-jvm', version: '3.9.0'
+    implementation group: 'org.jetbrains', name: 'annotations', version: '26.0.2'
 
     // Enforce slf4j-api version across dependencies
     implementation group: 'org.slf4j', name: 'slf4j-api', version: '2.0.16'

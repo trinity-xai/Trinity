@@ -29,6 +29,7 @@ module edu.jhuapl.trinity {
     requires fft4j;
     requires okhttp3;
     requires okio;
+    requires annotations;
     opens edu.jhuapl.trinity.javafx.components.radial to lit.litfx.controls;
     opens edu.jhuapl.trinity to webcam.capture;
     opens edu.jhuapl.trinity.data to javafx.base;
