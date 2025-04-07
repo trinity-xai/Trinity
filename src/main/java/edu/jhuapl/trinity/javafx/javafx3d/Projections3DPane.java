@@ -12,6 +12,7 @@ import edu.jhuapl.trinity.data.HyperspaceSeed;
 import edu.jhuapl.trinity.data.Manifold;
 import edu.jhuapl.trinity.data.Trajectory;
 import edu.jhuapl.trinity.data.files.FeatureCollectionFile;
+import edu.jhuapl.trinity.data.files.GaussianMixtureCollectionFile;
 import edu.jhuapl.trinity.data.messages.xai.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.data.messages.xai.GaussianMixture;
@@ -38,6 +39,7 @@ import edu.jhuapl.trinity.javafx.events.ManifoldEvent.ProjectionConfig;
 import edu.jhuapl.trinity.javafx.events.ShadowEvent;
 import edu.jhuapl.trinity.javafx.events.TimelineEvent;
 import edu.jhuapl.trinity.javafx.events.TrajectoryEvent;
+import static edu.jhuapl.trinity.javafx.handlers.GaussianMixtureEventHandler.generateEllipsoidDiagonal;
 import edu.jhuapl.trinity.javafx.javafx3d.ShadowCubeWorld.PROJECTION_TYPE;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.AnimatedSphere;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.Opticon;
@@ -137,6 +139,10 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static edu.jhuapl.trinity.utils.ResourceUtils.removeExtension;
+import java.util.logging.Level;
+import javafx.scene.input.DragEvent;
+import javafx.scene.input.Dragboard;
+import javafx.scene.input.TransferMode;
 
 /**
  * @author Sean Phillips
@@ -763,6 +769,33 @@ public class Projections3DPane extends StackPane implements
                 clusterSelectionMode = false;
             }
         });
+        //@HACKY QUICK FIX SMP Handle GMM drops separately here
+        subScene.addEventHandler(DragEvent.DRAG_OVER, e -> {
+            if (ResourceUtils.canDragOver(e)) {
+                e.acceptTransferModes(TransferMode.COPY);
+            } else {
+                e.consume();
+            }
+        });
+        subScene.addEventHandler(DragEvent.DRAG_DROPPED, e -> {
+            Dragboard db = e.getDragboard();
+            if (db.hasFiles()) {
+                final List<File> files = db.getFiles(); 
+                for (File file : files) {
+                    try {
+                        if (GaussianMixtureCollectionFile.isGaussianMixtureCollectionFile(file)) {
+                            GaussianMixtureCollectionFile gmcFile = new GaussianMixtureCollectionFile(file.getAbsolutePath(), true);
+                            //generate the diagonal for ellipsoid rendering
+                            generateEllipsoidDiagonal(gmcFile.gaussianMixtureCollection);
+                            addGaussianMixtureCollection(gmcFile.gaussianMixtureCollection);
+                        }
+                        e.consume();
+                    } catch (IOException ex) {
+                        LOG.error(ex.getMessage());
+                    }
+                }
+            }            
+        });        
         bp = new BorderPane(subScene);
         //RadialOverlayPane will hold all those nifty callouts and radial entities
         radialOverlayPane = new RadialEntityOverlayPane(this.scene, featureVectors);

@@ -47,22 +47,8 @@ public class GaussianMixtureEventHandler implements EventHandler<GaussianMixture
             });
 
             //generate the diagonal for ellipsoid rendering
-            //for each Gaussian Mixture
-            for (GaussianMixture gm : gaussianMixtureCollection.getMixtures()) {
-                //go through each gaussian mixture
-                for (GaussianMixtureData gmd : gm.getData()) {
-                    //If we have a full covariance matrix
-                    if (gm.getCovarianceMode().contentEquals(COVARIANCE_MODE.FULL.name())) {
-                        //perform SVD and then Rotation, result is the diagonal
-                        gmd.setEllipsoidDiagonal(
-                            AnalysisUtils.gmmFullCovToDiag(gmd.getCovariance())
-                        );
-                    } else { //the current covariance object is already a diagonal
-                        //Just copy the first (only) vector of doubles as the diagonal
-                        gmd.setEllipsoidDiagonal(gmd.getCovariance().get(0));
-                    }
-                }
-            }
+            generateEllipsoidDiagonal(gaussianMixtureCollection);
+            
             //send the updated collection out to the renderers
             for (GaussianMixtureRenderer renderer : renderers) {
                 renderer.addGaussianMixtureCollection(gaussianMixtureCollection);
@@ -72,6 +58,26 @@ public class GaussianMixtureEventHandler implements EventHandler<GaussianMixture
             updateGMLabelsAndColor(gaussianMixture);
             for (GaussianMixtureRenderer renderer : renderers) {
                 renderer.addGaussianMixture(gaussianMixture);
+            }
+        }
+    }
+
+    public static void generateEllipsoidDiagonal(GaussianMixtureCollection gaussianMixtureCollection) {             
+        //generate the diagonal for ellipsoid rendering
+        //for each Gaussian Mixture
+        for (GaussianMixture gm : gaussianMixtureCollection.getMixtures()) {
+            //go through each gaussian mixture
+            for (GaussianMixtureData gmd : gm.getData()) {
+                //If we have a full covariance matrix
+                if (gm.getCovarianceMode().contentEquals(COVARIANCE_MODE.FULL.name())) {
+                    //perform SVD and then Rotation, result is the diagonal
+                    gmd.setEllipsoidDiagonal(
+                        AnalysisUtils.gmmFullCovToDiag(gmd.getCovariance())
+                    );
+                } else { //the current covariance object is already a diagonal
+                    //Just copy the first (only) vector of doubles as the diagonal
+                    gmd.setEllipsoidDiagonal(gmd.getCovariance().get(0));
+                }
             }
         }
     }
