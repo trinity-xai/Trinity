@@ -4,6 +4,7 @@ module edu.jhuapl.trinity {
     requires java.datatransfer;
     requires java.desktop;
     requires java.naming; // needed by ch.qos.logback.classic
+    requires java.net.http;
     requires jdk.httpserver;
     requires javafx.graphics;
     requires javafx.controls;
@@ -27,9 +28,6 @@ module edu.jhuapl.trinity {
     requires org.slf4j;
     requires ch.qos.logback.classic;
     requires fft4j;
-    requires okhttp3;
-    requires okio;
-    requires annotations;
     opens edu.jhuapl.trinity.javafx.components.radial to lit.litfx.controls;
     opens edu.jhuapl.trinity to webcam.capture;
     opens edu.jhuapl.trinity.data to javafx.base;

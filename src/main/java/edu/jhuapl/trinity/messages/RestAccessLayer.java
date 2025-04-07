@@ -12,22 +12,22 @@ import edu.jhuapl.trinity.data.messages.llm.RestAccessLayerConfig;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import java.io.File;
 import java.io.IOException;
+import java.net.URI;
 import java.nio.file.Files;
 import java.util.List;
-import java.util.concurrent.TimeUnit;
 import java.util.function.Function;
 import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
-import okhttp3.ConnectionPool;
-import okhttp3.HttpUrl;
-import okhttp3.MediaType;
-import okhttp3.OkHttpClient;
-import okhttp3.Request;
-import okhttp3.RequestBody;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+import java.net.http.HttpClient;
+import java.net.http.HttpRequest;
+import java.net.http.HttpRequest.BodyPublishers;
+import java.net.http.HttpResponse;
+import java.net.http.HttpResponse.BodyHandlers;
+import java.time.Duration;
 
 /**
  *
@@ -36,13 +36,13 @@ import org.slf4j.LoggerFactory;
 public enum RestAccessLayer {
     INSTANCE;
     private static final Logger LOG = LoggerFactory.getLogger(RestAccessLayer.class);
-    private static OkHttpClient client;
+    private static HttpClient httpClient;
     private static ObjectMapper objectMapper;
     public static final String SERVICES_DEFAULT_PATH = "services/"; //default to local relative path
     public static final String SERVICES_DEFAULT_CONFIG = "defaultRestAccessLayer.json";
     public static RestAccessLayerConfig restAccessLayerconfig = null;
     public static final int DEFAULT_TIMEOUT_SECONDS = 60;
-    public static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
+//    public static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
     public static String currentEmbeddingsModel = null;
     public static String currentChatModel = null;
     
@@ -51,15 +51,9 @@ public enum RestAccessLayer {
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         objectMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
         
-        client = new OkHttpClient.Builder()
-            .connectTimeout(DEFAULT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-            .writeTimeout(DEFAULT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-            .callTimeout(DEFAULT_TIMEOUT_SECONDS, TimeUnit.SECONDS)
-            .readTimeout(300, TimeUnit.SECONDS)
-            .followRedirects(true)
-            .followSslRedirects(true)
-            .retryOnConnectionFailure(true)
-            .connectionPool(new ConnectionPool(50, DEFAULT_TIMEOUT_SECONDS, TimeUnit.SECONDS))
+        httpClient = HttpClient.newBuilder()
+            .followRedirects(HttpClient.Redirect.ALWAYS)
+            .connectTimeout(Duration.ofSeconds(DEFAULT_TIMEOUT_SECONDS))
             .build();
         try {
             restAccessLayerconfig = loadDefaultRestConfig();
@@ -83,125 +77,140 @@ public enum RestAccessLayer {
     }    
     
     //Text and Image REST calls
-
     public static void requestQueryTextEmbeddings(EmbeddingsImageInput input, 
         Scene scene, List<Integer> inputIDs, int requestNumber) throws JsonProcessingException {
-        if(!checkRestServiceInitialized()) {
-            notifyTerminalError(
-                "REST Request Error: Current REST URL or End Point not initialized properly.", 
-                scene
-            );            
-        }
+        if(restServiceFailed(scene)) return;
         String inputJSON = objectMapper.writeValueAsString(input);
-        //@DEBUG SMP
-        System.out.println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(input));
-        Request request = makePostRequest(inputJSON, restAccessLayerconfig.getImageEmbeddingsEndpoint());
-        client.newCall(request).enqueue(new EmbeddingsTextQueryCallback(scene, inputIDs, requestNumber));
+//        @DEBUG SMP
+//        System.out.println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(input));
+        HttpRequest request = makeHttpPostRequest(inputJSON, restAccessLayerconfig.getImageEmbeddingsEndpoint());
+        httpClient.sendAsync(request, BodyHandlers.ofString())
+            .thenAcceptAsync(resp -> {
+                if (resp.statusCode() != 200) {
+                    new EmbeddingsTextQueryCallback(scene, inputIDs, requestNumber).onFailure();
+                } else {
+                    new EmbeddingsTextQueryCallback(scene, inputIDs, requestNumber).processResponse(resp.body());
+                } 
+            });
     }
     public static void requestTextEmbeddings(EmbeddingsImageInput input, 
         Scene scene, List<Integer> inputIDs, int requestNumber) throws JsonProcessingException {
-        if(!checkRestServiceInitialized()) {
-            notifyTerminalError(
-                "REST Request Error: Current REST URL or End Point not initialized properly.", 
-                scene
-            );            
-        }
+        if(restServiceFailed(scene)) return;
         String inputJSON = objectMapper.writeValueAsString(input);
-        //@DEBUG SMP
-        //System.out.println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(input));
-        Request request = makePostRequest(inputJSON, restAccessLayerconfig.getImageEmbeddingsEndpoint());
-        try {
-            client.newCall(request).enqueue(new EmbeddingsTextCallback(scene, inputIDs, requestNumber));
-        } catch(Exception ex) {
-            System.out.println("dude...");
-        }
+        HttpRequest request = makeHttpPostRequest(inputJSON, restAccessLayerconfig.getImageEmbeddingsEndpoint());
+        httpClient.sendAsync(request, BodyHandlers.ofString())
+            .thenAcceptAsync(resp -> {
+                if (resp.statusCode() != 200) {
+                    new EmbeddingsTextCallback(scene, inputIDs, requestNumber).onFailure();
+                } else {
+                    new EmbeddingsTextCallback(scene, inputIDs, requestNumber).processResponse(resp.body());
+                } 
+            });
     }
     public static void requestLandmarkTextEmbeddings(EmbeddingsImageInput input, 
         Scene scene, List<Integer> inputIDs, int requestNumber) throws JsonProcessingException {
-        if(!checkRestServiceInitialized()) {
-            notifyTerminalError(
-                "REST Request Error: Current REST URL or End Point not initialized properly.", 
-                scene
-            );            
-        }
+        if(restServiceFailed(scene)) return;
         String inputJSON = objectMapper.writeValueAsString(input);
-        //@DEBUG SMP
-        //System.out.println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(input));
-        Request request = makePostRequest(inputJSON, restAccessLayerconfig.getImageEmbeddingsEndpoint());
-        client.newCall(request).enqueue(new EmbeddingsTextLandmarkCallback(scene, inputIDs, requestNumber));
+        HttpRequest request = makeHttpPostRequest(inputJSON, restAccessLayerconfig.getImageEmbeddingsEndpoint());
+        httpClient.sendAsync(request, BodyHandlers.ofString())
+            .thenAcceptAsync(resp -> {
+                if (resp.statusCode() != 200) {
+                    new EmbeddingsTextLandmarkCallback(scene, inputIDs, requestNumber).onFailure();
+                } else {
+                    new EmbeddingsTextLandmarkCallback(scene, inputIDs, requestNumber).processResponse(resp.body());
+                } 
+            });
     }
     public static void requestImageEmbeddings(EmbeddingsImageBatchInput input, 
         Scene scene, List<Integer> inputIDs, int requestNumber) throws JsonProcessingException {
-        if(!checkRestServiceInitialized()) {
-            notifyTerminalError(
-                "REST Request Error: Current REST URL or End Point not initialized properly.", 
-                scene
-            );            
-        }
+        if(restServiceFailed(scene)) return;
         String inputJSON = objectMapper.writeValueAsString(input);
-        Request request = makePostRequest(inputJSON, restAccessLayerconfig.getImageEmbeddingsEndpoint());
-        client.newCall(request).enqueue(new EmbeddingsImageCallback(scene, inputIDs, requestNumber));
+        HttpRequest request = makeHttpPostRequest(inputJSON, restAccessLayerconfig.getImageEmbeddingsEndpoint());
+        httpClient.sendAsync(request, BodyHandlers.ofString())
+            .thenAcceptAsync(resp -> {
+                if (resp.statusCode() != 200) {
+                    new EmbeddingsImageCallback(scene, inputIDs, requestNumber).onFailure();
+                } else {
+                    new EmbeddingsImageCallback(scene, inputIDs, requestNumber).processResponse(resp.body());
+                } 
+            });
     }
     public static void requestLandmarkImageEmbeddings(EmbeddingsImageBatchInput input, 
         Scene scene, List<Integer> inputIDs, int requestNumber) throws JsonProcessingException {
-        if(!checkRestServiceInitialized()) {
-            notifyTerminalError(
-                "REST Request Error: Current REST URL or End Point not initialized properly.", 
-                scene
-            );            
-        }
+        if(restServiceFailed(scene)) return;
         String inputJSON = objectMapper.writeValueAsString(input);
-        Request request = makePostRequest(inputJSON, restAccessLayerconfig.getImageEmbeddingsEndpoint());
-        client.newCall(request).enqueue(new EmbeddingsImageLandmarkCallback(scene, inputIDs, requestNumber));
+        HttpRequest request = makeHttpPostRequest(inputJSON, restAccessLayerconfig.getImageEmbeddingsEndpoint());
+        httpClient.sendAsync(request, BodyHandlers.ofString())
+            .thenAcceptAsync(resp -> {
+                if (resp.statusCode() != 200) {
+                    new EmbeddingsImageLandmarkCallback(scene, inputIDs, requestNumber).onFailure();
+                } else {
+                    new EmbeddingsImageLandmarkCallback(scene, inputIDs, requestNumber).processResponse(resp.body());
+                } 
+            });
     }
-    
-    public static void requestChatCompletion(ChatCompletionsInput input, Scene scene, int inputID, int requestNumber) throws JsonProcessingException {
-        if(!checkRestServiceInitialized()) {
-            notifyTerminalError(
-                "REST Request Error: Current REST URL or End Point not initialized properly.", 
-                scene
-            );            
-        }
+    public static void requestChatCompletion(ChatCompletionsInput input, Scene scene, int inputIDs, int requestNumber) throws JsonProcessingException {
+        if(restServiceFailed(scene)) return;
         String inputJSON = objectMapper.writeValueAsString(input);
-//@DEBUG SMP
-//        System.out.println("Pretty Print of ChatCompletionsInput: \n" 
-//            + objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(input));
-        Request request = makePostRequest(inputJSON, restAccessLayerconfig.getChatCompletionEndpoint());
-        client.newCall(request).enqueue(new ChatCompletionCallback(scene, inputID, requestNumber));
+        HttpRequest request = makeHttpPostRequest(inputJSON, restAccessLayerconfig.getChatCompletionEndpoint());
+        httpClient.sendAsync(request, BodyHandlers.ofString())
+            .thenAcceptAsync(resp -> {
+                if (resp.statusCode() != 200) {
+                    new ChatCompletionCallback(scene, inputIDs, requestNumber).onFailure();
+                } else {
+                    new ChatCompletionCallback(scene, inputIDs, requestNumber).processResponse(resp.body());
+                } 
+            });
     }
     
     //Utilities
     public static void requestChatModels(Scene scene) {
-        HttpUrl url = HttpUrl.parse(restAccessLayerconfig.getBaseRestURL() 
-                + restAccessLayerconfig.getChatModelsEndpoint())
-            .newBuilder()
-            .build();
-        Request request = new Request.Builder().url(url).build();
-        client.newCall(request).enqueue(new ChatModelsAliveCallback(scene));
+        HttpRequest request = HttpRequest.newBuilder()
+             .uri(URI.create(restAccessLayerconfig.getBaseRestURL() 
+                + restAccessLayerconfig.getChatModelsEndpoint()))
+             .timeout(Duration.ofSeconds(DEFAULT_TIMEOUT_SECONDS))
+             .header("Content-Type", "application/json")
+             .GET()
+             .build();
+        httpClient.sendAsync(request, BodyHandlers.ofString())
+            .thenAcceptAsync(resp -> {
+                if (resp.statusCode() != 200) {
+                    new ChatModelsAliveCallback(scene).onFailure();
+                } else {
+                    new ChatModelsAliveCallback(scene).processResponse(resp.body());
+                } 
+            });
     }
-    
     public static void requestRestIsAlive(Scene scene) {
-        HttpUrl url = HttpUrl.parse(restAccessLayerconfig.getBaseRestURL() 
-                + restAccessLayerconfig.getIsAliveEndpoint())
-            .newBuilder()
-            .build();
-        Request request = new Request.Builder().url(url).build();
-        client.newCall(request).enqueue(new IsAliveCallback(scene));
-    }
-    private static Request makePostRequest(String payload, String endPoint) {
-        HttpUrl url = HttpUrl.parse(restAccessLayerconfig.getBaseRestURL() + endPoint)
-            .newBuilder()
-            .build();
-        RequestBody hardBody = RequestBody.create(payload, JSON);
-        //  -H 'accept: application/json' \
-        //  -H 'Content-Type: application/json'
-        return new Request.Builder()
-            .addHeader("accept", "application/json")
-            .addHeader("Content-Type", "application/json")
-            .url(url)
-            .post(hardBody)
-            .build();        
+        HttpRequest request = HttpRequest.newBuilder()
+             .uri(URI.create(restAccessLayerconfig.getBaseRestURL() 
+                + restAccessLayerconfig.getIsAliveEndpoint()))
+             .timeout(Duration.ofSeconds(DEFAULT_TIMEOUT_SECONDS))
+             .header("Content-Type", "application/json")
+             .GET()
+             .build();
+        httpClient.sendAsync(request, BodyHandlers.ofString())
+            .thenApply(HttpResponse::body)
+            .thenAccept(new IsAliveCallback(scene)::processResponse); 
     }    
+    private static HttpRequest makeHttpPostRequest(String payload, String endPoint) {
+        return HttpRequest.newBuilder()
+             .uri(URI.create(restAccessLayerconfig.getBaseRestURL() + endPoint))
+             .timeout(Duration.ofSeconds(DEFAULT_TIMEOUT_SECONDS))
+             .header("Content-Type", "application/json")
+             .POST(BodyPublishers.ofString(payload))
+             .build();        
+    }    
+    private static boolean restServiceFailed(Scene scene) {
+        if(!checkRestServiceInitialized()) {
+            notifyTerminalError(
+                "REST Request Error: Current REST URL or End Point not initialized properly.", 
+                scene
+            );
+            return true;
+        }
+        return false;
+    }
     private static void notifyTerminalError(String message, Scene scene) {
         Platform.runLater(() -> {
             CommandTerminalEvent cte = new CommandTerminalEvent(

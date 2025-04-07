@@ -1,18 +1,17 @@
 package edu.jhuapl.trinity.messages;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import edu.jhuapl.trinity.data.messages.llm.ChatCompletionsOutput;
 import edu.jhuapl.trinity.javafx.events.ErrorEvent;
 import edu.jhuapl.trinity.javafx.events.RestEvent;
-import java.io.IOException;
 import javafx.application.Platform;
 import javafx.scene.Scene;
-import okhttp3.Call;
 
 /**
  *
  * @author Sean Phillips
  */
-public class ChatCompletionCallback extends RestCallback {
+public class ChatCompletionCallback extends RestConsumer {
     int requestNumber;
     int inputID;
     
@@ -25,8 +24,8 @@ public class ChatCompletionCallback extends RestCallback {
     }
 
     @Override
-    public void onFailure(Call call, IOException e) {
-        LOG.error(e.getMessage());
+    public void onFailure() {
+        LOG.error("REST RequestNumber: " + requestNumber + " returned with HTTP failure code.");
         ErrorEvent error = new ErrorEvent(ErrorEvent.REST_ERROR, getClass().getName() + " has failed.");
         scene.getRoot().fireEvent(error);
         Platform.runLater(() -> {
@@ -35,15 +34,20 @@ public class ChatCompletionCallback extends RestCallback {
     }
 
     @Override
-    protected void processResponse(String responseBodyString) throws Exception {
+    protected void processResponse(String responseBodyString) {
 //        System.out.println("Pretty Print of ChatCompletionCallback response... \n"
 //            + objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(responseBodyString));
-        ChatCompletionsOutput output = objectMapper.readValue(responseBodyString, ChatCompletionsOutput.class);
-        output.setInputID(inputID);
-        output.setRequestNumber(requestNumber);
+        ChatCompletionsOutput output;
+        try {
+            output = objectMapper.readValue(responseBodyString, ChatCompletionsOutput.class);
+            output.setInputID(inputID);
+            output.setRequestNumber(requestNumber);
 
-        Platform.runLater(() -> {
-            scene.getRoot().fireEvent(new RestEvent(RestEvent.NEW_CHAT_COMPLETION, output));
-        });  
+            Platform.runLater(() -> {
+                scene.getRoot().fireEvent(new RestEvent(RestEvent.NEW_CHAT_COMPLETION, output));
+            });  
+        } catch (JsonProcessingException ex) {
+            LOG.error(ex.getMessage());
+        }
     }
 }

@@ -1,21 +1,18 @@
 package edu.jhuapl.trinity.messages;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageOutput;
 import edu.jhuapl.trinity.javafx.events.ErrorEvent;
 import edu.jhuapl.trinity.javafx.events.RestEvent;
-import java.io.IOException;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javafx.application.Platform;
 import javafx.scene.Scene;
-import okhttp3.Call;
 
 /**
  *
  * @author Sean Phillips
  */
-public class EmbeddingsImageLandmarkCallback extends RestCallback {
+public class EmbeddingsImageLandmarkCallback extends RestConsumer {
     List<Integer> inputIDs;
     int requestNumber;
     
@@ -28,8 +25,8 @@ public class EmbeddingsImageLandmarkCallback extends RestCallback {
     }
 
     @Override
-    public void onFailure(Call call, IOException e) {
-        LOG.error(e.getMessage());
+    public void onFailure() {
+//        LOG.error(e.getMessage());
         ErrorEvent error = new ErrorEvent(ErrorEvent.REST_ERROR, getClass().getName() + " has failed.");
         scene.getRoot().fireEvent(error);
         Platform.runLater(() -> {
@@ -38,12 +35,16 @@ public class EmbeddingsImageLandmarkCallback extends RestCallback {
     }
 
     @Override
-    protected void processResponse(String responseBodyString) throws Exception {
-        //System.out.println("EmbeddingsImageCallback response...");
-        EmbeddingsImageOutput output = objectMapper.readValue(responseBodyString, EmbeddingsImageOutput.class);
-        output.setRequestNumber(requestNumber);
-        Platform.runLater(() -> {
-            scene.getRoot().fireEvent(new RestEvent(RestEvent.NEW_EMBEDDINGS_LANDMARKIMAGE, output, inputIDs));
-        });  
+    protected void processResponse(String responseBodyString) {
+        try {
+            //System.out.println("EmbeddingsImageCallback response...");
+            EmbeddingsImageOutput output = objectMapper.readValue(responseBodyString, EmbeddingsImageOutput.class);
+            output.setRequestNumber(requestNumber);
+            Platform.runLater(() -> {
+                scene.getRoot().fireEvent(new RestEvent(RestEvent.NEW_EMBEDDINGS_LANDMARKIMAGE, output, inputIDs));  
+            });
+        } catch (JsonProcessingException ex) {
+            LOG.error(ex.getMessage());
+        }
     }
 }

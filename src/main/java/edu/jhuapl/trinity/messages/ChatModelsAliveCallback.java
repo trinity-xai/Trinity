@@ -5,7 +5,6 @@ import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.ErrorEvent;
 import edu.jhuapl.trinity.javafx.events.RestEvent;
 import edu.jhuapl.trinity.utils.ResourceUtils;
-import java.io.IOException;
 import javafx.application.Platform;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
@@ -15,27 +14,25 @@ import javafx.scene.layout.Background;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.stage.StageStyle;
-import okhttp3.Call;
-import okhttp3.Response;
 
 /**
  *
  * @author Sean Phillips
  */
-public class ChatModelsAliveCallback extends RestCallback {
+public class ChatModelsAliveCallback extends RestConsumer {
 
     public ChatModelsAliveCallback(Scene scene) {
         super(scene);
     }
 
     @Override
-    public void onFailure(Call call, IOException e) {
-        LOG.error(e.getMessage());
+    public void onFailure() {
+//        LOG.error(e.getMessage());
         ErrorEvent error = new ErrorEvent(ErrorEvent.REST_ERROR,"The IsAlive callback has failed.");
         scene.getRoot().fireEvent(error);
         Platform.runLater(() -> {
             CommandTerminalEvent cte = new CommandTerminalEvent(
-            "Chat Model service could not be reached: " + response.code() + " - " + response.message(), 
+            "Chat Model service could not be reached: ", //+ response.code() + " - " + response.message(), 
                 new Font("Consolas", 20), Color.RED);
                 scene.getRoot().fireEvent(cte);
             Alert alert = new Alert(Alert.AlertType.WARNING,
@@ -55,16 +52,7 @@ public class ChatModelsAliveCallback extends RestCallback {
     }
 
     @Override
-    public void onResponse(Call call, Response response) throws IOException {
-        //Requesting a response body will be blocking even within an asynch callback
-        this.response = response;
-        Thread responseThread = new Thread(this);
-        responseThread.setDaemon(true);
-        responseThread.start();
-    }
-
-    @Override
-    protected void processResponse(String responseBodyString) throws Exception {
+    protected void processResponse(String responseBodyString) {
         try {
             System.out.println("Response from 'ChatModelsAlive' check: " + responseBodyString);
             AliveModels chatModelsAliveReesponse = objectMapper.readValue(responseBodyString, AliveModels.class);
