@@ -1,5 +1,3 @@
-/* Copyright (C) 2025 Sean Phillips */
-
 package edu.jhuapl.trinity.javafx.components.panes;
 
 import edu.jhuapl.trinity.javafx.events.ImageEvent;
@@ -28,11 +26,8 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.io.File;
 import java.net.MalformedURLException;
-import java.util.logging.Level;
-
 
 /**
  * @author Sean Phillips

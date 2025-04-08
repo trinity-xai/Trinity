@@ -5,7 +5,7 @@ import java.util.List;
 
 /**
  *
- * @author phillsm1
+ * @author Sean Phillips
  */
 public class EmbeddingsImageData {
     //<editor-fold defaultstate="collapsed" desc="JSON Payload">

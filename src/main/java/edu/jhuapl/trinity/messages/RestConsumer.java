@@ -1,10 +1,5 @@
 package edu.jhuapl.trinity.messages;
 
-/**
- *
- * @author Sean Phillips
- */
-
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import javafx.scene.Scene;
@@ -13,7 +8,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  *
- * @author phillsm1
+ * @author Sean Phillips
  */
 public abstract class RestConsumer {
     static final Logger LOG = LoggerFactory.getLogger(RestConsumer.class);

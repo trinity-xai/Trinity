@@ -1,5 +1,3 @@
-/* Copyright (C) 2025 Sean Phillips */
-
 package edu.jhuapl.trinity.data.messages.xai;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
