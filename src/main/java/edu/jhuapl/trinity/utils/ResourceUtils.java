@@ -75,10 +75,8 @@ import java.io.ByteArrayOutputStream;
 import java.io.DataOutputStream;
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.UnsupportedEncodingException;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -100,7 +98,6 @@ import java.util.Set;
 import java.util.UUID;
 import java.util.jar.JarEntry;
 import java.util.jar.JarFile;
-import java.util.logging.Level;
 import java.util.stream.Collectors;
 
 /**
@@ -216,17 +213,19 @@ public enum ResourceUtils {
     }
 
     public static File saveImageFile(Image image) throws IOException {
-        
-        File newFile = new File("imagery/Trinity-scan-" + UUID.randomUUID().toString()+".png");
+
+        File newFile = new File("imagery/Trinity-scan-" + UUID.randomUUID().toString() + ".png");
         BufferedImage buff = SwingFXUtils.fromFXImage(image, null);
         ImageIO.write(buff, "PNG", newFile);
         return newFile;
     }
+
     public static WritableImage loadImageFile(File file) throws IOException {
         BufferedImage image = ImageIO.read(file);
         WritableImage wi = SwingFXUtils.toFXImage(image, null);
         return wi;
     }
+
     public static WritableImage loadImageFile(String filename) throws IOException {
         File imageFile = new File(filename);
         return loadImageFile(imageFile);
@@ -291,6 +290,7 @@ public enum ResourceUtils {
         iv.setFitWidth(FIT_WIDTH);
         return iv;
     }
+
     /**
      * Checks whether the file can read as ASCII text.
      *
@@ -301,7 +301,7 @@ public enum ResourceUtils {
         if (file.isFile() && file.canRead()) {
             try {
                 String contentType = Files.probeContentType(file.toPath());
-                if(null != contentType) {
+                if (null != contentType) {
                     //check for explicit mime types we want to guarantee work
                     switch (contentType) {
                         case "text/plain", "application/json" -> {
@@ -309,9 +309,9 @@ public enum ResourceUtils {
                         }
                     }
                     //now look explicitly for type categories we like
-                    if(contentType.startsWith("text") || contentType.endsWith("json"))
+                    if (contentType.startsWith("text") || contentType.endsWith("json"))
                         return true;
-                }                
+                }
             } catch (IOException ex) {
                 LOG.error(null, ex);
             }
@@ -323,28 +323,29 @@ public enum ResourceUtils {
     }
 
     public static boolean asciiBytesCheck(File f) {
-        if(!f.exists())
+        if (!f.exists())
             return false;
         byte[] data;
         try (FileInputStream in = new FileInputStream(f)) {
             int size = in.available();
-            if(size > 1000)
+            if (size > 1000)
                 size = 1000;
             data = new byte[size];
             in.read(data);
             String s = new String(data, "ISO-8859-1");
             String s2 = s.replaceAll(
-                    "[a-zA-Z0-9ßöäü\\.\\*!\"§\\$\\%&/()=\\?@~'#:,;\\"+
-                    "+><\\|\\[\\]\\{\\}\\^°²³\\\\ \\n\\r\\t_\\-`´âêîô"+
+                "[a-zA-Z0-9ßöäü\\.\\*!\"§\\$\\%&/()=\\?@~'#:,;\\" +
+                    "+><\\|\\[\\]\\{\\}\\^°²³\\\\ \\n\\r\\t_\\-`´âêîô" +
                     "ÂÊÔÎáéíóàèìòÁÉÍÓÀÈÌÒ©‰¢£¥€±¿»«¼½¾™ª]", "");
             // will delete all text signs
-            double d = (double)(s.length() - s2.length()) / (double)(s.length());
+            double d = (double) (s.length() - s2.length()) / (double) (s.length());
             // percentage of text signs in the text
             return d > 0.95;
         } catch (IOException ex) {
             return false;
         }
     }
+
     /**
      * Checks whether the file can be used as an image.
      *
@@ -646,16 +647,18 @@ public enum ResourceUtils {
     public static String removeExtension(String filename) {
         return filename.substring(0, filename.lastIndexOf("."));
     }
-    public static  Image bytesToImage(byte[] image) {
-        byte [] rayray = new byte[image.length];
-        System.arraycopy(image, 0, 
+
+    public static Image bytesToImage(byte[] image) {
+        byte[] rayray = new byte[image.length];
+        System.arraycopy(image, 0,
             rayray, 0, rayray.length);
         Image imageObject = new Image(new ByteArrayInputStream(rayray));
         return imageObject;
     }
-    
+
     /**
      * https://stackoverflow.com/questions/24038524/how-to-get-byte-from-javafx-imageview
+     *
      * @param image
      * @return byte [] da bytes
      */
@@ -664,22 +667,23 @@ public enum ResourceUtils {
         ImageIO.write(SwingFXUtils.fromFXImage(image, null), "png", byteOutput);
         return byteOutput.toByteArray();
     }
+
     public static byte[] byteMe(Image me) throws IOException {
-        int w = (int)me.getWidth();
-        int h = (int)me.getHeight();
+        int w = (int) me.getWidth();
+        int h = (int) me.getHeight();
         int[] intBuf = new int[w * h];
-        me.getPixelReader().getPixels(0, 0, w, h, PixelFormat.getIntArgbPreInstance(), intBuf , 0, w);
+        me.getPixelReader().getPixels(0, 0, w, h, PixelFormat.getIntArgbPreInstance(), intBuf, 0, w);
         ByteArrayOutputStream baos = new ByteArrayOutputStream();
         DataOutputStream dos = new DataOutputStream(baos);
-        for(int i=0; i < intBuf.length; ++i) {
-             dos.writeInt(intBuf[i]);
+        for (int i = 0; i < intBuf.length; ++i) {
+            dos.writeInt(intBuf[i]);
         }
         return baos.toByteArray();
     }
-    
+
     public static String imageToBase64(Image image) throws IOException {
         return Base64.getEncoder().encodeToString(imageToBytes(image));
 //        return Base64.getEncoder().encodeToString(byteMe(image));
     }
-    
+
 }

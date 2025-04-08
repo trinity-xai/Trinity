@@ -1,14 +1,14 @@
 package edu.jhuapl.trinity.data.messages.llm;
 
 /**
- *
  * @author Sean Phillips
  */
 public class StreamOptions {
     private boolean include_usage = false;
+
     public StreamOptions() {
 
-    }    
+    }
 
     /**
      * @return the include_usage

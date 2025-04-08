@@ -4,12 +4,13 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import edu.jhuapl.trinity.utils.ResourceUtils;
-import java.io.File;
-import java.io.IOException;
-import java.util.function.Function;
 import javafx.scene.image.Image;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.function.Function;
 
 /**
  * @author Sean Phillips
@@ -30,7 +31,7 @@ public class EmbeddingsImageInput {
           "dimensions": 512,
           "user": "string"
         }
-    
+
 {
   "input": [
     {"type":"image_url","image_url": {"url": "data:image/png;base64,image1bytesencoded64"}},
@@ -40,12 +41,12 @@ public class EmbeddingsImageInput {
   "model": "intfloat/multilingual-e5-large",
   "encoding_format": "float"
 }
-    
+
      */
     //</editor-fold>
 
     //<editor-fold defaultstate="collapsed" desc="Payload Fields">
-    private String model; 
+    private String model;
     private String input; //base64 image to get embeddings for
     private String encoding_format;
     private String embedding_type;
@@ -55,10 +56,11 @@ public class EmbeddingsImageInput {
 
     public EmbeddingsImageInput() {
     }
-  
+
     public static EmbeddingsImageInput hellocarlTextEmbeddingsImageInput() throws IOException {
         return defaultTextInput("carl-b");
-    }       
+    }
+
     public static EmbeddingsImageInput defaultTextInput(String text) {
         EmbeddingsImageInput input = new EmbeddingsImageInput();
         input.setInput(text);
@@ -67,15 +69,15 @@ public class EmbeddingsImageInput {
         input.setEncoding_format("float");
         input.setModel("meta-llama/Llama-3.2-90B-Vision-Instruct");
         input.setUser("string");
-        return input;        
+        return input;
     }
 
     public static Function<File, EmbeddingsImageInput> inputFromFile = file -> {
         EmbeddingsImageInput input = new EmbeddingsImageInput();
         try {
             Image image = ResourceUtils.loadImageFile(file);
-            input.setInput(EmbeddingsImageInput.BASE64_PREFIX_PNG 
-                    + ResourceUtils.imageToBase64(image));
+            input.setInput(EmbeddingsImageInput.BASE64_PREFIX_PNG
+                + ResourceUtils.imageToBase64(image));
             input.setDimensions(Double.valueOf(image.getWidth()).intValue());
             input.setEmbedding_type("all");
             input.setEncoding_format("float");
@@ -88,8 +90,9 @@ public class EmbeddingsImageInput {
         }
         return input;
     };
+
     public static boolean isEmbeddingsImageInput(String messageBody) {
-        return messageBody.contains("input") && messageBody.contains("model") 
+        return messageBody.contains("input") && messageBody.contains("model")
             && messageBody.contains("encoding_format") && messageBody.contains("embedding_type");
     }
     //<editor-fold defaultstate="collapsed" desc="Properties">
@@ -178,5 +181,5 @@ public class EmbeddingsImageInput {
         this.user = user;
     }
 
-    //</editor-fold>    
+    //</editor-fold>
 }

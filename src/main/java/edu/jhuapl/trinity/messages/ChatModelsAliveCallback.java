@@ -16,7 +16,6 @@ import javafx.scene.text.Font;
 import javafx.stage.StageStyle;
 
 /**
- *
  * @author Sean Phillips
  */
 public class ChatModelsAliveCallback extends RestConsumer {
@@ -28,15 +27,15 @@ public class ChatModelsAliveCallback extends RestConsumer {
     @Override
     public void onFailure() {
 //        LOG.error(e.getMessage());
-        ErrorEvent error = new ErrorEvent(ErrorEvent.REST_ERROR,"The IsAlive callback has failed.");
+        ErrorEvent error = new ErrorEvent(ErrorEvent.REST_ERROR, "The IsAlive callback has failed.");
         scene.getRoot().fireEvent(error);
         Platform.runLater(() -> {
             CommandTerminalEvent cte = new CommandTerminalEvent(
-            "Chat Model service could not be reached: ", //+ response.code() + " - " + response.message(), 
+                "Chat Model service could not be reached: ", //+ response.code() + " - " + response.message(),
                 new Font("Consolas", 20), Color.RED);
-                scene.getRoot().fireEvent(cte);
+            scene.getRoot().fireEvent(cte);
             Alert alert = new Alert(Alert.AlertType.WARNING,
-                "Functionality will be limited without Chat Model access.", ButtonType.OK );
+                "Functionality will be limited without Chat Model access.", ButtonType.OK);
             alert.setTitle("Embedding Service Failure");
             alert.setHeaderText("Is Alive check for LLM Service failed");
             alert.setGraphic(ResourceUtils.loadIcon("alert", 75));
@@ -48,7 +47,7 @@ public class ChatModelsAliveCallback extends RestConsumer {
                 "/edu/jhuapl/trinity/css/dialogstyles.css").toExternalForm();
             dialogPane.getStylesheets().add(DIALOGCSS);
             alert.showAndWait();
-        });             
+        });
     }
 
     @Override
@@ -59,13 +58,13 @@ public class ChatModelsAliveCallback extends RestConsumer {
             Platform.runLater(() -> {
                 //Let folks know that the chat model service is up
                 CommandTerminalEvent cte = new CommandTerminalEvent(
-                "Chat Model Service is alive.", 
+                    "Chat Model Service is alive.",
                     new Font("Consolas", 20), Color.LIME);
                 scene.getRoot().fireEvent(cte);
                 //let folks know what chat models are available
                 scene.getRoot().fireEvent(
                     new RestEvent(RestEvent.CHAT_MODELS_ALIVE, chatModelsAliveReesponse));
-            });  
+            });
         } catch (Exception ex) {
             LOG.error(ex.getMessage());
         }

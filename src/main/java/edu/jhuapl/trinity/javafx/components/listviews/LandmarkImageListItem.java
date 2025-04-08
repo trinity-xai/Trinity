@@ -1,25 +1,26 @@
 package edu.jhuapl.trinity.javafx.components.listviews;
 
 import edu.jhuapl.trinity.utils.ResourceUtils;
-import java.io.File;
-import java.io.IOException;
 import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.IOException;
+
 /**
  * @author Sean Phillips
  */
 public class LandmarkImageListItem extends LandmarkListItem {
-    public static Image DEFAULT_ICON = ResourceUtils.loadIconFile("noimage");    
+    public static Image DEFAULT_ICON = ResourceUtils.loadIconFile("noimage");
     private static final Logger LOG = LoggerFactory.getLogger(LandmarkImageListItem.class);
-    public static double PREF_TEXTFIELD_WIDTH = 250;    
+    public static double PREF_TEXTFIELD_WIDTH = 250;
     private ImageView imageView;
-    private File file;    
+    private File file;
     private TextField labelTextField;
-    
+
     public LandmarkImageListItem(File file) {
         super(file.getName());
         this.file = file;
@@ -37,7 +38,7 @@ public class LandmarkImageListItem extends LandmarkListItem {
             imageView = new ImageView(DEFAULT_ICON);
         }
         imageView.setFitWidth(32);
-        imageView.setFitHeight(32);        
+        imageView.setFitHeight(32);
 
         getChildren().add(0, imageView);
         getChildren().add(labelTextField);

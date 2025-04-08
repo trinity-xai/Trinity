@@ -54,8 +54,8 @@ public class FeatureCollection extends MessageData {
         for (int featureVectorIndex = 0; featureVectorIndex < vectorCount; featureVectorIndex++) {
             Arrays.fill(data[featureVectorIndex], 0);
             for (int vectorIndex = 0; vectorIndex < vectorWidth; vectorIndex++) {
-                if(features.get(featureVectorIndex).getData().size()>vectorIndex)
-                    data[featureVectorIndex][vectorIndex] = 
+                if (features.get(featureVectorIndex).getData().size() > vectorIndex)
+                    data[featureVectorIndex][vectorIndex] =
                         features.get(featureVectorIndex).getData().get(vectorIndex).floatValue();
                 else
                     break;
@@ -71,8 +71,8 @@ public class FeatureCollection extends MessageData {
         for (int featureVectorIndex = 0; featureVectorIndex < vectorCount; featureVectorIndex++) {
             Arrays.fill(data[featureVectorIndex], 0);
             for (int vectorIndex = 0; vectorIndex < vectorWidth; vectorIndex++) {
-                if(features.get(featureVectorIndex).getData().size()>vectorIndex)
-                    data[featureVectorIndex][vectorIndex] = 
+                if (features.get(featureVectorIndex).getData().size() > vectorIndex)
+                    data[featureVectorIndex][vectorIndex] =
                         features.get(featureVectorIndex).getData().get(vectorIndex);
                 else
                     break;

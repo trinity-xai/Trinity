@@ -33,13 +33,13 @@ import javafx.scene.paint.Stop;
 import javafx.stage.FileChooser;
 import javafx.util.Duration;
 import lit.litfx.controls.covalent.PathPane;
+import lit.litfx.controls.menus.LitRadialContainerMenuItem;
 import lit.litfx.controls.menus.LitRadialMenuItem;
 
 import javax.imageio.ImageIO;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
-import lit.litfx.controls.menus.LitRadialContainerMenuItem;
 
 /**
  * @author Sean Phillips
@@ -89,7 +89,7 @@ public class HyperspaceMenu extends RadialEntity {
         buildMenu();
         resetMenuSizes();
         resetMenuColors();
-        
+
         setMenuItemSize(itemSize);
         setInnerRadius(INNER_RADIUS);
         setGraphicsFitWidth(ITEM_FIT_WIDTH);
@@ -252,7 +252,7 @@ public class HyperspaceMenu extends RadialEntity {
 
         ImageView features = ResourceUtils.loadIcon("features", ITEM_FIT_WIDTH);
         features.setEffect(glow);
-        
+
         addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Metadata Search", search, e -> {
             Pane pathPane = App.getAppPathPaneStack();
             if (null == searchPane) {
@@ -334,7 +334,7 @@ public class HyperspaceMenu extends RadialEntity {
             }
         }));
         addMenuItem(exportSubMenuItem);
-        
+
         addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Refresh Render", refresh, e -> {
             hyperspace3DPane.updateAll();
         }));

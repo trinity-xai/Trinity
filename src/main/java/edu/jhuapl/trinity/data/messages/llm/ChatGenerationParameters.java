@@ -2,17 +2,17 @@ package edu.jhuapl.trinity.data.messages.llm;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+
 import java.util.ArrayList;
 import java.util.List;
 
 /**
- *
  * @author Sean Phillips
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class ChatGenerationParameters {
-    
+
     /*
       "generation_parameters": {
         "bad_words": null,
@@ -27,9 +27,9 @@ public class ChatGenerationParameters {
         "start_id": null,
         "end_id": null,
         "response_format": null
-      }    
+      }
 
-    */    
+    */
     private List<String> bad_words;
     private String stop;
     private Integer output_length;
@@ -42,7 +42,7 @@ public class ChatGenerationParameters {
     private String start_id;
     private String end_id;
     private ResponseFormat response_format;
-    
+
     public ChatGenerationParameters() {
         bad_words = new ArrayList<>();
     }

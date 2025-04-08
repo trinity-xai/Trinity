@@ -45,7 +45,6 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.util.Arrays;
-import java.util.logging.Level;
 
 import static edu.jhuapl.trinity.utils.Utils.clamp;
 
@@ -382,7 +381,7 @@ public class ImageInspectorPane extends LitPathPane {
         });
         scene.getRoot().addEventHandler(ImageEvent.NEW_IMAGE_INSPECTION, event -> {
             try {
-                Image image = (Image)event.object;
+                Image image = (Image) event.object;
                 setImage(image);
             } catch (Exception ex) {
                 LOG.error("dude...");

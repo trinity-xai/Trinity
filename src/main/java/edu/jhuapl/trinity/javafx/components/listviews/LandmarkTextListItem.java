@@ -13,7 +13,7 @@ public class LandmarkTextListItem extends LandmarkListItem {
 
     public LandmarkTextListItem(String landmarkLabel) {
         super(landmarkLabel);
-        
+
         labelTextField = new TextField();
         labelTextField.setEditable(true);
         labelTextField.setPrefWidth(PREF_TEXTFIELD_WIDTH);
@@ -28,9 +28,10 @@ public class LandmarkTextListItem extends LandmarkListItem {
     @Override
     public void setFeatureVectorLabel(String text) {
         super.setFeatureVectorLabel(text);
-        labelTextField.setText(text);        
+        labelTextField.setText(text);
     }
+
     public void setLabelWidth(double width) {
         fileLabel.setPrefWidth(width);
-    }    
+    }
 }

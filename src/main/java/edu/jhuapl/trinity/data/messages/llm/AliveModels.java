@@ -2,6 +2,7 @@ package edu.jhuapl.trinity.data.messages.llm;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -13,7 +14,7 @@ import java.util.List;
 public class AliveModels {
     //<editor-fold defaultstate="collapsed" desc="JSON Payload">
     /*
-        {  
+        {
             "alive_models":[
                 {"id":"intfloat/multilingual-e5-large"},
                 {"id":"intfloat/e5-large-v2"},
@@ -26,7 +27,7 @@ public class AliveModels {
      */
     //</editor-fold>
 
-    private List<AiModel> alive_models; 
+    private List<AiModel> alive_models;
 
     public AliveModels() {
         alive_models = new ArrayList<>();

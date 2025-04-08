@@ -4,15 +4,14 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- *
  * @author Sean Phillips
  */
 public class ResponseChatMessage {
     private String role;
     private String content;
     private List<String> tool_calls;
-    
-    public ResponseChatMessage(){
+
+    public ResponseChatMessage() {
         tool_calls = new ArrayList<>();
     }
 

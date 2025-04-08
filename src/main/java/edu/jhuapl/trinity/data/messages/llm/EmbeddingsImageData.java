@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- *
  * @author Sean Phillips
  */
 public class EmbeddingsImageData {
@@ -31,7 +30,7 @@ public class EmbeddingsImageData {
     private List<Double> embedding;
     private int index;
     private String type;
-    
+
     public EmbeddingsImageData() {
         embedding = new ArrayList<>();
     }

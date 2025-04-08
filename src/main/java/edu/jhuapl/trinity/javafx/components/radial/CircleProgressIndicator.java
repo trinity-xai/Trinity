@@ -20,7 +20,7 @@ import javafx.util.Duration;
 public class CircleProgressIndicator extends StackPane {
 
     public Label progressLabel;
-    public SimpleStringProperty labelString; 
+    public SimpleStringProperty labelString;
     public Label topLabel;
     public SimpleStringProperty topLabelString;
     public double defaultOpacity = 0.75;
@@ -31,7 +31,8 @@ public class CircleProgressIndicator extends StackPane {
 
     public CircleProgressIndicator() {
         this(100.0, 70.0);
-    }    
+    }
+
     public CircleProgressIndicator(double outerRadius, double innerRadius) {
         setMouseTransparent(true);
         setAlignment(Pos.CENTER);
@@ -39,22 +40,22 @@ public class CircleProgressIndicator extends StackPane {
         labelString = new SimpleStringProperty();
         topLabel = new Label();
         topLabelString = new SimpleStringProperty();
-        
+
         outerNeonCircle = new AnimatedNeonCircle(
             new AnimatedNeonCircle.Animation(
                 Duration.millis(2000), Transition.INDEFINITE, false),
-            outerRadius, 3, outerRadius*0.5, outerRadius);
+            outerRadius, 3, outerRadius * 0.5, outerRadius);
         //outerRadius, 3, outerRadius*0.75, outerRadius*0.5);
         outerNeonCircle.getStyleClass().add("outer-neon-circle");
 
         innerNeonCircle = new AnimatedNeonCircle(
             new AnimatedNeonCircle.Animation(
                 Duration.millis(3000), Transition.INDEFINITE, false),
-            innerRadius, 1.5, innerRadius*0.8, innerRadius*0.3);
+            innerRadius, 1.5, innerRadius * 0.8, innerRadius * 0.3);
         innerNeonCircle.getStyleClass().add("inner-neon-circle");
 //            70, 1.5, 50.0, 20.0);
 
-        fillCircle = new AnimatedFillCircle(innerRadius*0.9, 0.0, 2.0, 1.0);
+        fillCircle = new AnimatedFillCircle(innerRadius * 0.9, 0.0, 2.0, 1.0);
         fillCircle.getStyleClass().add("fill-circle");
 //        fillCircle = new AnimatedFillCircle(65.0, 0.0, 2.0, 1.0);
 
@@ -77,10 +78,10 @@ public class CircleProgressIndicator extends StackPane {
         setAlignment(Pos.CENTER);
         getChildren().addAll(fillCircle, innerNeonCircle,
             outerNeonCircle, progressLabel, topLabel);
-        
-        topLabel.setTranslateY(-outerRadius-5);
+
+        topLabel.setTranslateY(-outerRadius - 5);
         topLabel.getStyleClass().add("progress-label");
-        progressLabel.setTranslateY(outerRadius+5);
+        progressLabel.setTranslateY(outerRadius + 5);
         progressLabel.getStyleClass().add("progress-label");
 
         ft.setAutoReverse(false);
@@ -106,6 +107,7 @@ public class CircleProgressIndicator extends StackPane {
         fillCircle.fillStartColor = ps.fillStartColor;
         fillCircle.fillEndColor = ps.fillEndColor;
     }
+
     public void setTopLabelLater(final String newText) {
         Platform.runLater(() -> topLabelString.set(newText));
     }
@@ -122,9 +124,11 @@ public class CircleProgressIndicator extends StackPane {
         outerNeonCircle.play(spin);
         innerNeonCircle.play(spin);
     }
-    public void setFadeTimeMS(long millis){
+
+    public void setFadeTimeMS(long millis) {
         ft.setDuration(Duration.millis(millis));
     }
+
     public void fadeBusy(boolean fadeOut) {
         if (fadeOut) {
             ft.setFromValue(defaultOpacity);

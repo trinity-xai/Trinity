@@ -235,11 +235,11 @@ public class Opticon extends Group {
 //                double yTranslate = -getTotalSceneWidth() -
 //                    rando.nextDouble() * 200;
                 double yTranslate = DataUtils.randomSign() *
-                    rando.nextDouble() * getTotalSceneHeight()*0.9;
+                    rando.nextDouble() * getTotalSceneHeight() * 0.9;
                 double xTranslate = DataUtils.randomSign() *
-                    rando.nextDouble() * getTotalSceneWidth()*0.9;
+                    rando.nextDouble() * getTotalSceneWidth() * 0.9;
                 double zTranslate = DataUtils.randomSign() *
-                    rando.nextDouble() * getTotalSceneDepth()*0.9;
+                    rando.nextDouble() * getTotalSceneDepth() * 0.9;
 
                 Point3D shiftedP3D = new Point3D(
                     xTranslate, yTranslate, zTranslate);

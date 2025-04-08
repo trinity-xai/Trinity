@@ -4,7 +4,6 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- *
  * @author Sean Phillips
  */
 public class ResponseFormat {
@@ -21,13 +20,13 @@ public class ResponseFormat {
          }
     */
     //</editor-fold>
-    
+
     //<editor-fold defaultstate="collapsed" desc="Payload Fields">
     private String type = "text";
     private JsonSchema json_schema;
     private String regex = "string";
     private List<String> multiple_choice;
-    //</editor-fold>    
+    //</editor-fold>
 
     public ResponseFormat() {
         json_schema = new JsonSchema();
@@ -36,6 +35,7 @@ public class ResponseFormat {
     }
 
     //<editor-fold defaultstate="collapsed" desc="Properties">
+
     /**
      * @return the type
      */
@@ -91,10 +91,11 @@ public class ResponseFormat {
     public void setMultiple_choice(List<String> multiple_choice) {
         this.multiple_choice = multiple_choice;
     }
+
     public class JsonSchema {
-        public JsonSchema(){
+        public JsonSchema() {
         }
-    }    
-        //</editor-fold>    
+    }
+    //</editor-fold>
 
 }

@@ -50,8 +50,10 @@ import edu.jhuapl.trinity.utils.ResourceUtils;
 import edu.jhuapl.trinity.utils.VisibilityMap;
 import edu.jhuapl.trinity.utils.WebCamUtils;
 import javafx.animation.AnimationTimer;
+import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.concurrent.Task;
 import javafx.scene.AmbientLight;
 import javafx.scene.Group;
@@ -84,6 +86,7 @@ import javafx.scene.text.Font;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Translate;
 import javafx.stage.StageStyle;
+import javafx.util.Duration;
 import org.fxyz3d.geometry.Point3D;
 import org.fxyz3d.scene.Skybox;
 import org.fxyz3d.utils.CameraTransformer;
@@ -98,9 +101,6 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Function;
-import javafx.animation.KeyFrame;
-import javafx.beans.property.SimpleBooleanProperty;
-import javafx.util.Duration;
 
 /**
  * @author Sean Phillips
@@ -194,7 +194,7 @@ public class Hyperspace3DPane extends StackPane implements
     public List<Double> meanVector = new ArrayList<>();
     public double maxAbsValue = 1.0;
     public double meanCenteredMaxAbsValue = 1.0;
-    
+
     Opticon projectionOpticon; //something fun
 
     public ConcurrentLinkedQueue<HyperspaceSeed> hyperspaceSeeds = new ConcurrentLinkedQueue<>();
@@ -337,7 +337,7 @@ public class Hyperspace3DPane extends StackPane implements
         //Add 3D subscene stuff to 3D scene root object
         sceneRoot.getChildren().addAll(cameraTransform, highlightedPoint, nodeGroup,
             manifoldGroup, debugGroup, cubeWorld, dataXForm, extrasGroup, anchorTSM);
-        
+
         projectionOpticon = new Opticon(Color.CYAN, 100);
         extrasGroup.getChildren().add(projectionOpticon);
         projectionOpticon.visibleProperty().bind(autoProjectionProperty);
@@ -952,9 +952,11 @@ public class Hyperspace3DPane extends StackPane implements
             anchorCallout.setVisible(false);
         });
     }
+
     public void enableAutoProjection(boolean enabled) {
         autoProjectionProperty.set(enabled);
-    }    
+    }
+
     private void opticonScan(Opticon opticon) {
         Image image = null;
         try {
@@ -981,7 +983,7 @@ public class Hyperspace3DPane extends StackPane implements
             camera.getTranslateX(), camera.getTranslateY(),
             camera.getTranslateZ(), false);
 
-        JavaFX3DUtils.lookAt(projectionOpticon,camLookP3D, opticonP3D, false, true);
+        JavaFX3DUtils.lookAt(projectionOpticon, camLookP3D, opticonP3D, false, true);
 
         opticon.scanMode(this, cameraP3D.getX(), cameraP3D.getY(), cameraP3D.getZ(), w, h);
         //Doofus hack but after 8 seconds the lasersweep is done
@@ -1607,12 +1609,12 @@ public class Hyperspace3DPane extends StackPane implements
             return;
         }
         //SUPER IMPORTANT HACK... always add 1 to the index to account for dummy pNode
-        Point3D p3d = scatterModel.data.get(index+1); //plus one to account for dummy seed
+        Point3D p3d = scatterModel.data.get(index + 1); //plus one to account for dummy seed
         anchorTSM.setTranslateX(p3d.x);
         anchorTSM.setTranslateY(p3d.y);
         anchorTSM.setTranslateZ(p3d.z);
 
-        if(animate) {
+        if (animate) {
             //make sure we have the latest states using the latest feature indices
             anchorTrajectory.states.clear();
             List<Point3D> p3ds = scatterModel.data;
@@ -2020,20 +2022,20 @@ public class Hyperspace3DPane extends StackPane implements
     @Override
     public void locateFeatureVector(FeatureVector featureVector) {
         //find the feature in all the features
-        if(null == featureVector.getEntityId()) return;
-        
+        if (null == featureVector.getEntityId()) return;
+
         int i = featureVectors.indexOf(featureVector);
-        if(i < 0) {
+        if (i < 0) {
             //try to manually find it via string compare (more expensive)
-            for(int index=0;index<featureVectors.size();index++) {
-                if(featureVectors.get(index).getEntityId()
-                    .contentEquals(featureVector.getEntityId())){
+            for (int index = 0; index < featureVectors.size(); index++) {
+                if (featureVectors.get(index).getEntityId()
+                    .contentEquals(featureVector.getEntityId())) {
                     i = index;
                     break;
                 }
             }
-        }        
-        if(i<0) return; //couldn't find it
+        }
+        if (i < 0) return; //couldn't find it
 
         setSpheroidAnchor(false, i);
     }
@@ -2056,12 +2058,12 @@ public class Hyperspace3DPane extends StackPane implements
                 setColorByIndex(featureVectors.indexOf(f), color);
             });
     }
-    
+
     @Override
     public void setColorByIndex(int i, Color color) {
         int index = 0;
-        for(Perspective3DNode pNode : pNodes) {
-            if(i == index) {
+        for (Perspective3DNode pNode : pNodes) {
+            if (i == index) {
                 pNode.nodeColor = color;
                 return;
             }
@@ -2082,7 +2084,7 @@ public class Hyperspace3DPane extends StackPane implements
 
     @Override
     public void refresh(boolean forceNodeUpdate) {
-        if(forceNodeUpdate)
+        if (forceNodeUpdate)
             updatePNodeColorsAndVisibility();
         updateView(forceNodeUpdate);
         updateEllipsoids();

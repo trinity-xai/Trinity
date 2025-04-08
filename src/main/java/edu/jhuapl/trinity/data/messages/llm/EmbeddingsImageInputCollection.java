@@ -2,6 +2,7 @@ package edu.jhuapl.trinity.data.messages.llm;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -35,6 +36,7 @@ public class EmbeddingsImageInputCollection {
     }
 
     //<editor-fold defaultstate="collapsed" desc="Properties">
+
     /**
      * @return the inputs
      */
@@ -48,5 +50,5 @@ public class EmbeddingsImageInputCollection {
     public void setInputs(List<EmbeddingsImageInput> inputs) {
         this.inputs = inputs;
     }
-    //</editor-fold>    
+    //</editor-fold>
 }

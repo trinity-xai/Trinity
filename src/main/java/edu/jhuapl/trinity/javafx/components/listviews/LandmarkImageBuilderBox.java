@@ -1,9 +1,6 @@
 package edu.jhuapl.trinity.javafx.components.listviews;
 
-import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
-import java.io.File;
-import java.util.List;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -21,6 +18,9 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 
+import java.io.File;
+import java.util.List;
+
 /**
  * @author Sean Phillips
  */
@@ -36,24 +36,24 @@ public class LandmarkImageBuilderBox extends VBox {
     protected ListView<LandmarkImageListItem> landmarksListView;
 
     File currentDirectory = new File(".");
-    
+
     public LandmarkImageBuilderBox() {
-        
+
         Button addButton = new Button("Add Images");
         addButton.setPrefWidth(BUTTON_PREF_WIDTH);
-        addButton.setOnAction(e-> {
+        addButton.setOnAction(e -> {
             FileChooser fc = new FileChooser();
             fc.setInitialDirectory(currentDirectory);
             List<File> files = fc.showOpenMultipleDialog(null);
-            if(null != files) {
+            if (null != files) {
             }
         });
         Button clearButton = new Button("Clear");
         clearButton.setPrefWidth(BUTTON_PREF_WIDTH);
-        clearButton.setOnAction(e-> landmarksListView.getItems().clear());
+        clearButton.setOnAction(e -> landmarksListView.getItems().clear());
         HBox buttonHBox = new HBox(10, addButton, clearButton);
         buttonHBox.setAlignment(Pos.CENTER);
-        
+
         landmarksListView = new ListView<>();
         landmarksListView.setMinWidth(LISTVIEW_PREF_WIDTH);
         landmarksListView.setPrefHeight(LISTVIEW_PREF_HEIGHT);
@@ -62,11 +62,11 @@ public class LandmarkImageBuilderBox extends VBox {
         VBox placeholder = new VBox(10, iv, new Label("No Image Landmarks Acquired"));
         placeholder.setAlignment(Pos.CENTER);
         landmarksListView.setPlaceholder(placeholder);
-        
+
         setSpacing(10);
         setPadding(new Insets(5, 0, 0, 0));
         getChildren().addAll(
-            buttonHBox, 
+            buttonHBox,
             landmarksListView
         );
         setBackground(transFillBack);
@@ -83,16 +83,18 @@ public class LandmarkImageBuilderBox extends VBox {
             if (db.hasFiles()) {
                 addFiles(db.getFiles());
             }
-        });        
+        });
     }
+
     public void addFiles(List<File> files) {
         files.stream().filter(f -> ResourceUtils.isImageFile(f))
             .forEach(imageFile -> {
                 landmarksListView.getItems().add(
                     new LandmarkImageListItem(imageFile));
-                currentDirectory = imageFile; //a little hacky but it works    
-        });
+                currentDirectory = imageFile; //a little hacky but it works
+            });
     }
+
     public List<LandmarkImageListItem> getItems() {
         return landmarksListView.getItems();
     }

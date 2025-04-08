@@ -15,7 +15,7 @@ public class AiModel {
      */
     //</editor-fold>
 
-    private String id; 
+    private String id;
 
     public AiModel() {
     }

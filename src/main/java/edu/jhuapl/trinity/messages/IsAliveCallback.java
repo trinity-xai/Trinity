@@ -15,36 +15,37 @@ import javafx.scene.text.Font;
 import javafx.stage.StageStyle;
 
 /**
- *
  * @author Sean Phillips
  */
 public class IsAliveCallback extends RestConsumer {
 
     public IsAliveCallback(Scene scene) {
-        super(scene); 
+        super(scene);
     }
+
     @Override
     public void onFailure() {
         Platform.runLater(() -> {
             CommandTerminalEvent cte = new CommandTerminalEvent(
-            "Embedding service could not be reached: ", // + response.code() + " - " + response.message(), 
+                "Embedding service could not be reached: ", // + response.code() + " - " + response.message(),
                 new Font("Consolas", 20), Color.RED);
-                scene.getRoot().fireEvent(cte);
+            scene.getRoot().fireEvent(cte);
             Alert alert = new Alert(Alert.AlertType.WARNING,
                 "Functionality will be limited without Embedding Service access.",
-                ButtonType.OK );
-                   alert.setTitle("Embedding Service Failure");
-                   alert.setHeaderText("Is Alive check for LLM Service failed");
-                   alert.setGraphic(ResourceUtils.loadIcon("alert", 75));
-                   alert.initStyle(StageStyle.TRANSPARENT);
-                   DialogPane dialogPane = alert.getDialogPane();
-                   dialogPane.setBackground(Background.EMPTY);
-                   dialogPane.getScene().setFill(Color.TRANSPARENT);
-                   String DIALOGCSS = IsAliveCallback.class.getResource("/edu/jhuapl/trinity/css/dialogstyles.css").toExternalForm();
-                   dialogPane.getStylesheets().add(DIALOGCSS);
-                   alert.showAndWait();
-        });                
-    }    
+                ButtonType.OK);
+            alert.setTitle("Embedding Service Failure");
+            alert.setHeaderText("Is Alive check for LLM Service failed");
+            alert.setGraphic(ResourceUtils.loadIcon("alert", 75));
+            alert.initStyle(StageStyle.TRANSPARENT);
+            DialogPane dialogPane = alert.getDialogPane();
+            dialogPane.setBackground(Background.EMPTY);
+            dialogPane.getScene().setFill(Color.TRANSPARENT);
+            String DIALOGCSS = IsAliveCallback.class.getResource("/edu/jhuapl/trinity/css/dialogstyles.css").toExternalForm();
+            dialogPane.getStylesheets().add(DIALOGCSS);
+            alert.showAndWait();
+        });
+    }
+
     @Override
     protected void processResponse(String responseBodyString) {
         System.out.println("IsAliveConsumer works: \n " + responseBodyString);
@@ -52,14 +53,14 @@ public class IsAliveCallback extends RestConsumer {
             AliveModels isAliveReesponse = objectMapper.readValue(responseBodyString, AliveModels.class);
             Platform.runLater(() -> {
                 CommandTerminalEvent cte = new CommandTerminalEvent(
-                "Embedding Service is alive.", 
+                    "Embedding Service is alive.",
                     new Font("Consolas", 20), Color.LIME);
                 scene.getRoot().fireEvent(cte);
                 scene.getRoot().fireEvent(
                     new RestEvent(RestEvent.EMBEDDING_MODELS_ALIVE, isAliveReesponse));
-            });  
+            });
         } catch (Exception ex) {
             LOG.error(ex.getMessage());
         }
-    }    
+    }
 }

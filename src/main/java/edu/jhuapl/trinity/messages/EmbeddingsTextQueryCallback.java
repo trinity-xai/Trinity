@@ -5,20 +5,22 @@ import edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageOutput;
 import edu.jhuapl.trinity.javafx.events.ErrorEvent;
 import edu.jhuapl.trinity.javafx.events.RestEvent;
 import edu.jhuapl.trinity.javafx.events.SearchEvent;
-import java.util.List;
 import javafx.application.Platform;
 import javafx.scene.Scene;
 
+import java.util.List;
+
 /**
- *
  * @author Sean Phillips
  */
 public class EmbeddingsTextQueryCallback extends RestConsumer {
     List<Integer> inputIDs;
     int requestNumber;
-    
-    public enum STATUS { REQUESTED, SUCCEEDED, FAILED };
-    
+
+    public enum STATUS {REQUESTED, SUCCEEDED, FAILED}
+
+    ;
+
     public EmbeddingsTextQueryCallback(Scene scene, List<Integer> inputIDs, int requestNumber) {
         super(scene);
         this.inputIDs = inputIDs;
@@ -32,7 +34,7 @@ public class EmbeddingsTextQueryCallback extends RestConsumer {
         scene.getRoot().fireEvent(error);
         Platform.runLater(() -> {
             scene.getRoot().fireEvent(new RestEvent(RestEvent.ERROR_EMBEDDINGS_TEXT, inputIDs, requestNumber));
-        });  
+        });
     }
 
     @Override
@@ -42,7 +44,7 @@ public class EmbeddingsTextQueryCallback extends RestConsumer {
             EmbeddingsImageOutput output = objectMapper.readValue(responseBodyString, EmbeddingsImageOutput.class);
             output.setRequestNumber(requestNumber);
             Platform.runLater(() -> {
-                scene.getRoot().fireEvent(new SearchEvent(SearchEvent.QUERY_EMBEDDINGS_RESPONSE, output));  
+                scene.getRoot().fireEvent(new SearchEvent(SearchEvent.QUERY_EMBEDDINGS_RESPONSE, output));
             });
         } catch (JsonProcessingException ex) {
             LOG.error(ex.getMessage());

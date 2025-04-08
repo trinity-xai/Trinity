@@ -2,12 +2,14 @@ package edu.jhuapl.trinity.data.messages.llm;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import static edu.jhuapl.trinity.data.messages.llm.ImageUrl.BASE64_PREFIX_PNG;
 import edu.jhuapl.trinity.utils.ResourceUtils;
+import javafx.scene.image.Image;
+
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
-import javafx.scene.image.Image;
+
+import static edu.jhuapl.trinity.data.messages.llm.ImageUrl.BASE64_PREFIX_PNG;
 
 /**
  * @author Sean Phillips
@@ -17,7 +19,8 @@ import javafx.scene.image.Image;
 public class ChatCompletionsInput {
 
     public static final String TYPESTRING = "chatCompletionsInput";
-    public static enum CAPTION_TYPE { DEFAULT, AUTOCHOOOSE }
+
+    public static enum CAPTION_TYPE {DEFAULT, AUTOCHOOOSE}
     //<editor-fold defaultstate="collapsed" desc="JSON Payload">
     /*
         {
@@ -62,13 +65,13 @@ public class ChatCompletionsInput {
           ],
           "top_k": 10
         }
-    
+
      */
     //</editor-fold>
 
     //<editor-fold defaultstate="collapsed" desc="Payload Fields">
     private List<ChatMessage> messages;
-    private String model; 
+    private String model;
     private Double frequency_penalty;
     private LogitBias logit_bias;
     private Boolean logprobs;
@@ -102,17 +105,20 @@ public class ChatCompletionsInput {
 //        bad_words = new ArrayList<>();
 //        bad_words.add("string");
     }
+
     public static ChatCompletionsInput hellocarlChatCompletionsInput() throws IOException {
         Image image = ResourceUtils.load3DTextureImage("carl-b-portrait");
         return defaultImageInput(image);
-    }          
+    }
+
     public static ChatCompletionsInput defaultImageInput(Image image) throws IOException {
         ImageUrl imageUrl = new ImageUrl();
         imageUrl.setUrl(BASE64_PREFIX_PNG + ResourceUtils.imageToBase64(image));
-        return defaultImageInput(imageUrl, CAPTION_TYPE.DEFAULT);        
+        return defaultImageInput(imageUrl, CAPTION_TYPE.DEFAULT);
     }
+
     public static ChatCompletionsInput defaultImageInput(ImageUrl imageUrl, CAPTION_TYPE type) throws IOException {
-        /*    
+        /*
         {
             "model": "meta-llama/Llama-3.2-90B-Vision-Instruct",
             "messages": [
@@ -140,7 +146,7 @@ public class ChatCompletionsInput {
         Content promptContent = new Content();
         promptContent.setTypeByEnum(Content.TYPE_ENUM.text);
         String promptString = Prompts.loadDefaultCaptionPrompt();
-        if(type == CAPTION_TYPE.AUTOCHOOOSE)
+        if (type == CAPTION_TYPE.AUTOCHOOOSE)
             promptString = Prompts.loadAutochooseCaptionPrompt();
         promptContent.setText(promptString);
         msg.addContent(promptContent);
@@ -152,11 +158,11 @@ public class ChatCompletionsInput {
         input.setModel("meta-llama/Llama-3.2-90B-Vision-Instruct");
         input.setMax_tokens(300);
         input.setTemperature(1.0);
-        return input;             
+        return input;
     }
-  
+
     public static ChatCompletionsInput helloworldChatCompletionsInput() {
-        /*    
+        /*
         {
           "messages": [
             {
@@ -182,6 +188,7 @@ public class ChatCompletionsInput {
         input.setTemperature(1.0);
         return input;
     }
+
     public static ChatCompletionsInput defaultFullChatCompletionsInput() {
         ChatCompletionsInput input = new ChatCompletionsInput();
         ChatMessage msg = new ChatMessage();
@@ -213,11 +220,11 @@ public class ChatCompletionsInput {
         input.setTop_k(10);
         return input;
     }
-    
+
     //<editor-fold defaultstate="collapsed" desc="Properties">
 
-    
-    //</editor-fold>    
+
+    //</editor-fold>
 
     /**
      * @return the messages

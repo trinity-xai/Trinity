@@ -8,16 +8,17 @@ import javafx.application.Platform;
 import javafx.scene.Scene;
 
 /**
- *
  * @author Sean Phillips
  */
 public class ChatCompletionCallback extends RestConsumer {
     int requestNumber;
     int inputID;
-    
-    public enum STATUS { REQUESTED, SUCCEEDED, FAILED };
-    
-    public ChatCompletionCallback( Scene scene, int inputID, int requestNumber) {
+
+    public enum STATUS {REQUESTED, SUCCEEDED, FAILED}
+
+    ;
+
+    public ChatCompletionCallback(Scene scene, int inputID, int requestNumber) {
         super(scene);
         this.requestNumber = requestNumber;
         this.inputID = inputID;
@@ -30,7 +31,7 @@ public class ChatCompletionCallback extends RestConsumer {
         scene.getRoot().fireEvent(error);
         Platform.runLater(() -> {
             scene.getRoot().fireEvent(new RestEvent(RestEvent.ERROR_CHAT_COMPLETIONS, requestNumber, inputID));
-        });  
+        });
     }
 
     @Override
@@ -45,7 +46,7 @@ public class ChatCompletionCallback extends RestConsumer {
 
             Platform.runLater(() -> {
                 scene.getRoot().fireEvent(new RestEvent(RestEvent.NEW_CHAT_COMPLETION, output));
-            });  
+            });
         } catch (JsonProcessingException ex) {
             LOG.error(ex.getMessage());
         }

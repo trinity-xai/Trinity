@@ -3,8 +3,8 @@
 package edu.jhuapl.trinity.javafx.javafx3d;
 
 import edu.jhuapl.trinity.data.Manifold;
-import edu.jhuapl.trinity.data.messages.xai.ManifoldData;
 import edu.jhuapl.trinity.data.messages.P3D;
+import edu.jhuapl.trinity.data.messages.xai.ManifoldData;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;

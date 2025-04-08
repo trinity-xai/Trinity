@@ -38,6 +38,7 @@ public enum MessageUtils {
         fv.getMetaData().put("type", d.getType());
         return fv;
     };
+
     public static void injectFeatureCollection(Scene scene, String message) {
         /** Provides deserialization support for JSON messages */
         ObjectMapper mapper = new ObjectMapper();

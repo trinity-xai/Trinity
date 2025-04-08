@@ -242,7 +242,7 @@ public class App extends Application {
         pixelSelectionPane = new PixelSelectionPane(scene, pathPane);
         imageInspectorPane = new ImageInspectorPane(scene, pathPane);
         hyperdrivePane = new HyperdrivePane(scene, pathPane);
-        
+
         LOG.info("Registering Event Handlers...");
         //animatedConsoleText.animate("Registering Event Handlers...");
         scene.addEventHandler(FeatureVectorEvent.REQUEST_FEATURE_COLLECTION, event -> {
@@ -653,7 +653,7 @@ public class App extends Application {
         scene.addEventHandler(ApplicationEvent.SHOW_IMAGE_INSPECTION, e -> {
             if (null != e.object) {
                 Boolean show = (Boolean) e.object;
-                if(show) {
+                if (show) {
                     if (null == imageInspectorPane) {
                         imageInspectorPane = new ImageInspectorPane(scene, pathPane);
                     }
@@ -803,7 +803,7 @@ public class App extends Application {
                 pathPane.getChildren().add(hyperdrivePane);
                 hyperdrivePane.slideInPane();
             } else {
-                hyperdrivePane.show();            
+                hyperdrivePane.show();
             }
         });
         LOG.info("Data Handlers ");
@@ -1133,8 +1133,8 @@ public class App extends Application {
         }
         if (e.isAltDown() && e.isControlDown() && e.getCode().equals(KeyCode.H)) {
             stage.getScene().getRoot().fireEvent(
-                new ApplicationEvent(ApplicationEvent.SHOW_HYPERDRIVE_PANE));            
-        }        
+                new ApplicationEvent(ApplicationEvent.SHOW_HYPERDRIVE_PANE));
+        }
         if (e.isAltDown() && e.isControlDown() && e.getCode().equals(KeyCode.Q)) {
             System.out.println("Requesting REST Is Alive...");
             RestAccessLayer.requestRestIsAlive(stage.getScene());

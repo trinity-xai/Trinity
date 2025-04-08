@@ -13,7 +13,7 @@ public class RestEvent extends Event {
 
     public Object object;
     public Object object2;
-    
+
     public static final EventType<RestEvent> START_RESTSERVER_THREAD = new EventType(ANY, "START_RESTSERVER_THREAD");
     public static final EventType<RestEvent> TERMINATE_RESTSERVER_THREAD = new EventType(ANY, "TERMINATE_RESTSERVER_THREAD");
     public static final EventType<RestEvent> START_RESTSERVER_PROCESSING = new EventType(ANY, "START_RESTSERVER_PROCESSING");
@@ -35,6 +35,7 @@ public class RestEvent extends Event {
         super(arg0);
         object = t;
     }
+
     public RestEvent(EventType<? extends Event> arg0, Object object1, Object object2) {
         super(arg0);
         object = object1;

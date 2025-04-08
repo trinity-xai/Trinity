@@ -4,7 +4,6 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
- *
  * @author Sean Phillips
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
@@ -13,11 +12,12 @@ public class ChatCaptionResponse {
     private String caption;
     private String description;
     private String explanation;
-    
+
     public ChatCaptionResponse() {
     }
-    
+
     //<editor-fold defaultstate="collapsed" desc="Properties">
+
     /**
      * @return the caption
      */

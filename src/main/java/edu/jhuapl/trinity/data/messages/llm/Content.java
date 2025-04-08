@@ -23,7 +23,8 @@ public class Content {
           }
      */
     //</editor-fold>
-    public enum TYPE_ENUM { text, image_url }
+    public enum TYPE_ENUM {text, image_url}
+
     private String type; //required type field
     private String text; //optional prompt text
     private ImageUrl image_url; //optional image_url

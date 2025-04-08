@@ -5,12 +5,12 @@ package edu.jhuapl.trinity.javafx.javafx3d;
 import edu.jhuapl.trinity.App;
 import edu.jhuapl.trinity.data.CoordinateSet;
 import edu.jhuapl.trinity.data.files.FeatureCollectionFile;
-import edu.jhuapl.trinity.data.messages.xai.FeatureCollection;
-import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.data.messages.bci.SemanticMap;
 import edu.jhuapl.trinity.data.messages.bci.SemanticMapCollection;
 import edu.jhuapl.trinity.data.messages.bci.SemanticReconstruction;
 import edu.jhuapl.trinity.data.messages.bci.SemanticReconstructionMap;
+import edu.jhuapl.trinity.data.messages.xai.FeatureCollection;
+import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.data.messages.xai.ShapleyCollection;
 import edu.jhuapl.trinity.data.messages.xai.ShapleyVector;
 import edu.jhuapl.trinity.javafx.components.callouts.Callout;
@@ -181,6 +181,7 @@ public class Hypersurface3DPane extends StackPane
     public boolean surfaceRender = true;
 
     enum COLORATION {COLOR_BY_IMAGE, COLOR_BY_FEATURE, COLOR_BY_SHAPLEY}
+
     COLORATION colorationMethod = COLORATION.COLOR_BY_FEATURE;
     boolean hoverInteractionsEnabled = false;
     boolean surfaceChartsEnabled = false;
@@ -591,7 +592,7 @@ public class Hypersurface3DPane extends StackPane
                 }
             }
         });
-        
+
         CheckMenuItem enableHoverItem = new CheckMenuItem("Hover Interactions");
         enableHoverItem.setOnAction(e -> {
             hoverInteractionsEnabled = enableHoverItem.isSelected();
@@ -599,7 +600,7 @@ public class Hypersurface3DPane extends StackPane
                 //TODO Make coordinate labels visible
             }
         });
-        
+
         CheckMenuItem surfaceChartsItem = new CheckMenuItem("Surface Charts");
         surfaceChartsItem.setOnAction(e -> {
             surfaceChartsEnabled = surfaceChartsItem.isSelected();
@@ -649,7 +650,7 @@ public class Hypersurface3DPane extends StackPane
         MenuItem resetViewItem = new MenuItem("Reset View");
         resetViewItem.setOnAction(e -> resetView(1000, false));
         ContextMenu cm = new ContextMenu(copyAsImageItem, saveSnapshotItem,
-            unrollHyperspaceItem, collectionDifferenceItem, vectorDistanceItem, 
+            unrollHyperspaceItem, collectionDifferenceItem, vectorDistanceItem,
             enableHoverItem, surfaceChartsItem, showDataMarkersItem, enableCrosshairsItem,
             updateAllItem, clearDataItem, resetViewItem);
         cm.setAutoFix(true);
@@ -786,19 +787,19 @@ public class Hypersurface3DPane extends StackPane
         };
         surfUpdateAnimationTimer.start();
     }
-    
+
     public void computeVectorDistances() {
         System.out.println("Computing Vector Distances... ");
         long startTime = System.nanoTime();
         Metric metric = Metric.getMetric("cosine");
         List<List<Double>> distancesGrid = new ArrayList<>();
-        
+
         //get all the values in this row
         dataGrid.stream().forEach(row -> {
             double[] rowVector = row.stream().mapToDouble(Double::doubleValue).toArray();
             List<Double> distanceVector = new ArrayList<>();
-            for(int i=0; i<dataGrid.size();i++) {
-                double [] xVector = dataGrid.get(i).stream()
+            for (int i = 0; i < dataGrid.size(); i++) {
+                double[] xVector = dataGrid.get(i).stream()
                     .mapToDouble(Double::doubleValue).toArray();
                 double currentDistance = metric.distance(xVector, rowVector);
                 distanceVector.add(currentDistance);
@@ -816,18 +817,19 @@ public class Hypersurface3DPane extends StackPane
         updateTheMesh();
         updateView(true);
     }
+
     public void computeSurfaceDifference(FeatureCollection collection) {
-        double [][] newRayRay = collection.convertFeaturesToArray();
+        double[][] newRayRay = collection.convertFeaturesToArray();
         System.out.println("Computing Surface Differences... ");
         long startTime = System.nanoTime();
         List<List<Double>> differencesGrid = new ArrayList<>();
-        
-        for(int rowIndex=0;rowIndex<dataGrid.size();rowIndex++) {
+
+        for (int rowIndex = 0; rowIndex < dataGrid.size(); rowIndex++) {
             List<Double> differenceVector = new ArrayList<>();
             List<Double> currentRow = dataGrid.get(rowIndex);
             int width = currentRow.size();
-            for(int colIndex=0; colIndex<width; colIndex++) {
-                if(rowIndex < newRayRay.length  && colIndex < newRayRay[rowIndex].length) {
+            for (int colIndex = 0; colIndex < width; colIndex++) {
+                if (rowIndex < newRayRay.length && colIndex < newRayRay[rowIndex].length) {
                     differenceVector.add(
                         currentRow.get(colIndex) - newRayRay[rowIndex][colIndex]);
                 } else {
@@ -846,7 +848,8 @@ public class Hypersurface3DPane extends StackPane
         zWidthSpinner.getValueFactory().setValue(zWidth);
         updateTheMesh();
         updateView(true);
-    }    
+    }
+
     public void unrollHyperspace() {
         getScene().getRoot().fireEvent(
             new CommandTerminalEvent("Requesting Hyperspace Vectors...",
@@ -1309,16 +1312,16 @@ public class Hypersurface3DPane extends StackPane
                 int row = Float.valueOf(vertP3D.getZ() / surfScale).intValue();
                 int column = Float.valueOf(vertP3D.getX() / surfScale).intValue();
                 if (null != anchorCallout) {
-                    if(row < featureVectors.size())
+                    if (row < featureVectors.size())
                         updateCalloutByFeatureVector(anchorCallout, featureVectors.get(row));
                     setSpheroidAnchor(false, row);
                 }
-                
-                if(crosshairsEnabled) {
+
+                if (crosshairsEnabled) {
                     paintSingleColor(Color.TRANSPARENT);
                     illuminateCrosshair(vertP3D);
                 }
-            
+
                 if (surfaceChartsEnabled) {
                     //get all the values in this row
                     List<Double> xlist = dataGrid.get(row);
@@ -1343,7 +1346,7 @@ public class Hypersurface3DPane extends StackPane
                     hoverText.setStrokeWidth(1);
                     hoverText.setLayoutX(50);
                     hoverText.setLayoutY(50);
-                    
+
                     scene.getRoot().fireEvent(new FactorAnalysisEvent(
                         FactorAnalysisEvent.SURFACE_XFACTOR_VECTOR, xRay));
 
@@ -1655,8 +1658,8 @@ public class Hypersurface3DPane extends StackPane
         Platform.runLater(() -> {
             FeatureVector dummy = FeatureVector.EMPTY_FEATURE_VECTOR("", 3);
             anchorCallout = createCallout(highlightedPoint, dummy, subScene);
-            anchorCallout.play().setOnFinished(fin -> anchorCallout.setVisible(false));        
-        });        
+            anchorCallout.play().setOnFinished(fin -> anchorCallout.setVisible(false));
+        });
     }
 
     public void updateCalloutByFeatureVector(Callout callout, FeatureVector featureVector) {
@@ -1933,14 +1936,17 @@ public class Hypersurface3DPane extends StackPane
             return Collections.EMPTY_LIST;
         return featureVectors;
     }
+
     @Override
     public void setColorByID(String iGotID, Color color) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
+
     @Override
     public void setColorByIndex(int i, Color color) {
         throw new UnsupportedOperationException("Not supported yet.");
     }
+
     @Override
     public void setVisibleByIndex(int i, boolean b) {
         throw new UnsupportedOperationException("Not supported yet.");

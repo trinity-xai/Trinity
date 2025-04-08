@@ -368,7 +368,7 @@ public class HyperSurfacePlotMesh extends TexturedMesh {
                     listTextures.add(new Face3(p11, p01, p00));
                     listFaces.add(new Face3(p00, p10, p11));
                     listFaces.add(new Face3(p11, p01, p00));
-                    
+
                 }
             }
         }

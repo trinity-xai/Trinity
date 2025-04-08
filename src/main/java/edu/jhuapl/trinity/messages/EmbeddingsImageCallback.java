@@ -4,22 +4,24 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageOutput;
 import edu.jhuapl.trinity.javafx.events.ErrorEvent;
 import edu.jhuapl.trinity.javafx.events.RestEvent;
-import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javafx.application.Platform;
 import javafx.scene.Scene;
 
+import java.util.List;
+import java.util.logging.Level;
+import java.util.logging.Logger;
+
 /**
- *
  * @author Sean Phillips
  */
 public class EmbeddingsImageCallback extends RestConsumer {
     List<Integer> inputIDs;
     int requestNumber;
-    
-    public enum STATUS { REQUESTED, SUCCEEDED, FAILED };
-    
+
+    public enum STATUS {REQUESTED, SUCCEEDED, FAILED}
+
+    ;
+
     public EmbeddingsImageCallback(Scene scene, List<Integer> inputIDs, int requestNumber) {
         super(scene);
         this.inputIDs = inputIDs;
@@ -33,7 +35,7 @@ public class EmbeddingsImageCallback extends RestConsumer {
         scene.getRoot().fireEvent(error);
         Platform.runLater(() -> {
             scene.getRoot().fireEvent(new RestEvent(RestEvent.ERROR_EMBEDDINGS_IMAGE, inputIDs, requestNumber));
-        });  
+        });
     }
 
     @Override
@@ -46,7 +48,7 @@ public class EmbeddingsImageCallback extends RestConsumer {
             output.setRequestNumber(requestNumber);
             Platform.runLater(() -> {
                 scene.getRoot().fireEvent(new RestEvent(RestEvent.NEW_EMBEDDINGS_IMAGE, output, inputIDs));
-            });  
+            });
         } catch (JsonProcessingException ex) {
             Logger.getLogger(EmbeddingsImageCallback.class.getName()).log(Level.SEVERE, null, ex);
         }

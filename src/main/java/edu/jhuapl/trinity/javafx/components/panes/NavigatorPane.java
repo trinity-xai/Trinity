@@ -13,6 +13,9 @@ import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.TitledPane;
 import javafx.scene.control.Tooltip;
 import javafx.scene.effect.InnerShadow;
@@ -20,6 +23,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.scene.media.MediaView;
@@ -34,10 +38,6 @@ import java.io.IOException;
 import java.util.Map;
 
 import static edu.jhuapl.trinity.data.messages.xai.FeatureVector.bboxToString;
-import javafx.scene.control.Tab;
-import javafx.scene.control.TabPane;
-import javafx.scene.control.TextArea;
-import javafx.scene.layout.HBox;
 
 /**
  * @author Sean Phillips
@@ -81,7 +81,7 @@ public class NavigatorPane extends LitPathPane {
         imageView.setFitWidth(DEFAULT_FIT_WIDTH);
         imageView.setFitHeight(DEFAULT_FIT_WIDTH);
         imageView.setPreserveRatio(true);
-        
+
         textArea = new TextArea();
         textArea.setPrefWidth(DEFAULT_FIT_WIDTH);
         textArea.setPrefHeight(DEFAULT_FIT_WIDTH);
@@ -105,7 +105,7 @@ public class NavigatorPane extends LitPathPane {
             imageInspectionButton.getScene().getRoot().fireEvent(
                 new ImageEvent(ImageEvent.NEW_IMAGE_INSPECTION, currentImage));
         });
-        
+
         detailsGridPane = new GridPane();
         detailsGridPane.setPadding(new Insets(1));
         detailsGridPane.setHgap(5);
@@ -123,11 +123,11 @@ public class NavigatorPane extends LitPathPane {
         textTab.setClosable(false);
         textTab.setContent(textArea);
         TabPane tabPane = new TabPane(imageTab, textTab);
-        
-        contentVBox = new VBox(5, 
+
+        contentVBox = new VBox(5,
 //            imageView, urlLabel, imageLabel,
             tabPane, urlLabel, imageLabel,
-            new HBox(10, hypersurfaceButton, imageInspectionButton), 
+            new HBox(10, hypersurfaceButton, imageInspectionButton),
             detailsTP, metaTP);
 
         ImageView refresh = ResourceUtils.loadIcon("refresh", 32);

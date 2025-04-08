@@ -1,8 +1,6 @@
 package edu.jhuapl.trinity.javafx.components.listviews;
 
 import edu.jhuapl.trinity.utils.ResourceUtils;
-import java.util.ArrayList;
-import java.util.List;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -16,6 +14,9 @@ import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+
+import java.util.ArrayList;
+import java.util.List;
 
 /**
  * @author Sean Phillips
@@ -34,11 +35,11 @@ public class LandmarkTextBuilderBox extends VBox {
         TextField entryTextField = new TextField();
         entryTextField.setPrefWidth(200);
         Label entryLabel = new Label("Enter New Label Choice");
-        
+
         Button addButton = new Button("Add");
         addButton.setPrefWidth(BUTTON_PREF_WIDTH);
-        addButton.setOnAction(e-> {
-            if(!entryTextField.getText().isBlank()){
+        addButton.setOnAction(e -> {
+            if (!entryTextField.getText().isBlank()) {
                 landmarksListView.getItems().add(
                     new LandmarkTextListItem(entryTextField.getText())
                 );
@@ -47,10 +48,10 @@ public class LandmarkTextBuilderBox extends VBox {
         });
         Button clearButton = new Button("Clear");
         clearButton.setPrefWidth(BUTTON_PREF_WIDTH);
-        clearButton.setOnAction(e-> landmarksListView.getItems().clear());
+        clearButton.setOnAction(e -> landmarksListView.getItems().clear());
         HBox buttonHBox = new HBox(10, entryLabel, addButton, clearButton);
         buttonHBox.setAlignment(Pos.CENTER);
-        
+
         landmarksListView = new ListView<>();
         landmarksListView.setPrefHeight(LISTVIEW_PREF_HEIGHT);
         landmarksListView.setEditable(true);
@@ -58,23 +59,24 @@ public class LandmarkTextBuilderBox extends VBox {
         VBox placeholder = new VBox(10, iv, new Label("No Text Landmarks Acquired"));
         placeholder.setAlignment(Pos.CENTER);
         landmarksListView.setPlaceholder(placeholder);
-        
+
         setSpacing(10);
         setPadding(new Insets(5, 0, 0, 0));
         getChildren().addAll(
-            buttonHBox, 
+            buttonHBox,
             entryTextField,
             landmarksListView
         );
         setBackground(transFillBack);
     }
-    public void setChoices(List<String> choices){
+
+    public void setChoices(List<String> choices) {
         landmarksListView.getItems().setAll(choices.stream()
             .map(c -> new LandmarkTextListItem(c))
             .toList());
     }
-    
-    public List<String> getChoices(){
+
+    public List<String> getChoices() {
         List<String> choices = new ArrayList<>();
         choices.addAll(
             landmarksListView.getItems().stream()
@@ -82,6 +84,7 @@ public class LandmarkTextBuilderBox extends VBox {
                 .toList());
         return choices;
     }
+
     public List<LandmarkTextListItem> getItems() {
         return landmarksListView.getItems();
     }

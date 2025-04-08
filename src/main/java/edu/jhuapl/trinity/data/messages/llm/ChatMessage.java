@@ -4,21 +4,22 @@ import java.util.ArrayList;
 import java.util.List;
 
 /**
- *
  * @author Sean Phillips
  */
 public class ChatMessage {
     private String role;
     private List<Content> content;
     private List<String> tool_calls;
-    
-    public ChatMessage(){
+
+    public ChatMessage() {
         tool_calls = new ArrayList<>();
         content = new ArrayList<>();
     }
+
     public void addContent(Content newContent) {
         getContent().add(newContent);
     }
+
     /**
      * @return the role
      */

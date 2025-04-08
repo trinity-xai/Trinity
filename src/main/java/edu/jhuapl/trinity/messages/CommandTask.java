@@ -21,17 +21,17 @@ public class CommandTask extends Task {
     String command;
     Scene scene;
     HashMap<String, String> properties;
-    
+
     public CommandTask(CommandRequest commandRequest, Scene scene) {
         this.scene = scene;
         delaySeconds = commandRequest.getDelaySeconds();
         command = commandRequest.getRequest();
         properties = commandRequest.getProperties();
-        
+
     }
 
-    public static void execute(Scene scene, String command, double delaySeconds, 
-        HashMap<String, String> properties) throws InterruptedException {
+    public static void execute(Scene scene, String command, double delaySeconds,
+                               HashMap<String, String> properties) throws InterruptedException {
         if (delaySeconds > 0) {
             Thread.sleep(Duration.ofMillis(Double.valueOf(delaySeconds * 1000).longValue()));
         }
@@ -60,7 +60,7 @@ public class CommandTask extends Task {
                 scene.getRoot().fireEvent(new EffectEvent(EffectEvent.OPTICON_LASER_SWEEP));
             });
         } else if (command.contentEquals(CommandRequest.COMMANDS.FIND.name())) {
-            if(null != properties && properties.containsKey(CommandRequest.PAYLOAD)) {
+            if (null != properties && properties.containsKey(CommandRequest.PAYLOAD)) {
                 System.out.println("need to find: " + properties.get(CommandRequest.PAYLOAD));
                 Platform.runLater(() -> {
                     scene.getRoot().fireEvent(new SearchEvent(SearchEvent.FIND_BY_QUERY, properties.get(CommandRequest.PAYLOAD)));

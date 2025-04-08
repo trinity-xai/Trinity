@@ -152,7 +152,7 @@ public class FeatureVectorCallout extends VBox {
         }
         Text metaText = new Text(sb.toString());
         metaText.setWrappingWidth(50); //something smallish just to initialize
-        
+
         TitledPane metaTP = new TitledPane();
         metaText.wrappingWidthProperty().bind(metaTP.widthProperty().subtract(10));
         metaTP.setContent(metaText);

@@ -4,20 +4,22 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageOutput;
 import edu.jhuapl.trinity.javafx.events.ErrorEvent;
 import edu.jhuapl.trinity.javafx.events.RestEvent;
-import java.util.List;
 import javafx.application.Platform;
 import javafx.scene.Scene;
 
+import java.util.List;
+
 /**
- *
  * @author Sean Phillips
  */
 public class EmbeddingsTextLandmarkCallback extends RestConsumer {
     List<Integer> inputIDs;
     int requestNumber;
-    
-    public enum STATUS { REQUESTED, SUCCEEDED, FAILED };
-    
+
+    public enum STATUS {REQUESTED, SUCCEEDED, FAILED}
+
+    ;
+
     public EmbeddingsTextLandmarkCallback(Scene scene, List<Integer> inputIDs, int requestNumber) {
         super(scene);
         this.inputIDs = inputIDs;
@@ -31,7 +33,7 @@ public class EmbeddingsTextLandmarkCallback extends RestConsumer {
         scene.getRoot().fireEvent(error);
         Platform.runLater(() -> {
             scene.getRoot().fireEvent(new RestEvent(RestEvent.ERROR_EMBEDDINGS_TEXT, inputIDs, requestNumber));
-        });  
+        });
     }
 
     @Override
@@ -41,7 +43,7 @@ public class EmbeddingsTextLandmarkCallback extends RestConsumer {
             EmbeddingsImageOutput output = objectMapper.readValue(responseBodyString, EmbeddingsImageOutput.class);
             output.setRequestNumber(requestNumber);
             Platform.runLater(() -> {
-                scene.getRoot().fireEvent(new RestEvent(RestEvent.NEW_EMBEDDINGS_LANDMARKTEXT, output, inputIDs));  
+                scene.getRoot().fireEvent(new RestEvent(RestEvent.NEW_EMBEDDINGS_LANDMARKTEXT, output, inputIDs));
             });
         } catch (JsonProcessingException ex) {
             LOG.error(ex.getMessage());

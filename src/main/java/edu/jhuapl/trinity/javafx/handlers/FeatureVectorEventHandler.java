@@ -96,7 +96,7 @@ public class FeatureVectorEventHandler implements EventHandler<FeatureVectorEven
         List<FeatureLayer> newFeatureLayers = new ArrayList<>();
 
         featureVectors.forEach(featureVector -> {
-            if(null != featureVector.getLabel()) {
+            if (null != featureVector.getLabel()) {
                 //Is the label already added to the local collection?
                 if (newFactorLabels.stream().noneMatch(
                     f -> f.getLabel().contentEquals(featureVector.getLabel()))) {

@@ -48,7 +48,7 @@ public class GaussianMixtureEventHandler implements EventHandler<GaussianMixture
 
             //generate the diagonal for ellipsoid rendering
             generateEllipsoidDiagonal(gaussianMixtureCollection);
-            
+
             //send the updated collection out to the renderers
             for (GaussianMixtureRenderer renderer : renderers) {
                 renderer.addGaussianMixtureCollection(gaussianMixtureCollection);
@@ -62,7 +62,7 @@ public class GaussianMixtureEventHandler implements EventHandler<GaussianMixture
         }
     }
 
-    public static void generateEllipsoidDiagonal(GaussianMixtureCollection gaussianMixtureCollection) {             
+    public static void generateEllipsoidDiagonal(GaussianMixtureCollection gaussianMixtureCollection) {
         //generate the diagonal for ellipsoid rendering
         //for each Gaussian Mixture
         for (GaussianMixture gm : gaussianMixtureCollection.getMixtures()) {

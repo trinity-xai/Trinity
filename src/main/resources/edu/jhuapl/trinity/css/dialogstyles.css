@@ -181,7 +181,7 @@
     -fx-background-insets: 0;
     -fx-background-color: -var-background_color;
     -fx-font-family: "Segoe UI Semilight";
-    -fx-font-size: 1.0em; 
+    -fx-font-size: 1.0em;
     -fx-text-fill: -var-text_color;
 }
 

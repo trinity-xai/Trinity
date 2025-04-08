@@ -3,6 +3,7 @@ package edu.jhuapl.trinity.data.messages.llm;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import edu.jhuapl.trinity.data.messages.MessageData;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -40,7 +41,7 @@ public class EmbeddingsImageOutput extends MessageData {
     //</editor-fold>
     //extra helper fields
     private int requestNumber;
-    
+
     public EmbeddingsImageOutput() {
         this.messageType = TYPESTRING;
         data = new ArrayList<>();
@@ -48,7 +49,7 @@ public class EmbeddingsImageOutput extends MessageData {
 
     public static boolean isEmbeddingsImageOutput(String messageBody) {
         return messageBody.contains("messageType")
-                && messageBody.contains(TYPESTRING);
+            && messageBody.contains(TYPESTRING);
     }
     //<editor-fold defaultstate="collapsed" desc="Properties">
 

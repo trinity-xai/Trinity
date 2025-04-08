@@ -13,7 +13,7 @@ public class RestAccessLayerConfig extends MessageData {
 
     public static final String TYPESTRING = "RestAccessLayerConfig";
     public static final String DEFAULT_IMAGE_MODEL = "openai/clip-vit-large-patch14";
-    
+
     //<editor-fold defaultstate="collapsed" desc="JSON Payload">
     /*
         {
@@ -29,7 +29,7 @@ public class RestAccessLayerConfig extends MessageData {
           "defaultCaptionModel" : "opensourceorg/opensourcemodel-versionnumber-Vision-Instruct",
 
           "notes" : "My happy funtime model that I host"
-        } 
+        }
     */
     //</editor-fold>
 
@@ -50,7 +50,7 @@ public class RestAccessLayerConfig extends MessageData {
 
     public static boolean isRestAccessLayerConfig(String messageBody) {
         return messageBody.contains("messageType")
-                && messageBody.contains(TYPESTRING);
+            && messageBody.contains(TYPESTRING);
     }
 
     //<editor-fold defaultstate="collapsed" desc="Properties">
@@ -166,6 +166,6 @@ public class RestAccessLayerConfig extends MessageData {
     public void setDefaultCaptionModel(String defaultCaptionModel) {
         this.defaultCaptionModel = defaultCaptionModel;
     }
-        
-    //</editor-fold>   
+
+    //</editor-fold>
 }

@@ -7,7 +7,6 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 /**
- *
  * @author Sean Phillips
  */
 public abstract class RestConsumer {
@@ -20,7 +19,8 @@ public abstract class RestConsumer {
         objectMapper = new ObjectMapper();
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
     }
-    
-    protected abstract void onFailure();    
-    protected abstract void processResponse(String responseBodyString);    
+
+    protected abstract void onFailure();
+
+    protected abstract void processResponse(String responseBodyString);
 }

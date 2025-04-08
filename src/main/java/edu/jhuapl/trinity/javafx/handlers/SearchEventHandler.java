@@ -8,25 +8,26 @@ import edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageData;
 import edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageInput;
 import edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageOutput;
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
-import static edu.jhuapl.trinity.data.messages.xai.FeatureVector.mapToStateArray;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.SearchEvent;
 import edu.jhuapl.trinity.javafx.renderers.FeatureVectorRenderer;
 import edu.jhuapl.trinity.messages.RestAccessLayer;
-import static edu.jhuapl.trinity.messages.RestAccessLayer.currentEmbeddingsModel;
 import edu.jhuapl.trinity.utils.metric.Metric;
-import java.io.IOException;
 import javafx.event.EventHandler;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
+import javafx.util.Pair;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-import javafx.util.Pair;
+
+import static edu.jhuapl.trinity.data.messages.xai.FeatureVector.mapToStateArray;
+import static edu.jhuapl.trinity.messages.RestAccessLayer.currentEmbeddingsModel;
 
 /**
  * @author Sean Phillips
@@ -135,6 +136,7 @@ public class SearchEventHandler implements EventHandler<SearchEvent> {
             App.getAppScene().getRoot().fireEvent(new CommandTerminalEvent(msg));
         }
     }
+
     public void handleFindByQuery(SearchEvent event) {
         String query = (String) event.eventObject;
         String msg = "Finding closest vector matches to '" + query + "'... ";
@@ -144,7 +146,7 @@ public class SearchEventHandler implements EventHandler<SearchEvent> {
         System.out.println("Requesting embedding vector for query...");
         try {
             EmbeddingsImageInput input = EmbeddingsImageInput.defaultTextInput(query);
-            if(null != currentEmbeddingsModel)
+            if (null != currentEmbeddingsModel)
                 input.setModel(currentEmbeddingsModel);
             List<Integer> inputIDs = new ArrayList<>();
             inputIDs.add(-1);
@@ -154,12 +156,13 @@ public class SearchEventHandler implements EventHandler<SearchEvent> {
             LOG.error(null, ex);
         }
     }
+
     public void handleQueryEmbeddingsResponse(SearchEvent event) {
         EmbeddingsImageOutput output = (EmbeddingsImageOutput) event.eventObject;
         System.out.println("Query Embedding Response... " + output.getData().get(0).getType());
         EmbeddingsImageData currentOutput = output.getData().get(0);
         //use a stream to convert the Boxed Double list to a primitive array
-        double [] queryVector = currentOutput.getEmbedding().stream().mapToDouble(d->d).toArray();
+        double[] queryVector = currentOutput.getEmbedding().stream().mapToDouble(d -> d).toArray();
         System.out.println("Computing Landmark Simularity Distances...");
         Metric metric = Metric.getMetric("cosine");
         long startTime = System.nanoTime();
@@ -169,21 +172,21 @@ public class SearchEventHandler implements EventHandler<SearchEvent> {
             Double shortestDistance = null;
             Integer shortestVectorIndex = null;
             //First calculate all the distances and build a list map against their indices
-            ArrayList<Pair<Integer,Double>> indexDistanceRecords = new ArrayList<>();
-            for(int i=0;i<size;i++){
+            ArrayList<Pair<Integer, Double>> indexDistanceRecords = new ArrayList<>();
+            for (int i = 0; i < size; i++) {
                 double[] itemVector = mapToStateArray.apply(fvList.get(i));
-                double currentDistance = metric.distance(itemVector,queryVector );
-                if(null == shortestDistance || currentDistance < shortestDistance) {
+                double currentDistance = metric.distance(itemVector, queryVector);
+                if (null == shortestDistance || currentDistance < shortestDistance) {
                     shortestDistance = currentDistance;
                     shortestVectorIndex = i;
                 }
-                indexDistanceRecords.add(new Pair<>(i,currentDistance));
+                indexDistanceRecords.add(new Pair<>(i, currentDistance));
             }
             //sort the list map by distance, closest to farthest
-            List<Pair<Integer,Double>> sortedList = indexDistanceRecords.stream()
+            List<Pair<Integer, Double>> sortedList = indexDistanceRecords.stream()
                 .sorted(indexDistancePairCompare)
                 .toList();
-            //@DEBUG SMP 
+            //@DEBUG SMP
             System.out.println("The shortest distance FV is index: " + shortestVectorIndex);
             System.out.println("The distance to the query vector is: " + shortestDistance);
             System.out.println("Here is the ranked distance list:");
@@ -191,8 +194,8 @@ public class SearchEventHandler implements EventHandler<SearchEvent> {
                 System.out.println("FV Index: " + p.getKey() + " with score: " + p.getValue());
             });
             //grey out everything outside the closest ten
-            for(int i=11; i<size;i++) {
-                renderer.setColorByIndex(sortedList.get(i).getKey()+1, Color.GRAY);
+            for (int i = 11; i < size; i++) {
+                renderer.setColorByIndex(sortedList.get(i).getKey() + 1, Color.GRAY);
             }
 
             //request render update
@@ -202,12 +205,14 @@ public class SearchEventHandler implements EventHandler<SearchEvent> {
             App.getAppScene().getRoot().fireEvent(new CommandTerminalEvent(msg));
         }
     }
-    public static Comparator<Pair<Integer, Double>> indexDistancePairCompare = 
+
+    public static Comparator<Pair<Integer, Double>> indexDistancePairCompare =
         (Pair<Integer, Double> p1, Pair<Integer, Double> p2) -> {
-        if (p1.getValue() < p2.getValue()) return -1;
-        else if (p1.getValue() > p2.getValue()) return 1;
-        else return 0;
-    };
+            if (p1.getValue() < p2.getValue()) return -1;
+            else if (p1.getValue() > p2.getValue()) return 1;
+            else return 0;
+        };
+
     @Override
     public void handle(SearchEvent event) {
         if (event.getEventType().equals(SearchEvent.FILTER_BY_TERM))

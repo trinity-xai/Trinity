@@ -2124,11 +2124,11 @@
  ******************************************************************************/
 .hyperdrive-pane .tab-pane .tab {
     -fx-pref-width: 150px;
-} 
- 
+}
+
 .circle-progress-indicator {
     -fx-font-family: "Segoe UI", Helvetica, Arial, sans-serif;
-    -fx-font-size: 14pt;    
+    -fx-font-size: 14pt;
 }
 
 #bounding-box {

@@ -4,12 +4,13 @@ import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import edu.jhuapl.trinity.utils.ResourceUtils;
-import java.io.File;
-import java.io.IOException;
-import java.util.function.Function;
 import javafx.scene.image.Image;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.IOException;
+import java.util.function.Function;
 
 /**
  * @author Sean Phillips
@@ -38,28 +39,13 @@ public class EmbeddingsImageUrl {
     public EmbeddingsImageUrl() {
         type = "image_url";
     }
+
     public static Function<Image, EmbeddingsImageUrl> imageUrlFromImage = image -> {
         EmbeddingsImageUrl input = new EmbeddingsImageUrl();
         try {
             ImageUrl imageUrl = new ImageUrl();
-            imageUrl.setUrl(BASE64_PREFIX_PNG 
-                    + ResourceUtils.imageToBase64(image));
-            input.setImage_url(imageUrl);
-        } catch (JsonProcessingException ex) {
-            LOG.error(ex.getMessage());
-        } catch (IOException ex) {
-            LOG.error(ex.getMessage());
-        }
-        return input;
-    };
-    
-    public static Function<File, EmbeddingsImageUrl> imageUrlFromFile = file -> {
-        EmbeddingsImageUrl input = new EmbeddingsImageUrl();
-        try {
-            Image image = ResourceUtils.loadImageFile(file);
-            ImageUrl imageUrl = new ImageUrl();
-            imageUrl.setUrl(BASE64_PREFIX_PNG 
-                    + ResourceUtils.imageToBase64(image));
+            imageUrl.setUrl(BASE64_PREFIX_PNG
+                + ResourceUtils.imageToBase64(image));
             input.setImage_url(imageUrl);
         } catch (JsonProcessingException ex) {
             LOG.error(ex.getMessage());
@@ -69,7 +55,23 @@ public class EmbeddingsImageUrl {
         return input;
     };
 
-    
+    public static Function<File, EmbeddingsImageUrl> imageUrlFromFile = file -> {
+        EmbeddingsImageUrl input = new EmbeddingsImageUrl();
+        try {
+            Image image = ResourceUtils.loadImageFile(file);
+            ImageUrl imageUrl = new ImageUrl();
+            imageUrl.setUrl(BASE64_PREFIX_PNG
+                + ResourceUtils.imageToBase64(image));
+            input.setImage_url(imageUrl);
+        } catch (JsonProcessingException ex) {
+            LOG.error(ex.getMessage());
+        } catch (IOException ex) {
+            LOG.error(ex.getMessage());
+        }
+        return input;
+    };
+
+
     /**
      * @return the type
      */

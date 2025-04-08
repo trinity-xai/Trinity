@@ -2,6 +2,7 @@ package edu.jhuapl.trinity.data.messages.llm;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -32,7 +33,7 @@ public class EmbeddingsImageBatchInput {
     //</editor-fold>
 
     //<editor-fold defaultstate="collapsed" desc="Payload Fields">
-    private String model; 
+    private String model;
     private List<EmbeddingsImageUrl> input;
     private String encoding_format;
     private String embedding_type;
@@ -116,6 +117,7 @@ public class EmbeddingsImageBatchInput {
     public void setUser(String user) {
         this.user = user;
     }
+
     /**
      * @return the input
      */
@@ -130,6 +132,6 @@ public class EmbeddingsImageBatchInput {
         this.input = input;
     }
 
-    //</editor-fold>    
+    //</editor-fold>
 
 }

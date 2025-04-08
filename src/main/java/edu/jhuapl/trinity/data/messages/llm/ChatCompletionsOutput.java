@@ -3,6 +3,7 @@ package edu.jhuapl.trinity.data.messages.llm;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import edu.jhuapl.trinity.data.messages.MessageData;
+
 import java.util.ArrayList;
 import java.util.List;
 
@@ -50,7 +51,7 @@ public class ChatCompletionsOutput extends MessageData {
     "response_format": null
   }
 }
-    
+
     */
     //</editor-fold>
 
@@ -60,12 +61,12 @@ public class ChatCompletionsOutput extends MessageData {
     private String prompt;
     private List<ChatCompletionChoice> choices;
     private ChatGenerationParameters generation_parameters;
-    
+
     //</editor-fold>
     //extra helper fields
     private int inputID;
     private int requestNumber;
-    
+
     public ChatCompletionsOutput() {
         this.messageType = TYPESTRING;
         choices = new ArrayList<>();
@@ -157,7 +158,7 @@ public class ChatCompletionsOutput extends MessageData {
     public void setGeneration_parameters(ChatGenerationParameters generation_parameters) {
         this.generation_parameters = generation_parameters;
     }
-  //</editor-fold>
+    //</editor-fold>
 
     /**
      * @return the inputID

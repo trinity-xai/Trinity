@@ -39,7 +39,6 @@ import edu.jhuapl.trinity.javafx.events.ManifoldEvent.ProjectionConfig;
 import edu.jhuapl.trinity.javafx.events.ShadowEvent;
 import edu.jhuapl.trinity.javafx.events.TimelineEvent;
 import edu.jhuapl.trinity.javafx.events.TrajectoryEvent;
-import static edu.jhuapl.trinity.javafx.handlers.GaussianMixtureEventHandler.generateEllipsoidDiagonal;
 import edu.jhuapl.trinity.javafx.javafx3d.ShadowCubeWorld.PROJECTION_TYPE;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.AnimatedSphere;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.Opticon;
@@ -92,12 +91,15 @@ import javafx.scene.effect.Glow;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
+import javafx.scene.input.DragEvent;
+import javafx.scene.input.Dragboard;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.PickResult;
 import javafx.scene.input.ScrollEvent;
+import javafx.scene.input.TransferMode;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
@@ -138,11 +140,8 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static edu.jhuapl.trinity.javafx.handlers.GaussianMixtureEventHandler.generateEllipsoidDiagonal;
 import static edu.jhuapl.trinity.utils.ResourceUtils.removeExtension;
-import java.util.logging.Level;
-import javafx.scene.input.DragEvent;
-import javafx.scene.input.Dragboard;
-import javafx.scene.input.TransferMode;
 
 /**
  * @author Sean Phillips
@@ -435,7 +434,7 @@ public class Projections3DPane extends StackPane implements
         this.scene.addEventHandler(EffectEvent.OPTICON_ENABLE_ORBITING, e -> {
             projectionOpticon.enableOrbiting((boolean) e.object);
         });
-                
+
         //Add 3D subscene stuff to 3D scene root object
         sceneRoot.getChildren().addAll(cameraTransform, highlightedPoint,
             nodeGroup, manifoldGroup, debugGroup, cubeWorld,
@@ -780,7 +779,7 @@ public class Projections3DPane extends StackPane implements
         subScene.addEventHandler(DragEvent.DRAG_DROPPED, e -> {
             Dragboard db = e.getDragboard();
             if (db.hasFiles()) {
-                final List<File> files = db.getFiles(); 
+                final List<File> files = db.getFiles();
                 for (File file : files) {
                     try {
                         if (GaussianMixtureCollectionFile.isGaussianMixtureCollectionFile(file)) {
@@ -794,8 +793,8 @@ public class Projections3DPane extends StackPane implements
                         LOG.error(ex.getMessage());
                     }
                 }
-            }            
-        });        
+            }
+        });
         bp = new BorderPane(subScene);
         //RadialOverlayPane will hold all those nifty callouts and radial entities
         radialOverlayPane = new RadialEntityOverlayPane(this.scene, featureVectors);
@@ -2718,23 +2717,25 @@ public class Projections3DPane extends StackPane implements
             .forEach(f -> {
                 setColorByIndex(featureVectors.indexOf(f), color);
             });
-    }    
+    }
+
     @Override
     public void setColorByIndex(int i, Color color) {
         //I'm thinking this is the ugliest thing I've ever written
-        ((PhongMaterial)sphereToFeatureVectorMap.keySet()
+        ((PhongMaterial) sphereToFeatureVectorMap.keySet()
             .toArray(Sphere[]::new)[i]
             .getMaterial()).setDiffuseColor(color);
-        
+
         int index = 0;
-        for(Perspective3DNode pNode : pNodes) {
-            if(i == index) {
+        for (Perspective3DNode pNode : pNodes) {
+            if (i == index) {
                 pNode.nodeColor = color;
                 return;
             }
             index++;
         }
     }
+
     @Override
     public void setVisibleByIndex(int i, boolean b) {
         VisibilityMap.pNodeVisibilityMap.put(pNodes.toArray(Perspective3DNode[]::new)[i], b);

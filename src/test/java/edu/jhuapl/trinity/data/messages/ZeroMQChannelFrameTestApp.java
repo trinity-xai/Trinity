@@ -2,9 +2,9 @@
 
 package edu.jhuapl.trinity.data.messages;
 
-import edu.jhuapl.trinity.data.messages.bci.ChannelFrame;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
+import edu.jhuapl.trinity.data.messages.bci.ChannelFrame;
 import edu.jhuapl.trinity.utils.MessageUtils;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
