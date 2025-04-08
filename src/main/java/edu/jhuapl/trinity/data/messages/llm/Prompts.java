@@ -1,11 +1,5 @@
 package edu.jhuapl.trinity.data.messages.llm;
 
-import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
-import javafx.application.Platform;
-import javafx.scene.Scene;
-import javafx.scene.paint.Color;
-import javafx.scene.text.Font;
-
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
@@ -32,11 +26,9 @@ public enum Prompts {
     public static final String DEFAULT_AUTOCHOOSECAPTION_PROMPT_TEXT =
     """
     Generate a text caption for this image. The caption you generate should be in the English language. The caption should be a noun limited to a single word. You must choose your caption from the following list of comma separated words: $CAPTION_CHOICES
-    
     Write your response as formatted json data. The formatted json response should have a field for "caption" which is where you put the word you are generating to describe the image.
     The formatted json response should have an "explanation" field and "description" field.
     The field called "explanation" is a single String type value where you provide an explanation of why you chose the one word caption from the list of words provided above. Please limit the "explanation" String value to four sentences or less.
-    
     The field called "description" is a single String type value where you provide text to describe details of what you see in the image. Please limit the "description" String value to four sentences or less.    
     """;
     
@@ -68,13 +60,5 @@ public enum Prompts {
                 choicesCSV.append(" ");
         }
         return captionPrompt.replaceAll(AUTOCHOOSE_VARIABLE, choicesCSV.toString());
-    }
-
-    private static void notifyTerminalError(String message, Scene scene) {
-        Platform.runLater(() -> {
-            CommandTerminalEvent cte = new CommandTerminalEvent(
-                message, new Font("Consolas", 20), Color.RED);
-            scene.getRoot().fireEvent(cte);
-        });
     }
 }
