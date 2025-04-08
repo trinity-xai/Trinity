@@ -48,6 +48,7 @@ import org.fxyz3d.shapes.polygon.PolygonMesh;
 import org.fxyz3d.shapes.primitives.TexturedMesh;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.function.Function;
 
@@ -130,11 +131,6 @@ public class HyperSurfacePlotMesh extends TexturedMesh {
                                     double xScale, double yScale, double zScale) {
         setMesh(null);
         mesh = createRawMesh(getFunctionVert3D(), rangeX, rangeY, xScale, yScale, zScale);
-//        for(int i=0;i<functionValues.size();i++){
-//            if(i>=listVertices.size()) break;
-//            listVertices.get(i).f
-//                = functionValues.get(i).floatValue();
-//        }
         setMesh(mesh);
     }
 
@@ -372,9 +368,13 @@ public class HyperSurfacePlotMesh extends TexturedMesh {
                     listTextures.add(new Face3(p11, p01, p00));
                     listFaces.add(new Face3(p00, p10, p11));
                     listFaces.add(new Face3(p11, p01, p00));
+
                 }
             }
         }
+        int[] faceSmoothingGroups = new int[listFaces.size()]; // 0 == hard edges
+        Arrays.fill(faceSmoothingGroups, 1); // 1: soft edges, all the faces in same surface
+        smoothingGroups = faceSmoothingGroups;
         return createMesh();
     }
 

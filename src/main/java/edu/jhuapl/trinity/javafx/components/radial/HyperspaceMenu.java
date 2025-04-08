@@ -6,6 +6,7 @@ import edu.jhuapl.trinity.App;
 import edu.jhuapl.trinity.javafx.components.panes.RadarPlotPane;
 import edu.jhuapl.trinity.javafx.components.panes.SearchPane;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
+import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.Hyperspace3DPane;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import javafx.animation.KeyFrame;
@@ -32,6 +33,7 @@ import javafx.scene.paint.Stop;
 import javafx.stage.FileChooser;
 import javafx.util.Duration;
 import lit.litfx.controls.covalent.PathPane;
+import lit.litfx.controls.menus.LitRadialContainerMenuItem;
 import lit.litfx.controls.menus.LitRadialMenuItem;
 
 import javax.imageio.ImageIO;
@@ -52,7 +54,7 @@ public class HyperspaceMenu extends RadialEntity {
     //defaults
     public static double IMAGE_FIT_HEIGHT = 64;
     public static double IMAGE_FIT_WIDTH = 64;
-    public static double ITEM_SIZE = 36;
+    public static double ITEM_SIZE = 40;
     public static double INNER_RADIUS = 70.0;
     public static double ITEM_FIT_WIDTH = 64.0;
     public static double MENU_RADIUS = 216.0;
@@ -60,12 +62,12 @@ public class HyperspaceMenu extends RadialEntity {
     public static double INITIAL_ANGLE = 0.0;
     public static double STROKE_WIDTH = 2.5;
 
-    static Color bgLg1Color = Color.DARKCYAN.deriveColor(1, 1, 1, 0.2);
-    static Color bgLg2Color = Color.LIGHTBLUE.deriveColor(1, 1, 1, 0.5);
-    static Color bgMoLg1Color = Color.LIGHTSKYBLUE.deriveColor(1, 1, 1, 0.3);
-    static Color bgMoLg2Color = Color.DARKBLUE.deriveColor(1, 1, 1, 0.6);
-    static Color strokeColor = Color.ALICEBLUE;
-    static Color strokeMouseOnColor = Color.YELLOW;
+    static Color bgLg1Color = Color.DARKCYAN.deriveColor(1, 1, 1, 0.01);
+    static Color bgLg2Color = Color.LIGHTBLUE.deriveColor(1, 1, 1, 0.1);
+    static Color bgMoLg1Color = Color.LIGHTSKYBLUE.deriveColor(1, 1, 1, 0.01);
+    static Color bgMoLg2Color = Color.DARKBLUE.deriveColor(1, 1, 1, 0.2);
+    static Color strokeColor = Color.ALICEBLUE.deriveColor(1, 1, 1, 0.2);
+    static Color strokeMouseOnColor = Color.LIGHTSKYBLUE.deriveColor(1, 1, 1, 0.4);
     static Color outlineColor = Color.GREEN;
     static Color outlineMouseOnColor = Color.LIGHTGREEN;
 
@@ -85,6 +87,8 @@ public class HyperspaceMenu extends RadialEntity {
         this.scene = hyperspace3DPane.scene;
         setScene(scene);
         buildMenu();
+        resetMenuSizes();
+        resetMenuColors();
 
         setMenuItemSize(itemSize);
         setInnerRadius(INNER_RADIUS);
@@ -243,6 +247,12 @@ public class HyperspaceMenu extends RadialEntity {
         ImageView navigator = ResourceUtils.loadIcon("navigator", ITEM_FIT_WIDTH);
         navigator.setEffect(glow);
 
+        ImageView export = ResourceUtils.loadIcon("export", ITEM_FIT_WIDTH);
+        export.setEffect(glow);
+
+        ImageView features = ResourceUtils.loadIcon("features", ITEM_FIT_WIDTH);
+        features.setEffect(glow);
+
         addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Metadata Search", search, e -> {
             Pane pathPane = App.getAppPathPaneStack();
             if (null == searchPane) {
@@ -277,7 +287,6 @@ public class HyperspaceMenu extends RadialEntity {
             Pane pathPane = App.getAppPathPaneStack();
             if (null == radarPlotPane) {
                 radarPlotPane = new RadarPlotPane(scene, pathPane);
-//                radarPlotPane.visibleProperty().bind(hyperspace3DPane.visibleProperty());
             }
             if (!pathPane.getChildren().contains(radarPlotPane)) {
                 pathPane.getChildren().add(radarPlotPane);
@@ -287,13 +296,14 @@ public class HyperspaceMenu extends RadialEntity {
             }
         }));
 
-        addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Copy Snapshot", copy, e -> {
+        LitRadialContainerMenuItem exportSubMenuItem = new LitRadialContainerMenuItem(ITEM_SIZE, "Export", export);
+        exportSubMenuItem.addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Copy Snapshot", copy, e -> {
             Clipboard clipboard = Clipboard.getSystemClipboard();
             ClipboardContent content = new ClipboardContent();
             content.putImage(hyperspace3DPane.snapshot(new SnapshotParameters(), null));
             clipboard.setContent(content);
         }));
-        addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Save as Image", save, e -> {
+        exportSubMenuItem.addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Save as Image", save, e -> {
             final FileChooser fileChooser = new FileChooser();
             fileChooser.setTitle("Save scene as...");
             fileChooser.setInitialFileName("trinity_hyperspace.png");
@@ -311,6 +321,20 @@ public class HyperspaceMenu extends RadialEntity {
                 }
             }
         }));
+        exportSubMenuItem.addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Export Features", features, e -> {
+            final FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Save FeatureCollection as...");
+            fileChooser.setInitialFileName("featurecollection.json");
+            fileChooser.setInitialDirectory(Paths.get(".").toFile());
+            fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("JSON", "*.json"));
+            File file = fileChooser.showSaveDialog(null);
+            if (file != null) {
+                hyperspace3DPane.getScene().getRoot().fireEvent(
+                    new FeatureVectorEvent(FeatureVectorEvent.EXPORT_FEATURE_COLLECTION, file));
+            }
+        }));
+        addMenuItem(exportSubMenuItem);
+
         addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Refresh Render", refresh, e -> {
             hyperspace3DPane.updateAll();
         }));
@@ -320,7 +344,7 @@ public class HyperspaceMenu extends RadialEntity {
             hyperspace3DPane.updateView(true);
             hyperspace3DPane.cubeWorld.clearAll();
         }));
-        addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Reset Camera View", camera, e -> {
+        addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Reset Camera", camera, e -> {
             hyperspace3DPane.resetView(1000, false);
         }));
         addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Clear Callouts", callouts, e -> {

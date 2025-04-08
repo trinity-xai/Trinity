@@ -47,7 +47,6 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
-import java.util.stream.Collectors;
 
 /**
  * @author José Pereda
@@ -70,7 +69,6 @@ public class DirectedScatterMesh extends Group implements TextureMode {
     public DirectedScatterMesh(List<Point3D> scatterData) {
         this(scatterData, DEFAULT_JOIN_SEGMENTS, DEFAULT_HEIGHT, DEFAULT_LEVEL);
     }
-
 
     public DirectedScatterMesh(List<Point3D> scatterData, double height) {
         this(scatterData, DEFAULT_JOIN_SEGMENTS, height, DEFAULT_LEVEL);
@@ -230,7 +228,6 @@ public class DirectedScatterMesh extends Group implements TextureMode {
     }
 
     protected final void updateMesh() {
-//        meshes=FXCollections.<DirectedTexturedMesh>observableArrayList();
         meshes.clear();
         createDots();
         getChildren().setAll(meshes);
@@ -300,8 +297,8 @@ public class DirectedScatterMesh extends Group implements TextureMode {
             DirectedTexturedMesh dot1 = new DirectedTetrahedraMesh(height.get(), level.get(), null, null);
             DirectedMeshHelper mh1 = new DirectedMeshHelper((TriangleMesh) dot1.getMesh());
             mh.addMesh(mh1,
-                scatterData.get().stream().skip(1).collect(Collectors.toList()),
-                endPoints.get().stream().skip(1).collect(Collectors.toList()));
+                scatterData.get().stream().skip(1).toList(),
+                endPoints.get().stream().skip(1).toList());
 //            mh.addMesh(mh1,
 //                scatterData.get().subList(1, scatterData.get().size()),
 //                endPoints.get().subList(1, endPoints.get().size()));

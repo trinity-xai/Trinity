@@ -1,5 +1,3 @@
-/* Copyright (C) 2025 Sean Phillips */
-
 package edu.jhuapl.trinity.javafx.components.panes;
 
 import edu.jhuapl.trinity.javafx.events.ImageEvent;
@@ -31,8 +29,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.net.MalformedURLException;
-import java.util.logging.Level;
-
 
 /**
  * @author Sean Phillips
@@ -151,7 +147,7 @@ public class PixelSelectionPane extends LitPathPane {
                     try {
                         setImage(new Image(file.toURI().toURL().toExternalForm()));
                     } catch (MalformedURLException ex) {
-                        java.util.logging.Logger.getLogger(PixelSelectionPane.class.getName()).log(Level.SEVERE, null, ex);
+                        LOG.error(ex.getMessage());
                     }
                 }
             }

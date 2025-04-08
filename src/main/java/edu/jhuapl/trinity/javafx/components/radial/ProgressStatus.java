@@ -14,6 +14,7 @@ public class ProgressStatus {
     public Color innerStrokeColor = Color.CYAN;
     public Color outerStrokeColor = Color.CYAN;
     public String statusMessage = "";
+    public String topMessage = "";
     public double percentComplete; //-1 for indeterminate
 
     public ProgressStatus(String statusMessage, double percentComplete) {

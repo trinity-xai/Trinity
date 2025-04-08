@@ -3,9 +3,9 @@
 package edu.jhuapl.trinity.utils;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
-import edu.jhuapl.trinity.data.messages.AnalysisConfig;
-import edu.jhuapl.trinity.data.messages.FeatureCollection;
-import edu.jhuapl.trinity.data.messages.UmapConfig;
+import edu.jhuapl.trinity.data.messages.xai.AnalysisConfig;
+import edu.jhuapl.trinity.data.messages.xai.FeatureCollection;
+import edu.jhuapl.trinity.data.messages.xai.UmapConfig;
 import edu.jhuapl.trinity.utils.umap.Umap;
 import javafx.geometry.Point2D;
 import org.apache.commons.math3.linear.EigenDecomposition;
@@ -154,6 +154,29 @@ public enum AnalysisUtils {
             result += x[i] * x[i];
         }
         return Math.sqrt(result);
+    }
+
+    public static List<List<Double>> computeSurfaceDifference(FeatureCollection collection1, FeatureCollection collection2) {
+        double[][] rayRay1 = collection1.convertFeaturesToArray();
+        double[][] rayRay2 = collection2.convertFeaturesToArray();
+        System.out.println("Computing Surface Differences... ");
+        long startTime = System.nanoTime();
+        List<List<Double>> differencesGrid = new ArrayList<>();
+
+        for (int rowIndex = 0; rowIndex < rayRay1.length; rowIndex++) {
+            List<Double> differenceVector = new ArrayList<>();
+            for (int colIndex = 0; colIndex < rayRay1[rowIndex].length; colIndex++) {
+                if (rowIndex < rayRay2.length && colIndex < rayRay2[rowIndex].length) {
+                    differenceVector.add(
+                        rayRay1[rowIndex][colIndex] - rayRay2[rowIndex][colIndex]);
+                } else {
+                    differenceVector.add(0.0);
+                }
+            }
+            differencesGrid.add(differenceVector);
+        }
+        Utils.printTotalTime(startTime);
+        return differencesGrid;
     }
 
     public static Double[][] boxDoubleArrays(double[][] arrays) {

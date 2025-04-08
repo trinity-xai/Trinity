@@ -4,7 +4,7 @@ package edu.jhuapl.trinity.utils;
 
 import edu.jhuapl.trinity.data.Trajectory;
 import edu.jhuapl.trinity.data.graph.GraphNode;
-import edu.jhuapl.trinity.data.messages.FeatureVector;
+import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.Perspective3DNode;
 import edu.jhuapl.trinity.javafx.javafx3d.Trajectory3D;
@@ -363,11 +363,15 @@ public enum JavaFX3DUtils {
         return new double[]{angleX, angleY, angleZ};
     }
 
-    public static Affine lookAt(Node node, javafx.geometry.Point3D from, javafx.geometry.Point3D to, boolean applyTranslate) {
+    public static Affine lookAt(Node node,
+                                javafx.geometry.Point3D from, javafx.geometry.Point3D to,
+                                boolean applyTranslate, boolean flipY) {
         //zVec is "forward"
         javafx.geometry.Point3D zVec = to.subtract(from).normalize();
         //ydir is "up"
         javafx.geometry.Point3D ydir = Rotate.Y_AXIS;
+        if (flipY)
+            ydir = new javafx.geometry.Point3D(0, -1, 0);
         javafx.geometry.Point3D tangent0 = zVec.crossProduct(ydir);
         //handle edge case where to location is precisely the "up" direction
         if (tangent0.magnitude() < 0.001) {
@@ -638,12 +642,12 @@ public enum JavaFX3DUtils {
             try {
                 String contentType = Files.probeContentType(file.toPath());
                 switch (contentType) {
-                    case "image/jpeg":
-                    case "image/png":
+                    case "image/jpeg", "image/png" -> {
                         return true;
+                    }
                 }
                 //System.out.println(contentType);
-            } catch (IOException ex) {
+            } catch (Exception ex) {
                 LOG.error(null, ex);
             }
         }

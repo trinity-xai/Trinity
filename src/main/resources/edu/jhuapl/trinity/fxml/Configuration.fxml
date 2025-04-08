@@ -237,6 +237,11 @@
                                                 <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
                                             </padding>
                                         </CheckBox>
+                                        <CheckBox fx:id="enableOrbitingCheckBox" mnemonicParsing="false" text="Enable Orbiters" GridPane.columnIndex="2">
+                                            <padding>
+                                                <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>
+                                            </padding>
+                                        </CheckBox>
                                     </children>
                                     <padding>
                                         <Insets bottom="5.0" left="5.0" right="5.0" top="5.0"/>

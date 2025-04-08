@@ -2,8 +2,9 @@
 
 package edu.jhuapl.trinity.javafx.renderers;
 
-import edu.jhuapl.trinity.data.messages.FeatureCollection;
-import edu.jhuapl.trinity.data.messages.FeatureVector;
+import edu.jhuapl.trinity.data.messages.xai.FeatureCollection;
+import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
+import javafx.scene.paint.Color;
 
 import java.util.List;
 
@@ -23,7 +24,11 @@ public interface FeatureVectorRenderer {
 
     public void setVisibleByIndex(int i, boolean b);
 
-    public void refresh();
+    public void setColorByIndex(int i, Color color);
+
+    public void setColorByID(String iGotID, Color color);
+
+    public void refresh(boolean forceNodeUpdate);
 
     public void setSpheroidAnchor(boolean animate, int index);
 

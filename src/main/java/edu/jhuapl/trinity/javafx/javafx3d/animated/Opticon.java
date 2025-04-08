@@ -5,6 +5,7 @@ package edu.jhuapl.trinity.javafx.javafx3d.animated;
 import edu.jhuapl.trinity.javafx.components.Crosshair;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.utils.DataUtils;
+import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import javafx.animation.AnimationTimer;
 import javafx.animation.Interpolator;
@@ -47,7 +48,6 @@ public class Opticon extends Group {
     public static double CONE_MESH_ROTATE = -5;
     public static double SCANMODE_X_ANGLE = 30.0;
     public static double SEARCH_DESTROY_X_ANGLE = 0.0;
-    //public static double SCANMODE_ANGLE = 30.0;
     public AnimatedSphere mainBody;
     Box pointer;
     public SpotLight scannerLight;
@@ -68,7 +68,8 @@ public class Opticon extends Group {
     Timeline scannerMeshTimeline;
     Crosshair laserCrosshair;
     private boolean scanning = false;
-
+    public double searchDurationSeconds = 2.0;
+    public long wakeupTimeSeconds = 10;
     private double mousePosX;
     private double mousePosY;
     private double mouseOldX;
@@ -221,7 +222,8 @@ public class Opticon extends Group {
             @Override
             public void handle(long now) {
                 //wake up and change position time
-                sleepNs = 30 * NANOS_IN_SECOND;
+//                sleepNs = 10 * NANOS_IN_SECOND;
+                sleepNs = wakeupTimeSeconds * NANOS_IN_SECOND;
 
                 if ((now - prevTime) < sleepNs) {
                     return;
@@ -230,12 +232,14 @@ public class Opticon extends Group {
                 if (!orbitingProperty.get())
                     return;
 
-                double yTranslate = -getTotalSceneWidth() -
-                    rando.nextDouble() * 200;
+//                double yTranslate = -getTotalSceneWidth() -
+//                    rando.nextDouble() * 200;
+                double yTranslate = DataUtils.randomSign() *
+                    rando.nextDouble() * getTotalSceneHeight() * 0.9;
                 double xTranslate = DataUtils.randomSign() *
-                    rando.nextDouble() * getTotalSceneWidth();
+                    rando.nextDouble() * getTotalSceneWidth() * 0.9;
                 double zTranslate = DataUtils.randomSign() *
-                    rando.nextDouble() * getTotalSceneDepth();
+                    rando.nextDouble() * getTotalSceneDepth() * 0.9;
 
                 Point3D shiftedP3D = new Point3D(
                     xTranslate, yTranslate, zTranslate);
@@ -244,7 +248,7 @@ public class Opticon extends Group {
 //                updateScannerSize(getScannerBaseRadius() +
 //                    rando.nextDouble() * 200);
                 //make sure the duration is less than the wakeup time above
-                search(shiftedP3D, Duration.seconds(5));
+                search(shiftedP3D, Duration.seconds(searchDurationSeconds));
             }
         };
     }
@@ -275,6 +279,7 @@ public class Opticon extends Group {
     }
 
     public void enableOrbiting(boolean enabled) {
+        orbitingProperty.set(enabled);
         if (enabled)
             orbitAnimationTimer.start();
         else
@@ -466,8 +471,7 @@ public class Opticon extends Group {
         this.searchLocation = searchLocation;
         Point3D currentP3D = new Point3D(getTranslateX(), getTranslateY(), getTranslateZ());
         //@TODO SMP need a way to animate the lookAt so the rotation isn't jarring
-        //@TODO SMP also need to have the option to flatten one of the planes of rotation
-        //JavaFX3DUtils.lookAt(this, currentP3D, searchLocation, false);
+        JavaFX3DUtils.lookAt(this, searchLocation, currentP3D, false, true);
 
         if (null != searchTimeline) {
             searchTimeline.stop();

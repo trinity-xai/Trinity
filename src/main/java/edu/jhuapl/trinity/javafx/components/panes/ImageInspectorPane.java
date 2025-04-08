@@ -45,8 +45,6 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.net.MalformedURLException;
 import java.util.Arrays;
-import java.util.DoubleSummaryStatistics;
-import java.util.logging.Level;
 
 import static edu.jhuapl.trinity.utils.Utils.clamp;
 
@@ -101,7 +99,6 @@ public class ImageInspectorPane extends LitPathPane {
         borderPane = (BorderPane) this.contentPane;
         tilePane = new TilePane();
         tilePane.setPrefColumns(3);
-//        tilePane.setPrefRows(1);
         tilePane.setHgap(10);
         tilePane.setAlignment(Pos.CENTER_LEFT);
         ScrollPane tileScrollPane = new ScrollPane(tilePane);
@@ -110,10 +107,8 @@ public class ImageInspectorPane extends LitPathPane {
         tileScrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         tileScrollPane.setFitToHeight(true);
         tileScrollPane.setFitToWidth(true);
-//        tileScrollPane.setPrefSize(512, 512);
 
         borderPane.setCenter(tileScrollPane);
-
 
         centerStack = new StackPane();
         centerStack.setAlignment(Pos.CENTER);
@@ -122,8 +117,8 @@ public class ImageInspectorPane extends LitPathPane {
         baseImageView = new ImageView(baseImage);
         baseImageView.setPreserveRatio(true);
         scrollPane = new ScrollPane(baseImageView);
-        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         scrollPane.setPannable(true);
         scrollPane.setFitToHeight(true);
         scrollPane.setFitToWidth(true);
@@ -237,16 +232,8 @@ public class ImageInspectorPane extends LitPathPane {
             }
         });
         imageFFTCanvas.setOnMouseReleased((MouseEvent me) -> {
-//            if(me.isPrimaryButtonDown()) {
             me.consume();
             //update masks
-            int startY = Double.valueOf(fftSelectionRectangle.getY()).intValue();
-            int endY = Double.valueOf(fftSelectionRectangle.getY()
-                + fftSelectionRectangle.getHeight()).intValue();
-            int startX = Double.valueOf(fftSelectionRectangle.getX()).intValue();
-            int endX = Double.valueOf(fftSelectionRectangle.getX()
-                + fftSelectionRectangle.getHeight()).intValue();
-
             Point2D sceneStart = fftSelectionRectangle.localToScene(fftSelectionRectangle.getX(), fftSelectionRectangle.getY());
             Point2D localStart = imageFFTCanvas.sceneToLocal(sceneStart);
             Point2D sceneEnd = fftSelectionRectangle.localToScene(
@@ -254,10 +241,10 @@ public class ImageInspectorPane extends LitPathPane {
                 fftSelectionRectangle.getY() + fftSelectionRectangle.getHeight());
             Point2D localEnd = imageFFTCanvas.sceneToLocal(sceneEnd);
 
-            startY = Double.valueOf(localStart.getY()).intValue();
-            endY = Double.valueOf(localEnd.getY()).intValue();
-            startX = Double.valueOf(localStart.getX()).intValue();
-            endX = Double.valueOf(localEnd.getX()).intValue();
+            int startY = Double.valueOf(localStart.getY()).intValue();
+            int endY = Double.valueOf(localEnd.getY()).intValue();
+            int startX = Double.valueOf(localStart.getX()).intValue();
+            int endX = Double.valueOf(localEnd.getX()).intValue();
 
             PixelWriter pw = imageFFTGC.getPixelWriter();
             for (int y = startY; y < endY; y++) {
@@ -304,7 +291,6 @@ public class ImageInspectorPane extends LitPathPane {
             fftSelectionRectangle.setVisible(false);
             fftSelectionRectangle.setWidth(1);
             fftSelectionRectangle.setHeight(1);
-//            }
         });
 
         brightnessDownscalerSpinner = new Spinner<>(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 1000, 10, 1));
@@ -340,7 +326,7 @@ public class ImageInspectorPane extends LitPathPane {
         ScrollPane imageFFTScrollPane = new ScrollPane(imageFFTCanvas);
         imageFFTScrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         imageFFTScrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-//        imageFFTScrollPane.setPannable(true);
+        imageFFTScrollPane.setPannable(true);
         imageFFTScrollPane.setFitToHeight(true);
         imageFFTScrollPane.setFitToWidth(true);
         imageFFTScrollPane.setPrefSize(512, 512);
@@ -358,21 +344,11 @@ public class ImageInspectorPane extends LitPathPane {
         BorderPane inverseFFTBorderPane = new BorderPane(inverseScrollPane);
         Button tessellateInverseFFTButton = new Button("Tessellate Inverse");
         tessellateInverseFFTButton.setOnAction(e -> {
-//            if(fftSelectionRectangle.getWidth() > 1 && fftSelectionRectangle.getHeight() > 1) {
-//                Point2D sceneP2D = fftSelectionRectangle.localToScene(
-//                    fftSelectionRectangle.getX(), fftSelectionRectangle.getY());
-//                Point2D localP2D = baseImageView.sceneToLocal(sceneP2D);
-//                WritableImage wi = ResourceUtils.cropImage(baseImage,
-//                    localP2D.getX(), localP2D.getY(),
-//                    localP2D.getX() + fftSelectionRectangle.getWidth(),
-//                    localP2D.getY() + fftSelectionRectangle.getHeight());
-
             SnapshotParameters snapshotParameters = new SnapshotParameters();
             snapshotParameters.setFill(Color.TRANSPARENT);
             Image image = inverseFFTCanvas.snapshot(snapshotParameters, null);
             tessellateInverseFFTButton.getScene().getRoot().fireEvent(
                 new ImageEvent(ImageEvent.NEW_TEXTURE_SURFACE, image));
-//            }
         });
         HBox inversePowerBottomHBox = new HBox(10, tessellateInverseFFTButton);
         inversePowerBottomHBox.setPadding(new Insets(10));
@@ -398,9 +374,17 @@ public class ImageInspectorPane extends LitPathPane {
                     try {
                         setImage(new Image(file.toURI().toURL().toExternalForm()));
                     } catch (MalformedURLException ex) {
-                        java.util.logging.Logger.getLogger(PixelSelectionPane.class.getName()).log(Level.SEVERE, null, ex);
+                        LOG.error(ex.getMessage());
                     }
                 }
+            }
+        });
+        scene.getRoot().addEventHandler(ImageEvent.NEW_IMAGE_INSPECTION, event -> {
+            try {
+                Image image = (Image) event.object;
+                setImage(image);
+            } catch (Exception ex) {
+                LOG.error("dude...");
             }
         });
     }
@@ -472,7 +456,7 @@ public class ImageInspectorPane extends LitPathPane {
         int height = Double.valueOf(image.getHeight()).intValue();
         int width = Double.valueOf(image.getWidth()).intValue();
 
-        greySignal2d = new Signal2d(height, width);
+//        greySignal2d = new Signal2d(height, width);
         redChannelSignal2d = new Signal2d(height, width);
         greenChannelSignal2d = new Signal2d(height, width);
         blueChannelSignal2d = new Signal2d(height, width);
@@ -482,7 +466,7 @@ public class ImageInspectorPane extends LitPathPane {
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
                 color = pixelReader.getColor(x, y);
-                greySignal2d.setReAt(y, x, color.grayscale().getBrightness());
+//                greySignal2d.setReAt(y, x, color.grayscale().getBrightness());
                 redChannelSignal2d.setReAt(y, x, color.getRed());
                 greenChannelSignal2d.setReAt(y, x, color.getGreen());
                 blueChannelSignal2d.setReAt(y, x, color.getBlue());
@@ -495,30 +479,32 @@ public class ImageInspectorPane extends LitPathPane {
         System.out.println("Signal2D values extracted.");
 
         FastFourier2d transformer2D = new FastFourier2d();
-        System.out.print("FFT on Greyscale... ");
+//        System.out.print("FFT on Greyscale... ");
         long startTime = System.nanoTime();
-        transformer2D.transform(greySignal2d);
-        Utils.printTotalTime(startTime);
+//        transformer2D.transform(greySignal2d);
+//        Utils.printTotalTime(startTime);
+        System.out.print("FFT on Red Channel... ");
         transformer2D.transform(redChannelSignal2d);
+        System.out.print("FFT on Green Channel... ");
         transformer2D.transform(greenChannelSignal2d);
+        System.out.print("FFT on Blue Channel... ");
         transformer2D.transform(blueChannelSignal2d);
 
         //fshift = np.fft.fftshift(f_image)
-        System.out.print("FFTShift on Greyscale... ");
-        startTime = System.nanoTime();
+//        System.out.print("FFTShift on Greyscale... ");
+//        startTime = System.nanoTime();
 //        shiftedGreySignal2d = fftShift2d(greySignal2d, false);
-        Utils.printTotalTime(startTime);
+//        Utils.printTotalTime(startTime);
+        System.out.print("FFT Shift on Red Channel... ");
         shiftedRedChannelSignal2d = fftShift2d(redChannelSignal2d, false);
+        System.out.print("FFT Shift on Green Channel... ");
         shiftedGreenChannelSignal2d = fftShift2d(greenChannelSignal2d, false);
+        System.out.print("FFT Shift on Blue Channel... ");
         shiftedBlueChannelSignal2d = fftShift2d(blueChannelSignal2d, false);
 
         //magnitude_spectrum = 20 * np.log(np.abs(fshift))
+        System.out.print("Plotting FFT Canvas... ");
         double redlogVal, greenlogVal, bluelogVal = 0;
-        DoubleSummaryStatistics stats = Arrays
-            .stream(greySignal2d.getRe())
-            .summaryStatistics();
-        System.out.println("Max: " + stats.getMax() + " Min: " + stats.getMin());
-
         baseImagePR = image.getPixelReader();
         PixelWriter pw = imageFFTGC.getPixelWriter();
         imageFFTGC.setFill(Color.BLACK);
@@ -544,16 +530,17 @@ public class ImageInspectorPane extends LitPathPane {
                 //                    1)));
             }
         }
-        System.out.println("log of fourier transformed greyscale image done.");
-
-        startTime = System.nanoTime();
         System.out.print("Inverse on Red Channel... ");
         transformer2D.inverse(redChannelSignal2d);
-        Utils.printTotalTime(startTime);
+        System.out.print("Inverse on Red Channel... ");
         transformer2D.inverse(greenChannelSignal2d);
+        System.out.print("Inverse on Red Channel... ");
         transformer2D.inverse(blueChannelSignal2d);
 
+        System.out.print("Plotting Inverse FFT... ");
         plotInverseFFT(height, width, redChannelSignal2d, greenChannelSignal2d, blueChannelSignal2d);
+        Utils.printTotalTime(startTime);
+
         // don't forget to shut it down as it uses an executor service
         transformer2D.shutdown();
     }

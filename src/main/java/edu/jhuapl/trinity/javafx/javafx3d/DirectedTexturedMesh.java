@@ -38,6 +38,7 @@ import javafx.scene.transform.Translate;
 import org.fxyz3d.geometry.Face3;
 import org.fxyz3d.geometry.Point3D;
 import org.fxyz3d.scene.paint.Palette.ColorPalette;
+import org.fxyz3d.scene.paint.Palette.FunctionColorPalette;
 import org.fxyz3d.scene.paint.Patterns.CarbonPatterns;
 import org.fxyz3d.shapes.primitives.helper.MeshHelper;
 import org.fxyz3d.shapes.primitives.helper.TextureMode;
@@ -448,8 +449,20 @@ public abstract class DirectedTexturedMesh extends MeshView implements TextureMo
         return maxGlobal;
     }
 
+    //@INFO SMP
+//    private final static double DEFAULT_OPACITY = 1.0;
+//    private final static int DEFAULT_NUMCOLORS = 1530; // 39x40 palette image
+//    public final static ColorPalette EASY_COLOR_PALETTE =
+//            new FunctionColorPalette(1530, d -> Color.hsb(360d * d, 1, 1, DEFAULT_OPACITY));
     private void createPalette(int colors) {
-        helper.createPalette(colors, false, colorPalette.get());
+//        helper.createPalette(colors, false, colorPalette.get());
+        ColorPalette EASY_COLOR_PALETTE =
+            new FunctionColorPalette(1530, d -> {
+                if (d == 0) return Color.BLACK;
+                if (d == 1) return Color.WHITE;
+                return Color.hsb(360d * d, 1, 1, 1.0);
+            });
+        helper.createPalette(colors, false, EASY_COLOR_PALETTE);
         helper.getMaterialWithPalette();
     }
 

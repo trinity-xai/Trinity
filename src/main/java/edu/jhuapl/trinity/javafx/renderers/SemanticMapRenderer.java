@@ -2,9 +2,9 @@
 
 package edu.jhuapl.trinity.javafx.renderers;
 
-import edu.jhuapl.trinity.data.messages.FeatureCollection;
-import edu.jhuapl.trinity.data.messages.SemanticMap;
-import edu.jhuapl.trinity.data.messages.SemanticMapCollection;
+import edu.jhuapl.trinity.data.messages.bci.SemanticMap;
+import edu.jhuapl.trinity.data.messages.bci.SemanticMapCollection;
+import edu.jhuapl.trinity.data.messages.xai.FeatureCollection;
 
 /**
  * @author Sean Phillips

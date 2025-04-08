@@ -4,7 +4,7 @@ package edu.jhuapl.trinity.utils.loaders;
 
 import edu.jhuapl.trinity.data.Trajectory;
 import edu.jhuapl.trinity.data.files.CdcTissueGenesFile;
-import edu.jhuapl.trinity.data.messages.FeatureCollection;
+import edu.jhuapl.trinity.data.messages.xai.FeatureCollection;
 import edu.jhuapl.trinity.javafx.components.radial.ProgressStatus;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;

@@ -13,9 +13,12 @@ import java.util.HashMap;
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CommandRequest extends MessageData {
+    public static String PAYLOAD = "PAYLOAD";
 
     public enum COMMANDS {
-        VIEW_HYPERSPACE, VIEW_HYPERSURFACE, VIEW_PROJECTIONS, EXECUTE_UMAP, AUTO_PROJECTION
+        VIEW_HYPERSPACE, VIEW_HYPERSURFACE, VIEW_PROJECTIONS, EXECUTE_UMAP, AUTO_PROJECTION,
+        ENABLE_OPTICON, DISABLE_OPTICON, LASER_SWEEP, SCAN_MODE, USER_ATTENTION,
+        FIND, CLEAR_FILTERS
     }
 
     public static final String TYPESTRING = "command_request";

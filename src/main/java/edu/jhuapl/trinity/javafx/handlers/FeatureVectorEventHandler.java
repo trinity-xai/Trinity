@@ -6,9 +6,9 @@ import edu.jhuapl.trinity.App;
 import edu.jhuapl.trinity.data.Dimension;
 import edu.jhuapl.trinity.data.FactorLabel;
 import edu.jhuapl.trinity.data.FeatureLayer;
-import edu.jhuapl.trinity.data.messages.FeatureCollection;
-import edu.jhuapl.trinity.data.messages.FeatureVector;
-import edu.jhuapl.trinity.data.messages.LabelConfig;
+import edu.jhuapl.trinity.data.messages.xai.FeatureCollection;
+import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
+import edu.jhuapl.trinity.data.messages.xai.LabelConfig;
 import edu.jhuapl.trinity.javafx.components.ColorMap;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
@@ -96,23 +96,25 @@ public class FeatureVectorEventHandler implements EventHandler<FeatureVectorEven
         List<FeatureLayer> newFeatureLayers = new ArrayList<>();
 
         featureVectors.forEach(featureVector -> {
-            //Is the label already added to the local collection?
-            if (newFactorLabels.stream().noneMatch(
-                f -> f.getLabel().contentEquals(featureVector.getLabel()))) {
-                //Have we seen this label before?
-                FactorLabel matchingLabel = FactorLabel.getFactorLabel(featureVector.getLabel());
+            if (null != featureVector.getLabel()) {
+                //Is the label already added to the local collection?
+                if (newFactorLabels.stream().noneMatch(
+                    f -> f.getLabel().contentEquals(featureVector.getLabel()))) {
+                    //Have we seen this label before?
+                    FactorLabel matchingLabel = FactorLabel.getFactorLabel(featureVector.getLabel());
 
-                //The label doesn't exist in the global map
-                if (null == matchingLabel) {
-                    //... add a new FactorLabel to the map
-                    if (labelColorIndex > labelColorCount) {
-                        labelColorIndex = 0;
+                    //The label doesn't exist in the global map
+                    if (null == matchingLabel) {
+                        //... add a new FactorLabel to the map
+                        if (labelColorIndex > labelColorCount) {
+                            labelColorIndex = 0;
+                        }
+                        //do bulk update using the addAllFactorLabels() method
+                        FactorLabel fl = new FactorLabel(featureVector.getLabel(),
+                            labelColorMap.getColorByIndex(labelColorIndex));
+                        newFactorLabels.add(fl);
+                        labelColorIndex++;
                     }
-                    //do bulk update using the addAllFactorLabels() method
-                    FactorLabel fl = new FactorLabel(featureVector.getLabel(),
-                        labelColorMap.getColorByIndex(labelColorIndex));
-                    newFactorLabels.add(fl);
-                    labelColorIndex++;
                 }
             }
             //Have we seen this layer before?
@@ -141,7 +143,7 @@ public class FeatureVectorEventHandler implements EventHandler<FeatureVectorEven
         LOG.info("Clearing All Feature Vectors By Request.");
         for (FeatureVectorRenderer renderer : renderers) {
             renderer.clearFeatureVectors();
-            renderer.refresh();
+            renderer.refresh(true);
         }
     }
 
@@ -183,7 +185,7 @@ public class FeatureVectorEventHandler implements EventHandler<FeatureVectorEven
             //update the renderers with the new arraylist of strings
             for (FeatureVectorRenderer renderer : renderers) {
                 renderer.setDimensionLabels(featureCollection.getDimensionLabels());
-                renderer.refresh();
+                renderer.refresh(true);
             }
         }
     }
@@ -254,7 +256,7 @@ public class FeatureVectorEventHandler implements EventHandler<FeatureVectorEven
             //update the renderers with the new arraylist of strings
             for (FeatureVectorRenderer renderer : renderers) {
                 renderer.setDimensionLabels(labelConfig.getDimensionLabels());
-                renderer.refresh();
+                renderer.refresh(true);
             }
         }
     }

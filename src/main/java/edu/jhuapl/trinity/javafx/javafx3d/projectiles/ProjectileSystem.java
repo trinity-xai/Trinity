@@ -151,7 +151,7 @@ public class ProjectileSystem {
             Point3D start = alienShip.randomStart(absSafetyPosition);
             //reverse the order of the points because alienship is already rotated
             JavaFX3DUtils.lookAt(alienShip, playerShip.getLocation(),
-                start, false);
+                start, false, false);
             alienShip.setStart(start);
             alienShip.setLocation(start);
             if (start.getX() < 0) {
@@ -468,7 +468,7 @@ public class ProjectileSystem {
             alienShip.flipCheck(absSafetyPosition); //did it flip over?
             //reverse the order of the points because alienship is already rotated
             JavaFX3DUtils.lookAt(alienShip, playerShip.getLocation(),
-                alienShip.getLocation(), false);
+                alienShip.getLocation(), false, false);
             if (random.nextDouble() >= 0.985) {
                 //Minus because the Alien is rotated 180 degrees ahead of time
                 Point3D velocity = new Point3D(0, 0, -fireVelocity);

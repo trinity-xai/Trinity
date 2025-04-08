@@ -4,8 +4,8 @@ package edu.jhuapl.trinity.javafx.handlers;
 
 import edu.jhuapl.trinity.App;
 import edu.jhuapl.trinity.data.Dimension;
-import edu.jhuapl.trinity.data.messages.ShapleyCollection;
-import edu.jhuapl.trinity.data.messages.ShapleyVector;
+import edu.jhuapl.trinity.data.messages.xai.ShapleyCollection;
+import edu.jhuapl.trinity.data.messages.xai.ShapleyVector;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.HyperspaceEvent;
 import edu.jhuapl.trinity.javafx.events.ShapleyEvent;

@@ -12,13 +12,14 @@ import edu.jhuapl.trinity.data.HyperspaceSeed;
 import edu.jhuapl.trinity.data.Manifold;
 import edu.jhuapl.trinity.data.Trajectory;
 import edu.jhuapl.trinity.data.files.FeatureCollectionFile;
-import edu.jhuapl.trinity.data.messages.FeatureCollection;
-import edu.jhuapl.trinity.data.messages.FeatureVector;
-import edu.jhuapl.trinity.data.messages.GaussianMixture;
-import edu.jhuapl.trinity.data.messages.GaussianMixtureCollection;
-import edu.jhuapl.trinity.data.messages.GaussianMixtureData;
-import edu.jhuapl.trinity.data.messages.PointCluster;
-import edu.jhuapl.trinity.data.messages.UmapConfig;
+import edu.jhuapl.trinity.data.files.GaussianMixtureCollectionFile;
+import edu.jhuapl.trinity.data.messages.xai.FeatureCollection;
+import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
+import edu.jhuapl.trinity.data.messages.xai.GaussianMixture;
+import edu.jhuapl.trinity.data.messages.xai.GaussianMixtureCollection;
+import edu.jhuapl.trinity.data.messages.xai.GaussianMixtureData;
+import edu.jhuapl.trinity.data.messages.xai.PointCluster;
+import edu.jhuapl.trinity.data.messages.xai.UmapConfig;
 import edu.jhuapl.trinity.javafx.components.callouts.Callout;
 import edu.jhuapl.trinity.javafx.components.callouts.DistanceDataCallout;
 import edu.jhuapl.trinity.javafx.components.panes.JoystickPane;
@@ -90,12 +91,15 @@ import javafx.scene.effect.Glow;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
+import javafx.scene.input.DragEvent;
+import javafx.scene.input.Dragboard;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.PickResult;
 import javafx.scene.input.ScrollEvent;
+import javafx.scene.input.TransferMode;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
@@ -136,6 +140,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 
+import static edu.jhuapl.trinity.javafx.handlers.GaussianMixtureEventHandler.generateEllipsoidDiagonal;
 import static edu.jhuapl.trinity.utils.ResourceUtils.removeExtension;
 
 /**
@@ -426,7 +431,9 @@ public class Projections3DPane extends StackPane implements
         this.scene.addEventHandler(EffectEvent.ENABLE_EMPTY_VISION, e -> {
             emptyVisionEnabled = (boolean) e.object;
         });
-
+        this.scene.addEventHandler(EffectEvent.OPTICON_ENABLE_ORBITING, e -> {
+            projectionOpticon.enableOrbiting((boolean) e.object);
+        });
 
         //Add 3D subscene stuff to 3D scene root object
         sceneRoot.getChildren().addAll(cameraTransform, highlightedPoint,
@@ -436,7 +443,6 @@ public class Projections3DPane extends StackPane implements
         projectionOpticon = new Opticon(Color.CYAN, 100);
         extrasGroup.getChildren().add(projectionOpticon);
         projectionOpticon.visibleProperty().bind(autoProjectionProperty);
-        projectionOpticon.orbitingProperty.bind(autoProjectionProperty);
 
         miniCrosshair = new Crosshair3D(javafx.geometry.Point3D.ZERO,
             2, 1.0f);
@@ -762,6 +768,33 @@ public class Projections3DPane extends StackPane implements
                 clusterSelectionMode = false;
             }
         });
+        //@HACKY QUICK FIX SMP Handle GMM drops separately here
+        subScene.addEventHandler(DragEvent.DRAG_OVER, e -> {
+            if (ResourceUtils.canDragOver(e)) {
+                e.acceptTransferModes(TransferMode.COPY);
+            } else {
+                e.consume();
+            }
+        });
+        subScene.addEventHandler(DragEvent.DRAG_DROPPED, e -> {
+            Dragboard db = e.getDragboard();
+            if (db.hasFiles()) {
+                final List<File> files = db.getFiles();
+                for (File file : files) {
+                    try {
+                        if (GaussianMixtureCollectionFile.isGaussianMixtureCollectionFile(file)) {
+                            GaussianMixtureCollectionFile gmcFile = new GaussianMixtureCollectionFile(file.getAbsolutePath(), true);
+                            //generate the diagonal for ellipsoid rendering
+                            generateEllipsoidDiagonal(gmcFile.gaussianMixtureCollection);
+                            addGaussianMixtureCollection(gmcFile.gaussianMixtureCollection);
+                        }
+                        e.consume();
+                    } catch (IOException ex) {
+                        LOG.error(ex.getMessage());
+                    }
+                }
+            }
+        });
         bp = new BorderPane(subScene);
         //RadialOverlayPane will hold all those nifty callouts and radial entities
         radialOverlayPane = new RadialEntityOverlayPane(this.scene, featureVectors);
@@ -874,7 +907,7 @@ public class Projections3DPane extends StackPane implements
             sphereToFeatureVectorMap.clear();
             ellipsoidGroup.getChildren().clear();
             clearAll();
-            refresh();
+            refresh(true);
         });
 
         ImageView selectPoints = ResourceUtils.loadIcon("boundingbox", ICON_FIT_HEIGHT);
@@ -942,10 +975,10 @@ public class Projections3DPane extends StackPane implements
             }
         });
         this.scene.addEventHandler(HyperspaceEvent.CLEARED_FACTOR_LABELS, e -> {
-            refresh();
+            refresh(true);
         });
         this.scene.addEventHandler(HyperspaceEvent.CLEARED_FEATURE_LAYERS, e -> {
-            refresh();
+            refresh(true);
         });
 
         this.scene.addEventHandler(HyperspaceEvent.ADDED_FACTOR_LABEL, e ->
@@ -2678,13 +2711,39 @@ public class Projections3DPane extends StackPane implements
     }
 
     @Override
+    public void setColorByID(String iGotID, Color color) {
+        featureVectors.stream()
+            .filter(fv -> fv.getEntityId().contentEquals(iGotID))
+            .forEach(f -> {
+                setColorByIndex(featureVectors.indexOf(f), color);
+            });
+    }
+
+    @Override
+    public void setColorByIndex(int i, Color color) {
+        //I'm thinking this is the ugliest thing I've ever written
+        ((PhongMaterial) sphereToFeatureVectorMap.keySet()
+            .toArray(Sphere[]::new)[i]
+            .getMaterial()).setDiffuseColor(color);
+
+        int index = 0;
+        for (Perspective3DNode pNode : pNodes) {
+            if (i == index) {
+                pNode.nodeColor = color;
+                return;
+            }
+            index++;
+        }
+    }
+
+    @Override
     public void setVisibleByIndex(int i, boolean b) {
         VisibilityMap.pNodeVisibilityMap.put(pNodes.toArray(Perspective3DNode[]::new)[i], b);
         VisibilityMap.visibilityList.set(i, b);
     }
 
     @Override
-    public void refresh() {
+    public void refresh(boolean forceNodeUpdate) {
         updatePNodeColorsAndVisibility();
         updateView(true);
         updateEllipsoids();
@@ -2879,7 +2938,7 @@ public class Projections3DPane extends StackPane implements
 
     public void enableAutoProjection(boolean enabled) {
         autoProjectionProperty.set(enabled);
-        projectionOpticon.enableOrbiting(enabled);
+//        projectionOpticon.enableOrbiting(enabled);
     }
 
     public void projectFeatureCollection(FeatureCollection originalFC, Umap umap) {
@@ -3053,19 +3112,6 @@ public class Projections3DPane extends StackPane implements
 
     @Override
     public void setUmapConfig(UmapConfig config) {
-//        latestUmap.setTargetWeight(config.getTargetWeight());
-//        latestUmap.setRepulsionStrength(config.getRepulsionStrength());
-//        latestUmap.setMinDist(config.getMinDist());
-//        latestUmap.setSpread(config.getSpread());
-//        latestUmap.setSetOpMixRatio(config.getOpMixRatio());
-//        latestUmap.setNumberComponents(config.getNumberComponents());
-//        latestUmap.setNumberEpochs(config.getNumberEpochs());
-//        latestUmap.setNumberNearestNeighbours(config.getNumberNearestNeighbours());
-//        latestUmap.setNegativeSampleRate(config.getNegativeSampleRate());
-//        latestUmap.setLocalConnectivity(config.getLocalConnectivity());
-//        latestUmap.setThreshold(config.getThreshold());
-//        latestUmap.setMetric(config.getMetric());
-//        latestUmap.setVerbose(config.getVerbose());
         latestUmap = AnalysisUtils.umapConfigToUmap(config);
     }
 }

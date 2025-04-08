@@ -2,7 +2,7 @@
 
 package edu.jhuapl.trinity.data;
 
-import edu.jhuapl.trinity.data.messages.FeatureVector;
+import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 
 import java.util.Comparator;
 

@@ -2,6 +2,8 @@
 
 package edu.jhuapl.trinity.javafx.components.panes;
 
+import edu.jhuapl.trinity.data.messages.CommandRequest;
+import edu.jhuapl.trinity.messages.CommandTask;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
@@ -13,13 +15,16 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextField;
 import javafx.scene.effect.Glow;
 import javafx.scene.image.ImageView;
+import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.CornerRadii;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
@@ -29,21 +34,31 @@ import javafx.scene.text.TextAlignment;
 import javafx.util.Duration;
 import lit.litfx.controls.output.LitLog;
 import lit.litfx.controls.output.LogToolbar;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.ArrayList;
 
 /**
  * @author Sean Phillips
  */
 public class TextPane extends LitPathPane {
+    public static int PANE_WIDTH = 700;
+    public static double NODE_WIDTH = PANE_WIDTH - 50;
+    public static double NODE_HEIGHT = NODE_WIDTH / 2.0;
+    public static Font USER_FONT = new Font("consolas", 14);
+    private static final Logger LOG = LoggerFactory.getLogger(TextPane.class);
+
     Background transBackground = new Background(new BackgroundFill(
         Color.DARKCYAN.deriveColor(1, 1, 1, 0.1),
         CornerRadii.EMPTY, Insets.EMPTY));
     BorderPane bp;
     LitLog litLog;
     LogToolbar logToolbar;
-    public static int PANE_WIDTH = 700;
-    public static double NODE_WIDTH = PANE_WIDTH - 50;
-    public static double NODE_HEIGHT = NODE_WIDTH / 2.0;
+    TextField commandTextField;
     String currentText = "";
+    int commandIndex = 0;
+    ArrayList<String> commandList;
 
     private static BorderPane createContent() {
         BorderPane bpOilSpill = new BorderPane();
@@ -65,6 +80,10 @@ public class TextPane extends LitPathPane {
         litLog.setMinHeight(NODE_HEIGHT);
         litLog.setMaxWidth(NODE_WIDTH);
         litLog.setMaxHeight(NODE_HEIGHT);
+
+        HBox hbox = new HBox(5);
+        hbox.setAlignment(Pos.CENTER_LEFT);
+        bpOilSpill.setBottom(hbox);
         bpOilSpill.setTop(logToolbar);
         bpOilSpill.setCenter(litLog);
 
@@ -80,11 +99,53 @@ public class TextPane extends LitPathPane {
 
     public TextPane(Scene scene, Pane parent) {
         super(scene, parent, PANE_WIDTH, 350, createContent(),
-            "Text Console", "", 300.0, 400.0);
+            "Terminal", "", 300.0, 400.0);
         this.scene = scene;
+        commandList = new ArrayList<>();
         bp = (BorderPane) this.contentPane;
         litLog = (LitLog) bp.getCenter();
         logToolbar = (LogToolbar) bp.getTop();
+        commandTextField = new TextField("");
+        commandTextField.prefWidthProperty().bind(litLog.widthProperty());
+        commandTextField.setOnKeyPressed(e -> {
+            if (e.getCode() == KeyCode.UP || e.getCode() == KeyCode.DOWN) {
+                if (e.getCode() == KeyCode.UP) {
+                    commandIndex++;
+                    if (commandIndex >= commandList.size()) {
+                        commandIndex = commandList.size() - 1;
+                    }
+                } else {
+                    commandIndex--;
+                    if (commandIndex < 0) {
+                        commandIndex = 0;
+                    }
+                }
+                //update the visible command
+                commandTextField.setText(commandList.get(commandIndex));
+            }
+        });
+        commandTextField.setOnAction(e -> {
+            String fullCommand = commandTextField.getText();
+            commandList.add(0, fullCommand);
+            CommandRequest request = new CommandRequest();
+            String[] tokens = fullCommand.split(" ");
+            request.setRequest(tokens[0]);
+            if (tokens.length > 1) {
+                request.getProperties().put(CommandRequest.PAYLOAD, fullCommand.replaceFirst(tokens[0], ""));
+            }
+            CommandTask commandTask = new CommandTask(request, scene);
+            Thread t = new Thread(commandTask, "Trinity Command Task " + fullCommand);
+            t.setDaemon(true);
+            t.start();
+            addLine(commandTextField.getText(),
+                new Font((String) logToolbar.fontChoiceBox.getValue(),
+                    (int) logToolbar.fontSizeSpinner.getValue()),
+                logToolbar.picker.getValue());
+            commandTextField.clear();
+        });
+        HBox bottomHBox = (HBox) bp.getBottom();
+        bottomHBox.getChildren().add(commandTextField);
+
         litLog.setBackground(transBackground);
         logToolbar.fontChoiceBox.valueProperty().addListener(c -> refresh());
         logToolbar.picker.valueProperty().addListener(c -> refresh());
@@ -96,6 +157,8 @@ public class TextPane extends LitPathPane {
         refreshVBox.setOnMouseExited(e -> refresh.setEffect(null));
         refreshVBox.setOnMouseClicked(eh -> refresh());
         logToolbar.getChildren().add(refreshVBox);
+
+        getStyleClass().add("text-pane");
     }
 
     private void refresh() {

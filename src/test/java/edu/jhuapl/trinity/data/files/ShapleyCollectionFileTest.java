@@ -1,6 +1,6 @@
 package edu.jhuapl.trinity.data.files;
 
-import edu.jhuapl.trinity.data.messages.ShapleyCollection;
+import edu.jhuapl.trinity.data.messages.xai.ShapleyCollection;
 import org.junit.jupiter.api.AfterAll;
 import org.junit.jupiter.api.AfterEach;
 import org.junit.jupiter.api.BeforeAll;

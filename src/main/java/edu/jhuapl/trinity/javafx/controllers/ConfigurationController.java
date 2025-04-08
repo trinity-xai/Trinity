@@ -8,7 +8,7 @@ import edu.jhuapl.trinity.data.Dimension;
 import edu.jhuapl.trinity.data.FactorLabel;
 import edu.jhuapl.trinity.data.FeatureLayer;
 import edu.jhuapl.trinity.data.files.LabelConfigFile;
-import edu.jhuapl.trinity.data.messages.LabelConfig;
+import edu.jhuapl.trinity.data.messages.xai.LabelConfig;
 import edu.jhuapl.trinity.javafx.components.ColorMap;
 import edu.jhuapl.trinity.javafx.components.listviews.DimensionLabelItem;
 import edu.jhuapl.trinity.javafx.components.listviews.FactorLabelListItem;
@@ -70,6 +70,8 @@ public class ConfigurationController implements Initializable {
 
     @FXML
     private CheckBox enableEmittersCheckBox;
+    @FXML
+    private CheckBox enableOrbitingCheckBox;
     @FXML
     private CheckBox enableEmptyVisionCheckBox;
     @FXML
@@ -1025,7 +1027,10 @@ public class ConfigurationController implements Initializable {
                 RadialEntityEvent.RADIAL_ENTITY_STROKE_WIDTH,
                 t.doubleValue(), t1.doubleValue()));
         });
-
+        enableOrbitingCheckBox.selectedProperty().addListener(cl -> {
+            scene.getRoot().fireEvent(new EffectEvent(
+                EffectEvent.OPTICON_ENABLE_ORBITING, enableOrbitingCheckBox.isSelected()));
+        });
         enableEmittersCheckBox.selectedProperty().addListener(cl -> {
             scene.getRoot().fireEvent(new EffectEvent(
                 EffectEvent.ENABLE_EMITTERS, enableEmittersCheckBox.isSelected()));

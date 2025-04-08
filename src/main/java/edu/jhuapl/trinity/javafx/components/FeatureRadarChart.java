@@ -2,7 +2,7 @@
 
 package edu.jhuapl.trinity.javafx.components;
 
-import edu.jhuapl.trinity.data.messages.FeatureVector;
+import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import eu.hansolo.fx.charts.Category;
 import eu.hansolo.fx.charts.ChartType;

@@ -5,8 +5,10 @@ package edu.jhuapl.trinity.utils;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import edu.jhuapl.trinity.data.messages.ChannelFrame;
-import edu.jhuapl.trinity.data.messages.FeatureCollection;
+import edu.jhuapl.trinity.data.messages.bci.ChannelFrame;
+import edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageData;
+import edu.jhuapl.trinity.data.messages.xai.FeatureCollection;
+import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import javafx.application.Platform;
 import javafx.scene.Scene;
@@ -17,6 +19,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 import java.util.concurrent.atomic.AtomicLong;
+import java.util.function.Function;
 import java.util.stream.Collectors;
 
 /**
@@ -26,6 +29,15 @@ public enum MessageUtils {
     INSTANCE;
     private static final Logger LOG = LoggerFactory.getLogger(MessageUtils.class);
     static AtomicLong atomicLong = new AtomicLong();
+
+    public static Function<EmbeddingsImageData, FeatureVector> embeddingsToFeatureVector = d -> {
+        FeatureVector fv = new FeatureVector();
+        fv.getData().addAll(d.getEmbedding());
+        fv.setMessageId(d.getIndex());
+        fv.getMetaData().put("object", d.getObject());
+        fv.getMetaData().put("type", d.getType());
+        return fv;
+    };
 
     public static void injectFeatureCollection(Scene scene, String message) {
         /** Provides deserialization support for JSON messages */

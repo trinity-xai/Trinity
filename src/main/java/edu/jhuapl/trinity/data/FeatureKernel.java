@@ -4,7 +4,7 @@ package edu.jhuapl.trinity.data;
 
 //import com.aparapi.Kernel;
 
-import edu.jhuapl.trinity.data.messages.FeatureVector;
+import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 
 import java.util.Arrays;
 import java.util.List;

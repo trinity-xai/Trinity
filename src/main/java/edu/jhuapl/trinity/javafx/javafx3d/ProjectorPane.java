@@ -4,8 +4,8 @@ package edu.jhuapl.trinity.javafx.javafx3d;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import edu.jhuapl.trinity.data.messages.AnalysisConfig;
-import edu.jhuapl.trinity.data.messages.UmapConfig;
+import edu.jhuapl.trinity.data.messages.xai.AnalysisConfig;
+import edu.jhuapl.trinity.data.messages.xai.UmapConfig;
 import edu.jhuapl.trinity.javafx.components.ProjectorNode;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
@@ -69,7 +69,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
-import java.util.logging.Level;
 
 /**
  * @author Sean Phillips
@@ -285,7 +284,7 @@ public class ProjectorPane extends StackPane {
                             ProjectorNode pn = new ProjectorNode(image, ucForMe, acDC);
                             projectorNodes.add(pn);
                         } catch (MalformedURLException ex) {
-                            java.util.logging.Logger.getLogger(ProjectorPane.class.getName()).log(Level.SEVERE, null, ex);
+                            LOG.error(ex.getMessage());
                         }
                     }
                 }
@@ -409,7 +408,7 @@ public class ProjectorPane extends StackPane {
                             return mapper.readValue(messageBody, AnalysisConfig.class);
                         }
                     } catch (IOException ex) {
-                        java.util.logging.Logger.getLogger(ProjectorPane.class.getName()).log(Level.SEVERE, null, ex);
+                        LOG.error(ex.getMessage());
                     }
                 }
             }
@@ -431,7 +430,7 @@ public class ProjectorPane extends StackPane {
                         return mapper.readValue(messageBody, UmapConfig.class);
                     }
                 } catch (IOException ex) {
-                    java.util.logging.Logger.getLogger(ProjectorPane.class.getName()).log(Level.SEVERE, null, ex);
+                    LOG.error(ex.getMessage());
                 }
             }
         }
@@ -468,7 +467,6 @@ public class ProjectorPane extends StackPane {
 
                 //play in order
                 SequentialTransition seq = new SequentialTransition(
-//                    fadeOutTransition, ivFadeTransition, flipTransition);
                     fadeOutTransition, ivFadeTransition);
                 seq.setOnFinished(f -> flipTransition.playFromStart());
                 seq.playFromStart();

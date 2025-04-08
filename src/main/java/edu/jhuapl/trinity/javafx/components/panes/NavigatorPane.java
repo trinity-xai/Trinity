@@ -1,9 +1,7 @@
-/* Copyright (C) 2021 - 2024 Sean Phillips */
-
 package edu.jhuapl.trinity.javafx.components.panes;
 
-import edu.jhuapl.trinity.data.messages.FeatureVector;
-import edu.jhuapl.trinity.data.messages.VectorMaskCollection;
+import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
+import edu.jhuapl.trinity.data.messages.xai.VectorMaskCollection;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
@@ -15,6 +13,9 @@ import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.Label;
+import javafx.scene.control.Tab;
+import javafx.scene.control.TabPane;
+import javafx.scene.control.TextArea;
 import javafx.scene.control.TitledPane;
 import javafx.scene.control.Tooltip;
 import javafx.scene.effect.InnerShadow;
@@ -22,6 +23,7 @@ import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.VBox;
 import javafx.scene.media.MediaView;
@@ -35,7 +37,7 @@ import java.io.File;
 import java.io.IOException;
 import java.util.Map;
 
-import static edu.jhuapl.trinity.data.messages.FeatureVector.bboxToString;
+import static edu.jhuapl.trinity.data.messages.xai.FeatureVector.bboxToString;
 
 /**
  * @author Sean Phillips
@@ -58,6 +60,7 @@ public class NavigatorPane extends LitPathPane {
     TitledPane metaTP;
     GridPane detailsGridPane;
     ImageView imageView;
+    TextArea textArea;
     VBox contentVBox;
 
     private static BorderPane createContent() {
@@ -79,6 +82,10 @@ public class NavigatorPane extends LitPathPane {
         imageView.setFitHeight(DEFAULT_FIT_WIDTH);
         imageView.setPreserveRatio(true);
 
+        textArea = new TextArea();
+        textArea.setPrefWidth(DEFAULT_FIT_WIDTH);
+        textArea.setPrefHeight(DEFAULT_FIT_WIDTH);
+
         urlLabel = new Label("Waiting for Image");
         urlLabel.setMaxWidth(DEFAULT_FIT_WIDTH);
         urlLabel.setTooltip(new Tooltip("Waiting for Image"));
@@ -91,6 +98,14 @@ public class NavigatorPane extends LitPathPane {
             hypersurfaceButton.getScene().getRoot().fireEvent(
                 new ImageEvent(ImageEvent.NEW_TEXTURE_SURFACE, currentImage));
         });
+        Button imageInspectionButton = new Button("Image Inspection");
+        imageInspectionButton.setOnAction(e -> {
+            imageInspectionButton.getScene().getRoot().fireEvent(
+                new ApplicationEvent(ApplicationEvent.SHOW_IMAGE_INSPECTION, true));
+            imageInspectionButton.getScene().getRoot().fireEvent(
+                new ImageEvent(ImageEvent.NEW_IMAGE_INSPECTION, currentImage));
+        });
+
         detailsGridPane = new GridPane();
         detailsGridPane.setPadding(new Insets(1));
         detailsGridPane.setHgap(5);
@@ -101,8 +116,19 @@ public class NavigatorPane extends LitPathPane {
         metaTP.setText("Metadata");
         metaTP.setExpanded(false);
         metaTP.setPrefWidth(DEFAULT_TITLEDPANE_WIDTH);
-        contentVBox = new VBox(5, imageView, urlLabel, imageLabel,
-            hypersurfaceButton, detailsTP, metaTP);
+        Tab imageTab = new Tab("Image");
+        imageTab.setClosable(false);
+        imageTab.setContent(imageView);
+        Tab textTab = new Tab("Text");
+        textTab.setClosable(false);
+        textTab.setContent(textArea);
+        TabPane tabPane = new TabPane(imageTab, textTab);
+
+        contentVBox = new VBox(5,
+//            imageView, urlLabel, imageLabel,
+            tabPane, urlLabel, imageLabel,
+            new HBox(10, hypersurfaceButton, imageInspectionButton),
+            detailsTP, metaTP);
 
         ImageView refresh = ResourceUtils.loadIcon("refresh", 32);
 
@@ -148,6 +174,7 @@ public class NavigatorPane extends LitPathPane {
                     File file = new File(imageryBasePath + fv.getImageURL());
                     currentImage = new Image(file.toURI().toURL().toExternalForm());
                     imageView.setImage(currentImage);
+                    textArea.setText(fv.getText());
                     urlLabel.setText(fv.getImageURL());
                     urlLabel.setTooltip(new Tooltip(file.toURI().toURL().toExternalForm()));
                     createDetails(fv);
@@ -192,6 +219,8 @@ public class NavigatorPane extends LitPathPane {
             sb.append(entry.getKey()).append(" : ").append(entry.getValue()).append("\n");
         }
         Text metaText = new Text(sb.toString());
+        metaText.setWrappingWidth(50); //something smallish just to initialize
+        metaText.wrappingWidthProperty().bind(metaTP.widthProperty().subtract(10));
         metaText.setFont(new Font("Consolas", 18));
         metaText.setStroke(Color.ALICEBLUE);
         metaTP.setContent(metaText);

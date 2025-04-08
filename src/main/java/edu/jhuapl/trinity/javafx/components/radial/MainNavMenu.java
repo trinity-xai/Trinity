@@ -47,7 +47,7 @@ public class MainNavMenu extends LitRadialMenu {
     //defaults
     public static double ITEM_SIZE = 60.0;
     public static double INNER_RADIUS = 60.0;
-    public static double ITEM_FIT_WIDTH = 85.0;
+    public static double ITEM_FIT_WIDTH = 84.0;
     public static double MENU_RADIUS = 215.0;
     public static double OFFSET = 9.0;
     public static double INITIAL_ANGLE = -120.0;
@@ -286,6 +286,7 @@ public class MainNavMenu extends LitRadialMenu {
         analysis.setEffect(glow);
         ImageView projector = ResourceUtils.loadIcon("projector", ITEM_FIT_WIDTH);
         ImageView datasources = ResourceUtils.loadIcon("datasources", ITEM_FIT_WIDTH);
+        ImageView hyperdrive = ResourceUtils.loadIcon("hyperdrive", ITEM_FIT_WIDTH);
 
         LitRadialContainerMenuItem dataSubMenuItem = new LitRadialContainerMenuItem(ITEM_SIZE, "Data", data);
         dataSubMenuItem.addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Data Sources", datasources, e -> {
@@ -296,6 +297,9 @@ public class MainNavMenu extends LitRadialMenu {
             if (!pathPane.getChildren().contains(dataPane))
                 pathPane.getChildren().add(dataPane);
             slideInPane(dataPane);
+        }));
+        dataSubMenuItem.addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Hyperdrive", hyperdrive, e -> {
+            scene.getRoot().fireEvent(new ApplicationEvent(ApplicationEvent.SHOW_HYPERDRIVE_PANE));
         }));
         dataSubMenuItem.addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Analysis Log", analysis, e -> {
             scene.getRoot().fireEvent(new ApplicationEvent(ApplicationEvent.SHOW_ANALYSISLOG_PANE));

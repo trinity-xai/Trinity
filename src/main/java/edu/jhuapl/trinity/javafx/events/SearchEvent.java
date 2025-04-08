@@ -17,6 +17,8 @@ public class SearchEvent extends Event {
     public static final EventType<SearchEvent> FILTER_BY_SCORE = new EventType(ANY, "FILTER_BY_SCORE");
     public static final EventType<SearchEvent> FILTER_BY_TERM = new EventType(ANY, "FILTER_BY_TERM");
     public static final EventType<SearchEvent> CLEAR_ALL_FILTERS = new EventType(ANY, "CLEAR_ALL_FILTERS");
+    public static final EventType<SearchEvent> FIND_BY_QUERY = new EventType(ANY, "FIND_BY_QUERY");
+    public static final EventType<SearchEvent> QUERY_EMBEDDINGS_RESPONSE = new EventType(ANY, "QUERY_EMBEDDINGS_RESPONSE");
 
     public SearchEvent(EventType<? extends Event> arg0) {
         super(arg0);

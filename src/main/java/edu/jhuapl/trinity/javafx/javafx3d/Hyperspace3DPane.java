@@ -9,13 +9,13 @@ import edu.jhuapl.trinity.data.FeatureLayer;
 import edu.jhuapl.trinity.data.HyperspaceSeed;
 import edu.jhuapl.trinity.data.Manifold;
 import edu.jhuapl.trinity.data.Trajectory;
-import edu.jhuapl.trinity.data.messages.FeatureCollection;
-import edu.jhuapl.trinity.data.messages.FeatureVector;
-import edu.jhuapl.trinity.data.messages.GaussianMixture;
-import edu.jhuapl.trinity.data.messages.GaussianMixtureCollection;
-import edu.jhuapl.trinity.data.messages.GaussianMixtureData;
-import edu.jhuapl.trinity.data.messages.PointCluster;
-import edu.jhuapl.trinity.data.messages.UmapConfig;
+import edu.jhuapl.trinity.data.messages.xai.FeatureCollection;
+import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
+import edu.jhuapl.trinity.data.messages.xai.GaussianMixture;
+import edu.jhuapl.trinity.data.messages.xai.GaussianMixtureCollection;
+import edu.jhuapl.trinity.data.messages.xai.GaussianMixtureData;
+import edu.jhuapl.trinity.data.messages.xai.PointCluster;
+import edu.jhuapl.trinity.data.messages.xai.UmapConfig;
 import edu.jhuapl.trinity.javafx.components.callouts.Callout;
 import edu.jhuapl.trinity.javafx.components.panes.RadialEntityOverlayPane;
 import edu.jhuapl.trinity.javafx.components.radial.HyperspaceMenu;
@@ -24,15 +24,18 @@ import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.ColorMapEvent;
 import edu.jhuapl.trinity.javafx.events.ColorMapEvent.COLOR_MAP;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
+import edu.jhuapl.trinity.javafx.events.EffectEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.events.HyperspaceEvent;
 import edu.jhuapl.trinity.javafx.events.HyperspaceEvent.COLOR_MODE;
+import edu.jhuapl.trinity.javafx.events.ImageEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent.ProjectionConfig;
 import edu.jhuapl.trinity.javafx.events.ShadowEvent;
 import edu.jhuapl.trinity.javafx.events.TimelineEvent;
 import edu.jhuapl.trinity.javafx.events.TrajectoryEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.ShadowCubeWorld.PROJECTION_TYPE;
+import edu.jhuapl.trinity.javafx.javafx3d.animated.Opticon;
 import edu.jhuapl.trinity.javafx.javafx3d.tasks.AffinityClusterTask;
 import edu.jhuapl.trinity.javafx.javafx3d.tasks.DBSCANClusterTask;
 import edu.jhuapl.trinity.javafx.javafx3d.tasks.ExMaxClusterTask;
@@ -45,9 +48,12 @@ import edu.jhuapl.trinity.javafx.renderers.ManifoldRenderer;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import edu.jhuapl.trinity.utils.VisibilityMap;
+import edu.jhuapl.trinity.utils.WebCamUtils;
 import javafx.animation.AnimationTimer;
+import javafx.animation.KeyFrame;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.concurrent.Task;
 import javafx.scene.AmbientLight;
 import javafx.scene.Group;
@@ -80,6 +86,7 @@ import javafx.scene.text.Font;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Translate;
 import javafx.stage.StageStyle;
+import javafx.util.Duration;
 import org.fxyz3d.geometry.Point3D;
 import org.fxyz3d.scene.Skybox;
 import org.fxyz3d.utils.CameraTransformer;
@@ -188,6 +195,8 @@ public class Hyperspace3DPane extends StackPane implements
     public double maxAbsValue = 1.0;
     public double meanCenteredMaxAbsValue = 1.0;
 
+    Opticon projectionOpticon; //something fun
+
     public ConcurrentLinkedQueue<HyperspaceSeed> hyperspaceSeeds = new ConcurrentLinkedQueue<>();
     public ConcurrentLinkedQueue<Perspective3DNode> pNodes = new ConcurrentLinkedQueue<>();
     int TOTAL_COLORS = 1530; //colors used by map function
@@ -203,7 +212,7 @@ public class Hyperspace3DPane extends StackPane implements
     private Group labelGroup = new Group();
     private Group manifoldGroup = new Group();
     private ArrayList<Manifold3D> manifolds = new ArrayList<>();
-
+    public SimpleBooleanProperty autoProjectionProperty = new SimpleBooleanProperty(false);
     BorderPane bp;
     //For each label you'll need some Shape3D to derive a point3d from.
     //For this we will use simple spheres.  These can be optionally invisible.
@@ -328,6 +337,11 @@ public class Hyperspace3DPane extends StackPane implements
         //Add 3D subscene stuff to 3D scene root object
         sceneRoot.getChildren().addAll(cameraTransform, highlightedPoint, nodeGroup,
             manifoldGroup, debugGroup, cubeWorld, dataXForm, extrasGroup, anchorTSM);
+
+        projectionOpticon = new Opticon(Color.CYAN, 100);
+        extrasGroup.getChildren().add(projectionOpticon);
+        projectionOpticon.visibleProperty().bind(autoProjectionProperty);
+        projectionOpticon.setScanning(false);
 
         highlightedPoint.setMaterial(new PhongMaterial(Color.ALICEBLUE));
         highlightedPoint.setDrawMode(DrawMode.LINE);
@@ -505,7 +519,7 @@ public class Hyperspace3DPane extends StackPane implements
             }
 
             //point size and scaling
-            if (keycode == KeyCode.T) {
+            if (!event.isControlDown() && keycode == KeyCode.T) {
                 scatterBuffScaling -= 0.1;
                 Platform.runLater(() -> scene.getRoot().fireEvent(
                     new HyperspaceEvent(HyperspaceEvent.SCATTERBUFF_SCALING_KEYPRESS, scatterBuffScaling)));
@@ -514,7 +528,7 @@ public class Hyperspace3DPane extends StackPane implements
                 updateView(false);
                 updateEllipsoids();
             }
-            if (keycode == KeyCode.Y) {
+            if (!event.isControlDown() && keycode == KeyCode.Y) {
                 scatterBuffScaling += 0.1;
                 Platform.runLater(() -> scene.getRoot().fireEvent(
                     new HyperspaceEvent(HyperspaceEvent.SCATTERBUFF_SCALING_KEYPRESS, scatterBuffScaling)));
@@ -556,7 +570,7 @@ public class Hyperspace3DPane extends StackPane implements
                 updateView(false);
             }
 
-            if (event.isAltDown() && keycode == KeyCode.H) {
+            if (!event.isControlDown() && event.isAltDown() && keycode == KeyCode.H) {
                 makeHull(false, null, null);
             }
             if (keycode == KeyCode.F) {
@@ -654,8 +668,14 @@ public class Hyperspace3DPane extends StackPane implements
         HyperspaceSeed seed = new HyperspaceSeed(0, 1, 2, 3, 4, 5, features);
         hyperspaceSeeds.add(seed);
         addPNodeFromSeed(seed);
+//        FeatureVector dummy = FeatureVector.EMPTY_FEATURE_VECTOR("", 6);
+//        featureVectors.add(dummy);
         //load empty mesh (except single 0'ed point.
         loadDirectedMesh();
+
+        this.scene.addEventHandler(EffectEvent.OPTICON_LASER_SWEEP, e -> {
+            opticonScan(projectionOpticon);
+        });
 
         this.scene.addEventHandler(HyperspaceEvent.ADDED_FEATURE_LAYER, e ->
             changeFeatureLayer((FeatureLayer) e.object));
@@ -694,10 +714,10 @@ public class Hyperspace3DPane extends StackPane implements
             cubeWorld.clearAll();
         });
         this.scene.addEventHandler(HyperspaceEvent.CLEARED_FACTOR_LABELS, e -> {
-            refresh();
+            refresh(true);
         });
         this.scene.addEventHandler(HyperspaceEvent.CLEARED_FEATURE_LAYERS, e -> {
-            refresh();
+            refresh(true);
         });
         this.scene.addEventHandler(HyperspaceEvent.HYPERSPACE_BACKGROUND_COLOR, e -> {
             Color color = (Color) e.object;
@@ -885,7 +905,6 @@ public class Hyperspace3DPane extends StackPane implements
                     sceneRoot.getChildren().remove(scatterMesh3D);
                     dataXForm.getChildren().add(scatterMesh3D);
                 });
-
             }
         });
 
@@ -897,7 +916,9 @@ public class Hyperspace3DPane extends StackPane implements
                 anchorIndex = scatterModel.data.size();
             setSpheroidAnchor(true, anchorIndex);
         });
-
+        scene.addEventHandler(EffectEvent.OPTICON_ENABLE_ORBITING, e -> {
+            projectionOpticon.enableOrbiting((boolean) e.object);
+        });
         AnimationTimer animationTimer = new AnimationTimer() {
             long sleepNs = 0;
             long prevTime = 0;
@@ -925,11 +946,55 @@ public class Hyperspace3DPane extends StackPane implements
             updateLabels();
             updateView(true);
             //create callout automatically puts the callout and node into a managed map
-            FeatureVector dummy = FeatureVector.EMPTY_FEATURE_VECTOR("", 3);
-            anchorCallout = radialOverlayPane.createCallout(anchorTSM, dummy, subScene);
+            FeatureVector anchorFV = FeatureVector.EMPTY_FEATURE_VECTOR("", 6);
+            anchorCallout = radialOverlayPane.createCallout(anchorTSM, anchorFV, subScene);
             anchorCallout.play();
             anchorCallout.setVisible(false);
         });
+    }
+
+    public void enableAutoProjection(boolean enabled) {
+        autoProjectionProperty.set(enabled);
+    }
+
+    private void opticonScan(Opticon opticon) {
+        Image image = null;
+        try {
+            image = WebCamUtils.takePicture();
+            System.out.println("Would you take my picture cuz I won't remember...");
+            LOG.info("got your little soul...");
+        } catch (Exception ex) {
+            LOG.info("Unable to capture image.");
+        }
+        final Image finalImage = image;
+        final int top = (int) snappedTopInset();
+        final int right = (int) snappedRightInset();
+        final int bottom = (int) snappedBottomInset();
+        final int left = (int) snappedLeftInset();
+        final double w = getWidth() - left - right;
+        final double h = getHeight() - top - bottom;
+        javafx.geometry.Point3D opticonP3D = new javafx.geometry.Point3D(
+            projectionOpticon.getTranslateX(), projectionOpticon.getTranslateY(),
+            projectionOpticon.getTranslateZ());
+        javafx.geometry.Point3D cameraP3D = cameraTransform.localToScene(
+            camera.getTranslateX(), camera.getTranslateY(),
+            camera.getTranslateZ() + 750, false);
+        javafx.geometry.Point3D camLookP3D = cameraTransform.localToScene(
+            camera.getTranslateX(), camera.getTranslateY(),
+            camera.getTranslateZ(), false);
+
+        JavaFX3DUtils.lookAt(projectionOpticon, camLookP3D, opticonP3D, false, true);
+
+        opticon.scanMode(this, cameraP3D.getX(), cameraP3D.getY(), cameraP3D.getZ(), w, h);
+        //Doofus hack but after 8 seconds the lasersweep is done
+        Timeline scanTimeline = new Timeline(
+            //Synch with Opticon laser sweep that starts at 3.5 seconds into timeline
+            new KeyFrame(Duration.seconds(8), kv ->
+                camera.getScene().getRoot().fireEvent(
+                    new ImageEvent(ImageEvent.NEW_SCAN_IMAGE, finalImage)))
+        );
+        scanTimeline.setCycleCount(1);
+        scanTimeline.playFromStart();
     }
 
     public void updateOnLabelChange(List<FactorLabel> labels) {
@@ -1543,22 +1608,25 @@ public class Hyperspace3DPane extends StackPane implements
             //System.out.println("Requested anchor index of " + index + " less than zero.");
             return;
         }
-        Point3D p3d = scatterModel.data.get(index);
+        //SUPER IMPORTANT HACK... always add 1 to the index to account for dummy pNode
+        Point3D p3d = scatterModel.data.get(index + 1); //plus one to account for dummy seed
         anchorTSM.setTranslateX(p3d.x);
         anchorTSM.setTranslateY(p3d.y);
         anchorTSM.setTranslateZ(p3d.z);
 
-        //make sure we have the latest states using the latest feature indices
-        anchorTrajectory.states.clear();
-        List<Point3D> p3ds = scatterModel.data;
-        if (index < scatterModel.data.size())
-            p3ds = scatterModel.data.subList(0, index + 1);
-        if (!p3ds.isEmpty()) {
-            for (Point3D p : p3ds) {
-                anchorTrajectory.states.add(new double[]{p.x, p.y, p.z});
+        if (animate) {
+            //make sure we have the latest states using the latest feature indices
+            anchorTrajectory.states.clear();
+            List<Point3D> p3ds = scatterModel.data;
+            if (index < scatterModel.data.size())
+                p3ds = scatterModel.data.subList(0, index + 1);
+            if (!p3ds.isEmpty()) {
+                for (Point3D p : p3ds) {
+                    anchorTrajectory.states.add(new double[]{p.x, p.y, p.z});
+                }
+                //recreate and add to the scene the 3D trajectory
+                updateTrajectory3D(false);
             }
-            //recreate and add to the scene the 3D trajectory
-            updateTrajectory3D(false);
         }
         if (index < featureVectors.size()) {
             scene.getRoot().fireEvent(new FeatureVectorEvent(
@@ -1916,7 +1984,9 @@ public class Hyperspace3DPane extends StackPane implements
 
     @Override
     public void clearGaussianMixtures() {
-        throw new UnsupportedOperationException("Not supported yet.");
+        ellipsoidGroup.getChildren().clear();
+        ellipsoidToGMMessageMap.clear();
+        ellipsoidToGMDataMap.clear();
     }
 
     @Override
@@ -1941,9 +2011,7 @@ public class Hyperspace3DPane extends StackPane implements
             if (optBT.get().equals(ButtonType.CANCEL))
                 return;
             else if (optBT.get().equals(ButtonType.YES)) {
-                ellipsoidGroup.getChildren().clear();
-                ellipsoidToGMMessageMap.clear();
-                ellipsoidToGMDataMap.clear();
+                clearGaussianMixtures();
             }
         }
         gaussianMixtureCollection.getMixtures().parallelStream().forEach(gm -> {
@@ -1953,32 +2021,23 @@ public class Hyperspace3DPane extends StackPane implements
 
     @Override
     public void locateFeatureVector(FeatureVector featureVector) {
-        //pixel ranges we wish to fit our scaling to
-        double halfSceneWidth = sceneWidth / 2.0;
-        double halfSceneHeight = sceneHeight / 2.0;
-        //offset used to center placement of points in scene after scaling
-        double quarterSceneWidth = sceneWidth / 4.0;
-        //modifiers used to manually adjust scaling by user
-        double buff = pointScale * scatterBuffScaling;
-        //formula bounds
-        double minX = -buff;
-        double rangeX = 2 * buff;
-        double minY = -buff;
-        double rangeY = 2 * buff;
-        double minZ = -buff;
-        double rangeZ = 2 * buff;
-        //Determine origin location of 3D object in 3D scene coordinates
-        //linear coordinate transformation of each mean to match our 3D scene
-        //X ==> X Positive
-        double xCoord = (((pointScale * featureVector.getData().get(xFactorIndex) - minX) * halfSceneWidth) / rangeX);
-        //Y ==> Z Positive
-        double yCoord = (((pointScale * featureVector.getData().get(yFactorIndex) - minY) * halfSceneHeight) / rangeY);
-        //Z ==> Y Positive
-        double zCoord = (((pointScale * featureVector.getData().get(zFactorIndex) - minZ) * halfSceneWidth) / rangeZ);
-        //subtracting centering offset because numbers are in 3D scene coordinates now
-        JavaFX3DUtils.transitionCameraTo(1000, camera, cameraTransform,
-            xCoord - quarterSceneWidth, yCoord - quarterSceneWidth,
-            zCoord - quarterSceneWidth - 750, 0, 0, 0); //subtract 750 from Z to pull the camera back
+        //find the feature in all the features
+        if (null == featureVector.getEntityId()) return;
+
+        int i = featureVectors.indexOf(featureVector);
+        if (i < 0) {
+            //try to manually find it via string compare (more expensive)
+            for (int index = 0; index < featureVectors.size(); index++) {
+                if (featureVectors.get(index).getEntityId()
+                    .contentEquals(featureVector.getEntityId())) {
+                    i = index;
+                    break;
+                }
+            }
+        }
+        if (i < 0) return; //couldn't find it
+
+        setSpheroidAnchor(false, i);
     }
 
     @Override
@@ -1989,6 +2048,27 @@ public class Hyperspace3DPane extends StackPane implements
     @Override
     public List<FeatureVector> getAllFeatureVectors() {
         return featureVectors;
+    }
+
+    @Override
+    public void setColorByID(String iGotID, Color color) {
+        featureVectors.stream()
+            .filter(fv -> fv.getEntityId().contentEquals(iGotID))
+            .forEach(f -> {
+                setColorByIndex(featureVectors.indexOf(f), color);
+            });
+    }
+
+    @Override
+    public void setColorByIndex(int i, Color color) {
+        int index = 0;
+        for (Perspective3DNode pNode : pNodes) {
+            if (i == index) {
+                pNode.nodeColor = color;
+                return;
+            }
+            index++;
+        }
     }
 
     @Override
@@ -2003,9 +2083,10 @@ public class Hyperspace3DPane extends StackPane implements
     }
 
     @Override
-    public void refresh() {
-        updatePNodeColorsAndVisibility();
-        updateView(true);
+    public void refresh(boolean forceNodeUpdate) {
+        if (forceNodeUpdate)
+            updatePNodeColorsAndVisibility();
+        updateView(forceNodeUpdate);
         updateEllipsoids();
         cubeWorld.redraw(true);
         updateLabels();

@@ -7,15 +7,15 @@ import edu.jhuapl.trinity.data.FactorLabel;
 import edu.jhuapl.trinity.data.files.ClusterCollectionFile;
 import edu.jhuapl.trinity.data.files.FeatureCollectionFile;
 import edu.jhuapl.trinity.data.files.ManifoldDataFile;
-import edu.jhuapl.trinity.data.messages.FeatureCollection;
-import edu.jhuapl.trinity.data.messages.FeatureVector;
+import edu.jhuapl.trinity.data.messages.xai.FeatureCollection;
+import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.javafx.components.MatrixOverlay;
 import edu.jhuapl.trinity.javafx.components.panes.AnalysisLogPane;
+import edu.jhuapl.trinity.javafx.components.panes.HyperdrivePane;
 import edu.jhuapl.trinity.javafx.components.panes.ImageInspectorPane;
 import edu.jhuapl.trinity.javafx.components.panes.NavigatorPane;
 import edu.jhuapl.trinity.javafx.components.panes.PixelSelectionPane;
 import edu.jhuapl.trinity.javafx.components.panes.Shape3DControlPane;
-import edu.jhuapl.trinity.javafx.components.panes.SparkLinesPane;
 import edu.jhuapl.trinity.javafx.components.panes.TextPane;
 import edu.jhuapl.trinity.javafx.components.panes.TrajectoryTrackerPane;
 import edu.jhuapl.trinity.javafx.components.panes.VideoPane;
@@ -57,6 +57,7 @@ import edu.jhuapl.trinity.javafx.javafx3d.ProjectorPane;
 import edu.jhuapl.trinity.javafx.javafx3d.RetroWavePane;
 import edu.jhuapl.trinity.messages.CommandTask;
 import edu.jhuapl.trinity.messages.MessageProcessor;
+import edu.jhuapl.trinity.messages.RestAccessLayer;
 import edu.jhuapl.trinity.messages.ZeroMQFeedManager;
 import edu.jhuapl.trinity.messages.ZeroMQSubscriberConfig;
 import edu.jhuapl.trinity.utils.AnalysisUtils;
@@ -109,6 +110,10 @@ import java.util.Map;
 
 public class App extends Application {
     private static final Logger LOG = LoggerFactory.getLogger(App.class);
+    static Configuration theConfig;
+    static Pane pathPane;
+    static Scene theScene;
+    static VideoPane theVideo = null;
 
     Pane desktopPane;
     StackPane centerStack;
@@ -124,7 +129,6 @@ public class App extends Application {
     ProjectorPane projectorPane;
     Projections3DPane projections3DPane;
     TrajectoryTrackerPane trajectoryTrackerPane;
-    SparkLinesPane sparkLinesPane;
     TextPane textConsolePane;
     VideoPane videoPane;
     NavigatorPane navigatorPane;
@@ -133,12 +137,8 @@ public class App extends Application {
     AnalysisLogPane analysisLogPane;
     PixelSelectionPane pixelSelectionPane;
     ImageInspectorPane imageInspectorPane;
+    HyperdrivePane hyperdrivePane;
     CircleProgressIndicator circleSpinner;
-
-    static Configuration theConfig;
-    static Pane pathPane;
-    static Scene theScene;
-    static VideoPane theVideo = null;
     //Command line argument support
     Map<String, String> namedParameters;
     List<String> unnamedParameters;
@@ -241,6 +241,7 @@ public class App extends Application {
         analysisLogPane = new AnalysisLogPane(scene, desktopPane);
         pixelSelectionPane = new PixelSelectionPane(scene, pathPane);
         imageInspectorPane = new ImageInspectorPane(scene, pathPane);
+        hyperdrivePane = new HyperdrivePane(scene, pathPane);
 
         LOG.info("Registering Event Handlers...");
         //animatedConsoleText.animate("Registering Event Handlers...");
@@ -347,9 +348,9 @@ public class App extends Application {
                 if (ResourceUtils.promptUserOnCommand(dropType)) {
                     try {
                         switch (dropType) {
-                            case "Hyperspace" -> CommandTask.execute(scene, "VIEW_HYPERSPACE", 0);
-                            case "Hypersurface" -> CommandTask.execute(scene, "VIEW_HYPERSURFACE", 0);
-                            case "Projections" -> CommandTask.execute(scene, "VIEW_PROJECTIONS", 0);
+                            case "Hyperspace" -> CommandTask.execute(scene, "VIEW_HYPERSPACE", 0, null);
+                            case "Hypersurface" -> CommandTask.execute(scene, "VIEW_HYPERSURFACE", 0, null);
+                            case "Projections" -> CommandTask.execute(scene, "VIEW_PROJECTIONS", 0, null);
                         }
                     } catch (InterruptedException ex) {
                         LOG.error(null, ex);
@@ -486,7 +487,6 @@ public class App extends Application {
                     theConfig = new Configuration(configFile);
                 } catch (IOException ex) {
                     LOG.info("Exception thrown loading: {}", configFile);
-                    //Logger.getLogger(Configuration.class.getName()).log(Level.SEVERE, null, ex);
                     LOG.info("Loading defaults.");
                     theConfig = Configuration.defaultConfiguration();
                 }
@@ -649,8 +649,23 @@ public class App extends Application {
                 pixelSelectionPane.setImage(image);
             }
         });
-
-
+        LOG.info("Image Inspection Pane");
+        scene.addEventHandler(ApplicationEvent.SHOW_IMAGE_INSPECTION, e -> {
+            if (null != e.object) {
+                Boolean show = (Boolean) e.object;
+                if (show) {
+                    if (null == imageInspectorPane) {
+                        imageInspectorPane = new ImageInspectorPane(scene, pathPane);
+                    }
+                    if (!pathPane.getChildren().contains(imageInspectorPane)) {
+                        pathPane.getChildren().add(imageInspectorPane);
+                        imageInspectorPane.slideInPane();
+                    } else {
+                        imageInspectorPane.show();
+                    }
+                }
+            }
+        });
         LOG.info("Waveform View ");
         scene.addEventHandler(ApplicationEvent.SHOW_WAVEFORM_PANE, e -> {
             if (null == waveformPane) {
@@ -676,18 +691,6 @@ public class App extends Application {
                 trajectoryTrackerPane.slideInPane();
             } else {
                 trajectoryTrackerPane.show();
-            }
-        });
-        LOG.info("Spark lines View ");
-        scene.addEventHandler(ApplicationEvent.SHOW_SPARK_LINES, e -> {
-            if (null == sparkLinesPane) {
-                sparkLinesPane = new SparkLinesPane(scene, pathPane);
-            }
-            if (!pathPane.getChildren().contains(sparkLinesPane)) {
-                pathPane.getChildren().add(sparkLinesPane);
-                sparkLinesPane.slideInPane();
-            } else {
-                sparkLinesPane.show();
             }
         });
         LOG.info("Projections ");
@@ -717,17 +720,14 @@ public class App extends Application {
                 }
                 hyperspace3DPane.setVisible(false);
                 hypersurface3DPane.setVisible(false);
-//                Platform.runLater(() -> {
                 projections3DPane.setVisible(true);
-//                });
             }
             projections3DPane.enableAutoProjection(enabled);
-
+            hyperspace3DPane.enableAutoProjection(enabled);
         });
         LOG.info("Hypersurface ");
         scene.addEventHandler(ApplicationEvent.SHOW_HYPERSURFACE, e -> {
             if (hypersurface3DPane.isVisible()) {
-                //hypersurface3DPane.hideFA3D();
                 Platform.runLater(() -> hypersurface3DPane.setVisible(false));
                 if (null != retroWavePane) {
                     retroWavePane.animateShow();
@@ -747,7 +747,6 @@ public class App extends Application {
                 } else {
                     Platform.runLater(() -> hypersurface3DPane.setVisible(true));
                 }
-
             }
         });
         LOG.info("Hyperspace ");
@@ -799,7 +798,14 @@ public class App extends Application {
                 projectorPane.scanAndAnimate();
             }
         });
-
+        scene.addEventHandler(ApplicationEvent.SHOW_HYPERDRIVE_PANE, e -> {
+            if (!pathPane.getChildren().contains(hyperdrivePane)) {
+                pathPane.getChildren().add(hyperdrivePane);
+                hyperdrivePane.slideInPane();
+            } else {
+                hyperdrivePane.show();
+            }
+        });
         LOG.info("Data Handlers ");
         gmeh = new GaussianMixtureEventHandler();
         scene.getRoot().addEventHandler(GaussianMixtureEvent.NEW_GAUSSIAN_MIXTURE, gmeh);
@@ -867,6 +873,8 @@ public class App extends Application {
         scene.getRoot().addEventHandler(SearchEvent.FILTER_BY_TERM, seh);
         scene.getRoot().addEventHandler(SearchEvent.FILTER_BY_SCORE, seh);
         scene.getRoot().addEventHandler(SearchEvent.CLEAR_ALL_FILTERS, seh);
+        scene.getRoot().addEventHandler(SearchEvent.FIND_BY_QUERY, seh);
+        scene.getRoot().addEventHandler(SearchEvent.QUERY_EMBEDDINGS_RESPONSE, seh);
         seh.addFeatureVectorRenderer(hyperspace3DPane);
 
         scene.getRoot().addEventHandler(CovalentPaneEvent.COVALENT_PANE_CLOSE, covalentEvent -> {
@@ -1122,10 +1130,15 @@ public class App extends Application {
             } else {
                 imageInspectorPane.show();
             }
-//            stage.getScene().getRoot().fireEvent(
-//                new ApplicationEvent(ApplicationEvent.SHOW_PROJECTOR_PANE));
         }
-
+        if (e.isAltDown() && e.isControlDown() && e.getCode().equals(KeyCode.H)) {
+            stage.getScene().getRoot().fireEvent(
+                new ApplicationEvent(ApplicationEvent.SHOW_HYPERDRIVE_PANE));
+        }
+        if (e.isAltDown() && e.isControlDown() && e.getCode().equals(KeyCode.Q)) {
+            System.out.println("Requesting REST Is Alive...");
+            RestAccessLayer.requestRestIsAlive(stage.getScene());
+        }
         if (e.isAltDown() && e.getCode().equals(KeyCode.N)) {
             matrixShowing = !matrixShowing;
             if (!matrixShowing) {
@@ -1133,7 +1146,6 @@ public class App extends Application {
             }
         }
     }
-
 
     @Override
     public void stop() throws Exception {
@@ -1167,7 +1179,6 @@ public class App extends Application {
 
     private void parseCommandLine() {
         Parameters parameters = getParameters();
-
         namedParameters = parameters.getNamed();
         unnamedParameters = parameters.getUnnamed();
 

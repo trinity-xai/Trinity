@@ -2,7 +2,7 @@
 
 package edu.jhuapl.trinity.javafx.events;
 
-import edu.jhuapl.trinity.data.messages.ChannelFrame;
+import edu.jhuapl.trinity.data.messages.bci.ChannelFrame;
 import javafx.event.Event;
 import javafx.event.EventTarget;
 import javafx.event.EventType;

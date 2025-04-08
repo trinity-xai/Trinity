@@ -4,8 +4,8 @@ package edu.jhuapl.trinity.javafx.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.jhuapl.trinity.App;
-import edu.jhuapl.trinity.data.messages.AnalysisConfig;
-import edu.jhuapl.trinity.data.messages.UmapConfig;
+import edu.jhuapl.trinity.data.messages.xai.AnalysisConfig;
+import edu.jhuapl.trinity.data.messages.xai.UmapConfig;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;

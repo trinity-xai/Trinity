@@ -3,8 +3,8 @@
 package edu.jhuapl.trinity.javafx.components;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
-import edu.jhuapl.trinity.data.messages.AnalysisConfig;
-import edu.jhuapl.trinity.data.messages.UmapConfig;
+import edu.jhuapl.trinity.data.messages.xai.AnalysisConfig;
+import edu.jhuapl.trinity.data.messages.xai.UmapConfig;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import javafx.geometry.Insets;
 import javafx.scene.control.Tooltip;
@@ -19,14 +19,14 @@ import javafx.scene.layout.BorderWidths;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
-
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Sean Phillips
  */
 public class ProjectorNode extends Pane {
+    private static final Logger LOG = LoggerFactory.getLogger(ProjectorNode.class);
     ImageView imageView;
     UmapConfig umapConfig;
     AnalysisConfig analysisConfig;
@@ -68,7 +68,7 @@ public class ProjectorNode extends Pane {
                             getScene().getRoot().fireEvent(new ApplicationEvent(
                                 ApplicationEvent.SHOW_TEXT_CONSOLE, umapConfig.prettyPrint()));
                         } catch (JsonProcessingException ex) {
-                            Logger.getLogger(ProjectorNode.class.getName()).log(Level.SEVERE, null, ex);
+                            LOG.error(ex.getMessage());
                         }
                     }
                 } else if (e.getClickCount() == 1) {
