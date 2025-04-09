@@ -28,6 +28,7 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Random;
+import javafx.application.Platform;
 
 /**
  * @author Sean Phillips
@@ -67,7 +68,6 @@ public class HitEventHandler implements EventHandler<HitEvent> {
         scoreText.setTranslateY(50);
         scoreText.setAnimationTimeMS(15);
         scoreText.setVisible(false); //hide at start
-        hudPane.getChildren().add(scoreText);
 
         playersText = new AnimatedText("04",
             Font.font("Consolas", 72),
@@ -80,7 +80,6 @@ public class HitEventHandler implements EventHandler<HitEvent> {
         playersText.setTranslateX(scoreText.getBoundsInLocal().getMaxX() + 100);
         playersText.setTranslateY(50);
         playersText.setVisible(false); //hide at start
-        hudPane.getChildren().add(playersText);
 
         try {
             smallBoom = ResourceUtils.loadMediaWav("smallBoom");
@@ -92,6 +91,10 @@ public class HitEventHandler implements EventHandler<HitEvent> {
         } catch (IOException ex) {
             LOG.error(null, ex);
         }
+        Platform.runLater(()-> {
+            hudPane.getChildren().add(scoreText);
+            hudPane.getChildren().add(playersText);
+        });
     }
 
     @Override

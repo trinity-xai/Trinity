@@ -101,6 +101,7 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.function.Function;
+import javafx.beans.value.WeakChangeListener;
 
 /**
  * @author Sean Phillips
@@ -940,16 +941,18 @@ public class Hyperspace3DPane extends StackPane implements
             }
         };
         animationTimer.start();
-        Platform.runLater(() -> {
-            cubeWorld.adjustPanelsByPos(cameraTransform.rx.getAngle(),
-                cameraTransform.ry.getAngle(), cameraTransform.rz.getAngle());
-            updateLabels();
-            updateView(true);
-            //create callout automatically puts the callout and node into a managed map
-            FeatureVector anchorFV = FeatureVector.EMPTY_FEATURE_VECTOR("", 6);
-            anchorCallout = radialOverlayPane.createCallout(anchorTSM, anchorFV, subScene);
-            anchorCallout.play();
-            anchorCallout.setVisible(false);
+        subScene.sceneProperty().addListener(c -> {
+            Platform.runLater(() -> {
+                cubeWorld.adjustPanelsByPos(cameraTransform.rx.getAngle(),
+                    cameraTransform.ry.getAngle(), cameraTransform.rz.getAngle());
+                updateLabels();
+                updateView(true);
+                //create callout automatically puts the callout and node into a managed map
+                FeatureVector anchorFV = FeatureVector.EMPTY_FEATURE_VECTOR("", 6);
+                anchorCallout = radialOverlayPane.createCallout(anchorTSM, anchorFV, subScene);
+                anchorCallout.play();
+                anchorCallout.setVisible(false);
+            });
         });
     }
 
