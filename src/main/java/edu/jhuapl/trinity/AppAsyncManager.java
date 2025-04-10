@@ -24,7 +24,6 @@ import edu.jhuapl.trinity.javafx.components.timeline.MissionTimerX;
 import edu.jhuapl.trinity.javafx.components.timeline.MissionTimerXBuilder;
 import edu.jhuapl.trinity.javafx.components.timeline.TimelineAnimation;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
-import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.events.GaussianMixtureEvent;
 import edu.jhuapl.trinity.javafx.events.HitEvent;
@@ -62,7 +61,6 @@ import edu.jhuapl.trinity.utils.VisibilityMap;
 import edu.jhuapl.trinity.utils.umap.Umap;
 import java.io.File;
 import java.io.IOException;
-import java.time.Duration;
 import java.time.LocalDateTime;
 import java.util.ArrayList;
 import java.util.List;
@@ -159,43 +157,40 @@ public class AppAsyncManager extends Task {
     protected Void call() throws Exception {
         Platform.runLater(() -> {
             ProgressStatus ps = new ProgressStatus("Loading Trinity GUI...", -1);
+            ps.fillStartColor = Color.AZURE;
+            ps.fillEndColor = Color.LIME;
+            ps.innerStrokeColor = Color.AZURE;
+            ps.outerStrokeColor = Color.LIME;
+            
             scene.getRoot().fireEvent(
                 new ApplicationEvent(ApplicationEvent.SHOW_BUSY_INDICATOR, ps));
         });
-//                //update the progress indicator
-//                if (i % updatePercent == 0) {
-//                    double percentComplete = Double.valueOf(i) / Double.valueOf(n);
-//                    Platform.runLater(() -> {
-//                        ProgressStatus ps = new ProgressStatus(
-//                            "Converting Text Embeddings to Feature Vectors...", percentComplete);
-//                        ps.fillStartColor = Color.AZURE;
-//                        ps.fillEndColor = Color.LIME;
-//                        ps.innerStrokeColor = Color.AZURE;
-//                        ps.outerStrokeColor = Color.LIME;
-//                        scene.getRoot().fireEvent(
-//                            new ApplicationEvent(ApplicationEvent.UPDATE_BUSY_INDICATOR, ps));
-//                    });
-//                }
-//            }        
+        //hardcoded count. need to update counts for every progress.setLabelLater
+        double total = 30.0;
+        double current = 0.0;
         Thread.sleep(100);
         progress.setTopLabelLater("Constructing 3D Subscenes");
          LOG.info("Constructing 3D subscenes...");
         progress.setLabelLater("...Projections3D...");
+        progress.setPercentComplete(current++/total);
         projections3DPane = new Projections3DPane(scene);
         projections3DPane.setVisible(false); //start off hidden
         Platform.runLater(() -> centerStack.getChildren().add(0, projections3DPane));
 
         progress.setLabelLater("...Hypersurface...");
+        progress.setPercentComplete(current++/total);
         hypersurface3DPane = new Hypersurface3DPane(scene);
         hypersurface3DPane.setVisible(false); //start off hidden
         Platform.runLater(() -> centerStack.getChildren().add(0, hypersurface3DPane));
 
         progress.setLabelLater("...Hyperspace...");
+        progress.setPercentComplete(current++/total);
         hyperspace3DPane = new Hyperspace3DPane(scene);
         hyperspace3DPane.setVisible(false); //start off hidden
         Platform.runLater(() -> centerStack.getChildren().add(0, hyperspace3DPane));
         
         progress.setLabelLater("...Analysis Projector...");
+        progress.setPercentComplete(current++/total);
         projectorPane = new ProjectorPane();
         projectorPane.setVisible(false); //start off hidden
         Platform.runLater(() -> centerStack.getChildren().add(0, projectorPane));
@@ -203,22 +198,29 @@ public class AppAsyncManager extends Task {
         progress.setTopLabelLater("Loading 2D Tools...");
          LOG.info("Loading 2D Tools...");
         progress.setLabelLater("...Content Navigator...");
+        progress.setPercentComplete(current++/total);
         navigatorPane = new NavigatorPane(scene, desktopPane);
         progress.setLabelLater("...Analysis Log...");
+        progress.setPercentComplete(current++/total);
         analysisLogPane = new AnalysisLogPane(scene, desktopPane);
         progress.setLabelLater("...Pixel Selector...");
+        progress.setPercentComplete(current++/total);
         pixelSelectionPane = new PixelSelectionPane(scene, desktopPane);
         progress.setLabelLater("...Image Inspector...");
+        progress.setPercentComplete(current++/total);
         imageInspectorPane = new ImageInspectorPane(scene, desktopPane);
         progress.setLabelLater("...Hyperdrive...");
+        progress.setPercentComplete(current++/total);
         hyperdrivePane = new HyperdrivePane(scene, desktopPane);
         progress.setLabelLater("...Empty Vision...");
+        progress.setPercentComplete(current++/total);
         videoPane = new VideoPane(scene, desktopPane);
         App.theVideo = videoPane;        
         
         progress.setTopLabelLater("Initializing Event Handlers");        
         LOG.info("Text Console ");
         progress.setLabelLater("...Application Events...");
+        progress.setPercentComplete(current++/total);
         scene.addEventHandler(ApplicationEvent.SHOW_TEXT_CONSOLE, e -> {
             if (null == textConsolePane) {
                 textConsolePane = new TextPane(scene, desktopPane);
@@ -462,10 +464,11 @@ public class AppAsyncManager extends Task {
                 hyperdrivePane.show();
             }
         });        
-        Thread.sleep(Duration.ofMillis(500));
+//        Thread.sleep(Duration.ofMillis(500));
         
         progress.setTopLabelLater("Establishing Messaging Feeds...");
         progress.setLabelLater("...REST Receiver...");
+        progress.setPercentComplete(current++/total);
         LOG.info("Setting up RestEventHandler...");
         reh = new RestEventHandler(scene);
         scene.addEventHandler(RestEvent.START_RESTSERVER_THREAD, reh);
@@ -479,6 +482,7 @@ public class AppAsyncManager extends Task {
         }
         
         progress.setLabelLater("...Setting up Mission Timer...");
+        progress.setPercentComplete(current++/total);
         LOG.info("Setting up Mission Timer...");
         setupMissionTimer(scene);
         scene.addEventHandler(MissionTimerXEvent.MISSION_TIMER_SHUTDOWN, e-> {
@@ -496,6 +500,7 @@ public class AppAsyncManager extends Task {
         missionTimerX.updateTime(0, "1");
 
         progress.setLabelLater("...ZeroMQ...");
+        progress.setPercentComplete(current++/total);
         LOG.info("Establishing Messaging Feed...");
         processor = new MessageProcessor(scene);
         subscriberConfig = new ZeroMQSubscriberConfig(
@@ -542,6 +547,7 @@ public class AppAsyncManager extends Task {
         progress.setTopLabelLater("Registering Request Handlers...");
         LOG.info("Request Handlers...");
         progress.setLabelLater("...REQUEST_FEATURE_COLLECTION...");
+        progress.setPercentComplete(current++/total);
         scene.addEventHandler(FeatureVectorEvent.REQUEST_FEATURE_COLLECTION, event -> {
             FeatureCollection fc = new FeatureCollection();
             fc.setFeatures(hyperspace3DPane.getAllFeatureVectors());
@@ -549,6 +555,7 @@ public class AppAsyncManager extends Task {
         });
 
         progress.setLabelLater("...GENERATE_NEW_UMAP...");
+        progress.setPercentComplete(current++/total);
         scene.addEventHandler(ManifoldEvent.GENERATE_NEW_UMAP, event -> {
             Platform.runLater(() -> {
                 ProgressStatus ps = new ProgressStatus("Generating UMAP Settings...", -1);
@@ -569,6 +576,7 @@ public class AppAsyncManager extends Task {
         });
 
         progress.setLabelLater("...GENERATE_NEW_PCA...");
+        progress.setPercentComplete(current++/total);
         scene.addEventHandler(ManifoldEvent.GENERATE_NEW_PCA, event -> {
             Platform.runLater(() -> {
                 ProgressStatus ps = new ProgressStatus("Projecting PCA...", -1);
@@ -582,6 +590,7 @@ public class AppAsyncManager extends Task {
         });
 
         progress.setLabelLater("...PROJECT_SURFACE_GRID...");
+        progress.setPercentComplete(current++/total);
         scene.addEventHandler(FeatureVectorEvent.PROJECT_SURFACE_GRID, event -> {
             FeatureCollection originalFC = new FeatureCollection();
             originalFC.setFeatures(hypersurface3DPane.getAllFeatureVectors());
@@ -602,6 +611,7 @@ public class AppAsyncManager extends Task {
         });
 
         progress.setLabelLater("...PROJECT_FEATURE_COLLECTION...");
+        progress.setPercentComplete(current++/total);
         scene.addEventHandler(FeatureVectorEvent.PROJECT_FEATURE_COLLECTION, event -> {
             FeatureCollection originalFC = new FeatureCollection();
             originalFC.setFeatures(hyperspace3DPane.getAllFeatureVectors());
@@ -622,6 +632,7 @@ public class AppAsyncManager extends Task {
         });
 
         progress.setLabelLater("...EXPORT_FEATURE_COLLECTION...");
+        progress.setPercentComplete(current++/total);
         scene.addEventHandler(FeatureVectorEvent.EXPORT_FEATURE_COLLECTION, event -> {
             File file = (File) event.object;
             FeatureCollection fc = new FeatureCollection();
@@ -639,6 +650,7 @@ public class AppAsyncManager extends Task {
         progress.setTopLabelLater("Connecting Dedicated Event Handlers...");
         LOG.info("Data Handlers ");
         progress.setLabelLater("...GaussianMixtureEventHandler...");
+        progress.setPercentComplete(current++/total);
         gmeh = new GaussianMixtureEventHandler();
         scene.getRoot().addEventHandler(GaussianMixtureEvent.NEW_GAUSSIAN_MIXTURE, gmeh);
         scene.getRoot().addEventHandler(GaussianMixtureEvent.LOCATE_GAUSSIAN_MIXTURE, gmeh);
@@ -646,6 +658,7 @@ public class AppAsyncManager extends Task {
         gmeh.addGaussianMixtureRenderer(hyperspace3DPane);
 
         progress.setLabelLater("...FeatureVectorEventHandler...");
+        progress.setPercentComplete(current++/total);
         fveh = new FeatureVectorEventHandler();
         scene.getRoot().addEventHandler(FeatureVectorEvent.NEW_FEATURE_VECTOR, fveh);
         scene.getRoot().addEventHandler(FeatureVectorEvent.LOCATE_FEATURE_VECTOR, fveh);
@@ -657,6 +670,7 @@ public class AppAsyncManager extends Task {
         fveh.addFeatureVectorRenderer(hyperspace3DPane);
 
         progress.setLabelLater("...ManifoldEventHandler...");
+        progress.setPercentComplete(current++/total);
         meh = new ManifoldEventHandler();
         scene.getRoot().addEventHandler(ManifoldEvent.NEW_UMAP_CONFIG, meh);
         scene.getRoot().addEventHandler(ManifoldEvent.NEW_MANIFOLD_CLUSTER, meh);
@@ -689,6 +703,7 @@ public class AppAsyncManager extends Task {
         });
 
         progress.setLabelLater("...ShapleyEventHandler...");
+        progress.setPercentComplete(current++/total);
         sheh = new ShapleyEventHandler();
         scene.getRoot().addEventHandler(ShapleyEvent.NEW_SHAPLEY_VECTOR, sheh);
         scene.getRoot().addEventHandler(ShapleyEvent.NEW_SHAPLEY_COLLECTION, sheh);
@@ -699,6 +714,7 @@ public class AppAsyncManager extends Task {
         scene.getRoot().addEventHandler(HitEvent.TRACKING_PROJECTILE_EVENTS, heh);
 
         progress.setLabelLater("...SemanticMapEventHandler...");
+        progress.setPercentComplete(current++/total);
         smeh = new SemanticMapEventHandler(false);
         scene.getRoot().addEventHandler(SemanticMapEvent.NEW_SEMANTIC_MAP, smeh);
         scene.getRoot().addEventHandler(SemanticMapEvent.NEW_SEMANTICMAP_COLLECTION, smeh);
@@ -706,6 +722,7 @@ public class AppAsyncManager extends Task {
         smeh.addSemanticMapRenderer(hypersurface3DPane);
 
         progress.setLabelLater("...SearchEventHandler...");
+        progress.setPercentComplete(current++/total);
         seh = new SearchEventHandler();
         scene.getRoot().addEventHandler(SearchEvent.FILTER_BY_TERM, seh);
         scene.getRoot().addEventHandler(SearchEvent.FILTER_BY_SCORE, seh);
@@ -717,6 +734,7 @@ public class AppAsyncManager extends Task {
         progress.setTopLabelLater("Adding Drag & Drop Support...");
         LOG.info("Adding Drag & Drop Support...");
         progress.setLabelLater("...Center Stack...");
+        progress.setPercentComplete(current++/total);
         //some helpful handling for the main view
         centerStack.addEventHandler(DragEvent.DRAG_OVER, event -> {
             if (ResourceUtils.canDragOver(event)) {
@@ -744,6 +762,7 @@ public class AppAsyncManager extends Task {
         });
 
         progress.setLabelLater("...3D subscenes...");
+        progress.setPercentComplete(current++/total);
         hyperspace3DPane.addEventHandler(DragEvent.DRAG_OVER, event -> {
             if (ResourceUtils.canDragOver(event)) {
                 event.acceptTransferModes(TransferMode.COPY);
@@ -802,7 +821,8 @@ public class AppAsyncManager extends Task {
         
         progress.setTopLabelLater("Finished async load.");
         progress.setLabelLater("User Interface Is Lit");
-        Thread.sleep(Duration.ofMillis(500));    
+        progress.setPercentComplete(1.0);
+//        Thread.sleep(Duration.ofMillis(500));    
         Platform.runLater(() -> {
             scene.getRoot().fireEvent(
                 new ApplicationEvent(ApplicationEvent.HIDE_BUSY_INDICATOR));

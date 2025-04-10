@@ -70,8 +70,6 @@ public class App extends Application {
     Map<String, String> namedParameters;
     AnimatedText animatedConsoleText;
 
-    boolean hyperspaceIntroShown = false;
-    boolean hypersurfaceIntroShown = false;
     boolean matrixShowing = false;
     boolean enableMatrix = false;
     static boolean matrixEnabled = false;
@@ -127,14 +125,13 @@ public class App extends Application {
         pathPane = desktopPane;
         theScene = scene;
         //</HACK>
-/*
+
         LOG.info("Building menu system...");
         mainNavMenu = new MainNavMenu(scene);
         StackPane.setAlignment(mainNavMenu, Pos.BOTTOM_RIGHT);
         mainNavMenu.hideRadialMenu();
         mainNavMenu.setTranslateX(-mainNavMenu.getInnerRadius());
         mainNavMenu.setTranslateY(-mainNavMenu.getInnerRadius());
-*/
 
         LOG.info("Parsing command line...");
         //animatedConsoleText.animate("Parsing command line...");
@@ -221,6 +218,7 @@ public class App extends Application {
             //mainNavMenu, 
             circleSpinner);
         centerStack.getChildren().add(animatedConsoleText);
+        stage.show();        
 
         LOG.info("Setting up Matrix Digital Rain...");
         // fun matrix effect, use Alt + N
@@ -312,12 +310,34 @@ public class App extends Application {
         scene.addEventHandler(CommandTerminalEvent.FADE_OUT, e -> fadeOutConsole(e.timeMS));
 
         LOG.info("User Interface Lit...");
-        stage.show();        
         AppAsyncManager async = new AppAsyncManager(scene, centerStack, desktopPane, circleSpinner, namedParameters);
         async.setOnSucceeded(s -> intro());
+        async.setOnFailed(s -> intro());            
         Utils.printTotalTime(startTime);
-//        missionTimerX.updateTime(0, "1");
         Thread.startVirtualThread(async);
+    }
+    private void intro() {
+//        Platform.runLater(() -> {
+            intro = new Timeline(
+                new KeyFrame(Duration.seconds(0.0), new KeyValue(mainNavMenu.opacityProperty(), 0.0)),
+                new KeyFrame(Duration.seconds(0.1), e -> {
+                    circleSpinner.spin(false);
+                    circleSpinner.fadeBusy(true);
+                    animatedConsoleText.setOpacity(1.0);
+                    animatedConsoleText.setText("> ");
+                    animatedConsoleText.setVisible(true);
+                    centerStack.getChildren().add(centerStack.getChildren().size() - 1, mainNavMenu);
+                }),
+                new KeyFrame(Duration.seconds(0.5), e -> animatedConsoleText.animate(">Trinity")),
+                new KeyFrame(Duration.seconds(2.0), e -> animatedConsoleText.animate(">Hyperdimensional Visualization")),
+                new KeyFrame(Duration.seconds(3.5), new KeyValue(animatedConsoleText.opacityProperty(), 1.0)),
+                new KeyFrame(Duration.seconds(5.0), new KeyValue(animatedConsoleText.opacityProperty(), 0.0)),
+                new KeyFrame(Duration.seconds(5.1), e -> animatedConsoleText.setVisible(false)),
+                new KeyFrame(Duration.seconds(5.1), e -> animatedConsoleText.animate(" ")),
+                new KeyFrame(Duration.seconds(5.1), new KeyValue(mainNavMenu.opacityProperty(), 1.0))
+            );
+            intro.play();
+//        });
     }
 
     private void fadeOutConsole(long timeMS) {
@@ -328,7 +348,6 @@ public class App extends Application {
         fade.setOnFinished(f -> animatedConsoleText.setText("> "));
         fade.play();
     }
-
     private void fadeInConsole(long timeMS) {
         animatedConsoleText.setAnimationTimeMS(30);  //default is 30ms
         FadeTransition fade = new FadeTransition(Duration.millis(timeMS), animatedConsoleText);
@@ -337,26 +356,6 @@ public class App extends Application {
         fade.setOnFinished(f -> animatedConsoleText.setText("> "));
         fade.play();
     }
-
-    private void intro() {
-//        Platform.runLater(() -> {
-            intro = new Timeline(
-                new KeyFrame(Duration.seconds(0.1), e -> {
-                    animatedConsoleText.setOpacity(1.0);
-                    animatedConsoleText.setText("> ");
-                    animatedConsoleText.setVisible(true);
-                }),
-                new KeyFrame(Duration.seconds(0.5), e -> animatedConsoleText.animate(">Trinity")),
-                new KeyFrame(Duration.seconds(2.0), e -> animatedConsoleText.animate(">Hyperdimensional Visualization")),
-                new KeyFrame(Duration.seconds(3.5), new KeyValue(animatedConsoleText.opacityProperty(), 1.0)),
-                new KeyFrame(Duration.seconds(5.0), new KeyValue(animatedConsoleText.opacityProperty(), 0.0)),
-                new KeyFrame(Duration.seconds(5.1), e -> animatedConsoleText.setVisible(false)),
-                new KeyFrame(Duration.seconds(5.1), e -> animatedConsoleText.animate(" "))
-            );
-            intro.play();
-//        });
-    }
-
     /**
      * Key handler for various keyboard shortcuts
      */
