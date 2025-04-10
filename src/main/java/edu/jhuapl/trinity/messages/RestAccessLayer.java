@@ -37,8 +37,8 @@ public enum RestAccessLayer {
     private static final Logger LOG = LoggerFactory.getLogger(RestAccessLayer.class);
     private static HttpClient httpClient;
     private static ObjectMapper objectMapper;
-    public static final String SERVICES_DEFAULT_PATH = "services/"; //default to local relative path
-    public static final String SERVICES_DEFAULT_CONFIG = "defaultRestAccessLayer.json";
+    public static String SERVICES_DEFAULT_PATH = "services/"; //default to local relative path
+    public static String SERVICES_DEFAULT_CONFIG = "defaultRestAccessLayer.json";
     public static RestAccessLayerConfig restAccessLayerconfig = null;
     public static final int DEFAULT_TIMEOUT_SECONDS = 60;
     public static final int SUCCESS_STATUS_CODE = 200;
@@ -75,7 +75,7 @@ public enum RestAccessLayer {
         }
         String message = Files.readString(defaultConfigFile.toPath());
         RestAccessLayerConfig config = objectMapper.readValue(message, RestAccessLayerConfig.class);
-        return config;
+        return restAccessLayerconfig = config;
     }
 
     //Text and Image REST calls

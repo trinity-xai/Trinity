@@ -10,7 +10,7 @@ import java.util.List;
  */
 public enum Prompts {
     INSTANCE;
-    public static final String PROMPTS_DEFAULT_PATH = "services/"; //default to local relative path
+    public static String PROMPTS_DEFAULT_PATH = "services/"; //default to local relative path
     public static final String CAPTION_PROMPT_FILENAME = "captionPrompt.txt";
     public static final String AUTOCHOOSE_CAPTION_FILENAME = "autochooseCaptionPrompt.txt";
     public static final String AUTOCHOOSE_VARIABLE = "\\$CAPTION_CHOICES";
