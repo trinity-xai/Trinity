@@ -4,13 +4,20 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
 import java.util.List;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Sean Phillips
  */
+
 public enum Prompts {
     INSTANCE;
-    public static String PROMPTS_DEFAULT_PATH = "services/"; //default to local relative path
+    private static final Logger LOG = LoggerFactory.getLogger(Prompts.class);
+    //default local relative path obtained as a system property if running from JLink/Jpackage
+    public static final String TRINITY_APP_DIR = "trinity.app.dir";
+    //default to local relative path if loading from a Jar/IDE
+    public static String PROMPTS_DEFAULT_PATH = "services" + File.separator; 
     public static final String CAPTION_PROMPT_FILENAME = "captionPrompt.txt";
     public static final String AUTOCHOOSE_CAPTION_FILENAME = "autochooseCaptionPrompt.txt";
     public static final String AUTOCHOOSE_VARIABLE = "\\$CAPTION_CHOICES";
@@ -31,8 +38,33 @@ public enum Prompts {
             The field called "explanation" is a single String type value where you provide an explanation of why you chose the one word caption from the list of words provided above. Please limit the "explanation" String value to four sentences or less.
             The field called "description" is a single String type value where you provide text to describe details of what you see in the image. Please limit the "description" String value to four sentences or less.
             """;
+    static {
+            //Load any defaults like services path from system properties
+            //These are injected when running from JLink/JPackage type builds
+            checkSystemProperties(); //should be called once to ensure we factor these in
+    }    
+    private static void checkSystemProperties() {
+        //Check if we are running from JLink/JPackage scenario. If so use System property
+        try {
+            String servicesDir = System.getProperty(TRINITY_APP_DIR);
+            //if it is null then the property isn't there and we assume Jar/IDE
+            if(null != servicesDir) {
+                //We assume its JLink/JPackage and hope they put in a good directory
+                PROMPTS_DEFAULT_PATH = servicesDir;
+                if(!PROMPTS_DEFAULT_PATH.endsWith(File.separator))
+                    PROMPTS_DEFAULT_PATH = PROMPTS_DEFAULT_PATH + File.separator;
+            }
+        } catch(Exception ex) {
+            //We are running from Jar/IDE or something else went wrong, use local relative
+            LOG.info("While initializing PROMPTS directory location, " + TRINITY_APP_DIR 
+                + " not found as System Property." + System.lineSeparator() 
+                + "Using current path of " + PROMPTS_DEFAULT_PATH);
+        }        
+    }
 
     public static String loadDefaultCaptionPrompt() throws IOException {
+        if(!PROMPTS_DEFAULT_PATH.endsWith(File.separator))
+            PROMPTS_DEFAULT_PATH = PROMPTS_DEFAULT_PATH + File.separator;        
         File file = new File(PROMPTS_DEFAULT_PATH + CAPTION_PROMPT_FILENAME);
         if (!file.exists() || !file.canRead()) {
             return DEFAULT_CAPTION_PROMPT_TEXT;
@@ -42,6 +74,8 @@ public enum Prompts {
     }
 
     public static String loadAutochooseCaptionPrompt() throws IOException {
+        if(!PROMPTS_DEFAULT_PATH.endsWith(File.separator))
+            PROMPTS_DEFAULT_PATH = PROMPTS_DEFAULT_PATH + File.separator;
         File file = new File(PROMPTS_DEFAULT_PATH + AUTOCHOOSE_CAPTION_FILENAME);
         if (!file.exists() || !file.canRead()) {
             return DEFAULT_AUTOCHOOSECAPTION_PROMPT_TEXT;

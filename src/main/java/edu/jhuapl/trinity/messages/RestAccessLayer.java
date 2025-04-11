@@ -38,7 +38,10 @@ public enum RestAccessLayer {
     private static final Logger LOG = LoggerFactory.getLogger(RestAccessLayer.class);
     private static HttpClient httpClient;
     private static ObjectMapper objectMapper;
-    public static String SERVICES_DEFAULT_PATH = "services/"; //default to local relative path
+    //default local relative path obtained as a system property if running from JLink/Jpackage
+    public static final String TRINITY_APP_DIR = "trinity.app.dir";
+    //default to local relative path if loading from a Jar/IDE
+    public static String SERVICES_DEFAULT_PATH = "services" + File.separator; 
     public static String SERVICES_DEFAULT_CONFIG = "defaultRestAccessLayer.json";
     public static RestAccessLayerConfig restAccessLayerconfig = null;
     public static final int DEFAULT_TIMEOUT_SECONDS = 60;
@@ -49,6 +52,9 @@ public enum RestAccessLayer {
     public static String currentChatModel = null;
 
     static {
+        //Load any defaults like services path from system properties
+        //These are injected when running from JLink/JPackage type builds
+        checkSystemProperties(); //should be called once to ensure we factor these in
         objectMapper = new ObjectMapper();
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         objectMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
@@ -68,8 +74,26 @@ public enum RestAccessLayer {
         currentEmbeddingsModel = restAccessLayerconfig.getDefaultImageModel();
         currentChatModel = restAccessLayerconfig.getDefaultCaptionModel();
     }
-
+    private static void checkSystemProperties() {
+        //Check if we are running from JLink/JPackage scenario. If so use System property
+        try {
+            String servicesDir = System.getProperty(TRINITY_APP_DIR);
+            //if it is null then the property isn't there and we assume Jar/IDE
+            if(null != servicesDir) {
+                //We assume its JLink/JPackage and hope they put in a good directory
+                SERVICES_DEFAULT_PATH = servicesDir;
+                if(!SERVICES_DEFAULT_PATH.endsWith(File.separator))
+                    SERVICES_DEFAULT_PATH = SERVICES_DEFAULT_PATH + File.separator;
+            }
+        } catch(Exception ex) {
+            //We are running from Jar/IDE or something else went wrong, use local relative
+            LOG.info(TRINITY_APP_DIR + " not found as System Property." + System.lineSeparator() 
+                + "Using current path of " + SERVICES_DEFAULT_PATH);
+        }        
+    }
     public static RestAccessLayerConfig loadDefaultRestConfig() throws IOException {
+        if(!SERVICES_DEFAULT_PATH.endsWith(File.separator))
+            SERVICES_DEFAULT_PATH = SERVICES_DEFAULT_PATH + File.separator;
         File defaultConfigFile = new File(SERVICES_DEFAULT_PATH + SERVICES_DEFAULT_CONFIG);
         if (!defaultConfigFile.exists() || !defaultConfigFile.canRead()) {
             return restAccessLayerconfig = RestAccessLayerConfig.getDefault();
@@ -78,14 +102,13 @@ public enum RestAccessLayer {
         RestAccessLayerConfig config = objectMapper.readValue(message, RestAccessLayerConfig.class);
         return restAccessLayerconfig = config;
     }
-
     //Text and Image REST calls
     public static void requestQueryTextEmbeddings(EmbeddingsImageInput input,
                                                   Scene scene, List<Integer> inputIDs, int requestNumber) throws JsonProcessingException {
         if (restServiceFailed(scene)) return;
         String inputJSON = objectMapper.writeValueAsString(input);
-//        @DEBUG SMP
-//        System.out.println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(input));
+        //@DEBUG SMP
+        //System.out.println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(input));
         HttpRequest request = makeHttpPostRequest(inputJSON, restAccessLayerconfig.getImageEmbeddingsEndpoint());
         httpClient.sendAsync(request, BodyHandlers.ofString())
             .thenAcceptAsync(resp -> {
