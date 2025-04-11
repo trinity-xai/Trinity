@@ -39,9 +39,9 @@ public enum RestAccessLayer {
     private static HttpClient httpClient;
     private static ObjectMapper objectMapper;
     //default local relative path obtained as a system property if running from JLink/Jpackage
-    public static final String TRINITY_APP_DIR = "trinity.app.dir";
+    public static final String TRINITY_APP_DIR_PROPERTY = "trinity.app.dir";
     //default to local relative path if loading from a Jar/IDE
-    public static String SERVICES_DEFAULT_PATH = "services" + File.separator; 
+    public static String SERVICES_DEFAULT_PATH = "services" + File.separator;
     public static String SERVICES_DEFAULT_CONFIG = "defaultRestAccessLayer.json";
     public static RestAccessLayerConfig restAccessLayerconfig = null;
     public static final int DEFAULT_TIMEOUT_SECONDS = 60;
@@ -74,25 +74,27 @@ public enum RestAccessLayer {
         currentEmbeddingsModel = restAccessLayerconfig.getDefaultImageModel();
         currentChatModel = restAccessLayerconfig.getDefaultCaptionModel();
     }
+
     private static void checkSystemProperties() {
         //Check if we are running from JLink/JPackage scenario. If so use System property
         try {
-            String servicesDir = System.getProperty(TRINITY_APP_DIR);
+            String servicesDir = System.getProperty(TRINITY_APP_DIR_PROPERTY);
             //if it is null then the property isn't there and we assume Jar/IDE
-            if(null != servicesDir) {
+            if (null != servicesDir) {
                 //We assume its JLink/JPackage and hope they put in a good directory
                 SERVICES_DEFAULT_PATH = servicesDir;
-                if(!SERVICES_DEFAULT_PATH.endsWith(File.separator))
+                if (!SERVICES_DEFAULT_PATH.endsWith(File.separator))
                     SERVICES_DEFAULT_PATH = SERVICES_DEFAULT_PATH + File.separator;
             }
-        } catch(Exception ex) {
+        } catch (Exception ex) {
             //We are running from Jar/IDE or something else went wrong, use local relative
-            LOG.info(TRINITY_APP_DIR + " not found as System Property." + System.lineSeparator() 
+            LOG.info(TRINITY_APP_DIR_PROPERTY + " not found as System Property." + System.lineSeparator()
                 + "Using current path of " + SERVICES_DEFAULT_PATH);
-        }        
+        }
     }
+
     public static RestAccessLayerConfig loadDefaultRestConfig() throws IOException {
-        if(!SERVICES_DEFAULT_PATH.endsWith(File.separator))
+        if (!SERVICES_DEFAULT_PATH.endsWith(File.separator))
             SERVICES_DEFAULT_PATH = SERVICES_DEFAULT_PATH + File.separator;
         File defaultConfigFile = new File(SERVICES_DEFAULT_PATH + SERVICES_DEFAULT_CONFIG);
         if (!defaultConfigFile.exists() || !defaultConfigFile.canRead()) {
@@ -102,6 +104,7 @@ public enum RestAccessLayer {
         RestAccessLayerConfig config = objectMapper.readValue(message, RestAccessLayerConfig.class);
         return restAccessLayerconfig = config;
     }
+
     //Text and Image REST calls
     public static void requestQueryTextEmbeddings(EmbeddingsImageInput input,
                                                   Scene scene, List<Integer> inputIDs, int requestNumber) throws JsonProcessingException {
