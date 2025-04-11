@@ -2,6 +2,7 @@
 
 package edu.jhuapl.trinity.utils;
 
+import edu.jhuapl.trinity.css.StyleResourceProvider;
 import javafx.scene.text.Font;
 
 
@@ -18,15 +19,15 @@ public class Fonts {
 
     static {
         try {
-            robotoBlackName = Font.loadFont(Fonts.class.getResourceAsStream("/edu/jhuapl/trinity/css/Roboto-Black.ttf"), 16).getName();
+            robotoBlackName = Font.loadFont(StyleResourceProvider.getResourceAsStream("Roboto-Black.ttf"), 16).getName();
         } catch (Exception exception) {
         }
         try {
-            robotoRegularName = Font.loadFont(Fonts.class.getResourceAsStream("/edu/jhuapl/trinity/css/Roboto-Regular.ttf"), 14).getName();
+            robotoRegularName = Font.loadFont(StyleResourceProvider.getResourceAsStream("Roboto-Regular.ttf"), 14).getName();
         } catch (Exception exception) {
         }
         try {
-            robotoThinName = Font.loadFont(Fonts.class.getResourceAsStream("/edu/jhuapl/trinity/css/Roboto-Thin.ttf"), 12).getName();
+            robotoThinName = Font.loadFont(StyleResourceProvider.getResourceAsStream("Roboto-Thin.ttf"), 12).getName();
         } catch (Exception exception) {
         }
 

@@ -3,6 +3,7 @@
 package edu.jhuapl.trinity.javafx.javafx3d;
 
 import edu.jhuapl.trinity.App;
+import edu.jhuapl.trinity.css.StyleResourceProvider;
 import edu.jhuapl.trinity.data.CoordinateSet;
 import edu.jhuapl.trinity.data.files.FeatureCollectionFile;
 import edu.jhuapl.trinity.data.messages.bci.SemanticMap;
@@ -26,6 +27,7 @@ import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.javafx.events.ShadowEvent;
 import edu.jhuapl.trinity.javafx.events.TimelineEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.TessellationTube;
+import edu.jhuapl.trinity.javafx.javafx3d.images.ImageResourceProvider;
 import edu.jhuapl.trinity.javafx.javafx3d.tasks.AffinityClusterTask;
 import edu.jhuapl.trinity.javafx.javafx3d.tasks.DBSCANClusterTask;
 import edu.jhuapl.trinity.javafx.javafx3d.tasks.ExMaxClusterTask;
@@ -697,7 +699,7 @@ public class Hypersurface3DPane extends StackPane
                 dialogPane.setBackground(Background.EMPTY);
                 dialogPane.getScene().setFill(Color.TRANSPARENT);
 
-                String DIALOGCSS = this.getClass().getResource("/edu/jhuapl/trinity/css/dialogstyles.css").toExternalForm();
+                String DIALOGCSS = StyleResourceProvider.getResource("dialogstyles.css").toExternalForm();
                 dialogPane.getStylesheets().add(DIALOGCSS);
 
                 Optional<ButtonType> optBT = alert.showAndWait();
@@ -1059,12 +1061,12 @@ public class Hypersurface3DPane extends StackPane
     private void setupSkyBox() {
         //Load SkyBox image
         Image
-            top = new Image(Hyperspace3DPane.class.getResource("images/darkmetalbottom.png").toExternalForm()),
-            bottom = new Image(Hyperspace3DPane.class.getResource("images/darkmetalbottom.png").toExternalForm()),
-            left = new Image(Hyperspace3DPane.class.getResource("images/1500_blackgrid.png").toExternalForm()),
-            right = new Image(Hyperspace3DPane.class.getResource("images/1500_blackgrid.png").toExternalForm()),
-            front = new Image(Hyperspace3DPane.class.getResource("images/1500_blackgrid.png").toExternalForm()),
-            back = new Image(Hyperspace3DPane.class.getResource("images/1500_blackgrid.png").toExternalForm());
+            top = new Image(ImageResourceProvider.getResource("darkmetalbottom.png").toExternalForm()),
+            bottom = new Image(ImageResourceProvider.getResource("darkmetalbottom.png").toExternalForm()),
+            left = new Image(ImageResourceProvider.getResource("1500_blackgrid.png").toExternalForm()),
+            right = new Image(ImageResourceProvider.getResource("1500_blackgrid.png").toExternalForm()),
+            front = new Image(ImageResourceProvider.getResource("1500_blackgrid.png").toExternalForm()),
+            back = new Image(ImageResourceProvider.getResource("1500_blackgrid.png").toExternalForm());
 
         // Load Skybox AFTER camera is initialized
         double size = 100000D;

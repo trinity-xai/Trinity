@@ -345,6 +345,7 @@ jlink {
         mainClass = mainClassPath
         jvmArgs = ['-Dprism.maxvram=2G', '-Djavafx.animation.fullspeed=true']
         jvmArgs += ["-Dlogback.configurationFile={{BIN_DIR}}${fileSep}logback.xml"]
+        jvmArgs += ["-Dtrinity.app.dir={{BIN_DIR}}"]
         //jvmArgs += ["--add-exports external.module.name/external.package.name=$sModuleName", ...]
     }
     //forceMerge('javafx')
@@ -357,6 +358,7 @@ jlink {
         imageOptions += ['--verbose']
         jvmArgs = ['-Dprism.maxvram=2G', '-Djavafx.animation.fullspeed=true']
         jvmArgs += ["-Dlogback.configurationFile=\$APPDIR${fileSep}logback.xml"]
+        jvmArgs += ["-Dtrinity.app.dir=\$APPDIR"]
         jvmArgs += ['--module-path', '.']
         if (currentOS.windows) {
             skipInstaller = true
@@ -387,6 +389,14 @@ tasks.jlink.doLast {
         from("$sourceSets.main.output.resourcesDir/logback.xml")
         into("$imageDir/bin")
     }
+    copy {
+        from("$projectDir/services")
+        into("$imageDir/bin/services")
+    }
+    copy {
+        from("$projectDir/analysis")
+        into("$imageDir/bin/analysis")
+    }
 }
 
 tasks.jpackageImage.doLast {
@@ -400,6 +410,14 @@ tasks.jpackageImage.doLast {
     copy {
         from("$sourceSets.main.output.resourcesDir/logback.xml")
         into layout.buildDirectory.dir(copyTo)
+    }
+    copy {
+        from("$projectDir/services")
+        into layout.buildDirectory.dir("$copyTo/services")
+    }
+    copy {
+        from("$projectDir/analysis")
+        into layout.buildDirectory.dir("$copyTo/analysis")
     }
 }
 

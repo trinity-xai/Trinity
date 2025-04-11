@@ -2,6 +2,7 @@
 
 package edu.jhuapl.trinity.utils.loaders;
 
+import edu.jhuapl.trinity.css.StyleResourceProvider;
 import edu.jhuapl.trinity.data.Trajectory;
 import edu.jhuapl.trinity.data.files.McclodSplitDataTsvFile;
 import edu.jhuapl.trinity.data.messages.SystemFeatures;
@@ -72,7 +73,7 @@ public class McclodSplitDataLoader extends Task {
         DialogPane dialogPane = alert.getDialogPane();
         dialogPane.setBackground(Background.EMPTY);
         dialogPane.getScene().setFill(Color.TRANSPARENT);
-        String DIALOGCSS = ResourceUtils.class.getResource("/edu/jhuapl/trinity/css/dialogstyles.css").toExternalForm();
+        String DIALOGCSS = StyleResourceProvider.getResource("dialogstyles.css").toExternalForm();
         dialogPane.getStylesheets().add(DIALOGCSS);
         Optional<ButtonType> optBT = alert.showAndWait();
         if (optBT.get().equals(ButtonType.YES))

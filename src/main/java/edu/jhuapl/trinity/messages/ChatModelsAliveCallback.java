@@ -1,5 +1,6 @@
 package edu.jhuapl.trinity.messages;
 
+import edu.jhuapl.trinity.css.StyleResourceProvider;
 import edu.jhuapl.trinity.data.messages.llm.AliveModels;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.ErrorEvent;
@@ -43,8 +44,7 @@ public class ChatModelsAliveCallback extends RestConsumer {
             DialogPane dialogPane = alert.getDialogPane();
             dialogPane.setBackground(Background.EMPTY);
             dialogPane.getScene().setFill(Color.TRANSPARENT);
-            String DIALOGCSS = ChatModelsAliveCallback.class.getResource(
-                "/edu/jhuapl/trinity/css/dialogstyles.css").toExternalForm();
+            String DIALOGCSS = StyleResourceProvider.getResource("dialogstyles.css").toExternalForm();
             dialogPane.getStylesheets().add(DIALOGCSS);
             alert.showAndWait();
         });

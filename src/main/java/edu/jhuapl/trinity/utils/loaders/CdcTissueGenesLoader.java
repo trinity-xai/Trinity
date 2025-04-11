@@ -50,23 +50,21 @@ public class CdcTissueGenesLoader extends Task {
             }
         });
 //        Platform.runLater(() -> {
-//            Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
-//                "Clear existing data?",
-//                ButtonType.YES, ButtonType.NO);
+//            Alert alert = new Alert(Alert.AlertType.CONFIRMATION, "Clear existing data?", ButtonType.YES, ButtonType.NO);
 //            alert.setHeaderText("Loading Gene Tissue Data");
 //            alert.setGraphic(ResourceUtils.loadIcon("alert", 75));
 //            alert.initStyle(StageStyle.TRANSPARENT);
 //            DialogPane dialogPane = alert.getDialogPane();
 //            dialogPane.setBackground(Background.EMPTY);
 //            dialogPane.getScene().setFill(Color.TRANSPARENT);
-//            String DIALOGCSS = ResourceUtils.class.getResource("/edu/jhuapl/trinity/css/dialogstyles.css").toExternalForm();
+//            String DIALOGCSS = StyleResourceProvider.getResource("dialogstyles.css").toExternalForm();
 //            dialogPane.getStylesheets().add(DIALOGCSS);
 //            Optional<ButtonType> optBT = alert.showAndWait();
-//            if (optBT.get().equals(ButtonType.YES))
-//    //            Platform.runLater(() -> {
-//                    scene.getRoot().fireEvent(
-//                        new HyperspaceEvent(HyperspaceEvent.CLEAR_HYPERSPACE_NOW));
-//    //            });
+//            if (optBT.get().equals(ButtonType.YES)) {
+//                //Platform.runLater(() -> {
+//                    scene.getRoot().fireEvent(new HyperspaceEvent(HyperspaceEvent.CLEAR_HYPERSPACE_NOW));
+//                //});
+//            }
 //        });
     }
 

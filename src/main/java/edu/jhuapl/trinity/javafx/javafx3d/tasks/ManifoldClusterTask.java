@@ -2,6 +2,7 @@
 
 package edu.jhuapl.trinity.javafx.javafx3d.tasks;
 
+import edu.jhuapl.trinity.css.StyleResourceProvider;
 import edu.jhuapl.trinity.data.FactorLabel;
 import edu.jhuapl.trinity.data.Manifold;
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
@@ -105,7 +106,7 @@ public class ManifoldClusterTask extends ClusterTask {
         dialogPane.setContent(contentVBox);
         dialogPane.setBackground(Background.EMPTY);
         dialogPane.getScene().setFill(Color.TRANSPARENT);
-        String DIALOGCSS = ResourceUtils.class.getResource("/edu/jhuapl/trinity/css/dialogstyles.css").toExternalForm();
+        String DIALOGCSS = StyleResourceProvider.getResource("dialogstyles.css").toExternalForm();
         dialogPane.getStylesheets().add(DIALOGCSS);
         Optional<ButtonType> optBT = alert.showAndWait();
         if (optBT.get().equals(ButtonType.APPLY)) {

@@ -3,6 +3,7 @@
 package edu.jhuapl.trinity.utils;
 
 import edu.jhuapl.trinity.audio.AudioResourceProvider;
+import edu.jhuapl.trinity.css.StyleResourceProvider;
 import edu.jhuapl.trinity.data.Trajectory;
 import edu.jhuapl.trinity.data.files.CdcCsvFile;
 import edu.jhuapl.trinity.data.files.CdcTissueGenesFile;
@@ -638,7 +639,7 @@ public enum ResourceUtils {
         DialogPane dialogPane = alert.getDialogPane();
         dialogPane.setBackground(Background.EMPTY);
         dialogPane.getScene().setFill(Color.TRANSPARENT);
-        String DIALOGCSS = ResourceUtils.class.getResource("/edu/jhuapl/trinity/css/dialogstyles.css").toExternalForm();
+        String DIALOGCSS = StyleResourceProvider.getResource("dialogstyles.css").toExternalForm();
         dialogPane.getStylesheets().add(DIALOGCSS);
         Optional<ButtonType> optBT = alert.showAndWait();
         return optBT.get().equals(ButtonType.YES);

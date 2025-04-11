@@ -1,6 +1,7 @@
 package edu.jhuapl.trinity.javafx.components.panes;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import edu.jhuapl.trinity.css.StyleResourceProvider;
 import edu.jhuapl.trinity.data.messages.llm.AiModel;
 import edu.jhuapl.trinity.data.messages.llm.AliveModels;
 import edu.jhuapl.trinity.data.messages.llm.ChatCaptionResponse;
@@ -70,6 +71,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.TextAlignment;
+import javafx.stage.DirectoryChooser;
 import javafx.stage.StageStyle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -128,6 +130,8 @@ public class HyperdrivePane extends LitPathPane {
     CircleProgressIndicator imageEmbeddingRequestIndicator;
     LandmarkTextBuilderBox landmarkTextBuilderBox;
     LandmarkImageBuilderBox landmarkImageBuilderBox;
+    TextField embeddingsLocationTextField;
+    TextField chatLocationTextField;
     ChoiceBox<String> metricChoiceBox;
     AtomicInteger requestNumber;
     HashMap<Integer, STATUS> outstandingRequests;
@@ -330,7 +334,7 @@ public class HyperdrivePane extends LitPathPane {
                 DialogPane dialogPane = td.getDialogPane();
                 dialogPane.setBackground(Background.EMPTY);
                 dialogPane.getScene().setFill(Color.TRANSPARENT);
-                String DIALOGCSS = this.getClass().getResource("/edu/jhuapl/trinity/css/dialogstyles.css").toExternalForm();
+                String DIALOGCSS = StyleResourceProvider.getResource("dialogstyles.css").toExternalForm();
                 dialogPane.getStylesheets().add(DIALOGCSS);
                 Optional<String> captionOptional = td.showAndWait();
                 if (captionOptional.isPresent()) {
@@ -363,7 +367,7 @@ public class HyperdrivePane extends LitPathPane {
                     dialogPane.setBackground(Background.EMPTY);
                     dialogPane.getScene().setFill(Color.TRANSPARENT);
                     dialogPane.setContent(box);
-                    String DIALOGCSS = HyperdrivePane.class.getResource("/edu/jhuapl/trinity/css/dialogstyles.css").toExternalForm();
+                    String DIALOGCSS = StyleResourceProvider.getResource("dialogstyles.css").toExternalForm();
                     dialogPane.getStylesheets().add(DIALOGCSS);
                     Optional<ButtonType> captionOptional = alert.showAndWait();
                     if (captionOptional.get() == ButtonType.OK) {
@@ -585,6 +589,52 @@ public class HyperdrivePane extends LitPathPane {
             RestAccessLayer.requestChatModels(chatStatusButton.getScene());
         });
 
+        TextField serviceDirTextField = new TextField(RestAccessLayer.SERVICES_DEFAULT_PATH);
+        serviceDirTextField.setEditable(false);
+        Button browseServiceDirButton = new Button("Browse Services");
+        browseServiceDirButton.setOnAction(e -> {
+            DirectoryChooser dc = new DirectoryChooser();
+            dc.setTitle("Browse to Desired Services Directory");
+            File dir = dc.showDialog(null);
+            if (null != dir) {
+                RestAccessLayer.SERVICES_DEFAULT_PATH = dir.getAbsolutePath() + File.separator;
+                Prompts.PROMPTS_DEFAULT_PATH = dir.getAbsolutePath();
+                serviceDirTextField.setText(dir.getAbsolutePath() + File.separator);
+            }
+        });
+        Button applyServiceDirButton = new Button("Reload Services");
+        applyServiceDirButton.setOnAction(e -> {
+            try {
+                RestAccessLayer.loadDefaultRestConfig();
+                embeddingsLocationTextField.setText(
+                    RestAccessLayer.restAccessLayerconfig.getBaseRestURL() +
+                        RestAccessLayer.restAccessLayerconfig.getImageEmbeddingsEndpoint()
+                );
+                chatLocationTextField.setText(
+                    RestAccessLayer.restAccessLayerconfig.getBaseRestURL() +
+                        RestAccessLayer.restAccessLayerconfig.getChatCompletionEndpoint()
+                );
+
+            } catch (IOException ex) {
+                Alert alert = new Alert(Alert.AlertType.ERROR);
+                alert.setHeaderText("Check services directory path");
+                alert.setContentText("Error loading from: \n" + RestAccessLayer.SERVICES_DEFAULT_PATH);
+                alert.setGraphic(ResourceUtils.loadIcon("error", 75));
+                alert.initStyle(StageStyle.TRANSPARENT);
+                DialogPane dialogPane = alert.getDialogPane();
+                dialogPane.setBackground(Background.EMPTY);
+                dialogPane.getScene().setFill(Color.TRANSPARENT);
+                String DIALOGCSS = StyleResourceProvider.getResource("dialogstyles.css").toExternalForm();
+                dialogPane.getStylesheets().add(DIALOGCSS);
+                alert.showAndWait();
+
+            }
+        });
+
+        HBox serviceDirHBox = new HBox(20, browseServiceDirButton, applyServiceDirButton);
+        VBox serviceDirVBox = new VBox(10,
+            new Label("Services Directory"), serviceDirTextField, serviceDirHBox);
+
         Spinner<Integer> batchSizeSpinner = new Spinner(1, 256, batchSize, 1);
         batchSizeSpinner.valueProperty().addListener(c -> {
             batchSize = batchSizeSpinner.getValue();
@@ -623,7 +673,7 @@ public class HyperdrivePane extends LitPathPane {
         servicesTab.setContent(servicesGrid);
 
         //Image Embeddings Service
-        TextField embeddingsLocationTextField = new TextField(
+        embeddingsLocationTextField = new TextField(
             RestAccessLayer.restAccessLayerconfig.getBaseRestURL() +
                 RestAccessLayer.restAccessLayerconfig.getImageEmbeddingsEndpoint()
         );
@@ -672,7 +722,7 @@ public class HyperdrivePane extends LitPathPane {
         });
 
         //Chat Completion Service
-        TextField chatLocationTextField = new TextField(
+        chatLocationTextField = new TextField(
             RestAccessLayer.restAccessLayerconfig.getBaseRestURL() +
                 RestAccessLayer.restAccessLayerconfig.getChatCompletionEndpoint()
         );
@@ -745,11 +795,14 @@ public class HyperdrivePane extends LitPathPane {
         GridPane.setColumnSpan(separator, GridPane.REMAINING);
         servicesGrid.add(separator, 0, 2);
 
+        serviceDirVBox.setAlignment(Pos.CENTER_LEFT);
+        servicesGrid.add(serviceDirVBox, 0, 3);
+
         requestsSpinnerVBox.setAlignment(Pos.CENTER_LEFT);
-        servicesGrid.add(requestsSpinnerVBox, 0, 3);
+        servicesGrid.add(requestsSpinnerVBox, 0, 4);
 
         chunkingSpinnerVBox.setAlignment(Pos.CENTER_LEFT);
-        servicesGrid.add(chunkingSpinnerVBox, 1, 3);
+        servicesGrid.add(chunkingSpinnerVBox, 1, 4);
 
 
         textEmbeddingsBorderPane.addEventHandler(DragEvent.DRAG_OVER, event -> {

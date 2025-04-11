@@ -2,6 +2,7 @@
 
 package edu.jhuapl.trinity.javafx.javafx3d.tasks;
 
+import edu.jhuapl.trinity.css.StyleResourceProvider;
 import edu.jhuapl.trinity.data.messages.xai.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.javafx.components.radial.ProgressStatus;
@@ -49,7 +50,7 @@ public class ProjectUmapFeaturesTask extends Task {
             DialogPane dialogPane = alert.getDialogPane();
             dialogPane.setBackground(Background.EMPTY);
             dialogPane.getScene().setFill(Color.TRANSPARENT);
-            String DIALOGCSS = this.getClass().getResource("/edu/jhuapl/trinity/css/dialogstyles.css").toExternalForm();
+            String DIALOGCSS = StyleResourceProvider.getResource("dialogstyles.css").toExternalForm();
             dialogPane.getStylesheets().add(DIALOGCSS);
             alert.setX(scene.getWidth() - 500);
             alert.setY(500);

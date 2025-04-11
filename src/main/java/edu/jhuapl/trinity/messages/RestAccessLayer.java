@@ -38,15 +38,23 @@ public enum RestAccessLayer {
     private static final Logger LOG = LoggerFactory.getLogger(RestAccessLayer.class);
     private static HttpClient httpClient;
     private static ObjectMapper objectMapper;
-    public static final String SERVICES_DEFAULT_PATH = "services/"; //default to local relative path
-    public static final String SERVICES_DEFAULT_CONFIG = "defaultRestAccessLayer.json";
+    //default local relative path obtained as a system property if running from JLink/Jpackage
+    public static final String TRINITY_APP_DIR_PROPERTY = "trinity.app.dir";
+    //default to local relative path if loading from a Jar/IDE
+    public static String SERVICES_DEFAULT_PATH = "services" + File.separator;
+    public static String SERVICES_DEFAULT_CONFIG = "defaultRestAccessLayer.json";
     public static RestAccessLayerConfig restAccessLayerconfig = null;
     public static final int DEFAULT_TIMEOUT_SECONDS = 60;
-    //    public static final MediaType JSON = MediaType.get("application/json; charset=utf-8");
+    public static final int SUCCESS_STATUS_CODE = 200;
+    public static final String CONTENT_TYPE = "Content-Type";
+    public static final String JSON = "application/json";
     public static String currentEmbeddingsModel = null;
     public static String currentChatModel = null;
 
     static {
+        //Load any defaults like services path from system properties
+        //These are injected when running from JLink/JPackage type builds
+        checkSystemProperties(); //should be called once to ensure we factor these in
         objectMapper = new ObjectMapper();
         objectMapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         objectMapper.configure(SerializationFeature.FAIL_ON_EMPTY_BEANS, false);
@@ -61,19 +69,40 @@ public enum RestAccessLayer {
             LOG.error(ex.getMessage());
             System.out.println("Error attempting to find and load REST Services Config: "
                 + SERVICES_DEFAULT_PATH + SERVICES_DEFAULT_CONFIG);
+            restAccessLayerconfig = RestAccessLayerConfig.getDefault();
         }
         currentEmbeddingsModel = restAccessLayerconfig.getDefaultImageModel();
         currentChatModel = restAccessLayerconfig.getDefaultCaptionModel();
     }
 
+    private static void checkSystemProperties() {
+        //Check if we are running from JLink/JPackage scenario. If so use System property
+        try {
+            String servicesDir = System.getProperty(TRINITY_APP_DIR_PROPERTY);
+            //if it is null then the property isn't there and we assume Jar/IDE
+            if (null != servicesDir) {
+                //We assume its JLink/JPackage and hope they put in a good directory
+                SERVICES_DEFAULT_PATH = servicesDir;
+                if (!SERVICES_DEFAULT_PATH.endsWith(File.separator))
+                    SERVICES_DEFAULT_PATH = SERVICES_DEFAULT_PATH + File.separator;
+            }
+        } catch (Exception ex) {
+            //We are running from Jar/IDE or something else went wrong, use local relative
+            LOG.info(TRINITY_APP_DIR_PROPERTY + " not found as System Property." + System.lineSeparator()
+                + "Using current path of " + SERVICES_DEFAULT_PATH);
+        }
+    }
+
     public static RestAccessLayerConfig loadDefaultRestConfig() throws IOException {
+        if (!SERVICES_DEFAULT_PATH.endsWith(File.separator))
+            SERVICES_DEFAULT_PATH = SERVICES_DEFAULT_PATH + File.separator;
         File defaultConfigFile = new File(SERVICES_DEFAULT_PATH + SERVICES_DEFAULT_CONFIG);
         if (!defaultConfigFile.exists() || !defaultConfigFile.canRead()) {
-            return null;
+            return restAccessLayerconfig = RestAccessLayerConfig.getDefault();
         }
         String message = Files.readString(defaultConfigFile.toPath());
         RestAccessLayerConfig config = objectMapper.readValue(message, RestAccessLayerConfig.class);
-        return config;
+        return restAccessLayerconfig = config;
     }
 
     //Text and Image REST calls
@@ -81,12 +110,12 @@ public enum RestAccessLayer {
                                                   Scene scene, List<Integer> inputIDs, int requestNumber) throws JsonProcessingException {
         if (restServiceFailed(scene)) return;
         String inputJSON = objectMapper.writeValueAsString(input);
-//        @DEBUG SMP
-//        System.out.println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(input));
+        //@DEBUG SMP
+        //System.out.println(objectMapper.writerWithDefaultPrettyPrinter().writeValueAsString(input));
         HttpRequest request = makeHttpPostRequest(inputJSON, restAccessLayerconfig.getImageEmbeddingsEndpoint());
         httpClient.sendAsync(request, BodyHandlers.ofString())
             .thenAcceptAsync(resp -> {
-                if (resp.statusCode() != 200) {
+                if (resp.statusCode() != SUCCESS_STATUS_CODE) {
                     new EmbeddingsTextQueryCallback(scene, inputIDs, requestNumber).onFailure();
                 } else {
                     new EmbeddingsTextQueryCallback(scene, inputIDs, requestNumber).processResponse(resp.body());
@@ -101,7 +130,7 @@ public enum RestAccessLayer {
         HttpRequest request = makeHttpPostRequest(inputJSON, restAccessLayerconfig.getImageEmbeddingsEndpoint());
         httpClient.sendAsync(request, BodyHandlers.ofString())
             .thenAcceptAsync(resp -> {
-                if (resp.statusCode() != 200) {
+                if (resp.statusCode() != SUCCESS_STATUS_CODE) {
                     new EmbeddingsTextCallback(scene, inputIDs, requestNumber).onFailure();
                 } else {
                     new EmbeddingsTextCallback(scene, inputIDs, requestNumber).processResponse(resp.body());
@@ -116,7 +145,7 @@ public enum RestAccessLayer {
         HttpRequest request = makeHttpPostRequest(inputJSON, restAccessLayerconfig.getImageEmbeddingsEndpoint());
         httpClient.sendAsync(request, BodyHandlers.ofString())
             .thenAcceptAsync(resp -> {
-                if (resp.statusCode() != 200) {
+                if (resp.statusCode() != SUCCESS_STATUS_CODE) {
                     new EmbeddingsTextLandmarkCallback(scene, inputIDs, requestNumber).onFailure();
                 } else {
                     new EmbeddingsTextLandmarkCallback(scene, inputIDs, requestNumber).processResponse(resp.body());
@@ -131,7 +160,7 @@ public enum RestAccessLayer {
         HttpRequest request = makeHttpPostRequest(inputJSON, restAccessLayerconfig.getImageEmbeddingsEndpoint());
         httpClient.sendAsync(request, BodyHandlers.ofString())
             .thenAcceptAsync(resp -> {
-                if (resp.statusCode() != 200) {
+                if (resp.statusCode() != SUCCESS_STATUS_CODE) {
                     new EmbeddingsImageCallback(scene, inputIDs, requestNumber).onFailure();
                 } else {
                     new EmbeddingsImageCallback(scene, inputIDs, requestNumber).processResponse(resp.body());
@@ -146,7 +175,7 @@ public enum RestAccessLayer {
         HttpRequest request = makeHttpPostRequest(inputJSON, restAccessLayerconfig.getImageEmbeddingsEndpoint());
         httpClient.sendAsync(request, BodyHandlers.ofString())
             .thenAcceptAsync(resp -> {
-                if (resp.statusCode() != 200) {
+                if (resp.statusCode() != SUCCESS_STATUS_CODE) {
                     new EmbeddingsImageLandmarkCallback(scene, inputIDs, requestNumber).onFailure();
                 } else {
                     new EmbeddingsImageLandmarkCallback(scene, inputIDs, requestNumber).processResponse(resp.body());
@@ -160,7 +189,7 @@ public enum RestAccessLayer {
         HttpRequest request = makeHttpPostRequest(inputJSON, restAccessLayerconfig.getChatCompletionEndpoint());
         httpClient.sendAsync(request, BodyHandlers.ofString())
             .thenAcceptAsync(resp -> {
-                if (resp.statusCode() != 200) {
+                if (resp.statusCode() != SUCCESS_STATUS_CODE) {
                     new ChatCompletionCallback(scene, inputIDs, requestNumber).onFailure();
                 } else {
                     new ChatCompletionCallback(scene, inputIDs, requestNumber).processResponse(resp.body());
@@ -174,12 +203,12 @@ public enum RestAccessLayer {
             .uri(URI.create(restAccessLayerconfig.getBaseRestURL()
                 + restAccessLayerconfig.getChatModelsEndpoint()))
             .timeout(Duration.ofSeconds(DEFAULT_TIMEOUT_SECONDS))
-            .header("Content-Type", "application/json")
+            .header(CONTENT_TYPE, JSON)
             .GET()
             .build();
         httpClient.sendAsync(request, BodyHandlers.ofString())
             .thenAcceptAsync(resp -> {
-                if (resp.statusCode() != 200) {
+                if (resp.statusCode() != SUCCESS_STATUS_CODE) {
                     new ChatModelsAliveCallback(scene).onFailure();
                 } else {
                     new ChatModelsAliveCallback(scene).processResponse(resp.body());
@@ -192,7 +221,7 @@ public enum RestAccessLayer {
             .uri(URI.create(restAccessLayerconfig.getBaseRestURL()
                 + restAccessLayerconfig.getIsAliveEndpoint()))
             .timeout(Duration.ofSeconds(DEFAULT_TIMEOUT_SECONDS))
-            .header("Content-Type", "application/json")
+            .header(CONTENT_TYPE, JSON)
             .GET()
             .build();
         httpClient.sendAsync(request, BodyHandlers.ofString())
@@ -204,7 +233,7 @@ public enum RestAccessLayer {
         return HttpRequest.newBuilder()
             .uri(URI.create(restAccessLayerconfig.getBaseRestURL() + endPoint))
             .timeout(Duration.ofSeconds(DEFAULT_TIMEOUT_SECONDS))
-            .header("Content-Type", "application/json")
+            .header(CONTENT_TYPE, JSON)
             .POST(BodyPublishers.ofString(payload))
             .build();
     }

@@ -53,6 +53,19 @@ public class RestAccessLayerConfig extends MessageData {
             && messageBody.contains(TYPESTRING);
     }
 
+    public static RestAccessLayerConfig getDefault() {
+        RestAccessLayerConfig config = new RestAccessLayerConfig();
+        config.setBaseRestURL("https://localhost");
+        config.setIsAliveEndpoint("/v2/embeddings/alive");
+        config.setImageEmbeddingsEndpoint("/v2/embeddings");
+        config.setDefaultImageModel("openai/clip-vit-large-patch14");
+        config.setChatModelsEndpoint("/v2/models/alive");
+        config.setChatCompletionEndpoint("/v2/chat/completions");
+        config.setDefaultCaptionModel("meta-llama/Llama-3.2-90B-Vision-Instruct");
+        config.setNotes("Default coded settings used at initialization");
+
+        return config;
+    }
     //<editor-fold defaultstate="collapsed" desc="Properties">
 
     /**
