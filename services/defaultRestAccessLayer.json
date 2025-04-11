@@ -1,15 +1,12 @@
 {
-  "messageType" : "RestAccessLayerConfig",
-  "messageId" : 0,
-  "baseRestURL" : "https://localhost",
-  
-  "isAliveEndpoint" : "/v2/embeddings/alive",
-  "imageEmbeddingsEndpoint" : "/v2/embeddings",
-  "defaultImageModel" : "openai/clip-vit-large-patch14",
-  
-  "chatModelsEndpoint" : "/v2/models/alive",
-  "chatCompletionEndpoint" : "/v2/chat/completions",
-  "defaultCaptionModel" : "meta-llama/Llama-3.2-90B-Vision-Instruct",
-  
-  "notes" : "Available services"
+  "messageType": "RestAccessLayerConfig",
+  "messageId": 0,
+  "baseRestURL": "https://localhost",
+  "isAliveEndpoint": "/v2/embeddings/alive",
+  "imageEmbeddingsEndpoint": "/v2/embeddings",
+  "defaultImageModel": "openai/clip-vit-large-patch14",
+  "chatModelsEndpoint": "/v2/models/alive",
+  "chatCompletionEndpoint": "/v2/chat/completions",
+  "defaultCaptionModel": "meta-llama/Llama-3.2-90B-Vision-Instruct",
+  "notes": "Available services"
 }
