@@ -15,6 +15,7 @@ import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.javafx.events.ShadowEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.ShadowCubeWorld.PROJECTION_TYPE;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.AnimatedSphere;
+import edu.jhuapl.trinity.javafx.javafx3d.images.ImageResourceProvider;
 import edu.jhuapl.trinity.javafx.javafx3d.projectiles.HitShape3D;
 import edu.jhuapl.trinity.javafx.javafx3d.projectiles.ProjectileSystem;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
@@ -777,8 +778,7 @@ public class AsteroidFieldPane extends StackPane {
     private void setupSkyBox() {
         // Load Skybox AFTER camera is initialized
         double size = 100000D;
-        Image singleImage = new Image(AsteroidFieldPane.class.getResource(
-            "images/space-skybox.png").toExternalForm());
+        Image singleImage = new Image(ImageResourceProvider.getResource("space-skybox.png").toExternalForm());
         skybox = new Skybox(
             singleImage,
             size,

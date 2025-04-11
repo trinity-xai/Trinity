@@ -1,6 +1,7 @@
 package edu.jhuapl.trinity.javafx.components.panes;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
+import edu.jhuapl.trinity.css.StyleResourceProvider;
 import edu.jhuapl.trinity.data.messages.llm.AiModel;
 import edu.jhuapl.trinity.data.messages.llm.AliveModels;
 import edu.jhuapl.trinity.data.messages.llm.ChatCaptionResponse;
@@ -333,7 +334,7 @@ public class HyperdrivePane extends LitPathPane {
                 DialogPane dialogPane = td.getDialogPane();
                 dialogPane.setBackground(Background.EMPTY);
                 dialogPane.getScene().setFill(Color.TRANSPARENT);
-                String DIALOGCSS = this.getClass().getResource("/edu/jhuapl/trinity/css/dialogstyles.css").toExternalForm();
+                String DIALOGCSS = StyleResourceProvider.getResource("dialogstyles.css").toExternalForm();
                 dialogPane.getStylesheets().add(DIALOGCSS);
                 Optional<String> captionOptional = td.showAndWait();
                 if (captionOptional.isPresent()) {
@@ -366,7 +367,7 @@ public class HyperdrivePane extends LitPathPane {
                     dialogPane.setBackground(Background.EMPTY);
                     dialogPane.getScene().setFill(Color.TRANSPARENT);
                     dialogPane.setContent(box);
-                    String DIALOGCSS = HyperdrivePane.class.getResource("/edu/jhuapl/trinity/css/dialogstyles.css").toExternalForm();
+                    String DIALOGCSS = StyleResourceProvider.getResource("dialogstyles.css").toExternalForm();
                     dialogPane.getStylesheets().add(DIALOGCSS);
                     Optional<ButtonType> captionOptional = alert.showAndWait();
                     if (captionOptional.get() == ButtonType.OK) {
@@ -623,7 +624,7 @@ public class HyperdrivePane extends LitPathPane {
                 DialogPane dialogPane = alert.getDialogPane();
                 dialogPane.setBackground(Background.EMPTY);
                 dialogPane.getScene().setFill(Color.TRANSPARENT);
-                String DIALOGCSS = HyperdrivePane.class.getResource("/edu/jhuapl/trinity/css/dialogstyles.css").toExternalForm();
+                String DIALOGCSS = StyleResourceProvider.getResource("dialogstyles.css").toExternalForm();
                 dialogPane.getStylesheets().add(DIALOGCSS);
                 alert.showAndWait();
 

@@ -17,6 +17,7 @@ package edu.jhuapl.trinity.javafx.components;
  */
 
 import edu.jhuapl.trinity.App;
+import edu.jhuapl.trinity.css.StyleResourceProvider;
 import javafx.animation.Interpolator;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
@@ -466,7 +467,7 @@ public class Joystick extends Region {
             }
         };
 
-        getStylesheets().add(Joystick.class.getResource("/edu/jhuapl/trinity/css/touchjoystick.css").toExternalForm());
+        getStylesheets().add(StyleResourceProvider.getResource("touchjoystick.css").toExternalForm());
 
         initGraphics();
         registerListeners();

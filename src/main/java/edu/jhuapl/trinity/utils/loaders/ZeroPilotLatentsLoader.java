@@ -2,6 +2,7 @@
 
 package edu.jhuapl.trinity.utils.loaders;
 
+import edu.jhuapl.trinity.css.StyleResourceProvider;
 import edu.jhuapl.trinity.data.Trajectory;
 import edu.jhuapl.trinity.data.ZeroPilotLatents;
 import edu.jhuapl.trinity.data.files.ZeroPilotLatentsFile;
@@ -86,7 +87,7 @@ public class ZeroPilotLatentsLoader extends Task {
             DialogPane dialogPane = alert.getDialogPane();
             dialogPane.setBackground(Background.EMPTY);
             dialogPane.getScene().setFill(Color.TRANSPARENT);
-            String DIALOGCSS = ResourceUtils.class.getResource("/edu/jhuapl/trinity/css/dialogstyles.css").toExternalForm();
+            String DIALOGCSS = StyleResourceProvider.getResource("dialogstyles.css").toExternalForm();
             dialogPane.getStylesheets().add(DIALOGCSS);
             Optional<ButtonType> optBT = alert.showAndWait();
             if (optBT.get().equals(ButtonType.YES))
