@@ -52,6 +52,7 @@ public class RestAccessLayerConfig extends MessageData {
         return messageBody.contains("messageType")
             && messageBody.contains(TYPESTRING);
     }
+
     public static RestAccessLayerConfig getDefault() {
         RestAccessLayerConfig config = new RestAccessLayerConfig();
         config.setBaseRestURL("https://localhost");
@@ -62,7 +63,7 @@ public class RestAccessLayerConfig extends MessageData {
         config.setChatCompletionEndpoint("/v2/chat/completions");
         config.setDefaultCaptionModel("meta-llama/Llama-3.2-90B-Vision-Instruct");
         config.setNotes("Default coded settings used at initialization");
-        
+
         return config;
     }
     //<editor-fold defaultstate="collapsed" desc="Properties">

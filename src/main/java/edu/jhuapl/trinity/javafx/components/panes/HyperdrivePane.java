@@ -70,6 +70,7 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.text.TextAlignment;
+import javafx.stage.DirectoryChooser;
 import javafx.stage.StageStyle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -92,8 +93,6 @@ import static edu.jhuapl.trinity.data.messages.xai.FeatureVector.mapToStateArray
 import static edu.jhuapl.trinity.javafx.components.listviews.EmbeddingsImageListItem.itemFromFile;
 import static edu.jhuapl.trinity.javafx.components.listviews.EmbeddingsImageListItem.itemNoRenderFromFile;
 import static edu.jhuapl.trinity.messages.RestAccessLayer.*;
-import java.util.logging.Level;
-import javafx.stage.DirectoryChooser;
 
 /**
  * @author Sean Phillips
@@ -131,7 +130,7 @@ public class HyperdrivePane extends LitPathPane {
     LandmarkTextBuilderBox landmarkTextBuilderBox;
     LandmarkImageBuilderBox landmarkImageBuilderBox;
     TextField embeddingsLocationTextField;
-    TextField chatLocationTextField;    
+    TextField chatLocationTextField;
     ChoiceBox<String> metricChoiceBox;
     AtomicInteger requestNumber;
     HashMap<Integer, STATUS> outstandingRequests;
@@ -596,7 +595,7 @@ public class HyperdrivePane extends LitPathPane {
             DirectoryChooser dc = new DirectoryChooser();
             dc.setTitle("Browse to Desired Services Directory");
             File dir = dc.showDialog(null);
-            if(null != dir) {
+            if (null != dir) {
                 RestAccessLayer.SERVICES_DEFAULT_PATH = dir.getAbsolutePath() + File.separator;
                 Prompts.PROMPTS_DEFAULT_PATH = dir.getAbsolutePath();
                 serviceDirTextField.setText(dir.getAbsolutePath() + File.separator);
@@ -613,8 +612,8 @@ public class HyperdrivePane extends LitPathPane {
                 chatLocationTextField.setText(
                     RestAccessLayer.restAccessLayerconfig.getBaseRestURL() +
                         RestAccessLayer.restAccessLayerconfig.getChatCompletionEndpoint()
-                );        
-                
+                );
+
             } catch (IOException ex) {
                 Alert alert = new Alert(Alert.AlertType.ERROR);
                 alert.setHeaderText("Check services directory path");
@@ -627,14 +626,14 @@ public class HyperdrivePane extends LitPathPane {
                 String DIALOGCSS = HyperdrivePane.class.getResource("/edu/jhuapl/trinity/css/dialogstyles.css").toExternalForm();
                 dialogPane.getStylesheets().add(DIALOGCSS);
                 alert.showAndWait();
-                
+
             }
         });
-        
+
         HBox serviceDirHBox = new HBox(20, browseServiceDirButton, applyServiceDirButton);
-        VBox serviceDirVBox = new VBox(10, 
-            new Label("Services Directory"), serviceDirTextField, serviceDirHBox);        
-        
+        VBox serviceDirVBox = new VBox(10,
+            new Label("Services Directory"), serviceDirTextField, serviceDirHBox);
+
         Spinner<Integer> batchSizeSpinner = new Spinner(1, 256, batchSize, 1);
         batchSizeSpinner.valueProperty().addListener(c -> {
             batchSize = batchSizeSpinner.getValue();
