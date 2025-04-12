@@ -5,7 +5,7 @@ plugins {
     id 'com.github.ben-manes.versions' version '0.52.0'
     id 'net.nemerosa.versioning' version '3.1.0'
     id 'org.openjfx.javafxplugin' version '0.1.0'
-    id 'org.gradlex.extra-java-module-info' version '1.10.1'
+    id 'org.gradlex.extra-java-module-info' version '1.12'
     id 'org.beryx.jlink' version '3.1.1'
 }
 
@@ -51,7 +51,7 @@ dependencies {
     implementation(group: 'org.fxyz3d', name: 'fxyz3d', version: '0.6.0') {
         exclude group: 'org.openjfx'
     }
-    implementation(group: 'eu.hansolo.fx', name: 'charts', version: '21.0.21') {
+    implementation(group: 'eu.hansolo.fx', name: 'charts', version: '21.0.23') {
         exclude group: 'org.openjfx'
         exclude group: 'ch.qos.logback'
     }
@@ -59,19 +59,19 @@ dependencies {
     implementation group: 'org.apache.commons', name: 'commons-math3', version: '3.6.1'
     implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.17.0'
     implementation group: 'org.zeromq', name: 'jeromq', version: '0.6.0'
-    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.18.2'
-    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.18.2'
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.18.3'
+    implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.18.3'
     implementation group: 'com.github.sarxos', name: 'webcam-capture', version: '0.3.12'
     implementation group: 'org.jflac', name: 'jflac-codec', version: '1.5.2'
     implementation group: 'com.tambapps.fft4j', name: 'fft4j', version: '2.0'
 
     // Enforce slf4j-api version across dependencies
-    implementation group: 'org.slf4j', name: 'slf4j-api', version: '2.0.16'
-    implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.5.16'
+    implementation group: 'org.slf4j', name: 'slf4j-api', version: '2.0.17'
+    implementation group: 'ch.qos.logback', name: 'logback-classic', version: '1.5.18'
 
-    testImplementation 'org.junit.jupiter:junit-jupiter:5.11.4'
-    testImplementation 'org.junit.platform:junit-platform-suite:1.11.4'
-    testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.11.4'
+    testImplementation 'org.junit.jupiter:junit-jupiter:5.12.1'
+    testImplementation 'org.junit.platform:junit-platform-suite:1.12.1'
+    testRuntimeOnly 'org.junit.platform:junit-platform-launcher:1.12.1'
 }
 
 // Make sure every single dependency is modularized.
@@ -153,7 +153,7 @@ idea {
 }
 
 tasks.named('wrapper', Wrapper) {
-    gradleVersion = '8.12.1'
+    gradleVersion = '8.13'
     distributionType = Wrapper.DistributionType.BIN
 }
 
