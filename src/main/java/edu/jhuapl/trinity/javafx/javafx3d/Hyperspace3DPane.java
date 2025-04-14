@@ -942,6 +942,7 @@ public class Hyperspace3DPane extends StackPane implements
             }
         };
         animationTimer.start();
+        subScene.sceneProperty().addListener(c -> {
         Platform.runLater(() -> {
             cubeWorld.adjustPanelsByPos(cameraTransform.rx.getAngle(),
                 cameraTransform.ry.getAngle(), cameraTransform.rz.getAngle());
@@ -952,6 +953,7 @@ public class Hyperspace3DPane extends StackPane implements
             anchorCallout = radialOverlayPane.createCallout(anchorTSM, anchorFV, subScene);
             anchorCallout.play();
             anchorCallout.setVisible(false);
+        });
         });
     }
 

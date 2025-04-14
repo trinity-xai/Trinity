@@ -1653,14 +1653,14 @@ public class Hypersurface3DPane extends StackPane
         StackPane.setAlignment(vbox, Pos.BOTTOM_LEFT);
         vbox.setPickOnBounds(false);
         getChildren().add(vbox);
-//        Utils.printTotalTime(startTime);
         updateLabels();
-
-        //create callout automatically puts the callout and node into a managed map
-        Platform.runLater(() -> {
-            FeatureVector dummy = FeatureVector.EMPTY_FEATURE_VECTOR("", 3);
-            anchorCallout = createCallout(highlightedPoint, dummy, subScene);
-            anchorCallout.play().setOnFinished(fin -> anchorCallout.setVisible(false));
+        subScene.sceneProperty().addListener(c -> {
+            //create callout automatically puts the callout and node into a managed map
+            Platform.runLater(() -> {
+                FeatureVector dummy = FeatureVector.EMPTY_FEATURE_VECTOR("", 3);
+                anchorCallout = createCallout(highlightedPoint, dummy, subScene);
+                anchorCallout.play().setOnFinished(fin -> anchorCallout.setVisible(false));
+            });
         });
     }
 

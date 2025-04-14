@@ -1374,33 +1374,33 @@ public class Projections3DPane extends StackPane implements
             projectileSystem.playerShip.setCockPitView(false);
             bindCameraRotations = false;
         });
+        subScene.sceneProperty().addListener(cl -> {
+            Platform.runLater(() -> {
+                cubeWorld.adjustPanelsByPos(cameraTransform.rx.getAngle(),
+                    cameraTransform.ry.getAngle(), cameraTransform.rz.getAngle());
+                updateFloatingNodes();
+                updateView(true);
+                //create callout automatically puts the callout and node into a managed map
+                FeatureVector dummy = FeatureVector.EMPTY_FEATURE_VECTOR("", 3);
+                anchorCallout = radialOverlayPane.createCallout(anchorTSM, dummy, subScene);
+                anchorCallout.play();
+                anchorCallout.setVisible(false);
 
-        Platform.runLater(() -> {
-            cubeWorld.adjustPanelsByPos(cameraTransform.rx.getAngle(),
-                cameraTransform.ry.getAngle(), cameraTransform.rz.getAngle());
-            updateFloatingNodes();
-            updateView(true);
-            //create callout automatically puts the callout and node into a managed map
-            FeatureVector dummy = FeatureVector.EMPTY_FEATURE_VECTOR("", 3);
-            anchorCallout = radialOverlayPane.createCallout(anchorTSM, dummy, subScene);
-            anchorCallout.play();
-            anchorCallout.setVisible(false);
+                joystickPane = new JoystickPane(scene, App.getAppPathPaneStack());
+                joystickPane.fireButton.setOnAction(e -> projectileSystem.fire());
+                joystickPane.thrustButton.setOnAction(e -> projectileSystem.thrustPlayer());
+                joystickPane.angleproperty.subscribe(c -> {
+                    projectileSystem.playerShip.mouseDragged(null,
+                        joystickPane.mouseDeltaX,
+                        joystickPane.mouseDeltaY);
+                });
 
-            joystickPane = new JoystickPane(scene, App.getAppPathPaneStack());
-            joystickPane.fireButton.setOnAction(e -> projectileSystem.fire());
-            joystickPane.thrustButton.setOnAction(e -> projectileSystem.thrustPlayer());
-            joystickPane.angleproperty.subscribe(c -> {
-                projectileSystem.playerShip.mouseDragged(null,
-                    joystickPane.mouseDeltaX,
-                    joystickPane.mouseDeltaY);
+                joystickPane.valueproperty.subscribe(c -> {
+                    projectileSystem.playerShip.mouseDragged(null,
+                        joystickPane.mouseDeltaX,
+                        joystickPane.mouseDeltaY);
+                });
             });
-
-            joystickPane.valueproperty.subscribe(c -> {
-                projectileSystem.playerShip.mouseDragged(null,
-                    joystickPane.mouseDeltaX,
-                    joystickPane.mouseDeltaY);
-            });
-
         });
     }
 

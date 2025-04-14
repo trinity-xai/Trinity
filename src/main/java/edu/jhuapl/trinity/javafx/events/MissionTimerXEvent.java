@@ -27,11 +27,16 @@ public class MissionTimerXEvent extends Event {
     public static final EventType<MissionTimerXEvent> ALL = new EventType<>("ALL");
     public static final EventType<MissionTimerXEvent> TRIGGERED = new EventType<>(ALL, "TRIGGERED");
     public static final EventType<MissionTimerXEvent> NEW_ITEM_INDEX = new EventType<>(ALL, "NEW_ITEM_INDEX");
+    public static final EventType<MissionTimerXEvent> MISSION_TIMER_SHUTDOWN = new EventType<>("MISSION_TIMER_SHUTDOWN");
 
     private final Item item;
     private Integer index = null;
 
     // ******************** Constructors **************************************
+    public MissionTimerXEvent(final EventType<? extends Event> type) {
+        super(type);
+        item = null;
+    }    
     public MissionTimerXEvent(final Item item, final EventType<? extends Event> type) {
         super(type);
         this.item = item;
