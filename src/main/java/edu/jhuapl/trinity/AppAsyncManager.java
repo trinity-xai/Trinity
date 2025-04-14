@@ -1,5 +1,6 @@
 package edu.jhuapl.trinity;
 
+import static edu.jhuapl.trinity.App.theConfig;
 import edu.jhuapl.trinity.data.Dimension;
 import edu.jhuapl.trinity.data.FactorLabel;
 import edu.jhuapl.trinity.data.files.ClusterCollectionFile;
@@ -7,6 +8,7 @@ import edu.jhuapl.trinity.data.files.FeatureCollectionFile;
 import edu.jhuapl.trinity.data.files.ManifoldDataFile;
 import edu.jhuapl.trinity.data.messages.xai.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
+import edu.jhuapl.trinity.javafx.components.MatrixOverlay;
 import edu.jhuapl.trinity.javafx.components.panes.AnalysisLogPane;
 import edu.jhuapl.trinity.javafx.components.panes.HyperdrivePane;
 import edu.jhuapl.trinity.javafx.components.panes.ImageInspectorPane;
@@ -24,6 +26,7 @@ import edu.jhuapl.trinity.javafx.components.timeline.MissionTimerX;
 import edu.jhuapl.trinity.javafx.components.timeline.MissionTimerXBuilder;
 import edu.jhuapl.trinity.javafx.components.timeline.TimelineAnimation;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
+import edu.jhuapl.trinity.javafx.events.EffectEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.events.GaussianMixtureEvent;
 import edu.jhuapl.trinity.javafx.events.HitEvent;
@@ -55,6 +58,7 @@ import edu.jhuapl.trinity.messages.MessageProcessor;
 import edu.jhuapl.trinity.messages.ZeroMQFeedManager;
 import edu.jhuapl.trinity.messages.ZeroMQSubscriberConfig;
 import edu.jhuapl.trinity.utils.AnalysisUtils;
+import edu.jhuapl.trinity.utils.Configuration;
 import edu.jhuapl.trinity.utils.PCAConfig;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import edu.jhuapl.trinity.utils.VisibilityMap;
@@ -77,6 +81,7 @@ import javafx.scene.input.TransferMode;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
+import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -110,11 +115,13 @@ public class AppAsyncManager extends Task {
     PixelSelectionPane pixelSelectionPane;
     ImageInspectorPane imageInspectorPane;
     HyperdrivePane hyperdrivePane;
+    MatrixOverlay matrixOverlay;
     RetroWavePane retroWavePane = null;
 
     boolean hyperspaceIntroShown = false;
     boolean hypersurfaceIntroShown = false;
-
+    boolean enableHttp = false;
+    
     ManifoldEventHandler meh;
     FeatureVectorEventHandler fveh;
     ShapleyEventHandler sheh;
@@ -166,9 +173,112 @@ public class AppAsyncManager extends Task {
                 new ApplicationEvent(ApplicationEvent.SHOW_BUSY_INDICATOR, ps));
         });
         //hardcoded count. need to update counts for every progress.setLabelLater
-        double total = 30.0;
+        double total = 32.0;
         double current = 0.0;
         Thread.sleep(100);
+        progress.setPercentComplete(current++/total);
+        LOG.info("Attempting to read defaults...");
+        try {
+            LOG.info("Build Date: {}", Configuration.getBuildDate());
+        } catch (Exception ex) {
+            LOG.error(null, ex);
+        }        
+        LOG.info("Setting up Matrix Digital Rain...");
+        // fun matrix effect, use Alt + N
+        progress.setLabelLater("...Digital Rain...");        
+        matrixOverlay = new MatrixOverlay(scene, centerStack);
+        scene.addEventHandler(EffectEvent.START_DIGITAL_RAIN, e -> {
+            MatrixOverlay.on.set(true);
+            matrixOverlay.matrixOn.run();
+        });
+        scene.addEventHandler(EffectEvent.STOP_DIGITAL_RAIN, e -> {
+            MatrixOverlay.on.set(false);
+            matrixOverlay.matrixOff.run();    
+        });        
+        centerStack.setOnSwipeUp(e -> {
+            if (e.getTouchCount() > 2) { //three finger swipe
+                MatrixOverlay.on.set(false);
+                matrixOverlay.matrixOff.run();
+                e.consume(); // <-- stops passing the event to next node
+            }
+        });
+        centerStack.setOnSwipeDown(e -> {
+            if (e.getTouchCount() > 2) { //three finger swipe
+                MatrixOverlay.on.set(true);
+                matrixOverlay.matrixOn.run();
+                e.consume(); // <-- stops passing the event to next node
+            }
+        });        
+        LOG.info("Parsing command line...");
+        progress.setPercentComplete(current++/total);
+        progress.setLabelLater("...Parsing Command Line...");           
+        parseParameters();
+        //ex: --scenario="C:\dev\cameratests" --geometry=1024x768+100+100
+        if (null != namedParameters) {
+            LOG.info("Checking for geometry arguments...");
+            if (namedParameters.containsKey("geometry")) {
+                String geometryParamString = namedParameters.get("geometry");
+                LOG.info("Attempting custom window geometry using {}", geometryParamString);
+                try {
+                    Platform.runLater(() -> {
+                        //example: 200x100+800+800
+                        String[] tokens = geometryParamString.split("\\+");
+                        String[] sizeTokens = tokens[0].split("x");
+                        ((Stage)scene.getWindow()).setWidth(Double.parseDouble(sizeTokens[0]));
+                        ((Stage)scene.getWindow()).setHeight(Double.parseDouble(sizeTokens[1]));
+                        ((Stage)scene.getWindow()).setX(Double.parseDouble(tokens[1]));
+                        ((Stage)scene.getWindow()).setY(Double.parseDouble(tokens[2]));
+                    });
+                } catch (NumberFormatException ex) {
+                    LOG.info("Exception thrown parsing: {}. Setting to Maximized.", geometryParamString);
+                    Platform.runLater(() -> ((Stage)scene.getWindow()).setMaximized(true));
+                }
+            } else if (namedParameters.containsKey("fullscreen")) {
+                LOG.info("Fullscreen start requested.");
+                Platform.runLater(() -> ((Stage)scene.getWindow()).setFullScreen(true));
+            } else {
+                LOG.info("Defaulting to maximized.");
+                Platform.runLater(() -> ((Stage)scene.getWindow()).setMaximized(true));
+            }
+            LOG.info("Checking for special effects requests...");
+            boolean surveillanceEnabled = namedParameters.containsKey("surveillance");
+            if (surveillanceEnabled) {
+                LOG.info("Surveillance found... enabling Camera.");
+            }
+
+            if (namedParameters.containsKey("outrun")) {
+                LOG.info("Outrun found... enabling RetroWavePane.");
+                try {
+                    //Add optional RETROWAVE VIEW
+                    retroWavePane = new RetroWavePane(scene, surveillanceEnabled);
+                    Platform.runLater(() -> {
+                        retroWavePane.setVisible(true);
+                        centerStack.getChildren().add(retroWavePane);
+                    });
+                } catch (Exception ex) {
+                    LOG.error(null, ex);
+                }
+            }
+            LOG.info("Checking for custom configuration...");
+            if (namedParameters.containsKey("config")) {
+                String configFile = namedParameters.get("config");
+                LOG.info("Configuration file found: {}", configFile);
+                try {
+                    theConfig = new Configuration(configFile);
+                } catch (IOException ex) {
+                    LOG.info("Exception thrown loading: {}", configFile);
+                    LOG.info("Loading defaults.");
+                    theConfig = Configuration.defaultConfiguration();
+                }
+            }
+            LOG.info("Checking for enabling HTTP processor...");
+            if (namedParameters.containsKey("http")) {
+                String httpValue = namedParameters.get("http");
+                LOG.info("HTTP found: {}", httpValue);
+                enableHttp = Boolean.parseBoolean(httpValue);
+            }
+        }
+        
         progress.setTopLabelLater("Constructing 3D Subscenes");
          LOG.info("Constructing 3D subscenes...");
         progress.setLabelLater("...Projections3D...");
@@ -473,13 +583,8 @@ public class AppAsyncManager extends Task {
         reh = new RestEventHandler(scene);
         scene.addEventHandler(RestEvent.START_RESTSERVER_THREAD, reh);
         scene.addEventHandler(RestEvent.TERMINATE_RESTSERVER_THREAD, reh);
-
-        if (namedParameters.containsKey("http")) {
-            String httpValue = namedParameters.get("http");
-            if (Boolean.parseBoolean(httpValue)) {
-                reh.startHttpService();
-            }
-        }
+        if (enableHttp) //commandline parsed previously
+            reh.startHttpService();
         
         progress.setLabelLater("...Setting up Mission Timer...");
         progress.setPercentComplete(current++/total);
@@ -822,7 +927,7 @@ public class AppAsyncManager extends Task {
         progress.setTopLabelLater("Finished async load.");
         progress.setLabelLater("User Interface Is Lit");
         progress.setPercentComplete(1.0);
-//        Thread.sleep(Duration.ofMillis(500));    
+  
         Platform.runLater(() -> {
             scene.getRoot().fireEvent(
                 new ApplicationEvent(ApplicationEvent.HIDE_BUSY_INDICATOR));
@@ -830,6 +935,14 @@ public class AppAsyncManager extends Task {
         System.out.println("Finished async load.");
         return null;
     }
+    private void parseParameters() {
+        if (!namedParameters.isEmpty()) {
+            LOG.info("NamedParameters :");
+            namedParameters.entrySet().forEach(entry -> {
+                LOG.info("\t{} : {}", entry.getKey(), entry.getValue());
+            });
+        }
+    }    
     private FeatureCollection getFeaturesBySource(ManifoldEvent.POINT_SOURCE source) {
         FeatureCollection originalFC = new FeatureCollection();
         if (source == ManifoldEvent.POINT_SOURCE.HYPERSURFACE) {
