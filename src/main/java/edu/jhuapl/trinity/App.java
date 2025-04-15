@@ -2,12 +2,14 @@
 
 package edu.jhuapl.trinity;
 
+import edu.jhuapl.trinity.audio.JukeBox;
 import edu.jhuapl.trinity.css.StyleResourceProvider;
 import edu.jhuapl.trinity.javafx.components.panes.VideoPane;
 import edu.jhuapl.trinity.javafx.components.radial.CircleProgressIndicator;
 import edu.jhuapl.trinity.javafx.components.radial.MainNavMenu;
 import edu.jhuapl.trinity.javafx.components.radial.ProgressStatus;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
+import edu.jhuapl.trinity.javafx.events.AudioEvent;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.EffectEvent;
 import edu.jhuapl.trinity.javafx.events.FullscreenEvent;
@@ -97,6 +99,13 @@ public class App extends Application {
         stage.show();  
         
         //add just the dark necessaties...
+        JukeBox jukeBox = new JukeBox(scene);
+        scene.addEventHandler(AudioEvent.PLAY_MUSIC_TRACK, jukeBox);
+        scene.addEventHandler(AudioEvent.RELOAD_MUSIC_FILES, jukeBox);
+        scene.addEventHandler(AudioEvent.MUSIC_FILES_RELOADED, jukeBox);
+        scene.addEventHandler(AudioEvent.ENABLE_MUSIC_TRACKS, jukeBox);
+        scene.addEventHandler(AudioEvent.SET_MUSIC_VOLUME, jukeBox);
+        
         desktopPane = new Pane(); //transparent layer that just holds floating panes
         desktopPane.setPickOnBounds(false); //prevent it from blocking mouse clicks to sublayers
         //@HACK This ultra dirty hack lets me easily add floating panes from anywhere
@@ -279,6 +288,10 @@ public class App extends Application {
         if (e.isAltDown() && e.isControlDown() && e.getCode().equals(KeyCode.Q)) {
             System.out.println("Requesting REST Is Alive...");
             RestAccessLayer.requestRestIsAlive(stage.getScene());
+        }
+        if (e.isAltDown() && e.isControlDown() && e.getCode().equals(KeyCode.M)) {
+            stage.getScene().getRoot().fireEvent(
+                new ApplicationEvent(ApplicationEvent.SHOW_JUKEBOX_PANE));
         }
         if (e.isAltDown() && e.getCode().equals(KeyCode.N)) {
             matrixShowing = !matrixShowing;

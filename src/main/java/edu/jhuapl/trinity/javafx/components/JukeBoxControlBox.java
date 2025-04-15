@@ -1,0 +1,77 @@
+package edu.jhuapl.trinity.javafx.components;
+
+import edu.jhuapl.trinity.javafx.events.AudioEvent;
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
+import javafx.scene.control.Slider;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
+import javafx.scene.media.Media;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+/**
+ *
+ * @author Sean Phillips
+ */
+public class JukeBoxControlBox extends VBox {
+    private static final Logger LOG = LoggerFactory.getLogger(JukeBoxControlBox.class);
+    ListView<String> musicTracks;
+    
+    public JukeBoxControlBox() {
+        musicTracks = new ListView();
+        Button reloadTrackList = new Button("Reload Track List");
+        reloadTrackList.setOnAction(e-> {
+            reloadTrackList.getScene().getRoot().fireEvent(new AudioEvent(
+                AudioEvent.RELOAD_MUSIC_FILES));
+        });
+        Button playTrack = new Button("Play Selected Track");
+        playTrack.setOnAction(e-> {
+            String trackName = musicTracks.getSelectionModel().getSelectedItem();
+            if(null != trackName){
+                reloadTrackList.getScene().getRoot().fireEvent(new AudioEvent(
+                    AudioEvent.PLAY_MUSIC_TRACK, trackName));
+            }
+        });
+        CheckBox enableMusicCheckBox = new CheckBox("Enable Music Tracks");
+        enableMusicCheckBox.setSelected(true);
+        enableMusicCheckBox.setOnAction(e -> {
+            reloadTrackList.getScene().getRoot().fireEvent(new AudioEvent(
+                AudioEvent.ENABLE_MUSIC_TRACKS, enableMusicCheckBox.isSelected()));
+        });
+        HBox volumeLabelHBox = new HBox(50, 
+            new Label("Music Volume"), enableMusicCheckBox);
+        
+        Slider volumeSlider = new Slider(0, 1, 0.25);
+        volumeSlider.valueProperty().addListener(e-> {
+            reloadTrackList.getScene().getRoot().fireEvent(new AudioEvent(
+                AudioEvent.SET_MUSIC_VOLUME, volumeSlider.getValue()));
+        });
+        VBox volumeVBox = new VBox(5, volumeLabelHBox, volumeSlider);
+        setSpacing(10);
+
+        getChildren().addAll(
+            volumeVBox,
+            new HBox(5, reloadTrackList, playTrack),
+            musicTracks
+        );        
+    }
+    public void reloadTracks(ArrayList<Media> mediaFiles) {
+        musicTracks.getItems().clear();
+        mediaFiles.forEach(m -> {
+            try {
+                musicTracks.getItems().add(
+                    Paths.get(new URI(m.getSource())).getFileName().toString()
+                );  
+            } catch (URISyntaxException ex) {
+                LOG.error(ex.getMessage());
+            }
+        });
+    }
+}

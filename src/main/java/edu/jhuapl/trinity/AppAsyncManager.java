@@ -12,6 +12,7 @@ import edu.jhuapl.trinity.javafx.components.MatrixOverlay;
 import edu.jhuapl.trinity.javafx.components.panes.AnalysisLogPane;
 import edu.jhuapl.trinity.javafx.components.panes.HyperdrivePane;
 import edu.jhuapl.trinity.javafx.components.panes.ImageInspectorPane;
+import edu.jhuapl.trinity.javafx.components.panes.JukeBoxPane;
 import edu.jhuapl.trinity.javafx.components.panes.NavigatorPane;
 import edu.jhuapl.trinity.javafx.components.panes.PixelSelectionPane;
 import edu.jhuapl.trinity.javafx.components.panes.Shape3DControlPane;
@@ -107,6 +108,7 @@ public class AppAsyncManager extends Task {
     Projections3DPane projections3DPane;
     TrajectoryTrackerPane trajectoryTrackerPane;
     TextPane textConsolePane;
+    JukeBoxPane jukeBoxPane;
     VideoPane videoPane;
     NavigatorPane navigatorPane;
     WaveformPane waveformPane;
@@ -574,6 +576,18 @@ public class AppAsyncManager extends Task {
                 hyperdrivePane.show();
             }
         });        
+        scene.addEventHandler(ApplicationEvent.SHOW_JUKEBOX_PANE, e -> {
+            if (null == jukeBoxPane) {
+                jukeBoxPane = new JukeBoxPane(scene, desktopPane);
+            }
+            if (!desktopPane.getChildren().contains(jukeBoxPane)) {
+                desktopPane.getChildren().add(jukeBoxPane);
+                jukeBoxPane.slideInPane();
+            } else {
+                jukeBoxPane.show();
+            }
+        });        
+        
 //        Thread.sleep(Duration.ofMillis(500));
         
         progress.setTopLabelLater("Establishing Messaging Feeds...");
