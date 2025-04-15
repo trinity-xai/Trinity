@@ -7,21 +7,18 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaView;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import javafx.application.Platform;
 
 /**
  * @author Sean Phillips
  */
 public class JukeBoxPane extends LitPathPane {
-//    private static final Logger LOG = LoggerFactory.getLogger(JukeBoxPane.class);
+    public static int PANE_WIDTH = 500;
+    public static int PANE_HEIGHT = 600;
     BorderPane bp;
     JukeBoxControlBox controlBox;
-    public static int PANE_WIDTH = 600;
-//    public static double NODE_WIDTH = PANE_WIDTH - 50;
-//    public static double NODE_HEIGHT = NODE_WIDTH / 2.0;
 
     private static BorderPane createContent() {
         BorderPane bpOilSpill = new BorderPane();
@@ -31,7 +28,7 @@ public class JukeBoxPane extends LitPathPane {
     }
 
     public JukeBoxPane(Scene scene, Pane parent) {
-        super(scene, parent, PANE_WIDTH, 750, createContent(),
+        super(scene, parent, PANE_WIDTH, PANE_HEIGHT, createContent(),
             "Juke Box", "", 300.0, 400.0);
         this.scene = scene;
         bp = (BorderPane) this.contentPane;
@@ -40,6 +37,10 @@ public class JukeBoxPane extends LitPathPane {
         scene.addEventHandler(AudioEvent.MUSIC_FILES_RELOADED, e-> {
             ArrayList<Media> mediaFiles = (ArrayList<Media>) e.object;
             controlBox.reloadTracks(mediaFiles);
+        });
+        Platform.runLater(() -> {
+            scene.getRoot().fireEvent(new AudioEvent(
+                AudioEvent.RELOAD_MUSIC_FILES));
         });
     }
 

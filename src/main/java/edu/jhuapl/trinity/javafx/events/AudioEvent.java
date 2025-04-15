@@ -14,6 +14,7 @@ public class AudioEvent extends Event {
     public static final EventType<AudioEvent> MUSIC_FILES_RELOADED = new EventType(ANY, "MUSIC_FILES_RELOADED");
     public static final EventType<AudioEvent> ENABLE_MUSIC_TRACKS = new EventType(ANY, "ENABLE_MUSIC_TRACKS");
     public static final EventType<AudioEvent> SET_MUSIC_VOLUME = new EventType(ANY, "SET_MUSIC_VOLUME");
+    public static final EventType<AudioEvent> ENABLE_FADE_TRACKS = new EventType(ANY, "ENABLE_CROSSFADE_TRACKS");
     
     public Object object = null;
 

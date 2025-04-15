@@ -1,6 +1,5 @@
 package edu.jhuapl.trinity.audio;
 
-import edu.jhuapl.trinity.javafx.components.JukeBoxControlBox;
 import edu.jhuapl.trinity.javafx.events.AudioEvent;
 import java.io.File;
 import java.net.MalformedURLException;
@@ -10,8 +9,6 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
@@ -37,10 +34,11 @@ public class JukeBox implements EventHandler<AudioEvent>{
     MediaPlayer currentMediaPlayer;
     Media defaultMedia;
     boolean transitioning = false;
+    boolean fade = true;
     
     List<Media> mediaFiles;
     Scene scene;
-    boolean enabled = true;
+    boolean enabled = false;
     double currentVolume = 0.1;
     
     public JukeBox(Scene scene) {
@@ -95,23 +93,29 @@ public class JukeBox implements EventHandler<AudioEvent>{
     }
     public void setRandomTrack(boolean rightNow){
         Media media = getRandomMedia();
-        if(!rightNow && null != currentMediaPlayer) {
-            transitioning = true;
-            Timeline tailoff = new Timeline(
-                new KeyFrame(Duration.seconds(1), 
-                new KeyValue(currentMediaPlayer.volumeProperty(), 0))
-            );
-            tailoff.setOnFinished(fin -> {
-                setMedia(media);
-                transitioning = false;
-            });
-            tailoff.play();
+        if(!rightNow && fade && null != currentMediaPlayer) {
+            fadeOut(media);
         } else
             setMedia(media);
     }
+    private void fadeOut(Media nextMedia){
+        transitioning = true;
+        Timeline tailoff = new Timeline(
+            new KeyFrame(Duration.seconds(1), 
+            new KeyValue(currentMediaPlayer.volumeProperty(), 0))
+        );
+        tailoff.setOnFinished(fin -> {
+            setMedia(nextMedia);
+            transitioning = false;
+        });
+        tailoff.play();
+    }
     public void setMediaByName(String name) {
         Media media = getBySourceName(name);
-        setMedia(media);               
+        if(fade && null != currentMediaPlayer) {
+            fadeOut(media);
+        } else
+            setMedia(media);
     }
     private String getNameFromURI(String uriString) {
         try {        
@@ -136,24 +140,26 @@ public class JukeBox implements EventHandler<AudioEvent>{
             setEnableMusic((boolean)event.object);
         else if(event.getEventType() == AudioEvent.SET_MUSIC_VOLUME)
             setMusicVolume((double)event.object);
+        else if(event.getEventType() == AudioEvent.ENABLE_FADE_TRACKS)
+            fade = (boolean)event.object;
     }
     
     private void loadMusic(){
+        mediaFiles.clear();
         File folder = new File(DEFAULT_MUSIC_PATH);
         if (!folder.exists() || !folder.isDirectory() || folder.listFiles().length < 1) {
             mediaFiles.add(defaultMedia);
-            return;
-        }
-        mediaFiles.clear();
-        File[] files = folder.listFiles();
-        for(File file : files) {
-            if(file.getName().endsWith(".mp3") 
-            || file.getName().endsWith(".MP3")) {
-                try {
-                    Media media = new Media(file.toURI().toURL().toString());
-                    mediaFiles.add(media);
-                } catch (MalformedURLException ex) {
-                    LOG.error("Could not load music file: " + file.getName());
+        } else {
+            File[] files = folder.listFiles();
+            for(File file : files) {
+                if(file.getName().endsWith(".mp3") 
+                || file.getName().endsWith(".MP3")) {
+                    try {
+                        Media media = new Media(file.toURI().toURL().toString());
+                        mediaFiles.add(media);
+                    } catch (MalformedURLException ex) {
+                        LOG.error("Could not load music file: " + file.getName());
+                    }
                 }
             }
         }

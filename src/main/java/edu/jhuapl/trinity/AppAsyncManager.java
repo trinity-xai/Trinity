@@ -576,6 +576,7 @@ public class AppAsyncManager extends Task {
                 hyperdrivePane.show();
             }
         });        
+        jukeBoxPane = new JukeBoxPane(scene, desktopPane);
         scene.addEventHandler(ApplicationEvent.SHOW_JUKEBOX_PANE, e -> {
             if (null == jukeBoxPane) {
                 jukeBoxPane = new JukeBoxPane(scene, desktopPane);
@@ -587,8 +588,6 @@ public class AppAsyncManager extends Task {
                 jukeBoxPane.show();
             }
         });        
-        
-//        Thread.sleep(Duration.ofMillis(500));
         
         progress.setTopLabelLater("Establishing Messaging Feeds...");
         progress.setLabelLater("...REST Receiver...");

@@ -1,15 +1,18 @@
 package edu.jhuapl.trinity.javafx.components;
 
 import edu.jhuapl.trinity.javafx.events.AudioEvent;
+import edu.jhuapl.trinity.utils.ResourceUtils;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
+import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.Slider;
+import javafx.scene.image.ImageView;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.scene.media.Media;
@@ -26,6 +29,12 @@ public class JukeBoxControlBox extends VBox {
     
     public JukeBoxControlBox() {
         musicTracks = new ListView();
+        
+        ImageView iv = ResourceUtils.loadIcon("waitingforimage", 128);
+        VBox placeholder = new VBox(10, iv, new Label("No soundtrack loaded"));
+        placeholder.setAlignment(Pos.CENTER);
+        musicTracks.setPlaceholder(placeholder);
+
         Button reloadTrackList = new Button("Reload Track List");
         reloadTrackList.setOnAction(e-> {
             reloadTrackList.getScene().getRoot().fireEvent(new AudioEvent(
@@ -40,13 +49,20 @@ public class JukeBoxControlBox extends VBox {
             }
         });
         CheckBox enableMusicCheckBox = new CheckBox("Enable Music Tracks");
-        enableMusicCheckBox.setSelected(true);
+//        enableMusicCheckBox.setSelected(true);
         enableMusicCheckBox.setOnAction(e -> {
             reloadTrackList.getScene().getRoot().fireEvent(new AudioEvent(
                 AudioEvent.ENABLE_MUSIC_TRACKS, enableMusicCheckBox.isSelected()));
         });
+        CheckBox enableFadeCheckBox = new CheckBox("Enable Fade");
+        enableFadeCheckBox.setSelected(true);
+        enableFadeCheckBox.setOnAction(e -> {
+            reloadTrackList.getScene().getRoot().fireEvent(new AudioEvent(
+                AudioEvent.ENABLE_FADE_TRACKS, enableFadeCheckBox.isSelected()));
+        });
+
         HBox volumeLabelHBox = new HBox(50, 
-            new Label("Music Volume"), enableMusicCheckBox);
+            new Label("Music Volume"), enableMusicCheckBox, enableFadeCheckBox);
         
         Slider volumeSlider = new Slider(0, 1, 0.25);
         volumeSlider.valueProperty().addListener(e-> {
