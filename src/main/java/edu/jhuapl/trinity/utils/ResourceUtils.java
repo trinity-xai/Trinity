@@ -79,6 +79,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
@@ -649,6 +650,14 @@ public enum ResourceUtils {
         return filename.substring(0, filename.lastIndexOf("."));
     }
 
+    public static String getNameFromURI(String uriString) {
+        try {        
+            return Paths.get(new URI(uriString)).getFileName().toString();
+        } catch (URISyntaxException ex) {
+            LOG.error("Could not load URI from: " + uriString);
+        }
+        return "";
+    }
     public static Image bytesToImage(byte[] image) {
         byte[] rayray = new byte[image.length];
         System.arraycopy(image, 0,

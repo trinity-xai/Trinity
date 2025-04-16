@@ -1,11 +1,9 @@
 package edu.jhuapl.trinity.audio;
 
 import edu.jhuapl.trinity.javafx.events.AudioEvent;
+import edu.jhuapl.trinity.utils.ResourceUtils;
 import java.io.File;
 import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -22,7 +20,7 @@ import org.slf4j.LoggerFactory;
 
 /**
  *
- * @author phillsm1
+ * @author Sean Phillips
  */
 public class JukeBox implements EventHandler<AudioEvent>{
     private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(JukeBox.class);
@@ -30,11 +28,14 @@ public class JukeBox implements EventHandler<AudioEvent>{
     //These are all the known tracks
     public static String NEON_SHADOWS_UNVEIL = "NeonShadowUnveil.mp3";
     public static String DEFAULT_MUSIC_TRACK = NEON_SHADOWS_UNVEIL;
+    public static int FADE_OUT_SECONDS = 2;
+    public static int FADE_IN_SECONDS = 2;
     
     MediaPlayer currentMediaPlayer;
     Media defaultMedia;
     boolean transitioning = false;
     boolean fade = true;
+    boolean cycle = true;
     
     List<Media> mediaFiles;
     Scene scene;
@@ -46,16 +47,21 @@ public class JukeBox implements EventHandler<AudioEvent>{
         defaultMedia = new Media(JukeBox.class.getResource(
             "/edu/jhuapl/trinity/audio/" + DEFAULT_MUSIC_TRACK)
                 .toExternalForm());
+        setMedia(defaultMedia);
         mediaFiles = new ArrayList<>();
         loadMusic();
-        currentMediaPlayer = new MediaPlayer(mediaFiles.get(0));
-        System.out.println("Music loaded.");
+        if(!mediaFiles.isEmpty())
+            setMedia(mediaFiles.get(0));
     }
     private void setMedia(Media media) {
         if(null != currentMediaPlayer) {
             currentMediaPlayer.stop();
         }
         currentMediaPlayer = new MediaPlayer(media);
+        String sourceName = ResourceUtils.getNameFromURI(media.getSource());
+        Platform.runLater(()-> {
+            scene.getRoot().fireEvent(new AudioEvent(AudioEvent.CURRENTLY_PLAYING_TRACK, sourceName));
+        });
         // Sets the audio playback volume. 
         //Its effect will be clamped to the range [0.0, 1.0].
         currentMediaPlayer.setVolume(currentVolume);
@@ -63,6 +69,10 @@ public class JukeBox implements EventHandler<AudioEvent>{
         currentMediaPlayer.setAutoPlay(true);
         // Play the music in loop
         currentMediaPlayer.setCycleCount(MediaPlayer.INDEFINITE);
+        currentMediaPlayer.setOnEndOfMedia(()-> {
+            if(cycle)
+                setRandomTrack(false);            
+        });
         if(enabled) {
             currentMediaPlayer.play();
         } else {
@@ -73,6 +83,10 @@ public class JukeBox implements EventHandler<AudioEvent>{
         this.enabled = enabled;
         if(enabled) {
             currentMediaPlayer.play();
+            String sourceName = ResourceUtils.getNameFromURI(currentMediaPlayer.getMedia().getSource());
+            Platform.runLater(()-> {
+                scene.getRoot().fireEvent(new AudioEvent(AudioEvent.CURRENTLY_PLAYING_TRACK, sourceName));
+            });
         } else {
             currentMediaPlayer.pause();
         }
@@ -93,19 +107,36 @@ public class JukeBox implements EventHandler<AudioEvent>{
     }
     public void setRandomTrack(boolean rightNow){
         Media media = getRandomMedia();
+        LOG.info("Now playing: " + media.getSource());
         if(!rightNow && fade && null != currentMediaPlayer) {
             fadeOut(media);
         } else
             setMedia(media);
     }
+    private void fadeIn(Media nextMedia){
+        transitioning = true;
+        currentMediaPlayer.setVolume(0);
+        Timeline tailOn = new Timeline(
+            new KeyFrame(Duration.seconds(0.1), e -> setMedia(nextMedia)),
+            new KeyFrame(Duration.seconds(FADE_IN_SECONDS), 
+                new KeyValue(currentMediaPlayer.volumeProperty(), currentVolume))
+        );
+        tailOn.setOnFinished(fin -> {
+            transitioning = false;
+        });
+        tailOn.play();
+    }
     private void fadeOut(Media nextMedia){
         transitioning = true;
         Timeline tailoff = new Timeline(
-            new KeyFrame(Duration.seconds(1), 
+            new KeyFrame(Duration.seconds(FADE_OUT_SECONDS), 
             new KeyValue(currentMediaPlayer.volumeProperty(), 0))
         );
         tailoff.setOnFinished(fin -> {
-            setMedia(nextMedia);
+            if(fade)
+                fadeIn(nextMedia);
+            else
+                setMedia(nextMedia);
             transitioning = false;
         });
         tailoff.play();
@@ -117,17 +148,10 @@ public class JukeBox implements EventHandler<AudioEvent>{
         } else
             setMedia(media);
     }
-    private String getNameFromURI(String uriString) {
-        try {        
-            return Paths.get(new URI(uriString)).getFileName().toString();
-        } catch (URISyntaxException ex) {
-            LOG.error("Could not load URI from: " + uriString);
-        }
-        return "";
-    }
+
     private Media getBySourceName(String name){
         return mediaFiles.stream()
-            .filter(m -> getNameFromURI(m.getSource()).contentEquals(name))
+            .filter(m -> ResourceUtils.getNameFromURI(m.getSource()).contentEquals(name))
             .findFirst().get();
     }
     @Override
@@ -142,6 +166,8 @@ public class JukeBox implements EventHandler<AudioEvent>{
             setMusicVolume((double)event.object);
         else if(event.getEventType() == AudioEvent.ENABLE_FADE_TRACKS)
             fade = (boolean)event.object;
+        else if(event.getEventType() == AudioEvent.CYCLE_MUSIC_TRACKS)
+            cycle = (boolean)event.object;
     }
     
     private void loadMusic(){
@@ -167,5 +193,4 @@ public class JukeBox implements EventHandler<AudioEvent>{
             scene.getRoot().fireEvent(new AudioEvent(AudioEvent.MUSIC_FILES_RELOADED, mediaFiles));
         });
     }    
-    
 }

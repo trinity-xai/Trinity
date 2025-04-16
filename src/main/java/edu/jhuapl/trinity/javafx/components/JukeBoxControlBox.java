@@ -48,8 +48,7 @@ public class JukeBoxControlBox extends VBox {
                     AudioEvent.PLAY_MUSIC_TRACK, trackName));
             }
         });
-        CheckBox enableMusicCheckBox = new CheckBox("Enable Music Tracks");
-//        enableMusicCheckBox.setSelected(true);
+        CheckBox enableMusicCheckBox = new CheckBox("Enable Music");
         enableMusicCheckBox.setOnAction(e -> {
             reloadTrackList.getScene().getRoot().fireEvent(new AudioEvent(
                 AudioEvent.ENABLE_MUSIC_TRACKS, enableMusicCheckBox.isSelected()));
@@ -60,9 +59,15 @@ public class JukeBoxControlBox extends VBox {
             reloadTrackList.getScene().getRoot().fireEvent(new AudioEvent(
                 AudioEvent.ENABLE_FADE_TRACKS, enableFadeCheckBox.isSelected()));
         });
+        CheckBox cycleTracksCheckBox = new CheckBox("Cycle Tracks");
+        cycleTracksCheckBox.setSelected(true);
+        cycleTracksCheckBox.setOnAction(e -> {
+            reloadTrackList.getScene().getRoot().fireEvent(new AudioEvent(
+                AudioEvent.CYCLE_MUSIC_TRACKS, cycleTracksCheckBox.isSelected()));
+        });
 
-        HBox volumeLabelHBox = new HBox(50, 
-            new Label("Music Volume"), enableMusicCheckBox, enableFadeCheckBox);
+        HBox volumeLabelHBox = new HBox(50, new Label("Music Volume"), 
+            enableMusicCheckBox, enableFadeCheckBox, cycleTracksCheckBox);
         
         Slider volumeSlider = new Slider(0, 1, 0.25);
         volumeSlider.valueProperty().addListener(e-> {
@@ -78,6 +83,18 @@ public class JukeBoxControlBox extends VBox {
             musicTracks
         );        
     }
+    public void selectTrackBySourceName(String name) {
+        for(int i=0; i<musicTracks.getItems().size();i++){
+            if(musicTracks.getItems().get(i).contentEquals(name)) {
+                if(musicTracks.getSelectionModel().getSelectedIndex() != i) {
+                    musicTracks.scrollTo(i);
+                    musicTracks.getSelectionModel().select(i);
+                }
+                return;
+            }
+        }
+    }
+            
     public void reloadTracks(ArrayList<Media> mediaFiles) {
         musicTracks.getItems().clear();
         mediaFiles.forEach(m -> {

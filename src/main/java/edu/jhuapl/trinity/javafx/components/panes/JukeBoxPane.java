@@ -38,10 +38,14 @@ public class JukeBoxPane extends LitPathPane {
             ArrayList<Media> mediaFiles = (ArrayList<Media>) e.object;
             controlBox.reloadTracks(mediaFiles);
         });
+        scene.addEventHandler(AudioEvent.CURRENTLY_PLAYING_TRACK, e-> {
+            String sourceName = (String) e.object;
+            controlBox.selectTrackBySourceName(sourceName);
+        });
+        
         Platform.runLater(() -> {
             scene.getRoot().fireEvent(new AudioEvent(
                 AudioEvent.RELOAD_MUSIC_FILES));
         });
     }
-
 }

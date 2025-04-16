@@ -106,6 +106,8 @@ public class App extends Application {
         scene.addEventHandler(AudioEvent.ENABLE_MUSIC_TRACKS, jukeBox);
         scene.addEventHandler(AudioEvent.SET_MUSIC_VOLUME, jukeBox);
         scene.addEventHandler(AudioEvent.ENABLE_FADE_TRACKS, jukeBox);
+        scene.addEventHandler(AudioEvent.CYCLE_MUSIC_TRACKS, jukeBox);
+        scene.addEventHandler(AudioEvent.CURRENTLY_PLAYING_TRACK, jukeBox);
         
         desktopPane = new Pane(); //transparent layer that just holds floating panes
         desktopPane.setPickOnBounds(false); //prevent it from blocking mouse clicks to sublayers
