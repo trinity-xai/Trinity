@@ -17,7 +17,6 @@ import edu.jhuapl.trinity.javafx.events.MissionTimerXEvent;
 import edu.jhuapl.trinity.javafx.events.ZeroMQEvent;
 import edu.jhuapl.trinity.messages.RestAccessLayer;
 import edu.jhuapl.trinity.utils.Configuration;
-import edu.jhuapl.trinity.utils.Utils;
 import javafx.animation.Animation;
 import javafx.animation.FadeTransition;
 import javafx.animation.KeyFrame;

@@ -27,6 +27,7 @@ import edu.jhuapl.trinity.javafx.components.timeline.MissionTimerX;
 import edu.jhuapl.trinity.javafx.components.timeline.MissionTimerXBuilder;
 import edu.jhuapl.trinity.javafx.components.timeline.TimelineAnimation;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
+import edu.jhuapl.trinity.javafx.events.AudioEvent;
 import edu.jhuapl.trinity.javafx.events.EffectEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.events.GaussianMixtureEvent;
@@ -185,37 +186,12 @@ public class AppAsyncManager extends Task {
         } catch (Exception ex) {
             LOG.error(null, ex);
         }        
-        LOG.info("Setting up Matrix Digital Rain...");
-        // fun matrix effect, use Alt + N
-        progress.setLabelLater("...Digital Rain...");        
-        matrixOverlay = new MatrixOverlay(scene, centerStack);
-        scene.addEventHandler(EffectEvent.START_DIGITAL_RAIN, e -> {
-            MatrixOverlay.on.set(true);
-            matrixOverlay.matrixOn.run();
-        });
-        scene.addEventHandler(EffectEvent.STOP_DIGITAL_RAIN, e -> {
-            MatrixOverlay.on.set(false);
-            matrixOverlay.matrixOff.run();    
-        });        
-        centerStack.setOnSwipeUp(e -> {
-            if (e.getTouchCount() > 2) { //three finger swipe
-                MatrixOverlay.on.set(false);
-                matrixOverlay.matrixOff.run();
-                e.consume(); // <-- stops passing the event to next node
-            }
-        });
-        centerStack.setOnSwipeDown(e -> {
-            if (e.getTouchCount() > 2) { //three finger swipe
-                MatrixOverlay.on.set(true);
-                matrixOverlay.matrixOn.run();
-                e.consume(); // <-- stops passing the event to next node
-            }
-        });        
         LOG.info("Parsing command line...");
         progress.setPercentComplete(current++/total);
         progress.setLabelLater("...Parsing Command Line...");           
         parseParameters();
         //ex: --scenario="C:\dev\cameratests" --geometry=1024x768+100+100
+        boolean jukeBox = false;
         if (null != namedParameters) {
             LOG.info("Checking for geometry arguments...");
             if (namedParameters.containsKey("geometry")) {
@@ -243,11 +219,17 @@ public class AppAsyncManager extends Task {
                 Platform.runLater(() -> ((Stage)scene.getWindow()).setMaximized(true));
             }
             LOG.info("Checking for special effects requests...");
+            jukeBox = namedParameters.containsKey("jukebox");
+            if (jukeBox) {
+                LOG.info("jukebox found... enabling music.");
+                Platform.runLater(() -> {
+                    scene.getRoot().fireEvent(new AudioEvent(AudioEvent.ENABLE_MUSIC_TRACKS, true));
+                });
+            }
             boolean surveillanceEnabled = namedParameters.containsKey("surveillance");
             if (surveillanceEnabled) {
                 LOG.info("Surveillance found... enabling Camera.");
             }
-
             if (namedParameters.containsKey("outrun")) {
                 LOG.info("Outrun found... enabling RetroWavePane.");
                 try {
@@ -279,7 +261,33 @@ public class AppAsyncManager extends Task {
                 LOG.info("HTTP found: {}", httpValue);
                 enableHttp = Boolean.parseBoolean(httpValue);
             }
-        }
+        }        
+        LOG.info("Setting up Matrix Digital Rain...");
+        // fun matrix effect, use Alt + N
+        progress.setLabelLater("...Digital Rain...");        
+        matrixOverlay = new MatrixOverlay(scene, centerStack);
+        scene.addEventHandler(EffectEvent.START_DIGITAL_RAIN, e -> {
+            MatrixOverlay.on.set(true);
+            matrixOverlay.matrixOn.run();
+        });
+        scene.addEventHandler(EffectEvent.STOP_DIGITAL_RAIN, e -> {
+            MatrixOverlay.on.set(false);
+            matrixOverlay.matrixOff.run();    
+        });        
+        centerStack.setOnSwipeUp(e -> {
+            if (e.getTouchCount() > 2) { //three finger swipe
+                MatrixOverlay.on.set(false);
+                matrixOverlay.matrixOff.run();
+                e.consume(); // <-- stops passing the event to next node
+            }
+        });
+        centerStack.setOnSwipeDown(e -> {
+            if (e.getTouchCount() > 2) { //three finger swipe
+                MatrixOverlay.on.set(true);
+                matrixOverlay.matrixOn.run();
+                e.consume(); // <-- stops passing the event to next node
+            }
+        });        
         
         progress.setTopLabelLater("Constructing 3D Subscenes");
          LOG.info("Constructing 3D subscenes...");
@@ -577,6 +585,7 @@ public class AppAsyncManager extends Task {
             }
         });        
         jukeBoxPane = new JukeBoxPane(scene, desktopPane);
+        jukeBoxPane.setEnableMusic(jukeBox);
         scene.addEventHandler(ApplicationEvent.SHOW_JUKEBOX_PANE, e -> {
             if (null == jukeBoxPane) {
                 jukeBoxPane = new JukeBoxPane(scene, desktopPane);

@@ -48,4 +48,7 @@ public class JukeBoxPane extends LitPathPane {
                 AudioEvent.RELOAD_MUSIC_FILES));
         });
     }
+    public void setEnableMusic(boolean enabled) {
+        controlBox.setEnableMusic(enabled);
+    }
 }

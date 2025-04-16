@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory;
 public class JukeBoxControlBox extends VBox {
     private static final Logger LOG = LoggerFactory.getLogger(JukeBoxControlBox.class);
     ListView<String> musicTracks;
+    CheckBox enableFadeCheckBox;
     
     public JukeBoxControlBox() {
         musicTracks = new ListView();
@@ -53,7 +54,7 @@ public class JukeBoxControlBox extends VBox {
             reloadTrackList.getScene().getRoot().fireEvent(new AudioEvent(
                 AudioEvent.ENABLE_MUSIC_TRACKS, enableMusicCheckBox.isSelected()));
         });
-        CheckBox enableFadeCheckBox = new CheckBox("Enable Fade");
+        enableFadeCheckBox = new CheckBox("Enable Fade");
         enableFadeCheckBox.setSelected(true);
         enableFadeCheckBox.setOnAction(e -> {
             reloadTrackList.getScene().getRoot().fireEvent(new AudioEvent(
@@ -82,6 +83,9 @@ public class JukeBoxControlBox extends VBox {
             new HBox(5, reloadTrackList, playTrack),
             musicTracks
         );        
+    }
+    public void setEnableMusic(boolean enabled) {
+        enableFadeCheckBox.setSelected(enabled);
     }
     public void selectTrackBySourceName(String name) {
         for(int i=0; i<musicTracks.getItems().size();i++){
