@@ -1184,10 +1184,11 @@ public class Hypersurface3DPane extends StackPane
                     featureVector.getBbox().get(3).intValue()
                 );
                 iv = new ImageView(image);
-            } else {
+            } else if(null != featureVector.getImageURL() && !featureVector.getImageURL().isBlank()){
                 iv = new ImageView(ResourceUtils.loadImageFile(imageryBasePath + featureVector.getImageURL()));
-            }
-        } catch (IOException ex) {
+            } else
+                iv = new ImageView(ResourceUtils.loadIconFile("noimage"));
+        } catch (Exception ex) {
             iv = new ImageView(ResourceUtils.loadIconFile("noimage"));
         }
         return iv;

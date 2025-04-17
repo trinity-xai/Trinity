@@ -297,8 +297,10 @@ public class HyperdrivePane extends LitPathPane {
         );
         fileControlsBox.setAlignment(Pos.CENTER);
 
-        Button embeddingsButton = new Button("Request Embeddings");
-        embeddingsButton.setOnAction(e -> {
+        Button imageEmbeddingsButton = new Button("Request Embeddings");
+        imageEmbeddingsButton.setWrapText(true);
+        imageEmbeddingsButton.setTextAlignment(TextAlignment.CENTER);
+        imageEmbeddingsButton.setOnAction(e -> {
             if (!imageEmbeddingsListView.getItems().isEmpty()) {
                 requestEmbeddingsTask();
             }
@@ -416,11 +418,6 @@ public class HyperdrivePane extends LitPathPane {
         embeddingsCenterStack.setAlignment(Pos.CENTER);
         embeddingsBorderPane = new BorderPane(embeddingsCenterStack);
         imageEmbeddingRequestIndicator = new CircleProgressIndicator();
-//        ProgressStatus ps = new ProgressStatus("Working",0.5);
-//        ps.fillStartColor = Color.AZURE;
-//        ps.fillEndColor = Color.LIME;
-//        ps.innerStrokeColor = Color.AZURE;
-//        ps.outerStrokeColor = Color.LIME;
         imageEmbeddingRequestIndicator.updateStatus(ps);
         imageEmbeddingRequestIndicator.defaultOpacity = 1.0;
         imageEmbeddingRequestIndicator.setOpacity(0.0); ///instead of setVisible(false)
@@ -428,14 +425,29 @@ public class HyperdrivePane extends LitPathPane {
         embeddingsCenterStack.getChildren().addAll(imageEmbeddingsListView);
 
         //add controls to execute over embeddings to the bottom
-        Button clearEmbeddingsButton = new Button("Clear embeddings");
-        clearEmbeddingsButton.setOnAction(e -> {
+        Button clearImageEmbeddingsButton = new Button("Clear embeddings");
+        clearImageEmbeddingsButton.setWrapText(true);        
+        clearImageEmbeddingsButton.setTextAlignment(TextAlignment.CENTER);
+        clearImageEmbeddingsButton.setOnAction(e -> {
             currentFeatureList.clear();
             imageEmbeddingsListView.getItems().clear();
         });
-        clearEmbeddingsButton.setCancelButton(true);
+        clearImageEmbeddingsButton.setCancelButton(true);
 
+        Button clearCompleteImageEmbeddingsButton = new Button("Clear Complete");
+        clearCompleteImageEmbeddingsButton.setWrapText(true);
+        clearCompleteImageEmbeddingsButton.setTextAlignment(TextAlignment.CENTER);
+        clearCompleteImageEmbeddingsButton.setOnAction(e -> {
+            List<EmbeddingsImageListItem> keep = imageEmbeddingsListView.getItems()
+                .stream().filter(i -> !i.embeddingsReceived()).toList();
+            imageEmbeddingsListView.getItems().clear();
+            currentFeatureList.clear();
+            imageEmbeddingsListView.getItems().addAll(keep);
+        });
+        
         Button injectFeaturesButton = new Button("Inject Features");
+        injectFeaturesButton.setWrapText(true);
+        injectFeaturesButton.setTextAlignment(TextAlignment.CENTER);
         injectFeaturesButton.setOnAction(e -> {
             currentFeatureList.clear();
             currentFeatureList.addAll(imageEmbeddingsListView.getItems().stream()
@@ -447,7 +459,8 @@ public class HyperdrivePane extends LitPathPane {
         });
 
         HBox controlsBox = new HBox(10,
-            embeddingsButton, clearEmbeddingsButton, injectFeaturesButton
+            imageEmbeddingsButton, clearImageEmbeddingsButton, 
+            clearCompleteImageEmbeddingsButton, injectFeaturesButton
         );
         controlsBox.setAlignment(Pos.CENTER);
         embeddingsBorderPane.setBottom(controlsBox);

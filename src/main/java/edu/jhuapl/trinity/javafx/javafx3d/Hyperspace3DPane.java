@@ -943,17 +943,17 @@ public class Hyperspace3DPane extends StackPane implements
         };
         animationTimer.start();
         subScene.sceneProperty().addListener(c -> {
-        Platform.runLater(() -> {
-            cubeWorld.adjustPanelsByPos(cameraTransform.rx.getAngle(),
-                cameraTransform.ry.getAngle(), cameraTransform.rz.getAngle());
-            updateLabels();
-            updateView(true);
-            //create callout automatically puts the callout and node into a managed map
-            FeatureVector anchorFV = FeatureVector.EMPTY_FEATURE_VECTOR("", 6);
-            anchorCallout = radialOverlayPane.createCallout(anchorTSM, anchorFV, subScene);
-            anchorCallout.play();
-            anchorCallout.setVisible(false);
-        });
+            Platform.runLater(() -> {
+                cubeWorld.adjustPanelsByPos(cameraTransform.rx.getAngle(),
+                    cameraTransform.ry.getAngle(), cameraTransform.rz.getAngle());
+                updateLabels();
+                updateView(true);
+                //create callout automatically puts the callout and node into a managed map
+                FeatureVector anchorFV = FeatureVector.EMPTY_FEATURE_VECTOR("", 6);
+                anchorCallout = radialOverlayPane.createCallout(anchorTSM, anchorFV, subScene);
+                anchorCallout.play();
+                anchorCallout.setVisible(false);
+            });
         });
     }
 
@@ -1636,9 +1636,13 @@ public class Hyperspace3DPane extends StackPane implements
             scene.getRoot().fireEvent(new FeatureVectorEvent(
                 FeatureVectorEvent.SELECT_FEATURE_VECTOR,
                 featureVectors.get(index), featureLabels));
+            if(!radialOverlayPane.getChildren().contains(anchorCallout)) {
+                radialOverlayPane.getChildren().add(anchorCallout);
+            }
             //try to update the callout anchored to the lead state
             radialOverlayPane.updateCalloutByFeatureVector(anchorCallout, featureVectors.get(index));
             radialOverlayPane.updateCalloutHeadPoint(anchorTSM, anchorCallout, subScene);
+            anchorCallout.play(2);
         }
     }
 
