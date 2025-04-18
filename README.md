@@ -11,6 +11,27 @@ Trinity provides performance analysis and XAI tools ideal for Deep Learning syst
 classification or decoding.
 Trinity does this through a combination of different interactive 3D projections that are hyper-dimensional aware. (Vectors of Vectors)
 
+### Example Use Cases ###
+Trinity has been applied to a wide range of problems which can be framed as vectors of vectors:
+
+**Deep Fake Image Detection**
+![TrinityDeepFake-HypersurfacePixelSelection](/media/TrinityDeepFake-HypersurfacePixelSelection.png)
+
+**Deep Fake Audio Detection**
+![Trinity-HypersurfaceAudioFFT](/media/Trinity-HypersurfaceAudioFFT.png)
+
+**Large Language Model (ChatGPT etc) Embeddings Analysis**
+![TrinityChatGPT-Manifold](/media/TrinityChatGPT-Manifold.png)
+
+**Deep Learning Object detection models**
+![Trinity-Competency-UMAP](/media/Trinity-Competency-UMAP.png)
+
+**COVID gene/tissue classification**
+![TrinityCOVIDTissueGeneSequenceUMAP-Yule](/media/TrinityCOVIDTissueGeneSequenceUMAP-Yule-000.png)
+
+**Brain Computer Interface decoders**
+![TrinityBCI-Hyperspace](/media/TrinityBCI-Hyperspace.png)
+
 ### Hyperspace ###
 ![Hyperspace Projection](/media/TrinityChatGPT_Text_Embeddings.png)
 Trinity's Hyperspace view provides a 3D scatter plot with automatic 2D projections of feature/factor data.
@@ -19,15 +40,44 @@ The user can pan, rotate and zoom either the 3D camera or the points themselves.
 The scatter points are interactive allowing the user to select individual points to bring up the associated data/imagery with that feature.
 
 ### Hypersurface ###
+#### Feature Collection Mode ####
 ![TrinityBCI-Hypersurface](/media/TrinityBCI-Hypersurface.png)
+
 Trinity can visualize higher dimensional inputs (before decoding) as a 3D surface.
 Hypersurface view provides analyst insight into what inputs correlate strongest with a decoding/classification result.
 This view is synchronized with the same FeatureVectors and Timeline as the Hyperspace viewpoint.
 
+#### 3D Imagery ####
+![Trinity-HypersurfaceOnyx](/media/Trinity-HypersurfaceOnyx.png)
+
+The Hypersurface can also be utilized to visualize 2D imagery in 3D.
+Each pixel of an input image is used to create Vertices and Faces of an underlying TriangleMesh.
+The surface height and colormap can be determined by multiple variants including luminosity (default), aligned FeatureVector or Shapley Value. 
+
+
 ### Projections and Manifolds ###
+#### UMAP and Dimension Reduction ####
 ![TrinityBCI-UMAP-Yule](/media/TrinityBCI-UMAP-Yule.png)
+
 Trinity provides a fast parallelized UMAP tool with a simple to use GUI to project the hyper-dimensional embeddings
 down to an arbitrary lower dimensional space. This allows analysts to project approximate manifolds as 3D clusters.
+
+#### Manifolds and Clustering ####
+
+Integrated in the Projections view are tools to automatically perform clustering.
+![Trinity-ProjectionsKmeansClustering](/media/Trinity-ProjectionsKmeansClustering.png)
+
+Clustering algorithm selection and parameters allow for full control by the user.
+Discovered Clusters are automatically converted to 3D TriangleMeshes using a ConvexHull algorithm.
+![Trinity-ProjectionsHDDBSCANClustering](/media/Trinity-ProjectionsHDDBSCANClustering.png)
+
+**_Special Shoutout and Acknowledgement to clust4j_**
+
+Most Clustering Algorithms (with the exception of the Multivariate Gaussian Mixture Models) used 
+by Trinity XAI are derived from [the brilliant clust4j project](https://github.com/tgsmith61591/clust4j).   
+At the time of writing clust4j was not available as 3rd party library nor was it module compatible.
+The Trinity XAI org decided to import the Apache 2.0 version of clust4j, make some changes to be module compatible
+and fixed a few deprecated calls (mostly in unit tests). It has functioned perfectly and we thank the author.
 
 ### Data Formats ###
 Trinity primarily speaks JSON and has a collection of serializable JSON message objects that can be imported.
@@ -89,23 +139,6 @@ A LabelConfig json file can be simply dragged and dropped onto the Trinity appli
     "clearAll" : "false"
 }
 ```
-
-### Example Use Cases ###
-Trinity has been applied to a series of use cases including:
-
-**Deep Learning Object detection models**
-![Trinity-Competency-UMAP](/media/Trinity-Competency-UMAP.png)
-
-
-**COVID gene/tissue classification**
-![TrinityCOVIDTissueGeneSequenceUMAP-Yule](/media/TrinityCOVIDTissueGeneSequenceUMAP-Yule-000.png)
-
-
-**Brain Computer Interface decoders**
-![TrinityBCI-Hyperspace](/media/TrinityBCI-Hyperspace.png)
-
-**Large Language Model (ChatGPT) Embeddings Analysis**
-![TrinityHumanVsChatGPTEmbeddings-UMAP-Yule](/media/TrinityHumanVsChatGPTEmbeddings-UMAP-Yule.png)
 
 
 ## Project contributors: ##
