@@ -1,4 +1,3 @@
-/* Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC */
 package edu.jhuapl.trinity.javafx.components;
 
 import com.tambapps.fft4j.FastFourier2d;

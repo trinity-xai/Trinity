@@ -16,7 +16,6 @@
 <?import javafx.scene.layout.BorderPane?>
 <?import javafx.scene.layout.HBox?>
 <?import javafx.scene.layout.VBox?>
-
 <AnchorPane fx:id="root" style="-fx-background-color: #00000000;" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="edu.jhuapl.trinity.javafx.controllers.AnalysisLogController">
     <children>

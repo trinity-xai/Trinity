@@ -1,5 +1,3 @@
-/* Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC */
-
 package edu.jhuapl.trinity.javafx.javafx3d;
 
 import edu.jhuapl.trinity.App;
@@ -1184,10 +1182,11 @@ public class Hypersurface3DPane extends StackPane
                     featureVector.getBbox().get(3).intValue()
                 );
                 iv = new ImageView(image);
-            } else {
+            } else if (null != featureVector.getImageURL() && !featureVector.getImageURL().isBlank()) {
                 iv = new ImageView(ResourceUtils.loadImageFile(imageryBasePath + featureVector.getImageURL()));
-            }
-        } catch (IOException ex) {
+            } else
+                iv = new ImageView(ResourceUtils.loadIconFile("noimage"));
+        } catch (Exception ex) {
             iv = new ImageView(ResourceUtils.loadIconFile("noimage"));
         }
         return iv;
@@ -1653,14 +1652,14 @@ public class Hypersurface3DPane extends StackPane
         StackPane.setAlignment(vbox, Pos.BOTTOM_LEFT);
         vbox.setPickOnBounds(false);
         getChildren().add(vbox);
-//        Utils.printTotalTime(startTime);
         updateLabels();
-
-        //create callout automatically puts the callout and node into a managed map
-        Platform.runLater(() -> {
-            FeatureVector dummy = FeatureVector.EMPTY_FEATURE_VECTOR("", 3);
-            anchorCallout = createCallout(highlightedPoint, dummy, subScene);
-            anchorCallout.play().setOnFinished(fin -> anchorCallout.setVisible(false));
+        subScene.sceneProperty().addListener(c -> {
+            //create callout automatically puts the callout and node into a managed map
+            Platform.runLater(() -> {
+                FeatureVector dummy = FeatureVector.EMPTY_FEATURE_VECTOR("", 3);
+                anchorCallout = createCallout(highlightedPoint, dummy, subScene);
+                anchorCallout.play().setOnFinished(fin -> anchorCallout.setVisible(false));
+            });
         });
     }
 

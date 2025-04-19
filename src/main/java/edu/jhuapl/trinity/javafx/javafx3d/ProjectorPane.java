@@ -1,5 +1,3 @@
-/* Copyright (C) 2021 - 2025 Sean Phillips */
-
 package edu.jhuapl.trinity.javafx.javafx3d;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;

@@ -1,5 +1,3 @@
-/* Copyright (C) 2021 - 2024 Sean Phillips */
-
 package edu.jhuapl.trinity.utils.marchingcubes;
 
 import org.slf4j.Logger;
