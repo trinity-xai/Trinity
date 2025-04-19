@@ -14,9 +14,6 @@
  * limitations under the License.
  */
 
-/* JHUAPL license for modified version of this code. */
-
-
 package edu.jhuapl.trinity.javafx.components;
 
 public enum LockState {
