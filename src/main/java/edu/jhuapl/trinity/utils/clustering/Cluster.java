@@ -1,5 +1,3 @@
-/* Copyright (C) 2021 - 2024 Sean Phillips */
-
 package edu.jhuapl.trinity.utils.clustering;
 
 import java.util.ArrayList;

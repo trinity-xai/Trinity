@@ -1,7 +1,6 @@
-/* Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC */
-
 package edu.jhuapl.trinity.javafx.components;
 
+import edu.jhuapl.trinity.css.StyleResourceProvider;
 import eu.hansolo.fx.charts.Category;
 import eu.hansolo.fx.charts.ChartType;
 import eu.hansolo.fx.charts.YChart;
@@ -113,7 +112,7 @@ public class RadarChartTest extends Application {
         StackPane pane = new StackPane(chart);
         Scene scene = new Scene(pane);
 
-        String CSS = this.getClass().getResource("/edu/jhuapl/trinity/css/styles.css").toExternalForm();
+        String CSS = StyleResourceProvider.getResource("styles.css").toExternalForm();
         scene.getStylesheets().add(CSS);
 
         stage.setTitle("RadarChart");

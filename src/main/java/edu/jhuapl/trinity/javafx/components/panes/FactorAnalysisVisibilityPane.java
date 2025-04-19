@@ -1,5 +1,3 @@
-/* Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC */
-
 package edu.jhuapl.trinity.javafx.components.panes;
 
 import edu.jhuapl.trinity.javafx.events.VisibilityEvent;

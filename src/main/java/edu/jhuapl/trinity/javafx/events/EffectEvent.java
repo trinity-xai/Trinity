@@ -1,5 +1,3 @@
-/* Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC */
-
 package edu.jhuapl.trinity.javafx.events;
 
 import javafx.event.Event;
@@ -10,6 +8,8 @@ import javafx.event.EventType;
  */
 public class EffectEvent extends Event {
 
+    public static final EventType<EffectEvent> START_DIGITAL_RAIN = new EventType(ANY, "START_DIGITAL_RAIN");
+    public static final EventType<EffectEvent> STOP_DIGITAL_RAIN = new EventType(ANY, "STOP_DIGITAL_RAIN");
     public static final EventType<EffectEvent> START_SCAN_EFFECT = new EventType(ANY, "START_SCAN_EFFECT");
     public static final EventType<EffectEvent> STOP_SCAN_EFFECT = new EventType(ANY, "STOP_SCAN_EFFECT");
     public static final EventType<EffectEvent> ENABLE_EMITTERS = new EventType(ANY, "ENABLE_EMITTERS");

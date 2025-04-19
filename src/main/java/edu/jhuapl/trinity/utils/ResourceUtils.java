@@ -1,5 +1,3 @@
-/* Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC */
-
 package edu.jhuapl.trinity.utils;
 
 import edu.jhuapl.trinity.audio.AudioResourceProvider;
@@ -79,6 +77,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
@@ -647,6 +646,15 @@ public enum ResourceUtils {
 
     public static String removeExtension(String filename) {
         return filename.substring(0, filename.lastIndexOf("."));
+    }
+
+    public static String getNameFromURI(String uriString) {
+        try {
+            return Paths.get(new URI(uriString)).getFileName().toString();
+        } catch (URISyntaxException ex) {
+            LOG.error("Could not load URI from: " + uriString);
+        }
+        return "";
     }
 
     public static Image bytesToImage(byte[] image) {

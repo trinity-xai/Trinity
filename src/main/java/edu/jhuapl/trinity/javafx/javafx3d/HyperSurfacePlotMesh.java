@@ -1,7 +1,7 @@
 /*
  * Modified from SurfacePlotMesh.java
  *
- * Copyright (c) 2013-2019, F(X)yz
+ * Original Copyright (C) 2013-2019, F(X)yz
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -26,7 +26,7 @@
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
-/* Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC */
+
 
 package edu.jhuapl.trinity.javafx.javafx3d;
 

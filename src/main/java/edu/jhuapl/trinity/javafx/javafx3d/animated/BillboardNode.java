@@ -1,10 +1,7 @@
-/* Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC */
-
-package edu.jhuapl.trinity.javafx.javafx3d.animated;
 /**
  * BillboardNode.java
  * <p>
- * Copyright (c) 2013-2016, F(X)yz
+ * Original Copyright (C) 2013-2016, F(X)yz
  * All rights reserved.
  * <p>
  * Redistribution and use in source and binary forms, with or without
@@ -29,6 +26,9 @@ package edu.jhuapl.trinity.javafx.javafx3d.animated;
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
+package edu.jhuapl.trinity.javafx.javafx3d.animated;
+
 
 import javafx.animation.AnimationTimer;
 import javafx.beans.property.BooleanProperty;

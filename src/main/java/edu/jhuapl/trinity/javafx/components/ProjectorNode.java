@@ -1,5 +1,3 @@
-/* Copyright (C) 2025 Sean Phillips */
-
 package edu.jhuapl.trinity.javafx.components;
 
 import com.fasterxml.jackson.core.JsonProcessingException;

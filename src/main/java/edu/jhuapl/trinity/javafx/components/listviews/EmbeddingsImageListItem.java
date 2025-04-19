@@ -33,6 +33,7 @@ public class EmbeddingsImageListItem extends HBox {
     public static AtomicInteger atomicID = new AtomicInteger();
     public static NumberFormat format = new DecimalFormat("0000");
 
+    public boolean embeddingsReceived = false;
     public int imageID;
     private ImageView imageView;
     private Label fileLabel;
@@ -87,7 +88,10 @@ public class EmbeddingsImageListItem extends HBox {
                     new FeatureVectorEvent(FeatureVectorEvent.LOCATE_FEATURE_VECTOR, featureVector));
             }
         });
+    }
 
+    public boolean embeddingsReceived() {
+        return embeddingsReceived;
     }
 
     public void reloadImage(boolean renderIcon) {
@@ -107,6 +111,7 @@ public class EmbeddingsImageListItem extends HBox {
         featureVector.getData().clear();
         featureVector.getData().addAll(data);
         dimensionsLabel.setText(format.format(data.size()));
+        embeddingsReceived = true;
     }
 
     public void setFeatureVectorLabel(String text) {
