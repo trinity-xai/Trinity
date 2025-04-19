@@ -1,5 +1,3 @@
-/* Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC */
-
 package edu.jhuapl.trinity;
 
 import edu.jhuapl.trinity.audio.JukeBox;
@@ -46,6 +44,7 @@ import lit.litfx.controls.covalent.events.CovalentPaneEvent;
 import lit.litfx.controls.output.AnimatedText;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 
 public class App extends Application {
@@ -95,8 +94,8 @@ public class App extends Application {
         scene.getStylesheets().add(CSS);
         CSS = StyleResourceProvider.getResource("covalent.css").toExternalForm();
         scene.getStylesheets().add(CSS);
-        stage.show();  
-        
+        stage.show();
+
         //add just the dark necessaties...
         JukeBox jukeBox = new JukeBox(scene);
         scene.addEventHandler(AudioEvent.PLAY_MUSIC_TRACK, jukeBox);
@@ -107,7 +106,7 @@ public class App extends Application {
         scene.addEventHandler(AudioEvent.ENABLE_FADE_TRACKS, jukeBox);
         scene.addEventHandler(AudioEvent.CYCLE_MUSIC_TRACKS, jukeBox);
         scene.addEventHandler(AudioEvent.CURRENTLY_PLAYING_TRACK, jukeBox);
-        
+
         desktopPane = new Pane(); //transparent layer that just holds floating panes
         desktopPane.setPickOnBounds(false); //prevent it from blocking mouse clicks to sublayers
         //@HACK This ultra dirty hack lets me easily add floating panes from anywhere
@@ -198,37 +197,38 @@ public class App extends Application {
         mainNavMenu.hideRadialMenu();
         mainNavMenu.setTranslateX(-mainNavMenu.getInnerRadius());
         mainNavMenu.setTranslateY(-mainNavMenu.getInnerRadius());
-        
+
         LOG.info("User Interface Lit...");
-        AppAsyncManager async = new AppAsyncManager(scene, centerStack, desktopPane, 
+        AppAsyncManager async = new AppAsyncManager(scene, centerStack, desktopPane,
             circleSpinner, getParameters().getNamed());
         async.setOnSucceeded(s -> intro());
-        async.setOnFailed(s -> intro());            
+        async.setOnFailed(s -> intro());
         //@DEBUG SMP load time
         //Utils.printTotalTime(startTime);
         Thread.startVirtualThread(async);
     }
+
     private void intro() {
 //        Platform.runLater(() -> {
-            intro = new Timeline(
-                new KeyFrame(Duration.seconds(0.0), new KeyValue(mainNavMenu.opacityProperty(), 0.0)),
-                new KeyFrame(Duration.seconds(0.1), e -> {
-                    circleSpinner.spin(false);
-                    circleSpinner.fadeBusy(true);
-                    animatedConsoleText.setOpacity(1.0);
-                    animatedConsoleText.setText("> ");
-                    animatedConsoleText.setVisible(true);
-                    centerStack.getChildren().add(centerStack.getChildren().size() - 1, mainNavMenu);
-                }),
-                new KeyFrame(Duration.seconds(0.5), e -> animatedConsoleText.animate(">Trinity")),
-                new KeyFrame(Duration.seconds(2.0), e -> animatedConsoleText.animate(">Hyperdimensional Visualization")),
-                new KeyFrame(Duration.seconds(3.5), new KeyValue(animatedConsoleText.opacityProperty(), 1.0)),
-                new KeyFrame(Duration.seconds(5.0), new KeyValue(animatedConsoleText.opacityProperty(), 0.0)),
-                new KeyFrame(Duration.seconds(5.1), e -> animatedConsoleText.setVisible(false)),
-                new KeyFrame(Duration.seconds(5.1), e -> animatedConsoleText.animate(" ")),
-                new KeyFrame(Duration.seconds(5.1), new KeyValue(mainNavMenu.opacityProperty(), 1.0))
-            );
-            intro.play();
+        intro = new Timeline(
+            new KeyFrame(Duration.seconds(0.0), new KeyValue(mainNavMenu.opacityProperty(), 0.0)),
+            new KeyFrame(Duration.seconds(0.1), e -> {
+                circleSpinner.spin(false);
+                circleSpinner.fadeBusy(true);
+                animatedConsoleText.setOpacity(1.0);
+                animatedConsoleText.setText("> ");
+                animatedConsoleText.setVisible(true);
+                centerStack.getChildren().add(centerStack.getChildren().size() - 1, mainNavMenu);
+            }),
+            new KeyFrame(Duration.seconds(0.5), e -> animatedConsoleText.animate(">Trinity")),
+            new KeyFrame(Duration.seconds(2.0), e -> animatedConsoleText.animate(">Hyperdimensional Visualization")),
+            new KeyFrame(Duration.seconds(3.5), new KeyValue(animatedConsoleText.opacityProperty(), 1.0)),
+            new KeyFrame(Duration.seconds(5.0), new KeyValue(animatedConsoleText.opacityProperty(), 0.0)),
+            new KeyFrame(Duration.seconds(5.1), e -> animatedConsoleText.setVisible(false)),
+            new KeyFrame(Duration.seconds(5.1), e -> animatedConsoleText.animate(" ")),
+            new KeyFrame(Duration.seconds(5.1), new KeyValue(mainNavMenu.opacityProperty(), 1.0))
+        );
+        intro.play();
 //        });
     }
 
@@ -240,6 +240,7 @@ public class App extends Application {
         fade.setOnFinished(f -> animatedConsoleText.setText("> "));
         fade.play();
     }
+
     private void fadeInConsole(long timeMS) {
         animatedConsoleText.setAnimationTimeMS(30);  //default is 30ms
         FadeTransition fade = new FadeTransition(Duration.millis(timeMS), animatedConsoleText);
@@ -248,6 +249,7 @@ public class App extends Application {
         fade.setOnFinished(f -> animatedConsoleText.setText("> "));
         fade.play();
     }
+
     /**
      * Key handler for various keyboard shortcuts
      */
@@ -302,7 +304,7 @@ public class App extends Application {
                     new EffectEvent(EffectEvent.START_DIGITAL_RAIN));
             } else {
                 stage.getScene().getRoot().fireEvent(
-                    new EffectEvent(EffectEvent.STOP_DIGITAL_RAIN));              
+                    new EffectEvent(EffectEvent.STOP_DIGITAL_RAIN));
                 intro();
             }
         }
@@ -316,9 +318,9 @@ public class App extends Application {
 
     private void shutdown(boolean now) {
         animatedConsoleText.getScene().getRoot().fireEvent(
-            new ZeroMQEvent(ZeroMQEvent.ZEROMQ_TERMINATE_CONNECTION, null));        
+            new ZeroMQEvent(ZeroMQEvent.ZEROMQ_TERMINATE_CONNECTION, null));
         animatedConsoleText.getScene().getRoot().fireEvent(
-            new MissionTimerXEvent(MissionTimerXEvent.MISSION_TIMER_SHUTDOWN)); 
+            new MissionTimerXEvent(MissionTimerXEvent.MISSION_TIMER_SHUTDOWN));
         if (now) {
             System.exit(0);
         } else {

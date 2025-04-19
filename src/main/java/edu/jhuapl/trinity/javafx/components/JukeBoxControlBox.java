@@ -2,10 +2,6 @@ package edu.jhuapl.trinity.javafx.components;
 
 import edu.jhuapl.trinity.javafx.events.AudioEvent;
 import edu.jhuapl.trinity.utils.ResourceUtils;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.nio.file.Paths;
-import java.util.ArrayList;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
@@ -19,32 +15,36 @@ import javafx.scene.media.Media;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.net.URI;
+import java.net.URISyntaxException;
+import java.nio.file.Paths;
+import java.util.ArrayList;
+
 /**
- *
  * @author Sean Phillips
  */
 public class JukeBoxControlBox extends VBox {
     private static final Logger LOG = LoggerFactory.getLogger(JukeBoxControlBox.class);
     ListView<String> musicTracks;
     CheckBox enableFadeCheckBox;
-    
+
     public JukeBoxControlBox() {
         musicTracks = new ListView();
-        
+
         ImageView iv = ResourceUtils.loadIcon("waitingforimage", 128);
         VBox placeholder = new VBox(10, iv, new Label("No soundtrack loaded"));
         placeholder.setAlignment(Pos.CENTER);
         musicTracks.setPlaceholder(placeholder);
 
         Button reloadTrackList = new Button("Reload Track List");
-        reloadTrackList.setOnAction(e-> {
+        reloadTrackList.setOnAction(e -> {
             reloadTrackList.getScene().getRoot().fireEvent(new AudioEvent(
                 AudioEvent.RELOAD_MUSIC_FILES));
         });
         Button playTrack = new Button("Play Selected Track");
-        playTrack.setOnAction(e-> {
+        playTrack.setOnAction(e -> {
             String trackName = musicTracks.getSelectionModel().getSelectedItem();
-            if(null != trackName){
+            if (null != trackName) {
                 reloadTrackList.getScene().getRoot().fireEvent(new AudioEvent(
                     AudioEvent.PLAY_MUSIC_TRACK, trackName));
             }
@@ -67,11 +67,11 @@ public class JukeBoxControlBox extends VBox {
                 AudioEvent.CYCLE_MUSIC_TRACKS, cycleTracksCheckBox.isSelected()));
         });
 
-        HBox volumeLabelHBox = new HBox(50, new Label("Music Volume"), 
+        HBox volumeLabelHBox = new HBox(50, new Label("Music Volume"),
             enableMusicCheckBox, enableFadeCheckBox, cycleTracksCheckBox);
-        
+
         Slider volumeSlider = new Slider(0, 1, 0.25);
-        volumeSlider.valueProperty().addListener(e-> {
+        volumeSlider.valueProperty().addListener(e -> {
             reloadTrackList.getScene().getRoot().fireEvent(new AudioEvent(
                 AudioEvent.SET_MUSIC_VOLUME, volumeSlider.getValue()));
         });
@@ -82,15 +82,17 @@ public class JukeBoxControlBox extends VBox {
             volumeVBox,
             new HBox(5, reloadTrackList, playTrack),
             musicTracks
-        );        
+        );
     }
+
     public void setEnableMusic(boolean enabled) {
         enableFadeCheckBox.setSelected(enabled);
     }
+
     public void selectTrackBySourceName(String name) {
-        for(int i=0; i<musicTracks.getItems().size();i++){
-            if(musicTracks.getItems().get(i).contentEquals(name)) {
-                if(musicTracks.getSelectionModel().getSelectedIndex() != i) {
+        for (int i = 0; i < musicTracks.getItems().size(); i++) {
+            if (musicTracks.getItems().get(i).contentEquals(name)) {
+                if (musicTracks.getSelectionModel().getSelectedIndex() != i) {
                     musicTracks.scrollTo(i);
                     musicTracks.getSelectionModel().select(i);
                 }
@@ -98,14 +100,14 @@ public class JukeBoxControlBox extends VBox {
             }
         }
     }
-            
+
     public void reloadTracks(ArrayList<Media> mediaFiles) {
         musicTracks.getItems().clear();
         mediaFiles.forEach(m -> {
             try {
                 musicTracks.getItems().add(
                     Paths.get(new URI(m.getSource())).getFileName().toString()
-                );  
+                );
             } catch (URISyntaxException ex) {
                 LOG.error(ex.getMessage());
             }

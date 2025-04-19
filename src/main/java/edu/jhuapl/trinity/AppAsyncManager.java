@@ -1,6 +1,5 @@
 package edu.jhuapl.trinity;
 
-import static edu.jhuapl.trinity.App.theConfig;
 import edu.jhuapl.trinity.data.Dimension;
 import edu.jhuapl.trinity.data.FactorLabel;
 import edu.jhuapl.trinity.data.files.ClusterCollectionFile;
@@ -65,12 +64,6 @@ import edu.jhuapl.trinity.utils.PCAConfig;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import edu.jhuapl.trinity.utils.VisibilityMap;
 import edu.jhuapl.trinity.utils.umap.Umap;
-import java.io.File;
-import java.io.IOException;
-import java.time.LocalDateTime;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.geometry.Insets;
@@ -87,6 +80,15 @@ import javafx.stage.Stage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.File;
+import java.io.IOException;
+import java.time.LocalDateTime;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+
+import static edu.jhuapl.trinity.App.theConfig;
+
 
 /**
  * @author Sean Phillips
@@ -98,11 +100,11 @@ public class AppAsyncManager extends Task {
     StackPane centerStack;
     Map<String, String> namedParameters;
     CircleProgressIndicator progress;
-    
+
     MessageProcessor processor;
     ZeroMQSubscriberConfig subscriberConfig;
     ZeroMQFeedManager feed;
-    
+
     Hyperspace3DPane hyperspace3DPane;
     Hypersurface3DPane hypersurface3DPane;
     ProjectorPane projectorPane;
@@ -124,7 +126,7 @@ public class AppAsyncManager extends Task {
     boolean hyperspaceIntroShown = false;
     boolean hypersurfaceIntroShown = false;
     boolean enableHttp = false;
-    
+
     ManifoldEventHandler meh;
     FeatureVectorEventHandler fveh;
     ShapleyEventHandler sheh;
@@ -132,11 +134,11 @@ public class AppAsyncManager extends Task {
     SemanticMapEventHandler smeh;
     SearchEventHandler seh;
     HitEventHandler heh;
-    RestEventHandler reh;    
-    
+    RestEventHandler reh;
+
     MissionTimerX missionTimerX;
     TimelineAnimation timelineAnimation;
-    
+
     public AppAsyncManager(Scene scene, StackPane centerStack, Pane desktopPane, CircleProgressIndicator progress, Map<String, String> namedParameters) {
         this.scene = scene;
         this.namedParameters = namedParameters;
@@ -171,7 +173,7 @@ public class AppAsyncManager extends Task {
             ps.fillEndColor = Color.LIME;
             ps.innerStrokeColor = Color.AZURE;
             ps.outerStrokeColor = Color.LIME;
-            
+
             scene.getRoot().fireEvent(
                 new ApplicationEvent(ApplicationEvent.SHOW_BUSY_INDICATOR, ps));
         });
@@ -179,16 +181,16 @@ public class AppAsyncManager extends Task {
         double total = 32.0;
         double current = 0.0;
         Thread.sleep(100);
-        progress.setPercentComplete(current++/total);
+        progress.setPercentComplete(current++ / total);
         LOG.info("Attempting to read defaults...");
         try {
             LOG.info("Build Date: {}", Configuration.getBuildDate());
         } catch (Exception ex) {
             LOG.error(null, ex);
-        }        
+        }
         LOG.info("Parsing command line...");
-        progress.setPercentComplete(current++/total);
-        progress.setLabelLater("...Parsing Command Line...");           
+        progress.setPercentComplete(current++ / total);
+        progress.setLabelLater("...Parsing Command Line...");
         parseParameters();
         //ex: --scenario="C:\dev\cameratests" --geometry=1024x768+100+100
         boolean jukeBox = false;
@@ -202,21 +204,21 @@ public class AppAsyncManager extends Task {
                         //example: 200x100+800+800
                         String[] tokens = geometryParamString.split("\\+");
                         String[] sizeTokens = tokens[0].split("x");
-                        ((Stage)scene.getWindow()).setWidth(Double.parseDouble(sizeTokens[0]));
-                        ((Stage)scene.getWindow()).setHeight(Double.parseDouble(sizeTokens[1]));
-                        ((Stage)scene.getWindow()).setX(Double.parseDouble(tokens[1]));
-                        ((Stage)scene.getWindow()).setY(Double.parseDouble(tokens[2]));
+                        ((Stage) scene.getWindow()).setWidth(Double.parseDouble(sizeTokens[0]));
+                        ((Stage) scene.getWindow()).setHeight(Double.parseDouble(sizeTokens[1]));
+                        ((Stage) scene.getWindow()).setX(Double.parseDouble(tokens[1]));
+                        ((Stage) scene.getWindow()).setY(Double.parseDouble(tokens[2]));
                     });
                 } catch (NumberFormatException ex) {
                     LOG.info("Exception thrown parsing: {}. Setting to Maximized.", geometryParamString);
-                    Platform.runLater(() -> ((Stage)scene.getWindow()).setMaximized(true));
+                    Platform.runLater(() -> ((Stage) scene.getWindow()).setMaximized(true));
                 }
             } else if (namedParameters.containsKey("fullscreen")) {
                 LOG.info("Fullscreen start requested.");
-                Platform.runLater(() -> ((Stage)scene.getWindow()).setFullScreen(true));
+                Platform.runLater(() -> ((Stage) scene.getWindow()).setFullScreen(true));
             } else {
                 LOG.info("Defaulting to maximized.");
-                Platform.runLater(() -> ((Stage)scene.getWindow()).setMaximized(true));
+                Platform.runLater(() -> ((Stage) scene.getWindow()).setMaximized(true));
             }
             LOG.info("Checking for special effects requests...");
             jukeBox = namedParameters.containsKey("jukebox");
@@ -261,10 +263,10 @@ public class AppAsyncManager extends Task {
                 LOG.info("HTTP found: {}", httpValue);
                 enableHttp = Boolean.parseBoolean(httpValue);
             }
-        }        
+        }
         LOG.info("Setting up Matrix Digital Rain...");
         // fun matrix effect, use Alt + N
-        progress.setLabelLater("...Digital Rain...");        
+        progress.setLabelLater("...Digital Rain...");
         matrixOverlay = new MatrixOverlay(scene, centerStack);
         scene.addEventHandler(EffectEvent.START_DIGITAL_RAIN, e -> {
             MatrixOverlay.on.set(true);
@@ -272,8 +274,8 @@ public class AppAsyncManager extends Task {
         });
         scene.addEventHandler(EffectEvent.STOP_DIGITAL_RAIN, e -> {
             MatrixOverlay.on.set(false);
-            matrixOverlay.matrixOff.run();    
-        });        
+            matrixOverlay.matrixOff.run();
+        });
         centerStack.setOnSwipeUp(e -> {
             if (e.getTouchCount() > 2) { //three finger swipe
                 MatrixOverlay.on.set(false);
@@ -287,60 +289,60 @@ public class AppAsyncManager extends Task {
                 matrixOverlay.matrixOn.run();
                 e.consume(); // <-- stops passing the event to next node
             }
-        });        
-        
+        });
+
         progress.setTopLabelLater("Constructing 3D Subscenes");
-         LOG.info("Constructing 3D subscenes...");
+        LOG.info("Constructing 3D subscenes...");
         progress.setLabelLater("...Projections3D...");
-        progress.setPercentComplete(current++/total);
+        progress.setPercentComplete(current++ / total);
         projections3DPane = new Projections3DPane(scene);
         projections3DPane.setVisible(false); //start off hidden
         Platform.runLater(() -> centerStack.getChildren().add(0, projections3DPane));
 
         progress.setLabelLater("...Hypersurface...");
-        progress.setPercentComplete(current++/total);
+        progress.setPercentComplete(current++ / total);
         hypersurface3DPane = new Hypersurface3DPane(scene);
         hypersurface3DPane.setVisible(false); //start off hidden
         Platform.runLater(() -> centerStack.getChildren().add(0, hypersurface3DPane));
 
         progress.setLabelLater("...Hyperspace...");
-        progress.setPercentComplete(current++/total);
+        progress.setPercentComplete(current++ / total);
         hyperspace3DPane = new Hyperspace3DPane(scene);
         hyperspace3DPane.setVisible(false); //start off hidden
         Platform.runLater(() -> centerStack.getChildren().add(0, hyperspace3DPane));
-        
+
         progress.setLabelLater("...Analysis Projector...");
-        progress.setPercentComplete(current++/total);
+        progress.setPercentComplete(current++ / total);
         projectorPane = new ProjectorPane();
         projectorPane.setVisible(false); //start off hidden
         Platform.runLater(() -> centerStack.getChildren().add(0, projectorPane));
 
         progress.setTopLabelLater("Loading 2D Tools...");
-         LOG.info("Loading 2D Tools...");
+        LOG.info("Loading 2D Tools...");
         progress.setLabelLater("...Content Navigator...");
-        progress.setPercentComplete(current++/total);
+        progress.setPercentComplete(current++ / total);
         navigatorPane = new NavigatorPane(scene, desktopPane);
         progress.setLabelLater("...Analysis Log...");
-        progress.setPercentComplete(current++/total);
+        progress.setPercentComplete(current++ / total);
         analysisLogPane = new AnalysisLogPane(scene, desktopPane);
         progress.setLabelLater("...Pixel Selector...");
-        progress.setPercentComplete(current++/total);
+        progress.setPercentComplete(current++ / total);
         pixelSelectionPane = new PixelSelectionPane(scene, desktopPane);
         progress.setLabelLater("...Image Inspector...");
-        progress.setPercentComplete(current++/total);
+        progress.setPercentComplete(current++ / total);
         imageInspectorPane = new ImageInspectorPane(scene, desktopPane);
         progress.setLabelLater("...Hyperdrive...");
-        progress.setPercentComplete(current++/total);
+        progress.setPercentComplete(current++ / total);
         hyperdrivePane = new HyperdrivePane(scene, desktopPane);
         progress.setLabelLater("...Empty Vision...");
-        progress.setPercentComplete(current++/total);
+        progress.setPercentComplete(current++ / total);
         videoPane = new VideoPane(scene, desktopPane);
-        App.theVideo = videoPane;        
-        
-        progress.setTopLabelLater("Initializing Event Handlers");        
+        App.theVideo = videoPane;
+
+        progress.setTopLabelLater("Initializing Event Handlers");
         LOG.info("Text Console ");
         progress.setLabelLater("...Application Events...");
-        progress.setPercentComplete(current++/total);
+        progress.setPercentComplete(current++ / total);
         scene.addEventHandler(ApplicationEvent.SHOW_TEXT_CONSOLE, e -> {
             if (null == textConsolePane) {
                 textConsolePane = new TextPane(scene, desktopPane);
@@ -517,7 +519,7 @@ public class AppAsyncManager extends Task {
                     projections3DPane.setVisible(false);
                 }
                 //@TODO SMP fadeOutConsole(500);
-                        //scene.addEventHandler(CommandTerminalEvent.FADE_OUT, e -> fadeOutConsole(e.timeMS));
+                //scene.addEventHandler(CommandTerminalEvent.FADE_OUT, e -> fadeOutConsole(e.timeMS));
 
                 if (!hypersurfaceIntroShown) {
                     hypersurface3DPane.showFA3D();
@@ -583,7 +585,7 @@ public class AppAsyncManager extends Task {
             } else {
                 hyperdrivePane.show();
             }
-        });        
+        });
         jukeBoxPane = new JukeBoxPane(scene, desktopPane);
         jukeBoxPane.setEnableMusic(jukeBox);
         scene.addEventHandler(ApplicationEvent.SHOW_JUKEBOX_PANE, e -> {
@@ -596,38 +598,38 @@ public class AppAsyncManager extends Task {
             } else {
                 jukeBoxPane.show();
             }
-        });        
-        
+        });
+
         progress.setTopLabelLater("Establishing Messaging Feeds...");
         progress.setLabelLater("...REST Receiver...");
-        progress.setPercentComplete(current++/total);
+        progress.setPercentComplete(current++ / total);
         LOG.info("Setting up RestEventHandler...");
         reh = new RestEventHandler(scene);
         scene.addEventHandler(RestEvent.START_RESTSERVER_THREAD, reh);
         scene.addEventHandler(RestEvent.TERMINATE_RESTSERVER_THREAD, reh);
         if (enableHttp) //commandline parsed previously
             reh.startHttpService();
-        
+
         progress.setLabelLater("...Setting up Mission Timer...");
-        progress.setPercentComplete(current++/total);
+        progress.setPercentComplete(current++ / total);
         LOG.info("Setting up Mission Timer...");
         setupMissionTimer(scene);
-        scene.addEventHandler(MissionTimerXEvent.MISSION_TIMER_SHUTDOWN, e-> {
+        scene.addEventHandler(MissionTimerXEvent.MISSION_TIMER_SHUTDOWN, e -> {
             if (null != missionTimerX) {
                 missionTimerX.stop();
-            }            
+            }
         });
- 
+
         Platform.runLater(() -> {
             int i = centerStack.getChildren().indexOf(progress);
-            if(i < 0 && !centerStack.getChildren().isEmpty())
-                i = centerStack.getChildren().size() - 1;            
+            if (i < 0 && !centerStack.getChildren().isEmpty())
+                i = centerStack.getChildren().size() - 1;
             centerStack.getChildren().add(i, missionTimerX);
         });
         missionTimerX.updateTime(0, "1");
 
         progress.setLabelLater("...ZeroMQ...");
-        progress.setPercentComplete(current++/total);
+        progress.setPercentComplete(current++ / total);
         LOG.info("Establishing Messaging Feed...");
         processor = new MessageProcessor(scene);
         subscriberConfig = new ZeroMQSubscriberConfig(
@@ -674,7 +676,7 @@ public class AppAsyncManager extends Task {
         progress.setTopLabelLater("Registering Request Handlers...");
         LOG.info("Request Handlers...");
         progress.setLabelLater("...REQUEST_FEATURE_COLLECTION...");
-        progress.setPercentComplete(current++/total);
+        progress.setPercentComplete(current++ / total);
         scene.addEventHandler(FeatureVectorEvent.REQUEST_FEATURE_COLLECTION, event -> {
             FeatureCollection fc = new FeatureCollection();
             fc.setFeatures(hyperspace3DPane.getAllFeatureVectors());
@@ -682,7 +684,7 @@ public class AppAsyncManager extends Task {
         });
 
         progress.setLabelLater("...GENERATE_NEW_UMAP...");
-        progress.setPercentComplete(current++/total);
+        progress.setPercentComplete(current++ / total);
         scene.addEventHandler(ManifoldEvent.GENERATE_NEW_UMAP, event -> {
             Platform.runLater(() -> {
                 ProgressStatus ps = new ProgressStatus("Generating UMAP Settings...", -1);
@@ -703,7 +705,7 @@ public class AppAsyncManager extends Task {
         });
 
         progress.setLabelLater("...GENERATE_NEW_PCA...");
-        progress.setPercentComplete(current++/total);
+        progress.setPercentComplete(current++ / total);
         scene.addEventHandler(ManifoldEvent.GENERATE_NEW_PCA, event -> {
             Platform.runLater(() -> {
                 ProgressStatus ps = new ProgressStatus("Projecting PCA...", -1);
@@ -717,7 +719,7 @@ public class AppAsyncManager extends Task {
         });
 
         progress.setLabelLater("...PROJECT_SURFACE_GRID...");
-        progress.setPercentComplete(current++/total);
+        progress.setPercentComplete(current++ / total);
         scene.addEventHandler(FeatureVectorEvent.PROJECT_SURFACE_GRID, event -> {
             FeatureCollection originalFC = new FeatureCollection();
             originalFC.setFeatures(hypersurface3DPane.getAllFeatureVectors());
@@ -738,7 +740,7 @@ public class AppAsyncManager extends Task {
         });
 
         progress.setLabelLater("...PROJECT_FEATURE_COLLECTION...");
-        progress.setPercentComplete(current++/total);
+        progress.setPercentComplete(current++ / total);
         scene.addEventHandler(FeatureVectorEvent.PROJECT_FEATURE_COLLECTION, event -> {
             FeatureCollection originalFC = new FeatureCollection();
             originalFC.setFeatures(hyperspace3DPane.getAllFeatureVectors());
@@ -759,7 +761,7 @@ public class AppAsyncManager extends Task {
         });
 
         progress.setLabelLater("...EXPORT_FEATURE_COLLECTION...");
-        progress.setPercentComplete(current++/total);
+        progress.setPercentComplete(current++ / total);
         scene.addEventHandler(FeatureVectorEvent.EXPORT_FEATURE_COLLECTION, event -> {
             File file = (File) event.object;
             FeatureCollection fc = new FeatureCollection();
@@ -772,12 +774,12 @@ public class AppAsyncManager extends Task {
                 LOG.error(null, ex);
             }
             event.consume();
-        });        
+        });
 
         progress.setTopLabelLater("Connecting Dedicated Event Handlers...");
         LOG.info("Data Handlers ");
         progress.setLabelLater("...GaussianMixtureEventHandler...");
-        progress.setPercentComplete(current++/total);
+        progress.setPercentComplete(current++ / total);
         gmeh = new GaussianMixtureEventHandler();
         scene.getRoot().addEventHandler(GaussianMixtureEvent.NEW_GAUSSIAN_MIXTURE, gmeh);
         scene.getRoot().addEventHandler(GaussianMixtureEvent.LOCATE_GAUSSIAN_MIXTURE, gmeh);
@@ -785,7 +787,7 @@ public class AppAsyncManager extends Task {
         gmeh.addGaussianMixtureRenderer(hyperspace3DPane);
 
         progress.setLabelLater("...FeatureVectorEventHandler...");
-        progress.setPercentComplete(current++/total);
+        progress.setPercentComplete(current++ / total);
         fveh = new FeatureVectorEventHandler();
         scene.getRoot().addEventHandler(FeatureVectorEvent.NEW_FEATURE_VECTOR, fveh);
         scene.getRoot().addEventHandler(FeatureVectorEvent.LOCATE_FEATURE_VECTOR, fveh);
@@ -797,7 +799,7 @@ public class AppAsyncManager extends Task {
         fveh.addFeatureVectorRenderer(hyperspace3DPane);
 
         progress.setLabelLater("...ManifoldEventHandler...");
-        progress.setPercentComplete(current++/total);
+        progress.setPercentComplete(current++ / total);
         meh = new ManifoldEventHandler();
         scene.getRoot().addEventHandler(ManifoldEvent.NEW_UMAP_CONFIG, meh);
         scene.getRoot().addEventHandler(ManifoldEvent.NEW_MANIFOLD_CLUSTER, meh);
@@ -830,7 +832,7 @@ public class AppAsyncManager extends Task {
         });
 
         progress.setLabelLater("...ShapleyEventHandler...");
-        progress.setPercentComplete(current++/total);
+        progress.setPercentComplete(current++ / total);
         sheh = new ShapleyEventHandler();
         scene.getRoot().addEventHandler(ShapleyEvent.NEW_SHAPLEY_VECTOR, sheh);
         scene.getRoot().addEventHandler(ShapleyEvent.NEW_SHAPLEY_COLLECTION, sheh);
@@ -841,7 +843,7 @@ public class AppAsyncManager extends Task {
         scene.getRoot().addEventHandler(HitEvent.TRACKING_PROJECTILE_EVENTS, heh);
 
         progress.setLabelLater("...SemanticMapEventHandler...");
-        progress.setPercentComplete(current++/total);
+        progress.setPercentComplete(current++ / total);
         smeh = new SemanticMapEventHandler(false);
         scene.getRoot().addEventHandler(SemanticMapEvent.NEW_SEMANTIC_MAP, smeh);
         scene.getRoot().addEventHandler(SemanticMapEvent.NEW_SEMANTICMAP_COLLECTION, smeh);
@@ -849,7 +851,7 @@ public class AppAsyncManager extends Task {
         smeh.addSemanticMapRenderer(hypersurface3DPane);
 
         progress.setLabelLater("...SearchEventHandler...");
-        progress.setPercentComplete(current++/total);
+        progress.setPercentComplete(current++ / total);
         seh = new SearchEventHandler();
         scene.getRoot().addEventHandler(SearchEvent.FILTER_BY_TERM, seh);
         scene.getRoot().addEventHandler(SearchEvent.FILTER_BY_SCORE, seh);
@@ -861,7 +863,7 @@ public class AppAsyncManager extends Task {
         progress.setTopLabelLater("Adding Drag & Drop Support...");
         LOG.info("Adding Drag & Drop Support...");
         progress.setLabelLater("...Center Stack...");
-        progress.setPercentComplete(current++/total);
+        progress.setPercentComplete(current++ / total);
         //some helpful handling for the main view
         centerStack.addEventHandler(DragEvent.DRAG_OVER, event -> {
             if (ResourceUtils.canDragOver(event)) {
@@ -889,7 +891,7 @@ public class AppAsyncManager extends Task {
         });
 
         progress.setLabelLater("...3D subscenes...");
-        progress.setPercentComplete(current++/total);
+        progress.setPercentComplete(current++ / total);
         hyperspace3DPane.addEventHandler(DragEvent.DRAG_OVER, event -> {
             if (ResourceUtils.canDragOver(event)) {
                 event.acceptTransferModes(TransferMode.COPY);
@@ -945,11 +947,11 @@ public class AppAsyncManager extends Task {
                 }
             }
         });
-        
+
         progress.setTopLabelLater("Finished async load.");
         progress.setLabelLater("User Interface Is Lit");
         progress.setPercentComplete(1.0);
-  
+
         Platform.runLater(() -> {
             scene.getRoot().fireEvent(
                 new ApplicationEvent(ApplicationEvent.HIDE_BUSY_INDICATOR));
@@ -957,6 +959,7 @@ public class AppAsyncManager extends Task {
         System.out.println("Finished async load.");
         return null;
     }
+
     private void parseParameters() {
         if (!namedParameters.isEmpty()) {
             LOG.info("NamedParameters :");
@@ -964,7 +967,8 @@ public class AppAsyncManager extends Task {
                 LOG.info("\t{} : {}", entry.getKey(), entry.getValue());
             });
         }
-    }    
+    }
+
     private FeatureCollection getFeaturesBySource(ManifoldEvent.POINT_SOURCE source) {
         FeatureCollection originalFC = new FeatureCollection();
         if (source == ManifoldEvent.POINT_SOURCE.HYPERSURFACE) {
@@ -993,7 +997,8 @@ public class AppAsyncManager extends Task {
         }
         originalFC.setDimensionLabels(labels);
         return originalFC;
-    }    
+    }
+
     private void setupMissionTimer(Scene scene) {
         double width = 900;
         double height = 200;

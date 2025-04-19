@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 by Gerrit Grunwald
+ * Original Copyright (C) 2021 by Gerrit Grunwald
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -14,7 +14,6 @@
  * limitations under the License.
  */
 
-/* Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC */
 
 package edu.jhuapl.trinity.javafx.events;
 
@@ -36,7 +35,8 @@ public class MissionTimerXEvent extends Event {
     public MissionTimerXEvent(final EventType<? extends Event> type) {
         super(type);
         item = null;
-    }    
+    }
+
     public MissionTimerXEvent(final Item item, final EventType<? extends Event> type) {
         super(type);
         this.item = item;

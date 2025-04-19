@@ -1,5 +1,3 @@
-/* Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC */
-
 package edu.jhuapl.trinity.utils;
 
 import edu.jhuapl.trinity.audio.AudioResourceProvider;
@@ -651,13 +649,14 @@ public enum ResourceUtils {
     }
 
     public static String getNameFromURI(String uriString) {
-        try {        
+        try {
             return Paths.get(new URI(uriString)).getFileName().toString();
         } catch (URISyntaxException ex) {
             LOG.error("Could not load URI from: " + uriString);
         }
         return "";
     }
+
     public static Image bytesToImage(byte[] image) {
         byte[] rayray = new byte[image.length];
         System.arraycopy(image, 0,

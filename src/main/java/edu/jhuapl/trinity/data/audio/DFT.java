@@ -1,5 +1,5 @@
 /*
- *  Copyright (c) 2007 - 2008 by Damien Di Fede <ddf@compartmental.net>
+ *   Original Copyright (C) 2007 - 2008 by Damien Di Fede <ddf@compartmental.net>
  *
  *   This program is free software; you can redistribute it and/or modify
  *   it under the terms of the GNU Library General Public License as published
@@ -16,7 +16,6 @@
  *   Foundation, Inc., 675 Mass Ave, Cambridge, MA 02139, USA.
  */
 
-/* Copyright (C) 2021 - 2024 Sean Phillips */
 
 package edu.jhuapl.trinity.data.audio;
 

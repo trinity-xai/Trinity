@@ -89,6 +89,7 @@ public class EmbeddingsImageListItem extends HBox {
             }
         });
     }
+
     public boolean embeddingsReceived() {
         return embeddingsReceived;
     }

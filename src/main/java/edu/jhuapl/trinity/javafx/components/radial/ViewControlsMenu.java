@@ -1,5 +1,3 @@
-/* Copyright (C) 2021 - 2024 Sean Phillips */
-
 package edu.jhuapl.trinity.javafx.components.radial;
 
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;

@@ -1,23 +1,8 @@
-/* Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC */
-
-package edu.jhuapl.trinity.javafx.javafx3d;
-
-import javafx.beans.property.DoubleProperty;
-import javafx.beans.property.IntegerProperty;
-import javafx.beans.property.SimpleDoubleProperty;
-import javafx.beans.property.SimpleIntegerProperty;
-import javafx.scene.DepthTest;
-import javafx.scene.shape.CullFace;
-import javafx.scene.shape.TriangleMesh;
-import org.fxyz3d.shapes.primitives.TexturedMesh;
-
-import java.util.Objects;
-
 /**
- * Orginal License/Comment block from FXyz3D
+ * Original License/Comment block from FXyz3D
  * SpheroidMesh.java
  * <p>
- * Copyright (c) 2013-2021, F(X)yz
+ * Original Copyright (C) 2013-2021, F(X)yz
  * All rights reserved.
  * <p>
  * Redistribution and use in source and binary forms, with or without
@@ -42,6 +27,19 @@ import java.util.Objects;
  * (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
  * SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
  */
+
+package edu.jhuapl.trinity.javafx.javafx3d;
+
+import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.IntegerProperty;
+import javafx.beans.property.SimpleDoubleProperty;
+import javafx.beans.property.SimpleIntegerProperty;
+import javafx.scene.DepthTest;
+import javafx.scene.shape.CullFace;
+import javafx.scene.shape.TriangleMesh;
+import org.fxyz3d.shapes.primitives.TexturedMesh;
+
+import java.util.Objects;
 
 
 /**

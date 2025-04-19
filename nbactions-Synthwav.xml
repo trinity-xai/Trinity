@@ -7,12 +7,12 @@
         </packagings>
         <goals>
             <goal>process-classes</goal>
-            <goal>org.codehaus.mojo:exec-maven-plugin:3.4.1:exec</goal>
+            <goal>org.codehaus.mojo:exec-maven-plugin:3.5.0:exec</goal>
         </goals>
         <properties>
             <exec.vmArgs>-Dprism.maxvram=2G</exec.vmArgs>
             <exec.args>${exec.vmArgs} -Xmx8g -classpath %classpath ${exec.mainClass} ${exec.appArgs}</exec.args>
-            <exec.appArgs>--jukebox=true --matrix=true</exec.appArgs>            
+            <exec.appArgs>--jukebox=true --matrix=true</exec.appArgs>
             <exec.mainClass>edu.jhuapl.trinity.TrinityMain</exec.mainClass>
             <exec.executable>java</exec.executable>
         </properties>
@@ -24,13 +24,13 @@
         </packagings>
         <goals>
             <goal>process-classes</goal>
-            <goal>org.codehaus.mojo:exec-maven-plugin:3.4.1:exec</goal>
+            <goal>org.codehaus.mojo:exec-maven-plugin:3.5.0:exec</goal>
         </goals>
         <properties>
             <exec.vmArgs>-Dprism.maxvram=2G -agentlib:jdwp=transport=dt_socket,server=n,address=${jpda.address}</exec.vmArgs>
             <exec.args>${exec.vmArgs} -Xmx8g -classpath %classpath ${exec.mainClass} ${exec.appArgs}</exec.args>
             <exec.mainClass>edu.jhuapl.trinity.TrinityMain</exec.mainClass>
-            <exec.appArgs>--jukebox=true --matrix=true</exec.appArgs>   
+            <exec.appArgs>--jukebox=true --matrix=true</exec.appArgs>
             <exec.executable>java</exec.executable>
             <jpda.listen>true</jpda.listen>
         </properties>
@@ -42,13 +42,13 @@
         </packagings>
         <goals>
             <goal>process-classes</goal>
-            <goal>org.codehaus.mojo:exec-maven-plugin:3.4.1:exec</goal>
+            <goal>org.codehaus.mojo:exec-maven-plugin:3.5.0:exec</goal>
         </goals>
         <properties>
             <exec.vmArgs>-Dprism.maxvram=2G</exec.vmArgs>
             <exec.args>${exec.vmArgs} -Xmx8g -classpath %classpath ${exec.mainClass} ${exec.appArgs}</exec.args>
             <exec.mainClass>edu.jhuapl.trinity.TrinityMain</exec.mainClass>
-            <exec.appArgs>--jukebox=true --matrix=true</exec.appArgs>   
+            <exec.appArgs>--jukebox=true --matrix=true</exec.appArgs>
             <exec.executable>java</exec.executable>
         </properties>
     </action>

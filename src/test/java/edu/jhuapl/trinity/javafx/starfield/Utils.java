@@ -1,9 +1,5 @@
-/* Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC */
-
-package edu.jhuapl.trinity.javafx.starfield;
-
 /*
- Copyright (c) 2019 Goksel KUCUKSAHIN
+ Original Copyright (C) 2019 Goksel KUCUKSAHIN
  Permission is hereby granted, free of charge, to any person obtaining a copy
  of this software and associated documentation files (the "Software"), to deal
  in the Software without restriction, including without limitation the rights
@@ -20,6 +16,9 @@ package edu.jhuapl.trinity.javafx.starfield;
  OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
  SOFTWARE.
  */
+
+package edu.jhuapl.trinity.javafx.starfield;
+
 
 import javafx.geometry.Point2D;
 import javafx.scene.shape.Line;

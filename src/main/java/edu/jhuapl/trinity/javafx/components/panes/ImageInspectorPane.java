@@ -1,5 +1,3 @@
-/* Copyright (C) 2025 Sean Phillips */
-
 package edu.jhuapl.trinity.javafx.components.panes;
 
 import com.tambapps.fft4j.FastFourier2d;

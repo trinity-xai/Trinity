@@ -1,5 +1,3 @@
-/* Copyright (C) 2021 - 2024 Sean Phillips */
-
 package edu.jhuapl.trinity.javafx.handlers;
 
 import edu.jhuapl.trinity.javafx.events.HitEvent;
@@ -11,6 +9,7 @@ import javafx.animation.Interpolator;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
+import javafx.application.Platform;
 import javafx.event.EventHandler;
 import javafx.geometry.Point3D;
 import javafx.geometry.VPos;
@@ -28,7 +27,6 @@ import org.slf4j.LoggerFactory;
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.Random;
-import javafx.application.Platform;
 
 /**
  * @author Sean Phillips
@@ -91,7 +89,7 @@ public class HitEventHandler implements EventHandler<HitEvent> {
         } catch (IOException ex) {
             LOG.error(null, ex);
         }
-        Platform.runLater(()-> {
+        Platform.runLater(() -> {
             hudPane.getChildren().add(scoreText);
             hudPane.getChildren().add(playersText);
         });

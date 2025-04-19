@@ -426,7 +426,7 @@ public class HyperdrivePane extends LitPathPane {
 
         //add controls to execute over embeddings to the bottom
         Button clearImageEmbeddingsButton = new Button("Clear embeddings");
-        clearImageEmbeddingsButton.setWrapText(true);        
+        clearImageEmbeddingsButton.setWrapText(true);
         clearImageEmbeddingsButton.setTextAlignment(TextAlignment.CENTER);
         clearImageEmbeddingsButton.setOnAction(e -> {
             currentFeatureList.clear();
@@ -444,7 +444,7 @@ public class HyperdrivePane extends LitPathPane {
             currentFeatureList.clear();
             imageEmbeddingsListView.getItems().addAll(keep);
         });
-        
+
         Button injectFeaturesButton = new Button("Inject Features");
         injectFeaturesButton.setWrapText(true);
         injectFeaturesButton.setTextAlignment(TextAlignment.CENTER);
@@ -459,7 +459,7 @@ public class HyperdrivePane extends LitPathPane {
         });
 
         HBox controlsBox = new HBox(10,
-            imageEmbeddingsButton, clearImageEmbeddingsButton, 
+            imageEmbeddingsButton, clearImageEmbeddingsButton,
             clearCompleteImageEmbeddingsButton, injectFeaturesButton
         );
         controlsBox.setAlignment(Pos.CENTER);

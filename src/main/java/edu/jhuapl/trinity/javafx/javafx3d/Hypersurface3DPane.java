@@ -1,5 +1,3 @@
-/* Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC */
-
 package edu.jhuapl.trinity.javafx.javafx3d;
 
 import edu.jhuapl.trinity.App;
@@ -1184,7 +1182,7 @@ public class Hypersurface3DPane extends StackPane
                     featureVector.getBbox().get(3).intValue()
                 );
                 iv = new ImageView(image);
-            } else if(null != featureVector.getImageURL() && !featureVector.getImageURL().isBlank()){
+            } else if (null != featureVector.getImageURL() && !featureVector.getImageURL().isBlank()) {
                 iv = new ImageView(ResourceUtils.loadImageFile(imageryBasePath + featureVector.getImageURL()));
             } else
                 iv = new ImageView(ResourceUtils.loadIconFile("noimage"));

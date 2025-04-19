@@ -49,7 +49,7 @@ public class EmbeddingsTextListItem extends HBox {
         fileLabel = new Label(file.getName());
         fileLabel.setPrefWidth(PREF_FILELABEL_WIDTH);
         featureVector = FeatureVector.EMPTY_FEATURE_VECTOR("", 3);
-        addMetaData("file",file.getAbsolutePath());
+        addMetaData("file", file.getAbsolutePath());
         if (parseFile)
             readText();
 

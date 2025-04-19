@@ -6,7 +6,6 @@ import org.apache.commons.math3.linear.RealMatrix;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-/* Copyright (C) 2021 - 2024 Sean Phillips */
 
 /**
  * Provides Expectation Maximization process for mixtures of distributions.

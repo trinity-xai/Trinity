@@ -1,5 +1,3 @@
-/* Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC */
-
 package edu.jhuapl.trinity.javafx.javafx3d.particle;
 
 import org.fxyz3d.utils.geom.Vec3f;

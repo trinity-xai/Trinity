@@ -1,5 +1,3 @@
-/* Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC */
-
 package edu.jhuapl.trinity.javafx.javafx3d;
 
 import edu.jhuapl.trinity.css.StyleResourceProvider;
@@ -1636,7 +1634,7 @@ public class Hyperspace3DPane extends StackPane implements
             scene.getRoot().fireEvent(new FeatureVectorEvent(
                 FeatureVectorEvent.SELECT_FEATURE_VECTOR,
                 featureVectors.get(index), featureLabels));
-            if(!radialOverlayPane.getChildren().contains(anchorCallout)) {
+            if (!radialOverlayPane.getChildren().contains(anchorCallout)) {
                 radialOverlayPane.getChildren().add(anchorCallout);
             }
             //try to update the callout anchored to the lead state

@@ -1,9 +1,9 @@
 /*
  * BSD 3-Clause License
- * Copyright (c) 2017, Leland McInnes, 2019 Tag.bio (Java port).
+ * Original Copyright (C) 2017, Leland McInnes, 2019 Tag.bio (Java port).
  * See UMAPLicense.txt.
  */
-/* Copyright (C) 2021 - 2024 Sean Phillips */
+
 
 package edu.jhuapl.trinity.utils.metric;
 
