@@ -188,6 +188,32 @@ When executing from a JAR, this will likely be the same directory as the JAR.
 When executing from a native package, it will vary but ultimately be located somewhere inside the package.
 This services directory also contains default Prompts, all of which can be dynamically reloaded at runtime.
 
+## 2D Helper Tools ## 
+
+3D is cool and all but 2D is the OG. Trinity uses a transparent overlay system of 2D panes to provide extra
+helper tools. These overlays are extensions of the [totally amazing LitFX Project](https://github.com/Birdasaur/LitFX).
+The genius of the author of LitFX is rivaled only possibly by the author's stunning lumberjack good looks. 
+A few are shown below:
+
+### Natural Language Query ###
+
+![Trinity-TerminalNaturalLanguageQuery](/media/Trinity-TerminalNaturalLanguageQuery.png)
+
+### Content Navigator ###
+
+![Trinity-ProjectionsContentNavigator](/media/Trinity-ProjectionsContentNavigator.png)
+
+
+### Image Inspection ###
+
+To assist with fine grain examination of imagery and to identify artifacts left by deep fake generators,
+Trinity provides an Image based FFT tool with frequency filter. This inspection tool helps perform actions
+like edge detection and high/low frequency changes that are often signs of a deep fake generator. 
+
+![Trinity-FFT-Filter-ImageInspector](/media/Trinity-FFT-Filter-ImageInspector.png)
+
+RGB content from the FFT workflow, either original image, spectral image or inverse FFT, 
+can be tessellated into the Hypersurface on demand.
 
 ## Project contributors: ##
 ![airplanelaugh](/media/airplanelaugh.jpg)
