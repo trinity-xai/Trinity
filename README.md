@@ -7,7 +7,7 @@
 
 ![Trinity City](/media/TrinityCity.png)
 
-Trinity provides performance analysis and XAI tools ideal for Deep Learning systems or other models performing complex
+Trinity provides performance analysis and XAI tools ideal for Generative AI and Deep Learning systems performing complex
 classification or decoding.
 Trinity does this through a combination of different interactive 3D projections that are hyper-dimensional aware. (Vectors of Vectors)
 
@@ -79,10 +79,14 @@ At the time of writing clust4j was not available as 3rd party library nor was it
 The Trinity XAI org decided to import the Apache 2.0 version of clust4j, make some changes to be module compatible
 and fixed a few deprecated calls (mostly in unit tests). It has functioned perfectly and we thank the author.
 
-### Data Formats ###
+### Data ###
 Trinity primarily speaks JSON and has a collection of serializable JSON message objects that can be imported.
 The primary message that most applications will leverage is the FeatureVector.
+
+#### FeatureVector ####
+
 Example:
+
 
 ```json
 {
@@ -108,6 +112,8 @@ Example:
 }
 ```
 
+#### FeatureCollection ####
+
 FeatureVector objects can be sent to Trinity as a stream using ZeroMQ. The ZeroMQ connection is configured from the Data UI panel.
 Large collections of FeatureVector objects can be loaded at once as a file drag and drop using the FeatureCollection JSON object.
 The FeatureCollection object is simply an array of FeatureVector objects with a type field that Trinity uses to detect file type at Drag and Drop
@@ -119,6 +125,8 @@ The FeatureCollection object is simply an array of FeatureVector objects with a 
     ]
 }
 ```
+
+#### LabelConfig ####
 
 Trinity will auto colorize the data in both the Hyperspace and Projections views by the label field. It uses a rotational color map that has 12 predefined colors.
 Colors can be reassigned to color gradients using score, layer, pFa or even raw coordinate position via the GUI.
@@ -139,6 +147,30 @@ A LabelConfig json file can be simply dragged and dropped onto the Trinity appli
     "clearAll" : "false"
 }
 ```
+#### Hyperdrive Imports ####
+
+File based imports require some process to generate the JSON. Alternatively the Hyperdrive 
+tool can perform bulk imports of imagery and/or text, providing functions to convert to
+embedding vectors, assign labels and other metadata. 
+![TrinityHyperdriveImport](/media/TrinityHyperdriveImport.png)
+
+Hyperdrive accomplishes this by allowing for a REST based exchange with embedding and
+vision models hosted via an OpenAI API compatible structure. The Hyperdrive Services tab
+provides support for configuring your connection including the base URL hosting models,
+endpoints for both Embeddings (Image/Text) and Chat (Completion/Vision/etc).
+
+Users can even select which models they wish to use based on the results of standard 'isAlive' requests.
+
+![TrinityHyperdriveServices](/media/TrinityHyperdriveServices.png)
+
+These services are intended to provide a loose coupling to your REST host. 
+The base URL, endpoints and default model names are all configurable via the defaultAccessLayer.json file.
+Trinity will search for this file by default in a directory called services which should
+be located relative to the execution (ie current working directory). In development mode
+this will simply be a directory relative to your projection workspace.
+When executing from a JAR, this will likely be the same directory as the JAR.
+When executing from a native package, it will vary but ultimately be located somewhere inside the package.
+This services directory also contains default Prompts, all of which can be dynamically reloaded at runtime.
 
 
 ## Project contributors: ##
