@@ -1,7 +1,6 @@
-/* Copyright (C) 2021 - 2024 Sean Phillips */
-
 package edu.jhuapl.trinity.javafx.graph;
 
+import edu.jhuapl.trinity.css.StyleResourceProvider;
 import edu.jhuapl.trinity.data.graph.GraphDirectedCollection;
 import edu.jhuapl.trinity.data.graph.GraphNode;
 import edu.jhuapl.trinity.javafx.events.GraphEvent;
@@ -221,7 +220,7 @@ public class GraphDirectedTest extends Application {
             //animate();
         });
 
-        String CSS = this.getClass().getResource("/edu/jhuapl/trinity/css/styles.css").toExternalForm();
+        String CSS = StyleResourceProvider.getResource("styles.css").toExternalForm();
         scene.getStylesheets().add(CSS);
 
         primaryStage.setTitle("3D Graph Demonstration");

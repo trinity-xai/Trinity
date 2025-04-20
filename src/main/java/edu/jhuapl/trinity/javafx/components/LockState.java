@@ -1,5 +1,5 @@
-/*Original Source code for Joystick License
- * Copyright (c) 2020 by Gerrit Grunwald
+/* Original Source code for Joystick License
+ * Original Copyright (C) 2020 by Gerrit Grunwald
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,9 +13,6 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
-/* JHUAPL license for modified version of this code. */
-/* Copyright (C) 2021 - 2024 Sean Phillips */
 
 package edu.jhuapl.trinity.javafx.components;
 

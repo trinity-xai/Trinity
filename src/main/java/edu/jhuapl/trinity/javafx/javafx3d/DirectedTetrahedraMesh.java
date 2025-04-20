@@ -1,6 +1,6 @@
 /*
  * @DERIVED FROM FXyz TetrahedraMesh class. Below is the copyright and link to GNU GPL
- * Copyright (C) 2013-2015 F(X)yz,
+ * Original Copyright (C) 2013-2015 F(X)yz,
  * Sean Phillips, Jason Pollastrini and Jose Pereda
  * All rights reserved.
  *
@@ -17,7 +17,7 @@
  * You should have received a copy of the GNU General Public License
  * along with this program.  If not, see <http://www.gnu.org/licenses/>.
  */
-/* Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC */
+
 
 package edu.jhuapl.trinity.javafx.javafx3d;
 

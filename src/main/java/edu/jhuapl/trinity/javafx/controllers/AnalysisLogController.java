@@ -1,5 +1,3 @@
-/* Copyright (C) 2025 Sean Phillips */
-
 package edu.jhuapl.trinity.javafx.controllers;
 
 import com.fasterxml.jackson.databind.ObjectMapper;

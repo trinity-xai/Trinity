@@ -1,9 +1,8 @@
-/* Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC */
-
 package edu.jhuapl.trinity.javafx.components;
 
 import edu.jhuapl.trinity.App;
 import edu.jhuapl.trinity.javafx.components.panes.CanvasOverlayPane;
+import javafx.application.Platform;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.event.EventHandler;
@@ -47,8 +46,9 @@ public class MatrixOverlay {
         neo = new MatrixEffect(canvas);
         // canvas overlay only works on StackPanes desktopPane's Parent (borderpane center).
         canvasOverlayPane = new CanvasOverlayPane(canvas, false, false);
-        desktopPaneParent.getChildren().add(canvasOverlayPane);
-
+        Platform.runLater(() -> {
+            desktopPaneParent.getChildren().add(canvasOverlayPane);
+        });
         matrixOn = () -> {
             LOG.info("matrix on");
             canvasOverlayPane.setVisible(true);

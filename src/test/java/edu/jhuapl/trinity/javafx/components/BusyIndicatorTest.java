@@ -1,7 +1,6 @@
-/* Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC */
-
 package edu.jhuapl.trinity.javafx.components;
 
+import edu.jhuapl.trinity.css.StyleResourceProvider;
 import edu.jhuapl.trinity.javafx.components.radial.CircleProgressIndicator;
 import javafx.animation.Interpolator;
 import javafx.animation.KeyFrame;
@@ -87,7 +86,7 @@ public class BusyIndicatorTest extends Application {
 
         Scene scene = new Scene(bpOilSpill, Color.BLACK);
         //Make everything pretty
-        String CSS = this.getClass().getResource("/edu/jhuapl/trinity/css/styles.css").toExternalForm();
+        String CSS = StyleResourceProvider.getResource("styles.css").toExternalForm();
         scene.getStylesheets().add(CSS);
         stage.setTitle("Busy Indicator tester");
         stage.setScene(scene);

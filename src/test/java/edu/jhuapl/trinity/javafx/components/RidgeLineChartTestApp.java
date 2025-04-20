@@ -1,9 +1,5 @@
-/* Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC */
-
-package edu.jhuapl.trinity.javafx.components;
-
 /*
- * Copyright (c) 2020 by Gerrit Grunwald
+ * Original Copyright (C) 2020 by Gerrit Grunwald
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -18,6 +14,7 @@ package edu.jhuapl.trinity.javafx.components;
  * limitations under the License.
  */
 
+package edu.jhuapl.trinity.javafx.components;
 
 import eu.hansolo.fx.charts.Axis;
 import eu.hansolo.fx.charts.ChartType;

@@ -1,7 +1,6 @@
-/* Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC */
-
 package edu.jhuapl.trinity.javafx.components;
 
+import edu.jhuapl.trinity.css.StyleResourceProvider;
 import edu.jhuapl.trinity.javafx.components.panes.JoystickPane;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.FastScatter3D;
 import edu.jhuapl.trinity.utils.volumetric.Octree;
@@ -306,9 +305,9 @@ public class JoystickPaneTest extends Application {
         affineTransform = new Affine();
 
         //Make everything pretty
-        String CSS = this.getClass().getResource("/edu/jhuapl/trinity/css/styles.css").toExternalForm();
+        String CSS = StyleResourceProvider.getResource("styles.css").toExternalForm();
         scene.getStylesheets().add(CSS);
-        CSS = this.getClass().getResource("/edu/jhuapl/trinity/css/covalent.css").toExternalForm();
+        CSS = StyleResourceProvider.getResource("covalent.css").toExternalForm();
         scene.getStylesheets().add(CSS);
         scene.setOnMouseEntered(event -> subScene.requestFocus());
 

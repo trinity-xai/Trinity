@@ -1,5 +1,3 @@
-/* Copyright (C) 2021 - 2024 Sean Phillips */
-
 package edu.jhuapl.trinity.javafx.handlers;
 
 import edu.jhuapl.trinity.javafx.events.HitEvent;
@@ -11,6 +9,7 @@ import javafx.animation.Interpolator;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
+import javafx.application.Platform;
 import javafx.event.EventHandler;
 import javafx.geometry.Point3D;
 import javafx.geometry.VPos;
@@ -67,7 +66,6 @@ public class HitEventHandler implements EventHandler<HitEvent> {
         scoreText.setTranslateY(50);
         scoreText.setAnimationTimeMS(15);
         scoreText.setVisible(false); //hide at start
-        hudPane.getChildren().add(scoreText);
 
         playersText = new AnimatedText("04",
             Font.font("Consolas", 72),
@@ -80,7 +78,6 @@ public class HitEventHandler implements EventHandler<HitEvent> {
         playersText.setTranslateX(scoreText.getBoundsInLocal().getMaxX() + 100);
         playersText.setTranslateY(50);
         playersText.setVisible(false); //hide at start
-        hudPane.getChildren().add(playersText);
 
         try {
             smallBoom = ResourceUtils.loadMediaWav("smallBoom");
@@ -92,6 +89,10 @@ public class HitEventHandler implements EventHandler<HitEvent> {
         } catch (IOException ex) {
             LOG.error(null, ex);
         }
+        Platform.runLater(() -> {
+            hudPane.getChildren().add(scoreText);
+            hudPane.getChildren().add(playersText);
+        });
     }
 
     @Override

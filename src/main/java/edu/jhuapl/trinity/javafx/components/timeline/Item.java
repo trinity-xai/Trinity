@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2021 by Gerrit Grunwald
+ * Original Copyright (C) 2021 by Gerrit Grunwald
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,7 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-/* Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC */
+
 
 package edu.jhuapl.trinity.javafx.components.timeline;
 

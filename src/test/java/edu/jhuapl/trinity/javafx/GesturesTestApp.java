@@ -1,7 +1,6 @@
-/* Copyright (C) 2021 - 2023 The Johns Hopkins University Applied Physics Laboratory LLC */
-
 package edu.jhuapl.trinity.javafx;
 
+import edu.jhuapl.trinity.css.StyleResourceProvider;
 import edu.jhuapl.trinity.javafx.handlers.ExpandTouchGestureHandler;
 import javafx.application.Application;
 import javafx.event.EventHandler;
@@ -90,7 +89,7 @@ public class GesturesTestApp extends Application {
 //        bpOilSpill.setTop(hbox);
 
         //Make everything pretty
-        String CSS = this.getClass().getResource("/edu/jhuapl/trinity/css/styles.css").toExternalForm();
+        String CSS = StyleResourceProvider.getResource("styles.css").toExternalForm();
         scene.getStylesheets().add(CSS);
 
         stage.setTitle("Gesture tester");

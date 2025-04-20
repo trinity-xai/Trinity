@@ -7,7 +7,7 @@
         </packagings>
         <goals>
             <goal>process-classes</goal>
-            <goal>org.codehaus.mojo:exec-maven-plugin:3.4.1:exec</goal>
+            <goal>org.codehaus.mojo:exec-maven-plugin:3.5.0:exec</goal>
         </goals>
         <properties>
             <exec.vmArgs>-Dprism.maxvram=2G</exec.vmArgs>
@@ -25,7 +25,7 @@
         </packagings>
         <goals>
             <goal>process-classes</goal>
-            <goal>org.codehaus.mojo:exec-maven-plugin:3.4.1:exec</goal>
+            <goal>org.codehaus.mojo:exec-maven-plugin:3.5.0:exec</goal>
         </goals>
         <properties>
             <exec.vmArgs>-Dprism.maxvram=2G -agentlib:jdwp=transport=dt_socket,server=n,address=${jpda.address}</exec.vmArgs>
@@ -44,7 +44,7 @@
         </packagings>
         <goals>
             <goal>process-classes</goal>
-            <goal>org.codehaus.mojo:exec-maven-plugin:3.4.1:exec</goal>
+            <goal>org.codehaus.mojo:exec-maven-plugin:3.5.0:exec</goal>
         </goals>
         <properties>
             <exec.vmArgs>-Dprism.maxvram=2G</exec.vmArgs>

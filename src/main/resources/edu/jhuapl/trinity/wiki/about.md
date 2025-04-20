@@ -40,10 +40,9 @@ BSD 3-Clause License
 @author Leland McInnes (Python)
 @author Sean A. Irvine (Java port)
 @author Richard Littin (Java port)
-Copyright (c):
+Copyright (C):
 2017, Leland McInnes,
 2019 Tag.bio (Java port).
 Source acquired from:
 https://github.com/tag-bio/umap-java
 See UMAPLicense.txt.
-
