@@ -154,6 +154,22 @@ tool can perform bulk imports of imagery and/or text, providing functions to con
 embedding vectors, assign labels and other metadata. 
 ![TrinityHyperdriveImport](/media/TrinityHyperdriveImport.png)
 
+Labels can be set manually by the user or auto-assigned. Auto-assignment has two methods:
+- Prompted Vision Model (Image only)
+- Landmark Similarity  (Image or Text)
+
+If you have access to a Vision model via the Services client, Trinity provides simple prompts
+to request a single English language noun as a label, as well as explanation/description fields.
+These prompts are located in the services directory described below.
+
+Landmark Similarity is a powerful and efficient way to automatically assign labels. Trinity allows the user to 
+add text or images as landmarks and assign labels to these. Trinity can then vectorize the landmarks using a 
+multimodal embedding model (via the REST based functions in Hyperdrive)
+From there the user can auto-assign labels to all imported items based on their vector distance to the landmarks.
+This distance is computed in the hyperdimensional space and the distance metric is selectable by the user.
+
+![Trinity-HyperdriveLabelByLandmark](/media/Trinity-HyperdriveLabelByLandmark.png)  
+
 Hyperdrive accomplishes this by allowing for a REST based exchange with embedding and
 vision models hosted via an OpenAI API compatible structure. The Hyperdrive Services tab
 provides support for configuring your connection including the base URL hosting models,
