@@ -7,9 +7,30 @@
 
 ![Trinity City](/media/TrinityCity.png)
 
-Trinity provides performance analysis and XAI tools ideal for Deep Learning systems or other models performing complex
+Trinity provides performance analysis and XAI tools ideal for Generative AI and Deep Learning systems performing complex
 classification or decoding.
 Trinity does this through a combination of different interactive 3D projections that are hyper-dimensional aware. (Vectors of Vectors)
+
+### Example Use Cases ###
+Trinity has been applied to a wide range of problems which can be framed as vectors of vectors:
+
+**Deep Fake Image Detection**
+![TrinityDeepFake-HypersurfacePixelSelection](/media/TrinityDeepFake-HypersurfacePixelSelection.png)
+
+**Deep Fake Audio Detection**
+![Trinity-HypersurfaceAudioFFT](/media/Trinity-HypersurfaceAudioFFT.png)
+
+**Large Language Model (ChatGPT etc) Embeddings Analysis**
+![TrinityChatGPT-Manifold](/media/TrinityChatGPT-Manifold.png)
+
+**Deep Learning Object detection models**
+![Trinity-Competency-UMAP](/media/Trinity-Competency-UMAP.png)
+
+**COVID gene/tissue classification**
+![TrinityCOVIDTissueGeneSequenceUMAP-Yule](/media/TrinityCOVIDTissueGeneSequenceUMAP-Yule-000.png)
+
+**Brain Computer Interface decoders**
+![TrinityBCI-Hyperspace](/media/TrinityBCI-Hyperspace.png)
 
 ### Hyperspace ###
 ![Hyperspace Projection](/media/TrinityChatGPT_Text_Embeddings.png)
@@ -19,20 +40,53 @@ The user can pan, rotate and zoom either the 3D camera or the points themselves.
 The scatter points are interactive allowing the user to select individual points to bring up the associated data/imagery with that feature.
 
 ### Hypersurface ###
+#### Feature Collection Mode ####
 ![TrinityBCI-Hypersurface](/media/TrinityBCI-Hypersurface.png)
+
 Trinity can visualize higher dimensional inputs (before decoding) as a 3D surface.
 Hypersurface view provides analyst insight into what inputs correlate strongest with a decoding/classification result.
 This view is synchronized with the same FeatureVectors and Timeline as the Hyperspace viewpoint.
 
+#### 3D Imagery ####
+![Trinity-HypersurfaceOnyx](/media/Trinity-HypersurfaceOnyx.png)
+
+The Hypersurface can also be utilized to visualize 2D imagery in 3D.
+Each pixel of an input image is used to create Vertices and Faces of an underlying TriangleMesh.
+The surface height and colormap can be determined by multiple variants including luminosity (default), aligned FeatureVector or Shapley Value. 
+
+
 ### Projections and Manifolds ###
+#### UMAP and Dimension Reduction ####
 ![TrinityBCI-UMAP-Yule](/media/TrinityBCI-UMAP-Yule.png)
+
 Trinity provides a fast parallelized UMAP tool with a simple to use GUI to project the hyper-dimensional embeddings
 down to an arbitrary lower dimensional space. This allows analysts to project approximate manifolds as 3D clusters.
 
-### Data Formats ###
+#### Manifolds and Clustering ####
+
+Integrated in the Projections view are tools to automatically perform clustering.
+![Trinity-ProjectionsKmeansClustering](/media/Trinity-ProjectionsKmeansClustering.png)
+
+Clustering algorithm selection and parameters allow for full control by the user.
+Discovered Clusters are automatically converted to 3D TriangleMeshes using a ConvexHull algorithm.
+![Trinity-ProjectionsHDDBSCANClustering](/media/Trinity-ProjectionsHDDBSCANClustering.png)
+
+**_Special Shoutout and Acknowledgement to clust4j_**
+
+Most Clustering Algorithms (with the exception of the Multivariate Gaussian Mixture Models) used 
+by Trinity XAI are derived from [the brilliant clust4j project](https://github.com/tgsmith61591/clust4j).   
+At the time of writing clust4j was not available as 3rd party library nor was it module compatible.
+The Trinity XAI org decided to import the Apache 2.0 version of clust4j, make some changes to be module compatible
+and fixed a few deprecated calls (mostly in unit tests). It has functioned perfectly and we thank the author.
+
+### Data ###
 Trinity primarily speaks JSON and has a collection of serializable JSON message objects that can be imported.
 The primary message that most applications will leverage is the FeatureVector.
+
+#### FeatureVector ####
+
 Example:
+
 
 ```json
 {
@@ -58,6 +112,8 @@ Example:
 }
 ```
 
+#### FeatureCollection ####
+
 FeatureVector objects can be sent to Trinity as a stream using ZeroMQ. The ZeroMQ connection is configured from the Data UI panel.
 Large collections of FeatureVector objects can be loaded at once as a file drag and drop using the FeatureCollection JSON object.
 The FeatureCollection object is simply an array of FeatureVector objects with a type field that Trinity uses to detect file type at Drag and Drop
@@ -69,6 +125,8 @@ The FeatureCollection object is simply an array of FeatureVector objects with a 
     ]
 }
 ```
+
+#### LabelConfig ####
 
 Trinity will auto colorize the data in both the Hyperspace and Projections views by the label field. It uses a rotational color map that has 12 predefined colors.
 Colors can be reassigned to color gradients using score, layer, pFa or even raw coordinate position via the GUI.
@@ -89,24 +147,99 @@ A LabelConfig json file can be simply dragged and dropped onto the Trinity appli
     "clearAll" : "false"
 }
 ```
+#### Hyperdrive Imports ####
 
-### Example Use Cases ###
-Trinity has been applied to a series of use cases including:
+File based imports require some process to generate the JSON. Alternatively the Hyperdrive 
+tool can perform bulk imports of imagery and/or text, providing functions to convert to
+embedding vectors, assign labels and other metadata. 
+![TrinityHyperdriveImport](/media/TrinityHyperdriveImport.png)
 
-**Deep Learning Object detection models**
-![Trinity-Competency-UMAP](/media/Trinity-Competency-UMAP.png)
+Labels can be set manually by the user or auto-assigned. Auto-assignment has two methods:
+- Prompted Vision Model (Image only)
+- Landmark Similarity  (Image or Text)
+
+If you have access to a Vision model via the Services client, Trinity provides simple prompts
+to request a single English language noun as a label, as well as explanation/description fields.
+These prompts are located in the services directory described below.
+
+Landmark Similarity is a powerful and efficient way to automatically assign labels. Trinity allows the user to 
+add text or images as landmarks and assign labels to these. Trinity can then vectorize the landmarks using a 
+multimodal embedding model (via the REST based functions in Hyperdrive)
+From there the user can auto-assign labels to all imported items based on their vector distance to the landmarks.
+This distance is computed in the hyperdimensional space and the distance metric is selectable by the user.
+
+![Trinity-HyperdriveLabelByLandmark](/media/Trinity-HyperdriveLabelByLandmark.png)  
+
+Hyperdrive accomplishes this by allowing for a REST based exchange with embedding and
+vision models hosted via an OpenAI API compatible structure. The Hyperdrive Services tab
+provides support for configuring your connection including the base URL hosting models,
+endpoints for both Embeddings (Image/Text) and Chat (Completion/Vision/etc).
+
+Users can even select which models they wish to use based on the results of standard 'isAlive' requests.
+
+![TrinityHyperdriveServices](/media/TrinityHyperdriveServices.png)
+
+These services are intended to provide a loose coupling to your REST host. 
+The base URL, endpoints and default model names are all configurable via the defaultAccessLayer.json file.
+Trinity will search for this file by default in a directory called services which should
+be located relative to the execution (ie current working directory). In development mode
+this will simply be a directory relative to your projection workspace.
+When executing from a JAR, this will likely be the same directory as the JAR.
+When executing from a native package, it will vary but ultimately be located somewhere inside the package.
+This services directory also contains default Prompts, all of which can be dynamically reloaded at runtime.
+
+## 2D Helper Tools ## 
+
+3D is cool and all but 2D is the OG. Trinity uses a transparent overlay system of 2D panes to provide extra
+helper tools. These overlays are extensions of the [totally amazing LitFX Project](https://github.com/Birdasaur/LitFX).
+The genius of the author of LitFX is rivaled only possibly by the author's stunning lumberjack good looks. 
+A few are shown below:
+
+### Natural Language Query ###
+
+There is a command terminal that you can enter natural language queries to using the following syntax:
+
+FIND your-natural-language-query
+
+The Terminal vectorizes the statement using the currently selected embeddings model in the Hyperdrive services tab.
+Trinity will automatically search through the Hyperspace data finding the top ten closest results based on distance.
+The distance calculation uses the currently selected distance metric in the Services tab.
+
+![Trinity-TerminalNaturalLanguageQuery](/media/Trinity-TerminalNaturalLanguageQuery.png)
+
+Any points outside the top ten closest matches in terms of vector distance are blacked out. 
+The number one closest match is highlighted with a Callout.
+Entering the CLEAR_FILTERS command into the terminal restores the colorations.
 
 
-**COVID gene/tissue classification**
-![TrinityCOVIDTissueGeneSequenceUMAP-Yule](/media/TrinityCOVIDTissueGeneSequenceUMAP-Yule-000.png)
+### Content Navigator ###
 
+When viewing dense scatterplots linked to feature vectors often visual groupings of data points 
+become evident. This is especially true after applying dimension reduction and clustering algorithms. 
+While the anchored callouts are a good way for the user to maintain precise drill down insight for 
+specific points of interest, it is cumbersome to click on all the points of a dense cluster. 
+To assist the user in visually identifying the similarities in images that are projected within a 
+local cluster/neighborhood, Trinity provides a Content Navigator 2D overlay pane. 
 
-**Brain Computer Interface decoders**
-![TrinityBCI-Hyperspace](/media/TrinityBCI-Hyperspace.png)
+![Trinity-ProjectionsContentNavigator](/media/Trinity-ProjectionsContentNavigator.png)
 
-**Large Language Model (ChatGPT) Embeddings Analysis**
-![TrinityHumanVsChatGPTEmbeddings-UMAP-Yule](/media/TrinityHumanVsChatGPTEmbeddings-UMAP-Yule.png)
+The Content Navigator provides a standard 2D rendering of an image or text content (depending on media type)
+overlaid on the 3D view currently in place. When enabled, the Content Navigator will instantly update 
+its content view with whatever image/text is linked to any point the user hovers the mouse over. 
 
+From this overlay other image and text manipulation tools can be injected with the content 
+currently loaded in the Navigator.
+
+### Image Inspection ###
+
+To assist with fine grain examination of imagery and to identify artifacts left by deep fake generators,
+Trinity provides an Image based FFT tool with frequency filter. This inspection tool helps perform actions
+like edge detection and high/low frequency changes that are often signs of a deep fake generator. 
+
+![Trinity-FFT-Filter-ImageInspector](/media/Trinity-FFT-Filter-ImageInspector.png)
+
+RGB content from the FFT workflow, either original image, spectral image or inverse FFT, 
+can be tessellated into the Hypersurface on demand.
 
 ## Project contributors: ##
 ![airplanelaugh](/media/airplanelaugh.jpg)

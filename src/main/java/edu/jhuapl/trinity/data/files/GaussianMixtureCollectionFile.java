@@ -18,7 +18,7 @@ import java.util.Optional;
 public class GaussianMixtureCollectionFile extends File implements Transferable {
     public static String FILE_DESC1 = "\"type\": \"GaussianMixtureCollection\"";
     public static String FILE_DESC2 = "\"type\":\"GaussianMixtureCollection\"";
-    public static final DataFlavor DATA_FLAVOR = new DataFlavor(GaussianMixtureCollectionFile.class, "FEATURECOLLECTION");
+    public static final DataFlavor DATA_FLAVOR = new DataFlavor(GaussianMixtureCollectionFile.class, "GaussianMixtureCollection");
     public GaussianMixtureCollection gaussianMixtureCollection = null;
 
     /**
@@ -52,9 +52,9 @@ public class GaussianMixtureCollectionFile extends File implements Transferable 
      * @throws java.io.IOException
      */
     public static boolean isGaussianMixtureCollectionFile(File file) throws IOException {
-        Optional<String> firstLine = Files.lines(file.toPath()).findFirst();
-        return firstLine.isPresent() &&
-            (firstLine.get().contains(FILE_DESC1) || firstLine.get().contains(FILE_DESC2));
+        return Files.lines(file.toPath()).anyMatch(line -> 
+            line.contains(FILE_DESC1) || line.contains(FILE_DESC2) || 
+                (line.contains("type") && line.contains(GaussianMixtureCollection.TYPESTRING)));
     }
 
     /**
