@@ -67,7 +67,7 @@ public class GaussianMixtureEventHandler implements EventHandler<GaussianMixture
             //go through each gaussian mixture
             for (GaussianMixtureData gmd : gm.getData()) {
                 //If we have a full covariance matrix
-                if (gm.getCovarianceMode().contentEquals(COVARIANCE_MODE.FULL.name())) {
+                if (gm.getCovarianceMode().equalsIgnoreCase(COVARIANCE_MODE.FULL.name())) {
                     //perform SVD and then Rotation, result is the diagonal
                     gmd.setEllipsoidDiagonal(
                         AnalysisUtils.gmmFullCovToDiag(gmd.getCovariance())
