@@ -197,12 +197,38 @@ A few are shown below:
 
 ### Natural Language Query ###
 
+There is a command terminal that you can enter natural language queries to using the following syntax:
+
+FIND your-natural-language-query
+
+The Terminal vectorizes the statement using the currently selected embeddings model in the Hyperdrive services tab.
+Trinity will automatically search through the Hyperspace data finding the top ten closest results based on distance.
+The distance calculation uses the currently selected distance metric in the Services tab.
+
 ![Trinity-TerminalNaturalLanguageQuery](/media/Trinity-TerminalNaturalLanguageQuery.png)
+
+Any points outside the top ten closest matches in terms of vector distance are blacked out. 
+The number one closest match is highlighted with a Callout.
+Entering the CLEAR_FILTERS command into the terminal restores the colorations.
+
 
 ### Content Navigator ###
 
+When viewing dense scatterplots linked to feature vectors often visual groupings of data points 
+become evident. This is especially true after applying dimension reduction and clustering algorithms. 
+While the anchored callouts are a good way for the user to maintain precise drill down insight for 
+specific points of interest, it is cumbersome to click on all the points of a dense cluster. 
+To assist the user in visually identifying the similarities in images that are projected within a 
+local cluster/neighborhood, Trinity provides a Content Navigator 2D overlay pane. 
+
 ![Trinity-ProjectionsContentNavigator](/media/Trinity-ProjectionsContentNavigator.png)
 
+The Content Navigator provides a standard 2D rendering of an image or text content (depending on media type)
+overlaid on the 3D view currently in place. When enabled, the Content Navigator will instantly update 
+its content view with whatever image/text is linked to any point the user hovers the mouse over. 
+
+From this overlay other image and text manipulation tools can be injected with the content 
+currently loaded in the Navigator.
 
 ### Image Inspection ###
 
