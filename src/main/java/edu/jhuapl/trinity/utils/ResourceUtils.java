@@ -555,7 +555,7 @@ public enum ResourceUtils {
                             } else if (CocoAnnotationFile.isCocoAnnotationFile(file)) {
                                 CocoAnnotationFile cocoFile = new CocoAnnotationFile(file.getAbsolutePath(), true);
                                 Platform.runLater(() -> scene.getRoot().fireEvent(
-                                    new ImageEvent(ImageEvent.NEW_COCO_ANNOTATION, cocoFile.cocoAnnotation)));
+                                    new ImageEvent(ImageEvent.NEW_COCO_ANNOTATION, cocoFile.cocoObject)));
                             }
                         } catch (IOException ex) {
                             LOG.error(null, ex);
