@@ -2,7 +2,7 @@ package edu.jhuapl.trinity.data.files;
 
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
-import edu.jhuapl.trinity.data.CocoAnnotation;
+import edu.jhuapl.trinity.data.coco.CocoObject;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -19,7 +19,7 @@ import java.nio.file.Files;
 public class CocoAnnotationFile extends File implements Transferable {
     private static final Logger LOG = LoggerFactory.getLogger(CocoAnnotationFile.class);
     public static final DataFlavor DATA_FLAVOR = new DataFlavor(CocoAnnotationFile.class, "COCOANNOTATION");
-    public CocoAnnotation cocoAnnotation = null;
+    public CocoObject cocoObject = null;
 
     /**
      * Constructor that extends File super constructor
@@ -45,8 +45,6 @@ public class CocoAnnotationFile extends File implements Transferable {
     }
 
     /**
-     * Tests whether a given File is a LayerableObject file or not
-     *
      * @param file The File to be tested
      * @return True if the file being tested has header line matching FILE_DESC
      * @throws java.io.IOException
@@ -56,7 +54,7 @@ public class CocoAnnotationFile extends File implements Transferable {
             file.getAbsolutePath().lastIndexOf("."));
         if (extension.equalsIgnoreCase(".json")) {
             String body = Files.readString(file.toPath());
-            return CocoAnnotation.isCocoAnnotation(body);
+            return CocoObject.isCocoObject(body);
         }
         return false;
     }
@@ -71,13 +69,13 @@ public class CocoAnnotationFile extends File implements Transferable {
         parseContent();
     }
 
-    private CocoAnnotation parseContent() throws IOException {
+    private CocoObject parseContent() throws IOException {
         /** Provides deserialization support for JSON messages */
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         String message = Files.readString(this.toPath());
-        cocoAnnotation = mapper.readValue(message, CocoAnnotation.class);
-        return cocoAnnotation;
+        cocoObject = mapper.readValue(message, CocoObject.class);
+        return cocoObject;
     }
 
     /**
@@ -88,11 +86,11 @@ public class CocoAnnotationFile extends File implements Transferable {
      * @throws java.io.IOException
      */
     public void writeContent() throws IOException {
-        if (null != cocoAnnotation) {
+        if (null != cocoObject) {
             ObjectMapper mapper = new ObjectMapper();
             //mapper.configure(SerializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-            mapper.writeValue(this, cocoAnnotation);
-            LOG.info("Vector Mask Collection serialized to file.");
+            mapper.writeValue(this, cocoObject);
+            LOG.info("CocoObject serialized to file.");
         }
     }
 

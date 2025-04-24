@@ -359,13 +359,27 @@ public enum AnalysisUtils {
         }
         //perform the SVD on the covariance matrix
         SingularValueDecomposition svd = getSVD(array);
-        //@TODO SMP Rotate the values to get orientation
-        //Copy rotated values into List<Double>
-        ArrayList<Double> svdValues = new ArrayList<>();
-        for (double d : svd.getSingularValues()) {
-            svdValues.add(d);
+        //Rotate the values to get orientation
+        RealMatrix uRealMatrix = svd.getU();
+        //D is the diagonal matrix of eigenvalues 
+        //D^1/2 an element wise square root of the diagonal matrix of eiganvalues
+        int cols = svd.getS().getColumnDimension();
+        int rows = svd.getS().getRowDimension();
+        RealMatrix sqrtS = MatrixUtils.createRealMatrix(cols, rows);
+        for(int c=0;c<cols;c++){
+            for(int r=0;r<rows;r++){
+                sqrtS.setEntry(r, c, Math.sqrt(svd.getS().getEntry(r, c)));
+            }
         }
-        return svdValues;
+        //R = U D^{1/2} 
+        RealMatrix r = uRealMatrix.multiply(sqrtS);
+        
+        //Copy rotated values into List<Double>
+        ArrayList<Double> rotatedSvdValues = new ArrayList<>();
+        rotatedSvdValues.add(r.getEntry(0, 0));
+        rotatedSvdValues.add(r.getEntry(1, 1));
+        rotatedSvdValues.add(r.getEntry(2, 2));
+        return rotatedSvdValues;
     }
 
     public static Umap umapConfigToUmap(UmapConfig config) {
