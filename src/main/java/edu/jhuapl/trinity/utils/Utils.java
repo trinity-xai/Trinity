@@ -1,5 +1,6 @@
 package edu.jhuapl.trinity.utils;
 
+import edu.jhuapl.trinity.utils.loaders.CounterThread;
 import javafx.scene.paint.Color;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -13,7 +14,12 @@ import java.io.InputStream;
 import java.io.OutputStream;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
+import java.nio.MappedByteBuffer;
+import java.nio.channels.FileChannel;
+import java.nio.file.StandardOpenOption;
 import java.text.DecimalFormat;
+import java.util.ArrayList;
+import java.util.List;
 import java.util.Map;
 import java.util.Objects;
 import java.util.Properties;
@@ -185,5 +191,46 @@ public enum Utils {
             TimeUnit.MILLISECONDS.toMinutes(millis) % TimeUnit.HOURS.toMinutes(1),
             TimeUnit.MILLISECONDS.toSeconds(millis) % TimeUnit.MINUTES.toSeconds(1),
             TimeUnit.MILLISECONDS.toMillis(millis) % TimeUnit.SECONDS.toMillis(1));
+    }
+    //fun parallel FileChannel way to count occurrences such as new line
+    public static long charCount(File inputFile, char letter) throws IOException, InterruptedException {
+        FileChannel fileChannel = FileChannel.open(inputFile.toPath(), StandardOpenOption.READ);
+        int numberOfThreads = Runtime.getRuntime().availableProcessors();
+        long chunkSize = fileChannel.size() / numberOfThreads;
+        System.out.println("Using chunkSize " + chunkSize + " with " + numberOfThreads + " threads.");
+        List<Thread> threads = new ArrayList<>();
+        List<CounterThread> runnables = new ArrayList<>();
+
+        for (int i = 0; i < numberOfThreads; i++) {
+            long start = i * chunkSize;
+            MappedByteBuffer buffer = fileChannel.map(FileChannel.MapMode.READ_ONLY, start, chunkSize);
+            CounterThread runnable = new CounterThread(buffer, (byte) letter);
+            runnables.add(runnable);
+            Thread counterThread =  Thread.startVirtualThread(runnable);
+            threads.add(counterThread);
+        }
+        for (Thread thread : threads) {
+            thread.join();
+        }
+        long result = 0L;
+        for (CounterThread runnable : runnables) {
+            result+=runnable.count();
+        }
+        return result;
+    }    
+    //non parallel old school way to count lines.
+    public static long getFileLineCount(File file) throws IOException {
+        long count = -1;
+        try (FileInputStream stream = new FileInputStream(file)) {
+            byte[] buffer = new byte[8192];
+            count = 0;
+            int n;
+            while ((n = stream.read(buffer)) > 0) {
+                for (int i = 0; i < n; i++) {
+                    if (buffer[i] == '\n') count++;
+                }
+            }
+        }
+        return count;
     }
 }
