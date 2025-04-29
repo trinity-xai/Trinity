@@ -197,7 +197,7 @@ public enum Utils {
         FileChannel fileChannel = FileChannel.open(inputFile.toPath(), StandardOpenOption.READ);
         int numberOfThreads = Runtime.getRuntime().availableProcessors();
         long chunkSize = fileChannel.size() / numberOfThreads;
-        System.out.println("Using chunkSize " + chunkSize + " with " + numberOfThreads + " threads.");
+        //System.out.println("Using chunkSize " + chunkSize + " with " + numberOfThreads + " threads.");
         List<Thread> threads = new ArrayList<>();
         List<CounterThread> runnables = new ArrayList<>();
 

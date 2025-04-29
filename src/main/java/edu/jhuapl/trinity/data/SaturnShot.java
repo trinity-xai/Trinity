@@ -27,7 +27,10 @@ public class SaturnShot {
     private double pd_3;
     
     public SaturnShot() { }
-    
+    public double normalizedX = 0;
+    public double normalizedY = 0;
+    public double normalizedValue = 0;
+    public String code = "00000000";
     public static Function<String, SaturnShot> csvToSaturnShot = s -> {
         SaturnShot shot = new SaturnShot();
         String[] tokens = s.split(",");

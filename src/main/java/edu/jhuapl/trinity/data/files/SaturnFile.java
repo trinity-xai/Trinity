@@ -11,9 +11,9 @@ import java.util.List;
 import java.util.Optional;
 import edu.jhuapl.trinity.data.SaturnShot;
 import edu.jhuapl.trinity.utils.Utils;
+import edu.jhuapl.trinity.utils.loaders.SaturnParserThread;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import java.util.stream.Collectors;
 
 /**
  * @author Sean Phillips
@@ -76,76 +76,64 @@ public class SaturnFile extends File implements Transferable {
     }
 
     public List<SaturnShot> parseContent() throws IOException {
-//        Scene scene = App.getAppScene();
-//        Platform.runLater(() -> {
-//            ProgressStatus ps = new ProgressStatus("Loading Saturn File...", -1);
-//            ps.fillStartColor = Color.CYAN;
-//            ps.fillEndColor = Color.DEEPPINK;
-//            ps.innerStrokeColor = Color.CYAN;
-//            ps.outerStrokeColor = Color.DEEPPINK;
-//            scene.getRoot().fireEvent(
-//                new ApplicationEvent(ApplicationEvent.UPDATE_BUSY_INDICATOR, ps));
-//        });
-
-        long channelCount = 0;
+        long fileChannelCount = 0;
         try {
             System.out.println("Parallel FileChannel sample count... ");
             long startTime = System.nanoTime();
             char charizar = '\n';
-            channelCount = Utils.charCount(this, charizar);
+            fileChannelCount = Utils.charCount(this, charizar);
             Utils.printTotalTime(startTime);
-            System.out.println("Number of lines: " + channelCount);        
+            System.out.println("Number of lines: " + fileChannelCount);        
         } catch (InterruptedException ex) {
             Logger.getLogger(SaturnFile.class.getName()).log(Level.SEVERE, null, ex);
         }
 ////////////        
-        List<SaturnShot> shotList = new ArrayList<>();
-//
-//        final FileChannel channel = new FileInputStream(this).getChannel();
-//        MappedByteBuffer mappedByteBuffer = channel.map(FileChannel.MapMode.READ_ONLY, 0, channel.size());
-//        // when finished
-//        channel.close();        
-
-        System.out.println("Parsing with Files.lines()... ");
+        System.out.println("Parsing with parallelParse()... ");
         long startTime = System.nanoTime();
-        shotList = Files.lines(this.toPath())
-            .skip(1).map(SaturnShot.csvToSaturnShot)
-            .collect(Collectors.toCollection(ArrayList::new)); //makes the new list mutable
+        List<SaturnShot> shotList = parallelParse(this);
         Utils.printTotalTime(startTime);
 
-//        try (InputStream in = Files.newInputStream(toPath());
-//             BufferedReader reader = new BufferedReader(new InputStreamReader(in))) {
-//            String line = null;
-//            Integer current = 0;
-//            int updatePercent = noOfLines / 50; //Find a nice balanced increment for the animation
-//            if (updatePercent < 1) //safety check for the maths
-//                updatePercent = 1;
-//            while ((line = reader.readLine()) != null) {
-//                if (current != 0 && null != line)
-//                    tissueList.add(csvToCdcTissueGenes.apply(line));
-//                current++;
-//                if (current % updatePercent == 0) {
-//                    double percentComplete = Double.valueOf(current) / Double.valueOf(noOfLines);
-//                    //System.out.println("percentComplete: " + percentComplete);
-//                    Platform.runLater(() -> {
-//                        ProgressStatus ps = new ProgressStatus(
-//                            "Loading Gene File...", percentComplete);
-//                        ps.fillStartColor = Color.CYAN;
-//                        ps.fillEndColor = Color.DEEPPINK;
-//                        ps.innerStrokeColor = Color.CYAN;
-//                        ps.outerStrokeColor = Color.DEEPPINK;
-//                        scene.getRoot().fireEvent(
-//                            new ApplicationEvent(ApplicationEvent.UPDATE_BUSY_INDICATOR, ps));
-//                    });
-//                }
-//            }
-//        } catch (IOException x) {
-//            System.err.println(x);
-//        }
-
+//        System.out.println("Parsing with Files.lines()... ");
+//        startTime = System.nanoTime();
+//        List<SaturnShot> shotList = Files.lines(this.toPath())
+//            .skip(1).map(SaturnShot.csvToSaturnShot)
+//            .collect(Collectors.toCollection(ArrayList::new)); //makes the new list mutable
+//        Utils.printTotalTime(startTime);
+        
         return shotList;
     }
 
+    public static List<SaturnShot> parallelParse(File file) {
+        List<SaturnShot> shotList = new ArrayList<>();
+        
+        try {
+            List<String> lines = Files.lines(file.toPath()).skip(1).toList();
+            int numberOfThreads = Runtime.getRuntime().availableProcessors();
+            int chunkSize = lines.size() / numberOfThreads; 
+            //@DEBUG SMP
+            //System.out.println("Using chunkSize " + chunkSize + " with " + numberOfThreads + " threads.");
+            List<Thread> threads = new ArrayList<>(numberOfThreads);
+            List<SaturnParserThread> runnables = new ArrayList<>(numberOfThreads);
+
+            for (int i = 0; i < numberOfThreads; i++) {
+                int start = i * chunkSize;
+                SaturnParserThread runnable = new SaturnParserThread(lines.subList(start, start+chunkSize));
+                runnables.add(runnable);
+                Thread counterThread =  Thread.startVirtualThread(runnable);
+                threads.add(counterThread);
+            }
+            for (Thread thread : threads) {
+                thread.join();
+            }
+            for (SaturnParserThread runnable : runnables) {
+                shotList.addAll(runnable.getMeasurements());
+            }
+        } catch (IOException | InterruptedException ex) {
+            Logger.getLogger(SaturnFile.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        return shotList;
+    }
+    
     /**
      * Writes out the content of this File at the location
      * specified via this object's constructor.

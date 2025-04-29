@@ -2,7 +2,9 @@ package edu.jhuapl.trinity.javafx.components;
 
 import edu.jhuapl.trinity.data.SaturnShot;
 import edu.jhuapl.trinity.data.files.SaturnFile;
+import edu.jhuapl.trinity.utils.DataUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
+import edu.jhuapl.trinity.utils.Utils;
 import javafx.application.Application;
 import javafx.scene.Cursor;
 import javafx.scene.Scene;
@@ -27,19 +29,24 @@ import java.util.logging.Logger;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.geometry.Point2D;
 import javafx.scene.control.Button;
-import javafx.scene.control.ScrollPane;
 import javafx.scene.control.TextField;
 import javafx.scene.input.MouseEvent;
-
+import java.util.DoubleSummaryStatistics;
+import javafx.application.Platform;
+import javafx.concurrent.Task;
+import javafx.geometry.Insets;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
+import javafx.scene.layout.CornerRadii;
+import javafx.scene.layout.Pane;
 /**
  * @author Sean Phillips
  */
 public class SaturnTestApp extends Application {
 
-    private Color fillColor = Color.SLATEGREY;
-    private double canvasSize = 500;
+    private Color fillColor = Color.ALICEBLUE;
+    private double canvasSize = 1000;
     private VBox controlsBox;
-    private ScrollPane canvasScrollPane;
     private Canvas saturnLayerCanvas;
     private GraphicsContext canvasGC;
 
@@ -47,6 +54,7 @@ public class SaturnTestApp extends Application {
     Rectangle selectionRectangle;
     List<SaturnShot> saturnMeasurements;
     SimpleBooleanProperty hasDataProperty = new SimpleBooleanProperty(false);
+    SimpleBooleanProperty renderingProperty = new SimpleBooleanProperty(false);
     private double mousePosX;
     private double mousePosY;
     private double mouseOldX;
@@ -60,30 +68,6 @@ public class SaturnTestApp extends Application {
         canvasGC.setFill(fillColor);
         canvasGC.fillRect(0, 0, canvasSize, canvasSize);
         
-        canvasScrollPane = new ScrollPane(saturnLayerCanvas);
-        
-        canvasScrollPane.addEventHandler(DragEvent.DRAG_OVER, event -> {
-            if (ResourceUtils.canDragOver(event)) {
-                event.acceptTransferModes(TransferMode.COPY);
-            } else {
-                event.consume();
-            }
-        });
-        canvasScrollPane.addEventHandler(DragEvent.DRAG_DROPPED, event -> {
-            Dragboard db = event.getDragboard();
-            if (db.hasFiles()) {
-                final File file = db.getFiles().get(0);
-                try {
-                    if (SaturnFile.isSaturnFile(file)) {
-                        System.out.println("Detected Saturn File...");
-                        loadSaturnFile(file);
-                    }
-                } catch (IOException ex) {
-                    Logger.getLogger(SaturnTestApp.class.getName()).log(Level.SEVERE, null, ex);
-                }
-            }
-        });
-
         //Setup selection rectangle and event handling
         selectionRectangle = new Rectangle(1, 1,
             Color.CYAN.deriveColor(1, 1, 1, 0.5));
@@ -95,11 +79,11 @@ public class SaturnTestApp extends Application {
             mousePosY = me.getSceneY();
             mouseOldX = me.getSceneX();
             mouseOldY = me.getSceneY();
-            saturnLayerCanvas.setWidth(1);
-            saturnLayerCanvas.setHeight(1);
+            selectionRectangle.setWidth(1);
+            selectionRectangle.setHeight(1);
             selectionRectangle.setX(mousePosX);
             selectionRectangle.setY(mousePosY);
-            saturnLayerCanvas.setVisible(true);
+            selectionRectangle.setVisible(true);
         });
         //Start Tracking mouse movements only when a button is pressed
         saturnLayerCanvas.setOnMouseDragged((MouseEvent me) -> {
@@ -131,7 +115,7 @@ public class SaturnTestApp extends Application {
         dataPointsTextField.setPrefWidth(150);
         Button drawButton = new Button("Draw Measurements");
         drawButton.setPrefWidth(150);
-        drawButton.disableProperty().bind(hasDataProperty.not());
+        drawButton.disableProperty().bind(hasDataProperty.not().and(renderingProperty));
         drawButton.setOnAction(e -> {
             drawCurrent();
         });
@@ -141,6 +125,11 @@ public class SaturnTestApp extends Application {
             saturnMeasurements.clear();
             dataPointsTextField.clear();
             hasDataProperty.set(false);
+            renderingProperty.set(false);
+            Platform.runLater(()->{
+                canvasGC.setFill(Color.ALICEBLUE);
+                canvasGC.fillRect(0, 0, saturnLayerCanvas.getWidth(), saturnLayerCanvas.getHeight());         
+            });                
         });
 
         controlsBox = new VBox(10,
@@ -153,7 +142,42 @@ public class SaturnTestApp extends Application {
 
     @Override
     public void start(Stage stage) {
-        BorderPane borderPane = new BorderPane(canvasScrollPane);
+        Pane centerPane = new Pane(saturnLayerCanvas);
+        centerPane.setBackground(new Background(new BackgroundFill(Color.ALICEBLUE, CornerRadii.EMPTY, Insets.EMPTY)));
+        centerPane.setMinSize(canvasSize, canvasSize);
+        
+        centerPane.widthProperty().addListener(cl-> {
+            saturnLayerCanvas.setWidth(centerPane.getWidth());
+        });
+        centerPane.heightProperty().addListener(cl-> {
+            saturnLayerCanvas.setHeight(centerPane.getHeight());
+        });
+
+        BorderPane borderPane = new BorderPane(centerPane);
+        
+        borderPane.addEventHandler(DragEvent.DRAG_OVER, event -> {
+            if (ResourceUtils.canDragOver(event)) {
+                event.acceptTransferModes(TransferMode.COPY);
+            } else {
+                event.consume();
+            }
+        });
+        borderPane.addEventHandler(DragEvent.DRAG_DROPPED, event -> {
+            Dragboard db = event.getDragboard();
+            if (db.hasFiles()) {
+                final File file = db.getFiles().get(0);
+                try {
+                    if (SaturnFile.isSaturnFile(file)) {
+                        System.out.println("Detected Saturn File...");
+                        loadSaturnFile(file);
+                    }
+                } catch (IOException ex) {
+                    Logger.getLogger(SaturnTestApp.class.getName()).log(Level.SEVERE, null, ex);
+                }
+            }
+        });
+
+        
         borderPane.setLeft(controlsBox);
         borderPane.getChildren().add(selectionRectangle); // a little hacky but...
         Scene scene = new Scene(borderPane);
@@ -163,7 +187,77 @@ public class SaturnTestApp extends Application {
         stage.show();
     }
     public void drawCurrent() {
-        
+        Task task = new Task() {
+            @Override
+            protected Void call() throws Exception {
+                Platform.runLater(()->{
+                    canvasGC.setFill(Color.ALICEBLUE);
+                    canvasGC.fillRect(0, 0, saturnLayerCanvas.getWidth(), saturnLayerCanvas.getHeight());         
+                });
+                //find some numbers
+                DoubleSummaryStatistics x_mmStats = saturnMeasurements.stream()
+                .mapToDouble(SaturnShot::getX_mm)
+                .summaryStatistics();
+                System.out.println("X_MM Stats: " + x_mmStats.toString());
+
+                DoubleSummaryStatistics y_mmStats = saturnMeasurements.stream()
+                .mapToDouble(SaturnShot::getY_mm)
+                .summaryStatistics();
+                System.out.println("Y_MM Stats: " + y_mmStats.toString());
+
+                DoubleSummaryStatistics powerStats = saturnMeasurements.stream()
+                .mapToDouble(SaturnShot::getPower)
+                .summaryStatistics();
+                System.out.println("Power Stats: " + powerStats.toString());
+
+                DoubleSummaryStatistics pd0Stats = saturnMeasurements.stream()
+                .mapToDouble(SaturnShot::getPd_0)
+                .summaryStatistics();
+                System.out.println("pd0Stats: " + pd0Stats.toString());
+
+                System.out.println("normalizing values...");
+                long startTime = System.nanoTime();
+                saturnMeasurements.parallelStream().forEach(s -> {
+                    s.normalizedValue = DataUtils.normalize(s.getPd_0(), pd0Stats.getMin(), pd0Stats.getMax());
+                    s.code = Color.color(s.normalizedValue, 0, 0, 0.666).toString();
+                    s.normalizedX = saturnLayerCanvas.getWidth() * DataUtils.normalize(s.getX_mm(), x_mmStats.getMin(), x_mmStats.getMax());
+                    s.normalizedY = saturnLayerCanvas.getHeight() * DataUtils.normalize(s.getY_mm(), y_mmStats.getMin(), y_mmStats.getMax());
+                });
+                Utils.printTotalTime(startTime);
+
+                int chunkSize = 20000;
+                int numberOfChunks = saturnMeasurements.size() / chunkSize;
+                System.out.println("Starting Canvas render...");
+                startTime = System.nanoTime();
+                for(int i=0; i<numberOfChunks; i++) {
+                    if(!renderingProperty.get()) {
+                        System.out.println("Rendering halted.");
+                        return null;
+                    }
+                    int start = i * chunkSize;
+                    Platform.runLater(()-> {
+                        saturnMeasurements.subList(start, start+chunkSize).forEach(shot -> {
+                            canvasGC.setFill(Color.valueOf(shot.code));
+                            canvasGC.fillOval(shot.normalizedX, shot.normalizedY, 0.5, 0.5);
+                        });
+                    });
+                    try {
+                        Thread.sleep(17);
+                    } catch (InterruptedException ex) {
+                        Logger.getLogger(SaturnTestApp.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                }             
+                Utils.printTotalTime(startTime);
+                System.out.println("Finished Rendering.");
+                return null;
+            }
+        };
+        Thread thread = new Thread(task);
+        task.setOnSucceeded(e->renderingProperty.set(false));
+        task.setOnFailed(e->renderingProperty.set(false));
+        task.setOnCancelled(e->renderingProperty.set(false));
+        renderingProperty.set(true);
+        thread.start();
     }
     public void loadSaturnFile(File file) {
         try {
@@ -174,32 +268,10 @@ public class SaturnTestApp extends Application {
 //            System.out.println("Total Measurements: " + saturnFile.shots.size());
 //            System.out.println("Shutter==1 Count: " + 
 //                saturnFile.shots.stream().filter(s -> s.isShutter()).count());
-            
         } catch (IOException ex) {
             Logger.getLogger(SaturnTestApp.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-
-//    public void plotCanvas(int height, int width, Signal2d redChannel, Signal2d greenChannel, Signal2d blueChannel) {
-//        PixelWriter pw = inverseFFTGC.getPixelWriter();
-//        PixelReader pr = baseImage.getPixelReader();
-//        Color originalColor = Color.BLACK;
-//        double level = 1;
-//        for (int y = 0; y < height; y++) {
-//            for (int x = 0; x < width; x++) {
-//                //Neat way to colorize but too dark
-//                //color = new Color(
-//                //        clamp(0, redChannel.getReAt(y, x), 1),
-//                //        clamp(0, greenChannel.getReAt(y, x), 1),
-//                //        clamp(0, blueChannel.getReAt(y, x), 1),
-//                //        1);//masks[y][x]);
-//                originalColor = pr.getColor(x, y);
-//                level = clamp(0, (redChannel.getReAt(y, x) + greenChannel.getReAt(y, x)
-//                    + blueChannel.getReAt(y, x)) / 1.0, 1);
-//                pw.setColor(x, y, originalColor.deriveColor(1, 1, level, 1));
-//            }
-//        }
-//    }
 
     public static void main(String[] args) {
         launch(args);
