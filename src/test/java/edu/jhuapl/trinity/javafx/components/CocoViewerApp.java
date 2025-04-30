@@ -1,8 +1,9 @@
 package edu.jhuapl.trinity.javafx.components;
 
+import edu.jhuapl.trinity.css.StyleResourceProvider;
+import edu.jhuapl.trinity.data.coco.CocoObject;
 import edu.jhuapl.trinity.data.files.CocoAnnotationFile;
 import edu.jhuapl.trinity.utils.ResourceUtils;
-import edu.jhuapl.trinity.utils.Utils;
 import javafx.application.Application;
 import javafx.scene.Cursor;
 import javafx.scene.Scene;
@@ -12,7 +13,6 @@ import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
@@ -22,11 +22,9 @@ import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 import javafx.geometry.Point2D;
-import javafx.scene.control.Button;
 import javafx.scene.input.MouseEvent;
-import javafx.application.Platform;
-import javafx.concurrent.Task;
 import javafx.geometry.Insets;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Background;
@@ -40,15 +38,20 @@ import javafx.scene.layout.StackPane;
 public class CocoViewerApp extends Application {
 
     private Color fillColor = Color.ALICEBLUE.deriveColor(1, 1, 1, 0.1);
-    private double canvasSize = 1000;
-    private VBox controlsBox;
+    private double canvasSize = 500;
     private Image baseImage;
     private ImageView baseImageView;
     private Canvas heatMapCanvas;
     private Pane annotationPane;
     private GraphicsContext canvasGC;
 
+    CocoObject cocoObject;
     Rectangle selectionRectangle;
+    CocoAnnotationControlBox controls;
+    //make transparent so it doesn't interfere with subnode transparency effects
+    Background transBack = new Background(new BackgroundFill(
+        Color.TRANSPARENT, CornerRadii.EMPTY, Insets.EMPTY));
+    
     private double mousePosX;
     private double mousePosY;
     private double mouseOldX;
@@ -68,6 +71,8 @@ public class CocoViewerApp extends Application {
             Logger.getLogger(CocoViewerApp.class.getName()).log(Level.SEVERE, null, ex);
         }
         baseImageView = new ImageView(baseImage);
+        baseImageView.setPreserveRatio(true);
+        baseImageView.setSmooth(true);
         
         annotationPane = new Pane();
         //Setup selection rectangle and event handling
@@ -111,19 +116,7 @@ public class CocoViewerApp extends Application {
             selectionRectangle.setHeight(1);
 
         });
-        Button clearButton = new Button("Clear All");
-        clearButton.setPrefWidth(150);
-        clearButton.setOnAction(e -> {
-
-            Platform.runLater(()->{
-                canvasGC.setFill(Color.ALICEBLUE);
-                canvasGC.fillRect(0, 0, heatMapCanvas.getWidth(), heatMapCanvas.getHeight());         
-            });                
-        });
-
-        controlsBox = new VBox(10,
-            clearButton
-        );
+        controls = new CocoAnnotationControlBox();
     }
 
     @Override
@@ -132,9 +125,10 @@ public class CocoViewerApp extends Application {
             baseImageView, 
             heatMapCanvas, 
             annotationPane);
-        centerStackPane.setBackground(new Background(new BackgroundFill(Color.ALICEBLUE, CornerRadii.EMPTY, Insets.EMPTY)));
+        centerStackPane.setBackground(transBack);
         centerStackPane.setMinSize(canvasSize, canvasSize);
-        
+
+        baseImageView.fitWidthProperty().bind(centerStackPane.widthProperty());
         centerStackPane.widthProperty().addListener(cl-> {
             heatMapCanvas.setWidth(centerStackPane.getWidth());
             annotationPane.setMinWidth(centerStackPane.getWidth());
@@ -149,6 +143,7 @@ public class CocoViewerApp extends Application {
         });
 
         BorderPane borderPane = new BorderPane(centerStackPane);
+        borderPane.setBackground(transBack);
         
         borderPane.addEventHandler(DragEvent.DRAG_OVER, event -> {
             if (ResourceUtils.canDragOver(event)) {
@@ -162,62 +157,48 @@ public class CocoViewerApp extends Application {
             if (db.hasFiles()) {
                 final File file = db.getFiles().get(0);
                 try {
-//                    if (SaturnFile.isSaturnFile(file)) {
-//                        System.out.println("Detected Saturn File...");
-//                        loadSaturnFile(file);
-                        long startTime = System.nanoTime();
-
-                        System.out.println("Saturn Measurements conversion took: " + Utils.totalTimeString(startTime));
-//                    }
+                    if (CocoAnnotationFile.isCocoAnnotationFile(file)) {
+                        System.out.println("Detected CocoAnnotation File...");
+                        loadCocoFile(file);
+                        populateControls();
+                    }
                 } catch (Exception ex) {
                     Logger.getLogger(CocoViewerApp.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
         });
-
+        ScrollPane sp = new ScrollPane(controls);
+        sp.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        sp.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        sp.setPannable(true);
         
-        borderPane.setLeft(controlsBox);
+        borderPane.setLeft(sp);
         borderPane.getChildren().add(selectionRectangle); // a little hacky but...
-        Scene scene = new Scene(borderPane);
+        borderPane.getStyleClass().add("trinity-pane");
+        
+        Scene scene = new Scene(borderPane, Color.BLACK);
 
-        stage.setTitle("Saturn Test");
+        //Make everything pretty
+        String CSS = StyleResourceProvider.getResource("styles.css").toExternalForm();
+        scene.getStylesheets().add(CSS);
+
+        stage.setTitle("COCO Annotation Test");
         stage.setScene(scene);
         stage.show();
     }
-    public void drawCurrent() {
-        Task task = new Task() {
-            @Override
-            protected Void call() throws Exception {
-                Platform.runLater(()->{
-                    canvasGC.setFill(Color.ALICEBLUE);
-                    canvasGC.fillRect(0, 0, heatMapCanvas.getWidth(), heatMapCanvas.getHeight());         
-                });
-                System.out.println("Starting render...");
-                long startTime = System.nanoTime();
-                Utils.printTotalTime(startTime);
-                System.out.println("Finished Rendering.");
-                return null;
-            }
-        };
-        Thread thread = new Thread(task);
-//        task.setOnSucceeded(e->renderingProperty.set(false));
-//        task.setOnFailed(e->renderingProperty.set(false));
-//        task.setOnCancelled(e->renderingProperty.set(false));
-//        renderingProperty.set(true);
-        thread.start();
+    public void populateControls() {
+        
     }
     public void loadCocoFile(File file) {
         try {
             CocoAnnotationFile cocoFile = new CocoAnnotationFile(file.getPath(), true);
-
-            System.out.println("Total Measurements: " + cocoFile.cocoObject.getAnnotations().size());
-//            System.out.println("Shutter==1 Count: " + 
-//                saturnFile.shots.stream().filter(s -> s.isShutter()).count());
+            cocoObject = cocoFile.cocoObject;
+            System.out.println("Total Annotations in object: " + cocoFile.cocoObject.getAnnotations().size());
         } catch (IOException ex) {
             Logger.getLogger(CocoViewerApp.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-
+    
     public static void main(String[] args) {
         launch(args);
     }
