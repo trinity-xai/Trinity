@@ -24,7 +24,7 @@ public class CocoCategory {
     //<editor-fold defaultstate="collapsed" desc="Payload Fields">    
     private String supercategory;
     private long id;
-    private String bicycle;
+    private String name;
     //</editor-fold>
     
     public CocoCategory() {
@@ -60,17 +60,18 @@ public class CocoCategory {
     }
 
     /**
-     * @return the bicycle
+     * @return the name
      */
-    public String getBicycle() {
-        return bicycle;
+    public String getName() {
+        return name;
     }
 
     /**
-     * @param bicycle the bicycle to set
+     * @param name the name to set
      */
-    public void setBicycle(String bicycle) {
-        this.bicycle = bicycle;
+    public void setName(String name) {
+        this.name = name;
     }
    //</editor-fold>    
+
 }
