@@ -2,6 +2,7 @@ package edu.jhuapl.trinity.javafx.components;
 
 import edu.jhuapl.trinity.data.SaturnShot;
 import edu.jhuapl.trinity.data.files.SaturnFile;
+import edu.jhuapl.trinity.data.messages.xai.FeatureCollection;
 import edu.jhuapl.trinity.utils.DataUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import edu.jhuapl.trinity.utils.Utils;
@@ -170,6 +171,9 @@ public class SaturnTestApp extends Application {
                     if (SaturnFile.isSaturnFile(file)) {
                         System.out.println("Detected Saturn File...");
                         loadSaturnFile(file);
+                        long startTime = System.nanoTime();
+                        FeatureCollection fc = DataUtils.convertSaturnMeasurements(saturnMeasurements);
+                        System.out.println("Saturn Measurements conversion took: " + Utils.totalTimeString(startTime));
                     }
                 } catch (IOException ex) {
                     Logger.getLogger(SaturnTestApp.class.getName()).log(Level.SEVERE, null, ex);

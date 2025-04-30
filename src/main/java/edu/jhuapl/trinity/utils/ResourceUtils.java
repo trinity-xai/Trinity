@@ -13,6 +13,7 @@ import edu.jhuapl.trinity.data.files.GraphDirectedCollectionFile;
 import edu.jhuapl.trinity.data.files.LabelConfigFile;
 import edu.jhuapl.trinity.data.files.ManifoldDataFile;
 import edu.jhuapl.trinity.data.files.McclodSplitDataTsvFile;
+import edu.jhuapl.trinity.data.files.SaturnFile;
 import edu.jhuapl.trinity.data.files.SemanticMapCollectionFile;
 import edu.jhuapl.trinity.data.files.ShapleyCollectionFile;
 import edu.jhuapl.trinity.data.files.TextEmbeddingCollectionFile;
@@ -37,6 +38,7 @@ import edu.jhuapl.trinity.utils.loaders.CdcTissueGenesLoader;
 import edu.jhuapl.trinity.utils.loaders.FeatureCollectionLoader;
 import edu.jhuapl.trinity.utils.loaders.GraphDirectedCollectionLoader;
 import edu.jhuapl.trinity.utils.loaders.McclodSplitDataLoader;
+import edu.jhuapl.trinity.utils.loaders.SaturnLoader;
 import edu.jhuapl.trinity.utils.loaders.ShapleyCollectionLoader;
 import edu.jhuapl.trinity.utils.loaders.TextEmbeddingsLoader;
 import edu.jhuapl.trinity.utils.loaders.VectorMaskCollectionLoader;
@@ -470,6 +472,11 @@ public enum ResourceUtils {
                             } else if (isAudioFile(file)) {
                                 Platform.runLater(() -> scene.getRoot().fireEvent(
                                     new AudioEvent(AudioEvent.NEW_AUDIO_FILE, file)));
+                            } else if (SaturnFile.isSaturnFile(file)) {
+                                SaturnLoader task = new SaturnLoader(scene, file);
+                                Thread thread = new Thread(task);
+                                thread.setDaemon(true);
+                                thread.start();
                             } else if (CdcCsvFile.isCdcCsvFile(file)) {
                                 CdcCsvFile cdcCsvFile = new CdcCsvFile(file.getAbsolutePath(), true);
                                 //convert to Feature Vector Collection for the lulz
