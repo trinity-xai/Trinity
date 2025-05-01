@@ -1,6 +1,7 @@
 package edu.jhuapl.trinity.javafx.components;
 
 import edu.jhuapl.trinity.css.StyleResourceProvider;
+import edu.jhuapl.trinity.data.coco.CocoImage;
 import edu.jhuapl.trinity.data.coco.CocoObject;
 import edu.jhuapl.trinity.data.files.CocoAnnotationFile;
 import edu.jhuapl.trinity.utils.ResourceUtils;
@@ -24,13 +25,17 @@ import java.util.logging.Logger;
 import javafx.geometry.Point2D;
 import javafx.scene.input.MouseEvent;
 import javafx.geometry.Insets;
+import javafx.geometry.Orientation;
+import javafx.scene.control.ScrollBar;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.CornerRadii;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
 /**
  * @author Sean Phillips
@@ -160,19 +165,39 @@ public class CocoViewerApp extends Application {
                     if (CocoAnnotationFile.isCocoAnnotationFile(file)) {
                         System.out.println("Detected CocoAnnotation File...");
                         loadCocoFile(file);
-                        populateControls();
+                        controls.populateControls(cocoObject);
                     }
                 } catch (Exception ex) {
                     Logger.getLogger(CocoViewerApp.class.getName()).log(Level.SEVERE, null, ex);
                 }
             }
         });
-        ScrollPane sp = new ScrollPane(controls);
-        sp.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-        sp.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-        sp.setPannable(true);
+        ScrollPane scrollPane = new ScrollPane(controls);
+        // hide scrollpane scrollbars
+        scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        scrollPane.setPadding(Insets.EMPTY); 
+        scrollPane.setPannable(true);
         
-        borderPane.setLeft(sp);
+        ScrollBar vScrollBar = new ScrollBar();
+        vScrollBar.setOrientation(Orientation.VERTICAL);
+        vScrollBar.minProperty().bind(scrollPane.vminProperty());
+        vScrollBar.maxProperty().bind(scrollPane.vmaxProperty());
+        vScrollBar.visibleAmountProperty().bind(scrollPane.heightProperty()
+            .divide(controls.heightProperty()));
+        scrollPane.vvalueProperty().bindBidirectional(vScrollBar.valueProperty());
+        vScrollBar.visibleProperty().bind(
+            scrollPane.heightProperty().divide(controls.heightProperty()).lessThan(1)
+        );
+        controls.heightProperty().addListener(cl-> {
+            scrollPane.setVvalue(scrollPane.getVmax());
+        });
+        
+        HBox hBox = new HBox();
+        HBox.setHgrow(scrollPane, Priority.ALWAYS);
+        hBox.getChildren().addAll(vScrollBar, scrollPane);             
+        
+        borderPane.setLeft(scrollPane);
         borderPane.getChildren().add(selectionRectangle); // a little hacky but...
         borderPane.getStyleClass().add("trinity-pane");
         
@@ -186,9 +211,7 @@ public class CocoViewerApp extends Application {
         stage.setScene(scene);
         stage.show();
     }
-    public void populateControls() {
-        
-    }
+
     public void loadCocoFile(File file) {
         try {
             CocoAnnotationFile cocoFile = new CocoAnnotationFile(file.getPath(), true);
