@@ -4,6 +4,7 @@ import edu.jhuapl.trinity.css.StyleResourceProvider;
 import edu.jhuapl.trinity.data.coco.CocoImage;
 import edu.jhuapl.trinity.data.coco.CocoObject;
 import edu.jhuapl.trinity.data.files.CocoAnnotationFile;
+import edu.jhuapl.trinity.javafx.events.ImageEvent;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import javafx.application.Application;
 import javafx.scene.Cursor;
@@ -26,8 +27,12 @@ import javafx.geometry.Point2D;
 import javafx.scene.input.MouseEvent;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
+import javafx.geometry.Pos;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.ScrollBar;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.layout.Background;
@@ -37,6 +42,8 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
+import javafx.stage.DirectoryChooser;
 /**
  * @author Sean Phillips
  */
@@ -49,7 +56,8 @@ public class CocoViewerApp extends Application {
     private Canvas heatMapCanvas;
     private Pane annotationPane;
     private GraphicsContext canvasGC;
-
+    
+    TextField basePathTextField;
     CocoObject cocoObject;
     Rectangle selectionRectangle;
     CocoAnnotationControlBox controls;
@@ -122,6 +130,8 @@ public class CocoViewerApp extends Application {
 
         });
         controls = new CocoAnnotationControlBox();
+        basePathTextField = new TextField("");
+        controls.imageBasePathProperty.bind(basePathTextField.textProperty());
     }
 
     @Override
@@ -197,12 +207,39 @@ public class CocoViewerApp extends Application {
         HBox.setHgrow(scrollPane, Priority.ALWAYS);
         hBox.getChildren().addAll(vScrollBar, scrollPane);             
         
+        Button browseButton = new Button("Browse");
+        browseButton.setOnAction(e -> {
+            DirectoryChooser dc = new DirectoryChooser();
+            File f = new File(basePathTextField.getText());
+            if(f.isDirectory())
+                dc.setInitialDirectory(f);
+            dc.setTitle("Browse to imagery base path...");
+            File dir = dc.showDialog(null);
+            if(null != dir && dir.isDirectory()) {
+                basePathTextField.setText(dir.getPath());
+            }
+        });
+        HBox basePathHBox = new HBox(10, browseButton, basePathTextField);
+        basePathHBox.setAlignment(Pos.CENTER_LEFT);
+        HBox.setHgrow(basePathTextField, Priority.ALWAYS);
+        basePathTextField.setPrefHeight(40);
+        VBox basePathVBox = new VBox(5, 
+            new Label("Imagery Base Path"), basePathHBox);
+        basePathVBox.setPadding(new Insets(5));
+        borderPane.setTop(basePathVBox);
         borderPane.setLeft(scrollPane);
         borderPane.getChildren().add(selectionRectangle); // a little hacky but...
         borderPane.getStyleClass().add("trinity-pane");
         
         Scene scene = new Scene(borderPane, Color.BLACK);
 
+        scene.addEventHandler(ImageEvent.SELECT_COCO_IMAGE, e-> {
+            Image image = (Image) e.object;
+            if(null != image) {
+                baseImage = image;
+                baseImageView.setImage(baseImage);
+            }
+        });
         //Make everything pretty
         String CSS = StyleResourceProvider.getResource("styles.css").toExternalForm();
         scene.getStylesheets().add(CSS);

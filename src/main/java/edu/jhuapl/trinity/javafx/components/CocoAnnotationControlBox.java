@@ -4,8 +4,10 @@ import edu.jhuapl.trinity.data.coco.CocoAnnotation;
 import edu.jhuapl.trinity.data.coco.CocoCategory;
 import edu.jhuapl.trinity.data.coco.CocoImage;
 import edu.jhuapl.trinity.data.coco.CocoObject;
+import edu.jhuapl.trinity.javafx.events.ImageEvent;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import java.io.File;
+import javafx.beans.property.SimpleStringProperty;
 import javafx.geometry.Pos;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
@@ -15,6 +17,8 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import javafx.scene.control.TitledPane;
+import javafx.scene.image.Image;
+import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
@@ -32,11 +36,12 @@ public class CocoAnnotationControlBox extends VBox {
     ListView<String> annotationsListView;
     Text imageText;
     Text categoryText;
-    Text annotationsText;
+    Text annotationText;
     TitledPane imagesTP;
     TitledPane categoriesTP;
     TitledPane annotationsTP;
     CocoObject cocoObject = null;
+    public SimpleStringProperty imageBasePathProperty = new SimpleStringProperty(".");
     
     public CocoAnnotationControlBox() {
         imagesTP = new TitledPane();
@@ -88,21 +93,21 @@ public class CocoAnnotationControlBox extends VBox {
         annotationsListView.setPlaceholder(annotationsPlaceholder);
         annotationsListView.setPrefHeight(DEFAULT_LISTVIEW_HEIGHT);
 
-        annotationsText = new Text("No Annotation Selected.");
+        annotationText = new Text("No Annotation Selected.");
 //        annotationsText.setWrappingWidth(50); //something smallish just to initialize
 //        annotationsText.wrappingWidthProperty().bind(annotationsTP.widthProperty().subtract(10));
-        annotationsText.setFont(new Font("Consolas", 16));
-        annotationsText.setStroke(Color.WHITE);
-        annotationsText.setFill(Color.ALICEBLUE);
+        annotationText.setFont(new Font("Consolas", 16));
+        annotationText.setStroke(Color.WHITE);
+        annotationText.setFill(Color.ALICEBLUE);
         
-        annotationsTP.setContent(new VBox(5, annotationsListView, annotationsText));        
+        annotationsTP.setContent(new VBox(5, annotationsListView, annotationText));        
         
         setSpacing(10);
         setPrefWidth(DEFAULT_PREF_WIDTH);
         getChildren().addAll( 
             imagesTP, 
-            categoriesTP, 
-            annotationsTP
+            annotationsTP,
+            categoriesTP
         );
         
         addListeners();
@@ -118,10 +123,58 @@ public class CocoAnnotationControlBox extends VBox {
                     .append("Width: " ).append(" : ").append(image.getWidth()).append("\n")
                     .append("Height: " ).append(" : ").append(image.getHeight()).append("\n");
                 imageText.setText(sb.toString());
-
             }
         });
-        
+        imageListView.addEventHandler(MouseEvent.MOUSE_CLICKED, e-> {
+            if(e.getClickCount() > 1){
+                int index = imageListView.getSelectionModel().getSelectedIndex();
+                if(index < cocoObject.getImages().size()) {
+                    CocoImage image = cocoObject.getImages().get(index);
+                    String resolvedPath = imageBasePathProperty.get();
+                    //if we have a full path.. use it... otherwise just the filename
+                    String imageFile = 
+                        (null != image.getPath() && !image.getPath().isBlank()) ?
+                        image.getPath() : image.getFile_name();
+                    resolvedPath += imageFile;
+                    try {
+                        File resolvedFile = new File(resolvedPath);
+                        if(resolvedFile.isFile()) {
+                            Image img = new Image(resolvedFile.toURI().toURL().toExternalForm());
+                            imageListView.getScene().getRoot().fireEvent(
+                                new ImageEvent(ImageEvent.SELECT_COCO_IMAGE, img)); 
+                        } else
+                            LOG.error("Failed to load " + resolvedPath);
+                    } catch(Exception ex) {
+                        LOG.error("Failed to load " + resolvedPath);
+                    }
+                }
+            }
+        });
+        categoriesListView.getSelectionModel().selectedIndexProperty().addListener(cl -> {
+            int index = categoriesListView.getSelectionModel().getSelectedIndex();
+            if(index < cocoObject.getCategories().size()) {
+                CocoCategory cat = cocoObject.getCategories().get(index);
+                StringBuilder sb = new StringBuilder();
+                sb.append("Category ID: " ).append(" : ").append(cat.getId()).append("\n")
+                    .append("Name: " ).append(" : ").append(cat.getName()).append("\n")
+                    .append("Supercategory: " ).append(" : ").append(cat.getSupercategory()).append("\n");
+                categoryText.setText(sb.toString());
+            }
+        });
+
+        annotationsListView.getSelectionModel().selectedIndexProperty().addListener(cl -> {
+            int index = annotationsListView.getSelectionModel().getSelectedIndex();
+            if(index < cocoObject.getAnnotations().size()) {
+                CocoAnnotation ann = cocoObject.getAnnotations().get(index);
+                StringBuilder sb = new StringBuilder();
+                sb.append("Annotation ID: " ).append(" : ").append(ann.getId()).append("\n")
+                    .append("Image ID: " ).append(" : ").append(ann.getImage_id()).append("\n")
+                    .append("Category ID: " ).append(" : ").append(ann.getCategory_id()).append("\n")
+                    .append("BBox: " ).append(" : ").append(ann.bboxToString()).append("\n")
+                    .append("Segmentations: " ).append(" : ").append(ann.getSegmentation().size()).append("\n");
+                annotationText.setText(sb.toString());
+            }
+        });
     }
     public void populateControls(CocoObject cocoObject) {
         this.cocoObject = cocoObject;
