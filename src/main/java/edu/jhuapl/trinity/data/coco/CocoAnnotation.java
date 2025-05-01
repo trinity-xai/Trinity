@@ -2,7 +2,6 @@ package edu.jhuapl.trinity.data.coco;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
-import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -47,10 +46,10 @@ public class CocoAnnotation {
         bbox = new ArrayList<>();
     }
 
-    public static String bboxToString(FeatureVector featureVector) {
+    public String bboxToString() {
         NumberFormat format = new DecimalFormat("0.00");
         StringBuilder sb = new StringBuilder("[ ");
-        for (Double d : featureVector.getBbox()) {
+        for (Double d : getBbox()) {
             sb.append(format.format(d));
             sb.append(" ");
         }
