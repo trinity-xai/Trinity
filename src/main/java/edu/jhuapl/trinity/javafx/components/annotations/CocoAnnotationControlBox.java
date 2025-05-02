@@ -7,6 +7,8 @@ import edu.jhuapl.trinity.data.coco.CocoObject;
 import edu.jhuapl.trinity.javafx.events.ImageEvent;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import java.io.File;
+import java.util.List;
+import java.util.Optional;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -181,18 +183,37 @@ public class CocoAnnotationControlBox extends VBox {
                     .append("Segmentations: " ).append(" : ").append(ann.getSegmentation().size()).append("\n");
                 annotationText.setText(sb.toString());
 
+                //can we lookup the color?
+                Optional<CocoCategory> opt = cocoObject.getCategories().stream()
+                    .filter(c -> c.getId() == ann.getCategory_id()).findFirst();
+                Color catColor = SegmentationOverlay.DEFAULT_POLYGON_FILLCOLOR;
+                Color catStrokeColor = SegmentationOverlay.DEFAULT_POLYGON_STROKECOLOR;
+                if(opt.isPresent()) {
+                    try {
+                        catStrokeColor = Color.valueOf(opt.get().getColor());
+                        catColor = catStrokeColor.deriveColor(1, 1, 1, 0.333);
+                    } catch(Exception ex) {
+                        LOG.warn("Could not parse a Color from: " + opt.get().getColor());
+                    }
+                }
+                    
                 if(ann.isBBoxValid()) {
                     BBoxOverlay bbox = new BBoxOverlay(ann.getBbox(), String.valueOf(ann.getId()));
+                    bbox.rectangle.setStroke(catStrokeColor);
                     imageListView.getScene().getRoot().fireEvent(
                         new ImageEvent(ImageEvent.SELECT_COCO_BBOX, bbox)); 
                 }
-//                if(ann.isSegmentationValid()) {
-//                    SegmentationOverlay seg = new SegmentationOverlay(
-//                        new BBox(ann.getBbox()), String.valueOf(ann.getId()));
-//                    imageListView.getScene().getRoot().fireEvent(
-//                        new ImageEvent(ImageEvent.NEW_COCO_BBOX, bbox)); 
-//                }
-                
+                if(ann.isSegmentationValid()) {
+                    for(List<Double> segmentation : ann.getSegmentation()) {
+                        String id = String.valueOf(ann.getId());
+                        SegmentationOverlay seg = new SegmentationOverlay(
+                            ann.getBbox().get(0), ann.getBbox().get(1), segmentation, id); 
+                        seg.setStroke(catStrokeColor);
+                        seg.setMouseEnteredFill(catColor);
+                        imageListView.getScene().getRoot().fireEvent(
+                            new ImageEvent(ImageEvent.SELECT_COCO_SEGMENTATION, seg)); 
+                    }
+                }
             }
         });
     }

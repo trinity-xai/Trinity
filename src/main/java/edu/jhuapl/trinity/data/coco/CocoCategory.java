@@ -25,6 +25,7 @@ public class CocoCategory {
     private String supercategory;
     private long id;
     private String name;
+    private String color; //non standard but common
     //</editor-fold>
     
     public CocoCategory() {
@@ -72,6 +73,18 @@ public class CocoCategory {
     public void setName(String name) {
         this.name = name;
     }
-   //</editor-fold>    
+    /**
+     * @return the color
+     */
+    public String getColor() {
+        return color;
+    }
 
+    /**
+     * @param color the color to set
+     */
+    public void setColor(String color) {
+        this.color = color;
+    }
+   //</editor-fold>    
 }
