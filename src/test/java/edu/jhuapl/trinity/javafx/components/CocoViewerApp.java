@@ -5,6 +5,7 @@ import edu.jhuapl.trinity.css.StyleResourceProvider;
 import edu.jhuapl.trinity.data.coco.CocoObject;
 import edu.jhuapl.trinity.data.files.CocoAnnotationFile;
 import edu.jhuapl.trinity.javafx.components.annotations.BBoxOverlay;
+import edu.jhuapl.trinity.javafx.components.annotations.SegmentationOverlay;
 import edu.jhuapl.trinity.javafx.events.ImageEvent;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import javafx.application.Application;
@@ -144,6 +145,7 @@ public class CocoViewerApp extends Application {
         centerStackPane.setBackground(transBack);
         centerStackPane.setMinSize(canvasSize, canvasSize);
 
+//@TODO SMP need logic to automatically resize overlays to match any fit size changes
 //        baseImageView.fitWidthProperty().bind(centerStackPane.widthProperty());
         StackPane.setAlignment(baseImageView, Pos.TOP_LEFT);
         
@@ -192,23 +194,23 @@ public class CocoViewerApp extends Application {
         scrollPane.setPadding(Insets.EMPTY); 
         scrollPane.setPannable(true);
         
-        ScrollBar vScrollBar = new ScrollBar();
-        vScrollBar.setOrientation(Orientation.VERTICAL);
-        vScrollBar.minProperty().bind(scrollPane.vminProperty());
-        vScrollBar.maxProperty().bind(scrollPane.vmaxProperty());
-        vScrollBar.visibleAmountProperty().bind(scrollPane.heightProperty()
-            .divide(controls.heightProperty()));
-        scrollPane.vvalueProperty().bindBidirectional(vScrollBar.valueProperty());
-        vScrollBar.visibleProperty().bind(
-            scrollPane.heightProperty().divide(controls.heightProperty()).lessThan(1)
-        );
+//        ScrollBar vScrollBar = new ScrollBar();
+//        vScrollBar.setOrientation(Orientation.VERTICAL);
+//        vScrollBar.minProperty().bind(scrollPane.vminProperty());
+//        vScrollBar.maxProperty().bind(scrollPane.vmaxProperty());
+//        vScrollBar.visibleAmountProperty().bind(scrollPane.heightProperty()
+//            .divide(controls.heightProperty()));
+//        scrollPane.vvalueProperty().bindBidirectional(vScrollBar.valueProperty());
+//        vScrollBar.visibleProperty().bind(
+//            scrollPane.heightProperty().divide(controls.heightProperty()).lessThan(1)
+//        );
         controls.heightProperty().addListener(cl-> {
             scrollPane.setVvalue(scrollPane.getVmax());
         });
         
-        HBox hBox = new HBox();
-        HBox.setHgrow(scrollPane, Priority.ALWAYS);
-        hBox.getChildren().addAll(vScrollBar, scrollPane);             
+//        HBox hBox = new HBox();
+//        HBox.setHgrow(scrollPane, Priority.ALWAYS);
+//        hBox.getChildren().addAll(vScrollBar, scrollPane);             
         
         Button browseButton = new Button("Browse");
         browseButton.setOnAction(e -> {
@@ -245,6 +247,13 @@ public class CocoViewerApp extends Application {
                 annotationPane.getChildren().add(bbox); //should be pretranslated
             }
         });
+        scene.addEventHandler(ImageEvent.SELECT_COCO_SEGMENTATION, e-> {
+            SegmentationOverlay seg = (SegmentationOverlay) e.object;
+            if(null != seg) {
+                annotationPane.getChildren().add(seg); //should be pretranslated
+            }
+        });
+        
         scene.addEventHandler(ImageEvent.SELECT_COCO_IMAGE, e-> {
             Image image = (Image) e.object;
             if(null != image) {
