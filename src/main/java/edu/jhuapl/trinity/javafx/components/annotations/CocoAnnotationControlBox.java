@@ -1,4 +1,4 @@
-package edu.jhuapl.trinity.javafx.components;
+package edu.jhuapl.trinity.javafx.components.annotations;
 
 import edu.jhuapl.trinity.data.coco.CocoAnnotation;
 import edu.jhuapl.trinity.data.coco.CocoCategory;
@@ -9,6 +9,7 @@ import edu.jhuapl.trinity.utils.ResourceUtils;
 import java.io.File;
 import javafx.beans.property.SimpleStringProperty;
 import javafx.geometry.Pos;
+import javafx.scene.control.Button;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.image.ImageView;
@@ -86,6 +87,12 @@ public class CocoAnnotationControlBox extends VBox {
         annotationsTP.setText("Annotations");
         annotationsTP.setExpanded(false);
         annotationsTP.setPrefWidth(DEFAULT_TITLEDPANE_WIDTH);
+        Button clearAnnotations = new Button("Clear Annotations");
+        clearAnnotations.setOnAction(e -> {
+            clearAnnotations.getScene().getRoot().fireEvent(
+                new ImageEvent(ImageEvent.CLEAR_COCO_ANNOTATIONS)); 
+        });
+                
         annotationsListView = new ListView();
         ImageView annotationsListIV = ResourceUtils.loadIcon("waitingforimage", 64);
         VBox annotationsPlaceholder = new VBox(10, annotationsListIV, new Label("I should COCO..."));
@@ -100,7 +107,7 @@ public class CocoAnnotationControlBox extends VBox {
         annotationText.setStroke(Color.WHITE);
         annotationText.setFill(Color.ALICEBLUE);
         
-        annotationsTP.setContent(new VBox(5, annotationsListView, annotationText));        
+        annotationsTP.setContent(new VBox(5, clearAnnotations, annotationsListView, annotationText));        
         
         setSpacing(10);
         setPrefWidth(DEFAULT_PREF_WIDTH);
@@ -173,6 +180,19 @@ public class CocoAnnotationControlBox extends VBox {
                     .append("BBox: " ).append(" : ").append(ann.bboxToString()).append("\n")
                     .append("Segmentations: " ).append(" : ").append(ann.getSegmentation().size()).append("\n");
                 annotationText.setText(sb.toString());
+
+                if(ann.isBBoxValid()) {
+                    BBoxOverlay bbox = new BBoxOverlay(ann.getBbox(), String.valueOf(ann.getId()));
+                    imageListView.getScene().getRoot().fireEvent(
+                        new ImageEvent(ImageEvent.SELECT_COCO_BBOX, bbox)); 
+                }
+//                if(ann.isSegmentationValid()) {
+//                    SegmentationOverlay seg = new SegmentationOverlay(
+//                        new BBox(ann.getBbox()), String.valueOf(ann.getId()));
+//                    imageListView.getScene().getRoot().fireEvent(
+//                        new ImageEvent(ImageEvent.NEW_COCO_BBOX, bbox)); 
+//                }
+                
             }
         });
     }
