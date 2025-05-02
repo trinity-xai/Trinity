@@ -1,9 +1,10 @@
 package edu.jhuapl.trinity.javafx.components;
 
+import edu.jhuapl.trinity.javafx.components.annotations.CocoAnnotationControlBox;
 import edu.jhuapl.trinity.css.StyleResourceProvider;
-import edu.jhuapl.trinity.data.coco.CocoImage;
 import edu.jhuapl.trinity.data.coco.CocoObject;
 import edu.jhuapl.trinity.data.files.CocoAnnotationFile;
+import edu.jhuapl.trinity.javafx.components.annotations.BBoxOverlay;
 import edu.jhuapl.trinity.javafx.events.ImageEvent;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import javafx.application.Application;
@@ -143,7 +144,9 @@ public class CocoViewerApp extends Application {
         centerStackPane.setBackground(transBack);
         centerStackPane.setMinSize(canvasSize, canvasSize);
 
-        baseImageView.fitWidthProperty().bind(centerStackPane.widthProperty());
+//        baseImageView.fitWidthProperty().bind(centerStackPane.widthProperty());
+        StackPane.setAlignment(baseImageView, Pos.TOP_LEFT);
+        
         centerStackPane.widthProperty().addListener(cl-> {
             heatMapCanvas.setWidth(centerStackPane.getWidth());
             annotationPane.setMinWidth(centerStackPane.getWidth());
@@ -233,6 +236,15 @@ public class CocoViewerApp extends Application {
         
         Scene scene = new Scene(borderPane, Color.BLACK);
 
+        scene.addEventHandler(ImageEvent.CLEAR_COCO_ANNOTATIONS, e-> {
+            annotationPane.getChildren().clear();
+        });
+        scene.addEventHandler(ImageEvent.SELECT_COCO_BBOX, e-> {
+            BBoxOverlay bbox = (BBoxOverlay) e.object;
+            if(null != bbox) {
+                annotationPane.getChildren().add(bbox); //should be pretranslated
+            }
+        });
         scene.addEventHandler(ImageEvent.SELECT_COCO_IMAGE, e-> {
             Image image = (Image) e.object;
             if(null != image) {

@@ -61,6 +61,10 @@ public class CocoAnnotation {
         return null != getBbox() && !getBbox().isEmpty() && getBbox().size() > 3
             && getBbox().get(2) > 0.0 && getBbox().get(3) > 0.0;
     }
+    public boolean isSegmentationValid() {
+        return null != getSegmentation() && !getSegmentation().isEmpty() 
+            && getSegmentation().size() > 2;
+    }    
     //<editor-fold defaultstate="collapsed" desc="Properties">
     /**
      * @return the id
