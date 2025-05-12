@@ -20,8 +20,9 @@ public class BBoxOverlay extends StackPane {
     public static Color DEFAULT_LABEL_FILLCOLOR = Color.CORNFLOWERBLUE;
     public Rectangle rectangle;
     public Label overlayLabel;
-    List<Double> bbox;
-    String id;
+    public List<Double> bbox;
+    public String id;
+    
     public BBoxOverlay(List<Double> bbox, String id) {
         this.bbox = bbox;
         this.id = id;
