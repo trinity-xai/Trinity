@@ -14,8 +14,12 @@ public class ImageEvent extends Event {
     public static final EventType<ImageEvent> NEW_IMAGE_INSPECTION = new EventType(ANY, "NEW_IMAGE_INSPECTION");
     public static final EventType<ImageEvent> NEW_TEXTURE_SURFACE = new EventType(ANY, "NEW_TEXTURE_SURFACE");
     public static final EventType<ImageEvent> NEW_VECTORMASK_COLLECTION = new EventType(ANY, "NEW_VECTORMASK_COLLECTION");
-    public static final EventType<ImageEvent> NEW_COCO_ANNOTATION = new EventType(ANY, "NEW_COCO_ANNOTATION");
     public static final EventType<ImageEvent> NEW_SCAN_IMAGE = new EventType(ANY, "NEW_SCAN_IMAGE");
+    public static final EventType<ImageEvent> NEW_COCO_ANNOTATION = new EventType(ANY, "NEW_COCO_ANNOTATION");
+    public static final EventType<ImageEvent> CLEAR_COCO_ANNOTATIONS = new EventType(ANY, "CLEAR_COCO_ANNOTATIONS");
+    public static final EventType<ImageEvent> SELECT_COCO_IMAGE = new EventType(ANY, "SELECT_COCO_IMAGE");
+    public static final EventType<ImageEvent> SELECT_COCO_BBOX = new EventType(ANY, "SELECT_COCO_BBOX");
+    public static final EventType<ImageEvent> SELECT_COCO_SEGMENTATION = new EventType(ANY, "SELECT_COCO_SEGMENTATION");
 
     public ImageEvent(EventType<? extends Event> arg0) {
         super(arg0);

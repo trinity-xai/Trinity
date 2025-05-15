@@ -22,6 +22,7 @@ public class ApplicationEvent extends Event {
     public static final EventType<ApplicationEvent> SHOW_VIDEO_PANE = new EventType(ANY, "SHOW_VIDEO_PANE");
     public static final EventType<ApplicationEvent> SHOW_JUKEBOX_PANE = new EventType(ANY, "SHOW_JUKEBOX_PANE");
     public static final EventType<ApplicationEvent> SHOW_NAVIGATOR_PANE = new EventType(ANY, "SHOW_NAVIGATOR_PANE");
+    public static final EventType<ApplicationEvent> SHOW_COCOVIEWER_PANE = new EventType(ANY, "SHOW_COCOVIEWER_PANE");
     public static final EventType<ApplicationEvent> SHOW_WAVEFORM_PANE = new EventType(ANY, "SHOW_WAVEFORM_PANE");
     public static final EventType<ApplicationEvent> SHOW_HYPERSPACE = new EventType(ANY, "SHOW_HYPERSPACE");
     public static final EventType<ApplicationEvent> SHOW_HYPERSURFACE = new EventType(ANY, "SHOW_HYPERSURFACE");

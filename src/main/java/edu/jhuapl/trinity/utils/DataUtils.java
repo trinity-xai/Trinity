@@ -4,6 +4,7 @@ import edu.jhuapl.trinity.App;
 import edu.jhuapl.trinity.data.CdcCsv;
 import edu.jhuapl.trinity.data.CdcTissueGenes;
 import edu.jhuapl.trinity.data.FeatureVectorComparator;
+import edu.jhuapl.trinity.data.SaturnShot;
 import edu.jhuapl.trinity.data.cislunar.McclodSplitDataTsv;
 import edu.jhuapl.trinity.data.messages.SystemFeatures;
 import edu.jhuapl.trinity.data.messages.bci.ReconstructionAttributes;
@@ -30,6 +31,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 import java.util.Random;
 import java.util.Set;
+import java.util.function.Function;
+import java.util.stream.Collectors;
 
 /**
  * @author Sean Phillips
@@ -247,7 +250,39 @@ public enum DataUtils {
         }
         return fc;
     }
+    public static FeatureCollection convertSaturnMeasurements(List<SaturnShot> saturnMeasurements) {
+        FeatureCollection fc = new FeatureCollection();
+        List<FeatureVector> featureVectors = saturnMeasurements.stream()
+            .map(saturnToFeatureVector)
+            .collect(Collectors.toCollection(ArrayList::new));
+        fc.setFeatures(featureVectors);
+        fc.setType(FeatureCollection.TYPESTRING);
+        return fc;
+    }
+    
+    public static Function<SaturnShot, FeatureVector> saturnToFeatureVector = c -> {
+        FeatureVector fv = new FeatureVector();
+        fv.getData().add(c.getX_mm());
+        fv.getData().add(c.getY_mm());
+        fv.getData().add(c.getZ_mm());
 
+        fv.getData().add(c.getPower());
+        fv.getData().add(c.getPd_0());
+        fv.getData().add(c.getPd_1());
+        fv.getData().add(c.getPd_2());
+        fv.getData().add(c.getPd_3());
+
+        fv.setLabel("Saturn Measurement");
+        HashMap<String, String> metaData = new HashMap<>();
+        metaData.put("timeMs", String.valueOf(c.getTimeMs()));
+        metaData.put("shutter", String.valueOf(c.isShutter()));
+        metaData.put("device", "EOS");
+        metaData.put("varName1", String.valueOf(c.getVarName1()));
+        fv.setMetaData(metaData);
+        fv.setEntityId(String.valueOf(c.getVarName1()));
+        return fv;
+    };
+    
     public static FeatureCollection convertCdcCsv(List<CdcCsv> cdcCsvList, boolean normalize) {
         long startTime = System.nanoTime();
         FeatureCollection fc = new FeatureCollection();

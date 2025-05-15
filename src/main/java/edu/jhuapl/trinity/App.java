@@ -13,7 +13,6 @@ import edu.jhuapl.trinity.javafx.events.EffectEvent;
 import edu.jhuapl.trinity.javafx.events.FullscreenEvent;
 import edu.jhuapl.trinity.javafx.events.MissionTimerXEvent;
 import edu.jhuapl.trinity.javafx.events.ZeroMQEvent;
-import edu.jhuapl.trinity.messages.RestAccessLayer;
 import edu.jhuapl.trinity.utils.Configuration;
 import javafx.animation.Animation;
 import javafx.animation.FadeTransition;
@@ -209,7 +208,6 @@ public class App extends Application {
     }
 
     private void intro() {
-//        Platform.runLater(() -> {
         intro = new Timeline(
             new KeyFrame(Duration.seconds(0.0), new KeyValue(mainNavMenu.opacityProperty(), 0.0)),
             new KeyFrame(Duration.seconds(0.1), e -> {
@@ -229,7 +227,6 @@ public class App extends Application {
             new KeyFrame(Duration.seconds(5.1), new KeyValue(mainNavMenu.opacityProperty(), 1.0))
         );
         intro.play();
-//        });
     }
 
     private void fadeOutConsole(long timeMS) {
@@ -259,11 +256,13 @@ public class App extends Application {
             stage.setFullScreen(!stage.isFullScreen());
         }
         //Terminate the app by entering an exit animation
-        if (e.isControlDown() && e.isShiftDown()
-            && e.getCode().equals(KeyCode.C)) {
+        if (e.isAltDown() && e.isControlDown() && e.getCode().equals(KeyCode.Q)) {
             shutdown(false);
         }
-        //@DEBUG SMP
+        if (e.isAltDown() && e.isControlDown() && e.getCode().equals(KeyCode.C)) {
+            stage.getScene().getRoot().fireEvent(
+                new ApplicationEvent(ApplicationEvent.SHOW_COCOVIEWER_PANE));
+        }
         if (e.isAltDown() && e.isControlDown() && e.getCode().equals(KeyCode.A)) {
             stage.getScene().getRoot().fireEvent(
                 new ApplicationEvent(ApplicationEvent.SHOW_WAVEFORM_PANE));
@@ -288,10 +287,6 @@ public class App extends Application {
         if (e.isAltDown() && e.isControlDown() && e.getCode().equals(KeyCode.H)) {
             stage.getScene().getRoot().fireEvent(
                 new ApplicationEvent(ApplicationEvent.SHOW_HYPERDRIVE_PANE));
-        }
-        if (e.isAltDown() && e.isControlDown() && e.getCode().equals(KeyCode.Q)) {
-            System.out.println("Requesting REST Is Alive...");
-            RestAccessLayer.requestRestIsAlive(stage.getScene());
         }
         if (e.isAltDown() && e.isControlDown() && e.getCode().equals(KeyCode.M)) {
             stage.getScene().getRoot().fireEvent(

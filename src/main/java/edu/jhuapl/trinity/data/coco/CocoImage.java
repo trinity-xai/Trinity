@@ -18,6 +18,7 @@ public class CocoImage {
     //        "license": 4,
     //        "coco_url": "http://images.cocodataset.org/val2017/000000242287.jpg",
     //        "flickr_url": "http://farm3.staticflickr.com/2626/4072194513_edb6acfb2b_z.jpg",
+    //        "path" : "/datasets/coco/000000242287.jpg"
     //        "width": 426,
     //        "height": 640,
     //        "file_name": "000000242287.jpg",
@@ -32,6 +33,7 @@ public class CocoImage {
     private String flickr_url;
     private int width;
     private int height;
+    private String path;
     private String file_name;
     private String date_captured;    
     //</editor-fold>    
@@ -122,6 +124,20 @@ public class CocoImage {
      */
     public void setHeight(int height) {
         this.height = height;
+    }
+
+    /**
+     * @return the path
+     */
+    public String getPath() {
+        return path;
+    }
+
+    /**
+     * @param path the path to set
+     */
+    public void setPath(String path) {
+        this.path = path;
     }
 
     /**

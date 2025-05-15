@@ -1,7 +1,11 @@
 package edu.jhuapl.trinity.javafx.components.listviews;
 
+import com.fasterxml.jackson.databind.JsonNode;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.node.JsonNodeType;
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
+import edu.jhuapl.trinity.utils.MessageUtils;
 import javafx.application.Platform;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
@@ -15,6 +19,7 @@ import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
@@ -22,7 +27,7 @@ import java.util.function.Function;
  * @author Sean Phillips
  */
 public class EmbeddingsTextListItem extends HBox {
-    public static double PREF_DIMLABEL_WIDTH = 150;
+    public static double PREF_DIMLABEL_WIDTH = 100;
     public static double PREF_FILELABEL_WIDTH = 250;
     public static int LARGEFILE_SPLIT_SIZE = 16384;
     public static AtomicInteger atomicID = new AtomicInteger();
@@ -55,7 +60,7 @@ public class EmbeddingsTextListItem extends HBox {
 
         labelTextField = new TextField();
         labelTextField.setEditable(true);
-        labelTextField.setPrefWidth(PREF_DIMLABEL_WIDTH);
+        labelTextField.setPrefWidth(PREF_FILELABEL_WIDTH);
         labelTextField.setOnAction(e -> featureVector.setLabel(labelTextField.getText()));
         labelTextField.textProperty().addListener(e -> featureVector.setLabel(labelTextField.getText()));
         dimensionsLabel = new Label(format.format(0));
@@ -154,29 +159,55 @@ public class EmbeddingsTextListItem extends HBox {
         return new EmbeddingsTextListItem(file, false);
     };
     public static Function<File, List<EmbeddingsTextListItem>> itemsSplitFromFile = file -> {
-        long total = file.length();
         List<EmbeddingsTextListItem> list = new ArrayList<>();
-
-        if (total <= LARGEFILE_SPLIT_SIZE) {
-            list.add(new EmbeddingsTextListItem(file, true));
-            return list;
-        }
         try {
             String fileString = Files.readString(file.toPath());
-            int len = fileString.length();
-            int currentStart = 0;
-            int currentEnd = LARGEFILE_SPLIT_SIZE;
-            while (currentStart <= len) {
-                if (currentEnd > len)
-                    currentEnd = len;
-                String sub = fileString.substring(currentStart, currentEnd);
-                EmbeddingsTextListItem item = new EmbeddingsTextListItem(file, false);
-                item.contents = sub;
-                item.getFeatureVector().setText(sub);
-                item.setFeatureVectorLabel(file.getName());
-                list.add(item);
-                currentStart += LARGEFILE_SPLIT_SIZE;
-                currentEnd += LARGEFILE_SPLIT_SIZE;
+            //if JSON attempt intelligent object wise chunking
+            if(MessageUtils.probablyJSON(fileString)){
+                final ObjectMapper mapper = new ObjectMapper();
+                JsonNode jsonNode = mapper.readTree(fileString);
+                if(jsonNode.getNodeType() == JsonNodeType.ARRAY) {
+                    for (final JsonNode objNode : jsonNode) {
+                        //System.out.println(objNode);
+                        EmbeddingsTextListItem item = new EmbeddingsTextListItem(file, false);
+                        item.contents = objNode.toPrettyString();
+                        item.getFeatureVector().setText(item.contents);
+                        item.setFeatureVectorLabel(file.getName());
+                        objNode.fields().forEachRemaining(obj -> {
+                            String lower = obj.getKey().toLowerCase();
+                            //last found matching field will be used
+                            if(lower.contains("name") || lower.contains("label")) { 
+                                item.setFeatureVectorLabel(obj.getValue().asText());
+                            }
+                        });
+                        list.add(item);                         
+                    }
+                }
+               
+            } else {
+                //use naive bruteforce chunking
+                long total = file.length();
+
+                if (total <= LARGEFILE_SPLIT_SIZE) {
+                    list.add(new EmbeddingsTextListItem(file, true));
+                    return list;
+                }
+                //String fileString = Files.readString(file.toPath());
+                int len = fileString.length();
+                int currentStart = 0;
+                int currentEnd = LARGEFILE_SPLIT_SIZE;
+                while (currentStart <= len) {
+                    if (currentEnd > len)
+                        currentEnd = len;
+                    String sub = fileString.substring(currentStart, currentEnd);
+                    EmbeddingsTextListItem item = new EmbeddingsTextListItem(file, false);
+                    item.contents = sub;
+                    item.getFeatureVector().setText(sub);
+                    item.setFeatureVectorLabel(file.getName());
+                    list.add(item);
+                    currentStart += LARGEFILE_SPLIT_SIZE;
+                    currentEnd += LARGEFILE_SPLIT_SIZE;
+                }
             }
         } catch (Exception ex) {
         }
