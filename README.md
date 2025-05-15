@@ -3,6 +3,8 @@
 [![Maven Build](https://github.com/Birdasaur/Trinity/actions/workflows/maven.yml/badge.svg)](https://github.com/Birdasaur/Trinity/actions/workflows/maven.yml)
 [![Gradle Build](https://github.com/Birdasaur/Trinity/actions/workflows/gradle.yml/badge.svg)](https://github.com/Birdasaur/Trinity/actions/workflows/gradle.yml)
 
+[Trinity YouTube Playlist](https://youtube.com/playlist?list=PLrMR7Y6k6mkDVfYpqrqvaxoti4E2tJXhW&feature=shared)
+
 ## Explainable AI (XAI) Analysis and Visualization tool ##
 
 ![Trinity City](/media/TrinityCity.png)
@@ -74,7 +76,7 @@ Discovered Clusters are automatically converted to 3D TriangleMeshes using a Con
 **_Special Shoutout and Acknowledgement to clust4j_**
 
 Most Clustering Algorithms (with the exception of the Multivariate Gaussian Mixture Models) used 
-by Trinity XAI are derived from [the brilliant clust4j project](https://github.com/tgsmith61591/clust4j).   
+by Trinity XAI are derived from [the brilliant clust4j project](/github.com/tgsmith61591/clust4j).   
 At the time of writing clust4j was not available as 3rd party library nor was it module compatible.
 The Trinity XAI org decided to import the Apache 2.0 version of clust4j, make some changes to be module compatible
 and fixed a few deprecated calls (mostly in unit tests). It has functioned perfectly and we thank the author.
