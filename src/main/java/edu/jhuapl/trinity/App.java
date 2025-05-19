@@ -282,7 +282,7 @@ public class App extends Application {
         }
         if (e.isAltDown() && e.isControlDown() && e.getCode().equals(KeyCode.I)) {
             stage.getScene().getRoot().fireEvent(
-                new ApplicationEvent(ApplicationEvent.SHOW_IMAGE_INSPECTION));
+                new ApplicationEvent(ApplicationEvent.SHOW_IMAGE_INSPECTION, true));
         }
         if (e.isAltDown() && e.isControlDown() && e.getCode().equals(KeyCode.H)) {
             stage.getScene().getRoot().fireEvent(
