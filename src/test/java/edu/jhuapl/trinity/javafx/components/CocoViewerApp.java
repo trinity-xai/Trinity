@@ -34,14 +34,14 @@ import javafx.stage.Stage;
 
 import java.io.File;
 import java.io.IOException;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Sean Phillips
  */
 public class CocoViewerApp extends Application {
-
+    private static final Logger LOG = LoggerFactory.getLogger(CocoViewerApp.class);
     CocoAnnotationPane cocoAnnotationPane;
     TextField basePathTextField;
     CocoObject cocoObject;
@@ -75,12 +75,11 @@ public class CocoViewerApp extends Application {
                 final File file = db.getFiles().get(0);
                 try {
                     if (CocoAnnotationFile.isCocoAnnotationFile(file)) {
-                        System.out.println("Detected CocoAnnotation File...");
                         loadCocoFile(file);
                         controls.populateControls(cocoObject);
                     }
                 } catch (Exception ex) {
-                    Logger.getLogger(CocoViewerApp.class.getName()).log(Level.SEVERE, null, ex);
+                    LOG.error("Error while loading COCO File: " + ex.getMessage());
                 }
             }
         });
@@ -128,14 +127,16 @@ public class CocoViewerApp extends Application {
             BBoxOverlay bbox = (BBoxOverlay) e.object;
             if (null != bbox) {
                 cocoAnnotationPane.addCocoBBox(bbox);
-//                transformOverlays();
+                //@TODO SMP Got to get transforms working when view is stretched.
+                //transformOverlays();
             }
         });
         scene.addEventHandler(ImageEvent.SELECT_COCO_SEGMENTATION, e -> {
             SegmentationOverlay seg = (SegmentationOverlay) e.object;
             if (null != seg) {
                 cocoAnnotationPane.addSegmentationOverlay(seg);
-//                transformOverlays();
+                //@TODO SMP Got to get transforms working when view is stretched.
+                //transformOverlays();
             }
         });
 
@@ -159,9 +160,10 @@ public class CocoViewerApp extends Application {
         try {
             CocoAnnotationFile cocoFile = new CocoAnnotationFile(file.getPath(), true);
             cocoObject = cocoFile.cocoObject;
-            System.out.println("Total Annotations in object: " + cocoFile.cocoObject.getAnnotations().size());
+            //@DEBUG SMP
+            //System.out.println("Total Annotations in COCO object: " + cocoFile.cocoObject.getAnnotations().size());
         } catch (IOException ex) {
-            Logger.getLogger(CocoViewerApp.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error("Error loading COCO file: " + ex);
         }
     }
 

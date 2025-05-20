@@ -13,13 +13,14 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Sean Phillips
  */
 public class SaturnFile extends File implements Transferable {
+    private static final Logger LOG = LoggerFactory.getLogger(SaturnFile.class);
     public static String VARCOL = "VarName1";
     public static String TIMECOL = "Time_ms";
     public static String SHUTTERCOL = "Shutter";
@@ -79,28 +80,19 @@ public class SaturnFile extends File implements Transferable {
     public List<SaturnShot> parseContent() throws IOException {
         long fileChannelCount = 0;
         try {
-            System.out.println("Parallel FileChannel sample count... ");
+            LOG.info("Parallel FileChannel sample count... ");
             long startTime = System.nanoTime();
             char charizar = '\n';
             fileChannelCount = Utils.charCount(this, charizar);
-            Utils.printTotalTime(startTime);
-            System.out.println("Number of lines: " + fileChannelCount);
+            Utils.logTotalTime(startTime);
+            LOG.info("Number of lines: " + fileChannelCount);
         } catch (InterruptedException ex) {
-            Logger.getLogger(SaturnFile.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error("Parsing Saturn File Failed: " + ex.getMessage());
         }
-////////////
-        System.out.println("Parsing with parallelParse()... ");
+        LOG.info("Parsing with parallelParse()... ");
         long startTime = System.nanoTime();
         List<SaturnShot> shotList = parallelParse(this);
-        Utils.printTotalTime(startTime);
-
-//        System.out.println("Parsing with Files.lines()... ");
-//        startTime = System.nanoTime();
-//        List<SaturnShot> shotList = Files.lines(this.toPath())
-//            .skip(1).map(SaturnShot.csvToSaturnShot)
-//            .collect(Collectors.toCollection(ArrayList::new)); //makes the new list mutable
-//        Utils.printTotalTime(startTime);
-
+        Utils.logTotalTime(startTime);
         return shotList;
     }
 
@@ -130,7 +122,7 @@ public class SaturnFile extends File implements Transferable {
                 shotList.addAll(runnable.getMeasurements());
             }
         } catch (IOException | InterruptedException ex) {
-            Logger.getLogger(SaturnFile.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error("Encountered IO error while parsing Saturn file in parallel: " + ex.getMessage());
         }
         return shotList;
     }

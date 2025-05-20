@@ -38,13 +38,14 @@ import java.io.IOException;
 import java.util.ArrayList;
 import java.util.DoubleSummaryStatistics;
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Sean Phillips
  */
 public class SaturnTestApp extends Application {
+    private static final Logger LOG = LoggerFactory.getLogger(SaturnTestApp.class);
 
     private Color fillColor = Color.ALICEBLUE;
     private double canvasSize = 1000;
@@ -170,14 +171,14 @@ public class SaturnTestApp extends Application {
                 final File file = db.getFiles().get(0);
                 try {
                     if (SaturnFile.isSaturnFile(file)) {
-                        System.out.println("Detected Saturn File...");
+                        LOG.info("Detected Saturn File...");
                         loadSaturnFile(file);
                         long startTime = System.nanoTime();
                         FeatureCollection fc = DataUtils.convertSaturnMeasurements(saturnMeasurements);
-                        System.out.println("Saturn Measurements conversion took: " + Utils.totalTimeString(startTime));
+                        LOG.info("Saturn Measurements conversion took: " + Utils.totalTimeString(startTime));
                     }
                 } catch (IOException ex) {
-                    Logger.getLogger(SaturnTestApp.class.getName()).log(Level.SEVERE, null, ex);
+                    LOG.error("Error while processing dropped Saturn file: " + ex.getMessage());
                 }
             }
         });
@@ -204,24 +205,28 @@ public class SaturnTestApp extends Application {
                 DoubleSummaryStatistics x_mmStats = saturnMeasurements.stream()
                     .mapToDouble(SaturnShot::getX_mm)
                     .summaryStatistics();
-                System.out.println("X_MM Stats: " + x_mmStats.toString());
+                //@DEBUG SMP
+                //System.out.println("X_MM Stats: " + x_mmStats.toString());
 
                 DoubleSummaryStatistics y_mmStats = saturnMeasurements.stream()
                     .mapToDouble(SaturnShot::getY_mm)
                     .summaryStatistics();
-                System.out.println("Y_MM Stats: " + y_mmStats.toString());
+                //@DEBUG SMP
+                //System.out.println("Y_MM Stats: " + y_mmStats.toString());
 
                 DoubleSummaryStatistics powerStats = saturnMeasurements.stream()
                     .mapToDouble(SaturnShot::getPower)
                     .summaryStatistics();
-                System.out.println("Power Stats: " + powerStats.toString());
+                //@DEBUG SMP
+                //System.out.println("Power Stats: " + powerStats.toString());
 
                 DoubleSummaryStatistics pd0Stats = saturnMeasurements.stream()
                     .mapToDouble(SaturnShot::getPd_0)
                     .summaryStatistics();
-                System.out.println("pd0Stats: " + pd0Stats.toString());
+                //@DEBUG SMP
+                //System.out.println("pd0Stats: " + pd0Stats.toString());
 
-                System.out.println("normalizing values...");
+                LOG.info("normalizing values...");
                 long startTime = System.nanoTime();
                 saturnMeasurements.parallelStream().forEach(s -> {
                     s.normalizedValue = DataUtils.normalize(s.getPd_0(), pd0Stats.getMin(), pd0Stats.getMax());
@@ -229,15 +234,15 @@ public class SaturnTestApp extends Application {
                     s.normalizedX = saturnLayerCanvas.getWidth() * DataUtils.normalize(s.getX_mm(), x_mmStats.getMin(), x_mmStats.getMax());
                     s.normalizedY = saturnLayerCanvas.getHeight() * DataUtils.normalize(s.getY_mm(), y_mmStats.getMin(), y_mmStats.getMax());
                 });
-                Utils.printTotalTime(startTime);
+                Utils.logTotalTime(startTime);
 
                 int chunkSize = 20000;
                 int numberOfChunks = saturnMeasurements.size() / chunkSize;
-                System.out.println("Starting Canvas render...");
+                LOG.info("Starting Canvas render...");
                 startTime = System.nanoTime();
                 for (int i = 0; i < numberOfChunks; i++) {
                     if (!renderingProperty.get()) {
-                        System.out.println("Rendering halted.");
+                        LOG.info("Rendering halted.");
                         return null;
                     }
                     int start = i * chunkSize;
@@ -250,11 +255,11 @@ public class SaturnTestApp extends Application {
                     try {
                         Thread.sleep(17);
                     } catch (InterruptedException ex) {
-                        Logger.getLogger(SaturnTestApp.class.getName()).log(Level.SEVERE, null, ex);
+                        LOG.error("Rendering loop sleep interrupted: " + ex.getMessage());
                     }
                 }
-                Utils.printTotalTime(startTime);
-                System.out.println("Finished Rendering.");
+                Utils.logTotalTime(startTime);
+                LOG.info("Finished Rendering.");
                 return null;
             }
         };
@@ -272,11 +277,12 @@ public class SaturnTestApp extends Application {
             saturnMeasurements = saturnFile.parseContent();
             dataPointsTextField.setText(String.valueOf(saturnMeasurements.size()));
             hasDataProperty.set(true);
+            //@DEBUG SMP
 //            System.out.println("Total Measurements: " + saturnFile.shots.size());
 //            System.out.println("Shutter==1 Count: " +
 //                saturnFile.shots.stream().filter(s -> s.isShutter()).count());
         } catch (IOException ex) {
-            Logger.getLogger(SaturnTestApp.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error("Error while trying to load Saturn file: " +  ex);
         }
     }
 
