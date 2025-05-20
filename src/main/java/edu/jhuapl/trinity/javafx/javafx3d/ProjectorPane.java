@@ -282,7 +282,7 @@ public class ProjectorPane extends StackPane {
                             ProjectorNode pn = new ProjectorNode(image, ucForMe, acDC);
                             projectorNodes.add(pn);
                         } catch (MalformedURLException ex) {
-                            LOG.error(ex.getMessage());
+                            LOG.error(null, ex);
                         }
                     }
                 }
@@ -406,7 +406,7 @@ public class ProjectorPane extends StackPane {
                             return mapper.readValue(messageBody, AnalysisConfig.class);
                         }
                     } catch (IOException ex) {
-                        LOG.error(ex.getMessage());
+                        LOG.error(null, ex);
                     }
                 }
             }
@@ -428,7 +428,7 @@ public class ProjectorPane extends StackPane {
                         return mapper.readValue(messageBody, UmapConfig.class);
                     }
                 } catch (IOException ex) {
-                    LOG.error(ex.getMessage());
+                    LOG.error(null, ex);
                 }
             }
         }

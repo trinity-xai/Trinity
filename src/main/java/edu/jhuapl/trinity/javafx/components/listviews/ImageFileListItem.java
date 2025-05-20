@@ -38,7 +38,7 @@ public class ImageFileListItem extends HBox {
             try {
                 imageView = new ImageView(ResourceUtils.loadImageFile(file));
             } catch (IOException ex) {
-                LOG.error(ex.getMessage());
+                LOG.error(null, ex);
                 imageView = new ImageView(DEFAULT_ICON);
             }
         } else {

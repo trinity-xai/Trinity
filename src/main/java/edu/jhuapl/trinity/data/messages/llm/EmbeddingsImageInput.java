@@ -84,9 +84,9 @@ public class EmbeddingsImageInput {
             input.setModel("openai/clip-vit-large-patch14");
             input.setUser("string");
         } catch (JsonProcessingException ex) {
-            LOG.error(ex.getMessage());
+            LOG.error(null, ex);
         } catch (IOException ex) {
-            LOG.error(ex.getMessage());
+            LOG.error(null, ex);
         }
         return input;
     };

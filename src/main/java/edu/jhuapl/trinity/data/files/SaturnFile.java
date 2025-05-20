@@ -3,6 +3,8 @@ package edu.jhuapl.trinity.data.files;
 import edu.jhuapl.trinity.data.SaturnShot;
 import edu.jhuapl.trinity.utils.Utils;
 import edu.jhuapl.trinity.utils.loaders.SaturnParserThread;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
@@ -13,8 +15,6 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * @author Sean Phillips
@@ -87,7 +87,7 @@ public class SaturnFile extends File implements Transferable {
             Utils.logTotalTime(startTime);
             LOG.info("Number of lines: " + fileChannelCount);
         } catch (InterruptedException ex) {
-            LOG.error("Parsing Saturn File Failed: " + ex.getMessage());
+            LOG.error("Parsing Saturn File Failed: {}", ex.getMessage(), ex);
         }
         LOG.info("Parsing with parallelParse()... ");
         long startTime = System.nanoTime();
@@ -122,7 +122,7 @@ public class SaturnFile extends File implements Transferable {
                 shotList.addAll(runnable.getMeasurements());
             }
         } catch (IOException | InterruptedException ex) {
-            LOG.error("Encountered IO error while parsing Saturn file in parallel: " + ex.getMessage());
+            LOG.error("Encountered IO error while parsing Saturn file in parallel: {}", ex.getMessage(), ex);
         }
         return shotList;
     }

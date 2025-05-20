@@ -66,7 +66,7 @@ public class ChatModelsAliveCallback extends RestConsumer {
                     new RestEvent(RestEvent.CHAT_MODELS_ALIVE, chatModelsAliveReesponse));
             });
         } catch (Exception ex) {
-            LOG.error(ex.getMessage());
+            LOG.error(null, ex);
         }
     }
 }

@@ -1102,7 +1102,7 @@ public class HyperdrivePane extends LitPathPane {
                     baseImageView.setImage(baseImage);
                 }
             } catch (IOException ex) {
-                LOG.error(ex.getMessage());
+                LOG.error(null, ex);
             }
         });
         getStyleClass().add("hyperdrive-pane");
@@ -1357,7 +1357,7 @@ public class HyperdrivePane extends LitPathPane {
                             input, scene, inputIDs, rn);
                         outstandingRequests.put(rn, STATUS.REQUESTED);
                     } catch (JsonProcessingException ex) {
-                        LOG.error(ex.getMessage());
+                        LOG.error(null, ex);
                     }
                     completed++;
                     if (completed % updatePercent == 0) {

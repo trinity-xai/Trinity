@@ -789,7 +789,7 @@ public class Projections3DPane extends StackPane implements
                         }
                         e.consume();
                     } catch (IOException ex) {
-                        LOG.error(ex.getMessage());
+                        LOG.error(null, ex);
                     }
                 }
             }

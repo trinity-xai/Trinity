@@ -32,14 +32,14 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.DoubleSummaryStatistics;
 import java.util.List;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * @author Sean Phillips
@@ -178,7 +178,7 @@ public class SaturnTestApp extends Application {
                         LOG.info("Saturn Measurements conversion took: " + Utils.totalTimeString(startTime));
                     }
                 } catch (IOException ex) {
-                    LOG.error("Error while processing dropped Saturn file: " + ex.getMessage());
+                    LOG.error("Error while processing dropped Saturn file: {}", ex.getMessage(), ex);
                 }
             }
         });
@@ -255,7 +255,7 @@ public class SaturnTestApp extends Application {
                     try {
                         Thread.sleep(17);
                     } catch (InterruptedException ex) {
-                        LOG.error("Rendering loop sleep interrupted: " + ex.getMessage());
+                        LOG.error("Rendering loop sleep interrupted: {}", ex.getMessage(), ex);
                     }
                 }
                 Utils.logTotalTime(startTime);
@@ -282,7 +282,7 @@ public class SaturnTestApp extends Application {
 //            System.out.println("Shutter==1 Count: " +
 //                saturnFile.shots.stream().filter(s -> s.isShutter()).count());
         } catch (IOException ex) {
-            LOG.error("Error while trying to load Saturn file: " +  ex);
+            LOG.error("Error while trying to load Saturn file: " + ex);
         }
     }
 

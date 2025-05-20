@@ -6,21 +6,20 @@ import edu.jhuapl.trinity.javafx.events.ErrorEvent;
 import edu.jhuapl.trinity.javafx.events.RestEvent;
 import javafx.application.Platform;
 import javafx.scene.Scene;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 /**
  * @author Sean Phillips
  */
 public class EmbeddingsImageCallback extends RestConsumer {
+    private static final Logger LOG = LoggerFactory.getLogger(EmbeddingsImageCallback.class);
     List<Integer> inputIDs;
     int requestNumber;
 
     public enum STATUS {REQUESTED, SUCCEEDED, FAILED}
-
-    ;
 
     public EmbeddingsImageCallback(Scene scene, List<Integer> inputIDs, int requestNumber) {
         super(scene);
@@ -50,7 +49,7 @@ public class EmbeddingsImageCallback extends RestConsumer {
                 scene.getRoot().fireEvent(new RestEvent(RestEvent.NEW_EMBEDDINGS_IMAGE, output, inputIDs));
             });
         } catch (JsonProcessingException ex) {
-            Logger.getLogger(EmbeddingsImageCallback.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(null, ex);
         }
     }
 }

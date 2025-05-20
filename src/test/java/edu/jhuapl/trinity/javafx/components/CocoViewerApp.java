@@ -31,11 +31,11 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * @author Sean Phillips
@@ -79,7 +79,7 @@ public class CocoViewerApp extends Application {
                         controls.populateControls(cocoObject);
                     }
                 } catch (Exception ex) {
-                    LOG.error("Error while loading COCO File: " + ex.getMessage());
+                    LOG.error("Error while loading COCO File: {}", ex.getMessage(), ex);
                 }
             }
         });
