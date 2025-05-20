@@ -13,7 +13,7 @@ public class SaturnShot {
     //Example Header and single csv line
     //VarName1,Time_ms,Shutter,X_mm,Y_mm,Z_mm,Power,PD_0,PD_1,PD_2,PD_3
     //20808943,115605.238888889,1,140.648198254215,205.063043298452,3.2,6.248054042,0.000562797779999902,0.0171936016,-0.00541654708,-0.00408584207999962
-    
+
     private long varName1;
     private double timeMs;
     private boolean shutter;
@@ -25,8 +25,10 @@ public class SaturnShot {
     private double pd_1;
     private double pd_2;
     private double pd_3;
-    
-    public SaturnShot() { }
+
+    public SaturnShot() {
+    }
+
     public double normalizedX = 0;
     public double normalizedY = 0;
     public double normalizedValue = 0;
@@ -36,23 +38,24 @@ public class SaturnShot {
         String[] tokens = s.split(",");
         int tokenIndex = 0;
 //        try {
-            shot.setVarName1(Long.parseLong(tokens[tokenIndex++]));
-            shot.setTimeMs(Double.parseDouble(tokens[tokenIndex++]));
-            shot.setShutter(Integer.parseInt(tokens[tokenIndex++])!= 0);
-            shot.setX_mm(Double.parseDouble(tokens[tokenIndex++]));
-            shot.setY_mm(Double.parseDouble(tokens[tokenIndex++]));
-            shot.setZ_mm(Double.parseDouble(tokens[tokenIndex++]));
-            shot.setPower(Double.parseDouble(tokens[tokenIndex++]));
-            shot.setPd_0(Double.parseDouble(tokens[tokenIndex++]));
-            shot.setPd_1(Double.parseDouble(tokens[tokenIndex++]));
-            shot.setPd_2(Double.parseDouble(tokens[tokenIndex++]));
-            shot.setPd_3(Double.parseDouble(tokens[tokenIndex]));
+        shot.setVarName1(Long.parseLong(tokens[tokenIndex++]));
+        shot.setTimeMs(Double.parseDouble(tokens[tokenIndex++]));
+        shot.setShutter(Integer.parseInt(tokens[tokenIndex++]) != 0);
+        shot.setX_mm(Double.parseDouble(tokens[tokenIndex++]));
+        shot.setY_mm(Double.parseDouble(tokens[tokenIndex++]));
+        shot.setZ_mm(Double.parseDouble(tokens[tokenIndex++]));
+        shot.setPower(Double.parseDouble(tokens[tokenIndex++]));
+        shot.setPd_0(Double.parseDouble(tokens[tokenIndex++]));
+        shot.setPd_1(Double.parseDouble(tokens[tokenIndex++]));
+        shot.setPd_2(Double.parseDouble(tokens[tokenIndex++]));
+        shot.setPd_3(Double.parseDouble(tokens[tokenIndex]));
 
 //        } catch (NumberFormatException ex) {
 //            LOG.error("Exception", ex);
 //        }
         return shot;
     };
+
     /**
      * @return the varName1
      */

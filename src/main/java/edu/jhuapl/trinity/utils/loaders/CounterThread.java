@@ -3,7 +3,6 @@ package edu.jhuapl.trinity.utils.loaders;
 import java.nio.MappedByteBuffer;
 
 /**
- *
  * @author Sean Phillips
  */
 public class CounterThread extends Thread {
@@ -20,7 +19,7 @@ public class CounterThread extends Thread {
     @Override
     public void run() {
         while (buffer.hasRemaining()) {
-            if (buffer.get() == letter){
+            if (buffer.get() == letter) {
                 count++;
             }
         }

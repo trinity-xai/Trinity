@@ -10,7 +10,6 @@ import java.awt.datatransfer.UnsupportedFlavorException;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
-import java.util.Optional;
 
 /**
  * @author Sean Phillips
@@ -52,8 +51,8 @@ public class GaussianMixtureCollectionFile extends File implements Transferable 
      * @throws java.io.IOException
      */
     public static boolean isGaussianMixtureCollectionFile(File file) throws IOException {
-        return Files.lines(file.toPath()).anyMatch(line -> 
-            line.contains(FILE_DESC1) || line.contains(FILE_DESC2) || 
+        return Files.lines(file.toPath()).anyMatch(line ->
+            line.contains(FILE_DESC1) || line.contains(FILE_DESC2) ||
                 (line.contains("type") && line.contains(GaussianMixtureCollection.TYPESTRING)));
     }
 

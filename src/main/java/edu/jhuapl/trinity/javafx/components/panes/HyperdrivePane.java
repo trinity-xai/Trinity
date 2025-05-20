@@ -225,7 +225,7 @@ public class HyperdrivePane extends LitPathPane {
             new ContextMenu(selectAllTextMenuItem,
                 textEmbbedingsTextLandmarkCaptionItem, imageEmbeddingsImageLandmarkCaptionItem,
 //                setCaptionItem, requestCaptionItem,
-//                chooseCaptionItem, 
+//                chooseCaptionItem,
                 clearTextRequestsItem);
         textEmbeddingsListView.setContextMenu(textEmbeddingsContextMenu);
 
@@ -1143,6 +1143,7 @@ public class HyperdrivePane extends LitPathPane {
         t.setDaemon(true);
         t.start();
     }
+
     public void requestTextLandmarkSimilarityTask(
         List<EmbeddingsTextListItem> items, List<FeatureVector> landmarkFeatures) {
         Task requestTask = new Task() {
@@ -1183,6 +1184,7 @@ public class HyperdrivePane extends LitPathPane {
         t.setDaemon(true);
         t.start();
     }
+
     public void requestLandmarkSimilarityTask(
         List<EmbeddingsImageListItem> items, List<FeatureVector> landmarkFeatures) {
         Task requestTask = new Task() {

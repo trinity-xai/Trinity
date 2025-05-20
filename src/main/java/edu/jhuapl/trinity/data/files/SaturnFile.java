@@ -1,5 +1,9 @@
 package edu.jhuapl.trinity.data.files;
 
+import edu.jhuapl.trinity.data.SaturnShot;
+import edu.jhuapl.trinity.utils.Utils;
+import edu.jhuapl.trinity.utils.loaders.SaturnParserThread;
+
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
@@ -9,9 +13,6 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Optional;
-import edu.jhuapl.trinity.data.SaturnShot;
-import edu.jhuapl.trinity.utils.Utils;
-import edu.jhuapl.trinity.utils.loaders.SaturnParserThread;
 import java.util.logging.Level;
 import java.util.logging.Logger;
 
@@ -28,7 +29,7 @@ public class SaturnFile extends File implements Transferable {
     //Example Header and single csv line
     //VarName1,Time_ms,Shutter,X_mm,Y_mm,Z_mm,Power,PD_0,PD_1,PD_2,PD_3
     //20808943,115605.238888889,1,140.648198254215,205.063043298452,3.2,6.248054042,0.000562797779999902,0.0171936016,-0.00541654708,-0.00408584207999962
-    
+
     /**
      * Constructor that extends File super constructor
      *
@@ -83,11 +84,11 @@ public class SaturnFile extends File implements Transferable {
             char charizar = '\n';
             fileChannelCount = Utils.charCount(this, charizar);
             Utils.printTotalTime(startTime);
-            System.out.println("Number of lines: " + fileChannelCount);        
+            System.out.println("Number of lines: " + fileChannelCount);
         } catch (InterruptedException ex) {
             Logger.getLogger(SaturnFile.class.getName()).log(Level.SEVERE, null, ex);
         }
-////////////        
+////////////
         System.out.println("Parsing with parallelParse()... ");
         long startTime = System.nanoTime();
         List<SaturnShot> shotList = parallelParse(this);
@@ -99,17 +100,17 @@ public class SaturnFile extends File implements Transferable {
 //            .skip(1).map(SaturnShot.csvToSaturnShot)
 //            .collect(Collectors.toCollection(ArrayList::new)); //makes the new list mutable
 //        Utils.printTotalTime(startTime);
-        
+
         return shotList;
     }
 
     public static List<SaturnShot> parallelParse(File file) {
         List<SaturnShot> shotList = new ArrayList<>();
-        
+
         try {
             List<String> lines = Files.lines(file.toPath()).skip(1).toList();
             int numberOfThreads = Runtime.getRuntime().availableProcessors();
-            int chunkSize = lines.size() / numberOfThreads; 
+            int chunkSize = lines.size() / numberOfThreads;
             //@DEBUG SMP
             //System.out.println("Using chunkSize " + chunkSize + " with " + numberOfThreads + " threads.");
             List<Thread> threads = new ArrayList<>(numberOfThreads);
@@ -117,9 +118,9 @@ public class SaturnFile extends File implements Transferable {
 
             for (int i = 0; i < numberOfThreads; i++) {
                 int start = i * chunkSize;
-                SaturnParserThread runnable = new SaturnParserThread(lines.subList(start, start+chunkSize));
+                SaturnParserThread runnable = new SaturnParserThread(lines.subList(start, start + chunkSize));
                 runnables.add(runnable);
-                Thread counterThread =  Thread.startVirtualThread(runnable);
+                Thread counterThread = Thread.startVirtualThread(runnable);
                 threads.add(counterThread);
             }
             for (Thread thread : threads) {
@@ -133,7 +134,7 @@ public class SaturnFile extends File implements Transferable {
         }
         return shotList;
     }
-    
+
     /**
      * Writes out the content of this File at the location
      * specified via this object's constructor.

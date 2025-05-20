@@ -192,6 +192,7 @@ public enum Utils {
             TimeUnit.MILLISECONDS.toSeconds(millis) % TimeUnit.MINUTES.toSeconds(1),
             TimeUnit.MILLISECONDS.toMillis(millis) % TimeUnit.SECONDS.toMillis(1));
     }
+
     //fun parallel FileChannel way to count occurrences such as new line
     public static long charCount(File inputFile, char letter) throws IOException, InterruptedException {
         FileChannel fileChannel = FileChannel.open(inputFile.toPath(), StandardOpenOption.READ);
@@ -206,7 +207,7 @@ public enum Utils {
             MappedByteBuffer buffer = fileChannel.map(FileChannel.MapMode.READ_ONLY, start, chunkSize);
             CounterThread runnable = new CounterThread(buffer, (byte) letter);
             runnables.add(runnable);
-            Thread counterThread =  Thread.startVirtualThread(runnable);
+            Thread counterThread = Thread.startVirtualThread(runnable);
             threads.add(counterThread);
         }
         for (Thread thread : threads) {
@@ -214,10 +215,11 @@ public enum Utils {
         }
         long result = 0L;
         for (CounterThread runnable : runnables) {
-            result+=runnable.count();
+            result += runnable.count();
         }
         return result;
-    }    
+    }
+
     //non parallel old school way to count lines.
     public static long getFileLineCount(File file) throws IOException {
         long count = -1;

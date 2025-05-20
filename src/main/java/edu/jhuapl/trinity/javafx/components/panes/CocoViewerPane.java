@@ -12,29 +12,29 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
+import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextField;
 import javafx.scene.image.Image;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import javafx.stage.DirectoryChooser;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import javafx.scene.control.Label;
-import javafx.scene.control.TextField;
-import javafx.scene.layout.BackgroundFill;
-import javafx.scene.layout.CornerRadii;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.VBox;
-import javafx.stage.DirectoryChooser;
 
 /**
  * @author Sean Phillips
@@ -54,7 +54,7 @@ public class CocoViewerPane extends LitPathPane {
     Background transBack = new Background(new BackgroundFill(
         Color.TRANSPARENT, CornerRadii.EMPTY, Insets.EMPTY));
 
-    
+
     private static BorderPane createContent() {
         BorderPane bpOilSpill = new BorderPane();
         return bpOilSpill;
@@ -69,31 +69,31 @@ public class CocoViewerPane extends LitPathPane {
         centerStack = new StackPane();
         centerStack.setAlignment(Pos.CENTER);
         borderPane.setCenter(centerStack);
-        
+
         cocoAnnotationPane = new CocoAnnotationPane();
         controls = new CocoAnnotationControlBox();
         scrollPane = new ScrollPane(controls);
         // hide scrollpane scrollbars
         scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-        scrollPane.setPadding(Insets.EMPTY); 
+        scrollPane.setPadding(Insets.EMPTY);
         scrollPane.setPannable(true);
-        
-        controls.heightProperty().addListener(cl-> {
+
+        controls.heightProperty().addListener(cl -> {
             scrollPane.setVvalue(scrollPane.getVmax());
-        });        
+        });
         borderPane.setLeft(scrollPane);
         basePathTextField = new TextField("");
-        controls.imageBasePathProperty.bind(basePathTextField.textProperty());        
+        controls.imageBasePathProperty.bind(basePathTextField.textProperty());
         Button browseButton = new Button("Browse");
         browseButton.setOnAction(e -> {
             DirectoryChooser dc = new DirectoryChooser();
             File f = new File(basePathTextField.getText());
-            if(f.isDirectory())
+            if (f.isDirectory())
                 dc.setInitialDirectory(f);
             dc.setTitle("Browse to imagery base path...");
             File dir = dc.showDialog(null);
-            if(null != dir && dir.isDirectory()) {
+            if (null != dir && dir.isDirectory()) {
                 basePathTextField.setText(dir.getPath());
             }
         });
@@ -101,7 +101,7 @@ public class CocoViewerPane extends LitPathPane {
         basePathHBox.setAlignment(Pos.CENTER_LEFT);
         HBox.setHgrow(basePathTextField, Priority.ALWAYS);
         basePathTextField.setPrefHeight(40);
-        VBox basePathVBox = new VBox(5, 
+        VBox basePathVBox = new VBox(5,
             new Label("Imagery Base Path"), basePathHBox);
         basePathVBox.setPadding(new Insets(5));
         borderPane.setTop(basePathVBox);
@@ -115,31 +115,31 @@ public class CocoViewerPane extends LitPathPane {
         scrollPane.setPrefSize(512, 512);
         centerStack.getChildren().add(scrollPane);
 
-        scene.addEventHandler(ImageEvent.CLEAR_COCO_ANNOTATIONS, e-> {
+        scene.addEventHandler(ImageEvent.CLEAR_COCO_ANNOTATIONS, e -> {
             cocoAnnotationPane.clearAnnotations();
         });
-        scene.addEventHandler(ImageEvent.SELECT_COCO_BBOX, e-> {
+        scene.addEventHandler(ImageEvent.SELECT_COCO_BBOX, e -> {
             BBoxOverlay bbox = (BBoxOverlay) e.object;
-            if(null != bbox) {
+            if (null != bbox) {
                 cocoAnnotationPane.addCocoBBox(bbox);
 //                transformOverlays();
             }
         });
-        scene.addEventHandler(ImageEvent.SELECT_COCO_SEGMENTATION, e-> {
+        scene.addEventHandler(ImageEvent.SELECT_COCO_SEGMENTATION, e -> {
             SegmentationOverlay seg = (SegmentationOverlay) e.object;
-            if(null != seg) {
+            if (null != seg) {
                 cocoAnnotationPane.addSegmentationOverlay(seg);
 //                transformOverlays();
             }
         });
-        
-        scene.addEventHandler(ImageEvent.SELECT_COCO_IMAGE, e-> {
+
+        scene.addEventHandler(ImageEvent.SELECT_COCO_IMAGE, e -> {
             Image image = (Image) e.object;
-            if(null != image) {
+            if (null != image) {
                 cocoAnnotationPane.setBaseImage(image);
             }
         });
-        
+
         borderPane.addEventHandler(DragEvent.DRAG_OVER, event -> {
             if (ResourceUtils.canDragOver(event)) {
                 event.acceptTransferModes(TransferMode.COPY);
@@ -160,13 +160,15 @@ public class CocoViewerPane extends LitPathPane {
                     LOG.error("Could not load COCO File: " + file.getPath());
                 }
             }
-        });   
+        });
     }
+
     public void loadCocoObject(CocoObject coco) {
         cocoObject = coco;
         //System.out.println("Total Annotations in object: " + cocoFile.cocoObject.getAnnotations().size());
         controls.populateControls(cocoObject);
     }
+
     public void loadCocoFile(File file) {
         try {
             CocoAnnotationFile cocoFile = new CocoAnnotationFile(file.getPath(), true);

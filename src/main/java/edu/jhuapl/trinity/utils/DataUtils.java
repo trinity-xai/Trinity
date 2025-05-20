@@ -250,6 +250,7 @@ public enum DataUtils {
         }
         return fc;
     }
+
     public static FeatureCollection convertSaturnMeasurements(List<SaturnShot> saturnMeasurements) {
         FeatureCollection fc = new FeatureCollection();
         List<FeatureVector> featureVectors = saturnMeasurements.stream()
@@ -259,7 +260,7 @@ public enum DataUtils {
         fc.setType(FeatureCollection.TYPESTRING);
         return fc;
     }
-    
+
     public static Function<SaturnShot, FeatureVector> saturnToFeatureVector = c -> {
         FeatureVector fv = new FeatureVector();
         fv.getData().add(c.getX_mm());
@@ -282,7 +283,7 @@ public enum DataUtils {
         fv.setEntityId(String.valueOf(c.getVarName1()));
         return fv;
     };
-    
+
     public static FeatureCollection convertCdcCsv(List<CdcCsv> cdcCsvList, boolean normalize) {
         long startTime = System.nanoTime();
         FeatureCollection fc = new FeatureCollection();

@@ -2,6 +2,7 @@ package edu.jhuapl.trinity;
 
 import edu.jhuapl.trinity.data.Dimension;
 import edu.jhuapl.trinity.data.FactorLabel;
+import edu.jhuapl.trinity.data.coco.CocoObject;
 import edu.jhuapl.trinity.data.files.ClusterCollectionFile;
 import edu.jhuapl.trinity.data.files.FeatureCollectionFile;
 import edu.jhuapl.trinity.data.files.ManifoldDataFile;
@@ -9,6 +10,7 @@ import edu.jhuapl.trinity.data.messages.xai.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.javafx.components.MatrixOverlay;
 import edu.jhuapl.trinity.javafx.components.panes.AnalysisLogPane;
+import edu.jhuapl.trinity.javafx.components.panes.CocoViewerPane;
 import edu.jhuapl.trinity.javafx.components.panes.HyperdrivePane;
 import edu.jhuapl.trinity.javafx.components.panes.ImageInspectorPane;
 import edu.jhuapl.trinity.javafx.components.panes.JukeBoxPane;
@@ -88,8 +90,6 @@ import java.util.List;
 import java.util.Map;
 
 import static edu.jhuapl.trinity.App.theConfig;
-import edu.jhuapl.trinity.data.coco.CocoObject;
-import edu.jhuapl.trinity.javafx.components.panes.CocoViewerPane;
 
 
 /**
@@ -418,7 +418,8 @@ public class AppAsyncManager extends Task {
                     switch (e.object) {
                         case File file -> cocoViewerPane.loadCocoFile(file);
                         case CocoObject cocoObject -> cocoViewerPane.loadCocoObject(cocoObject);
-                        default -> { }
+                        default -> {
+                        }
                     }
                 });
             }

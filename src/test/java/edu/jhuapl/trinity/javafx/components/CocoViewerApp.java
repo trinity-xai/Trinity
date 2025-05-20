@@ -1,46 +1,47 @@
 package edu.jhuapl.trinity.javafx.components;
 
-import edu.jhuapl.trinity.javafx.components.annotations.CocoAnnotationControlBox;
 import edu.jhuapl.trinity.css.StyleResourceProvider;
 import edu.jhuapl.trinity.data.coco.CocoObject;
 import edu.jhuapl.trinity.data.files.CocoAnnotationFile;
 import edu.jhuapl.trinity.javafx.components.annotations.BBoxOverlay;
+import edu.jhuapl.trinity.javafx.components.annotations.CocoAnnotationControlBox;
 import edu.jhuapl.trinity.javafx.components.annotations.CocoAnnotationPane;
 import edu.jhuapl.trinity.javafx.components.annotations.SegmentationOverlay;
 import edu.jhuapl.trinity.javafx.events.ImageEvent;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import javafx.application.Application;
+import javafx.geometry.Insets;
+import javafx.geometry.Pos;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
+import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
+import javafx.scene.control.TextField;
+import javafx.scene.image.Image;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.CornerRadii;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
+import javafx.stage.DirectoryChooser;
 import javafx.stage.Stage;
 
 import java.io.File;
 import java.io.IOException;
 import java.util.logging.Level;
 import java.util.logging.Logger;
-import javafx.geometry.Insets;
-import javafx.geometry.Pos;
-import javafx.scene.control.Button;
-import javafx.scene.control.Label;
-import javafx.scene.control.ScrollPane;
-import javafx.scene.control.TextField;
-import javafx.scene.image.Image;
-import javafx.scene.layout.Background;
-import javafx.scene.layout.BackgroundFill;
-import javafx.scene.layout.CornerRadii;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Priority;
-import javafx.scene.layout.VBox;
-import javafx.stage.DirectoryChooser;
+
 /**
  * @author Sean Phillips
  */
 public class CocoViewerApp extends Application {
-    
+
     CocoAnnotationPane cocoAnnotationPane;
     TextField basePathTextField;
     CocoObject cocoObject;
@@ -87,23 +88,23 @@ public class CocoViewerApp extends Application {
         // hide scrollpane scrollbars
         scrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
-        scrollPane.setPadding(Insets.EMPTY); 
+        scrollPane.setPadding(Insets.EMPTY);
         scrollPane.setPannable(true);
-        
-        controls.heightProperty().addListener(cl-> {
+
+        controls.heightProperty().addListener(cl -> {
             scrollPane.setVvalue(scrollPane.getVmax());
         });
-      
-        
+
+
         Button browseButton = new Button("Browse");
         browseButton.setOnAction(e -> {
             DirectoryChooser dc = new DirectoryChooser();
             File f = new File(basePathTextField.getText());
-            if(f.isDirectory())
+            if (f.isDirectory())
                 dc.setInitialDirectory(f);
             dc.setTitle("Browse to imagery base path...");
             File dir = dc.showDialog(null);
-            if(null != dir && dir.isDirectory()) {
+            if (null != dir && dir.isDirectory()) {
                 basePathTextField.setText(dir.getPath());
             }
         });
@@ -111,36 +112,36 @@ public class CocoViewerApp extends Application {
         basePathHBox.setAlignment(Pos.CENTER_LEFT);
         HBox.setHgrow(basePathTextField, Priority.ALWAYS);
         basePathTextField.setPrefHeight(40);
-        VBox basePathVBox = new VBox(5, 
+        VBox basePathVBox = new VBox(5,
             new Label("Imagery Base Path"), basePathHBox);
         basePathVBox.setPadding(new Insets(5));
         borderPane.setTop(basePathVBox);
         borderPane.setLeft(scrollPane);
         borderPane.getStyleClass().add("trinity-pane");
-        
+
         Scene scene = new Scene(borderPane, Color.BLACK);
 
-        scene.addEventHandler(ImageEvent.CLEAR_COCO_ANNOTATIONS, e-> {
+        scene.addEventHandler(ImageEvent.CLEAR_COCO_ANNOTATIONS, e -> {
             cocoAnnotationPane.clearAnnotations();
         });
-        scene.addEventHandler(ImageEvent.SELECT_COCO_BBOX, e-> {
+        scene.addEventHandler(ImageEvent.SELECT_COCO_BBOX, e -> {
             BBoxOverlay bbox = (BBoxOverlay) e.object;
-            if(null != bbox) {
+            if (null != bbox) {
                 cocoAnnotationPane.addCocoBBox(bbox);
 //                transformOverlays();
             }
         });
-        scene.addEventHandler(ImageEvent.SELECT_COCO_SEGMENTATION, e-> {
+        scene.addEventHandler(ImageEvent.SELECT_COCO_SEGMENTATION, e -> {
             SegmentationOverlay seg = (SegmentationOverlay) e.object;
-            if(null != seg) {
+            if (null != seg) {
                 cocoAnnotationPane.addSegmentationOverlay(seg);
 //                transformOverlays();
             }
         });
-        
-        scene.addEventHandler(ImageEvent.SELECT_COCO_IMAGE, e-> {
+
+        scene.addEventHandler(ImageEvent.SELECT_COCO_IMAGE, e -> {
             Image image = (Image) e.object;
-            if(null != image) {
+            if (null != image) {
                 cocoAnnotationPane.setBaseImage(image);
             }
         });
@@ -163,7 +164,7 @@ public class CocoViewerApp extends Application {
             Logger.getLogger(CocoViewerApp.class.getName()).log(Level.SEVERE, null, ex);
         }
     }
-    
+
     public static void main(String[] args) {
         launch(args);
     }

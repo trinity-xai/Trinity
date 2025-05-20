@@ -5,13 +5,13 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
  * @author sean phillips
- * Based on https://cocodataset.org/#format-data 
+ * Based on https://cocodataset.org/#format-data
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CocoLicense {
     public static final String TYPESTRING = "CocoLicense";
-    
+
     //<editor-fold defaultstate="collapsed" desc="JSON Payload">
     //        {
     //            "url": "http://creativecommons.org/licenses/by/2.0/",
@@ -20,16 +20,17 @@ public class CocoLicense {
     //        }
     //</editor-fold>
 
-    //<editor-fold defaultstate="collapsed" desc="Payload Fields">    
+    //<editor-fold defaultstate="collapsed" desc="Payload Fields">
     private String url;
     private long id;
     private String name;
-    //</editor-fold>    
-    
+    //</editor-fold>
+
     public CocoLicense() {
     }
 
     //<editor-fold defaultstate="collapsed" desc="Properties">
+
     /**
      * @return the url
      */
@@ -71,5 +72,5 @@ public class CocoLicense {
     public void setName(String name) {
         this.name = name;
     }
-    //</editor-fold>    
+    //</editor-fold>
 }

@@ -19,7 +19,6 @@ import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map.Entry;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
 
@@ -163,10 +162,10 @@ public class EmbeddingsTextListItem extends HBox {
         try {
             String fileString = Files.readString(file.toPath());
             //if JSON attempt intelligent object wise chunking
-            if(MessageUtils.probablyJSON(fileString)){
+            if (MessageUtils.probablyJSON(fileString)) {
                 final ObjectMapper mapper = new ObjectMapper();
                 JsonNode jsonNode = mapper.readTree(fileString);
-                if(jsonNode.getNodeType() == JsonNodeType.ARRAY) {
+                if (jsonNode.getNodeType() == JsonNodeType.ARRAY) {
                     for (final JsonNode objNode : jsonNode) {
                         //System.out.println(objNode);
                         EmbeddingsTextListItem item = new EmbeddingsTextListItem(file, false);
@@ -176,14 +175,14 @@ public class EmbeddingsTextListItem extends HBox {
                         objNode.fields().forEachRemaining(obj -> {
                             String lower = obj.getKey().toLowerCase();
                             //last found matching field will be used
-                            if(lower.contains("name") || lower.contains("label")) { 
+                            if (lower.contains("name") || lower.contains("label")) {
                                 item.setFeatureVectorLabel(obj.getValue().asText());
                             }
                         });
-                        list.add(item);                         
+                        list.add(item);
                     }
                 }
-               
+
             } else {
                 //use naive bruteforce chunking
                 long total = file.length();

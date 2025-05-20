@@ -1,6 +1,5 @@
 package edu.jhuapl.trinity.javafx.components.annotations;
 
-import java.util.List;
 import javafx.geometry.Insets;
 import javafx.scene.control.Label;
 import javafx.scene.layout.Background;
@@ -10,8 +9,9 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 
+import java.util.List;
+
 /**
- *
  * @author Sean Phillips
  */
 public class BBoxOverlay extends StackPane {
@@ -22,14 +22,14 @@ public class BBoxOverlay extends StackPane {
     public Label overlayLabel;
     public List<Double> bbox;
     public String id;
-    
+
     public BBoxOverlay(List<Double> bbox, String id) {
         this.bbox = bbox;
         this.id = id;
         rectangle = new Rectangle(bbox.get(0), bbox.get(1), bbox.get(2), bbox.get(3));
         rectangle.setFill(DEFAULT_RECTANGLE_FILLCOLOR);
         rectangle.setStroke(DEFAULT_RECTANGLE_STROKECOLOR);
-        
+
         overlayLabel = new Label(id);
         overlayLabel.setBackground(new Background(new BackgroundFill(
             DEFAULT_LABEL_FILLCOLOR, CornerRadii.EMPTY, Insets.EMPTY)));
@@ -37,10 +37,10 @@ public class BBoxOverlay extends StackPane {
         setPickOnBounds(false);
         setOnMouseEntered(e -> {
             setBackground(new Background(new BackgroundFill(
-                Color.GHOSTWHITE.deriveColor(1, 1, 1, 0.1), CornerRadii.EMPTY, Insets.EMPTY)));    
+                Color.GHOSTWHITE.deriveColor(1, 1, 1, 0.1), CornerRadii.EMPTY, Insets.EMPTY)));
         });
         setOnMouseExited(e -> {
-            setBackground(Background.EMPTY);    
+            setBackground(Background.EMPTY);
         });
         setLayoutX(bbox.get(0));
         setLayoutY(bbox.get(1));

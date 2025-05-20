@@ -5,13 +5,13 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
  * @author sean phillips
- * Based on https://cocodataset.org/#format-data 
+ * Based on https://cocodataset.org/#format-data
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CocoImage {
     public static final String TYPESTRING = "CocoImage";
-    
+
     //<editor-fold defaultstate="collapsed" desc="JSON Payload">
     //    {
     //        "id": 242287,
@@ -25,8 +25,8 @@ public class CocoImage {
     //        "date_captured": "2013-11-15 02:41:42"
     //    }
     //</editor-fold>
-    
-    //<editor-fold defaultstate="collapsed" desc="Payload Fields"> 
+
+    //<editor-fold defaultstate="collapsed" desc="Payload Fields">
     private long id;
     private int license;
     private String coco_url;
@@ -35,13 +35,14 @@ public class CocoImage {
     private int height;
     private String path;
     private String file_name;
-    private String date_captured;    
-    //</editor-fold>    
-    
+    private String date_captured;
+    //</editor-fold>
+
     public CocoImage() {
     }
-    
+
     //<editor-fold defaultstate="collapsed" desc="Properties">
+
     /**
      * @return the id
      */
@@ -167,5 +168,5 @@ public class CocoImage {
     public void setDate_captured(String date_captured) {
         this.date_captured = date_captured;
     }
-    //</editor-fold>    
+    //</editor-fold>
 }

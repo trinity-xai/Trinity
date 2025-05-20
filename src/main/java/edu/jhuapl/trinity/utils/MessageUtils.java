@@ -8,12 +8,12 @@ import edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageData;
 import edu.jhuapl.trinity.data.messages.xai.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
-import java.io.IOException;
 import javafx.application.Platform;
 import javafx.scene.Scene;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -33,15 +33,17 @@ public enum MessageUtils {
         return (possibleJson.startsWith("{") && possibleJson.endsWith("}"))
             || (possibleJson.startsWith("[") && possibleJson.endsWith("]"));
     }
-    public static boolean isJSONValid(String jsonInString ) {
-      try {
-         final ObjectMapper mapper = new ObjectMapper();
-         mapper.readTree(jsonInString);
-         return true;
-      } catch (IOException e) {
-         return false;
-      }
-    }    
+
+    public static boolean isJSONValid(String jsonInString) {
+        try {
+            final ObjectMapper mapper = new ObjectMapper();
+            mapper.readTree(jsonInString);
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
+
     public static Function<EmbeddingsImageData, FeatureVector> embeddingsToFeatureVector = d -> {
         FeatureVector fv = new FeatureVector();
         fv.getData().addAll(d.getEmbedding());

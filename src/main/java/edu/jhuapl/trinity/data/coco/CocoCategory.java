@@ -5,33 +5,34 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
  * @author sean phillips
- * Based on https://cocodataset.org/#format-data 
+ * Based on https://cocodataset.org/#format-data
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CocoCategory {
-    
+
     //<editor-fold defaultstate="collapsed" desc="JSON Payload">
     //    {
     //        "supercategory": "vehicle",
     //        "id": 2,
     //        "name": "bicycle"
-    //    }    
+    //    }
     //</editor-fold>
-    
+
     public static final String TYPESTRING = "CocoAnnotation";
-    
-    //<editor-fold defaultstate="collapsed" desc="Payload Fields">    
+
+    //<editor-fold defaultstate="collapsed" desc="Payload Fields">
     private String supercategory;
     private long id;
     private String name;
     private String color; //non standard but common
     //</editor-fold>
-    
+
     public CocoCategory() {
     }
 
     //<editor-fold defaultstate="collapsed" desc="Properties">
+
     /**
      * @return the supercategory
      */
@@ -73,6 +74,7 @@ public class CocoCategory {
     public void setName(String name) {
         this.name = name;
     }
+
     /**
      * @return the color
      */
@@ -86,5 +88,5 @@ public class CocoCategory {
     public void setColor(String color) {
         this.color = color;
     }
-   //</editor-fold>    
+    //</editor-fold>
 }

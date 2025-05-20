@@ -67,15 +67,15 @@ public class SaturnLoader extends Task {
             scene.getRoot().fireEvent(
                 new ApplicationEvent(ApplicationEvent.UPDATE_BUSY_INDICATOR, ps));
         });
- 
+
 //        try {
-            FeatureCollection fc = DataUtils.convertSaturnMeasurements(saturnMeasurements);
-            Platform.runLater(() -> {
-                scene.getRoot().fireEvent(
-                    new FeatureVectorEvent(FeatureVectorEvent.NEW_FEATURE_COLLECTION, fc));
-                scene.getRoot().fireEvent(
-                    new ApplicationEvent(ApplicationEvent.HIDE_BUSY_INDICATOR));
-            });
+        FeatureCollection fc = DataUtils.convertSaturnMeasurements(saturnMeasurements);
+        Platform.runLater(() -> {
+            scene.getRoot().fireEvent(
+                new FeatureVectorEvent(FeatureVectorEvent.NEW_FEATURE_COLLECTION, fc));
+            scene.getRoot().fireEvent(
+                new ApplicationEvent(ApplicationEvent.HIDE_BUSY_INDICATOR));
+        });
 //        } catch (Exception ex) {
 //            LOG.error("Exception", ex);
 //        }

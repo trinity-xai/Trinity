@@ -1,12 +1,12 @@
 package edu.jhuapl.trinity.utils.loaders;
 
 import edu.jhuapl.trinity.data.SaturnShot;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.stream.Collectors;
 
 /**
- *
  * @author Sean Phillips
  */
 public class SaturnParserThread extends Thread {
