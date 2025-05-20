@@ -48,7 +48,7 @@ public class ChatCompletionCallback extends RestConsumer {
                 scene.getRoot().fireEvent(new RestEvent(RestEvent.NEW_CHAT_COMPLETION, output));
             });
         } catch (JsonProcessingException ex) {
-            LOG.error(ex.getMessage());
+            LOG.error(null, ex);
         }
     }
 }

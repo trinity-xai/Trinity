@@ -34,7 +34,7 @@ public class LandmarkImageListItem extends LandmarkListItem {
         try {
             imageView = new ImageView(ResourceUtils.loadImageFile(file));
         } catch (IOException ex) {
-            LOG.error(ex.getMessage());
+            LOG.error(null, ex);
             imageView = new ImageView(DEFAULT_ICON);
         }
         imageView.setFitWidth(32);

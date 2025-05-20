@@ -66,7 +66,7 @@ public class ProjectorNode extends Pane {
                             getScene().getRoot().fireEvent(new ApplicationEvent(
                                 ApplicationEvent.SHOW_TEXT_CONSOLE, umapConfig.prettyPrint()));
                         } catch (JsonProcessingException ex) {
-                            LOG.error(ex.getMessage());
+                            LOG.error(null, ex);
                         }
                     }
                 } else if (e.getClickCount() == 1) {

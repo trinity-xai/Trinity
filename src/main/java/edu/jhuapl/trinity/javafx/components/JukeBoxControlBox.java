@@ -109,7 +109,7 @@ public class JukeBoxControlBox extends VBox {
                     Paths.get(new URI(m.getSource())).getFileName().toString()
                 );
             } catch (URISyntaxException ex) {
-                LOG.error(ex.getMessage());
+                LOG.error(null, ex);
             }
         });
     }

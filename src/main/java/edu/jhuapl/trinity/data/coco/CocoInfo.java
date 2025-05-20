@@ -5,13 +5,13 @@ import com.fasterxml.jackson.annotation.JsonInclude;
 
 /**
  * @author sean phillips
- * Based on https://cocodataset.org/#format-data 
+ * Based on https://cocodataset.org/#format-data
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CocoInfo {
     public static final String TYPESTRING = "CocoInfo";
-    
+
     //<editor-fold defaultstate="collapsed" desc="JSON Payload">
     //    "info": {
     //            "description": "COCO 2017 Dataset",
@@ -20,21 +20,22 @@ public class CocoInfo {
     //            "year": 2017,
     //            "contributor": "COCO Consortium",
     //            "date_created": "2017/09/01"
-    //        }    
+    //        }
     //</editor-fold>
 
-    //<editor-fold defaultstate="collapsed" desc="Payload Fields">    
+    //<editor-fold defaultstate="collapsed" desc="Payload Fields">
     private String description;
     private String url;
     private String version;
     private int year;
     private String contributor;
     private String date_created;
-    //</editor-fold>    
-    
+    //</editor-fold>
+
     public CocoInfo() {
     }
     //<editor-fold defaultstate="collapsed" desc="Properties">
+
     /**
      * @return the description
      */

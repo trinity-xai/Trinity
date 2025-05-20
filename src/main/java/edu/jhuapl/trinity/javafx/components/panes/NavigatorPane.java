@@ -174,10 +174,8 @@ public class NavigatorPane extends LitPathPane {
                     File file = new File(imageryBasePath + fv.getImageURL());
                     currentImage = new Image(file.toURI().toURL().toExternalForm());
                     imageView.setImage(currentImage);
-                    textArea.setText(fv.getText());
                     urlLabel.setText(fv.getImageURL());
                     urlLabel.setTooltip(new Tooltip(file.toURI().toURL().toExternalForm()));
-                    createDetails(fv);
                 } catch (IOException ex) {
                     Platform.runLater(() -> {
                         getScene().getRoot().fireEvent(
@@ -188,6 +186,10 @@ public class NavigatorPane extends LitPathPane {
                     LOG.error(null, ex);
                 }
             }
+            if (null != fv.getText()) {
+                textArea.setText(fv.getText());
+            }
+            createDetails(fv);
         });
     }
 

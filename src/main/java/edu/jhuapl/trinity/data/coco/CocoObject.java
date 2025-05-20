@@ -2,12 +2,13 @@ package edu.jhuapl.trinity.data.coco;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * @author sean phillips
- * Based on https://cocodataset.org/#format-data 
+ * Based on https://cocodataset.org/#format-data
  */
 @JsonInclude(JsonInclude.Include.NON_NULL)
 @JsonIgnoreProperties(ignoreUnknown = true)
@@ -27,8 +28,8 @@ public class CocoObject {
     }
 
     public static boolean isCocoObject(String messageBody) {
-        return messageBody.contains("categories") 
-            && messageBody.contains("images") 
+        return messageBody.contains("categories")
+            && messageBody.contains("images")
             && messageBody.contains("annotations");
     }
 

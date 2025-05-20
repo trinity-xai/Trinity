@@ -29,19 +29,19 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Rectangle;
 import javafx.stage.Stage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.util.Arrays;
 import java.util.DoubleSummaryStatistics;
-import java.util.logging.Level;
-import java.util.logging.Logger;
 
 import static edu.jhuapl.trinity.utils.Utils.clamp;
 
 public class ImageFFTTestApp extends Application {
-
+    private static final Logger LOG = LoggerFactory.getLogger(ImageFFTTestApp.class);
     private Color fillColor = Color.SLATEGREY;
     private double imageSize = 512;
     private VBox controlsBox;
@@ -80,7 +80,7 @@ public class ImageFFTTestApp extends Application {
             masks = new double[height][width];
             clearMask();
         } catch (IOException ex) {
-            Logger.getLogger(ImageFFTTestApp.class.getName()).log(Level.SEVERE, null, ex);
+            LOG.error(null, ex);
             baseImageView = new ImageView();
         }
         baseImageView.setFitWidth(imageSize);
@@ -106,7 +106,7 @@ public class ImageFFTTestApp extends Application {
                         masks = new double[height][width];
                         clearMask();
                     } catch (MalformedURLException ex) {
-                        Logger.getLogger(ImageFFTTestApp.class.getName()).log(Level.SEVERE, null, ex);
+                        LOG.error(null, ex);
                     }
                 }
             }

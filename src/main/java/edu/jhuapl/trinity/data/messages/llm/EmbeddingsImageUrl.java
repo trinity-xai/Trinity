@@ -48,9 +48,9 @@ public class EmbeddingsImageUrl {
                 + ResourceUtils.imageToBase64(image));
             input.setImage_url(imageUrl);
         } catch (JsonProcessingException ex) {
-            LOG.error(ex.getMessage());
+            LOG.error(null, ex);
         } catch (IOException ex) {
-            LOG.error(ex.getMessage());
+            LOG.error(null, ex);
         }
         return input;
     };
@@ -64,9 +64,9 @@ public class EmbeddingsImageUrl {
                 + ResourceUtils.imageToBase64(image));
             input.setImage_url(imageUrl);
         } catch (JsonProcessingException ex) {
-            LOG.error(ex.getMessage());
+            LOG.error(null, ex);
         } catch (IOException ex) {
-            LOG.error(ex.getMessage());
+            LOG.error(null, ex);
         }
         return input;
     };

@@ -361,19 +361,19 @@ public enum AnalysisUtils {
         SingularValueDecomposition svd = getSVD(array);
         //Rotate the values to get orientation
         RealMatrix uRealMatrix = svd.getU();
-        //D is the diagonal matrix of eigenvalues 
+        //D is the diagonal matrix of eigenvalues
         //D^1/2 an element wise square root of the diagonal matrix of eiganvalues
         int cols = svd.getS().getColumnDimension();
         int rows = svd.getS().getRowDimension();
         RealMatrix sqrtS = MatrixUtils.createRealMatrix(cols, rows);
-        for(int c=0;c<cols;c++){
-            for(int r=0;r<rows;r++){
+        for (int c = 0; c < cols; c++) {
+            for (int r = 0; r < rows; r++) {
                 sqrtS.setEntry(r, c, Math.sqrt(svd.getS().getEntry(r, c)));
             }
         }
-        //R = U D^{1/2} 
+        //R = U D^{1/2}
         RealMatrix r = uRealMatrix.multiply(sqrtS);
-        
+
         //Copy rotated values into List<Double>
         ArrayList<Double> rotatedSvdValues = new ArrayList<>();
         rotatedSvdValues.add(r.getEntry(0, 0));

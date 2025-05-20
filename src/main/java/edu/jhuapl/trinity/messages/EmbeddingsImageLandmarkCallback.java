@@ -46,7 +46,7 @@ public class EmbeddingsImageLandmarkCallback extends RestConsumer {
                 scene.getRoot().fireEvent(new RestEvent(RestEvent.NEW_EMBEDDINGS_LANDMARKIMAGE, output, inputIDs));
             });
         } catch (JsonProcessingException ex) {
-            LOG.error(ex.getMessage());
+            LOG.error(null, ex);
         }
     }
 }

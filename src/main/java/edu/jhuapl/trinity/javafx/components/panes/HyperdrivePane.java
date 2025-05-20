@@ -198,6 +198,23 @@ public class HyperdrivePane extends LitPathPane {
         selectAllTextMenuItem.setOnAction(e ->
             textEmbeddingsListView.getSelectionModel().selectAll());
 
+        MenuItem textEmbbedingsTextLandmarkCaptionItem = new MenuItem("Label by Text Landmark Similarity");
+        textEmbbedingsTextLandmarkCaptionItem.setOnAction(e -> {
+            if (!textEmbeddingsListView.getSelectionModel().getSelectedItems().isEmpty())
+                requestTextLandmarkSimilarityTask(textEmbeddingsListView.getSelectionModel().getSelectedItems()
+                    , landmarkTextBuilderBox.getItems().stream()
+                        .map(LandmarkListItem::getFeatureVector).toList());
+        });
+        MenuItem imageEmbeddingsImageLandmarkCaptionItem = new MenuItem("Label by Image Landmark Similarity");
+        imageEmbeddingsImageLandmarkCaptionItem.setOnAction(e -> {
+            if (!textEmbeddingsListView.getSelectionModel().getSelectedItems().isEmpty()) {
+                requestTextLandmarkSimilarityTask(textEmbeddingsListView.getSelectionModel().getSelectedItems(),
+                    landmarkImageBuilderBox.getItems().stream()
+                        .map(LandmarkListItem::getFeatureVector).toList()
+                );
+            }
+        });
+
         MenuItem clearTextRequestsItem = new MenuItem("Clear Requests");
         clearTextRequestsItem.setOnAction(e -> {
             outstandingRequests.clear();
@@ -206,8 +223,9 @@ public class HyperdrivePane extends LitPathPane {
         });
         ContextMenu textEmbeddingsContextMenu =
             new ContextMenu(selectAllTextMenuItem,
+                textEmbbedingsTextLandmarkCaptionItem, imageEmbeddingsImageLandmarkCaptionItem,
 //                setCaptionItem, requestCaptionItem,
-//                chooseCaptionItem, textLandmarkCaptionItem, imageLandmarkCaptionItem,
+//                chooseCaptionItem,
                 clearTextRequestsItem);
         textEmbeddingsListView.setContextMenu(textEmbeddingsContextMenu);
 
@@ -400,7 +418,6 @@ public class HyperdrivePane extends LitPathPane {
                 );
             }
         });
-
 
         MenuItem clearRequestsItem = new MenuItem("Clear Requests");
         clearRequestsItem.setOnAction(e -> {
@@ -640,7 +657,6 @@ public class HyperdrivePane extends LitPathPane {
                 String DIALOGCSS = StyleResourceProvider.getResource("dialogstyles.css").toExternalForm();
                 dialogPane.getStylesheets().add(DIALOGCSS);
                 alert.showAndWait();
-
             }
         });
 
@@ -1086,7 +1102,7 @@ public class HyperdrivePane extends LitPathPane {
                     baseImageView.setImage(baseImage);
                 }
             } catch (IOException ex) {
-                LOG.error(ex.getMessage());
+                LOG.error(null, ex);
             }
         });
         getStyleClass().add("hyperdrive-pane");
@@ -1128,6 +1144,47 @@ public class HyperdrivePane extends LitPathPane {
         t.start();
     }
 
+    public void requestTextLandmarkSimilarityTask(
+        List<EmbeddingsTextListItem> items, List<FeatureVector> landmarkFeatures) {
+        Task requestTask = new Task() {
+            @Override
+            protected Void call() throws Exception {
+                textEmbeddingRequestIndicator.setLabelLater("Computing Landmark Similarity Distances...");
+                textEmbeddingRequestIndicator.spin(true);
+                textEmbeddingRequestIndicator.fadeBusy(false);
+                System.out.println("Computing Landmark Simularity Distances...");
+                Metric metric = Metric.getMetric(metricChoiceBox.getSelectionModel().getSelectedItem());
+                long startTime = System.nanoTime();
+
+                List<double[]> landmarkVectors = landmarkFeatures.stream()
+                    .map(mapToStateArray).toList();
+                items.stream().forEach(item -> {
+                    double[] itemVector = mapToStateArray.apply(item.getFeatureVector());
+                    Double shortestDistance = null;
+                    Integer shortestLandmarkIndex = null;
+                    for (int i = 0; i < landmarkVectors.size(); i++) {
+                        double currentDistance = metric.distance(itemVector, landmarkVectors.get(i));
+                        //System.out.println(i + " : " + currentDistance);
+                        if (null == shortestDistance || currentDistance < shortestDistance) {
+                            shortestDistance = currentDistance;
+                            shortestLandmarkIndex = i;
+                        }
+                    }
+                    item.setFeatureVectorLabel(
+                        landmarkFeatures.get(shortestLandmarkIndex).getLabel());
+                });
+                Utils.printTotalTime(startTime);
+                textEmbeddingRequestIndicator.setLabelLater("Finished.");
+                textEmbeddingRequestIndicator.spin(false);
+                textEmbeddingRequestIndicator.fadeBusy(true);
+                return null;
+            }
+        };
+        Thread t = new Thread(requestTask, "Trinity Text Landmark Similarity Task");
+        t.setDaemon(true);
+        t.start();
+    }
+
     public void requestLandmarkSimilarityTask(
         List<EmbeddingsImageListItem> items, List<FeatureVector> landmarkFeatures) {
         Task requestTask = new Task() {
@@ -1164,7 +1221,7 @@ public class HyperdrivePane extends LitPathPane {
                 return null;
             }
         };
-        Thread t = new Thread(requestTask, "Trinity Landmark Simulatrity Task");
+        Thread t = new Thread(requestTask, "Trinity Image Landmark Similarity Task");
         t.setDaemon(true);
         t.start();
     }
@@ -1300,7 +1357,7 @@ public class HyperdrivePane extends LitPathPane {
                             input, scene, inputIDs, rn);
                         outstandingRequests.put(rn, STATUS.REQUESTED);
                     } catch (JsonProcessingException ex) {
-                        LOG.error(ex.getMessage());
+                        LOG.error(null, ex);
                     }
                     completed++;
                     if (completed % updatePercent == 0) {

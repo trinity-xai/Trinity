@@ -3,6 +3,8 @@
 [![Maven Build](https://github.com/Birdasaur/Trinity/actions/workflows/maven.yml/badge.svg)](https://github.com/Birdasaur/Trinity/actions/workflows/maven.yml)
 [![Gradle Build](https://github.com/Birdasaur/Trinity/actions/workflows/gradle.yml/badge.svg)](https://github.com/Birdasaur/Trinity/actions/workflows/gradle.yml)
 
+[Trinity YouTube Playlist](https://youtube.com/playlist?list=PLrMR7Y6k6mkDVfYpqrqvaxoti4E2tJXhW&feature=shared)
+
 ## Explainable AI (XAI) Analysis and Visualization tool ##
 
 ![Trinity City](/media/TrinityCity.png)
@@ -193,7 +195,7 @@ This services directory also contains default Prompts, all of which can be dynam
 3D is cool and all but 2D is the OG. Trinity uses a transparent overlay system of 2D panes to provide extra
 helper tools. These overlays are extensions of the [totally amazing LitFX Project](https://github.com/Birdasaur/LitFX).
 The genius of the author of LitFX is rivaled only possibly by the author's stunning lumberjack good looks. 
-A few are shown below:
+A few of these helper tools are shown below:
 
 ### Natural Language Query ###
 
@@ -230,6 +232,19 @@ its content view with whatever image/text is linked to any point the user hovers
 From this overlay other image and text manipulation tools can be injected with the content 
 currently loaded in the Navigator.
 
+
+### COCO Annotations Viewer ###
+
+Common with perception based AI workflows is to perform segmentation and 
+annotation marking of images. Bounding Boxes and segmentation Polygons are usually 
+generated and inteneded to be overlaid on the base image.  A common standard used for
+this is COCO. Trinity provides a COCO Viewer tool:
+
+![Trinity-CocoViewer](/media/Trinity-CocoViewer.png)
+
+The COCO Viewer tool is smart enough to load multiple images from a single COCO JSON file
+and allow the user to mix and match annotation overlays in-situ.
+
 ### Image Inspection ###
 
 To assist with fine grain examination of imagery and to identify artifacts left by deep fake generators,
@@ -256,10 +271,22 @@ can be tessellated into the Hypersurface on demand.
 You can build with either `Maven` or `Gradle` with a modern version of Java (>=17).
 There's already a set of scripts for building and running if you use a Jetbrains IDE or Netbeans to facilitate a cold start on the project.
 To run the project from a jar after building, you can take a look at the `scripts` directory to get you started.
-Otherwise, make sure to use at least `-Dprism.maxvram=2G` on your JVM parameters when starting it up.
-For JLink/JPackage builds those JVM args are baked in already into the packages.
+
+
+Setting the JavaFX parameter `-Dprism.maxvram=2G` when starting it up will increase the VRAM that 
+JavaFX allocates from your video card to 2GB. This is necessary for very large datasets or
+4k displays, as by default JavaFX only preallocates 512mb. This value can be tuned to your 
+system and needs. For JLink/JPackage builds those JVM args are baked in already into the packages.
 
 ## Troubleshooting ##
+** Wierd/scary <local9> Prism errors **
+These are exceptions being thrown WAY down in the weeds due to memory failures in the native Prism code.
+There are currently two known causes for this:
+- Weird Scaling settings: JavaFX is optimized for 50/100/150/200 percent scaling and can throw the above 
+error when using anything in between
+- High Resolution Displays: JavaFX supports texture sizes of 4k and even 8k but you need
+to allocate enough VRAM to allow for it. The default VRAM allocation is only 512mb. This can
+be updated using `-Dprism.maxvram=2G` as a runtime parameter. See above for more details.
 
 **Execution Permissions **
 Execution permissions might need to be needed to run the `JPackage`, `JLink`, or `Native` builds

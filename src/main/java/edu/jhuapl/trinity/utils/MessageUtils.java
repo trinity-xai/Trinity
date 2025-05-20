@@ -13,6 +13,7 @@ import javafx.scene.Scene;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
@@ -27,6 +28,21 @@ public enum MessageUtils {
     INSTANCE;
     private static final Logger LOG = LoggerFactory.getLogger(MessageUtils.class);
     static AtomicLong atomicLong = new AtomicLong();
+
+    public static boolean probablyJSON(String possibleJson) {
+        return (possibleJson.startsWith("{") && possibleJson.endsWith("}"))
+            || (possibleJson.startsWith("[") && possibleJson.endsWith("]"));
+    }
+
+    public static boolean isJSONValid(String jsonInString) {
+        try {
+            final ObjectMapper mapper = new ObjectMapper();
+            mapper.readTree(jsonInString);
+            return true;
+        } catch (IOException e) {
+            return false;
+        }
+    }
 
     public static Function<EmbeddingsImageData, FeatureVector> embeddingsToFeatureVector = d -> {
         FeatureVector fv = new FeatureVector();

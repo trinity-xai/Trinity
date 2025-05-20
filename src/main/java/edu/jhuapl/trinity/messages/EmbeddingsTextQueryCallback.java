@@ -47,7 +47,7 @@ public class EmbeddingsTextQueryCallback extends RestConsumer {
                 scene.getRoot().fireEvent(new SearchEvent(SearchEvent.QUERY_EMBEDDINGS_RESPONSE, output));
             });
         } catch (JsonProcessingException ex) {
-            LOG.error(ex.getMessage());
+            LOG.error(null, ex);
         }
     }
 }

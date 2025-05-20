@@ -2,6 +2,7 @@ package edu.jhuapl.trinity;
 
 import edu.jhuapl.trinity.data.Dimension;
 import edu.jhuapl.trinity.data.FactorLabel;
+import edu.jhuapl.trinity.data.coco.CocoObject;
 import edu.jhuapl.trinity.data.files.ClusterCollectionFile;
 import edu.jhuapl.trinity.data.files.FeatureCollectionFile;
 import edu.jhuapl.trinity.data.files.ManifoldDataFile;
@@ -9,6 +10,7 @@ import edu.jhuapl.trinity.data.messages.xai.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.javafx.components.MatrixOverlay;
 import edu.jhuapl.trinity.javafx.components.panes.AnalysisLogPane;
+import edu.jhuapl.trinity.javafx.components.panes.CocoViewerPane;
 import edu.jhuapl.trinity.javafx.components.panes.HyperdrivePane;
 import edu.jhuapl.trinity.javafx.components.panes.ImageInspectorPane;
 import edu.jhuapl.trinity.javafx.components.panes.JukeBoxPane;
@@ -114,6 +116,7 @@ public class AppAsyncManager extends Task {
     JukeBoxPane jukeBoxPane;
     VideoPane videoPane;
     NavigatorPane navigatorPane;
+    CocoViewerPane cocoViewerPane;
     WaveformPane waveformPane;
     Shape3DControlPane shape3DControlPane;
     AnalysisLogPane analysisLogPane;
@@ -397,6 +400,28 @@ public class AppAsyncManager extends Task {
             }
             if (null != e.object) {
                 Platform.runLater(() -> navigatorPane.setImage((Image) e.object));
+            }
+        });
+        LOG.info("COCO Viewer");
+        scene.addEventHandler(ApplicationEvent.SHOW_COCOVIEWER_PANE, e -> {
+            if (null == cocoViewerPane) {
+                cocoViewerPane = new CocoViewerPane(scene, desktopPane);
+            }
+            if (!desktopPane.getChildren().contains(cocoViewerPane)) {
+                desktopPane.getChildren().add(cocoViewerPane);
+                cocoViewerPane.slideInPane();
+            } else {
+                cocoViewerPane.show();
+            }
+            if (null != e.object) {
+                Platform.runLater(() -> {
+                    switch (e.object) {
+                        case File file -> cocoViewerPane.loadCocoFile(file);
+                        case CocoObject cocoObject -> cocoViewerPane.loadCocoObject(cocoObject);
+                        default -> {
+                        }
+                    }
+                });
             }
         });
         LOG.info("Analysis Log View");

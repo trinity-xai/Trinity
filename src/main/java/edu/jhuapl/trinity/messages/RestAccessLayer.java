@@ -66,7 +66,7 @@ public enum RestAccessLayer {
         try {
             restAccessLayerconfig = loadDefaultRestConfig();
         } catch (IOException ex) {
-            LOG.error(ex.getMessage());
+            LOG.error(null, ex);
             System.out.println("Error attempting to find and load REST Services Config: "
                 + SERVICES_DEFAULT_PATH + SERVICES_DEFAULT_CONFIG);
             restAccessLayerconfig = RestAccessLayerConfig.getDefault();

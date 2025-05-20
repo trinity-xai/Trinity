@@ -46,7 +46,7 @@ public class EmbeddingsTextCallback extends RestConsumer {
                 scene.getRoot().fireEvent(new RestEvent(RestEvent.NEW_EMBEDDINGS_TEXT, output, inputIDs));
             });
         } catch (JsonProcessingException ex) {
-            LOG.error(ex.getMessage());
+            LOG.error(null, ex);
         }
     }
 }

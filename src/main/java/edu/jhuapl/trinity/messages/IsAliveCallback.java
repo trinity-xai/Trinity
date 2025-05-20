@@ -61,7 +61,7 @@ public class IsAliveCallback extends RestConsumer {
                     new RestEvent(RestEvent.EMBEDDING_MODELS_ALIVE, isAliveReesponse));
             });
         } catch (Exception ex) {
-            LOG.error(ex.getMessage());
+            LOG.error(null, ex);
         }
     }
 }

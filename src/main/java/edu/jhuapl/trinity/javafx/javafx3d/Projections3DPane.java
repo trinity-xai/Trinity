@@ -789,7 +789,7 @@ public class Projections3DPane extends StackPane implements
                         }
                         e.consume();
                     } catch (IOException ex) {
-                        LOG.error(ex.getMessage());
+                        LOG.error(null, ex);
                     }
                 }
             }
@@ -2584,7 +2584,9 @@ public class Projections3DPane extends StackPane implements
             midpointLabel.setScaleZ(1);
             midpointSphere.setRadius(1);
         });
-
+        newDistanceTraj3D.visibleProperty().bind(distance.visible);
+        midpointSphere.visibleProperty().bind(distance.visible);
+        midpointLabel.visibleProperty().bind(distance.visible);
         distanceTotrajectory3DMap.put(distance, newDistanceTraj3D);
         connectorsGroup.getChildren().add(0, newDistanceTraj3D);
 

@@ -588,7 +588,7 @@ public class Hypersurface3DPane extends StackPane
                     fcf = new FeatureCollectionFile(file.getAbsolutePath(), true);
                     computeSurfaceDifference(fcf.featureCollection);
                 } catch (IOException ex) {
-                    LOG.error(ex.getMessage());
+                    LOG.error(null, ex);
                 }
             }
         });
