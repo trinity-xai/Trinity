@@ -141,6 +141,7 @@ import java.util.stream.Collectors;
 
 import static edu.jhuapl.trinity.javafx.handlers.GaussianMixtureEventHandler.generateEllipsoidDiagonal;
 import static edu.jhuapl.trinity.utils.ResourceUtils.removeExtension;
+import javafx.scene.control.Menu;
 
 /**
  * @author Sean Phillips
@@ -918,7 +919,7 @@ public class Projections3DPane extends StackPane implements
         });
 
         CheckMenuItem showCubeItem = new CheckMenuItem("Show Cube");
-        showCubeItem.setSelected(true);
+        showCubeItem.setSelected(false);
         showCubeItem.selectedProperty().addListener(cl -> {
             cubeWorld.showDataAndCrosshairsOnly(showCubeItem.isSelected());
         });
@@ -932,10 +933,14 @@ public class Projections3DPane extends StackPane implements
         updatingTrajectoriesItem.selectedProperty().addListener(cl ->
             updatingTrajectories = updatingTrajectoriesItem.isSelected());
 
+        ImageView optionsImageView = ResourceUtils.loadIcon("configuration", ICON_FIT_HEIGHT);
+        optionsImageView.setEffect(glow);
+        Menu optionsMenu = new Menu("Options", optionsImageView, 
+            showCubeItem, animatingProjectionsItem, updatingTrajectoriesItem);
+        
         ContextMenu cm = new ContextMenu(selectPointsItem,
             resetViewItem, manifoldsItem, radarItem, exportItem, analysisItem, navigatorItem,
-            clearCalloutsItem, clearProjectionItem,
-            showCubeItem, animatingProjectionsItem, updatingTrajectoriesItem);
+            clearCalloutsItem, clearProjectionItem, optionsMenu);
 
         cm.setAutoFix(true);
         cm.setAutoHide(true);
@@ -1400,6 +1405,7 @@ public class Projections3DPane extends StackPane implements
                 });
             });
         });
+        cubeWorld.showDataAndCrosshairsOnly(showCubeItem.isSelected());
     }
 
     private void toggleProjectileViews() {

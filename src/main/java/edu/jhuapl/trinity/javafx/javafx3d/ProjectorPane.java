@@ -4,7 +4,9 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.jhuapl.trinity.data.messages.xai.AnalysisConfig;
 import edu.jhuapl.trinity.data.messages.xai.UmapConfig;
-import edu.jhuapl.trinity.javafx.components.ProjectorNode;
+import edu.jhuapl.trinity.javafx.components.projector.ProjectorAnalysisNode;
+import edu.jhuapl.trinity.javafx.components.projector.ProjectorNode;
+import edu.jhuapl.trinity.javafx.components.projector.ProjectorTextNode;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import javafx.animation.AnimationTimer;
@@ -76,6 +78,7 @@ public class ProjectorPane extends StackPane {
     private static final Logger LOG = LoggerFactory.getLogger(ProjectorPane.class);
     PerspectiveCamera camera = new PerspectiveCamera(true);
     public Group sceneRoot = new Group();
+    public Group projectorNodeGroup;
     private Group labelGroup;
     public SubScene subScene;
     public CameraTransformer cameraTransform = new CameraTransformer();
@@ -232,7 +235,9 @@ public class ProjectorPane extends StackPane {
         });
 
         nodes = new ArrayList<>();
-        sceneRoot.getChildren().addAll(nodes);
+        projectorNodeGroup = new Group();
+        projectorNodeGroup.getChildren().addAll(nodes);
+        sceneRoot.getChildren().addAll(projectorNodeGroup);
         Sphere origin = new Sphere(20.0);
         Sphere northPole = new Sphere(20.0);
         PhongMaterial northPhong = new PhongMaterial(Color.DODGERBLUE);
@@ -269,6 +274,10 @@ public class ProjectorPane extends StackPane {
                 //We will recognize three different file types...
                 //map images to their respective UMAP and Analysis config names
                 List<ProjectorNode> projectorNodes = new ArrayList<>();
+
+                //ProjectorNode test = new ProjectorTextNode("Dude this is a test!");
+                //projectorNodes.add(test);                
+                
                 //search for and use image files as pivot points, do NOT follow recursively
                 for (File subDirFile : subDirectory.listFiles()) {
                     if (ResourceUtils.isImageFile(subDirFile)) {
@@ -279,7 +288,7 @@ public class ProjectorPane extends StackPane {
                             UmapConfig ucForMe = findUmapConfigByName(subDirectory, subDirFile.getName());
                             AnalysisConfig acDC = findAnalysisConfigByName(subDirectory, subDirFile.getName());
                             //the configs may be null but that is ok
-                            ProjectorNode pn = new ProjectorNode(image, ucForMe, acDC);
+                            ProjectorNode pn = new ProjectorAnalysisNode(image, ucForMe, acDC);
                             projectorNodes.add(pn);
                         } catch (MalformedURLException ex) {
                             LOG.error(null, ex);
@@ -386,7 +395,7 @@ public class ProjectorPane extends StackPane {
 
         projectorNode.setVisible(false); //must animate or manually set visible later
         nodes.add(projectorNode);
-        sceneRoot.getChildren().add(projectorNode);
+        projectorNodeGroup.getChildren().add(projectorNode);
         transitionList.add(createTransition(projectorNode));
     }
 
