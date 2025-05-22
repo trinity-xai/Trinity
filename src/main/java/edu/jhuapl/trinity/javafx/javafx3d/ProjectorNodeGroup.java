@@ -38,28 +38,31 @@ import org.fxyz3d.utils.CameraTransformer;
  * @author Sean Phillips
  */
 public class ProjectorNodeGroup extends Group {
-    public Group extrasGroup = new Group();
-    public Group labelGroup = new Group();
+    public Group labelGroup; 
     ArrayList<ProjectorNode> nodes;
     ArrayList<Integer> randomIndices;
     List<ParallelTransition> transitionList = new ArrayList<>();
-    double transitionXOffset = -15000;
-    double transitionYOffset = -15000;
-    double transitionZOffset = 0;
-    double originRadius = 9001;
+    public double transitionXOffset = -15000;
+    public double transitionYOffset = -15000;
+    public double transitionZOffset = 0;
+    public double originRadius = 9001;
     public SubScene subScene;
     public Camera camera;
     public CameraTransformer cameraTransform;
     //allows 2D labels to track their 3D counterparts
     public HashMap<Shape3D, Label> shape3DToLabel = new HashMap<>();    
 
-    public ProjectorNodeGroup(SubScene subScene, Camera camera, CameraTransformer cameraTransform) {
+    public ProjectorNodeGroup(SubScene subScene, Camera camera, CameraTransformer cameraTransform, Group labelGroup) {
         this.subScene = subScene;
         this.camera = camera;
         this.cameraTransform = cameraTransform;
+        this.labelGroup = labelGroup;
         nodes = new ArrayList<>();
         getChildren().addAll(nodes);
-        
+    }
+    public void clearAll() {
+        nodes.clear();
+        transitionList.clear();
     }
     public void addNodeToScene(ProjectorNode projectorNode, int row, int max, double angle1) {
         double yOffset = 1300; //a bit more than 1080p height
@@ -120,7 +123,7 @@ public class ProjectorNodeGroup extends Group {
         transitionList.add(createTransition(projectorNode));
     }
     public void animateImages() {
-        labelGroup.setOpacity(0.0);
+        shape3DToLabel.values().forEach(label -> label.setOpacity(0.0));
         nodes.forEach(n -> n.setVisible(false));
         AnimationTimer timer = createAnimation();
         timer.start();
@@ -189,7 +192,8 @@ public class ProjectorNodeGroup extends Group {
         parallelTransition.setCycleCount(1);
         return parallelTransition;
     }    
-    private void updateLabels() {
+
+    public void updateLabels() {
         shape3DToLabel.forEach((node, label) -> {
             javafx.geometry.Point3D coordinates = node.localToScene(javafx.geometry.Point3D.ZERO, true);
             //@DEBUG SMP  useful debugging print
