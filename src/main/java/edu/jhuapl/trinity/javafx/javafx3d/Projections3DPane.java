@@ -441,7 +441,7 @@ public class Projections3DPane extends StackPane implements
 
         projectionOpticon = new Opticon(Color.CYAN, 100);
         extrasGroup.getChildren().add(projectionOpticon);
-        projectionOpticon.visibleProperty().bind(autoProjectionProperty);
+        projectionOpticon.visibleProperty().bind(projectionOpticon.orbitingProperty);
 
         miniCrosshair = new Crosshair3D(javafx.geometry.Point3D.ZERO,
             2, 1.0f);
@@ -2893,7 +2893,9 @@ public class Projections3DPane extends StackPane implements
                 projections[0].length, 1.0);
             projectedFV.setLayer(featureVector.getLayer());
             projectedFV.setLabel(featureVector.getLabel());
+            projectedFV.setImageURL(featureVector.getImageURL());
             projectedFV.setMediaURL(featureVector.getMediaURL());
+            projectedFV.setText(featureVector.getText());
             //Convert projected point to sphere
             //set color according to label and projection status
             //add feature vector to sphere lookup
@@ -2906,6 +2908,21 @@ public class Projections3DPane extends StackPane implements
 //            update spark line views with distance and threshold checks
         }
         return null;
+    }
+    
+    @Override
+    public void transformFeatureVector(FeatureVector featureVector) {
+        Point3D transformedPoint = projectVector(featureVector);
+        if (animatingProjections && null != transformedPoint) {
+            Platform.runLater(() -> {
+                //For the lulz... (and also to provide a visual indicator to user!)
+                projectionOpticon.fireData(new javafx.geometry.Point3D(
+                    transformedPoint.getX() * projectionScalar,
+                    transformedPoint.getY() * -projectionScalar,
+                    transformedPoint.getZ() * projectionScalar
+                ), 1, FactorLabel.getColorByLabel(featureVector.getLabel()));
+            });
+        }
     }
 
     public void transformFeatureCollection(final FeatureCollection fc) {
