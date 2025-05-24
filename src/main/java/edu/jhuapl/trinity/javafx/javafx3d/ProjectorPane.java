@@ -270,7 +270,7 @@ public class ProjectorPane extends StackPane {
                         row *= -1;
                     //add each projector node to the column
                     for (ProjectorNode pn : projectorNodes) {
-                        projectorNodeGroup.addNodeToScene(pn, row, projectorNodes.size() / 2, angle1);
+                        projectorNodeGroup.addNodeToScene(pn, row, angle1, projectorNodeGroup.originRadius);
                         row++;
                     }
                     //Add header Label based on directory name

@@ -12,6 +12,7 @@ import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Text;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -21,22 +22,37 @@ import org.slf4j.LoggerFactory;
 public class ProjectorTextNode extends ProjectorNode {
     private static final Logger LOG = LoggerFactory.getLogger(ProjectorTextNode.class);
     String textContent; 
-    
-    public static WritableImage convertTextToImage(String textContent) {
-        //make transparent so it doesn't interfere with subnode transparency effects
-        Background transBack = new Background(new BackgroundFill(
-            Color.TRANSPARENT, CornerRadii.EMPTY, Insets.EMPTY));
-        
+
+    public static TextArea convertTextToArea(String textContent) {
         //create a node to render the actual string    
         TextArea textArea = new TextArea(textContent);
         textArea.setWrapText(true);
-        BorderPane bpOilSpill = new BorderPane(textArea);
-        bpOilSpill.getStyleClass().add("projector-text-node");
+        textArea.setEditable(false);
+        textArea.setMouseTransparent(true);
+        return textArea;
+    }
+    public static Text convertTextToText(String textContent) {
+        //create a node to render the actual string    
+        Text text = new Text(textContent.length() > 1000 
+            ? textContent.substring(0,1000):textContent);
+        text.setWrappingWidth(500);
+        text.setMouseTransparent(true);
+        text.setFill(Color.ALICEBLUE);
+        return text;
+    }
+    
+    public static WritableImage convertTextToImage(String textContent) {
+//        //make transparent so it doesn't interfere with subnode transparency effects
+//        Background transBack = new Background(new BackgroundFill(
+//            Color.TRANSPARENT, CornerRadii.EMPTY, Insets.EMPTY));
+        
+        BorderPane bpOilSpill = new BorderPane(convertTextToArea(textContent));
+//        bpOilSpill.getStyleClass().add("projector-text-node");
 
-        Scene scene = new Scene(bpOilSpill, 512, 512, Color.DARKSLATEGRAY);
-        //freaky styley
-        String CSS = StyleResourceProvider.getResource("styles.css").toExternalForm();
-        scene.getStylesheets().add(CSS);
+//        Scene scene = new Scene(bpOilSpill, 512, 512, Color.DARKSLATEGRAY);
+//        //freaky styley
+//        String CSS = StyleResourceProvider.getResource("styles.css").toExternalForm();
+//        scene.getStylesheets().add(CSS);
         //snatch the image
         SnapshotParameters snapshotParams = new SnapshotParameters();
         snapshotParams.setFill(Color.TRANSPARENT);
@@ -45,8 +61,9 @@ public class ProjectorTextNode extends ProjectorNode {
     }
 
     public ProjectorTextNode(String textContent) {
-        super(convertTextToImage(textContent));
-        addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
+        super(convertTextToText(textContent));
+        this.textContent = textContent;
+//        addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
 //            if (e.getButton() == MouseButton.PRIMARY) {
 //                if (e.getClickCount() == 1 && e.isControlDown()) {
 //                    if (null != umapConfig) {
@@ -64,7 +81,7 @@ public class ProjectorTextNode extends ProjectorNode {
 //                    }
 //                }
 //            }
-        });
+//        });
 //        Tooltip.install(imageView, new Tooltip(analysisConfig.getAnalysisName()));
     }
 }

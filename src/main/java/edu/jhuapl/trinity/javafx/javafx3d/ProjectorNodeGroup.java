@@ -1,12 +1,14 @@
 package edu.jhuapl.trinity.javafx.javafx3d;
 
 import edu.jhuapl.trinity.javafx.components.projector.ProjectorNode;
+import edu.jhuapl.trinity.javafx.components.projector.ProjectorRow;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import javafx.scene.Group;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Optional;
 import javafx.animation.AnimationTimer;
 import javafx.animation.FadeTransition;
 import javafx.animation.KeyFrame;
@@ -39,19 +41,20 @@ import org.fxyz3d.utils.CameraTransformer;
  */
 public class ProjectorNodeGroup extends Group {
     public Group labelGroup; 
-    ArrayList<ProjectorNode> nodes;
-    ArrayList<Integer> randomIndices;
-    List<ParallelTransition> transitionList = new ArrayList<>();
     public double transitionXOffset = -15000;
     public double transitionYOffset = -15000;
     public double transitionZOffset = 0;
     public double originRadius = 9001;
+    public boolean positiveRow = false;
     public SubScene subScene;
     public Camera camera;
     public CameraTransformer cameraTransform;
     //allows 2D labels to track their 3D counterparts
-    public HashMap<Shape3D, Label> shape3DToLabel = new HashMap<>();    
-
+    public HashMap<Shape3D, Label> shape3DToLabel;    
+    public ArrayList<ProjectorRow> rows;    
+    ArrayList<ProjectorNode> nodes;
+    List<ParallelTransition> transitionList;
+    
     public ProjectorNodeGroup(SubScene subScene, Camera camera, CameraTransformer cameraTransform, Group labelGroup) {
         this.subScene = subScene;
         this.camera = camera;
@@ -59,24 +62,48 @@ public class ProjectorNodeGroup extends Group {
         this.labelGroup = labelGroup;
         nodes = new ArrayList<>();
         getChildren().addAll(nodes);
+        transitionList = new ArrayList<>();
+        shape3DToLabel = new HashMap<>();
+        rows = new ArrayList<>();
     }
     public void clearAll() {
         nodes.clear();
         transitionList.clear();
+        shape3DToLabel.clear();
+        rows.clear();
+        getChildren().clear();
     }
-    public void addNodeToScene(ProjectorNode projectorNode, int row, int max, double angle1) {
-        double yOffset = 1300; //a bit more than 1080p height
+
+    public ProjectorNode addNodeToScene(ProjectorNode projectorNode, String rowLabel) {
+        Optional<ProjectorRow> optRow = rows.stream()
+            .filter(r -> r.rowLabel.contentEquals(rowLabel)).findFirst();
+        if(!optRow.isPresent()) {
+            //we need to create new row
+            //this logic should alternate row placement in the 3D scene such that 
+            //0 is equitorial, negative goes Y up and positive goes Y down... 
+            int r = rows.isEmpty() ? 0 : rows.size()/2 + 1;
+            if(positiveRow == false)
+                r *= -1;
+            System.out.println("r = " + r + " " + rowLabel);
+
+            ProjectorRow newRow = new ProjectorRow(rowLabel, r, originRadius);
+            rows.add(newRow);
+            positiveRow = !positiveRow;
+            return addNodeToScene(projectorNode, newRow.row, newRow.getAngleAndStep(), newRow.getRadius());
+        } else {    
+            ProjectorRow row = optRow.get();
+            return addNodeToScene(projectorNode, row.row, row.getAngleAndStep(), row.getRadius());
+        }
+    }    
+    public ProjectorNode addNodeToScene(ProjectorNode projectorNode, int row, double angle1, double radius) {
+//        double yOffset = 1300; //a bit more than 1080p height
+        double yOffset = 636; //a bit more than 512 height
         double angle2 = Math.PI;
-        Reflection refl = new Reflection();
-        refl.setFraction(0.9f);
-        Glow glow = new Glow();
-        glow.setLevel(0.9);
-        glow.setInput(refl);
 
         // Ring formula
-        final double x = originRadius * Math.sin(angle1) * Math.cos(angle2);
+        final double x = radius * Math.sin(angle1) * Math.cos(angle2);
         final double y = yOffset * row;
-        final double z = originRadius * Math.cos(angle1);
+        final double z = radius * Math.cos(angle1);
 
         projectorNode.setTranslateX(x);
         projectorNode.setTranslateY(y);
@@ -88,10 +115,6 @@ public class ProjectorNodeGroup extends Group {
         projectorNode.getTransforms().addAll(ry);
         final double ryAngle = ry.getAngle();
 
-//        // reflection on bottom row
-//        if (row == max) {
-//            projectorNode.setEffect(glow);
-//        }
         //Add special click handler to zoom camera
         projectorNode.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
             if (e.getButton() == MouseButton.MIDDLE) {
@@ -120,7 +143,9 @@ public class ProjectorNodeGroup extends Group {
         projectorNode.setVisible(false); //must animate or manually set visible later
         nodes.add(projectorNode);
         getChildren().add(projectorNode);
-        transitionList.add(createTransition(projectorNode));
+//        ParallelTransition pt = createTransition(projectorNode);
+//        transitionList.add(pt);
+        return projectorNode;
     }
     public void animateImages() {
         shape3DToLabel.values().forEach(label -> label.setOpacity(0.0));

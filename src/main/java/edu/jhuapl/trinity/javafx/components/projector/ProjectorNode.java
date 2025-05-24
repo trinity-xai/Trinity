@@ -1,6 +1,7 @@
 package edu.jhuapl.trinity.javafx.components.projector;
 
 import javafx.geometry.Insets;
+import javafx.scene.Node;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
@@ -19,15 +20,18 @@ import org.slf4j.LoggerFactory;
  */
 public class ProjectorNode extends Pane {
     private static final Logger LOG = LoggerFactory.getLogger(ProjectorNode.class);
-    ImageView imageView;
+    Node node; 
     Border hoverBorder;
     Border emptyBorder;
     Border selectedBorder;
     int borderWidth = 50;
 
     public ProjectorNode(Image image) {
-        imageView = new ImageView(image);
-        getChildren().add(imageView);
+        this(new ImageView(image));
+    }
+    public ProjectorNode(Node node) {
+        this.node = node;
+        getChildren().add(this.node);
         emptyBorder = Border.EMPTY;
         hoverBorder = new Border(new BorderStroke(Color.LIGHTCYAN.deriveColor(1, 1, 1, 0.75),
             BorderStrokeStyle.SOLID, CornerRadii.EMPTY,

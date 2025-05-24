@@ -42,6 +42,6 @@ public class ProjectorAnalysisNode extends ProjectorNode {
                 }
             }
         });
-        Tooltip.install(imageView, new Tooltip(analysisConfig.getAnalysisName()));
+        Tooltip.install(node, new Tooltip(analysisConfig.getAnalysisName()));
     }
 }

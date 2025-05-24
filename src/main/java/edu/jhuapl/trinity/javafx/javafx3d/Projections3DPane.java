@@ -25,6 +25,8 @@ import edu.jhuapl.trinity.javafx.components.panes.ManifoldControlPane;
 import edu.jhuapl.trinity.javafx.components.panes.RadarPlotPane;
 import edu.jhuapl.trinity.javafx.components.panes.RadialEntityOverlayPane;
 import edu.jhuapl.trinity.javafx.components.panes.VideoPane;
+import edu.jhuapl.trinity.javafx.components.projector.ProjectorNode;
+import edu.jhuapl.trinity.javafx.components.projector.ProjectorTextNode;
 import edu.jhuapl.trinity.javafx.components.radial.AnimatedNeonCircle;
 import edu.jhuapl.trinity.javafx.components.radial.ViewControlsMenu;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
@@ -141,6 +143,7 @@ import java.util.stream.Collectors;
 
 import static edu.jhuapl.trinity.javafx.handlers.GaussianMixtureEventHandler.generateEllipsoidDiagonal;
 import static edu.jhuapl.trinity.utils.ResourceUtils.removeExtension;
+import javafx.animation.ParallelTransition;
 import javafx.scene.control.Menu;
 
 /**
@@ -178,7 +181,6 @@ public class Projections3DPane extends StackPane implements
     public Group connectorsGroup = new Group();
     public Group debugGroup = new Group();
     public Group ellipsoidGroup = new Group();
-    public Group projectedGroup = new Group();
     public XFormGroup dataXForm = new XFormGroup();
     public boolean enableXForm = false;
     public boolean enableContextMenu = true;
@@ -262,6 +264,7 @@ public class Projections3DPane extends StackPane implements
     public boolean animatingProjections = false;
     public boolean emptyVisionEnabled = false;
     public SimpleBooleanProperty autoProjectionProperty = new SimpleBooleanProperty(false);
+    public SimpleBooleanProperty projectionWallProperty = new SimpleBooleanProperty(false);
     Opticon projectionOpticon;
     public ConcurrentLinkedQueue<HyperspaceSeed> hyperspaceSeeds = new ConcurrentLinkedQueue<>();
     public ConcurrentLinkedQueue<Perspective3DNode> pNodes = new ConcurrentLinkedQueue<>();
@@ -274,6 +277,11 @@ public class Projections3DPane extends StackPane implements
     private final Rotate rotateZ = new Rotate(0, Rotate.Z_AXIS);
 
     private Skybox skybox;
+    ProjectorNodeGroup projectorNodeGroup;
+    int currentProjectorRow = -1;
+    double currentProjectorAngle = -Math.PI * 0.35; //@TODO SMP Dynamically figure this out
+    double angleStepSize = 0.25; //@TODO SMP Dynamically figure this out
+     
     private Group nodeGroup = new Group();
     private Group labelGroup = new Group();
     private Group manifoldGroup = new Group();
@@ -434,6 +442,10 @@ public class Projections3DPane extends StackPane implements
         this.scene.addEventHandler(EffectEvent.OPTICON_ENABLE_ORBITING, e -> {
             projectionOpticon.enableOrbiting((boolean) e.object);
         });
+        
+        projectorNodeGroup = new ProjectorNodeGroup(subScene, camera, cameraTransform, labelGroup);
+        projectorNodeGroup.visibleProperty().bind(projectionWallProperty);
+        sceneRoot.getChildren().addAll(projectorNodeGroup);
 
         //Add 3D subscene stuff to 3D scene root object
         sceneRoot.getChildren().addAll(cameraTransform, highlightedPoint,
@@ -906,6 +918,7 @@ public class Projections3DPane extends StackPane implements
             featureVectors.clear();
             sphereToFeatureVectorMap.clear();
             ellipsoidGroup.getChildren().clear();
+            projectorNodeGroup.clearAll();
             clearAll();
             refresh(true);
         });
@@ -924,6 +937,12 @@ public class Projections3DPane extends StackPane implements
             cubeWorld.showDataAndCrosshairsOnly(showCubeItem.isSelected());
         });
 
+        CheckMenuItem enableProjectionWallItem = new CheckMenuItem("Enable Projection Wall");
+        enableProjectionWallItem.setSelected(false);
+        enableProjectionWallItem.selectedProperty().addListener(cl -> {
+            projectionWallProperty.set(enableProjectionWallItem.isSelected());
+        });
+
         CheckMenuItem animatingProjectionsItem = new CheckMenuItem("Animating Projections");
         animatingProjectionsItem.setSelected(animatingProjections);
         animatingProjectionsItem.selectedProperty().addListener(cl ->
@@ -936,7 +955,8 @@ public class Projections3DPane extends StackPane implements
         ImageView optionsImageView = ResourceUtils.loadIcon("configuration", ICON_FIT_HEIGHT);
         optionsImageView.setEffect(glow);
         Menu optionsMenu = new Menu("Options", optionsImageView, 
-            showCubeItem, animatingProjectionsItem, updatingTrajectoriesItem);
+            showCubeItem, enableProjectionWallItem, 
+            animatingProjectionsItem, updatingTrajectoriesItem);
         
         ContextMenu cm = new ContextMenu(selectPointsItem,
             resetViewItem, manifoldsItem, radarItem, exportItem, analysisItem, navigatorItem,
@@ -1422,7 +1442,7 @@ public class Projections3DPane extends StackPane implements
         manifoldGroup.setVisible(!projectileSystem.isRunning());
         connectorsGroup.setVisible(!projectileSystem.isRunning());
         ellipsoidGroup.setVisible(!projectileSystem.isRunning());
-        projectedGroup.setVisible(!projectileSystem.isRunning());
+//        projectedGroup.setVisible(!projectileSystem.isRunning());
         highlighterNeonCircle.setVisible(!projectileSystem.isRunning());
         anchorTrajectory.setVisible(!projectileSystem.isRunning());
         anchorTraj3D.setVisible(!projectileSystem.isRunning());
@@ -2359,13 +2379,23 @@ public class Projections3DPane extends StackPane implements
                     new Font("Consolas", 20), Color.GREEN));
         });
         //Make a 3D sphere for each projected feature vector
+        System.out.println("Total Features to project: " + featureCollection.getFeatures().size());
         for (int i = 0; i < featureCollection.getFeatures().size(); i++) {
             FeatureVector featureVector = featureCollection.getFeatures().get(i);
             addProjectedFeatureVector(featureVector);
+            //@EXPERIMENTAL SMP
+            addProjectorNode(featureVector);
         }
         trimQueueNow();
     }
-
+    
+    private void addProjectorNode(FeatureVector featureVector) {
+        if(null != featureVector.getText()){
+            ProjectorNode pn = new ProjectorTextNode(featureVector.getText());
+            projectorNodeGroup.addNodeToScene(pn, featureVector.getLabel());
+            pn.setVisible(true);
+        }
+    }
     public void addProjectedFeatureVector(FeatureVector featureVector) {
         Color labelColor = FactorLabel.getColorByLabel(featureVector.getLabel());
         PhongMaterial mat = new PhongMaterial(labelColor);
@@ -2915,10 +2945,12 @@ public class Projections3DPane extends StackPane implements
         }
         return null;
     }
+
     
     @Override
     public void transformFeatureVector(FeatureVector featureVector) {
         Point3D transformedPoint = projectVector(featureVector);
+        addProjectorNode(featureVector);
         if (animatingProjections && null != transformedPoint) {
             Platform.runLater(() -> {
                 //For the lulz... (and also to provide a visual indicator to user!)
