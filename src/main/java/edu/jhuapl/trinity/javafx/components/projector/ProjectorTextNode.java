@@ -12,6 +12,9 @@ import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.CycleMethod;
+import javafx.scene.paint.RadialGradient;
+import javafx.scene.paint.Stop;
 import javafx.scene.text.Text;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -22,7 +25,13 @@ import org.slf4j.LoggerFactory;
 public class ProjectorTextNode extends ProjectorNode {
     private static final Logger LOG = LoggerFactory.getLogger(ProjectorTextNode.class);
     String textContent; 
-
+    public static Color colorZero = Color.BLUE.deriveColor(1, 1, 1, 0.25);
+    public static Color colorOne = Color.SKYBLUE.deriveColor(1, 1, 1, 0.5);
+    public static RadialGradient radialGradient = 
+        new RadialGradient(0, 0, 0.5, 0.5, 1, true, CycleMethod.NO_CYCLE,
+                new Stop(0.0, colorZero),
+                new Stop(1.0, colorOne));
+    
     public static TextArea convertTextToArea(String textContent) {
         //create a node to render the actual string    
         TextArea textArea = new TextArea(textContent);
@@ -63,6 +72,11 @@ public class ProjectorTextNode extends ProjectorNode {
     public ProjectorTextNode(String textContent) {
         super(convertTextToText(textContent));
         this.textContent = textContent;
+        //make transparent so it doesn't interfere with subnode transparency effects
+        Background back = new Background(new BackgroundFill(
+            radialGradient, CornerRadii.EMPTY, Insets.EMPTY));
+        setBackground(back);
+        
 //        addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
 //            if (e.getButton() == MouseButton.PRIMARY) {
 //                if (e.getClickCount() == 1 && e.isControlDown()) {

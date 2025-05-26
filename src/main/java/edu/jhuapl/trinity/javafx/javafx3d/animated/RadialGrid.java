@@ -24,6 +24,8 @@ public class RadialGrid extends Group {
     private static final double LINE_RADIUS = 0.2;
     private static final double CIRCLE_SEGMENTS = 90;
     AnimationTimer pulseAnimator;
+    private double pulseScalar = 0.25;
+    private double baseRadius = LINE_RADIUS;
     private double rotationSpeed = 7; // degrees per second
     private double pulseSpeedHz = 0.12; // pulses per second
     private boolean enableRotation = false;
@@ -61,9 +63,7 @@ public class RadialGrid extends Group {
                     // Optional: vary radius slightly for "breathing"
                     for (Node node : getChildren()) {
                         if (node instanceof Cylinder cylinder) {
-                            double baseRadius = 0.1;
-                            double scale = 0.25 + pulse;//0.1 * pulse; // minor change
-                            cylinder.setRadius(baseRadius * scale);
+                            cylinder.setRadius(getBaseRadius() * (getPulseScalar() + pulse));
                         }
                     }
                 }
@@ -198,5 +198,33 @@ public class RadialGrid extends Group {
      */
     public void setEnablePulsation(boolean enablePulsation) {
         this.enablePulsation = enablePulsation;
+    }
+
+    /**
+     * @return the baseRadius
+     */
+    public double getBaseRadius() {
+        return baseRadius;
+    }
+
+    /**
+     * @param baseRadius the baseRadius to set
+     */
+    public void setBaseRadius(double baseRadius) {
+        this.baseRadius = baseRadius;
+    }
+
+    /**
+     * @return the pulseScalar
+     */
+    public double getPulseScalar() {
+        return pulseScalar;
+    }
+
+    /**
+     * @param pulseScalar the pulseScalar to set
+     */
+    public void setPulseScalar(double pulseScalar) {
+        this.pulseScalar = pulseScalar;
     }
 }

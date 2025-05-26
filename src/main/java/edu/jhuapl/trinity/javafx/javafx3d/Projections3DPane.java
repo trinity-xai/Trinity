@@ -24,6 +24,7 @@ import edu.jhuapl.trinity.javafx.components.panes.JoystickPane;
 import edu.jhuapl.trinity.javafx.components.panes.ManifoldControlPane;
 import edu.jhuapl.trinity.javafx.components.panes.RadarPlotPane;
 import edu.jhuapl.trinity.javafx.components.panes.RadialEntityOverlayPane;
+import edu.jhuapl.trinity.javafx.components.panes.RadialGridControlsPane;
 import edu.jhuapl.trinity.javafx.components.panes.VideoPane;
 import edu.jhuapl.trinity.javafx.components.projector.ProjectorNode;
 import edu.jhuapl.trinity.javafx.components.projector.ProjectorTextNode;
@@ -142,8 +143,8 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static edu.jhuapl.trinity.javafx.handlers.GaussianMixtureEventHandler.generateEllipsoidDiagonal;
+import edu.jhuapl.trinity.javafx.javafx3d.animated.RadialGrid;
 import static edu.jhuapl.trinity.utils.ResourceUtils.removeExtension;
-import javafx.animation.ParallelTransition;
 import javafx.scene.control.Menu;
 
 /**
@@ -172,9 +173,11 @@ public class Projections3DPane extends StackPane implements
     private double mouseDeltaY;
     RadialEntityOverlayPane radialOverlayPane;
     ManifoldControlPane manifoldControlPane;
+    RadialGridControlsPane radialGridControlPane;
     RadarPlotPane radarPlotPane;
     ViewControlsMenu viewControlsMenu;
     JoystickPane joystickPane;
+    RadialGrid radialGrid;
 
     public Group sceneRoot = new Group();
     public Group extrasGroup = new Group();
@@ -447,8 +450,10 @@ public class Projections3DPane extends StackPane implements
         projectorNodeGroup.visibleProperty().bind(projectionWallProperty);
         sceneRoot.getChildren().addAll(projectorNodeGroup);
 
+        radialGrid = new RadialGrid();
+        
         //Add 3D subscene stuff to 3D scene root object
-        sceneRoot.getChildren().addAll(cameraTransform, highlightedPoint,
+        sceneRoot.getChildren().addAll(cameraTransform, radialGrid, highlightedPoint,
             nodeGroup, manifoldGroup, debugGroup, cubeWorld,
             dataXForm, extrasGroup, connectorsGroup, anchorTSM);
 
@@ -845,6 +850,7 @@ public class Projections3DPane extends StackPane implements
         MenuItem manifoldsItem = new MenuItem("Manifold Controls", manifold);
 
         manifoldControlPane = new ManifoldControlPane(scene, App.getAppPathPaneStack());
+        manifoldControlPane.visibleProperty().bind(this.visibleProperty());
         manifoldsItem.setOnAction(e -> {
             Pane pathPane = App.getAppPathPaneStack();
             if (null == manifoldControlPane) {
@@ -856,6 +862,26 @@ public class Projections3DPane extends StackPane implements
                 manifoldControlPane.slideInPane();
             } else {
                 manifoldControlPane.show();
+            }
+        });
+        
+        ImageView radial = ResourceUtils.loadIcon("radial", ICON_FIT_HEIGHT);
+        radial.setEffect(glow);
+        MenuItem radialItem = new MenuItem("Radial Grid Controls", radial);
+
+        radialGridControlPane = new RadialGridControlsPane(scene, App.getAppPathPaneStack(), radialGrid);
+        radialGridControlPane.visibleProperty().bind(this.visibleProperty());
+        radialItem.setOnAction(e -> {
+            Pane pathPane = App.getAppPathPaneStack();
+            if (null == radialGridControlPane) {
+                radialGridControlPane = new RadialGridControlsPane(scene, pathPane, radialGrid);
+                radialGridControlPane.visibleProperty().bind(this.visibleProperty());
+            }
+            if (!pathPane.getChildren().contains(radialGridControlPane)) {
+                pathPane.getChildren().add(radialGridControlPane);
+                radialGridControlPane.slideInPane();
+            } else {
+                radialGridControlPane.show();
             }
         });
         ImageView radar = ResourceUtils.loadIcon("radar", ICON_FIT_HEIGHT);
@@ -959,7 +985,8 @@ public class Projections3DPane extends StackPane implements
             animatingProjectionsItem, updatingTrajectoriesItem);
         
         ContextMenu cm = new ContextMenu(selectPointsItem,
-            resetViewItem, manifoldsItem, radarItem, exportItem, analysisItem, navigatorItem,
+            resetViewItem, manifoldsItem, radialItem, radarItem, 
+            exportItem, analysisItem, navigatorItem,
             clearCalloutsItem, clearProjectionItem, optionsMenu);
 
         cm.setAutoFix(true);

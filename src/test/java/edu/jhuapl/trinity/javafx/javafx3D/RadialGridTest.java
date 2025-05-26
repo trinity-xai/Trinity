@@ -1,7 +1,7 @@
 package edu.jhuapl.trinity.javafx.javafx3D;
 
 import edu.jhuapl.trinity.javafx.javafx3d.animated.RadialGrid;
-import edu.jhuapl.trinity.utils.Utils;
+import edu.jhuapl.trinity.javafx.javafx3d.animated.RadialGridControlBox;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.layout.BorderPane;
@@ -14,15 +14,9 @@ import javafx.scene.Group;
 import javafx.scene.PerspectiveCamera;
 import javafx.scene.SceneAntialiasing;
 import javafx.scene.SubScene;
-import javafx.scene.control.Button;
-import javafx.scene.control.ColorPicker;
-import javafx.scene.control.Label;
-import javafx.scene.control.Spinner;
-import javafx.scene.control.ToggleButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.Pane;
-import javafx.scene.layout.VBox;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Translate;
 
@@ -45,12 +39,8 @@ public class RadialGridTest extends Application {
     private static final double LINE_RADIUS = 0.2;
     private static final double CIRCLE_SEGMENTS = 90;
     RadialGrid radialGrid;
+    RadialGridControlBox controls;
     Group sceneRoot;
-    Spinner<Integer> numCirclesSpinner;
-    Spinner<Integer> numLinesSpinner;
-    Spinner<Double> maxRadiusSpinner;
-    Spinner<Double> lineRadiusSpinner;
-    Spinner<Double> circleSegmentsSpinner;    
     
     @Override
     public void start(Stage primaryStage) {
@@ -75,57 +65,9 @@ public class RadialGridTest extends Application {
         
         // Mouse controls
         handleMouse(subScene);
-        ToggleButton animateToggle = new ToggleButton("Animation");
-        animateToggle.setOnAction(e -> 
-            radialGrid.setEnableAnimation(animateToggle.isSelected()));
-        ToggleButton pulseToggle = new ToggleButton("Pulse");
-        pulseToggle.setOnAction(e -> 
-            radialGrid.setEnablePulsation(pulseToggle.isSelected()));
-        ToggleButton rotateToggle = new ToggleButton("Rotate");
-        rotateToggle.setOnAction(e -> 
-            radialGrid.setEnableRotation(rotateToggle.isSelected()));
-
-        numCirclesSpinner = new Spinner(2, 200, NUM_CIRCLES, 1);
-        numCirclesSpinner.valueProperty().addListener(e->regenerate());
-        numLinesSpinner = new Spinner(2, 200, NUM_RADIAL_LINES, 1);
-        numLinesSpinner.valueProperty().addListener(e->regenerate());
-        maxRadiusSpinner = new Spinner(1, 10000, MAX_RADIUS, 100);
-        maxRadiusSpinner.valueProperty().addListener(e->regenerate());
-        lineRadiusSpinner = new Spinner(0.1, 100, LINE_RADIUS, 0.1);
-        lineRadiusSpinner.valueProperty().addListener(e->regenerate());
-        circleSegmentsSpinner = new Spinner(1, 360, CIRCLE_SEGMENTS, 1);
-        circleSegmentsSpinner.valueProperty().addListener(e->regenerate());
-        
-        Button generateButton = new Button("Regenerate");
-        generateButton.setOnAction(e -> regenerate());
-        
-        ColorPicker diffuseColorPicker = new ColorPicker(Color.DEEPSKYBLUE);
-        diffuseColorPicker.valueProperty().bindBidirectional(radialGrid.gridMaterial.diffuseColorProperty());
-        ColorPicker specularColorPicker = new ColorPicker(Color.LIGHTCYAN);
-        specularColorPicker.valueProperty().bindBidirectional(radialGrid.gridMaterial.specularColorProperty());
-        
-        VBox vbox = new VBox(10, 
-            animateToggle,
-            pulseToggle,
-            rotateToggle,
-            new Label("Number of Circles"),
-            numCirclesSpinner,
-            new Label("Number of Lines"),
-            numLinesSpinner,
-            new Label("Max Radius"),
-            maxRadiusSpinner,
-            new Label("Line Radius"),
-            lineRadiusSpinner,
-            new Label("Circle Segment Arc"),
-            circleSegmentsSpinner,
-            generateButton,
-            new Label("Diffuse Color"),
-            diffuseColorPicker,
-            new Label("Specular Color"),
-            specularColorPicker
-        );
+        controls = new RadialGridControlBox(radialGrid);
         BorderPane root = new BorderPane(subScenePane);
-        root.setLeft(vbox);
+        root.setLeft(controls);
         root.setMinSize(800,800);
         Scene scene = new Scene(root);
 
@@ -133,13 +75,6 @@ public class RadialGridTest extends Application {
         primaryStage.setScene(scene);
         primaryStage.show();
     }
-private void regenerate() {
-    long startTime = System.nanoTime();
-    radialGrid.regenerate(numCirclesSpinner.getValue(), 
-        numLinesSpinner.getValue(), maxRadiusSpinner.getValue(), 
-        lineRadiusSpinner.getValue(), circleSegmentsSpinner.getValue());
-    Utils.printTotalTime(startTime);
-}
 
     private void handleMouse(SubScene scene) {
         scene.setOnMousePressed((MouseEvent event) -> {
