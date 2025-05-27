@@ -196,7 +196,7 @@ public class ProjectorNodeGroup extends Group {
         streetSpiritFadeIn.setToValue(1);
         streetSpiritFadeIn.playFromStart();
     }    
-    private ParallelTransition createTransition(final Node node) {
+    public ParallelTransition createTransition(final Node node) {
         Path path = new Path();
         path.getElements().add(new MoveToAbs(node,
             node.getTranslateX() + transitionXOffset,

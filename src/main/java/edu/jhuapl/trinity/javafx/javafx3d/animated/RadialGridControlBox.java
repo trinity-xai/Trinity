@@ -30,15 +30,15 @@ public class RadialGridControlBox extends VBox {
     public RadialGridControlBox(RadialGrid radialGrid) {
         this.radialGrid=radialGrid;
         ToggleButton animateToggle = new ToggleButton("Animation");
-        animateToggle.setPrefWidth(CONTROL_PREF_WIDTH);
+        animateToggle.setPrefWidth(CONTROL_PREF_WIDTH*2);
         animateToggle.setOnAction(e -> 
             radialGrid.setEnableAnimation(animateToggle.isSelected()));
         ToggleButton pulseToggle = new ToggleButton("Pulse");
-        pulseToggle.setPrefWidth(CONTROL_PREF_WIDTH);
+        pulseToggle.setPrefWidth(CONTROL_PREF_WIDTH*2);
         pulseToggle.setOnAction(e -> 
             radialGrid.setEnablePulsation(pulseToggle.isSelected()));
         ToggleButton rotateToggle = new ToggleButton("Rotate");
-        rotateToggle.setPrefWidth(CONTROL_PREF_WIDTH);
+        rotateToggle.setPrefWidth(CONTROL_PREF_WIDTH*2);
         rotateToggle.setOnAction(e -> 
             radialGrid.setEnableRotation(rotateToggle.isSelected()));
 
@@ -66,6 +66,7 @@ public class RadialGridControlBox extends VBox {
         circleSegmentsSpinner.setPrefWidth(CONTROL_PREF_WIDTH);
         
         Button generateButton = new Button("Regenerate");
+        generateButton.setPrefWidth(CONTROL_PREF_WIDTH*2);
         generateButton.setOnAction(e -> regenerate());
         
         ColorPicker diffuseColorPicker = new ColorPicker(Color.DEEPSKYBLUE);

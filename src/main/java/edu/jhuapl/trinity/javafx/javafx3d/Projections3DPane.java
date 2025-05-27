@@ -145,6 +145,7 @@ import java.util.stream.Collectors;
 import static edu.jhuapl.trinity.javafx.handlers.GaussianMixtureEventHandler.generateEllipsoidDiagonal;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.RadialGrid;
 import static edu.jhuapl.trinity.utils.ResourceUtils.removeExtension;
+import javafx.animation.ParallelTransition;
 import javafx.scene.control.Menu;
 
 /**
@@ -804,8 +805,8 @@ public class Projections3DPane extends StackPane implements
                             //generate the diagonal for ellipsoid rendering
                             generateEllipsoidDiagonal(gmcFile.gaussianMixtureCollection);
                             addGaussianMixtureCollection(gmcFile.gaussianMixtureCollection);
+                            e.consume();
                         }
-                        e.consume();
                     } catch (IOException ex) {
                         LOG.error(null, ex);
                     }
@@ -2419,8 +2420,14 @@ public class Projections3DPane extends StackPane implements
     private void addProjectorNode(FeatureVector featureVector) {
         if(null != featureVector.getText()){
             ProjectorNode pn = new ProjectorTextNode(featureVector.getText());
-            projectorNodeGroup.addNodeToScene(pn, featureVector.getLabel());
-            pn.setVisible(true);
+            Platform.runLater(() -> {
+                projectorNodeGroup.addNodeToScene(pn, featureVector.getLabel());
+                pn.setVisible(true);
+                if(animatingProjections) {
+                    ParallelTransition pt = projectorNodeGroup.createTransition(pn);
+                    pt.play();
+                }
+            });
         }
     }
     public void addProjectedFeatureVector(FeatureVector featureVector) {
@@ -2998,6 +3005,8 @@ public class Projections3DPane extends StackPane implements
                 for (int i = 0; i < fc.getFeatures().size(); i++) {
                     FeatureVector featureVector = fc.getFeatures().get(i);
                     Point3D transformedPoint = projectVector(featureVector);
+                    //@EXPERIMENTAL SMP
+                    addProjectorNode(featureVector);                     
                     if (animatingProjections && null != transformedPoint) {
                         Platform.runLater(() -> {
                             //For the lulz... (and also to provide a visual indicator to user!)
@@ -3007,8 +3016,9 @@ public class Projections3DPane extends StackPane implements
                                 transformedPoint.getZ() * projectionScalar
                             ), 1, FactorLabel.getColorByLabel(featureVector.getLabel()));
                         });
-                        Thread.sleep(100);
                     }
+                    if(animatingProjections)
+                        Thread.sleep(100); //I hate this but...
                 }
                 return null;
             }
