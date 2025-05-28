@@ -700,9 +700,6 @@ public class Projections3DPane extends StackPane implements
                 updateView(false);
             }
 
-//            if (event.isAltDown() && keycode == KeyCode.H) {
-//                makeHull(getPointsByLabel(true, null), null, null);
-//            }
             if (event.isAltDown() && keycode == KeyCode.H) {
                 double w = highlighterNeonCircle.getStrokeWidth() - 0.1;
                 if(w <= 0)
@@ -713,11 +710,10 @@ public class Projections3DPane extends StackPane implements
             if (event.isAltDown() && keycode == KeyCode.J) {
                 double w = highlighterNeonCircle.getStrokeWidth() + 0.1;
                 if(w > 50)
-                    highlighterNeonCircle.setStrokeWidth(50);
+                    highlighterNeonCircle.setStrokeWidth(20);
                 else
                     highlighterNeonCircle.setStrokeWidth(w);
             }
-
             if (keycode == KeyCode.F) {
                 anchorIndex--;
                 if (anchorIndex < 0) anchorIndex = 0;
@@ -849,7 +845,7 @@ public class Projections3DPane extends StackPane implements
         highlighterNeonCircle = new AnimatedNeonCircle(
             new AnimatedNeonCircle.Animation(
                 Duration.millis(3000), Transition.INDEFINITE, false),
-            20, 3.0, 8.0, 5.0);
+            20, 5.0, 8.0, 5.0);
         highlighterNeonCircle.setManaged(false);
         highlighterNeonCircle.setMouseTransparent(true);
         getChildren().clear();

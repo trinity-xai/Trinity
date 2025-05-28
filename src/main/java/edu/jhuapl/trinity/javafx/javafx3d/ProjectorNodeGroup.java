@@ -83,7 +83,6 @@ public class ProjectorNodeGroup extends Group {
             int r = rows.isEmpty() ? 0 : rows.size()/2 + 1;
             if(positiveRow == false)
                 r *= -1;
-            System.out.println("r = " + r + " " + rowLabel);
 
             ProjectorRow newRow = new ProjectorRow(rowLabel, r, originRadius);
             rows.add(newRow);

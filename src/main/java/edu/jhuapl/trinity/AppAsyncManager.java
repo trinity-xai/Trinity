@@ -985,6 +985,7 @@ public class AppAsyncManager extends Task {
                 new ApplicationEvent(ApplicationEvent.HIDE_BUSY_INDICATOR));
         });
         System.out.println("Finished async load.");
+        LOG.info("Finished async load.");
         return null;
     }
 

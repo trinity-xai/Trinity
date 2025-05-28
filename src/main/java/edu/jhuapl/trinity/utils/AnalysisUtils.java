@@ -157,8 +157,8 @@ public enum AnalysisUtils {
     public static List<List<Double>> computeSurfaceDifference(FeatureCollection collection1, FeatureCollection collection2) {
         double[][] rayRay1 = collection1.convertFeaturesToArray();
         double[][] rayRay2 = collection2.convertFeaturesToArray();
-        System.out.println("Computing Surface Differences... ");
-        long startTime = System.nanoTime();
+        //System.out.println("Computing Surface Differences... ");
+        //long startTime = System.nanoTime();
         List<List<Double>> differencesGrid = new ArrayList<>();
 
         for (int rowIndex = 0; rowIndex < rayRay1.length; rowIndex++) {
@@ -173,7 +173,7 @@ public enum AnalysisUtils {
             }
             differencesGrid.add(differenceVector);
         }
-        Utils.printTotalTime(startTime);
+        //Utils.printTotalTime(startTime);
         return differencesGrid;
     }
 

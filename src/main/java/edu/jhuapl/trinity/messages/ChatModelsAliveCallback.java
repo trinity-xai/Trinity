@@ -53,7 +53,8 @@ public class ChatModelsAliveCallback extends RestConsumer {
     @Override
     protected void processResponse(String responseBodyString) {
         try {
-            System.out.println("Response from 'ChatModelsAlive' check: " + responseBodyString);
+            //@DEBUG SMP
+            //System.out.println("Response from 'ChatModelsAlive' check: " + responseBodyString);
             AliveModels chatModelsAliveReesponse = objectMapper.readValue(responseBodyString, AliveModels.class);
             Platform.runLater(() -> {
                 //Let folks know that the chat model service is up
