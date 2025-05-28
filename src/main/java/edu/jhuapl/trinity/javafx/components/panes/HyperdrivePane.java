@@ -375,7 +375,7 @@ public class HyperdrivePane extends LitPathPane {
                 imageEmbeddingRequestIndicator.setLabelLater("Choose Captions...");
                 imageEmbeddingRequestIndicator.spin(true);
                 imageEmbeddingRequestIndicator.fadeBusy(false);
-                System.out.println("Prompting User for Labels...");
+                //System.out.println("Prompting User for Labels...");
                 Platform.runLater(() -> {
                     CaptionChooserBox box = new CaptionChooserBox();
                     box.setChoices(landmarkTextBuilderBox.getChoices());
@@ -391,7 +391,8 @@ public class HyperdrivePane extends LitPathPane {
                     dialogPane.getStylesheets().add(DIALOGCSS);
                     Optional<ButtonType> captionOptional = alert.showAndWait();
                     if (captionOptional.get() == ButtonType.OK) {
-                        System.out.println("Choices from user: " + box.getChoices());
+                        //@DEBUG SMP
+                        //System.out.println("Choices from user: " + box.getChoices());
                         landmarkTextBuilderBox.setChoices(box.getChoices());
                         if (!box.getChoices().isEmpty()) {
                             chooseCaptionsTask(imageEmbeddingsListView.getSelectionModel().getSelectedItems(),
@@ -523,9 +524,6 @@ public class HyperdrivePane extends LitPathPane {
             Dragboard db = event.getDragboard();
             if (db.hasFiles()) {
                 final File file = db.getFiles().get(0);
-                if (ResourceUtils.isTextFile(file)) {
-                    System.out.println("its text!!");
-                }
                 if (JavaFX3DUtils.isTextureFile(file)) {
                     try {
                         baseImage = new Image(file.toURI().toURL().toExternalForm());
@@ -910,7 +908,8 @@ public class HyperdrivePane extends LitPathPane {
                 }
             }
             outstandingRequests.put(output.getRequestNumber(), STATUS.SUCCEEDED);
-            System.out.println(msg);
+            //@DEBUG SMP
+            //System.out.println(msg);
             if (!outstandingRequests.containsValue(STATUS.REQUESTED)) {
                 outstandingRequests.clear();
             }
@@ -937,7 +936,8 @@ public class HyperdrivePane extends LitPathPane {
             }
 
             outstandingRequests.put(output.getRequestNumber(), STATUS.SUCCEEDED);
-            System.out.println(msg);
+            //@DEBUG SMP
+            //System.out.println(msg);
             int totalRequests = outstandingRequests.size();
             long remainingRequests = outstandingRequests.entrySet().stream()
                 .filter(t -> t.getValue() == STATUS.REQUESTED).count();
@@ -985,9 +985,11 @@ public class HyperdrivePane extends LitPathPane {
         });
         scene.getRoot().addEventHandler(RestEvent.NEW_CHAT_COMPLETION, event -> {
             ChatCompletionsOutput output = (ChatCompletionsOutput) event.object;
-            String msg = "Received " + output.getChoices().size() + " Chat Choices at " + LocalDateTime.now();
+            //@DEBUG SMP
+            //String msg = "Received " + output.getChoices().size() + " Chat Choices at " + LocalDateTime.now();
             outstandingRequests.put(output.getRequestNumber(), STATUS.SUCCEEDED);
-            System.out.println(msg);
+            //@DEBUG SMP
+            //System.out.println(msg);
             //System.out.println(output.getChoices().get(0).getText());
 
             imageEmbeddingsListView.getItems().stream()
@@ -1040,7 +1042,8 @@ public class HyperdrivePane extends LitPathPane {
 
             outstandingRequests.put(output.getRequestNumber(), STATUS.SUCCEEDED);
             textEmbeddingRequestIndicator.setTopLabelLater(msg);
-            System.out.println(msg);
+            //@DEBUG SMP
+            //System.out.println(msg);
 
             int totalRequests = outstandingRequests.size();
             long remainingRequests = outstandingRequests.entrySet().stream()
@@ -1078,7 +1081,8 @@ public class HyperdrivePane extends LitPathPane {
 
             outstandingRequests.put(output.getRequestNumber(), STATUS.SUCCEEDED);
             textEmbeddingRequestIndicator.setTopLabelLater(msg);
-            System.out.println(msg);
+            //@DEBUG SMP
+            //System.out.println(msg);
             outstandingRequests.remove(output.getRequestNumber());
             if (!outstandingRequests.containsValue(STATUS.REQUESTED)) {
                 textEmbeddingRequestIndicator.spin(false);
@@ -1152,9 +1156,10 @@ public class HyperdrivePane extends LitPathPane {
                 textEmbeddingRequestIndicator.setLabelLater("Computing Landmark Similarity Distances...");
                 textEmbeddingRequestIndicator.spin(true);
                 textEmbeddingRequestIndicator.fadeBusy(false);
-                System.out.println("Computing Landmark Simularity Distances...");
+                //@DEBUG SMP
+                //System.out.println("Computing Landmark Simularity Distances...");
                 Metric metric = Metric.getMetric(metricChoiceBox.getSelectionModel().getSelectedItem());
-                long startTime = System.nanoTime();
+                //long startTime = System.nanoTime();
 
                 List<double[]> landmarkVectors = landmarkFeatures.stream()
                     .map(mapToStateArray).toList();
@@ -1173,7 +1178,7 @@ public class HyperdrivePane extends LitPathPane {
                     item.setFeatureVectorLabel(
                         landmarkFeatures.get(shortestLandmarkIndex).getLabel());
                 });
-                Utils.printTotalTime(startTime);
+                //Utils.printTotalTime(startTime);
                 textEmbeddingRequestIndicator.setLabelLater("Finished.");
                 textEmbeddingRequestIndicator.spin(false);
                 textEmbeddingRequestIndicator.fadeBusy(true);
@@ -1193,9 +1198,10 @@ public class HyperdrivePane extends LitPathPane {
                 imageEmbeddingRequestIndicator.setLabelLater("Computing Landmark Similarity Distances...");
                 imageEmbeddingRequestIndicator.spin(true);
                 imageEmbeddingRequestIndicator.fadeBusy(false);
-                System.out.println("Computing Landmark Simularity Distances...");
+                //@DEBUG SMP
+                //System.out.println("Computing Landmark Simularity Distances...");
                 Metric metric = Metric.getMetric(metricChoiceBox.getSelectionModel().getSelectedItem());
-                long startTime = System.nanoTime();
+                //long startTime = System.nanoTime();
 
                 List<double[]> landmarkVectors = landmarkFeatures.stream()
                     .map(mapToStateArray).toList();
@@ -1214,7 +1220,7 @@ public class HyperdrivePane extends LitPathPane {
                     item.setFeatureVectorLabel(
                         landmarkFeatures.get(shortestLandmarkIndex).getLabel());
                 });
-                Utils.printTotalTime(startTime);
+                //Utils.printTotalTime(startTime);
                 imageEmbeddingRequestIndicator.setLabelLater("Finished.");
                 imageEmbeddingRequestIndicator.spin(false);
                 imageEmbeddingRequestIndicator.fadeBusy(true);
@@ -1233,7 +1239,8 @@ public class HyperdrivePane extends LitPathPane {
                 imageEmbeddingRequestIndicator.setLabelLater("Requesting Captions...");
                 imageEmbeddingRequestIndicator.spin(true);
                 imageEmbeddingRequestIndicator.fadeBusy(false);
-                System.out.println("Requesting Captions...");
+                //@DEBUG SMP
+                //System.out.println("Requesting Captions...");
                 for (EmbeddingsImageListItem item : items) {
                     EmbeddingsImageUrl url = imageUrlFromImage.apply(item.getCurrentImage());
                     try {

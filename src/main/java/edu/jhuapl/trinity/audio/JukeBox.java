@@ -45,11 +45,15 @@ public class JukeBox implements EventHandler<AudioEvent> {
     public JukeBox(Scene scene) {
         this.scene = scene;
         defaultMedia = new Media(AudioResourceProvider.getResource(DEFAULT_MUSIC_TRACK).toExternalForm());
-        setMedia(defaultMedia);
-        mediaFiles = new ArrayList<>();
-        loadMusic();
-        if (!mediaFiles.isEmpty())
-            setMedia(mediaFiles.get(0));
+        try {
+            setMedia(defaultMedia);
+            mediaFiles = new ArrayList<>();
+            loadMusic();
+            if (!mediaFiles.isEmpty())
+                setMedia(mediaFiles.get(0));
+        } catch (Exception ex) {
+            
+        }
     }
 
     private void setMedia(Media media) {
@@ -57,6 +61,8 @@ public class JukeBox implements EventHandler<AudioEvent> {
             currentMediaPlayer.stop();
         }
         currentMediaPlayer = new MediaPlayer(media);
+        //@DEBUG SMP
+        //System.out.println(media.getSource());
         String sourceName = ResourceUtils.getNameFromURI(media.getSource());
         Platform.runLater(() -> {
             scene.getRoot().fireEvent(new AudioEvent(AudioEvent.CURRENTLY_PLAYING_TRACK, sourceName));

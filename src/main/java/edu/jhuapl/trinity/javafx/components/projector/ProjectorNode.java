@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory;
  */
 public class ProjectorNode extends Pane {
     private static final Logger LOG = LoggerFactory.getLogger(ProjectorNode.class);
-    Node node; 
+    public Node node; 
     Border hoverBorder;
     Border emptyBorder;
     Border selectedBorder;

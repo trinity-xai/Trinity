@@ -71,8 +71,8 @@ public class SpikeTrain {
             }
             //Add last record when the end of the file is reached
             spikeTrainList.add(new SpikeTrain(trialID, varTimeSeries));
-
-            System.out.println(spikeTrainList.size());
+            //@DEBUG SMP
+            //System.out.println(spikeTrainList.size());
             //closes the stream and release the resources
         } catch (IOException ex) {
             LOG.error(null, ex);

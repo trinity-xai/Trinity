@@ -226,6 +226,7 @@ public class Projections3DPane extends StackPane implements
     TriaxialSpheroidMesh anchorTSM;
     Trajectory anchorTrajectory;
     Trajectory3D anchorTraj3D;
+    Trajectory3D projectorConnector;
     Group trajectorySphereGroup;
     Group trajectoryGroup;
     HashMap<Trajectory, Trajectory3D> trajToTraj3DMap = new HashMap<>();
@@ -233,6 +234,8 @@ public class Projections3DPane extends StackPane implements
     int trajectoryTailSize = 5;
     double projectionScalar = 100.0;
 
+    HashMap<FeatureVector, ProjectorNode> featureVectorToProjectorNode = new HashMap<>(); 
+    
     ArrayList<Point3D> data;
     ArrayList<Point3D> endPoints;
     //This maps each seed to a Point3D object which represents its transfromed screen coordinates.
@@ -381,9 +384,13 @@ public class Projections3DPane extends StackPane implements
         trajectoryScale = 1.0;
         anchorTraj3D = JavaFX3DUtils.buildPolyLineFromTrajectory(1, 1,
             anchorTrajectory, Color.CYAN, trajectoryScale, sceneWidth, sceneHeight);
+        extrasGroup.getChildren().add(anchorTraj3D);
         anchorTSM.visibleProperty().bind(anchorTraj3D.visibleProperty());
 
-        extrasGroup.getChildren().add(anchorTraj3D);
+        projectorConnector = JavaFX3DUtils.buildPolyLineFromTrajectory(1, 1,
+            anchorTrajectory, Color.WHITE, trajectoryScale, sceneWidth, sceneHeight);
+        extrasGroup.getChildren().add(projectorConnector);
+        
         trajectoryGroup = new Group();
         trajectorySphereGroup = new Group();
         double ellipsoidWidth = anchorTraj3D.width / 2.0;
@@ -693,9 +700,24 @@ public class Projections3DPane extends StackPane implements
                 updateView(false);
             }
 
+//            if (event.isAltDown() && keycode == KeyCode.H) {
+//                makeHull(getPointsByLabel(true, null), null, null);
+//            }
             if (event.isAltDown() && keycode == KeyCode.H) {
-                makeHull(getPointsByLabel(true, null), null, null);
+                double w = highlighterNeonCircle.getStrokeWidth() - 0.1;
+                if(w <= 0)
+                    highlighterNeonCircle.setStrokeWidth(0.1);
+                else
+                    highlighterNeonCircle.setStrokeWidth(w);
             }
+            if (event.isAltDown() && keycode == KeyCode.J) {
+                double w = highlighterNeonCircle.getStrokeWidth() + 0.1;
+                if(w > 50)
+                    highlighterNeonCircle.setStrokeWidth(50);
+                else
+                    highlighterNeonCircle.setStrokeWidth(w);
+            }
+
             if (keycode == KeyCode.F) {
                 anchorIndex--;
                 if (anchorIndex < 0) anchorIndex = 0;
@@ -827,7 +849,7 @@ public class Projections3DPane extends StackPane implements
         highlighterNeonCircle = new AnimatedNeonCircle(
             new AnimatedNeonCircle.Animation(
                 Duration.millis(3000), Transition.INDEFINITE, false),
-            20, 1.5, 8.0, 5.0);
+            20, 3.0, 8.0, 5.0);
         highlighterNeonCircle.setManaged(false);
         highlighterNeonCircle.setMouseTransparent(true);
         getChildren().clear();
@@ -1822,12 +1844,14 @@ public class Projections3DPane extends StackPane implements
             //update the local transform of the label.
             label.getTransforms().setAll(new Translate(x, y));
         });
-
+        updateHighlighterCircle(); //special case
+    }
+    private void updateHighlighterCircle() {
         javafx.geometry.Point3D coordinates =
             highlightedPoint.localToScene(javafx.geometry.Point3D.ZERO, true);
         double x = coordinates.getX();
         double y = coordinates.getY();
-        highlighterNeonCircle.setMouseTransparent(true);
+        //highlighterNeonCircle.setMouseTransparent(true);
         //is it left of the view?
         if (x < 0) {
             x = 0;
@@ -1845,7 +1869,7 @@ public class Projections3DPane extends StackPane implements
             y = subScene.getHeight() - (highlighterNeonCircle.getRadius() + 5);
         //update the local transform of the label.
         highlighterNeonCircle.getTransforms().setAll(new Translate(x, y));
-        setCircleRadiusByDistance(highlighterNeonCircle, highlightedPoint);
+        setCircleRadiusByDistance(highlighterNeonCircle, highlightedPoint);        
     }
 
     public void updateView(boolean forcePNodeUpdate) {
@@ -2407,7 +2431,8 @@ public class Projections3DPane extends StackPane implements
                     new Font("Consolas", 20), Color.GREEN));
         });
         //Make a 3D sphere for each projected feature vector
-        System.out.println("Total Features to project: " + featureCollection.getFeatures().size());
+        //@DEBUG SMP
+        //System.out.println("Total Features to project: " + featureCollection.getFeatures().size());
         for (int i = 0; i < featureCollection.getFeatures().size(); i++) {
             FeatureVector featureVector = featureCollection.getFeatures().get(i);
             addProjectedFeatureVector(featureVector);
@@ -2420,7 +2445,10 @@ public class Projections3DPane extends StackPane implements
     private void addProjectorNode(FeatureVector featureVector) {
         if(null != featureVector.getText()){
             ProjectorNode pn = new ProjectorTextNode(featureVector.getText());
+            featureVectorToProjectorNode.put(featureVector, pn);
             Platform.runLater(() -> {
+                scene.getRoot().fireEvent(new FeatureVectorEvent(
+                    FeatureVectorEvent.SELECT_FEATURE_VECTOR, featureVector, featureLabels));
                 projectorNodeGroup.addNodeToScene(pn, featureVector.getLabel());
                 pn.setVisible(true);
                 if(animatingProjections) {
@@ -2442,9 +2470,14 @@ public class Projections3DPane extends StackPane implements
         sphere.setTranslateZ(featureVector.getData().get(2) * projectionScalar);
         Platform.runLater(() -> {
             ellipsoidGroup.getChildren().add(sphere);
+            if(animatingProjections) {
+                highlightedPoint = sphere;
+                //System.out.println("Found matching Feature Vector...");
+                updateHighlighterCircle(); //Will transform location of circle
+            }
         });
         sphereToFeatureVectorMap.put(sphere, featureVector);
-
+        
         //Add Circle as highlight when mouse hovering
         sphere.addEventHandler(MouseEvent.MOUSE_ENTERED, e -> {
             highlightedPoint = sphere;
@@ -2453,15 +2486,36 @@ public class Projections3DPane extends StackPane implements
                 sphere.getTranslateX(), sphere.getTranslateY(), sphere.getTranslateZ());
             scene.getRoot().fireEvent(new ManifoldEvent(
                 ManifoldEvent.SELECT_PROJECTION_POINT3D, p1));
-
             miniCrosshair.size = point3dSize * 4.0;
             miniCrosshair.setCenter(p1);
             setCircleRadiusByDistance(highlighterNeonCircle, sphere);
             //update selection listeners with original hyper dimensions (eg RADAR plot)
             FeatureVector fv = sphereToFeatureVectorMap.get(sphere);
-            if (null != fv)
+            if (null != fv) {
                 scene.getRoot().fireEvent(new FeatureVectorEvent(
                     FeatureVectorEvent.SELECT_FEATURE_VECTOR, fv, featureLabels));
+                if(animatingProjections) {
+                    ProjectorNode pn = featureVectorToProjectorNode.get(fv);
+                    if(null != pn) {
+                        extrasGroup.getChildren().remove(projectorConnector);
+                        Trajectory trajectory = new Trajectory("Projector Connector");
+                        trajectory.states.clear();
+                        //These are the original feature values.
+                        //They need to be transformed using the current UMAP transformation matrix
+                        trajectory.states.add(new double[] { sphere.getTranslateX(),
+                            sphere.getTranslateY(), sphere.getTranslateZ() });
+                        trajectory.states.add(new double[] { pn.node.getTranslateX(),
+                            pn.node.getTranslateY(), pn.node.getTranslateZ() });
+                        projectorConnector = JavaFX3DUtils.buildPolyLineFromTrajectory(
+                            trajectory, 8.0f, trajectory.getColor(),
+                            trajectory.states.size(), trajectoryScale, sceneWidth, sceneHeight);
+                        extrasGroup.getChildren().add(projectorConnector);
+                        projectorConnector.setVisible(true);
+                    }
+                }
+            } else {
+                projectorConnector.setVisible(false);
+            }
         });
 
         //Add click handler to popup callout or point distance measurements
@@ -2988,11 +3042,14 @@ public class Projections3DPane extends StackPane implements
         if (animatingProjections && null != transformedPoint) {
             Platform.runLater(() -> {
                 //For the lulz... (and also to provide a visual indicator to user!)
-                projectionOpticon.fireData(new javafx.geometry.Point3D(
-                    transformedPoint.getX() * projectionScalar,
-                    transformedPoint.getY() * -projectionScalar,
-                    transformedPoint.getZ() * projectionScalar
-                ), 1, FactorLabel.getColorByLabel(featureVector.getLabel()));
+                projectionOpticon.fireData(
+                    extrasGroup,
+                    new javafx.geometry.Point3D(
+                        transformedPoint.getX() * projectionScalar,
+                        transformedPoint.getY() * -projectionScalar,
+                        transformedPoint.getZ() * projectionScalar
+                    ), 
+                    1, FactorLabel.getColorByLabel(featureVector.getLabel()));
             });
         }
     }

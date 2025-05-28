@@ -22,8 +22,6 @@ import javafx.scene.Camera;
 import javafx.scene.Node;
 import javafx.scene.SubScene;
 import javafx.scene.control.Label;
-import javafx.scene.effect.Glow;
-import javafx.scene.effect.Reflection;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.shape.LineTo;
@@ -51,6 +49,7 @@ public class ProjectorNodeGroup extends Group {
     public CameraTransformer cameraTransform;
     //allows 2D labels to track their 3D counterparts
     public HashMap<Shape3D, Label> shape3DToLabel;    
+   
     public ArrayList<ProjectorRow> rows;    
     ArrayList<ProjectorNode> nodes;
     List<ParallelTransition> transitionList;

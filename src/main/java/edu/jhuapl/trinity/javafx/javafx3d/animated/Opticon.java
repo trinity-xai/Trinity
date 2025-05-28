@@ -37,6 +37,7 @@ import java.io.IOException;
 import java.util.Random;
 
 import static javafx.animation.Animation.INDEFINITE;
+import javafx.scene.Parent;
 
 /**
  * @author Sean Phillips
@@ -250,8 +251,7 @@ public class Opticon extends Group {
             }
         };
     }
-
-    public void fireData(Point3D destination, double seconds, Color dataColor) {
+    public void fireData(Group parent, Point3D destination, double seconds, Color dataColor) {
         Point3D sceneToLocalPoint = this.sceneToLocal(destination);
         Sphere dataSphere = new Sphere(10);
         dataSphere.setMaterial(new PhongMaterial(dataColor));
@@ -265,10 +265,14 @@ public class Opticon extends Group {
             })
         });
         timeline.setOnFinished(e -> {
-            getChildren().remove(dataSphere);
+            parent.getChildren().remove(dataSphere);
         });
-        getChildren().add(dataSphere);
+        parent.getChildren().add(dataSphere);
         timeline.playFromStart();
+    }
+
+    public void fireData(Point3D destination, double seconds, Color dataColor) {
+        fireData(this, destination, seconds, dataColor);
     }
 
     public void updateScannerSize(double radius) {
