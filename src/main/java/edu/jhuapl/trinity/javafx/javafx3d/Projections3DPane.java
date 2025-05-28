@@ -456,6 +456,7 @@ public class Projections3DPane extends StackPane implements
         
         projectorNodeGroup = new ProjectorNodeGroup(subScene, camera, cameraTransform, labelGroup);
         projectorNodeGroup.visibleProperty().bind(projectionWallProperty);
+        projectorNodeGroup.yOffset = 636.0; //bigger than 512...
         sceneRoot.getChildren().addAll(projectorNodeGroup);
 
         radialGrid = new RadialGrid();

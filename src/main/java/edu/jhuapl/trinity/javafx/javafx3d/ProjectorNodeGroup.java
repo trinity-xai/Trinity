@@ -43,6 +43,7 @@ public class ProjectorNodeGroup extends Group {
     public double transitionYOffset = -15000;
     public double transitionZOffset = 0;
     public double originRadius = 9001;
+    public double yOffset = 1300; //a bit more than 1080p height
     public boolean positiveRow = false;
     public SubScene subScene;
     public Camera camera;
@@ -94,8 +95,6 @@ public class ProjectorNodeGroup extends Group {
         }
     }    
     public ProjectorNode addNodeToScene(ProjectorNode projectorNode, int row, double angle1, double radius) {
-//        double yOffset = 1300; //a bit more than 1080p height
-        double yOffset = 636; //a bit more than 512 height
         double angle2 = Math.PI;
 
         // Ring formula

@@ -46,6 +46,7 @@ import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
+import javafx.animation.ParallelTransition;
 
 /**
  * @author Sean Phillips
@@ -207,6 +208,7 @@ public class ProjectorPane extends StackPane {
         getChildren().add(labelGroup);
         
         projectorNodeGroup = new ProjectorNodeGroup(subScene, camera, cameraTransform, labelGroup);
+        projectorNodeGroup.yOffset = 1300.0; //bigger than 512...
         sceneRoot.getChildren().addAll(projectorNodeGroup);
         Sphere origin = new Sphere(20.0);
         Sphere northPole = new Sphere(20.0);
@@ -257,6 +259,7 @@ public class ProjectorPane extends StackPane {
                             AnalysisConfig acDC = findAnalysisConfigByName(subDirectory, subDirFile.getName());
                             //the configs may be null but that is ok
                             ProjectorNode pn = new ProjectorAnalysisNode(image, ucForMe, acDC);
+                            pn.setVisible(true);
                             projectorNodes.add(pn);
                         } catch (MalformedURLException ex) {
                             LOG.error(null, ex);
@@ -271,6 +274,11 @@ public class ProjectorPane extends StackPane {
                     //add each projector node to the column
                     for (ProjectorNode pn : projectorNodes) {
                         projectorNodeGroup.addNodeToScene(pn, row, angle1, projectorNodeGroup.originRadius);
+
+                        ParallelTransition pt = projectorNodeGroup.createTransition(pn);
+                        projectorNodeGroup.transitionList.add(pt);                        
+
+                        pn.setVisible(true);
                         row++;
                     }
                     //Add header Label based on directory name
