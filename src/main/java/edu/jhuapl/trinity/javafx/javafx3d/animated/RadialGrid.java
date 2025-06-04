@@ -20,9 +20,9 @@ public class RadialGrid extends Group {
     private final Rotate worldRotateY = new Rotate(0, Rotate.Y_AXIS);
     private static final int NUM_CIRCLES = 10;
     private static final int NUM_RADIAL_LINES = 24;
-    private static final double MAX_RADIUS = 200;
+    private static final double MAX_RADIUS = 1000;
     private static final double LINE_RADIUS = 0.2;
-    private static final double CIRCLE_SEGMENTS = 90;
+    private static final double CIRCLE_SEGMENTS = 60;
     AnimationTimer pulseAnimator;
     private double pulseScalar = 0.25;
     private double baseRadius = LINE_RADIUS;
@@ -30,7 +30,7 @@ public class RadialGrid extends Group {
     private double pulseSpeedHz = 0.12; // pulses per second
     private boolean enableRotation = false;
     private boolean enablePulsation = false;
-    public PhongMaterial gridMaterial = new PhongMaterial(Color.web("#00bfff")); // deep sky blue
+    public PhongMaterial gridMaterial = new PhongMaterial(Color.DEEPSKYBLUE); // deep sky blue
 
     public RadialGrid() {
        this(NUM_CIRCLES, NUM_RADIAL_LINES, MAX_RADIUS, LINE_RADIUS, CIRCLE_SEGMENTS);

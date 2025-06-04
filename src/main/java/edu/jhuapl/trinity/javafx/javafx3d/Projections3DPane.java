@@ -257,6 +257,8 @@ public class Projections3DPane extends StackPane implements
 
     public List<FeatureVector> featureVectors = new ArrayList<>();
     public List<FeatureVector> hyperFeatures = new ArrayList<>();
+    public List<FeatureVector> autoProjectedFeatures = new ArrayList<>();
+    public int autoProjectionQueueSize = 1000;
 
     public boolean meanCentered = true;
     public boolean autoScaling = true;
@@ -846,7 +848,7 @@ public class Projections3DPane extends StackPane implements
         highlighterNeonCircle = new AnimatedNeonCircle(
             new AnimatedNeonCircle.Animation(
                 Duration.millis(3000), Transition.INDEFINITE, false),
-            20, 5.0, 8.0, 5.0);
+            20, 2.5, 8.0, 5.0);
         highlighterNeonCircle.setManaged(false);
         highlighterNeonCircle.setMouseTransparent(true);
         getChildren().clear();
@@ -1271,6 +1273,16 @@ public class Projections3DPane extends StackPane implements
                 updateDistanceTrajectory(traj3D, eventDistance);
             }
         });
+        scene.addEventHandler(ManifoldEvent.SET_PROJECTIONQUEUE_SIZE, e -> {
+            int newQueueSize = (int) e.object1;
+            autoProjectionQueueSize = newQueueSize;
+            //age out older items... 
+            int ageOffCount = - autoProjectionQueueSize - autoProjectedFeatures.size();
+            if(ageOffCount > 0) {
+                System.out.println("Aging off " + ageOffCount + " projected features.");
+            }
+        });
+        
 
         scene.addEventHandler(TimelineEvent.TIMELINE_SAMPLE_INDEX, e -> {
             anchorIndex = (int) e.object;
