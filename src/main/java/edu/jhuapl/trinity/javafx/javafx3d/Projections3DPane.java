@@ -6,7 +6,6 @@ import edu.jhuapl.trinity.data.Dimension;
 import edu.jhuapl.trinity.data.Distance;
 import edu.jhuapl.trinity.data.FactorLabel;
 import edu.jhuapl.trinity.data.FeatureLayer;
-import edu.jhuapl.trinity.data.HyperspaceSeed;
 import edu.jhuapl.trinity.data.Manifold;
 import edu.jhuapl.trinity.data.Trajectory;
 import edu.jhuapl.trinity.data.files.FeatureCollectionFile;
@@ -40,7 +39,6 @@ import edu.jhuapl.trinity.javafx.events.ManifoldEvent.ProjectionConfig;
 import edu.jhuapl.trinity.javafx.events.ShadowEvent;
 import edu.jhuapl.trinity.javafx.events.TimelineEvent;
 import edu.jhuapl.trinity.javafx.events.TrajectoryEvent;
-import edu.jhuapl.trinity.javafx.javafx3d.ShadowCubeWorld.PROJECTION_TYPE;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.AnimatedSphere;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.Opticon;
 import edu.jhuapl.trinity.javafx.javafx3d.images.ImageResourceProvider;
@@ -64,7 +62,6 @@ import edu.jhuapl.trinity.utils.PCAConfig;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import edu.jhuapl.trinity.utils.VisibilityMap;
 import edu.jhuapl.trinity.utils.umap.Umap;
-import javafx.animation.AnimationTimer;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
@@ -75,7 +72,6 @@ import javafx.concurrent.Task;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.AmbientLight;
 import javafx.scene.Group;
-import javafx.scene.Node;
 import javafx.scene.PerspectiveCamera;
 import javafx.scene.PointLight;
 import javafx.scene.Scene;
@@ -99,7 +95,6 @@ import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.input.PickResult;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.input.TransferMode;
 import javafx.scene.layout.Background;
@@ -132,12 +127,9 @@ import java.nio.file.Paths;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
-import java.util.concurrent.ConcurrentLinkedQueue;
 import java.util.concurrent.ExecutionException;
 import java.util.function.Function;
 import java.util.stream.Collectors;
@@ -195,30 +187,20 @@ public class Projections3DPane extends StackPane implements
     public Manifold3D selectedManifoldB = null;
 
     public SubScene subScene;
-    public ShadowCubeWorld cubeWorld;
-    public PROJECTION_TYPE projectionType = ShadowCubeWorld.PROJECTION_TYPE.FIXED_ORTHOGRAPHIC;
 
     public double point3dSize = 10.0; //size of 3d tetrahedra
     public double pointScale = 1.0; //scales parameter value in transform
     public double scatterBuffScaling = 1.0; //scales domain range in transform
-    public long hyperspaceRefreshRate = 500; //milliseconds
     public int queueLimit = 50000;
 
     //feature vector indices for 3D coordinates
     private int xFactorIndex = 0;
     private int yFactorIndex = 1;
     private int zFactorIndex = 2;
-    private int xDirFactorIndex = 4;
-    private int yDirFactorIndex = 5;
-    private int zDirFactorIndex = 6;
     private int factorMaxIndex = 512;
     private int anchorIndex = 0;
-    DirectedScatterMesh scatterMesh3D;
-    DirectedScatterDataModel scatterModel;
 
     public Color sceneColor = Color.BLACK;
-    boolean isDirty = false;
-    boolean heightChanged = false;
     boolean reflectY = true;
     Sphere highlightedPoint = new Sphere(1, 8);
 
@@ -236,12 +218,6 @@ public class Projections3DPane extends StackPane implements
 
     HashMap<FeatureVector, ProjectorNode> featureVectorToProjectorNode = new HashMap<>(); 
     
-    ArrayList<Point3D> data;
-    ArrayList<Point3D> endPoints;
-    //This maps each seed to a Point3D object which represents its transfromed screen coordinates.
-    HashMap<Point3D, HyperspaceSeed> seedToDataMap = new HashMap<>();
-    //This maps each seed to a Point3D object which represents its end point transfromed to screen coordinates.
-    HashMap<Point3D, HyperspaceSeed> seedToEndMap = new HashMap<>();
     //This maps each ellipsoid to a GMM
     HashMap<Sphere, FeatureVector> sphereToFeatureVectorMap = new HashMap<>();
     //This maps each ellipsoid to a GMM
@@ -258,6 +234,7 @@ public class Projections3DPane extends StackPane implements
     public List<FeatureVector> featureVectors = new ArrayList<>();
     public List<FeatureVector> hyperFeatures = new ArrayList<>();
     public List<FeatureVector> autoProjectedFeatures = new ArrayList<>();
+    //@TODO SMP
     public int autoProjectionQueueSize = 1000;
 
     public boolean meanCentered = true;
@@ -274,11 +251,7 @@ public class Projections3DPane extends StackPane implements
     public boolean emptyVisionEnabled = false;
     public SimpleBooleanProperty autoProjectionProperty = new SimpleBooleanProperty(false);
     public SimpleBooleanProperty projectionWallProperty = new SimpleBooleanProperty(false);
-    Opticon projectionOpticon;
-    public ConcurrentLinkedQueue<HyperspaceSeed> hyperspaceSeeds = new ConcurrentLinkedQueue<>();
-    public ConcurrentLinkedQueue<Perspective3DNode> pNodes = new ConcurrentLinkedQueue<>();
-    int TOTAL_COLORS = 1530; //colors used by map function
-    Function<Point3D, Number> colorByLabelFunction = p -> p.f; //Color mapping function
+    Opticon projectionOpticon; 
 
     // initial rotation
     private final Rotate rotateX = new Rotate(0, Rotate.X_AXIS);
@@ -287,9 +260,6 @@ public class Projections3DPane extends StackPane implements
 
     private Skybox skybox;
     ProjectorNodeGroup projectorNodeGroup;
-    int currentProjectorRow = -1;
-    double currentProjectorAngle = -Math.PI * 0.35; //@TODO SMP Dynamically figure this out
-    double angleStepSize = 0.25; //@TODO SMP Dynamically figure this out
      
     private Group nodeGroup = new Group();
     private Group labelGroup = new Group();
@@ -297,6 +267,7 @@ public class Projections3DPane extends StackPane implements
     private ArrayList<Manifold3D> manifolds = new ArrayList<>();
     public AnimatedNeonCircle highlighterNeonCircle;
     public Crosshair3D miniCrosshair;
+    public Crosshair3D crosshair3D;
 
     BorderPane bp;
     //For each label you'll need some Shape3D to derive a point3d from.
@@ -317,17 +288,6 @@ public class Projections3DPane extends StackPane implements
 
     public Projections3DPane(Scene scene) {
         this.scene = scene;
-        cubeWorld = new ShadowCubeWorld(cubeSize, 100, true, featureVectors);
-        cubeWorld.setScene(this.scene);
-        cubeWorld.showXAxesGroup(true);
-        cubeWorld.showYAxesGroup(true);
-        cubeWorld.showZAxesGroup(true);
-        cubeWorld.getChildren().filtered((Node t) -> t instanceof Sphere)
-            .forEach(s -> s.setVisible(true));
-        cubeWorld.showAllGridLines(false);
-        cubeWorld.meanCentered = false;
-        cubeWorld.autoScaling = false;
-        cubeWorld.pointScale = 0.1;
 
         setBackground(Background.EMPTY);
         subScene = new SubScene(sceneRoot, sceneWidth, sceneHeight, true, SceneAntialiasing.BALANCED);
@@ -377,7 +337,7 @@ public class Projections3DPane extends StackPane implements
         cameraTransform.ry.setAngle(-45.0);
         cameraTransform.rx.setAngle(-10.0);
 
-        setupSkyBox();
+//        setupSkyBox();
         debugGroup.setVisible(false);
 
         //Anchor and event trajectory setup
@@ -462,11 +422,16 @@ public class Projections3DPane extends StackPane implements
         sceneRoot.getChildren().addAll(projectorNodeGroup);
 
         radialGrid = new RadialGrid();
+        crosshair3D = new Crosshair3D(javafx.geometry.Point3D.ZERO, sceneWidth/2.0, 10.0f);
         
         //Add 3D subscene stuff to 3D scene root object
         sceneRoot.getChildren().addAll(cameraTransform, radialGrid, highlightedPoint,
-            nodeGroup, manifoldGroup, debugGroup, cubeWorld,
+            nodeGroup, manifoldGroup, debugGroup, crosshair3D,
             dataXForm, extrasGroup, connectorsGroup, anchorTSM);
+        //Add some ambient light so folks can see it
+        AmbientLight light = new AmbientLight(Color.WHITE);
+        sceneRoot.getChildren().add(light);
+        sceneRoot.getChildren().add(ellipsoidGroup);
 
         projectionOpticon = new Opticon(Color.CYAN, 100);
         extrasGroup.getChildren().add(projectionOpticon);
@@ -480,11 +445,11 @@ public class Projections3DPane extends StackPane implements
         highlightedPoint.setDrawMode(DrawMode.LINE);
         subScene.setCamera(camera);
         //add a Point Light for better viewing of the grid coordinate system
-        PointLight light = new PointLight(Color.WHITE);
+        PointLight pointLight = new PointLight(Color.WHITE);
         cameraTransform.getChildren().add(light);
-        light.setTranslateX(camera.getTranslateX());
-        light.setTranslateY(camera.getTranslateY());
-        light.setTranslateZ(camera.getTranslateZ() + 500.0);
+        pointLight.setTranslateX(camera.getTranslateX());
+        pointLight.setTranslateY(camera.getTranslateY());
+        pointLight.setTranslateZ(camera.getTranslateZ() + 500.0);
 
         //Some camera controls...
         subScene.setOnMouseEntered(event -> subScene.requestFocus());
@@ -497,32 +462,10 @@ public class Projections3DPane extends StackPane implements
             camera.setTranslateZ(newZ);
             updateFloatingNodes();
         });
-        subScene.setOnSwipeUp(e -> {
-            e.consume();
-            Platform.runLater(() -> {
-                cubeWorld.animateOut(1000, 20000);
-            });
-        });
-        subScene.setOnSwipeDown(e -> {
-            e.consume();
-            Platform.runLater(() -> {
-                cubeWorld.animateIn(1000, cubeSize);
-            });
-        });
 
         subScene.setOnKeyPressed(event -> {
-            cubeWorld.pointScale = 0.1;
             //What key did the user press?
             KeyCode keycode = event.getCode();
-            if (keycode == KeyCode.OPEN_BRACKET && event.isControlDown()) {
-                Platform.runLater(() -> {
-                    cubeWorld.animateOut(1000, 20000);
-                });
-            } else if (keycode == KeyCode.CLOSE_BRACKET && event.isControlDown()) {
-                Platform.runLater(() -> {
-                    cubeWorld.animateIn(1000, cubeSize);
-                });
-            }
             if ((keycode == KeyCode.NUMPAD0 && event.isControlDown())
                 || (keycode == KeyCode.DIGIT0 && event.isControlDown())) {
                 resetView(1000, false);
@@ -593,8 +536,6 @@ public class Projections3DPane extends StackPane implements
                             new CoordinateSet(xFactorIndex, yFactorIndex, zFactorIndex))));
                     boolean redraw = false;
                     try {
-                        updatePNodeIndices(xFactorIndex, yFactorIndex, zFactorIndex,
-                            xDirFactorIndex, yDirFactorIndex, zDirFactorIndex);
                         redraw = true;
                     } catch (Exception ex) {
                         scene.getRoot().fireEvent(
@@ -603,7 +544,6 @@ public class Projections3DPane extends StackPane implements
                                 new Font("Consolas", 20), Color.RED));
                     }
                     if (redraw) {
-                        updateView(false);
                         updateEllipsoids();
                         notifyIndexChange();
                     }
@@ -625,8 +565,6 @@ public class Projections3DPane extends StackPane implements
                             new CoordinateSet(xFactorIndex, yFactorIndex, zFactorIndex))));
                     boolean redraw = false;
                     try {
-                        updatePNodeIndices(xFactorIndex, yFactorIndex, zFactorIndex,
-                            xDirFactorIndex, yDirFactorIndex, zDirFactorIndex);
                         redraw = true;
                     } catch (ArrayIndexOutOfBoundsException ex) {
                         scene.getRoot().fireEvent(
@@ -635,7 +573,6 @@ public class Projections3DPane extends StackPane implements
                                 new Font("Consolas", 20), Color.RED));
                     }
                     if (redraw) {
-                        updateView(false);
                         updateEllipsoids();
                         notifyIndexChange();
                     }
@@ -656,18 +593,14 @@ public class Projections3DPane extends StackPane implements
                 scatterBuffScaling -= 0.1;
                 Platform.runLater(() -> scene.getRoot().fireEvent(
                     new HyperspaceEvent(HyperspaceEvent.SCATTERBUFF_SCALING_KEYPRESS, scatterBuffScaling)));
-                updateScatterLimits(scatterBuffScaling, true);
                 notifyScaleChange();
-                updateView(false);
                 updateEllipsoids();
             }
             if (keycode == KeyCode.Y) {
                 scatterBuffScaling += 0.1;
                 Platform.runLater(() -> scene.getRoot().fireEvent(
                     new HyperspaceEvent(HyperspaceEvent.SCATTERBUFF_SCALING_KEYPRESS, scatterBuffScaling)));
-                updateScatterLimits(scatterBuffScaling, true);
                 notifyScaleChange();
-                updateView(false);
                 updateEllipsoids();
             }
 
@@ -676,31 +609,25 @@ public class Projections3DPane extends StackPane implements
                 point3dSize -= 1;
                 Platform.runLater(() -> scene.getRoot().fireEvent(
                     new HyperspaceEvent(HyperspaceEvent.POINT3D_SIZE_KEYPRESS, point3dSize)));
-                heightChanged = true;
-                updateView(false);
+                updateDataRadius();
             }
             if (keycode == KeyCode.P) {
                 point3dSize += 1;
                 Platform.runLater(() -> scene.getRoot().fireEvent(
                     new HyperspaceEvent(HyperspaceEvent.POINT3D_SIZE_KEYPRESS, point3dSize)));
-                heightChanged = true;
-                updateView(false);
+                updateDataRadius();
             }
             if (keycode == KeyCode.U) {
                 pointScale -= 0.1;
                 Platform.runLater(() -> scene.getRoot().fireEvent(
                     new HyperspaceEvent(HyperspaceEvent.POINT_SCALE_KEYPRESS, pointScale)));
-                scatterModel.pointScale = pointScale;
                 notifyScaleChange();
-                updateView(false);
             }
             if (keycode == KeyCode.I) {
                 pointScale += 0.1;
                 Platform.runLater(() -> scene.getRoot().fireEvent(
                     new HyperspaceEvent(HyperspaceEvent.POINT_SCALE_KEYPRESS, pointScale)));
-                scatterModel.pointScale = pointScale;
                 notifyScaleChange();
-                updateView(false);
             }
 
             if (event.isAltDown() && keycode == KeyCode.H) {
@@ -724,7 +651,7 @@ public class Projections3DPane extends StackPane implements
             }
             if (keycode == KeyCode.G) {
                 anchorIndex++;
-                if (anchorIndex > scatterModel.data.size()) anchorIndex = scatterModel.data.size();
+                if (anchorIndex >= featureVectors.size()) anchorIndex = featureVectors.size();
                 setSpheroidAnchor(true, anchorIndex);
             }
 
@@ -979,12 +906,6 @@ public class Projections3DPane extends StackPane implements
                 ManifoldEvent.CLUSTER_SELECTION_MODE, true));
         });
 
-        CheckMenuItem showCubeItem = new CheckMenuItem("Show Cube");
-        showCubeItem.setSelected(false);
-        showCubeItem.selectedProperty().addListener(cl -> {
-            cubeWorld.showDataAndCrosshairsOnly(showCubeItem.isSelected());
-        });
-
         CheckMenuItem enableProjectionWallItem = new CheckMenuItem("Enable Projection Wall");
         enableProjectionWallItem.setSelected(false);
         enableProjectionWallItem.selectedProperty().addListener(cl -> {
@@ -1003,7 +924,7 @@ public class Projections3DPane extends StackPane implements
         ImageView optionsImageView = ResourceUtils.loadIcon("configuration", ICON_FIT_HEIGHT);
         optionsImageView.setEffect(glow);
         Menu optionsMenu = new Menu("Options", optionsImageView, 
-            showCubeItem, enableProjectionWallItem, 
+            enableProjectionWallItem, 
             animatingProjectionsItem, updatingTrajectoriesItem);
         
         ContextMenu cm = new ContextMenu(selectPointsItem,
@@ -1026,25 +947,10 @@ public class Projections3DPane extends StackPane implements
             }
         });
 
-        //Create dummy seed and pnode for mesh to form around
-        double[] features = new double[factorMaxIndex];
-        Arrays.fill(features, 0);
-        HyperspaceSeed seed = new HyperspaceSeed(0, 1, 2, 3, 4, 5, features);
-        hyperspaceSeeds.add(seed);
-        addPNodeFromSeed(seed);
-        //load empty mesh (except single 0'ed point.
-        loadDirectedMesh();
-
-        this.scene.addEventHandler(HyperspaceEvent.ADDED_FEATURE_LAYER, e ->
-            changeFeatureLayer((FeatureLayer) e.object));
-        this.scene.addEventHandler(HyperspaceEvent.ADDEDALL_FEATURE_LAYER, e ->
-            changeFeatureLayer(null));
-        this.scene.addEventHandler(HyperspaceEvent.UPDATED_FEATURE_LAYER, e ->
-            changeFeatureLayer((FeatureLayer) e.object));
         this.scene.addEventHandler(HyperspaceEvent.REMOVED_FEATURE_LAYER, e -> {
             Integer index = ((FeatureLayer) e.object).getIndex();
             if (null != FeatureLayer.removeFeatureLayer(index)) {
-                updateView(true);
+                refresh(true);
             }
         });
         this.scene.addEventHandler(HyperspaceEvent.CLEARED_FACTOR_LABELS, e -> {
@@ -1069,8 +975,7 @@ public class Projections3DPane extends StackPane implements
         this.scene.addEventHandler(HyperspaceEvent.REMOVED_FACTOR_LABEL, e -> {
             String label = ((FactorLabel) e.object).getLabel();
             if (null != FactorLabel.removeFactorLabel(label)) {
-                updateView(true);
-                updateEllipsoids();
+                refresh(true);
             }
         });
 
@@ -1081,9 +986,6 @@ public class Projections3DPane extends StackPane implements
         this.scene.addEventHandler(HyperspaceEvent.ENABLE_HYPERSPACE_SKYBOX, e -> {
             skybox.setVisible((Boolean) e.object);
         });
-        this.scene.addEventHandler(HyperspaceEvent.ENABLE_FEATURE_DATA, e -> {
-            scatterMesh3D.setVisible((Boolean) e.object);
-        });
 
         this.scene.addEventHandler(HyperspaceEvent.FACTOR_COORDINATES_GUI, e -> {
             CoordinateSet coords = (CoordinateSet) e.object;
@@ -1091,7 +993,6 @@ public class Projections3DPane extends StackPane implements
             yFactorIndex = coords.coordinateIndices.get(1);
             zFactorIndex = coords.coordinateIndices.get(2);
             updateFloatingNodes();
-            updateView(true);
             updateEllipsoids();
             notifyIndexChange();
         });
@@ -1114,7 +1015,6 @@ public class Projections3DPane extends StackPane implements
                     update = true;
                 }
                 if (update) {
-                    updateView(true);
                     updateEllipsoids();
                     notifyIndexChange();
                 }
@@ -1123,58 +1023,39 @@ public class Projections3DPane extends StackPane implements
         });
         scene.addEventHandler(HyperspaceEvent.COLOR_BY_LABEL, e -> {
             colorByLabel = (boolean) e.object;
-            updateView(true);
+            updateDataColors();            
         });
         scene.addEventHandler(HyperspaceEvent.COLOR_BY_LAYER, e -> {
             colorByLabel = !(boolean) e.object;
-            updateView(true);
+            updateDataColors();
         });
 
-        scene.addEventHandler(HyperspaceEvent.SCALING_AUTO_NORMALIZE, e -> {
-            autoScaling = (boolean) e.object;
-            updateView(false);
-        });
-        scene.addEventHandler(HyperspaceEvent.SCALING_MANUAL_BOUNDS, e -> {
-            autoScaling = !(boolean) e.object;
-            updateView(false);
-        });
-        scene.addEventHandler(HyperspaceEvent.SCALING_MEAN_CENTERED, e -> {
-            meanCentered = (boolean) e.object;
-            updateView(false);
-        });
         scene.addEventHandler(HyperspaceEvent.NODE_QUEUELIMIT_GUI, e -> queueLimit = (int) e.object);
-        scene.addEventHandler(HyperspaceEvent.REFRESH_RATE_GUI, e -> hyperspaceRefreshRate = (long) e.object);
+
         scene.addEventHandler(HyperspaceEvent.POINT3D_SIZE_GUI, e -> {
             point3dSize = (double) e.object;
-            updateView(false);
+            updateDataRadius();
         });
         scene.addEventHandler(HyperspaceEvent.POINT_SCALE_GUI, e -> {
             pointScale = (double) e.object;
             notifyScaleChange();
-            updateView(false);
             updateEllipsoids();
         });
         scene.addEventHandler(HyperspaceEvent.SCATTERBUFF_SCALING_GUI, e -> {
             scatterBuffScaling = (double) e.object;
             notifyScaleChange();
-            updateView(false);
             updateEllipsoids();
         });
         scene.addEventHandler(HyperspaceEvent.RESET_MAX_ABS, e -> {
             maxAbsValue = 1.0;
             meanCenteredMaxAbsValue = 1.0;
-            cubeWorld.maxAbsValue = maxAbsValue;
-            cubeWorld.meanCenteredMaxAbsValue = meanCenteredMaxAbsValue;
-            cubeWorld.setDirty(true); //signals to animation timer to redraw
             notifyScaleChange();
-            updateView(false);
             updateEllipsoids();
         });
         scene.addEventHandler(HyperspaceEvent.RECOMPUTE_MAX_ABS, e -> {
             if (!featureVectors.isEmpty())
                 updateMaxAndMeans();
             notifyScaleChange();
-            updateView(false);
             updateEllipsoids();
         });
 
@@ -1182,28 +1063,9 @@ public class Projections3DPane extends StackPane implements
             nodeGroup.setVisible((boolean) e.object);
             labelGroup.setVisible((boolean) e.object);
         });
-        scene.addEventHandler(ShadowEvent.FIXED_ORHOGRAPHIC_PROJECTION, e -> {
-            if ((boolean) e.object) {
-                projectionType = PROJECTION_TYPE.FIXED_ORTHOGRAPHIC;
-                Platform.runLater(() -> {
-                    dataXForm.getChildren().remove(scatterMesh3D);
-                    sceneRoot.getChildren().add(scatterMesh3D);
-                });
-            }
-        });
-        scene.addEventHandler(ShadowEvent.ROTATING_PERSPECTIVE_PROJECTION, e -> {
-            if ((boolean) e.object) {
-                projectionType = PROJECTION_TYPE.ROTATING_PERSPECTIVE;
-                Platform.runLater(() -> {
-                    sceneRoot.getChildren().remove(scatterMesh3D);
-                    dataXForm.getChildren().add(scatterMesh3D);
-                });
-            }
-        });
         scene.addEventHandler(ShadowEvent.OVERRIDE_XFORM, e -> {
             enableXForm = (boolean) e.object;
         });
-
 
         scene.addEventHandler(ManifoldEvent.CLUSTER_SELECTION_MODE, e -> {
             boolean isActive = (boolean) e.object1;
@@ -1292,30 +1154,6 @@ public class Projections3DPane extends StackPane implements
                 anchorIndex = featureVectors.size();
             setSpheroidAnchor(true, anchorIndex);
         });
-
-        AnimationTimer animationTimer = new AnimationTimer() {
-            long sleepNs = 0;
-            long prevTime = 0;
-            long NANOS_IN_MILLI = 1_000_000;
-
-            @Override
-            public void handle(long now) {
-                sleepNs = hyperspaceRefreshRate * NANOS_IN_MILLI;
-                if ((now - prevTime) < sleepNs) return;
-                prevTime = now;
-                if (isDirty) {
-                    try {
-                        updateView(false); // isDirty set to false inside.
-                    } catch (Exception ex) {
-                        LOG.info("Hyperspace Animation Timer: {}", ex.getMessage(), ex);
-                    }
-                    isDirty = false;
-                }
-            }
-
-            ;
-        };
-        animationTimer.start();
 
         projectileSystem = new ProjectileSystem(debugGroup, 15);
         projectileSystem.setRunning(false);
@@ -1458,10 +1296,7 @@ public class Projections3DPane extends StackPane implements
         });
         subScene.sceneProperty().addListener(cl -> {
             Platform.runLater(() -> {
-                cubeWorld.adjustPanelsByPos(cameraTransform.rx.getAngle(),
-                    cameraTransform.ry.getAngle(), cameraTransform.rz.getAngle());
                 updateFloatingNodes();
-                updateView(true);
                 //create callout automatically puts the callout and node into a managed map
                 FeatureVector dummy = FeatureVector.EMPTY_FEATURE_VECTOR("", 3);
                 anchorCallout = radialOverlayPane.createCallout(anchorTSM, dummy, subScene);
@@ -1484,14 +1319,12 @@ public class Projections3DPane extends StackPane implements
                 });
             });
         });
-        cubeWorld.showDataAndCrosshairsOnly(showCubeItem.isSelected());
     }
 
     private void toggleProjectileViews() {
         //first toggle the system
         projectileSystem.setRunning(!projectileSystem.isRunning());
         //hide the boring serious stuff
-        cubeWorld.setVisible(!projectileSystem.isRunning());
         xSphere.setVisible(!projectileSystem.isRunning());
         ySphere.setVisible(!projectileSystem.isRunning());
         zSphere.setVisible(!projectileSystem.isRunning());
@@ -1501,13 +1334,11 @@ public class Projections3DPane extends StackPane implements
         manifoldGroup.setVisible(!projectileSystem.isRunning());
         connectorsGroup.setVisible(!projectileSystem.isRunning());
         ellipsoidGroup.setVisible(!projectileSystem.isRunning());
-//        projectedGroup.setVisible(!projectileSystem.isRunning());
         highlighterNeonCircle.setVisible(!projectileSystem.isRunning());
         anchorTrajectory.setVisible(!projectileSystem.isRunning());
         anchorTraj3D.setVisible(!projectileSystem.isRunning());
         trajectorySphereGroup.setVisible(!projectileSystem.isRunning());
         trajectoryGroup.setVisible(!projectileSystem.isRunning());
-        scatterMesh3D.setVisible(!projectileSystem.isRunning());
         miniCrosshair.setVisible(!projectileSystem.isRunning());
         //show the cool stuff
         debugGroup.setVisible(projectileSystem.isRunning());
@@ -1534,8 +1365,6 @@ public class Projections3DPane extends StackPane implements
     }
 
     public void updateOnLabelChange(List<FactorLabel> labels) {
-        updatePNodeColorsAndVisibility();
-        updateView(false);
         labels.forEach(factorLabel -> {
             sphereToFeatureVectorMap.forEach((s, fv) -> {
                 if (fv.getLabel().contentEquals(factorLabel.getLabel())) {
@@ -1636,11 +1465,16 @@ public class Projections3DPane extends StackPane implements
         skybox.setVisible(false);
     }
 
-    private void changeFeatureLayer(FeatureLayer featureLayer) {
-        updatePNodeColorsAndVisibility();
-        updateView(false);
+    private void updateDataColors() {
+        sphereToFeatureVectorMap.forEach((s, fv) -> {
+            if (null != fv.getLabel()) {
+                FactorLabel fl = FactorLabel.getFactorLabel(fv.getLabel());
+                s.setVisible(fl.getVisible());
+                ((PhongMaterial) s.getMaterial()).setDiffuseColor(fl.getColor());
+                ((PhongMaterial) s.getMaterial()).setSpecularColor(fl.getColor());
+            }
+        });    
     }
-
     private void changeFactorLabels(FactorLabel factorLabel) {
         sphereToFeatureVectorMap.forEach((s, fv) -> {
             if (null != fv.getLabel() && fv.getLabel().contentEquals(factorLabel.getLabel())) {
@@ -1648,8 +1482,6 @@ public class Projections3DPane extends StackPane implements
                 ((PhongMaterial) s.getMaterial()).setDiffuseColor(factorLabel.getColor());
             }
         });
-        updatePNodeColorsAndVisibility();
-        updateView(false);
         ellipsoidToGMMessageMap.forEach((TriaxialSpheroidMesh t, GaussianMixture u) -> {
             PhongMaterial mat = (PhongMaterial) t.getMaterial();
             Color color = FactorLabel.getColorByLabel(
@@ -1679,7 +1511,6 @@ public class Projections3DPane extends StackPane implements
     public void resetView(double milliseconds, boolean rightNow) {
         if (!rightNow) {
             cameraTransform.setPivot(0, 0, 0);
-            if (projectionType == PROJECTION_TYPE.FIXED_ORTHOGRAPHIC) {
                 Timeline timeline = new Timeline(
                     new KeyFrame(Duration.millis(milliseconds),
                         new KeyValue(cameraTransform.translateXProperty(), 0),
@@ -1690,31 +1521,18 @@ public class Projections3DPane extends StackPane implements
                 timeline.setOnFinished(eh -> {
                     Timeline zoomTimeline = JavaFX3DUtils.transitionCameraTo(milliseconds, camera, cameraTransform,
                         0, 0, cameraDistance, -10.0, -45.0, 0.0);
-                    zoomTimeline.setOnFinished(e ->
-                        cubeWorld.adjustPanelsByPos(cameraTransform.rx.getAngle(),
-                            cameraTransform.ry.getAngle(), cameraTransform.rz.getAngle()));
                 });
                 timeline.playFromStart();
-            } else {
-                dataXForm.reset();
-                cubeWorld.resetProjectionAffine();
-            }
         } else {
             cameraTransform.setPivot(0, 0, 0);
 
-            if (projectionType == PROJECTION_TYPE.FIXED_ORTHOGRAPHIC) {
-                cameraTransform.rx.setAngle(-10);
-                cameraTransform.ry.setAngle(-45.0);
-                cameraTransform.rz.setAngle(0.0);
-                camera.setTranslateX(0);
-                camera.setTranslateY(0);
-                camera.setTranslateZ(cameraDistance);
-                cubeWorld.adjustPanelsByPos(cameraTransform.rx.getAngle(),
-                    cameraTransform.ry.getAngle(), cameraTransform.rz.getAngle());
-            } else {
-                dataXForm.reset();
-                cubeWorld.resetProjectionAffine();
-            }
+            cameraTransform.rx.setAngle(-10);
+            cameraTransform.ry.setAngle(-45.0);
+            cameraTransform.rz.setAngle(0.0);
+            camera.setTranslateX(0);
+            camera.setTranslateY(0);
+            camera.setTranslateZ(cameraDistance);
+
             cameraTransform.setPivot(0, 0, 0);
         }
     }
@@ -1731,8 +1549,6 @@ public class Projections3DPane extends StackPane implements
     public void updateAll() {
         Platform.runLater(() -> {
             highlightedPoint.setRadius(point3dSize / 2.0);
-            updateView(true);
-            cubeWorld.setDirty(true); //signals to animation timer to redraw
             updateEllipsoids();
         });
     }
@@ -1754,42 +1570,32 @@ public class Projections3DPane extends StackPane implements
             modifier = 25.0;
         }
 
-        if (projectionType == PROJECTION_TYPE.FIXED_ORTHOGRAPHIC) {
-            if (me.isPrimaryButtonDown()) {
-                if (me.isAltDown()) { //roll
-                    cameraTransform.rz.setAngle(((cameraTransform.rz.getAngle() + mouseDeltaX * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180); // +
-                    if (bindCameraRotations)
-                        projectileSystem.playerShip.addRotation(cameraTransform.rz.getAngle(), Rotate.Z_AXIS);
-                } else {
-                    cameraTransform.ry.setAngle(((cameraTransform.ry.getAngle() + mouseDeltaX * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180); // +
-                    cameraTransform.rx.setAngle(
-                        ((cameraTransform.rx.getAngle() - mouseDeltaY * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180);
-                    if (bindCameraRotations) {
-                        //must clamp the turns
-                        double yChange =
-                            (((mouseDeltaX * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180);
-                        double xChange =
-                            (((-mouseDeltaY * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180);
-                        projectileSystem.playerShip.addRotation(yChange, Rotate.Y_AXIS);
-                        projectileSystem.playerShip.addRotation(xChange, Rotate.X_AXIS);
-                    }
+        if (me.isPrimaryButtonDown()) {
+            if (me.isAltDown()) { //roll
+                cameraTransform.rz.setAngle(((cameraTransform.rz.getAngle() + mouseDeltaX * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180); // +
+                if (bindCameraRotations)
+                    projectileSystem.playerShip.addRotation(cameraTransform.rz.getAngle(), Rotate.Z_AXIS);
+            } else {
+                cameraTransform.ry.setAngle(((cameraTransform.ry.getAngle() + mouseDeltaX * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180); // +
+                cameraTransform.rx.setAngle(
+                    ((cameraTransform.rx.getAngle() - mouseDeltaY * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180);
+                if (bindCameraRotations) {
+                    //must clamp the turns
+                    double yChange =
+                        (((mouseDeltaX * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180);
+                    double xChange =
+                        (((-mouseDeltaY * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180);
+                    projectileSystem.playerShip.addRotation(yChange, Rotate.Y_AXIS);
+                    projectileSystem.playerShip.addRotation(xChange, Rotate.X_AXIS);
                 }
-            } else if (me.isMiddleButtonDown()) {
-                cameraTransform.t.setX(cameraTransform.t.getX() + mouseDeltaX * modifierFactor * modifier * 0.3); // -
-                cameraTransform.t.setY(cameraTransform.t.getY() + mouseDeltaY * modifierFactor * modifier * 0.3); // -
             }
-            cubeWorld.adjustPanelsByPos(cameraTransform.rx.getAngle(), cameraTransform.ry.getAngle(), cameraTransform.rz.getAngle());
-        } else {
-            double yChange = (((mouseDeltaX * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180);
-            double xChange = (((-mouseDeltaY * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180);
-            dataXForm.addRotation(yChange, Rotate.Y_AXIS);
-            dataXForm.addRotation(xChange, Rotate.X_AXIS);
-
-            cubeWorld.projectionAffine.setToTransform(dataXForm.getLocalToSceneTransform());
-            cubeWorld.setDirty(true); //signals to animation timer to redraw
+        } else if (me.isMiddleButtonDown()) {
+            cameraTransform.t.setX(cameraTransform.t.getX() + mouseDeltaX * modifierFactor * modifier * 0.3); // -
+            cameraTransform.t.setY(cameraTransform.t.getY() + mouseDeltaY * modifierFactor * modifier * 0.3); // -
         }
+        
         //right clicking should rotate pointing objects in the xform group only
-        if ((projectionType == PROJECTION_TYPE.FIXED_ORTHOGRAPHIC && enableXForm && me.isSecondaryButtonDown())) {
+        if (enableXForm && me.isSecondaryButtonDown()) {
             double yChange = (((mouseDeltaX * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180);
             double xChange = (((-mouseDeltaY * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180);
             LOG.info("BINDCAMERAROTATIONS Rotating data and not camera: {} {}", yChange, xChange);
@@ -1881,268 +1687,6 @@ public class Projections3DPane extends StackPane implements
         setCircleRadiusByDistance(highlighterNeonCircle, highlightedPoint);        
     }
 
-    public void updateView(boolean forcePNodeUpdate) {
-        if (null != scatterMesh3D)
-            scatterMesh3D.setVisible(false);
-        ellipsoidGroup.getChildren().filtered(n -> n instanceof Sphere).forEach(s -> {
-            ((Sphere) s).setRadius(point3dSize);
-        });
-        if (forcePNodeUpdate) //pointScale
-            updatePNodes();
-        if (null != scatterMesh3D) {
-            Perspective3DNode[] pNodeArray = pNodes.toArray(Perspective3DNode[]::new);
-
-            data = getVisiblePoints(pNodeArray);
-            //@TODO SMP if we want to implement directional arrows
-            //if((dataFormat.contentEquals(Options.DataFormat.Directed_Arrow.toString())))
-            //  ends = getEndPoints(data);
-            //else
-            endPoints = getFixedEndPoints(pNodeArray, 0f);
-            scatterModel.pointScale = pointScale;
-            Platform.runLater(() -> hardDraw());
-        }
-    }
-
-    private void hardDraw() {
-        if (heightChanged) { //if it hasn't changed, don't call expensive height change
-            scatterMesh3D.setHeight(point3dSize);
-            heightChanged = false;
-        }
-        //long startTime2 = System.nanoTime();
-        //if there is data and their end points are bounded
-        //set the start and end points of the mesh
-        //18 ms for 20k points
-        if (!data.isEmpty() && !endPoints.isEmpty())
-            scatterMesh3D.setScatterDataAndEndPoints(data, endPoints);
-        //@DEBUG SMP Rendering timing print
-        //System.out.println("UpdateView setScatterDataAndEndPoints time: "
-        //    + Utils.totalTimeString(startTime2));
-        //Since we changed the mesh unfortunately we have to reset the color mode
-        //otherwise the triangles won't have color.
-        //5ms for 20k points
-        scatterMesh3D.setTextureModeVertices3D(TOTAL_COLORS, colorByLabelFunction, 0.0, 360.0);
-        isDirty = false;
-    }
-
-    private ArrayList<Point3D> getAllPoints(Perspective3DNode[] pNodeArray) {
-        //Build scatter model
-        if (null == scatterModel)
-            scatterModel = new DirectedScatterDataModel();
-        //clear existing data
-        scatterModel.reset();
-        //synch model reflection status with current boolean value
-        scatterModel.reflectY = reflectY;
-        //Add our nodes to the model's collection
-        Collections.addAll(scatterModel.pNodes, pNodeArray);
-        //Check flag to see if we are auto normalizing
-        double buff = scatterBuffScaling;
-        if (autoScaling)
-            buff = meanCentered ? meanCenteredMaxAbsValue : maxAbsValue;
-        scatterModel.setLimits(-buff, buff, -buff, buff, -buff, buff);
-        //Check flag to see if we are mean centering
-        if (meanCentered && !meanVector.isEmpty()) {
-            double xShift = meanVector.get(xFactorIndex);
-            double yShift = meanVector.get(yFactorIndex);
-            double zShift = meanVector.get(zFactorIndex);
-            scatterModel.setShifts(xShift, yShift, zShift);
-        } else {
-            scatterModel.setShifts(0, 0, 0);
-        }
-        return scatterModel.getVisiblePoints(false, sceneWidth, sceneHeight);
-    }
-
-    private ArrayList<Point3D> getVisiblePoints(Perspective3DNode[] pNodeArray) {
-        //Build scatter model
-        if (null == scatterModel)
-            scatterModel = new DirectedScatterDataModel();
-        //clear existing data
-        scatterModel.reset();
-        //synch model reflection status with current boolean value
-        scatterModel.reflectY = reflectY;
-        //Add our nodes to the model's collection
-        Collections.addAll(scatterModel.pNodes, pNodeArray);
-        //True calls updateModel which is where the pain is
-        updateScatterLimits(scatterBuffScaling, true);
-        return scatterModel.data;
-    }
-
-    private ArrayList<Point3D> getFixedEndPoints(Perspective3DNode[] pNodes, float fixedSize) {
-//        ArrayList<Point3D> ends = new ArrayList<>(pNodes.length);
-////        seedToEndMap.clear(); //@TODO SMP
-//        for(int i=0; i<pNodes.length; i++){
-//            ends.add(new Point3D(fixedSize, fixedSize, fixedSize));
-//            //HyperspaceSeed seed = seedToDataMap.get(pNode.factorAnalysisSeed);
-//            //Fix endpoints so they are just zero adds
-////            Point3D endPoint3D = new Point3D(fixedSize, fixedSize, fixedSize);
-////            ends.add(endPoint3D);
-////            seedToEndMap.put(endPoint3D, pNode.factorAnalysisSeed);
-//        }
-//        return ends;
-        Point3D[] endArray = new Point3D[pNodes.length];
-        Arrays.parallelSetAll(endArray, i -> new Point3D(fixedSize, fixedSize, fixedSize));
-        return new ArrayList<>(Arrays.asList(endArray));
-    }
-
-    public void updateScatterLimits(double bufferScale, boolean updateModel) {
-        //Check flag to see if we are auto normalizing
-        double buff = bufferScale;
-        if (autoScaling)
-            buff = meanCentered ? meanCenteredMaxAbsValue : maxAbsValue;
-        scatterModel.setLimits(-buff, buff, -buff, buff, -buff, buff);
-        //Check flag to see if we are mean centering
-        if (meanCentered && !meanVector.isEmpty()) {
-            double xShift = meanVector.get(xFactorIndex);
-            double yShift = meanVector.get(yFactorIndex);
-            double zShift = meanVector.get(zFactorIndex);
-            scatterModel.setShifts(xShift, yShift, zShift);
-        } else {
-            scatterModel.setShifts(0, 0, 0);
-        }
-        if (updateModel)
-            scatterModel.updateModel(sceneWidth, sceneHeight);
-    }
-
-    public Perspective3DNode addPNodeFromSeed(HyperspaceSeed seed) {
-        Perspective3DNode pNode = new Perspective3DNode(
-            seed.vector[seed.x], seed.vector[seed.y], seed.vector[seed.z],
-            seed.vector[seed.xDir], seed.vector[seed.yDir], seed.vector[seed.zDir],
-            seed);
-
-        if (colorByLabel)
-            if (null == seed.label)
-                pNode.nodeColor = Color.ALICEBLUE;
-            else if (seed.label.isBlank())
-                pNode.nodeColor = Color.ALICEBLUE;
-            else
-                pNode.nodeColor = FactorLabel.getColorByLabel(seed.label);
-        else if (colorByCoordinate) {
-            //@TODO SMP map triplet to RGB (x, y, z)
-            //normalize x, y, z values between 0 and 1
-
-            //java.awt.Color.RGBtoHSB((int)p.x, (int)p.y, (int)p.z, null)[0];
-        } else if (null == pNode.factorAnalysisSeed.layer)
-            pNode.nodeColor = Color.ALICEBLUE;
-        else
-            pNode.nodeColor = FeatureLayer.getColorByIndex(pNode.factorAnalysisSeed.layer);
-        pNode.visible = pNode.factorAnalysisSeed.visible;
-        pNodes.add(pNode);
-        return pNode;
-    }
-
-    private void updatePNodes() {
-        pNodes.clear();
-        HyperspaceSeed[] seeds = hyperspaceSeeds.toArray(HyperspaceSeed[]::new);
-        HyperspaceSeed seed;
-        for (int i = 0; i < seeds.length; i++) {
-            seed = seeds[i];
-            seed.x = xFactorIndex;
-            seed.y = yFactorIndex;
-            seed.z = zFactorIndex;
-            seed.visible = FactorLabel.visibilityByLabel(seed.label)
-                && FeatureLayer.visibilityByIndex(seed.layer)
-                && VisibilityMap.visibilityByIndex(i);
-            addPNodeFromSeed(seed);
-        }
-    }
-
-    private void updatePNodeColorsAndVisibility() {
-        pNodes.parallelStream().forEach(p -> {
-            if (colorByLabel)
-                if (null == p.factorAnalysisSeed.label || p.factorAnalysisSeed.label.isBlank())
-                    p.nodeColor = Color.ALICEBLUE;
-                else
-                    p.nodeColor = FactorLabel.getColorByLabel(p.factorAnalysisSeed.label);
-            else //color by layer index
-                if (null == p.factorAnalysisSeed.layer)
-                    p.nodeColor = Color.ALICEBLUE;
-                else
-                    p.nodeColor = FeatureLayer.getColorByIndex(p.factorAnalysisSeed.layer);
-            p.visible = FactorLabel.visibilityByLabel(p.factorAnalysisSeed.label)
-                && FeatureLayer.visibilityByIndex(p.factorAnalysisSeed.layer)
-                && VisibilityMap.visibilityByPNode(p);
-        });
-    }
-
-    private void updatePNodeIndices(int x, int y, int z, int xDir, int yDir, int zDir) {
-        //always skip the first node since its a dummy node.
-        pNodes.parallelStream().skip(1).forEach(p -> p.setParamsByIndex(x, y, z, xDir, yDir, zDir));
-    }
-
-    public void loadDirectedMesh() {
-        //System.out.println("Loading Directed Mesh...");
-        //@TODO SMP this is where you might load some dank data from a file
-        showAll();
-        updatePNodes();
-        Perspective3DNode[] pNodeArray = pNodes.toArray(Perspective3DNode[]::new);
-        data = getVisiblePoints(pNodeArray);
-        endPoints = getFixedEndPoints(pNodeArray, 0f);
-        //System.out.println("Rendering 3D Mesh...");
-        if (null != scatterMesh3D) {
-            scatterMesh3D.setDrawMode(DrawMode.FILL);
-            scatterMesh3D.setTextureModeVertices3D(TOTAL_COLORS, colorByLabelFunction, 0.0, 360.0);
-            scatterMesh3D.setScatterDataAndEndPoints(data, endPoints);
-        } else {
-            scatterMesh3D = new DirectedScatterMesh(data, endPoints, true, point3dSize, 0);
-            scatterMesh3D.setDrawMode(DrawMode.FILL);
-            scatterMesh3D.setTextureModeVertices3D(TOTAL_COLORS, colorByLabelFunction, 0.0, 360.0);
-            highlightedPoint.visibleProperty().bind(scatterMesh3D.visibleProperty());
-            highlightedPoint.setMouseTransparent(true);
-            highlightedPoint.setOpacity(0.5);
-            scatterMesh3D.addEventHandler(MouseEvent.MOUSE_CLICKED, event -> {
-                PickResult n = event.getPickResult();
-                int pointId1 = n.getIntersectedFace() / 4;
-                //System.out.println("Intersected Face:  " + n.getIntersectedFace());
-                if (pointId1 < scatterMesh3D.scatterDataProperty().get().size()) {
-                    Point3D pt1 = scatterMesh3D.scatterDataProperty().get().get(pointId1);
-                    Sphere sphere = new Sphere(1, 1);
-                    sphere.setTranslateX(pt1.x);
-                    sphere.setTranslateY(pt1.y);
-                    sphere.setTranslateZ(pt1.z);
-                    nodeGroup.getChildren().add(sphere);
-                    //find correct feature vector
-                    int correctIndex = scatterModel.findIndexFromVisibleFacePoint(pointId1);
-                    if (correctIndex >= 0)
-                        radialOverlayPane.createCallout(sphere,
-                            featureVectors.get(correctIndex), subScene);
-                }
-            });
-            scatterMesh3D.addEventHandler(MouseEvent.MOUSE_MOVED, event -> {
-                PickResult n = event.getPickResult();
-                final int pointId1 = n.getIntersectedFace() / 4;
-                Platform.runLater(() -> {
-                    if (pointId1 < scatterMesh3D.scatterDataProperty().get().size()) {
-                        Point3D pt1 = scatterMesh3D.scatterDataProperty().get().get(pointId1);
-                        Translate highlightTranslate = new Translate(pt1.x, pt1.y, pt1.z);
-                        highlightedPoint.getTransforms().clear();
-                        highlightedPoint.getTransforms().add(highlightTranslate);
-                        highlightedPoint.setUserData(pt1);
-                        highlightedPoint.setRadius(point3dSize / 2.0);
-                        int correctIndex = scatterModel.findIndexFromVisibleFacePoint(pointId1);
-                        if (correctIndex >= 0 && correctIndex <= featureVectors.size()) {
-                            scene.getRoot().fireEvent(new FeatureVectorEvent(
-                                FeatureVectorEvent.SELECT_FEATURE_VECTOR,
-                                featureVectors.get(correctIndex), featureLabels));
-                        }
-                        //@TODO SMP Update HUD with hovered point
-                        //HyperspaceSeed seed = seedToDataMap.get(pt1);
-                        //dataHudText.setText(seed.prettyPrint());
-                    }
-                });
-            });
-        }
-        Platform.runLater(() -> {
-            //System.out.println("Projections render complete.");
-            if (!sceneRoot.getChildren().contains(scatterMesh3D)) {
-                sceneRoot.getChildren().add(scatterMesh3D);
-                //Add some ambient light so folks can see it
-                AmbientLight light = new AmbientLight(Color.WHITE);
-                light.getScope().addAll(scatterMesh3D);
-                sceneRoot.getChildren().add(light);
-                sceneRoot.getChildren().add(ellipsoidGroup);
-            }
-        });
-    }
-
     private TriaxialSpheroidMesh createEllipsoid(double major, double minor, double gamma, Color color) {
         TriaxialSpheroidMesh triaxialSpheroid = new TriaxialSpheroidMesh(32, major, minor, gamma);
         triaxialSpheroid.setDrawMode(DrawMode.FILL);
@@ -2167,28 +1711,19 @@ public class Projections3DPane extends StackPane implements
         ellipsoidToGMMessageMap.clear();
         ellipsoidToGMDataMap.clear();
         clearFeatureVectors();
-        hyperspaceSeeds.clear();
-        pNodes.clear();
-        seedToDataMap.clear();
-        seedToEndMap.clear();
         shape3DToLabel.clear();
         //Add to hashmap so updateLabels() can manage the label position
         shape3DToLabel.put(xSphere, xLabel);
         shape3DToLabel.put(ySphere, yLabel);
         shape3DToLabel.put(zSphere, zLabel);
-        //Create dummy seed and pnode for mesh to form around
-        double[] features = new double[]{0, 0, 0, 0, 0, 0};
-        HyperspaceSeed seed = new HyperspaceSeed(0, 1, 2, 3, 4, 5, features);
-        hyperspaceSeeds.add(seed);
-        addPNodeFromSeed(seed);
         //@DIRTY BUG! SMP... since projections visibility is determined by
+        //I leave this in here as a warning to the future
         //hyperspace visibility we should NOT be clearing this teensy hacky
         //static method of tracking visibility by point.
         //VisibilityMap.clearAll();
     }
 
     public void showAll() {
-        updateView(true);
         updateEllipsoids();
     }
 
@@ -2337,6 +1872,11 @@ public class Projections3DPane extends StackPane implements
         });
     }
 
+    private void updateDataRadius() {
+        ellipsoidGroup.getChildren().filtered(n -> n instanceof Sphere).forEach(s -> {
+            ((Sphere) s).setRadius(point3dSize);
+        });         
+    }
     private void updateEllipsoids() {
         //pixel ranges we wish to fit our scaling to
         double halfSceneWidth = sceneWidth / 2.0;
@@ -2408,20 +1948,7 @@ public class Projections3DPane extends StackPane implements
     @Override
     public void addFeatureVector(FeatureVector featureVector) {
         featureVectors.add(featureVector);
-        double[] features = FeatureVector.mapToStateArray.apply(featureVector);
-        HyperspaceSeed seed = new HyperspaceSeed(
-            xFactorIndex, yFactorIndex, zFactorIndex,
-            xDirFactorIndex, yDirFactorIndex, zDirFactorIndex, features);
-        seed.label = featureVector.getLabel();
-        seed.layer = featureVector.getLayer();
-        seed.visible = FactorLabel.visibilityByLabel(seed.label)
-            && FeatureLayer.visibilityByIndex(seed.layer);
-        hyperspaceSeeds.add(seed);
         trimQueueNow();
-        addPNodeFromSeed(seed);
-        cubeWorld.setDirty(true); //signals to animation timer to redraw
-        //rather than directly call updateView() let the rendering thread know there is a change
-        isDirty = true;
     }
 
     @Override
@@ -2538,15 +2065,6 @@ public class Projections3DPane extends StackPane implements
         });
 
         featureVectors.add(featureVector);
-        HyperspaceSeed seed = new HyperspaceSeed(
-            0, 1, 2, 0, 1, 2,
-            FeatureVector.mapToStateArray.apply(featureVector));
-        seed.label = featureVector.getLabel();
-        seed.layer = featureVector.getLayer();
-        seed.score = featureVector.getScore();
-        seed.pfa = featureVector.getPfa();
-        hyperspaceSeeds.add(seed);
-        addPNodeFromSeed(seed);
     }
 
     private void pointToManifold(Manifold3D manifold3D) {
@@ -2746,12 +2264,6 @@ public class Projections3DPane extends StackPane implements
         meanCenteredMaxAbsValue = FeatureVector.getMeanCenteredMaxAbsValue(featureVectors, meanVector);
 
         String str = "Mean Centered MaxAbsValue: " + meanCenteredMaxAbsValue;
-        cubeWorld.meanVector.clear();
-        cubeWorld.meanVector.addAll(meanVector);
-        cubeWorld.maxAbsValue = maxAbsValue;
-        cubeWorld.meanCenteredMaxAbsValue = meanCenteredMaxAbsValue;
-        isDirty = true; //let the rendering thread know there is a change
-        cubeWorld.setDirty(true); //signals to animation timer to redraw
         Platform.runLater(() -> {
             getScene().getRoot().fireEvent(
                 new HyperspaceEvent(HyperspaceEvent.NEW_MAX_ABS, maxAbsValue));
@@ -2763,12 +2275,6 @@ public class Projections3DPane extends StackPane implements
     }
 
     public void trimQueueNow() {
-        while (hyperspaceSeeds.size() > queueLimit) {
-            hyperspaceSeeds.poll();
-        }
-        while (pNodes.size() > queueLimit) {
-            pNodes.poll();
-        }
         while (featureVectors.size() > queueLimit) {
             featureVectors.remove(0);
         }
@@ -2845,6 +2351,8 @@ public class Projections3DPane extends StackPane implements
 
     @Override
     public void setColorByID(String iGotID, Color color) {
+        //sweet song reference
+        //https://en.wikipedia.org/wiki/Merkin_Ball
         featureVectors.stream()
             .filter(fv -> fv.getEntityId().contentEquals(iGotID))
             .forEach(f -> {
@@ -2858,61 +2366,43 @@ public class Projections3DPane extends StackPane implements
         ((PhongMaterial) sphereToFeatureVectorMap.keySet()
             .toArray(Sphere[]::new)[i]
             .getMaterial()).setDiffuseColor(color);
-
-        int index = 0;
-        for (Perspective3DNode pNode : pNodes) {
-            if (i == index) {
-                pNode.nodeColor = color;
-                return;
-            }
-            index++;
-        }
     }
 
     @Override
     public void setVisibleByIndex(int i, boolean b) {
-        VisibilityMap.pNodeVisibilityMap.put(pNodes.toArray(Perspective3DNode[]::new)[i], b);
         VisibilityMap.visibilityList.set(i, b);
     }
 
     @Override
     public void refresh(boolean forceNodeUpdate) {
-        updatePNodeColorsAndVisibility();
-        updateView(true);
+        updateDataColors();        
         updateEllipsoids();
-        cubeWorld.redraw(true);
     }
 
     private List<Point3D> getPointsByLabel(boolean useVisiblePoints, String label) {
-        Perspective3DNode[] pNodeArray = pNodes.toArray(Perspective3DNode[]::new);
-        List<Point3D> labelMatchedPoints = null;
-        if (null == label)
-            labelMatchedPoints = Arrays.stream(pNodeArray)
-                .filter(p -> p.visible)
-                .map(p -> new Point3D(p.xCoord * projectionScalar,
-                    reflectY ? p.yCoord * -projectionScalar : p.yCoord * projectionScalar,
-                    p.zCoord * projectionScalar))
-                .collect(Collectors.toList());
-        else if (useVisiblePoints)
-            labelMatchedPoints = Arrays.stream(pNodeArray)
-                .filter(p -> p.factorAnalysisSeed.label.contentEquals(label) && p.visible)
-                .map(p -> new Point3D(p.xCoord * projectionScalar,
-                    reflectY ? p.yCoord * -projectionScalar : p.yCoord * projectionScalar,
-                    p.zCoord * projectionScalar))
-                .collect(Collectors.toList());
-        else
-            labelMatchedPoints = Arrays.stream(pNodeArray)
-                .filter(p -> p.factorAnalysisSeed.label.contentEquals(label))
-                .map(p -> new Point3D(p.xCoord * projectionScalar,
-                    reflectY ? p.yCoord * -projectionScalar : p.yCoord * projectionScalar,
-                    p.zCoord * projectionScalar))
-                .collect(Collectors.toList());
+        List<Point3D> labelMatchedPoints = new ArrayList<>();
+        for(int i=0; i<featureVectors.size();i++) {
+            FeatureVector fv = featureVectors.get(i);
+            Point3D newPoint3D = new Point3D(
+                fv.getData().get(0) * projectionScalar,
+                reflectY ? fv.getData().get(1) * -projectionScalar : fv.getData().get(1) * projectionScalar,
+                fv.getData().get(2) * projectionScalar);            
+            if (null == label) {
+                if(VisibilityMap.visibilityByIndex(i))
+                    labelMatchedPoints.add(newPoint3D);
+            } else if (useVisiblePoints) {
+                if(VisibilityMap.visibilityByIndex(i) && FactorLabel.visibilityByLabel(fv.getLabel()))
+                    labelMatchedPoints.add(newPoint3D);
+            } else {
+                if(FactorLabel.visibilityByLabel(fv.getLabel()))
+                    labelMatchedPoints.add(newPoint3D);
+            }
+        }
         return labelMatchedPoints;
     }
 
     @Override
     public void addManifold(Manifold manifold, Manifold3D manifold3D) {
-//        System.out.println("adding manifold to Projections View.");
         manifold3D.setManifold(manifold);
         manifold3D.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
             getScene().getRoot().fireEvent(
@@ -2921,7 +2411,6 @@ public class Projections3DPane extends StackPane implements
                 || (e.getButton() == MouseButton.PRIMARY && pointToPointDistanceMode)) {
                 processDistanceClick(manifold3D);
             }
-
         });
         MenuItem orbitItem = new MenuItem("Orbit Here");
         orbitItem.setOnAction(e -> {
@@ -3096,7 +2585,6 @@ public class Projections3DPane extends StackPane implements
 
     public void enableAutoProjection(boolean enabled) {
         autoProjectionProperty.set(enabled);
-//        projectionOpticon.enableOrbiting(enabled);
     }
 
     public void projectFeatureCollection(FeatureCollection originalFC, Umap umap) {
@@ -3205,7 +2693,6 @@ public class Projections3DPane extends StackPane implements
                 else if (o1.getClusterId() > o2.getClusterId()) return 1;
                 else return 0;
             }).forEach(pointCluster -> {
-//        for(PointCluster pointCluster : clusters) {
                 if (null != pointCluster.getData() && !pointCluster.getData().isEmpty()) {
                     //@TODO SMP add new data points based on these clusters
                     pointCluster.getData().forEach(p -> {
@@ -3213,7 +2700,6 @@ public class Projections3DPane extends StackPane implements
                         fv.setLabel(pointCluster.getClusterName());
                         fv.getData().addAll(p);
                         featureVectors.add(fv);
-//                    Sphere sphere = new Sphere(point3dSize);
                         PhongMaterial mat = new PhongMaterial(Color.ALICEBLUE);
                         Sphere sphere = new AnimatedSphere(mat, point3dSize, 32, true);
                         mat.setSpecularColor(Color.AQUA);
@@ -3263,8 +2749,6 @@ public class Projections3DPane extends StackPane implements
             } else {
                 LOG.info("Cluster has less than 4 points");
             }
-//            i++;
-//            if(i>0) break;
         }
     }
 
