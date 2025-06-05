@@ -18,10 +18,10 @@ import javafx.scene.transform.Rotate;
 public class RadialGrid extends Group {
     private static final Logger LOG = LoggerFactory.getLogger(RadialGrid.class);
     private final Rotate worldRotateY = new Rotate(0, Rotate.Y_AXIS);
-    private static final int NUM_CIRCLES = 10;
-    private static final int NUM_RADIAL_LINES = 24;
+    private static final int NUM_CIRCLES = 5;
+    private static final int NUM_RADIAL_LINES = 20;
     private static final double MAX_RADIUS = 1000;
-    private static final double LINE_RADIUS = 0.2;
+    private static final double LINE_RADIUS = 0.5;
     private static final double CIRCLE_SEGMENTS = 60;
     AnimationTimer pulseAnimator;
     private double pulseScalar = 0.25;

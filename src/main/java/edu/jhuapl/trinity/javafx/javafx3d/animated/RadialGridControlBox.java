@@ -15,10 +15,10 @@ import javafx.scene.paint.Color;
  */
 public class RadialGridControlBox extends VBox {
     private static final double CONTROL_PREF_WIDTH = 100;
-    private static final int NUM_CIRCLES = 10;
-    private static final int NUM_RADIAL_LINES = 24;
+    private static final int NUM_CIRCLES = 5;
+    private static final int NUM_RADIAL_LINES = 20;
     private static final double MAX_RADIUS = 1000;
-    private static final double LINE_RADIUS = 0.2;
+    private static final double LINE_RADIUS = 0.5;
     private static final double CIRCLE_SEGMENTS = 60;
     RadialGrid radialGrid;
     Spinner<Integer> numCirclesSpinner;

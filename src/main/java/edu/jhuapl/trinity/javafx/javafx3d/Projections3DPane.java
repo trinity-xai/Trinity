@@ -131,14 +131,16 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
-import java.util.function.Function;
 import java.util.stream.Collectors;
 
 import static edu.jhuapl.trinity.javafx.handlers.GaussianMixtureEventHandler.generateEllipsoidDiagonal;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.RadialGrid;
 import static edu.jhuapl.trinity.utils.ResourceUtils.removeExtension;
 import javafx.animation.ParallelTransition;
+import javafx.scene.control.ColorPicker;
+import javafx.scene.control.CustomMenuItem;
 import javafx.scene.control.Menu;
+import javafx.scene.layout.VBox;
 
 /**
  * @author Sean Phillips
@@ -157,6 +159,8 @@ public class Projections3DPane extends StackPane implements
     private final double cubeSize = sceneWidth / 2.0;
     public PerspectiveCamera camera;
     public CameraTransformer cameraTransform = new CameraTransformer();
+    PointLight cameraLight; 
+    PointLight centerLight;    
     public boolean bindCameraRotations = false;
     private double mousePosX;
     private double mousePosY;
@@ -428,9 +432,8 @@ public class Projections3DPane extends StackPane implements
         sceneRoot.getChildren().addAll(cameraTransform, radialGrid, highlightedPoint,
             nodeGroup, manifoldGroup, debugGroup, crosshair3D,
             dataXForm, extrasGroup, connectorsGroup, anchorTSM);
-        //Add some ambient light so folks can see it
-        AmbientLight light = new AmbientLight(Color.WHITE);
-        sceneRoot.getChildren().add(light);
+        centerLight = new PointLight(Color.WHITE);
+        sceneRoot.getChildren().add(centerLight);
         sceneRoot.getChildren().add(ellipsoidGroup);
 
         projectionOpticon = new Opticon(Color.CYAN, 100);
@@ -445,11 +448,11 @@ public class Projections3DPane extends StackPane implements
         highlightedPoint.setDrawMode(DrawMode.LINE);
         subScene.setCamera(camera);
         //add a Point Light for better viewing of the grid coordinate system
-        PointLight pointLight = new PointLight(Color.WHITE);
-        cameraTransform.getChildren().add(light);
-        pointLight.setTranslateX(camera.getTranslateX());
-        pointLight.setTranslateY(camera.getTranslateY());
-        pointLight.setTranslateZ(camera.getTranslateZ() + 500.0);
+        cameraLight = new PointLight(Color.WHITE);
+        cameraTransform.getChildren().add(cameraLight);
+        cameraLight.setTranslateX(camera.getTranslateX());
+        cameraLight.setTranslateY(camera.getTranslateY());
+        cameraLight.setTranslateZ(camera.getTranslateZ());
 
         //Some camera controls...
         subScene.setOnMouseEntered(event -> subScene.requestFocus());
@@ -688,6 +691,10 @@ public class Projections3DPane extends StackPane implements
             }
             updateFloatingNodes();
             radialOverlayPane.updateCalloutHeadPoints(subScene);
+            cameraLight.setTranslateX(camera.getTranslateX());
+            cameraLight.setTranslateY(camera.getTranslateY());
+            cameraLight.setTranslateZ(camera.getTranslateZ());
+            
             e.consume();
         });
         subScene.setOnScroll((ScrollEvent event) -> {
@@ -703,6 +710,9 @@ public class Projections3DPane extends StackPane implements
             double z = camera.getTranslateZ();
             double newZ = z + event.getDeltaY() * modifierFactor * modifier;
             camera.setTranslateZ(newZ);
+            cameraLight.setTranslateX(camera.getTranslateX());
+            cameraLight.setTranslateY(camera.getTranslateY());
+            cameraLight.setTranslateZ(camera.getTranslateZ());
             updateFloatingNodes();
             radialOverlayPane.updateCalloutHeadPoints(subScene);
         });
@@ -921,11 +931,21 @@ public class Projections3DPane extends StackPane implements
         updatingTrajectoriesItem.selectedProperty().addListener(cl ->
             updatingTrajectories = updatingTrajectoriesItem.isSelected());
 
+        ColorPicker centerLightPicker = new ColorPicker(Color.WHITE);
+        centerLight.colorProperty().bind(centerLightPicker.valueProperty());
+        MenuItem centerLightItem = new CustomMenuItem(
+            new VBox(2, new Label("Center Light"), centerLightPicker), false);
+
+        ColorPicker cameraLightPicker = new ColorPicker(Color.WHITE);
+        cameraLight.colorProperty().bind(cameraLightPicker.valueProperty());
+        MenuItem cameraLightItem = new CustomMenuItem(
+            new VBox(2, new Label("Camera Light"), cameraLightPicker), false);
+        
         ImageView optionsImageView = ResourceUtils.loadIcon("configuration", ICON_FIT_HEIGHT);
         optionsImageView.setEffect(glow);
         Menu optionsMenu = new Menu("Options", optionsImageView, 
-            enableProjectionWallItem, 
-            animatingProjectionsItem, updatingTrajectoriesItem);
+            centerLightItem, cameraLightItem,     
+            enableProjectionWallItem, animatingProjectionsItem, updatingTrajectoriesItem);
         
         ContextMenu cm = new ContextMenu(selectPointsItem,
             resetViewItem, manifoldsItem, radialItem, radarItem, 
@@ -1602,6 +1622,10 @@ public class Projections3DPane extends StackPane implements
             dataXForm.addRotation(yChange, Rotate.Y_AXIS);
             dataXForm.addRotation(xChange, Rotate.X_AXIS);
         }
+        cameraLight.setTranslateX(camera.getTranslateX());
+        cameraLight.setTranslateY(camera.getTranslateY());
+        cameraLight.setTranslateZ(camera.getTranslateZ());
+        
         updateFloatingNodes();
         radialOverlayPane.updateCalloutHeadPoints(subScene);
     }
@@ -1979,7 +2003,7 @@ public class Projections3DPane extends StackPane implements
     }
     
     private void addProjectorNode(FeatureVector featureVector) {
-        if(null != featureVector.getText()){
+        if(null != featureVector.getText() && !featureVector.getText().isBlank()){
             ProjectorNode pn = new ProjectorTextNode(featureVector.getText());
             featureVectorToProjectorNode.put(featureVector, pn);
             Platform.runLater(() -> {
