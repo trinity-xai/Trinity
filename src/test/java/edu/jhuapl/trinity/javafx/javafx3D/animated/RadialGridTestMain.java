@@ -1,4 +1,4 @@
-package edu.jhuapl.trinity.javafx.javafx3D;
+package edu.jhuapl.trinity.javafx.javafx3d.animated;
 
 import javafx.application.Application;
 

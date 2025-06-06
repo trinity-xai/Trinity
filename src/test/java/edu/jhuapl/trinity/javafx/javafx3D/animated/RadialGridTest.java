@@ -1,7 +1,5 @@
-package edu.jhuapl.trinity.javafx.javafx3D;
+package edu.jhuapl.trinity.javafx.javafx3d.animated;
 
-import edu.jhuapl.trinity.javafx.javafx3d.animated.RadialGrid;
-import edu.jhuapl.trinity.javafx.javafx3d.animated.RadialGridControlBox;
 import javafx.application.Application;
 import javafx.scene.Scene;
 import javafx.scene.layout.BorderPane;
