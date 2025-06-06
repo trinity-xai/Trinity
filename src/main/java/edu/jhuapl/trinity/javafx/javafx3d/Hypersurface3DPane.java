@@ -253,7 +253,7 @@ public class Hypersurface3DPane extends StackPane
     public Spinner xWidthSpinner, zWidthSpinner;
     public Scene scene;
     HashMap<Shape3D, Callout> shape3DToCalloutMap;
-    public String imageryBasePath = "imagery/";
+    public String imageryBasePath = "";
     SurfaceChartPane surfaceChartPane;
     public AmbientLight ambientLight;
     public PointLight pointLight;

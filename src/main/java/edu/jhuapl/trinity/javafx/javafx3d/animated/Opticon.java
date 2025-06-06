@@ -251,14 +251,14 @@ public class Opticon extends Group {
             }
         };
     }
-    public void fireData(Group parent, Point3D destination, double seconds, Color dataColor) {
+    public void fireData(Group parent, Point3D destination, double milliseconds, Color dataColor) {
         Point3D sceneToLocalPoint = this.sceneToLocal(destination);
         Sphere dataSphere = new Sphere(10);
         dataSphere.setMaterial(new PhongMaterial(dataColor));
 
         Timeline timeline = new Timeline();
         timeline.getKeyFrames().addAll(new KeyFrame[]{
-            new KeyFrame(Duration.seconds(seconds), new KeyValue[]{// Frame End
+            new KeyFrame(Duration.millis(milliseconds), new KeyValue[]{// Frame End
                 new KeyValue(dataSphere.translateXProperty(), sceneToLocalPoint.getX(), Interpolator.EASE_OUT),
                 new KeyValue(dataSphere.translateYProperty(), sceneToLocalPoint.getY(), Interpolator.EASE_OUT),
                 new KeyValue(dataSphere.translateZProperty(), sceneToLocalPoint.getZ(), Interpolator.EASE_OUT),
@@ -271,8 +271,8 @@ public class Opticon extends Group {
         timeline.playFromStart();
     }
 
-    public void fireData(Point3D destination, double seconds, Color dataColor) {
-        fireData(this, destination, seconds, dataColor);
+    public void fireData(Point3D destination, double milliseconds, Color dataColor) {
+        fireData(this, destination, milliseconds, dataColor);
     }
 
     public void updateScannerSize(double radius) {

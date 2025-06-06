@@ -27,6 +27,7 @@ import javafx.stage.DirectoryChooser;
 import java.io.File;
 import java.net.URL;
 import java.util.ResourceBundle;
+import javafx.scene.control.Tooltip;
 
 /**
  * FXML Controller class
@@ -102,7 +103,8 @@ public class DataController implements Initializable {
         pubsubRadioButton.setToggleGroup(toggleGroup);
         pushpullRadioButton.setToggleGroup(toggleGroup);
         updateRateTextField.setText(String.valueOf(ZeroMQFeedManager.DEFAULT_TIMER_RATE_MS));
-        imageryBasePathTextField.setText("imagery/");
+        imageryBasePathTextField.setText("");
+        imageryBasePathTextField.setTooltip(new Tooltip("Prepends this string for file based sources. \nEmpty String assumes OS specific path for files."));
         showTimelineCheckBox.selectedProperty().addListener(cl -> {
             showTimelineCheckBox.getScene().getRoot().fireEvent(
                 new TimelineEvent(TimelineEvent.TIMELINE_SET_VISIBLE,

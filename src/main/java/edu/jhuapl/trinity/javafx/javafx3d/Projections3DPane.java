@@ -140,6 +140,8 @@ import javafx.animation.ParallelTransition;
 import javafx.scene.control.ColorPicker;
 import javafx.scene.control.CustomMenuItem;
 import javafx.scene.control.Menu;
+import javafx.scene.control.Spinner;
+import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.layout.VBox;
 
 /**
@@ -192,6 +194,8 @@ public class Projections3DPane extends StackPane implements
 
     public SubScene subScene;
 
+    public double dataAnimationMS = 500; //milliseconds
+    public double animationSleepMS = 100; //milliseconds
     public double point3dSize = 10.0; //size of 3d tetrahedra
     public double pointScale = 1.0; //scales parameter value in transform
     public double scatterBuffScaling = 1.0; //scales domain range in transform
@@ -931,6 +935,26 @@ public class Projections3DPane extends StackPane implements
         updatingTrajectoriesItem.selectedProperty().addListener(cl ->
             updatingTrajectories = updatingTrajectoriesItem.isSelected());
 
+        Spinner<Double> dataAnimationSpinner = new Spinner<>();
+        dataAnimationSpinner.setValueFactory(
+            new SpinnerValueFactory.DoubleSpinnerValueFactory(50, 1000, dataAnimationMS, 50));
+        dataAnimationSpinner.setEditable(true);
+        dataAnimationSpinner.valueProperty().addListener(e-> {
+            dataAnimationMS = dataAnimationSpinner.getValue();
+        });
+        MenuItem dataAnimationItem = new CustomMenuItem(
+            new VBox(2, new Label("Data Animation (ms)"), dataAnimationSpinner), false);
+
+        Spinner<Double> sleepAnimationSpinner = new Spinner<>();
+        sleepAnimationSpinner.setValueFactory(
+            new SpinnerValueFactory.DoubleSpinnerValueFactory(50, 1000, animationSleepMS, 50));
+        sleepAnimationSpinner.setEditable(true);
+        sleepAnimationSpinner.valueProperty().addListener(e-> {
+            animationSleepMS = sleepAnimationSpinner.getValue();
+        });
+        MenuItem sleepAnimationItem = new CustomMenuItem(
+            new VBox(2, new Label("Sleep Animation (ms)"), sleepAnimationSpinner), false);
+
         ColorPicker centerLightPicker = new ColorPicker(Color.WHITE);
         centerLight.colorProperty().bind(centerLightPicker.valueProperty());
         MenuItem centerLightItem = new CustomMenuItem(
@@ -943,7 +967,8 @@ public class Projections3DPane extends StackPane implements
         
         ImageView optionsImageView = ResourceUtils.loadIcon("configuration", ICON_FIT_HEIGHT);
         optionsImageView.setEffect(glow);
-        Menu optionsMenu = new Menu("Options", optionsImageView, 
+        Menu optionsMenu = new Menu("Options", optionsImageView,
+            dataAnimationItem, sleepAnimationItem,
             centerLightItem, cameraLightItem,     
             enableProjectionWallItem, animatingProjectionsItem, updatingTrajectoriesItem);
         
@@ -2007,8 +2032,8 @@ public class Projections3DPane extends StackPane implements
             ProjectorNode pn = new ProjectorTextNode(featureVector.getText());
             featureVectorToProjectorNode.put(featureVector, pn);
             Platform.runLater(() -> {
-                scene.getRoot().fireEvent(new FeatureVectorEvent(
-                    FeatureVectorEvent.SELECT_FEATURE_VECTOR, featureVector, featureLabels));
+//                scene.getRoot().fireEvent(new FeatureVectorEvent(
+//                    FeatureVectorEvent.SELECT_FEATURE_VECTOR, featureVector, featureLabels));
                 projectorNodeGroup.addNodeToScene(pn, featureVector.getLabel());
                 pn.setVisible(true);
                 if(animatingProjections) {
@@ -2563,6 +2588,8 @@ public class Projections3DPane extends StackPane implements
         addProjectorNode(featureVector);
         if (animatingProjections && null != transformedPoint) {
             Platform.runLater(() -> {
+                scene.getRoot().fireEvent(new FeatureVectorEvent(
+                    FeatureVectorEvent.SELECT_FEATURE_VECTOR, featureVector, featureLabels));
                 //For the lulz... (and also to provide a visual indicator to user!)
                 projectionOpticon.fireData(
                     extrasGroup,
@@ -2571,7 +2598,7 @@ public class Projections3DPane extends StackPane implements
                         transformedPoint.getY() * -projectionScalar,
                         transformedPoint.getZ() * projectionScalar
                     ), 
-                    1, FactorLabel.getColorByLabel(featureVector.getLabel()));
+                    dataAnimationMS, FactorLabel.getColorByLabel(featureVector.getLabel()));
             });
         }
     }
@@ -2593,11 +2620,12 @@ public class Projections3DPane extends StackPane implements
                                 transformedPoint.getX() * projectionScalar,
                                 transformedPoint.getY() * -projectionScalar,
                                 transformedPoint.getZ() * projectionScalar
-                            ), 1, FactorLabel.getColorByLabel(featureVector.getLabel()));
+                            ), dataAnimationMS, FactorLabel.getColorByLabel(featureVector.getLabel()));
                         });
                     }
-                    if(animatingProjections)
-                        Thread.sleep(100); //I hate this but...
+                    if(animatingProjections) {
+                        Thread.sleep(Double.valueOf(animationSleepMS).longValue()); //I hate this but...
+                    }
                 }
                 return null;
             }
