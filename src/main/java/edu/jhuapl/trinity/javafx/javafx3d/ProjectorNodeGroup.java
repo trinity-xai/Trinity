@@ -3,12 +3,6 @@ package edu.jhuapl.trinity.javafx.javafx3d;
 import edu.jhuapl.trinity.javafx.components.projector.ProjectorNode;
 import edu.jhuapl.trinity.javafx.components.projector.ProjectorRow;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
-import javafx.scene.Group;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Optional;
 import javafx.animation.AnimationTimer;
 import javafx.animation.FadeTransition;
 import javafx.animation.KeyFrame;
@@ -19,6 +13,7 @@ import javafx.animation.RotateTransition;
 import javafx.animation.Timeline;
 import javafx.geometry.Point2D;
 import javafx.scene.Camera;
+import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.SubScene;
 import javafx.scene.control.Label;
@@ -33,12 +28,18 @@ import javafx.scene.transform.Translate;
 import javafx.util.Duration;
 import org.fxyz3d.utils.CameraTransformer;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Optional;
+
 
 /**
  * @author Sean Phillips
  */
 public class ProjectorNodeGroup extends Group {
-    public Group labelGroup; 
+    public Group labelGroup;
     public double transitionXOffset = -15000;
     public double transitionYOffset = -15000;
     public double transitionZOffset = 0;
@@ -49,12 +50,12 @@ public class ProjectorNodeGroup extends Group {
     public Camera camera;
     public CameraTransformer cameraTransform;
     //allows 2D labels to track their 3D counterparts
-    public HashMap<Shape3D, Label> shape3DToLabel;    
-   
-    public ArrayList<ProjectorRow> rows;    
+    public HashMap<Shape3D, Label> shape3DToLabel;
+
+    public ArrayList<ProjectorRow> rows;
     ArrayList<ProjectorNode> nodes;
     List<ParallelTransition> transitionList;
-    
+
     public ProjectorNodeGroup(SubScene subScene, Camera camera, CameraTransformer cameraTransform, Group labelGroup) {
         this.subScene = subScene;
         this.camera = camera;
@@ -66,6 +67,7 @@ public class ProjectorNodeGroup extends Group {
         shape3DToLabel = new HashMap<>();
         rows = new ArrayList<>();
     }
+
     public void clearAll() {
         nodes.clear();
         transitionList.clear();
@@ -77,23 +79,24 @@ public class ProjectorNodeGroup extends Group {
     public ProjectorNode addNodeToScene(ProjectorNode projectorNode, String rowLabel) {
         Optional<ProjectorRow> optRow = rows.stream()
             .filter(r -> r.rowLabel.contentEquals(rowLabel)).findFirst();
-        if(!optRow.isPresent()) {
+        if (!optRow.isPresent()) {
             //we need to create new row
-            //this logic should alternate row placement in the 3D scene such that 
-            //0 is equitorial, negative goes Y up and positive goes Y down... 
-            int r = rows.isEmpty() ? 0 : rows.size()/2 + 1;
-            if(positiveRow == false)
+            //this logic should alternate row placement in the 3D scene such that
+            //0 is equitorial, negative goes Y up and positive goes Y down...
+            int r = rows.isEmpty() ? 0 : rows.size() / 2 + 1;
+            if (positiveRow == false)
                 r *= -1;
 
             ProjectorRow newRow = new ProjectorRow(rowLabel, r, originRadius);
             rows.add(newRow);
             positiveRow = !positiveRow;
             return addNodeToScene(projectorNode, newRow.row, newRow.getAngleAndStep(), newRow.getRadius());
-        } else {    
+        } else {
             ProjectorRow row = optRow.get();
             return addNodeToScene(projectorNode, row.row, row.getAngleAndStep(), row.getRadius());
         }
-    }    
+    }
+
     public ProjectorNode addNodeToScene(ProjectorNode projectorNode, int row, double angle1, double radius) {
         double angle2 = Math.PI;
 
@@ -144,6 +147,7 @@ public class ProjectorNodeGroup extends Group {
 //        transitionList.add(pt);
         return projectorNode;
     }
+
     public void animateImages() {
         shape3DToLabel.values().forEach(label -> label.setOpacity(0.0));
         nodes.forEach(n -> n.setVisible(false));
@@ -186,13 +190,15 @@ public class ProjectorNodeGroup extends Group {
         };
         return timer;
     }
+
     private void animateLabelVisibility(long ms) {
         //sweet music reference: https://en.wikipedia.org/wiki/Street_Spirit_(Fade_Out)
         FadeTransition streetSpiritFadeIn = new FadeTransition(Duration.millis(ms), labelGroup);
         streetSpiritFadeIn.setFromValue(0.0);
         streetSpiritFadeIn.setToValue(1);
         streetSpiritFadeIn.playFromStart();
-    }    
+    }
+
     public ParallelTransition createTransition(final Node node) {
         Path path = new Path();
         path.getElements().add(new MoveToAbs(node,
@@ -213,7 +219,7 @@ public class ProjectorNodeGroup extends Group {
         parallelTransition.getChildren().addAll(pt, rt);
         parallelTransition.setCycleCount(1);
         return parallelTransition;
-    }    
+    }
 
     public void updateLabels() {
         shape3DToLabel.forEach((node, label) -> {
@@ -245,7 +251,8 @@ public class ProjectorNodeGroup extends Group {
             //update the local transform of the label.
             label.getTransforms().setAll(new Translate(x, y));
         });
-    }    
+    }
+
     public static class MoveToAbs extends MoveTo {
 
         public MoveToAbs(Node node, double x, double y) {
@@ -260,5 +267,5 @@ public class ProjectorNodeGroup extends Group {
             super(x - node.getLayoutX() + node.getLayoutBounds().getWidth() / 2,
                 y - node.getLayoutY() + node.getLayoutBounds().getHeight() / 2);
         }
-    }    
+    }
 }

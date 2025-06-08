@@ -37,7 +37,6 @@ import java.io.IOException;
 import java.util.Random;
 
 import static javafx.animation.Animation.INDEFINITE;
-import javafx.scene.Parent;
 
 /**
  * @author Sean Phillips
@@ -251,6 +250,7 @@ public class Opticon extends Group {
             }
         };
     }
+
     public void fireData(Group parent, Point3D destination, double milliseconds, Color dataColor) {
         Point3D sceneToLocalPoint = this.sceneToLocal(destination);
         Sphere dataSphere = new Sphere(10);

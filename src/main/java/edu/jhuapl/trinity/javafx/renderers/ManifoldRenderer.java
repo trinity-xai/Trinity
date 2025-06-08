@@ -19,7 +19,7 @@ public interface ManifoldRenderer {
     public Point3D projectVector(FeatureVector featureVector);
 
     public void transformFeatureVector(FeatureVector featureVector);
-    
+
     public void clearAllManifolds();
 
     public void addManifold(Manifold manifold, Manifold3D manifold3D);

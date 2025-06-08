@@ -1,16 +1,15 @@
 package edu.jhuapl.trinity.javafx.javafx3d.animated;
 
-import javafx.scene.Group;
-import javafx.scene.paint.Color;
-import javafx.scene.paint.PhongMaterial;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import javafx.animation.AnimationTimer;
 import javafx.geometry.Point3D;
+import javafx.scene.Group;
 import javafx.scene.Node;
+import javafx.scene.paint.Color;
+import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.Cylinder;
 import javafx.scene.transform.Rotate;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Sean Phillips
@@ -33,23 +32,24 @@ public class RadialGrid extends Group {
     public PhongMaterial gridMaterial = new PhongMaterial(Color.DEEPSKYBLUE); // deep sky blue
 
     public RadialGrid() {
-       this(NUM_CIRCLES, NUM_RADIAL_LINES, MAX_RADIUS, LINE_RADIUS, CIRCLE_SEGMENTS);
+        this(NUM_CIRCLES, NUM_RADIAL_LINES, MAX_RADIUS, LINE_RADIUS, CIRCLE_SEGMENTS);
     }
+
     public RadialGrid(int circles, int radialLines, double maxRadius, double lineRadius, double circleSegments) {
         gridMaterial.setSpecularColor(Color.LIGHTCYAN);
         getTransforms().add(worldRotateY); // apply the rotating transform
         // Build grid and axis markers
         createRadialGrid(circles, radialLines, maxRadius, lineRadius, circleSegments);
-        
+
         pulseAnimator = new AnimationTimer() {
             private long startTime = -1;
             private long lastTime = 0;
-    
+
             @Override
             public void handle(long now) {
                 if (startTime < 0) startTime = now;
                 if (lastTime > 0) {
-                    if(isEnableRotation()) {
+                    if (isEnableRotation()) {
                         double deltaSeconds = (now - lastTime) / 1_000_000_000.0;
                         double deltaAngle = deltaSeconds * getRotationSpeed();
                         worldRotateY.setAngle(worldRotateY.getAngle() + deltaAngle);
@@ -57,7 +57,7 @@ public class RadialGrid extends Group {
                 }
                 lastTime = now;
 
-                if(isEnablePulsation()) {
+                if (isEnablePulsation()) {
                     double elapsedSec = (now - startTime) / 1_000_000_000.0;
                     double pulse = (Math.sin(2 * Math.PI * getPulseSpeedHz() * elapsedSec) + 1) / 2; // 0 to 1
                     // Optional: vary radius slightly for "breathing"
@@ -70,16 +70,19 @@ public class RadialGrid extends Group {
             }
         };
     }
+
     public void regenerate(int circles, int radialLines, double maxRadius, double lineRadius, double circleSegments) {
         getChildren().clear();
         createRadialGrid(circles, radialLines, maxRadius, lineRadius, circleSegments);
     }
+
     public void setEnableAnimation(boolean enable) {
-        if(enable)
-            pulseAnimator.start();        
+        if (enable)
+            pulseAnimator.start();
         else
-            pulseAnimator.stop();        
+            pulseAnimator.stop();
     }
+
     private void createRadialGrid(int numCircles, int radialLines, double maxRadius, double lineRadius, double circleSegments) {
 
         // Draw concentric circles using short cylinders
@@ -109,7 +112,7 @@ public class RadialGrid extends Group {
     }
 
     public static void addLine3D(Group group, double x1, double y1, double z1,
-                    double x2, double y2, double z2, double radius, PhongMaterial material) {
+                                 double x2, double y2, double z2, double radius, PhongMaterial material) {
         // Vector from point A to B
         double dx = x2 - x1;
         double dy = y2 - y1;

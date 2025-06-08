@@ -2125,9 +2125,11 @@
 .projector-text-node {
     -fx-background-color: radial-gradient(center 50% 50%, radius 35%, #6495ED77, #000000);
 }
+
 .projector-text-node .text-area .content {
     -fx-background-color: transparent;
 }
+
 .projector-text-node .text-area {
     -fx-background-color: transparent;
     /*-fx-pref-width: 150px;*/
@@ -2137,14 +2139,17 @@
     -fx-font-size: 24;
     -fx-background-insets: 0px;
 }
+
 .projector-text-node .text-area .text {
     -fx-stroke: aliceblue;
 }
+
 .projector-text-node .text-area .scroll-pane {
     -fx-background-color: transparent;
     -fx-background-insets: 5 5 5 5;
     -fx-pannable: true;
 }
+
 /*.projector-text-node .text-area .scroll-pane .corner {
     -fx-background-color: #000000;
     -fx-background-radius: 0 0 0 0;

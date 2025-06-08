@@ -2213,6 +2213,7 @@ public class Hyperspace3DPane extends StackPane implements
     public Point3D projectVector(FeatureVector featureVector) {
         return null;         //no/op
     }
+
     @Override
     public void transformFeatureVector(FeatureVector featureVector) {
         //no/op

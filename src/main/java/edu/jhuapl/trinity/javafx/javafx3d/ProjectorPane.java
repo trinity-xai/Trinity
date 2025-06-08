@@ -10,6 +10,7 @@ import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
+import javafx.animation.ParallelTransition;
 import javafx.animation.Timeline;
 import javafx.geometry.Insets;
 import javafx.scene.Group;
@@ -46,7 +47,6 @@ import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
-import javafx.animation.ParallelTransition;
 
 /**
  * @author Sean Phillips
@@ -206,7 +206,7 @@ public class ProjectorPane extends StackPane {
         labelGroup = new Group();
         labelGroup.setManaged(false);
         getChildren().add(labelGroup);
-        
+
         projectorNodeGroup = new ProjectorNodeGroup(subScene, camera, cameraTransform, labelGroup);
         projectorNodeGroup.yOffset = 1300.0; //bigger than 512...
         sceneRoot.getChildren().addAll(projectorNodeGroup);
@@ -246,8 +246,8 @@ public class ProjectorPane extends StackPane {
                 List<ProjectorNode> projectorNodes = new ArrayList<>();
 
                 //ProjectorNode test = new ProjectorTextNode("Dude this is a test!");
-                //projectorNodes.add(test);                
-                
+                //projectorNodes.add(test);
+
                 //search for and use image files as pivot points, do NOT follow recursively
                 for (File subDirFile : subDirectory.listFiles()) {
                     if (ResourceUtils.isImageFile(subDirFile)) {
@@ -276,7 +276,7 @@ public class ProjectorPane extends StackPane {
                         projectorNodeGroup.addNodeToScene(pn, row, angle1, projectorNodeGroup.originRadius);
 
                         ParallelTransition pt = projectorNodeGroup.createTransition(pn);
-                        projectorNodeGroup.transitionList.add(pt);                        
+                        projectorNodeGroup.transitionList.add(pt);
 
                         pn.setVisible(true);
                         row++;

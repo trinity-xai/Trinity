@@ -10,7 +10,6 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 
 /**
- *
  * @author Sean Phillips
  */
 public class RadialGridControlBox extends VBox {
@@ -25,56 +24,56 @@ public class RadialGridControlBox extends VBox {
     Spinner<Integer> numLinesSpinner;
     Spinner<Double> maxRadiusSpinner;
     Spinner<Double> lineRadiusSpinner;
-    Spinner<Double> circleSegmentsSpinner;  
-    
+    Spinner<Double> circleSegmentsSpinner;
+
     public RadialGridControlBox(RadialGrid radialGrid) {
-        this.radialGrid=radialGrid;
+        this.radialGrid = radialGrid;
         ToggleButton animateToggle = new ToggleButton("Animation");
-        animateToggle.setPrefWidth(CONTROL_PREF_WIDTH*2);
-        animateToggle.setOnAction(e -> 
+        animateToggle.setPrefWidth(CONTROL_PREF_WIDTH * 2);
+        animateToggle.setOnAction(e ->
             radialGrid.setEnableAnimation(animateToggle.isSelected()));
         ToggleButton pulseToggle = new ToggleButton("Pulse");
-        pulseToggle.setPrefWidth(CONTROL_PREF_WIDTH*2);
-        pulseToggle.setOnAction(e -> 
+        pulseToggle.setPrefWidth(CONTROL_PREF_WIDTH * 2);
+        pulseToggle.setOnAction(e ->
             radialGrid.setEnablePulsation(pulseToggle.isSelected()));
         ToggleButton rotateToggle = new ToggleButton("Rotate");
-        rotateToggle.setPrefWidth(CONTROL_PREF_WIDTH*2);
-        rotateToggle.setOnAction(e -> 
+        rotateToggle.setPrefWidth(CONTROL_PREF_WIDTH * 2);
+        rotateToggle.setOnAction(e ->
             radialGrid.setEnableRotation(rotateToggle.isSelected()));
 
         numCirclesSpinner = new Spinner(2, 200, NUM_CIRCLES, 1);
-        numCirclesSpinner.valueProperty().addListener(e->regenerate());
+        numCirclesSpinner.valueProperty().addListener(e -> regenerate());
         numCirclesSpinner.setPrefWidth(CONTROL_PREF_WIDTH);
 
         numLinesSpinner = new Spinner(2, 200, NUM_RADIAL_LINES, 1);
-        numLinesSpinner.valueProperty().addListener(e->regenerate());
+        numLinesSpinner.valueProperty().addListener(e -> regenerate());
         numLinesSpinner.setPrefWidth(CONTROL_PREF_WIDTH);
 
         maxRadiusSpinner = new Spinner(1, 10000, MAX_RADIUS, 100);
-        maxRadiusSpinner.valueProperty().addListener(e->regenerate());
+        maxRadiusSpinner.valueProperty().addListener(e -> regenerate());
         maxRadiusSpinner.setPrefWidth(CONTROL_PREF_WIDTH);
 
         lineRadiusSpinner = new Spinner(0.1, 100, LINE_RADIUS, 0.1);
-        lineRadiusSpinner.valueProperty().addListener(e-> {
+        lineRadiusSpinner.valueProperty().addListener(e -> {
             this.radialGrid.setBaseRadius(lineRadiusSpinner.getValue());
             regenerate();
         });
         lineRadiusSpinner.setPrefWidth(CONTROL_PREF_WIDTH);
 
         circleSegmentsSpinner = new Spinner(1, 360, CIRCLE_SEGMENTS, 1);
-        circleSegmentsSpinner.valueProperty().addListener(e->regenerate());
+        circleSegmentsSpinner.valueProperty().addListener(e -> regenerate());
         circleSegmentsSpinner.setPrefWidth(CONTROL_PREF_WIDTH);
-        
+
         Button generateButton = new Button("Regenerate");
-        generateButton.setPrefWidth(CONTROL_PREF_WIDTH*2);
+        generateButton.setPrefWidth(CONTROL_PREF_WIDTH * 2);
         generateButton.setOnAction(e -> regenerate());
-        
+
         ColorPicker diffuseColorPicker = new ColorPicker(Color.DEEPSKYBLUE);
         diffuseColorPicker.valueProperty().bindBidirectional(radialGrid.gridMaterial.diffuseColorProperty());
         ColorPicker specularColorPicker = new ColorPicker(Color.LIGHTCYAN);
         specularColorPicker.valueProperty().bindBidirectional(radialGrid.gridMaterial.specularColorProperty());
-        
-        getChildren().addAll( 
+
+        getChildren().addAll(
             animateToggle,
             pulseToggle,
             rotateToggle,
@@ -94,15 +93,15 @@ public class RadialGridControlBox extends VBox {
             new Label("Specular Color"),
             specularColorPicker
         );
-        
+
         setSpacing(10);
     }
 
     private void regenerate() {
         long startTime = System.nanoTime();
-        radialGrid.regenerate(numCirclesSpinner.getValue(), 
-            numLinesSpinner.getValue(), maxRadiusSpinner.getValue(), 
+        radialGrid.regenerate(numCirclesSpinner.getValue(),
+            numLinesSpinner.getValue(), maxRadiusSpinner.getValue(),
             lineRadiusSpinner.getValue(), circleSegmentsSpinner.getValue());
         Utils.printTotalTime(startTime);
-    }    
+    }
 }

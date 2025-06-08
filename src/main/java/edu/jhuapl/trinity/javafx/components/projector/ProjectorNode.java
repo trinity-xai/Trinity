@@ -20,7 +20,7 @@ import org.slf4j.LoggerFactory;
  */
 public class ProjectorNode extends Pane {
     private static final Logger LOG = LoggerFactory.getLogger(ProjectorNode.class);
-    public Node node; 
+    public Node node;
     Border hoverBorder;
     Border emptyBorder;
     Border selectedBorder;
@@ -29,6 +29,7 @@ public class ProjectorNode extends Pane {
     public ProjectorNode(Image image) {
         this(new ImageView(image));
     }
+
     public ProjectorNode(Node node) {
         this.node = node;
         getChildren().add(this.node);

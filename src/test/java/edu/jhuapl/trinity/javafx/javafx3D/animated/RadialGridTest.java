@@ -1,22 +1,21 @@
 package edu.jhuapl.trinity.javafx.javafx3d.animated;
 
 import javafx.application.Application;
-import javafx.scene.Scene;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.paint.Color;
-import javafx.stage.Stage;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
 import javafx.scene.Group;
 import javafx.scene.PerspectiveCamera;
+import javafx.scene.Scene;
 import javafx.scene.SceneAntialiasing;
 import javafx.scene.SubScene;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
+import javafx.scene.paint.Color;
 import javafx.scene.transform.Rotate;
 import javafx.scene.transform.Translate;
+import javafx.stage.Stage;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * @author Sean Phillips
@@ -39,19 +38,19 @@ public class RadialGridTest extends Application {
     RadialGrid radialGrid;
     RadialGridControlBox controls;
     Group sceneRoot;
-    
+
     @Override
     public void start(Stage primaryStage) {
-         sceneRoot = new Group();
-         radialGrid = new RadialGrid(NUM_CIRCLES, NUM_RADIAL_LINES, 
+        sceneRoot = new Group();
+        radialGrid = new RadialGrid(NUM_CIRCLES, NUM_RADIAL_LINES,
             MAX_RADIUS, LINE_RADIUS, CIRCLE_SEGMENTS);
-         sceneRoot.getChildren().add(radialGrid);
-         // Camera
+        sceneRoot.getChildren().add(radialGrid);
+        // Camera
         PerspectiveCamera camera = new PerspectiveCamera(true);
         camera.setNearClip(0.1);
         camera.setFarClip(10000.0);
         camera.getTransforms().addAll(rotateX, rotateY, cameraTranslate);
-        
+
         SubScene subScene = new SubScene(sceneRoot, 800, 600, true, SceneAntialiasing.BALANCED);
         subScene.setWidth(sceneWidth);
         subScene.setHeight(sceneHeight);
@@ -60,13 +59,13 @@ public class RadialGridTest extends Application {
         Pane subScenePane = new Pane(subScene);
         subScene.widthProperty().bind(subScenePane.widthProperty());
         subScene.heightProperty().bind(subScenePane.heightProperty());
-        
+
         // Mouse controls
         handleMouse(subScene);
         controls = new RadialGridControlBox(radialGrid);
         BorderPane root = new BorderPane(subScenePane);
         root.setLeft(controls);
-        root.setMinSize(800,800);
+        root.setMinSize(800, 800);
         Scene scene = new Scene(root);
 
         primaryStage.setTitle("3D Radial Grid with Camera Controls");

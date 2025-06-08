@@ -21,13 +21,13 @@ import javafx.scene.control.TabPane;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.DirectoryChooser;
 
 import java.io.File;
 import java.net.URL;
 import java.util.ResourceBundle;
-import javafx.scene.control.Tooltip;
 
 /**
  * FXML Controller class
@@ -133,7 +133,7 @@ public class DataController implements Initializable {
         trajectorySizeSpinner.disableProperty().bind(
             showStateTrajectoryCheckBox.selectedProperty().not());
 
-                
+
         projectionQueueSizeSpinner.setValueFactory(
             new SpinnerValueFactory.IntegerSpinnerValueFactory(100, 10000, 1000, 50));
         projectionQueueSizeSpinner.setEditable(true);
@@ -143,7 +143,7 @@ public class DataController implements Initializable {
                 new ManifoldEvent(ManifoldEvent.SET_PROJECTIONQUEUE_SIZE,
                     (int) projectionQueueSizeSpinner.getValue()));
         });
-        
+
         restProgressIndicator.visibleProperty().bind(restInjectToggleButton.selectedProperty());
         scene.getRoot().addEventHandler(ApplicationEvent.SET_IMAGERY_BASEPATH, e -> {
             String newBasePath = (String) e.object;

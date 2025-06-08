@@ -41,6 +41,7 @@ import edu.jhuapl.trinity.javafx.events.TimelineEvent;
 import edu.jhuapl.trinity.javafx.events.TrajectoryEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.AnimatedSphere;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.Opticon;
+import edu.jhuapl.trinity.javafx.javafx3d.animated.RadialGrid;
 import edu.jhuapl.trinity.javafx.javafx3d.images.ImageResourceProvider;
 import edu.jhuapl.trinity.javafx.javafx3d.projectiles.HitShape3D;
 import edu.jhuapl.trinity.javafx.javafx3d.projectiles.ProjectileSystem;
@@ -64,6 +65,7 @@ import edu.jhuapl.trinity.utils.VisibilityMap;
 import edu.jhuapl.trinity.utils.umap.Umap;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
+import javafx.animation.ParallelTransition;
 import javafx.animation.Timeline;
 import javafx.animation.Transition;
 import javafx.application.Platform;
@@ -82,9 +84,14 @@ import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckMenuItem;
+import javafx.scene.control.ColorPicker;
 import javafx.scene.control.ContextMenu;
+import javafx.scene.control.CustomMenuItem;
 import javafx.scene.control.Label;
+import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.Spinner;
+import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.effect.Glow;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -101,6 +108,7 @@ import javafx.scene.layout.Background;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.CullFace;
@@ -134,15 +142,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 import static edu.jhuapl.trinity.javafx.handlers.GaussianMixtureEventHandler.generateEllipsoidDiagonal;
-import edu.jhuapl.trinity.javafx.javafx3d.animated.RadialGrid;
 import static edu.jhuapl.trinity.utils.ResourceUtils.removeExtension;
-import javafx.animation.ParallelTransition;
-import javafx.scene.control.ColorPicker;
-import javafx.scene.control.CustomMenuItem;
-import javafx.scene.control.Menu;
-import javafx.scene.control.Spinner;
-import javafx.scene.control.SpinnerValueFactory;
-import javafx.scene.layout.VBox;
 
 /**
  * @author Sean Phillips
@@ -161,8 +161,8 @@ public class Projections3DPane extends StackPane implements
     private final double cubeSize = sceneWidth / 2.0;
     public PerspectiveCamera camera;
     public CameraTransformer cameraTransform = new CameraTransformer();
-    PointLight cameraLight; 
-    PointLight centerLight;    
+    PointLight cameraLight;
+    PointLight centerLight;
     public boolean bindCameraRotations = false;
     private double mousePosX;
     private double mousePosY;
@@ -224,8 +224,8 @@ public class Projections3DPane extends StackPane implements
     int trajectoryTailSize = 5;
     double projectionScalar = 100.0;
 
-    HashMap<FeatureVector, ProjectorNode> featureVectorToProjectorNode = new HashMap<>(); 
-    
+    HashMap<FeatureVector, ProjectorNode> featureVectorToProjectorNode = new HashMap<>();
+
     //This maps each ellipsoid to a GMM
     HashMap<Sphere, FeatureVector> sphereToFeatureVectorMap = new HashMap<>();
     //This maps each ellipsoid to a GMM
@@ -259,7 +259,7 @@ public class Projections3DPane extends StackPane implements
     public boolean emptyVisionEnabled = false;
     public SimpleBooleanProperty autoProjectionProperty = new SimpleBooleanProperty(false);
     public SimpleBooleanProperty projectionWallProperty = new SimpleBooleanProperty(false);
-    Opticon projectionOpticon; 
+    Opticon projectionOpticon;
 
     // initial rotation
     private final Rotate rotateX = new Rotate(0, Rotate.X_AXIS);
@@ -268,7 +268,7 @@ public class Projections3DPane extends StackPane implements
 
     private Skybox skybox;
     ProjectorNodeGroup projectorNodeGroup;
-     
+
     private Group nodeGroup = new Group();
     private Group labelGroup = new Group();
     private Group manifoldGroup = new Group();
@@ -360,7 +360,7 @@ public class Projections3DPane extends StackPane implements
         projectorConnector = JavaFX3DUtils.buildPolyLineFromTrajectory(1, 1,
             anchorTrajectory, Color.WHITE, trajectoryScale, sceneWidth, sceneHeight);
         extrasGroup.getChildren().add(projectorConnector);
-        
+
         trajectoryGroup = new Group();
         trajectorySphereGroup = new Group();
         double ellipsoidWidth = anchorTraj3D.width / 2.0;
@@ -423,15 +423,15 @@ public class Projections3DPane extends StackPane implements
         this.scene.addEventHandler(EffectEvent.OPTICON_ENABLE_ORBITING, e -> {
             projectionOpticon.enableOrbiting((boolean) e.object);
         });
-        
+
         projectorNodeGroup = new ProjectorNodeGroup(subScene, camera, cameraTransform, labelGroup);
         projectorNodeGroup.visibleProperty().bind(projectionWallProperty);
         projectorNodeGroup.yOffset = 636.0; //bigger than 512...
         sceneRoot.getChildren().addAll(projectorNodeGroup);
 
         radialGrid = new RadialGrid();
-        crosshair3D = new Crosshair3D(javafx.geometry.Point3D.ZERO, sceneWidth/2.0, 10.0f);
-        
+        crosshair3D = new Crosshair3D(javafx.geometry.Point3D.ZERO, sceneWidth / 2.0, 10.0f);
+
         //Add 3D subscene stuff to 3D scene root object
         sceneRoot.getChildren().addAll(cameraTransform, radialGrid, highlightedPoint,
             nodeGroup, manifoldGroup, debugGroup, crosshair3D,
@@ -639,14 +639,14 @@ public class Projections3DPane extends StackPane implements
 
             if (event.isAltDown() && keycode == KeyCode.H) {
                 double w = highlighterNeonCircle.getStrokeWidth() - 0.1;
-                if(w <= 0)
+                if (w <= 0)
                     highlighterNeonCircle.setStrokeWidth(0.1);
                 else
                     highlighterNeonCircle.setStrokeWidth(w);
             }
             if (event.isAltDown() && keycode == KeyCode.J) {
                 double w = highlighterNeonCircle.getStrokeWidth() + 0.1;
-                if(w > 50)
+                if (w > 50)
                     highlighterNeonCircle.setStrokeWidth(20);
                 else
                     highlighterNeonCircle.setStrokeWidth(w);
@@ -698,7 +698,7 @@ public class Projections3DPane extends StackPane implements
             cameraLight.setTranslateX(camera.getTranslateX());
             cameraLight.setTranslateY(camera.getTranslateY());
             cameraLight.setTranslateZ(camera.getTranslateZ());
-            
+
             e.consume();
         });
         subScene.setOnScroll((ScrollEvent event) -> {
@@ -827,7 +827,7 @@ public class Projections3DPane extends StackPane implements
                 manifoldControlPane.show();
             }
         });
-        
+
         ImageView radial = ResourceUtils.loadIcon("radial", ICON_FIT_HEIGHT);
         radial.setEffect(glow);
         MenuItem radialItem = new MenuItem("Radial Grid Controls", radial);
@@ -939,7 +939,7 @@ public class Projections3DPane extends StackPane implements
         dataAnimationSpinner.setValueFactory(
             new SpinnerValueFactory.DoubleSpinnerValueFactory(50, 1000, dataAnimationMS, 50));
         dataAnimationSpinner.setEditable(true);
-        dataAnimationSpinner.valueProperty().addListener(e-> {
+        dataAnimationSpinner.valueProperty().addListener(e -> {
             dataAnimationMS = dataAnimationSpinner.getValue();
         });
         MenuItem dataAnimationItem = new CustomMenuItem(
@@ -949,7 +949,7 @@ public class Projections3DPane extends StackPane implements
         sleepAnimationSpinner.setValueFactory(
             new SpinnerValueFactory.DoubleSpinnerValueFactory(50, 1000, animationSleepMS, 50));
         sleepAnimationSpinner.setEditable(true);
-        sleepAnimationSpinner.valueProperty().addListener(e-> {
+        sleepAnimationSpinner.valueProperty().addListener(e -> {
             animationSleepMS = sleepAnimationSpinner.getValue();
         });
         MenuItem sleepAnimationItem = new CustomMenuItem(
@@ -964,16 +964,16 @@ public class Projections3DPane extends StackPane implements
         cameraLight.colorProperty().bind(cameraLightPicker.valueProperty());
         MenuItem cameraLightItem = new CustomMenuItem(
             new VBox(2, new Label("Camera Light"), cameraLightPicker), false);
-        
+
         ImageView optionsImageView = ResourceUtils.loadIcon("configuration", ICON_FIT_HEIGHT);
         optionsImageView.setEffect(glow);
         Menu optionsMenu = new Menu("Options", optionsImageView,
             dataAnimationItem, sleepAnimationItem,
-            centerLightItem, cameraLightItem,     
+            centerLightItem, cameraLightItem,
             enableProjectionWallItem, animatingProjectionsItem, updatingTrajectoriesItem);
-        
+
         ContextMenu cm = new ContextMenu(selectPointsItem,
-            resetViewItem, manifoldsItem, radialItem, radarItem, 
+            resetViewItem, manifoldsItem, radialItem, radarItem,
             exportItem, analysisItem, navigatorItem,
             clearCalloutsItem, clearProjectionItem, optionsMenu);
 
@@ -1068,7 +1068,7 @@ public class Projections3DPane extends StackPane implements
         });
         scene.addEventHandler(HyperspaceEvent.COLOR_BY_LABEL, e -> {
             colorByLabel = (boolean) e.object;
-            updateDataColors();            
+            updateDataColors();
         });
         scene.addEventHandler(HyperspaceEvent.COLOR_BY_LAYER, e -> {
             colorByLabel = !(boolean) e.object;
@@ -1183,13 +1183,13 @@ public class Projections3DPane extends StackPane implements
         scene.addEventHandler(ManifoldEvent.SET_PROJECTIONQUEUE_SIZE, e -> {
             int newQueueSize = (int) e.object1;
             autoProjectionQueueSize = newQueueSize;
-            //age out older items... 
-            int ageOffCount = - autoProjectionQueueSize - autoProjectedFeatures.size();
-            if(ageOffCount > 0) {
+            //age out older items...
+            int ageOffCount = -autoProjectionQueueSize - autoProjectedFeatures.size();
+            if (ageOffCount > 0) {
                 System.out.println("Aging off " + ageOffCount + " projected features.");
             }
         });
-        
+
 
         scene.addEventHandler(TimelineEvent.TIMELINE_SAMPLE_INDEX, e -> {
             anchorIndex = (int) e.object;
@@ -1518,8 +1518,9 @@ public class Projections3DPane extends StackPane implements
                 ((PhongMaterial) s.getMaterial()).setDiffuseColor(fl.getColor());
                 ((PhongMaterial) s.getMaterial()).setSpecularColor(fl.getColor());
             }
-        });    
+        });
     }
+
     private void changeFactorLabels(FactorLabel factorLabel) {
         sphereToFeatureVectorMap.forEach((s, fv) -> {
             if (null != fv.getLabel() && fv.getLabel().contentEquals(factorLabel.getLabel())) {
@@ -1556,18 +1557,18 @@ public class Projections3DPane extends StackPane implements
     public void resetView(double milliseconds, boolean rightNow) {
         if (!rightNow) {
             cameraTransform.setPivot(0, 0, 0);
-                Timeline timeline = new Timeline(
-                    new KeyFrame(Duration.millis(milliseconds),
-                        new KeyValue(cameraTransform.translateXProperty(), 0),
-                        new KeyValue(cameraTransform.translateYProperty(), 0),
-                        new KeyValue(cameraTransform.translateZProperty(), 0)
-                    )
-                );
-                timeline.setOnFinished(eh -> {
-                    Timeline zoomTimeline = JavaFX3DUtils.transitionCameraTo(milliseconds, camera, cameraTransform,
-                        0, 0, cameraDistance, -10.0, -45.0, 0.0);
-                });
-                timeline.playFromStart();
+            Timeline timeline = new Timeline(
+                new KeyFrame(Duration.millis(milliseconds),
+                    new KeyValue(cameraTransform.translateXProperty(), 0),
+                    new KeyValue(cameraTransform.translateYProperty(), 0),
+                    new KeyValue(cameraTransform.translateZProperty(), 0)
+                )
+            );
+            timeline.setOnFinished(eh -> {
+                Timeline zoomTimeline = JavaFX3DUtils.transitionCameraTo(milliseconds, camera, cameraTransform,
+                    0, 0, cameraDistance, -10.0, -45.0, 0.0);
+            });
+            timeline.playFromStart();
         } else {
             cameraTransform.setPivot(0, 0, 0);
 
@@ -1638,7 +1639,7 @@ public class Projections3DPane extends StackPane implements
             cameraTransform.t.setX(cameraTransform.t.getX() + mouseDeltaX * modifierFactor * modifier * 0.3); // -
             cameraTransform.t.setY(cameraTransform.t.getY() + mouseDeltaY * modifierFactor * modifier * 0.3); // -
         }
-        
+
         //right clicking should rotate pointing objects in the xform group only
         if (enableXForm && me.isSecondaryButtonDown()) {
             double yChange = (((mouseDeltaX * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180);
@@ -1650,7 +1651,7 @@ public class Projections3DPane extends StackPane implements
         cameraLight.setTranslateX(camera.getTranslateX());
         cameraLight.setTranslateY(camera.getTranslateY());
         cameraLight.setTranslateZ(camera.getTranslateZ());
-        
+
         updateFloatingNodes();
         radialOverlayPane.updateCalloutHeadPoints(subScene);
     }
@@ -1710,6 +1711,7 @@ public class Projections3DPane extends StackPane implements
         });
         updateHighlighterCircle(); //special case
     }
+
     private void updateHighlighterCircle() {
         javafx.geometry.Point3D coordinates =
             highlightedPoint.localToScene(javafx.geometry.Point3D.ZERO, true);
@@ -1733,7 +1735,7 @@ public class Projections3DPane extends StackPane implements
             y = subScene.getHeight() - (highlighterNeonCircle.getRadius() + 5);
         //update the local transform of the label.
         highlighterNeonCircle.getTransforms().setAll(new Translate(x, y));
-        setCircleRadiusByDistance(highlighterNeonCircle, highlightedPoint);        
+        setCircleRadiusByDistance(highlighterNeonCircle, highlightedPoint);
     }
 
     private TriaxialSpheroidMesh createEllipsoid(double major, double minor, double gamma, Color color) {
@@ -1924,8 +1926,9 @@ public class Projections3DPane extends StackPane implements
     private void updateDataRadius() {
         ellipsoidGroup.getChildren().filtered(n -> n instanceof Sphere).forEach(s -> {
             ((Sphere) s).setRadius(point3dSize);
-        });         
+        });
     }
+
     private void updateEllipsoids() {
         //pixel ranges we wish to fit our scaling to
         double halfSceneWidth = sceneWidth / 2.0;
@@ -2026,9 +2029,9 @@ public class Projections3DPane extends StackPane implements
         }
         trimQueueNow();
     }
-    
+
     private void addProjectorNode(FeatureVector featureVector) {
-        if(null != featureVector.getText() && !featureVector.getText().isBlank()){
+        if (null != featureVector.getText() && !featureVector.getText().isBlank()) {
             ProjectorNode pn = new ProjectorTextNode(featureVector.getText());
             featureVectorToProjectorNode.put(featureVector, pn);
             Platform.runLater(() -> {
@@ -2036,13 +2039,14 @@ public class Projections3DPane extends StackPane implements
 //                    FeatureVectorEvent.SELECT_FEATURE_VECTOR, featureVector, featureLabels));
                 projectorNodeGroup.addNodeToScene(pn, featureVector.getLabel());
                 pn.setVisible(true);
-                if(animatingProjections) {
+                if (animatingProjections) {
                     ParallelTransition pt = projectorNodeGroup.createTransition(pn);
                     pt.play();
                 }
             });
         }
     }
+
     public void addProjectedFeatureVector(FeatureVector featureVector) {
         Color labelColor = FactorLabel.getColorByLabel(featureVector.getLabel());
         PhongMaterial mat = new PhongMaterial(labelColor);
@@ -2055,14 +2059,14 @@ public class Projections3DPane extends StackPane implements
         sphere.setTranslateZ(featureVector.getData().get(2) * projectionScalar);
         Platform.runLater(() -> {
             ellipsoidGroup.getChildren().add(sphere);
-            if(animatingProjections) {
+            if (animatingProjections) {
                 highlightedPoint = sphere;
                 //System.out.println("Found matching Feature Vector...");
                 updateHighlighterCircle(); //Will transform location of circle
             }
         });
         sphereToFeatureVectorMap.put(sphere, featureVector);
-        
+
         //Add Circle as highlight when mouse hovering
         sphere.addEventHandler(MouseEvent.MOUSE_ENTERED, e -> {
             highlightedPoint = sphere;
@@ -2079,18 +2083,18 @@ public class Projections3DPane extends StackPane implements
             if (null != fv) {
                 scene.getRoot().fireEvent(new FeatureVectorEvent(
                     FeatureVectorEvent.SELECT_FEATURE_VECTOR, fv, featureLabels));
-                if(animatingProjections) {
+                if (animatingProjections) {
                     ProjectorNode pn = featureVectorToProjectorNode.get(fv);
-                    if(null != pn) {
+                    if (null != pn) {
                         extrasGroup.getChildren().remove(projectorConnector);
                         Trajectory trajectory = new Trajectory("Projector Connector");
                         trajectory.states.clear();
                         //These are the original feature values.
                         //They need to be transformed using the current UMAP transformation matrix
-                        trajectory.states.add(new double[] { sphere.getTranslateX(),
-                            sphere.getTranslateY(), sphere.getTranslateZ() });
-                        trajectory.states.add(new double[] { pn.node.getTranslateX(),
-                            pn.node.getTranslateY(), pn.node.getTranslateZ() });
+                        trajectory.states.add(new double[]{sphere.getTranslateX(),
+                            sphere.getTranslateY(), sphere.getTranslateZ()});
+                        trajectory.states.add(new double[]{pn.node.getTranslateX(),
+                            pn.node.getTranslateY(), pn.node.getTranslateZ()});
                         projectorConnector = JavaFX3DUtils.buildPolyLineFromTrajectory(
                             trajectory, 8.0f, trajectory.getColor(),
                             trajectory.states.size(), trajectoryScale, sceneWidth, sceneHeight);
@@ -2424,26 +2428,26 @@ public class Projections3DPane extends StackPane implements
 
     @Override
     public void refresh(boolean forceNodeUpdate) {
-        updateDataColors();        
+        updateDataColors();
         updateEllipsoids();
     }
 
     private List<Point3D> getPointsByLabel(boolean useVisiblePoints, String label) {
         List<Point3D> labelMatchedPoints = new ArrayList<>();
-        for(int i=0; i<featureVectors.size();i++) {
+        for (int i = 0; i < featureVectors.size(); i++) {
             FeatureVector fv = featureVectors.get(i);
             Point3D newPoint3D = new Point3D(
                 fv.getData().get(0) * projectionScalar,
                 reflectY ? fv.getData().get(1) * -projectionScalar : fv.getData().get(1) * projectionScalar,
-                fv.getData().get(2) * projectionScalar);            
+                fv.getData().get(2) * projectionScalar);
             if (null == label) {
-                if(VisibilityMap.visibilityByIndex(i))
+                if (VisibilityMap.visibilityByIndex(i))
                     labelMatchedPoints.add(newPoint3D);
             } else if (useVisiblePoints) {
-                if(VisibilityMap.visibilityByIndex(i) && FactorLabel.visibilityByLabel(fv.getLabel()))
+                if (VisibilityMap.visibilityByIndex(i) && FactorLabel.visibilityByLabel(fv.getLabel()))
                     labelMatchedPoints.add(newPoint3D);
             } else {
-                if(FactorLabel.visibilityByLabel(fv.getLabel()))
+                if (FactorLabel.visibilityByLabel(fv.getLabel()))
                     labelMatchedPoints.add(newPoint3D);
             }
         }
@@ -2581,7 +2585,7 @@ public class Projections3DPane extends StackPane implements
         return null;
     }
 
-    
+
     @Override
     public void transformFeatureVector(FeatureVector featureVector) {
         Point3D transformedPoint = projectVector(featureVector);
@@ -2597,7 +2601,7 @@ public class Projections3DPane extends StackPane implements
                         transformedPoint.getX() * projectionScalar,
                         transformedPoint.getY() * -projectionScalar,
                         transformedPoint.getZ() * projectionScalar
-                    ), 
+                    ),
                     dataAnimationMS, FactorLabel.getColorByLabel(featureVector.getLabel()));
             });
         }
@@ -2612,7 +2616,7 @@ public class Projections3DPane extends StackPane implements
                     FeatureVector featureVector = fc.getFeatures().get(i);
                     Point3D transformedPoint = projectVector(featureVector);
                     //@EXPERIMENTAL SMP
-                    addProjectorNode(featureVector);                     
+                    addProjectorNode(featureVector);
                     if (animatingProjections && null != transformedPoint) {
                         Platform.runLater(() -> {
                             //For the lulz... (and also to provide a visual indicator to user!)
@@ -2623,7 +2627,7 @@ public class Projections3DPane extends StackPane implements
                             ), dataAnimationMS, FactorLabel.getColorByLabel(featureVector.getLabel()));
                         });
                     }
-                    if(animatingProjections) {
+                    if (animatingProjections) {
                         Thread.sleep(Double.valueOf(animationSleepMS).longValue()); //I hate this but...
                     }
                 }

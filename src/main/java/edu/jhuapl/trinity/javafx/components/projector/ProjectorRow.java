@@ -1,7 +1,6 @@
 package edu.jhuapl.trinity.javafx.components.projector;
 
 /**
- *
  * @author Sean Phillips
  */
 public class ProjectorRow {
@@ -21,18 +20,20 @@ public class ProjectorRow {
         this.row = row;
         this.currentRadius = currentRadius;
     }
+
     public double getRadius() {
         return currentRadius;
     }
+
     public double getAngleAndStep() {
         double t = currentAngle;
         currentAngle += angleStepSize;
         //check if we've made a complete circle
-        if(currentAngle > 6.283) { //angle in radians
+        if (currentAngle > 6.283) { //angle in radians
             currentAngle = 0.0; //reset
             currentRadius += radiusStepSize;
         }
         return t;
     }
-    
+
 }
