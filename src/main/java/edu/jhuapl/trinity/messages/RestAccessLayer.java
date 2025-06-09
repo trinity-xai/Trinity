@@ -67,8 +67,7 @@ public enum RestAccessLayer {
             restAccessLayerconfig = loadDefaultRestConfig();
         } catch (IOException ex) {
             LOG.error(null, ex);
-            System.out.println("Error attempting to find and load REST Services Config: "
-                + SERVICES_DEFAULT_PATH + SERVICES_DEFAULT_CONFIG);
+            LOG.error("Error attempting to find and load REST Services Config: {}{}", SERVICES_DEFAULT_PATH, SERVICES_DEFAULT_CONFIG);
             restAccessLayerconfig = RestAccessLayerConfig.getDefault();
         }
         currentEmbeddingsModel = restAccessLayerconfig.getDefaultImageModel();

@@ -352,10 +352,10 @@ public class ImageFFTTestApp extends Application {
 
     public void spaToFreq2D(Image image) {
         extractSignals(image);
-        System.out.println("Signal2D values extracted.");
+        LOG.info("Signal2D values extracted.");
 
         FastFourier2d transformer2D = new FastFourier2d();
-        System.out.print("FFT on Greyscale... ");
+        LOG.info("FFT on Greyscale... ");
         long startTime = System.nanoTime();
         transformer2D.transform(greySignal2d);
         Utils.printTotalTime(startTime);
@@ -377,7 +377,7 @@ public class ImageFFTTestApp extends Application {
         DoubleSummaryStatistics stats = Arrays
             .stream(greySignal2d.getRe())
             .summaryStatistics();
-        System.out.println("Max: " + stats.getMax() + " Min: " + stats.getMin());
+        LOG.info("Max: {} Min: {}", stats.getMax(), stats.getMin());
 
         baseImagePR = baseImage.getPixelReader();
         PixelWriter pw = imageFFTGC.getPixelWriter();
@@ -404,16 +404,16 @@ public class ImageFFTTestApp extends Application {
                 //                    1)));
             }
         }
-        System.out.println("log of fourier transformed greyscale image done.");
+        LOG.info("log of fourier transformed greyscale image done.");
 
-        System.out.println("Polar Plotting...");
+        LOG.info("Polar Plotting...");
         polarGC.clearRect(0, 0, polarCanvas.getWidth(), polarCanvas.getHeight());
         polarPlot2D(polarScaleSpinner.getValue(), height, width, shiftedRedChannelSignal2d);
         polarPlot2D(polarScaleSpinner.getValue(), height, width, shiftedGreenChannelSignal2d);
         polarPlot2D(polarScaleSpinner.getValue(), height, width, shiftedBlueChannelSignal2d);
 
         startTime = System.nanoTime();
-        System.out.print("Inverse on Red Channel... ");
+        LOG.info("Inverse on Red Channel... ");
         transformer2D.inverse(redChannelSignal2d);
         Utils.printTotalTime(startTime);
         transformer2D.inverse(greenChannelSignal2d);

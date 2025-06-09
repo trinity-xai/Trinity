@@ -270,7 +270,7 @@ public class DataSet extends Clust4j implements DeepCloneable, Serializable {
             return true;
         if (o instanceof DataSet) {
             DataSet other = (DataSet) o;
-            System.out.println(VecUtils.equalsExactly(labels, other.labels));
+            LOG.info("{}", VecUtils.equalsExactly(labels, other.labels));
 
             return MatUtils.equalsExactly(data.getDataRef(), other.data.getDataRef())
                 && VecUtils.equalsExactly(headers, other.headers)
@@ -430,7 +430,7 @@ public class DataSet extends Clust4j implements DeepCloneable, Serializable {
     }
 
     public void head(int numRows) {
-        System.out.println(TABLE_FORMATTER.format(buildHead(numRows)));
+        LOG.info("{}", TABLE_FORMATTER.format(buildHead(numRows)));
     }
 
     /**

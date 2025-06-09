@@ -8,6 +8,8 @@ import edu.jhuapl.trinity.javafx.events.SearchEvent;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.scene.Scene;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.time.Duration;
 import java.util.HashMap;
@@ -17,6 +19,7 @@ import java.util.HashMap;
  */
 public class CommandTask extends Task {
 
+    private static final Logger LOG = LoggerFactory.getLogger(CommandTask.class);
     double delaySeconds = 0.0;
     String command;
     Scene scene;
@@ -61,7 +64,7 @@ public class CommandTask extends Task {
             });
         } else if (command.contentEquals(CommandRequest.COMMANDS.FIND.name())) {
             if (null != properties && properties.containsKey(CommandRequest.PAYLOAD)) {
-                System.out.println("need to find: " + properties.get(CommandRequest.PAYLOAD));
+                LOG.info("need to find: {}", properties.get(CommandRequest.PAYLOAD));
                 Platform.runLater(() -> {
                     scene.getRoot().fireEvent(new SearchEvent(SearchEvent.FIND_BY_QUERY, properties.get(CommandRequest.PAYLOAD)));
                 });
@@ -71,7 +74,7 @@ public class CommandTask extends Task {
                 scene.getRoot().fireEvent(new SearchEvent(SearchEvent.CLEAR_ALL_FILTERS));
             });
         } else {
-            System.out.println("Unknown command received: " + command);
+            LOG.info("Unknown command received: {}", command);
         }
     }
 

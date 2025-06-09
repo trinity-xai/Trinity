@@ -49,7 +49,7 @@ public class IsAliveCallback extends RestConsumer {
 
     @Override
     protected void processResponse(String responseBodyString) {
-        System.out.println("IsAliveConsumer works: \n " + responseBodyString);
+        LOG.info("IsAliveConsumer works: \n {}", responseBodyString);
         try {
             AliveModels isAliveReesponse = objectMapper.readValue(responseBodyString, AliveModels.class);
             Platform.runLater(() -> {

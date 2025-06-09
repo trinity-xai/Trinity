@@ -27,7 +27,7 @@ public class MessageUtilsTest {
         ChannelFrame expResult = null;
         ChannelFrame result = MessageUtils.buildSpikeyChannelFrame(100, 1.0, 5, 30);
         for (Double d : result.getChannelData()) {
-            System.out.println(d);
+            LOG.info("{}", d);
         }
     }
 
@@ -40,6 +40,6 @@ public class MessageUtilsTest {
         int size = 10;
         List<Double> expResult = null;
         List<Double> result = MessageUtils.pureSortedGaussians(size);
-        System.out.println(result);
+        LOG.info("{}", result);
     }
 }

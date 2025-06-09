@@ -71,7 +71,7 @@ public class SearchEventHandler implements EventHandler<SearchEvent> {
                     renderer.setVisibleByIndex(i, false);
 //@DEBUG SMP useful print... but it is very slow
 //                else
-//                    System.out.println("Index: " + i + " | " + fvList.get(i).metadataAsString(" "));
+//                    LOG.info("Index: " + i + " | " + fvList.get(i).metadataAsString(" "));
             }
             //request render update
             renderer.refresh(true);
@@ -192,7 +192,7 @@ public class SearchEventHandler implements EventHandler<SearchEvent> {
             //System.out.println("The distance to the query vector is: " + shortestDistance);
             //System.out.println("Here is the ranked distance list:");
             sortedList.forEach(p -> {
-                System.out.println("FV Index: " + p.getKey() + " with score: " + p.getValue());
+                LOG.info("FV Index: {} with score: {}", p.getKey(), p.getValue());
             });
             //grey out everything outside the closest ten
             for (int i = 11; i < size; i++) {

@@ -1186,7 +1186,7 @@ public class Projections3DPane extends StackPane implements
             //age out older items...
             int ageOffCount = -autoProjectionQueueSize - autoProjectedFeatures.size();
             if (ageOffCount > 0) {
-                System.out.println("Aging off " + ageOffCount + " projected features.");
+                LOG.info("Aging off {} projected features.", ageOffCount);
             }
         });
 
