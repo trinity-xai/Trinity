@@ -39,7 +39,7 @@ public class FeatureVectorCallout extends VBox {
     public static double CHIP_FIT_WIDTH = 200;
     public static double IMAGE_FIT_HEIGHT = 200;
     public static double IMAGE_FIT_WIDTH = 200;
-    public String imageryBasePath = "imagery/";
+    public String imageryBasePath = "";
 
     public static Callout createByShape3D(Shape3D shape3D,
                                           FeatureVector featureVector, SubScene subScene, String imageryBasePath) {

@@ -51,7 +51,7 @@ public class NavigatorPane extends LitPathPane {
     public static int PANE_WIDTH = 600;
     public static int PANE_HEIGHT = 850;
 
-    public String imageryBasePath = "imagery/";
+    public String imageryBasePath = "";
     boolean auto = false;
     Image currentImage = null;
     Label imageLabel;
@@ -125,7 +125,6 @@ public class NavigatorPane extends LitPathPane {
         TabPane tabPane = new TabPane(imageTab, textTab);
 
         contentVBox = new VBox(5,
-//            imageView, urlLabel, imageLabel,
             tabPane, urlLabel, imageLabel,
             new HBox(10, hypersurfaceButton, imageInspectionButton),
             detailsTP, metaTP);

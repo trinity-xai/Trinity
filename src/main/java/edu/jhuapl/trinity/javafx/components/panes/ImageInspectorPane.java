@@ -474,34 +474,34 @@ public class ImageInspectorPane extends LitPathPane {
 
     public void spaToFreq2D(Image image) {
         extractSignals(image);
-        System.out.println("Signal2D values extracted.");
+        LOG.info("Signal2D values extracted.");
 
         FastFourier2d transformer2D = new FastFourier2d();
-//        System.out.print("FFT on Greyscale... ");
+//        LOG.info("FFT on Greyscale... ");
         long startTime = System.nanoTime();
 //        transformer2D.transform(greySignal2d);
 //        Utils.printTotalTime(startTime);
-        System.out.print("FFT on Red Channel... ");
+        LOG.info("FFT on Red Channel... ");
         transformer2D.transform(redChannelSignal2d);
-        System.out.print("FFT on Green Channel... ");
+        LOG.info("FFT on Green Channel... ");
         transformer2D.transform(greenChannelSignal2d);
-        System.out.print("FFT on Blue Channel... ");
+        LOG.info("FFT on Blue Channel... ");
         transformer2D.transform(blueChannelSignal2d);
 
         //fshift = np.fft.fftshift(f_image)
-//        System.out.print("FFTShift on Greyscale... ");
+//        LOG.info("FFTShift on Greyscale... ");
 //        startTime = System.nanoTime();
 //        shiftedGreySignal2d = fftShift2d(greySignal2d, false);
 //        Utils.printTotalTime(startTime);
-        System.out.print("FFT Shift on Red Channel... ");
+        LOG.info("FFT Shift on Red Channel... ");
         shiftedRedChannelSignal2d = fftShift2d(redChannelSignal2d, false);
-        System.out.print("FFT Shift on Green Channel... ");
+        LOG.info("FFT Shift on Green Channel... ");
         shiftedGreenChannelSignal2d = fftShift2d(greenChannelSignal2d, false);
-        System.out.print("FFT Shift on Blue Channel... ");
+        LOG.info("FFT Shift on Blue Channel... ");
         shiftedBlueChannelSignal2d = fftShift2d(blueChannelSignal2d, false);
 
         //magnitude_spectrum = 20 * np.log(np.abs(fshift))
-        System.out.print("Plotting FFT Canvas... ");
+        LOG.info("Plotting FFT Canvas... ");
         double redlogVal, greenlogVal, bluelogVal = 0;
         baseImagePR = image.getPixelReader();
         PixelWriter pw = imageFFTGC.getPixelWriter();
@@ -528,14 +528,14 @@ public class ImageInspectorPane extends LitPathPane {
                 //                    1)));
             }
         }
-        System.out.print("Inverse on Red Channel... ");
+        LOG.info("Inverse on Red Channel... ");
         transformer2D.inverse(redChannelSignal2d);
-        System.out.print("Inverse on Red Channel... ");
+        LOG.info("Inverse on Red Channel... ");
         transformer2D.inverse(greenChannelSignal2d);
-        System.out.print("Inverse on Red Channel... ");
+        LOG.info("Inverse on Red Channel... ");
         transformer2D.inverse(blueChannelSignal2d);
 
-        System.out.print("Plotting Inverse FFT... ");
+        LOG.info("Plotting Inverse FFT... ");
         plotInverseFFT(height, width, redChannelSignal2d, greenChannelSignal2d, blueChannelSignal2d);
         Utils.printTotalTime(startTime);
 

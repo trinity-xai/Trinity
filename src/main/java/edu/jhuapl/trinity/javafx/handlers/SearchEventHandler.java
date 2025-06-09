@@ -71,7 +71,7 @@ public class SearchEventHandler implements EventHandler<SearchEvent> {
                     renderer.setVisibleByIndex(i, false);
 //@DEBUG SMP useful print... but it is very slow
 //                else
-//                    System.out.println("Index: " + i + " | " + fvList.get(i).metadataAsString(" "));
+//                    LOG.info("Index: " + i + " | " + fvList.get(i).metadataAsString(" "));
             }
             //request render update
             renderer.refresh(true);
@@ -141,7 +141,8 @@ public class SearchEventHandler implements EventHandler<SearchEvent> {
         App.getAppScene().getRoot().fireEvent(new CommandTerminalEvent(msg,
             new Font("Consolas", 20), Color.GREEN));
         LOG.info(msg);
-        System.out.println("Requesting embedding vector for query...");
+        //@DEBUG SMP
+        //System.out.println("Requesting embedding vector for query...");
         try {
             EmbeddingsImageInput input = EmbeddingsImageInput.defaultTextInput(query);
             if (null != currentEmbeddingsModel)
@@ -157,11 +158,13 @@ public class SearchEventHandler implements EventHandler<SearchEvent> {
 
     public void handleQueryEmbeddingsResponse(SearchEvent event) {
         EmbeddingsImageOutput output = (EmbeddingsImageOutput) event.eventObject;
-        System.out.println("Query Embedding Response... " + output.getData().get(0).getType());
+        //@DEBUG SMP
+        //System.out.println("Query Embedding Response... " + output.getData().get(0).getType());
         EmbeddingsImageData currentOutput = output.getData().get(0);
         //use a stream to convert the Boxed Double list to a primitive array
         double[] queryVector = currentOutput.getEmbedding().stream().mapToDouble(d -> d).toArray();
-        System.out.println("Computing Landmark Simularity Distances...");
+        //@DEBUG SMP
+        //System.out.println("Computing Landmark Simularity Distances...");
         Metric metric = Metric.getMetric("cosine");
         long startTime = System.nanoTime();
         for (FeatureVectorRenderer renderer : renderers) {
@@ -185,11 +188,11 @@ public class SearchEventHandler implements EventHandler<SearchEvent> {
                 .sorted(indexDistancePairCompare)
                 .toList();
             //@DEBUG SMP
-            System.out.println("The shortest distance FV is index: " + shortestVectorIndex);
-            System.out.println("The distance to the query vector is: " + shortestDistance);
-            System.out.println("Here is the ranked distance list:");
+            //System.out.println("The shortest distance FV is index: " + shortestVectorIndex);
+            //System.out.println("The distance to the query vector is: " + shortestDistance);
+            //System.out.println("Here is the ranked distance list:");
             sortedList.forEach(p -> {
-                System.out.println("FV Index: " + p.getKey() + " with score: " + p.getValue());
+                LOG.info("FV Index: {} with score: {}", p.getKey(), p.getValue());
             });
             //grey out everything outside the closest ten
             for (int i = 11; i < size; i++) {

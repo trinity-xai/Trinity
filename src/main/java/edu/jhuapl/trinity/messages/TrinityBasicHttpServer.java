@@ -1,7 +1,11 @@
 package edu.jhuapl.trinity.messages;
 
 import com.sun.net.httpserver.HttpServer;
+import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
+import javafx.application.Platform;
 import javafx.scene.Scene;
+import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -30,6 +34,11 @@ public class TrinityBasicHttpServer implements Runnable {
         try {
             server = HttpServer.create(new InetSocketAddress(DEFAULT_HTTP_HOST, DEFAULT_HTTP_PORT), 1024);
         } catch (IOException e) {
+            Platform.runLater(() -> {
+                scene.getRoot().fireEvent(
+                    new CommandTerminalEvent("Trinity HTTP Receiver failed to start.",
+                        new Font("Consolas", 20), Color.RED));
+            });
             LOG.error("Trinity HTTP Server failed to start.", e);
             throw new RuntimeException(e);
         }
@@ -43,6 +52,11 @@ public class TrinityBasicHttpServer implements Runnable {
         // Start the server
         server.start();
 
+        Platform.runLater(() -> {
+            scene.getRoot().fireEvent(
+                new CommandTerminalEvent("Trinity HTTP Receiver Active.",
+                    new Font("Consolas", 20), Color.GREEN));
+        });
         // Wait until a stop signal is received
         try {
             stopSignal.await();

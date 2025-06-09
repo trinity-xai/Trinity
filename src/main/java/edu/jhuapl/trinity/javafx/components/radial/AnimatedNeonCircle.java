@@ -15,7 +15,7 @@ import javafx.util.Duration;
  */
 public class AnimatedNeonCircle extends Circle {
 
-    private final RotateTransition transition;
+    private RotateTransition transition;
 
     public AnimatedNeonCircle(AnimatedNeonCircle.Animation a, double radius, double strokeWidth, Double... dashedArray) {
         this.transition = new RotateTransition(a.durationProperty().get(), AnimatedNeonCircle.this);

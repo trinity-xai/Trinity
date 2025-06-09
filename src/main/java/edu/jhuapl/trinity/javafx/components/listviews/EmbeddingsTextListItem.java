@@ -176,8 +176,14 @@ public class EmbeddingsTextListItem extends HBox {
                             String lower = obj.getKey().toLowerCase();
                             //last found matching field will be used
                             if (lower.contains("name") || lower.contains("label")) {
-                                item.setFeatureVectorLabel(obj.getValue().asText());
+                                item.setFeatureVectorLabel(obj.getValue().toString());
+                            } else if (lower.equalsIgnoreCase("text")) {
+                                //overrides the above full contents
+                                item.getFeatureVector().setText(obj.getValue().toPrettyString());
+                            } else {
+                                item.addMetaData(obj.getKey(), obj.getValue().toString());
                             }
+
                         });
                         list.add(item);
                     }

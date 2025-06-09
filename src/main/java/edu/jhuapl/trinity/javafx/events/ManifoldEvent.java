@@ -75,6 +75,7 @@ public class ManifoldEvent extends Event {
     public static final EventType<ManifoldEvent> GENERATE_HYPERSPACE_MANIFOLD = new EventType(ANY, "GENERATE_HYPERSPACE_MANIFOLD");
     public static final EventType<ManifoldEvent> GENERATE_PROJECTION_MANIFOLD = new EventType(ANY, "GENERATE_PROJECTION_MANIFOLD");
     public static final EventType<ManifoldEvent> NEW_PROJECTION_VECTOR = new EventType(ANY, "NEW_PROJECTION_VECTOR");
+    public static final EventType<ManifoldEvent> SET_PROJECTIONQUEUE_SIZE = new EventType(ANY, "SET_PROJECTIONQUEUE_SIZE");
 
     //Clustering
     public static final EventType<ManifoldEvent> FIND_HYPERSURFACE_CLUSTERS = new EventType(ANY, "FIND_HYPERSURFACE_CLUSTERS");

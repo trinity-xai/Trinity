@@ -963,7 +963,7 @@ public class Hyperspace3DPane extends StackPane implements
         Image image = null;
         try {
             image = WebCamUtils.takePicture();
-            System.out.println("Would you take my picture cuz I won't remember...");
+            LOG.info("Would you take my picture cuz I won't remember...");
             LOG.info("got your little soul...");
         } catch (Exception ex) {
             LOG.info("Unable to capture image.");
@@ -2212,6 +2212,11 @@ public class Hyperspace3DPane extends StackPane implements
     @Override
     public Point3D projectVector(FeatureVector featureVector) {
         return null;         //no/op
+    }
+
+    @Override
+    public void transformFeatureVector(FeatureVector featureVector) {
+        //no/op
     }
 
     @Override

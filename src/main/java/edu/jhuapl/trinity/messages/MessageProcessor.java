@@ -70,9 +70,12 @@ public class MessageProcessor {
             });
         } else if (FeatureVector.isFeatureVector(message)) {
             FeatureVector featureVector = getMapper().readValue(message, FeatureVector.class);
-            //fire event to load data in JavaFX Scene
+            //fire event to load data in JavaFX Scenes
             scene.getRoot().fireEvent(new FeatureVectorEvent(
                 FeatureVectorEvent.NEW_FEATURE_VECTOR, featureVector));
+            scene.getRoot().fireEvent(new ManifoldEvent(
+                ManifoldEvent.NEW_PROJECTION_VECTOR, featureVector));
+
         } else if (GaussianMixture.isGaussianMixture(message)) {
             GaussianMixture gaussianMixture = getMapper().readValue(message, GaussianMixture.class);
             Platform.runLater(() -> {

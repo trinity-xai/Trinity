@@ -2,6 +2,7 @@ package edu.jhuapl.trinity.javafx.controllers;
 
 import edu.jhuapl.trinity.App;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
+import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.javafx.events.RestEvent;
 import edu.jhuapl.trinity.javafx.events.TimelineEvent;
 import edu.jhuapl.trinity.javafx.events.TrajectoryEvent;
@@ -20,6 +21,7 @@ import javafx.scene.control.TabPane;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
+import javafx.scene.control.Tooltip;
 import javafx.scene.layout.BorderPane;
 import javafx.stage.DirectoryChooser;
 
@@ -101,7 +103,8 @@ public class DataController implements Initializable {
         pubsubRadioButton.setToggleGroup(toggleGroup);
         pushpullRadioButton.setToggleGroup(toggleGroup);
         updateRateTextField.setText(String.valueOf(ZeroMQFeedManager.DEFAULT_TIMER_RATE_MS));
-        imageryBasePathTextField.setText("imagery/");
+        imageryBasePathTextField.setText("");
+        imageryBasePathTextField.setTooltip(new Tooltip("Prepends this string for file based sources. \nEmpty String assumes OS specific path for files."));
         showTimelineCheckBox.selectedProperty().addListener(cl -> {
             showTimelineCheckBox.getScene().getRoot().fireEvent(
                 new TimelineEvent(TimelineEvent.TIMELINE_SET_VISIBLE,
@@ -129,6 +132,17 @@ public class DataController implements Initializable {
         });
         trajectorySizeSpinner.disableProperty().bind(
             showStateTrajectoryCheckBox.selectedProperty().not());
+
+
+        projectionQueueSizeSpinner.setValueFactory(
+            new SpinnerValueFactory.IntegerSpinnerValueFactory(100, 10000, 1000, 50));
+        projectionQueueSizeSpinner.setEditable(true);
+        //whenever the spinner value is changed...
+        projectionQueueSizeSpinner.valueProperty().addListener(e -> {
+            scene.getRoot().fireEvent(
+                new ManifoldEvent(ManifoldEvent.SET_PROJECTIONQUEUE_SIZE,
+                    (int) projectionQueueSizeSpinner.getValue()));
+        });
 
         restProgressIndicator.visibleProperty().bind(restInjectToggleButton.selectedProperty());
         scene.getRoot().addEventHandler(ApplicationEvent.SET_IMAGERY_BASEPATH, e -> {

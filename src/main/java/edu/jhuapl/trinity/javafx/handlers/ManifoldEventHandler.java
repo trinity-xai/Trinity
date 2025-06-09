@@ -344,7 +344,7 @@ public class ManifoldEventHandler implements EventHandler<ManifoldEvent> {
         } else if (event.getEventType().equals(ManifoldEvent.NEW_PROJECTION_VECTOR)) {
             FeatureVector fv = (FeatureVector) event.object1;
             for (ManifoldRenderer renderer : manifoldRenderers) {
-                renderer.projectVector(fv);
+                renderer.transformFeatureVector(fv);
             }
         } else if (event.getEventType().equals(ManifoldEvent.NEW_CLUSTER_COLLECTION)) {
             ClusterCollection cc = (ClusterCollection) event.object1;

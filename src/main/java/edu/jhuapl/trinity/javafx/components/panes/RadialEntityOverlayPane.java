@@ -66,7 +66,7 @@ public class RadialEntityOverlayPane extends Pane {
     ObservableList<RadialEntity> entityList;
     ObservableList<Callout> calloutList;
     public List<FeatureVector> featureVectors;
-    public String imageryBasePath = "imagery/";
+    public String imageryBasePath = "";
 
     public RadialEntityOverlayPane(Scene scene, List<FeatureVector> featureVectors) {
         setBackground(Background.EMPTY);

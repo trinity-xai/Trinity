@@ -11,6 +11,7 @@ import javafx.scene.Scene;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
 import javafx.util.Duration;
+import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
@@ -23,7 +24,7 @@ import java.util.Random;
  * @author Sean Phillips
  */
 public class JukeBox implements EventHandler<AudioEvent> {
-    private static final org.slf4j.Logger LOG = LoggerFactory.getLogger(JukeBox.class);
+    private static final Logger LOG = LoggerFactory.getLogger(JukeBox.class);
     public static String DEFAULT_MUSIC_PATH = "music/";
     //These are all the known tracks
     public static String NEON_SHADOWS_UNVEIL = "NeonShadowUnveil.mp3";
@@ -45,11 +46,14 @@ public class JukeBox implements EventHandler<AudioEvent> {
     public JukeBox(Scene scene) {
         this.scene = scene;
         defaultMedia = new Media(AudioResourceProvider.getResource(DEFAULT_MUSIC_TRACK).toExternalForm());
-        setMedia(defaultMedia);
-        mediaFiles = new ArrayList<>();
-        loadMusic();
-        if (!mediaFiles.isEmpty())
-            setMedia(mediaFiles.get(0));
+        try {
+            setMedia(defaultMedia);
+            mediaFiles = new ArrayList<>();
+            loadMusic();
+            if (!mediaFiles.isEmpty())
+                setMedia(mediaFiles.get(0));
+        } catch (Exception ex) {
+        }
     }
 
     private void setMedia(Media media) {
@@ -57,6 +61,8 @@ public class JukeBox implements EventHandler<AudioEvent> {
             currentMediaPlayer.stop();
         }
         currentMediaPlayer = new MediaPlayer(media);
+        //@DEBUG SMP
+        //System.out.println(media.getSource());
         String sourceName = ResourceUtils.getNameFromURI(media.getSource());
         Platform.runLater(() -> {
             scene.getRoot().fireEvent(new AudioEvent(AudioEvent.CURRENTLY_PLAYING_TRACK, sourceName));

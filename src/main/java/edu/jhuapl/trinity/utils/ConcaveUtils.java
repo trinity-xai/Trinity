@@ -14,6 +14,8 @@ import javafx.scene.shape.TriangleMesh;
 import org.fxyz3d.geometry.Point3D;
 import org.fxyz3d.geometry.Vector3D;
 import org.fxyz3d.utils.geom.Vec3d;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -25,6 +27,8 @@ import java.util.stream.DoubleStream;
  *
  */
 public class ConcaveUtils {
+
+    private static final Logger LOG = LoggerFactory.getLogger(ConcaveUtils.class);
     static int NO_OF_DIM = 3;                              // dimension of data
     static double N = 0;                                  // threshold for digging
     double[][] orgData;
@@ -195,11 +199,11 @@ public class ConcaveUtils {
 	Dig the boundary as a result of comparing between nearest inner point and decision distance.
 	////////////////////////////////////////////////////////////////////////////////////////////*/
     public void findConcave() {
-        System.out.println("Finding Concave Hull for face count: " + cvxList.size());
+        LOG.info("Finding Concave Hull for face count: {}", cvxList.size());
         int count_array_change = 0;
         for (int i = 0; i < cvxList.size(); i++) {
             if (i % 10 == 0)
-                System.out.println("cvxList Index: " + i + " out of " + cvxList.size());
+                LOG.info("cvxList Index: {} out of {}", i, cvxList.size());
             // Step. 0 Calculate average of edges of each component
             double avgEdgeLength = 0;
             int cCnt = 0;
@@ -321,7 +325,7 @@ public class ConcaveUtils {
             // if the ratio bigger than N, nearest inner point is inserted to concave list.
             double diggRatio = (double) avgEdgeLength / (double) minLength;
             if (diggRatio < 0)
-                System.out.println("Negative diggRatio!");
+                LOG.info("Negative diggRatio!");
             if (minLength > 0 && diggRatio > N) {
                 // 3.1 vertex flag on.
                 orgData[nearestPoint][NO_OF_DIM] = 1;
@@ -351,7 +355,7 @@ public class ConcaveUtils {
                 //System.out.println("removed :" + k);
             }
         }
-        System.out.println("Completed Concave Hull for face count: " + cvxList.size());
+        LOG.info("Completed Concave Hull for face count: {}", cvxList.size());
     }
 
     //Sort nodes with positions in 3d space.
@@ -484,7 +488,7 @@ public class ConcaveUtils {
             manifold3D.extrasGroup.getChildren().add(mv);
 
         }
-        System.out.println("Ok done with Concave stuff...");
+        LOG.info("Ok done with Concave stuff...");
 /*
         make 3D float array with all zeros.
         then for each point convert x,y,z positions to an index...

@@ -4,32 +4,22 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.jhuapl.trinity.data.messages.xai.AnalysisConfig;
 import edu.jhuapl.trinity.data.messages.xai.UmapConfig;
-import edu.jhuapl.trinity.javafx.components.ProjectorNode;
+import edu.jhuapl.trinity.javafx.components.projector.ProjectorAnalysisNode;
+import edu.jhuapl.trinity.javafx.components.projector.ProjectorNode;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
-import javafx.animation.AnimationTimer;
-import javafx.animation.FadeTransition;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.ParallelTransition;
-import javafx.animation.PathTransition;
-import javafx.animation.RotateTransition;
-import javafx.animation.SequentialTransition;
 import javafx.animation.Timeline;
-import javafx.application.Platform;
 import javafx.geometry.Insets;
-import javafx.geometry.Point2D;
-import javafx.geometry.Point3D;
 import javafx.scene.Group;
-import javafx.scene.Node;
 import javafx.scene.PerspectiveCamera;
 import javafx.scene.SceneAntialiasing;
 import javafx.scene.SubScene;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
-import javafx.scene.effect.Glow;
-import javafx.scene.effect.Reflection;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.input.KeyCode;
@@ -42,14 +32,8 @@ import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
-import javafx.scene.shape.LineTo;
-import javafx.scene.shape.MoveTo;
-import javafx.scene.shape.Path;
-import javafx.scene.shape.Shape3D;
 import javafx.scene.shape.Sphere;
 import javafx.scene.text.Font;
-import javafx.scene.transform.Rotate;
-import javafx.scene.transform.Translate;
 import javafx.stage.DirectoryChooser;
 import javafx.util.Duration;
 import org.fxyz3d.geometry.MathUtils;
@@ -58,14 +42,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.net.MalformedURLException;
 import java.nio.file.Files;
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -76,6 +56,8 @@ public class ProjectorPane extends StackPane {
     private static final Logger LOG = LoggerFactory.getLogger(ProjectorPane.class);
     PerspectiveCamera camera = new PerspectiveCamera(true);
     public Group sceneRoot = new Group();
+    ProjectorNodeGroup projectorNodeGroup;
+
     private Group labelGroup;
     public SubScene subScene;
     public CameraTransformer cameraTransform = new CameraTransformer();
@@ -89,22 +71,13 @@ public class ProjectorPane extends StackPane {
     private double mouseDeltaX;
     private double mouseDeltaY;
 
-    ArrayList<ProjectorNode> nodes;
-    ArrayList<Integer> randomIndices;
-    List<ParallelTransition> transitionList = new ArrayList<>();
-    double transitionXOffset = -15000;
-    double transitionYOffset = -15000;
-    double transitionZOffset = 0;
     ImageView overlayImageView;
     File analysisDirectory = new File("./analysis");
-    double originRadius = 9001;
     public Color sceneColor = Color.TRANSPARENT;
     /**
      * Provides deserialization support for JSON messages
      */
     ObjectMapper mapper;
-    //allows 2D labels to track their 3D counterparts
-    HashMap<Shape3D, Label> shape3DToLabel = new HashMap<>();
     public boolean firstTime = true;
 
     public ProjectorPane() {
@@ -142,7 +115,7 @@ public class ProjectorPane extends StackPane {
             double z = camera.getTranslateZ();
             double newZ = z + event.getDeltaY() * modifierFactor * modifier;
             camera.setTranslateZ(newZ);
-            updateLabels();
+            projectorNodeGroup.updateLabels();
         });
         subScene.setOnKeyPressed(event -> {
             //What key did the user press?
@@ -174,7 +147,7 @@ public class ProjectorPane extends StackPane {
             if (keycode == KeyCode.X) {
                 camera.setTranslateY(camera.getTranslateY() + change);
             }
-            updateLabels();
+            projectorNodeGroup.updateLabels();
         });
         camera = new PerspectiveCamera(true);
         //setup camera transform for rotational support
@@ -193,7 +166,7 @@ public class ProjectorPane extends StackPane {
 
         MenuItem animateItem = new MenuItem("Animate");
         animateItem.setOnAction(e -> {
-            animateImages();
+            projectorNodeGroup.animateImages();
         });
         MenuItem basePathItem = new MenuItem("Set Analysis Directory");
         basePathItem.setOnAction(e -> {
@@ -211,8 +184,7 @@ public class ProjectorPane extends StackPane {
         MenuItem scanItem = new MenuItem("Scan Folder");
         scanItem.setOnAction(e -> {
             sceneRoot.getChildren().removeIf(n -> n instanceof ProjectorNode);
-            nodes.clear();
-            transitionList.clear();
+            projectorNodeGroup.clearAll();
             scanAndAnimate();
         });
 
@@ -230,38 +202,41 @@ public class ProjectorPane extends StackPane {
                 e.consume();
             }
         });
-
-        nodes = new ArrayList<>();
-        sceneRoot.getChildren().addAll(nodes);
-        Sphere origin = new Sphere(20.0);
-        Sphere northPole = new Sphere(20.0);
-        PhongMaterial northPhong = new PhongMaterial(Color.DODGERBLUE);
-        northPole.setMaterial(northPhong);
-        northPole.setTranslateY(-originRadius);
-
-        Sphere southPole = new Sphere(20.0);
-        PhongMaterial southPhong = new PhongMaterial(Color.TOMATO);
-        southPole.setMaterial(southPhong);
-        southPole.setTranslateY(originRadius);
-
-        sceneRoot.getChildren().addAll(origin, northPole, southPole);
         //add our labels to the group that will be added to the StackPane
         labelGroup = new Group();
         labelGroup.setManaged(false);
         getChildren().add(labelGroup);
+
+        projectorNodeGroup = new ProjectorNodeGroup(subScene, camera, cameraTransform, labelGroup);
+        projectorNodeGroup.yOffset = 1300.0; //bigger than 512...
+        sceneRoot.getChildren().addAll(projectorNodeGroup);
+        Sphere origin = new Sphere(20.0);
+        Sphere northPole = new Sphere(20.0);
+        PhongMaterial northPhong = new PhongMaterial(Color.DODGERBLUE);
+        northPole.setMaterial(northPhong);
+        northPole.setTranslateY(-projectorNodeGroup.originRadius);
+
+        Sphere southPole = new Sphere(20.0);
+        PhongMaterial southPhong = new PhongMaterial(Color.TOMATO);
+        southPole.setMaterial(southPhong);
+        southPole.setTranslateY(projectorNodeGroup.originRadius);
+
+        sceneRoot.getChildren().addAll(origin, northPole, southPole);
+
     }
 
     public void scanAndAnimate() {
         scanAnalysisDirectory(analysisDirectory);
-        updateLabels();
-        animateImages();
+        projectorNodeGroup.updateLabels();
+        projectorNodeGroup.animateImages();
     }
 
     private void scanAnalysisDirectory(File directory) {
-        sceneRoot.getChildren().removeIf(n -> n instanceof Sphere);
+        //sceneRoot.getChildren().removeIf(n -> n instanceof Sphere);
+        projectorNodeGroup.getChildren().removeIf(n -> n instanceof Sphere);
         labelGroup.getChildren().clear();
-        shape3DToLabel.clear();
-        originRadius = 9001;
+        projectorNodeGroup.shape3DToLabel.clear();
+        projectorNodeGroup.originRadius = 9001;
         double angle1 = -Math.PI * 0.35; //@TODO SMP Dynamically figure this out
         double angleStepSize = 0.25; //@TODO SMP Dynamically figure this out
         for (File subDirectory : directory.listFiles()) {
@@ -269,6 +244,10 @@ public class ProjectorPane extends StackPane {
                 //We will recognize three different file types...
                 //map images to their respective UMAP and Analysis config names
                 List<ProjectorNode> projectorNodes = new ArrayList<>();
+
+                //ProjectorNode test = new ProjectorTextNode("Dude this is a test!");
+                //projectorNodes.add(test);
+
                 //search for and use image files as pivot points, do NOT follow recursively
                 for (File subDirFile : subDirectory.listFiles()) {
                     if (ResourceUtils.isImageFile(subDirFile)) {
@@ -279,7 +258,8 @@ public class ProjectorPane extends StackPane {
                             UmapConfig ucForMe = findUmapConfigByName(subDirectory, subDirFile.getName());
                             AnalysisConfig acDC = findAnalysisConfigByName(subDirectory, subDirFile.getName());
                             //the configs may be null but that is ok
-                            ProjectorNode pn = new ProjectorNode(image, ucForMe, acDC);
+                            ProjectorNode pn = new ProjectorAnalysisNode(image, ucForMe, acDC);
+                            pn.setVisible(true);
                             projectorNodes.add(pn);
                         } catch (MalformedURLException ex) {
                             LOG.error(null, ex);
@@ -293,7 +273,12 @@ public class ProjectorPane extends StackPane {
                         row *= -1;
                     //add each projector node to the column
                     for (ProjectorNode pn : projectorNodes) {
-                        addNodeToScene(pn, row, projectorNodes.size() / 2, angle1);
+                        projectorNodeGroup.addNodeToScene(pn, row, angle1, projectorNodeGroup.originRadius);
+
+                        ParallelTransition pt = projectorNodeGroup.createTransition(pn);
+                        projectorNodeGroup.transitionList.add(pt);
+
+                        pn.setVisible(true);
                         row++;
                     }
                     //Add header Label based on directory name
@@ -303,91 +288,25 @@ public class ProjectorPane extends StackPane {
 
                     // Ring formula
                     //bump the x coordinate a bit the left to left justify the label
-                    double x = originRadius * Math.sin(angle1 * 1.1) * Math.cos(Math.PI);
+                    double x = projectorNodeGroup.originRadius * Math.sin(angle1 * 1.1) * Math.cos(Math.PI);
                     double y = 1800 * -(projectorNodes.size() / 2); //extra offset
-                    double z = originRadius * Math.cos(angle1);
+                    double z = projectorNodeGroup.originRadius * Math.cos(angle1);
                     columnLabelSphere.setTranslateX(x);
                     columnLabelSphere.setTranslateY(y);
                     columnLabelSphere.setTranslateZ(z);
-                    sceneRoot.getChildren().add(columnLabelSphere);
+                    //sceneRoot.getChildren().add(columnLabelSphere);
+                    projectorNodeGroup.getChildren().add(columnLabelSphere);
                     Label columnLabel = new Label(subDirectory.getName());
                     columnLabel.setFont(new Font("Consolas", 20));
                     columnLabel.setTextFill(Color.SKYBLUE);
                     labelGroup.getChildren().add(columnLabel);
-                    shape3DToLabel.put(columnLabelSphere, columnLabel);
+                    projectorNodeGroup.shape3DToLabel.put(columnLabelSphere, columnLabel);
                     //only bump the directional angle if the subdir had nodes in it
                     angle1 += angleStepSize;
                 }
             }
         }
-        updateLabels();
-    }
-
-    private void animateLabelVisibility(long ms) {
-        //sweet music reference: https://en.wikipedia.org/wiki/Street_Spirit_(Fade_Out)
-        FadeTransition streetSpiritFadeIn = new FadeTransition(Duration.millis(ms), labelGroup);
-        streetSpiritFadeIn.setFromValue(0.0);
-        streetSpiritFadeIn.setToValue(1);
-        streetSpiritFadeIn.playFromStart();
-    }
-
-    private void addNodeToScene(ProjectorNode projectorNode, int row, int max, double angle1) {
-        double yOffset = 1300; //a bit more than 1080p height
-        double angle2 = Math.PI;
-        Reflection refl = new Reflection();
-        refl.setFraction(0.9f);
-        Glow glow = new Glow();
-        glow.setLevel(0.9);
-        glow.setInput(refl);
-
-        // Ring formula
-        final double x = originRadius * Math.sin(angle1) * Math.cos(angle2);
-        final double y = yOffset * row;
-        final double z = originRadius * Math.cos(angle1);
-
-        projectorNode.setTranslateX(x);
-        projectorNode.setTranslateY(y);
-        projectorNode.setTranslateZ(z);
-
-        Rotate ry = new Rotate();
-        ry.setAxis(Rotate.Y_AXIS);
-        ry.setAngle(Math.toDegrees(-angle1));
-        projectorNode.getTransforms().addAll(ry);
-        final double ryAngle = ry.getAngle();
-
-//        // reflection on bottom row
-//        if (row == max) {
-//            projectorNode.setEffect(glow);
-//        }
-        //Add special click handler to zoom camera
-        projectorNode.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
-            if (e.getButton() == MouseButton.MIDDLE) {
-                long milliseconds = 500;
-                Timeline rotateTimeline = JavaFX3DUtils.transitionCameraTo(milliseconds, camera, cameraTransform,
-                    0, 0, 0, 0.0, ryAngle, 0.0);
-                rotateTimeline.setOnFinished(eh -> {
-                    updateLabels();
-                    Point3D p3D = new Point3D(x, y, z);
-                    Point3D lessP3D = p3D.subtract(x * 0.5, y * 0.5, z * 0.5);
-                    cameraTransform.setPivot(0, 0, 0);
-                    Timeline timeline = new Timeline(
-                        new KeyFrame(Duration.millis(milliseconds),
-                            new KeyValue(cameraTransform.translateXProperty(), lessP3D.getX()),
-                            new KeyValue(cameraTransform.translateYProperty(), y),
-                            new KeyValue(cameraTransform.translateZProperty(), lessP3D.getZ())
-                        )
-                    );
-                    timeline.setOnFinished(fin -> updateLabels());
-                    timeline.playFromStart();
-                });
-                rotateTimeline.playFromStart();
-            }
-        });
-
-        projectorNode.setVisible(false); //must animate or manually set visible later
-        nodes.add(projectorNode);
-        sceneRoot.getChildren().add(projectorNode);
-        transitionList.add(createTransition(projectorNode));
+        projectorNodeGroup.updateLabels();
     }
 
     private AnalysisConfig findAnalysisConfigByName(File directory, String name) {
@@ -434,111 +353,45 @@ public class ProjectorPane extends StackPane {
         }
         return null; //if you get this far its because the file isn't there
     }
-
-    private void playNewImage(int index, String fixedPath) {
-        Platform.runLater(() -> {
-            try {
-                Thread.sleep(250); //give the watch service time to release the file
-                FileInputStream stream = new FileInputStream(fixedPath);
-                Image image = new Image(stream);
-                overlayImageView.setImage(image);
-                overlayImageView.setFitWidth(image.getWidth() * 0.9);
-                overlayImageView.setFitHeight(image.getHeight() * 0.9);
-
-                FadeTransition fadeOutTransition = new FadeTransition(Duration.seconds(8), overlayImageView);
-                fadeOutTransition.setFromValue(1.0);
-                fadeOutTransition.setToValue(0.0);
-
-                ParallelTransition flipTransition = transitionList.get(randomIndices.get(index));
-                ImageView iv = (ImageView) flipTransition.getNode();
-                iv.setImage(image);
-                iv.setFitHeight(150);
-                iv.setFitWidth(200);
-                iv.setTranslateX(iv.getTranslateX() + transitionXOffset);
-                iv.setTranslateY(iv.getTranslateY() + transitionYOffset);
-                iv.setTranslateZ(iv.getTranslateZ());
-                fadeOutTransition.setOnFinished(e -> iv.setVisible(true));
-
-                FadeTransition ivFadeTransition = new FadeTransition(Duration.seconds(2), iv);
-                ivFadeTransition.setFromValue(0.0);
-                ivFadeTransition.setToValue(1.0);
-
-                //play in order
-                SequentialTransition seq = new SequentialTransition(
-                    fadeOutTransition, ivFadeTransition);
-                seq.setOnFinished(f -> flipTransition.playFromStart());
-                seq.playFromStart();
-            } catch (FileNotFoundException | InterruptedException ex) {
-                LOG.error(null, ex);
-            }
-        });
-    }
-
-    public void animateImages() {
-        labelGroup.setOpacity(0.0);
-        nodes.forEach(n -> n.setVisible(false));
-        AnimationTimer timer = createAnimation();
-        timer.start();
-    }
-
-    private AnimationTimer createAnimation() {
-        Collections.sort(transitionList, (ParallelTransition arg0, ParallelTransition arg1) -> {
-            // bottom right to top left
-            Point2D ref = new Point2D(1000, 1000);
-            Point2D pt0 = new Point2D(arg0.getNode().getTranslateX(), arg0.getNode().getTranslateY());
-            Point2D pt1 = new Point2D(arg1.getNode().getTranslateX(), arg1.getNode().getTranslateY());
-
-            return Double.compare(ref.distance(pt0), ref.distance(pt1));
-            // bottom row first
-            // return -Double.compare( arg0.getNode().getTranslateY(), arg1.getNode().getTranslateY());
-        });
-
-        AnimationTimer timer = new AnimationTimer() {
-            long last = 0;
-            int transitionIndex = 0;
-
-            @Override
-            public void handle(long now) {
-                if ((now - last) > 30_000_000) {
-                    if (transitionIndex < transitionList.size()) {
-                        ParallelTransition t = transitionList.get(transitionIndex);
-                        t.getNode().setVisible(true);
-                        t.play();
-                        transitionIndex++;
-                    }
-                    last = now;
-                }
-                if (transitionIndex >= transitionList.size()) {
-                    stop();
-                    animateLabelVisibility(1000);
-                }
-            }
-        };
-
-        return timer;
-    }
-
-    private ParallelTransition createTransition(final Node node) {
-        Path path = new Path();
-        path.getElements().add(new MoveToAbs(node,
-            node.getTranslateX() + transitionXOffset,
-            node.getTranslateY() + transitionYOffset));
-        path.getElements().add(new LineToAbs(node, node.getTranslateX(), node.getTranslateY()));
-
-        Duration duration = Duration.millis(1000);
-
-        PathTransition pt = new PathTransition(duration, path, node);
-
-        RotateTransition rt = new RotateTransition(duration, node);
-        rt.setByAngle(720);
-        rt.setAutoReverse(true);
-
-        ParallelTransition parallelTransition = new ParallelTransition();
-        parallelTransition.setNode(node);
-        parallelTransition.getChildren().addAll(pt, rt);
-        parallelTransition.setCycleCount(1);
-        return parallelTransition;
-    }
+//
+//    private void playNewImage(int index, String fixedPath) {
+//        Platform.runLater(() -> {
+//            try {
+//                Thread.sleep(250); //give the watch service time to release the file
+//                FileInputStream stream = new FileInputStream(fixedPath);
+//                Image image = new Image(stream);
+//                overlayImageView.setImage(image);
+//                overlayImageView.setFitWidth(image.getWidth() * 0.9);
+//                overlayImageView.setFitHeight(image.getHeight() * 0.9);
+//
+//                FadeTransition fadeOutTransition = new FadeTransition(Duration.seconds(8), overlayImageView);
+//                fadeOutTransition.setFromValue(1.0);
+//                fadeOutTransition.setToValue(0.0);
+//
+//                ParallelTransition flipTransition = transitionList.get(randomIndices.get(index));
+//                ImageView iv = (ImageView) flipTransition.getNode();
+//                iv.setImage(image);
+//                iv.setFitHeight(150);
+//                iv.setFitWidth(200);
+//                iv.setTranslateX(iv.getTranslateX() + transitionXOffset);
+//                iv.setTranslateY(iv.getTranslateY() + transitionYOffset);
+//                iv.setTranslateZ(iv.getTranslateZ());
+//                fadeOutTransition.setOnFinished(e -> iv.setVisible(true));
+//
+//                FadeTransition ivFadeTransition = new FadeTransition(Duration.seconds(2), iv);
+//                ivFadeTransition.setFromValue(0.0);
+//                ivFadeTransition.setToValue(1.0);
+//
+//                //play in order
+//                SequentialTransition seq = new SequentialTransition(
+//                    fadeOutTransition, ivFadeTransition);
+//                seq.setOnFinished(f -> flipTransition.playFromStart());
+//                seq.playFromStart();
+//            } catch (FileNotFoundException | InterruptedException ex) {
+//                LOG.error(null, ex);
+//            }
+//        });
+//    }
 
     public void resetView(double milliseconds, boolean rightNow) {
         if (!rightNow) {
@@ -551,10 +404,10 @@ public class ProjectorPane extends StackPane {
                 )
             );
             timeline.setOnFinished(eh -> {
-                updateLabels();
+                projectorNodeGroup.updateLabels();
                 Timeline zoomTimeline = JavaFX3DUtils.transitionCameraTo(milliseconds, camera, cameraTransform,
                     0, 0, cameraDistance, 0.0, 0.0, 0.0);
-                zoomTimeline.setOnFinished(fin -> updateLabels());
+                zoomTimeline.setOnFinished(fin -> projectorNodeGroup.updateLabels());
             });
             timeline.playFromStart();
         } else {
@@ -599,54 +452,6 @@ public class ProjectorPane extends StackPane {
             cameraTransform.t.setX(cameraTransform.t.getX() + mouseDeltaX * modifierFactor * modifier * 0.3); // -
             cameraTransform.t.setY(cameraTransform.t.getY() + mouseDeltaY * modifierFactor * modifier * 0.3); // -
         }
-        updateLabels();
-    }
-
-    private void updateLabels() {
-        shape3DToLabel.forEach((node, label) -> {
-            javafx.geometry.Point3D coordinates = node.localToScene(javafx.geometry.Point3D.ZERO, true);
-            //@DEBUG SMP  useful debugging print
-            //System.out.println("subSceneToScene Coordinates: " + coordinates.toString());
-            //Clipping Logic
-            //if coordinates are outside of the scene it could
-            //stretch the screen so don't transform them
-            double x = coordinates.getX();
-            double y = coordinates.getY();
-            //is it left of the view?
-            if (x < 0) {
-                x = 0;
-            }
-            //is it right of the view?
-            if ((x + label.getWidth() + 5) > subScene.getWidth()) {
-                x = subScene.getWidth() - (label.getWidth() + 5);
-            }
-            //is it above the view?
-            if (y < 0) {
-                y = 0;
-            }
-            //is it below the view
-            if ((y + label.getHeight()) > subScene.getHeight())
-                y = subScene.getHeight() - (label.getHeight() + 5);
-            //@DEBUG SMP  useful debugging print
-            //System.out.println("clipping Coordinates: " + x + ", " + y);
-            //update the local transform of the label.
-            label.getTransforms().setAll(new Translate(x, y));
-        });
-    }
-
-    public static class MoveToAbs extends MoveTo {
-
-        public MoveToAbs(Node node, double x, double y) {
-            super(x - node.getLayoutX() + node.getLayoutBounds().getWidth() / 2,
-                y - node.getLayoutY() + node.getLayoutBounds().getHeight() / 2);
-        }
-    }
-
-    public static class LineToAbs extends LineTo {
-
-        public LineToAbs(Node node, double x, double y) {
-            super(x - node.getLayoutX() + node.getLayoutBounds().getWidth() / 2,
-                y - node.getLayoutY() + node.getLayoutBounds().getHeight() / 2);
-        }
+        projectorNodeGroup.updateLabels();
     }
 }

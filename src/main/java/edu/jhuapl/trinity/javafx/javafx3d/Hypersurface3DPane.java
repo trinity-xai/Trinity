@@ -253,7 +253,7 @@ public class Hypersurface3DPane extends StackPane
     public Spinner xWidthSpinner, zWidthSpinner;
     public Scene scene;
     HashMap<Shape3D, Callout> shape3DToCalloutMap;
-    public String imageryBasePath = "imagery/";
+    public String imageryBasePath = "";
     SurfaceChartPane surfaceChartPane;
     public AmbientLight ambientLight;
     public PointLight pointLight;
@@ -789,8 +789,9 @@ public class Hypersurface3DPane extends StackPane
     }
 
     public void computeVectorDistances() {
-        System.out.println("Computing Vector Distances... ");
-        long startTime = System.nanoTime();
+        //@DEBUG SMP
+        //System.out.println("Computing Vector Distances... ");
+        //long startTime = System.nanoTime();
         Metric metric = Metric.getMetric("cosine");
         List<List<Double>> distancesGrid = new ArrayList<>();
 
@@ -806,7 +807,7 @@ public class Hypersurface3DPane extends StackPane
             }
             distancesGrid.add(distanceVector);
         });
-        Utils.printTotalTime(startTime);
+        //Utils.printTotalTime(startTime);
 
         dataGrid.clear();
         dataGrid.addAll(distancesGrid);
@@ -820,8 +821,9 @@ public class Hypersurface3DPane extends StackPane
 
     public void computeSurfaceDifference(FeatureCollection collection) {
         double[][] newRayRay = collection.convertFeaturesToArray();
-        System.out.println("Computing Surface Differences... ");
-        long startTime = System.nanoTime();
+        //@DEBUG SMP
+        //System.out.println("Computing Surface Differences... ");
+        //long startTime = System.nanoTime();
         List<List<Double>> differencesGrid = new ArrayList<>();
 
         for (int rowIndex = 0; rowIndex < dataGrid.size(); rowIndex++) {
@@ -838,7 +840,7 @@ public class Hypersurface3DPane extends StackPane
             }
             differencesGrid.add(differenceVector);
         }
-        Utils.printTotalTime(startTime);
+        //Utils.printTotalTime(startTime);
 
         dataGrid.clear();
         dataGrid.addAll(differencesGrid);

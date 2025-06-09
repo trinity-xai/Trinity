@@ -35,6 +35,8 @@ import org.fxyz3d.geometry.Face3;
 import org.fxyz3d.geometry.Point3D;
 import org.fxyz3d.scene.paint.Palette;
 import org.fxyz3d.shapes.primitives.helper.TriangleMeshHelper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.util.ArrayList;
@@ -49,6 +51,8 @@ import java.util.stream.DoubleStream;
  * @author Sean Phillips
  */
 public class Manifold3D extends Group {
+
+    private static final Logger LOG = LoggerFactory.getLogger(Manifold3D.class);
     public Group extrasGroup = new Group();
     public Group labelGroup = new Group();
     private Manifold manifold = null;
@@ -173,7 +177,7 @@ public class Manifold3D extends Group {
         MenuItem printBoundsCentroid = new MenuItem("Print Bounds Centroid");
         printBoundsCentroid.setOnAction(eh -> {
             Point3D p = getBoundsCentroid();
-            System.out.println(p);
+            LOG.info("{}", p);
         });
         cm.getItems().addAll(editPointsItem, makeConcaveItem, exportItem, diffuseColorItem,
             specColorItem, tessallateItem, printBoundsCentroid);
@@ -439,7 +443,7 @@ public class Manifold3D extends Group {
                 faceIndex += 6;
                 if (faceIndex >= quickhullTriangleMesh.getFaces().size()) {
                     this.stop();
-                    System.out.println("Tessellation Complete.");
+                    LOG.info("Tessellation Complete.");
                 }
             }
 
@@ -466,35 +470,44 @@ public class Manifold3D extends Group {
     }
 
     public void makeDebugPoints(QuickHull3D hull, float scale, boolean print) {
+        StringBuilder sb = new StringBuilder();
         if (print)
-            System.out.print("double [] factors = new double[] { ");
+            sb.append("double [] factors = new double[] { ");
+
         for (int i = 0; i < hull.getNumVertices(); i++) {
             Point3d p3d = hull.getVertices()[i];
             Point3D point3D = hullPointToPoint3D.apply(p3d);
             point3D.x *= scale;
             point3D.y *= scale;
             point3D.z *= scale;
+
             if (print) {
-                System.out.print(point3D.x + ", " + point3D.y + ", " + point3D.z);
+                sb.append(point3D.x).append(", ").append(point3D.y).append(", ").append(point3D.z);
                 if (i < hull.getNumVertices() - 1)
-                    System.out.print(", ");
+                    sb.append(", ");
             }
+
             Sphere sphere = new Sphere(2.5);
             PhongMaterial mat = new PhongMaterial(Color.BLUE);
-            mat.setSpecularColor(Color.BLUE); //fix for aarch64 Mac Ventura
+            mat.setSpecularColor(Color.BLUE); // fix for aarch64 Mac Ventura
             sphere.setMaterial(mat);
             sphere.setTranslateX(point3D.x);
             sphere.setTranslateY(point3D.y);
             sphere.setTranslateZ(point3D.z);
             extrasGroup.getChildren().add(sphere);
+
             Label newLabel = new Label(String.valueOf(i));
             labelGroup.getChildren().addAll(newLabel);
             newLabel.setTextFill(Color.SKYBLUE);
             newLabel.setFont(new Font("calibri", 20));
             shape3DToLabel.put(sphere, newLabel);
         }
-        if (print)
-            System.out.println("};");
+
+        if (print) {
+            sb.append("};");
+            LOG.info(sb.toString());
+        }
+
         getChildren().add(extrasGroup);
     }
 

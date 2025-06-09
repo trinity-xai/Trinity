@@ -14,7 +14,7 @@ import edu.jhuapl.trinity.data.messages.xai.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.data.messages.xai.GaussianMixture;
 import edu.jhuapl.trinity.data.messages.xai.GaussianMixtureData;
-import edu.jhuapl.trinity.javafx.components.Projector;
+import edu.jhuapl.trinity.javafx.components.projector.Projector;
 import edu.jhuapl.trinity.javafx.components.radial.ProgressStatus;
 import edu.jhuapl.trinity.javafx.components.timeline.Item;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;

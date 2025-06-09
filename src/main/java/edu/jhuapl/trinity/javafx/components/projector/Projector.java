@@ -1,4 +1,4 @@
-package edu.jhuapl.trinity.javafx.components;
+package edu.jhuapl.trinity.javafx.components.projector;
 
 import javafx.scene.image.PixelBuffer;
 import javafx.scene.image.PixelFormat;

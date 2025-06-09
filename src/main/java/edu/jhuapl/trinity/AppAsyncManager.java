@@ -954,17 +954,20 @@ public class AppAsyncManager extends Task {
                                     file.getAbsolutePath(), true);
                                 fveh.scanLabelsAndLayers(fcFile.featureCollection.getFeatures());
                                 projections3DPane.transformFeatureCollection(fcFile.featureCollection);
+                                e.consume();
                             }
                         }
                         if (ClusterCollectionFile.isClusterCollectionFile(file)) {
                             ClusterCollectionFile ccFile = new ClusterCollectionFile(file.getAbsolutePath(), true);
                             scene.getRoot().fireEvent(
                                 new ManifoldEvent(ManifoldEvent.NEW_CLUSTER_COLLECTION, ccFile.clusterCollection));
+                            e.consume();
                         }
                         if (ManifoldDataFile.isManifoldDataFile(file)) {
                             ManifoldDataFile mdFile = new ManifoldDataFile(file.getAbsolutePath(), true);
                             Platform.runLater(() -> scene.getRoot().fireEvent(
                                 new ManifoldEvent(ManifoldEvent.NEW_MANIFOLD_DATA, mdFile.manifoldData)));
+                            e.consume();
                         }
                     } catch (IOException ex) {
                         LOG.error(null, ex);
@@ -981,7 +984,8 @@ public class AppAsyncManager extends Task {
             scene.getRoot().fireEvent(
                 new ApplicationEvent(ApplicationEvent.HIDE_BUSY_INDICATOR));
         });
-        System.out.println("Finished async load.");
+        //System.out.println("Finished async load.");
+        LOG.info("Finished async load.");
         return null;
     }
 

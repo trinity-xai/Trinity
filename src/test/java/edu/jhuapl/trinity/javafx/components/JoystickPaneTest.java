@@ -32,12 +32,15 @@ import javafx.scene.transform.Affine;
 import javafx.scene.transform.Rotate;
 import javafx.stage.Stage;
 import org.fxyz3d.utils.CameraTransformer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
 public class JoystickPaneTest extends Application {
+    private static final Logger LOG = LoggerFactory.getLogger(JoystickPaneTest.class);
     PerspectiveCamera camera;
     CameraTransformer cameraTransform;
     Group sceneRoot;
@@ -285,8 +288,8 @@ public class JoystickPaneTest extends Application {
 
         Scene scene = new Scene(bpOilSpill, Color.BLACK);
         joystickPane = new JoystickPane(scene, centerStack);
-        joystickPane.fireButton.setOnAction(e -> System.out.println("fire"));
-        joystickPane.thrustButton.setOnAction(e -> System.out.println("thrust"));
+        joystickPane.fireButton.setOnAction(e -> LOG.info("fire"));
+        joystickPane.thrustButton.setOnAction(e -> LOG.info("thrust"));
         joystickPane.angleproperty.subscribe(c -> {
 //            projectileSystem.playerShip.mouseDragged(null,
 //                joystickPane.mouseDeltaX,
@@ -357,7 +360,7 @@ public class JoystickPaneTest extends Application {
         if (radius > 0.0) {
             Point3D centroid = octree.getCurrentPoints().get(currentIndex);
             List<Integer> indices = octree.searchAllNeighborsWithinDistance(centroid, radius);
-            System.out.println(indices.size() + " " + radius);
+            LOG.info("{} {}", indices.size(), radius);
             for (int i : indices) {
                 fastScatter3D.setColorByIndex(i, neighborColor);
             }
@@ -389,7 +392,7 @@ public class JoystickPaneTest extends Application {
     private void refreshOctree() {
         octree.buildIndex(positions);
         selectCentroid();
-        System.out.println("Octree stuff done.");
+        LOG.info("Octree stuff done.");
     }
 
     private void mouseDragCamera(MouseEvent me) {
