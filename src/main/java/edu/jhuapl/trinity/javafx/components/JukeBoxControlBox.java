@@ -2,6 +2,9 @@ package edu.jhuapl.trinity.javafx.components;
 
 import edu.jhuapl.trinity.javafx.events.AudioEvent;
 import edu.jhuapl.trinity.utils.ResourceUtils;
+import java.io.File;
+import java.io.FileNotFoundException;
+import java.net.MalformedURLException;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
@@ -17,6 +20,7 @@ import org.slf4j.LoggerFactory;
 
 import java.net.URI;
 import java.net.URISyntaxException;
+import java.net.URL;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 
@@ -109,8 +113,20 @@ public class JukeBoxControlBox extends VBox {
                     Paths.get(new URI(m.getSource())).getFileName().toString()
                 );
             } catch (URISyntaxException ex) {
+                LOG.error("Couldn't get media source from: " + m.getSource());
                 LOG.error(null, ex);
             }
         });
     }
+    public  Media loadMp3AsMedia(File file) throws FileNotFoundException, MalformedURLException {
+        URL url = getClass().getClassLoader().getResource(file.getPath());
+        if (url == null) {
+            // If the mp3 file is not found as a resource, try to load it as a file
+            if (file.exists()) {
+                url = file.toURI().toURL();
+            }
+        }
+        Media media = new Media(url.toString());    
+        return media;
+    }     
 }

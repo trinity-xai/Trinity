@@ -28,8 +28,10 @@ public class AnimatedSphere extends Sphere implements Selectable3D {
     private PhongMaterial selectedMaterial;
     private double sphereRadius;
     private boolean animateOnHover = false;
+    private boolean contractOnFinish = true;
     private double expansionScale = 3.0;
-
+    private double animationTimeMS = 100.0;
+    private boolean isAnimating = false;
 
     public AnimatedSphere(PhongMaterial material, double radius, int divisions, boolean animated) {
         super(radius, divisions);
@@ -41,7 +43,7 @@ public class AnimatedSphere extends Sphere implements Selectable3D {
         selectedMaterial.setSpecularColor(Color.ALICEBLUE); //fix for aarch64 Mac Ventura
         setOnMouseEntered(mouseEnter -> {
             if (animateOnHover) {
-                expand();
+                expand(contractOnFinish);
             }
         });
         setOnMouseExited(mouseExit -> {
@@ -56,7 +58,7 @@ public class AnimatedSphere extends Sphere implements Selectable3D {
                 event.acceptTransferModes(TransferMode.COPY);
             }
         });
-        addEventHandler(DragEvent.DRAG_ENTERED, event -> expand());
+        addEventHandler(DragEvent.DRAG_ENTERED, event -> expand(false));
         addEventHandler(DragEvent.DRAG_EXITED, event -> contract());
 
         // Dropping over surface
@@ -77,35 +79,38 @@ public class AnimatedSphere extends Sphere implements Selectable3D {
             }
         });
     }
-//
-//    public void bindScale(SimpleDoubleProperty scaleProp) {
-//        scalingBind = scaleProp;
-//        scalingBind.addListener((obs, oV, nv) -> {
-//            setRadius(getRadius() * nv.doubleValue());
-//        });
-//    }
 
-    private void expand() {
+    private void expand(boolean contractOnFinish) {
+        if(isAnimating)
+           return; 
         ScaleTransition outTransition =
-            new ScaleTransition(Duration.millis(50), this);
+            new ScaleTransition(Duration.millis(getAnimationTimeMS()), this);
         outTransition.setToX(null != scalingBind ? scalingBind.doubleValue() * getExpansionScale() : getExpansionScale());
         outTransition.setToY(null != scalingBind ? scalingBind.doubleValue() * getExpansionScale() : getExpansionScale());
         outTransition.setToZ(null != scalingBind ? scalingBind.doubleValue() * getExpansionScale() : getExpansionScale());
-        outTransition.setCycleCount(1);
-        outTransition.setAutoReverse(false);
+        outTransition.setAutoReverse(contractOnFinish);
+        if(contractOnFinish)
+            outTransition.setCycleCount(2);
+        else
+            outTransition.setCycleCount(1);
         outTransition.setInterpolator(Interpolator.EASE_OUT);
+        outTransition.setOnFinished(e -> isAnimating = false);
         outTransition.play();
     }
 
     private void contract() {
+        if(isAnimating)
+           return; 
+        
         ScaleTransition inTransition =
-            new ScaleTransition(Duration.millis(50), this);
+            new ScaleTransition(Duration.millis(getAnimationTimeMS()), this);
         inTransition.setToX(null != scalingBind ? scalingBind.doubleValue() : 1f);
         inTransition.setToY(null != scalingBind ? scalingBind.doubleValue() : 1f);
         inTransition.setToZ(null != scalingBind ? scalingBind.doubleValue() : 1f);
         inTransition.setCycleCount(1);
         inTransition.setAutoReverse(false);
         inTransition.setInterpolator(Interpolator.EASE_OUT);
+        inTransition.setOnFinished(e -> isAnimating = false);
         inTransition.play();
     }
 
@@ -197,5 +202,33 @@ public class AnimatedSphere extends Sphere implements Selectable3D {
      */
     public void setExpansionScale(double expansionScale) {
         this.expansionScale = expansionScale;
+    }
+
+    /**
+     * @return the contractOnFinish
+     */
+    public boolean isContractOnFinish() {
+        return contractOnFinish;
+    }
+
+    /**
+     * @param contractOnFinish the contractOnFinish to set
+     */
+    public void setContractOnFinish(boolean contractOnFinish) {
+        this.contractOnFinish = contractOnFinish;
+    }
+
+    /**
+     * @return the animationTimeMS
+     */
+    public double getAnimationTimeMS() {
+        return animationTimeMS;
+    }
+
+    /**
+     * @param animationTimeMS the animationTimeMS to set
+     */
+    public void setAnimationTimeMS(double animationTimeMS) {
+        this.animationTimeMS = animationTimeMS;
     }
 }
