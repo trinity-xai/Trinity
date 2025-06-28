@@ -81,15 +81,15 @@ public class AnimatedSphere extends Sphere implements Selectable3D {
     }
 
     private void expand(boolean contractOnFinish) {
-        if(isAnimating)
-           return; 
+        if (isAnimating)
+            return;
         ScaleTransition outTransition =
             new ScaleTransition(Duration.millis(getAnimationTimeMS()), this);
         outTransition.setToX(null != scalingBind ? scalingBind.doubleValue() * getExpansionScale() : getExpansionScale());
         outTransition.setToY(null != scalingBind ? scalingBind.doubleValue() * getExpansionScale() : getExpansionScale());
         outTransition.setToZ(null != scalingBind ? scalingBind.doubleValue() * getExpansionScale() : getExpansionScale());
         outTransition.setAutoReverse(contractOnFinish);
-        if(contractOnFinish)
+        if (contractOnFinish)
             outTransition.setCycleCount(2);
         else
             outTransition.setCycleCount(1);
@@ -99,9 +99,9 @@ public class AnimatedSphere extends Sphere implements Selectable3D {
     }
 
     private void contract() {
-        if(isAnimating)
-           return; 
-        
+        if (isAnimating)
+            return;
+
         ScaleTransition inTransition =
             new ScaleTransition(Duration.millis(getAnimationTimeMS()), this);
         inTransition.setToX(null != scalingBind ? scalingBind.doubleValue() : 1f);

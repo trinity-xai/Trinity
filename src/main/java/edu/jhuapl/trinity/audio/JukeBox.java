@@ -15,15 +15,12 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
-import java.io.FileInputStream;
 import java.io.FileNotFoundException;
-import java.io.InputStream;
 import java.net.MalformedURLException;
 import java.net.URL;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
-import java.util.logging.Level;
 
 /**
  * @author Sean Phillips
@@ -53,12 +50,12 @@ public class JukeBox implements EventHandler<AudioEvent> {
         defaultMedia = new Media(AudioResourceProvider.getResource(DEFAULT_MUSIC_TRACK).toExternalForm());
         mediaFiles = new ArrayList<>();
         try {
-            if(null != defaultMedia)
+            if (null != defaultMedia)
                 setMedia(defaultMedia);
             loadMusic();
             if (!mediaFiles.isEmpty())
                 setMedia(mediaFiles.get(0));
-        } catch (Exception ex) { 
+        } catch (Exception ex) {
             LOG.warn("No music files loaded at JukeBox startup.");
         }
     }
@@ -123,8 +120,8 @@ public class JukeBox implements EventHandler<AudioEvent> {
 
     public void setRandomTrack(boolean rightNow) {
         Media media = getRandomMedia();
-        if(null != media) {
-            LOG.info("Now playing: " + media.getSource());
+        if (null != media) {
+            LOG.info("Now playing: {}", media.getSource());
             if (!rightNow && fade && null != currentMediaPlayer) {
                 fadeOut(media);
             } else
@@ -191,7 +188,8 @@ public class JukeBox implements EventHandler<AudioEvent> {
         else if (event.getEventType() == AudioEvent.CYCLE_MUSIC_TRACKS)
             cycle = (boolean) event.object;
     }
-    public  Media loadMp3AsMedia(File file) throws FileNotFoundException, MalformedURLException {
+
+    public Media loadMp3AsMedia(File file) throws FileNotFoundException, MalformedURLException {
         URL url = getClass().getClassLoader().getResource(file.getPath());
         if (url == null) {
             // If the mp3 file is not found as a resource, try to load it as a file
@@ -199,14 +197,15 @@ public class JukeBox implements EventHandler<AudioEvent> {
                 url = file.toURI().toURL();
             }
         }
-        Media media = new Media(url.toString());    
+        Media media = new Media(url.toString());
         return media;
     }
+
     private void loadMusic() {
         mediaFiles.clear();
         File folder = new File(DEFAULT_MUSIC_PATH);
         if (!folder.exists() || !folder.isDirectory() || folder.listFiles().length < 1) {
-            if(null != defaultMedia)
+            if (null != defaultMedia)
                 mediaFiles.add(defaultMedia);
         } else {
             File[] files = folder.listFiles();
