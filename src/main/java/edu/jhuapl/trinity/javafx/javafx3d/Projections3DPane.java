@@ -2115,11 +2115,11 @@ public class Projections3DPane extends StackPane implements
                 || (e.getButton() == MouseButton.PRIMARY && pointToPointDistanceMode)) {
                 processDistanceClick(sphere);
             }
-        
+
             MenuItem orbitItem = new MenuItem("Orbit On Point");
             orbitItem.setOnAction(o -> {
                 javafx.geometry.Point3D orbitPoint3D = new javafx.geometry.Point3D(
-                    sphere.getTranslateX(), sphere.getTranslateY(), sphere.getTranslateZ());            
+                    sphere.getTranslateX(), sphere.getTranslateY(), sphere.getTranslateZ());
                 JavaFX3DUtils.orbitAt(camera, cameraTransform, orbitPoint3D, true);
             });
             ContextMenu cm = new ContextMenu(orbitItem);

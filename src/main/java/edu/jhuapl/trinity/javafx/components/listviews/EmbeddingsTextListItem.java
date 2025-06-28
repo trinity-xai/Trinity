@@ -172,7 +172,7 @@ public class EmbeddingsTextListItem extends HBox {
                         item.contents = objNode.toPrettyString();
                         item.getFeatureVector().setText(item.contents);
                         item.setFeatureVectorLabel(file.getName());
-                        objNode.fields().forEachRemaining(obj -> {
+                        objNode.properties().forEach(obj -> {
                             String lower = obj.getKey().toLowerCase();
                             //last found matching field will be used
                             if (lower.contains("name") || lower.contains("label")) {
@@ -183,7 +183,6 @@ public class EmbeddingsTextListItem extends HBox {
                             } else {
                                 item.addMetaData(obj.getKey(), obj.getValue().toString());
                             }
-
                         });
                         list.add(item);
                     }
