@@ -40,6 +40,7 @@
         <junit.jupiter.platform.version>1.13.2</junit.jupiter.platform.version>
         <litfx.controls.version>0.1.3</litfx.controls.version>
         <fxyz3d.version>0.6.0</fxyz3d.version>
+        <supermds.version>2025.06.29-d978b68-SNAPSHOT</supermds.version>
         <hansolo.charts.version>21.0.25</hansolo.charts.version>
         <quickhull3d.version>1.0.0</quickhull3d.version>
         <apache.commons.math3.version>3.6.1</apache.commons.math3.version>
@@ -115,6 +116,11 @@
             <artifactId>litfx-controls</artifactId>
             <version>${litfx.controls.version}</version>
         </dependency>
+<dependency>
+  <groupId>com.github.trinity</groupId>
+  <artifactId>supermds</artifactId>
+  <version>2025.06.29-d978b68-SNAPSHOT</version>
+</dependency>       
         <dependency>
             <groupId>org.fxyz3d</groupId>
             <artifactId>fxyz3d</artifactId>
@@ -357,6 +363,23 @@
     </build>
 
     <profiles>
+        <profile>
+          <id>github</id>
+          <repositories>
+            <repository>
+              <id>central</id>
+              <url>https://repo1.maven.org/maven2</url>
+            </repository>
+            <repository>
+              <id>github</id>
+                <url>https://maven.pkg.github.com/trinity/supermds</url>
+                <!--https://github.com/trinity-xai/SuperMDS-->
+              <snapshots>
+                <enabled>true</enabled>
+              </snapshots>
+            </repository>
+          </repositories>
+        </profile>        
         <profile>
             <!-- BEGIN: plugin assembly -->
             <id>assembly</id>
