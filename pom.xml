@@ -66,6 +66,13 @@
         <logging.level>&#36;{LOGBACK_LOG_LEVEL:-WARN}</logging.level>
     </properties>
 
+    <repositories>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
+    </repositories>
+
     <dependencies>
         <dependency>
             <groupId>org.openjfx</groupId>
@@ -180,6 +187,11 @@
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
             <version>${logback.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.trinity-xai</groupId>
+            <artifactId>SuperMDS</artifactId>
+            <version>v2025.06.29</version>
         </dependency>
     </dependencies>
     <reporting>
