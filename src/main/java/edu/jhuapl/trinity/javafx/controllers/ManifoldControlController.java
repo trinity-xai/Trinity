@@ -6,6 +6,8 @@ import edu.jhuapl.trinity.data.Distance;
 import edu.jhuapl.trinity.data.FactorLabel;
 import edu.jhuapl.trinity.data.Manifold;
 import edu.jhuapl.trinity.data.messages.xai.UmapConfig;
+import edu.jhuapl.trinity.javafx.components.CvaeControlBox;
+import edu.jhuapl.trinity.javafx.components.MdsControlBox;
 import edu.jhuapl.trinity.javafx.components.listviews.DistanceListItem;
 import edu.jhuapl.trinity.javafx.components.listviews.ManifoldListItem;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
@@ -54,6 +56,10 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
+import javafx.geometry.Orientation;
+import javafx.scene.control.Separator;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
 
 /**
  * FXML Controller class
@@ -177,6 +183,12 @@ public class ManifoldControlController implements Initializable {
     @FXML
     private Spinner connectorThicknessSpinner;
 
+    //MDS + CVAE Tab
+    @FXML
+    private BorderPane mdsPane;
+    private MdsControlBox mdsControlBox;
+    private CvaeControlBox cvaeControlBox;
+    
     Scene scene;
     private final String ALL = "ALL";
     boolean reactive = true;
@@ -196,6 +208,12 @@ public class ManifoldControlController implements Initializable {
         setupHullControls();
         setupUmapControls();
         setupDistanceControls();
+        mdsControlBox = new MdsControlBox();
+        cvaeControlBox = new CvaeControlBox();
+        HBox mdsHBox = new HBox(10, 
+            mdsControlBox, new Separator(Orientation.VERTICAL), cvaeControlBox);
+        mdsPane.setCenter(mdsHBox);
+        
         if (null != root) {
             root.addEventHandler(DragEvent.DRAG_OVER, event -> {
                 event.acceptTransferModes(TransferMode.COPY);

@@ -9,6 +9,7 @@ import com.github.trinity.supermds.SuperMDS;
 import com.github.trinity.supermds.SuperMDS.Mode;
 import com.github.trinity.supermds.SuperMDS.Params;
 import com.github.trinity.supermds.SuperMDSHelper;
+import static com.github.trinity.supermds.SuperMDSValidator.generateSphereData;
 import java.util.Arrays;
 import java.util.Random;
 
@@ -30,7 +31,8 @@ public class CVAEInverseTest {
         int epochs = 2000;
         
         // Generate dummy original data (e.g., MDS input)
-        double[][] originalData = generateRandomData(numPoints, inputDim);
+//        double[][] originalData = generateRandomData(numPoints, inputDim);
+        double[][] originalData = generateSphereData(numPoints, inputDim, 42);
         // Optional: generate weights... for equal weighting use all 1.0s
         System.out.println("Initializing weights...");
         long startTime = System.nanoTime();
