@@ -1,7 +1,6 @@
 package SuperMDS;
 
 import com.github.trinity.supermds.CVAE;
-import static com.github.trinity.supermds.CVAEHelper.generateRandomData;
 import static com.github.trinity.supermds.CVAEHelper.mseLoss;
 import static com.github.trinity.supermds.CVAEHelper.shuffledIndices;
 import com.github.trinity.supermds.Normalizer;

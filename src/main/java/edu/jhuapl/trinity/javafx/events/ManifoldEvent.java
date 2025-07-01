@@ -65,7 +65,8 @@ public class ManifoldEvent extends Event {
     public static final EventType<ManifoldEvent> CLEAR_DISTANCE_CONNECTORS = new EventType(ANY, "CLEAR_DISTANCE_CONNECTORS");
     //PCA
     public static final EventType<ManifoldEvent> GENERATE_NEW_PCA = new EventType(ANY, "GENERATE_NEW_PCA");
-
+    //MDS
+    public static final EventType<ManifoldEvent> GENERATE_NEW_MDS = new EventType(ANY, "GENERATE_NEW_MDS");
     //UMAP
     public static final EventType<ManifoldEvent> NEW_UMAP_CONFIG = new EventType(ANY, "NEW_UMAP_CONFIG");
     public static final EventType<ManifoldEvent> SAVE_PROJECTION_DATA = new EventType(ANY, "SAVE_PROJECTION_DATA");

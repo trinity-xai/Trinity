@@ -1,5 +1,6 @@
 package edu.jhuapl.trinity;
 
+import com.github.trinity.supermds.SuperMDS;
 import edu.jhuapl.trinity.data.Dimension;
 import edu.jhuapl.trinity.data.FactorLabel;
 import edu.jhuapl.trinity.data.coco.CocoObject;
@@ -727,6 +728,22 @@ public class AppAsyncManager extends Task {
                 source = (ManifoldEvent.POINT_SOURCE) event.object2;
             FeatureCollection originalFC = getFeaturesBySource(source);
             projections3DPane.projectFeatureCollection(originalFC, umap);
+        });
+        
+        scene.addEventHandler(ManifoldEvent.GENERATE_NEW_MDS, event -> {
+            Platform.runLater(() -> {
+                ProgressStatus ps = new ProgressStatus("Starting MDS Transform....", -1);
+                scene.getRoot().fireEvent(
+                    new ApplicationEvent(ApplicationEvent.SHOW_BUSY_INDICATOR, ps));
+            });
+            SuperMDS.Params params = null;
+            if (null != event.object1)
+                params = (SuperMDS.Params) event.object1;
+            ManifoldEvent.POINT_SOURCE source = ManifoldEvent.POINT_SOURCE.HYPERSPACE;
+            if (null != event.object2)
+                source = (ManifoldEvent.POINT_SOURCE) event.object2;
+            FeatureCollection originalFC = getFeaturesBySource(source);
+            projections3DPane.projectFeatureCollection(originalFC, params);
         });
 
         progress.setLabelLater("...GENERATE_NEW_PCA...");

@@ -132,7 +132,7 @@ public class CvaeControlBox extends VBox {
         params.autoSymmetrize = true;             // Auto symmetrization of distance matrix
         params.useKMeansForLandmarks = true;         // If LANDMARK mode is selected
         params.classLabels = null;                 // Only used by SUPERVISED mode
-        params.numLandmarks = 20;                    // Used if LANDMARK mode is active
+        params.numLandmarks = numberOfLandmarks;                    // Used if LANDMARK mode is active
         params.useParallel = false;               // Toggle parallelized SMACOF
         params.useStressSampling = true;         // allows SMACOF to drastically reduce iterations
         params.stressSampleCount = 1000; //number of stress samples per SMACOF interation

@@ -3,12 +3,15 @@ package edu.jhuapl.trinity.javafx.components;
 import com.github.trinity.supermds.MultilaterationConfig;
 import com.github.trinity.supermds.MultilaterationConfig.OptimizerType;
 import com.github.trinity.supermds.SuperMDS;
+import com.github.trinity.supermds.SuperMDS.Params;
 import com.github.trinity.supermds.SuperMDSAnchors;
 import com.github.trinity.supermds.SuperMDSAnchors.Strategy;
 import com.github.trinity.supermds.SuperMDSHelper;
 import com.github.trinity.supermds.SuperMDSInverter;
 import com.github.trinity.supermds.SuperMDSValidator;
 import edu.jhuapl.trinity.javafx.events.AudioEvent;
+import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
+import edu.jhuapl.trinity.javafx.javafx3d.tasks.ProjectMdsFeaturesTask;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import static edu.jhuapl.trinity.utils.Utils.printTotalTime;
 import javafx.geometry.Pos;
@@ -34,6 +37,8 @@ import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.concurrent.ExecutionException;
+import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Spinner;
@@ -101,14 +106,15 @@ public class MdsControlBox extends VBox {
 
         Button testButton = new Button("Test MDS");
         testButton.setOnAction(e -> {
-            runMDS(
-                numPointsSpinner.getValue(), 
-                inputDimensionsSpinner.getValue(),
-                outputDimensionsSpinner.getValue(),
-                numLandmarksSpinner.getValue(),
-                inverseAnchorChoiceBox.getValue(),
-                optimizerChoiceBox.getValue()
-            );
+            runMDSTask();
+//            runMDS(
+//                numPointsSpinner.getValue(), 
+//                inputDimensionsSpinner.getValue(),
+//                outputDimensionsSpinner.getValue(),
+//                numLandmarksSpinner.getValue(),
+//                inverseAnchorChoiceBox.getValue(),
+//                optimizerChoiceBox.getValue()
+//            );
         });
 
 //            reloadTrackList.getScene().getRoot().fireEvent(new AudioEvent(
@@ -120,6 +126,25 @@ public class MdsControlBox extends VBox {
             testButton, numPoints, inputDim, outputDim, numLandmarks, 
             inverseAnchors, optimizer
         );
+    }
+    public void runMDSTask() {
+        // Build params
+        Params params = new SuperMDS.Params();
+        params.outputDim = 3;
+        params.mode = SuperMDS.Mode.PARALLEL;          // Try CLASSICAL, SUPERVISED, LANDMARK, etc.
+        params.useSMACOF = true;                     // Enable SMACOF optimization
+        params.weights = null;                   // No weighting
+        params.autoSymmetrize = true;             // Auto symmetrization of distance matrix
+        params.useKMeansForLandmarks = true;         // If LANDMARK mode is selected
+        params.classLabels = null;                 // Only used by SUPERVISED mode
+        params.numLandmarks = 20;                    // Used if LANDMARK mode is active
+        params.useParallel = false;               // Toggle parallelized SMACOF
+        params.useStressSampling = true;         // allows SMACOF to drastically reduce iterations
+        params.stressSampleCount = 1000; //number of stress samples per SMACOF interation
+        Platform.runLater(() -> {
+            getScene().getRoot().fireEvent(
+                new ManifoldEvent(ManifoldEvent.GENERATE_NEW_MDS, params));
+        });        
     }
     public void runMDS(int nPoints, int inputDim, int outputDim, int numberOfLandmarks, 
         Strategy strategy, OptimizerType optimizer) {

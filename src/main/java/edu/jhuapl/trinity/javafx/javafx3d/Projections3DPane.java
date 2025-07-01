@@ -1,5 +1,6 @@
 package edu.jhuapl.trinity.javafx.javafx3d;
 
+import com.github.trinity.supermds.SuperMDS;
 import edu.jhuapl.trinity.App;
 import edu.jhuapl.trinity.data.CoordinateSet;
 import edu.jhuapl.trinity.data.Dimension;
@@ -142,6 +143,7 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 
 import static edu.jhuapl.trinity.javafx.handlers.GaussianMixtureEventHandler.generateEllipsoidDiagonal;
+import edu.jhuapl.trinity.javafx.javafx3d.tasks.ProjectMdsFeaturesTask;
 import static edu.jhuapl.trinity.utils.ResourceUtils.removeExtension;
 
 /**
@@ -2664,6 +2666,29 @@ public class Projections3DPane extends StackPane implements
         autoProjectionProperty.set(enabled);
     }
 
+    public void projectFeatureCollection(FeatureCollection originalFC, SuperMDS.Params params) {
+        ProjectMdsFeaturesTask task = new ProjectMdsFeaturesTask(
+            this.getScene(), originalFC, params, false);
+        task.setProjectionScalar(200);
+        task.setOnSucceeded(e -> {
+            FeatureCollection fc;
+            try {
+                setHyperDimensionFeatures(originalFC);
+                fc = (FeatureCollection) task.get();
+                if (null != originalFC.getDimensionLabels()) {
+                    setDimensionLabels(originalFC.getDimensionLabels());
+                    fc.setDimensionLabels(originalFC.getDimensionLabels());
+                }
+                addFeatureCollection(fc, false);
+            } catch (InterruptedException | ExecutionException ex) {
+                LOG.error(null, ex);
+            }
+        });
+        Thread thread = new Thread(task);
+        thread.setDaemon(true);
+        thread.start();        
+    }
+    
     public void projectFeatureCollection(FeatureCollection originalFC, Umap umap) {
         latestUmap = umap;
         ProjectUmapFeaturesTask task = new ProjectUmapFeaturesTask(
