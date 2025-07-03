@@ -143,7 +143,9 @@ import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
 import edu.jhuapl.trinity.javafx.javafx3d.tasks.ProjectMdsFeaturesTask;
 import static edu.jhuapl.trinity.javafx.handlers.GaussianMixtureEventHandler.generateEllipsoidDiagonal;
+import edu.jhuapl.trinity.javafx.javafx3d.animated.CameraOrbiter;
 import static edu.jhuapl.trinity.utils.ResourceUtils.removeExtension;
+import javafx.scene.control.ToggleButton;
 
 /**
  * @author Sean Phillips
@@ -161,7 +163,8 @@ public class Projections3DPane extends StackPane implements
     private final double sceneHeight = 4000;
     private final double cubeSize = sceneWidth / 2.0;
     public PerspectiveCamera camera;
-    public CameraTransformer cameraTransform = new CameraTransformer();
+    public CameraTransformer cameraTransform;
+    CameraOrbiter cameraOrbiter;
     PointLight cameraLight;
     PointLight centerLight;
     public boolean bindCameraRotations = false;
@@ -338,6 +341,7 @@ public class Projections3DPane extends StackPane implements
         camera = new PerspectiveCamera(true);
 
         //setup camera transform for rotational support
+        cameraTransform = new CameraTransformer();        
         cameraTransform.setTranslate(0, 0, 0);
         cameraTransform.getChildren().add(camera);
         camera.setNearClip(0.1);
@@ -345,7 +349,8 @@ public class Projections3DPane extends StackPane implements
         camera.setTranslateZ(cameraDistance);
         cameraTransform.ry.setAngle(-45.0);
         cameraTransform.rx.setAngle(-10.0);
-
+        cameraOrbiter = new CameraOrbiter(cameraTransform, 7);
+        cameraTransform.ry.angleProperty().addListener(e->updateFloatingNodes());
 //        setupSkyBox();
         debugGroup.setVisible(false);
 
@@ -375,6 +380,20 @@ public class Projections3DPane extends StackPane implements
         }
         extrasGroup.getChildren().add(0, trajectorySphereGroup);
         extrasGroup.getChildren().add(0, trajectoryGroup);
+
+        scene.addEventHandler(ApplicationEvent.CAMERA_ORBIT_MODE, e -> {
+            if(null != e.object) {
+                boolean rotating = (boolean) e.object;
+                if(rotating) {
+                    cameraOrbiter.start();
+                    cameraOrbiter.setEnableRotation(rotating);
+                } else {
+                    cameraOrbiter.stop();
+                    cameraOrbiter.setEnableRotation(rotating);
+                }
+            }
+        });        
+                
         this.scene.addEventHandler(TrajectoryEvent.REFRESH_3D_TRAJECTORIES, e -> {
             updateTrajectory3D(true);
         });
@@ -936,6 +955,14 @@ public class Projections3DPane extends StackPane implements
         updatingTrajectoriesItem.selectedProperty().addListener(cl ->
             updatingTrajectories = updatingTrajectoriesItem.isSelected());
 
+        ToggleButton cameraAnimateToggle = new ToggleButton("Orbiting Camera");
+        cameraAnimateToggle.setOnAction(e -> {
+            scene.getRoot().fireEvent(
+                new ApplicationEvent(ApplicationEvent.CAMERA_ORBIT_MODE, 
+                    cameraAnimateToggle.isSelected()));
+        });
+        MenuItem cameraAnimateItem = new CustomMenuItem(cameraAnimateToggle, false);
+
         Spinner<Double> projectionScalarSpinner = new Spinner<>();
         projectionScalarSpinner.setValueFactory(
             new SpinnerValueFactory.DoubleSpinnerValueFactory(1, 1000, projectionScalar, 1));
@@ -984,7 +1011,7 @@ public class Projections3DPane extends StackPane implements
         ImageView optionsImageView = ResourceUtils.loadIcon("configuration", ICON_FIT_HEIGHT);
         optionsImageView.setEffect(glow);
         Menu optionsMenu = new Menu("Options", optionsImageView,
-            projectionScalarItem,
+            cameraAnimateItem, projectionScalarItem,
             dataAnimationItem, sleepAnimationItem,
             centerLightItem, cameraLightItem,
             enableProjectionWallItem, animatingProjectionsItem, updatingTrajectoriesItem);
@@ -1661,7 +1688,7 @@ public class Projections3DPane extends StackPane implements
         if (enableXForm && me.isSecondaryButtonDown()) {
             double yChange = (((mouseDeltaX * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180);
             double xChange = (((-mouseDeltaY * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180);
-            LOG.info("BINDCAMERAROTATIONS Rotating data and not camera: {} {}", yChange, xChange);
+            //LOG.info("BINDCAMERAROTATIONS Rotating data and not camera: {} {}", yChange, xChange);
             dataXForm.addRotation(yChange, Rotate.Y_AXIS);
             dataXForm.addRotation(xChange, Rotate.X_AXIS);
         }

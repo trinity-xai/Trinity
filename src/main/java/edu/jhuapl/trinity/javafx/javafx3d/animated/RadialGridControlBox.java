@@ -1,5 +1,6 @@
 package edu.jhuapl.trinity.javafx.javafx3d.animated;
 
+import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.utils.Utils;
 import javafx.scene.control.Button;
 import javafx.scene.control.ColorPicker;
@@ -38,8 +39,12 @@ public class RadialGridControlBox extends VBox {
             radialGrid.setEnablePulsation(pulseToggle.isSelected()));
         ToggleButton rotateToggle = new ToggleButton("Rotate");
         rotateToggle.setPrefWidth(CONTROL_PREF_WIDTH * 2);
-        rotateToggle.setOnAction(e ->
-            radialGrid.setEnableRotation(rotateToggle.isSelected()));
+        rotateToggle.setOnAction(e -> {
+            radialGrid.setEnableRotation(rotateToggle.isSelected());
+            radialGrid.getScene().getRoot().fireEvent(
+                new ApplicationEvent(ApplicationEvent.CAMERA_ORBIT_MODE, 
+                    rotateToggle.isSelected()));
+        });
 
         numCirclesSpinner = new Spinner(2, 200, NUM_CIRCLES, 1);
         numCirclesSpinner.valueProperty().addListener(e -> regenerate());
