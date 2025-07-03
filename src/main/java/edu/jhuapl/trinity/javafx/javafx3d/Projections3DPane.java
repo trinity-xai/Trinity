@@ -141,9 +141,8 @@ import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.ExecutionException;
 import java.util.stream.Collectors;
-
-import static edu.jhuapl.trinity.javafx.handlers.GaussianMixtureEventHandler.generateEllipsoidDiagonal;
 import edu.jhuapl.trinity.javafx.javafx3d.tasks.ProjectMdsFeaturesTask;
+import static edu.jhuapl.trinity.javafx.handlers.GaussianMixtureEventHandler.generateEllipsoidDiagonal;
 import static edu.jhuapl.trinity.utils.ResourceUtils.removeExtension;
 
 /**
@@ -937,6 +936,21 @@ public class Projections3DPane extends StackPane implements
         updatingTrajectoriesItem.selectedProperty().addListener(cl ->
             updatingTrajectories = updatingTrajectoriesItem.isSelected());
 
+        Spinner<Double> projectionScalarSpinner = new Spinner<>();
+        projectionScalarSpinner.setValueFactory(
+            new SpinnerValueFactory.DoubleSpinnerValueFactory(1, 1000, projectionScalar, 1));
+        projectionScalarSpinner.setEditable(true);
+        projectionScalarSpinner.valueProperty().addListener(e -> {
+            projectionScalar = projectionScalarSpinner.getValue();
+            sphereToFeatureVectorMap.forEach((sphere, featureVector) -> {
+                sphere.setTranslateX(featureVector.getData().get(0) * projectionScalar);
+                sphere.setTranslateY(featureVector.getData().get(1) * -projectionScalar);
+                sphere.setTranslateZ(featureVector.getData().get(2) * projectionScalar);
+            });
+        });
+        MenuItem projectionScalarItem = new CustomMenuItem(
+            new VBox(2, new Label("Projection Scalar)"), projectionScalarSpinner), false);
+        
         Spinner<Double> dataAnimationSpinner = new Spinner<>();
         dataAnimationSpinner.setValueFactory(
             new SpinnerValueFactory.DoubleSpinnerValueFactory(50, 1000, dataAnimationMS, 50));
@@ -970,6 +984,7 @@ public class Projections3DPane extends StackPane implements
         ImageView optionsImageView = ResourceUtils.loadIcon("configuration", ICON_FIT_HEIGHT);
         optionsImageView.setEffect(glow);
         Menu optionsMenu = new Menu("Options", optionsImageView,
+            projectionScalarItem,
             dataAnimationItem, sleepAnimationItem,
             centerLightItem, cameraLightItem,
             enableProjectionWallItem, animatingProjectionsItem, updatingTrajectoriesItem);
@@ -2669,7 +2684,7 @@ public class Projections3DPane extends StackPane implements
     public void projectFeatureCollection(FeatureCollection originalFC, SuperMDS.Params params) {
         ProjectMdsFeaturesTask task = new ProjectMdsFeaturesTask(
             this.getScene(), originalFC, params, false);
-        task.setProjectionScalar(200);
+        task.setProjectionScalar(projectionScalar);
         task.setOnSucceeded(e -> {
             FeatureCollection fc;
             try {

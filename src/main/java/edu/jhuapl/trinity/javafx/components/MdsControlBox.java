@@ -9,78 +9,86 @@ import com.github.trinity.supermds.SuperMDSAnchors.Strategy;
 import com.github.trinity.supermds.SuperMDSHelper;
 import com.github.trinity.supermds.SuperMDSInverter;
 import com.github.trinity.supermds.SuperMDSValidator;
-import edu.jhuapl.trinity.javafx.events.AudioEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
-import edu.jhuapl.trinity.javafx.javafx3d.tasks.ProjectMdsFeaturesTask;
-import edu.jhuapl.trinity.utils.ResourceUtils;
+import edu.jhuapl.trinity.utils.DoubleConverter;
 import static edu.jhuapl.trinity.utils.Utils.printTotalTime;
-import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
-import javafx.scene.control.Slider;
-import javafx.scene.image.ImageView;
-import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import javafx.scene.media.Media;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.io.File;
-import java.io.FileNotFoundException;
-import java.net.MalformedURLException;
-import java.net.URI;
-import java.net.URISyntaxException;
-import java.net.URL;
-import java.nio.file.Paths;
-import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.concurrent.ExecutionException;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Spinner;
+import javafx.scene.control.SpinnerValueFactory;
+import javafx.scene.control.Tooltip;
 
 /**
  * @author Sean Phillips
  */
 public class MdsControlBox extends VBox {
     private static final Logger LOG = LoggerFactory.getLogger(MdsControlBox.class);
-    ListView<String> musicTracks;
-    CheckBox enableFadeCheckBox;
-
-    public MdsControlBox() {
-        Spinner<Integer> numPointsSpinner = new Spinner(100, 10000, 100, 100);
-        numPointsSpinner.setEditable(true);
-        numPointsSpinner.setPrefWidth(100);
-
-        VBox numPoints = new VBox(5, 
-            new Label("Number of Points"), 
-            numPointsSpinner
-        );
-        numPoints.setPrefWidth(200);
+    ChoiceBox<SuperMDS.Mode> modeChoiceBox;
+    Spinner<Integer> stressSampleSpinner;
+    Spinner<Integer> outputDimensionsSpinner;
+    Spinner<Integer> numLandmarksSpinner;
+    Spinner<Integer> maxIterationsSpinner;
+    Spinner<Double> toleranceSpinner;
+    CheckBox useStressSamplesCheckBox;
+    CheckBox useKmeansForLandmarks;
+    CheckBox useSMACOFCheckBox;
+    CheckBox autoSymmetrizeCheckBox;
         
-        Spinner<Integer> inputDimensionsSpinner = new Spinner(3, 1000, 10, 5);
-        inputDimensionsSpinner.setEditable(true);
-        inputDimensionsSpinner.setPrefWidth(100);
-
-        VBox inputDim = new VBox(5, 
-            new Label("Input Dimensions"), 
-            inputDimensionsSpinner
+    public MdsControlBox() {
+        modeChoiceBox = new ChoiceBox<>(
+            FXCollections.observableArrayList(SuperMDS.Mode.values()));
+        modeChoiceBox.getSelectionModel().select(SuperMDS.Mode.PARALLEL);
+        modeChoiceBox.setTooltip(new Tooltip(
+            "Determines MDS Algorithm. \nNote: PARALLEL uses SMACOF and overrides runParallel as true."));
+        VBox mdsMode = new VBox(5, 
+            new Label("MDS Mode"),
+            modeChoiceBox
         );
+        
+        useSMACOFCheckBox = new CheckBox("Use SMACOF Optimization");
+        useSMACOFCheckBox.setSelected(true);
 
-        Spinner<Integer> outputDimensionsSpinner = new Spinner(2, 1000, 3, 5);
+        autoSymmetrizeCheckBox = new CheckBox("Auto Symmetrize Input Matrix");
+        autoSymmetrizeCheckBox.setSelected(true);
+
+        useKmeansForLandmarks = new CheckBox("Use KMeans++ to select Landmarks");
+        useKmeansForLandmarks.setSelected(true);
+                
+        useStressSamplesCheckBox = new CheckBox("Use Stress Sampling Points");
+        useStressSamplesCheckBox.setSelected(true);
+        
+        stressSampleSpinner = new Spinner(10, 10000, 100, 10);
+        stressSampleSpinner.setEditable(true);
+        stressSampleSpinner.setPrefWidth(100);
+        stressSampleSpinner.disableProperty().bind(
+            useStressSamplesCheckBox.selectedProperty().not());
+
+        VBox stressSamples = new VBox(5, 
+            useStressSamplesCheckBox, 
+            stressSampleSpinner
+        );
+        stressSamples.setPrefWidth(200);
+
+        outputDimensionsSpinner = new Spinner(2, 1000, 3, 5);
         outputDimensionsSpinner.setEditable(true);
         outputDimensionsSpinner.setPrefWidth(100);        
-        
         VBox outputDim = new VBox(5, 
             new Label("Output Dimensions"), 
             outputDimensionsSpinner
         );
         
-        Spinner<Integer> numLandmarksSpinner = new Spinner(2, 1000, 10, 10);
+        numLandmarksSpinner = new Spinner(2, 1000, 10, 10);
         numLandmarksSpinner.setEditable(true);
         numLandmarksSpinner.setPrefWidth(100); 
         
@@ -89,58 +97,55 @@ public class MdsControlBox extends VBox {
             numLandmarksSpinner
         );
 
-        ChoiceBox<Strategy> inverseAnchorChoiceBox = new ChoiceBox<>(
-            FXCollections.observableArrayList(SuperMDSAnchors.Strategy.values()));
-        inverseAnchorChoiceBox.getSelectionModel().selectFirst();
-        VBox inverseAnchors = new VBox(5, 
-            new Label("Inverse Anchor Selection Strategy"),
-            inverseAnchorChoiceBox
-        );
-        ChoiceBox<OptimizerType> optimizerChoiceBox = new ChoiceBox<>(
-            FXCollections.observableArrayList(MultilaterationConfig.OptimizerType.values()));
-        optimizerChoiceBox.getSelectionModel().selectFirst();
-        VBox optimizer = new VBox(5, 
-            new Label("Multilateration Optimizer"),
-            optimizerChoiceBox
+        maxIterationsSpinner = new Spinner(100, 2000, 500, 100);
+        maxIterationsSpinner.setEditable(true);
+        maxIterationsSpinner.setPrefWidth(100);        
+        VBox maxIterations = new VBox(5, 
+            new Label("Max Iterations"), 
+            maxIterationsSpinner
         );
 
-        Button testButton = new Button("Test MDS");
-        testButton.setOnAction(e -> {
-            runMDSTask();
-//            runMDS(
-//                numPointsSpinner.getValue(), 
-//                inputDimensionsSpinner.getValue(),
-//                outputDimensionsSpinner.getValue(),
-//                numLandmarksSpinner.getValue(),
-//                inverseAnchorChoiceBox.getValue(),
-//                optimizerChoiceBox.getValue()
-//            );
-        });
+        toleranceSpinner = new Spinner();
+        SpinnerValueFactory<Double> valueFactory = new SpinnerValueFactory
+            .DoubleSpinnerValueFactory(1e-8, 1e-2, 1e-6, 1e-6);
+        DoubleConverter doubleConverter = new DoubleConverter("###.######");
+        valueFactory.setConverter(doubleConverter);
+        toleranceSpinner.setValueFactory(valueFactory);
 
-//            reloadTrackList.getScene().getRoot().fireEvent(new AudioEvent(
-//                AudioEvent.RELOAD_MUSIC_FILES));
-// 
+        toleranceSpinner.setEditable(true);
+        toleranceSpinner.setPrefWidth(200);        
+        VBox tolerance = new VBox(5, 
+            new Label("Tolerance"), 
+            toleranceSpinner
+        );
+
+        Button runMDSButton = new Button("Run MDS");
+        runMDSButton.setOnAction(e -> runMDSTask());
         setSpacing(10);
-
         getChildren().addAll(
-            testButton, numPoints, inputDim, outputDim, numLandmarks, 
-            inverseAnchors, optimizer
+            mdsMode, useSMACOFCheckBox, autoSymmetrizeCheckBox
+            ,stressSamples, outputDim
+            ,numLandmarks, useKmeansForLandmarks
+            ,maxIterations, tolerance
+            ,runMDSButton
         );
     }
     public void runMDSTask() {
         // Build params
         Params params = new SuperMDS.Params();
-        params.outputDim = 3;
-        params.mode = SuperMDS.Mode.PARALLEL;          // Try CLASSICAL, SUPERVISED, LANDMARK, etc.
-        params.useSMACOF = true;                     // Enable SMACOF optimization
+        params.outputDim = outputDimensionsSpinner.getValue();
+        params.mode = modeChoiceBox.getSelectionModel().getSelectedItem(); //CLASSICAL, SUPERVISED, LANDMARK, etc.
+        params.useSMACOF = useSMACOFCheckBox.isSelected();// Enable SMACOF optimization
         params.weights = null;                   // No weighting
-        params.autoSymmetrize = true;             // Auto symmetrization of distance matrix
-        params.useKMeansForLandmarks = true;         // If LANDMARK mode is selected
+        params.autoSymmetrize = autoSymmetrizeCheckBox.isSelected(); // Auto symmetrization of distance matrix
+        params.useKMeansForLandmarks = useKmeansForLandmarks.isSelected();// If LANDMARK mode is selected
         params.classLabels = null;                 // Only used by SUPERVISED mode
-        params.numLandmarks = 20;                    // Used if LANDMARK mode is active
-        params.useParallel = false;               // Toggle parallelized SMACOF
-        params.useStressSampling = true;         // allows SMACOF to drastically reduce iterations
-        params.stressSampleCount = 1000; //number of stress samples per SMACOF interation
+        params.numLandmarks = numLandmarksSpinner.getValue();   // Used if LANDMARK mode is active
+        params.useStressSampling = useStressSamplesCheckBox.isSelected(); // allows SMACOF to drastically reduce iterations
+        params.stressSampleCount = stressSampleSpinner.getValue(); //number of stress samples per SMACOF interation
+        params.tolerance = toleranceSpinner.getValue();
+        params.maxIterations = maxIterationsSpinner.getValue();
+        
         Platform.runLater(() -> {
             getScene().getRoot().fireEvent(
                 new ManifoldEvent(ManifoldEvent.GENERATE_NEW_MDS, params));

@@ -15,6 +15,7 @@ import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.Manifold3D;
 import edu.jhuapl.trinity.utils.AnalysisUtils;
+import edu.jhuapl.trinity.utils.DoubleConverter;
 import edu.jhuapl.trinity.utils.PCAConfig;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import edu.jhuapl.trinity.utils.metric.Metric;
@@ -370,9 +371,13 @@ public class ManifoldControlController implements Initializable {
             new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 250, 5, 1));
         localConnectivitySpinner.setValueFactory(
             new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 250, 1, 1));
-//        thresholdSpinner.setValueFactory(
-//            new SpinnerValueFactory.DoubleSpinnerValueFactory(0.001, 1.0, 0.001, 0.001));
-//        thresholdSpinner.setEditable(true);
+
+        SpinnerValueFactory<Double> valueFactory = new SpinnerValueFactory
+            .DoubleSpinnerValueFactory(1e-8, 0.1, 1e-6, 1e-6);
+        DoubleConverter doubleConverter = new DoubleConverter("###.######");
+        valueFactory.setConverter(doubleConverter);
+        thresholdSpinner.setValueFactory(valueFactory);
+        thresholdSpinner.setEditable(true);
 
         hyperSourceGroup = new ToggleGroup();
         useHyperspaceButton.setToggleGroup(hyperSourceGroup);
