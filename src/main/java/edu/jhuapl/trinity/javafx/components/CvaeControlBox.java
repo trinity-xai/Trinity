@@ -116,7 +116,7 @@ public class CvaeControlBox extends VBox {
 //        double[][] originalData = generateRandomData(numPoints, inputDim);
         double[][] originalData = generateSphereData(numPoints, inputDim, 42);
         // Optional: generate weights... for equal weighting use all 1.0s
-        System.out.println("Initializing weights...");
+        //System.out.println("Initializing weights...");
         long startTime = System.nanoTime();
         double[][] weights = new double[originalData.length][originalData.length]; 
         for (int i = 0; i < originalData.length; i++) {
@@ -138,7 +138,7 @@ public class CvaeControlBox extends VBox {
         params.stressSampleCount = 1000; //number of stress samples per SMACOF interation
         
         // Run SuperMDS/SMACOF to get embeddings
-        System.out.println("Running SMACOF MDS...");
+        //System.out.println("Running SMACOF MDS...");
         startTime = System.nanoTime();
         double[][] symmetricDistanceMatrix = SuperMDS.ensureSymmetricDistanceMatrix(originalData);
         //normalize
@@ -163,7 +163,7 @@ public class CvaeControlBox extends VBox {
         cvae.setUseDropout(false);
         cvae.setIsTraining(true);
         // Train the CVAE
-        System.out.println("Training CVAE...");
+        //System.out.println("Training CVAE...");
         startTime = System.nanoTime();
         Random rand = new Random(42L);
         for (int epoch = 0; epoch < epochs; epoch++) {
@@ -205,8 +205,8 @@ public class CvaeControlBox extends VBox {
 
         double avgReconError = totalReconError / numPoints;
         double avgMeanVariance = totalMeanVar / numPoints;
-        System.out.printf("\nAverage Reconstruction MSE: %.6f%n", avgReconError);
-        System.out.printf("\nAverage Mean Variance: %.6f%n", avgMeanVariance);
+        //System.out.printf("\nAverage Reconstruction MSE: %.6f%n", avgReconError);
+        //System.out.printf("\nAverage Mean Variance: %.6f%n", avgMeanVariance);
 
     }
 
