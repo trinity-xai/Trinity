@@ -71,13 +71,11 @@ public class TextPane extends LitPathPane {
         LitLog litLog = new LitLog(5, 50);
         litLog.scrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         litLog.vbox.setAlignment(Pos.TOP_CENTER);
-        litLog.vbox.setMaxHeight(NODE_HEIGHT);
         litLog.vbox.mouseTransparentProperty().bind(litLog.selectingProperty);
         litLog.textArea.setWrapText(true);
         litLog.setMinWidth(NODE_WIDTH);
         litLog.setMinHeight(NODE_HEIGHT);
         litLog.setMaxWidth(NODE_WIDTH);
-        litLog.setMaxHeight(NODE_HEIGHT);
 
         HBox hbox = new HBox(5);
         hbox.setAlignment(Pos.CENTER_LEFT);
@@ -182,7 +180,10 @@ public class TextPane extends LitPathPane {
         litLog.textArea.clear();
         litLog.vbox.getChildren().clear();
         currentText = text;
-        addLine(currentText,
+        addText(currentText);
+    }
+    public void addText(String text) {
+        addLine(text,
             new Font((String) logToolbar.fontChoiceBox.getValue(),
                 (int) logToolbar.fontSizeSpinner.getValue()),
             logToolbar.picker.getValue());

@@ -40,6 +40,7 @@ println "OS Detected: ${org.gradle.internal.os.OperatingSystem.current()}"
 
 repositories {
     mavenCentral()
+    maven { url 'https://jitpack.io' }
 }
 
 
@@ -64,6 +65,7 @@ dependencies {
     implementation group: 'com.github.sarxos', name: 'webcam-capture', version: '0.3.12'
     implementation group: 'org.jflac', name: 'jflac-codec', version: '1.5.2'
     implementation group: 'com.tambapps.fft4j', name: 'fft4j', version: '2.0'
+    implementation group: 'com.github.trinity-xai', name: 'SuperMDS', version: 'v2025.06.29'
 
     // Enforce slf4j-api version across dependencies
     implementation group: 'org.slf4j', name: 'slf4j-api', version: '2.0.17'

@@ -10,8 +10,8 @@
     <description>Hyperdimensional Visualization</description>
     <inceptionYear>2021</inceptionYear>
     <organization>
-        <name>The Johns Hopkins University Applied Physics Laboratory</name>
-        <url>https://www.jhuapl.edu</url>
+        <name>Trinity XAI</name>
+        <url>https://github.com/trinity-xai</url>
     </organization>
 
     <properties>
@@ -49,6 +49,7 @@
         <sarxos.webcam.capture.version>0.3.12</sarxos.webcam.capture.version>
         <org.jflac.jflac-codec.version>1.5.2</org.jflac.jflac-codec.version>
         <com.tambapps.fft4j.version>2.0</com.tambapps.fft4j.version>
+        <supermds.version>v2025.06.29</supermds.version>
         <slf4j.version>2.0.17</slf4j.version>
         <logback.version>1.5.18</logback.version>
         <mainClassName>edu.jhuapl.trinity.TrinityMain</mainClassName>
@@ -65,6 +66,13 @@
         <logging.pattern>trinity-%d{yyyy-MM-dd}.%i.log</logging.pattern>
         <logging.level>&#36;{LOGBACK_LOG_LEVEL:-WARN}</logging.level>
     </properties>
+
+    <repositories>
+        <repository>
+            <id>jitpack.io</id>
+            <url>https://jitpack.io</url>
+        </repository>
+    </repositories>
 
     <dependencies>
         <dependency>
@@ -180,6 +188,11 @@
             <groupId>ch.qos.logback</groupId>
             <artifactId>logback-classic</artifactId>
             <version>${logback.version}</version>
+        </dependency>
+        <dependency>
+            <groupId>com.github.trinity-xai</groupId>
+            <artifactId>SuperMDS</artifactId>
+            <version>${supermds.version}</version>
         </dependency>
     </dependencies>
     <reporting>
