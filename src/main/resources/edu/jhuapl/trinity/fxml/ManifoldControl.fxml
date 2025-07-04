@@ -133,7 +133,7 @@
                         </BorderPane>
                     </content>
                 </Tab>
-                <Tab closable="false" text="MDS + CVAE">
+                <Tab closable="false" text="MDS">
                     <content>
                         <BorderPane fx:id="mdsPane" minHeight="200.0" minWidth="400.0">
                             <children>

@@ -972,7 +972,9 @@ public class Projections3DPane extends StackPane implements
             sphereToFeatureVectorMap.forEach((sphere, featureVector) -> {
                 sphere.setTranslateX(featureVector.getData().get(0) * projectionScalar);
                 sphere.setTranslateY(featureVector.getData().get(1) * -projectionScalar);
-                sphere.setTranslateZ(featureVector.getData().get(2) * projectionScalar);
+                sphere.setTranslateZ(featureVector.getData().size() > 2 
+                    ? featureVector.getData().get(2) * projectionScalar
+                    : 0.0);
             });
         });
         MenuItem projectionScalarItem = new CustomMenuItem(
@@ -2100,7 +2102,9 @@ public class Projections3DPane extends StackPane implements
         sphere.setMaterial(mat);
         sphere.setTranslateX(featureVector.getData().get(0) * projectionScalar);
         sphere.setTranslateY(featureVector.getData().get(1) * -projectionScalar);
-        sphere.setTranslateZ(featureVector.getData().get(2) * projectionScalar);
+        sphere.setTranslateZ(featureVector.getData().size() > 2 
+            ? featureVector.getData().get(2) * projectionScalar
+            : 0.0);
         Platform.runLater(() -> {
             ellipsoidGroup.getChildren().add(sphere);
             if (animatingProjections) {
@@ -2708,10 +2712,12 @@ public class Projections3DPane extends StackPane implements
         autoProjectionProperty.set(enabled);
     }
 
-    public void projectFeatureCollection(FeatureCollection originalFC, SuperMDS.Params params) {
+    public void projectFeatureCollection(FeatureCollection originalFC, 
+        SuperMDS.Params params, boolean computeMetrics) {
         ProjectMdsFeaturesTask task = new ProjectMdsFeaturesTask(
             this.getScene(), originalFC, params, false);
         task.setProjectionScalar(projectionScalar);
+        task.setComputeMetrics(computeMetrics);
         task.setOnSucceeded(e -> {
             FeatureCollection fc;
             try {

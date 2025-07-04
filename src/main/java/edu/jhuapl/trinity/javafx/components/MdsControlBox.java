@@ -1,39 +1,32 @@
 package edu.jhuapl.trinity.javafx.components;
 
-import com.github.trinity.supermds.MultilaterationConfig;
-import com.github.trinity.supermds.MultilaterationConfig.OptimizerType;
 import com.github.trinity.supermds.SuperMDS;
 import com.github.trinity.supermds.SuperMDS.Params;
-import com.github.trinity.supermds.SuperMDSAnchors;
-import com.github.trinity.supermds.SuperMDSAnchors.Strategy;
-import com.github.trinity.supermds.SuperMDSHelper;
-import com.github.trinity.supermds.SuperMDSInverter;
-import com.github.trinity.supermds.SuperMDSValidator;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.utils.DoubleConverter;
-import static edu.jhuapl.trinity.utils.Utils.printTotalTime;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
-import javafx.scene.control.ListView;
 import javafx.scene.layout.VBox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.Arrays;
-import java.util.List;
 import javafx.application.Platform;
 import javafx.collections.FXCollections;
+import javafx.geometry.Insets;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.Tooltip;
+import javafx.scene.layout.HBox;
 
 /**
  * @author Sean Phillips
  */
 public class MdsControlBox extends VBox {
     private static final Logger LOG = LoggerFactory.getLogger(MdsControlBox.class);
+    public static double CONTROL_PREF_WIDTH = 200.0;
+    public static double CONTROL_SPACING = 50.0;
     ChoiceBox<SuperMDS.Mode> modeChoiceBox;
     Spinner<Integer> stressSampleSpinner;
     Spinner<Integer> outputDimensionsSpinner;
@@ -42,8 +35,9 @@ public class MdsControlBox extends VBox {
     Spinner<Double> toleranceSpinner;
     CheckBox useStressSamplesCheckBox;
     CheckBox useKmeansForLandmarks;
-    CheckBox useSMACOFCheckBox;
+    CheckBox forceSMACOFCheckBox;
     CheckBox autoSymmetrizeCheckBox;
+    CheckBox stressMetricsCheckBox;
         
     public MdsControlBox() {
         modeChoiceBox = new ChoiceBox<>(
@@ -55,30 +49,7 @@ public class MdsControlBox extends VBox {
             new Label("MDS Mode"),
             modeChoiceBox
         );
-        
-        useSMACOFCheckBox = new CheckBox("Use SMACOF Optimization");
-        useSMACOFCheckBox.setSelected(true);
-
-        autoSymmetrizeCheckBox = new CheckBox("Auto Symmetrize Input Matrix");
-        autoSymmetrizeCheckBox.setSelected(true);
-
-        useKmeansForLandmarks = new CheckBox("Use KMeans++ to select Landmarks");
-        useKmeansForLandmarks.setSelected(true);
-                
-        useStressSamplesCheckBox = new CheckBox("Use Stress Sampling Points");
-        useStressSamplesCheckBox.setSelected(true);
-        
-        stressSampleSpinner = new Spinner(10, 10000, 100, 10);
-        stressSampleSpinner.setEditable(true);
-        stressSampleSpinner.setPrefWidth(100);
-        stressSampleSpinner.disableProperty().bind(
-            useStressSamplesCheckBox.selectedProperty().not());
-
-        VBox stressSamples = new VBox(5, 
-            useStressSamplesCheckBox, 
-            stressSampleSpinner
-        );
-        stressSamples.setPrefWidth(200);
+        modeChoiceBox.setPrefWidth(CONTROL_PREF_WIDTH);
 
         outputDimensionsSpinner = new Spinner(2, 1000, 3, 5);
         outputDimensionsSpinner.setEditable(true);
@@ -86,11 +57,35 @@ public class MdsControlBox extends VBox {
         VBox outputDim = new VBox(5, 
             new Label("Output Dimensions"), 
             outputDimensionsSpinner
-        );
+        );        
+                
+        forceSMACOFCheckBox = new CheckBox("Force SMACOF Optimization");
+        forceSMACOFCheckBox.setSelected(true);
+        forceSMACOFCheckBox.setPrefWidth(CONTROL_PREF_WIDTH);
+
+        autoSymmetrizeCheckBox = new CheckBox("Auto Symmetrize Input Matrix");
+        autoSymmetrizeCheckBox.setSelected(true);
+
+        useStressSamplesCheckBox = new CheckBox("Optimize via Stress Sampling");
+        useStressSamplesCheckBox.setSelected(true);
+        useStressSamplesCheckBox.setPrefWidth(CONTROL_PREF_WIDTH);
         
+        stressSampleSpinner = new Spinner(10, 10000, 100, 10);
+        stressSampleSpinner.setEditable(true);
+        stressSampleSpinner.setPrefWidth(CONTROL_PREF_WIDTH);
+        stressSampleSpinner.disableProperty().bind(
+            useStressSamplesCheckBox.selectedProperty().not());
+        VBox stressSamples = new VBox(5, 
+            new Label("Stress Sample Count"), 
+            stressSampleSpinner
+        );    
+                
+        useKmeansForLandmarks = new CheckBox("KMeans++ for Landmarks");
+        useKmeansForLandmarks.setSelected(true);       
+        useKmeansForLandmarks.setPrefWidth(CONTROL_PREF_WIDTH); 
         numLandmarksSpinner = new Spinner(2, 1000, 10, 10);
         numLandmarksSpinner.setEditable(true);
-        numLandmarksSpinner.setPrefWidth(100); 
+        numLandmarksSpinner.setPrefWidth(CONTROL_PREF_WIDTH); 
         
         VBox numLandmarks = new VBox(5, 
             new Label("Number of Landmarks"), 
@@ -99,7 +94,7 @@ public class MdsControlBox extends VBox {
 
         maxIterationsSpinner = new Spinner(100, 2000, 500, 100);
         maxIterationsSpinner.setEditable(true);
-        maxIterationsSpinner.setPrefWidth(100);        
+        maxIterationsSpinner.setPrefWidth(CONTROL_PREF_WIDTH);        
         VBox maxIterations = new VBox(5, 
             new Label("Max Iterations"), 
             maxIterationsSpinner
@@ -111,23 +106,29 @@ public class MdsControlBox extends VBox {
         DoubleConverter doubleConverter = new DoubleConverter("###.######");
         valueFactory.setConverter(doubleConverter);
         toleranceSpinner.setValueFactory(valueFactory);
-
         toleranceSpinner.setEditable(true);
-        toleranceSpinner.setPrefWidth(200);        
+        toleranceSpinner.setPrefWidth(CONTROL_PREF_WIDTH);        
         VBox tolerance = new VBox(5, 
             new Label("Tolerance"), 
             toleranceSpinner
         );
 
+        stressMetricsCheckBox = new CheckBox("Generate Metrics");
+        stressMetricsCheckBox.setSelected(false);
+        stressMetricsCheckBox.setPrefWidth(CONTROL_PREF_WIDTH);
+        
         Button runMDSButton = new Button("Run MDS");
+        runMDSButton.setDefaultButton(true);
         runMDSButton.setOnAction(e -> runMDSTask());
-        setSpacing(10);
+        setSpacing(CONTROL_SPACING/2.0);
+        setPadding(new Insets(10));
         getChildren().addAll(
-            mdsMode, useSMACOFCheckBox, autoSymmetrizeCheckBox
-            ,stressSamples, outputDim
-            ,numLandmarks, useKmeansForLandmarks
-            ,maxIterations, tolerance
-            ,runMDSButton
+            new HBox(CONTROL_SPACING, mdsMode, outputDim),
+            new HBox(CONTROL_SPACING, forceSMACOFCheckBox, autoSymmetrizeCheckBox),
+            new HBox(CONTROL_SPACING, useStressSamplesCheckBox, stressSamples),
+            new HBox(CONTROL_SPACING, useKmeansForLandmarks, numLandmarks),
+            new HBox(CONTROL_SPACING, tolerance, maxIterations),
+            new HBox(CONTROL_SPACING, stressMetricsCheckBox, runMDSButton)
         );
     }
     public void runMDSTask() {
@@ -135,7 +136,7 @@ public class MdsControlBox extends VBox {
         Params params = new SuperMDS.Params();
         params.outputDim = outputDimensionsSpinner.getValue();
         params.mode = modeChoiceBox.getSelectionModel().getSelectedItem(); //CLASSICAL, SUPERVISED, LANDMARK, etc.
-        params.useSMACOF = useSMACOFCheckBox.isSelected();// Enable SMACOF optimization
+        params.useSMACOF = forceSMACOFCheckBox.isSelected();// Enable SMACOF optimization
         params.weights = null;                   // No weighting
         params.autoSymmetrize = autoSymmetrizeCheckBox.isSelected(); // Auto symmetrization of distance matrix
         params.useKMeansForLandmarks = useKmeansForLandmarks.isSelected();// If LANDMARK mode is selected
@@ -148,183 +149,8 @@ public class MdsControlBox extends VBox {
         
         Platform.runLater(() -> {
             getScene().getRoot().fireEvent(
-                new ManifoldEvent(ManifoldEvent.GENERATE_NEW_MDS, params));
+                new ManifoldEvent(ManifoldEvent.GENERATE_NEW_MDS, 
+                    params, stressMetricsCheckBox.isSelected()));
         });        
     }
-    public void runMDS(int nPoints, int inputDim, int outputDim, int numberOfLandmarks, 
-        Strategy strategy, OptimizerType optimizer) {
-        long startTime = System.nanoTime();
-        // Generate synthetic data
-        double[][] rawInputData = SuperMDSValidator.generateSphereData(nPoints, inputDim, 42);
-        printTotalTime(startTime);
-        
-        // Optional: generate weights... for equal weighting use all 1.0s
-        System.out.println("Initializing weights...");
-        startTime = System.nanoTime();
-        double[][] weights = new double[rawInputData.length][rawInputData.length]; 
-        for (int i = 0; i < rawInputData.length; i++) {
-            Arrays.fill(weights[i], 1.0);
-        }
-        printTotalTime(startTime);  
-
-        // Optional: Generate synthetic class labels
-        System.out.println("Initializing Labels...");
-        startTime = System.nanoTime();
-        int[] labels = SuperMDSValidator.generateSyntheticLabels(nPoints, 3); // 3 classes
-        printTotalTime(startTime);
-        
-        // Build params
-        SuperMDS.Params params = new SuperMDS.Params();
-        params.outputDim = outputDim;
-        params.mode = SuperMDS.Mode.PARALLEL;          // Try CLASSICAL, SUPERVISED, LANDMARK, etc.
-        params.useSMACOF = true;                     // Enable SMACOF optimization
-        params.weights = weights;                   // No weighting
-        params.autoSymmetrize = true;             // Auto symmetrization of distance matrix
-        params.useKMeansForLandmarks = true;         // If LANDMARK mode is selected
-        params.classLabels = labels;                 // Only used by SUPERVISED mode
-        params.numLandmarks = 20;                    // Used if LANDMARK mode is active
-        params.useParallel = false;               // Toggle parallelized SMACOF
-        params.useStressSampling = true;         // allows SMACOF to drastically reduce iterations
-        params.stressSampleCount = 1000; //number of stress samples per SMACOF interation
-        
-        
-        System.out.println("ensuring Symmetric Distance Matrix and normalizing...");
-        startTime = System.nanoTime();
-        double [][] classicalSquaredDistances = SuperMDSHelper.computeSquaredEuclideanDistanceMatrix(rawInputData);
-        double[][] symmetricDistanceMatrix = SuperMDS.ensureSymmetricDistanceMatrix(rawInputData);
-        //normalize
-        double[][] normalizedDistanceMatrix = SuperMDSHelper.normalizeDistancesParallel(symmetricDistanceMatrix);
-        printTotalTime(startTime);        
-
-        System.out.println("Number of Points: " + nPoints);
-        System.out.println("Input Dimensions: " + inputDim);
-        System.out.println("Output Dimensions: " + outputDim);
-        System.out.println("Number of Landmarks: " + numberOfLandmarks);
-        System.out.println("Initializing data...");
-
-        System.out.println("Testing Classical MDS...");
-        startTime = System.nanoTime();
-        double[][] classicalEmbeddings = SuperMDS.classicalMDS(classicalSquaredDistances, outputDim);
-        printTotalTime(startTime);        
-
-        System.out.println("Computing Error and Stress Metrics for Classical MDS...");
-        SuperMDSValidator.computeStressMetricsClassic(rawInputData, classicalEmbeddings);        
-
-        
-        System.out.println("Testing Landmark MDS...");
-        startTime = System.nanoTime();
-        double[][] landmarkEmbeddings = SuperMDS.landmarkMDS(
-            rawInputData, outputDim, numberOfLandmarks, false, 42);
-        printTotalTime(startTime);        
-        System.out.printf("Results for Landmark MDS on synthetic data (%d points, %dD → %dD):\n",
-                nPoints, inputDim, outputDim);
-        SuperMDSValidator.computeStressMetricsClassic(rawInputData, landmarkEmbeddings);
-
-        System.out.println("Testing Approximate Landmark MDS...");
-        startTime = System.nanoTime();
-        double[][] approximateLandmarkEmbeddings = SuperMDS.approximateMDSViaLandmarks(
-            rawInputData, outputDim, numberOfLandmarks, false, 42);
-        printTotalTime(startTime);        
-        System.out.printf("Results for Approximate Landmark MDS on synthetic data (%d points, %dD → %dD):\n",
-                nPoints, inputDim, outputDim);
-        SuperMDSValidator.computeStressMetricsClassic(rawInputData, approximateLandmarkEmbeddings);
-
-        // Run MDS
-        System.out.println("Running SMACOF MDS...");
-        startTime = System.nanoTime();
-
-        double[][] embeddings = SuperMDS.runMDS(normalizedDistanceMatrix, params);
-        printTotalTime(startTime);
-
-        System.out.println("Computing Error and Stress Metrics...");
-        startTime = System.nanoTime();
-        double [][] reconstructed = SuperMDSHelper.computeReconstructedDistances(embeddings);
-        double maxError = SuperMDSValidator.maxDistanceError(normalizedDistanceMatrix, reconstructed);
-        double mse = SuperMDSValidator.meanSquaredError(normalizedDistanceMatrix, reconstructed);
-        double rawStress = SuperMDSValidator.rawStress(normalizedDistanceMatrix, reconstructed, weights);
-        printTotalTime(startTime);
-        
-        System.out.printf("Results for SMACOF MDS on synthetic data (%d points, %dD → %dD):\n",
-                nPoints, inputDim, outputDim);
-        System.out.printf("Max error: %.6f\n", maxError);
-        System.out.printf("MSE:       %.6f\n", mse);
-        System.out.printf("Raw stress: %.6f\n", rawStress);        
-
-        SuperMDSValidator.StressMetrics smacofStressMetrics = 
-            SuperMDSValidator.computeStressMetrics(normalizedDistanceMatrix, reconstructed);
-        System.out.println(smacofStressMetrics);  
-        
-        
-//        System.out.println("Testing OSE...");
-//        System.out.println("Generating synthetic test data...");
-//        startTime = System.nanoTime();
-//        double[][] testData = SuperMDSValidator.generateSyntheticData(5, inputDim); // Normally distributed
-//        printTotalTime(startTime);
-//
-//        // Embed the new points4
-//        System.out.println("Using OSE to project test data...");
-//        startTime = System.nanoTime();
-//        double[] testDataWeights = new double[rawInputData.length];
-//        Arrays.fill(testDataWeights, 1.0);
-//
-//        for(int i=0;i<testData.length;i++) {
-//            double[] distances = SuperMDSHelper.distancesToNewPoint(testData[i], rawInputData);
-//            double[] normalizedDistances = SuperMDSHelper.normalizeDistances(distances);
-//            double[] embeddedNewPoint = SuperMDS.embedPointOSEParallel(
-//                embeddings, normalizedDistances, testDataWeights, params);
-//            double oseStress = SuperMDSValidator.computeOSEStress(embeddings, embeddedNewPoint, normalizedDistances);
-//            System.out.printf("Embedding stress for new point: %.6f%n", oseStress);            
-//            double oseGoodnessOfFit = SuperMDSValidator.computeOSEGoodnessOfFit(
-//                embeddings, embeddedNewPoint, normalizedDistances);
-//            System.out.printf("Goodness-of-Fit for new point: %.6f <-------------------- %n", oseGoodnessOfFit);            
-//        }
-//        printTotalTime(startTime);        
-        
-        SuperMDSAnchors.AnchorSetRecord anchorSet = SuperMDSAnchors.selectAnchors(rawInputData, 
-            numberOfLandmarks, strategy, 42);
-        double [][] landmarksLowD = SuperMDSAnchors.extractByIndices(embeddings, anchorSet.indices());
-        
-        double [][] inverseMappedData = new double[embeddings.length][embeddings[0].length];
-
-        MultilaterationConfig config = new MultilaterationConfig();
-       
-        config.regularizationLambda = 0.01;
-        config.maxIterations = 10000;
-        config.maxEvaluations = 10000;
-        config.optimizer = optimizer;
-        for(int i=0;i<rawInputData.length; i++) {
-            double[] reconstructedHighD = SuperMDSInverter.invertViaMultilateration(
-                anchorSet.anchors(),
-                landmarksLowD,
-                embeddings[i],
-                config
-            );
-            inverseMappedData[i] = Arrays.copyOf(reconstructedHighD, reconstructedHighD.length);
-        }
-
-        SuperMDSValidator.ValidationResults results = SuperMDSValidator.validateInversion(
-            rawInputData, inverseMappedData, anchorSet.anchors()
-        );
-        System.out.println(results.toString());
-        
-        System.out.println("Sanity Check for Multilateration...");
-        double[] x_orig = anchorSet.anchors()[0];
-        double[] x_emb = embeddings[0];
-        double[] x_recovered = SuperMDSInverter.invertViaMultilateration(
-            anchorSet.anchors(), embeddings, x_emb, config);
-        System.out.println("Error: " + SuperMDSHelper.euclideanDistance(x_orig, x_recovered));
-        
-        System.out.println("NEW AND IMPROVED Sanity Checks for Inversions...");
-        //identity test: Set the high-D and low-D space equal and skip MDS. 
-        double[][] sanityAnchors = SuperMDSValidator.generateSphereData(nPoints, inputDim, 42);
-        double[][] sanityEmbeddings = sanityAnchors;  // Identity mapping
-        int[] anchorIndices = new int[] { 0, 2, 4, 6, 8, 10 };       
-        System.out.println("Multilateration Inversion...");
-        SuperMDSValidator.runMultilaterationSanityCheck(
-            sanityAnchors, sanityEmbeddings, config, List.of(0, 1, 2)
-        );       
-        System.out.println("Pseudo Inversion...");
-        SuperMDSValidator.runPseudoinverseInversionSanityCheck(sanityAnchors, sanityEmbeddings, anchorIndices);  // Identity        
-    }    
-
 }

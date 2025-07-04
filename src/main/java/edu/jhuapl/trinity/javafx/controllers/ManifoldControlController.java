@@ -6,7 +6,6 @@ import edu.jhuapl.trinity.data.Distance;
 import edu.jhuapl.trinity.data.FactorLabel;
 import edu.jhuapl.trinity.data.Manifold;
 import edu.jhuapl.trinity.data.messages.xai.UmapConfig;
-import edu.jhuapl.trinity.javafx.components.CvaeControlBox;
 import edu.jhuapl.trinity.javafx.components.MdsControlBox;
 import edu.jhuapl.trinity.javafx.components.listviews.DistanceListItem;
 import edu.jhuapl.trinity.javafx.components.listviews.ManifoldListItem;
@@ -57,10 +56,7 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
-import javafx.geometry.Orientation;
-import javafx.scene.control.Separator;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
 
 /**
  * FXML Controller class
@@ -184,11 +180,10 @@ public class ManifoldControlController implements Initializable {
     @FXML
     private Spinner connectorThicknessSpinner;
 
-    //MDS + CVAE Tab
+    //MDS Tab
     @FXML
     private BorderPane mdsPane;
     private MdsControlBox mdsControlBox;
-    private CvaeControlBox cvaeControlBox;
     
     Scene scene;
     private final String ALL = "ALL";
@@ -210,10 +205,7 @@ public class ManifoldControlController implements Initializable {
         setupUmapControls();
         setupDistanceControls();
         mdsControlBox = new MdsControlBox();
-        cvaeControlBox = new CvaeControlBox();
-        HBox mdsHBox = new HBox(10, 
-            mdsControlBox, new Separator(Orientation.VERTICAL), cvaeControlBox);
-        mdsPane.setCenter(mdsHBox);
+        mdsPane.setCenter(mdsControlBox);
         
         if (null != root) {
             root.addEventHandler(DragEvent.DRAG_OVER, event -> {
@@ -647,25 +639,7 @@ public class ManifoldControlController implements Initializable {
             LOG.error(null, ex);
         }
     }
-//    private String configToFilename(){
-//        NumberFormat format = new DecimalFormat("0.00");
-//        StringBuilder sb = new StringBuilder("UmapConfig-");
-////        sb.append(targetWeightSlider.getValue()).append("-");
-//        sb.append((String) metricChoiceBox.getValue()).append("-");
-//        sb.append("R").append(format.format(repulsionSlider.getValue())).append("-");
-//        sb.append("MD").append(format.format(minDistanceSlider.getValue())).append("-");
-//        sb.append("S").append(format.format(spreadSlider.getValue())).append("-");
-//        sb.append("OPM").append(format.format(opMixSlider.getValue())).append("-");
-////        uc.setNumberComponents((int) numComponentsSpinner.getValue());
-////        uc.setNumberEpochs((int) numEpochsSpinner.getValue());
-//        sb.append("NN").append(nearestNeighborsSpinner.getValue()).append("-");
-//        sb.append("NSR").append(negativeSampleRateSpinner.getValue()).append("-");
-//        sb.append("LC").append(localConnectivitySpinner.getValue());
 
-    /// /        uc.setThreshold((double) thresholdSpinner.getValue());
-    /// /        uc.setVerbose(verboseCheckBox.isSelected());
-//        return sb.toString();
-//    }
     private void sendUmapConfig() {
         String name = latestDir.getAbsolutePath() + File.separator
             + UmapConfig.configToFilename(getCurrentUmapConfig()).concat(".json");
