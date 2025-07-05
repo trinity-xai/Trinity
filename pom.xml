@@ -50,6 +50,7 @@
         <org.jflac.jflac-codec.version>1.5.2</org.jflac.jflac-codec.version>
         <com.tambapps.fft4j.version>2.0</com.tambapps.fft4j.version>
         <supermds.version>v2025.06.29</supermds.version>
+        <pdfbox.version>3.0.5</pdfbox.version>
         <slf4j.version>2.0.17</slf4j.version>
         <logback.version>1.5.18</logback.version>
         <mainClassName>edu.jhuapl.trinity.TrinityMain</mainClassName>
@@ -194,6 +195,11 @@
             <artifactId>SuperMDS</artifactId>
             <version>${supermds.version}</version>
         </dependency>
+        <dependency>
+            <groupId>org.apache.pdfbox</groupId>
+            <artifactId>pdfbox</artifactId>
+            <version>${pdfbox.version}</version>
+        </dependency>        
     </dependencies>
     <reporting>
         <plugins>

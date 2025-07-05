@@ -1277,22 +1277,21 @@ public class HyperdrivePane extends LitPathPane {
 
                 currentTextFeatureList.clear();
                 textFilesList.clear();
-                LOG.info("Searching for files, filtering on ASCII....");
+                LOG.info("Searching for files, filtering on ASCII/PDF....");
                 long startTime = System.nanoTime();
                 for (File file : files) {
-                    LOG.info(file.getAbsolutePath());
+                    //@DEBUB SMP LOG.info(file.getAbsolutePath());
                     if (file.isDirectory()) {
                         textFilesList.addAll(
                             Files.walk(file.toPath())
                                 .map(Path::toFile)
-                                .filter(f -> ResourceUtils.isTextFile(f))
+                                .filter(f -> ResourceUtils.isTextFile(f) || ResourceUtils.isPDF(file))
                                 .toList());
                     } else {
-                        if (ResourceUtils.isTextFile(file))
+                        if (ResourceUtils.isTextFile(file) || ResourceUtils.isPDF(file))
                             textFilesList.add(file);
                     }
                 }
-                textFilesList.removeIf(f -> !ResourceUtils.isTextFile(f));
                 Utils.printTotalTime(startTime);
                 final double total = textFilesList.size();
                 LOG.info("Loading textfiles into listitems....");
@@ -1325,7 +1324,7 @@ public class HyperdrivePane extends LitPathPane {
                 return null;
             }
         };
-        Thread t = new Thread(loadTask, "Trinity Batch Image Load Task");
+        Thread t = new Thread(loadTask, "Trinity Batch Text File Load Task");
         t.setDaemon(true);
         t.start();
     }
