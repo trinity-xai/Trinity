@@ -1,23 +1,28 @@
 package SuperMDS;
 
 import com.github.trinity.supermds.CVAE;
-import static com.github.trinity.supermds.CVAEHelper.mseLoss;
-import static com.github.trinity.supermds.CVAEHelper.shuffledIndices;
 import com.github.trinity.supermds.Normalizer;
 import com.github.trinity.supermds.SuperMDS;
 import com.github.trinity.supermds.SuperMDS.Mode;
 import com.github.trinity.supermds.SuperMDS.Params;
 import com.github.trinity.supermds.SuperMDSHelper;
-import static com.github.trinity.supermds.SuperMDSValidator.generateSphereData;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.Arrays;
 import java.util.Random;
 
+import static com.github.trinity.supermds.CVAEHelper.mseLoss;
+import static com.github.trinity.supermds.CVAEHelper.shuffledIndices;
+import static com.github.trinity.supermds.SuperMDSValidator.generateSphereData;
+
 /**
- *
  * @author Sean Phillips
  */
 
 public class CVAEInverseTest {
+
+    private static final Logger LOG = LoggerFactory.getLogger(CVAEInverseTest.class);
 
     public static void main(String[] args) {
         // Example synthetic test case
@@ -28,18 +33,18 @@ public class CVAEInverseTest {
         int hiddenDim = 64;
         int batchSize = 128;
         int epochs = 2000;
-        
+
         // Generate dummy original data (e.g., MDS input)
 //        double[][] originalData = generateRandomData(numPoints, inputDim);
         double[][] originalData = generateSphereData(numPoints, inputDim, 42);
         // Optional: generate weights... for equal weighting use all 1.0s
-        System.out.println("Initializing weights...");
+        LOG.info("Initializing weights...");
         long startTime = System.nanoTime();
-        double[][] weights = new double[originalData.length][originalData.length]; 
+        double[][] weights = new double[originalData.length][originalData.length];
         for (int i = 0; i < originalData.length; i++) {
             Arrays.fill(weights[i], 1.0);
         }
-        printTotalTime(startTime); 
+        printTotalTime(startTime);
         // Build params
         Params params = new Params();
         params.outputDim = embeddingDim;
@@ -53,9 +58,9 @@ public class CVAEInverseTest {
         params.useParallel = false;               // Toggle parallelized SMACOF
         params.useStressSampling = true;         // allows SMACOF to drastically reduce iterations
         params.stressSampleCount = 1000; //number of stress samples per SMACOF interation
-        
+
         // Run SuperMDS/SMACOF to get embeddings
-        System.out.println("Running SMACOF MDS...");
+        LOG.info("Running SMACOF MDS...");
         startTime = System.nanoTime();
         double[][] symmetricDistanceMatrix = SuperMDS.ensureSymmetricDistanceMatrix(originalData);
         //normalize
@@ -75,14 +80,14 @@ public class CVAEInverseTest {
             conditions[i] = normalizedEmbedding[i];  // full 3D embedding as condition
         }
 
-        for(int outerLoop=0;outerLoop<10;outerLoop++) {
+        for (int outerLoop = 0; outerLoop < 10; outerLoop++) {
             // Initialize CVAE
             CVAE cvae = new CVAE(inputDim, embeddingDim, latentDim, hiddenDim);
             cvae.setDebug(false);
             cvae.setUseDropout(false);
             cvae.setIsTraining(true);
             // Train the CVAE
-            System.out.println("Training CVAE...");
+            LOG.info("Training CVAE...");
             startTime = System.nanoTime();
             Random rand = new Random(42L);
             for (int epoch = 0; epoch < epochs; epoch++) {
@@ -112,14 +117,14 @@ public class CVAEInverseTest {
             double totalMeanVar = 0.0;
             for (int i = 0; i < numPoints; i++) {
                 double[] recon = cvae.inverseTransform(conditions[i]);
-    //            double[] recon = cvae.inverseTransform(mdsEmbedding[i]);
-    //            double mse = mseLoss(originalData[i], recon);
+                //            double[] recon = cvae.inverseTransform(mdsEmbedding[i]);
+                //            double mse = mseLoss(originalData[i], recon);
                 double mse = mseLoss(normalizedData[i], recon);
                 totalReconError += mse;
 
                 double[] var = cvae.confidenceEstimate(conditions[i], 50);
                 totalMeanVar += Arrays.stream(var).average().orElse(Double.NaN);
-//                System.out.printf("Condition %d: Mean variance = %.6f\n", i, meanVar);                
+//                System.out.printf("Condition %d: Mean variance = %.6f\n", i, meanVar);
             }
 
             double avgReconError = totalReconError / numPoints;
@@ -128,9 +133,11 @@ public class CVAEInverseTest {
             System.out.printf("\nAverage Mean Variance: %.6f%n", avgMeanVariance);
         }
     }
+
     public static void printTotalTime(long startTime) {
-        System.out.println(totalTimeString(startTime));
-    }      
+        LOG.info(totalTimeString(startTime));
+    }
+
     public static String totalTimeString(long startTime) {
         long estimatedTime = System.nanoTime() - startTime;
         long totalNanos = estimatedTime;
@@ -142,5 +149,5 @@ public class CVAEInverseTest {
         long us = totalNanos / 1000;
         totalNanos -= us * 1000;
         return "Total elapsed time: " + s + ":s:" + ms + ":ms:" + us + ":us:" + totalNanos + ":ns";
-    }    
+    }
 }

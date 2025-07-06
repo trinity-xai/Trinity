@@ -182,6 +182,7 @@ public class TextPane extends LitPathPane {
         currentText = text;
         addText(currentText);
     }
+
     public void addText(String text) {
         addLine(text,
             new Font((String) logToolbar.fontChoiceBox.getValue(),

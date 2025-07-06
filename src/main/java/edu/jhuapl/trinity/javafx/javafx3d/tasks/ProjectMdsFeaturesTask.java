@@ -10,9 +10,6 @@ import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.javafx.components.radial.ProgressStatus;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.utils.ResourceUtils;
-import static edu.jhuapl.trinity.utils.Utils.logTotalTime;
-import static edu.jhuapl.trinity.utils.Utils.printTotalTime;
-import static edu.jhuapl.trinity.utils.Utils.totalTimeString;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.scene.Scene;
@@ -28,6 +25,8 @@ import org.slf4j.LoggerFactory;
 import java.time.Duration;
 import java.util.Arrays;
 import java.util.Formatter;
+
+import static edu.jhuapl.trinity.utils.Utils.totalTimeString;
 
 /**
  * @author Sean Phillips
@@ -104,13 +103,13 @@ public class ProjectMdsFeaturesTask extends Task {
             scene.getRoot().fireEvent(
                 new ApplicationEvent(ApplicationEvent.UPDATE_BUSY_INDICATOR, ps));
             scene.getRoot().fireEvent(new ApplicationEvent(
-                ApplicationEvent.SHOW_TEXT_CONSOLE, "Preparing MDS Process..."));            
+                ApplicationEvent.SHOW_TEXT_CONSOLE, "Preparing MDS Process..."));
         });
         Thread.sleep(Duration.ofSeconds(1));
         LOG.info("Preparing MDS Process...");
         long startTime = System.nanoTime();
         double[][] originalData = originalFC.convertFeaturesToArray();
-        double[][] weights = new double[originalData.length][originalData.length]; 
+        double[][] weights = new double[originalData.length][originalData.length];
         for (int i = 0; i < originalData.length; i++) {
             Arrays.fill(weights[i], 1.0);
         }
@@ -118,9 +117,9 @@ public class ProjectMdsFeaturesTask extends Task {
         LOG.info(totesTime);
         Platform.runLater(() -> {
             scene.getRoot().fireEvent(new ApplicationEvent(
-                ApplicationEvent.SHOW_TEXT_CONSOLE, totesTime, true));            
-        });        
-        
+                ApplicationEvent.SHOW_TEXT_CONSOLE, totesTime, true));
+        });
+
         LOG.info("Symmetrizing and Normalizing Matrix...");
         startTime = System.nanoTime();
         Platform.runLater(() -> {
@@ -132,7 +131,7 @@ public class ProjectMdsFeaturesTask extends Task {
             scene.getRoot().fireEvent(
                 new ApplicationEvent(ApplicationEvent.UPDATE_BUSY_INDICATOR, ps));
             scene.getRoot().fireEvent(new ApplicationEvent(
-                ApplicationEvent.SHOW_TEXT_CONSOLE, "Symmetrizing and Normalizing Matrix...", true));            
+                ApplicationEvent.SHOW_TEXT_CONSOLE, "Symmetrizing and Normalizing Matrix...", true));
         });
         double[][] symmetricDistanceMatrix = SuperMDS.ensureSymmetricDistanceMatrix(originalData);
         double[][] normalizedDistanceMatrix = SuperMDSHelper.normalizeDistancesParallel(symmetricDistanceMatrix);
@@ -140,10 +139,10 @@ public class ProjectMdsFeaturesTask extends Task {
         LOG.info(totesTime2);
         Platform.runLater(() -> {
             scene.getRoot().fireEvent(new ApplicationEvent(
-                ApplicationEvent.SHOW_TEXT_CONSOLE, totesTime2, true));            
+                ApplicationEvent.SHOW_TEXT_CONSOLE, totesTime2, true));
             scene.getRoot().fireEvent(new ApplicationEvent(
-                ApplicationEvent.SHOW_TEXT_CONSOLE, "Running MDS: " + params.mode.name(), true));            
-        });        
+                ApplicationEvent.SHOW_TEXT_CONSOLE, "Running MDS: " + params.mode.name(), true));
+        });
         LOG.info("Running MDS: " + params.mode.name());
         startTime = System.nanoTime();
         double[][] mdsEmbedding = SuperMDS.runMDS(normalizedDistanceMatrix, params);
@@ -151,10 +150,10 @@ public class ProjectMdsFeaturesTask extends Task {
         LOG.info(totesTime3);
         Platform.runLater(() -> {
             scene.getRoot().fireEvent(new ApplicationEvent(
-                ApplicationEvent.SHOW_TEXT_CONSOLE, totesTime3, true));            
-        });        
-        
-        if(isComputeMetrics()) {
+                ApplicationEvent.SHOW_TEXT_CONSOLE, totesTime3, true));
+        });
+
+        if (isComputeMetrics()) {
             computeStressMetrics(normalizedDistanceMatrix, weights, mdsEmbedding);
         }
         Platform.runLater(() -> {
@@ -198,10 +197,10 @@ public class ProjectMdsFeaturesTask extends Task {
                 ApplicationEvent.SHOW_TEXT_CONSOLE, "Computing Error and Stress Metrics...", true));
         });
         LOG.info("Computing Error and Stress Metrics...");
-        
+
 ////        System.out.println("Computing Error and Stress Metrics for Classical MDS...");
-////        SuperMDSValidator.computeStressMetricsClassic(rawInputData, classicalEmbeddings);        
-////        
+////        SuperMDSValidator.computeStressMetricsClassic(rawInputData, classicalEmbeddings);
+////
 ////        System.out.printf("Results for Landmark MDS on synthetic data (%d points, %dD → %dD):\n",
 ////                nPoints, inputDim, outputDim);
 ////        SuperMDSValidator.computeStressMetricsClassic(rawInputData, landmarkEmbeddings);
@@ -211,7 +210,7 @@ public class ProjectMdsFeaturesTask extends Task {
 //        SuperMDSValidator.computeStressMetricsClassic(rawInputData, approximateLandmarkEmbeddings);
 
         //System.out.println("Computing Error and Stress Metrics...");
-        double [][] reconstructed = SuperMDSHelper.computeReconstructedDistances(embeddings);
+        double[][] reconstructed = SuperMDSHelper.computeReconstructedDistances(embeddings);
         double maxError = SuperMDSValidator.maxDistanceError(normalizedDistanceMatrix, reconstructed);
         double mse = SuperMDSValidator.meanSquaredError(normalizedDistanceMatrix, reconstructed);
         double rawStress = SuperMDSValidator.rawStress(normalizedDistanceMatrix, reconstructed, weights);
@@ -220,26 +219,27 @@ public class ProjectMdsFeaturesTask extends Task {
         try (Formatter formatter = new Formatter(sb)) {
             formatter.format("Results for SMACOF MDS on data (%d points, %dD → %dD):\n",
                 normalizedDistanceMatrix.length, normalizedDistanceMatrix[0].length, params.outputDim);
-            
+
             formatter.format("Max error: %.6f\n", maxError);
             formatter.format("MSE:       %.6f\n", mse);
             formatter.format("Raw stress: %.6f\n", rawStress);
-            
+
             Platform.runLater(() -> {
                 scene.getRoot().fireEvent(new ApplicationEvent(
-                        ApplicationEvent.SHOW_TEXT_CONSOLE, sb.toString(),true));
+                    ApplicationEvent.SHOW_TEXT_CONSOLE, sb.toString(), true));
             });
             LOG.info(sb.toString());
-            
+
             SuperMDSValidator.StressMetrics smacofStressMetrics =
-                    SuperMDSValidator.computeStressMetrics(normalizedDistanceMatrix, reconstructed);
+                SuperMDSValidator.computeStressMetrics(normalizedDistanceMatrix, reconstructed);
             Platform.runLater(() -> {
                 scene.getRoot().fireEvent(new ApplicationEvent(
-                        ApplicationEvent.SHOW_TEXT_CONSOLE, smacofStressMetrics.toString(), true));
+                    ApplicationEvent.SHOW_TEXT_CONSOLE, smacofStressMetrics.toString(), true));
             });
             LOG.info(smacofStressMetrics.toString());
         }
     }
+
     /**
      * @return the cancelledByUser
      */
