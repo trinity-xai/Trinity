@@ -15,6 +15,7 @@ import org.slf4j.LoggerFactory;
  * @author Sean Phillips
  */
 public class RadialGrid extends Group {
+
     private static final Logger LOG = LoggerFactory.getLogger(RadialGrid.class);
     private final Rotate worldRotateY = new Rotate(0, Rotate.Y_AXIS);
     private static final int NUM_CIRCLES = 5;
@@ -52,7 +53,7 @@ public class RadialGrid extends Group {
                     if (isEnableRotation()) {
                         double deltaSeconds = (now - lastTime) / 1_000_000_000.0;
                         double deltaAngle = deltaSeconds * getRotationSpeed();
-                        worldRotateY.setAngle(worldRotateY.getAngle() + deltaAngle);
+                        getWorldRotateY().setAngle(getWorldRotateY().getAngle() + deltaAngle);
                     }
                 }
                 lastTime = now;
@@ -229,5 +230,12 @@ public class RadialGrid extends Group {
      */
     public void setPulseScalar(double pulseScalar) {
         this.pulseScalar = pulseScalar;
+    }
+
+    /**
+     * @return the worldRotateY
+     */
+    public Rotate getWorldRotateY() {
+        return worldRotateY;
     }
 }

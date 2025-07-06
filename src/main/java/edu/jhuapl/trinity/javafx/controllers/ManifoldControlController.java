@@ -6,6 +6,7 @@ import edu.jhuapl.trinity.data.Distance;
 import edu.jhuapl.trinity.data.FactorLabel;
 import edu.jhuapl.trinity.data.Manifold;
 import edu.jhuapl.trinity.data.messages.xai.UmapConfig;
+import edu.jhuapl.trinity.javafx.components.MdsControlBox;
 import edu.jhuapl.trinity.javafx.components.listviews.DistanceListItem;
 import edu.jhuapl.trinity.javafx.components.listviews.ManifoldListItem;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
@@ -13,6 +14,7 @@ import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.Manifold3D;
 import edu.jhuapl.trinity.utils.AnalysisUtils;
+import edu.jhuapl.trinity.utils.DoubleConverter;
 import edu.jhuapl.trinity.utils.PCAConfig;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import edu.jhuapl.trinity.utils.metric.Metric;
@@ -37,6 +39,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
@@ -177,6 +180,11 @@ public class ManifoldControlController implements Initializable {
     @FXML
     private Spinner connectorThicknessSpinner;
 
+    //MDS Tab
+    @FXML
+    private BorderPane mdsPane;
+    private MdsControlBox mdsControlBox;
+
     Scene scene;
     private final String ALL = "ALL";
     boolean reactive = true;
@@ -196,6 +204,9 @@ public class ManifoldControlController implements Initializable {
         setupHullControls();
         setupUmapControls();
         setupDistanceControls();
+        mdsControlBox = new MdsControlBox();
+        mdsPane.setCenter(mdsControlBox);
+
         if (null != root) {
             root.addEventHandler(DragEvent.DRAG_OVER, event -> {
                 event.acceptTransferModes(TransferMode.COPY);
@@ -352,9 +363,13 @@ public class ManifoldControlController implements Initializable {
             new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 250, 5, 1));
         localConnectivitySpinner.setValueFactory(
             new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 250, 1, 1));
-//        thresholdSpinner.setValueFactory(
-//            new SpinnerValueFactory.DoubleSpinnerValueFactory(0.001, 1.0, 0.001, 0.001));
-//        thresholdSpinner.setEditable(true);
+
+        SpinnerValueFactory<Double> valueFactory = new SpinnerValueFactory
+            .DoubleSpinnerValueFactory(1e-8, 0.1, 1e-6, 1e-6);
+        DoubleConverter doubleConverter = new DoubleConverter("###.######");
+        valueFactory.setConverter(doubleConverter);
+        thresholdSpinner.setValueFactory(valueFactory);
+        thresholdSpinner.setEditable(true);
 
         hyperSourceGroup = new ToggleGroup();
         useHyperspaceButton.setToggleGroup(hyperSourceGroup);
@@ -624,25 +639,7 @@ public class ManifoldControlController implements Initializable {
             LOG.error(null, ex);
         }
     }
-//    private String configToFilename(){
-//        NumberFormat format = new DecimalFormat("0.00");
-//        StringBuilder sb = new StringBuilder("UmapConfig-");
-////        sb.append(targetWeightSlider.getValue()).append("-");
-//        sb.append((String) metricChoiceBox.getValue()).append("-");
-//        sb.append("R").append(format.format(repulsionSlider.getValue())).append("-");
-//        sb.append("MD").append(format.format(minDistanceSlider.getValue())).append("-");
-//        sb.append("S").append(format.format(spreadSlider.getValue())).append("-");
-//        sb.append("OPM").append(format.format(opMixSlider.getValue())).append("-");
-////        uc.setNumberComponents((int) numComponentsSpinner.getValue());
-////        uc.setNumberEpochs((int) numEpochsSpinner.getValue());
-//        sb.append("NN").append(nearestNeighborsSpinner.getValue()).append("-");
-//        sb.append("NSR").append(negativeSampleRateSpinner.getValue()).append("-");
-//        sb.append("LC").append(localConnectivitySpinner.getValue());
 
-    /// /        uc.setThreshold((double) thresholdSpinner.getValue());
-    /// /        uc.setVerbose(verboseCheckBox.isSelected());
-//        return sb.toString();
-//    }
     private void sendUmapConfig() {
         String name = latestDir.getAbsolutePath() + File.separator
             + UmapConfig.configToFilename(getCurrentUmapConfig()).concat(".json");

@@ -10,7 +10,7 @@
             <tabs>
                 <Tab closable="false" text="UMAP">
                     <content>
-                        <BorderPane fx:id="majorPane" minHeight="200.0" minWidth="400.0">
+                        <BorderPane minHeight="200.0" minWidth="400.0">
                             <children>
                             </children>
                             <top>
@@ -133,9 +133,22 @@
                         </BorderPane>
                     </content>
                 </Tab>
+                <Tab closable="false" text="MDS">
+                    <content>
+                        <BorderPane fx:id="mdsPane" minHeight="200.0" minWidth="400.0">
+                            <children>
+                            </children>
+                            <top>
+                            </top>
+                            <center>
+
+                            </center>
+                        </BorderPane>
+                    </content>
+                </Tab>
                 <Tab closable="false" text="PCA">
                     <content>
-                        <BorderPane fx:id="majorPane" minHeight="200.0" minWidth="400.0">
+                        <BorderPane minHeight="200.0" minWidth="400.0">
                             <children>
                             </children>
                             <top>
@@ -211,7 +224,7 @@
                 </Tab>
                 <Tab closable="false" text="Distances">
                     <content>
-                        <BorderPane fx:id="majorPane" minHeight="200.0" minWidth="400.0">
+                        <BorderPane minHeight="200.0" minWidth="400.0">
                             <children>
                             </children>
                             <top>

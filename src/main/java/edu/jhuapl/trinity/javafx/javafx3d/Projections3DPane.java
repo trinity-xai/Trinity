@@ -1,5 +1,6 @@
 package edu.jhuapl.trinity.javafx.javafx3d;
 
+import com.github.trinity.supermds.SuperMDS;
 import edu.jhuapl.trinity.App;
 import edu.jhuapl.trinity.data.CoordinateSet;
 import edu.jhuapl.trinity.data.Dimension;
@@ -40,6 +41,7 @@ import edu.jhuapl.trinity.javafx.events.ShadowEvent;
 import edu.jhuapl.trinity.javafx.events.TimelineEvent;
 import edu.jhuapl.trinity.javafx.events.TrajectoryEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.AnimatedSphere;
+import edu.jhuapl.trinity.javafx.javafx3d.animated.CameraOrbiter;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.Opticon;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.RadialGrid;
 import edu.jhuapl.trinity.javafx.javafx3d.images.ImageResourceProvider;
@@ -52,6 +54,7 @@ import edu.jhuapl.trinity.javafx.javafx3d.tasks.HDDBSCANClusterTask;
 import edu.jhuapl.trinity.javafx.javafx3d.tasks.KMeansClusterTask;
 import edu.jhuapl.trinity.javafx.javafx3d.tasks.KMediodsClusterTask;
 import edu.jhuapl.trinity.javafx.javafx3d.tasks.ManifoldClusterTask;
+import edu.jhuapl.trinity.javafx.javafx3d.tasks.ProjectMdsFeaturesTask;
 import edu.jhuapl.trinity.javafx.javafx3d.tasks.ProjectPcaFeaturesTask;
 import edu.jhuapl.trinity.javafx.javafx3d.tasks.ProjectUmapFeaturesTask;
 import edu.jhuapl.trinity.javafx.renderers.FeatureVectorRenderer;
@@ -92,6 +95,7 @@ import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
+import javafx.scene.control.ToggleButton;
 import javafx.scene.effect.Glow;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -160,7 +164,8 @@ public class Projections3DPane extends StackPane implements
     private final double sceneHeight = 4000;
     private final double cubeSize = sceneWidth / 2.0;
     public PerspectiveCamera camera;
-    public CameraTransformer cameraTransform = new CameraTransformer();
+    public CameraTransformer cameraTransform;
+    CameraOrbiter cameraOrbiter;
     PointLight cameraLight;
     PointLight centerLight;
     public boolean bindCameraRotations = false;
@@ -337,6 +342,7 @@ public class Projections3DPane extends StackPane implements
         camera = new PerspectiveCamera(true);
 
         //setup camera transform for rotational support
+        cameraTransform = new CameraTransformer();
         cameraTransform.setTranslate(0, 0, 0);
         cameraTransform.getChildren().add(camera);
         camera.setNearClip(0.1);
@@ -344,7 +350,8 @@ public class Projections3DPane extends StackPane implements
         camera.setTranslateZ(cameraDistance);
         cameraTransform.ry.setAngle(-45.0);
         cameraTransform.rx.setAngle(-10.0);
-
+        cameraOrbiter = new CameraOrbiter(cameraTransform, 7);
+        cameraTransform.ry.angleProperty().addListener(e -> updateFloatingNodes());
 //        setupSkyBox();
         debugGroup.setVisible(false);
 
@@ -374,6 +381,20 @@ public class Projections3DPane extends StackPane implements
         }
         extrasGroup.getChildren().add(0, trajectorySphereGroup);
         extrasGroup.getChildren().add(0, trajectoryGroup);
+
+        scene.addEventHandler(ApplicationEvent.CAMERA_ORBIT_MODE, e -> {
+            if (null != e.object) {
+                boolean rotating = (boolean) e.object;
+                if (rotating) {
+                    cameraOrbiter.start();
+                    cameraOrbiter.setEnableRotation(rotating);
+                } else {
+                    cameraOrbiter.stop();
+                    cameraOrbiter.setEnableRotation(rotating);
+                }
+            }
+        });
+
         this.scene.addEventHandler(TrajectoryEvent.REFRESH_3D_TRAJECTORIES, e -> {
             updateTrajectory3D(true);
         });
@@ -935,6 +956,31 @@ public class Projections3DPane extends StackPane implements
         updatingTrajectoriesItem.selectedProperty().addListener(cl ->
             updatingTrajectories = updatingTrajectoriesItem.isSelected());
 
+        ToggleButton cameraAnimateToggle = new ToggleButton("Orbiting Camera");
+        cameraAnimateToggle.setOnAction(e -> {
+            scene.getRoot().fireEvent(
+                new ApplicationEvent(ApplicationEvent.CAMERA_ORBIT_MODE,
+                    cameraAnimateToggle.isSelected()));
+        });
+        MenuItem cameraAnimateItem = new CustomMenuItem(cameraAnimateToggle, false);
+
+        Spinner<Double> projectionScalarSpinner = new Spinner<>();
+        projectionScalarSpinner.setValueFactory(
+            new SpinnerValueFactory.DoubleSpinnerValueFactory(1, 1000, projectionScalar, 1));
+        projectionScalarSpinner.setEditable(true);
+        projectionScalarSpinner.valueProperty().addListener(e -> {
+            projectionScalar = projectionScalarSpinner.getValue();
+            sphereToFeatureVectorMap.forEach((sphere, featureVector) -> {
+                sphere.setTranslateX(featureVector.getData().get(0) * projectionScalar);
+                sphere.setTranslateY(featureVector.getData().get(1) * -projectionScalar);
+                sphere.setTranslateZ(featureVector.getData().size() > 2
+                    ? featureVector.getData().get(2) * projectionScalar
+                    : 0.0);
+            });
+        });
+        MenuItem projectionScalarItem = new CustomMenuItem(
+            new VBox(2, new Label("Projection Scalar)"), projectionScalarSpinner), false);
+
         Spinner<Double> dataAnimationSpinner = new Spinner<>();
         dataAnimationSpinner.setValueFactory(
             new SpinnerValueFactory.DoubleSpinnerValueFactory(50, 1000, dataAnimationMS, 50));
@@ -968,6 +1014,7 @@ public class Projections3DPane extends StackPane implements
         ImageView optionsImageView = ResourceUtils.loadIcon("configuration", ICON_FIT_HEIGHT);
         optionsImageView.setEffect(glow);
         Menu optionsMenu = new Menu("Options", optionsImageView,
+            cameraAnimateItem, projectionScalarItem,
             dataAnimationItem, sleepAnimationItem,
             centerLightItem, cameraLightItem,
             enableProjectionWallItem, animatingProjectionsItem, updatingTrajectoriesItem);
@@ -1644,7 +1691,7 @@ public class Projections3DPane extends StackPane implements
         if (enableXForm && me.isSecondaryButtonDown()) {
             double yChange = (((mouseDeltaX * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180);
             double xChange = (((-mouseDeltaY * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180);
-            LOG.info("BINDCAMERAROTATIONS Rotating data and not camera: {} {}", yChange, xChange);
+            //LOG.info("BINDCAMERAROTATIONS Rotating data and not camera: {} {}", yChange, xChange);
             dataXForm.addRotation(yChange, Rotate.Y_AXIS);
             dataXForm.addRotation(xChange, Rotate.X_AXIS);
         }
@@ -2056,7 +2103,9 @@ public class Projections3DPane extends StackPane implements
         sphere.setMaterial(mat);
         sphere.setTranslateX(featureVector.getData().get(0) * projectionScalar);
         sphere.setTranslateY(featureVector.getData().get(1) * -projectionScalar);
-        sphere.setTranslateZ(featureVector.getData().get(2) * projectionScalar);
+        sphere.setTranslateZ(featureVector.getData().size() > 2
+            ? featureVector.getData().get(2) * projectionScalar
+            : 0.0);
         Platform.runLater(() -> {
             ellipsoidGroup.getChildren().add(sphere);
             if (animatingProjections) {
@@ -2662,6 +2711,31 @@ public class Projections3DPane extends StackPane implements
 
     public void enableAutoProjection(boolean enabled) {
         autoProjectionProperty.set(enabled);
+    }
+
+    public void projectFeatureCollection(FeatureCollection originalFC,
+                                         SuperMDS.Params params, boolean computeMetrics) {
+        ProjectMdsFeaturesTask task = new ProjectMdsFeaturesTask(
+            this.getScene(), originalFC, params, false);
+        task.setProjectionScalar(projectionScalar);
+        task.setComputeMetrics(computeMetrics);
+        task.setOnSucceeded(e -> {
+            FeatureCollection fc;
+            try {
+                setHyperDimensionFeatures(originalFC);
+                fc = (FeatureCollection) task.get();
+                if (null != originalFC.getDimensionLabels()) {
+                    setDimensionLabels(originalFC.getDimensionLabels());
+                    fc.setDimensionLabels(originalFC.getDimensionLabels());
+                }
+                addFeatureCollection(fc, false);
+            } catch (InterruptedException | ExecutionException ex) {
+                LOG.error(null, ex);
+            }
+        });
+        Thread thread = new Thread(task);
+        thread.setDaemon(true);
+        thread.start();
     }
 
     public void projectFeatureCollection(FeatureCollection originalFC, Umap umap) {
