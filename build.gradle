@@ -318,6 +318,7 @@ tasks.register('noFxUberJar', Jar) {
     } {
         // Exclude problematic module-info.class duplicates from runtimeClasspath
         exclude '**/module-info.class'
+        exclude 'META-INF/DEPENDENCIES'
     }
 }
 
