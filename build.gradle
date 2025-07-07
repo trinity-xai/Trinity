@@ -335,7 +335,7 @@ tasks.register('fxUberJar', Jar) {
     } {
         // Exclude problematic module-info.class duplicates from runtimeClasspath
         exclude '**/module-info.class'
-        pickFirst  'META-INF/*'
+        exclude 'META-INF/DEPENDENCIES'
     }
 }
 
