@@ -138,10 +138,10 @@ extraJavaModuleInfo {
     module('org.apache.pdfbox:pdfbox', 'org.apache.pdfbox') {
         exportAllPackages()
     }
-    module('org.apache.pdfbox:pdfbox-io', 'org.apached.pdfbox.io') {
+    module('org.apache.pdfbox:pdfbox-io', 'org.apache.pdfbox.io') {
         exportAllPackages()
     }
-    module('org.apache.pdfbox:fontbox', 'org.apached.fontbox') {
+    module('org.apache.pdfbox:fontbox', 'org.apache.fontbox') {
         exportAllPackages()
     }
 }
