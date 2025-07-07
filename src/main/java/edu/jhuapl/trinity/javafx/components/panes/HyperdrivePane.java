@@ -91,12 +91,14 @@ import java.util.concurrent.atomic.AtomicInteger;
 import static edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageUrl.imageUrlFromImage;
 import static edu.jhuapl.trinity.data.messages.xai.FeatureVector.mapToStateArray;
 import edu.jhuapl.trinity.javafx.components.hyperdrive.HyperdriveTask.REQUEST_STATUS;
+import edu.jhuapl.trinity.javafx.components.hyperdrive.LoadImagesTask;
 import edu.jhuapl.trinity.javafx.components.hyperdrive.RequestEmbeddingsTask;
 import static edu.jhuapl.trinity.javafx.components.listviews.EmbeddingsImageListItem.itemFromFile;
 import static edu.jhuapl.trinity.javafx.components.listviews.EmbeddingsImageListItem.itemNoRenderFromFile;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import static edu.jhuapl.trinity.javafx.events.CommandTerminalEvent.notifyTerminalSuccess;
 import static edu.jhuapl.trinity.javafx.events.CommandTerminalEvent.notifyTerminalWarning;
+import edu.jhuapl.trinity.javafx.events.HyperdriveEvent;
 import static edu.jhuapl.trinity.messages.RestAccessLayer.*;
 import javafx.scene.text.Font;
 
@@ -1123,6 +1125,24 @@ public class HyperdrivePane extends LitPathPane {
                 LOG.error(null, ex);
             }
         });
+        scene.getRoot().addEventHandler(HyperdriveEvent.NEW_BATCH_IMAGELOAD, event -> {
+            if(null != event.object1) {
+                List<EmbeddingsImageListItem> newItems = (List<EmbeddingsImageListItem>) event.object1;
+                imageEmbeddingsListView.getItems().addAll(newItems);
+            }
+            if(null != event.object2) {
+                ArrayList<File> newImageFiles = (ArrayList<File>) event.object2;
+                imageFilesList.addAll(newImageFiles);
+            }
+            imageFilesCountLabel.setText(String.valueOf(imageFilesList.size()));
+            if (!imageEmbeddingsListView.getItems().isEmpty()) {
+                //trigger baseImageView to change
+                imageEmbeddingsListView.getSelectionModel().selectFirst();
+            } else {
+                baseImage = waitingImage;
+                baseImageView.setImage(baseImage);
+            }            
+        });
         getStyleClass().add("hyperdrive-pane");
     }
 
@@ -1398,68 +1418,10 @@ public class HyperdrivePane extends LitPathPane {
     }
 
     public void loadImagesTask(List<File> files) {
-        Task loadTask = new Task() {
-            @Override
-            protected Void call() throws Exception {
-                AtomicInteger atomicCount = new AtomicInteger(0);
-                imageEmbeddingRequestIndicator.setFadeTimeMS(250);
-                imageEmbeddingRequestIndicator.setLabelLater("Loading " + atomicCount.toString() + " images...");
-                imageEmbeddingRequestIndicator.spin(true);
-                imageEmbeddingRequestIndicator.fadeBusy(false);
-
-                currentFeatureList.clear();
-                imageFilesList.clear();
-                LOG.info("Searching for files, filtering images....");
-                long startTime = System.nanoTime();
-                for (File file : files) {
-                    LOG.info(file.getAbsolutePath());
-                    if (file.isDirectory()) {
-                        imageFilesList.addAll(
-                            Files.walk(file.toPath())
-                                .map(Path::toFile)
-                                .filter(f -> JavaFX3DUtils.isTextureFile(f))
-                                .toList());
-                    } else {
-                        if (JavaFX3DUtils.isTextureFile(file))
-                            imageFilesList.add(file);
-                    }
-                }
-                imageFilesList.removeIf(f -> !JavaFX3DUtils.isTextureFile(f));
-                Utils.printTotalTime(startTime);
-                final double total = imageFilesList.size();
-                LOG.info("Loading images into listitems....");
-                startTime = System.nanoTime();
-                final boolean renderIcons = renderIconsCheckBox.isSelected();
-                List<EmbeddingsImageListItem> newItems =
-                    imageFilesList.parallelStream()
-                        .map(renderIcons ? itemFromFile : itemNoRenderFromFile)
-                        .peek(i -> {
-                            double completed = atomicCount.incrementAndGet();
-                            imageEmbeddingRequestIndicator.setPercentComplete(completed / total);
-                            imageEmbeddingRequestIndicator.setLabelLater(completed + " of " + total);
-                        }).toList();
-                Utils.printTotalTime(startTime);
-
-                LOG.info("Populating ListView....");
-                Platform.runLater(() -> {
-                    long start = System.nanoTime();
-                    imageEmbeddingsListView.getItems().addAll(newItems);
-                    imageFilesCountLabel.setText(String.valueOf(imageFilesList.size()));
-                    if (!imageEmbeddingsListView.getItems().isEmpty()) {
-                        //trigger baseImageView to change
-                        imageEmbeddingsListView.getSelectionModel().selectFirst();
-                    } else {
-                        baseImage = waitingImage;
-                        baseImageView.setImage(baseImage);
-                    }
-                    Utils.printTotalTime(start);
-                });
-                imageEmbeddingRequestIndicator.setLabelLater("Complete");
-                imageEmbeddingRequestIndicator.spin(false);
-                imageEmbeddingRequestIndicator.fadeBusy(true);
-                return null;
-            }
-        };
+        currentFeatureList.clear();
+        imageFilesList.clear();        
+        LoadImagesTask loadTask = new LoadImagesTask(scene, 
+            imageEmbeddingRequestIndicator, renderIconsCheckBox.isSelected(), files);
         Thread t = new Thread(loadTask, "Trinity Batch Image Load Task");
         t.setDaemon(true);
         t.start();
@@ -1468,7 +1430,7 @@ public class HyperdrivePane extends LitPathPane {
     public void requestEmbeddingsTask() {
         RequestEmbeddingsTask task = new RequestEmbeddingsTask(scene, 
             imageEmbeddingRequestIndicator, requestNumber, currentEmbeddingsModel, 
-            outstandingRequests, imageEmbeddingsListView.getItems());
+            outstandingRequests, imageEmbeddingsListView.getSelectionModel().getSelectedItems());
         Thread t = new Thread(task, "Trinity Embeddings Image Request");
         t.setDaemon(true);
         t.start();        
