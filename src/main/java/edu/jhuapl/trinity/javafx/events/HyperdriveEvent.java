@@ -12,6 +12,7 @@ public class HyperdriveEvent extends Event {
     public Object object2;
 
     public static final EventType<HyperdriveEvent> NEW_BATCH_IMAGELOAD = new EventType(ANY, "NEW_BATCH_IMAGELOAD");
+    public static final EventType<HyperdriveEvent> NEW_BATCH_TEXTLOAD = new EventType(ANY, "NEW_BATCH_TEXTLOAD");
 
     public HyperdriveEvent(EventType<? extends Event> arg0) {
         super(arg0);

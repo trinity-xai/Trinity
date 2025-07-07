@@ -30,7 +30,6 @@ import edu.jhuapl.trinity.javafx.events.RestEvent;
 import edu.jhuapl.trinity.messages.RestAccessLayer;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
-import edu.jhuapl.trinity.utils.Utils;
 import edu.jhuapl.trinity.utils.metric.Metric;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
@@ -78,8 +77,6 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -92,15 +89,13 @@ import static edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageUrl.imageUrlFr
 import static edu.jhuapl.trinity.data.messages.xai.FeatureVector.mapToStateArray;
 import edu.jhuapl.trinity.javafx.components.hyperdrive.HyperdriveTask.REQUEST_STATUS;
 import edu.jhuapl.trinity.javafx.components.hyperdrive.LoadImagesTask;
+import edu.jhuapl.trinity.javafx.components.hyperdrive.LoadTextTask;
 import edu.jhuapl.trinity.javafx.components.hyperdrive.RequestEmbeddingsTask;
-import static edu.jhuapl.trinity.javafx.components.listviews.EmbeddingsImageListItem.itemFromFile;
-import static edu.jhuapl.trinity.javafx.components.listviews.EmbeddingsImageListItem.itemNoRenderFromFile;
-import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
+import edu.jhuapl.trinity.javafx.components.hyperdrive.RequestTextEmbeddingsTask;
 import static edu.jhuapl.trinity.javafx.events.CommandTerminalEvent.notifyTerminalSuccess;
 import static edu.jhuapl.trinity.javafx.events.CommandTerminalEvent.notifyTerminalWarning;
 import edu.jhuapl.trinity.javafx.events.HyperdriveEvent;
 import static edu.jhuapl.trinity.messages.RestAccessLayer.*;
-import javafx.scene.text.Font;
 
 /**
  * @author Sean Phillips
@@ -137,6 +132,7 @@ public class HyperdrivePane extends LitPathPane {
     ListView<EmbeddingsImageListItem> imageEmbeddingsListView;
     ListView<EmbeddingsTextListItem> textEmbeddingsListView;
     Label imageFilesCountLabel;
+    Label textFilesCountLabel;
     CircleProgressIndicator textEmbeddingRequestIndicator;
     CircleProgressIndicator imageEmbeddingRequestIndicator;
     LandmarkTextBuilderBox landmarkTextBuilderBox;
@@ -243,6 +239,12 @@ public class HyperdrivePane extends LitPathPane {
         BorderPane textEmbeddingsBorderPane = new BorderPane(textEmbeddingsListView);
         textEmbeddingsBorderPane.setPrefWidth(600);
 
+        Label textFilesLabel = new Label("Total Text Files: ");
+        textFilesCountLabel = new Label("0");
+        HBox textFileControlsBox = new HBox(10, textFilesLabel, textFilesCountLabel);
+        textFileControlsBox.setAlignment(Pos.CENTER);
+        textEmbeddingsBorderPane.setTop(textFileControlsBox);
+        
         Button getTextEmbeddingsButton = new Button("Request Embeddings");
         getTextEmbeddingsButton.setWrapText(true);
         getTextEmbeddingsButton.setTextAlignment(TextAlignment.CENTER);
@@ -258,6 +260,7 @@ public class HyperdrivePane extends LitPathPane {
         clearTextEmbeddingsButton.setOnAction(e -> {
             currentTextFeatureList.clear();
             textEmbeddingsListView.getItems().clear();
+            textFilesCountLabel.setText(String.valueOf(textFilesList.size()));
         });
         clearTextEmbeddingsButton.setCancelButton(true);
 
@@ -1143,6 +1146,24 @@ public class HyperdrivePane extends LitPathPane {
                 baseImageView.setImage(baseImage);
             }            
         });
+        scene.getRoot().addEventHandler(HyperdriveEvent.NEW_BATCH_TEXTLOAD, event -> {
+            if(null != event.object1) {
+                List<EmbeddingsTextListItem> newItems = (List<EmbeddingsTextListItem>) event.object1;
+                textEmbeddingsListView.getItems().addAll(newItems);
+            }
+            if(null != event.object2) {
+                ArrayList<File> newImageFiles = (ArrayList<File>) event.object2;
+                textFilesList.addAll(newImageFiles);
+            }
+            textFilesCountLabel.setText(String.valueOf(textFilesList.size()));
+            
+            if (!textEmbeddingsListView.getItems().isEmpty()) {
+                textEmbeddingsListView.getSelectionModel().selectFirst();
+            } else {
+                baseTextArea.clear();
+            }
+        });
+        
         getStyleClass().add("hyperdrive-pane");
     }
 
@@ -1300,118 +1321,18 @@ public class HyperdrivePane extends LitPathPane {
     }
 
     public void loadTextTask(List<File> files) {
-        Task loadTask = new Task() {
-            @Override
-            protected Void call() throws Exception {
-                AtomicInteger atomicCount = new AtomicInteger(0);
-                textEmbeddingRequestIndicator.setFadeTimeMS(250);
-                textEmbeddingRequestIndicator.setLabelLater("Loading " + atomicCount.toString() + " files...");
-                textEmbeddingRequestIndicator.spin(true);
-                textEmbeddingRequestIndicator.fadeBusy(false);
-
-                currentTextFeatureList.clear();
-                textFilesList.clear();
-                LOG.info("Searching for files, filtering on ASCII/PDF....");
-                long startTime = System.nanoTime();
-                for (File file : files) {
-                    //@DEBUB SMP LOG.info(file.getAbsolutePath());
-                    if (file.isDirectory()) {
-                        textFilesList.addAll(
-                            Files.walk(file.toPath())
-                                .map(Path::toFile)
-                                .filter(f -> ResourceUtils.isTextFile(f) || ResourceUtils.isPDF(file))
-                                .toList());
-                    } else {
-                        if (ResourceUtils.isTextFile(file) || ResourceUtils.isPDF(file))
-                            textFilesList.add(file);
-                    }
-                }
-                Utils.printTotalTime(startTime);
-                final double total = textFilesList.size();
-                LOG.info("Loading textfiles into listitems....");
-                startTime = System.nanoTime();
-                List<EmbeddingsTextListItem> newItems =
-                    textFilesList.parallelStream()
-                        .map(EmbeddingsTextListItem.itemsSplitFromFile)
-                        .flatMap(List::stream)
-                        .peek(i -> {
-                            double completed = atomicCount.incrementAndGet();
-                            textEmbeddingRequestIndicator.setLabelLater(completed + " of " + total);
-                        }).toList();
-                Utils.printTotalTime(startTime);
-
-                LOG.info("Populating ListView....");
-                Platform.runLater(() -> {
-                    long start = System.nanoTime();
-                    textEmbeddingsListView.getItems().addAll(newItems);
-                    LOG.info("loaded {} ASCII files.", String.valueOf(textFilesList.size()));
-                    if (!textEmbeddingsListView.getItems().isEmpty()) {
-                        textEmbeddingsListView.getSelectionModel().selectFirst();
-                    } else {
-                        baseTextArea.clear();
-                    }
-                    Utils.printTotalTime(start);
-                });
-                textEmbeddingRequestIndicator.setLabelLater("Complete");
-                textEmbeddingRequestIndicator.spin(false);
-                textEmbeddingRequestIndicator.fadeBusy(true);
-                return null;
-            }
-        };
+        currentTextFeatureList.clear();
+        textFilesList.clear();   
+        LoadTextTask loadTask = new LoadTextTask(scene, textEmbeddingRequestIndicator, files);
         Thread t = new Thread(loadTask, "Trinity Batch Text File Load Task");
         t.setDaemon(true);
         t.start();
     }
 
     public void requestTextEmbeddingsTask() {
-        Task requestTask = new Task() {
-            @Override
-            protected Void call() throws Exception {
-                textEmbeddingRequestIndicator.setFadeTimeMS(250);
-                textEmbeddingRequestIndicator.setLabelLater("Encoding Text...");
-                textEmbeddingRequestIndicator.spin(true);
-                textEmbeddingRequestIndicator.fadeBusy(false);
-                LOG.info("Loading and Encoding Text...");
-                long startTime = System.nanoTime();
-                final int total = textEmbeddingsListView.getSelectionModel().getSelectedItems().size();
-
-                int percent = 100;
-                if (total < 100)
-                    percent = 10;
-                if (total < 10)
-                    percent = 1;
-                int updatePercent = total / percent;
-
-                double completed = 0;
-                for (EmbeddingsTextListItem item : textEmbeddingsListView.getSelectionModel().getSelectedItems()) {
-                    if (null == item.contents)
-                        item.readText();
-                    EmbeddingsImageInput input = EmbeddingsImageInput.defaultTextInput(item.contents);
-                    if (null != currentEmbeddingsModel)
-                        input.setModel(currentEmbeddingsModel);
-                    List<Integer> inputIDs = new ArrayList<>();
-                    inputIDs.add(item.textID);
-                    try {
-                        int rn = requestNumber.getAndIncrement();
-                        RestAccessLayer.requestTextEmbeddings(
-                            input, scene, inputIDs, rn);
-                        outstandingRequests.put(rn, REQUEST_STATUS.REQUESTED);
-                    } catch (JsonProcessingException ex) {
-                        LOG.error(null, ex);
-                    }
-                    completed++;
-                    if (completed % updatePercent == 0) {
-                        textEmbeddingRequestIndicator.setPercentComplete(completed / total);
-                    }
-                    textEmbeddingRequestIndicator.setLabelLater("Encoding " + completed + " of " + total);
-                    Thread.sleep(requestDelay);
-                }
-                Utils.printTotalTime(startTime);
-                textEmbeddingRequestIndicator.setPercentComplete(completed / total);
-                textEmbeddingRequestIndicator.setLabelLater("Requested " + completed + " of " + total);
-                return null;
-            }
-        };
+        RequestTextEmbeddingsTask requestTask = new RequestTextEmbeddingsTask(
+            scene, textEmbeddingRequestIndicator, requestNumber, currentEmbeddingsModel, 
+            outstandingRequests, textEmbeddingsListView.getSelectionModel().getSelectedItems());
         Thread t = new Thread(requestTask, "Trinity Embeddings Text Request");
         t.setDaemon(true);
         t.start();
