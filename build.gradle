@@ -67,8 +67,8 @@ dependencies {
     implementation group: 'com.tambapps.fft4j', name: 'fft4j', version: '2.0'
     implementation group: 'com.github.trinity-xai', name: 'SuperMDS', version: 'v2025.06.29'
     implementation group: 'org.apache.pdfbox', name: 'pdfbox', version: '3.0.5'
-    implementation group: 'org.apache.pdfbox', name: 'fontbox', version: '3.0.5'
     implementation group: 'org.apache.pdfbox', name: 'pdfbox-io', version: '3.0.5'
+    //implementation group: 'org.apache.pdfbox', name: 'fontbox', version: '3.0.5'
 
     // Enforce slf4j-api version across dependencies
     implementation group: 'org.slf4j', name: 'slf4j-api', version: '2.0.17'
