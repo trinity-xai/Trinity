@@ -32,11 +32,12 @@ public class LoadTextTask extends HyperdriveTask {
     @Override
     protected void processTask() throws Exception {
         AtomicInteger atomicCount = new AtomicInteger(0);
-        progressIndicator.setFadeTimeMS(250);
-        progressIndicator.setLabelLater("Loading " + atomicCount.toString() + " files...");
-        progressIndicator.spin(true);
-        progressIndicator.fadeBusy(false);
-
+        if(null != progressIndicator) {
+            progressIndicator.setFadeTimeMS(250);
+            progressIndicator.setLabelLater("Loading " + atomicCount.toString() + " files...");
+            progressIndicator.spin(true);
+            progressIndicator.fadeBusy(false);
+        }
         ArrayList<File> textFilesList = new ArrayList<>();
         LOG.info("Searching for files, filtering on ASCII/PDF....");
         long startTime = System.nanoTime();
@@ -63,7 +64,9 @@ public class LoadTextTask extends HyperdriveTask {
                 .flatMap(List::stream)
                 .peek(i -> {
                     double completed = atomicCount.incrementAndGet();
-                    progressIndicator.setLabelLater(completed + " of " + total);
+                    if(null != progressIndicator) {
+                        progressIndicator.setLabelLater(completed + " of " + total);
+                    }
                 }).toList();
         Utils.logTotalTime(startTime);
 
@@ -72,8 +75,10 @@ public class LoadTextTask extends HyperdriveTask {
             scene.getRoot().fireEvent(
                 new HyperdriveEvent(HyperdriveEvent.NEW_BATCH_TEXTLOAD, newItems, textFilesList));
         });
-        progressIndicator.setLabelLater("Complete");
-        progressIndicator.spin(false);
-        progressIndicator.fadeBusy(true);
+        if(null != progressIndicator) {
+            progressIndicator.setLabelLater("Complete");
+            progressIndicator.spin(false);
+            progressIndicator.fadeBusy(true);
+        }
     }
 }

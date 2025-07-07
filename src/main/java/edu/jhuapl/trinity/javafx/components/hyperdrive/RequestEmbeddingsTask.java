@@ -31,7 +31,6 @@ public class RequestEmbeddingsTask extends HyperdriveTask {
         this.currentEmbeddingsModel = currentEmbeddingsModel;
         this.imageEmbeddingsListItems = null;
     }
-
     
     public RequestEmbeddingsTask(Scene scene, CircleProgressIndicator progressIndicator, 
         AtomicInteger requestNumber, String currentEmbeddingsModel,
@@ -45,10 +44,12 @@ public class RequestEmbeddingsTask extends HyperdriveTask {
     @Override
     protected void processTask() throws Exception {
         AtomicInteger atomicCount = new AtomicInteger(0);
-        progressIndicator.setFadeTimeMS(250);
-        progressIndicator.setLabelLater("Encoding Images...");
-        progressIndicator.spin(true);
-        progressIndicator.fadeBusy(false);
+        if(null != progressIndicator) {
+            progressIndicator.setFadeTimeMS(250);
+            progressIndicator.setLabelLater("Encoding Images...");
+            progressIndicator.spin(true);
+            progressIndicator.fadeBusy(false);
+        }
         LOG.info("Loading and Encoding Images...");
         long startTime = System.nanoTime();
         List<EmbeddingsImageUrl> inputs = new ArrayList<>();
@@ -57,15 +58,18 @@ public class RequestEmbeddingsTask extends HyperdriveTask {
         imageEmbeddingsListItems.parallelStream().forEach(item -> {
             inputs.add(imageUrlFromImage.apply(item.getCurrentImage()));
             inputIDs.add(item.imageID);
-            double completed = inputs.size();
-            progressIndicator.setPercentComplete(completed / total);
-            progressIndicator.setLabelLater("Encoding " + completed + " of " + total);
+            if(null != progressIndicator) {            
+                double completed = inputs.size();
+                progressIndicator.setPercentComplete(completed / total);
+                progressIndicator.setLabelLater("Encoding " + completed + " of " + total);
+            }                
         });
-        Utils.printTotalTime(startTime);
+        Utils.logTotalTime(startTime);
         double completed = atomicCount.incrementAndGet();
-        progressIndicator.setPercentComplete(completed / total);
-        progressIndicator.setLabelLater("Requested " + completed + " of " + total);
-
+        if(null != progressIndicator) {        
+            progressIndicator.setPercentComplete(completed / total);
+            progressIndicator.setLabelLater("Requested " + completed + " of " + total);
+        }
         //break up the requests based on batch size
         int currentIndex = 0;
         while (currentIndex < inputs.size()) {
@@ -77,10 +81,11 @@ public class RequestEmbeddingsTask extends HyperdriveTask {
             LOG.info("Batch created: {}", currentBatch.size());
             requestEmbeddings(currentBatch, inputIDs.subList(currentIndex, endCurrentIndex));
             currentIndex += getBatchSize();
-
             completed = Integer.valueOf(currentIndex).doubleValue();
-            progressIndicator.setPercentComplete(completed / total);
-            progressIndicator.setLabelLater("Requested " + completed + " of " + total);
+            if(null != progressIndicator) {            
+                progressIndicator.setPercentComplete(completed / total);
+                progressIndicator.setLabelLater("Requested " + completed + " of " + total);
+            }
             Thread.sleep(getRequestDelay());
         }
     }
