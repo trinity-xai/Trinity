@@ -136,6 +136,7 @@ extraJavaModuleInfo {
         exportAllPackages()
     }
     module('org.apache.pdfbox:pdfbox', 'org.apache.pdfbox') {
+        requires('org.apache.pdfbox.io')
         exportAllPackages()
     }
     module('org.apache.pdfbox:pdfbox-io', 'org.apache.pdfbox.io') {

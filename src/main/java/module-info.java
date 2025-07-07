@@ -30,6 +30,7 @@ module edu.jhuapl.trinity {
     requires fft4j;
     requires com.github.trinity.supermds;
     requires org.apache.pdfbox;
+    requires org.apache.pdfbox.io;
     opens edu.jhuapl.trinity.javafx.components.radial to lit.litfx.controls;
     opens edu.jhuapl.trinity to webcam.capture;
     opens edu.jhuapl.trinity.data to javafx.base;
