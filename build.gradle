@@ -133,7 +133,7 @@ extraJavaModuleInfo {
     module('com.tambapps.fft4j:fft4j', 'fft4j') {
         exportAllPackages()
     }
-    module('rg.apache.pdfbox', 'pdfbox') {
+    module('org.apache.pdfbox', 'pdfbox') {
         exportAllPackages()
     }
 }
