@@ -1,30 +1,25 @@
 package edu.jhuapl.trinity.javafx.components;
 
 import com.github.trinity.supermds.CVAE;
-import static com.github.trinity.supermds.CVAEHelper.mseLoss;
-import static com.github.trinity.supermds.CVAEHelper.shuffledIndices;
-import com.github.trinity.supermds.MultilaterationConfig;
-import com.github.trinity.supermds.MultilaterationConfig.OptimizerType;
 import com.github.trinity.supermds.Normalizer;
 import com.github.trinity.supermds.SuperMDS;
-import com.github.trinity.supermds.SuperMDSAnchors;
-import com.github.trinity.supermds.SuperMDSAnchors.Strategy;
 import com.github.trinity.supermds.SuperMDSHelper;
-import static com.github.trinity.supermds.SuperMDSValidator.generateSphereData;
-import static edu.jhuapl.trinity.utils.Utils.printTotalTime;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
+import javafx.scene.control.Spinner;
 import javafx.scene.layout.VBox;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.Arrays;
 import java.util.Random;
-import javafx.collections.FXCollections;
-import javafx.scene.control.ChoiceBox;
-import javafx.scene.control.Spinner;
+
+import static com.github.trinity.supermds.CVAEHelper.mseLoss;
+import static com.github.trinity.supermds.CVAEHelper.shuffledIndices;
+import static com.github.trinity.supermds.SuperMDSValidator.generateSphereData;
+import static edu.jhuapl.trinity.utils.Utils.printTotalTime;
 
 /**
  * @author Sean Phillips
@@ -39,50 +34,50 @@ public class CvaeControlBox extends VBox {
         numPointsSpinner.setEditable(true);
         numPointsSpinner.setPrefWidth(100);
 
-        VBox numPoints = new VBox(5, 
-            new Label("Number of Points"), 
+        VBox numPoints = new VBox(5,
+            new Label("Number of Points"),
             numPointsSpinner
         );
         numPoints.setPrefWidth(200);
-        
+
         Spinner<Integer> inputDimensionsSpinner = new Spinner(3, 1000, 10, 5);
         inputDimensionsSpinner.setEditable(true);
         inputDimensionsSpinner.setPrefWidth(100);
 
-        VBox inputDim = new VBox(5, 
-            new Label("Input Dimensions"), 
+        VBox inputDim = new VBox(5,
+            new Label("Input Dimensions"),
             inputDimensionsSpinner
         );
 
         Spinner<Integer> outputDimensionsSpinner = new Spinner(2, 1000, 3, 5);
         outputDimensionsSpinner.setEditable(true);
-        outputDimensionsSpinner.setPrefWidth(100);        
-        
-        VBox outputDim = new VBox(5, 
-            new Label("Output Dimensions"), 
+        outputDimensionsSpinner.setPrefWidth(100);
+
+        VBox outputDim = new VBox(5,
+            new Label("Output Dimensions"),
             outputDimensionsSpinner
         );
-        
+
         Spinner<Integer> numLandmarksSpinner = new Spinner(2, 1000, 10, 10);
         numLandmarksSpinner.setEditable(true);
-        numLandmarksSpinner.setPrefWidth(100); 
-        
-        VBox numLandmarks = new VBox(5, 
-            new Label("Number of Landmarks"), 
+        numLandmarksSpinner.setPrefWidth(100);
+
+        VBox numLandmarks = new VBox(5,
+            new Label("Number of Landmarks"),
             numLandmarksSpinner
         );
 
 //        ChoiceBox<Strategy> inverseAnchorChoiceBox = new ChoiceBox<>(
 //            FXCollections.observableArrayList(SuperMDSAnchors.Strategy.values()));
 //        inverseAnchorChoiceBox.getSelectionModel().selectFirst();
-//        VBox inverseAnchors = new VBox(5, 
+//        VBox inverseAnchors = new VBox(5,
 //            new Label("Inverse Anchor Selection Strategy"),
 //            inverseAnchorChoiceBox
 //        );
 //        ChoiceBox<OptimizerType> optimizerChoiceBox = new ChoiceBox<>(
 //            FXCollections.observableArrayList(MultilaterationConfig.OptimizerType.values()));
 //        optimizerChoiceBox.getSelectionModel().selectFirst();
-//        VBox optimizer = new VBox(5, 
+//        VBox optimizer = new VBox(5,
 //            new Label("Multilateration Optimizer"),
 //            optimizerChoiceBox
 //        );
@@ -90,7 +85,7 @@ public class CvaeControlBox extends VBox {
         Button testButton = new Button("Train CVAE");
         testButton.setOnAction(e -> {
             trainCVAE(
-                numPointsSpinner.getValue(), 
+                numPointsSpinner.getValue(),
                 inputDimensionsSpinner.getValue(),
                 outputDimensionsSpinner.getValue(),
                 numLandmarksSpinner.getValue()
@@ -99,30 +94,31 @@ public class CvaeControlBox extends VBox {
 
 //            reloadTrackList.getScene().getRoot().fireEvent(new AudioEvent(
 //                AudioEvent.RELOAD_MUSIC_FILES));
-// 
+//
         setSpacing(10);
 
         getChildren().addAll(
             testButton, numPoints, inputDim, outputDim, numLandmarks
         );
     }
+
     public void trainCVAE(int numPoints, int inputDim, int embeddingDim, int numberOfLandmarks) {
         int latentDim = 16;
         int hiddenDim = 64;
         int batchSize = 128;
         int epochs = 2000;
-        
+
         // Generate dummy original data (e.g., MDS input)
 //        double[][] originalData = generateRandomData(numPoints, inputDim);
         double[][] originalData = generateSphereData(numPoints, inputDim, 42);
         // Optional: generate weights... for equal weighting use all 1.0s
         //System.out.println("Initializing weights...");
         long startTime = System.nanoTime();
-        double[][] weights = new double[originalData.length][originalData.length]; 
+        double[][] weights = new double[originalData.length][originalData.length];
         for (int i = 0; i < originalData.length; i++) {
             Arrays.fill(weights[i], 1.0);
         }
-        printTotalTime(startTime); 
+        printTotalTime(startTime);
         // Build params
         SuperMDS.Params params = new SuperMDS.Params();
         params.outputDim = embeddingDim;
@@ -136,7 +132,7 @@ public class CvaeControlBox extends VBox {
         params.useParallel = false;               // Toggle parallelized SMACOF
         params.useStressSampling = true;         // allows SMACOF to drastically reduce iterations
         params.stressSampleCount = 1000; //number of stress samples per SMACOF interation
-        
+
         // Run SuperMDS/SMACOF to get embeddings
         //System.out.println("Running SMACOF MDS...");
         startTime = System.nanoTime();
@@ -200,7 +196,7 @@ public class CvaeControlBox extends VBox {
 
             double[] var = cvae.confidenceEstimate(conditions[i], 50);
             totalMeanVar += Arrays.stream(var).average().orElse(Double.NaN);
-//                System.out.printf("Condition %d: Mean variance = %.6f\n", i, meanVar);                
+//                System.out.printf("Condition %d: Mean variance = %.6f\n", i, meanVar);
         }
 
         double avgReconError = totalReconError / numPoints;

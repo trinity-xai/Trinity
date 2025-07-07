@@ -141,11 +141,11 @@
                             <top>
                             </top>
                             <center>
-                                
+
                             </center>
                         </BorderPane>
                     </content>
-                </Tab>                
+                </Tab>
                 <Tab closable="false" text="PCA">
                     <content>
                         <BorderPane minHeight="200.0" minWidth="400.0">

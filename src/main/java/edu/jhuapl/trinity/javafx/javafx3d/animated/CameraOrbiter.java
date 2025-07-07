@@ -4,7 +4,6 @@ import javafx.animation.AnimationTimer;
 import org.fxyz3d.utils.CameraTransformer;
 
 /**
- *
  * @author Sean Phillips
  */
 public class CameraOrbiter extends AnimationTimer {
@@ -12,13 +11,13 @@ public class CameraOrbiter extends AnimationTimer {
     private long lastTime = 0;
     private CameraTransformer cameraTransform;
     private double rotationSpeed = 7; // degrees per second
-    private boolean enableRotation = false;    
-    
+    private boolean enableRotation = false;
+
     public CameraOrbiter(CameraTransformer cameraTransform, double rotationDegreesPerSecond) {
         this.cameraTransform = cameraTransform;
         rotationSpeed = rotationDegreesPerSecond;
     }
-    
+
     @Override
     public void handle(long now) {
 
@@ -31,8 +30,9 @@ public class CameraOrbiter extends AnimationTimer {
             }
         }
         lastTime = now;
-        
+
     }
+
     /**
      * @return the rotationSpeed
      */
@@ -45,7 +45,8 @@ public class CameraOrbiter extends AnimationTimer {
      */
     public void setRotationSpeed(double rotationSpeed) {
         this.rotationSpeed = rotationSpeed;
-    }    
+    }
+
     /**
      * @return the enableRotation
      */
@@ -58,5 +59,5 @@ public class CameraOrbiter extends AnimationTimer {
      */
     public void setEnableRotation(boolean enableRotation) {
         this.enableRotation = enableRotation;
-    }    
+    }
 }

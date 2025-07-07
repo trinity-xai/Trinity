@@ -231,10 +231,11 @@ public class RadialGrid extends Group {
     public void setPulseScalar(double pulseScalar) {
         this.pulseScalar = pulseScalar;
     }
+
     /**
      * @return the worldRotateY
      */
     public Rotate getWorldRotateY() {
         return worldRotateY;
-    }    
+    }
 }

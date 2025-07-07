@@ -42,7 +42,7 @@ public class RadialGridControlBox extends VBox {
         rotateToggle.setOnAction(e -> {
             radialGrid.setEnableRotation(rotateToggle.isSelected());
             radialGrid.getScene().getRoot().fireEvent(
-                new ApplicationEvent(ApplicationEvent.CAMERA_ORBIT_MODE, 
+                new ApplicationEvent(ApplicationEvent.CAMERA_ORBIT_MODE,
                     rotateToggle.isSelected()));
         });
 

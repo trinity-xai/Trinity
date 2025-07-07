@@ -39,6 +39,7 @@ import javafx.scene.image.ImageView;
 import javafx.scene.input.DragEvent;
 import javafx.scene.input.Dragboard;
 import javafx.scene.input.TransferMode;
+import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
@@ -56,7 +57,6 @@ import java.nio.file.Files;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.ResourceBundle;
-import javafx.scene.layout.BorderPane;
 
 /**
  * FXML Controller class
@@ -184,7 +184,7 @@ public class ManifoldControlController implements Initializable {
     @FXML
     private BorderPane mdsPane;
     private MdsControlBox mdsControlBox;
-    
+
     Scene scene;
     private final String ALL = "ALL";
     boolean reactive = true;
@@ -206,7 +206,7 @@ public class ManifoldControlController implements Initializable {
         setupDistanceControls();
         mdsControlBox = new MdsControlBox();
         mdsPane.setCenter(mdsControlBox);
-        
+
         if (null != root) {
             root.addEventHandler(DragEvent.DRAG_OVER, event -> {
                 event.acceptTransferModes(TransferMode.COPY);

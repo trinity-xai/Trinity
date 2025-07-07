@@ -348,7 +348,7 @@ public class AppAsyncManager extends Task {
         progress.setLabelLater("...Application Events...");
         progress.setPercentComplete(current++ / total);
         scene.addEventHandler(ApplicationEvent.SHOW_TEXT_CONSOLE, e -> {
-            boolean streaming = null != e.object2 && (boolean)e.object2; //true for streaming 
+            boolean streaming = null != e.object2 && (boolean) e.object2; //true for streaming
             if (null == textConsolePane) {
                 textConsolePane = new TextPane(scene, desktopPane);
                 textConsolePane.setOpaqueEnabled(true);
@@ -357,12 +357,12 @@ public class AppAsyncManager extends Task {
                 desktopPane.getChildren().add(textConsolePane);
                 textConsolePane.slideInPane();
             } else {
-                if(!streaming) //don't want to trigger the show animations every streaming update
+                if (!streaming) //don't want to trigger the show animations every streaming update
                     textConsolePane.show();
             }
             if (null != e.object) {
                 String newText = (String) e.object;
-                if(streaming)
+                if (streaming)
                     Platform.runLater(() -> textConsolePane.addText(newText));
                 else
                     Platform.runLater(() -> textConsolePane.setText(newText));
@@ -735,7 +735,7 @@ public class AppAsyncManager extends Task {
             FeatureCollection originalFC = getFeaturesBySource(source);
             projections3DPane.projectFeatureCollection(originalFC, umap);
         });
-        
+
         scene.addEventHandler(ManifoldEvent.GENERATE_NEW_MDS, event -> {
             Platform.runLater(() -> {
                 ProgressStatus ps = new ProgressStatus("Starting MDS Transform....", -1);
