@@ -10,8 +10,6 @@ import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.javafx.components.radial.ProgressStatus;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.utils.ResourceUtils;
-import static edu.jhuapl.trinity.utils.Utils.logTotalTime;
-import static edu.jhuapl.trinity.utils.Utils.printTotalTime;
 import static edu.jhuapl.trinity.utils.Utils.totalTimeString;
 import javafx.application.Platform;
 import javafx.concurrent.Task;

@@ -27,7 +27,6 @@ import edu.jhuapl.trinity.javafx.components.radial.ProgressStatus;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.events.ImageEvent;
 import edu.jhuapl.trinity.javafx.events.RestEvent;
-import edu.jhuapl.trinity.messages.EmbeddingsImageCallback.STATUS;
 import edu.jhuapl.trinity.messages.RestAccessLayer;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
@@ -91,15 +90,25 @@ import java.util.concurrent.atomic.AtomicInteger;
 
 import static edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageUrl.imageUrlFromImage;
 import static edu.jhuapl.trinity.data.messages.xai.FeatureVector.mapToStateArray;
+import edu.jhuapl.trinity.javafx.components.hyperdrive.HyperdriveTask.REQUEST_STATUS;
+import edu.jhuapl.trinity.javafx.components.hyperdrive.RequestEmbeddingsTask;
 import static edu.jhuapl.trinity.javafx.components.listviews.EmbeddingsImageListItem.itemFromFile;
 import static edu.jhuapl.trinity.javafx.components.listviews.EmbeddingsImageListItem.itemNoRenderFromFile;
+import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
+import static edu.jhuapl.trinity.javafx.events.CommandTerminalEvent.notifyTerminalSuccess;
+import static edu.jhuapl.trinity.javafx.events.CommandTerminalEvent.notifyTerminalWarning;
 import static edu.jhuapl.trinity.messages.RestAccessLayer.*;
+import javafx.scene.text.Font;
 
 /**
  * @author Sean Phillips
  */
 public class HyperdrivePane extends LitPathPane {
     private static final Logger LOG = LoggerFactory.getLogger(HyperdrivePane.class);
+    private static int EMBEDDINGS_IMAGE_TESTID = -9001;
+    private static int EMBEDDINGS_TEXT_TESTID = -9002;
+    private static int CHAT_CHAT_TESTID = -9003;
+    private static int CHAT_VISION_TESTID = -9004;
     public static int PANE_WIDTH = 1200;
     public static int PANE_HEIGHT = 575;
     Image waitingImage;
@@ -134,7 +143,7 @@ public class HyperdrivePane extends LitPathPane {
     TextField chatLocationTextField;
     ChoiceBox<String> metricChoiceBox;
     AtomicInteger requestNumber;
-    HashMap<Integer, STATUS> outstandingRequests;
+    HashMap<Integer, REQUEST_STATUS> outstandingRequests;
     int batchSize = 1;
     long requestDelay = 25;
     int chunkSize = 16384;
@@ -726,10 +735,12 @@ public class HyperdrivePane extends LitPathPane {
         testEmbeddingsImageButton.setOnAction(e -> {
             try {
                 List<Integer> inputIDs = new ArrayList<>();
-                inputIDs.add(-1);
+                inputIDs.add(EMBEDDINGS_IMAGE_TESTID);
                 List<EmbeddingsImageUrl> inputs = new ArrayList<>();
                 inputs.add(imageUrlFromImage.apply(ResourceUtils.load3DTextureImage("carl-b-portrait")));
-                requestEmbeddings(inputs, inputIDs);
+                new RequestEmbeddingsTask(scene, currentEmbeddingsModel).
+                    requestEmbeddings(inputs, inputIDs);
+                notifyTerminalWarning("Sent Image Embeddings Request test using Carl-b.", scene);    
             } catch (IOException ex) {
                 LOG.error(null, ex);
             }
@@ -741,8 +752,9 @@ public class HyperdrivePane extends LitPathPane {
                 if (null != currentEmbeddingsModel)
                     input.setModel(currentEmbeddingsModel);
                 List<Integer> inputIDs = new ArrayList<>();
-                inputIDs.add(-1);
+                inputIDs.add(EMBEDDINGS_TEXT_TESTID);
                 RestAccessLayer.requestTextEmbeddings(input, scene, inputIDs, 666);
+                notifyTerminalWarning("Sent Text Embeddings Request Test.", scene);
             } catch (IOException ex) {
                 LOG.error(null, ex);
             }
@@ -775,8 +787,9 @@ public class HyperdrivePane extends LitPathPane {
             ChatCompletionsInput input = ChatCompletionsInput.helloworldChatCompletionsInput();
             if (null != currentChatModel)
                 input.setModel(currentChatModel);
-            try {
-                RestAccessLayer.requestChatCompletion(input, testChatModelButton.getScene(), 666, 9001);
+            try {    
+                RestAccessLayer.requestChatCompletion(input, testChatModelButton.getScene(), CHAT_CHAT_TESTID, 9001);
+                notifyTerminalWarning("Sent Chat Completions Test.", scene);
             } catch (JsonProcessingException ex) {
                 LOG.error(null, ex);
             }
@@ -787,7 +800,8 @@ public class HyperdrivePane extends LitPathPane {
                 ChatCompletionsInput input = ChatCompletionsInput.hellocarlChatCompletionsInput();
                 if (null != currentChatModel)
                     input.setModel(currentChatModel);
-                RestAccessLayer.requestChatCompletion(input, testVisionModelButton.getScene(), 666, 9001);
+                RestAccessLayer.requestChatCompletion(input, testVisionModelButton.getScene(), CHAT_VISION_TESTID, 9001);
+                notifyTerminalWarning("Sent Vision Test using Carl-b.", scene);
             } catch (JsonProcessingException ex) {
                 LOG.error(null, ex);
             } catch (IOException ex) {
@@ -907,10 +921,10 @@ public class HyperdrivePane extends LitPathPane {
                         });
                 }
             }
-            outstandingRequests.put(output.getRequestNumber(), STATUS.SUCCEEDED);
+            outstandingRequests.put(output.getRequestNumber(), REQUEST_STATUS.SUCCEEDED);
             //@DEBUG SMP
             //System.out.println(msg);
-            if (!outstandingRequests.containsValue(STATUS.REQUESTED)) {
+            if (!outstandingRequests.containsValue(REQUEST_STATUS.REQUESTED)) {
                 outstandingRequests.clear();
             }
         });
@@ -918,33 +932,31 @@ public class HyperdrivePane extends LitPathPane {
         scene.getRoot().addEventHandler(RestEvent.NEW_EMBEDDINGS_IMAGE, event -> {
             EmbeddingsImageOutput output = (EmbeddingsImageOutput) event.object;
             List<Integer> inputIDs = (List<Integer>) event.object2;
-            String msg = "Received " + output.getData().size() + " embeddings at "
-                + format.format(LocalDateTime.now());
             int totalListItems = imageEmbeddingsListView.getItems().size();
             for (int i = 0; i < output.getData().size(); i++) {
                 if (i <= totalListItems) {
-                    EmbeddingsImageData currentOutput = output.getData().get(i);
                     int currentInputID = inputIDs.get(i);
-                    imageEmbeddingsListView.getItems()
-                        .filtered(fi -> fi.imageID == currentInputID)
-                        .forEach(item -> {
-                            item.setEmbeddings(currentOutput.getEmbedding());
-                            item.addMetaData("object", currentOutput.getObject());
-                            item.addMetaData("type", currentOutput.getType());
-                        });
+                    if(currentInputID == EMBEDDINGS_IMAGE_TESTID) {
+                        notifyTerminalSuccess("Image Embeddings Test Successful", scene);                        
+                    } else {
+                        EmbeddingsImageData currentOutput = output.getData().get(i);
+                        imageEmbeddingsListView.getItems()
+                            .filtered(fi -> fi.imageID == currentInputID)
+                            .forEach(item -> {
+                                item.setEmbeddings(currentOutput.getEmbedding());
+                                item.addMetaData("object", currentOutput.getObject());
+                                item.addMetaData("type", currentOutput.getType());
+                            });
+                    }
                 }
             }
-
-            outstandingRequests.put(output.getRequestNumber(), STATUS.SUCCEEDED);
-            //@DEBUG SMP
-            //System.out.println(msg);
+            outstandingRequests.put(output.getRequestNumber(), REQUEST_STATUS.SUCCEEDED);
             int totalRequests = outstandingRequests.size();
             long remainingRequests = outstandingRequests.entrySet().stream()
-                .filter(t -> t.getValue() == STATUS.REQUESTED).count();
+                .filter(t -> t.getValue() == REQUEST_STATUS.REQUESTED).count();
             imageEmbeddingRequestIndicator.setTopLabelLater("Received "
                 + (totalRequests - remainingRequests) + " of " + totalRequests);
-
-            if (!outstandingRequests.containsValue(STATUS.REQUESTED)) {
+            if (!outstandingRequests.containsValue(REQUEST_STATUS.REQUESTED)) {
                 imageEmbeddingRequestIndicator.spin(false);
                 imageEmbeddingRequestIndicator.fadeBusy(true);
                 outstandingRequests.clear();
@@ -953,14 +965,14 @@ public class HyperdrivePane extends LitPathPane {
         scene.getRoot().addEventHandler(RestEvent.ERROR_EMBEDDINGS_IMAGE, event -> {
             List<File> inputFiles = (List<File>) event.object;
             int request = (int) event.object2;
-            outstandingRequests.put(request, STATUS.FAILED);
+            outstandingRequests.put(request, REQUEST_STATUS.FAILED);
             long totalRequests = outstandingRequests.entrySet().size();
             long remainingRequests = outstandingRequests.entrySet().stream()
-                .filter(t -> t.getValue() == STATUS.REQUESTED).count();
+                .filter(t -> t.getValue() == REQUEST_STATUS.REQUESTED).count();
             imageEmbeddingRequestIndicator.setTopLabelLater("Received "
                 + (totalRequests - remainingRequests) + " of " + totalRequests);
 
-            if (!outstandingRequests.containsValue(STATUS.REQUESTED)) {
+            if (!outstandingRequests.containsValue(REQUEST_STATUS.REQUESTED)) {
                 outstandingRequests.clear();
                 imageEmbeddingRequestIndicator.spin(false);
                 imageEmbeddingRequestIndicator.fadeBusy(true);
@@ -969,14 +981,14 @@ public class HyperdrivePane extends LitPathPane {
         scene.getRoot().addEventHandler(RestEvent.ERROR_EMBEDDINGS_TEXT, event -> {
             List<File> inputFiles = (List<File>) event.object;
             int request = (int) event.object2;
-            outstandingRequests.put(request, STATUS.FAILED);
+            outstandingRequests.put(request, REQUEST_STATUS.FAILED);
             long totalRequests = outstandingRequests.entrySet().size();
             long remainingRequests = outstandingRequests.entrySet().stream()
-                .filter(t -> t.getValue() == STATUS.REQUESTED).count();
+                .filter(t -> t.getValue() == REQUEST_STATUS.REQUESTED).count();
             textEmbeddingRequestIndicator.setTopLabelLater("Received "
                 + (totalRequests - remainingRequests) + " of " + totalRequests);
 
-            if (!outstandingRequests.containsValue(STATUS.REQUESTED)) {
+            if (!outstandingRequests.containsValue(REQUEST_STATUS.REQUESTED)) {
                 outstandingRequests.clear();
                 textEmbeddingRequestIndicator.spin(false);
                 textEmbeddingRequestIndicator.fadeBusy(true);
@@ -987,11 +999,15 @@ public class HyperdrivePane extends LitPathPane {
             ChatCompletionsOutput output = (ChatCompletionsOutput) event.object;
             //@DEBUG SMP
             //String msg = "Received " + output.getChoices().size() + " Chat Choices at " + LocalDateTime.now();
-            outstandingRequests.put(output.getRequestNumber(), STATUS.SUCCEEDED);
-            //@DEBUG SMP
-            //System.out.println(msg);
-            //System.out.println(output.getChoices().get(0).getText());
-
+            outstandingRequests.put(output.getRequestNumber(), REQUEST_STATUS.SUCCEEDED);
+            if(output.getInputID() == CHAT_CHAT_TESTID) {
+                notifyTerminalSuccess("Chat Model Response Successful", scene);
+                return;
+            } 
+            if(output.getInputID() == CHAT_VISION_TESTID) {
+                notifyTerminalSuccess("Vision Model Response Successful", scene);
+                return;
+            }             
             imageEmbeddingsListView.getItems().stream()
                 .filter(t -> t.imageID == output.getInputID())
                 .forEach(item -> {
@@ -1007,16 +1023,14 @@ public class HyperdrivePane extends LitPathPane {
                     }
                 });
             outstandingRequests.remove(output.getRequestNumber());
-            if (!outstandingRequests.containsValue(STATUS.REQUESTED)) {
+            if (!outstandingRequests.containsValue(REQUEST_STATUS.REQUESTED)) {
                 imageEmbeddingRequestIndicator.spin(false);
                 imageEmbeddingRequestIndicator.fadeBusy(true);
             }
-
         });
         scene.getRoot().addEventHandler(RestEvent.ERROR_CHAT_COMPLETIONS, event -> {
-//            List<File> inputFiles = (List<File>) event.object;
             int request = (int) event.object2;
-            outstandingRequests.put(request, STATUS.FAILED);
+            outstandingRequests.put(request, REQUEST_STATUS.FAILED);
         });
         scene.getRoot().addEventHandler(RestEvent.NEW_EMBEDDINGS_TEXT, event -> {
             //Even though its a text embeddings event we reuse the same output data structure
@@ -1028,30 +1042,30 @@ public class HyperdrivePane extends LitPathPane {
             int totalListItems = textEmbeddingsListView.getItems().size();
             for (int i = 0; i < output.getData().size(); i++) {
                 if (i <= totalListItems) {
-                    EmbeddingsImageData currentOutput = output.getData().get(i);
                     int currentInputID = inputIDs.get(i);
-                    textEmbeddingsListView.getItems().stream()
-                        .filter(li -> li.textID == currentInputID)
-                        .forEach(item -> {
-                            item.setEmbeddings(currentOutput.getEmbedding());
-                            item.addMetaData("object", currentOutput.getObject());
-                            item.addMetaData("type", currentOutput.getType());
-                        });
+                    if(currentInputID == EMBEDDINGS_TEXT_TESTID) {
+                        notifyTerminalSuccess("Image Embeddings Test Successful", scene);                        
+                    } else {                    
+                        EmbeddingsImageData currentOutput = output.getData().get(i);
+                        textEmbeddingsListView.getItems().stream()
+                            .filter(li -> li.textID == currentInputID)
+                            .forEach(item -> {
+                                item.setEmbeddings(currentOutput.getEmbedding());
+                                item.addMetaData("object", currentOutput.getObject());
+                                item.addMetaData("type", currentOutput.getType());
+                            });
+                    }
                 }
             }
 
-            outstandingRequests.put(output.getRequestNumber(), STATUS.SUCCEEDED);
+            outstandingRequests.put(output.getRequestNumber(), REQUEST_STATUS.SUCCEEDED);
             textEmbeddingRequestIndicator.setTopLabelLater(msg);
-            //@DEBUG SMP
-            //System.out.println(msg);
-
             int totalRequests = outstandingRequests.size();
             long remainingRequests = outstandingRequests.entrySet().stream()
-                .filter(t -> t.getValue() == STATUS.REQUESTED).count();
+                .filter(t -> t.getValue() == REQUEST_STATUS.REQUESTED).count();
             textEmbeddingRequestIndicator.setTopLabelLater("Received "
                 + (totalRequests - remainingRequests) + " of " + totalRequests);
-
-            if (!outstandingRequests.containsValue(STATUS.REQUESTED)) {
+            if (!outstandingRequests.containsValue(REQUEST_STATUS.REQUESTED)) {
                 outstandingRequests.clear();
                 textEmbeddingRequestIndicator.spin(false);
                 textEmbeddingRequestIndicator.fadeBusy(true);
@@ -1079,12 +1093,12 @@ public class HyperdrivePane extends LitPathPane {
                 }
             }
 
-            outstandingRequests.put(output.getRequestNumber(), STATUS.SUCCEEDED);
+            outstandingRequests.put(output.getRequestNumber(), REQUEST_STATUS.SUCCEEDED);
             textEmbeddingRequestIndicator.setTopLabelLater(msg);
             //@DEBUG SMP
             //System.out.println(msg);
             outstandingRequests.remove(output.getRequestNumber());
-            if (!outstandingRequests.containsValue(STATUS.REQUESTED)) {
+            if (!outstandingRequests.containsValue(REQUEST_STATUS.REQUESTED)) {
                 textEmbeddingRequestIndicator.spin(false);
                 textEmbeddingRequestIndicator.fadeBusy(true);
             }
@@ -1361,7 +1375,7 @@ public class HyperdrivePane extends LitPathPane {
                         int rn = requestNumber.getAndIncrement();
                         RestAccessLayer.requestTextEmbeddings(
                             input, scene, inputIDs, rn);
-                        outstandingRequests.put(rn, STATUS.REQUESTED);
+                        outstandingRequests.put(rn, REQUEST_STATUS.REQUESTED);
                     } catch (JsonProcessingException ex) {
                         LOG.error(null, ex);
                     }
@@ -1451,78 +1465,14 @@ public class HyperdrivePane extends LitPathPane {
         t.start();
     }
 
-    private void requestEmbeddings(List<EmbeddingsImageUrl> currentBatch, List<Integer> inputIDs) {
-        EmbeddingsImageBatchInput input = new EmbeddingsImageBatchInput();
-        input.setInput(currentBatch);
-        input.setDimensions(512);
-        input.setEmbedding_type("all");
-        input.setEncoding_format("float");
-        input.setModel(currentEmbeddingsModel);
-        input.setUser("string");
-        try {
-            int rn = requestNumber.incrementAndGet();
-            imageEmbeddingRequestIndicator.setLabelLater("Embeddings Request " + rn + "...");
-            LOG.info("Sending {} images for processing at {}", currentBatch.size(), LocalDateTime.now());
-            RestAccessLayer.requestImageEmbeddings(input,
-                imageEmbeddingRequestIndicator.getScene(), inputIDs, rn);
-            outstandingRequests.put(rn, STATUS.REQUESTED);
-        } catch (JsonProcessingException ex) {
-            LOG.error(null, ex);
-        }
-    }
-
     public void requestEmbeddingsTask() {
-        Task requestTask = new Task() {
-            @Override
-            protected Void call() throws Exception {
-                AtomicInteger atomicCount = new AtomicInteger(0);
-                imageEmbeddingRequestIndicator.setFadeTimeMS(250);
-                imageEmbeddingRequestIndicator.setLabelLater("Encoding Images...");
-                imageEmbeddingRequestIndicator.spin(true);
-                imageEmbeddingRequestIndicator.fadeBusy(false);
-                LOG.info("Loading and Encoding Images...");
-                long startTime = System.nanoTime();
-                List<EmbeddingsImageUrl> inputs = new ArrayList<>();
-                List<Integer> inputIDs = new ArrayList<>();
-                final double total = imageEmbeddingsListView.getSelectionModel().getSelectedItems().size();
-                imageEmbeddingsListView.getSelectionModel().getSelectedItems()
-                    .parallelStream().forEach(item -> {
-                        inputs.add(imageUrlFromImage.apply(item.getCurrentImage()));
-                        inputIDs.add(item.imageID);
-                        double completed = inputs.size();
-                        imageEmbeddingRequestIndicator.setPercentComplete(completed / total);
-                        imageEmbeddingRequestIndicator.setLabelLater("Encoding " + completed + " of " + total);
-
-                    });
-                Utils.printTotalTime(startTime);
-                double completed = atomicCount.incrementAndGet();
-                imageEmbeddingRequestIndicator.setPercentComplete(completed / total);
-                imageEmbeddingRequestIndicator.setLabelLater("Requested " + completed + " of " + total);
-
-                //break up the requests based on batch size
-                int currentIndex = 0;
-                while (currentIndex < inputs.size()) {
-                    int endCurrentIndex = currentIndex + batchSize;
-                    if (endCurrentIndex > inputs.size())
-                        endCurrentIndex = inputs.size();
-                    List<EmbeddingsImageUrl> currentBatch =
-                        inputs.subList(currentIndex, endCurrentIndex);
-                    LOG.info("Batch created: {}", currentBatch.size());
-                    requestEmbeddings(currentBatch, inputIDs.subList(currentIndex, endCurrentIndex));
-                    currentIndex += batchSize;
-
-                    completed = Integer.valueOf(currentIndex).doubleValue();
-                    imageEmbeddingRequestIndicator.setPercentComplete(completed / total);
-                    imageEmbeddingRequestIndicator.setLabelLater("Requested " + completed + " of " + total);
-                    Thread.sleep(requestDelay);
-                }
-                return null;
-            }
-        };
-        Thread t = new Thread(requestTask, "Trinity Embeddings Image Request");
+        RequestEmbeddingsTask task = new RequestEmbeddingsTask(scene, 
+            imageEmbeddingRequestIndicator, requestNumber, currentEmbeddingsModel, 
+            outstandingRequests, imageEmbeddingsListView.getItems());
+        Thread t = new Thread(task, "Trinity Embeddings Image Request");
         t.setDaemon(true);
-        t.start();
-    }
+        t.start();        
+    }    
 
     private void refreshImageFiles(boolean renderIcons) {
         imageEmbeddingsListView.getItems().forEach(item -> item.reloadImage(renderIcons));

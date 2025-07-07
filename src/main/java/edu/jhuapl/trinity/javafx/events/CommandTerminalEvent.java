@@ -1,8 +1,10 @@
 package edu.jhuapl.trinity.javafx.events;
 
+import javafx.application.Platform;
 import javafx.event.Event;
 import javafx.event.EventType;
 import javafx.scene.Node;
+import javafx.scene.Scene;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 
@@ -49,4 +51,33 @@ public class CommandTerminalEvent extends Event {
     public CommandTerminalEvent(EventType<? extends Event> arg0) {
         super(arg0);
     }
+    
+    public static void alertTerminalWarning(String message, Scene scene, Node node) {
+        Platform.runLater(() -> {
+            CommandTerminalEvent cte = new CommandTerminalEvent(
+                message, new Font("Consolas", 20), Color.GOLD, node);
+            scene.getRoot().fireEvent(cte);
+        });
+    }    
+    public static void notifyTerminalWarning(String message, Scene scene) {
+        Platform.runLater(() -> {
+            CommandTerminalEvent cte = new CommandTerminalEvent(
+                message, new Font("Consolas", 20), Color.GOLD);
+            scene.getRoot().fireEvent(cte);
+        });
+    }
+    public static void notifyTerminalError(String message, Scene scene) {
+        Platform.runLater(() -> {
+            CommandTerminalEvent cte = new CommandTerminalEvent(
+                message, new Font("Consolas", 20), Color.RED);
+            scene.getRoot().fireEvent(cte);
+        });
+    }
+    public static void notifyTerminalSuccess(String message, Scene scene) {
+        Platform.runLater(() -> {
+            CommandTerminalEvent cte = new CommandTerminalEvent(
+                message, new Font("Consolas", 20), Color.LIME);
+            scene.getRoot().fireEvent(cte);
+        });
+    }       
 }
