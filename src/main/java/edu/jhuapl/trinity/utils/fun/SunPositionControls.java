@@ -11,6 +11,7 @@ import javafx.geometry.Insets;
 import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
 import javafx.scene.control.ToggleButton;
+import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
 /**
@@ -29,17 +30,23 @@ public class SunPositionControls extends VBox {
         VBox heightSlider = createSliderBox("Arc Height", SUN_POSITION_ARCHEIGHT, arcHeight, 0.1, 1);
         VBox velocitySlider = createSliderBox("Velocity (Hz)", SUN_POSITION_VELOCITY, velocityHz, 0.01, 1);
 
+        ToggleButton enabledBtn = new ToggleButton("Enable Solar Artifacts");
+        enabledBtn.setOnAction(e -> {
+            getScene().getRoot().fireEvent(new EffectEvent(
+                EffectEvent.SUN_ARTIFACT_ENABLED, enabledBtn.isSelected()));
+        });
         ToggleButton startStopBtn = new ToggleButton("Enable Animation");
         startStopBtn.setOnAction(e -> {
             getScene().getRoot().fireEvent(new EffectEvent(
                 EffectEvent.SUN_POSITION_ANIMATING, startStopBtn.isSelected()));
         });
         getChildren().addAll(
+            new Label("Toggles"),
+            new HBox(20, enabledBtn, startStopBtn),
             new Label("Sun Arc Animation"),
             widthSlider,
             heightSlider,
-            velocitySlider,
-            startStopBtn
+            velocitySlider
         );        
     }
     private VBox createSliderBox(String name, EventType<EffectEvent> eventType, DoubleProperty boundValue, double min, double max) {

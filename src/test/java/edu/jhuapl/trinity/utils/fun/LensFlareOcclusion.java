@@ -2,11 +2,6 @@ package edu.jhuapl.trinity.utils.fun;
 
 import edu.jhuapl.trinity.css.StyleResourceProvider;
 import edu.jhuapl.trinity.utils.ResourceUtils;
-import edu.jhuapl.trinity.utils.fun.FlareOcclusionUtil;
-import edu.jhuapl.trinity.utils.fun.LensFlareControls;
-import edu.jhuapl.trinity.utils.fun.LensFlareGroup;
-import edu.jhuapl.trinity.utils.fun.SunPositionControls;
-import edu.jhuapl.trinity.utils.fun.SunPositionTimer;
 import java.io.IOException;
 import java.util.List;
 import javafx.application.Application;
@@ -136,13 +131,6 @@ public class LensFlareOcclusion extends Application {
             double newY = e.getSceneY() + dragOffset[1];
             sun.setTranslateX(newX);
             sun.setTranslateY(newY);
-//            flareGroup.update(newX, newY, 
-//                sun.getScene().getWidth() / 2.0, 
-//                sun.getScene().getHeight() / 2.0);
-////            double alphaMultiplier = FlareOcclusionUtil.computeFlareAlpha(
-////                newX, newY, sceneW / 2.0, sceneH / 2.0, sceneW, sceneH);
-////            sun.setOpacity(Math.max(alphaMultiplier, 0.1));
-////            sunNeonRim.setOpacity(Math.max(1-alphaMultiplier, 0.1));
         });
         sun.translateXProperty().addListener(e -> {
             flareGroup.update(sun.getTranslateX(), sun.getTranslateY(), 

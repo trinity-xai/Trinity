@@ -18,6 +18,7 @@ public class SunPositionTimer extends AnimationTimer {
 
     private double animationStartTime = -1;
     private boolean animating = false;
+    private boolean enabled = false;
     private Circle sun;
     Pane sunPane; //whatever width/height parent you want to use 
     
@@ -25,6 +26,7 @@ public class SunPositionTimer extends AnimationTimer {
         super();
         this.sunPane = sunPane;
         this.sun = sun;
+
         sunPane.getScene().getRoot().addEventHandler(EffectEvent.SUN_POSITION_ANIMATING, e -> {
             animating  = (boolean) e.object;
         });
