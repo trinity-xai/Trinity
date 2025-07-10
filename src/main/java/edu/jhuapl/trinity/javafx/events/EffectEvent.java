@@ -20,7 +20,12 @@ public class EffectEvent extends Event {
     public static final EventType<EffectEvent> OPTICON_LASER_SWEEP = new EventType(ANY, "OPTICON_LASER_SWEEP");
     public static final EventType<EffectEvent> OPTICON_ENABLE_ORBITING = new EventType(ANY, "OPTICON_ENABLE_ORBITING");
     public static final EventType<EffectEvent> RADIAL_GRID_ROTATION = new EventType(ANY, "RADIAL_GRID_ROTATION");
+    public static final EventType<EffectEvent> SUN_POSITION_ARCWIDTH = new EventType(ANY, "SUN_POSITION_ARCWIDTH");
+    public static final EventType<EffectEvent> SUN_POSITION_ARCHEIGHT = new EventType(ANY, "SUN_POSITION_ARCHEIGHT");
+    public static final EventType<EffectEvent> SUN_POSITION_VELOCITY = new EventType(ANY, "SUN_POSITION_VELOCITY");
+    public static final EventType<EffectEvent> SUN_POSITION_ANIMATING = new EventType(ANY, "SUN_POSITION_ANIMATING");
 
+    
     public String stringId = null;
     public Object object = null;
 
