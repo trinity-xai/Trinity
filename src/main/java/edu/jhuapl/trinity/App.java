@@ -259,6 +259,10 @@ public class App extends Application {
         if (e.isAltDown() && e.isControlDown() && e.getCode().equals(KeyCode.Q)) {
             shutdown(false);
         }
+        if (e.isAltDown() && e.isControlDown() && e.getCode().equals(KeyCode.S)) {
+            stage.getScene().getRoot().fireEvent(
+                new ApplicationEvent(ApplicationEvent.SHOW_SPECIALEFFECTS_PANE));
+        }
         if (e.isAltDown() && e.isControlDown() && e.getCode().equals(KeyCode.C)) {
             stage.getScene().getRoot().fireEvent(
                 new ApplicationEvent(ApplicationEvent.SHOW_COCOVIEWER_PANE));

@@ -91,6 +91,7 @@ import java.util.List;
 import java.util.Map;
 
 import static edu.jhuapl.trinity.App.theConfig;
+import edu.jhuapl.trinity.javafx.components.panes.SpecialEffectsPane;
 
 
 /**
@@ -116,6 +117,7 @@ public class AppAsyncManager extends Task {
     TextPane textConsolePane;
     JukeBoxPane jukeBoxPane;
     VideoPane videoPane;
+    SpecialEffectsPane specialEffectsPane;     
     NavigatorPane navigatorPane;
     CocoViewerPane cocoViewerPane;
     WaveformPane waveformPane;
@@ -394,6 +396,18 @@ public class AppAsyncManager extends Task {
             }
             videoPane.setVideo();
         });
+        LOG.info("Special Effects");
+        scene.addEventHandler(ApplicationEvent.SHOW_SPECIALEFFECTS_PANE, e -> {
+            if (null == specialEffectsPane) {
+                specialEffectsPane = new SpecialEffectsPane(scene, desktopPane);
+            }
+            if (!desktopPane.getChildren().contains(specialEffectsPane)) {
+                desktopPane.getChildren().add(specialEffectsPane);
+                specialEffectsPane.slideInPane();
+            } else {
+                specialEffectsPane.show();
+            }
+        });        
         LOG.info("Content Navigator ");
         scene.addEventHandler(ApplicationEvent.SHOW_NAVIGATOR_PANE, e -> {
             if (null == navigatorPane) {
