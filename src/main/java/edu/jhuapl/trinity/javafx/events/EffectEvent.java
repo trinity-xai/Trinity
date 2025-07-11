@@ -25,6 +25,7 @@ public class EffectEvent extends Event {
     public static final EventType<EffectEvent> SUN_POSITION_VELOCITY = new EventType(ANY, "SUN_POSITION_VELOCITY");
     public static final EventType<EffectEvent> SUN_POSITION_ANIMATING = new EventType(ANY, "SUN_POSITION_ANIMATING");
     public static final EventType<EffectEvent> SUN_ARTIFACT_ENABLED = new EventType(ANY, "SUN_ARTIFACT_ENABLED");
+    public static final EventType<EffectEvent> SUN_POSITION_PATHMODE = new EventType(ANY, "SUN_POSITION_PATHMODE");
     
     public String stringId = null;
     public Object object = null;
