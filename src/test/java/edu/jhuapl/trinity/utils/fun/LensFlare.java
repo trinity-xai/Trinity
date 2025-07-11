@@ -1,5 +1,7 @@
 package edu.jhuapl.trinity.utils.fun;
 
+import edu.jhuapl.trinity.utils.fun.solar.LensFlareGroup;
+import edu.jhuapl.trinity.utils.fun.solar.FlareOcclusionUtil;
 import javafx.application.Application;
 import javafx.scene.Group;
 import javafx.scene.Scene;

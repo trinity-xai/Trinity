@@ -1,4 +1,4 @@
-package edu.jhuapl.trinity.utils.fun;
+package edu.jhuapl.trinity.utils.fun.solar;
 
 import java.io.File;
 import java.io.IOException;

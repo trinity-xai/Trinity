@@ -1,7 +1,7 @@
-package edu.jhuapl.trinity.utils.fun;
+package edu.jhuapl.trinity.utils.fun.solar;
 
-import edu.jhuapl.trinity.utils.fun.FlarePresets.FlarePresetType;
-import edu.jhuapl.trinity.utils.fun.RetrowavePresetFactory.RetrowavePresetType;
+import edu.jhuapl.trinity.utils.fun.solar.FlarePresets.FlarePresetType;
+import edu.jhuapl.trinity.utils.fun.solar.RetrowavePresetFactory.RetrowavePresetType;
 import javafx.geometry.Insets;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;

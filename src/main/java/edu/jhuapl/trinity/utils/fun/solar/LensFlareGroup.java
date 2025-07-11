@@ -1,4 +1,4 @@
-package edu.jhuapl.trinity.utils.fun;
+package edu.jhuapl.trinity.utils.fun.solar;
 
 import java.util.ArrayList;
 import java.util.List;

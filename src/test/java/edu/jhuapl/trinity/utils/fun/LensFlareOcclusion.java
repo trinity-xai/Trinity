@@ -1,5 +1,10 @@
 package edu.jhuapl.trinity.utils.fun;
 
+import edu.jhuapl.trinity.utils.fun.solar.LensFlareGroup;
+import edu.jhuapl.trinity.utils.fun.solar.LensFlareControls;
+import edu.jhuapl.trinity.utils.fun.solar.SunPositionTimer;
+import edu.jhuapl.trinity.utils.fun.solar.SunPositionControls;
+import edu.jhuapl.trinity.utils.fun.solar.FlareOcclusionUtil;
 import edu.jhuapl.trinity.css.StyleResourceProvider;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import java.io.IOException;
