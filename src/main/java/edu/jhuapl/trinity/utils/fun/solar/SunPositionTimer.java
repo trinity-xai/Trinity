@@ -1,4 +1,4 @@
-package edu.jhuapl.trinity.utils.fun;
+package edu.jhuapl.trinity.utils.fun.solar;
 
 import edu.jhuapl.trinity.javafx.events.EffectEvent;
 import javafx.animation.AnimationTimer;

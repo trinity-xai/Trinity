@@ -1,4 +1,4 @@
-package edu.jhuapl.trinity.utils.fun;
+package edu.jhuapl.trinity.utils.fun.solar;
 
 import edu.jhuapl.trinity.javafx.events.EffectEvent;
 import static edu.jhuapl.trinity.javafx.events.EffectEvent.SUN_POSITION_ARCHEIGHT;
