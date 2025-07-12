@@ -1,11 +1,13 @@
 package edu.jhuapl.trinity.utils.fun.solar;
 
+import edu.jhuapl.trinity.javafx.events.EffectEvent;
 import edu.jhuapl.trinity.utils.fun.solar.FlarePresets.FlarePresetType;
 import edu.jhuapl.trinity.utils.fun.solar.RetrowavePresetFactory.RetrowavePresetType;
 import javafx.geometry.Insets;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
+import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
@@ -26,6 +28,12 @@ public class LensFlareControls extends VBox {
 
         Label title = new Label("Flare Controls");
         title.setStyle("-fx-font-weight: bold; -fx-text-fill: white;");
+
+        ToggleButton enabledBtn = new ToggleButton("Enable Lens Flare");
+        enabledBtn.setOnAction(e -> {
+            getScene().getRoot().fireEvent(new EffectEvent(
+                EffectEvent.LENSFLARE_ARTIFACT_ENABLED, enabledBtn.isSelected()));
+        });
 
         listView.setPrefHeight(400);
         listView.setPrefWidth(500);
@@ -55,6 +63,7 @@ public class LensFlareControls extends VBox {
 
         
         getChildren().addAll(title, 
+            enabledBtn,    
             new HBox(10, new VBox(5, new Label("Lens Flare Presets"), flarePresetsComboBox)), 
             new HBox(10, new VBox(5, new Label("RetroWave Presets"), retrowavePresetsComboBox)), 
             listView);

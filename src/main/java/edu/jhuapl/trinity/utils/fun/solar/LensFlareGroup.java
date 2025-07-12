@@ -13,10 +13,10 @@ public class LensFlareGroup extends Group {
 
     private final List<FlareSprite> flares = new ArrayList<>();
     //dumb but safe presets
-    private Double sunX = 100.0;
-    private Double sunY = 100.0; 
-    private Double centerX = 100.0;
-    private Double centerY = 100.0;
+    private Double sunX = 200.0;
+    private Double sunY = 200.0; 
+    private Double centerX = 200.0;
+    private Double centerY = 200.0;
     private Double flareAlpha = 1.0;
     private Double occlusionFactor = 1.0;
     

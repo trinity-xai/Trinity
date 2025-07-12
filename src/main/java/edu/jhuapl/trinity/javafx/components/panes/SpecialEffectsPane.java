@@ -68,6 +68,7 @@ public class SpecialEffectsPane extends LitPathPane {
         Tab lensFlareTab = new Tab("Lens Flare Effects");
         lensFlareTab.setClosable(false);
         flareGroup = new LensFlareGroup();
+        flareGroup.setVisible(false);
         parent.getChildren().add(flareGroup);
         lensFlareControls = new LensFlareControls(flareGroup);
         lensFlareTab.setContent(lensFlareControls);
@@ -75,8 +76,9 @@ public class SpecialEffectsPane extends LitPathPane {
         Tab planetaryTab = new Tab("Planetary Disc");
         planetaryTab.setClosable(false);
 
-        disc[0] = new PlanetaryDisc(400, PlanetStyle.RETROWAVE);
-        disc[0].setTranslateY(400); // optional placement
+        disc[0] = new PlanetaryDisc(200, PlanetStyle.RETROWAVE);
+        disc[0].setTranslateY(200); // optional placement
+        disc[0].setVisible(false);
         parent.getChildren().add(disc[0]); //The disc render should be in the pane
         //but not actually used for occlusion
         disc[0].toBack();
@@ -99,7 +101,6 @@ public class SpecialEffectsPane extends LitPathPane {
         occluders.add(disc[0].getOccluderShape());
 
         PlanetaryDiscControls controls = new PlanetaryDiscControls(
-            style -> regenerateDisc(disc, parent, controlsRef[0], occluders),
             radius -> regenerateDisc(disc, parent, controlsRef[0], occluders),
             yOffset -> {
                 if (disc[0] != null) disc[0].setTranslateY(yOffset);
@@ -154,6 +155,7 @@ public class SpecialEffectsPane extends LitPathPane {
         sun.setOpacity(1.0);
         sun.setTranslateX(200);
         sun.setTranslateY(200);
+        sun.setVisible(false); //needs to be enabled from controls
         parent.getChildren().add(sun);
         enableSolarDrag(sun);
 
@@ -182,15 +184,24 @@ public class SpecialEffectsPane extends LitPathPane {
                         sunScene, sun.getRadius(), occluders); // fade radius in pixels
                 sun.setOpacity(flareAlpha * occlusionFactor);
                 flareGroup.updateOpacity(flareAlpha, occlusionFactor);
-//                disc[0].updateScattering(1.0 - occlusionFactor); 
+                if(controlsRef[0].scatteringEnabledProperty().get())
+                    disc[0].updateScattering(1.0 - occlusionFactor); 
             }
         }.start();
 
         SunPositionTimer sunPositionTimer = new SunPositionTimer(parent, sun);
         sunPositionTimer.start();
+        flareGroup.update(sun.getTranslateX(), sun.getTranslateY(),
+                sun.getScene().getWidth() / 2.0,
+                sun.getScene().getHeight() / 2.0);
+        
         scene.getRoot().addEventHandler(EffectEvent.SUN_ARTIFACT_ENABLED, e -> {
             enabled = (boolean) e.object;
             sun.setVisible(enabled);
+//            flareGroup.setVisible(enabled);
+        });
+        scene.getRoot().addEventHandler(EffectEvent.LENSFLARE_ARTIFACT_ENABLED, e -> {
+            enabled = (boolean) e.object;
             flareGroup.setVisible(enabled);
         });
     }
