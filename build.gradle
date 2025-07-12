@@ -302,6 +302,8 @@ tasks.withType(Jar).configureEach {
     // Exclude problematic duplicates (to avoid duplications strategy issues)
     exclude 'META-INF/*LICENSE*', 'META-INF/*NOTICE*', 'META-INF/INDEX.LIST', 'META-INF/maven/**'
     exclude 'META-INF/3rd-party-licenses/**', 'META-INF/substrate/**', 'LICENSE.txt'
+    // Exclude problematic duplicates from org.apache.pdfbox
+    exclude 'META-INF/DEPENDENCIES'
     // Include some top-level files for now...
     from(layout.projectDirectory) {
         include 'LICENSE.md', 'README.md'
@@ -323,7 +325,6 @@ tasks.register('noFxUberJar', Jar) {
     } {
         // Exclude problematic module-info.class duplicates from runtimeClasspath
         exclude '**/module-info.class'
-        exclude 'META-INF/DEPENDENCIES'
     }
 }
 
@@ -341,7 +342,6 @@ tasks.register('fxUberJar', Jar) {
     } {
         // Exclude problematic module-info.class duplicates from runtimeClasspath
         exclude '**/module-info.class'
-        exclude 'META-INF/DEPENDENCIES'
     }
 }
 
