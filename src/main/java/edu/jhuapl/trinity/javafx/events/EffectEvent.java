@@ -26,6 +26,8 @@ public class EffectEvent extends Event {
     public static final EventType<EffectEvent> SUN_POSITION_ANIMATING = new EventType(ANY, "SUN_POSITION_ANIMATING");
     public static final EventType<EffectEvent> SUN_ARTIFACT_ENABLED = new EventType(ANY, "SUN_ARTIFACT_ENABLED");
     public static final EventType<EffectEvent> SUN_POSITION_PATHMODE = new EventType(ANY, "SUN_POSITION_PATHMODE");
+    public static final EventType<EffectEvent> PLANETARY_STYLE_CHANGE = new EventType(ANY, "PLANETARY_STYLE_CHANGE");
+    public static final EventType<EffectEvent> NEW_PLANETARY_DISC = new EventType<>(ANY, "NEW_PLANETARY_DISC");
     
     public String stringId = null;
     public Object object = null;

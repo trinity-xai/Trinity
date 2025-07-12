@@ -1,5 +1,6 @@
 package edu.jhuapl.trinity.utils.fun.planetary;
 import javafx.scene.Group;
+import javafx.scene.Node;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 /**
@@ -7,24 +8,42 @@ import javafx.scene.shape.Line;
  * @author Sean Phillips
  */
 public class ScanlineEffect implements PlanetaryEffect {
-    private final int lineCount;
-    private final Color lineColor;
+    private final Group lines = new Group();
+    private final int count;
+    private final Color color;
 
-    public ScanlineEffect(int lineCount, Color lineColor) {
-        this.lineCount = lineCount;
-        this.lineColor = lineColor;
+    public ScanlineEffect(int count, Color color) {
+        this.count = count;
+        this.color = color;
     }
 
     @Override
-    public void applyTo(Group group, double width, double height) {
-        Group lines = new Group();
-        double spacing = height / (lineCount + 1);
-        for (int i = 1; i <= lineCount; i++) {
-            Line line = new Line(0, i * spacing, width, i * spacing);
-            line.setStroke(lineColor);
-            line.setStrokeWidth(1.5);
+    public void attachTo(PlanetaryDisc disc) {
+        lines.getChildren().clear();
+        double spacing = disc.getRadius() * 2 / count;
+
+        for (int i = 0; i < count; i++) {
+            Line line = new Line();
+            line.setStroke(color);
+            line.setStartX(0);
+            line.setEndX(disc.getRadius() * 2);
+            line.setTranslateY(i * spacing);
+            line.setMouseTransparent(true);
             lines.getChildren().add(line);
         }
-        group.getChildren().add(lines);
+
+        lines.layoutXProperty().bind(disc.getPlanetCircle().centerXProperty().subtract(disc.getRadius()));
+        lines.layoutYProperty().bind(disc.getPlanetCircle().centerYProperty().subtract(disc.getRadius()));
+    }
+
+    @Override
+    public void update(double occlusionFactor) {
+        lines.setOpacity(occlusionFactor);
+    }
+
+    @Override
+    public Node getNode() {
+        return lines;
     }
 }
+

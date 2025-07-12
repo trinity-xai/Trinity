@@ -7,6 +7,7 @@ import edu.jhuapl.trinity.utils.fun.solar.LensFlareGroup;
 import edu.jhuapl.trinity.utils.fun.planetary.PlanetaryDisc;
 import edu.jhuapl.trinity.utils.fun.planetary.PlanetaryDiscControls;
 import edu.jhuapl.trinity.utils.fun.planetary.PlanetaryEffectFactory.PlanetStyle;
+import edu.jhuapl.trinity.utils.fun.planetary.PlanetaryStyleControls;
 import edu.jhuapl.trinity.utils.fun.solar.SunPositionControls;
 import edu.jhuapl.trinity.utils.fun.solar.SunPositionTimer;
 import java.util.List;
@@ -33,9 +34,6 @@ import org.slf4j.LoggerFactory;
 public class SpecialEffectsPane extends LitPathPane {
 
     private static final Logger LOG = LoggerFactory.getLogger(SpecialEffectsPane.class);
-    public static double DEFAULT_FIT_WIDTH = 512;
-    public static double DEFAULT_TITLEDPANE_WIDTH = 256;
-    public static double DEFAULT_LABEL_WIDTH = 64;
     public static int PANE_WIDTH = 600;
     public static int PANE_HEIGHT = 600;
 
@@ -43,7 +41,6 @@ public class SpecialEffectsPane extends LitPathPane {
     SunPositionControls sunPositionControls;
     LensFlareControls lensFlareControls;
     PlanetaryDiscControls planetaryDiscControls;
-    private double dragOffsetX, dragOffsetY;
     private LensFlareGroup flareGroup;
     ObservableList<Node> occluders;
     Circle sun;
@@ -75,7 +72,7 @@ public class SpecialEffectsPane extends LitPathPane {
         lensFlareControls = new LensFlareControls(flareGroup);
         lensFlareTab.setContent(lensFlareControls);
 
-        Tab planetaryTab = new Tab("Planetary");
+        Tab planetaryTab = new Tab("Planetary Disc");
         planetaryTab.setClosable(false);
 
         disc[0] = new PlanetaryDisc(400, PlanetStyle.RETROWAVE);
@@ -109,7 +106,7 @@ public class SpecialEffectsPane extends LitPathPane {
             },
             xOffset -> {
                 if (disc[0] != null) disc[0].setTranslateX(xOffset);
-            },                
+            },
             visible -> {
                 if (disc[0] != null) {
                     disc[0].setVisible(visible);
@@ -118,12 +115,35 @@ public class SpecialEffectsPane extends LitPathPane {
             },
             debug -> {
                 if (disc[0] != null) disc[0].setDebugVisible(debug);
+            },
+            scatteringEnabled -> {
+                if (disc[0] != null) disc[0].setScatteringEnabled(scatteringEnabled);
+            },
+            color -> {
+                if (disc[0] != null) disc[0].setScatteringColor(color);
+            },
+            shadowStrength -> {
+                if (disc[0] != null) disc[0].setScatteringShadowStrength(shadowStrength);
+            },
+            blurRadius -> {
+                if (disc[0] != null) disc[0].setScatteringBlurRadius(blurRadius);
             }
         );
+
         controlsRef[0] = controls;
         planetaryTab.setContent(controls);
 
-        TabPane tabPane = new TabPane(solarCycleTab, lensFlareTab, planetaryTab);
+        Tab planetaryStyleTab = new Tab("Planetary Styles");
+        planetaryStyleTab.setClosable(false);
+        PlanetaryStyleControls styleControls = new PlanetaryStyleControls(disc[0]);                
+        planetaryStyleTab.setContent(styleControls);
+        scene.getRoot().addEventHandler(EffectEvent.NEW_PLANETARY_DISC, e -> {
+            if (e.object instanceof PlanetaryDisc newDisc) {
+                styleControls.setPlanetaryDisc(newDisc);
+            }
+        });                
+        
+        TabPane tabPane = new TabPane(solarCycleTab, lensFlareTab, planetaryTab, planetaryStyleTab);
 
         VBox contentVBox = new VBox(5, tabPane);
 
@@ -162,6 +182,7 @@ public class SpecialEffectsPane extends LitPathPane {
                         sunScene, sun.getRadius(), occluders); // fade radius in pixels
                 sun.setOpacity(flareAlpha * occlusionFactor);
                 flareGroup.updateOpacity(flareAlpha, occlusionFactor);
+//                disc[0].updateScattering(1.0 - occlusionFactor); 
             }
         }.start();
 
@@ -217,21 +238,20 @@ public class SpecialEffectsPane extends LitPathPane {
         double radius = controls.discRadiusProperty().get();
         // Update reference
         discRef[0] = new PlanetaryDisc(radius, style);
-
         // Position and visibility
         discRef[0].setTranslateY(controls.verticalOffsetProperty().get());
         discRef[0].setTranslateX(controls.horizontalOffsetProperty().get());        
         discRef[0].setVisible(controls.discVisibleProperty().get());
+        discRef[0].setScatteringEnabled(controls.scatteringEnabledProperty().get());
+        discRef[0].setScatteringColor(controls.scatteringColorProperty().get());
+        discRef[0].setScatteringBlurRadius(controls.scatteringBlurRadiusProperty().get());
 
         // Set debug overlay
         if (controls.debugOccluderProperty().get()) {
             discRef[0].setDebugVisible(true);
         }
-
         // Ensure occluder shape is valid and detectable
         Node occluder = discRef[0].getOccluderShape();
-//        occluder.setVisible(true);            // important for computeSunOcclusionFactor
-//        occluder.setOpacity(1.0);             // non-zero opacity
         occluder.setMouseTransparent(true);   // do not block input
 
         // Add to scene and back of rendering order
@@ -240,5 +260,8 @@ public class SpecialEffectsPane extends LitPathPane {
 
         // Add occluder shape to logic list
         occluders.add(occluder);
+        // NOtify folks with an event
+        EffectEvent event = new EffectEvent(EffectEvent.NEW_PLANETARY_DISC, discRef[0]);
+        getScene().getRoot().fireEvent(event);
     }
 }

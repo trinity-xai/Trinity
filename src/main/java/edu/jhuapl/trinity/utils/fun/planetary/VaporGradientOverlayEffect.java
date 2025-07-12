@@ -1,6 +1,7 @@
 package edu.jhuapl.trinity.utils.fun.planetary;
 
-import javafx.scene.Group;
+import javafx.scene.Node;
+import javafx.scene.effect.BlendMode;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.CycleMethod;
 import javafx.scene.paint.LinearGradient;
@@ -12,17 +13,35 @@ import javafx.scene.shape.Rectangle;
  * @author Sean Phillips
  */
 public class VaporGradientOverlayEffect implements PlanetaryEffect {
-    @Override
-    public void applyTo(Group group, double width, double height) {
-        Rectangle gradient = new Rectangle(0, 0, width, height);
-        gradient.setFill(new LinearGradient(
+    private final Rectangle overlay = new Rectangle();
+
+    public VaporGradientOverlayEffect() {
+        overlay.setMouseTransparent(true);
+        overlay.setFill(new LinearGradient(
             0, 0, 1, 1, true, CycleMethod.NO_CYCLE,
-            new Stop(0.0, Color.PINK),
-            new Stop(0.5, Color.LIGHTBLUE),
-            new Stop(1.0, Color.MEDIUMPURPLE)
+            new Stop(0.0, Color.web("#ffccff", 0.25)),
+            new Stop(1.0, Color.web("#66ccff", 0.25))
         ));
-        gradient.setOpacity(0.25);
-        group.getChildren().add(gradient);
+        overlay.setBlendMode(BlendMode.OVERLAY);
+    }
+
+    @Override
+    public void attachTo(PlanetaryDisc disc) {
+        double d = disc.getRadius() * 2;
+        overlay.widthProperty().set(d);
+        overlay.heightProperty().set(d);
+        overlay.layoutXProperty().bind(disc.getPlanetCircle().centerXProperty().subtract(disc.getRadius()));
+        overlay.layoutYProperty().bind(disc.getPlanetCircle().centerYProperty().subtract(disc.getRadius()));
+    }
+
+    @Override
+    public void update(double occlusionFactor) {
+        overlay.setOpacity(occlusionFactor);
+    }
+
+    @Override
+    public Node getNode() {
+        return overlay;
     }
 }
 

@@ -1,9 +1,11 @@
 package edu.jhuapl.trinity.utils.fun.planetary;
 
 import javafx.animation.Animation;
-import javafx.animation.FadeTransition;
+import javafx.animation.KeyFrame;
+import javafx.animation.KeyValue;
+import javafx.animation.Timeline;
 import javafx.scene.Group;
-import javafx.scene.effect.GaussianBlur;
+import javafx.scene.Node;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.util.Duration;
@@ -13,28 +15,50 @@ import javafx.util.Duration;
  * @author Sean Phillips
  */
 public class AuraPulseEffect implements PlanetaryEffect {
-    private final Color pulseColor;
+    private final Circle aura = new Circle();
+    private final Group nodeGroup = new Group();
+    private final Timeline pulse;
 
-    public AuraPulseEffect(Color pulseColor) {
-        this.pulseColor = pulseColor;
+    public AuraPulseEffect(Color auraColor) {
+        aura.setFill(auraColor);
+        aura.setMouseTransparent(true);
+        aura.setOpacity(0.2);
+
+        nodeGroup.getChildren().add(aura);
+
+        // Create a pulsating scale + fade animation
+        pulse = new Timeline(
+            new KeyFrame(Duration.ZERO,
+                new KeyValue(aura.scaleXProperty(), 1.0),
+                new KeyValue(aura.scaleYProperty(), 1.0),
+                new KeyValue(aura.opacityProperty(), 0.2)
+            ),
+            new KeyFrame(Duration.seconds(2),
+                new KeyValue(aura.scaleXProperty(), 1.4),
+                new KeyValue(aura.scaleYProperty(), 1.4),
+                new KeyValue(aura.opacityProperty(), 0.0)
+            )
+        );
+        pulse.setCycleCount(Animation.INDEFINITE);
+        pulse.setAutoReverse(true);
     }
 
     @Override
-    public void applyTo(Group group, double width, double height) {
-        double radius = width / 2;
-        Circle pulse = new Circle(radius, radius, radius * 1.1);
-        pulse.setFill(pulseColor);
-        pulse.setEffect(new GaussianBlur(30));
+    public void attachTo(PlanetaryDisc disc) {
+        Circle base = disc.getPlanetCircle();
+        aura.centerXProperty().bind(base.centerXProperty());
+        aura.centerYProperty().bind(base.centerYProperty());
+        aura.radiusProperty().bind(base.radiusProperty().multiply(1.2));
+        pulse.playFromStart();
+    }
 
-        // Animate opacity pulse
-        FadeTransition fade = new FadeTransition(Duration.seconds(3), pulse);
-        fade.setFromValue(0.15);
-        fade.setToValue(0.35);
-        fade.setCycleCount(Animation.INDEFINITE);
-        fade.setAutoReverse(true);
-        fade.play();
+    @Override
+    public void update(double occlusionFactor) {
+        nodeGroup.setOpacity(occlusionFactor);
+    }
 
-        group.getChildren().add(pulse);
+    @Override
+    public Node getNode() {
+        return nodeGroup;
     }
 }
-

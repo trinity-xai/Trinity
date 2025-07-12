@@ -1,25 +1,40 @@
 package edu.jhuapl.trinity.utils.fun.planetary;
 
 import javafx.scene.Group;
+import javafx.scene.Node;
 import javafx.scene.effect.GaussianBlur;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 
 public class GlowRimEffect implements PlanetaryEffect {
-    private final Color glowColor;
+    private final Circle glowCircle = new Circle();
+    private final Group nodeGroup = new Group();
 
     public GlowRimEffect(Color glowColor) {
-        this.glowColor = glowColor;
+        glowCircle.setFill(null);
+        glowCircle.setStroke(glowColor);
+        glowCircle.setStrokeWidth(8);
+        glowCircle.setEffect(new GaussianBlur(15));
+        glowCircle.setOpacity(1.0);
+        glowCircle.setMouseTransparent(true);
+        nodeGroup.getChildren().add(glowCircle);
     }
 
     @Override
-    public void applyTo(Group group, double width, double height) {
-        double radius = width / 2;
-        Circle glow = new Circle(radius, radius, radius * 1.2);
-        glow.setFill(Color.TRANSPARENT);
-        glow.setStroke(glowColor);
-        glow.setStrokeWidth(8);
-        glow.setEffect(new GaussianBlur(25));
-        group.getChildren().add(glow);
+    public void attachTo(PlanetaryDisc disc) {
+        Circle base = disc.getPlanetCircle();
+        glowCircle.centerXProperty().bind(base.centerXProperty());
+        glowCircle.centerYProperty().bind(base.centerYProperty());
+        glowCircle.radiusProperty().bind(base.radiusProperty().multiply(1.1));
+    }
+
+    @Override
+    public void update(double occlusionFactor) {
+        glowCircle.setOpacity(occlusionFactor);
+    }
+
+    @Override
+    public Node getNode() {
+        return nodeGroup;
     }
 }
