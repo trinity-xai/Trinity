@@ -1,7 +1,9 @@
 package edu.jhuapl.trinity.utils.fun.planetary;
 
 import javafx.scene.Group;
+import javafx.scene.Node;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
 
 /**
@@ -9,24 +11,62 @@ import javafx.scene.shape.Line;
  * @author Sean Phillips
  */
 public class SparseLineEffect implements PlanetaryEffect {
-    private final int lineCount;
-    private final Color lineColor;
+    private final Group lines = new Group();
+    private final int count;
+    private final Color color;
+    private final boolean vertical;
 
-    public SparseLineEffect(int lineCount, Color lineColor) {
-        this.lineCount = lineCount;
-        this.lineColor = lineColor;
+    /**
+     * @param count   Number of sparse lines to render
+     * @param color   Stroke color of the lines
+     * @param vertical True for vertical lines, false for horizontal
+     */
+    public SparseLineEffect(int count, Color color, boolean vertical) {
+        this.count = Math.max(1, count);
+        this.color = color;
+        this.vertical = vertical;
+
+        for (int i = 0; i < count; i++) {
+            Line line = new Line();
+            line.setStroke(color);
+            line.setStrokeWidth(1.5);
+            line.setMouseTransparent(true);
+            lines.getChildren().add(line);
+        }
     }
 
     @Override
-    public void applyTo(Group group, double width, double height) {
-        Group lines = new Group();
-        double spacing = height / (lineCount + 1);
-        for (int i = 1; i <= lineCount; i++) {
-            Line line = new Line(0, i * spacing, width, i * spacing);
-            line.setStroke(lineColor);
-            line.setStrokeWidth(3.0);
-            lines.getChildren().add(line);
+    public void attachTo(PlanetaryDisc disc) {
+        double diameter = disc.getRadius() * 2;
+        double spacing = diameter / (count + 1);
+        Circle base = disc.getPlanetCircle();
+
+        for (int i = 0; i < count; i++) {
+            Line line = (Line) lines.getChildren().get(i);
+            double offset = (i + 1) * spacing - disc.getRadius();
+
+            if (vertical) {
+                line.startXProperty().bind(base.centerXProperty().add(offset));
+                line.endXProperty().bind(line.startXProperty());
+                line.startYProperty().bind(base.centerYProperty().subtract(disc.getRadius()));
+                line.endYProperty().bind(base.centerYProperty().add(disc.getRadius()));
+            } else {
+                line.startYProperty().bind(base.centerYProperty().add(offset));
+                line.endYProperty().bind(line.startYProperty());
+                line.startXProperty().bind(base.centerXProperty().subtract(disc.getRadius()));
+                line.endXProperty().bind(base.centerXProperty().add(disc.getRadius()));
+            }
         }
-        group.getChildren().add(lines);
+    }
+
+    @Override
+    public void update(double occlusionFactor) {
+        lines.setOpacity(occlusionFactor);
+    }
+
+    @Override
+    public Node getNode() {
+        return lines;
     }
 }
+

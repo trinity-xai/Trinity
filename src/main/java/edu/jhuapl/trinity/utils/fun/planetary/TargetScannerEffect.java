@@ -1,43 +1,57 @@
 package edu.jhuapl.trinity.utils.fun.planetary;
 
-import javafx.animation.Animation;
-import javafx.animation.ScaleTransition;
 import javafx.scene.Group;
-import javafx.scene.effect.GaussianBlur;
+import javafx.scene.Node;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
-import javafx.util.Duration;
+import javafx.scene.shape.Line;
 
 /**
  *
  * @author Sean Phillips
  */
 public class TargetScannerEffect implements PlanetaryEffect {
-    private final Color scanColor;
+    private final Group grid = new Group();
 
-    public TargetScannerEffect(Color scanColor) {
-        this.scanColor = scanColor;
+    public TargetScannerEffect(Color color) {
+        Line hLine = new Line();
+        Line vLine = new Line();
+        hLine.setStroke(color);
+        vLine.setStroke(color);
+        hLine.setStrokeWidth(1.5);
+        vLine.setStrokeWidth(1.5);
+        hLine.setMouseTransparent(true);
+        vLine.setMouseTransparent(true);
+        grid.getChildren().addAll(hLine, vLine);
     }
 
     @Override
-    public void applyTo(Group group, double width, double height) {
-        double center = width / 2;
+    public void attachTo(PlanetaryDisc disc) {
+        Circle base = disc.getPlanetCircle();
+        double diameter = disc.getRadius() * 2;
 
-        Circle scanner = new Circle(center, center, width / 6);
-        scanner.setFill(Color.TRANSPARENT);
-        scanner.setStroke(scanColor);
-        scanner.setStrokeWidth(2);
-        scanner.setEffect(new GaussianBlur(5));
+        Line h = (Line) grid.getChildren().get(0);
+        Line v = (Line) grid.getChildren().get(1);
 
-        ScaleTransition scale = new ScaleTransition(Duration.seconds(2.5), scanner);
-        scale.setFromX(1);
-        scale.setFromY(1);
-        scale.setToX(2.5);
-        scale.setToY(2.5);
-        scale.setCycleCount(Animation.INDEFINITE);
-        scale.setAutoReverse(true);
-        scale.play();
+        h.startXProperty().bind(base.centerXProperty().subtract(diameter / 2));
+        h.endXProperty().bind(base.centerXProperty().add(diameter / 2));
+        h.startYProperty().bind(base.centerYProperty());
+        h.endYProperty().bind(base.centerYProperty());
 
-        group.getChildren().add(scanner);
+        v.startXProperty().bind(base.centerXProperty());
+        v.endXProperty().bind(base.centerXProperty());
+        v.startYProperty().bind(base.centerYProperty().subtract(diameter / 2));
+        v.endYProperty().bind(base.centerYProperty().add(diameter / 2));
+    }
+
+    @Override
+    public void update(double occlusionFactor) {
+        grid.setOpacity(occlusionFactor);
+    }
+
+    @Override
+    public Node getNode() {
+        return grid;
     }
 }
+
