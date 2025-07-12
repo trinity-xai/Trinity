@@ -1,12 +1,12 @@
 package edu.jhuapl.trinity.javafx.components.hyperdrive;
 
 import edu.jhuapl.trinity.javafx.components.radial.CircleProgressIndicator;
-import java.util.HashMap;
 import javafx.concurrent.Task;
 import javafx.scene.Scene;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.HashMap;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -22,11 +22,11 @@ public abstract class HyperdriveTask extends Task {
     private boolean cancelledByUser = false;
     private int batchSize = 1; //default one at a time
     private long requestDelay = 25; //default 25ms between requests
-    
-    public enum REQUEST_STATUS { REQUESTED, SUCCEEDED, FAILED }
+
+    public enum REQUEST_STATUS {REQUESTED, SUCCEEDED, FAILED}
 
     public HyperdriveTask(Scene scene, CircleProgressIndicator progressIndicator,
-        AtomicInteger requestNumber, HashMap<Integer, REQUEST_STATUS> outstandingRequests) {
+                          AtomicInteger requestNumber, HashMap<Integer, REQUEST_STATUS> outstandingRequests) {
         this.scene = scene;
         this.progressIndicator = progressIndicator;
         this.requestNumber = requestNumber;

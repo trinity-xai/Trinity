@@ -12,6 +12,11 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.HBox;
+import org.apache.pdfbox.Loader;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.text.PDFTextStripper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -22,17 +27,13 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
-import org.apache.pdfbox.Loader;
-import org.apache.pdfbox.text.PDFTextStripper;
-import org.apache.pdfbox.pdmodel.PDDocument;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
 /**
  * @author Sean Phillips
  */
 public class EmbeddingsTextListItem extends HBox {
     private static final Logger LOG = LoggerFactory.getLogger(EmbeddingsTextListItem.class);
-    
+
     public static double PREF_DIMLABEL_WIDTH = 100;
     public static double PREF_FILELABEL_WIDTH = 250;
     public static int LARGEFILE_SPLIT_SIZE = 16384;
@@ -169,7 +170,7 @@ public class EmbeddingsTextListItem extends HBox {
         try {
             //First extract usable text
             String fileString = null;
-            if(ResourceUtils.isPDF(file)) {
+            if (ResourceUtils.isPDF(file)) {
                 try (PDDocument document = Loader.loadPDF(file)) {
                     PDFTextStripper stripper = new PDFTextStripper();
                     stripper.setSortByPosition(true);
@@ -220,6 +221,7 @@ public class EmbeddingsTextListItem extends HBox {
         }
         return list;
     };
+
     public static List<EmbeddingsTextListItem> chunkString(File file, String fileString) {
         //String fileString = Files.readString(file.toPath());
         List<EmbeddingsTextListItem> list = new ArrayList<>();

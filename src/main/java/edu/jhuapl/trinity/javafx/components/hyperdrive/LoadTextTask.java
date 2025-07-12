@@ -5,16 +5,17 @@ import edu.jhuapl.trinity.javafx.components.radial.CircleProgressIndicator;
 import edu.jhuapl.trinity.javafx.events.HyperdriveEvent;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import edu.jhuapl.trinity.utils.Utils;
+import javafx.application.Platform;
+import javafx.scene.Scene;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-import javafx.application.Platform;
-import javafx.scene.Scene;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 
 /**
@@ -23,7 +24,7 @@ import org.slf4j.LoggerFactory;
 public class LoadTextTask extends HyperdriveTask {
     private static final Logger LOG = LoggerFactory.getLogger(LoadTextTask.class);
     List<File> files;
-    
+
     public LoadTextTask(Scene scene, CircleProgressIndicator progressIndicator, List<File> files) {
         super(scene, progressIndicator, new AtomicInteger(), null);
         this.files = files;
@@ -32,7 +33,7 @@ public class LoadTextTask extends HyperdriveTask {
     @Override
     protected void processTask() throws Exception {
         AtomicInteger atomicCount = new AtomicInteger(0);
-        if(null != progressIndicator) {
+        if (null != progressIndicator) {
             progressIndicator.setFadeTimeMS(250);
             progressIndicator.setLabelLater("Loading " + atomicCount.toString() + " files...");
             progressIndicator.spin(true);
@@ -64,7 +65,7 @@ public class LoadTextTask extends HyperdriveTask {
                 .flatMap(List::stream)
                 .peek(i -> {
                     double completed = atomicCount.incrementAndGet();
-                    if(null != progressIndicator) {
+                    if (null != progressIndicator) {
                         progressIndicator.setLabelLater(completed + " of " + total);
                     }
                 }).toList();
@@ -75,7 +76,7 @@ public class LoadTextTask extends HyperdriveTask {
             scene.getRoot().fireEvent(
                 new HyperdriveEvent(HyperdriveEvent.NEW_BATCH_TEXTLOAD, newItems, textFilesList));
         });
-        if(null != progressIndicator) {
+        if (null != progressIndicator) {
             progressIndicator.setLabelLater("Complete");
             progressIndicator.spin(false);
             progressIndicator.fadeBusy(true);

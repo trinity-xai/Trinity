@@ -322,8 +322,9 @@ public enum ResourceUtils {
 //            return ascii;
         }
         return false;
-        
+
     }
+
     /**
      * Checks whether the file can read as ASCII text.
      *

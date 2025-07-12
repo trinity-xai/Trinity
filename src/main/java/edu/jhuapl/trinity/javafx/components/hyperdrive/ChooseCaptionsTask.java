@@ -3,19 +3,20 @@ package edu.jhuapl.trinity.javafx.components.hyperdrive;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import edu.jhuapl.trinity.data.messages.llm.ChatCompletionsInput;
 import edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageUrl;
-import static edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageUrl.imageUrlFromImage;
 import edu.jhuapl.trinity.data.messages.llm.Prompts;
 import edu.jhuapl.trinity.javafx.components.listviews.EmbeddingsImageListItem;
 import edu.jhuapl.trinity.javafx.components.radial.CircleProgressIndicator;
 import edu.jhuapl.trinity.messages.RestAccessLayer;
-import static edu.jhuapl.trinity.messages.RestAccessLayer.currentChatModel;
+import javafx.scene.Scene;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-import javafx.scene.Scene;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import static edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageUrl.imageUrlFromImage;
 
 
 /**
@@ -25,18 +26,18 @@ public class ChooseCaptionsTask extends HyperdriveTask {
     private static final Logger LOG = LoggerFactory.getLogger(ChooseCaptionsTask.class);
     String currentChatModel;
     List<EmbeddingsImageListItem> items;
-    List<String> choices;    
+    List<String> choices;
 
     public ChooseCaptionsTask(Scene scene, String currentChatModel) {
         super(scene, null, new AtomicInteger(), null);
         this.currentChatModel = currentChatModel;
         this.items = null;
     }
-    
-    public ChooseCaptionsTask(Scene scene, CircleProgressIndicator progressIndicator, 
-        AtomicInteger requestNumber, String currentChatModel,
-        HashMap<Integer, REQUEST_STATUS> outstandingRequests,
-        List<EmbeddingsImageListItem> items, List<String> choices) {
+
+    public ChooseCaptionsTask(Scene scene, CircleProgressIndicator progressIndicator,
+                              AtomicInteger requestNumber, String currentChatModel,
+                              HashMap<Integer, REQUEST_STATUS> outstandingRequests,
+                              List<EmbeddingsImageListItem> items, List<String> choices) {
         super(scene, progressIndicator, requestNumber, outstandingRequests);
         this.currentChatModel = currentChatModel;
         this.items = items;
@@ -45,7 +46,7 @@ public class ChooseCaptionsTask extends HyperdriveTask {
 
     @Override
     protected void processTask() throws Exception {
-        if(null != progressIndicator) {
+        if (null != progressIndicator) {
             progressIndicator.setFadeTimeMS(250);
             progressIndicator.setLabelLater("Requesting Auto-choose Captions...");
             progressIndicator.spin(true);
@@ -72,16 +73,16 @@ public class ChooseCaptionsTask extends HyperdriveTask {
             }
             currentIndex++;
             double completed = Integer.valueOf(currentIndex).doubleValue();
-            if(null != progressIndicator) {            
+            if (null != progressIndicator) {
                 progressIndicator.setPercentComplete(completed / total);
                 progressIndicator.setLabelLater("Requested " + completed + " of " + total);
-            }            
+            }
             Thread.sleep(getRequestDelay());
         }
-        if(null != progressIndicator) {
+        if (null != progressIndicator) {
             progressIndicator.setLabelLater("Complete");
             progressIndicator.spin(false);
             progressIndicator.fadeBusy(true);
-        }        
+        }
     }
 }

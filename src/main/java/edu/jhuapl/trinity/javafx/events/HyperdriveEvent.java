@@ -22,6 +22,7 @@ public class HyperdriveEvent extends Event {
         this(arg0);
         object1 = arg1;
     }
+
     public HyperdriveEvent(EventType<? extends Event> arg0, Object arg1, Object arg2) {
         this(arg0);
         object1 = arg1;

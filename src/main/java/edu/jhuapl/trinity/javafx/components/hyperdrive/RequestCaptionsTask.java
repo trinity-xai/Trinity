@@ -3,17 +3,19 @@ package edu.jhuapl.trinity.javafx.components.hyperdrive;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import edu.jhuapl.trinity.data.messages.llm.ChatCompletionsInput;
 import edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageUrl;
-import static edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageUrl.imageUrlFromImage;
 import edu.jhuapl.trinity.javafx.components.listviews.EmbeddingsImageListItem;
 import edu.jhuapl.trinity.javafx.components.radial.CircleProgressIndicator;
 import edu.jhuapl.trinity.messages.RestAccessLayer;
+import javafx.scene.Scene;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
 import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
-import javafx.scene.Scene;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+
+import static edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageUrl.imageUrlFromImage;
 
 
 /**
@@ -29,11 +31,11 @@ public class RequestCaptionsTask extends HyperdriveTask {
         this.currentChatModel = currentChatModel;
         this.items = null;
     }
-    
-    public RequestCaptionsTask(Scene scene, CircleProgressIndicator progressIndicator, 
-        AtomicInteger requestNumber, String currentChatModel,
-        HashMap<Integer, REQUEST_STATUS> outstandingRequests,
-        List<EmbeddingsImageListItem> items) {
+
+    public RequestCaptionsTask(Scene scene, CircleProgressIndicator progressIndicator,
+                               AtomicInteger requestNumber, String currentChatModel,
+                               HashMap<Integer, REQUEST_STATUS> outstandingRequests,
+                               List<EmbeddingsImageListItem> items) {
         super(scene, progressIndicator, requestNumber, outstandingRequests);
         this.currentChatModel = currentChatModel;
         this.items = items;
@@ -41,7 +43,7 @@ public class RequestCaptionsTask extends HyperdriveTask {
 
     @Override
     protected void processTask() throws Exception {
-        if(null != progressIndicator) {
+        if (null != progressIndicator) {
             progressIndicator.setFadeTimeMS(250);
             progressIndicator.setLabelLater("Requesting Captions...");
             progressIndicator.spin(true);

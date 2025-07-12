@@ -1,14 +1,16 @@
 package edu.jhuapl.trinity.javafx.components.hyperdrive;
 
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
-import static edu.jhuapl.trinity.data.messages.xai.FeatureVector.mapToStateArray;
 import edu.jhuapl.trinity.javafx.components.listviews.EmbeddingsImageListItem;
 import edu.jhuapl.trinity.javafx.components.radial.CircleProgressIndicator;
 import edu.jhuapl.trinity.utils.metric.Metric;
-import java.util.List;
 import javafx.scene.Scene;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
+
+import static edu.jhuapl.trinity.data.messages.xai.FeatureVector.mapToStateArray;
 
 
 /**
@@ -19,9 +21,9 @@ public class RequestLandmarkSimilarityTask extends HyperdriveTask {
     List<EmbeddingsImageListItem> items;
     List<FeatureVector> landmarkFeatures;
     Metric metric;
-    
-    public RequestLandmarkSimilarityTask(Scene scene, CircleProgressIndicator progressIndicator, 
-        List<EmbeddingsImageListItem> items, List<FeatureVector> landmarkFeatures, Metric metric) {
+
+    public RequestLandmarkSimilarityTask(Scene scene, CircleProgressIndicator progressIndicator,
+                                         List<EmbeddingsImageListItem> items, List<FeatureVector> landmarkFeatures, Metric metric) {
         super(scene, progressIndicator, null, null);
         this.items = items;
         this.landmarkFeatures = landmarkFeatures;
@@ -30,7 +32,7 @@ public class RequestLandmarkSimilarityTask extends HyperdriveTask {
 
     @Override
     protected void processTask() throws Exception {
-        if(null != progressIndicator) {
+        if (null != progressIndicator) {
             progressIndicator.setFadeTimeMS(250);
             progressIndicator.setLabelLater("Computing Landmark Similarity Distances...");
             progressIndicator.spin(true);
@@ -54,17 +56,17 @@ public class RequestLandmarkSimilarityTask extends HyperdriveTask {
             }
             item.setFeatureVectorLabel(
                 landmarkFeatures.get(shortestLandmarkIndex).getLabel());
-            currentIndex++;    
+            currentIndex++;
             double completed = Integer.valueOf(currentIndex).doubleValue();
-            if(null != progressIndicator) {            
+            if (null != progressIndicator) {
                 progressIndicator.setPercentComplete(completed / total);
                 progressIndicator.setLabelLater("Computed " + currentIndex + " of " + total);
-            }              
+            }
         }
-        if(null != progressIndicator) {
+        if (null != progressIndicator) {
             progressIndicator.setLabelLater("Complete");
             progressIndicator.spin(false);
             progressIndicator.fadeBusy(true);
-        }        
+        }
     }
 }

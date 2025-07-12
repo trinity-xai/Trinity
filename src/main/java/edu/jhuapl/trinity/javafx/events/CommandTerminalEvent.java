@@ -51,14 +51,15 @@ public class CommandTerminalEvent extends Event {
     public CommandTerminalEvent(EventType<? extends Event> arg0) {
         super(arg0);
     }
-    
+
     public static void alertTerminalWarning(String message, Scene scene, Node node) {
         Platform.runLater(() -> {
             CommandTerminalEvent cte = new CommandTerminalEvent(
                 message, new Font("Consolas", 20), Color.GOLD, node);
             scene.getRoot().fireEvent(cte);
         });
-    }    
+    }
+
     public static void notifyTerminalWarning(String message, Scene scene) {
         Platform.runLater(() -> {
             CommandTerminalEvent cte = new CommandTerminalEvent(
@@ -66,6 +67,7 @@ public class CommandTerminalEvent extends Event {
             scene.getRoot().fireEvent(cte);
         });
     }
+
     public static void notifyTerminalError(String message, Scene scene) {
         Platform.runLater(() -> {
             CommandTerminalEvent cte = new CommandTerminalEvent(
@@ -73,11 +75,12 @@ public class CommandTerminalEvent extends Event {
             scene.getRoot().fireEvent(cte);
         });
     }
+
     public static void notifyTerminalSuccess(String message, Scene scene) {
         Platform.runLater(() -> {
             CommandTerminalEvent cte = new CommandTerminalEvent(
                 message, new Font("Consolas", 20), Color.LIME);
             scene.getRoot().fireEvent(cte);
         });
-    }       
+    }
 }
