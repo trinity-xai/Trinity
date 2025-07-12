@@ -8,12 +8,10 @@ import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.scene.control.CheckBox;
-import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.Slider;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import javafx.collections.FXCollections;
 import javafx.geometry.Insets;
 import java.util.function.Consumer;
 import javafx.scene.control.ColorPicker;
@@ -29,15 +27,14 @@ public class PlanetaryDiscControls extends VBox {
     private final DoubleProperty discRadius = new SimpleDoubleProperty(200);
     private final DoubleProperty verticalOffset = new SimpleDoubleProperty(0);
     private final DoubleProperty horizontalOffset = new SimpleDoubleProperty(0);
-    private final BooleanProperty discVisible = new SimpleBooleanProperty(true);
+    private final BooleanProperty discVisible = new SimpleBooleanProperty(false);
     private final BooleanProperty debugOccluder = new SimpleBooleanProperty(false);
-private final DoubleProperty scatteringBlurRadius = new SimpleDoubleProperty(20);
+    private final DoubleProperty scatteringBlurRadius = new SimpleDoubleProperty(20);
     private final BooleanProperty scatteringEnabled = new SimpleBooleanProperty(true);
     private final ObjectProperty<Color> scatteringColor = new SimpleObjectProperty<>(Color.CYAN);
     private final DoubleProperty shadowIntensity = new SimpleDoubleProperty(0.5);
 
     public PlanetaryDiscControls(
-        Consumer<PlanetStyle> styleChanged,
         Consumer<Double> radiusChanged,
         Consumer<Double> verticalOffsetChanged,
         Consumer<Double> horizontalOffsetChanged,
@@ -51,12 +48,6 @@ private final DoubleProperty scatteringBlurRadius = new SimpleDoubleProperty(20)
         setSpacing(10);
         setPadding(new Insets(10));
 
-        // Style dropdown
-        ComboBox<PlanetStyle> styleBox = new ComboBox<>(FXCollections.observableArrayList(PlanetStyle.values()));
-        styleBox.setValue(selectedStyle.get());
-        styleBox.valueProperty().bindBidirectional(selectedStyle);
-        selectedStyle.addListener((obs, old, val) -> styleChanged.accept(val));
-
         // Radius slider
         VBox radiusBox = createSlider("Disc Radius", 100, 1000, discRadius, radiusChanged);
 
@@ -64,7 +55,7 @@ private final DoubleProperty scatteringBlurRadius = new SimpleDoubleProperty(20)
         VBox vOffsetBox = createSlider("Vertical Offset", -1000, 1000, verticalOffset, verticalOffsetChanged);
 
         // Horizontal offset
-        VBox hOffsetBox = createSlider("Horizontal Offset", -1000, 1000, horizontalOffset, horizontalOffsetChanged);
+        VBox hOffsetBox = createSlider("Horizontal Offset", -2000, 2000, horizontalOffset, horizontalOffsetChanged);
 
         // Visibility checkbox
         CheckBox visibleBox = new CheckBox("Visible");
@@ -89,23 +80,22 @@ private final DoubleProperty scatteringBlurRadius = new SimpleDoubleProperty(20)
         scatteringColor.bind(scatterColorPicker.valueProperty());
         scatteringColor.addListener((obs, old, val) -> scatteringColorChanged.accept(val));
 
-        // Shadow intensity slider
+        // Shadow intensity & blur radius sliders
         VBox shadowSlider = createSlider("Shadow Intensity", 0.0, 1.0, shadowIntensity, shadowChanged);
         VBox blurSlider = createSlider("Scattering Blur Radius", 0, 100, scatteringBlurRadius, blurRadiusChanged);
 
         getChildren().addAll(
-                new Label("Planetary Disc Controls"),
-                new HBox(10, new Label("Style:"), styleBox),
-                radiusBox,
-                vOffsetBox,
-                hOffsetBox,
-                visibleBox,
-                debugBox,
-                new Separator(),
-                scatterToggle,
-                new HBox(10, new Label("Scattering Color:"), scatterColorPicker),
-                blurSlider,
-                shadowSlider
+            new Label("Planetary Disc Controls"),
+            radiusBox,
+            vOffsetBox,
+            hOffsetBox,
+            visibleBox,
+            debugBox,
+            new Separator(),
+            scatterToggle,
+            new HBox(10, new Label("Scattering Color:"), scatterColorPicker),
+            blurSlider,
+            shadowSlider
         );
     }
 
@@ -127,7 +117,7 @@ private final DoubleProperty scatteringBlurRadius = new SimpleDoubleProperty(20)
     public DoubleProperty horizontalOffsetProperty() { return horizontalOffset; }
     public BooleanProperty discVisibleProperty() { return discVisible; }
     public BooleanProperty debugOccluderProperty() { return debugOccluder; }
-public DoubleProperty scatteringBlurRadiusProperty() { return scatteringBlurRadius; }
+    public DoubleProperty scatteringBlurRadiusProperty() { return scatteringBlurRadius; }
     public BooleanProperty scatteringEnabledProperty() { return scatteringEnabled; }
     public ObjectProperty<Color> scatteringColorProperty() { return scatteringColor; }
     public DoubleProperty shadowIntensityProperty() { return shadowIntensity; }
