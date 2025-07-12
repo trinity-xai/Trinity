@@ -1,4 +1,4 @@
-package edu.jhuapl.trinity.javafx.components;
+package edu.jhuapl.trinity.javafx.components.hyperdrive;
 
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;

@@ -58,7 +58,7 @@ dependencies {
     }
     implementation group: 'com.github.quickhull3d', name: 'quickhull3d', version: '1.0.0'
     implementation group: 'org.apache.commons', name: 'commons-math3', version: '3.6.1'
-    implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.17.0'
+    implementation group: 'org.apache.commons', name: 'commons-lang3', version: '3.18.0'
     implementation group: 'org.zeromq', name: 'jeromq', version: '0.6.0'
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-annotations', version: '2.19.1'
     implementation group: 'com.fasterxml.jackson.core', name: 'jackson-databind', version: '2.19.1'
@@ -66,6 +66,7 @@ dependencies {
     implementation group: 'org.jflac', name: 'jflac-codec', version: '1.5.2'
     implementation group: 'com.tambapps.fft4j', name: 'fft4j', version: '2.0'
     implementation group: 'com.github.trinity-xai', name: 'SuperMDS', version: 'v2025.06.29'
+    implementation group: 'org.apache.pdfbox', name: 'pdfbox', version: '3.0.5'
 
     // Enforce slf4j-api version across dependencies
     implementation group: 'org.slf4j', name: 'slf4j-api', version: '2.0.17'
@@ -130,6 +131,23 @@ extraJavaModuleInfo {
         exportAllPackages()
     }
     module('com.tambapps.fft4j:fft4j', 'fft4j') {
+        exportAllPackages()
+    }
+    module('org.apache.pdfbox:pdfbox', 'org.apache.pdfbox') {
+        requires('org.apache.pdfbox.io')
+        requires('org.apache.fontbox')
+        requires('org.apache.commons.logging')
+        exportAllPackages()
+    }
+    // Transitive of org.apache.pdfbox:pdfbox
+    module('org.apache.pdfbox:pdfbox-io', 'org.apache.pdfbox.io') {
+        requires('org.apache.commons.logging')
+        exportAllPackages()
+    }
+    // Transitive of org.apache.pdfbox:pdfbox
+    module('org.apache.pdfbox:fontbox', 'org.apache.fontbox') {
+        requires('org.apache.pdfbox.io')
+        requires('org.apache.commons.logging')
         exportAllPackages()
     }
 }
@@ -284,6 +302,8 @@ tasks.withType(Jar).configureEach {
     // Exclude problematic duplicates (to avoid duplications strategy issues)
     exclude 'META-INF/*LICENSE*', 'META-INF/*NOTICE*', 'META-INF/INDEX.LIST', 'META-INF/maven/**'
     exclude 'META-INF/3rd-party-licenses/**', 'META-INF/substrate/**', 'LICENSE.txt'
+    // Exclude problematic duplicates from org.apache.pdfbox
+    exclude 'META-INF/DEPENDENCIES'
     // Include some top-level files for now...
     from(layout.projectDirectory) {
         include 'LICENSE.md', 'README.md'

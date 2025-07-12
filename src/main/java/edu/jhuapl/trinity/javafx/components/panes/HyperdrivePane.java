@@ -6,7 +6,6 @@ import edu.jhuapl.trinity.data.messages.llm.AiModel;
 import edu.jhuapl.trinity.data.messages.llm.AliveModels;
 import edu.jhuapl.trinity.data.messages.llm.ChatCaptionResponse;
 import edu.jhuapl.trinity.data.messages.llm.ChatCompletionsInput;
-import edu.jhuapl.trinity.data.messages.llm.ChatCompletionsInput.CAPTION_TYPE;
 import edu.jhuapl.trinity.data.messages.llm.ChatCompletionsOutput;
 import edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageBatchInput;
 import edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageData;
@@ -16,7 +15,16 @@ import edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageUrl;
 import edu.jhuapl.trinity.data.messages.llm.Prompts;
 import edu.jhuapl.trinity.data.messages.xai.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
-import edu.jhuapl.trinity.javafx.components.CaptionChooserBox;
+import edu.jhuapl.trinity.javafx.components.hyperdrive.CaptionChooserBox;
+import edu.jhuapl.trinity.javafx.components.hyperdrive.ChooseCaptionsTask;
+import edu.jhuapl.trinity.javafx.components.hyperdrive.HyperdriveTask.REQUEST_STATUS;
+import edu.jhuapl.trinity.javafx.components.hyperdrive.LoadImagesTask;
+import edu.jhuapl.trinity.javafx.components.hyperdrive.LoadTextTask;
+import edu.jhuapl.trinity.javafx.components.hyperdrive.RequestCaptionsTask;
+import edu.jhuapl.trinity.javafx.components.hyperdrive.RequestEmbeddingsTask;
+import edu.jhuapl.trinity.javafx.components.hyperdrive.RequestLandmarkSimilarityTask;
+import edu.jhuapl.trinity.javafx.components.hyperdrive.RequestTextEmbeddingsTask;
+import edu.jhuapl.trinity.javafx.components.hyperdrive.RequestTextLandmarkSimilarityTask;
 import edu.jhuapl.trinity.javafx.components.listviews.EmbeddingsImageListItem;
 import edu.jhuapl.trinity.javafx.components.listviews.EmbeddingsTextListItem;
 import edu.jhuapl.trinity.javafx.components.listviews.LandmarkImageBuilderBox;
@@ -25,16 +33,14 @@ import edu.jhuapl.trinity.javafx.components.listviews.LandmarkTextBuilderBox;
 import edu.jhuapl.trinity.javafx.components.radial.CircleProgressIndicator;
 import edu.jhuapl.trinity.javafx.components.radial.ProgressStatus;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
+import edu.jhuapl.trinity.javafx.events.HyperdriveEvent;
 import edu.jhuapl.trinity.javafx.events.ImageEvent;
 import edu.jhuapl.trinity.javafx.events.RestEvent;
-import edu.jhuapl.trinity.messages.EmbeddingsImageCallback.STATUS;
 import edu.jhuapl.trinity.messages.RestAccessLayer;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
-import edu.jhuapl.trinity.utils.Utils;
 import edu.jhuapl.trinity.utils.metric.Metric;
 import javafx.application.Platform;
-import javafx.concurrent.Task;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -79,8 +85,6 @@ import org.slf4j.LoggerFactory;
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 import java.time.LocalDateTime;
 import java.time.format.DateTimeFormatter;
 import java.util.ArrayList;
@@ -90,9 +94,8 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageUrl.imageUrlFromImage;
-import static edu.jhuapl.trinity.data.messages.xai.FeatureVector.mapToStateArray;
-import static edu.jhuapl.trinity.javafx.components.listviews.EmbeddingsImageListItem.itemFromFile;
-import static edu.jhuapl.trinity.javafx.components.listviews.EmbeddingsImageListItem.itemNoRenderFromFile;
+import static edu.jhuapl.trinity.javafx.events.CommandTerminalEvent.notifyTerminalSuccess;
+import static edu.jhuapl.trinity.javafx.events.CommandTerminalEvent.notifyTerminalWarning;
 import static edu.jhuapl.trinity.messages.RestAccessLayer.*;
 
 /**
@@ -100,6 +103,10 @@ import static edu.jhuapl.trinity.messages.RestAccessLayer.*;
  */
 public class HyperdrivePane extends LitPathPane {
     private static final Logger LOG = LoggerFactory.getLogger(HyperdrivePane.class);
+    private static int EMBEDDINGS_IMAGE_TESTID = -9001;
+    private static int EMBEDDINGS_TEXT_TESTID = -9002;
+    private static int CHAT_CHAT_TESTID = -9003;
+    private static int CHAT_VISION_TESTID = -9004;
     public static int PANE_WIDTH = 1200;
     public static int PANE_HEIGHT = 575;
     Image waitingImage;
@@ -126,6 +133,7 @@ public class HyperdrivePane extends LitPathPane {
     ListView<EmbeddingsImageListItem> imageEmbeddingsListView;
     ListView<EmbeddingsTextListItem> textEmbeddingsListView;
     Label imageFilesCountLabel;
+    Label textFilesCountLabel;
     CircleProgressIndicator textEmbeddingRequestIndicator;
     CircleProgressIndicator imageEmbeddingRequestIndicator;
     LandmarkTextBuilderBox landmarkTextBuilderBox;
@@ -134,7 +142,7 @@ public class HyperdrivePane extends LitPathPane {
     TextField chatLocationTextField;
     ChoiceBox<String> metricChoiceBox;
     AtomicInteger requestNumber;
-    HashMap<Integer, STATUS> outstandingRequests;
+    HashMap<Integer, REQUEST_STATUS> outstandingRequests;
     int batchSize = 1;
     long requestDelay = 25;
     int chunkSize = 16384;
@@ -222,15 +230,18 @@ public class HyperdrivePane extends LitPathPane {
             textEmbeddingRequestIndicator.fadeBusy(true);
         });
         ContextMenu textEmbeddingsContextMenu =
-            new ContextMenu(selectAllTextMenuItem,
-                textEmbbedingsTextLandmarkCaptionItem, imageEmbeddingsImageLandmarkCaptionItem,
-//                setCaptionItem, requestCaptionItem,
-//                chooseCaptionItem,
-                clearTextRequestsItem);
+            new ContextMenu(selectAllTextMenuItem, textEmbbedingsTextLandmarkCaptionItem,
+                imageEmbeddingsImageLandmarkCaptionItem, clearTextRequestsItem);
         textEmbeddingsListView.setContextMenu(textEmbeddingsContextMenu);
 
         BorderPane textEmbeddingsBorderPane = new BorderPane(textEmbeddingsListView);
         textEmbeddingsBorderPane.setPrefWidth(600);
+
+        Label textFilesLabel = new Label("Total Text Files: ");
+        textFilesCountLabel = new Label("0");
+        HBox textFileControlsBox = new HBox(10, textFilesLabel, textFilesCountLabel);
+        textFileControlsBox.setAlignment(Pos.CENTER);
+        textEmbeddingsBorderPane.setTop(textFileControlsBox);
 
         Button getTextEmbeddingsButton = new Button("Request Embeddings");
         getTextEmbeddingsButton.setWrapText(true);
@@ -247,6 +258,7 @@ public class HyperdrivePane extends LitPathPane {
         clearTextEmbeddingsButton.setOnAction(e -> {
             currentTextFeatureList.clear();
             textEmbeddingsListView.getItems().clear();
+            textFilesCountLabel.setText(String.valueOf(textFilesList.size()));
         });
         clearTextEmbeddingsButton.setCancelButton(true);
 
@@ -298,8 +310,7 @@ public class HyperdrivePane extends LitPathPane {
         StackPane baseTextStackPane = new StackPane(baseTextArea, textEmbeddingRequestIndicator);
         textTabHBox.getChildren().addAll(textEmbeddingsBorderPane, baseTextStackPane);
 
-
-///////////////////////////////////////////////////////////////
+        // Image Import Controls ///////////////////////////////////////////////
         imageryTabHBox = new HBox(20);
         imageryTabHBox.setAlignment(Pos.CENTER);
         imageryEmbeddingsTab.setContent(imageryTabHBox);
@@ -606,7 +617,6 @@ public class HyperdrivePane extends LitPathPane {
         visionHBox.setPadding(new Insets(10));
         similarityTab.setContent(visionHBox);
 
-
         //Services Tab ////////////////////////////////////////////////
         Button isAliveButton = new Button("Check Status");
         isAliveButton.setOnAction(e -> {
@@ -726,10 +736,12 @@ public class HyperdrivePane extends LitPathPane {
         testEmbeddingsImageButton.setOnAction(e -> {
             try {
                 List<Integer> inputIDs = new ArrayList<>();
-                inputIDs.add(-1);
+                inputIDs.add(EMBEDDINGS_IMAGE_TESTID);
                 List<EmbeddingsImageUrl> inputs = new ArrayList<>();
                 inputs.add(imageUrlFromImage.apply(ResourceUtils.load3DTextureImage("carl-b-portrait")));
-                requestEmbeddings(inputs, inputIDs);
+                new RequestEmbeddingsTask(scene, currentEmbeddingsModel).
+                    requestEmbeddings(inputs, inputIDs);
+                notifyTerminalWarning("Sent Image Embeddings Request test using Carl-b.", scene);
             } catch (IOException ex) {
                 LOG.error(null, ex);
             }
@@ -741,8 +753,9 @@ public class HyperdrivePane extends LitPathPane {
                 if (null != currentEmbeddingsModel)
                     input.setModel(currentEmbeddingsModel);
                 List<Integer> inputIDs = new ArrayList<>();
-                inputIDs.add(-1);
+                inputIDs.add(EMBEDDINGS_TEXT_TESTID);
                 RestAccessLayer.requestTextEmbeddings(input, scene, inputIDs, 666);
+                notifyTerminalWarning("Sent Text Embeddings Request Test.", scene);
             } catch (IOException ex) {
                 LOG.error(null, ex);
             }
@@ -776,7 +789,8 @@ public class HyperdrivePane extends LitPathPane {
             if (null != currentChatModel)
                 input.setModel(currentChatModel);
             try {
-                RestAccessLayer.requestChatCompletion(input, testChatModelButton.getScene(), 666, 9001);
+                RestAccessLayer.requestChatCompletion(input, testChatModelButton.getScene(), CHAT_CHAT_TESTID, 9001);
+                notifyTerminalWarning("Sent Chat Completions Test.", scene);
             } catch (JsonProcessingException ex) {
                 LOG.error(null, ex);
             }
@@ -787,7 +801,8 @@ public class HyperdrivePane extends LitPathPane {
                 ChatCompletionsInput input = ChatCompletionsInput.hellocarlChatCompletionsInput();
                 if (null != currentChatModel)
                     input.setModel(currentChatModel);
-                RestAccessLayer.requestChatCompletion(input, testVisionModelButton.getScene(), 666, 9001);
+                RestAccessLayer.requestChatCompletion(input, testVisionModelButton.getScene(), CHAT_VISION_TESTID, 9001);
+                notifyTerminalWarning("Sent Vision Test using Carl-b.", scene);
             } catch (JsonProcessingException ex) {
                 LOG.error(null, ex);
             } catch (IOException ex) {
@@ -831,7 +846,6 @@ public class HyperdrivePane extends LitPathPane {
         chunkingSpinnerVBox.setAlignment(Pos.CENTER_LEFT);
         servicesGrid.add(chunkingSpinnerVBox, 1, 4);
 
-
         textEmbeddingsBorderPane.addEventHandler(DragEvent.DRAG_OVER, event -> {
             if (ResourceUtils.canDragOver(event)) {
                 event.acceptTransferModes(TransferMode.COPY);
@@ -846,7 +860,6 @@ public class HyperdrivePane extends LitPathPane {
                 loadTextTask(db.getFiles());
             }
         });
-
         borderPane.addEventHandler(DragEvent.DRAG_OVER, event -> {
             if (ResourceUtils.canDragOver(event)) {
                 event.acceptTransferModes(TransferMode.COPY);
@@ -907,44 +920,41 @@ public class HyperdrivePane extends LitPathPane {
                         });
                 }
             }
-            outstandingRequests.put(output.getRequestNumber(), STATUS.SUCCEEDED);
+            outstandingRequests.put(output.getRequestNumber(), REQUEST_STATUS.SUCCEEDED);
             //@DEBUG SMP
             //System.out.println(msg);
-            if (!outstandingRequests.containsValue(STATUS.REQUESTED)) {
+            if (!outstandingRequests.containsValue(REQUEST_STATUS.REQUESTED)) {
                 outstandingRequests.clear();
             }
         });
-
         scene.getRoot().addEventHandler(RestEvent.NEW_EMBEDDINGS_IMAGE, event -> {
             EmbeddingsImageOutput output = (EmbeddingsImageOutput) event.object;
             List<Integer> inputIDs = (List<Integer>) event.object2;
-            String msg = "Received " + output.getData().size() + " embeddings at "
-                + format.format(LocalDateTime.now());
             int totalListItems = imageEmbeddingsListView.getItems().size();
             for (int i = 0; i < output.getData().size(); i++) {
                 if (i <= totalListItems) {
-                    EmbeddingsImageData currentOutput = output.getData().get(i);
                     int currentInputID = inputIDs.get(i);
-                    imageEmbeddingsListView.getItems()
-                        .filtered(fi -> fi.imageID == currentInputID)
-                        .forEach(item -> {
-                            item.setEmbeddings(currentOutput.getEmbedding());
-                            item.addMetaData("object", currentOutput.getObject());
-                            item.addMetaData("type", currentOutput.getType());
-                        });
+                    if (currentInputID == EMBEDDINGS_IMAGE_TESTID) {
+                        notifyTerminalSuccess("Image Embeddings Test Successful", scene);
+                    } else {
+                        EmbeddingsImageData currentOutput = output.getData().get(i);
+                        imageEmbeddingsListView.getItems()
+                            .filtered(fi -> fi.imageID == currentInputID)
+                            .forEach(item -> {
+                                item.setEmbeddings(currentOutput.getEmbedding());
+                                item.addMetaData("object", currentOutput.getObject());
+                                item.addMetaData("type", currentOutput.getType());
+                            });
+                    }
                 }
             }
-
-            outstandingRequests.put(output.getRequestNumber(), STATUS.SUCCEEDED);
-            //@DEBUG SMP
-            //System.out.println(msg);
+            outstandingRequests.put(output.getRequestNumber(), REQUEST_STATUS.SUCCEEDED);
             int totalRequests = outstandingRequests.size();
             long remainingRequests = outstandingRequests.entrySet().stream()
-                .filter(t -> t.getValue() == STATUS.REQUESTED).count();
+                .filter(t -> t.getValue() == REQUEST_STATUS.REQUESTED).count();
             imageEmbeddingRequestIndicator.setTopLabelLater("Received "
                 + (totalRequests - remainingRequests) + " of " + totalRequests);
-
-            if (!outstandingRequests.containsValue(STATUS.REQUESTED)) {
+            if (!outstandingRequests.containsValue(REQUEST_STATUS.REQUESTED)) {
                 imageEmbeddingRequestIndicator.spin(false);
                 imageEmbeddingRequestIndicator.fadeBusy(true);
                 outstandingRequests.clear();
@@ -953,14 +963,14 @@ public class HyperdrivePane extends LitPathPane {
         scene.getRoot().addEventHandler(RestEvent.ERROR_EMBEDDINGS_IMAGE, event -> {
             List<File> inputFiles = (List<File>) event.object;
             int request = (int) event.object2;
-            outstandingRequests.put(request, STATUS.FAILED);
+            outstandingRequests.put(request, REQUEST_STATUS.FAILED);
             long totalRequests = outstandingRequests.entrySet().size();
             long remainingRequests = outstandingRequests.entrySet().stream()
-                .filter(t -> t.getValue() == STATUS.REQUESTED).count();
+                .filter(t -> t.getValue() == REQUEST_STATUS.REQUESTED).count();
             imageEmbeddingRequestIndicator.setTopLabelLater("Received "
                 + (totalRequests - remainingRequests) + " of " + totalRequests);
 
-            if (!outstandingRequests.containsValue(STATUS.REQUESTED)) {
+            if (!outstandingRequests.containsValue(REQUEST_STATUS.REQUESTED)) {
                 outstandingRequests.clear();
                 imageEmbeddingRequestIndicator.spin(false);
                 imageEmbeddingRequestIndicator.fadeBusy(true);
@@ -969,29 +979,31 @@ public class HyperdrivePane extends LitPathPane {
         scene.getRoot().addEventHandler(RestEvent.ERROR_EMBEDDINGS_TEXT, event -> {
             List<File> inputFiles = (List<File>) event.object;
             int request = (int) event.object2;
-            outstandingRequests.put(request, STATUS.FAILED);
+            outstandingRequests.put(request, REQUEST_STATUS.FAILED);
             long totalRequests = outstandingRequests.entrySet().size();
             long remainingRequests = outstandingRequests.entrySet().stream()
-                .filter(t -> t.getValue() == STATUS.REQUESTED).count();
+                .filter(t -> t.getValue() == REQUEST_STATUS.REQUESTED).count();
             textEmbeddingRequestIndicator.setTopLabelLater("Received "
                 + (totalRequests - remainingRequests) + " of " + totalRequests);
-
-            if (!outstandingRequests.containsValue(STATUS.REQUESTED)) {
+            if (!outstandingRequests.containsValue(REQUEST_STATUS.REQUESTED)) {
                 outstandingRequests.clear();
                 textEmbeddingRequestIndicator.spin(false);
                 textEmbeddingRequestIndicator.fadeBusy(true);
             }
-
         });
         scene.getRoot().addEventHandler(RestEvent.NEW_CHAT_COMPLETION, event -> {
             ChatCompletionsOutput output = (ChatCompletionsOutput) event.object;
             //@DEBUG SMP
             //String msg = "Received " + output.getChoices().size() + " Chat Choices at " + LocalDateTime.now();
-            outstandingRequests.put(output.getRequestNumber(), STATUS.SUCCEEDED);
-            //@DEBUG SMP
-            //System.out.println(msg);
-            //System.out.println(output.getChoices().get(0).getText());
-
+            outstandingRequests.put(output.getRequestNumber(), REQUEST_STATUS.SUCCEEDED);
+            if (output.getInputID() == CHAT_CHAT_TESTID) {
+                notifyTerminalSuccess("Chat Model Response Successful", scene);
+                return;
+            }
+            if (output.getInputID() == CHAT_VISION_TESTID) {
+                notifyTerminalSuccess("Vision Model Response Successful", scene);
+                return;
+            }
             imageEmbeddingsListView.getItems().stream()
                 .filter(t -> t.imageID == output.getInputID())
                 .forEach(item -> {
@@ -1007,16 +1019,14 @@ public class HyperdrivePane extends LitPathPane {
                     }
                 });
             outstandingRequests.remove(output.getRequestNumber());
-            if (!outstandingRequests.containsValue(STATUS.REQUESTED)) {
+            if (!outstandingRequests.containsValue(REQUEST_STATUS.REQUESTED)) {
                 imageEmbeddingRequestIndicator.spin(false);
                 imageEmbeddingRequestIndicator.fadeBusy(true);
             }
-
         });
         scene.getRoot().addEventHandler(RestEvent.ERROR_CHAT_COMPLETIONS, event -> {
-//            List<File> inputFiles = (List<File>) event.object;
             int request = (int) event.object2;
-            outstandingRequests.put(request, STATUS.FAILED);
+            outstandingRequests.put(request, REQUEST_STATUS.FAILED);
         });
         scene.getRoot().addEventHandler(RestEvent.NEW_EMBEDDINGS_TEXT, event -> {
             //Even though its a text embeddings event we reuse the same output data structure
@@ -1028,30 +1038,30 @@ public class HyperdrivePane extends LitPathPane {
             int totalListItems = textEmbeddingsListView.getItems().size();
             for (int i = 0; i < output.getData().size(); i++) {
                 if (i <= totalListItems) {
-                    EmbeddingsImageData currentOutput = output.getData().get(i);
                     int currentInputID = inputIDs.get(i);
-                    textEmbeddingsListView.getItems().stream()
-                        .filter(li -> li.textID == currentInputID)
-                        .forEach(item -> {
-                            item.setEmbeddings(currentOutput.getEmbedding());
-                            item.addMetaData("object", currentOutput.getObject());
-                            item.addMetaData("type", currentOutput.getType());
-                        });
+                    if (currentInputID == EMBEDDINGS_TEXT_TESTID) {
+                        notifyTerminalSuccess("Image Embeddings Test Successful", scene);
+                    } else {
+                        EmbeddingsImageData currentOutput = output.getData().get(i);
+                        textEmbeddingsListView.getItems().stream()
+                            .filter(li -> li.textID == currentInputID)
+                            .forEach(item -> {
+                                item.setEmbeddings(currentOutput.getEmbedding());
+                                item.addMetaData("object", currentOutput.getObject());
+                                item.addMetaData("type", currentOutput.getType());
+                            });
+                    }
                 }
             }
 
-            outstandingRequests.put(output.getRequestNumber(), STATUS.SUCCEEDED);
+            outstandingRequests.put(output.getRequestNumber(), REQUEST_STATUS.SUCCEEDED);
             textEmbeddingRequestIndicator.setTopLabelLater(msg);
-            //@DEBUG SMP
-            //System.out.println(msg);
-
             int totalRequests = outstandingRequests.size();
             long remainingRequests = outstandingRequests.entrySet().stream()
-                .filter(t -> t.getValue() == STATUS.REQUESTED).count();
+                .filter(t -> t.getValue() == REQUEST_STATUS.REQUESTED).count();
             textEmbeddingRequestIndicator.setTopLabelLater("Received "
                 + (totalRequests - remainingRequests) + " of " + totalRequests);
-
-            if (!outstandingRequests.containsValue(STATUS.REQUESTED)) {
+            if (!outstandingRequests.containsValue(REQUEST_STATUS.REQUESTED)) {
                 outstandingRequests.clear();
                 textEmbeddingRequestIndicator.spin(false);
                 textEmbeddingRequestIndicator.fadeBusy(true);
@@ -1079,12 +1089,12 @@ public class HyperdrivePane extends LitPathPane {
                 }
             }
 
-            outstandingRequests.put(output.getRequestNumber(), STATUS.SUCCEEDED);
+            outstandingRequests.put(output.getRequestNumber(), REQUEST_STATUS.SUCCEEDED);
             textEmbeddingRequestIndicator.setTopLabelLater(msg);
             //@DEBUG SMP
             //System.out.println(msg);
             outstandingRequests.remove(output.getRequestNumber());
-            if (!outstandingRequests.containsValue(STATUS.REQUESTED)) {
+            if (!outstandingRequests.containsValue(REQUEST_STATUS.REQUESTED)) {
                 textEmbeddingRequestIndicator.spin(false);
                 textEmbeddingRequestIndicator.fadeBusy(true);
             }
@@ -1109,40 +1119,49 @@ public class HyperdrivePane extends LitPathPane {
                 LOG.error(null, ex);
             }
         });
+        scene.getRoot().addEventHandler(HyperdriveEvent.NEW_BATCH_IMAGELOAD, event -> {
+            if (null != event.object1) {
+                List<EmbeddingsImageListItem> newItems = (List<EmbeddingsImageListItem>) event.object1;
+                imageEmbeddingsListView.getItems().addAll(newItems);
+            }
+            if (null != event.object2) {
+                ArrayList<File> newImageFiles = (ArrayList<File>) event.object2;
+                imageFilesList.addAll(newImageFiles);
+            }
+            imageFilesCountLabel.setText(String.valueOf(imageFilesList.size()));
+            if (!imageEmbeddingsListView.getItems().isEmpty()) {
+                //trigger baseImageView to change
+                imageEmbeddingsListView.getSelectionModel().selectFirst();
+            } else {
+                baseImage = waitingImage;
+                baseImageView.setImage(baseImage);
+            }
+        });
+        scene.getRoot().addEventHandler(HyperdriveEvent.NEW_BATCH_TEXTLOAD, event -> {
+            if (null != event.object1) {
+                List<EmbeddingsTextListItem> newItems = (List<EmbeddingsTextListItem>) event.object1;
+                textEmbeddingsListView.getItems().addAll(newItems);
+            }
+            if (null != event.object2) {
+                ArrayList<File> newImageFiles = (ArrayList<File>) event.object2;
+                textFilesList.addAll(newImageFiles);
+            }
+            textFilesCountLabel.setText(String.valueOf(textFilesList.size()));
+
+            if (!textEmbeddingsListView.getItems().isEmpty()) {
+                textEmbeddingsListView.getSelectionModel().selectFirst();
+            } else {
+                baseTextArea.clear();
+            }
+        });
+
         getStyleClass().add("hyperdrive-pane");
     }
 
     public void chooseCaptionsTask(List<EmbeddingsImageListItem> items, List<String> choices) {
-        Task requestTask = new Task() {
-            @Override
-            protected Void call() throws Exception {
-                for (EmbeddingsImageListItem item : items) {
-                    EmbeddingsImageUrl url = imageUrlFromImage.apply(item.getCurrentImage());
-                    try {
-                        ChatCompletionsInput input = ChatCompletionsInput.defaultImageInput(
-                            url.getImage_url(), CAPTION_TYPE.AUTOCHOOOSE);
-                        String choosePrompt = input.getMessages().get(0).getContent().get(0).getText();
-                        choosePrompt = Prompts.insertAutochooseChoices(choosePrompt, choices);
-                        input.getMessages().get(0).getContent().get(0).setText(choosePrompt);
-                        if (null != currentChatModel)
-                            input.setModel(currentChatModel);
-                        RestAccessLayer.requestChatCompletion(input,
-                            imageEmbeddingRequestIndicator.getScene(),
-                            item.imageID, requestNumber.getAndIncrement());
-                    } catch (JsonProcessingException ex) {
-                        LOG.error(null, ex);
-                    } catch (IOException ex) {
-                        LOG.error(null, ex);
-                    }
-                    try {
-                        Thread.sleep(requestDelay);
-                    } catch (InterruptedException ex) {
-                        LOG.error(null, ex);
-                    }
-                }
-                return null;
-            }
-        };
+        ChooseCaptionsTask requestTask = new ChooseCaptionsTask(scene,
+            imageEmbeddingRequestIndicator, requestNumber, currentChatModel,
+            outstandingRequests, items, choices);
         Thread t = new Thread(requestTask, "Trinity Image Auto-choose Captions Request");
         t.setDaemon(true);
         t.start();
@@ -1150,41 +1169,10 @@ public class HyperdrivePane extends LitPathPane {
 
     public void requestTextLandmarkSimilarityTask(
         List<EmbeddingsTextListItem> items, List<FeatureVector> landmarkFeatures) {
-        Task requestTask = new Task() {
-            @Override
-            protected Void call() throws Exception {
-                textEmbeddingRequestIndicator.setLabelLater("Computing Landmark Similarity Distances...");
-                textEmbeddingRequestIndicator.spin(true);
-                textEmbeddingRequestIndicator.fadeBusy(false);
-                //@DEBUG SMP
-                //System.out.println("Computing Landmark Simularity Distances...");
-                Metric metric = Metric.getMetric(metricChoiceBox.getSelectionModel().getSelectedItem());
-                //long startTime = System.nanoTime();
-
-                List<double[]> landmarkVectors = landmarkFeatures.stream()
-                    .map(mapToStateArray).toList();
-                items.stream().forEach(item -> {
-                    double[] itemVector = mapToStateArray.apply(item.getFeatureVector());
-                    Double shortestDistance = null;
-                    Integer shortestLandmarkIndex = null;
-                    for (int i = 0; i < landmarkVectors.size(); i++) {
-                        double currentDistance = metric.distance(itemVector, landmarkVectors.get(i));
-                        //System.out.println(i + " : " + currentDistance);
-                        if (null == shortestDistance || currentDistance < shortestDistance) {
-                            shortestDistance = currentDistance;
-                            shortestLandmarkIndex = i;
-                        }
-                    }
-                    item.setFeatureVectorLabel(
-                        landmarkFeatures.get(shortestLandmarkIndex).getLabel());
-                });
-                //Utils.printTotalTime(startTime);
-                textEmbeddingRequestIndicator.setLabelLater("Finished.");
-                textEmbeddingRequestIndicator.spin(false);
-                textEmbeddingRequestIndicator.fadeBusy(true);
-                return null;
-            }
-        };
+        Metric metric = Metric.getMetric(metricChoiceBox.getSelectionModel().getSelectedItem());
+        RequestTextLandmarkSimilarityTask requestTask =
+            new RequestTextLandmarkSimilarityTask(scene, textEmbeddingRequestIndicator,
+                items, landmarkFeatures, metric);
         Thread t = new Thread(requestTask, "Trinity Text Landmark Similarity Task");
         t.setDaemon(true);
         t.start();
@@ -1192,358 +1180,58 @@ public class HyperdrivePane extends LitPathPane {
 
     public void requestLandmarkSimilarityTask(
         List<EmbeddingsImageListItem> items, List<FeatureVector> landmarkFeatures) {
-        Task requestTask = new Task() {
-            @Override
-            protected Void call() throws Exception {
-                imageEmbeddingRequestIndicator.setLabelLater("Computing Landmark Similarity Distances...");
-                imageEmbeddingRequestIndicator.spin(true);
-                imageEmbeddingRequestIndicator.fadeBusy(false);
-                //@DEBUG SMP
-                //System.out.println("Computing Landmark Simularity Distances...");
-                Metric metric = Metric.getMetric(metricChoiceBox.getSelectionModel().getSelectedItem());
-                //long startTime = System.nanoTime();
-
-                List<double[]> landmarkVectors = landmarkFeatures.stream()
-                    .map(mapToStateArray).toList();
-                items.stream().forEach(item -> {
-                    double[] itemVector = mapToStateArray.apply(item.getFeatureVector());
-                    Double shortestDistance = null;
-                    Integer shortestLandmarkIndex = null;
-                    for (int i = 0; i < landmarkVectors.size(); i++) {
-                        double currentDistance = metric.distance(itemVector, landmarkVectors.get(i));
-                        //System.out.println(i + " : " + currentDistance);
-                        if (null == shortestDistance || currentDistance < shortestDistance) {
-                            shortestDistance = currentDistance;
-                            shortestLandmarkIndex = i;
-                        }
-                    }
-                    item.setFeatureVectorLabel(
-                        landmarkFeatures.get(shortestLandmarkIndex).getLabel());
-                });
-                //Utils.printTotalTime(startTime);
-                imageEmbeddingRequestIndicator.setLabelLater("Finished.");
-                imageEmbeddingRequestIndicator.spin(false);
-                imageEmbeddingRequestIndicator.fadeBusy(true);
-                return null;
-            }
-        };
+        Metric metric = Metric.getMetric(metricChoiceBox.getSelectionModel().getSelectedItem());
+        RequestLandmarkSimilarityTask requestTask =
+            new RequestLandmarkSimilarityTask(scene, imageEmbeddingRequestIndicator,
+                items, landmarkFeatures, metric);
         Thread t = new Thread(requestTask, "Trinity Image Landmark Similarity Task");
         t.setDaemon(true);
         t.start();
     }
 
     public void requestCaptionsTask(List<EmbeddingsImageListItem> items) {
-        Task requestTask = new Task() {
-            @Override
-            protected Void call() throws Exception {
-                imageEmbeddingRequestIndicator.setLabelLater("Requesting Captions...");
-                imageEmbeddingRequestIndicator.spin(true);
-                imageEmbeddingRequestIndicator.fadeBusy(false);
-                //@DEBUG SMP
-                //System.out.println("Requesting Captions...");
-                for (EmbeddingsImageListItem item : items) {
-                    EmbeddingsImageUrl url = imageUrlFromImage.apply(item.getCurrentImage());
-                    try {
-                        ChatCompletionsInput input = ChatCompletionsInput.defaultImageInput(url.getImage_url(), CAPTION_TYPE.DEFAULT);
-                        if (null != currentChatModel)
-                            input.setModel(currentChatModel);
-                        RestAccessLayer.requestChatCompletion(input,
-                            imageEmbeddingRequestIndicator.getScene(),
-                            item.imageID, requestNumber.getAndIncrement());
-                    } catch (JsonProcessingException ex) {
-                        LOG.error(null, ex);
-                    } catch (IOException ex) {
-                        LOG.error(null, ex);
-                    }
-                    Thread.sleep(requestDelay);
-                }
-                return null;
-            }
-        };
+        RequestCaptionsTask requestTask = new RequestCaptionsTask(
+            scene, imageEmbeddingRequestIndicator, requestNumber,
+            currentChatModel, outstandingRequests, items);
         Thread t = new Thread(requestTask, "Trinity Image Captioning Request");
         t.setDaemon(true);
         t.start();
     }
 
     public void loadTextTask(List<File> files) {
-        Task loadTask = new Task() {
-            @Override
-            protected Void call() throws Exception {
-                AtomicInteger atomicCount = new AtomicInteger(0);
-                textEmbeddingRequestIndicator.setFadeTimeMS(250);
-                textEmbeddingRequestIndicator.setLabelLater("Loading " + atomicCount.toString() + " files...");
-                textEmbeddingRequestIndicator.spin(true);
-                textEmbeddingRequestIndicator.fadeBusy(false);
-
-                currentTextFeatureList.clear();
-                textFilesList.clear();
-                LOG.info("Searching for files, filtering on ASCII....");
-                long startTime = System.nanoTime();
-                for (File file : files) {
-                    LOG.info(file.getAbsolutePath());
-                    if (file.isDirectory()) {
-                        textFilesList.addAll(
-                            Files.walk(file.toPath())
-                                .map(Path::toFile)
-                                .filter(f -> ResourceUtils.isTextFile(f))
-                                .toList());
-                    } else {
-                        if (ResourceUtils.isTextFile(file))
-                            textFilesList.add(file);
-                    }
-                }
-                textFilesList.removeIf(f -> !ResourceUtils.isTextFile(f));
-                Utils.printTotalTime(startTime);
-                final double total = textFilesList.size();
-                LOG.info("Loading textfiles into listitems....");
-                startTime = System.nanoTime();
-                List<EmbeddingsTextListItem> newItems =
-                    textFilesList.parallelStream()
-                        .map(EmbeddingsTextListItem.itemsSplitFromFile)
-                        .flatMap(List::stream)
-                        .peek(i -> {
-                            double completed = atomicCount.incrementAndGet();
-                            textEmbeddingRequestIndicator.setLabelLater(completed + " of " + total);
-                        }).toList();
-                Utils.printTotalTime(startTime);
-
-                LOG.info("Populating ListView....");
-                Platform.runLater(() -> {
-                    long start = System.nanoTime();
-                    textEmbeddingsListView.getItems().addAll(newItems);
-                    LOG.info("loaded {} ASCII files.", String.valueOf(textFilesList.size()));
-                    if (!textEmbeddingsListView.getItems().isEmpty()) {
-                        textEmbeddingsListView.getSelectionModel().selectFirst();
-                    } else {
-                        baseTextArea.clear();
-                    }
-                    Utils.printTotalTime(start);
-                });
-                textEmbeddingRequestIndicator.setLabelLater("Complete");
-                textEmbeddingRequestIndicator.spin(false);
-                textEmbeddingRequestIndicator.fadeBusy(true);
-                return null;
-            }
-        };
-        Thread t = new Thread(loadTask, "Trinity Batch Image Load Task");
+        currentTextFeatureList.clear();
+        textFilesList.clear();
+        LoadTextTask loadTask = new LoadTextTask(scene, textEmbeddingRequestIndicator, files);
+        Thread t = new Thread(loadTask, "Trinity Batch Text File Load Task");
         t.setDaemon(true);
         t.start();
     }
 
     public void requestTextEmbeddingsTask() {
-        Task requestTask = new Task() {
-            @Override
-            protected Void call() throws Exception {
-                textEmbeddingRequestIndicator.setFadeTimeMS(250);
-                textEmbeddingRequestIndicator.setLabelLater("Encoding Text...");
-                textEmbeddingRequestIndicator.spin(true);
-                textEmbeddingRequestIndicator.fadeBusy(false);
-                LOG.info("Loading and Encoding Text...");
-                long startTime = System.nanoTime();
-                final int total = textEmbeddingsListView.getSelectionModel().getSelectedItems().size();
-
-                int percent = 100;
-                if (total < 100)
-                    percent = 10;
-                if (total < 10)
-                    percent = 1;
-                int updatePercent = total / percent;
-
-                double completed = 0;
-                for (EmbeddingsTextListItem item : textEmbeddingsListView.getSelectionModel().getSelectedItems()) {
-                    if (null == item.contents)
-                        item.readText();
-                    EmbeddingsImageInput input = EmbeddingsImageInput.defaultTextInput(item.contents);
-                    if (null != currentEmbeddingsModel)
-                        input.setModel(currentEmbeddingsModel);
-                    List<Integer> inputIDs = new ArrayList<>();
-                    inputIDs.add(item.textID);
-                    try {
-                        int rn = requestNumber.getAndIncrement();
-                        RestAccessLayer.requestTextEmbeddings(
-                            input, scene, inputIDs, rn);
-                        outstandingRequests.put(rn, STATUS.REQUESTED);
-                    } catch (JsonProcessingException ex) {
-                        LOG.error(null, ex);
-                    }
-                    completed++;
-                    if (completed % updatePercent == 0) {
-                        textEmbeddingRequestIndicator.setPercentComplete(completed / total);
-                    }
-                    textEmbeddingRequestIndicator.setLabelLater("Encoding " + completed + " of " + total);
-                    Thread.sleep(requestDelay);
-                }
-                Utils.printTotalTime(startTime);
-                textEmbeddingRequestIndicator.setPercentComplete(completed / total);
-                textEmbeddingRequestIndicator.setLabelLater("Requested " + completed + " of " + total);
-                return null;
-            }
-        };
+        RequestTextEmbeddingsTask requestTask = new RequestTextEmbeddingsTask(
+            scene, textEmbeddingRequestIndicator, requestNumber, currentEmbeddingsModel,
+            outstandingRequests, textEmbeddingsListView.getSelectionModel().getSelectedItems());
         Thread t = new Thread(requestTask, "Trinity Embeddings Text Request");
         t.setDaemon(true);
         t.start();
     }
 
     public void loadImagesTask(List<File> files) {
-        Task loadTask = new Task() {
-            @Override
-            protected Void call() throws Exception {
-                AtomicInteger atomicCount = new AtomicInteger(0);
-                imageEmbeddingRequestIndicator.setFadeTimeMS(250);
-                imageEmbeddingRequestIndicator.setLabelLater("Loading " + atomicCount.toString() + " images...");
-                imageEmbeddingRequestIndicator.spin(true);
-                imageEmbeddingRequestIndicator.fadeBusy(false);
-
-                currentFeatureList.clear();
-                imageFilesList.clear();
-                LOG.info("Searching for files, filtering images....");
-                long startTime = System.nanoTime();
-                for (File file : files) {
-                    LOG.info(file.getAbsolutePath());
-                    if (file.isDirectory()) {
-                        imageFilesList.addAll(
-                            Files.walk(file.toPath())
-                                .map(Path::toFile)
-                                .filter(f -> JavaFX3DUtils.isTextureFile(f))
-                                .toList());
-                    } else {
-                        if (JavaFX3DUtils.isTextureFile(file))
-                            imageFilesList.add(file);
-                    }
-                }
-                imageFilesList.removeIf(f -> !JavaFX3DUtils.isTextureFile(f));
-                Utils.printTotalTime(startTime);
-                final double total = imageFilesList.size();
-                LOG.info("Loading images into listitems....");
-                startTime = System.nanoTime();
-                final boolean renderIcons = renderIconsCheckBox.isSelected();
-                List<EmbeddingsImageListItem> newItems =
-                    imageFilesList.parallelStream()
-                        .map(renderIcons ? itemFromFile : itemNoRenderFromFile)
-                        .peek(i -> {
-                            double completed = atomicCount.incrementAndGet();
-                            imageEmbeddingRequestIndicator.setPercentComplete(completed / total);
-                            imageEmbeddingRequestIndicator.setLabelLater(completed + " of " + total);
-                        }).toList();
-                Utils.printTotalTime(startTime);
-
-                LOG.info("Populating ListView....");
-                Platform.runLater(() -> {
-                    long start = System.nanoTime();
-                    imageEmbeddingsListView.getItems().addAll(newItems);
-                    imageFilesCountLabel.setText(String.valueOf(imageFilesList.size()));
-                    if (!imageEmbeddingsListView.getItems().isEmpty()) {
-                        //trigger baseImageView to change
-                        imageEmbeddingsListView.getSelectionModel().selectFirst();
-                    } else {
-                        baseImage = waitingImage;
-                        baseImageView.setImage(baseImage);
-                    }
-                    Utils.printTotalTime(start);
-                });
-                imageEmbeddingRequestIndicator.setLabelLater("Complete");
-                imageEmbeddingRequestIndicator.spin(false);
-                imageEmbeddingRequestIndicator.fadeBusy(true);
-                return null;
-            }
-        };
+        currentFeatureList.clear();
+        imageFilesList.clear();
+        LoadImagesTask loadTask = new LoadImagesTask(scene,
+            imageEmbeddingRequestIndicator, renderIconsCheckBox.isSelected(), files);
         Thread t = new Thread(loadTask, "Trinity Batch Image Load Task");
         t.setDaemon(true);
         t.start();
     }
 
-    private void requestEmbeddings(List<EmbeddingsImageUrl> currentBatch, List<Integer> inputIDs) {
-        EmbeddingsImageBatchInput input = new EmbeddingsImageBatchInput();
-        input.setInput(currentBatch);
-        input.setDimensions(512);
-        input.setEmbedding_type("all");
-        input.setEncoding_format("float");
-        input.setModel(currentEmbeddingsModel);
-        input.setUser("string");
-        try {
-            int rn = requestNumber.incrementAndGet();
-            imageEmbeddingRequestIndicator.setLabelLater("Embeddings Request " + rn + "...");
-            LOG.info("Sending {} images for processing at {}", currentBatch.size(), LocalDateTime.now());
-            RestAccessLayer.requestImageEmbeddings(input,
-                imageEmbeddingRequestIndicator.getScene(), inputIDs, rn);
-            outstandingRequests.put(rn, STATUS.REQUESTED);
-        } catch (JsonProcessingException ex) {
-            LOG.error(null, ex);
-        }
-    }
-
     public void requestEmbeddingsTask() {
-        Task requestTask = new Task() {
-            @Override
-            protected Void call() throws Exception {
-                AtomicInteger atomicCount = new AtomicInteger(0);
-                imageEmbeddingRequestIndicator.setFadeTimeMS(250);
-                imageEmbeddingRequestIndicator.setLabelLater("Encoding Images...");
-                imageEmbeddingRequestIndicator.spin(true);
-                imageEmbeddingRequestIndicator.fadeBusy(false);
-                LOG.info("Loading and Encoding Images...");
-                long startTime = System.nanoTime();
-                List<EmbeddingsImageUrl> inputs = new ArrayList<>();
-                List<Integer> inputIDs = new ArrayList<>();
-                final double total = imageEmbeddingsListView.getSelectionModel().getSelectedItems().size();
-                imageEmbeddingsListView.getSelectionModel().getSelectedItems()
-                    .parallelStream().forEach(item -> {
-                        inputs.add(imageUrlFromImage.apply(item.getCurrentImage()));
-                        inputIDs.add(item.imageID);
-                        double completed = inputs.size();
-                        imageEmbeddingRequestIndicator.setPercentComplete(completed / total);
-                        imageEmbeddingRequestIndicator.setLabelLater("Encoding " + completed + " of " + total);
-
-                    });
-                Utils.printTotalTime(startTime);
-                double completed = atomicCount.incrementAndGet();
-                imageEmbeddingRequestIndicator.setPercentComplete(completed / total);
-                imageEmbeddingRequestIndicator.setLabelLater("Requested " + completed + " of " + total);
-
-                //break up the requests based on batch size
-                int currentIndex = 0;
-                while (currentIndex < inputs.size()) {
-                    int endCurrentIndex = currentIndex + batchSize;
-                    if (endCurrentIndex > inputs.size())
-                        endCurrentIndex = inputs.size();
-                    List<EmbeddingsImageUrl> currentBatch =
-                        inputs.subList(currentIndex, endCurrentIndex);
-                    LOG.info("Batch created: {}", currentBatch.size());
-                    requestEmbeddings(currentBatch, inputIDs.subList(currentIndex, endCurrentIndex));
-                    currentIndex += batchSize;
-
-                    completed = Integer.valueOf(currentIndex).doubleValue();
-                    imageEmbeddingRequestIndicator.setPercentComplete(completed / total);
-                    imageEmbeddingRequestIndicator.setLabelLater("Requested " + completed + " of " + total);
-                    Thread.sleep(requestDelay);
-                }
-                return null;
-            }
-        };
-        Thread t = new Thread(requestTask, "Trinity Embeddings Image Request");
+        RequestEmbeddingsTask task = new RequestEmbeddingsTask(scene,
+            imageEmbeddingRequestIndicator, requestNumber, currentEmbeddingsModel,
+            outstandingRequests, imageEmbeddingsListView.getSelectionModel().getSelectedItems());
+        Thread t = new Thread(task, "Trinity Embeddings Image Request");
         t.setDaemon(true);
         t.start();
-    }
-
-    private void refreshImageFiles(boolean renderIcons) {
-        imageEmbeddingsListView.getItems().forEach(item -> item.reloadImage(renderIcons));
-    }
-
-    public void updateLabels(String labelText, boolean onlySelected, boolean overwrite) {
-        if (onlySelected && overwrite) {
-            imageEmbeddingsListView.getSelectionModel().getSelectedItems().forEach(i ->
-                i.setFeatureVectorLabel(labelText));
-        } else if (onlySelected && !overwrite) {
-            imageEmbeddingsListView.getSelectionModel().getSelectedItems()
-                .filtered(t -> t.getFeatureVectorLabel().isBlank())
-                .forEach(i -> i.setFeatureVectorLabel(labelText));
-        } else if (!onlySelected && overwrite) {
-            imageEmbeddingsListView.getItems().forEach(i ->
-                i.setFeatureVectorLabel(labelText));
-        } else {
-            imageEmbeddingsListView.getItems()
-                .filtered(t -> t.getFeatureVectorLabel().isBlank())
-                .forEach(i -> i.setFeatureVectorLabel(labelText));
-        }
     }
 }

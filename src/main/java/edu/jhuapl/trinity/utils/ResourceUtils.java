@@ -294,6 +294,38 @@ public enum ResourceUtils {
     }
 
     /**
+     * Checks whether the file is an extractable PDF type.
+     *
+     * @param file The File object to check.
+     * @return boolean true if it is a pdf file, can be read and is a supported type
+     */
+    public static boolean isPDF(File file) {
+        if (file.isFile() && file.canRead()) {
+            try {
+                String contentType = Files.probeContentType(file.toPath());
+                if (null != contentType) {
+                    //check for explicit mime types we want to guarantee work
+                    switch (contentType) {
+                        case "application/pdf" -> {
+                            return true;
+                        }
+                    }
+//                    //now look explicitly for type categories we like
+//                    if (contentType.startsWith("text") || contentType.endsWith("json"))
+//                        return true;
+                }
+            } catch (IOException ex) {
+                LOG.error(null, ex);
+            }
+//            //now fuck it just check for certain byte types. (good but not guaranteed)
+//            boolean ascii = asciiBytesCheck(file);
+//            return ascii;
+        }
+        return false;
+
+    }
+
+    /**
      * Checks whether the file can read as ASCII text.
      *
      * @param file The File object to check.

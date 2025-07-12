@@ -19,8 +19,6 @@ public class EmbeddingsImageCallback extends RestConsumer {
     List<Integer> inputIDs;
     int requestNumber;
 
-    public enum STATUS {REQUESTED, SUCCEEDED, FAILED}
-
     public EmbeddingsImageCallback(Scene scene, List<Integer> inputIDs, int requestNumber) {
         super(scene);
         this.inputIDs = inputIDs;

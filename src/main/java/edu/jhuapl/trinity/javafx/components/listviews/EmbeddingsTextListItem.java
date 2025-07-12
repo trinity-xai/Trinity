@@ -6,11 +6,17 @@ import com.fasterxml.jackson.databind.node.JsonNodeType;
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.utils.MessageUtils;
+import edu.jhuapl.trinity.utils.ResourceUtils;
 import javafx.application.Platform;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.HBox;
+import org.apache.pdfbox.Loader;
+import org.apache.pdfbox.pdmodel.PDDocument;
+import org.apache.pdfbox.text.PDFTextStripper;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
@@ -26,6 +32,8 @@ import java.util.function.Function;
  * @author Sean Phillips
  */
 public class EmbeddingsTextListItem extends HBox {
+    private static final Logger LOG = LoggerFactory.getLogger(EmbeddingsTextListItem.class);
+
     public static double PREF_DIMLABEL_WIDTH = 100;
     public static double PREF_FILELABEL_WIDTH = 250;
     public static int LARGEFILE_SPLIT_SIZE = 16384;
@@ -160,7 +168,18 @@ public class EmbeddingsTextListItem extends HBox {
     public static Function<File, List<EmbeddingsTextListItem>> itemsSplitFromFile = file -> {
         List<EmbeddingsTextListItem> list = new ArrayList<>();
         try {
-            String fileString = Files.readString(file.toPath());
+            //First extract usable text
+            String fileString = null;
+            if (ResourceUtils.isPDF(file)) {
+                try (PDDocument document = Loader.loadPDF(file)) {
+                    PDFTextStripper stripper = new PDFTextStripper();
+                    stripper.setSortByPosition(true);
+                    fileString = stripper.getText(document);
+                    //System.out.println(text);
+                }
+            } else {
+                fileString = Files.readString(file.toPath());
+            }
             //if JSON attempt intelligent object wise chunking
             if (MessageUtils.probablyJSON(fileString)) {
                 final ObjectMapper mapper = new ObjectMapper();
@@ -187,7 +206,6 @@ public class EmbeddingsTextListItem extends HBox {
                         list.add(item);
                     }
                 }
-
             } else {
                 //use naive bruteforce chunking
                 long total = file.length();
@@ -196,25 +214,32 @@ public class EmbeddingsTextListItem extends HBox {
                     list.add(new EmbeddingsTextListItem(file, true));
                     return list;
                 }
-                //String fileString = Files.readString(file.toPath());
-                int len = fileString.length();
-                int currentStart = 0;
-                int currentEnd = LARGEFILE_SPLIT_SIZE;
-                while (currentStart <= len) {
-                    if (currentEnd > len)
-                        currentEnd = len;
-                    String sub = fileString.substring(currentStart, currentEnd);
-                    EmbeddingsTextListItem item = new EmbeddingsTextListItem(file, false);
-                    item.contents = sub;
-                    item.getFeatureVector().setText(sub);
-                    item.setFeatureVectorLabel(file.getName());
-                    list.add(item);
-                    currentStart += LARGEFILE_SPLIT_SIZE;
-                    currentEnd += LARGEFILE_SPLIT_SIZE;
-                }
+                return chunkString(file, fileString);
             }
         } catch (Exception ex) {
+            LOG.error("Wierdness trying to read in " + file.getName());
         }
         return list;
     };
+
+    public static List<EmbeddingsTextListItem> chunkString(File file, String fileString) {
+        //String fileString = Files.readString(file.toPath());
+        List<EmbeddingsTextListItem> list = new ArrayList<>();
+        int len = fileString.length();
+        int currentStart = 0;
+        int currentEnd = LARGEFILE_SPLIT_SIZE;
+        while (currentStart <= len) {
+            if (currentEnd > len)
+                currentEnd = len;
+            String sub = fileString.substring(currentStart, currentEnd);
+            EmbeddingsTextListItem item = new EmbeddingsTextListItem(file, false);
+            item.contents = sub;
+            item.getFeatureVector().setText(sub);
+            item.setFeatureVectorLabel(file.getName());
+            list.add(item);
+            currentStart += LARGEFILE_SPLIT_SIZE;
+            currentEnd += LARGEFILE_SPLIT_SIZE;
+        }
+        return list;
+    }
 }
