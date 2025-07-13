@@ -1,11 +1,11 @@
 package edu.jhuapl.trinity.utils.fun.planetary;
 
 import edu.jhuapl.trinity.utils.fun.planetary.PlanetaryEffectFactory.PlanetStyle;
+import static edu.jhuapl.trinity.utils.fun.planetary.PlanetaryEffectFactory.getFillForStyle;
 import java.util.ArrayList;
 import java.util.List;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.CycleMethod;
-import javafx.scene.paint.LinearGradient;
 import javafx.scene.paint.Paint;
 import javafx.scene.paint.Stop;
 import javafx.scene.shape.Circle;
@@ -45,7 +45,7 @@ public class PlanetaryDisc extends Group {
 
         // Core planet shape
         planetCircle = new Circle(radius, radius, radius);
-        planetCircle.setFill(getStyleFill(style));
+        planetCircle.setFill(getFillForStyle(style));
         planetCircle.getProperties().put("occluderShape", true);
         planetCircle.setMouseTransparent(true);
         getChildren().add(planetCircle);
@@ -69,7 +69,7 @@ public class PlanetaryDisc extends Group {
 
     public void setPlanetStyle(PlanetStyle style) {
         this.planetStyle = style;
-        planetCircle.setFill(getStyleFill(style));  
+        planetCircle.setFill(getFillForStyle(style));  
 
         // Remove old effect nodes
         getChildren().removeIf(node -> node.getUserData() instanceof PlanetaryEffect);
@@ -214,30 +214,5 @@ public class PlanetaryDisc extends Group {
 
     public PlanetStyle getPlanetStyle() {
         return planetStyle;
-    }
-
-    private Paint getStyleFill(PlanetStyle style) {
-        return switch (style) {
-            case OUTRUN ->
-                new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
-                new Stop(0, Color.web("#FF003C")),
-                new Stop(1, Color.web("#FF7F50")));
-            case VAPORWAVE ->
-                new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
-                new Stop(0, Color.web("#ffccff")),
-                new Stop(1, Color.web("#66ccff")));
-            case SCIFI ->
-                new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
-                new Stop(0, Color.web("#00FFFF")),
-                new Stop(1, Color.web("#003366")));
-            case SPACE_HORROR ->
-                new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
-                new Stop(0, Color.web("#220000")),
-                new Stop(1, Color.web("#550000")));
-            case RETROWAVE ->
-                new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
-                new Stop(0, Color.web("#FF00CC")),
-                new Stop(1, Color.web("#6600FF")));
-        };
     }
 }

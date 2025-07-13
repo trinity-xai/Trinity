@@ -1,49 +1,54 @@
 package edu.jhuapl.trinity.utils.fun.planetary;
-import javafx.scene.Group;
 import javafx.scene.Node;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Line;
 /**
  *
  * @author Sean Phillips
  */
 public class ScanlineEffect implements PlanetaryEffect {
-    private final Group lines = new Group();
-    private final int count;
-    private final Color color;
 
-    public ScanlineEffect(int count, Color color) {
-        this.count = count;
-        this.color = color;
+    private final Canvas canvas;
+    private final GraphicsContext gc;
+    private final int lineSpacing;
+    private final Color lineColor;
+
+    public ScanlineEffect(int lineSpacing, Color color) {
+        this.lineSpacing = lineSpacing;
+        this.lineColor = color;
+        this.canvas = new Canvas();
+        this.gc = canvas.getGraphicsContext2D();
     }
 
     @Override
     public void attachTo(PlanetaryDisc disc) {
-        lines.getChildren().clear();
-        double spacing = disc.getRadius() * 2 / count;
+        double diameter = disc.getRadius() * 2;
+        canvas.setWidth(diameter);
+        canvas.setHeight(diameter);
+        canvas.setMouseTransparent(true);
+        canvas.setOpacity(lineColor.getOpacity());
 
-        for (int i = 0; i < count; i++) {
-            Line line = new Line();
-            line.setStroke(color);
-            line.setStartX(0);
-            line.setEndX(disc.getRadius() * 2);
-            line.setTranslateY(i * spacing);
-            line.setMouseTransparent(true);
-            lines.getChildren().add(line);
+        // Clip to planet shape with padding
+        ClipUtils.applyCircularClip(canvas, disc.getPlanetCircle(), 4.0);
+
+        // Draw horizontal lines
+        gc.clearRect(0, 0, diameter, diameter);
+        gc.setStroke(lineColor);
+        gc.setLineWidth(1.0);
+        for (int y = 0; y < diameter; y += lineSpacing) {
+            gc.strokeLine(0, y, diameter, y);
         }
-
-        lines.layoutXProperty().bind(disc.getPlanetCircle().centerXProperty().subtract(disc.getRadius()));
-        lines.layoutYProperty().bind(disc.getPlanetCircle().centerYProperty().subtract(disc.getRadius()));
     }
 
     @Override
     public void update(double occlusionFactor) {
-        lines.setOpacity(occlusionFactor);
+        canvas.setVisible(occlusionFactor > 0.05); // Optional perf optimization
+        canvas.setOpacity(lineColor.getOpacity() * occlusionFactor);
     }
 
     @Override
     public Node getNode() {
-        return lines;
+        return canvas;
     }
 }
-
