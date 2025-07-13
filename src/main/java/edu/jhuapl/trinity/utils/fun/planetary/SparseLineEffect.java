@@ -11,62 +11,71 @@ import javafx.scene.shape.Line;
  * @author Sean Phillips
  */
 public class SparseLineEffect implements PlanetaryEffect {
-    private final Group lines = new Group();
-    private final int count;
-    private final Color color;
-    private final boolean vertical;
 
-    /**
-     * @param count   Number of sparse lines to render
-     * @param color   Stroke color of the lines
-     * @param vertical True for vertical lines, false for horizontal
-     */
-    public SparseLineEffect(int count, Color color, boolean vertical) {
-        this.count = Math.max(1, count);
-        this.color = color;
+    private final Group linesGroup = new Group();
+    private final int lineCount;
+    private final Color lineColor;
+    private final boolean vertical;  // new flag: true = vertical lines, false = horizontal
+
+    private Circle planetCircle;
+    private double radius;
+    private double innerPadding = 4.0;  // configurable padding inside planet radius
+
+    public SparseLineEffect(int lineCount, Color lineColor, boolean vertical) {
+        this.lineCount = lineCount;
+        this.lineColor = lineColor;
         this.vertical = vertical;
-
-        for (int i = 0; i < count; i++) {
-            Line line = new Line();
-            line.setStroke(color);
-            line.setStrokeWidth(1.5);
-            line.setMouseTransparent(true);
-            lines.getChildren().add(line);
-        }
     }
 
     @Override
     public void attachTo(PlanetaryDisc disc) {
-        double diameter = disc.getRadius() * 2;
-        double spacing = diameter / (count + 1);
-        Circle base = disc.getPlanetCircle();
+        this.planetCircle = disc.getPlanetCircle();
+        this.radius = disc.getRadius();
 
-        for (int i = 0; i < count; i++) {
-            Line line = (Line) lines.getChildren().get(i);
-            double offset = (i + 1) * spacing - disc.getRadius();
+        linesGroup.getChildren().clear();
 
+        double centerX = planetCircle.getCenterX();
+        double centerY = planetCircle.getCenterY();
+
+        // Calculate step spacing based on radius and line count
+        double step = (2 * radius - 2 * innerPadding) / (lineCount - 1);
+
+        for (int i = 0; i < lineCount; i++) {
+            Line line;
             if (vertical) {
-                line.startXProperty().bind(base.centerXProperty().add(offset));
-                line.endXProperty().bind(line.startXProperty());
-                line.startYProperty().bind(base.centerYProperty().subtract(disc.getRadius()));
-                line.endYProperty().bind(base.centerYProperty().add(disc.getRadius()));
+                // X fixed, Y varies from top to bottom inside circle
+                double x = centerX - radius + innerPadding + step * i;
+                double startY = centerY - radius + innerPadding;
+                double endY = centerY + radius - innerPadding;
+                line = new Line(x, startY, x, endY);
             } else {
-                line.startYProperty().bind(base.centerYProperty().add(offset));
-                line.endYProperty().bind(line.startYProperty());
-                line.startXProperty().bind(base.centerXProperty().subtract(disc.getRadius()));
-                line.endXProperty().bind(base.centerXProperty().add(disc.getRadius()));
+                // Y fixed, X varies from left to right inside circle
+                double y = centerY - radius + innerPadding + step * i;
+                double startX = centerX - radius + innerPadding;
+                double endX = centerX + radius - innerPadding;
+                line = new Line(startX, y, endX, y);
             }
+
+            line.setStroke(lineColor);
+            line.setStrokeWidth(1.2);
+            line.setMouseTransparent(true);
+
+            linesGroup.getChildren().add(line);
         }
+
+        // Apply circular clip with padding to entire group
+        ClipUtils.applyCircularClip(linesGroup, planetCircle, innerPadding);
     }
 
     @Override
-    public void update(double occlusionFactor) {
-        lines.setOpacity(occlusionFactor);
+    public void update(double occlusion) {
+        // Adjust opacity based on occlusion
+        linesGroup.setOpacity(occlusion);
     }
 
     @Override
     public Node getNode() {
-        return lines;
+        return linesGroup;
     }
 }
 

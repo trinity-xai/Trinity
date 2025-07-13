@@ -1,61 +1,59 @@
 package edu.jhuapl.trinity.utils.fun.planetary;
 
-import javafx.scene.Group;
 import javafx.scene.Node;
+import javafx.scene.canvas.Canvas;
+import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Circle;
-import javafx.scene.shape.Line;
 
 /**
  *
  * @author Sean Phillips
  */
 public class TechnoGridEffect implements PlanetaryEffect {
-    private final Group grid = new Group();
+
+    private final Canvas canvas;
+    private final GraphicsContext gc;
+    private final Color gridColor;
+    private final double spacing;
 
     public TechnoGridEffect(Color color) {
-        for (int i = 0; i <= 8; i++) {
-            Line h = new Line(), v = new Line();
-            h.setStroke(color);
-            v.setStroke(color);
-            h.setMouseTransparent(true);
-            v.setMouseTransparent(true);
-            grid.getChildren().addAll(h, v);
-        }
+        this.gridColor = color;
+        this.spacing = 20; // Fixed grid spacing
+        this.canvas = new Canvas();
+        this.gc = canvas.getGraphicsContext2D();
     }
 
     @Override
     public void attachTo(PlanetaryDisc disc) {
-        double r = disc.getRadius();
-        Circle base = disc.getPlanetCircle();
-        int divisions = 4;
+        double diameter = disc.getRadius() * 2;
+        canvas.setWidth(diameter);
+        canvas.setHeight(diameter);
+        canvas.setMouseTransparent(true);
+        canvas.setOpacity(gridColor.getOpacity());
 
-        for (int i = 0; i <= divisions; i++) {
-            double offset = (i - divisions / 2.0) * r * 0.5;
+        // Clip to the planet circle with inner padding
+        ClipUtils.applyCircularClip(canvas, disc.getPlanetCircle(), 5.0);
 
-            Line h = (Line) grid.getChildren().get(i * 2);
-            Line v = (Line) grid.getChildren().get(i * 2 + 1);
+        gc.clearRect(0, 0, diameter, diameter);
+        gc.setStroke(gridColor);
+        gc.setLineWidth(1.0);
 
-            h.startXProperty().bind(base.centerXProperty().subtract(r));
-            h.endXProperty().bind(base.centerXProperty().add(r));
-            h.startYProperty().bind(base.centerYProperty().add(offset));
-            h.endYProperty().bind(h.startYProperty());
-
-            v.startXProperty().bind(base.centerXProperty().add(offset));
-            v.endXProperty().bind(v.startXProperty());
-            v.startYProperty().bind(base.centerYProperty().subtract(r));
-            v.endYProperty().bind(base.centerYProperty().add(r));
+        for (double x = 0; x < diameter; x += spacing) {
+            gc.strokeLine(x, 0, x, diameter);
+        }
+        for (double y = 0; y < diameter; y += spacing) {
+            gc.strokeLine(0, y, diameter, y);
         }
     }
 
     @Override
     public void update(double occlusionFactor) {
-        grid.setOpacity(occlusionFactor);
+        canvas.setVisible(occlusionFactor > 0.05);
+        canvas.setOpacity(gridColor.getOpacity() * occlusionFactor);
     }
 
     @Override
     public Node getNode() {
-        return grid;
+        return canvas;
     }
 }
-

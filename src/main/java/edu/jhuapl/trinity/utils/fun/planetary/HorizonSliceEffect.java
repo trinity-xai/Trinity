@@ -3,49 +3,48 @@ package edu.jhuapl.trinity.utils.fun.planetary;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.paint.Color;
-import javafx.scene.shape.Rectangle;
+import javafx.scene.shape.Line;
 
 /**
  *
  * @author Sean Phillips
  */
 public class HorizonSliceEffect implements PlanetaryEffect {
-    private final Group slices = new Group();
-    private final int count;
+
+    private final Group group = new Group();
+    private final int lineCount;
     private final Color color;
 
-    public HorizonSliceEffect(int count, Color color) {
-        this.count = count;
+    public HorizonSliceEffect(int lineCount, Color color) {
+        this.lineCount = lineCount;
         this.color = color;
     }
 
     @Override
     public void attachTo(PlanetaryDisc disc) {
-        slices.getChildren().clear();
-        double spacing = disc.getRadius() * 0.05;
+        group.getChildren().clear();
+        double radius = disc.getRadius();
+        double centerX = radius;
+        double centerY = radius;
 
-        for (int i = 0; i < count; i++) {
-            Rectangle rect = new Rectangle();
-            rect.setFill(color);
-            rect.setWidth(disc.getRadius() * 2);
-            rect.setHeight(spacing);
-            rect.setMouseTransparent(true);
-            rect.setTranslateY(i * spacing);
-            slices.getChildren().add(rect);
+        for (int i = 1; i <= lineCount; i++) {
+            double y = centerY + i * (radius / lineCount);
+            Line line = new Line(centerX - radius, y, centerX + radius, y);
+            line.setStroke(color);
+            line.setOpacity(1.0 - (i / (double) lineCount));
+            group.getChildren().add(line);
         }
 
-        slices.layoutXProperty().bind(disc.getPlanetCircle().centerXProperty().subtract(disc.getRadius()));
-        slices.layoutYProperty().bind(disc.getPlanetCircle().centerYProperty());
+        ClipUtils.applyCircularClip(group,disc.getPlanetCircle(), 4.0);
     }
 
     @Override
-    public void update(double occlusionFactor) {
-        slices.setOpacity(occlusionFactor);
+    public void update(double occlusion) {
+        group.setOpacity(occlusion);
     }
 
     @Override
     public Node getNode() {
-        return slices;
+        return group;
     }
 }
-
