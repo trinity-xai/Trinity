@@ -11,9 +11,12 @@ public class GlowRimEffect implements PlanetaryEffect {
     private final Group nodeGroup = new Group();
 
     public GlowRimEffect(Color glowColor) {
+        this(glowColor, 8);
+    }
+    public GlowRimEffect(Color glowColor, double strokeWidth) {
         glowCircle.setFill(null);
         glowCircle.setStroke(glowColor);
-        glowCircle.setStrokeWidth(8);
+        glowCircle.setStrokeWidth(strokeWidth);
         glowCircle.setEffect(new GaussianBlur(15));
         glowCircle.setOpacity(1.0);
         glowCircle.setMouseTransparent(true);
