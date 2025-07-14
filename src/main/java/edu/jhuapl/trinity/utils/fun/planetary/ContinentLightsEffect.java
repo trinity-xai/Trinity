@@ -31,7 +31,8 @@ public class ContinentLightsEffect implements PlanetaryEffect {
     private final int numContinents;
     private final int minVertices;
     private final int maxVertices;
-    private double continentScale;
+    private Double continentScale;
+    private Double fillRatio;
     private final int lightsPerContinent;
     private final int clustersPerContinent;
     private final Color outlineColor;
@@ -53,6 +54,8 @@ private final Color fillColor;
         this.lightColor = builder.lightColor;
         this.maxLightSize = builder.maxLightSize;
         this.innerPadding = builder.innerPadding;
+        this.fillRatio = builder.fillRatio;
+        
  this.fillColor = builder.fillColor;       
     }
 
@@ -66,9 +69,15 @@ public void attachTo(PlanetaryDisc disc) {
 
     rootGroup.getChildren().clear();
 
-    double fillRatio = 0.5;
+    if(null == fillRatio)
+        fillRatio = 0.5;
     double minDistance;
-    continentScale = computeContinentScale(effectiveRadius, numContinents, fillRatio);
+    double scaleNormalized = computeContinentScaleNormalized(numContinents, fillRatio);
+    if(null == continentScale) {
+        continentScale = scaleNormalized * effectiveRadius;
+    } else {
+        continentScale *= effectiveRadius;
+    }
     minDistance = continentScale * 2.0;
 
     // 🧠 Compute valid centers inside the disc
@@ -127,6 +136,13 @@ public void attachTo(PlanetaryDisc disc) {
     // ✅ Ensure clipping is applied last
     ClipUtils.applyCircularClip(rootGroup, planetCircle, innerPadding);
 }
+private double computeContinentScaleNormalized(int numContinents, double fillRatio) {
+    double totalArea = Math.PI;
+    double avgArea = (totalArea * fillRatio) / Math.max(1, numContinents);
+    double scale = Math.sqrt(avgArea / Math.PI); // This is in normalized radius (1.0 = effectiveRadius)
+    return Math.max(scale, 0.08); // Enforce minimum of 8% of disc radius
+}
+
 private double computeContinentScale(double effectiveRadius, int numContinents, double fillRatio) {
     double totalArea = Math.PI * effectiveRadius * effectiveRadius;
     double avgArea = (totalArea * fillRatio) / Math.max(1, numContinents);
@@ -284,7 +300,8 @@ private Point2D randomPointInPolygon(List<Point2D> polygon) {
         private int numContinents = 3;
         private int minVertices = 6;
         private int maxVertices = 12;
-        private double continentScale = 0.4;
+        private Double fillRatio = null;
+        private Double continentScale = null;
         private int lightsPerContinent = 200;
         private int clustersPerContinent = 3;
         private Color outlineColor = Color.DARKSLATEBLUE;
@@ -309,6 +326,11 @@ private Point2D randomPointInPolygon(List<Point2D> polygon) {
         public Builder vertexRange(int min, int max) {
             this.minVertices = min;
             this.maxVertices = max;
+            return this;
+        }
+
+        public Builder fillRatio(double val) {
+            this.fillRatio = val;
             return this;
         }
 

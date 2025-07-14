@@ -6,6 +6,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.paint.CycleMethod;
 import javafx.scene.paint.LinearGradient;
 import javafx.scene.paint.Paint;
+import javafx.scene.paint.RadialGradient;
 import javafx.scene.paint.Stop;
 
 /**
@@ -153,55 +154,64 @@ public class PlanetaryEffectFactory {
             }
             case NIGHTSIDE_EARTH ->
                 List.of(
-                new GlowRimEffect(Color.web("#224466")),
-                new ScanlineEffect(40, Color.web("#335577", 0.15)),
+                new GlowRimEffect(Color.CYAN, 2),
                 new ContinentLightsEffect.Builder()
-                .numContinents(2)
-                .continentScale(0.65)
-                .vertexRange(15, 50)
-                .lightsPerContinent(300)
-                .clustersPerContinent(7)
-                .fillColor(Color.web("#00131f"))  // dark blue landmass                        
-                .outlineColor(Color.web("#334466"))
-                .lightColor(Color.web("#FFDDAA", 0.8))
-                .maxLightSize(2.5)
-                .build(),
-                new AuraPulseEffect(Color.web("#113355", 0.2))
+                    .numContinents(2 + (int) (Math.random() * 3)) // 2 to 4
+                    .fillRatio(0.99) // 60–70% disc area
+                    .vertexRange(10, 20) // Smoother curves, larger landmasses
+                    .lightsPerContinent(250 + (int)(Math.random() * 100)) // natural variation
+                    .clustersPerContinent(4 + (int)(Math.random() * 4)) // 4–7 city clusters
+                    .fillColor(Color.web("#001522"))  // Dark blue landmass (deep ocean hue)
+                    .outlineColor(Color.web("#223344")) // less sharp outline
+                    .lightColor(Color.web("#FFDDAA", 0.9)) // warm light clusters
+                    .maxLightSize(2.2)
+                    .build()
                 );
             case URBAN_WORLD ->
                 List.of(
-                new GlowRimEffect(Color.web("#FF9900")),
-                new ScanlineEffect(20, Color.web("#FF9900", 0.2)),
+                new GlowRimEffect(Color.web("#220099")),
+                new ScanlineEffect(20, Color.web("#FF9900", 0.4)),
                 new ContinentLightsEffect.Builder()
-                .numContinents(5)
-                .continentScale(0.65)
-                .vertexRange(12, 16)
-                .lightsPerContinent(600)
-                .clustersPerContinent(10)
-                .fillColor(Color.web("#2a0000"))
-                .outlineColor(Color.web("#AA5500"))
+                .numContinents(1)
+                .fillRatio(0.95)        
+                .continentScale(1.15)
+                .vertexRange(12, 26)
+                .lightsPerContinent(800)
+                .clustersPerContinent(40)
+                .fillColor(Color.web("#100010"))
+                .outlineColor(Color.web("#221100"))
                 .lightColor(Color.web("#FFCC33", 0.9))
-                .maxLightSize(3.5)
+                .maxLightSize(4.5)
                 .build(),
-                new AuraPulseEffect(Color.web("#FF9900", 0.35))
+                new AuraPulseEffect(Color.web("#111100", 0.35))
                 );
             case RANDOMIZED_WORLD -> {
                 Color fillColor = Color.hsb(
                     Math.random() * 360,       // hue
                     0.4 + Math.random() * 0.5, // saturation
                     0.05 + Math.random() * 0.15 // very dark value
-                );                
+                );
+
                 Color base = Color.hsb(Math.random() * 360, 0.6, 1.0);
                 double alpha = 0.6 + Math.random() * 0.3;
 
+                int numContinents = 3 + (int) (Math.random() * 4);
+                double fillRatio = 0.25 + Math.random() * 0.5; // 25%–75% coverage
+
                 List<PlanetaryEffect> effects = new ArrayList<>();
                 effects.add(new GlowRimEffect(base));
-                effects.add(new ScanlineEffect(25 + (int) (Math.random() * 30), base.deriveColor(0, 1, 1, 0.15)));
+                effects.add(new ScanlineEffect(
+                    25 + (int) (Math.random() * 30),
+                    base.deriveColor(0, 1, 1, 0.15))
+                );
 
                 effects.add(new ContinentLightsEffect.Builder()
-                        .numContinents(2 + (int) (Math.random() * 4))
-                        .continentScale(0.35 + Math.random() * 0.3)
-                        .vertexRange(5 + (int) (Math.random() * 6), 10 + (int) (Math.random() * 6))
+                        .numContinents(numContinents)
+                        .fillRatio(fillRatio) 
+                        .vertexRange(
+                            5 + (int) (Math.random() * 6),
+                            10 + (int) (Math.random() * 6)
+                        )
                         .lightsPerContinent(150 + (int) (Math.random() * 200))
                         .clustersPerContinent(2 + (int) (Math.random() * 4))
                         .fillColor(fillColor)
@@ -256,14 +266,14 @@ public class PlanetaryEffectFactory {
                 new Stop(1, end));
             }
             case NIGHTSIDE_EARTH ->
-                new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
-                new Stop(0, Color.web("#00182B")), // deep ocean blue
-                new Stop(1, Color.web("#002B45")));  // soft steel blue blend
+                new RadialGradient(0, 0, 0.5, 0.5, 0.5, true, CycleMethod.NO_CYCLE,
+                new Stop(0, Color.NAVY), // deep ocean blue
+                new Stop(1, Color.BLACK));  // black
 
             case URBAN_WORLD ->
                 new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
-                new Stop(0, Color.web("#0A0000")), // black with a hint of maroon
-                new Stop(1, Color.web("#330000")));  // dark reddish tint for sci-fi urban vibe
+                new Stop(0, Color.web("#000000")), // black 
+                new Stop(1, Color.web("#100000")));  // dark reddish tint for sci-fi urban vibe
 
             case RANDOMIZED_WORLD -> {
                 Color base = Color.hsb(Math.random() * 360, 0.4 + Math.random() * 0.2, 0.2 + Math.random() * 0.3);
