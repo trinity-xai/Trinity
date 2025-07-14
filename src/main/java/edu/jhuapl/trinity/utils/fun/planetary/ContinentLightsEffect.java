@@ -1,21 +1,24 @@
 package edu.jhuapl.trinity.utils.fun.planetary;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 import java.util.stream.Collectors;
+import javafx.animation.Animation;
+import javafx.animation.FadeTransition;
+import javafx.animation.KeyFrame;
+import javafx.animation.Timeline;
 import javafx.geometry.Point2D;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
-import javafx.scene.paint.Paint;
 import javafx.scene.shape.Circle;
-import javafx.scene.shape.ClosePath;
-import javafx.scene.shape.MoveTo;
 import javafx.scene.shape.Path;
-import javafx.scene.shape.QuadCurveTo;
+import javafx.util.Duration;
 
 /**
  *
@@ -26,7 +29,7 @@ public class ContinentLightsEffect implements PlanetaryEffect {
     private final Group rootGroup = new Group();
     private Circle planetCircle;
     private double radius;
-
+    private double minDistanceMultiplier;
     private final int numContinents;
     private final int minVertices;
     private final int maxVertices;
@@ -41,11 +44,11 @@ public class ContinentLightsEffect implements PlanetaryEffect {
     private double innerPadding = 6.0;
     private List<Color> clusterColors;
     private List<Color> lightColors;
-
+    private Boolean enableTwinkle;
     private double cx,cy,effectiveRadius;
-    private final Random random = new Random();
 
     private ContinentLightsEffect(Builder builder) {
+        minDistanceMultiplier = builder.minDistanceMultiplier;
         numContinents = builder.numContinents;
         minVertices = builder.minVertices;
         maxVertices = builder.maxVertices;
@@ -59,7 +62,8 @@ public class ContinentLightsEffect implements PlanetaryEffect {
         fillRatio = builder.fillRatio;
         clusterColors = builder.clusterColors;
         lightColors = builder.lightColors;    
-        fillColor = builder.fillColor;       
+        fillColor = builder.fillColor;  
+        enableTwinkle = builder.enableTwinkle;
     }
 
     @Override
@@ -72,32 +76,24 @@ public void attachTo(PlanetaryDisc disc) {
 
     rootGroup.getChildren().clear();
 
-    if(null == fillRatio)
-        fillRatio = 0.5;
-    double minDistance;
-    double scaleNormalized = computeContinentScaleNormalized(numContinents, fillRatio);
-    if(null == continentScale) {
-        continentScale = scaleNormalized * effectiveRadius;
-    } else {
-        continentScale *= effectiveRadius;
-    }
-    minDistance = continentScale * 2.0;
-
+    continentScale *= effectiveRadius;
+    double minDistance = continentScale * minDistanceMultiplier;
+    
     //Compute valid centers inside the disc
-    List<Point2D> centers = generateNonOverlappingCenters(
+    List<Point2D> centers = GeographyUtils.generateNonOverlappingCenters(
         numContinents, minDistance, cx, cy, effectiveRadius
     );
 
     for (Point2D offset : centers) {
         // Build and offset a polygon
-        List<Point2D> localPoints = generateContinentPolygon(
+        List<Point2D> localPoints = GeographyUtils.generateContinentPolygon(
             minVertices, maxVertices, continentScale
         );
         List<Point2D> offsetPoints = localPoints.stream()
                 .map(p -> p.add(offset))
                 .collect(Collectors.toList());
         //Add continent path
-        Path continent = buildContinentPath(offsetPoints, cx, cy,
+        Path continent = GeographyUtils.buildContinentPath(offsetPoints, cx, cy,
             effectiveRadius, fillColor, outlineColor);
         rootGroup.getChildren().add(continent);
 //        //DEBUG: show center dots
@@ -108,22 +104,33 @@ public void attachTo(PlanetaryDisc disc) {
         GraphicsContext gc = canvas.getGraphicsContext2D();
         //Pick cluster locations and draw them with some attitude
         List<Point2D> clusters = new ArrayList<>();
+        List<Circle> clusterDots = new ArrayList<>();
         for (int i = 0; i < clustersPerContinent; i++) {
             double clusterSize = maxLightSize * 1.5;
-            Color clusterColor = pickRandomColor(clusterColors, lightColor).deriveColor(0, 1, 1, 1.0);
+            Color clusterColor = GeographyUtils.pickRandomColor(clusterColors, lightColor).deriveColor(0, 1, 1, 1.0);
             double haloSize = clusterSize * 2.5;
-            Point2D cluster = randomPointInPolygon(offsetPoints);
+            Point2D cluster = GeographyUtils.randomPointInPolygon(offsetPoints);
             clusters.add(cluster);
             // Draw glow halo behind cluster center
-            gc.setFill(clusterColor.deriveColor(0, 1, 1, 0.15));
+            gc.setFill(clusterColor.deriveColor(0, 1, 1, 0.35));
             gc.fillOval(cluster.getX() - haloSize / 2, cluster.getY() - haloSize / 2, haloSize, haloSize);
             //draw the cluster center point dot 
-            gc.setFill(clusterColor);
-            gc.fillOval(cluster.getX() - clusterSize / 2, cluster.getY() - clusterSize / 2, clusterSize, clusterSize);
+            Circle dot = new Circle(cluster.getX(), cluster.getY(), clusterSize / 2);
+            dot.setFill(clusterColor);
+            dot.setMouseTransparent(true);
+            clusterDots.add(dot);
+            rootGroup.getChildren().add(dot);
+        }
+        if(enableTwinkle) {
+            Timeline twinkleTimeline = new Timeline(
+                new KeyFrame(Duration.seconds(2), e -> twinkleRandomClusters(clusterDots))
+            );
+            twinkleTimeline.setCycleCount(Animation.INDEFINITE);
+            twinkleTimeline.play();
         }
         //draw points, brighter if close to a cluster center
         for (int i = 0; i < lightsPerContinent; i++) {
-            Point2D p = randomPointInPolygon(offsetPoints);
+            Point2D p = GeographyUtils.randomPointInPolygon(offsetPoints);
             double brightness = 0.4;
             for (Point2D cluster : clusters) {
                 double dist = p.distance(cluster);
@@ -131,7 +138,7 @@ public void attachTo(PlanetaryDisc disc) {
                 brightness += Math.exp(-dist * 10) * 0.6;
             }
             brightness = Math.min(1.0, brightness);
-            Color baseLight = pickRandomColor(lightColors, lightColor);
+            Color baseLight = GeographyUtils.pickRandomColor(lightColors, lightColor);
             Color glow = baseLight.deriveColor(0, 1, 1, brightness);
             double size = maxLightSize * (0.4 + brightness * 0.6);
             gc.setFill(glow);
@@ -144,148 +151,24 @@ public void attachTo(PlanetaryDisc disc) {
     //apply clipping last
     ClipUtils.applyCircularClip(rootGroup, planetCircle, innerPadding);
 }
-    private double computeContinentScaleNormalized(int numContinents, double fillRatio) {
-        double totalArea = Math.PI;
-        double avgArea = (totalArea * fillRatio) / Math.max(1, numContinents);
-        double scale = Math.sqrt(avgArea / Math.PI); // This is in normalized radius (1.0 = effectiveRadius)
-        return Math.max(scale, 0.08); // Enforce minimum of 8% of disc radius
-    }
-    private List<Point2D> generateNonOverlappingCenters(int count, double minDistance, double cx, double cy, double effectiveRadius) {
-        List<Point2D> centers = new ArrayList<>();
 
-        if (count <= 0) return centers;
+private void twinkleRandomClusters(List<Circle> clusters) {
+    int pulses = Math.min(3, clusters.size());  // Only a few at a time
+    Set<Circle> chosen = new HashSet<>();
 
-        double ringSpacing = minDistance; // distance between rings
-        double angleStep;
-        double radius;
-
-        // Add first point at center if fits
-        if (count > 0) {
-            centers.add(new Point2D(cx, cy));
-            if (count == 1) return centers;
+    while (chosen.size() < pulses) {
+        Circle randomDot = clusters.get((int)(Math.random() * clusters.size()));
+        if (chosen.add(randomDot)) {
+            FadeTransition ft = new FadeTransition(Duration.seconds(1.0 + Math.random()), randomDot);
+            ft.setFromValue(0.3);
+            ft.setToValue(1.0);
+            ft.setAutoReverse(true);
+            ft.setCycleCount(2);  // fade in + fade out
+            ft.play();
         }
-
-        int pointsAdded = 1;
-        int ringIndex = 1;
-
-        while (pointsAdded < count) {
-            radius = ringIndex * ringSpacing;
-            if (radius > effectiveRadius) break; // Outside planet disc
-
-            // Calculate how many points can fit evenly on this ring
-            double circumference = 2 * Math.PI * radius;
-            int pointsInRing = (int) Math.floor(circumference / minDistance);
-            if (pointsInRing == 0) pointsInRing = 1;
-
-            angleStep = 2 * Math.PI / pointsInRing;
-
-            for (int i = 0; i < pointsInRing && pointsAdded < count; i++) {
-                double angle = i * angleStep;
-                double x = cx + radius * Math.cos(angle);
-                double y = cy + radius * Math.sin(angle);
-                centers.add(new Point2D(x, y));
-                pointsAdded++;
-            }
-
-            ringIndex++;
-        }
-
-        return centers;
     }
-
-    private List<Point2D> generateContinentPolygon(int minPts, int maxPts, double scale) {
-        int pts = minPts + random.nextInt(maxPts - minPts + 1);
-        List<Point2D> result = new ArrayList<>();
-
-        double angleStep = 2 * Math.PI / pts;
-        for (int i = 0; i < pts; i++) {
-            double angle = i * angleStep + random.nextDouble() * angleStep * 0.4;
-            double r = scale * (0.5 + random.nextDouble() * 0.5);
-            result.add(new Point2D(Math.cos(angle) * r, Math.sin(angle) * r));
-        }
-        return result;
-    }
-
-    private Path buildContinentPath(List<Point2D> globalPoints, double cx, double cy, double scale, Paint fill, Paint stroke) {
-    Path path = new Path();
-    if (globalPoints.size() < 3) return path;
-
-    // Start with first point
-    Point2D start = globalPoints.get(0);
-    path.getElements().add(new MoveTo(start.getX(), start.getY()));
-
-    for (int i = 1; i < globalPoints.size() - 1; i++) {
-        Point2D p1 = globalPoints.get(i);
-        Point2D p2 = globalPoints.get(i + 1);
-
-        // Middle control point
-        Point2D control = p1;
-        Point2D end = p1.midpoint(p2);
-
-        path.getElements().add(new QuadCurveTo(
-                control.getX(), control.getY(),
-                end.getX(), end.getY()));
-    }
-
-    // Final curve from second-to-last to start
-    Point2D last = globalPoints.get(globalPoints.size() - 1);
-    Point2D control = last;
-    Point2D end = last.midpoint(start);
-
-    path.getElements().add(new QuadCurveTo(
-            control.getX(), control.getY(),
-            end.getX(), end.getY()));
-
-    path.getElements().add(new ClosePath());
-
-    path.setFill(fill != null ? fill : Color.DARKBLUE);
-    path.setStroke(stroke != null ? stroke : Color.CYAN);
-    path.setMouseTransparent(true);
-
-    return path;
 }
 
-    private Point2D randomPointInPolygon(List<Point2D> polygon) {
-    if (polygon.isEmpty()) return new Point2D(0, 0);
-
-    // Compute bounding box of polygon
-    double minX = polygon.stream().mapToDouble(Point2D::getX).min().orElse(0);
-    double maxX = polygon.stream().mapToDouble(Point2D::getX).max().orElse(0);
-    double minY = polygon.stream().mapToDouble(Point2D::getY).min().orElse(0);
-    double maxY = polygon.stream().mapToDouble(Point2D::getY).max().orElse(0);
-
-    // Try to find a random point inside the bounding box
-    for (int tries = 0; tries < 50; tries++) {
-        double x = minX + random.nextDouble() * (maxX - minX);
-        double y = minY + random.nextDouble() * (maxY - minY);
-        Point2D candidate = new Point2D(x, y);
-        if (pointInPolygon(candidate, polygon)) {
-            return candidate;
-        }
-    }
-
-    // Fallback to first vertex
-    return polygon.get(0);
-}
-
-    private boolean pointInPolygon(Point2D p, List<Point2D> polygon) {
-        int crossings = 0;
-        for (int i = 0, j = polygon.size() - 1; i < polygon.size(); j = i++) {
-            Point2D pi = polygon.get(i);
-            Point2D pj = polygon.get(j);
-            if (((pi.getY() > p.getY()) != (pj.getY() > p.getY()))
-                    && (p.getX() < (pj.getX() - pi.getX()) * (p.getY() - pi.getY()) / (pj.getY() - pi.getY()) + pi.getX())) {
-                crossings++;
-            }
-        }
-        return (crossings % 2 == 1);
-    }
-    private Color pickRandomColor(List<Color> colors, Color fallback) {
-        if (colors == null || colors.isEmpty()) {
-            return fallback;
-        }
-        return colors.get(random.nextInt(colors.size()));
-    }
     @Override
     public void update(double occlusion) {
         rootGroup.setOpacity(occlusion);
@@ -297,12 +180,12 @@ public void attachTo(PlanetaryDisc disc) {
     }
 
     public static class Builder {
-
+        private double minDistanceMultiplier = 1.0;
         private int numContinents = 3;
         private int minVertices = 6;
         private int maxVertices = 12;
-        private Double fillRatio = null;
-        private Double continentScale = null;
+        private Double fillRatio = 0.5;
+        private Double continentScale = 0.5;
         private int lightsPerContinent = 200;
         private int clustersPerContinent = 3;
         private Color outlineColor = Color.DARKSLATEBLUE;
@@ -310,14 +193,18 @@ public void attachTo(PlanetaryDisc disc) {
         private List<Color> clusterColors = null;
         private List<Color> lightColors = null;        
         private double maxLightSize = 2.0;
-        private double innerPadding = 6.0;
+        private double innerPadding = 3.0;
         private Color fillColor = null; // null = no fill
-
+        private Boolean enableTwinkle = false;
+        
+        public Builder minDistanceMultiplier(double value) {
+            this.minDistanceMultiplier = value;
+            return this;
+        }
         public Builder clusterColors(List<Color> colors) {
             this.clusterColors = colors;
             return this;
         }
-
         public Builder lightColors(List<Color> colors) {
             this.lightColors = colors;
             return this;
@@ -373,6 +260,10 @@ public void attachTo(PlanetaryDisc disc) {
 
         public Builder maxLightSize(double val) {
             this.maxLightSize = val;
+            return this;
+        }
+        public Builder enableTwinkle(Boolean val) {
+            this.enableTwinkle = val;
             return this;
         }
 
