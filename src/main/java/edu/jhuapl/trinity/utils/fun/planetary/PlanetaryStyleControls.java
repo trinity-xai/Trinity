@@ -5,14 +5,17 @@ package edu.jhuapl.trinity.utils.fun.planetary;
  * @author Sean Phillips
  */
 import edu.jhuapl.trinity.javafx.events.EffectEvent;
-import javafx.scene.control.*;
-import javafx.scene.layout.*;
-import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.geometry.Insets;
-import javafx.geometry.Pos;
 import javafx.event.ActionEvent;
+import javafx.geometry.Pos;
 import javafx.scene.Node;
+import javafx.scene.control.Button;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.VBox;
 
 public class PlanetaryStyleControls extends VBox {
 
@@ -44,9 +47,15 @@ public class PlanetaryStyleControls extends VBox {
         listView.setFocusTraversable(false);
         listView.setMouseTransparent(false);
 
+        Button regenerateButton = new Button("Regenerate");
+        regenerateButton.setOnAction(this::handleStyleChange);
+        
+        HBox presetsHBox = new HBox(10, new VBox(5, comboLabel, styleComboBox), regenerateButton);
+        presetsHBox.setAlignment(Pos.CENTER_LEFT);
+        
         getChildren().addAll(
             title,
-            new HBox(10, new VBox(5, comboLabel, styleComboBox)),
+            presetsHBox,
             new Label("Effect Controls"),
             listView
         );

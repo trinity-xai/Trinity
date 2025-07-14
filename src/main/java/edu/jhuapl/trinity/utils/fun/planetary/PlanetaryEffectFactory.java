@@ -156,14 +156,15 @@ public class PlanetaryEffectFactory {
                 List.of(
                 new GlowRimEffect(Color.CYAN, 2),
                 new ContinentLightsEffect.Builder()
-                    .numContinents(2)
-                    .fillRatio(1.99) // 60–70% disc area
-                    .continentScale(0.6)    
+                    .numContinents(4)
+                    .fillRatio(0.99) // 60–70% disc area
+                    .continentScale(0.65)
+                    .minDistanceMultiplier(1.4) //moderate separation
                     .vertexRange(10, 20) // Smoother curves, larger landmasses
                     .lightsPerContinent(250 + (int)(Math.random() * 100)) // natural variation
                     .clustersPerContinent(4 + (int)(Math.random() * 4)) // 4–7 city clusters
                     .fillColor(Color.web("#001522"))  // Dark blue landmass (deep ocean hue)
-                    .outlineColor(Color.web("#223344")) // less sharp outline
+                    .outlineColor(Color.web("#223344", 0.05)) // less sharp outline
                     .lightColors(List.of(Color.web("#FFDDAA", 0.9), Color.ALICEBLUE)) 
                     .clusterColors(List.of(Color.GREENYELLOW, Color.CYAN)) 
                     .maxLightSize(2.2)
@@ -171,17 +172,32 @@ public class PlanetaryEffectFactory {
                 );
             case URBAN_WORLD ->
                 List.of(
+              new CircuitBoardEffect.Builder()
+                        .baseLineCount(6 + (int) (Math.random() * 6)) // 6–11
+                        .maxLineCount(20 + (int) (Math.random() * 20)) // 20–40
+                        .horizontalDensity(0.3 + Math.random() * 0.5) // 0.3–0.8
+                        .horizontalLines(10)
+                        .verticalDensity(0.3 + Math.random() * 0.5) // 0.3–0.8
+                        .verticalLines(10)
+                        .lineColor(Color.web("#220099", 0.2))
+                        .lineThickness(0.9 + Math.random() * 1.2) // 0.9–2.1
+                        .drawPads(Math.random() < 0.6)
+                        .drawDots(Math.random() < 0.4)
+                        .drawJumpers(Math.random() < 0.4)
+                        .glowEnabled(false)
+                        .animateGlow(false)
+                        .build(),                                  
                 new GlowRimEffect(Color.web("#220099")),
                 new ScanlineEffect(20, Color.web("#FF9900", 0.5)),
                 new ContinentLightsEffect.Builder()
                 .numContinents(1)
-                .fillRatio(0.99)        
-                .continentScale(1.2)
+                .fillRatio(1.99)        
+                .continentScale(1.1)
                 .vertexRange(6, 26)
                 .lightsPerContinent(800)
                 .clustersPerContinent(40)
-                .fillColor(Color.web("#100010", 0.333))
-                .outlineColor(Color.web("#221100"))
+                .fillColor(Color.web("#100010", 0.1))
+                .outlineColor(Color.web("#221100", 0.1))
                 .lightColor(Color.web("#FFCC33", 0.9))
                 .lightColors(List.of(Color.web("#FFDDAA", 0.9))) 
                 .clusterColors(List.of(Color.FIREBRICK, Color.GOLD, Color.DEEPPINK)) 
@@ -200,7 +216,7 @@ public class PlanetaryEffectFactory {
                 double alpha = 0.6 + Math.random() * 0.3;
 
                 int numContinents = 3 + (int) (Math.random() * 4);
-                double fillRatio = 0.25 + Math.random() * 0.5; // 25%–75% coverage
+                double fillRatio = 0.5 + Math.random() * 0.5; 
 
                 List<PlanetaryEffect> effects = new ArrayList<>();
                 effects.add(new GlowRimEffect(base));
@@ -212,6 +228,7 @@ public class PlanetaryEffectFactory {
                 effects.add(new ContinentLightsEffect.Builder()
                         .numContinents(numContinents)
                         .fillRatio(fillRatio) 
+                        .minDistanceMultiplier(1.4) //moderate separation
                         .vertexRange(
                             5 + (int) (Math.random() * 6),
                             10 + (int) (Math.random() * 6)
