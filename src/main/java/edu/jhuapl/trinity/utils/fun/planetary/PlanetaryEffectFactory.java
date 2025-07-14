@@ -156,32 +156,36 @@ public class PlanetaryEffectFactory {
                 List.of(
                 new GlowRimEffect(Color.CYAN, 2),
                 new ContinentLightsEffect.Builder()
-                    .numContinents(2 + (int) (Math.random() * 3)) // 2 to 4
-                    .fillRatio(0.99) // 60–70% disc area
+                    .numContinents(2)
+                    .fillRatio(1.99) // 60–70% disc area
+                    .continentScale(0.6)    
                     .vertexRange(10, 20) // Smoother curves, larger landmasses
                     .lightsPerContinent(250 + (int)(Math.random() * 100)) // natural variation
                     .clustersPerContinent(4 + (int)(Math.random() * 4)) // 4–7 city clusters
                     .fillColor(Color.web("#001522"))  // Dark blue landmass (deep ocean hue)
                     .outlineColor(Color.web("#223344")) // less sharp outline
-                    .lightColor(Color.web("#FFDDAA", 0.9)) // warm light clusters
+                    .lightColors(List.of(Color.web("#FFDDAA", 0.9), Color.ALICEBLUE)) 
+                    .clusterColors(List.of(Color.GREENYELLOW, Color.CYAN)) 
                     .maxLightSize(2.2)
                     .build()
                 );
             case URBAN_WORLD ->
                 List.of(
                 new GlowRimEffect(Color.web("#220099")),
-                new ScanlineEffect(20, Color.web("#FF9900", 0.4)),
+                new ScanlineEffect(20, Color.web("#FF9900", 0.5)),
                 new ContinentLightsEffect.Builder()
                 .numContinents(1)
-                .fillRatio(0.95)        
-                .continentScale(1.15)
-                .vertexRange(12, 26)
+                .fillRatio(0.99)        
+                .continentScale(1.2)
+                .vertexRange(6, 26)
                 .lightsPerContinent(800)
                 .clustersPerContinent(40)
-                .fillColor(Color.web("#100010"))
+                .fillColor(Color.web("#100010", 0.333))
                 .outlineColor(Color.web("#221100"))
                 .lightColor(Color.web("#FFCC33", 0.9))
-                .maxLightSize(4.5)
+                .lightColors(List.of(Color.web("#FFDDAA", 0.9))) 
+                .clusterColors(List.of(Color.FIREBRICK, Color.GOLD, Color.DEEPPINK)) 
+                .maxLightSize(3.0)
                 .build(),
                 new AuraPulseEffect(Color.web("#111100", 0.35))
                 );

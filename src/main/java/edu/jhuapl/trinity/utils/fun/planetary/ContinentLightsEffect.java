@@ -13,7 +13,6 @@ import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.ClosePath;
-import javafx.scene.shape.LineTo;
 import javafx.scene.shape.MoveTo;
 import javafx.scene.shape.Path;
 import javafx.scene.shape.QuadCurveTo;
@@ -36,36 +35,40 @@ public class ContinentLightsEffect implements PlanetaryEffect {
     private final int lightsPerContinent;
     private final int clustersPerContinent;
     private final Color outlineColor;
-private final Color fillColor;    
+    private final Color fillColor;    
     private final Color lightColor;
     private final double maxLightSize;
     private double innerPadding = 6.0;
+    private List<Color> clusterColors;
+    private List<Color> lightColors;
+
     private double cx,cy,effectiveRadius;
     private final Random random = new Random();
 
     private ContinentLightsEffect(Builder builder) {
-        this.numContinents = builder.numContinents;
-        this.minVertices = builder.minVertices;
-        this.maxVertices = builder.maxVertices;
-        this.continentScale = builder.continentScale;
-        this.lightsPerContinent = builder.lightsPerContinent;
-        this.clustersPerContinent = builder.clustersPerContinent;
-        this.outlineColor = builder.outlineColor;
-        this.lightColor = builder.lightColor;
-        this.maxLightSize = builder.maxLightSize;
-        this.innerPadding = builder.innerPadding;
-        this.fillRatio = builder.fillRatio;
-        
- this.fillColor = builder.fillColor;       
+        numContinents = builder.numContinents;
+        minVertices = builder.minVertices;
+        maxVertices = builder.maxVertices;
+        continentScale = builder.continentScale;
+        lightsPerContinent = builder.lightsPerContinent;
+        clustersPerContinent = builder.clustersPerContinent;
+        outlineColor = builder.outlineColor;
+        lightColor = builder.lightColor;
+        maxLightSize = builder.maxLightSize;
+        innerPadding = builder.innerPadding;
+        fillRatio = builder.fillRatio;
+        clusterColors = builder.clusterColors;
+        lightColors = builder.lightColors;    
+        fillColor = builder.fillColor;       
     }
 
     @Override
 public void attachTo(PlanetaryDisc disc) {
-    this.planetCircle = disc.getPlanetCircle();
-    this.radius = disc.getRadius();
-    this.cx = planetCircle.getCenterX();
-    this.cy = planetCircle.getCenterY();
-    this.effectiveRadius = radius - innerPadding;
+    planetCircle = disc.getPlanetCircle();
+    radius = disc.getRadius();
+    cx = planetCircle.getCenterX();
+    cy = planetCircle.getCenterY();
+    effectiveRadius = radius - innerPadding;
 
     rootGroup.getChildren().clear();
 
@@ -80,7 +83,7 @@ public void attachTo(PlanetaryDisc disc) {
     }
     minDistance = continentScale * 2.0;
 
-    // 🧠 Compute valid centers inside the disc
+    //Compute valid centers inside the disc
     List<Point2D> centers = generateNonOverlappingCenters(
         numContinents, minDistance, cx, cy, effectiveRadius
     );
@@ -93,38 +96,44 @@ public void attachTo(PlanetaryDisc disc) {
         List<Point2D> offsetPoints = localPoints.stream()
                 .map(p -> p.add(offset))
                 .collect(Collectors.toList());
-
-        // ✅ Add continent path (must be visible)
+        //Add continent path
         Path continent = buildContinentPath(offsetPoints, cx, cy,
             effectiveRadius, fillColor, outlineColor);
         rootGroup.getChildren().add(continent);
-
-        // ✅ DEBUG: show center dots
-        Circle debugDot = new Circle(offset.getX(), offset.getY(), 2, Color.LIME);
-        rootGroup.getChildren().add(debugDot);
-
-        // ✅ Canvas lights
+//        //DEBUG: show center dots
+//        Circle debugDot = new Circle(offset.getX(), offset.getY(), 2, Color.LIME);
+//        rootGroup.getChildren().add(debugDot);
+        //Canvas lights
         Canvas canvas = new Canvas(radius * 2, radius * 2);
         GraphicsContext gc = canvas.getGraphicsContext2D();
-
+        //Pick cluster locations and draw them with some attitude
         List<Point2D> clusters = new ArrayList<>();
         for (int i = 0; i < clustersPerContinent; i++) {
-            clusters.add(randomPointInPolygon(offsetPoints));
+            double clusterSize = maxLightSize * 1.5;
+            Color clusterColor = pickRandomColor(clusterColors, lightColor).deriveColor(0, 1, 1, 1.0);
+            double haloSize = clusterSize * 2.5;
+            Point2D cluster = randomPointInPolygon(offsetPoints);
+            clusters.add(cluster);
+            // Draw glow halo behind cluster center
+            gc.setFill(clusterColor.deriveColor(0, 1, 1, 0.15));
+            gc.fillOval(cluster.getX() - haloSize / 2, cluster.getY() - haloSize / 2, haloSize, haloSize);
+            //draw the cluster center point dot 
+            gc.setFill(clusterColor);
+            gc.fillOval(cluster.getX() - clusterSize / 2, cluster.getY() - clusterSize / 2, clusterSize, clusterSize);
         }
-
+        //draw points, brighter if close to a cluster center
         for (int i = 0; i < lightsPerContinent; i++) {
             Point2D p = randomPointInPolygon(offsetPoints);
-            // ✅ Points are already in global space; no transformation needed
             double brightness = 0.4;
             for (Point2D cluster : clusters) {
                 double dist = p.distance(cluster);
+                //Steep Gaussian like Falloff for brightness
                 brightness += Math.exp(-dist * 10) * 0.6;
             }
-
             brightness = Math.min(1.0, brightness);
-            Color glow = lightColor.deriveColor(0, 1, 1, brightness);
+            Color baseLight = pickRandomColor(lightColors, lightColor);
+            Color glow = baseLight.deriveColor(0, 1, 1, brightness);
             double size = maxLightSize * (0.4 + brightness * 0.6);
-
             gc.setFill(glow);
             gc.fillOval(p.getX() - size / 2, p.getY() - size / 2, size, size);
         }
@@ -132,65 +141,57 @@ public void attachTo(PlanetaryDisc disc) {
         canvas.setMouseTransparent(true);
         rootGroup.getChildren().add(canvas);
     }
-
-    // ✅ Ensure clipping is applied last
+    //apply clipping last
     ClipUtils.applyCircularClip(rootGroup, planetCircle, innerPadding);
 }
-private double computeContinentScaleNormalized(int numContinents, double fillRatio) {
-    double totalArea = Math.PI;
-    double avgArea = (totalArea * fillRatio) / Math.max(1, numContinents);
-    double scale = Math.sqrt(avgArea / Math.PI); // This is in normalized radius (1.0 = effectiveRadius)
-    return Math.max(scale, 0.08); // Enforce minimum of 8% of disc radius
-}
-
-private double computeContinentScale(double effectiveRadius, int numContinents, double fillRatio) {
-    double totalArea = Math.PI * effectiveRadius * effectiveRadius;
-    double avgArea = (totalArea * fillRatio) / Math.max(1, numContinents);
-    double scale = Math.sqrt(avgArea / Math.PI);
-    return Math.max(scale, effectiveRadius * 0.08); // enforce minimum
-}
-private List<Point2D> generateNonOverlappingCenters(int count, double minDistance, double cx, double cy, double effectiveRadius) {
-    List<Point2D> centers = new ArrayList<>();
-
-    if (count <= 0) return centers;
-
-    double ringSpacing = minDistance; // distance between rings
-    double angleStep;
-    double radius;
-
-    // Add first point at center if fits
-    if (count > 0) {
-        centers.add(new Point2D(cx, cy));
-        if (count == 1) return centers;
+    private double computeContinentScaleNormalized(int numContinents, double fillRatio) {
+        double totalArea = Math.PI;
+        double avgArea = (totalArea * fillRatio) / Math.max(1, numContinents);
+        double scale = Math.sqrt(avgArea / Math.PI); // This is in normalized radius (1.0 = effectiveRadius)
+        return Math.max(scale, 0.08); // Enforce minimum of 8% of disc radius
     }
+    private List<Point2D> generateNonOverlappingCenters(int count, double minDistance, double cx, double cy, double effectiveRadius) {
+        List<Point2D> centers = new ArrayList<>();
 
-    int pointsAdded = 1;
-    int ringIndex = 1;
+        if (count <= 0) return centers;
 
-    while (pointsAdded < count) {
-        radius = ringIndex * ringSpacing;
-        if (radius > effectiveRadius) break; // Outside planet disc
+        double ringSpacing = minDistance; // distance between rings
+        double angleStep;
+        double radius;
 
-        // Calculate how many points can fit evenly on this ring
-        double circumference = 2 * Math.PI * radius;
-        int pointsInRing = (int) Math.floor(circumference / minDistance);
-        if (pointsInRing == 0) pointsInRing = 1;
-
-        angleStep = 2 * Math.PI / pointsInRing;
-
-        for (int i = 0; i < pointsInRing && pointsAdded < count; i++) {
-            double angle = i * angleStep;
-            double x = cx + radius * Math.cos(angle);
-            double y = cy + radius * Math.sin(angle);
-            centers.add(new Point2D(x, y));
-            pointsAdded++;
+        // Add first point at center if fits
+        if (count > 0) {
+            centers.add(new Point2D(cx, cy));
+            if (count == 1) return centers;
         }
 
-        ringIndex++;
-    }
+        int pointsAdded = 1;
+        int ringIndex = 1;
 
-    return centers;
-}
+        while (pointsAdded < count) {
+            radius = ringIndex * ringSpacing;
+            if (radius > effectiveRadius) break; // Outside planet disc
+
+            // Calculate how many points can fit evenly on this ring
+            double circumference = 2 * Math.PI * radius;
+            int pointsInRing = (int) Math.floor(circumference / minDistance);
+            if (pointsInRing == 0) pointsInRing = 1;
+
+            angleStep = 2 * Math.PI / pointsInRing;
+
+            for (int i = 0; i < pointsInRing && pointsAdded < count; i++) {
+                double angle = i * angleStep;
+                double x = cx + radius * Math.cos(angle);
+                double y = cy + radius * Math.sin(angle);
+                centers.add(new Point2D(x, y));
+                pointsAdded++;
+            }
+
+            ringIndex++;
+        }
+
+        return centers;
+    }
 
     private List<Point2D> generateContinentPolygon(int minPts, int maxPts, double scale) {
         int pts = minPts + random.nextInt(maxPts - minPts + 1);
@@ -205,7 +206,7 @@ private List<Point2D> generateNonOverlappingCenters(int count, double minDistanc
         return result;
     }
 
-private Path buildContinentPath(List<Point2D> globalPoints, double cx, double cy, double scale, Paint fill, Paint stroke) {
+    private Path buildContinentPath(List<Point2D> globalPoints, double cx, double cy, double scale, Paint fill, Paint stroke) {
     Path path = new Path();
     if (globalPoints.size() < 3) return path;
 
@@ -244,7 +245,7 @@ private Path buildContinentPath(List<Point2D> globalPoints, double cx, double cy
     return path;
 }
 
-private Point2D randomPointInPolygon(List<Point2D> polygon) {
+    private Point2D randomPointInPolygon(List<Point2D> polygon) {
     if (polygon.isEmpty()) return new Point2D(0, 0);
 
     // Compute bounding box of polygon
@@ -267,7 +268,6 @@ private Point2D randomPointInPolygon(List<Point2D> polygon) {
     return polygon.get(0);
 }
 
-
     private boolean pointInPolygon(Point2D p, List<Point2D> polygon) {
         int crossings = 0;
         for (int i = 0, j = polygon.size() - 1; i < polygon.size(); j = i++) {
@@ -280,11 +280,12 @@ private Point2D randomPointInPolygon(List<Point2D> polygon) {
         }
         return (crossings % 2 == 1);
     }
-
-    private Point2D toGlobal(Point2D p, double cx, double cy, double scale) {
-        return new Point2D(cx + p.getX() * scale, cy + p.getY() * scale);
+    private Color pickRandomColor(List<Color> colors, Color fallback) {
+        if (colors == null || colors.isEmpty()) {
+            return fallback;
+        }
+        return colors.get(random.nextInt(colors.size()));
     }
-
     @Override
     public void update(double occlusion) {
         rootGroup.setOpacity(occlusion);
@@ -306,10 +307,21 @@ private Point2D randomPointInPolygon(List<Point2D> polygon) {
         private int clustersPerContinent = 3;
         private Color outlineColor = Color.DARKSLATEBLUE;
         private Color lightColor = Color.GOLD;
+        private List<Color> clusterColors = null;
+        private List<Color> lightColors = null;        
         private double maxLightSize = 2.0;
         private double innerPadding = 6.0;
         private Color fillColor = null; // null = no fill
 
+        public Builder clusterColors(List<Color> colors) {
+            this.clusterColors = colors;
+            return this;
+        }
+
+        public Builder lightColors(List<Color> colors) {
+            this.lightColors = colors;
+            return this;
+        }        
         public Builder fillColor(Color color) {
             this.fillColor = color;
             return this;
