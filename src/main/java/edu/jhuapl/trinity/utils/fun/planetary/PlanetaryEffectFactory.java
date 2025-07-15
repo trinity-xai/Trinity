@@ -37,16 +37,6 @@ public class PlanetaryEffectFactory {
                 new GlowRimEffect(Color.web("#FF007F")),
                 new ScanlineEffect(30, Color.web("#FF007F", 0.2)),
                 new HorizonSliceEffect(12, Color.web("#000000", 0.4)),
-                new BlendOverlayEffect(
-                   new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
-                       List.of(
-                           new Stop(0.0, Color.CYAN),
-                           new Stop(1.0, Color.LIME)
-                       )
-                   ),
-                   BlendMode.ADD,
-                   0.8
-                ),                 
                 new ConcentricRingsEffect(Color.web("#FF007F", 0.15)),
                 new AuraPulseEffect(Color.web("#FF66AA", 0.3))
                 );
@@ -69,20 +59,10 @@ public class PlanetaryEffectFactory {
                 ),
                 new ScanlineEffect(20, Color.web("#ffffff", 0.2)),
                 new PixelationEffect(
-                    10,       // basePixelSize
+                    12,       // basePixelSize
                     3000.0,   // updateInterval in ms
                     true     // jitter the pixel size for glitchy look
                 ),
-//                new BlendOverlayEffect(
-//                   new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
-//                       List.of(
-//                           new Stop(0.0, Color.web("#ffccff", 0.4)),
-//                           new Stop(1.0, Color.web("#ccffff", 0.3))
-//                       )
-//                   ),
-//                   BlendMode.OVERLAY,
-//                   0.8
-//                ),               
                 new GlitchDisplacementEffect(
                     0.3,   // intensity
                     3,    // glitch bands
@@ -97,17 +77,7 @@ public class PlanetaryEffectFactory {
                 new ScanlineEffect(40, Color.web("#00FFFF", 0.1)),
                 new TechnoGridEffect(Color.web("#00FFFF", 0.1)),
                 new TargetScannerEffect(Color.web("#00FFFF", 0.2)),
-                new AuraPulseEffect(Color.web("#00FFFF", 0.15)),
-                new BlendOverlayEffect(
-                   new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
-                       List.of(
-                           new Stop(0.0, Color.web("#ffccff", 0.4)),
-                           new Stop(1.0, Color.web("#ccffff", 0.3))
-                       )
-                   ),
-                   BlendMode.COLOR_BURN,
-                   0.8
-                ) 
+                new AuraPulseEffect(Color.web("#00FFFF", 0.15))
                 );
 
             case SPACE_HORROR ->
@@ -116,17 +86,7 @@ public class PlanetaryEffectFactory {
                 new SparseLineEffect(6, Color.web("#330000", 0.3), true),
                 new DripShadowEffect(),
                 new AuraPulseEffect(Color.web("#440000", 0.15)),
-                new ConcentricRingsEffect(Color.web("#660000", 0.08)),
-                new BlendOverlayEffect(
-                   new LinearGradient(0, 0, 0, 1, true, CycleMethod.NO_CYCLE,
-                       List.of(
-                           new Stop(0.0, Color.web("#111111", 0.4)),
-                           new Stop(1.0, Color.web("#060606", 0.3))
-                       )
-                   ),
-                   BlendMode.DARKEN,
-                   0.8
-                )                 
+                new ConcentricRingsEffect(Color.web("#660000", 0.08))             
                 );
 
             case RETROWAVE ->
