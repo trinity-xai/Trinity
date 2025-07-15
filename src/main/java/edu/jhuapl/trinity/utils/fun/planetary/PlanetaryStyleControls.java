@@ -69,7 +69,7 @@ public class PlanetaryStyleControls extends VBox {
             targetDisc.setPlanetStyle(selectedStyle);
             populateEffectControls();
 
-            EffectEvent event = new EffectEvent(EffectEvent.PLANETARY_STYLE_CHANGE, selectedStyle.name());
+            EffectEvent event = new EffectEvent(EffectEvent.PLANETARY_STYLE_CHANGE, selectedStyle);
             fireEvent(event);
         }
     }
@@ -78,8 +78,8 @@ public class PlanetaryStyleControls extends VBox {
         listView.getItems().clear();
         for (Node node : targetDisc.getChildren()) {
             Object tag = node.getUserData();
-            if (tag instanceof PlanetaryEffect) {
-                listView.getItems().add(new EffectControlItem(node, (PlanetaryEffect) tag));
+            if (tag instanceof PlanetaryEffect planetaryEffect) {
+                listView.getItems().add(new EffectControlItem(node, planetaryEffect));
             }
         }
     }

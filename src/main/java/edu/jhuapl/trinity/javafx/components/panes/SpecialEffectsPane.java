@@ -6,6 +6,7 @@ import edu.jhuapl.trinity.utils.fun.solar.LensFlareControls;
 import edu.jhuapl.trinity.utils.fun.solar.LensFlareGroup;
 import edu.jhuapl.trinity.utils.fun.planetary.PlanetaryDisc;
 import edu.jhuapl.trinity.utils.fun.planetary.PlanetaryDiscControls;
+import edu.jhuapl.trinity.utils.fun.planetary.PlanetaryEffectFactory;
 import edu.jhuapl.trinity.utils.fun.planetary.PlanetaryEffectFactory.PlanetStyle;
 import edu.jhuapl.trinity.utils.fun.planetary.PlanetaryStyleControls;
 import edu.jhuapl.trinity.utils.fun.solar.SunPositionControls;
@@ -40,7 +41,6 @@ public class SpecialEffectsPane extends LitPathPane {
     BorderPane bp;
     SunPositionControls sunPositionControls;
     LensFlareControls lensFlareControls;
-    PlanetaryDiscControls planetaryDiscControls;
     private LensFlareGroup flareGroup;
     ObservableList<Node> occluders;
     Circle sun;
@@ -48,7 +48,8 @@ public class SpecialEffectsPane extends LitPathPane {
     boolean enabled = false;
     PlanetaryDisc[] disc = new PlanetaryDisc[1]; // Mutable reference
     PlanetaryDiscControls[] controlsRef = new PlanetaryDiscControls[1];
-
+    PlanetaryEffectFactory.PlanetStyle selectedStyle; 
+            
     private static BorderPane createContent() {
         BorderPane bpOilSpill = new BorderPane();
         return bpOilSpill;
@@ -76,7 +77,8 @@ public class SpecialEffectsPane extends LitPathPane {
         Tab planetaryTab = new Tab("Planetary Disc");
         planetaryTab.setClosable(false);
 
-        disc[0] = new PlanetaryDisc(200, PlanetStyle.RETROWAVE);
+        selectedStyle = PlanetStyle.RETROWAVE;
+        disc[0] = new PlanetaryDisc(200, selectedStyle);
         disc[0].setTranslateY(200); // optional placement
         disc[0].setVisible(false);
         parent.getChildren().add(disc[0]); //The disc render should be in the pane
@@ -101,7 +103,7 @@ public class SpecialEffectsPane extends LitPathPane {
         occluders.add(disc[0].getOccluderShape());
 
         PlanetaryDiscControls controls = new PlanetaryDiscControls(
-            radius -> regenerateDisc(disc, parent, controlsRef[0], occluders),
+            radius -> regenerateDisc(disc, parent, controlsRef[0], selectedStyle, occluders),
             yOffset -> {
                 if (disc[0] != null) disc[0].setTranslateY(yOffset);
             },
@@ -198,12 +200,15 @@ public class SpecialEffectsPane extends LitPathPane {
         scene.getRoot().addEventHandler(EffectEvent.SUN_ARTIFACT_ENABLED, e -> {
             enabled = (boolean) e.object;
             sun.setVisible(enabled);
-//            flareGroup.setVisible(enabled);
         });
         scene.getRoot().addEventHandler(EffectEvent.LENSFLARE_ARTIFACT_ENABLED, e -> {
             enabled = (boolean) e.object;
             flareGroup.setVisible(enabled);
         });
+        scene.getRoot().addEventHandler(EffectEvent.PLANETARY_STYLE_CHANGE, e -> {
+            selectedStyle = (PlanetaryEffectFactory.PlanetStyle ) e.object;
+        });
+        
     }
 
     private void enableSolarDrag(Circle sun) {
@@ -236,6 +241,7 @@ public class SpecialEffectsPane extends LitPathPane {
             PlanetaryDisc[] discRef,
             Pane parent,
             PlanetaryDiscControls controls,
+            PlanetaryEffectFactory.PlanetStyle style,
             List<Node> occluders
     ) {
     // Remove existing disc from parent and occluders
@@ -245,7 +251,6 @@ public class SpecialEffectsPane extends LitPathPane {
         }
 
         // Create new disc
-        PlanetStyle style = controls.selectedStyleProperty().get();
         double radius = controls.discRadiusProperty().get();
         // Update reference
         discRef[0] = new PlanetaryDisc(radius, style);

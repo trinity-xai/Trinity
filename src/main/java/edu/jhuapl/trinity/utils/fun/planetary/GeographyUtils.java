@@ -30,48 +30,7 @@ public class GeographyUtils {
         Random random = new Random();
         return colors.get(random.nextInt(colors.size()));
     }    
-//    public static  List<Point2D> generateNonOverlappingCenters(int count, double minDistance, double cx, double cy, double effectiveRadius) {
-//        List<Point2D> centers = new ArrayList<>();
-//
-//        if (count <= 0) return centers;
-//
-//        double ringSpacing = minDistance; // distance between rings
-//        double angleStep;
-//        double radius;
-//
-//        // Add first point at center if fits
-//        if (count > 0) {
-//            centers.add(new Point2D(cx, cy));
-//            if (count == 1) return centers;
-//        }
-//
-//        int pointsAdded = 1;
-//        int ringIndex = 1;
-//
-//        while (pointsAdded < count) {
-//            radius = ringIndex * ringSpacing;
-//            if (radius > effectiveRadius) break; // Outside planet disc
-//
-//            // Calculate how many points can fit evenly on this ring
-//            double circumference = 2 * Math.PI * radius;
-//            int pointsInRing = (int) Math.floor(circumference / minDistance);
-//            if (pointsInRing == 0) pointsInRing = 1;
-//
-//            angleStep = 2 * Math.PI / pointsInRing;
-//
-//            for (int i = 0; i < pointsInRing && pointsAdded < count; i++) {
-//                double angle = i * angleStep;
-//                double x = cx + radius * Math.cos(angle);
-//                double y = cy + radius * Math.sin(angle);
-//                centers.add(new Point2D(x, y));
-//                pointsAdded++;
-//            }
-//
-//            ringIndex++;
-//        }
-//
-//        return centers;
-//    }
+
 public static List<Point2D> generateNonOverlappingCenters(
         int count, double minDistance, double cx, double cy, double effectiveRadius
 ) {
@@ -79,8 +38,7 @@ public static List<Point2D> generateNonOverlappingCenters(
     int attempts = 0;
     int maxAttempts = count * 30;
 
-//    double placementRadius = effectiveRadius - minDistance * 0.8;
-    double placementRadius = effectiveRadius * 0.95; // - minDistance * 0.8;
+    double placementRadius = effectiveRadius * 0.95;
 
     while (centers.size() < count && attempts < maxAttempts) {
         attempts++;
@@ -102,7 +60,6 @@ public static List<Point2D> generateNonOverlappingCenters(
     // Fallback: if not enough were added, relax the spacing
     while (centers.size() < count) {
         double angle = Math.random() * 2 * Math.PI;
-//        double distance = Math.random() * (effectiveRadius - minDistance * 0.4);
         double distance = Math.random() * (effectiveRadius * 0.95);
         double x = cx + distance * Math.cos(angle);
         double y = cy + distance * Math.sin(angle);

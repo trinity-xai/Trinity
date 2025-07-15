@@ -44,11 +44,27 @@ public class PlanetaryEffectFactory {
                 List.of(
                 new GlowRimEffect(Color.web("#ff77ff")),
                 new ScanlineEffect(20, Color.web("#ffffff", 0.2)),
-                new VaporGradientOverlayEffect(),
-                new AuraPulseEffect(Color.web("#ffbbe0", 0.25)),
-                new ConcentricRingsEffect(Color.web("#ccffff", 0.1))
-                );
-
+                new VaporwaveEffect(
+                    List.of(
+                        Color.web("#D1C4E9"),
+                        Color.web("#B39DDB"),
+                        Color.web("#9575CD"),
+                        Color.web("#80DEEA"),
+                        Color.web("#CE93D8")
+                    ),
+                    6,                             // noiseRingCount
+                    Color.web("#BA68C8"),          // noiseRingColor
+                    0.25,                          // noiseRingOpacity
+                    true                           // includeScanlines
+                ),
+                new GlitchDisplacementEffect(
+                    0.3,   // intensity
+                    3,    // glitch bands
+                    500.0,    
+                    1000.0,    // ms per update
+                    0.03    
+                )
+            );
             case SCIFI ->
                 List.of(
                 new GlowRimEffect(Color.web("#00FFFF")),
@@ -70,10 +86,21 @@ public class PlanetaryEffectFactory {
             case RETROWAVE ->
                 List.of(
                 new GlowRimEffect(Color.web("#FF00CC")),
-                new ScanlineEffect(15, Color.web("#FF00CC", 0.2)),
-                new HorizonSliceEffect(10, Color.web("#000000", 0.4)),
-                new AuraPulseEffect(Color.web("#FF33AA", 0.25)),
-                new ConcentricRingsEffect(Color.web("#FF33AA", 0.1))
+                new RetrowaveEffect(
+                    List.of(Color.web("#FF5F6D"), Color.web("#FFC371")), // Top sunset gradient
+                    List.of(                                           // Bottom stripes
+                        Color.web("#FF0080"),
+                        Color.web("#FF8C00"),
+                        Color.web("#FFD700"),
+                        Color.web("#FF69B4"),
+                        Color.web("#DA70D6")
+                    ),
+                    4.0,  // bandGap
+                    12.0,  // bandHeight
+                    true // useTopGradient
+                ),                        
+                new AuraPulseEffect(Color.web("#FF33AA", 0.45)),
+                new ConcentricRingsEffect(Color.web("#FF33AA", 0.4))
                 );
 
             case AI_OVERLORD ->
