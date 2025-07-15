@@ -77,7 +77,7 @@ public class App extends Application {
         BorderPane bp = new BorderPane(centerStack);
         bp.setBackground(transBack);
         bp.getStyleClass().add("trinity-pane");
-        Scene scene = new Scene(bp, Color.BLACK);
+        Scene scene = new Scene(bp, 1920, 1080, Color.BLACK);
         stage.setScene(scene);
         LOG.info("Styling Scene and Stage...");
         stage.setTitle("Trinity XAI");

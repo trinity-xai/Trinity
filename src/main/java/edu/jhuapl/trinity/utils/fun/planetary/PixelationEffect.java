@@ -1,6 +1,7 @@
 package edu.jhuapl.trinity.utils.fun.planetary;
 
 import edu.jhuapl.trinity.utils.fun.Pixelate;
+import edu.jhuapl.trinity.utils.fun.Pixelate.PixelationMode;
 import javafx.scene.Group;
 import javafx.scene.Node;
 
@@ -57,7 +58,10 @@ public class PixelationEffect implements PlanetaryEffect {
             jitterPixelSize,
             updateIntervalMs
         );
-
+        pixelate.setPixelateTime(800);
+        pixelate.setMode(PixelationMode.RANDOM_BLOCKS);
+        pixelate.setBlockCount(5);
+        pixelate.setBlockSizeRange(20, 40);
         group.getChildren().clear();
         group.getChildren().add(pixelate.getCanvas());
 
