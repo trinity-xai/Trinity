@@ -4,6 +4,7 @@ import edu.jhuapl.trinity.utils.fun.planetary.PlanetaryEffectFactory.PlanetStyle
 import static edu.jhuapl.trinity.utils.fun.planetary.PlanetaryEffectFactory.getFillForStyle;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.CycleMethod;
 import javafx.scene.paint.Paint;
@@ -66,6 +67,24 @@ public class PlanetaryDisc extends Group {
         
         setMouseTransparent(true);
     }
+    public Group getRenderedGroup(PlanetaryEffect... excludedEffects) {
+        Group composite = new Group();
+        composite.getChildren().add(planetCircle);
+        Set<PlanetaryEffect> excludeSet = null == excludedEffects 
+            ? Set.of()
+            : Set.of(excludedEffects);
+
+        for (PlanetaryEffect effect : effects) {
+            if (!excludeSet.contains(effect)) {
+                Node node = effect.getNode();
+                if (node != null) {
+                    composite.getChildren().add(node);
+                }
+            }
+        }
+        return composite;
+    }
+    
 
     public void setPlanetStyle(PlanetStyle style) {
         this.planetStyle = style;
