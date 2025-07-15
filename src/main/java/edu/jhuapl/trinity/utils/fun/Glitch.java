@@ -45,7 +45,8 @@ public class Glitch {
         this.displacementMap.setScaleX(intensity);
         this.displacementMap.setScaleY(0); // horizontal glitch only
         this.timeline = new Timeline(
-                new KeyFrame(Duration.millis(glitchFrequency + getRandomMillis()), e -> runGlitchCycle())
+            new KeyFrame(Duration.millis(glitchFrequency + getRandomMillis()), 
+                e -> runGlitchCycle())
         );
         this.timeline.setCycleCount(Animation.INDEFINITE);
     }
@@ -53,6 +54,13 @@ public class Glitch {
         Random rando = new Random();
         return rando.nextDouble() * getGlitchFreqRandomOffset();
     }
+    private void runGlitchCycle() {
+        applyRandomGlitch();
+        // Schedule reset after glitchTime
+        PauseTransition reset = new PauseTransition(Duration.millis(glitchTime));
+        reset.setOnFinished(e -> resetFloatMap());
+        reset.play();
+    }    
 private void applyRandomGlitch() {
     resetFloatMap();  // Clear previous glitch
 
@@ -82,13 +90,7 @@ private void applyRandomGlitch() {
     }
 }
 
-    private void runGlitchCycle() {
-        applyRandomGlitch();
-        // Schedule reset after glitchTime
-        PauseTransition reset = new PauseTransition(Duration.millis(glitchTime));
-        reset.setOnFinished(e -> resetFloatMap());
-        reset.play();
-    }
+
     public void resetFloatMap() {
         for (int y = 0; y < height; y++) {
             for (int x = 0; x < width; x++) {
