@@ -1,6 +1,5 @@
 package edu.jhuapl.trinity.utils.fun;
 
-
 import java.util.Random;
 import javafx.animation.AnimationTimer;
 import javafx.geometry.Rectangle2D;
@@ -15,10 +14,11 @@ import javafx.scene.shape.Circle;
 import javafx.scene.transform.Transform;
 
 public class Pixelate {
-public enum PixelationMode {
-    FULL_SURFACE,
-    RANDOM_BLOCKS
-}
+
+    public enum PixelationMode {
+        FULL_SURFACE,
+        RANDOM_BLOCKS
+    }
     private final Node target;
     private final int width;
     private final int height;
@@ -28,10 +28,10 @@ public enum PixelationMode {
 
     private final Canvas canvas;
     private final GraphicsContext gc;
-private PixelationMode mode = PixelationMode.FULL_SURFACE;
-private int blockCount = 8; // only for RANDOM_BLOCKS
-private int minBlockSize = 10;
-private int maxBlockSize = 40;
+    private PixelationMode mode = PixelationMode.FULL_SURFACE;
+    private int blockCount = 8; // only for RANDOM_BLOCKS
+    private int minBlockSize = 10;
+    private int maxBlockSize = 40;
     private double pixelateTime = 300.0;  // How long the pixelation lasts
     private double pixelateFreqRandomOffset = 2000.0;
     private final Random random = new Random();
@@ -44,7 +44,7 @@ private int maxBlockSize = 40;
     private boolean pixelating = false;
 
     public Pixelate(Node target, int width, int height, int basePixelSize,
-                    boolean jitterPixelSize, double updateIntervalMs) {
+            boolean jitterPixelSize, double updateIntervalMs) {
         this.target = target;
         this.width = width;
         this.height = height;
@@ -88,8 +88,8 @@ private int maxBlockSize = 40;
 
     private void updatePixelation() {
         int pixelSize = jitterPixelSize
-            ? Math.max(1, basePixelSize + (int) (Math.random() * 4 - 2))
-            : basePixelSize;
+                ? Math.max(1, basePixelSize + (int) (Math.random() * 4 - 2))
+                : basePixelSize;
 
         double radius = height / 2.0;
         if (target instanceof Circle circle) {
@@ -126,14 +126,16 @@ private int maxBlockSize = 40;
 
                 for (int py = y; py < y + blockH; py += pixelSize) {
                     for (int px = x; px < x + blockW; px += pixelSize) {
-                        if (px >= width || py >= height) continue;
+                        if (px >= width || py >= height) {
+                            continue;
+                        }
                         Color color = reader.getColor(px, py);
                         gc.setFill(color);
                         gc.fillRect(px, py, pixelSize, pixelSize);
                     }
                 }
             }
-        }        
+        }
     }
 
     private void clearPixels() {
@@ -161,16 +163,19 @@ private int maxBlockSize = 40;
     public boolean isRunning() {
         return pixelating;
     }
-public void setMode(PixelationMode mode) {
-    this.mode = mode;
-}
-public void setBlockCount(int count) {
-    this.blockCount = count;
-}
-public void setBlockSizeRange(int minSize, int maxSize) {
-    this.minBlockSize = minSize;
-    this.maxBlockSize = maxSize;
-}    
+
+    public void setMode(PixelationMode mode) {
+        this.mode = mode;
+    }
+
+    public void setBlockCount(int count) {
+        this.blockCount = count;
+    }
+
+    public void setBlockSizeRange(int minSize, int maxSize) {
+        this.minBlockSize = minSize;
+        this.maxBlockSize = maxSize;
+    }
 
     public Canvas getCanvas() {
         return canvas;

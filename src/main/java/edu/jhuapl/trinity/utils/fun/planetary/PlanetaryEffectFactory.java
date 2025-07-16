@@ -44,25 +44,32 @@ public class PlanetaryEffectFactory {
             case VAPORWAVE ->
                 List.of(
                 new GlowRimEffect(Color.web("#ff77ff")),
-                new VaporwaveEffect(
-                    List.of(
-                        Color.web("#D1C4E9"),
-                        Color.web("#B39DDB"),
-                        Color.web("#9575CD"),
-                        Color.web("#80DEEA"),
-                        Color.web("#CE93D8")
-                    ),
-                    6,                             // noiseRingCount
-                    Color.web("#BA68C8"),          // noiseRingColor
-                    0.25,                          // noiseRingOpacity
-                    true                           // includeScanlines
-                ),
-                new ScanlineEffect(20, Color.web("#ffffff", 0.2)),
-                new PixelationEffect(
-                    12,       // basePixelSize
-                    3000.0,   // updateInterval in ms
-                    true     // jitter the pixel size for glitchy look
-                ),
+//                new VaporwaveEffect(
+//                    List.of(
+//                        Color.web("#D1C4E9"),
+//                        Color.web("#B39DDB"),
+//                        Color.web("#9575CD"),
+//                        Color.web("#80DEEA"),
+//                        Color.web("#CE93D8")
+//                    ),
+//                    6,                             // noiseRingCount
+//                    Color.web("#BA68C8"),          // noiseRingColor
+//                    0.25,                          // noiseRingOpacity
+//                    true                           // includeScanlines
+//                ),
+//                new VHSScanlineEffect.Builder()
+//                    .size(512, 512)
+//                    .autoSize(true)
+//                    .flicker(true)
+//                    .chunkyMode(true)
+//                    .scanlineSpacing(3)
+//                    .bandCount(3)
+//                    .build()                
+//                new PixelationEffect(
+//                    12,       // basePixelSize
+//                    3000.0,   // updateInterval in ms
+//                    true     // jitter the pixel size for glitchy look
+//                )
                 new GlitchDisplacementEffect(
                     0.3,   // intensity
                     3,    // glitch bands
