@@ -7,8 +7,7 @@ import javafx.geometry.Bounds;
 import javafx.scene.Node;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
-import javafx.scene.effect.BlendMode;
-import javafx.scene.paint.*;
+import javafx.scene.paint.Color;
 
 public class VHSScanline extends Canvas {
 
@@ -27,36 +26,34 @@ public class VHSScanline extends Canvas {
     private double bandOpacity = 0.15;
     private double bandSpeed = 0.5;
     private double[] bandOffsets;
-private long lastDrawNanos = 0;
-private long drawIntervalNanos = 33_000_000; // default ~30 FPS (33ms)    
-private double flickerOpacity = 1.0;
-private long lastFlickerTime = 0;
+    private long lastDrawNanos = 0;
+    private long drawIntervalNanos = 33_000_000; // default ~30 FPS (33ms)    
+    private double flickerOpacity = 1.0;
+    private long lastFlickerTime = 0;
 
     private final ChangeListener<Bounds> layoutListener = (obs, oldVal, newVal) -> {
-        if (autoSize) Platform.runLater(this::autoSizeNow);
+        if (autoSize) {
+            Platform.runLater(this::autoSizeNow);
+        }
     };
 
     public VHSScanline(Node target, double width, double height) {
         super(width, height);
         this.target = target;
         setMouseTransparent(true);
-//        setBlendMode(BlendMode.MULTIPLY);
-
         initBands();
         target.layoutBoundsProperty().addListener(layoutListener);
-
-        // === Safe animation lifecycle ===
         this.timer = new AnimationTimer() {
             @Override
             public void handle(long now) {
                 if ((now - lastDrawNanos) >= drawIntervalNanos) {
-                    if(target.isVisible() && isVisible())
+                    if (target.isVisible() && isVisible()) {
                         draw();
+                    }
                     lastDrawNanos = now;
                 }
             }
         };
-
         // Auto-manage based on scene lifecycle
         sceneProperty().addListener((obs, oldScene, newScene) -> {
             if (newScene != null) {
@@ -74,13 +71,15 @@ private long lastFlickerTime = 0;
             bandOffsets[i] = Math.random() * height;
         }
     }
-private void updateFlicker() {
-    long now = System.currentTimeMillis();
-    if (retroFlickerEnabled && now - lastFlickerTime > 60) {
-        flickerOpacity = 0.5 + 0.5 * Math.sin(now * 0.005);
-        lastFlickerTime = now;
+
+    private void updateFlicker() {
+        long now = System.currentTimeMillis();
+        if (retroFlickerEnabled && now - lastFlickerTime > 60) {
+            flickerOpacity = 0.5 + 0.5 * Math.sin(now * 0.005);
+            lastFlickerTime = now;
+        }
     }
-}
+
     private void draw() {
         GraphicsContext gc = getGraphicsContext2D();
         double width = getWidth();
@@ -88,7 +87,7 @@ private void updateFlicker() {
         gc.clearRect(0, 0, width, height);
 
         updateFlicker();
-        double scanlineOpacity = baseScanlineOpacity * flickerOpacity;        
+        double scanlineOpacity = baseScanlineOpacity * flickerOpacity;
 
         // Scanlines
         gc.setFill(Color.rgb(0, 0, 0, scanlineOpacity));
@@ -103,7 +102,7 @@ private void updateFlicker() {
 
             Color bandColor = Color.rgb(255, 255, 255, bandOpacity);
             gc.setFill(bandColor);
-            gc.fillRect(0, y, width, bandHeight);            
+            gc.fillRect(0, y, width, bandHeight);
 
             bandOffsets[i] -= bandSpeed;
             if (bandOffsets[i] + bandHeight < 0) {
@@ -121,8 +120,6 @@ private void updateFlicker() {
             }
         }
     }
-
-    // === Controls ===
 
     public void start() {
         if (!running) {
@@ -143,21 +140,21 @@ private void updateFlicker() {
         target.layoutBoundsProperty().removeListener(layoutListener);
     }
 
-    // === Configuration Setters ===
-
     public void setAutoSize(boolean autoSize) {
         this.autoSize = autoSize;
         if (this.autoSize) {
             Platform.runLater(this::autoSizeNow);
         }
     }
-/**
- * Sets the minimum time (in milliseconds) between animation draw updates.
- * Recommended values: 16 (60fps), 33 (30fps), 50 (20fps), 100 (10fps), etc.
- */
-public void setDrawIntervalMillis(long millis) {
-    this.drawIntervalNanos = Math.max(1, millis) * 1_000_000;
-}
+
+    /**
+     * Sets the minimum time (in milliseconds) between animation draw updates.
+     * Recommended values: 16 (60fps), 33 (30fps), 50 (20fps), 100 (10fps), etc.
+     */
+    public void setDrawIntervalMillis(long millis) {
+        this.drawIntervalNanos = Math.max(1, millis) * 1_000_000;
+    }
+
     public void setScanlineSpacing(int spacing) {
         this.scanlineSpacing = spacing;
     }

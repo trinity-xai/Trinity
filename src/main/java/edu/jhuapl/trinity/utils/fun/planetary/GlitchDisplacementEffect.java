@@ -13,7 +13,7 @@ public class GlitchDisplacementEffect implements PlanetaryEffect {
     private Group group = new Group();
     private final double intensity;
     private final int rows;
-    private double glitchFrequency;
+    private double glitchFrequencyMS;
     private double glitchTime;
     private double bandThicknessRatio;
     private Glitch glitch;
@@ -23,7 +23,7 @@ public class GlitchDisplacementEffect implements PlanetaryEffect {
         double glitchTime, double glitchFrequencyMs, double bandThicknessRatio) {
         this.intensity = intensity;
         this.rows = rows;
-        this.glitchFrequency = glitchFrequencyMs;
+        this.glitchFrequencyMS = glitchFrequencyMs;
         this.glitchTime = glitchTime;
         this.bandThicknessRatio = bandThicknessRatio;
         group.setMouseTransparent(true);
@@ -31,15 +31,10 @@ public class GlitchDisplacementEffect implements PlanetaryEffect {
             if(null != glitch) {
                 if(group.isVisible()) {
                     //if its not running we need to start it
-                    if(!glitch.isRunning()) {
-                        glitch.start();
-                    } 
+                    glitch.start();
                 } else {
-                    //if it running now, stop it
-                    if(glitch.isRunning()) {
-                        glitch.stop();
-                        glitch.resetFloatMap();
-                    }
+                    glitch.stop();
+                    glitch.resetFloatMap();
                 }
                     
             }
@@ -63,10 +58,11 @@ public class GlitchDisplacementEffect implements PlanetaryEffect {
             diameter, diameter,       // width & height
             intensity,            // intensity
             rows,              // max bands per burst
-            glitchFrequency,           // glitchFrequency
+            glitchFrequencyMS,           // glitchFrequency
             glitchTime,            // glitchTime
             bandThicknessRatio           // base band thickness ~7% of height
         );
+        glitch.setCheckIntervalMillis(200);
         glitch.start();
     }
 

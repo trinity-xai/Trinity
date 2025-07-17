@@ -104,6 +104,7 @@ public class PlanetaryDiscControls extends VBox {
         Slider slider = new Slider(min, max, prop.get());
         slider.setShowTickLabels(true);
         slider.setShowTickMarks(true);
+        slider.setSnapToTicks(true);
         slider.setBlockIncrement((max - min) / 20);
         slider.valueProperty().bindBidirectional(prop);
         slider.valueProperty().addListener((obs, old, val) -> onChange.accept(val.doubleValue()));

@@ -14,6 +14,10 @@ import edu.jhuapl.trinity.javafx.events.FullscreenEvent;
 import edu.jhuapl.trinity.javafx.events.MissionTimerXEvent;
 import edu.jhuapl.trinity.javafx.events.ZeroMQEvent;
 import edu.jhuapl.trinity.utils.Configuration;
+import edu.jhuapl.trinity.utils.fun.Glitch;
+import edu.jhuapl.trinity.utils.fun.Pixelate;
+import edu.jhuapl.trinity.utils.fun.Pixelate.PixelationMode;
+import edu.jhuapl.trinity.utils.fun.VHSScanline;
 import javafx.animation.Animation;
 import javafx.animation.FadeTransition;
 import javafx.animation.KeyFrame;
@@ -64,7 +68,10 @@ public class App extends Application {
     Timeline intro;
     CircleProgressIndicator circleSpinner;
     AnimatedText animatedConsoleText;
-
+    Pixelate pixelate;
+    Glitch glitch;
+    VHSScanline vhsscanline;
+    
     @Override
     public void start(Stage stage) throws IOException {
         //@DEBUG SMP load time
@@ -205,6 +212,20 @@ public class App extends Application {
         //@DEBUG SMP load time
         //Utils.printTotalTime(startTime);
         Thread.startVirtualThread(async);
+        pixelate = new Pixelate(
+            bp,
+            Double.valueOf(scene.getWidth()).intValue(),
+            Double.valueOf(scene.getHeight()).intValue(),
+            16,
+            true,
+            2000
+        );
+        pixelate.setPixelateTime(800);
+        pixelate.setMode(PixelationMode.RANDOM_BLOCKS);
+        pixelate.setCenterOnY(false);
+        pixelate.setBlockCount(20);
+        pixelate.setBlockSizeRange(10, 50);
+
     }
 
     private void intro() {
@@ -224,7 +245,11 @@ public class App extends Application {
             new KeyFrame(Duration.seconds(5.0), new KeyValue(animatedConsoleText.opacityProperty(), 0.0)),
             new KeyFrame(Duration.seconds(5.1), e -> animatedConsoleText.setVisible(false)),
             new KeyFrame(Duration.seconds(5.1), e -> animatedConsoleText.animate(" ")),
-            new KeyFrame(Duration.seconds(5.1), new KeyValue(mainNavMenu.opacityProperty(), 1.0))
+            new KeyFrame(Duration.seconds(5.1), new KeyValue(mainNavMenu.opacityProperty(), 1.0)),
+            new KeyFrame(Duration.seconds(5.1), e -> {
+                centerStack.getChildren().add(pixelate.getCanvas());
+                //pixelate.start();
+            })    
         );
         intro.play();
     }
@@ -316,6 +341,9 @@ public class App extends Application {
     }
 
     private void shutdown(boolean now) {
+            pixelate.stop();
+            pixelate.setMode(PixelationMode.FULL_SURFACE);
+
         animatedConsoleText.getScene().getRoot().fireEvent(
             new ZeroMQEvent(ZeroMQEvent.ZEROMQ_TERMINATE_CONNECTION, null));
         animatedConsoleText.getScene().getRoot().fireEvent(
@@ -332,7 +360,10 @@ public class App extends Application {
             Timeline outtro = new Timeline(
                 new KeyFrame(Duration.seconds(0.1), new KeyValue(animatedConsoleText.opacityProperty(), 1.0)),
                 new KeyFrame(Duration.seconds(0.1), kv -> animatedConsoleText.animate(">Kill Signal Received. Terminating...")),
-                new KeyFrame(Duration.seconds(2.0), kv -> System.exit(0)));
+                new KeyFrame(Duration.seconds(1.0), kv -> pixelate.animatePixelSize(8, 100, 2000, false, false)),   
+//                new KeyFrame(Duration.seconds(2.5), kv -> new KeyValue(centerStack.opacityProperty(), 1.0)),       
+//                new KeyFrame(Duration.seconds(3.1), kv -> new KeyValue(centerStack.opacityProperty(), 0.0)),       
+                new KeyFrame(Duration.seconds(3.25), kv -> System.exit(0)));
             outtro.play();
         }
     }
