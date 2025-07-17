@@ -394,7 +394,7 @@ public class AppAsyncManager extends Task {
                 String caption = (String) e.object2;
                 videoPane.mainTitleText2Property.set(caption);
             }
-            videoPane.setVideo();
+            videoPane.setVideo(false);
         });
         LOG.info("Special Effects");
         scene.addEventHandler(ApplicationEvent.SHOW_SPECIALEFFECTS_PANE, e -> {

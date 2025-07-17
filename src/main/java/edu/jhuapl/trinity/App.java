@@ -14,6 +14,7 @@ import edu.jhuapl.trinity.javafx.events.FullscreenEvent;
 import edu.jhuapl.trinity.javafx.events.MissionTimerXEvent;
 import edu.jhuapl.trinity.javafx.events.ZeroMQEvent;
 import edu.jhuapl.trinity.utils.Configuration;
+import edu.jhuapl.trinity.utils.ResourceUtils;
 import edu.jhuapl.trinity.utils.fun.Glitch;
 import edu.jhuapl.trinity.utils.fun.Pixelate;
 import edu.jhuapl.trinity.utils.fun.Pixelate.PixelationMode;
@@ -49,6 +50,10 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
+import java.net.URISyntaxException;
+import javafx.scene.media.Media;
+import javafx.scene.media.MediaPlayer;
+import javafx.scene.media.MediaView;
 
 public class App extends Application {
     private static final Logger LOG = LoggerFactory.getLogger(App.class);
@@ -86,6 +91,30 @@ public class App extends Application {
         bp.getStyleClass().add("trinity-pane");
         Scene scene = new Scene(bp, 1920, 1080, Color.BLACK);
         stage.setScene(scene);
+        stage.setMaximized(true); //default... but could be overridden later by commandline params
+        stage.show();
+        
+        Media media;
+        try {
+            media = ResourceUtils.loadRandomMediaMp4();
+            MediaPlayer mediaPlayer = new MediaPlayer(media);
+            MediaView mediaView = new MediaView(mediaPlayer);
+            mediaView.setPreserveRatio(true);
+            centerStack.getChildren().add(mediaView);
+            mediaView.fitWidthProperty().bind(centerStack.widthProperty().subtract(10));
+
+            mediaPlayer.play(); 
+            mediaPlayer.setOnEndOfMedia(() -> {
+                Timeline time = new Timeline(                
+                    new KeyFrame(Duration.seconds(0.5), new KeyValue(mediaView.opacityProperty(), 0.0)),
+                    new KeyFrame(Duration.seconds(0.6), e -> centerStack.getChildren().remove(mediaView))
+                );
+                time.play();
+            });            
+        } catch (URISyntaxException ex) {
+            System.getLogger(App.class.getName()).log(System.Logger.Level.ERROR, (String) null, ex);
+        }
+
         LOG.info("Styling Scene and Stage...");
         stage.setTitle("Trinity XAI");
         //Set icon for stage for fun
@@ -94,15 +123,15 @@ public class App extends Application {
         stage.setFullScreenExitKeyCombination(KeyCombination.NO_MATCH);
         //Setup a custom key handlers
         stage.setFullScreenExitHint("Press ALT+ENTER to alternate Fullscreen Mode.");
-        stage.setMaximized(true); //default... but could be overridden later by commandline params
         //Make everything pretty
         String CSS = StyleResourceProvider.getResource("styles.css").toExternalForm();
         scene.getStylesheets().add(CSS);
         CSS = StyleResourceProvider.getResource("covalent.css").toExternalForm();
         scene.getStylesheets().add(CSS);
-        stage.show();
+//        stage.show();
+               
 
-        //add just the dark necessaties...
+        //add just the dark necessities...
         JukeBox jukeBox = new JukeBox(scene);
         scene.addEventHandler(AudioEvent.PLAY_MUSIC_TRACK, jukeBox);
         scene.addEventHandler(AudioEvent.RELOAD_MUSIC_FILES, jukeBox);
