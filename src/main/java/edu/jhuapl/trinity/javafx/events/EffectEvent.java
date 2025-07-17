@@ -29,6 +29,10 @@ public class EffectEvent extends Event {
     public static final EventType<EffectEvent> SUN_POSITION_PATHMODE = new EventType(ANY, "SUN_POSITION_PATHMODE");
     public static final EventType<EffectEvent> PLANETARY_STYLE_CHANGE = new EventType(ANY, "PLANETARY_STYLE_CHANGE");
     public static final EventType<EffectEvent> NEW_PLANETARY_DISC = new EventType<>(ANY, "NEW_PLANETARY_DISC");
+    public static final EventType<EffectEvent> ENABLE_GLITCH_EFFECT = new EventType<>(ANY, "ENABLE_GLITCH_EFFECT");
+    public static final EventType<EffectEvent> ENABLE_PIXELATE_EFFECT = new EventType<>(ANY, "ENABLE_PIXELATE_EFFECT");
+    public static final EventType<EffectEvent> ENABLE_VHSSCANLINE_EFFECT = new EventType<>(ANY, "ENABLE_VHSSCANLINE_EFFECT");
+
     
     public String stringId = null;
     public Object object = null;

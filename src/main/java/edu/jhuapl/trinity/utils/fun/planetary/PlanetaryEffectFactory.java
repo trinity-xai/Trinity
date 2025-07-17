@@ -65,18 +65,18 @@ public class PlanetaryEffectFactory {
 //                    .scanlineSpacing(3)
 //                    .bandCount(3)
 //                    .build()                
-//                new PixelationEffect(
-//                    12,       // basePixelSize
-//                    3000.0,   // updateInterval in ms
-//                    true     // jitter the pixel size for glitchy look
-//                )
-                new GlitchDisplacementEffect(
-                    0.3,   // intensity
-                    3,    // glitch bands
-                    250.0,    
-                    1000.0,    // ms per update
-                    0.03    
+                new PixelationEffect(
+                    12,       // basePixelSize
+                    3000.0,   // updateInterval in ms
+                    true     // jitter the pixel size for glitchy look
                 )
+//                new GlitchDisplacementEffect(
+//                    0.3,   // intensity
+//                    3,    // glitch bands
+//                    200.0,  //duration of each glitch  
+//                    2000.0,   // ms between glitches 
+//                    0.02  // thicc ass glitch ratio
+//                )
             );
             case SCIFI ->
                 List.of(

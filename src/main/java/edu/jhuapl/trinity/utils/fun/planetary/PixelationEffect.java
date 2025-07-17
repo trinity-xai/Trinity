@@ -60,7 +60,7 @@ public class PixelationEffect implements PlanetaryEffect {
         );
         pixelate.setPixelateTime(800);
         pixelate.setMode(PixelationMode.RANDOM_BLOCKS);
-        pixelate.setBlockCount(5);
+        pixelate.setBlockCount(10);
         pixelate.setBlockSizeRange(20, 40);
         group.getChildren().clear();
         group.getChildren().add(pixelate.getCanvas());

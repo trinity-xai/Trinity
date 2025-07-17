@@ -1,7 +1,13 @@
 package edu.jhuapl.trinity.utils.fun;
 
 import java.util.Random;
+import javafx.animation.Animation;
 import javafx.animation.AnimationTimer;
+import javafx.animation.KeyFrame;
+import javafx.animation.KeyValue;
+import javafx.animation.Timeline;
+import javafx.beans.property.DoubleProperty;
+import javafx.beans.property.SimpleDoubleProperty;
 import javafx.geometry.Rectangle2D;
 import javafx.scene.Node;
 import javafx.scene.SnapshotParameters;
@@ -12,6 +18,7 @@ import javafx.scene.image.WritableImage;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.scene.transform.Transform;
+import javafx.util.Duration;
 
 public class Pixelate {
 
@@ -22,7 +29,7 @@ public class Pixelate {
     private final Node target;
     private final int width;
     private final int height;
-    private final int basePixelSize;
+    private int basePixelSize;
     private final boolean jitterPixelSize;
     private final double updateIntervalMs;
 
@@ -37,12 +44,15 @@ public class Pixelate {
     private final Random random = new Random();
 
     private AnimationTimer animationTimer;
+    AnimationTimer pixelateTimer;    
     private long lastTriggerTimeNs = 0;
     private long pixelationStartTimeNs = -1;
     private long currentIntervalNs;
-
+    private long checkIntervalNanos = 200_000_000; // e.g. 100ms
+    private long lastCheckNanos = 0;
     private boolean pixelating = false;
-
+    private boolean centerOnY = true;
+    
     public Pixelate(Node target, int width, int height, int basePixelSize,
             boolean jitterPixelSize, double updateIntervalMs) {
         this.target = target;
@@ -54,16 +64,19 @@ public class Pixelate {
 
         this.canvas = new Canvas(width, height);
         this.gc = canvas.getGraphicsContext2D();
-
+        canvas.setMouseTransparent(true);
         setupTimer();
     }
 
     private void setupTimer() {
         currentIntervalNs = millisToNanos(updateIntervalMs + getRandomMillis());
-
         animationTimer = new AnimationTimer() {
             @Override
             public void handle(long now) {
+                if ((now - lastCheckNanos) < checkIntervalNanos) {
+                    return; // too soon — skip this frame
+                }                
+                lastCheckNanos = now;
                 if (!pixelating) {
                     if (now - lastTriggerTimeNs >= currentIntervalNs) {
                         runPixelCycle(now);
@@ -91,17 +104,19 @@ public class Pixelate {
                 ? Math.max(1, basePixelSize + (int) (Math.random() * 4 - 2))
                 : basePixelSize;
 
-        double radius = height / 2.0;
-        if (target instanceof Circle circle) {
-            radius = circle.getRadius();
-        }
         double pixelOffset = pixelSize / 2.0;
 
         SnapshotParameters params = new SnapshotParameters();
         params.setFill(Color.TRANSPARENT);
         params.setViewport(new Rectangle2D(0, 0, width, height));
-        params.setTransform(Transform.translate(-pixelOffset, -radius - pixelOffset));
-
+        if(centerOnY) {
+            double radius = height / 2.0;
+            if (target instanceof Circle circle) {
+                radius = circle.getRadius();
+            }        
+            params.setTransform(Transform.translate(-pixelOffset, -radius - pixelOffset));
+        } else
+            params.setTransform(Transform.translate(-pixelOffset, -pixelOffset));            
         WritableImage snapshot = new WritableImage(width, height);
         target.snapshot(params, snapshot);
 
@@ -196,4 +211,60 @@ public class Pixelate {
     public void setPixelateFreqRandomOffset(double pixelateFreqRandomOffset) {
         this.pixelateFreqRandomOffset = pixelateFreqRandomOffset;
     }
+
+    /**
+     * @return the centerOnY
+     */
+    public boolean isCenterOnY() {
+        return centerOnY;
+    }
+
+    /**
+     * @param centerOnY the centerOnY to set
+     */
+    public void setCenterOnY(boolean centerOnY) {
+        this.centerOnY = centerOnY;
+    }
+    public void animatePixelSize(double fromSize, double toSize, long durationMillis, boolean autoReverse, boolean repeat) {
+        
+        if (pixelateTimer != null) pixelateTimer.stop();        
+        pixelateTimer = new AnimationTimer() {
+            long pixelateDurationNanos = durationMillis * 1_000_000;
+            long pixelateStartTime = System.nanoTime();
+            long lastUpdateTime = 0;
+            long pixelateIntervalNanos = 100_000_000;
+            double pixelateFromSize = fromSize;
+            double pixelateToSize = toSize;
+            boolean pixelateAutoReverse = autoReverse;
+            boolean pixelateRepeat = repeat;
+    
+            @Override
+            public void handle(long now) {
+                long elapsed = now - pixelateStartTime;
+                if ((now - lastUpdateTime) < pixelateIntervalNanos) return;
+                lastUpdateTime = now;
+                double progress = Math.min(1.0, (double) elapsed / pixelateDurationNanos);
+                //Double currentSize = pixelateFromSize + (pixelateToSize - pixelateFromSize);
+                Double currentSize = pixelateFromSize + (pixelateToSize - pixelateFromSize) * progress;
+                basePixelSize = currentSize.intValue();
+                clearPixels();
+                updatePixelation();
+
+                if (progress >= 1.0) {
+                    if (pixelateAutoReverse) {
+                        // Swap direction and restart
+                        double temp = pixelateFromSize;
+                        pixelateFromSize = pixelateToSize;
+                        pixelateToSize = temp;
+                        pixelateStartTime = now;
+                    } else if (pixelateRepeat) {
+                        pixelateStartTime = now;
+                    } else {
+                        this.stop();
+                    }
+                }
+            }
+        };
+        pixelateTimer.start();
+    }    
 }
