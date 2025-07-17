@@ -31,7 +31,7 @@ public class VideoPane extends LitPathPane {
     public static double NODE_WIDTH = PANE_WIDTH - 50;
     public static double NODE_HEIGHT = NODE_WIDTH / 2.0;
     Media media;
-    MediaView mediaView;
+    private MediaView mediaView;
     public MediaPlayer mediaPlayer;
     boolean auto = false;
     ChangeListener endOfMediaListener;
@@ -75,7 +75,7 @@ public class VideoPane extends LitPathPane {
         });
         forwardVBox.setOnMouseClicked(e -> {
             mediaPlayer.pause();
-            setVideo();
+            setVideo(false);
         });
         forwardVBox.setOnMouseExited(e -> {
             forward.setEffect(null);
@@ -122,15 +122,17 @@ public class VideoPane extends LitPathPane {
         auto = !auto;
     }
 
-    public void setVideo() {
+    public void setVideo(boolean closeOnEndOfMedia) {
         try {
             media = ResourceUtils.loadRandomMediaMp4();
             if (null != media) {
                 mediaPlayer = new MediaPlayer(media);
-                mediaView.setMediaPlayer(mediaPlayer);
+                getMediaView().setMediaPlayer(mediaPlayer);
                 mediaPlayer.setOnEndOfMedia(() -> {
-                    if (auto) {
-                        setVideo();
+                    if(closeOnEndOfMedia)
+                        shutdown();
+                    else if(auto) {
+                        setVideo(false);
                     }
                 });
                 mediaPlayer.play();
@@ -140,6 +142,20 @@ public class VideoPane extends LitPathPane {
         } catch (URISyntaxException | IOException ex) {
             LOG.error(null, ex);
         }
+    }
+
+    /**
+     * @return the mediaView
+     */
+    public MediaView getMediaView() {
+        return mediaView;
+    }
+
+    /**
+     * @param mediaView the mediaView to set
+     */
+    public void setMediaView(MediaView mediaView) {
+        this.mediaView = mediaView;
     }
 
 }
