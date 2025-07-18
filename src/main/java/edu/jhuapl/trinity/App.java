@@ -15,10 +15,8 @@ import edu.jhuapl.trinity.javafx.events.MissionTimerXEvent;
 import edu.jhuapl.trinity.javafx.events.ZeroMQEvent;
 import edu.jhuapl.trinity.utils.Configuration;
 import edu.jhuapl.trinity.utils.ResourceUtils;
-import edu.jhuapl.trinity.utils.fun.Glitch;
 import edu.jhuapl.trinity.utils.fun.Pixelate;
 import edu.jhuapl.trinity.utils.fun.Pixelate.PixelationMode;
-import edu.jhuapl.trinity.utils.fun.VHSScanline;
 import javafx.animation.Animation;
 import javafx.animation.FadeTransition;
 import javafx.animation.KeyFrame;
@@ -48,9 +46,10 @@ import lit.litfx.controls.covalent.events.CovalentPaneEvent;
 import lit.litfx.controls.output.AnimatedText;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.io.IOException;
+import java.net.MalformedURLException;
 import java.net.URISyntaxException;
+import javafx.beans.value.ChangeListener;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
 import javafx.scene.media.MediaView;
@@ -74,8 +73,6 @@ public class App extends Application {
     CircleProgressIndicator circleSpinner;
     AnimatedText animatedConsoleText;
     Pixelate pixelate;
-    Glitch glitch;
-    VHSScanline vhsscanline;
     
     @Override
     public void start(Stage stage) throws IOException {
@@ -85,6 +82,7 @@ public class App extends Application {
         LOG.info("Starting JavaFX rendering...");
         centerStack = new StackPane();
         centerStack.setBackground(transBack);
+
         LOG.info("Building Scene Stack...");
         BorderPane bp = new BorderPane(centerStack);
         bp.setBackground(transBack);
@@ -94,25 +92,52 @@ public class App extends Application {
         stage.setMaximized(true); //default... but could be overridden later by commandline params
         stage.show();
         
-        Media media;
         try {
-            media = ResourceUtils.loadRandomMediaMp4();
-            MediaPlayer mediaPlayer = new MediaPlayer(media);
-            MediaView mediaView = new MediaView(mediaPlayer);
-            mediaView.setPreserveRatio(true);
-            centerStack.getChildren().add(mediaView);
-            mediaView.fitWidthProperty().bind(centerStack.widthProperty().subtract(10));
+                Media media = ResourceUtils.loadMediaMp4("Intro.mp4");
+                if(null != media) {
+                    double FADE_DURATION_MS = 2000;    
+                    MediaPlayer mediaPlayer = new MediaPlayer(media);
 
-            mediaPlayer.play(); 
-            mediaPlayer.setOnEndOfMedia(() -> {
-                Timeline time = new Timeline(                
-                    new KeyFrame(Duration.seconds(0.5), new KeyValue(mediaView.opacityProperty(), 0.0)),
-                    new KeyFrame(Duration.seconds(0.6), e -> centerStack.getChildren().remove(mediaView))
-                );
-                time.play();
-            });            
-        } catch (URISyntaxException ex) {
-            System.getLogger(App.class.getName()).log(System.Logger.Level.ERROR, (String) null, ex);
+                    ChangeListener<Duration> fadeListener = (obs, oldTime, newTime) -> {
+                        double total = media.getDuration().toMillis();
+                        double current = newTime.toMillis();
+                        double remaining = total - current;
+
+                        if (remaining <= FADE_DURATION_MS) {
+                            // Linear fade-out: volume is proportional to remaining time
+                            double volume = Math.max(0.0, remaining / FADE_DURATION_MS);
+                            mediaPlayer.setVolume(volume);
+                        }
+                    };            
+                    mediaPlayer.setOnReady(() -> {
+                        mediaPlayer.setVolume(1.0); // Start at full volume
+                        mediaPlayer.currentTimeProperty().addListener(fadeListener);
+                        mediaPlayer.play();
+                    });
+
+                    mediaPlayer.setOnEndOfMedia(() -> {
+                        mediaPlayer.setVolume(0.0); // Ensure final volume is zero
+                        mediaPlayer.currentTimeProperty().removeListener(fadeListener);
+                    });        
+
+                    MediaView mediaView = new MediaView(mediaPlayer);
+                    mediaView.setPreserveRatio(true);
+                    centerStack.getChildren().add(mediaView);
+                    mediaView.fitWidthProperty().bind(centerStack.widthProperty().subtract(10));
+                    mediaPlayer.play(); 
+
+                    mediaPlayer.setOnEndOfMedia(() -> {
+                        Timeline time = new Timeline(                
+                            new KeyFrame(Duration.seconds(0.5), new KeyValue(mediaView.opacityProperty(), 0.0)),
+                            new KeyFrame(Duration.seconds(0.6), e -> {
+                                centerStack.getChildren().remove(mediaView);
+                            })
+                        );
+                        time.play();
+                    });             
+                }
+        } catch (Exception ex) {
+            LOG.error("Tried and failed to load intro media.");
         }
 
         LOG.info("Styling Scene and Stage...");
@@ -128,8 +153,6 @@ public class App extends Application {
         scene.getStylesheets().add(CSS);
         CSS = StyleResourceProvider.getResource("covalent.css").toExternalForm();
         scene.getStylesheets().add(CSS);
-//        stage.show();
-               
 
         //add just the dark necessities...
         JukeBox jukeBox = new JukeBox(scene);
@@ -254,7 +277,6 @@ public class App extends Application {
         pixelate.setCenterOnY(false);
         pixelate.setBlockCount(20);
         pixelate.setBlockSizeRange(10, 50);
-
     }
 
     private void intro() {
@@ -277,7 +299,6 @@ public class App extends Application {
             new KeyFrame(Duration.seconds(5.1), new KeyValue(mainNavMenu.opacityProperty(), 1.0)),
             new KeyFrame(Duration.seconds(5.1), e -> {
                 centerStack.getChildren().add(pixelate.getCanvas());
-                //pixelate.start();
             })    
         );
         intro.play();
