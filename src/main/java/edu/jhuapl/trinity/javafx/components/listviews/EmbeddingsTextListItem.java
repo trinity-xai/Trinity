@@ -33,7 +33,7 @@ import java.util.function.Function;
  */
 public class EmbeddingsTextListItem extends HBox {
     private static final Logger LOG = LoggerFactory.getLogger(EmbeddingsTextListItem.class);
-
+    public static boolean ENABLE_JSON_PROCESSING = false;
     public static double PREF_DIMLABEL_WIDTH = 100;
     public static double PREF_FILELABEL_WIDTH = 250;
     public static int LARGEFILE_SPLIT_SIZE = 16384;
@@ -181,7 +181,7 @@ public class EmbeddingsTextListItem extends HBox {
                 fileString = Files.readString(file.toPath());
             }
             //if JSON attempt intelligent object wise chunking
-            if (MessageUtils.probablyJSON(fileString)) {
+            if (ENABLE_JSON_PROCESSING && MessageUtils.probablyJSON(fileString)) {
                 final ObjectMapper mapper = new ObjectMapper();
                 JsonNode jsonNode = mapper.readTree(fileString);
                 if (jsonNode.getNodeType() == JsonNodeType.ARRAY) {

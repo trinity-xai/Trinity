@@ -452,6 +452,19 @@ public enum ResourceUtils {
         return media;
     }
 
+    public static boolean canDragOverDirectory(DragEvent event) {
+        Dragboard db = event.getDragboard();
+        if (db.hasFiles()) {
+            File file = db.getFiles().get(0); //only support the first
+            if (file.isDirectory()) {
+                event.acceptTransferModes(TransferMode.COPY);
+                return true;
+            }
+        } else {
+            event.consume();
+        }
+        return false;
+    }
     public static boolean canDragOver(DragEvent event) {
         Dragboard db = event.getDragboard();
         DataFormat dataFormat = DataFormat.lookupMimeType("application/x-java-file-list");

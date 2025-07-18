@@ -81,7 +81,6 @@ import javafx.stage.DirectoryChooser;
 import javafx.stage.StageStyle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -92,7 +91,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
-
 import static edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageUrl.imageUrlFromImage;
 import static edu.jhuapl.trinity.javafx.events.CommandTerminalEvent.notifyTerminalSuccess;
 import static edu.jhuapl.trinity.javafx.events.CommandTerminalEvent.notifyTerminalWarning;
@@ -642,30 +640,7 @@ public class HyperdrivePane extends LitPathPane {
         });
         Button applyServiceDirButton = new Button("Reload Services");
         applyServiceDirButton.setOnAction(e -> {
-            try {
-                RestAccessLayer.loadDefaultRestConfig();
-                embeddingsLocationTextField.setText(
-                    RestAccessLayer.restAccessLayerconfig.getBaseRestURL() +
-                        RestAccessLayer.restAccessLayerconfig.getImageEmbeddingsEndpoint()
-                );
-                chatLocationTextField.setText(
-                    RestAccessLayer.restAccessLayerconfig.getBaseRestURL() +
-                        RestAccessLayer.restAccessLayerconfig.getChatCompletionEndpoint()
-                );
-
-            } catch (IOException ex) {
-                Alert alert = new Alert(Alert.AlertType.ERROR);
-                alert.setHeaderText("Check services directory path");
-                alert.setContentText("Error loading from: \n" + RestAccessLayer.SERVICES_DEFAULT_PATH);
-                alert.setGraphic(ResourceUtils.loadIcon("error", 75));
-                alert.initStyle(StageStyle.TRANSPARENT);
-                DialogPane dialogPane = alert.getDialogPane();
-                dialogPane.setBackground(Background.EMPTY);
-                dialogPane.getScene().setFill(Color.TRANSPARENT);
-                String DIALOGCSS = StyleResourceProvider.getResource("dialogstyles.css").toExternalForm();
-                dialogPane.getStylesheets().add(DIALOGCSS);
-                alert.showAndWait();
-            }
+            applyServiceDir();
         });
 
         HBox serviceDirHBox = new HBox(20, browseServiceDirButton, applyServiceDirButton);
@@ -692,15 +667,24 @@ public class HyperdrivePane extends LitPathPane {
             new VBox(5, new Label("Request Delay ms"), requestDelaySpinner)
         );
 
+        CheckBox enableJSONcheckBox = new CheckBox("Enable Special JSON Processing");
+        enableJSONcheckBox.selectedProperty().addListener(e -> {
+            EmbeddingsTextListItem.ENABLE_JSON_PROCESSING = enableJSONcheckBox.isSelected();
+            enableJSONcheckBox.getScene().getRoot().fireEvent(
+                new HyperdriveEvent(HyperdriveEvent.ENABLE_JSON_PROCESSING, enableJSONcheckBox.isSelected()));
+        });
         Spinner<Integer> chunkSizeSpinner = new Spinner(256, 262144, chunkSize, 256);
         chunkSizeSpinner.valueProperty().addListener(c -> {
             chunkSize = chunkSizeSpinner.getValue();
             EmbeddingsTextListItem.LARGEFILE_SPLIT_SIZE = chunkSize;
+            chunkSizeSpinner.getScene().getRoot().fireEvent(
+                new HyperdriveEvent(HyperdriveEvent.SET_CHUNK_SIZE, chunkSize));
         });
         chunkSizeSpinner.setEditable(true);
         chunkSizeSpinner.setPrefWidth(100);
 
         VBox chunkingSpinnerVBox = new VBox(20,
+            enableJSONcheckBox, 
             new VBox(5, new Label("Chunk Size (bytes)"), chunkSizeSpinner)
         );
 
@@ -708,7 +692,27 @@ public class HyperdrivePane extends LitPathPane {
         servicesGrid.setPadding(new Insets(10));
         servicesGrid.setAlignment(Pos.TOP_LEFT);
         servicesTab.setContent(servicesGrid);
-
+        servicesGrid.addEventHandler(DragEvent.DRAG_OVER, event -> {
+            if (ResourceUtils.canDragOverDirectory(event)) {
+                event.acceptTransferModes(TransferMode.COPY);
+            } else {
+                event.consume();
+            }
+        });
+        servicesGrid.addEventHandler(DragEvent.DRAG_DROPPED, event -> {
+            event.consume();
+            Dragboard db = event.getDragboard();
+            if (db.hasFiles()) {
+                File file = db.getFiles().get(0); //only support the first
+                if (file.isDirectory()) {
+                    RestAccessLayer.SERVICES_DEFAULT_PATH = file.getAbsolutePath() + File.separator;
+                    Prompts.PROMPTS_DEFAULT_PATH = file.getAbsolutePath();
+                    serviceDirTextField.setText(file.getAbsolutePath() + File.separator);                   
+                    applyServiceDir();
+                }
+            }
+        });
+        
         //Image Embeddings Service
         embeddingsLocationTextField = new TextField(
             RestAccessLayer.restAccessLayerconfig.getBaseRestURL() +
@@ -833,12 +837,12 @@ public class HyperdrivePane extends LitPathPane {
                 new HBox(10, refreshChatModelsButton, testChatModelButton, testVisionModelButton)),
             1, 1);
 
+        serviceDirVBox.setAlignment(Pos.CENTER_LEFT);
+        servicesGrid.add(serviceDirVBox, 0, 2);
+        
         Separator separator = new Separator();
         GridPane.setColumnSpan(separator, GridPane.REMAINING);
-        servicesGrid.add(separator, 0, 2);
-
-        serviceDirVBox.setAlignment(Pos.CENTER_LEFT);
-        servicesGrid.add(serviceDirVBox, 0, 3);
+        servicesGrid.add(separator, 0, 3);
 
         requestsSpinnerVBox.setAlignment(Pos.CENTER_LEFT);
         servicesGrid.add(requestsSpinnerVBox, 0, 4);
@@ -1157,7 +1161,32 @@ public class HyperdrivePane extends LitPathPane {
 
         getStyleClass().add("hyperdrive-pane");
     }
+    private void applyServiceDir() {
+        try {
+            RestAccessLayer.loadDefaultRestConfig();
+            embeddingsLocationTextField.setText(
+                RestAccessLayer.restAccessLayerconfig.getBaseRestURL() +
+                    RestAccessLayer.restAccessLayerconfig.getImageEmbeddingsEndpoint()
+            );
+            chatLocationTextField.setText(
+                RestAccessLayer.restAccessLayerconfig.getBaseRestURL() +
+                    RestAccessLayer.restAccessLayerconfig.getChatCompletionEndpoint()
+            );
 
+        } catch (IOException ex) {
+            Alert alert = new Alert(Alert.AlertType.ERROR);
+            alert.setHeaderText("Check services directory path");
+            alert.setContentText("Error loading from: \n" + RestAccessLayer.SERVICES_DEFAULT_PATH);
+            alert.setGraphic(ResourceUtils.loadIcon("error", 75));
+            alert.initStyle(StageStyle.TRANSPARENT);
+            DialogPane dialogPane = alert.getDialogPane();
+            dialogPane.setBackground(Background.EMPTY);
+            dialogPane.getScene().setFill(Color.TRANSPARENT);
+            String DIALOGCSS = StyleResourceProvider.getResource("dialogstyles.css").toExternalForm();
+            dialogPane.getStylesheets().add(DIALOGCSS);
+            alert.showAndWait();
+        }        
+    }
     public void chooseCaptionsTask(List<EmbeddingsImageListItem> items, List<String> choices) {
         ChooseCaptionsTask requestTask = new ChooseCaptionsTask(scene,
             imageEmbeddingRequestIndicator, requestNumber, currentChatModel,

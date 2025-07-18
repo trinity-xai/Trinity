@@ -11,6 +11,8 @@ public class HyperdriveEvent extends Event {
     public Object object1;
     public Object object2;
 
+    public static final EventType<HyperdriveEvent> SET_CHUNK_SIZE = new EventType(ANY, "SET_CHUNK_SIZE");
+    public static final EventType<HyperdriveEvent> ENABLE_JSON_PROCESSING = new EventType(ANY, "ENABLE_JSON_PROCESSING");
     public static final EventType<HyperdriveEvent> NEW_BATCH_IMAGELOAD = new EventType(ANY, "NEW_BATCH_IMAGELOAD");
     public static final EventType<HyperdriveEvent> NEW_BATCH_TEXTLOAD = new EventType(ANY, "NEW_BATCH_TEXTLOAD");
 
