@@ -104,7 +104,6 @@ public void setDisplacementMode(GlitchDisplacementMode mode) {
             int bandHeight = Math.max(1, (int) randomizedHeight);
             // Random horizontal displacement scaled by intensity
             double offset = Math.random() * 2 * maxOffset - maxOffset;
-//            for (int y = bandStartY; y < bandStartY + bandHeight && y < height; y++) {
             int bandEndY = Math.min(bandStartY + bandHeight, height);
             for (int y = bandStartY; y < bandEndY; y++) {
                 modifiedRows.add(y);
