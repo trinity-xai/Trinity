@@ -84,15 +84,6 @@ public class EmbeddingsTextListItem extends HBox {
         Tooltip.install(this, new Tooltip(file.getAbsolutePath()));
 
         setFeatureVectorLabel(file.getName());
-
-//        imageView.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
-//            if (e.getClickCount() > 1) {
-//                getScene().getRoot().fireEvent(new FeatureVectorEvent(
-//                    FeatureVectorEvent.SELECT_FEATURE_VECTOR, featureVector));
-//                getScene().getRoot().fireEvent(
-//                    new FeatureVectorEvent(FeatureVectorEvent.LOCATE_FEATURE_VECTOR, featureVector));
-//            }
-//        });
         setOnMouseClicked(e -> {
             if (e.getClickCount() > 1) {
                 getScene().getRoot().fireEvent(new FeatureVectorEvent(

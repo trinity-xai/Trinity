@@ -725,9 +725,7 @@ public class HyperdrivePane extends LitPathPane {
             }
         });
         Button applyServiceDirButton = new Button("Reload Services");
-        applyServiceDirButton.setOnAction(e -> {
-            applyServiceDir();
-        });
+        applyServiceDirButton.setOnAction(e -> applyServiceDir());
 
         HBox serviceDirHBox = new HBox(20, browseServiceDirButton, applyServiceDirButton);
         VBox serviceDirVBox = new VBox(10,
