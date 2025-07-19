@@ -79,6 +79,7 @@ import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.UnsupportedEncodingException;
+import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
@@ -439,7 +440,20 @@ public enum ResourceUtils {
     public static Media loadMediaWav(String filename) throws IOException {
         return new Media(AudioResourceProvider.getResource(filename + ".wav").toExternalForm());
     }
-
+    public static Media loadMediaMp4(String filename) throws MalformedURLException {
+        File folder = new File("video/");
+        if (!folder.exists() || !folder.isDirectory() || folder.listFiles().length < 1) {
+            return null;
+        }
+        for(File file: folder.listFiles()) {
+            if(file.getName().contentEquals(filename)) {
+                Media media = new Media(file.toURI().toURL().toString());
+                return media;
+            }
+        }
+        
+        return null;        
+    }
     public static Media loadRandomMediaMp4() throws URISyntaxException, IOException {
         File folder = new File("video/");
         if (!folder.exists() || !folder.isDirectory() || folder.listFiles().length < 1) {

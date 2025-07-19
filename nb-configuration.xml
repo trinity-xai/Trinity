@@ -12,7 +12,7 @@ Without this configuration present, some functionality in the IDE may be limited
             <configuration id="ZeroMQ" profiles=""/>
             <configuration id="OutRun" profiles=""/>
             <configuration id="DalleWalle" profiles=""/>
-            <configuration id="GraalVM" profiles=""/>
+            <configuration id="VRAMDebug" profiles=""/>
             <configuration id="4kMemory" profiles=""/>
             <configuration id="Synthwav" profiles=""/>
         </configurations>

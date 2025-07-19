@@ -1275,7 +1275,7 @@ public class Projections3DPane extends StackPane implements
                 if (!projectileSystem.isRunning() && !projectileSystem.introPlayed) {
                     projectileSystem.introPlayed = true;
                     VideoPane vp = App.getVideoPane();
-                    vp.setVideo();
+                    vp.setVideo(false);
                     Pane desktopPane = App.getAppPathPaneStack();
                     App.getAppPathPaneStack().getChildren().add(vp);
                     vp.moveTo(desktopPane.getWidth() / 2.0

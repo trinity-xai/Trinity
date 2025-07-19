@@ -77,7 +77,7 @@ public class LitPathPane extends PathPane {
      * an anchorpane node which is returned wrapped as a BorderPane
      *
      * @param controllerLocation The path to the FXML file to load. e.g.
-     *                           "/edu/jhuapl/trinity/fxml/ManifoldControl.fxml"
+     *                           "/com/somepackage/fxml/controller.fxml"
      * @return BorderPane the userContent
      */
     public static BorderPane createContent(String controllerLocation) {
@@ -146,10 +146,6 @@ public class LitPathPane extends PathPane {
         timeline.setOnFinished(e -> {
             animating = false;
             setEffect(null);
-//            Platform.runLater(()-> {
-//            contentPane.setPrefWidth(mainContentBorderFrame.getWidth()-200);
-//            contentPane.setPrefHeight(mainContentBorderFrame.getHeight()-200);
-//            });
         });
     }
 
@@ -176,7 +172,7 @@ public class LitPathPane extends PathPane {
         defaultBackground = mainContentBorderFrame.getBackground();
     }
 
-    private void setEffects() {
+    public void setEffects() {
         ImageView fadeImageView = ResourceUtils.loadIcon("fade", effectsFitWidth);
         fadeLabel = new Label("Fadeout", fadeImageView);
         fadeLabel.setContentDisplay(ContentDisplay.TOP);
@@ -267,7 +263,7 @@ public class LitPathPane extends PathPane {
         });
     }
 
-    private Timeline setupGradientTimeline() {
+    public Timeline setupGradientTimeline() {
         Timeline timeline = new Timeline(
             new KeyFrame(Duration.millis(30), new KeyValue(percentComplete, 0.0)),
             new KeyFrame(Duration.millis(currentGradientMillis), new KeyValue(percentComplete, 1.0))
@@ -281,7 +277,7 @@ public class LitPathPane extends PathPane {
         return timeline;
     }
 
-    private void setGradientByComplete() {
+    public void setGradientByComplete() {
         Stop preStopClear = new Stop(percentComplete.get() - 0.15, Color.TRANSPARENT);
         Stop preStop = new Stop(percentComplete.get() - 0.1, fillPreStartColor);
         stop1 = new Stop(percentComplete.get() - 0.01, fillStartColor);
@@ -301,7 +297,7 @@ public class LitPathPane extends PathPane {
             0.5, 1.0, 0.5, 0.0, true, CycleMethod.NO_CYCLE, stops);
     }
 
-    private void updateGradient() {
+    public void updateGradient() {
         setGradientByComplete();
         this.outerFrame.setFill(lg);
     }
