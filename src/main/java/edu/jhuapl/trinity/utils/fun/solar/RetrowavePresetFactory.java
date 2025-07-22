@@ -1,7 +1,5 @@
 package edu.jhuapl.trinity.utils.fun.solar;
 
-import edu.jhuapl.trinity.utils.fun.solar.FlareSprite;
-import edu.jhuapl.trinity.utils.fun.solar.FlarePatternFactory;
 import edu.jhuapl.trinity.utils.fun.solar.FlarePatternFactory.SunSlice;
 import java.util.ArrayList;
 import java.util.Arrays;

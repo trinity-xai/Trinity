@@ -150,9 +150,7 @@ public class CvaeControlBox extends VBox {
         Normalizer embeddingNormalizer = new Normalizer(mdsEmbedding, Normalizer.Type.Z_SCORE);
         double[][] normalizedEmbedding = embeddingNormalizer.normalizeAll(mdsEmbedding);
         double[][] conditions = new double[numPoints][embeddingDim];
-        for (int i = 0; i < numPoints; i++) {
-            conditions[i] = normalizedEmbedding[i];  // full 3D embedding as condition
-        }
+        System.arraycopy(normalizedEmbedding, 0, conditions, 0, numPoints); // full 3D embedding as condition
         // Initialize CVAE
         CVAE cvae = new CVAE(inputDim, embeddingDim, latentDim, hiddenDim);
         cvae.setDebug(false);

@@ -52,7 +52,7 @@ public class Perspective3DNode {
             : factorAnalysisSeed.vector[factorAnalysisSeed.vector.length - 1];
         yDirCoord = factorAnalysisSeed.vector.length > yDir ? factorAnalysisSeed.vector[yDir]
             : factorAnalysisSeed.vector[factorAnalysisSeed.vector.length - 1];
-        ;
+
         zDirCoord = factorAnalysisSeed.vector.length > zDir ? factorAnalysisSeed.vector[zDir]
             : factorAnalysisSeed.vector[factorAnalysisSeed.vector.length - 1];
     }

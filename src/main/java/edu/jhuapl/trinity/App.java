@@ -47,8 +47,6 @@ import lit.litfx.controls.output.AnimatedText;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import java.io.IOException;
-import java.net.MalformedURLException;
-import java.net.URISyntaxException;
 import javafx.beans.value.ChangeListener;
 import javafx.scene.media.Media;
 import javafx.scene.media.MediaPlayer;
@@ -411,8 +409,6 @@ public class App extends Application {
                 new KeyFrame(Duration.seconds(0.1), new KeyValue(animatedConsoleText.opacityProperty(), 1.0)),
                 new KeyFrame(Duration.seconds(0.1), kv -> animatedConsoleText.animate(">Kill Signal Received. Terminating...")),
                 new KeyFrame(Duration.seconds(1.0), kv -> pixelate.animatePixelSize(8, 100, 2000, false, false)),   
-//                new KeyFrame(Duration.seconds(2.5), kv -> new KeyValue(centerStack.opacityProperty(), 1.0)),       
-//                new KeyFrame(Duration.seconds(3.1), kv -> new KeyValue(centerStack.opacityProperty(), 0.0)),       
                 new KeyFrame(Duration.seconds(3.25), kv -> System.exit(0)));
             outtro.play();
         }

@@ -20,13 +20,15 @@ import javafx.scene.paint.Stop;
 import javafx.scene.shape.ArcType;
 import javafx.scene.shape.StrokeLineCap;
 import javax.imageio.ImageIO;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  *
  * @author Sean Phillips
  */
 public class FlarePatternFactory {
-
+    private static final Logger LOG = LoggerFactory.getLogger(FlarePatternFactory.class);
     public record BlurredDiskSpec(
             int diskSize, // Diameter of the oval
             Color color,
@@ -428,8 +430,8 @@ public static Image createRetrowaveSun(
         File file = new File(path);
         try {
             ImageIO.write(SwingFXUtils.fromFXImage(writableImage, null), "png", file);
-        } catch (IOException e) {
-            e.printStackTrace();
+        } catch (IOException ex) {
+            LOG.error(null, ex);
         }
     }
 }

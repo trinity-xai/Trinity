@@ -2,7 +2,6 @@ package edu.jhuapl.trinity.utils.fun.planetary;
 
 import java.util.ArrayList;
 import java.util.List;
-import javafx.scene.effect.BlendMode;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.CycleMethod;
 import javafx.scene.paint.LinearGradient;
@@ -57,14 +56,14 @@ public class PlanetaryEffectFactory {
 //                    0.25,                          // noiseRingOpacity
 //                    true                           // includeScanlines
 //                ),
-//                new VHSScanlineEffect.Builder()
-//                    .size(512, 512)
-//                    .autoSize(true)
-//                    .flicker(true)
-//                    .chunkyMode(true)
-//                    .scanlineSpacing(3)
-//                    .bandCount(3)
-//                    .build()                
+                new VHSScanlineEffect.Builder()
+                    .size(512, 512)
+                    .autoSize(true)
+                    .flicker(true)
+                    .chunkyMode(true)
+                    .scanlineSpacing(3)
+                    .bandCount(3)
+                    .build(),                
                 new PixelationEffect(
                     12,       // basePixelSize
                     3000.0,   // updateInterval in ms
