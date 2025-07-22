@@ -5,6 +5,8 @@
 
 [Trinity YouTube Playlist](https://youtube.com/playlist?list=PLrMR7Y6k6mkDVfYpqrqvaxoti4E2tJXhW&feature=shared)
 
+[Developer Quick Start](/DEVQUICKSTART.md)
+
 ## Explainable AI (XAI) Analysis and Visualization tool ##
 
 ![Trinity City](/media/TrinityCity.png)

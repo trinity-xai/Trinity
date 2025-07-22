@@ -6,11 +6,7 @@
 
   - Adoptium: <https://adoptium.net/>
 
-<!-- -->
-
 - Note: Trinity compiles at JDK21 by default.
-
-<!-- -->
 
 - Apache Maven
 
@@ -37,18 +33,6 @@
 
   - Note: Other IDEs will work, just has been tested on Apache NetBeans
     and Intellij.
-
-# 
-
-# 
-
-# 
-
-# 
-
-# 
-
-# 
 
 # Local Deployment
 
