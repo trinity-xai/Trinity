@@ -4,7 +4,6 @@ import javafx.scene.Node;
 import javafx.scene.shape.Circle;
 
 /**
- *
  * @author Sean Phillips
  */
 public class ClipUtils {

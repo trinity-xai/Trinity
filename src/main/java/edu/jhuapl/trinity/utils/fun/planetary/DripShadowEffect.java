@@ -6,7 +6,6 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 
 /**
- *
  * @author Sean Phillips
  */
 public class DripShadowEffect implements PlanetaryEffect {
@@ -30,7 +29,8 @@ public class DripShadowEffect implements PlanetaryEffect {
         }
 
         // Clip to planet shape with padding
-        ClipUtils.applyCircularClip(group, disc.getPlanetCircle(), 4.0);    }
+        ClipUtils.applyCircularClip(group, disc.getPlanetCircle(), 4.0);
+    }
 
     @Override
     public void update(double occlusion) {

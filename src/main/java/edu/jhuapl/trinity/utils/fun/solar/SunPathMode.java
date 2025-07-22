@@ -1,10 +1,10 @@
 package edu.jhuapl.trinity.utils.fun.solar;
 
-import java.time.LocalTime;
 import javafx.geometry.Point2D;
 
+import java.time.LocalTime;
+
 /**
- *
  * @author Sean Phillips
  */
 public enum SunPathMode {

@@ -1,11 +1,6 @@
 package edu.jhuapl.trinity.utils.fun.planetary;
 
 import edu.jhuapl.trinity.utils.fun.VHSScanline;
-
-/**
- *
- * @author Sean Phillips
- */
 import javafx.scene.Node;
 
 public class VHSScanlineEffect implements PlanetaryEffect {
@@ -48,7 +43,7 @@ public class VHSScanlineEffect implements PlanetaryEffect {
         scanline.setBandCount(bandCount);
         scanline.setBandHeight(bandHeight);
         scanline.setBandOpacity(bandOpacity);
-        scanline.setBandSpeed(bandSpeed);                
+        scanline.setBandSpeed(bandSpeed);
         scanline.setDrawIntervalMillis(50);
         ClipUtils.applyCircularClip(scanline, disc.getPlanetCircle(), 4.0);
         scanline.start();
@@ -85,6 +80,7 @@ public class VHSScanlineEffect implements PlanetaryEffect {
             this.autoSize = enableAutosize;
             return this;
         }
+
         public Builder size(double width, double height) {
             this.width = width;
             this.height = height;

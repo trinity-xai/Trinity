@@ -1,22 +1,23 @@
 package edu.jhuapl.trinity.utils.fun.planetary;
 
 import edu.jhuapl.trinity.utils.fun.planetary.PlanetaryEffectFactory.PlanetStyle;
-import static edu.jhuapl.trinity.utils.fun.planetary.PlanetaryEffectFactory.getFillForStyle;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Set;
-import javafx.scene.paint.Color;
-import javafx.scene.paint.CycleMethod;
-import javafx.scene.paint.Paint;
-import javafx.scene.paint.Stop;
-import javafx.scene.shape.Circle;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.effect.GaussianBlur;
+import javafx.scene.paint.Color;
+import javafx.scene.paint.CycleMethod;
+import javafx.scene.paint.Paint;
 import javafx.scene.paint.RadialGradient;
+import javafx.scene.paint.Stop;
+import javafx.scene.shape.Circle;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Set;
+
+import static edu.jhuapl.trinity.utils.fun.planetary.PlanetaryEffectFactory.getFillForStyle;
 
 /**
- *
  * @author Sean Phillips
  */
 public class PlanetaryDisc extends Group {
@@ -63,14 +64,15 @@ public class PlanetaryDisc extends Group {
         shadowOverlay.setVisible(shadowEnabled);
         getChildren().add(shadowOverlay);
 
-        setPlanetStyle(style);        
-        
+        setPlanetStyle(style);
+
         setMouseTransparent(true);
     }
+
     public Group getRenderedGroup(PlanetaryEffect... excludedEffects) {
         Group composite = new Group();
         composite.getChildren().add(planetCircle);
-        Set<PlanetaryEffect> excludeSet = null == excludedEffects 
+        Set<PlanetaryEffect> excludeSet = null == excludedEffects
             ? Set.of()
             : Set.of(excludedEffects);
 
@@ -84,11 +86,11 @@ public class PlanetaryDisc extends Group {
         }
         return composite;
     }
-    
+
 
     public void setPlanetStyle(PlanetStyle style) {
         this.planetStyle = style;
-        planetCircle.setFill(getFillForStyle(style));  
+        planetCircle.setFill(getFillForStyle(style));
 
         // Remove old effect nodes
         getChildren().removeIf(node -> node.getUserData() instanceof PlanetaryEffect);
@@ -126,14 +128,14 @@ public class PlanetaryDisc extends Group {
 
             if (oldFill instanceof RadialGradient rg) {
                 List<Stop> stops = List.of(
-                        new Stop(0, scatteringColor.deriveColor(0, 1, 1, finalOpacity)),
-                        new Stop(1, Color.TRANSPARENT)
+                    new Stop(0, scatteringColor.deriveColor(0, 1, 1, finalOpacity)),
+                    new Stop(1, Color.TRANSPARENT)
                 );
                 RadialGradient newFill = new RadialGradient(
-                        rg.getFocusAngle(), rg.getFocusDistance(),
-                        rg.getCenterX(), rg.getCenterY(),
-                        rg.getRadius(), rg.isProportional(),
-                        rg.getCycleMethod(), stops
+                    rg.getFocusAngle(), rg.getFocusDistance(),
+                    rg.getCenterX(), rg.getCenterY(),
+                    rg.getRadius(), rg.isProportional(),
+                    rg.getCycleMethod(), stops
                 );
                 ring.setFill(newFill);
             }
@@ -153,10 +155,10 @@ public class PlanetaryDisc extends Group {
 
             Circle ring = new Circle(radius, radius, ringRadius);
             ring.setFill(new RadialGradient(
-                    0, 0, radius, radius, ringRadius,
-                    false, CycleMethod.NO_CYCLE,
-                    new Stop(0.0, scatteringColor.deriveColor(0, 1, 1, opacity)),
-                    new Stop(1.0, Color.TRANSPARENT)
+                0, 0, radius, radius, ringRadius,
+                false, CycleMethod.NO_CYCLE,
+                new Stop(0.0, scatteringColor.deriveColor(0, 1, 1, opacity)),
+                new Stop(1.0, Color.TRANSPARENT)
             ));
             ring.setEffect(new GaussianBlur(scatteringBlurRadius));
             ring.setMouseTransparent(true);
@@ -206,7 +208,7 @@ public class PlanetaryDisc extends Group {
             planetCircle.setStroke(Color.CYAN);
             planetCircle.setStrokeWidth(1);
             planetCircle.setFill(
-                    planetCircle.getFill() instanceof Color color
+                planetCircle.getFill() instanceof Color color
                     ? color.deriveColor(0, 1, 1, 0.25)
                     : planetCircle.getFill()
             );

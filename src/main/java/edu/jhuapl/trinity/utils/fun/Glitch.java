@@ -1,14 +1,14 @@
 package edu.jhuapl.trinity.utils.fun;
 
-import java.util.HashSet;
-import java.util.Random;
 import javafx.animation.AnimationTimer;
 import javafx.scene.Node;
 import javafx.scene.effect.DisplacementMap;
 import javafx.scene.effect.FloatMap;
 
+import java.util.HashSet;
+import java.util.Random;
+
 /**
- *
  * @author Sean Phillips
  */
 public class Glitch {
@@ -34,14 +34,16 @@ public class Glitch {
     private long checkIntervalNanos = 100_000_000; // e.g. 100ms
     private long lastCheckNanos = 0;
     Random random = new Random();
+
     public enum GlitchDisplacementMode {
         FEATHERED,   // Smooth bell-curve displacement (current)
         HARD         // Uniform full-offset band
-    }    
+    }
+
     private GlitchDisplacementMode displacementMode = GlitchDisplacementMode.FEATHERED;
 
     public Glitch(Node target, int width, int height, double intensity, int rows,
-            double glitchFrequencyMs, double glitchTimeMs, double bandThicknessRatio) {
+                  double glitchFrequencyMs, double glitchTimeMs, double bandThicknessRatio) {
         this.bandThicknessRatio = bandThicknessRatio;
         this.target = target;
         this.intensity = intensity;
@@ -65,9 +67,9 @@ public class Glitch {
                     return; // too soon — skip this frame
                 }
                 lastCheckNanos = now;
-                if (!target.isVisible() || null == target.getLayoutBounds()) return;                
-                if (!glitchActive && 
-                    (now - lastTriggerNanos >= glitchFrequencyNanos 
+                if (!target.isVisible() || null == target.getLayoutBounds()) return;
+                if (!glitchActive &&
+                    (now - lastTriggerNanos >= glitchFrequencyNanos
                         + (long) (getRandomMillis() * 1_000_000))) {
                     applyRandomGlitch();
                     glitchStartNanos = now;
@@ -80,9 +82,10 @@ public class Glitch {
             }
         };
     }
-public void setDisplacementMode(GlitchDisplacementMode mode) {
-    this.displacementMode = mode;
-}    
+
+    public void setDisplacementMode(GlitchDisplacementMode mode) {
+        this.displacementMode = mode;
+    }
 
     public void setCheckIntervalMillis(long millis) {
         this.checkIntervalNanos = millis * 1_000_000L;
@@ -114,7 +117,7 @@ public void setDisplacementMode(GlitchDisplacementMode mode) {
                     appliedOffset = (float) (offset * strength);
                 }                 // Bell curve fade (strongest at center)
                 for (int x = 0; x < width; x++) {
-                    if(appliedOffset != 0f)
+                    if (appliedOffset != 0f)
                         floatMap.setSamples(x, y, appliedOffset, 0);
                 }
             }

@@ -1,9 +1,9 @@
 package edu.jhuapl.trinity.utils.fun;
 
 /**
- *
  * @author Sean Phillips
  */
+
 import javafx.animation.AnimationTimer;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.DoubleProperty;
@@ -93,7 +93,7 @@ public class ChromaticAberration {
         blueView.setTranslateY(-offsetY.get());
     }
 
-    private enum ColorChannel { RED, GREEN, BLUE }
+    private enum ColorChannel {RED, GREEN, BLUE}
 
     private Image extractColorChannel(Image input, ColorChannel channel) {
         int w = (int) input.getWidth();
@@ -125,10 +125,21 @@ public class ChromaticAberration {
     }
 
     // --- Properties ---
-    public DoubleProperty offsetXProperty() { return offsetX; }
-    public DoubleProperty offsetYProperty() { return offsetY; }
-    public BooleanProperty autoUpdateProperty() { return autoUpdate; }
-    public LongProperty updateIntervalMillisProperty() { return updateIntervalMillis; }
+    public DoubleProperty offsetXProperty() {
+        return offsetX;
+    }
+
+    public DoubleProperty offsetYProperty() {
+        return offsetY;
+    }
+
+    public BooleanProperty autoUpdateProperty() {
+        return autoUpdate;
+    }
+
+    public LongProperty updateIntervalMillisProperty() {
+        return updateIntervalMillis;
+    }
 
     // --- Builder ---
     public static class Builder {

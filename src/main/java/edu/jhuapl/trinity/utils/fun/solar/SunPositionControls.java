@@ -1,9 +1,6 @@
 package edu.jhuapl.trinity.utils.fun.solar;
 
 import edu.jhuapl.trinity.javafx.events.EffectEvent;
-import static edu.jhuapl.trinity.javafx.events.EffectEvent.SUN_POSITION_ARCHEIGHT;
-import static edu.jhuapl.trinity.javafx.events.EffectEvent.SUN_POSITION_ARCWIDTH;
-import static edu.jhuapl.trinity.javafx.events.EffectEvent.SUN_POSITION_VELOCITY;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleDoubleProperty;
@@ -17,8 +14,9 @@ import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
+import static edu.jhuapl.trinity.javafx.events.EffectEvent.*;
+
 /**
- *
  * @author Sean Phillips
  */
 public class SunPositionControls extends VBox {
@@ -38,12 +36,12 @@ public class SunPositionControls extends VBox {
         ToggleButton enabledBtn = new ToggleButton("Enable Solar Artifacts");
         enabledBtn.setOnAction(e -> {
             getScene().getRoot().fireEvent(new EffectEvent(
-                    EffectEvent.SUN_ARTIFACT_ENABLED, enabledBtn.isSelected()));
+                EffectEvent.SUN_ARTIFACT_ENABLED, enabledBtn.isSelected()));
         });
         ToggleButton startStopBtn = new ToggleButton("Enable Animation");
         startStopBtn.setOnAction(e -> {
             getScene().getRoot().fireEvent(new EffectEvent(
-                    EffectEvent.SUN_POSITION_ANIMATING, startStopBtn.isSelected()));
+                EffectEvent.SUN_POSITION_ANIMATING, startStopBtn.isSelected()));
         });
         ComboBox<SunPathMode> pathModeCombo = new ComboBox<>();
         pathModeCombo.getItems().addAll(SunPathMode.values());
@@ -54,18 +52,18 @@ public class SunPositionControls extends VBox {
             pathMode.set(newVal);
             if (getScene() != null) {
                 getScene().getRoot().fireEvent(new EffectEvent(
-                        EffectEvent.SUN_POSITION_PATHMODE, newVal));
+                    EffectEvent.SUN_POSITION_PATHMODE, newVal));
             }
         });
         getChildren().addAll(
-                new Label("Toggles"),
-                new HBox(20, enabledBtn, startStopBtn),
-                new Label("Sun Arc Animation"),
-                widthSlider,
-                heightSlider,
-                velocitySlider,
-                new Label("Sun Path Mode"),
-                pathModeCombo
+            new Label("Toggles"),
+            new HBox(20, enabledBtn, startStopBtn),
+            new Label("Sun Arc Animation"),
+            widthSlider,
+            heightSlider,
+            velocitySlider,
+            new Label("Sun Path Mode"),
+            pathModeCombo
         );
     }
 
@@ -80,7 +78,7 @@ public class SunPositionControls extends VBox {
         slider.valueProperty().bindBidirectional(boundValue);
         slider.valueProperty().addListener(e -> {
             slider.getScene().getRoot().fireEvent(
-                    new EffectEvent(eventType, slider.getValue()));
+                new EffectEvent(eventType, slider.getValue()));
         });
         VBox container = new VBox(2, label, slider);
         container.setPadding(new Insets(4, 0, 4, 0));

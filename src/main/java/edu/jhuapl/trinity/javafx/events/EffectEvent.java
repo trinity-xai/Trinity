@@ -33,7 +33,7 @@ public class EffectEvent extends Event {
     public static final EventType<EffectEvent> ENABLE_PIXELATE_EFFECT = new EventType<>(ANY, "ENABLE_PIXELATE_EFFECT");
     public static final EventType<EffectEvent> ENABLE_VHSSCANLINE_EFFECT = new EventType<>(ANY, "ENABLE_VHSSCANLINE_EFFECT");
 
-    
+
     public String stringId = null;
     public Object object = null;
 

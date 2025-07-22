@@ -1,9 +1,9 @@
 package edu.jhuapl.trinity.utils.fun.planetary;
 
 /**
- *
  * @author Sean Phillips
  */
+
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;

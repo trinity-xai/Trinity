@@ -5,7 +5,6 @@ import javafx.scene.Group;
 import javafx.scene.Node;
 
 /**
- *
  * @author Sean Phillips
  */
 public class GlitchDisplacementEffect implements PlanetaryEffect {
@@ -19,8 +18,8 @@ public class GlitchDisplacementEffect implements PlanetaryEffect {
     private Glitch glitch;
     PlanetaryDisc discWorld;
 
-    public GlitchDisplacementEffect(double intensity, int rows, 
-        double glitchTime, double glitchFrequencyMs, double bandThicknessRatio) {
+    public GlitchDisplacementEffect(double intensity, int rows,
+                                    double glitchTime, double glitchFrequencyMs, double bandThicknessRatio) {
         this.intensity = intensity;
         this.rows = rows;
         this.glitchFrequencyMS = glitchFrequencyMs;
@@ -28,19 +27,19 @@ public class GlitchDisplacementEffect implements PlanetaryEffect {
         this.bandThicknessRatio = bandThicknessRatio;
         group.setMouseTransparent(true);
         group.visibleProperty().addListener(e -> {
-            if(null != glitch) {
-                if(group.isVisible()) {
+            if (null != glitch) {
+                if (group.isVisible()) {
                     //if its not running we need to start it
                     glitch.start();
                 } else {
                     glitch.stop();
                     glitch.resetFloatMap();
                 }
-                    
+
             }
         });
         group.parentProperty().addListener(il -> {
-            if(null == group.getParent()) {
+            if (null == group.getParent()) {
                 glitch.stop();
                 glitch.resetFloatMap();
             }
@@ -50,7 +49,7 @@ public class GlitchDisplacementEffect implements PlanetaryEffect {
     @Override
     public void attachTo(PlanetaryDisc disc) {
         group.getChildren().clear();
-        
+
         discWorld = disc;
         int diameter = (int) (disc.getRadius() * 2);
         glitch = new Glitch(

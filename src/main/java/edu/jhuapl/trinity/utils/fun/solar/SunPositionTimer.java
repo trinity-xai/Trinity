@@ -11,7 +11,6 @@ import javafx.scene.layout.Pane;
 import javafx.scene.shape.Circle;
 
 /**
- *
  * @author Sean Phillips
  */
 public class SunPositionTimer extends AnimationTimer {
@@ -25,7 +24,7 @@ public class SunPositionTimer extends AnimationTimer {
     private boolean animating = false;
     private boolean enabled = false;
     private Circle sun;
-    Pane sunPane; 
+    Pane sunPane;
 
     public SunPositionTimer(Pane sunPane, Circle sun) {
         super();

@@ -1,10 +1,5 @@
 package edu.jhuapl.trinity.utils.fun.planetary;
 
-import java.util.ArrayList;
-import java.util.HashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Random;
 import javafx.animation.Animation;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
@@ -25,8 +20,13 @@ import javafx.scene.shape.Shape;
 import javafx.scene.shape.StrokeType;
 import javafx.util.Duration;
 
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+
 /**
- *
  * @author Sean Phillips
  */
 public class CircuitBoardEffect implements PlanetaryEffect {
@@ -116,8 +116,8 @@ public class CircuitBoardEffect implements PlanetaryEffect {
                 double xEnd = Math.min(xStart + segmentLength, cx + effectiveRadius);
 
                 horizontalPath.getElements().addAll(
-                        new MoveTo(xStart, y),
-                        new LineTo(xEnd, y)
+                    new MoveTo(xStart, y),
+                    new LineTo(xEnd, y)
                 );
 
                 if (drawDots && random.nextDouble() < 0.2) {
@@ -140,8 +140,8 @@ public class CircuitBoardEffect implements PlanetaryEffect {
                 double yEnd = Math.min(yStart + segmentLength, cy + effectiveRadius);
 
                 verticalPath.getElements().addAll(
-                        new MoveTo(x, yStart),
-                        new LineTo(x, yEnd)
+                    new MoveTo(x, yStart),
+                    new LineTo(x, yEnd)
                 );
 
                 for (int i = 0; i < horizontalLines; i++) {
@@ -171,8 +171,8 @@ public class CircuitBoardEffect implements PlanetaryEffect {
                     double controlY = y - 6 - random.nextDouble() * 4;
 
                     jumperPath.getElements().addAll(
-                            new MoveTo(x1, y),
-                            new QuadCurveTo((x1 + x2) / 2, controlY, x2, y)
+                        new MoveTo(x1, y),
+                        new QuadCurveTo((x1 + x2) / 2, controlY, x2, y)
                     );
                 }
             }
@@ -235,7 +235,7 @@ public class CircuitBoardEffect implements PlanetaryEffect {
 
     private void startGlowAnimation() {
         glowAnimator = new Timeline(
-                new KeyFrame(Duration.seconds(0.3), e -> animateRandomGlow())
+            new KeyFrame(Duration.seconds(0.3), e -> animateRandomGlow())
         );
         glowAnimator.setCycleCount(Animation.INDEFINITE);
         glowAnimator.play();
@@ -255,9 +255,9 @@ public class CircuitBoardEffect implements PlanetaryEffect {
                 double intensity = 0.3 + random.nextDouble() * 0.7;
 
                 Timeline pulse = new Timeline(
-                        new KeyFrame(Duration.ZERO, new KeyValue(glow.levelProperty(), 0)),
-                        new KeyFrame(Duration.seconds(0.3), new KeyValue(glow.levelProperty(), intensity)),
-                        new KeyFrame(Duration.seconds(0.6), new KeyValue(glow.levelProperty(), 0))
+                    new KeyFrame(Duration.ZERO, new KeyValue(glow.levelProperty(), 0)),
+                    new KeyFrame(Duration.seconds(0.3), new KeyValue(glow.levelProperty(), intensity)),
+                    new KeyFrame(Duration.seconds(0.6), new KeyValue(glow.levelProperty(), 0))
                 );
                 pulse.play();
             }

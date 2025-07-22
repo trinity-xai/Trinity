@@ -11,7 +11,6 @@ import javafx.scene.shape.Circle;
 import javafx.util.Duration;
 
 /**
- *
  * @author Sean Phillips
  */
 public class AuraPulseEffect implements PlanetaryEffect {

@@ -13,6 +13,7 @@ public class GlowRimEffect implements PlanetaryEffect {
     public GlowRimEffect(Color glowColor) {
         this(glowColor, 8);
     }
+
     public GlowRimEffect(Color glowColor, double strokeWidth) {
         glowCircle.setFill(null);
         glowCircle.setStroke(glowColor);

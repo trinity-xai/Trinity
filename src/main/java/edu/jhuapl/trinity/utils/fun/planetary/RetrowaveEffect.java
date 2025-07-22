@@ -1,6 +1,5 @@
 package edu.jhuapl.trinity.utils.fun.planetary;
 
-import java.util.List;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.paint.Color;
@@ -9,8 +8,9 @@ import javafx.scene.paint.LinearGradient;
 import javafx.scene.paint.Stop;
 import javafx.scene.shape.Rectangle;
 
+import java.util.List;
+
 /**
- *
  * @author Sean Phillips
  */
 public class RetrowaveEffect implements PlanetaryEffect {
@@ -45,7 +45,7 @@ public class RetrowaveEffect implements PlanetaryEffect {
         if (useTopGradient && !topGradientColors.isEmpty()) {
             Stop[] stops = new Stop[topGradientColors.size()];
             for (int i = 0; i < topGradientColors.size(); i++) {
-                stops[i] = new Stop(i / (double)(topGradientColors.size() - 1), topGradientColors.get(i));
+                stops[i] = new Stop(i / (double) (topGradientColors.size() - 1), topGradientColors.get(i));
             }
 
             Rectangle topHalf = new Rectangle(centerX - radius, 0, radius * 2, centerY);
@@ -78,4 +78,3 @@ public class RetrowaveEffect implements PlanetaryEffect {
         return group;
     }
 }
-

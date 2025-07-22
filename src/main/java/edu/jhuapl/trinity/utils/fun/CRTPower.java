@@ -1,9 +1,9 @@
 package edu.jhuapl.trinity.utils.fun;
 
 /**
- *
  * @author Sean Phillips
  */
+
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
@@ -134,4 +134,3 @@ public class CRTPower {
         }
     }
 }
-

@@ -1,9 +1,5 @@
 package edu.jhuapl.trinity.utils.fun.solar;
 
-import java.io.File;
-import java.io.IOException;
-import java.util.List;
-import java.util.Random;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.canvas.Canvas;
@@ -19,74 +15,82 @@ import javafx.scene.paint.LinearGradient;
 import javafx.scene.paint.Stop;
 import javafx.scene.shape.ArcType;
 import javafx.scene.shape.StrokeLineCap;
-import javax.imageio.ImageIO;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import javax.imageio.ImageIO;
+import java.io.File;
+import java.io.IOException;
+import java.util.List;
+import java.util.Random;
+
 /**
- *
  * @author Sean Phillips
  */
 public class FlarePatternFactory {
     private static final Logger LOG = LoggerFactory.getLogger(FlarePatternFactory.class);
+
     public record BlurredDiskSpec(
-            int diskSize, // Diameter of the oval
-            Color color,
-            double opacity,
-            double offsetX, // Offset from canvas center
-            double offsetY,
-            double blurRadius
-            ) {
+        int diskSize, // Diameter of the oval
+        Color color,
+        double opacity,
+        double offsetX, // Offset from canvas center
+        double offsetY,
+        double blurRadius
+    ) {
 
     }
-public record SunSlice(Color color, double thickness) {}
 
-public static Image createRetrowaveSun(
+    public record SunSlice(Color color, double thickness) {
+    }
+
+    public static Image createRetrowaveSun(
         int width,
         int height,
         Color topColor,
         Color bottomColor,
         List<SunSlice> slices
-) {
-    Canvas canvas = new Canvas(width, height);
-    GraphicsContext gc = canvas.getGraphicsContext2D();
+    ) {
+        Canvas canvas = new Canvas(width, height);
+        GraphicsContext gc = canvas.getGraphicsContext2D();
 
-    double centerX = width / 2.0;
-    double centerY = height / 2.0;
-    double radius = Math.min(width, height) / 2.0;
-    double sunTop = centerY - radius;
+        double centerX = width / 2.0;
+        double centerY = height / 2.0;
+        double radius = Math.min(width, height) / 2.0;
+        double sunTop = centerY - radius;
 
-    // Top gradient arc (upper semicircle)
-    gc.setFill(new LinearGradient(
+        // Top gradient arc (upper semicircle)
+        gc.setFill(new LinearGradient(
             0, sunTop, 0, sunTop + radius,
             false, CycleMethod.NO_CYCLE,
             new Stop(0, topColor),
             new Stop(1, bottomColor)
-    ));
-    gc.fillArc(centerX - radius, sunTop, radius * 2, radius * 2, 0, 180, ArcType.ROUND);
+        ));
+        gc.fillArc(centerX - radius, sunTop, radius * 2, radius * 2, 0, 180, ArcType.ROUND);
 
-    // Start drawing slices just below midline
-    double currentY = centerY + 2;
+        // Start drawing slices just below midline
+        double currentY = centerY + 2;
 
-    for (SunSlice slice : slices) {
-        double sliceCenterY = currentY + slice.thickness() / 2.0;
-        double normalizedY = (sliceCenterY - centerY) / radius;
-        normalizedY = Math.max(-1.0, Math.min(1.0, normalizedY));
+        for (SunSlice slice : slices) {
+            double sliceCenterY = currentY + slice.thickness() / 2.0;
+            double normalizedY = (sliceCenterY - centerY) / radius;
+            normalizedY = Math.max(-1.0, Math.min(1.0, normalizedY));
 
-        double arcWidth = Math.sqrt(1.0 - normalizedY * normalizedY) * radius;
+            double arcWidth = Math.sqrt(1.0 - normalizedY * normalizedY) * radius;
 
-        gc.setFill(slice.color());
-        gc.fillRect(centerX - arcWidth, currentY, arcWidth * 2, slice.thickness());
+            gc.setFill(slice.color());
+            gc.fillRect(centerX - arcWidth, currentY, arcWidth * 2, slice.thickness());
 
-        // Optional debug stroke
-        // gc.setStroke(Color.RED);
-        // gc.strokeRect(centerX - arcWidth, currentY, arcWidth * 2, slice.thickness());
+            // Optional debug stroke
+            // gc.setStroke(Color.RED);
+            // gc.strokeRect(centerX - arcWidth, currentY, arcWidth * 2, slice.thickness());
 
-        currentY += slice.thickness() + 2;
+            currentY += slice.thickness() + 2;
+        }
+
+        return FlarePatternFactory.snapshot(canvas);
     }
 
-    return FlarePatternFactory.snapshot(canvas);
-}
     public static Image createHexGridImage(int size, Color color, double spacing, double lineWidth) {
         Canvas canvas = new Canvas(size, size);
         GraphicsContext gc = canvas.getGraphicsContext2D();
@@ -106,6 +110,7 @@ public static Image createRetrowaveSun(
 
         return snapshot(canvas);
     }
+
     private static void drawHex(GraphicsContext gc, double cx, double cy, double r) {
         gc.beginPath();
         for (int i = 0; i < 6; i++) {
@@ -121,6 +126,7 @@ public static Image createRetrowaveSun(
         gc.closePath();
         gc.stroke();
     }
+
     public static Image createAnalogGlitchImage(int width, int height, Color baseColor, int lineCount) {
         Canvas canvas = new Canvas(width, height);
         GraphicsContext gc = canvas.getGraphicsContext2D();
@@ -137,6 +143,7 @@ public static Image createRetrowaveSun(
 
         return snapshot(canvas);
     }
+
     public static Image createPixelBurstImage(int size, Color color, int count) {
         Canvas canvas = new Canvas(size, size);
         GraphicsContext gc = canvas.getGraphicsContext2D();
@@ -158,6 +165,7 @@ public static Image createRetrowaveSun(
 
         return snapshot(canvas);
     }
+
     public static Image createPlasmaRing(int size, Color baseColor, int arcCount, double noiseScale) {
         WritableImage image = new WritableImage(size, size);
         PixelWriter pw = image.getPixelWriter();
@@ -192,6 +200,7 @@ public static Image createRetrowaveSun(
         }
         return image;
     }
+
     public static Image createRotatingSpikeImage(int size, int spikes, Color color) {
         Canvas canvas = new Canvas(size, size);
         GraphicsContext gc = canvas.getGraphicsContext2D();
@@ -211,6 +220,7 @@ public static Image createRetrowaveSun(
         canvas.setEffect(new GaussianBlur(size * 0.05));
         return snapshot(canvas);
     }
+
     public static Image createCoronaRing(int size, Color color, int waves) {
         WritableImage image = new WritableImage(size, size);
         PixelWriter pw = image.getPixelWriter();
@@ -237,6 +247,7 @@ public static Image createRetrowaveSun(
         }
         return image;
     }
+
     public static Image createDiskImage(int size, Color color) {
         Canvas canvas = new Canvas(size, size);
         GraphicsContext gc = canvas.getGraphicsContext2D();
@@ -246,11 +257,13 @@ public static Image createRetrowaveSun(
 
         return snapshot(canvas);
     }
+
     public static Image createBlurredDiskImage(int canvasSize, int diskSize, Color color, double opacity, double blurRadius, int blurIterations) {
         return createBlurredDiskImage(canvasSize, diskSize, color, opacity, 0, 0, blurRadius);
     }
+
     public static Image createBlurredDiskImage(int canvasSize, int diskSize, Color color,
-        double opacity, double offsetX, double offsetY, double blurRadius) {
+                                               double opacity, double offsetX, double offsetY, double blurRadius) {
         Canvas canvas = new Canvas(canvasSize, canvasSize);
         GraphicsContext gc = canvas.getGraphicsContext2D();
 
@@ -266,6 +279,7 @@ public static Image createRetrowaveSun(
 
         return snapshot(canvas);
     }
+
     public static Image createCompositeBlurredDisks(List<BlurredDiskSpec> specs, int canvasSize) {
         Canvas canvas = new Canvas(canvasSize, canvasSize);
         GraphicsContext gc = canvas.getGraphicsContext2D();
@@ -273,13 +287,13 @@ public static Image createRetrowaveSun(
         for (BlurredDiskSpec spec : specs) {
             // Use the new fully parameterized method
             Image disk = createBlurredDiskImage(
-                    canvasSize,
-                    spec.diskSize(),
-                    spec.color(),
-                    spec.opacity(),
-                    spec.offsetX(),
-                    spec.offsetY(),
-                    spec.blurRadius()
+                canvasSize,
+                spec.diskSize(),
+                spec.color(),
+                spec.opacity(),
+                spec.offsetX(),
+                spec.offsetY(),
+                spec.blurRadius()
             );
 
             gc.drawImage(disk, 0, 0); // Disk already centered in image
@@ -287,9 +301,11 @@ public static Image createRetrowaveSun(
 
         return snapshot(canvas);
     }
+
     public static Image createStarImage(int size, Color color) {
         return createStarImage(size, color, 8, 0);
     }
+
     public static Image createStarImage(int size, Color color, int points, double rotation) {
         Canvas canvas = new Canvas(size, size);
         GraphicsContext gc = canvas.getGraphicsContext2D();
@@ -318,19 +334,20 @@ public static Image createRetrowaveSun(
 
         return snapshot(canvas);
     }
+
     /**
      * Draws a star shape using the given GraphicsContext.
      *
-     * @param gc the GraphicsContext to draw with
-     * @param centerX center X coordinate
-     * @param centerY center Y coordinate
-     * @param outerR radius to the star's outer tips
-     * @param innerR radius to the inner valleys between tips
-     * @param points number of points (minimum 2)
+     * @param gc       the GraphicsContext to draw with
+     * @param centerX  center X coordinate
+     * @param centerY  center Y coordinate
+     * @param outerR   radius to the star's outer tips
+     * @param innerR   radius to the inner valleys between tips
+     * @param points   number of points (minimum 2)
      * @param rotation initial rotation in degrees (e.g. 0 or 45)
      */
     public static void drawStar(GraphicsContext gc, double centerX, double centerY,
-            double outerR, double innerR, int points, double rotation) {
+                                double outerR, double innerR, int points, double rotation) {
         if (points < 2) {
             return;
         }
@@ -353,6 +370,7 @@ public static Image createRetrowaveSun(
         gc.closePath();
         gc.fill();
     }
+
     public static Image createRaysImage(int size, int rayCount, Color color) {
         Canvas canvas = new Canvas(size, size);
         GraphicsContext gc = canvas.getGraphicsContext2D();
@@ -368,18 +386,19 @@ public static Image createRetrowaveSun(
             gc.translate(center, center);
             gc.rotate(angle);
             gc.setFill(new LinearGradient(0, 0, 0, -r1, false, CycleMethod.NO_CYCLE,
-                    new Stop(0, color),
-                    new Stop(1, Color.color(color.getRed(), color.getGreen(), color.getBlue(), 0))));
+                new Stop(0, color),
+                new Stop(1, Color.color(color.getRed(), color.getGreen(), color.getBlue(), 0))));
             gc.fillPolygon(
-                    new double[]{0, -r2, r2},
-                    new double[]{0, -r1, -r1},
-                    3
+                new double[]{0, -r2, r2},
+                new double[]{0, -r1, -r1},
+                3
             );
             gc.restore();
         }
 
         return snapshot(canvas);
     }
+
     public static Image createHaloImage(int size, Color color, double alphaFalloff) {
         Canvas canvas = new Canvas(size, size);
         GraphicsContext gc = canvas.getGraphicsContext2D();
@@ -395,6 +414,7 @@ public static Image createRetrowaveSun(
 
         return snapshot(canvas);
     }
+
     public static Image createRainbowImage(int size) {
         Canvas canvas = new Canvas(size, size);
         GraphicsContext gc = canvas.getGraphicsContext2D();
@@ -412,16 +432,18 @@ public static Image createRetrowaveSun(
 
         return snapshot(canvas);
     }
-    
+
     public static Image snapshot(Canvas canvas, int x, int y, int w, int h) {
         WritableImage full = canvas.snapshot(null, null);
         return new WritableImage(full.getPixelReader(), x, y, w, h);
     }
+
     private static Image snapshot(Canvas canvas) {
         SnapshotParameters params = new SnapshotParameters();
         params.setFill(Color.TRANSPARENT);
         return canvas.snapshot(params, new WritableImage((int) canvas.getWidth(), (int) canvas.getHeight()));
     }
+
     public static void saveImage(Image image, String path) {
         WritableImage writableImage = new WritableImage((int) image.getWidth(), (int) image.getHeight());
         SnapshotParameters params = new SnapshotParameters();

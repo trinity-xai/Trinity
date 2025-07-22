@@ -7,18 +7,19 @@ import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleDoubleProperty;
 import javafx.beans.property.SimpleObjectProperty;
+import javafx.geometry.Insets;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.ColorPicker;
 import javafx.scene.control.Label;
+import javafx.scene.control.Separator;
 import javafx.scene.control.Slider;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
-import javafx.geometry.Insets;
-import java.util.function.Consumer;
-import javafx.scene.control.ColorPicker;
-import javafx.scene.control.Separator;
 import javafx.scene.paint.Color;
+
+import java.util.function.Consumer;
+
 /**
- *
  * @author Sean Phillips
  */
 public class PlanetaryDiscControls extends VBox {
@@ -112,14 +113,43 @@ public class PlanetaryDiscControls extends VBox {
     }
 
     // Exposed properties
-    public ObjectProperty<PlanetStyle> selectedStyleProperty() { return selectedStyle; }
-    public DoubleProperty discRadiusProperty() { return discRadius; }
-    public DoubleProperty verticalOffsetProperty() { return verticalOffset; }
-    public DoubleProperty horizontalOffsetProperty() { return horizontalOffset; }
-    public BooleanProperty discVisibleProperty() { return discVisible; }
-    public BooleanProperty debugOccluderProperty() { return debugOccluder; }
-    public DoubleProperty scatteringBlurRadiusProperty() { return scatteringBlurRadius; }
-    public BooleanProperty scatteringEnabledProperty() { return scatteringEnabled; }
-    public ObjectProperty<Color> scatteringColorProperty() { return scatteringColor; }
-    public DoubleProperty shadowIntensityProperty() { return shadowIntensity; }
+    public ObjectProperty<PlanetStyle> selectedStyleProperty() {
+        return selectedStyle;
+    }
+
+    public DoubleProperty discRadiusProperty() {
+        return discRadius;
+    }
+
+    public DoubleProperty verticalOffsetProperty() {
+        return verticalOffset;
+    }
+
+    public DoubleProperty horizontalOffsetProperty() {
+        return horizontalOffset;
+    }
+
+    public BooleanProperty discVisibleProperty() {
+        return discVisible;
+    }
+
+    public BooleanProperty debugOccluderProperty() {
+        return debugOccluder;
+    }
+
+    public DoubleProperty scatteringBlurRadiusProperty() {
+        return scatteringBlurRadius;
+    }
+
+    public BooleanProperty scatteringEnabledProperty() {
+        return scatteringEnabled;
+    }
+
+    public ObjectProperty<Color> scatteringColorProperty() {
+        return scatteringColor;
+    }
+
+    public DoubleProperty shadowIntensityProperty() {
+        return shadowIntensity;
+    }
 }

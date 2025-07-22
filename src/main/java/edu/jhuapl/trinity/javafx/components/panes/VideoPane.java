@@ -129,9 +129,9 @@ public class VideoPane extends LitPathPane {
                 mediaPlayer = new MediaPlayer(media);
                 getMediaView().setMediaPlayer(mediaPlayer);
                 mediaPlayer.setOnEndOfMedia(() -> {
-                    if(closeOnEndOfMedia)
+                    if (closeOnEndOfMedia)
                         shutdown();
-                    else if(auto) {
+                    else if (auto) {
                         setVideo(false);
                     }
                 });

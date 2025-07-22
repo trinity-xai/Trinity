@@ -12,7 +12,6 @@ import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
 /**
- *
  * @author Sean Phillips
  */
 public class LensFlareControls extends VBox {
@@ -61,11 +60,11 @@ public class LensFlareControls extends VBox {
             lensFlareGroup.update();
         });
 
-        
-        getChildren().addAll(title, 
-            enabledBtn,    
-            new HBox(10, new VBox(5, new Label("Lens Flare Presets"), flarePresetsComboBox)), 
-            new HBox(10, new VBox(5, new Label("RetroWave Presets"), retrowavePresetsComboBox)), 
+
+        getChildren().addAll(title,
+            enabledBtn,
+            new HBox(10, new VBox(5, new Label("Lens Flare Presets"), flarePresetsComboBox)),
+            new HBox(10, new VBox(5, new Label("RetroWave Presets"), retrowavePresetsComboBox)),
             listView);
     }
 

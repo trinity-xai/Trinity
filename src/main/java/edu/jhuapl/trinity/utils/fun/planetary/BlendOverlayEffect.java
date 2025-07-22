@@ -8,7 +8,6 @@ import javafx.scene.effect.BlendMode;
 import javafx.scene.paint.Paint;
 
 /**
- *
  * @author Sean Phillips
  */
 public class BlendOverlayEffect implements PlanetaryEffect {

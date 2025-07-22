@@ -1,8 +1,8 @@
 package edu.jhuapl.trinity.utils.fun;
 
+import javafx.animation.AnimationTimer;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.SimpleDoubleProperty;
-import javafx.animation.AnimationTimer;
 import javafx.scene.Node;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.effect.DisplacementMap;
@@ -101,9 +101,17 @@ public class CRTCurvature {
     }
 
     // --- Property Access ---
-    public DoubleProperty curvatureAmountProperty() { return curvatureAmount; }
-    public double getCurvatureAmount() { return curvatureAmount.get(); }
-    public void setCurvatureAmount(double amount) { this.curvatureAmount.set(amount); }
+    public DoubleProperty curvatureAmountProperty() {
+        return curvatureAmount;
+    }
+
+    public double getCurvatureAmount() {
+        return curvatureAmount.get();
+    }
+
+    public void setCurvatureAmount(double amount) {
+        this.curvatureAmount.set(amount);
+    }
 
     // --- Builder ---
     public static class Builder {

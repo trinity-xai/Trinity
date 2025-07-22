@@ -6,7 +6,6 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 
 /**
- *
  * @author Sean Phillips
  */
 public class ConcentricRingsEffect implements PlanetaryEffect {

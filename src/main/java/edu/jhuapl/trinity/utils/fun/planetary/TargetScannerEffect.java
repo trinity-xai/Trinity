@@ -7,7 +7,6 @@ import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
 
 /**
- *
  * @author Sean Phillips
  */
 public class TargetScannerEffect implements PlanetaryEffect {
@@ -54,4 +53,3 @@ public class TargetScannerEffect implements PlanetaryEffect {
         return grid;
     }
 }
-

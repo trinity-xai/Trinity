@@ -1,16 +1,15 @@
 package edu.jhuapl.trinity.utils.fun.solar;
 
-import java.util.ArrayList;
 import javafx.geometry.Bounds;
 import javafx.geometry.Point2D;
 import javafx.scene.Node;
-
-import java.util.List;
 import javafx.scene.Parent;
 import javafx.scene.shape.Circle;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
- *
  * @author Sean Phillips
  */
 public class FlareOcclusionUtil {
@@ -38,17 +37,17 @@ public class FlareOcclusionUtil {
      * indicate partial occlusion/falloff.
      *
      * @param sunScenePos Position of the sun in scene coordinates.
-     * @param sunRadius The radius to check for depth of occlusion
-     * @param occluders List of GUI nodes that may block the sun.
-     * @param fadeRadius Number of pixels around the occluder edge to apply soft
-     * fade-out.
+     * @param sunRadius   The radius to check for depth of occlusion
+     * @param occluders   List of GUI nodes that may block the sun.
+     * @param fadeRadius  Number of pixels around the occluder edge to apply soft
+     *                    fade-out.
      * @return Visibility factor in [0, 1].
      */
 
     public static double computeSunOcclusionFactor(
-            Point2D sunScenePos,
-            double sunRadius,
-            List<Node> occluders
+        Point2D sunScenePos,
+        double sunRadius,
+        List<Node> occluders
     ) {
         if (sunScenePos == null || occluders == null || occluders.isEmpty()) {
             return 1.0;
@@ -59,7 +58,7 @@ public class FlareOcclusionUtil {
         for (Node node : occluders) {
             Bounds bounds = node.localToScene(node.getBoundsInLocal());
             if (null == bounds || node.getScene() == null
-                    || !isEffectivelyVisible(node) || node.getOpacity() <= 0.0) {
+                || !isEffectivelyVisible(node) || node.getOpacity() <= 0.0) {
                 continue;
             }
 

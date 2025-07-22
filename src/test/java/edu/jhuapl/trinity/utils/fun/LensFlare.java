@@ -1,7 +1,7 @@
 package edu.jhuapl.trinity.utils.fun;
 
-import edu.jhuapl.trinity.utils.fun.solar.LensFlareGroup;
 import edu.jhuapl.trinity.utils.fun.solar.FlareOcclusionUtil;
+import edu.jhuapl.trinity.utils.fun.solar.LensFlareGroup;
 import javafx.application.Application;
 import javafx.scene.Group;
 import javafx.scene.Scene;
@@ -10,8 +10,8 @@ import javafx.scene.effect.Glow;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import javafx.stage.Stage;
+
 /**
- *
  * @author Sean Phillips
  */
 public class LensFlare extends Application {
@@ -40,17 +40,17 @@ public class LensFlare extends Application {
         sunNeonRim.centerXProperty().bind(sun.centerXProperty());
         sunNeonRim.centerYProperty().bind(sun.centerYProperty());
         sunNeonRim.setMouseTransparent(true);
-        
+
         flareGroup = new LensFlareGroup();
         enableDrag(sun);
 
         root.getChildren().addAll(flareGroup, sun, sunNeonRim);
         flareGroup.update(sun.getCenterX(), sun.getCenterY(), sceneW / 2.0, sceneH / 2.0);
-        
+
         stage.setTitle("JavaFX Solar Lens Flare");
         stage.setScene(scene);
         stage.show();
-        
+
         stage.heightProperty().addListener(cl -> {
             sceneH = flareGroup.getScene().getHeight();
             flareGroup.update(sun.getCenterX(), sun.getCenterY(), sceneW / 2.0, sceneH / 2.0);
@@ -59,7 +59,7 @@ public class LensFlare extends Application {
             sceneW = flareGroup.getScene().getWidth();
             flareGroup.update(sun.getCenterX(), sun.getCenterY(), sceneW / 2.0, sceneH / 2.0);
         });
-        
+
     }
 
     private void enableDrag(Circle sun) {
@@ -79,7 +79,7 @@ public class LensFlare extends Application {
             double alphaMultiplier = FlareOcclusionUtil.computeFlareAlpha(
                 newX, newY, sceneW / 2.0, sceneH / 2.0, sceneW, sceneH);
             sun.setOpacity(Math.max(alphaMultiplier, 0.1));
-            sunNeonRim.setOpacity(Math.max(1-alphaMultiplier, 0.1));
+            sunNeonRim.setOpacity(Math.max(1 - alphaMultiplier, 0.1));
         });
     }
 

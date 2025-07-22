@@ -1,10 +1,11 @@
 package edu.jhuapl.trinity.utils.fun.planetary;
+
 import javafx.scene.Node;
 import javafx.scene.canvas.Canvas;
 import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
+
 /**
- *
  * @author Sean Phillips
  */
 public class ScanlineEffect implements PlanetaryEffect {

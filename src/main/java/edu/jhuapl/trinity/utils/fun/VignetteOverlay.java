@@ -1,9 +1,9 @@
 package edu.jhuapl.trinity.utils.fun;
 
 /**
- *
  * @author Sean Phillips
  */
+
 import javafx.animation.AnimationTimer;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.DoubleProperty;
@@ -18,7 +18,10 @@ import javafx.scene.effect.BlendMode;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.WritableImage;
 import javafx.scene.layout.StackPane;
-import javafx.scene.paint.*;
+import javafx.scene.paint.Color;
+import javafx.scene.paint.CycleMethod;
+import javafx.scene.paint.RadialGradient;
+import javafx.scene.paint.Stop;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.transform.Transform;
 
@@ -117,10 +120,21 @@ public class VignetteOverlay {
     }
 
     // --- Properties ---
-    public DoubleProperty darknessProperty() { return darkness; }
-    public DoubleProperty radiusProperty() { return radius; }
-    public BooleanProperty autoUpdateProperty() { return autoUpdate; }
-    public LongProperty updateIntervalMillisProperty() { return updateIntervalMS; }
+    public DoubleProperty darknessProperty() {
+        return darkness;
+    }
+
+    public DoubleProperty radiusProperty() {
+        return radius;
+    }
+
+    public BooleanProperty autoUpdateProperty() {
+        return autoUpdate;
+    }
+
+    public LongProperty updateIntervalMillisProperty() {
+        return updateIntervalMS;
+    }
 
     // --- Builder ---
     public static class Builder {

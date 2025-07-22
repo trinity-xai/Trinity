@@ -7,7 +7,6 @@ import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
 
 /**
- *
  * @author Sean Phillips
  */
 public class SparseLineEffect implements PlanetaryEffect {
@@ -78,4 +77,3 @@ public class SparseLineEffect implements PlanetaryEffect {
         return linesGroup;
     }
 }
-

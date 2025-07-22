@@ -6,7 +6,6 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Line;
 
 /**
- *
  * @author Sean Phillips
  */
 public class HorizonSliceEffect implements PlanetaryEffect {
@@ -35,7 +34,7 @@ public class HorizonSliceEffect implements PlanetaryEffect {
             group.getChildren().add(line);
         }
 
-        ClipUtils.applyCircularClip(group,disc.getPlanetCircle(), 4.0);
+        ClipUtils.applyCircularClip(group, disc.getPlanetCircle(), 4.0);
     }
 
     @Override

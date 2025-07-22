@@ -25,6 +25,7 @@ import javafx.animation.Timeline;
 import javafx.application.Application;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.value.ChangeListener;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -38,6 +39,9 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
+import javafx.scene.media.Media;
+import javafx.scene.media.MediaPlayer;
+import javafx.scene.media.MediaView;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
@@ -46,11 +50,8 @@ import lit.litfx.controls.covalent.events.CovalentPaneEvent;
 import lit.litfx.controls.output.AnimatedText;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.io.IOException;
-import javafx.beans.value.ChangeListener;
-import javafx.scene.media.Media;
-import javafx.scene.media.MediaPlayer;
-import javafx.scene.media.MediaView;
 
 public class App extends Application {
     private static final Logger LOG = LoggerFactory.getLogger(App.class);
@@ -71,7 +72,7 @@ public class App extends Application {
     CircleProgressIndicator circleSpinner;
     AnimatedText animatedConsoleText;
     Pixelate pixelate;
-    
+
     @Override
     public void start(Stage stage) throws IOException {
         //@DEBUG SMP load time
@@ -89,51 +90,51 @@ public class App extends Application {
         stage.setScene(scene);
         stage.setMaximized(true); //default... but could be overridden later by commandline params
         stage.show();
-        
+
         try {
-                Media media = ResourceUtils.loadMediaMp4("Intro.mp4");
-                if(null != media) {
-                    double FADE_DURATION_MS = 2000;    
-                    MediaPlayer mediaPlayer = new MediaPlayer(media);
+            Media media = ResourceUtils.loadMediaMp4("Intro.mp4");
+            if (null != media) {
+                double FADE_DURATION_MS = 2000;
+                MediaPlayer mediaPlayer = new MediaPlayer(media);
 
-                    ChangeListener<Duration> fadeListener = (obs, oldTime, newTime) -> {
-                        double total = media.getDuration().toMillis();
-                        double current = newTime.toMillis();
-                        double remaining = total - current;
+                ChangeListener<Duration> fadeListener = (obs, oldTime, newTime) -> {
+                    double total = media.getDuration().toMillis();
+                    double current = newTime.toMillis();
+                    double remaining = total - current;
 
-                        if (remaining <= FADE_DURATION_MS) {
-                            // Linear fade-out: volume is proportional to remaining time
-                            double volume = Math.max(0.0, remaining / FADE_DURATION_MS);
-                            mediaPlayer.setVolume(volume);
-                        }
-                    };            
-                    mediaPlayer.setOnReady(() -> {
-                        mediaPlayer.setVolume(1.0); // Start at full volume
-                        mediaPlayer.currentTimeProperty().addListener(fadeListener);
-                        mediaPlayer.play();
-                    });
+                    if (remaining <= FADE_DURATION_MS) {
+                        // Linear fade-out: volume is proportional to remaining time
+                        double volume = Math.max(0.0, remaining / FADE_DURATION_MS);
+                        mediaPlayer.setVolume(volume);
+                    }
+                };
+                mediaPlayer.setOnReady(() -> {
+                    mediaPlayer.setVolume(1.0); // Start at full volume
+                    mediaPlayer.currentTimeProperty().addListener(fadeListener);
+                    mediaPlayer.play();
+                });
 
-                    mediaPlayer.setOnEndOfMedia(() -> {
-                        mediaPlayer.setVolume(0.0); // Ensure final volume is zero
-                        mediaPlayer.currentTimeProperty().removeListener(fadeListener);
-                    });        
+                mediaPlayer.setOnEndOfMedia(() -> {
+                    mediaPlayer.setVolume(0.0); // Ensure final volume is zero
+                    mediaPlayer.currentTimeProperty().removeListener(fadeListener);
+                });
 
-                    MediaView mediaView = new MediaView(mediaPlayer);
-                    mediaView.setPreserveRatio(true);
-                    centerStack.getChildren().add(mediaView);
-                    mediaView.fitWidthProperty().bind(centerStack.widthProperty().subtract(10));
-                    mediaPlayer.play(); 
+                MediaView mediaView = new MediaView(mediaPlayer);
+                mediaView.setPreserveRatio(true);
+                centerStack.getChildren().add(mediaView);
+                mediaView.fitWidthProperty().bind(centerStack.widthProperty().subtract(10));
+                mediaPlayer.play();
 
-                    mediaPlayer.setOnEndOfMedia(() -> {
-                        Timeline time = new Timeline(                
-                            new KeyFrame(Duration.seconds(0.5), new KeyValue(mediaView.opacityProperty(), 0.0)),
-                            new KeyFrame(Duration.seconds(0.6), e -> {
-                                centerStack.getChildren().remove(mediaView);
-                            })
-                        );
-                        time.play();
-                    });             
-                }
+                mediaPlayer.setOnEndOfMedia(() -> {
+                    Timeline time = new Timeline(
+                        new KeyFrame(Duration.seconds(0.5), new KeyValue(mediaView.opacityProperty(), 0.0)),
+                        new KeyFrame(Duration.seconds(0.6), e -> {
+                            centerStack.getChildren().remove(mediaView);
+                        })
+                    );
+                    time.play();
+                });
+            }
         } catch (Exception ex) {
             LOG.error("Tried and failed to load intro media.");
         }
@@ -297,7 +298,7 @@ public class App extends Application {
             new KeyFrame(Duration.seconds(5.1), new KeyValue(mainNavMenu.opacityProperty(), 1.0)),
             new KeyFrame(Duration.seconds(5.1), e -> {
                 centerStack.getChildren().add(pixelate.getCanvas());
-            })    
+            })
         );
         intro.play();
     }
@@ -389,8 +390,8 @@ public class App extends Application {
     }
 
     private void shutdown(boolean now) {
-            pixelate.stop();
-            pixelate.setMode(PixelationMode.FULL_SURFACE);
+        pixelate.stop();
+        pixelate.setMode(PixelationMode.FULL_SURFACE);
 
         animatedConsoleText.getScene().getRoot().fireEvent(
             new ZeroMQEvent(ZeroMQEvent.ZEROMQ_TERMINATE_CONNECTION, null));
@@ -408,7 +409,7 @@ public class App extends Application {
             Timeline outtro = new Timeline(
                 new KeyFrame(Duration.seconds(0.1), new KeyValue(animatedConsoleText.opacityProperty(), 1.0)),
                 new KeyFrame(Duration.seconds(0.1), kv -> animatedConsoleText.animate(">Kill Signal Received. Terminating...")),
-                new KeyFrame(Duration.seconds(1.0), kv -> pixelate.animatePixelSize(8, 100, 2000, false, false)),   
+                new KeyFrame(Duration.seconds(1.0), kv -> pixelate.animatePixelSize(8, 100, 2000, false, false)),
                 new KeyFrame(Duration.seconds(3.25), kv -> System.exit(0)));
             outtro.play();
         }

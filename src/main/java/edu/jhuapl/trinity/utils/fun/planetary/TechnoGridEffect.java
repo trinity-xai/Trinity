@@ -6,7 +6,6 @@ import javafx.scene.canvas.GraphicsContext;
 import javafx.scene.paint.Color;
 
 /**
- *
  * @author Sean Phillips
  */
 public class TechnoGridEffect implements PlanetaryEffect {

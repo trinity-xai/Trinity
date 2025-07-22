@@ -6,7 +6,6 @@ import javafx.scene.Group;
 import javafx.scene.Node;
 
 /**
- *
  * @author Sean Phillips
  */
 public class PixelationEffect implements PlanetaryEffect {

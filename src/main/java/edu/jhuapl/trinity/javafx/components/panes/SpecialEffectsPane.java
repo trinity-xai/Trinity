@@ -1,17 +1,16 @@
 package edu.jhuapl.trinity.javafx.components.panes;
 
 import edu.jhuapl.trinity.javafx.events.EffectEvent;
-import edu.jhuapl.trinity.utils.fun.solar.FlareOcclusionUtil;
-import edu.jhuapl.trinity.utils.fun.solar.LensFlareControls;
-import edu.jhuapl.trinity.utils.fun.solar.LensFlareGroup;
 import edu.jhuapl.trinity.utils.fun.planetary.PlanetaryDisc;
 import edu.jhuapl.trinity.utils.fun.planetary.PlanetaryDiscControls;
 import edu.jhuapl.trinity.utils.fun.planetary.PlanetaryEffectFactory;
 import edu.jhuapl.trinity.utils.fun.planetary.PlanetaryEffectFactory.PlanetStyle;
 import edu.jhuapl.trinity.utils.fun.planetary.PlanetaryStyleControls;
+import edu.jhuapl.trinity.utils.fun.solar.FlareOcclusionUtil;
+import edu.jhuapl.trinity.utils.fun.solar.LensFlareControls;
+import edu.jhuapl.trinity.utils.fun.solar.LensFlareGroup;
 import edu.jhuapl.trinity.utils.fun.solar.SunPositionControls;
 import edu.jhuapl.trinity.utils.fun.solar.SunPositionTimer;
-import java.util.List;
 import javafx.animation.AnimationTimer;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
@@ -28,6 +27,8 @@ import javafx.scene.paint.Color;
 import javafx.scene.shape.Circle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
+import java.util.List;
 
 /**
  * @author Sean Phillips
@@ -48,8 +49,8 @@ public class SpecialEffectsPane extends LitPathPane {
     boolean enabled = false;
     PlanetaryDisc[] disc = new PlanetaryDisc[1]; // Mutable reference
     PlanetaryDiscControls[] controlsRef = new PlanetaryDiscControls[1];
-    PlanetaryEffectFactory.PlanetStyle selectedStyle; 
-            
+    PlanetaryEffectFactory.PlanetStyle selectedStyle;
+
     private static BorderPane createContent() {
         BorderPane bpOilSpill = new BorderPane();
         return bpOilSpill;
@@ -57,7 +58,7 @@ public class SpecialEffectsPane extends LitPathPane {
 
     public SpecialEffectsPane(Scene scene, Pane parent) {
         super(scene, parent, PANE_WIDTH, PANE_HEIGHT, createContent(),
-                "Special Effects", "", 300.0, 400.0);
+            "Special Effects", "", 300.0, 400.0);
         this.scene = scene;
         bp = (BorderPane) this.contentPane;
 
@@ -138,14 +139,14 @@ public class SpecialEffectsPane extends LitPathPane {
 
         Tab planetaryStyleTab = new Tab("Planetary Styles");
         planetaryStyleTab.setClosable(false);
-        PlanetaryStyleControls styleControls = new PlanetaryStyleControls(disc[0]);                
+        PlanetaryStyleControls styleControls = new PlanetaryStyleControls(disc[0]);
         planetaryStyleTab.setContent(styleControls);
         scene.getRoot().addEventHandler(EffectEvent.NEW_PLANETARY_DISC, e -> {
             if (e.object instanceof PlanetaryDisc newDisc) {
                 styleControls.setPlanetaryDisc(newDisc);
             }
-        });                
-        
+        });
+
         TabPane tabPane = new TabPane(solarCycleTab, lensFlareTab, planetaryTab, planetaryStyleTab);
 
         VBox contentVBox = new VBox(5, tabPane);
@@ -179,24 +180,24 @@ public class SpecialEffectsPane extends LitPathPane {
                 Point2D center = new Point2D(scene.getWidth() / 2, scene.getHeight() / 2);
 
                 double flareAlpha = FlareOcclusionUtil.computeFlareAlpha(
-                        sunScene.getX(), sunScene.getY(),
-                        center.getX(), center.getY(),
-                        scene.getWidth(), scene.getHeight());
+                    sunScene.getX(), sunScene.getY(),
+                    center.getX(), center.getY(),
+                    scene.getWidth(), scene.getHeight());
                 double occlusionFactor = FlareOcclusionUtil.computeSunOcclusionFactor(
-                        sunScene, sun.getRadius(), occluders); // fade radius in pixels
+                    sunScene, sun.getRadius(), occluders); // fade radius in pixels
                 sun.setOpacity(flareAlpha * occlusionFactor);
                 flareGroup.updateOpacity(flareAlpha, occlusionFactor);
-                if(controlsRef[0].scatteringEnabledProperty().get())
-                    disc[0].updateScattering(1.0 - occlusionFactor); 
+                if (controlsRef[0].scatteringEnabledProperty().get())
+                    disc[0].updateScattering(1.0 - occlusionFactor);
             }
         }.start();
 
         SunPositionTimer sunPositionTimer = new SunPositionTimer(parent, sun);
         sunPositionTimer.start();
         flareGroup.update(sun.getTranslateX(), sun.getTranslateY(),
-                sun.getScene().getWidth() / 2.0,
-                sun.getScene().getHeight() / 2.0);
-        
+            sun.getScene().getWidth() / 2.0,
+            sun.getScene().getHeight() / 2.0);
+
         scene.getRoot().addEventHandler(EffectEvent.SUN_ARTIFACT_ENABLED, e -> {
             enabled = (boolean) e.object;
             sun.setVisible(enabled);
@@ -206,9 +207,9 @@ public class SpecialEffectsPane extends LitPathPane {
             flareGroup.setVisible(enabled);
         });
         scene.getRoot().addEventHandler(EffectEvent.PLANETARY_STYLE_CHANGE, e -> {
-            selectedStyle = (PlanetaryEffectFactory.PlanetStyle ) e.object;
+            selectedStyle = (PlanetaryEffectFactory.PlanetStyle) e.object;
         });
-        
+
     }
 
     private void enableSolarDrag(Circle sun) {
@@ -227,24 +228,24 @@ public class SpecialEffectsPane extends LitPathPane {
         });
         sun.translateXProperty().addListener(e -> {
             flareGroup.update(sun.getTranslateX(), sun.getTranslateY(),
-                    sun.getScene().getWidth() / 2.0,
-                    sun.getScene().getHeight() / 2.0);
+                sun.getScene().getWidth() / 2.0,
+                sun.getScene().getHeight() / 2.0);
         });
         sun.translateYProperty().addListener(e -> {
             flareGroup.update(sun.getTranslateX(), sun.getTranslateY(),
-                    sun.getScene().getWidth() / 2.0,
-                    sun.getScene().getHeight() / 2.0);
+                sun.getScene().getWidth() / 2.0,
+                sun.getScene().getHeight() / 2.0);
         });
     }
 
     private void regenerateDisc(
-            PlanetaryDisc[] discRef,
-            Pane parent,
-            PlanetaryDiscControls controls,
-            PlanetaryEffectFactory.PlanetStyle style,
-            List<Node> occluders
+        PlanetaryDisc[] discRef,
+        Pane parent,
+        PlanetaryDiscControls controls,
+        PlanetaryEffectFactory.PlanetStyle style,
+        List<Node> occluders
     ) {
-    // Remove existing disc from parent and occluders
+        // Remove existing disc from parent and occluders
         if (discRef[0] != null) {
             occluders.remove(discRef[0].getOccluderShape());
             parent.getChildren().remove(discRef[0]);
@@ -256,7 +257,7 @@ public class SpecialEffectsPane extends LitPathPane {
         discRef[0] = new PlanetaryDisc(radius, style);
         // Position and visibility
         discRef[0].setTranslateY(controls.verticalOffsetProperty().get());
-        discRef[0].setTranslateX(controls.horizontalOffsetProperty().get());        
+        discRef[0].setTranslateX(controls.horizontalOffsetProperty().get());
         discRef[0].setVisible(controls.discVisibleProperty().get());
         discRef[0].setScatteringEnabled(controls.scatteringEnabledProperty().get());
         discRef[0].setScatteringColor(controls.scatteringColorProperty().get());

@@ -1,6 +1,5 @@
 package edu.jhuapl.trinity.utils.fun.planetary;
 
-import java.util.List;
 import javafx.scene.Group;
 import javafx.scene.Node;
 import javafx.scene.paint.Color;
@@ -10,13 +9,14 @@ import javafx.scene.paint.Stop;
 import javafx.scene.shape.Circle;
 import javafx.scene.shape.Line;
 
+import java.util.List;
+
 /**
- *
  * @author Sean Phillips
  */
 public class VaporwaveEffect implements PlanetaryEffect {
 
-private final Group group = new Group();
+    private final Group group = new Group();
     private final List<Color> radialGradientColors;
     private final int noiseRingCount;
     private final Color noiseRingColor;
@@ -45,16 +45,16 @@ private final Group group = new Group();
         // Create dreamy radial gradient fill (soft pastel blend)
         Stop[] stops = new Stop[radialGradientColors.size()];
         for (int i = 0; i < radialGradientColors.size(); i++) {
-            stops[i] = new Stop(i / (double)(radialGradientColors.size() - 1), radialGradientColors.get(i));
+            stops[i] = new Stop(i / (double) (radialGradientColors.size() - 1), radialGradientColors.get(i));
         }
         Circle gradientFill = new Circle(centerX, centerY, radius);
         gradientFill.setFill(new RadialGradient(0, 0, centerX, centerY, radius,
-                false, CycleMethod.NO_CYCLE, stops));
+            false, CycleMethod.NO_CYCLE, stops));
         group.getChildren().add(gradientFill);
 
         // Add concentric semi-transparent noise rings
         for (int i = 0; i < noiseRingCount; i++) {
-            double ringRadius = radius * ((i + 1) / (double)(noiseRingCount + 1));
+            double ringRadius = radius * ((i + 1) / (double) (noiseRingCount + 1));
             Circle ring = new Circle(centerX, centerY, ringRadius);
             ring.setFill(Color.TRANSPARENT);
             ring.setStroke(noiseRingColor);

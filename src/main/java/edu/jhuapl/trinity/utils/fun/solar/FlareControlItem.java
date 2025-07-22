@@ -11,7 +11,6 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 
 /**
- *
  * @author Sean Phillips
  */
 public class FlareControlItem extends HBox {
@@ -27,7 +26,7 @@ public class FlareControlItem extends HBox {
         visibleBox.setSelected(flare.isVisible());
         visibleBox.selectedProperty().addListener((obs, old, val) -> flare.setVisible(val));
         visibleBox.setPrefWidth(125);
-        
+
         // Opacity slider
         Slider opacitySlider = new Slider(0.0, 1.0, flare.getBaseOpacity());
         opacitySlider.setPrefWidth(125);
@@ -35,7 +34,7 @@ public class FlareControlItem extends HBox {
 
         // Color picker (tint)
         ColorPicker colorPicker = new ColorPicker(Color.WHITE);
-        colorPicker.setPrefWidth(150);        
+        colorPicker.setPrefWidth(150);
         colorPicker.setOnAction(e -> {
             Color c = colorPicker.getValue();
             double hue = (c.getHue() - 180) / 180.0;           // Convert 0–360° to -1.0–1.0
@@ -44,8 +43,8 @@ public class FlareControlItem extends HBox {
             flare.setTintHSB(hue, saturation, brightness);
         });
 
-        getChildren().addAll(visibleBox, 
-            new VBox(5, new Label("Base Opacity"), opacitySlider), 
+        getChildren().addAll(visibleBox,
+            new VBox(5, new Label("Base Opacity"), opacitySlider),
             colorPicker);
     }
 }

@@ -1,30 +1,20 @@
 package edu.jhuapl.trinity.utils.fun.solar;
 
 import edu.jhuapl.trinity.utils.fun.solar.FlarePatternFactory.BlurredDiskSpec;
-import static edu.jhuapl.trinity.utils.fun.solar.FlarePatternFactory.createAnalogGlitchImage;
-import static edu.jhuapl.trinity.utils.fun.solar.FlarePatternFactory.createBlurredDiskImage;
-import static edu.jhuapl.trinity.utils.fun.solar.FlarePatternFactory.createCoronaRing;
-import static edu.jhuapl.trinity.utils.fun.solar.FlarePatternFactory.createHaloImage;
-import static edu.jhuapl.trinity.utils.fun.solar.FlarePatternFactory.createHexGridImage;
-import static edu.jhuapl.trinity.utils.fun.solar.FlarePatternFactory.createPixelBurstImage;
-import static edu.jhuapl.trinity.utils.fun.solar.FlarePatternFactory.createPlasmaRing;
-import static edu.jhuapl.trinity.utils.fun.solar.FlarePatternFactory.createRainbowImage;
-import static edu.jhuapl.trinity.utils.fun.solar.FlarePatternFactory.createRaysImage;
-import static edu.jhuapl.trinity.utils.fun.solar.FlarePatternFactory.createRotatingSpikeImage;
-import static edu.jhuapl.trinity.utils.fun.solar.FlarePatternFactory.createStarImage;
 import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
 /**
- *
  * @author Sean Phillips
  */
 public class FlarePresets {
 
     public static double DEFAULT_OPACITY = 0.5;
+
     public enum FlarePresetType {
         DEFAULT, CLASSIC_GLOW, SOLAR_CORE, CORONA_FLARE,
         CRT_AURORA_DREAM, TACTICAL_HEX, CRYO_LENS_VORTEX,
@@ -66,12 +56,12 @@ public class FlarePresets {
         Image halo = FlarePatternFactory.createHaloImage(128, Color.WHITE, 2.0);
 
         List<BlurredDiskSpec> specs = List.of(
-                new BlurredDiskSpec(256, Color.rgb(255, 255, 180), 0.1, 0, 0, 10) // soft outer corona
-                ,
-                 new BlurredDiskSpec(180, Color.rgb(255, 220, 100), 0.2, 0, 0, 8) // mid haze
-                ,
-                 new BlurredDiskSpec(120, Color.GOLD, 0.3, 0, 0, 6) // main glow
-        //    new BlurredDiskSpec(64, Color.LIGHTYELLOW, 0.6, 0, 0, 2)                 // bright sun core
+            new BlurredDiskSpec(256, Color.rgb(255, 255, 180), 0.1, 0, 0, 10) // soft outer corona
+            ,
+            new BlurredDiskSpec(180, Color.rgb(255, 220, 100), 0.2, 0, 0, 8) // mid haze
+            ,
+            new BlurredDiskSpec(120, Color.GOLD, 0.3, 0, 0, 6) // main glow
+            //    new BlurredDiskSpec(64, Color.LIGHTYELLOW, 0.6, 0, 0, 2)                 // bright sun core
         );
 
         Image solarComposite = FlarePatternFactory.createCompositeBlurredDisks(specs, 512);
@@ -110,23 +100,23 @@ public class FlarePresets {
 
     public static List<FlareSprite> createClassicGlow() {
         List<FlareSprite> flares = new ArrayList<>();
-        //Sun    
+        //Sun
         flares.add(new FlareSprite(
-                FlarePatternFactory.createBlurredDiskImage(256, 96, Color.rgb(255, 245, 200), 0.9, 0, 0, 20),
-                1.0, 0.0, 0.9, true, "Core Glow"));
+            FlarePatternFactory.createBlurredDiskImage(256, 96, Color.rgb(255, 245, 200), 0.9, 0, 0, 20),
+            1.0, 0.0, 0.9, true, "Core Glow"));
         flares.add(new FlareSprite(
-                FlarePatternFactory.createHaloImage(128, Color.rgb(255, 240, 180), 2.5),
-                2.0, 0.0, 0.75, true, "Glow Halo"));
+            FlarePatternFactory.createHaloImage(128, Color.rgb(255, 240, 180), 2.5),
+            2.0, 0.0, 0.75, true, "Glow Halo"));
         //Ghost Lens Artifacts
-        // 🔗 Chain 
+        // 🔗 Chain
         Random rando = new Random();
         for (int i = 0; i < 6; i++) {
             double pos = 0.4 + i * 0.5;
             double scale = rando.nextDouble() + i * 0.5;
             flares.add(new FlareSprite(
-                FlarePatternFactory.createBlurredDiskImage(64, 48, 
+                FlarePatternFactory.createBlurredDiskImage(64, 48,
                     Color.rgb(255, 220, 100), DEFAULT_OPACITY, 0, 0, 10),
-                    scale, pos, DEFAULT_OPACITY*rando.nextDouble(), true, "Lens Ghost " + i));
+                scale, pos, DEFAULT_OPACITY * rando.nextDouble(), true, "Lens Ghost " + i));
         }
 
         return flares;
@@ -136,20 +126,20 @@ public class FlarePresets {
         List<FlareSprite> flares = new ArrayList<>();
 
         Image composite = FlarePatternFactory.createCompositeBlurredDisks(List.of(
-                new FlarePatternFactory.BlurredDiskSpec(220, Color.rgb(255, 245, 180), 0.4, 0, 0, 10),
-                new FlarePatternFactory.BlurredDiskSpec(160, Color.rgb(255, 230, 100), 0.6, 0, 0, 8),
-                new FlarePatternFactory.BlurredDiskSpec(90, Color.rgb(255, 200, 50), 0.8, 0, 0, 5)
+            new FlarePatternFactory.BlurredDiskSpec(220, Color.rgb(255, 245, 180), 0.4, 0, 0, 10),
+            new FlarePatternFactory.BlurredDiskSpec(160, Color.rgb(255, 230, 100), 0.6, 0, 0, 8),
+            new FlarePatternFactory.BlurredDiskSpec(90, Color.rgb(255, 200, 50), 0.8, 0, 0, 5)
         ), 512);
 
         flares.add(new FlareSprite(composite, 1.0, 0.0, 0.9, true, "Solar Core Composite"));
 
         flares.add(new FlareSprite(
-                FlarePatternFactory.createRainbowImage(128),
-                1.8, 0.0, 0.7, true, "Diffraction Ring"));
+            FlarePatternFactory.createRainbowImage(128),
+            1.8, 0.0, 0.7, true, "Diffraction Ring"));
 
         flares.add(new FlareSprite(
-                FlarePatternFactory.createDiskImage(16, Color.rgb(255, 220, 120)),
-                0.2, 1.5, 0.5, true, "Sun Artifact"));
+            FlarePatternFactory.createDiskImage(16, Color.rgb(255, 220, 120)),
+            0.2, 1.5, 0.5, true, "Sun Artifact"));
 
         return flares;
     }
@@ -157,23 +147,23 @@ public class FlarePresets {
     public static List<FlareSprite> createCoronaFlare() {
         List<FlareSprite> flares = new ArrayList<>();
         flares.add(new FlareSprite(
-                FlarePatternFactory.createCoronaRing(128, Color.GOLD, 10),
-                1.5, 0.0, 0.85, true, "Corona Ring"));
+            FlarePatternFactory.createCoronaRing(128, Color.GOLD, 10),
+            1.5, 0.0, 0.85, true, "Corona Ring"));
         flares.add(new FlareSprite(
-                FlarePatternFactory.createStarImage(128, Color.rgb(255, 255, 240)),
-                1.2, 0.0, 0.7, true, "Solar Spark"));
+            FlarePatternFactory.createStarImage(128, Color.rgb(255, 255, 240)),
+            1.2, 0.0, 0.7, true, "Solar Spark"));
         flares.add(new FlareSprite(
-                FlarePatternFactory.createBlurredDiskImage(64, 48, Color.rgb(255, 200, 100), 0.5, 0, 0, 6),
-                0.3, 1.3, 0.4, true, "Corona Echo"));
-        // 🔗 Chain 
+            FlarePatternFactory.createBlurredDiskImage(64, 48, Color.rgb(255, 200, 100), 0.5, 0, 0, 6),
+            0.3, 1.3, 0.4, true, "Corona Echo"));
+        // 🔗 Chain
         Random rando = new Random();
         for (int i = 0; i < 6; i++) {
             double pos = 0.4 + i * 0.5;
             double scale = rando.nextDouble() + i * 0.25;
             flares.add(new FlareSprite(
-                FlarePatternFactory.createCoronaRing(128, Color.GOLD, 10), 
-                    scale, pos, 0.25*rando.nextDouble(), true, "Lens Ghost " + i));
-        }        
+                FlarePatternFactory.createCoronaRing(128, Color.GOLD, 10),
+                scale, pos, 0.25 * rando.nextDouble(), true, "Lens Ghost " + i));
+        }
         return flares;
     }
 
@@ -193,10 +183,10 @@ public class FlarePresets {
         Random rando = new Random();
         // 🔗 Chain — Vintage Trail
         for (int i = 0; i < 10; i++) {
-            double pos = rando.nextDouble()+ 0.4 + i * 0.15;
+            double pos = rando.nextDouble() + 0.4 + i * 0.15;
             Color color = i % 3 == 0 ? Color.CYAN : (i % 3 == 1 ? Color.MAGENTA : Color.ORANGE);
-            flares.add(new FlareSprite(FlarePatternFactory.createDiskImage(64, color), 
-                0.2 + i * rando.nextDouble(), pos , 0.25, true, "Retro Ghost " + i));
+            flares.add(new FlareSprite(FlarePatternFactory.createDiskImage(64, color),
+                0.2 + i * rando.nextDouble(), pos, 0.25, true, "Retro Ghost " + i));
         }
 
         return flares;
@@ -221,7 +211,7 @@ public class FlarePresets {
             double pos = 0.5 + i * 0.2;
             double scale = rando.nextDouble() + i * 0.05;
             Color color = i % 2 == 0 ? Color.AQUAMARINE : Color.LIGHTBLUE;
-            flares.add(new FlareSprite(FlarePatternFactory.createStarImage(64, color), 
+            flares.add(new FlareSprite(FlarePatternFactory.createStarImage(64, color),
                 scale, pos, DEFAULT_OPACITY, true, "Cryo Echo " + i));
         }
 
@@ -244,14 +234,14 @@ public class FlarePresets {
         for (int i = 0; i < 15; i++) {
             double pos = 0.3 + i * 0.15;
             Color color = i % 2 == 0 ? Color.HOTPINK : Color.MAGENTA;
-            flares.add(new FlareSprite(FlarePatternFactory.createDiskImage(24, color), 
+            flares.add(new FlareSprite(FlarePatternFactory.createDiskImage(24, color),
                 0.2 + i * 0.25, pos, 0.35, true, "Synth Trail " + i));
         }
 
         // 🔗 Chain B — Rainbow Reflections
         for (int i = 0; i < 10; i++) {
             double pos = 0.6 + i * 0.25;
-            flares.add(new FlareSprite(FlarePatternFactory.createRainbowImage(128), 
+            flares.add(new FlareSprite(FlarePatternFactory.createRainbowImage(128),
                 0.25 + i * 0.3, pos, 0.1, true, "Rainbow Chain " + i));
         }
 
@@ -263,9 +253,9 @@ public class FlarePresets {
 
         // 🌞 Sun Group A — Composite Core
         Image solarComposite = FlarePatternFactory.createCompositeBlurredDisks(List.of(
-                new BlurredDiskSpec(256, Color.rgb(255, 255, 180), 0.15, 0, 0, 10),
-                new BlurredDiskSpec(180, Color.rgb(255, 220, 100), 0.25, 0, 0, 8),
-                new BlurredDiskSpec(120, Color.GOLD, 0.35, 0, 0, 6)
+            new BlurredDiskSpec(256, Color.rgb(255, 255, 180), 0.15, 0, 0, 10),
+            new BlurredDiskSpec(180, Color.rgb(255, 220, 100), 0.25, 0, 0, 8),
+            new BlurredDiskSpec(120, Color.GOLD, 0.35, 0, 0, 6)
         ), 512);
         flares.add(new FlareSprite(solarComposite, 1.0, 0.0, 0.4, true, "Solar Core"));
         flares.add(new FlareSprite(FlarePatternFactory.createStarImage(128, Color.WHITE), 1.6, 0.0, 0.2, true, "Optical Spike"));
@@ -310,10 +300,10 @@ public class FlarePresets {
             double scale = rando.nextDouble() + i * 0.25;
             double pos = 0.6 + i * 0.2;
             Color color = chainColors[i % chainColors.length];
-            list.add(new FlareSprite(FlarePatternFactory.createHexGridImage(64, color, 8, 1.0), 
-                scale, pos, i == 0 ? 0.8 : 0.75/i, true, "Hex Chain " + i));
-        }        
-        
+            list.add(new FlareSprite(FlarePatternFactory.createHexGridImage(64, color, 8, 1.0),
+                scale, pos, i == 0 ? 0.8 : 0.75 / i, true, "Hex Chain " + i));
+        }
+
         return list;
     }
 
@@ -384,9 +374,9 @@ public class FlarePresets {
         Random rando = new Random();
         for (int i = 0; i < 13; i++) {
             double pos = 0.5 + i * 0.22;
-            double scale = rando.nextDouble() * (i/13);
-            flares.add(new FlareSprite(createPixelBurstImage(128, Color.AQUA, 50), scale + 0.25, pos, 0.95 - i/13 + 0.05, true, "Shock Fragment " + i));
-            flares.add(new FlareSprite(createRaysImage(128, 20, Color.AQUAMARINE), scale, pos+0.1, 0.5 - i/13 + 0.05, true, "Shock Rays echo " + i));
+            double scale = rando.nextDouble() * (i / 13);
+            flares.add(new FlareSprite(createPixelBurstImage(128, Color.AQUA, 50), scale + 0.25, pos, 0.95 - i / 13 + 0.05, true, "Shock Fragment " + i));
+            flares.add(new FlareSprite(createRaysImage(128, 20, Color.AQUAMARINE), scale, pos + 0.1, 0.5 - i / 13 + 0.05, true, "Shock Rays echo " + i));
         }
 
         return flares;
@@ -400,19 +390,19 @@ public class FlarePresets {
         flares.add(new FlareSprite(createCoronaRing(256, Color.PURPLE, 32), 1.5, 0.0, 0.25, true, "Corona"));
         flares.add(new FlareSprite(createPlasmaRing(256, Color.MEDIUMPURPLE, 12, 5.0), 1.9, 0.0, 0.25, true, "Plasma Envelope"));
         flares.add(new FlareSprite(createRotatingSpikeImage(256, 32, Color.LIGHTPINK), 2.3, 0.0, 0.2, true, "Spikes"));
-        
+
         Random rando = new Random();
         // 🔗 Spiral Chain A
         for (int i = 0; i < 14; i++) {
             double pos = 0.4 + i * 0.18;
-            flares.add(new FlareSprite(createPlasmaRing(256, Color.HOTPINK, 12, 16), 
+            flares.add(new FlareSprite(createPlasmaRing(256, Color.HOTPINK, 12, 16),
                 0.2 + i * 0.15, pos, rando.nextDouble(), true, "Chain Ring " + i));
         }
 
         // 🔗 Spiral Chain B (Offset)
         for (int i = 0; i < 10; i++) {
             double pos = 0.6 + i * 0.22;
-            flares.add(new FlareSprite(createCoronaRing(256, Color.VIOLET, 12), 
+            flares.add(new FlareSprite(createCoronaRing(256, Color.VIOLET, 12),
                 0.5 + i * 0.15, pos + 0.2, rando.nextDouble(), true, "Offset Echo " + i));
         }
 
