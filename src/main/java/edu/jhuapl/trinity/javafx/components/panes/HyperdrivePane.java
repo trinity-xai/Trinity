@@ -81,6 +81,7 @@ import javafx.stage.DirectoryChooser;
 import javafx.stage.StageStyle;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.io.File;
 import java.io.IOException;
 import java.net.MalformedURLException;
@@ -91,6 +92,7 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
+
 import static edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageUrl.imageUrlFromImage;
 import static edu.jhuapl.trinity.javafx.events.CommandTerminalEvent.notifyTerminalSuccess;
 import static edu.jhuapl.trinity.javafx.events.CommandTerminalEvent.notifyTerminalWarning;
@@ -684,7 +686,7 @@ public class HyperdrivePane extends LitPathPane {
         chunkSizeSpinner.setPrefWidth(100);
 
         VBox chunkingSpinnerVBox = new VBox(20,
-            enableJSONcheckBox, 
+            enableJSONcheckBox,
             new VBox(5, new Label("Chunk Size (bytes)"), chunkSizeSpinner)
         );
 
@@ -707,12 +709,12 @@ public class HyperdrivePane extends LitPathPane {
                 if (file.isDirectory()) {
                     RestAccessLayer.SERVICES_DEFAULT_PATH = file.getAbsolutePath() + File.separator;
                     Prompts.PROMPTS_DEFAULT_PATH = file.getAbsolutePath();
-                    serviceDirTextField.setText(file.getAbsolutePath() + File.separator);                   
+                    serviceDirTextField.setText(file.getAbsolutePath() + File.separator);
                     applyServiceDir();
                 }
             }
         });
-        
+
         //Image Embeddings Service
         embeddingsLocationTextField = new TextField(
             RestAccessLayer.restAccessLayerconfig.getBaseRestURL() +
@@ -839,7 +841,7 @@ public class HyperdrivePane extends LitPathPane {
 
         serviceDirVBox.setAlignment(Pos.CENTER_LEFT);
         servicesGrid.add(serviceDirVBox, 0, 2);
-        
+
         Separator separator = new Separator();
         GridPane.setColumnSpan(separator, GridPane.REMAINING);
         servicesGrid.add(separator, 0, 3);
@@ -1161,6 +1163,7 @@ public class HyperdrivePane extends LitPathPane {
 
         getStyleClass().add("hyperdrive-pane");
     }
+
     private void applyServiceDir() {
         try {
             RestAccessLayer.loadDefaultRestConfig();
@@ -1185,8 +1188,9 @@ public class HyperdrivePane extends LitPathPane {
             String DIALOGCSS = StyleResourceProvider.getResource("dialogstyles.css").toExternalForm();
             dialogPane.getStylesheets().add(DIALOGCSS);
             alert.showAndWait();
-        }        
+        }
     }
+
     public void chooseCaptionsTask(List<EmbeddingsImageListItem> items, List<String> choices) {
         ChooseCaptionsTask requestTask = new ChooseCaptionsTask(scene,
             imageEmbeddingRequestIndicator, requestNumber, currentChatModel,

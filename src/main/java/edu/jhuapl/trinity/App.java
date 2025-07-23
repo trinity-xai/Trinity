@@ -14,6 +14,9 @@ import edu.jhuapl.trinity.javafx.events.FullscreenEvent;
 import edu.jhuapl.trinity.javafx.events.MissionTimerXEvent;
 import edu.jhuapl.trinity.javafx.events.ZeroMQEvent;
 import edu.jhuapl.trinity.utils.Configuration;
+import edu.jhuapl.trinity.utils.ResourceUtils;
+import edu.jhuapl.trinity.utils.fun.Pixelate;
+import edu.jhuapl.trinity.utils.fun.Pixelate.PixelationMode;
 import javafx.animation.Animation;
 import javafx.animation.FadeTransition;
 import javafx.animation.KeyFrame;
@@ -22,6 +25,7 @@ import javafx.animation.Timeline;
 import javafx.application.Application;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
+import javafx.beans.value.ChangeListener;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -35,6 +39,9 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
+import javafx.scene.media.Media;
+import javafx.scene.media.MediaPlayer;
+import javafx.scene.media.MediaView;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
 import javafx.stage.Stage;
@@ -64,6 +71,7 @@ public class App extends Application {
     Timeline intro;
     CircleProgressIndicator circleSpinner;
     AnimatedText animatedConsoleText;
+    Pixelate pixelate;
 
     @Override
     public void start(Stage stage) throws IOException {
@@ -73,12 +81,64 @@ public class App extends Application {
         LOG.info("Starting JavaFX rendering...");
         centerStack = new StackPane();
         centerStack.setBackground(transBack);
+
         LOG.info("Building Scene Stack...");
         BorderPane bp = new BorderPane(centerStack);
         bp.setBackground(transBack);
         bp.getStyleClass().add("trinity-pane");
-        Scene scene = new Scene(bp, Color.BLACK);
+        Scene scene = new Scene(bp, 1920, 1080, Color.BLACK);
         stage.setScene(scene);
+        stage.setMaximized(true); //default... but could be overridden later by commandline params
+        stage.show();
+
+        try {
+            Media media = ResourceUtils.loadMediaMp4("Intro.mp4");
+            if (null != media) {
+                double FADE_DURATION_MS = 2000;
+                MediaPlayer mediaPlayer = new MediaPlayer(media);
+
+                ChangeListener<Duration> fadeListener = (obs, oldTime, newTime) -> {
+                    double total = media.getDuration().toMillis();
+                    double current = newTime.toMillis();
+                    double remaining = total - current;
+
+                    if (remaining <= FADE_DURATION_MS) {
+                        // Linear fade-out: volume is proportional to remaining time
+                        double volume = Math.max(0.0, remaining / FADE_DURATION_MS);
+                        mediaPlayer.setVolume(volume);
+                    }
+                };
+                mediaPlayer.setOnReady(() -> {
+                    mediaPlayer.setVolume(1.0); // Start at full volume
+                    mediaPlayer.currentTimeProperty().addListener(fadeListener);
+                    mediaPlayer.play();
+                });
+
+                mediaPlayer.setOnEndOfMedia(() -> {
+                    mediaPlayer.setVolume(0.0); // Ensure final volume is zero
+                    mediaPlayer.currentTimeProperty().removeListener(fadeListener);
+                });
+
+                MediaView mediaView = new MediaView(mediaPlayer);
+                mediaView.setPreserveRatio(true);
+                centerStack.getChildren().add(mediaView);
+                mediaView.fitWidthProperty().bind(centerStack.widthProperty().subtract(10));
+                mediaPlayer.play();
+
+                mediaPlayer.setOnEndOfMedia(() -> {
+                    Timeline time = new Timeline(
+                        new KeyFrame(Duration.seconds(0.5), new KeyValue(mediaView.opacityProperty(), 0.0)),
+                        new KeyFrame(Duration.seconds(0.6), e -> {
+                            centerStack.getChildren().remove(mediaView);
+                        })
+                    );
+                    time.play();
+                });
+            }
+        } catch (Exception ex) {
+            LOG.error("Tried and failed to load intro media.");
+        }
+
         LOG.info("Styling Scene and Stage...");
         stage.setTitle("Trinity XAI");
         //Set icon for stage for fun
@@ -87,15 +147,13 @@ public class App extends Application {
         stage.setFullScreenExitKeyCombination(KeyCombination.NO_MATCH);
         //Setup a custom key handlers
         stage.setFullScreenExitHint("Press ALT+ENTER to alternate Fullscreen Mode.");
-        stage.setMaximized(true); //default... but could be overridden later by commandline params
         //Make everything pretty
         String CSS = StyleResourceProvider.getResource("styles.css").toExternalForm();
         scene.getStylesheets().add(CSS);
         CSS = StyleResourceProvider.getResource("covalent.css").toExternalForm();
         scene.getStylesheets().add(CSS);
-        stage.show();
 
-        //add just the dark necessaties...
+        //add just the dark necessities...
         JukeBox jukeBox = new JukeBox(scene);
         scene.addEventHandler(AudioEvent.PLAY_MUSIC_TRACK, jukeBox);
         scene.addEventHandler(AudioEvent.RELOAD_MUSIC_FILES, jukeBox);
@@ -205,6 +263,19 @@ public class App extends Application {
         //@DEBUG SMP load time
         //Utils.printTotalTime(startTime);
         Thread.startVirtualThread(async);
+        pixelate = new Pixelate(
+            bp,
+            Double.valueOf(scene.getWidth()).intValue(),
+            Double.valueOf(scene.getHeight()).intValue(),
+            16,
+            true,
+            2000
+        );
+        pixelate.setPixelateTime(800);
+        pixelate.setMode(PixelationMode.RANDOM_BLOCKS);
+        pixelate.setCenterOnY(false);
+        pixelate.setBlockCount(20);
+        pixelate.setBlockSizeRange(10, 50);
     }
 
     private void intro() {
@@ -224,7 +295,10 @@ public class App extends Application {
             new KeyFrame(Duration.seconds(5.0), new KeyValue(animatedConsoleText.opacityProperty(), 0.0)),
             new KeyFrame(Duration.seconds(5.1), e -> animatedConsoleText.setVisible(false)),
             new KeyFrame(Duration.seconds(5.1), e -> animatedConsoleText.animate(" ")),
-            new KeyFrame(Duration.seconds(5.1), new KeyValue(mainNavMenu.opacityProperty(), 1.0))
+            new KeyFrame(Duration.seconds(5.1), new KeyValue(mainNavMenu.opacityProperty(), 1.0)),
+            new KeyFrame(Duration.seconds(5.1), e -> {
+                centerStack.getChildren().add(pixelate.getCanvas());
+            })
         );
         intro.play();
     }
@@ -258,6 +332,10 @@ public class App extends Application {
         //Terminate the app by entering an exit animation
         if (e.isAltDown() && e.isControlDown() && e.getCode().equals(KeyCode.Q)) {
             shutdown(false);
+        }
+        if (e.isAltDown() && e.isControlDown() && e.getCode().equals(KeyCode.S)) {
+            stage.getScene().getRoot().fireEvent(
+                new ApplicationEvent(ApplicationEvent.SHOW_SPECIALEFFECTS_PANE));
         }
         if (e.isAltDown() && e.isControlDown() && e.getCode().equals(KeyCode.C)) {
             stage.getScene().getRoot().fireEvent(
@@ -312,6 +390,9 @@ public class App extends Application {
     }
 
     private void shutdown(boolean now) {
+        pixelate.stop();
+        pixelate.setMode(PixelationMode.FULL_SURFACE);
+
         animatedConsoleText.getScene().getRoot().fireEvent(
             new ZeroMQEvent(ZeroMQEvent.ZEROMQ_TERMINATE_CONNECTION, null));
         animatedConsoleText.getScene().getRoot().fireEvent(
@@ -328,7 +409,8 @@ public class App extends Application {
             Timeline outtro = new Timeline(
                 new KeyFrame(Duration.seconds(0.1), new KeyValue(animatedConsoleText.opacityProperty(), 1.0)),
                 new KeyFrame(Duration.seconds(0.1), kv -> animatedConsoleText.animate(">Kill Signal Received. Terminating...")),
-                new KeyFrame(Duration.seconds(2.0), kv -> System.exit(0)));
+                new KeyFrame(Duration.seconds(1.0), kv -> pixelate.animatePixelSize(8, 100, 2000, false, false)),
+                new KeyFrame(Duration.seconds(3.25), kv -> System.exit(0)));
             outtro.play();
         }
     }

@@ -18,6 +18,7 @@ import edu.jhuapl.trinity.javafx.components.panes.JukeBoxPane;
 import edu.jhuapl.trinity.javafx.components.panes.NavigatorPane;
 import edu.jhuapl.trinity.javafx.components.panes.PixelSelectionPane;
 import edu.jhuapl.trinity.javafx.components.panes.Shape3DControlPane;
+import edu.jhuapl.trinity.javafx.components.panes.SpecialEffectsPane;
 import edu.jhuapl.trinity.javafx.components.panes.TextPane;
 import edu.jhuapl.trinity.javafx.components.panes.TrajectoryTrackerPane;
 import edu.jhuapl.trinity.javafx.components.panes.VideoPane;
@@ -116,6 +117,7 @@ public class AppAsyncManager extends Task {
     TextPane textConsolePane;
     JukeBoxPane jukeBoxPane;
     VideoPane videoPane;
+    SpecialEffectsPane specialEffectsPane;
     NavigatorPane navigatorPane;
     CocoViewerPane cocoViewerPane;
     WaveformPane waveformPane;
@@ -392,7 +394,19 @@ public class AppAsyncManager extends Task {
                 String caption = (String) e.object2;
                 videoPane.mainTitleText2Property.set(caption);
             }
-            videoPane.setVideo();
+            videoPane.setVideo(false);
+        });
+        LOG.info("Special Effects");
+        scene.addEventHandler(ApplicationEvent.SHOW_SPECIALEFFECTS_PANE, e -> {
+            if (null == specialEffectsPane) {
+                specialEffectsPane = new SpecialEffectsPane(scene, desktopPane);
+            }
+            if (!desktopPane.getChildren().contains(specialEffectsPane)) {
+                desktopPane.getChildren().add(specialEffectsPane);
+                specialEffectsPane.slideInPane();
+            } else {
+                specialEffectsPane.show();
+            }
         });
         LOG.info("Content Navigator ");
         scene.addEventHandler(ApplicationEvent.SHOW_NAVIGATOR_PANE, e -> {
