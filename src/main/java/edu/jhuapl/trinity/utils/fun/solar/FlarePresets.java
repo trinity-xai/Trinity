@@ -1,6 +1,17 @@
 package edu.jhuapl.trinity.utils.fun.solar;
 
 import edu.jhuapl.trinity.utils.fun.solar.FlarePatternFactory.BlurredDiskSpec;
+import static edu.jhuapl.trinity.utils.fun.solar.FlarePatternFactory.createAnalogGlitchImage;
+import static edu.jhuapl.trinity.utils.fun.solar.FlarePatternFactory.createBlurredDiskImage;
+import static edu.jhuapl.trinity.utils.fun.solar.FlarePatternFactory.createCoronaRing;
+import static edu.jhuapl.trinity.utils.fun.solar.FlarePatternFactory.createHaloImage;
+import static edu.jhuapl.trinity.utils.fun.solar.FlarePatternFactory.createHexGridImage;
+import static edu.jhuapl.trinity.utils.fun.solar.FlarePatternFactory.createPixelBurstImage;
+import static edu.jhuapl.trinity.utils.fun.solar.FlarePatternFactory.createPlasmaRing;
+import static edu.jhuapl.trinity.utils.fun.solar.FlarePatternFactory.createRainbowImage;
+import static edu.jhuapl.trinity.utils.fun.solar.FlarePatternFactory.createRaysImage;
+import static edu.jhuapl.trinity.utils.fun.solar.FlarePatternFactory.createRotatingSpikeImage;
+import static edu.jhuapl.trinity.utils.fun.solar.FlarePatternFactory.createStarImage;
 import javafx.scene.image.Image;
 import javafx.scene.paint.Color;
 
