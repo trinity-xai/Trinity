@@ -408,7 +408,7 @@ public class ConcaveUtils {
         ArrayList<Point3D> subSample = new ArrayList<>();
         Random rando = new Random();
         for (Point3D p3D : manifold3D.getOriginalPoint3DList()) {
-            if (rando.nextFloat() <= 0.05)
+            if (rando.nextFloat() <= 1.05)
                 subSample.add(p3D);
         }
 
@@ -445,10 +445,8 @@ public class ConcaveUtils {
 
 
         ArrayList<Sphere> p = new ArrayList<>();
-        if (false && null != manifold3D.getScene()) {
-
+        if (null != manifold3D.getScene()) {
             //Go through orgData and only add points which are marked with a 1
-
             TriangleMesh tm = new TriangleMesh();
             PhongMaterial pm = new PhongMaterial(Color.RED);
             for (int i = 0; i < obj.cvxList.size(); i++) {

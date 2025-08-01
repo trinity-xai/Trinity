@@ -126,6 +126,7 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Random;
 import java.util.function.Function;
+import javafx.scene.control.Menu;
 
 /**
  * @author Sean Phillips
@@ -134,6 +135,7 @@ import java.util.function.Function;
 public class Hypersurface3DPane extends StackPane
     implements SemanticMapRenderer, FeatureVectorRenderer, ShapleyVectorRenderer {
     private static final Logger LOG = LoggerFactory.getLogger(Hypersurface3DPane.class);
+    public static double ICON_FIT_HEIGHT = 64;
     public static double DEFAULT_INTRO_DISTANCE = -30000.0;
     public static double DEFAULT_ZOOM_TIME_MS = 500.0;
     public static double CHIP_FIT_WIDTH = 200;
@@ -575,7 +577,7 @@ public class Hypersurface3DPane extends StackPane
         MenuItem vectorDistanceItem = new MenuItem("Show Vector Distances");
         vectorDistanceItem.setOnAction(e -> computeVectorDistances());
 
-        MenuItem collectionDifferenceItem = new MenuItem("Compare Feature Collection");
+        MenuItem collectionDifferenceItem = new MenuItem("Feature Collection Difference");
         collectionDifferenceItem.setOnAction(e -> {
             final FileChooser fileChooser = new FileChooser();
             fileChooser.setTitle("Load FeatureCollection to Compare...");
@@ -592,7 +594,31 @@ public class Hypersurface3DPane extends StackPane
                 }
             }
         });
-
+        MenuItem cosineSimilarityItem = new MenuItem("Feature Collection Cosine Distance");
+        cosineSimilarityItem.setOnAction(e -> {
+            final FileChooser fileChooser = new FileChooser();
+            fileChooser.setTitle("Load FeatureCollection to Compare...");
+            fileChooser.setInitialDirectory(Paths.get(".").toFile());
+            fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("JSON", "*.json"));
+            File file = fileChooser.showOpenDialog(null);
+            if (file != null) {
+                FeatureCollectionFile fcf;
+                try {
+                    fcf = new FeatureCollectionFile(file.getAbsolutePath(), true);
+                    computeCosineDistance(fcf.featureCollection);
+                } catch (IOException ex) {
+                    LOG.error(null, ex);
+                }
+            }
+        });
+        
+        Glow glow = new Glow(0.5);
+        ImageView analysisImageView = ResourceUtils.loadIcon("analysis", ICON_FIT_HEIGHT);
+        analysisImageView.setEffect(glow);
+        Menu analysisMenu = new Menu("Analysis", analysisImageView,
+            vectorDistanceItem, collectionDifferenceItem, cosineSimilarityItem
+        );   
+        
         CheckMenuItem enableHoverItem = new CheckMenuItem("Hover Interactions");
         enableHoverItem.setOnAction(e -> {
             hoverInteractionsEnabled = enableHoverItem.isSelected();
@@ -650,7 +676,7 @@ public class Hypersurface3DPane extends StackPane
         MenuItem resetViewItem = new MenuItem("Reset View");
         resetViewItem.setOnAction(e -> resetView(1000, false));
         ContextMenu cm = new ContextMenu(copyAsImageItem, saveSnapshotItem,
-            unrollHyperspaceItem, collectionDifferenceItem, vectorDistanceItem,
+            unrollHyperspaceItem, analysisMenu,
             enableHoverItem, surfaceChartsItem, showDataMarkersItem, enableCrosshairsItem,
             updateAllItem, clearDataItem, resetViewItem);
         cm.setAutoFix(true);
@@ -787,38 +813,27 @@ public class Hypersurface3DPane extends StackPane
         };
         surfUpdateAnimationTimer.start();
     }
-
-    public void computeVectorDistances() {
+    
+    public void computeCosineDistance(FeatureCollection collection) {
+        double[][] newRayRay = collection.convertFeaturesToArray();
         //@DEBUG SMP
-        //System.out.println("Computing Vector Distances... ");
+        //System.out.println("Computing Surface Differences... ");
         //long startTime = System.nanoTime();
         Metric metric = Metric.getMetric("cosine");
-        List<List<Double>> distancesGrid = new ArrayList<>();
-
-        //get all the values in this row
-        dataGrid.stream().forEach(row -> {
-            double[] rowVector = row.stream().mapToDouble(Double::doubleValue).toArray();
-            List<Double> distanceVector = new ArrayList<>();
-            for (int i = 0; i < dataGrid.size(); i++) {
-                double[] xVector = dataGrid.get(i).stream()
+        
+        List<Double> cosineDistancesGrid = new ArrayList<>();
+        for (int rowIndex = 0; rowIndex < dataGrid.size(); rowIndex++) {
+            double[] dataGridVector = dataGrid.get(rowIndex).stream()
                     .mapToDouble(Double::doubleValue).toArray();
-                double currentDistance = metric.distance(xVector, rowVector);
-                distanceVector.add(currentDistance);
-            }
-            distancesGrid.add(distanceVector);
-        });
+            double currentDistance = metric.distance(dataGridVector, newRayRay[rowIndex]);
+            cosineDistancesGrid.add(currentDistance);
+        }
         //Utils.printTotalTime(startTime);
-
-        dataGrid.clear();
-        dataGrid.addAll(distancesGrid);
-        xWidth = dataGrid.get(0).size();
-        zWidth = dataGrid.size();
-        xWidthSpinner.getValueFactory().setValue(xWidth);
-        zWidthSpinner.getValueFactory().setValue(zWidth);
-        updateTheMesh();
-        updateView(true);
+        scene.getRoot().fireEvent(new FactorAnalysisEvent(
+            FactorAnalysisEvent.ANALYSIS_DATA_VECTOR, "Feature Collection Cosine Similarity", 
+                cosineDistancesGrid.toArray(Double[]::new)));        
+        System.out.println(cosineDistancesGrid.toString());
     }
-
     public void computeSurfaceDifference(FeatureCollection collection) {
         double[][] newRayRay = collection.convertFeaturesToArray();
         //@DEBUG SMP
@@ -844,6 +859,36 @@ public class Hypersurface3DPane extends StackPane
 
         dataGrid.clear();
         dataGrid.addAll(differencesGrid);
+        xWidth = dataGrid.get(0).size();
+        zWidth = dataGrid.size();
+        xWidthSpinner.getValueFactory().setValue(xWidth);
+        zWidthSpinner.getValueFactory().setValue(zWidth);
+        updateTheMesh();
+        updateView(true);
+    }
+    public void computeVectorDistances() {
+        //@DEBUG SMP
+        //System.out.println("Computing Vector Distances... ");
+        //long startTime = System.nanoTime();
+        Metric metric = Metric.getMetric("cosine");
+        List<List<Double>> distancesGrid = new ArrayList<>();
+
+        //get all the values in this row
+        dataGrid.stream().forEach(row -> {
+            double[] rowVector = row.stream().mapToDouble(Double::doubleValue).toArray();
+            List<Double> distanceVector = new ArrayList<>();
+            for (int i = 0; i < dataGrid.size(); i++) {
+                double[] xVector = dataGrid.get(i).stream()
+                    .mapToDouble(Double::doubleValue).toArray();
+                double currentDistance = metric.distance(xVector, rowVector);
+                distanceVector.add(currentDistance);
+            }
+            distancesGrid.add(distanceVector);
+        });
+        //Utils.printTotalTime(startTime);
+
+        dataGrid.clear();
+        dataGrid.addAll(distancesGrid);
         xWidth = dataGrid.get(0).size();
         zWidth = dataGrid.size();
         xWidthSpinner.getValueFactory().setValue(xWidth);

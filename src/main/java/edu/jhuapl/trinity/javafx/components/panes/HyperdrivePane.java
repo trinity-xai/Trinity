@@ -144,6 +144,7 @@ public class HyperdrivePane extends LitPathPane {
     AtomicInteger requestNumber;
     HashMap<Integer, REQUEST_STATUS> outstandingRequests;
     int batchSize = 1;
+    int outstandingRequestLimit = 50;
     long requestDelay = 25;
     int chunkSize = 16384;
     DateTimeFormatter format;
@@ -669,6 +670,17 @@ public class HyperdrivePane extends LitPathPane {
             new VBox(5, new Label("Request Delay ms"), requestDelaySpinner)
         );
 
+        Spinner<Integer> outstandingSpinner = new Spinner(1, 256, outstandingRequestLimit, 1);
+        outstandingSpinner.valueProperty().addListener(c -> {
+            outstandingRequestLimit = outstandingSpinner.getValue();
+        });
+        outstandingSpinner.setEditable(true);
+        outstandingSpinner.setPrefWidth(100);
+        
+        VBox outstandingSpinnerVBox = new VBox(20,
+            new VBox(5, new Label("Outstanding Request Limit"), outstandingSpinner)
+        );
+
         CheckBox enableJSONcheckBox = new CheckBox("Enable Special JSON Processing");
         enableJSONcheckBox.selectedProperty().addListener(e -> {
             EmbeddingsTextListItem.ENABLE_JSON_PROCESSING = enableJSONcheckBox.isSelected();
@@ -846,8 +858,12 @@ public class HyperdrivePane extends LitPathPane {
         GridPane.setColumnSpan(separator, GridPane.REMAINING);
         servicesGrid.add(separator, 0, 3);
 
-        requestsSpinnerVBox.setAlignment(Pos.CENTER_LEFT);
-        servicesGrid.add(requestsSpinnerVBox, 0, 4);
+        requestsSpinnerVBox.setAlignment(Pos.TOP_LEFT);
+        outstandingSpinnerVBox.setAlignment(Pos.TOP_LEFT);
+        //@TODO SMP sorry for the magic numbers
+        HBox requestsHBox = new HBox(75, requestsSpinnerVBox, outstandingSpinnerVBox);
+        requestsHBox.setAlignment(Pos.TOP_LEFT);
+        servicesGrid.add(requestsHBox, 0, 4);
 
         chunkingSpinnerVBox.setAlignment(Pos.CENTER_LEFT);
         servicesGrid.add(chunkingSpinnerVBox, 1, 4);
