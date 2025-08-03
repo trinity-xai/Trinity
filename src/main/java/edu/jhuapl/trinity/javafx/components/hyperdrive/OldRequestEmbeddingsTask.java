@@ -23,18 +23,18 @@ import static edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageUrl.imageUrlFr
 /**
  * @author Sean Phillips
  */
-public class RequestEmbeddingsTask extends HyperdriveTask {
-    private static final Logger LOG = LoggerFactory.getLogger(RequestEmbeddingsTask.class);
+public class OldRequestEmbeddingsTask extends HyperdriveTask {
+    private static final Logger LOG = LoggerFactory.getLogger(OldRequestEmbeddingsTask.class);
     String currentEmbeddingsModel;
     List<EmbeddingsImageListItem> imageEmbeddingsListItems;
 
-    public RequestEmbeddingsTask(Scene scene, String currentEmbeddingsModel) {
+    public OldRequestEmbeddingsTask(Scene scene, String currentEmbeddingsModel) {
         super(scene, null, new AtomicInteger(), null);
         this.currentEmbeddingsModel = currentEmbeddingsModel;
         this.imageEmbeddingsListItems = null;
     }
 
-    public RequestEmbeddingsTask(Scene scene, CircleProgressIndicator progressIndicator,
+    public OldRequestEmbeddingsTask(Scene scene, CircleProgressIndicator progressIndicator,
                                  AtomicInteger requestNumber, String currentEmbeddingsModel,
                                  HashMap<Integer, REQUEST_STATUS> outstandingRequests,
                                  List<EmbeddingsImageListItem> imageEmbeddingsListItems) {
@@ -42,6 +42,7 @@ public class RequestEmbeddingsTask extends HyperdriveTask {
         this.currentEmbeddingsModel = currentEmbeddingsModel;
         this.imageEmbeddingsListItems = imageEmbeddingsListItems;
     }
+
     @Override
     protected void processTask() throws Exception {
         AtomicInteger atomicCount = new AtomicInteger(0);

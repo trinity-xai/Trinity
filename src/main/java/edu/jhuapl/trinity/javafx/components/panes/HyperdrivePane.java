@@ -94,6 +94,8 @@ import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageUrl.imageUrlFromImage;
+import edu.jhuapl.trinity.javafx.components.hyperdrive.BatchRequestManager;
+import edu.jhuapl.trinity.javafx.components.hyperdrive.ImageEmbeddingsBatchLauncher;
 import static edu.jhuapl.trinity.javafx.events.CommandTerminalEvent.notifyTerminalSuccess;
 import static edu.jhuapl.trinity.javafx.events.CommandTerminalEvent.notifyTerminalWarning;
 import static edu.jhuapl.trinity.messages.RestAccessLayer.*;
@@ -142,9 +144,14 @@ public class HyperdrivePane extends LitPathPane {
     TextField chatLocationTextField;
     ChoiceBox<String> metricChoiceBox;
     AtomicInteger requestNumber;
+    AtomicInteger batchNumber;
+    
     HashMap<Integer, REQUEST_STATUS> outstandingRequests;
+    ImageEmbeddingsBatchLauncher imageBatchLauncher;
+    BatchRequestManager<List<EmbeddingsImageListItem>> imageEmbeddingManager;
+
     int batchSize = 1;
-    int outstandingRequestLimit = 50;
+    int maxInFlightBatches = 5;
     long requestDelay = 25;
     int chunkSize = 16384;
     DateTimeFormatter format;
@@ -166,6 +173,7 @@ public class HyperdrivePane extends LitPathPane {
 
         outstandingRequests = new HashMap<>();
         requestNumber = new AtomicInteger();
+        batchNumber = new AtomicInteger(0);
         waitingImage = ResourceUtils.loadIconFile("waitingforimage");
         setBackground(Background.EMPTY);
         //container for the floating window itself
@@ -330,11 +338,20 @@ public class HyperdrivePane extends LitPathPane {
         Button imageEmbeddingsButton = new Button("Request Embeddings");
         imageEmbeddingsButton.setWrapText(true);
         imageEmbeddingsButton.setTextAlignment(TextAlignment.CENTER);
-        imageEmbeddingsButton.setOnAction(e -> {
-            if (!imageEmbeddingsListView.getItems().isEmpty()) {
-                requestEmbeddingsTask();
-            }
-        });
+//        imageEmbeddingsButton.setOnAction(e -> {
+//            if (!imageEmbeddingsListView.getItems().isEmpty()) {
+//                requestEmbeddingsTask();
+//            }
+//        });
+imageEmbeddingsButton.setOnAction(e -> {
+    List<EmbeddingsImageListItem> items = imageEmbeddingsListView.getSelectionModel().getSelectedItems();
+//    int batchSize = batchSizeSpinner.getValue(); // Or wherever you store the batch size
+    List<List<EmbeddingsImageListItem>> batches = new ArrayList<>();
+    for (int i = 0; i < items.size(); i += batchSize) {
+        batches.add(new ArrayList<>(items.subList(i, Math.min(i + batchSize, items.size()))));
+    }
+    imageEmbeddingManager.enqueue(batches);
+});
 
         ImageView embeddingsPlaceholderIV = ResourceUtils.loadIcon("data", 50);
         HBox embeddingsPlaceholder = new HBox(10, embeddingsPlaceholderIV, new Label("No Data Sources Marked"));
@@ -670,15 +687,15 @@ public class HyperdrivePane extends LitPathPane {
             new VBox(5, new Label("Request Delay ms"), requestDelaySpinner)
         );
 
-        Spinner<Integer> outstandingSpinner = new Spinner(1, 256, outstandingRequestLimit, 1);
+        Spinner<Integer> outstandingSpinner = new Spinner(1, 256, maxInFlightBatches, 1);
         outstandingSpinner.valueProperty().addListener(c -> {
-            outstandingRequestLimit = outstandingSpinner.getValue();
+            maxInFlightBatches = outstandingSpinner.getValue();
         });
         outstandingSpinner.setEditable(true);
         outstandingSpinner.setPrefWidth(100);
         
         VBox outstandingSpinnerVBox = new VBox(20,
-            new VBox(5, new Label("Outstanding Request Limit"), outstandingSpinner)
+            new VBox(5, new Label("Max In Flight Batches"), outstandingSpinner)
         );
 
         CheckBox enableJSONcheckBox = new CheckBox("Enable Special JSON Processing");
@@ -1178,6 +1195,45 @@ public class HyperdrivePane extends LitPathPane {
         });
 
         getStyleClass().add("hyperdrive-pane");
+        // Initialize the batch launcher with current Scene and model
+        imageBatchLauncher = new ImageEmbeddingsBatchLauncher(scene, currentEmbeddingsModel);
+        // Instantiate the manager
+        imageEmbeddingManager = new BatchRequestManager<>(
+            maxInFlightBatches,   // Maximum concurrent requests (from your spinner)
+            60000,                    // Timeout in ms (e.g., 60s)
+            3,                        // Maximum retries per batch
+            batchNumber::getAndIncrement,       // batchNumber supplier
+            requestNumber::getAndIncrement, // Unique request ID supplier
+            // Task Factory: how to launch a batch
+            (batch, batchNum, reqId) -> () -> {
+                imageBatchLauncher.launchBatch(batch, batchNum, reqId, (success, ex) -> {
+                    if (success) {
+                        imageEmbeddingManager.completeSuccess(reqId, batchNum, batch, 0);
+                    } else {
+                        imageEmbeddingManager.completeFailure(reqId, batchNum, batch, 0, ex);
+                    }
+                });
+            },
+            // onComplete: What to do when a batch finishes (success/failure/timeout)
+            result -> {
+                
+                Platform.runLater(() -> {
+                    // Example: update your progress indicator, show alerts on failure, etc.
+                    // You can use: result.getStatus(), result.getBatch(), result.getRetryCount(), result.getException()
+                    System.out.println("Batch: " + result.getBatchNumber() 
+                        + " Request: " + result.getRequestId() 
+                        + " Status: " + result.getStatus()
+                        + " Attempt: " + result.getRetryCount()
+                    );
+                });
+            }
+        );
+        Runtime.getRuntime().addShutdownHook(new Thread(() -> {
+            if (this != null) {
+                imageEmbeddingManager.shutdown();
+            }
+        }));        
+        
     }
 
     private void applyServiceDir() {

@@ -15,7 +15,6 @@ import java.util.concurrent.ScheduledExecutorService;
 import java.util.concurrent.ScheduledFuture;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.BiFunction;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
 import org.slf4j.Logger;
@@ -37,12 +36,14 @@ public class BatchRequestManager<T> {
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2);
     private final Map<Integer, ScheduledFuture<?>> timeouts = new ConcurrentHashMap<>();
 
-    private final BiFunction<T, Integer, Runnable> taskFactory; // (batch, requestId) -> Runnable/Task
-    private final Consumer<BatchResult<T>> onComplete; // Info on batch completion/failure/timeout
+    // Now you need both a requestId and a batchNumber supplier!
     private final Supplier<Integer> requestIdSupplier;
+    private final Supplier<Integer> batchNumberSupplier;
+    private final TriFunction<T, Integer, Integer, Runnable> taskFactory; // (batch, batchNumber, reqId) -> Runnable
+    private final Consumer<BatchResult<T>> onComplete;
 
-    // For logging or UI updates
     public interface BatchResult<T> {
+        int getBatchNumber();
         int getRequestId();
         T getBatch();
         Status getStatus();
@@ -52,30 +53,40 @@ public class BatchRequestManager<T> {
         enum Status { SUCCESS, FAILURE, TIMEOUT }
     }
 
-    // Internal wrapper to track retries, etc.
+    // Internal wrapper
     private static class BatchWrapper<T> {
         final T batch;
+        final int batchNumber;
+        final int requestId; // Typically per batch, but you can expand to per-item if you want
         int retries;
-        final int requestId;
 
-        BatchWrapper(T batch, int requestId) {
+        BatchWrapper(T batch, int batchNumber, int requestId) {
             this.batch = batch;
-            this.retries = 0;
+            this.batchNumber = batchNumber;
             this.requestId = requestId;
+            this.retries = 0;
         }
+    }
+
+    // TriFunction interface
+    @FunctionalInterface
+    public interface TriFunction<A, B, C, R> {
+        R apply(A a, B b, C c);
     }
 
     public BatchRequestManager(
             int maxInFlight,
             long timeoutMillis,
             int maxRetries,
+            Supplier<Integer> batchNumberSupplier,
             Supplier<Integer> requestIdSupplier,
-            BiFunction<T, Integer, Runnable> taskFactory,
+            TriFunction<T, Integer, Integer, Runnable> taskFactory, // (batch, batchNumber, reqId) -> Runnable
             Consumer<BatchResult<T>> onComplete
     ) {
         this.maxInFlight = maxInFlight;
         this.timeoutMillis = timeoutMillis;
         this.maxRetries = maxRetries;
+        this.batchNumberSupplier = batchNumberSupplier;
         this.requestIdSupplier = requestIdSupplier;
         this.taskFactory = taskFactory;
         this.onComplete = onComplete;
@@ -83,8 +94,9 @@ public class BatchRequestManager<T> {
 
     public void enqueue(Collection<T> batches) {
         for (T batch : batches) {
+            int batchNum = batchNumberSupplier.get();
             int reqId = requestIdSupplier.get();
-            pendingQueue.add(new BatchWrapper<>(batch, reqId));
+            pendingQueue.add(new BatchWrapper<>(batch, batchNum, reqId));
         }
         dispatch();
     }
@@ -94,19 +106,18 @@ public class BatchRequestManager<T> {
             BatchWrapper<T> wrapper = pendingQueue.poll();
             if (wrapper != null) {
                 inFlight.incrementAndGet();
-                LOG.info("Dispatching batch {} (retry #{})", wrapper.requestId, wrapper.retries);
+                LOG.info("Dispatching batch {} (batchNumber={}) (retry #{})", wrapper.requestId, wrapper.batchNumber, wrapper.retries);
                 ScheduledFuture<?> timeout = scheduler.schedule(() -> {
                     onTimeout(wrapper);
                 }, timeoutMillis, TimeUnit.MILLISECONDS);
                 timeouts.put(wrapper.requestId, timeout);
 
-                Runnable task = taskFactory.apply(wrapper.batch, wrapper.requestId);
+                Runnable task = taskFactory.apply(wrapper.batch, wrapper.batchNumber, wrapper.requestId);
                 new Thread(() -> {
                     try {
                         task.run();
-                        // On success, complete() should be called externally
                     } catch (Exception ex) {
-                        LOG.error("Batch {} threw exception: {}", wrapper.requestId, ex.toString());
+                        LOG.error("Batch {} (batchNumber={}) threw exception: {}", wrapper.requestId, wrapper.batchNumber, ex.toString());
                         handleFailure(wrapper, ex);
                     }
                 }, "BatchRequest-" + wrapper.requestId).start();
@@ -114,20 +125,18 @@ public class BatchRequestManager<T> {
         }
     }
 
-    // Call this from your Task when a batch completes successfully
-    public void completeSuccess(int requestId, T batch, int retries) {
-        handleCompletion(requestId, batch, retries, BatchResult.Status.SUCCESS, null);
+    public void completeSuccess(int requestId, int batchNumber, T batch, int retries) {
+        handleCompletion(requestId, batchNumber, batch, retries, BatchResult.Status.SUCCESS, null);
     }
 
-    // Call this from your Task when a batch fails explicitly (not via timeout)
-    public void completeFailure(int requestId, T batch, int retries, Exception ex) {
-        handleCompletion(requestId, batch, retries, BatchResult.Status.FAILURE, ex);
+    public void completeFailure(int requestId, int batchNumber, T batch, int retries, Exception ex) {
+        handleCompletion(requestId, batchNumber, batch, retries, BatchResult.Status.FAILURE, ex);
     }
 
-    // Only call directly from timeout handler
     private void onTimeout(BatchWrapper<T> wrapper) {
-        LOG.warn("Batch {} timed out after {}ms (retry #{})", wrapper.requestId, timeoutMillis, wrapper.retries);
-        handleFailure(wrapper, null); // Ex == null means timeout
+        LOG.warn("Batch {} (batchNumber={}) timed out after {}ms (retry #{})",
+            wrapper.requestId, wrapper.batchNumber, timeoutMillis, wrapper.retries);
+        handleFailure(wrapper, null);
     }
 
     private void handleFailure(BatchWrapper<T> wrapper, Exception ex) {
@@ -135,35 +144,38 @@ public class BatchRequestManager<T> {
         inFlight.decrementAndGet();
         if (wrapper.retries < maxRetries) {
             wrapper.retries++;
-            LOG.info("Retrying batch {} (retry #{})", wrapper.requestId, wrapper.retries);
+            LOG.info("Retrying batch {} (batchNumber={}) (retry #{})", wrapper.requestId, wrapper.batchNumber, wrapper.retries);
             pendingQueue.add(wrapper);
         } else {
-            LOG.error("Batch {} failed after {} retries", wrapper.requestId, wrapper.retries);
+            LOG.error("Batch {} (batchNumber={}) failed after {} retries", wrapper.requestId, wrapper.batchNumber, wrapper.retries);
             if (onComplete != null) {
-                onComplete.accept(new BatchResultImpl<>(wrapper.requestId, wrapper.batch, BatchResult.Status.FAILURE, wrapper.retries, ex));
+                onComplete.accept(new BatchResultImpl<>(wrapper.requestId, wrapper.batchNumber, wrapper.batch, BatchResult.Status.FAILURE, wrapper.retries, ex));
             }
         }
         dispatch();
     }
 
-    private void handleCompletion(int requestId, T batch, int retries, BatchResult.Status status, Exception ex) {
+    private void handleCompletion(int requestId, int batchNumber, T batch, int retries, BatchResult.Status status, Exception ex) {
         ScheduledFuture<?> timeout = timeouts.remove(requestId);
         if (timeout != null) timeout.cancel(false);
         inFlight.decrementAndGet();
         if (onComplete != null) {
-            onComplete.accept(new BatchResultImpl<>(requestId, batch, status, retries, ex));
+            onComplete.accept(new BatchResultImpl<>(requestId, batchNumber, batch, status, retries, ex));
         }
         dispatch();
     }
 
     private static class BatchResultImpl<T> implements BatchResult<T> {
         private final int requestId;
+        private final int batchNumber;
         private final T batch;
         private final Status status;
         private final int retryCount;
         private final Exception ex;
-        BatchResultImpl(int requestId, T batch, Status status, int retryCount, Exception ex) {
+
+        BatchResultImpl(int requestId, int batchNumber, T batch, Status status, int retryCount, Exception ex) {
             this.requestId = requestId;
+            this.batchNumber = batchNumber;
             this.batch = batch;
             this.status = status;
             this.retryCount = retryCount;
@@ -171,6 +183,8 @@ public class BatchRequestManager<T> {
         }
         @Override
         public int getRequestId() { return requestId; }
+        @Override
+        public int getBatchNumber() { return batchNumber; }
         @Override
         public T getBatch() { return batch; }
         @Override
