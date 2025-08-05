@@ -41,7 +41,7 @@ public class LoadImagesTask extends HyperdriveTask {
         AtomicInteger atomicCount = new AtomicInteger(0);
         if (null != progressIndicator) {
             progressIndicator.setFadeTimeMS(250);
-            progressIndicator.setLabelLater("Loading " + atomicCount.toString() + " images...");
+            progressIndicator.setTopLabelLater("Searching for images...");
             progressIndicator.spin(true);
             progressIndicator.fadeBusy(false);
         }
@@ -64,6 +64,9 @@ public class LoadImagesTask extends HyperdriveTask {
         imageFilesList.removeIf(f -> !JavaFX3DUtils.isTextureFile(f));
         Utils.logTotalTime(startTime);
         final double total = imageFilesList.size();
+        if (null != progressIndicator) {
+            progressIndicator.setTopLabelLater("Loading " + total + " images...");
+        }
         LOG.info("Loading images into listitems....");
         startTime = System.nanoTime();
         List<EmbeddingsImageListItem> newItems =

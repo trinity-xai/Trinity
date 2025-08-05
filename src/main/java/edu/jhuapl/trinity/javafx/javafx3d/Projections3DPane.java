@@ -351,8 +351,11 @@ public class Projections3DPane extends StackPane implements
         camera.setTranslateZ(cameraDistance);
         cameraTransform.ry.setAngle(-45.0);
         cameraTransform.rx.setAngle(-10.0);
-        cameraOrbiter = new CameraOrbiter(cameraTransform, 7);
-        cameraTransform.ry.angleProperty().addListener(e -> updateFloatingNodes());
+        cameraOrbiter = new CameraOrbiter(cameraTransform, 6);
+        cameraTransform.ry.angleProperty().addListener(e -> {
+            updateFloatingNodes();
+            radialOverlayPane.updateCalloutHeadPoints(subScene);
+        });
 //        setupSkyBox();
         debugGroup.setVisible(false);
 

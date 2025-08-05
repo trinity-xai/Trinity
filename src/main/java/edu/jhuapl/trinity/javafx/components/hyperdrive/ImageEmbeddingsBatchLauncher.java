@@ -13,12 +13,14 @@ import java.util.function.BiConsumer;
 
 import static edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageUrl.imageUrlFromImage;
 import edu.jhuapl.trinity.messages.EmbeddingsImageCallback;
+import java.util.ArrayList;
 
 /**
  * Utility for launching a batch of image embedding requests and registering
  * completion callbacks with the BatchRequestManager.
  */
 public class ImageEmbeddingsBatchLauncher {
+
     private static final Logger LOG = LoggerFactory.getLogger(ImageEmbeddingsBatchLauncher.class);
 
     private final Scene scene;
@@ -30,21 +32,28 @@ public class ImageEmbeddingsBatchLauncher {
     }
 
     /**
-     * Launch a batch of embedding requests and register the completion callback.
-     * @param batch         List of EmbeddingsImageListItem to process in this batch.
-     * @param batchNumber   The unique batch number for this batch.
-     * @param reqId         The request number for this REST batch submission.
-     * @param callback      Completion callback, signature: (success, Exception)
+     * Launch a batch of embedding requests and register the completion
+     * callback.
+     *
+     * @param batch List of EmbeddingsImageListItem to process in this batch.
+     * @param batchNumber The unique batch number for this batch.
+     * @param reqId The request number for this REST batch submission.
+     * @param callback Completion callback, signature: (success, Exception)
      */
     public void launchBatch(List<EmbeddingsImageListItem> batch, int batchNumber, int reqId,
-                            BiConsumer<Boolean, Exception> callback) {
+            BiConsumer<Boolean, Exception> callback) {
         //register the callback and fire the REST request.
         EmbeddingsImageCallback.completionCallbacks.put(reqId, callback);
 
-        List<EmbeddingsImageUrl> inputs = batch.stream()
-                .map(item -> imageUrlFromImage.apply(item.getCurrentImage()))
-                .toList();
+        List<EmbeddingsImageUrl> inputs = new ArrayList<>();
 
+        //Serial encoding (preserves GUI thread order)
+        for (int i = 0; i < batch.size(); i++) {
+            EmbeddingsImageListItem item = batch.get(i);
+            inputs.add(imageUrlFromImage.apply(item.getCurrentImage()));
+        }
+
+        // Now build and send the request as before:
         EmbeddingsImageBatchInput input = new EmbeddingsImageBatchInput();
         input.setInput(inputs);
         input.setDimensions(512);

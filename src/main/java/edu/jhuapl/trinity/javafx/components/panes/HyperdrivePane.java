@@ -99,6 +99,7 @@ import edu.jhuapl.trinity.javafx.components.hyperdrive.ImageEmbeddingsBatchLaunc
 import static edu.jhuapl.trinity.javafx.events.CommandTerminalEvent.notifyTerminalSuccess;
 import static edu.jhuapl.trinity.javafx.events.CommandTerminalEvent.notifyTerminalWarning;
 import static edu.jhuapl.trinity.messages.RestAccessLayer.*;
+import java.text.DecimalFormat;
 
 /**
  * @author Sean Phillips
@@ -151,8 +152,9 @@ public class HyperdrivePane extends LitPathPane {
     BatchRequestManager<List<EmbeddingsImageListItem>> imageEmbeddingManager;
 
     int batchSize = 1;
-    int maxInFlightBatches = 5;
-    long requestDelay = 25;
+    int maxInFlightBatches = 10;
+    long requestDelay = 50;
+    long requestTimeoutMS = 180000;
     int chunkSize = 16384;
     DateTimeFormatter format;
 
@@ -172,7 +174,7 @@ public class HyperdrivePane extends LitPathPane {
         textFilesList = new ArrayList<>();
 
         outstandingRequests = new HashMap<>();
-        requestNumber = new AtomicInteger();
+        requestNumber = new AtomicInteger(0);
         batchNumber = new AtomicInteger(0);
         waitingImage = ResourceUtils.loadIconFile("waitingforimage");
         setBackground(Background.EMPTY);
@@ -338,18 +340,28 @@ public class HyperdrivePane extends LitPathPane {
         Button imageEmbeddingsButton = new Button("Request Embeddings");
         imageEmbeddingsButton.setWrapText(true);
         imageEmbeddingsButton.setTextAlignment(TextAlignment.CENTER);
-//        imageEmbeddingsButton.setOnAction(e -> {
-//            if (!imageEmbeddingsListView.getItems().isEmpty()) {
-//                requestEmbeddingsTask();
-//            }
-//        });
+        
 imageEmbeddingsButton.setOnAction(e -> {
     List<EmbeddingsImageListItem> items = imageEmbeddingsListView.getSelectionModel().getSelectedItems();
-//    int batchSize = batchSizeSpinner.getValue(); // Or wherever you store the batch size
     List<List<EmbeddingsImageListItem>> batches = new ArrayList<>();
     for (int i = 0; i < items.size(); i += batchSize) {
-        batches.add(new ArrayList<>(items.subList(i, Math.min(i + batchSize, items.size()))));
+        batches.add(
+            new ArrayList<>(items.subList(i, Math.min(i + batchSize, items.size())))
+        );
     }
+    System.out.println("Total Batches: " + batches.size());
+    //Progress & OutstandingRequests Initialization
+    outstandingRequests.clear();
+    for (EmbeddingsImageListItem item : items) {  // use the flat, full list!
+        outstandingRequests.put(item.imageID, REQUEST_STATUS.REQUESTED);
+    }
+    imageEmbeddingRequestIndicator.setPercentComplete(0);
+    imageEmbeddingRequestIndicator.setTopLabelLater("Received 0 of " + items.size());
+    imageEmbeddingRequestIndicator.spin(true);
+    if(!imageEmbeddingRequestIndicator.inView())
+        imageEmbeddingRequestIndicator.fadeBusy(false);    
+    imageEmbeddingManager.clearCounters();
+    // Launch batches
     imageEmbeddingManager.enqueue(batches);
 });
 
@@ -403,8 +415,8 @@ imageEmbeddingsButton.setOnAction(e -> {
             if (!imageEmbeddingsListView.getSelectionModel().getSelectedItems().isEmpty()) {
                 imageEmbeddingRequestIndicator.setLabelLater("Choose Captions...");
                 imageEmbeddingRequestIndicator.spin(true);
-                imageEmbeddingRequestIndicator.fadeBusy(false);
-                //LOG.info("Prompting User for Labels...");
+                if(!imageEmbeddingRequestIndicator.inView())
+                    imageEmbeddingRequestIndicator.fadeBusy(false);                //LOG.info("Prompting User for Labels...");
                 Platform.runLater(() -> {
                     CaptionChooserBox box = new CaptionChooserBox();
                     box.setChoices(landmarkTextBuilderBox.getChoices());
@@ -455,10 +467,20 @@ imageEmbeddingsButton.setOnAction(e -> {
             imageEmbeddingRequestIndicator.spin(false);
             imageEmbeddingRequestIndicator.fadeBusy(true);
         });
+        MenuItem stopAndClearMenuItem = new MenuItem("Stop and Clear Enqueued");
+        stopAndClearMenuItem.setOnAction(e -> {
+            imageEmbeddingManager.stopAndClear();
+            // Clear GUI progress and outstandingRequests map too, if desired
+            outstandingRequests.clear();
+            imageEmbeddingRequestIndicator.setPercentComplete(0);
+            imageEmbeddingRequestIndicator.setTopLabelLater("Stopped");
+            imageEmbeddingRequestIndicator.spin(false);
+            imageEmbeddingRequestIndicator.fadeBusy(true);
+        });        
         ContextMenu embeddingsContextMenu =
             new ContextMenu(selectAllMenuItem, setCaptionItem, requestCaptionItem,
                 chooseCaptionItem, textLandmarkCaptionItem, imageLandmarkCaptionItem,
-                clearRequestsItem);
+                clearRequestsItem, stopAndClearMenuItem);
         imageEmbeddingsListView.setContextMenu(embeddingsContextMenu);
 
         embeddingsCenterStack = new StackPane();
@@ -674,10 +696,19 @@ imageEmbeddingsButton.setOnAction(e -> {
         batchSizeSpinner.setEditable(true);
         batchSizeSpinner.setPrefWidth(100);
 
+        Spinner<Integer> timeoutSpinner = new Spinner(1, 600, requestTimeoutMS/1000, 1);
+        timeoutSpinner.valueProperty().addListener(c -> {
+            requestTimeoutMS = timeoutSpinner.getValue() * 1000; //spinner is in seconds
+            imageEmbeddingManager.setTimeoutMillis(requestTimeoutMS);
+        });
+        timeoutSpinner.setEditable(true);
+        timeoutSpinner.setPrefWidth(100);
+
         Spinner requestDelaySpinner = new Spinner(1, 1000, requestDelay, 1);
         requestDelaySpinner.valueProperty().addListener(c -> {
             Double delay = (Double) requestDelaySpinner.getValue();
             requestDelay = delay.longValue();
+            imageEmbeddingManager.setRequestDelayMillis(requestDelay);
         });
         requestDelaySpinner.setEditable(true);
         requestDelaySpinner.setPrefWidth(100);
@@ -690,12 +721,14 @@ imageEmbeddingsButton.setOnAction(e -> {
         Spinner<Integer> outstandingSpinner = new Spinner(1, 256, maxInFlightBatches, 1);
         outstandingSpinner.valueProperty().addListener(c -> {
             maxInFlightBatches = outstandingSpinner.getValue();
+            imageEmbeddingManager.setMaxInFlight(maxInFlightBatches);
         });
         outstandingSpinner.setEditable(true);
         outstandingSpinner.setPrefWidth(100);
         
         VBox outstandingSpinnerVBox = new VBox(20,
-            new VBox(5, new Label("Max In Flight Batches"), outstandingSpinner)
+            new VBox(5, new Label("Max In Flight Batches"), outstandingSpinner),
+            new VBox(5, new Label("Request Timeout (Seconds)"), timeoutSpinner)
         );
 
         CheckBox enableJSONcheckBox = new CheckBox("Enable Special JSON Processing");
@@ -966,55 +999,67 @@ imageEmbeddingsButton.setOnAction(e -> {
                 outstandingRequests.clear();
             }
         });
-        scene.getRoot().addEventHandler(RestEvent.NEW_EMBEDDINGS_IMAGE, event -> {
-            EmbeddingsImageOutput output = (EmbeddingsImageOutput) event.object;
-            List<Integer> inputIDs = (List<Integer>) event.object2;
-            int totalListItems = imageEmbeddingsListView.getItems().size();
-            for (int i = 0; i < output.getData().size(); i++) {
-                if (i <= totalListItems) {
-                    int currentInputID = inputIDs.get(i);
-                    if (currentInputID == EMBEDDINGS_IMAGE_TESTID) {
-                        notifyTerminalSuccess("Image Embeddings Test Successful", scene);
-                    } else {
-                        EmbeddingsImageData currentOutput = output.getData().get(i);
-                        imageEmbeddingsListView.getItems()
-                            .filtered(fi -> fi.imageID == currentInputID)
-                            .forEach(item -> {
-                                item.setEmbeddings(currentOutput.getEmbedding());
-                                item.addMetaData("object", currentOutput.getObject());
-                                item.addMetaData("type", currentOutput.getType());
-                            });
-                    }
-                }
-            }
-            outstandingRequests.put(output.getRequestNumber(), REQUEST_STATUS.SUCCEEDED);
-            int totalRequests = outstandingRequests.size();
-            long remainingRequests = outstandingRequests.entrySet().stream()
-                .filter(t -> t.getValue() == REQUEST_STATUS.REQUESTED).count();
-            imageEmbeddingRequestIndicator.setTopLabelLater("Received "
-                + (totalRequests - remainingRequests) + " of " + totalRequests);
-            if (!outstandingRequests.containsValue(REQUEST_STATUS.REQUESTED)) {
-                imageEmbeddingRequestIndicator.spin(false);
-                imageEmbeddingRequestIndicator.fadeBusy(true);
-                outstandingRequests.clear();
-            }
-        });
-        scene.getRoot().addEventHandler(RestEvent.ERROR_EMBEDDINGS_IMAGE, event -> {
-            List<File> inputFiles = (List<File>) event.object;
-            int request = (int) event.object2;
-            outstandingRequests.put(request, REQUEST_STATUS.FAILED);
-            long totalRequests = outstandingRequests.entrySet().size();
-            long remainingRequests = outstandingRequests.entrySet().stream()
-                .filter(t -> t.getValue() == REQUEST_STATUS.REQUESTED).count();
-            imageEmbeddingRequestIndicator.setTopLabelLater("Received "
-                + (totalRequests - remainingRequests) + " of " + totalRequests);
 
-            if (!outstandingRequests.containsValue(REQUEST_STATUS.REQUESTED)) {
-                outstandingRequests.clear();
-                imageEmbeddingRequestIndicator.spin(false);
-                imageEmbeddingRequestIndicator.fadeBusy(true);
-            }
-        });
+scene.getRoot().addEventHandler(RestEvent.NEW_EMBEDDINGS_IMAGE, event -> {
+    EmbeddingsImageOutput output = (EmbeddingsImageOutput) event.object;
+    List<Integer> inputIDs = (List<Integer>) event.object2;
+
+    int totalListItems = outstandingRequests.size(); // Track total once at start
+    // For each result, mark as SUCCEEDED in outstandingRequests
+    for (int i = 0; i < output.getData().size(); i++) {
+        int currentInputID = inputIDs.get(i);
+        outstandingRequests.put(currentInputID, REQUEST_STATUS.SUCCEEDED);
+        // (Optionally update imageEmbeddingsListView items here as before)
+        EmbeddingsImageData currentOutput = output.getData().get(i);
+        if (currentInputID == EMBEDDINGS_IMAGE_TESTID) {
+            notifyTerminalSuccess("Image Embeddings Test Successful", scene);
+        } else {        
+            imageEmbeddingsListView.getItems()
+            .filtered(fi -> fi.imageID == currentInputID)
+            .forEach(item -> {
+                item.setEmbeddings(currentOutput.getEmbedding());
+                item.addMetaData("object", currentOutput.getObject());
+                item.addMetaData("type", currentOutput.getType());
+            });
+        }
+    }
+    // Progress calculation
+    long succeeded = outstandingRequests.values().stream().filter(s -> s == REQUEST_STATUS.SUCCEEDED).count();
+    long failed = outstandingRequests.values().stream().filter(s -> s == REQUEST_STATUS.FAILED).count();
+    long completed = succeeded + failed;
+
+    imageEmbeddingRequestIndicator.setPercentComplete(completed / (double) totalListItems);
+    imageEmbeddingRequestIndicator.setTopLabelLater("Received " + completed + " of " + totalListItems);
+
+    // When ALL are done (succeeded or failed), clean up
+    if (completed == totalListItems) {
+        imageEmbeddingRequestIndicator.spin(false);
+        imageEmbeddingRequestIndicator.fadeBusy(true);
+        outstandingRequests.clear();
+    }
+});     
+scene.getRoot().addEventHandler(RestEvent.ERROR_EMBEDDINGS_IMAGE, event -> {
+    List<Integer> failedInputIDs = (List<Integer>) event.object;
+    int totalListItems = outstandingRequests.size();
+
+    for (Integer failedId : failedInputIDs) {
+        outstandingRequests.put(failedId, REQUEST_STATUS.FAILED);
+    }
+
+    long succeeded = outstandingRequests.values().stream().filter(s -> s == REQUEST_STATUS.SUCCEEDED).count();
+    long failed = outstandingRequests.values().stream().filter(s -> s == REQUEST_STATUS.FAILED).count();
+    long completed = succeeded + failed;
+
+    imageEmbeddingRequestIndicator.setPercentComplete(completed / (double) totalListItems);
+    imageEmbeddingRequestIndicator.setTopLabelLater("Received " + completed + " of " + totalListItems);
+
+    if (completed == totalListItems) {
+        imageEmbeddingRequestIndicator.spin(false);
+        imageEmbeddingRequestIndicator.fadeBusy(true);
+        outstandingRequests.clear();
+    }
+});
+
         scene.getRoot().addEventHandler(RestEvent.ERROR_EMBEDDINGS_TEXT, event -> {
             List<File> inputFiles = (List<File>) event.object;
             int request = (int) event.object2;
@@ -1199,13 +1244,25 @@ imageEmbeddingsButton.setOnAction(e -> {
         imageBatchLauncher = new ImageEmbeddingsBatchLauncher(scene, currentEmbeddingsModel);
         // Instantiate the manager
         imageEmbeddingManager = new BatchRequestManager<>(
-            maxInFlightBatches,   // Maximum concurrent requests (from your spinner)
-            60000,                    // Timeout in ms (e.g., 60s)
+            maxInFlightBatches,   // Maximum concurrent requests 
+            requestTimeoutMS,                    // Timeout in ms (e.g., 60s)
             3,                        // Maximum retries per batch
             batchNumber::getAndIncrement,       // batchNumber supplier
             requestNumber::getAndIncrement, // Unique request ID supplier
-            // Task Factory: how to launch a batch
+            // Task Factory: launch a batch
             (batch, batchNum, reqId) -> () -> {
+                Platform.runLater(() -> {
+                    if (imageEmbeddingRequestIndicator != null) {
+                        imageEmbeddingRequestIndicator.setFadeTimeMS(250);
+                        imageEmbeddingRequestIndicator.spin(true);
+                        if(!imageEmbeddingRequestIndicator.inView())
+                            imageEmbeddingRequestIndicator.fadeBusy(false);
+                        imageEmbeddingRequestIndicator.setLabelLater(
+                            "Encoding and sending Batch: " + batchNum 
+                            + " of " + imageEmbeddingManager.getTotalBatches()
+                        );                                 
+                    }           
+                });    
                 imageBatchLauncher.launchBatch(batch, batchNum, reqId, (success, ex) -> {
                     if (success) {
                         imageEmbeddingManager.completeSuccess(reqId, batchNum, batch, 0);
@@ -1214,17 +1271,29 @@ imageEmbeddingsButton.setOnAction(e -> {
                     }
                 });
             },
-            // onComplete: What to do when a batch finishes (success/failure/timeout)
+            // onComplete: (success/failure/timeout)
             result -> {
+                //@DEBUG SMP 
+                System.out.println("Batch: " + result.getBatchNumber() 
+                    + " Request: " + result.getRequestId() 
+                    + " Status: " + result.getStatus()
+                    + " Attempt: " + result.getRetryCount()
+                    + " In Flight: " + imageEmbeddingManager.getInFlight()
+                );
+                System.out.println(" Duration: " + imageEmbeddingManager.getBatchDurationByID(result.getRequestId())/1000 + " s"
+                    + " Avg Duration: " + new DecimalFormat("#.000").format(
+                        imageEmbeddingManager.getAvgBatchDurationMillis()/1000) + " s"
+                    + " Total Duration: " + imageEmbeddingManager.getTotalBatchDurationMillis()/1000 + " s"
+                );
                 
                 Platform.runLater(() -> {
-                    // Example: update your progress indicator, show alerts on failure, etc.
-                    // You can use: result.getStatus(), result.getBatch(), result.getRetryCount(), result.getException()
-                    System.out.println("Batch: " + result.getBatchNumber() 
-                        + " Request: " + result.getRequestId() 
-                        + " Status: " + result.getStatus()
-                        + " Attempt: " + result.getRetryCount()
-                    );
+                    // update progress indicator, show alerts on failure, etc.
+                    long failed = outstandingRequests.values().stream().filter(s -> s == REQUEST_STATUS.FAILED).count();
+                    imageEmbeddingRequestIndicator.setLabelLater(
+                        "Batches completed: " + imageEmbeddingManager.getBatchesCompleted() 
+                        + " of " + imageEmbeddingManager.getTotalBatches()
+                        + (failed > 0 ? (" | Errors: " + failed) : "")
+                    );                    
                 });
             }
         );
@@ -1232,8 +1301,7 @@ imageEmbeddingsButton.setOnAction(e -> {
             if (this != null) {
                 imageEmbeddingManager.shutdown();
             }
-        }));        
-        
+        }));                
     }
 
     private void applyServiceDir() {

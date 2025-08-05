@@ -51,11 +51,9 @@ public class CircleProgressIndicator extends StackPane {
                 Duration.millis(3000), Transition.INDEFINITE, false),
             innerRadius, 1.5, innerRadius * 0.8, innerRadius * 0.3);
         innerNeonCircle.getStyleClass().add("inner-neon-circle");
-//            70, 1.5, 50.0, 20.0);
 
         fillCircle = new AnimatedFillCircle(innerRadius * 0.9, 0.0, 2.0, 1.0);
         fillCircle.getStyleClass().add("fill-circle");
-//        fillCircle = new AnimatedFillCircle(65.0, 0.0, 2.0, 1.0);
 
         topLabel.setText("...executing...");
         topLabel.setTextAlignment(TextAlignment.CENTER);
@@ -138,5 +136,8 @@ public class CircleProgressIndicator extends StackPane {
         setVisible(true);
         ft.setOnFinished(e -> setVisible(!fadeOut));
         ft.playFromStart();
+    }
+    public boolean inView() {
+        return getOpacity() >= defaultOpacity && isVisible();
     }
 }
