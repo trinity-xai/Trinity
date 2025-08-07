@@ -1191,7 +1191,7 @@ scene.getRoot().addEventHandler(RestEvent.ERROR_EMBEDDINGS_IMAGE, event -> {
                 newFile = ResourceUtils.saveImageFile(scanImage);
                 EmbeddingsImageListItem newItem = new EmbeddingsImageListItem(newFile, renderIconsCheckBox.isSelected());
                 imageEmbeddingsListView.getItems().add(0, newItem);
-                imageFilesCountLabel.setText(String.valueOf(imageFilesList.size()));
+                imageFilesCountLabel.setText(String.valueOf(imageEmbeddingsListView.getItems().size()));
                 if (!imageEmbeddingsListView.getItems().isEmpty()) {
                     //trigger baseImageView to change
                     imageEmbeddingsListView.getSelectionModel().selectFirst();
@@ -1212,7 +1212,7 @@ scene.getRoot().addEventHandler(RestEvent.ERROR_EMBEDDINGS_IMAGE, event -> {
                 ArrayList<File> newImageFiles = (ArrayList<File>) event.object2;
                 imageFilesList.addAll(newImageFiles);
             }
-            imageFilesCountLabel.setText(String.valueOf(imageFilesList.size()));
+            imageFilesCountLabel.setText(String.valueOf(imageEmbeddingsListView.getItems().size()));
             if (!imageEmbeddingsListView.getItems().isEmpty()) {
                 //trigger baseImageView to change
                 imageEmbeddingsListView.getSelectionModel().selectFirst();

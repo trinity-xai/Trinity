@@ -158,8 +158,7 @@ private void initialDispatch() {
 
 // Call this from completion/failure/timeout
 private void dispatch() {
-    // Only launch one batch after each completion
-    if (inFlight.get() < maxInFlight && !pendingQueue.isEmpty()) {
+    while(inFlight.get() < maxInFlight && !pendingQueue.isEmpty()) {
         scheduleNextBatch();
     }
 }
@@ -242,7 +241,6 @@ private void handleFailure(BatchWrapper<T> wrapper, Exception ex) {
             onComplete.accept(new BatchResultImpl<>(wrapper.requestId, wrapper.batchNumber, wrapper.batch, BatchResult.Status.FAILURE, wrapper.retries, ex));
         }
     }
-    // ---- Only call dispatch() ONCE here! ----
     dispatch();
 }
 public double getAvgBatchDurationMillis() {

@@ -71,7 +71,8 @@ public class EmbeddingsImageListItem extends HBox {
         setPrefHeight(32);
         featureVector = FeatureVector.EMPTY_FEATURE_VECTOR("", 3);
         featureVector.setImageURL(file.getAbsolutePath());
-        Tooltip.install(this, new Tooltip(file.getAbsolutePath()));
+        if(renderIcon) //conserve VRAM
+            Tooltip.install(this, new Tooltip(file.getAbsolutePath()));
 
         imageView.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
             if (e.getClickCount() > 1) {
