@@ -34,15 +34,16 @@ public class EmbeddingsImageListItem extends HBox {
     public static NumberFormat format = new DecimalFormat("0000");
 
     public boolean embeddingsReceived = false;
+    public boolean renderIcon;
+    private boolean imageLoaded = false; //true == loaded actual image not placeholder
     public int imageID;
     private ImageView imageView;
     private Label fileLabel;
     private File file;
-    public boolean renderIcon;
     private Label dimensionsLabel;
     private TextField labelTextField;
     private FeatureVector featureVector = null;
-
+    
     public EmbeddingsImageListItem(File file) {
         this(file, true);
     }
@@ -97,7 +98,8 @@ public class EmbeddingsImageListItem extends HBox {
     public void reloadImage(boolean renderIcon) {
         if (renderIcon) {
             try {
-                imageView = new ImageView(ResourceUtils.loadImageFile(file));
+                imageView = new ImageView(ResourceUtils.loadImageFile(getFile()));
+                imageLoaded = true;
             } catch (IOException ex) {
                 LOG.error(null, ex);
                 imageView = new ImageView(DEFAULT_ICON);
@@ -129,6 +131,11 @@ public class EmbeddingsImageListItem extends HBox {
         fileLabel.setPrefWidth(width);
     }
 
+    
+    public boolean isImageLoaded() {
+        return imageLoaded;
+    }
+         
     public Image getCurrentImage() {
         return imageView.getImage();
     }
@@ -155,6 +162,20 @@ public class EmbeddingsImageListItem extends HBox {
 
     public void setFeatureVectorEntityID(String entityID) {
         featureVector.setEntityId(entityID);
+    }
+
+    /**
+     * @return the file
+     */
+    public File getFile() {
+        return file;
+    }
+
+    /**
+     * @param file the file to set
+     */
+    public void setFile(File file) {
+        this.file = file;
     }
 
     public static Function<File, EmbeddingsImageListItem> itemFromFile = file -> {

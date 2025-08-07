@@ -761,7 +761,5 @@ public enum ResourceUtils {
 
     public static String imageToBase64(Image image) throws IOException {
         return Base64.getEncoder().encodeToString(imageToBytes(image));
-//        return Base64.getEncoder().encodeToString(byteMe(image));
     }
-
 }

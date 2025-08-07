@@ -13,6 +13,8 @@ import java.util.function.BiConsumer;
 
 import static edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageUrl.imageUrlFromImage;
 import edu.jhuapl.trinity.messages.EmbeddingsImageCallback;
+import edu.jhuapl.trinity.utils.ResourceUtils;
+import java.io.IOException;
 import java.util.ArrayList;
 
 /**
@@ -46,11 +48,20 @@ public class ImageEmbeddingsBatchLauncher {
         EmbeddingsImageCallback.completionCallbacks.put(reqId, callback);
 
         List<EmbeddingsImageUrl> inputs = new ArrayList<>();
-
+        
         //Serial encoding (preserves GUI thread order)
         for (int i = 0; i < batch.size(); i++) {
             EmbeddingsImageListItem item = batch.get(i);
-            inputs.add(imageUrlFromImage.apply(item.getCurrentImage()));
+            if(!item.isImageLoaded()){
+                try {
+                    inputs.add(imageUrlFromImage.apply(
+                            ResourceUtils.loadImageFile(item.getFile())));
+                } catch (IOException ex) {
+                    LOG.error("Failed to load Image from source: " + item.getFile().getAbsolutePath());
+                }
+            } else {
+                inputs.add(imageUrlFromImage.apply(item.getCurrentImage()));
+            }
         }
 
         // Now build and send the request as before:
