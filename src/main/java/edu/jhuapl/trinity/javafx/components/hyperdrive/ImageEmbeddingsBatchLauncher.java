@@ -26,7 +26,7 @@ public class ImageEmbeddingsBatchLauncher {
     private static final Logger LOG = LoggerFactory.getLogger(ImageEmbeddingsBatchLauncher.class);
 
     private final Scene scene;
-    private final String currentEmbeddingsModel;
+    private String currentEmbeddingsModel;
 
     public ImageEmbeddingsBatchLauncher(Scene scene, String model) {
         this.scene = scene;
@@ -70,7 +70,7 @@ public class ImageEmbeddingsBatchLauncher {
         input.setDimensions(512);
         input.setEmbedding_type("all");
         input.setEncoding_format("float");
-        input.setModel(currentEmbeddingsModel);
+        input.setModel(getCurrentEmbeddingsModel());
         input.setUser("string");
 
         try {
@@ -86,5 +86,19 @@ public class ImageEmbeddingsBatchLauncher {
             EmbeddingsImageCallback.completionCallbacks.remove(reqId);
             callback.accept(false, ex);
         }
+    }
+
+    /**
+     * @return the currentEmbeddingsModel
+     */
+    public String getCurrentEmbeddingsModel() {
+        return currentEmbeddingsModel;
+    }
+
+    /**
+     * @param currentEmbeddingsModel the currentEmbeddingsModel to set
+     */
+    public void setCurrentEmbeddingsModel(String currentEmbeddingsModel) {
+        this.currentEmbeddingsModel = currentEmbeddingsModel;
     }
 }

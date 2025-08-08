@@ -791,8 +791,10 @@ imageEmbeddingsButton.setOnAction(e -> {
         embeddingsModelChoiceBox.setPrefWidth(400);
         embeddingsModelChoiceBox.setOnAction(e -> {
             String selectedModel = embeddingsModelChoiceBox.getSelectionModel().getSelectedItem();
-            if (null != selectedModel && !selectedModel.isBlank())
+            if (null != selectedModel && !selectedModel.isBlank()) {
                 currentEmbeddingsModel = selectedModel;
+                imageBatchLauncher.setCurrentEmbeddingsModel(currentEmbeddingsModel);
+            }
         });
 
         //Multimodal Embedding Service
