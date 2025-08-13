@@ -12,12 +12,12 @@
         pkgs = import nixpkgs { inherit system; };
 
         # Concrete JDK derivation (avoid pkgs.jdk indirection)
-        jdk = pkgs.temurin-bin-21;  # swap to pkgs.temurin-bin-17 if you prefer
+        jdk = pkgs.temurin-bin-21;
 
         trinityRun = pkgs.writeShellScriptBin "trinity-run" ''
           set -euo pipefail
 
-          # Prefer shaded jar if present; otherwise use classes + copied deps
+          # Prefer shaded jar if present
           SHADED_JAR="$(ls target/*-shaded.jar 2>/dev/null | head -n1 || true)"
           if [ -n "$SHADED_JAR" ]; then
             CP="$SHADED_JAR"
