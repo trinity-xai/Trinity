@@ -2,6 +2,7 @@ package edu.jhuapl.trinity.javafx.components.panes;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import edu.jhuapl.trinity.css.StyleResourceProvider;
+import edu.jhuapl.trinity.data.files.FeatureCollectionFile;
 import edu.jhuapl.trinity.data.messages.llm.AiModel;
 import edu.jhuapl.trinity.data.messages.llm.AliveModels;
 import edu.jhuapl.trinity.data.messages.llm.ChatCaptionResponse;
@@ -100,6 +101,7 @@ import static edu.jhuapl.trinity.javafx.events.CommandTerminalEvent.notifyTermin
 import static edu.jhuapl.trinity.javafx.events.CommandTerminalEvent.notifyTerminalWarning;
 import static edu.jhuapl.trinity.messages.RestAccessLayer.*;
 import java.text.DecimalFormat;
+import javafx.stage.FileChooser;
 
 /**
  * @author Sean Phillips
@@ -127,6 +129,7 @@ public class HyperdrivePane extends LitPathPane {
     Tab textEmbeddingsTab;
     Tab similarityTab;
     Tab servicesTab;
+    Tab filesTab;
     CheckBox renderIconsCheckBox;
 
     ArrayList<FeatureVector> currentFeatureList;
@@ -184,8 +187,10 @@ public class HyperdrivePane extends LitPathPane {
         textEmbeddingsTab = new Tab("Text");
         similarityTab = new Tab("Similarity");
         servicesTab = new Tab("Services");
+        filesTab = new Tab("Files");
 
-        tabPane = new TabPane(imageryEmbeddingsTab, textEmbeddingsTab, similarityTab, servicesTab);
+        tabPane = new TabPane(imageryEmbeddingsTab, textEmbeddingsTab, 
+            similarityTab, servicesTab, filesTab);
         tabPane.setPadding(Insets.EMPTY);
         tabPane.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
         tabPane.setTabDragPolicy(TabPane.TabDragPolicy.FIXED);
@@ -777,6 +782,44 @@ imageEmbeddingsButton.setOnAction(e -> {
             }
         });
 
+        Button mergeButton = new Button("Merge FeatureCollections");
+        mergeButton.setOnAction(e -> {
+            FileChooser fc = new FileChooser();
+            fc.setTitle("Browse and Select FeatureCollections to Merge");
+            List<File> files = fc.showOpenMultipleDialog(getScene().getWindow());
+            if(!files.isEmpty()) {
+                ArrayList<FeatureCollection> collections = new ArrayList<>();
+                for(File file : files) {
+                    try {
+                        if(FeatureCollectionFile.isFeatureCollectionFile(file)){
+                            FeatureCollectionFile fcf = new FeatureCollectionFile(file.getAbsolutePath(), true);
+                            collections.add(fcf.featureCollection);
+                        }
+                    } catch (IOException ex) {
+                        LOG.error(null, ex);
+                    }
+                }
+                if(!collections.isEmpty()) {
+                    FileChooser saver = new FileChooser();
+                    saver.setTitle("Save " + collections.size() + " merged files as...");
+                    File saveAsFile = saver.showSaveDialog(getScene().getWindow());
+                    if(null != saveAsFile){
+                        FeatureCollection merged = FeatureCollection.merge(collections);
+                        FeatureCollectionFile mergedFile = new FeatureCollectionFile(saveAsFile.getAbsolutePath());
+                        mergedFile.featureCollection = merged;
+                        try {
+                            mergedFile.writeContent();
+                        } catch (IOException ex) {
+                            LOG.error(null, ex);
+                        }
+                    }
+                }
+            }
+        });
+        VBox filesVBox = new VBox(10, mergeButton);
+        
+        filesTab.setContent(filesVBox);
+        
         //Image Embeddings Service
         embeddingsLocationTextField = new TextField(
             RestAccessLayer.restAccessLayerconfig.getBaseRestURL() +
