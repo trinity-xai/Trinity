@@ -487,10 +487,23 @@ imageEmbeddingsButton.setOnAction(e -> {
             imageEmbeddingRequestIndicator.spin(false);
             imageEmbeddingRequestIndicator.fadeBusy(true);
         });        
+        MenuItem exportEmbeddingsMenuItem =  new MenuItem("Export Completed to Collection");
+        exportEmbeddingsMenuItem.setOnAction(e -> {
+            if (!imageEmbeddingsListView.getSelectionModel().getSelectedItems().isEmpty()) {
+                List<EmbeddingsImageListItem> complete = imageEmbeddingsListView.getItems()
+                    .stream().filter(i -> i.embeddingsReceived()).toList();
+                List<FeatureVector> features = (complete.stream()
+                    .map(EmbeddingsImageListItem::getFeatureVector).toList());
+                FeatureCollection fc = new FeatureCollection();
+                fc.getFeatures().addAll(features);
+                exportFeatureCollection("Save FeatureCollecdtion as...", fc);
+            }
+
+        });         
         ContextMenu embeddingsContextMenu =
             new ContextMenu(selectAllMenuItem, setCaptionItem, requestCaptionItem,
                 chooseCaptionItem, textLandmarkCaptionItem, imageLandmarkCaptionItem,
-                clearRequestsItem, stopAndClearMenuItem);
+                exportEmbeddingsMenuItem, clearRequestsItem, stopAndClearMenuItem);
         imageEmbeddingsListView.setContextMenu(embeddingsContextMenu);
 
         embeddingsCenterStack = new StackPane();
@@ -805,19 +818,8 @@ imageEmbeddingsButton.setOnAction(e -> {
                     }
                 }
                 if(!collections.isEmpty()) {
-                    FileChooser saver = new FileChooser();
-                    saver.setTitle("Save " + collections.size() + " merged files as...");
-                    File saveAsFile = saver.showSaveDialog(getScene().getWindow());
-                    if(null != saveAsFile){
-                        FeatureCollection merged = FeatureCollection.merge(collections);
-                        FeatureCollectionFile mergedFile = new FeatureCollectionFile(saveAsFile.getAbsolutePath());
-                        mergedFile.featureCollection = merged;
-                        try {
-                            mergedFile.writeContent();
-                        } catch (IOException ex) {
-                            LOG.error(null, ex);
-                        }
-                    }
+                    FeatureCollection merged = FeatureCollection.merge(collections);
+                    exportFeatureCollection("Save " + collections.size() + " merged files as...", merged);
                 }
             }
         });
@@ -1352,6 +1354,20 @@ scene.getRoot().addEventHandler(RestEvent.ERROR_EMBEDDINGS_IMAGE, event -> {
                 imageEmbeddingManager.shutdown();
             }
         }));                
+    }
+    public static void exportFeatureCollection(String title, FeatureCollection fc) {
+        FileChooser saver = new FileChooser();
+        saver.setTitle(title);
+        File saveAsFile = saver.showSaveDialog(null);
+        if(null != saveAsFile){
+            FeatureCollectionFile file = new FeatureCollectionFile(saveAsFile.getAbsolutePath());
+            file.featureCollection = fc;
+            try {
+                file.writeContent();
+            } catch (IOException ex) {
+                LOG.error(null, ex);
+            }
+        }
     }
 
     private void applyServiceDir() {
