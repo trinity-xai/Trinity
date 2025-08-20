@@ -101,6 +101,8 @@ import static edu.jhuapl.trinity.javafx.events.CommandTerminalEvent.notifyTermin
 import static edu.jhuapl.trinity.javafx.events.CommandTerminalEvent.notifyTerminalWarning;
 import static edu.jhuapl.trinity.messages.RestAccessLayer.*;
 import java.text.DecimalFormat;
+import java.util.Collections;
+import java.util.Map;
 import javafx.stage.FileChooser;
 
 /**
@@ -150,7 +152,8 @@ public class HyperdrivePane extends LitPathPane {
     AtomicInteger requestNumber;
     AtomicInteger batchNumber;
     
-    HashMap<Integer, REQUEST_STATUS> outstandingRequests;
+//    HashMap<Integer, REQUEST_STATUS> outstandingRequests;
+    Map<Integer, REQUEST_STATUS> outstandingRequests;
     ImageEmbeddingsBatchLauncher imageBatchLauncher;
     BatchRequestManager<List<EmbeddingsImageListItem>> imageEmbeddingManager;
 
@@ -176,7 +179,9 @@ public class HyperdrivePane extends LitPathPane {
         imageFilesList = new ArrayList<>();
         textFilesList = new ArrayList<>();
 
-        outstandingRequests = new HashMap<>();
+//        outstandingRequests = new HashMap<>();
+        outstandingRequests = Collections.synchronizedMap(new HashMap<Integer, REQUEST_STATUS>());
+
         requestNumber = new AtomicInteger(0);
         batchNumber = new AtomicInteger(0);
         waitingImage = ResourceUtils.loadIconFile("waitingforimage");
@@ -527,7 +532,7 @@ imageEmbeddingsButton.setOnAction(e -> {
             currentFeatureList.addAll(imageEmbeddingsListView.getItems().stream()
                 .map(EmbeddingsImageListItem::getFeatureVector).toList());
             FeatureCollection fc = new FeatureCollection();
-            fc.setFeatures(currentFeatureList);
+            fc.getFeatures().addAll(currentFeatureList);
             injectFeaturesButton.getScene().getRoot().fireEvent(
                 new FeatureVectorEvent(FeatureVectorEvent.NEW_FEATURE_COLLECTION, fc));
         });

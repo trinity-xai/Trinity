@@ -13,11 +13,11 @@ import org.slf4j.LoggerFactory;
 
 import java.time.LocalDateTime;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageUrl.imageUrlFromImage;
+import java.util.Map;
 
 
 /**
@@ -36,7 +36,7 @@ public class RequestEmbeddingsTask extends HyperdriveTask {
 
     public RequestEmbeddingsTask(Scene scene, CircleProgressIndicator progressIndicator,
                                  AtomicInteger requestNumber, String currentEmbeddingsModel,
-                                 HashMap<Integer, REQUEST_STATUS> outstandingRequests,
+                                 Map<Integer, REQUEST_STATUS> outstandingRequests,
                                  List<EmbeddingsImageListItem> imageEmbeddingsListItems) {
         super(scene, progressIndicator, requestNumber, outstandingRequests);
         this.currentEmbeddingsModel = currentEmbeddingsModel;

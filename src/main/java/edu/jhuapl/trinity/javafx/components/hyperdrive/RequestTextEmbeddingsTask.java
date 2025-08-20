@@ -11,7 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Map;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -32,7 +32,7 @@ public class RequestTextEmbeddingsTask extends HyperdriveTask {
 
     public RequestTextEmbeddingsTask(Scene scene, CircleProgressIndicator progressIndicator,
                                      AtomicInteger requestNumber, String currentEmbeddingsModel,
-                                     HashMap<Integer, REQUEST_STATUS> outstandingRequests,
+                                     Map<Integer, REQUEST_STATUS> outstandingRequests,
                                      List<EmbeddingsTextListItem> textEmbeddingsListItems) {
         super(scene, progressIndicator, requestNumber, outstandingRequests);
         this.currentEmbeddingsModel = currentEmbeddingsModel;
