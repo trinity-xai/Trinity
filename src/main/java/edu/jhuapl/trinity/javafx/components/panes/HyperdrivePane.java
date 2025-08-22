@@ -124,7 +124,7 @@ public class HyperdrivePane extends LitPathPane {
     ImageView baseImageView;
     BorderPane embeddingsBorderPane;
     StackPane embeddingsCenterStack;
-    TextArea baseTextArea;
+    TextArea baseTextArea; 
 
     TabPane tabPane;
     Tab imageryEmbeddingsTab;
@@ -152,7 +152,6 @@ public class HyperdrivePane extends LitPathPane {
     AtomicInteger requestNumber;
     AtomicInteger batchNumber;
     
-//    HashMap<Integer, REQUEST_STATUS> outstandingRequests;
     Map<Integer, REQUEST_STATUS> outstandingRequests;
     ImageEmbeddingsBatchLauncher imageBatchLauncher;
     BatchRequestManager<List<EmbeddingsImageListItem>> imageEmbeddingManager;
@@ -179,8 +178,7 @@ public class HyperdrivePane extends LitPathPane {
         imageFilesList = new ArrayList<>();
         textFilesList = new ArrayList<>();
 
-//        outstandingRequests = new HashMap<>();
-        outstandingRequests = Collections.synchronizedMap(new HashMap<Integer, REQUEST_STATUS>());
+        outstandingRequests = Collections.synchronizedMap(new HashMap<>());
 
         requestNumber = new AtomicInteger(0);
         batchNumber = new AtomicInteger(0);
@@ -226,6 +224,28 @@ public class HyperdrivePane extends LitPathPane {
         MenuItem selectAllTextMenuItem = new MenuItem("Select All");
         selectAllTextMenuItem.setOnAction(e ->
             textEmbeddingsListView.getSelectionModel().selectAll());
+        
+        MenuItem setTextLabelItem = new MenuItem("Set Label Manually");
+        setTextLabelItem.setOnAction(e -> {
+            if (!textEmbeddingsListView.getSelectionModel().getSelectedItems().isEmpty()) {
+                TextInputDialog td = new TextInputDialog("enter any text");
+                td.setHeaderText("Manually set Label for "
+                    + textEmbeddingsListView.getSelectionModel().getSelectedItems().size()
+                    + " items.");
+                td.setGraphic(ResourceUtils.loadIcon("console", 75));
+                td.initStyle(StageStyle.TRANSPARENT);
+                DialogPane dialogPane = td.getDialogPane();
+                dialogPane.setBackground(Background.EMPTY);
+                dialogPane.getScene().setFill(Color.TRANSPARENT);
+                String DIALOGCSS = StyleResourceProvider.getResource("dialogstyles.css").toExternalForm();
+                dialogPane.getStylesheets().add(DIALOGCSS);
+                Optional<String> captionOptional = td.showAndWait();
+                if (captionOptional.isPresent()) {
+                    textEmbeddingsListView.getSelectionModel().getSelectedItems()
+                        .forEach(i -> i.setFeatureVectorLabel(captionOptional.get()));
+                }
+            }
+        });
 
         MenuItem textEmbbedingsTextLandmarkCaptionItem = new MenuItem("Label by Text Landmark Similarity");
         textEmbbedingsTextLandmarkCaptionItem.setOnAction(e -> {
@@ -251,7 +271,8 @@ public class HyperdrivePane extends LitPathPane {
             textEmbeddingRequestIndicator.fadeBusy(true);
         });
         ContextMenu textEmbeddingsContextMenu =
-            new ContextMenu(selectAllTextMenuItem, textEmbbedingsTextLandmarkCaptionItem,
+            new ContextMenu(selectAllTextMenuItem, setTextLabelItem,
+                textEmbbedingsTextLandmarkCaptionItem,
                 imageEmbeddingsImageLandmarkCaptionItem, clearTextRequestsItem);
         textEmbeddingsListView.setContextMenu(textEmbeddingsContextMenu);
 
@@ -351,29 +372,29 @@ public class HyperdrivePane extends LitPathPane {
         imageEmbeddingsButton.setWrapText(true);
         imageEmbeddingsButton.setTextAlignment(TextAlignment.CENTER);
         
-imageEmbeddingsButton.setOnAction(e -> {
-    List<EmbeddingsImageListItem> items = imageEmbeddingsListView.getSelectionModel().getSelectedItems();
-    List<List<EmbeddingsImageListItem>> batches = new ArrayList<>();
-    for (int i = 0; i < items.size(); i += batchSize) {
-        batches.add(
-            new ArrayList<>(items.subList(i, Math.min(i + batchSize, items.size())))
-        );
-    }
-    System.out.println("Total Batches: " + batches.size());
-    //Progress & OutstandingRequests Initialization
-    outstandingRequests.clear();
-    for (EmbeddingsImageListItem item : items) {  // use the flat, full list!
-        outstandingRequests.put(item.imageID, REQUEST_STATUS.REQUESTED);
-    }
-    imageEmbeddingRequestIndicator.setPercentComplete(0);
-    imageEmbeddingRequestIndicator.setTopLabelLater("Received 0 of " + items.size());
-    imageEmbeddingRequestIndicator.spin(true);
-    if(!imageEmbeddingRequestIndicator.inView())
-        imageEmbeddingRequestIndicator.fadeBusy(false);    
-    imageEmbeddingManager.clearCounters();
-    // Launch batches
-    imageEmbeddingManager.enqueue(batches);
-});
+        imageEmbeddingsButton.setOnAction(e -> {
+            List<EmbeddingsImageListItem> items = imageEmbeddingsListView.getSelectionModel().getSelectedItems();
+            List<List<EmbeddingsImageListItem>> batches = new ArrayList<>();
+            for (int i = 0; i < items.size(); i += batchSize) {
+                batches.add(
+                    new ArrayList<>(items.subList(i, Math.min(i + batchSize, items.size())))
+                );
+            }
+            System.out.println("Total Batches: " + batches.size());
+            //Progress & OutstandingRequests Initialization
+            outstandingRequests.clear();
+            for (EmbeddingsImageListItem item : items) {  // use the flat, full list!
+                outstandingRequests.put(item.imageID, REQUEST_STATUS.REQUESTED);
+            }
+            imageEmbeddingRequestIndicator.setPercentComplete(0);
+            imageEmbeddingRequestIndicator.setTopLabelLater("Received 0 of " + items.size());
+            imageEmbeddingRequestIndicator.spin(true);
+            if(!imageEmbeddingRequestIndicator.inView())
+                imageEmbeddingRequestIndicator.fadeBusy(false);    
+            imageEmbeddingManager.clearCounters();
+            // Launch batches
+            imageEmbeddingManager.enqueue(batches);
+        });
 
         ImageView embeddingsPlaceholderIV = ResourceUtils.loadIcon("data", 50);
         HBox embeddingsPlaceholder = new HBox(10, embeddingsPlaceholderIV, new Label("No Data Sources Marked"));
@@ -393,8 +414,8 @@ imageEmbeddingsButton.setOnAction(e -> {
         selectAllMenuItem.setOnAction(e ->
             imageEmbeddingsListView.getSelectionModel().selectAll());
 
-        MenuItem setCaptionItem = new MenuItem("Set Label");
-        setCaptionItem.setOnAction(e -> {
+        MenuItem setLabelItem = new MenuItem("Set Label");
+        setLabelItem.setOnAction(e -> {
             if (!imageEmbeddingsListView.getSelectionModel().getSelectedItems().isEmpty()) {
                 TextInputDialog td = new TextInputDialog("enter any text");
                 td.setHeaderText("Manually set Label for "
@@ -501,7 +522,7 @@ imageEmbeddingsButton.setOnAction(e -> {
 
         });         
         ContextMenu embeddingsContextMenu =
-            new ContextMenu(selectAllMenuItem, setCaptionItem, requestCaptionItem,
+            new ContextMenu(selectAllMenuItem, setLabelItem, requestCaptionItem,
                 chooseCaptionItem, textLandmarkCaptionItem, imageLandmarkCaptionItem,
                 exportEmbeddingsMenuItem, clearRequestsItem, stopAndClearMenuItem);
         imageEmbeddingsListView.setContextMenu(embeddingsContextMenu);
@@ -754,12 +775,44 @@ imageEmbeddingsButton.setOnAction(e -> {
             new VBox(5, new Label("Request Timeout (Seconds)"), timeoutSpinner)
         );
 
-        CheckBox enableJSONcheckBox = new CheckBox("Enable Special JSON Processing");
-        enableJSONcheckBox.selectedProperty().addListener(e -> {
-            EmbeddingsTextListItem.ENABLE_JSON_PROCESSING = enableJSONcheckBox.isSelected();
-            enableJSONcheckBox.getScene().getRoot().fireEvent(
-                new HyperdriveEvent(HyperdriveEvent.ENABLE_JSON_PROCESSING, enableJSONcheckBox.isSelected()));
+        CheckBox enableJSONCheckBox = new CheckBox("Enable Special JSON Processing");
+        enableJSONCheckBox.selectedProperty().addListener(e -> {
+            EmbeddingsTextListItem.ENABLE_JSON_PROCESSING = enableJSONCheckBox.isSelected();
+            enableJSONCheckBox.getScene().getRoot().fireEvent(
+                new HyperdriveEvent(HyperdriveEvent.ENABLE_JSON_PROCESSING, enableJSONCheckBox.isSelected()));
         });
+        CheckBox enableCSVCheckBox = new CheckBox("Enable CSV Expansion");
+        enableCSVCheckBox.selectedProperty().addListener(e -> {
+            EmbeddingsTextListItem.ENABLE_CSV_EXPANSION = enableCSVCheckBox.isSelected();
+            enableCSVCheckBox.getScene().getRoot().fireEvent(
+                new HyperdriveEvent(HyperdriveEvent.ENABLE_CSV_EXPANSION, enableCSVCheckBox.isSelected()));
+        });
+        
+        CheckBox labelFromColumnCheckBox = new CheckBox("Auto-label from CSV Column");
+        labelFromColumnCheckBox.selectedProperty().addListener(e -> {
+            EmbeddingsTextListItem.AUTOLABEL_FROM_CSVCOLUMN = labelFromColumnCheckBox.isSelected();
+            labelFromColumnCheckBox.getScene().getRoot().fireEvent(
+                new HyperdriveEvent(HyperdriveEvent.AUTOLABEL_FROM_CSVCOLUMN, labelFromColumnCheckBox.isSelected()));
+        });
+
+        Spinner<Integer> csvColumnSpinner = new Spinner(0, 9001, 0, 1);
+        csvColumnSpinner.valueProperty().addListener(c -> {
+            EmbeddingsTextListItem.CSV_DEFAULTLABEL_COLUMN = csvColumnSpinner.getValue();
+            csvColumnSpinner.getScene().getRoot().fireEvent(
+                new HyperdriveEvent(HyperdriveEvent.SET_CSV_DEFAULTLABELCOLUMN, csvColumnSpinner.getValue()));
+        });
+        csvColumnSpinner.setEditable(true);
+        csvColumnSpinner.setPrefWidth(100);
+        VBox selectColumnHBox = new VBox(5, new Label("Default CSV Label Column"),csvColumnSpinner);
+        selectColumnHBox.disableProperty().bind(labelFromColumnCheckBox.selectedProperty().not());
+        
+        CheckBox breakOnNewLineCheckBox = new CheckBox("Force Break on New Lines");
+        breakOnNewLineCheckBox.selectedProperty().addListener(e -> {
+            EmbeddingsTextListItem.BREAK_ON_NEWLINES = breakOnNewLineCheckBox.isSelected();
+            breakOnNewLineCheckBox.getScene().getRoot().fireEvent(
+                new HyperdriveEvent(HyperdriveEvent.BREAK_ON_NEWLINES, breakOnNewLineCheckBox.isSelected()));
+        });        
+        
         Spinner<Integer> chunkSizeSpinner = new Spinner(256, 262144, chunkSize, 256);
         chunkSizeSpinner.valueProperty().addListener(c -> {
             chunkSize = chunkSizeSpinner.getValue();
@@ -770,9 +823,10 @@ imageEmbeddingsButton.setOnAction(e -> {
         chunkSizeSpinner.setEditable(true);
         chunkSizeSpinner.setPrefWidth(100);
 
-        VBox chunkingSpinnerVBox = new VBox(20,
-            enableJSONcheckBox,
-            new VBox(5, new Label("Chunk Size (bytes)"), chunkSizeSpinner)
+        VBox chunkingSpinnerVBox = new VBox(30,
+            new HBox(20, enableJSONCheckBox, enableCSVCheckBox),
+            new HBox(20, labelFromColumnCheckBox, selectColumnHBox),    
+            new HBox(20, breakOnNewLineCheckBox, new VBox(5, new Label("Chunk Size (bytes)"), chunkSizeSpinner))
         );
 
         GridPane servicesGrid = new GridPane(20, 10);

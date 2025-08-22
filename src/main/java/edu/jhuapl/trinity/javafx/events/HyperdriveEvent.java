@@ -12,7 +12,11 @@ public class HyperdriveEvent extends Event {
     public Object object2;
 
     public static final EventType<HyperdriveEvent> SET_CHUNK_SIZE = new EventType(ANY, "SET_CHUNK_SIZE");
+    public static final EventType<HyperdriveEvent> BREAK_ON_NEWLINES = new EventType(ANY, "BREAK_ON_NEWLINES");
     public static final EventType<HyperdriveEvent> ENABLE_JSON_PROCESSING = new EventType(ANY, "ENABLE_JSON_PROCESSING");
+    public static final EventType<HyperdriveEvent> ENABLE_CSV_EXPANSION = new EventType(ANY, "ENABLE_CSV_EXPANSION");
+    public static final EventType<HyperdriveEvent> AUTOLABEL_FROM_CSVCOLUMN = new EventType(ANY, "AUTOLABEL_FROM_CSVCOLUMN");
+    public static final EventType<HyperdriveEvent> SET_CSV_DEFAULTLABELCOLUMN = new EventType(ANY, "SET_CSV_DEFAULTLABELCOLUMN");
     public static final EventType<HyperdriveEvent> NEW_BATCH_IMAGELOAD = new EventType(ANY, "NEW_BATCH_IMAGELOAD");
     public static final EventType<HyperdriveEvent> NEW_BATCH_TEXTLOAD = new EventType(ANY, "NEW_BATCH_TEXTLOAD");
 
