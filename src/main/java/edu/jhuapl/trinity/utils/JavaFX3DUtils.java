@@ -51,6 +51,7 @@ import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
 import java.util.function.Function;
+import javafx.scene.shape.Polygon;
 
 /**
  * Utilities used by various 3D rendering code.
@@ -133,10 +134,22 @@ public enum JavaFX3DUtils {
         return new javafx.geometry.Point3D(fv.getData().get(0),
             fv.getData().get(1), fv.getData().get(2));
     };
-
-    public static List<Integer> pickIndicesByBox(PerspectiveCamera camera,
-                                                 List<? extends Shape3D> shapes, Point2D upperLeft, Point2D lowerRight) {
-
+    public static List<Integer> performLassoSelection(Polygon lassoPolygon, List<? extends Shape3D> shapes) {
+        List<Integer> indices = new ArrayList<>();
+        int totalContains = 0;
+        Shape3D shape3D;
+        for (int i = 0; i < shapes.size(); i++) {
+            shape3D = shapes.get(i);
+            javafx.geometry.Point3D scenePoint = shape3D.localToScene(javafx.geometry.Point3D.ZERO, true);
+            if (scenePoint != null && lassoPolygon.contains(scenePoint.getX(), scenePoint.getY())) {
+                totalContains++;
+                indices.add(i);
+            }
+        }
+        return indices;
+    }
+    public static List<Integer> pickIndicesByBox(List<? extends Shape3D> shapes, 
+            Point2D upperLeft, Point2D lowerRight) {
         List<Integer> indices = new ArrayList<>();
         //reuse this point reference
         Shape3D shape3D;
@@ -156,7 +169,7 @@ public enum JavaFX3DUtils {
                 indices.add(i);
             }
         }
-        LOG.info("screenBox contains {} shapes.", totalContains);
+        LOG.debug("screenBox contains {} shapes.", totalContains);
         return indices;
     }
 

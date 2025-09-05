@@ -11,7 +11,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
-import java.util.HashMap;
+import java.util.Map;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -32,7 +32,7 @@ public class RequestTextEmbeddingsTask extends HyperdriveTask {
 
     public RequestTextEmbeddingsTask(Scene scene, CircleProgressIndicator progressIndicator,
                                      AtomicInteger requestNumber, String currentEmbeddingsModel,
-                                     HashMap<Integer, REQUEST_STATUS> outstandingRequests,
+                                     Map<Integer, REQUEST_STATUS> outstandingRequests,
                                      List<EmbeddingsTextListItem> textEmbeddingsListItems) {
         super(scene, progressIndicator, requestNumber, outstandingRequests);
         this.currentEmbeddingsModel = currentEmbeddingsModel;
@@ -90,25 +90,4 @@ public class RequestTextEmbeddingsTask extends HyperdriveTask {
             progressIndicator.setLabelLater("Requested " + completed + " of " + total);
         }
     }
-
-//    public void requestEmbeddings(List<EmbeddingsImageUrl> currentBatch, List<Integer> inputIDs) {
-//        EmbeddingsImageBatchInput input = new EmbeddingsImageBatchInput();
-//        input.setInput(currentBatch);
-//        input.setDimensions(512);
-//        input.setEmbedding_type("all");
-//        input.setEncoding_format("float");
-//        input.setModel(currentEmbeddingsModel);
-//        input.setUser("string");
-//        try {
-//            int rn = null != requestNumber ? requestNumber.incrementAndGet() : -1;
-//            if(null != progressIndicator)
-//                progressIndicator.setLabelLater("Embeddings Request " + requestNumber + "...");
-//            LOG.info("Sending {} images for processing at {}", currentBatch.size(), LocalDateTime.now());
-//            RestAccessLayer.requestImageEmbeddings(input, scene, inputIDs, rn);
-//            if(null != outstandingRequests)
-//                outstandingRequests.put(rn, REQUEST_STATUS.REQUESTED);
-//        } catch (JsonProcessingException ex) {
-//            LOG.error(null, ex);
-//        }
-//    }
 }

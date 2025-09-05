@@ -12,11 +12,11 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.IOException;
-import java.util.HashMap;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import static edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageUrl.imageUrlFromImage;
+import java.util.Map;
 
 
 /**
@@ -36,7 +36,7 @@ public class ChooseCaptionsTask extends HyperdriveTask {
 
     public ChooseCaptionsTask(Scene scene, CircleProgressIndicator progressIndicator,
                               AtomicInteger requestNumber, String currentChatModel,
-                              HashMap<Integer, REQUEST_STATUS> outstandingRequests,
+                              Map<Integer, REQUEST_STATUS> outstandingRequests,
                               List<EmbeddingsImageListItem> items, List<String> choices) {
         super(scene, progressIndicator, requestNumber, outstandingRequests);
         this.currentChatModel = currentChatModel;

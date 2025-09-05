@@ -114,18 +114,21 @@ public class App extends Application {
                     mediaPlayer.play();
                 });
 
-                mediaPlayer.setOnEndOfMedia(() -> {
-                    mediaPlayer.setVolume(0.0); // Ensure final volume is zero
-                    mediaPlayer.currentTimeProperty().removeListener(fadeListener);
-                });
-
                 MediaView mediaView = new MediaView(mediaPlayer);
                 mediaView.setPreserveRatio(true);
                 centerStack.getChildren().add(mediaView);
                 mediaView.fitWidthProperty().bind(centerStack.widthProperty().subtract(10));
                 mediaPlayer.play();
+                mediaView.setOnMouseClicked(e-> {
+                    mediaPlayer.setVolume(0.0); // Ensure final volume is zero
+                    mediaPlayer.currentTimeProperty().removeListener(fadeListener);                    
+                    mediaPlayer.stop();
+                    centerStack.getChildren().remove(mediaView);
+                });
 
                 mediaPlayer.setOnEndOfMedia(() -> {
+                    mediaPlayer.setVolume(0.0); // Ensure final volume is zero
+                    mediaPlayer.currentTimeProperty().removeListener(fadeListener);
                     Timeline time = new Timeline(
                         new KeyFrame(Duration.seconds(0.5), new KeyValue(mediaView.opacityProperty(), 0.0)),
                         new KeyFrame(Duration.seconds(0.6), e -> {

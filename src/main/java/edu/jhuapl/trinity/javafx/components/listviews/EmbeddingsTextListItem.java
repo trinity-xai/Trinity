@@ -24,6 +24,8 @@ import java.nio.file.Files;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
@@ -34,6 +36,10 @@ import java.util.function.Function;
 public class EmbeddingsTextListItem extends HBox {
     private static final Logger LOG = LoggerFactory.getLogger(EmbeddingsTextListItem.class);
     public static boolean ENABLE_JSON_PROCESSING = false;
+    public static boolean ENABLE_CSV_EXPANSION = false;
+    public static boolean AUTOLABEL_FROM_CSVCOLUMN = false;
+    public static boolean BREAK_ON_NEWLINES = false;
+    public static int CSV_DEFAULTLABEL_COLUMN = 0;
     public static double PREF_DIMLABEL_WIDTH = 100;
     public static double PREF_FILELABEL_WIDTH = 250;
     public static int LARGEFILE_SPLIT_SIZE = 16384;
@@ -181,7 +187,11 @@ public class EmbeddingsTextListItem extends HBox {
                 fileString = Files.readString(file.toPath());
             }
             //if JSON attempt intelligent object wise chunking
-            if (ENABLE_JSON_PROCESSING && MessageUtils.probablyJSON(fileString)) {
+            if (ENABLE_CSV_EXPANSION && MessageUtils.probablyCSV(file.getName())) {
+                //assumes first row is the column labels
+                return expandCSVAndChunk(file, fileString);
+            } else if (ENABLE_JSON_PROCESSING && MessageUtils.probablyJSON(fileString)) {
+                //if JSON attempt intelligent object wise chunking
                 final ObjectMapper mapper = new ObjectMapper();
                 JsonNode jsonNode = mapper.readTree(fileString);
                 if (jsonNode.getNodeType() == JsonNodeType.ARRAY) {
@@ -207,9 +217,12 @@ public class EmbeddingsTextListItem extends HBox {
                     }
                 }
             } else {
+                //not smart but smarter than dumb newline delimited chunks
+                if(BREAK_ON_NEWLINES){
+                    return chunkByDelimiter(file, fileString, System.lineSeparator());
+                }
                 //use naive bruteforce chunking
                 long total = file.length();
-
                 if (total <= LARGEFILE_SPLIT_SIZE) {
                     list.add(new EmbeddingsTextListItem(file, true));
                     return list;
@@ -221,9 +234,48 @@ public class EmbeddingsTextListItem extends HBox {
         }
         return list;
     };
-
+    public static List<EmbeddingsTextListItem> expandCSVAndChunk(File file, String fileString) throws IOException {
+        String [] csvRows = fileString.split(System.lineSeparator());
+        if(csvRows.length <= 1) return Collections.EMPTY_LIST;
+        //get labels
+        String [] labels = csvRows[0].split(",");
+        List<EmbeddingsTextListItem> list = Arrays.asList(csvRows).stream()
+            .skip(1) //skip the first row (label row)
+            .map(s -> {
+                EmbeddingsTextListItem item = new EmbeddingsTextListItem(file, false);
+                String expandedContent = expandCSV(labels, s);
+                item.contents = expandedContent;
+                item.getFeatureVector().setText(expandedContent);
+                String [] csvTokens = s.split(",");
+                if(AUTOLABEL_FROM_CSVCOLUMN && csvTokens.length > CSV_DEFAULTLABEL_COLUMN)
+                    item.setFeatureVectorLabel(csvTokens[CSV_DEFAULTLABEL_COLUMN]);
+                else
+                    item.setFeatureVectorLabel(file.getName());
+                return item;
+            }).toList();
+        return list;
+    }
+    public static String expandCSV(String [] labels, String csvRow) {
+        StringBuilder sb = new StringBuilder();
+        String [] tokens = csvRow.split(",");
+        for(int i=0;i<labels.length;i++){
+            if(i>=tokens.length) break; //in case a row is incomplete
+            sb.append(labels[i].trim()).append(" = ").append(tokens[i].trim()).append(System.lineSeparator());
+        }
+        return sb.toString();
+    }
+    public static List<EmbeddingsTextListItem> chunkByDelimiter(File file, String fileString, String delimiter) throws IOException {
+        List<EmbeddingsTextListItem> list = Arrays.asList(fileString.split(delimiter)).stream()
+            .map(s -> {
+                EmbeddingsTextListItem item = new EmbeddingsTextListItem(file, false);
+                item.contents = s;
+                item.getFeatureVector().setText(s);
+                item.setFeatureVectorLabel(file.getName());
+                return item;
+            }).toList();
+        return list;
+    }
     public static List<EmbeddingsTextListItem> chunkString(File file, String fileString) {
-        //String fileString = Files.readString(file.toPath());
         List<EmbeddingsTextListItem> list = new ArrayList<>();
         int len = fileString.length();
         int currentStart = 0;

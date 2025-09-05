@@ -27,7 +27,7 @@ import java.util.List;
 public class LandmarkImageBuilderBox extends VBox {
 
     public static double LISTVIEW_PREF_WIDTH = 400;
-    public static double LISTVIEW_PREF_HEIGHT = 210;
+    public static double LISTVIEW_PREF_HEIGHT = 450;
     public static double BUTTON_PREF_WIDTH = 150;
 
     Background transFillBack = new Background(new BackgroundFill(

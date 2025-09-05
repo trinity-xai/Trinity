@@ -3,7 +3,6 @@ package edu.jhuapl.trinity.utils;
 import com.github.quickhull3d.Point3d;
 import com.github.quickhull3d.QuickHull3D;
 import edu.jhuapl.trinity.javafx.javafx3d.Manifold3D;
-import edu.jhuapl.trinity.utils.mc.MarchingCubesMeshFactory;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.CullFace;
@@ -408,7 +407,7 @@ public class ConcaveUtils {
         ArrayList<Point3D> subSample = new ArrayList<>();
         Random rando = new Random();
         for (Point3D p3D : manifold3D.getOriginalPoint3DList()) {
-            if (rando.nextFloat() <= 0.05)
+            if (rando.nextFloat() <= 1.05)
                 subSample.add(p3D);
         }
 
@@ -445,10 +444,8 @@ public class ConcaveUtils {
 
 
         ArrayList<Sphere> p = new ArrayList<>();
-        if (false && null != manifold3D.getScene()) {
-
+        if (null != manifold3D.getScene()) {
             //Go through orgData and only add points which are marked with a 1
-
             TriangleMesh tm = new TriangleMesh();
             PhongMaterial pm = new PhongMaterial(Color.RED);
             for (int i = 0; i < obj.cvxList.size(); i++) {
@@ -514,8 +511,6 @@ public class ConcaveUtils {
             .min().getAsDouble();
         double maxZ = minZ + depth;
 
-//        ;
-
         for (Point3D p3D : manifold3D.getOriginalPoint3DList()) {
             double normalizedX = DataUtils.normalize(p3D.x, minX, maxX);
             double normalizedY = DataUtils.normalize(p3D.y, minY, maxY);
@@ -527,50 +522,8 @@ public class ConcaveUtils {
             scalarField[x][y][z] = 1;
         }
 
-        MarchingCubesMeshFactory mcmf = new MarchingCubesMeshFactory(scalarField,
-            0.5f, 1);
-
-        TriangleMesh tm = mcmf.createMesh();
-        MeshView mv = new MeshView(tm);
-        PhongMaterial pm = new PhongMaterial(Color.GREEN);
-        mv.setMaterial(pm);
-        mv.setDrawMode(DrawMode.FILL);
-        mv.setCullFace(CullFace.NONE);
-        manifold3D.extrasGroup.getChildren().add(mv);
-
         ArrayList<Sphere> concavePoints = new ArrayList<>();
-//        /////
-//        double isoValue = 0.5;
-//        float[] voxSize = {1.0f, 1.0f, 1.0f};
-//
-//        int pointCount = subSample.size();
-//        int[] size = {pointCount, pointCount, pointCount};
-//        double[] scalarField = new double[size[0] * size[1] * size[2]];
-//        for(int i=0;i<pointCount;i++) {
-//            Point3D p3D = subSample.get(i);
-//            scalarField[i] = (p3D.x * p3D.x + p3D.y * p3D.y - p3D.z * p3D.z - 25);
-//        }
-//        ArrayList<ArrayList<float []>> results = BenchmarkHandler.makeConcave(
-//            scalarField, size, voxSize, isoValue, 1);
-//        System.out.println("Total results: " + results.size());
-//
 
-//        if(null != manifold3D.getScene()) {
-////            manifold3D.extrasGroup.getChildren().clear();
-//            double scale = 50.0;
-//            for (int i = 0; i < results.size(); i++) {
-//                ArrayList<float[]> resSeg = results.get(i);
-//                PhongMaterial pm = new PhongMaterial(Color.WHITE);
-//                for (int v = 0; v < resSeg.size(); v++) {
-//                    Sphere sphere = new Sphere(1);
-//                    sphere.setTranslateX(resSeg.get(v)[0] * scale);
-//                    sphere.setTranslateY(resSeg.get(v)[1] * scale);
-//                    sphere.setTranslateZ(resSeg.get(v)[2] * scale);
-//                    sphere.setMaterial(pm);
-//                    manifold3D.extrasGroup.getChildren().add(sphere);
-//                }
-//            }
-//        }
         return concavePoints;
     }
 }

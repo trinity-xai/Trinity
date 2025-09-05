@@ -23,7 +23,7 @@ import java.util.List;
  */
 public class LandmarkTextBuilderBox extends VBox {
 
-    public static double LISTVIEW_PREF_HEIGHT = 150;
+    public static double LISTVIEW_PREF_HEIGHT = 450;
     public static double BUTTON_PREF_WIDTH = 125;
 
     Background transFillBack = new Background(new BackgroundFill(

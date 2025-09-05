@@ -140,18 +140,21 @@ public class Manifold3D extends Group {
         });
 
         ColorPicker diffuseColorPicker = new ColorPicker(Color.SKYBLUE);
+        diffuseColorPicker.setMaxWidth(150);
         diffuseColorPicker.valueProperty().addListener(cl -> {
             ((PhongMaterial) quickhullMeshView.getMaterial()).setDiffuseColor(diffuseColorPicker.getValue());
         });
         MenuItem diffuseColorItem = new MenuItem("Diffuse Color", diffuseColorPicker);
 
         ColorPicker specColorPicker = new ColorPicker(Color.SKYBLUE);
+        specColorPicker.setMaxWidth(150);
         specColorPicker.valueProperty().addListener(cl -> {
             ((PhongMaterial) quickhullMeshView.getMaterial()).setSpecularColor(specColorPicker.getValue());
         });
         MenuItem specColorItem = new MenuItem("Specular Color", specColorPicker);
 
         Spinner<Integer> spinner = new Spinner<>(10, 1000, 100, 10);
+        spinner.setMaxWidth(150);
         MenuItem tessallateItem = new MenuItem("Tessellate", spinner);
         tessallateItem.setOnAction(e -> {
             Integer i = spinner.getValue();

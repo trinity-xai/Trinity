@@ -45,6 +45,16 @@ public class FeatureCollection extends MessageData {
             && messageBody.contains("features");
     }
 
+    public static FeatureCollection merge(List<FeatureCollection> collections) {
+        FeatureCollection fcf = new FeatureCollection();
+        List<FeatureVector> featureVectors = new ArrayList<>();
+        for(FeatureCollection fc : collections) {
+            featureVectors.addAll(fc.getFeatures());
+        }
+        fcf.setFeatures(featureVectors);
+        return fcf;
+    }
+    
     public float[][] convertFeaturesToFloatArray() {
         int vectorCount = features.size();
         int vectorWidth = features.get(0).getData().size();
@@ -166,7 +176,6 @@ public class FeatureCollection extends MessageData {
     public void setType(String type) {
         this.type = type;
     }
-    //</editor-fold>
 
     /**
      * @return the dimensionLabels
@@ -181,4 +190,5 @@ public class FeatureCollection extends MessageData {
     public void setDimensionLabels(ArrayList<String> dimensionLabels) {
         this.dimensionLabels = dimensionLabels;
     }
+    //</editor-fold>    
 }
