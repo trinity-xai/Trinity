@@ -100,7 +100,6 @@ import edu.jhuapl.trinity.javafx.components.hyperdrive.ImageEmbeddingsBatchLaunc
 import static edu.jhuapl.trinity.javafx.events.CommandTerminalEvent.notifyTerminalSuccess;
 import static edu.jhuapl.trinity.javafx.events.CommandTerminalEvent.notifyTerminalWarning;
 import static edu.jhuapl.trinity.messages.RestAccessLayer.*;
-import java.text.DecimalFormat;
 import java.util.Collections;
 import java.util.Map;
 import javafx.stage.FileChooser;
@@ -380,7 +379,8 @@ public class HyperdrivePane extends LitPathPane {
                     new ArrayList<>(items.subList(i, Math.min(i + batchSize, items.size())))
                 );
             }
-            System.out.println("Total Batches: " + batches.size());
+            //@DEBUG SMP
+            //System.out.println("Total Batches: " + batches.size());
             //Progress & OutstandingRequests Initialization
             outstandingRequests.clear();
             for (EmbeddingsImageListItem item : items) {  // use the flat, full list!
@@ -1380,17 +1380,17 @@ scene.getRoot().addEventHandler(RestEvent.ERROR_EMBEDDINGS_IMAGE, event -> {
             // onComplete: (success/failure/timeout)
             result -> {
                 //@DEBUG SMP 
-                System.out.println("Batch: " + result.getBatchNumber() 
-                    + " Request: " + result.getRequestId() 
-                    + " Status: " + result.getStatus()
-                    + " Attempt: " + result.getRetryCount()
-                    + " In Flight: " + imageEmbeddingManager.getInFlight()
-                );
-                System.out.println(" Duration: " + imageEmbeddingManager.getBatchDurationByID(result.getRequestId())/1000 + " s"
-                    + " Avg Duration: " + new DecimalFormat("#.000").format(
-                        imageEmbeddingManager.getAvgBatchDurationMillis()/1000) + " s"
-                    + " Total Duration: " + imageEmbeddingManager.getTotalBatchDurationMillis()/1000 + " s"
-                );
+                //System.out.println("Batch: " + result.getBatchNumber() 
+                //    + " Request: " + result.getRequestId() 
+                //    + " Status: " + result.getStatus()
+                //    + " Attempt: " + result.getRetryCount()
+                //    + " In Flight: " + imageEmbeddingManager.getInFlight()
+                //);
+                //System.out.println(" Duration: " + imageEmbeddingManager.getBatchDurationByID(result.getRequestId())/1000 + " s"
+                //    + " Avg Duration: " + new DecimalFormat("#.000").format(
+                //        imageEmbeddingManager.getAvgBatchDurationMillis()/1000) + " s"
+                //    + " Total Duration: " + imageEmbeddingManager.getTotalBatchDurationMillis()/1000 + " s"
+                //);
                 
                 Platform.runLater(() -> {
                     // update progress indicator, show alerts on failure, etc.
