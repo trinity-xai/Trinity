@@ -147,6 +147,7 @@ import java.util.stream.Collectors;
 
 import static edu.jhuapl.trinity.javafx.handlers.GaussianMixtureEventHandler.generateEllipsoidDiagonal;
 import static edu.jhuapl.trinity.utils.ResourceUtils.removeExtension;
+import javafx.scene.shape.Polygon;
 
 /**
  * @author Sean Phillips
@@ -294,7 +295,7 @@ public class Projections3DPane extends StackPane implements
     public List<String> featureLabels = new ArrayList<>();
     public Scene scene;
     public Umap latestUmap = null;
-
+    Polygon lassoPolygon = new Polygon();
     Rectangle selectionRectangle;
     ProjectileSystem projectileSystem;
     File mostRecentPath = Paths.get(".").toFile();
@@ -350,8 +351,11 @@ public class Projections3DPane extends StackPane implements
         camera.setTranslateZ(cameraDistance);
         cameraTransform.ry.setAngle(-45.0);
         cameraTransform.rx.setAngle(-10.0);
-        cameraOrbiter = new CameraOrbiter(cameraTransform, 7);
-        cameraTransform.ry.angleProperty().addListener(e -> updateFloatingNodes());
+        cameraOrbiter = new CameraOrbiter(cameraTransform, 6);
+        cameraTransform.ry.angleProperty().addListener(e -> {
+            updateFloatingNodes();
+            radialOverlayPane.updateCalloutHeadPoints(subScene);
+        });
 //        setupSkyBox();
         debugGroup.setVisible(false);
 
@@ -692,14 +696,25 @@ public class Projections3DPane extends StackPane implements
             Color.ALICEBLUE.deriveColor(1, 1, 1, 0.2));
         selectionRectangle.setManaged(false);
         selectionRectangle.setMouseTransparent(true);
-
         selectionRectangle.setVisible(false);
+
+        lassoPolygon.setFill(Color.CYAN.deriveColor(1, 1, 1, 0.2));
+        lassoPolygon.setStroke(Color.ALICEBLUE);
+        lassoPolygon.setStrokeDashOffset(5);
+        lassoPolygon.getStrokeDashArray().addAll(10.0, 7.0, 6.0, 5.0, 4.0);
+        lassoPolygon.setManaged(false);
+        lassoPolygon.setMouseTransparent(true);
+        lassoPolygon.setVisible(false);
+
         subScene.setOnMousePressed((MouseEvent me) -> {
             mousePosX = me.getSceneX();
             mousePosY = me.getSceneY();
             mouseOldX = me.getSceneX();
             mouseOldY = me.getSceneY();
             if (clusterSelectionMode) {
+                lassoPolygon.getPoints().clear();
+                lassoPolygon.getPoints().addAll(mousePosX, mousePosY);
+                lassoPolygon.setVisible(true);
                 selectionRectangle.setWidth(1);
                 selectionRectangle.setHeight(1);
                 selectionRectangle.setX(mousePosX);
@@ -754,15 +769,18 @@ public class Projections3DPane extends StackPane implements
                     mousePosX - selectionRectangle.getX());
                 selectionRectangle.setHeight(
                     mousePosY - selectionRectangle.getY());
+                lassoPolygon.getPoints().addAll(mousePosX, mousePosY);                
             } else
                 mouseDragCamera(me);
         });
         subScene.setOnMouseReleased((MouseEvent me) -> {
             if (clusterSelectionMode) {
                 ManifoldClusterTask manifoldClusterTask = new ManifoldClusterTask(scene,
-                    camera, sphereToFeatureVectorMap, selectionRectangle);
+                    camera, sphereToFeatureVectorMap, lassoPolygon);
                 if (!manifoldClusterTask.isCancelledByUser())
                     manifoldClusterTask.run();
+                lassoPolygon.getPoints().clear();
+                lassoPolygon.setVisible(false);
                 selectionRectangle.setVisible(false);
                 selectionRectangle.setWidth(1);
                 selectionRectangle.setHeight(1);
@@ -815,7 +833,7 @@ public class Projections3DPane extends StackPane implements
         highlighterNeonCircle.setMouseTransparent(true);
         getChildren().clear();
         getChildren().addAll(bp, labelGroup, radialOverlayPane,
-            highlighterNeonCircle, selectionRectangle);
+            highlighterNeonCircle, lassoPolygon, selectionRectangle);
 
         Glow glow = new Glow(0.5);
 
@@ -1236,7 +1254,6 @@ public class Projections3DPane extends StackPane implements
                 LOG.info("Aging off {} projected features.", ageOffCount);
             }
         });
-
 
         scene.addEventHandler(TimelineEvent.TIMELINE_SAMPLE_INDEX, e -> {
             anchorIndex = (int) e.object;

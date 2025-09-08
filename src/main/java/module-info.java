@@ -94,8 +94,6 @@ module edu.jhuapl.trinity {
     exports edu.jhuapl.trinity.utils.clustering;
     exports edu.jhuapl.trinity.utils.fun;
     exports edu.jhuapl.trinity.utils.loaders;
-    exports edu.jhuapl.trinity.utils.marchingcubes;
-    exports edu.jhuapl.trinity.utils.mc;
     exports edu.jhuapl.trinity.utils.metric;
     exports edu.jhuapl.trinity.utils.umap;
     exports edu.jhuapl.trinity.utils.volumetric;

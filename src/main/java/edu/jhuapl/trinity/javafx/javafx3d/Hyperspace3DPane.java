@@ -1949,6 +1949,15 @@ public class Hyperspace3DPane extends StackPane implements
                 return null;
             }
         };
+        task.setOnFailed(e -> {
+            Platform.runLater(() -> {
+                ProgressStatus ps = new ProgressStatus("Error Adding FeatureCollection.", -1);
+                getScene().getRoot().fireEvent(
+                    new ApplicationEvent(ApplicationEvent.HIDE_BUSY_INDICATOR, ps));
+                getScene().getRoot().fireEvent(
+                    new CommandTerminalEvent("Error Adding FeatureCollection.", new Font("Consolas", 20), Color.RED));                
+            });
+        });
         Thread thread = new Thread(task);
         thread.setDaemon(true);
         thread.start();

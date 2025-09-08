@@ -6,7 +6,7 @@ import javafx.scene.Scene;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import java.util.HashMap;
+import java.util.Map;
 import java.util.concurrent.atomic.AtomicInteger;
 
 /**
@@ -18,7 +18,7 @@ public abstract class HyperdriveTask extends Task {
     Scene scene;
     CircleProgressIndicator progressIndicator = null;
     AtomicInteger requestNumber;
-    HashMap<Integer, REQUEST_STATUS> outstandingRequests;
+    Map<Integer, REQUEST_STATUS> outstandingRequests;
     private boolean cancelledByUser = false;
     private int batchSize = 1; //default one at a time
     private long requestDelay = 25; //default 25ms between requests
@@ -26,31 +26,11 @@ public abstract class HyperdriveTask extends Task {
     public enum REQUEST_STATUS {REQUESTED, SUCCEEDED, FAILED}
 
     public HyperdriveTask(Scene scene, CircleProgressIndicator progressIndicator,
-                          AtomicInteger requestNumber, HashMap<Integer, REQUEST_STATUS> outstandingRequests) {
+                          AtomicInteger requestNumber, Map<Integer, REQUEST_STATUS> outstandingRequests) {
         this.scene = scene;
         this.progressIndicator = progressIndicator;
         this.requestNumber = requestNumber;
         this.outstandingRequests = outstandingRequests;
-
-//        setOnSucceeded(e -> {
-//            Platform.runLater(() -> {
-//                scene.getRoot().fireEvent(
-//                    new ApplicationEvent(ApplicationEvent.HIDE_BUSY_INDICATOR));
-//            });
-//        });
-//        setOnFailed(e -> {
-//            Platform.runLater(() -> {
-//                scene.getRoot().fireEvent(
-//                    new ApplicationEvent(ApplicationEvent.HIDE_BUSY_INDICATOR));
-//            });
-//        });
-//        setOnCancelled(e -> {
-//            Platform.runLater(() -> {
-//                scene.getRoot().fireEvent(
-//                    new ApplicationEvent(ApplicationEvent.HIDE_BUSY_INDICATOR));
-//            });
-//        });
-
     }
 
     protected abstract void processTask() throws Exception;
