@@ -6,7 +6,9 @@ import com.fasterxml.jackson.annotation.JsonProperty;
 import edu.jhuapl.trinity.data.messages.MessageData;
 import java.util.ArrayList;
 import java.util.HashMap;
+import java.util.List;
 import java.util.UUID;
+import java.util.function.Function;
 
 /**
  * @author Sean Phillips
@@ -92,14 +94,42 @@ public class CyberVector extends MessageData {
 //        metaData.put("uuid", entityId);
     }
 
-//
-//    public static Function<CyberVector, double[]> mapToStateArray = (state) -> {
-//        double[] states = new double[state.data.size()];
-//        for (int i = 0; i < states.length; i++) {
-//            states[i] = state.data.get(i);
-//        }
-//        return states;
-//    };
+    public static Function<CyberVector, List<Double>> mapToVectorList = (state) -> {
+//        "Image Count": 0.7391304347826086,
+//        "Image Distribution": 0.9869558477855777,
+//        "Pod Count": 0.20440251572327045,
+//        "Service Intersection": 1.0,
+//        "Namespace Intersection" : 0.5,
+//        "Namespaces Per Pod Distribution" : 0.5,
+//        "Namespace Count" : 0.5,
+//        "Role Count" : 0.5,
+//        "Role Name Intersection" : 0.5,
+//        "Resource Count" : 0.5,
+//        "Resource Name Intersection" : 0.5,
+//        "Role Permissions Intersection" : 0.5,
+//        "Role Resource Distribution" : 0.5,
+//        "Role Permissions Distribution" : 0.5,
+//        "Namespace Per User Distribution" : 0.5 
+        
+        List<Double> vector = new ArrayList<>();
+        vector.add(state.getImageCount());
+        vector.add(state.getImageDistribution());
+        vector.add(state.getPodCount());
+        vector.add(state.getServiceIntersection());
+        vector.add(state.getNamespaceIntersection());
+        vector.add(state.getNamespacesPerPodDistribution());
+        vector.add(state.getNamespaceCount());
+        vector.add(state.getRoleCount());
+        vector.add(state.getRoleNameIntersection());
+        vector.add(state.getResourceCount());
+        vector.add(state.getResourceNameIntersection());
+        vector.add(state.getRolePermissionsIntersection());
+        vector.add(state.getRoleResourceDistribution());
+        vector.add(state.getRolePermissionsDistribution());
+        vector.add(state.getNamespacePerUserDistribution());
+
+        return vector;
+    };
 
     //<editor-fold defaultstate="collapsed" desc="Properties">
 

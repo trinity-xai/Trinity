@@ -12,35 +12,44 @@ import java.util.Map;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CyberReport {
+    public final static String GROUNDTRUTH = "Ground Truth";
+    public final static String INFERENCES = "Inferences";
+    public final static String ADJACENTNETWORK = "Adjacent Network";
+    public final static String MOD = "Mod";
+    public final static String SGTA = "S(GT, A)";
+    public final static String SINTELGT = "S(intel, GT)";
+    public final static String SINTELA = "S(intel, A)";
+    public final static String SINFGT = "S(inf, GT)";
+    public final static String DELTA = "delta";
 
     // ----- simple metadata -----
-    @JsonProperty("Ground Truth")
+    @JsonProperty(GROUNDTRUTH)
     private String groundTruth;
 
-    @JsonProperty("Adjacent Network")
+    @JsonProperty(ADJACENTNETWORK)
     private String adjacentNetwork;
 
-    @JsonProperty("Inferences")
+    @JsonProperty(INFERENCES)
     private List<String> inferences = new ArrayList<>();
 
-    @JsonProperty("Mod")
+    @JsonProperty(MOD)
     private List<String> mod = new ArrayList<>();
 
     // ----- score vectors (known names) -----
-    @JsonProperty("S(GT, A)")
+    @JsonProperty(SGTA)
     private CyberVector sGtA;
 
-    @JsonProperty("S(intel, GT)")
+    @JsonProperty(SINTELGT)
     private CyberVector sIntelGt;
 
-    @JsonProperty("S(intel, A)")
+    @JsonProperty(SINTELA)
     private CyberVector sIntelA;
 
-    @JsonProperty("S(inf, GT)")
+    @JsonProperty(SINFGT)
     private CyberVector sInfGt;
 
     // delta vector
-    @JsonProperty("delta")
+    @JsonProperty(DELTA)
     private CyberVector delta;
 
     // ----- catch-all for any other S(... ) vectors so you can treat them like a list -----

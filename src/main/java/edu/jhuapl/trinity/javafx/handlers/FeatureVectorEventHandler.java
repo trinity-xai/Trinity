@@ -4,6 +4,8 @@ import edu.jhuapl.trinity.App;
 import edu.jhuapl.trinity.data.Dimension;
 import edu.jhuapl.trinity.data.FactorLabel;
 import edu.jhuapl.trinity.data.FeatureLayer;
+import edu.jhuapl.trinity.data.messages.xai.CyberReport;
+import edu.jhuapl.trinity.data.messages.xai.CyberVector;
 import edu.jhuapl.trinity.data.messages.xai.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.data.messages.xai.LabelConfig;
@@ -20,6 +22,7 @@ import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
+import java.util.HashMap;
 import java.util.List;
 
 /**
@@ -48,7 +51,77 @@ public class FeatureVectorEventHandler implements EventHandler<FeatureVectorEven
     public void addFeatureVectorRenderer(FeatureVectorRenderer renderer) {
         renderers.add(renderer);
     }
+    public static FeatureVector cyberToFeatureVector(CyberVector cyberVector) {
+        FeatureVector fv = new FeatureVector();
+        fv.setData(CyberVector.mapToVectorList.apply(cyberVector));
+        return fv;
+    }
 
+    private void addNewFeatureVector(FeatureVector featureVector) {
+        //Have we seen this label before?
+        FactorLabel matchingLabel = FactorLabel.getFactorLabel(featureVector.getLabel());
+        //The label is new... add a new FactorLabel row
+        if (null == matchingLabel) {
+            if (labelColorIndex > labelColorCount) {
+                labelColorIndex = 0;
+            }
+            FactorLabel fl = new FactorLabel(featureVector.getLabel(),
+                labelColorMap.getColorByIndex(labelColorIndex));
+            FactorLabel.addFactorLabel(fl);
+            labelColorIndex++;
+        }
+        //Have we seen this layer before?
+        int index = featureVector.getLayer();
+        FeatureLayer matchingLayer = FeatureLayer.getFeatureLayer(index);
+        //The layer is new... add a new FeatureLayer  row
+        if (null == matchingLayer) {
+            if (layerColorIndex > layerColorCount) {
+                layerColorIndex = 0;
+            }
+            FeatureLayer fl = new FeatureLayer(index,
+                layerColorMap.getColorByIndex(layerColorIndex));
+            FeatureLayer.addFeatureLayer(fl);
+            layerColorIndex++;
+        }
+
+        for (FeatureVectorRenderer renderer : renderers) {
+            renderer.addFeatureVector(featureVector);
+        }
+    }
+    public void handleCyberReport(FeatureVectorEvent event) {
+        CyberReport cyberReport = (CyberReport) event.object;
+        HashMap<String, String> metaData = new HashMap();
+        metaData.put(CyberReport.GROUNDTRUTH, cyberReport.getGroundTruth());
+        metaData.put(CyberReport.ADJACENTNETWORK, cyberReport.getAdjacentNetwork());
+        metaData.put(CyberReport.INFERENCES, cyberReport.getInferences().toString());
+        metaData.put(CyberReport.MOD, cyberReport.getMod().toString());
+
+        FeatureVector sgtaFV = cyberToFeatureVector(cyberReport.getsGtA());
+        sgtaFV.setLabel(CyberReport.SGTA);
+        sgtaFV.getMetaData().putAll(metaData);
+        addNewFeatureVector(sgtaFV);
+        
+        FeatureVector sinfgtFV = cyberToFeatureVector(cyberReport.getsInfGt());
+        sinfgtFV.setLabel(CyberReport.SINFGT);
+        sinfgtFV.getMetaData().putAll(metaData);
+        addNewFeatureVector(sinfgtFV);
+
+        FeatureVector sintelaFV = cyberToFeatureVector(cyberReport.getsIntelA());
+        sintelaFV.setLabel(CyberReport.SINTELA);
+        sintelaFV.getMetaData().putAll(metaData);
+        addNewFeatureVector(sintelaFV);
+
+        FeatureVector sintelgtFV = cyberToFeatureVector(cyberReport.getsIntelGt());
+        sintelgtFV.setLabel(CyberReport.SINTELGT);
+        sintelgtFV.getMetaData().putAll(metaData);
+        addNewFeatureVector(sintelgtFV);
+
+        FeatureVector deltaFV = cyberToFeatureVector(cyberReport.getDelta());
+        deltaFV.setLabel(CyberReport.DELTA);
+        deltaFV.getMetaData().putAll(metaData);
+        addNewFeatureVector(deltaFV);
+        
+    }    
     public void handleFeatureVectorEvent(FeatureVectorEvent event) {
         FeatureVector featureVector = (FeatureVector) event.object;
         if (event.getEventType().equals(FeatureVectorEvent.LOCATE_FEATURE_VECTOR)) {
@@ -57,35 +130,7 @@ public class FeatureVectorEventHandler implements EventHandler<FeatureVectorEven
             }
         }
         if (event.getEventType().equals(FeatureVectorEvent.NEW_FEATURE_VECTOR)) {
-            //Have we seen this label before?
-            FactorLabel matchingLabel = FactorLabel.getFactorLabel(featureVector.getLabel());
-            //The label is new... add a new FactorLabel row
-            if (null == matchingLabel) {
-                if (labelColorIndex > labelColorCount) {
-                    labelColorIndex = 0;
-                }
-                FactorLabel fl = new FactorLabel(featureVector.getLabel(),
-                    labelColorMap.getColorByIndex(labelColorIndex));
-                FactorLabel.addFactorLabel(fl);
-                labelColorIndex++;
-            }
-            //Have we seen this layer before?
-            int index = featureVector.getLayer();
-            FeatureLayer matchingLayer = FeatureLayer.getFeatureLayer(index);
-            //The layer is new... add a new FeatureLayer  row
-            if (null == matchingLayer) {
-                if (layerColorIndex > layerColorCount) {
-                    layerColorIndex = 0;
-                }
-                FeatureLayer fl = new FeatureLayer(index,
-                    layerColorMap.getColorByIndex(layerColorIndex));
-                FeatureLayer.addFeatureLayer(fl);
-                layerColorIndex++;
-            }
-
-            for (FeatureVectorRenderer renderer : renderers) {
-                renderer.addFeatureVector(featureVector);
-            }
+            addNewFeatureVector(featureVector);
         }
     }
 
@@ -276,6 +321,8 @@ public class FeatureVectorEventHandler implements EventHandler<FeatureVectorEven
             for (FeatureVectorRenderer renderer : renderers) {
                 scanLabelsAndLayers(renderer.getAllFeatureVectors());
             }
+        } else if (event.getEventType().equals(FeatureVectorEvent.NEW_CYBER_REPORT)) {
+            handleCyberReport(event);
         }
     }
 }
