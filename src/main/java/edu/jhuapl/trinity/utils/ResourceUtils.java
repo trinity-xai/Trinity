@@ -7,6 +7,7 @@ import edu.jhuapl.trinity.data.files.CdcCsvFile;
 import edu.jhuapl.trinity.data.files.CdcTissueGenesFile;
 import edu.jhuapl.trinity.data.files.ClusterCollectionFile;
 import edu.jhuapl.trinity.data.files.CocoAnnotationFile;
+import edu.jhuapl.trinity.data.files.CyberReporterFile;
 import edu.jhuapl.trinity.data.files.FeatureCollectionFile;
 import edu.jhuapl.trinity.data.files.GaussianMixtureCollectionFile;
 import edu.jhuapl.trinity.data.files.GraphDirectedCollectionFile;
@@ -625,6 +626,10 @@ public enum ResourceUtils {
                                 CocoAnnotationFile cocoFile = new CocoAnnotationFile(file.getAbsolutePath(), true);
                                 Platform.runLater(() -> scene.getRoot().fireEvent(
                                     new ImageEvent(ImageEvent.NEW_COCO_ANNOTATION, cocoFile.cocoObject)));
+                            } else if (CyberReporterFile.isFileType(file)) {
+                                CyberReporterFile cyberReportFile = new CyberReporterFile(file.getAbsolutePath(), true);
+                                Platform.runLater(() -> scene.getRoot().fireEvent(
+                                    new FeatureVectorEvent(FeatureVectorEvent.NEW_CYBER_REPORT, cyberReportFile.cyberReport)));
                             }
                         } catch (IOException ex) {
                             LOG.error(null, ex);
