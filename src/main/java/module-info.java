@@ -97,6 +97,7 @@ module edu.jhuapl.trinity {
     exports edu.jhuapl.trinity.utils.metric;
     exports edu.jhuapl.trinity.utils.umap;
     exports edu.jhuapl.trinity.utils.volumetric;
+    exports edu.jhuapl.trinity.utils.statistics;
     exports edu.jhuapl.trinity.utils;
     exports edu.jhuapl.trinity;
 }

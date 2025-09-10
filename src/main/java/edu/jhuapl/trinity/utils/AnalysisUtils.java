@@ -449,5 +449,15 @@ public enum AnalysisUtils {
         Utils.printTotalTime(start);
         return projected;
     }
+    public static double cosineSimilarity(List<Double> v1, List<Double> v2) {
+        double dot = 0.0, norm1 = 0.0, norm2 = 0.0;
+        for (int i = 0; i < v1.size(); i++) {
+            double a = v1.get(i), b = v2.get(i);
+            dot += a * b;
+            norm1 += a * a;
+            norm2 += b * b;
+        }
+        return dot / (Math.sqrt(norm1) * Math.sqrt(norm2) + 1e-12); // safe divide
+    }    
 
 }

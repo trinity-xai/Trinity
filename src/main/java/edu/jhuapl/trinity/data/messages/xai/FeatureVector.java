@@ -224,7 +224,6 @@ public class FeatureVector extends MessageData {
         return sb.toString();
     }
     //<editor-fold defaultstate="collapsed" desc="Properties">
-
     /**
      * @return the entityId
      */
@@ -378,7 +377,6 @@ public class FeatureVector extends MessageData {
     public void setMetaData(HashMap<String, String> metaData) {
         this.metaData = metaData;
     }
-    //</editor-fold>
 
     /**
      * @return the text
@@ -407,4 +405,5 @@ public class FeatureVector extends MessageData {
     public void setMediaURL(String mediaURL) {
         this.mediaURL = mediaURL;
     }
+    //</editor-fold>
 }
