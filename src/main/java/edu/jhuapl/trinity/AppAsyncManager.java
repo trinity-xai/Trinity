@@ -92,6 +92,7 @@ import java.util.List;
 import java.util.Map;
 
 import static edu.jhuapl.trinity.App.theConfig;
+import edu.jhuapl.trinity.javafx.components.panes.StatPdfCdfPane;
 
 
 /**
@@ -118,6 +119,7 @@ public class AppAsyncManager extends Task {
     JukeBoxPane jukeBoxPane;
     VideoPane videoPane;
     SpecialEffectsPane specialEffectsPane;
+    StatPdfCdfPane statPdfCdfPane;
     NavigatorPane navigatorPane;
     CocoViewerPane cocoViewerPane;
     WaveformPane waveformPane;
@@ -534,6 +536,22 @@ public class AppAsyncManager extends Task {
                     projections3DPane.setVisible(true);
                 });
             }
+        });
+        LOG.info("Statistics Views");
+        scene.addEventHandler(ApplicationEvent.SHOW_STATISTICS_PANE, e -> {
+            if (null == statPdfCdfPane) {
+                statPdfCdfPane = new StatPdfCdfPane(scene, desktopPane);
+            }
+            if (!desktopPane.getChildren().contains(statPdfCdfPane)) {
+                desktopPane.getChildren().add(statPdfCdfPane);
+                statPdfCdfPane.slideInPane();
+            } else {
+                statPdfCdfPane.show();
+            }
+            if (null != e.object) {
+                Platform.runLater(() -> statPdfCdfPane.setFeatureVectors((List<FeatureVector>) e.object));
+            }
+            
         });
 
         scene.addEventHandler(ApplicationEvent.AUTO_PROJECTION_MODE, e -> {

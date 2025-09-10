@@ -3,8 +3,11 @@ package edu.jhuapl.trinity.utils.statistics;
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.utils.AnalysisUtils;
 import edu.jhuapl.trinity.utils.metric.Metric;
-
-import java.util.*;
+import java.util.ArrayList;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
 
 /**
  * StatisticEngine for extracting scalar statistics and their distributions

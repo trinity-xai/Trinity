@@ -230,6 +230,9 @@ public class HyperspaceMenu extends RadialEntity {
         ImageView save = ResourceUtils.loadIcon("save", ITEM_FIT_WIDTH);
         save.setEffect(glow);
 
+        ImageView stats = ResourceUtils.loadIcon("data", ITEM_FIT_WIDTH);
+        stats.setEffect(glow);
+
         ImageView refresh = ResourceUtils.loadIcon("refresh", ITEM_FIT_WIDTH);
         refresh.setEffect(glow);
 
@@ -331,6 +334,12 @@ public class HyperspaceMenu extends RadialEntity {
                     new FeatureVectorEvent(FeatureVectorEvent.EXPORT_FEATURE_COLLECTION, file));
             }
         }));
+        exportSubMenuItem.addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Compute Stats", stats, e -> {
+            hyperspace3DPane.getScene().getRoot().fireEvent(
+                new ApplicationEvent(ApplicationEvent.SHOW_STATISTICS_PANE, 
+                    hyperspace3DPane.getAllFeatureVectors()));
+        }));
+        
         addMenuItem(exportSubMenuItem);
 
         addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Refresh Render", refresh, e -> {

@@ -336,6 +336,11 @@ public class App extends Application {
         if (e.isAltDown() && e.isControlDown() && e.getCode().equals(KeyCode.Q)) {
             shutdown(false);
         }
+        //J cuz i'm running out of letters
+        if (e.isAltDown() && e.isControlDown() && e.getCode().equals(KeyCode.J)) {
+            stage.getScene().getRoot().fireEvent(
+                new ApplicationEvent(ApplicationEvent.SHOW_STATISTICS_PANE));
+        }
         if (e.isAltDown() && e.isControlDown() && e.getCode().equals(KeyCode.S)) {
             stage.getScene().getRoot().fireEvent(
                 new ApplicationEvent(ApplicationEvent.SHOW_SPECIALEFFECTS_PANE));
