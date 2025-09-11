@@ -13,18 +13,21 @@ import java.util.Set;
  * StatisticEngine for extracting scalar statistics and their distributions
  * from FeatureVector collections.
  *
- * @author Sean
+ * @author Sean Phillips
  */
 public class StatisticEngine {
 
-    public enum ScalarType {
-        NORM, MEAN, MAX, MIN,
-        DIST_TO_MEAN,
-        COSINE_TO_MEAN,
-        PC1_PROJECTION,
-        METRIC_DISTANCE_TO_MEAN // requires metricName argument
-    }
-
+public enum ScalarType {
+    L1_NORM,
+    LINF_NORM,
+    MEAN,
+    MAX,
+    MIN,
+    DIST_TO_MEAN,
+    COSINE_TO_MEAN,
+    PC1_PROJECTION,
+    METRIC_DISTANCE_TO_MEAN
+}
     /**
      * Main entry point to compute selected statistics for a list of FeatureVectors.
      * @param vectors List of FeatureVector
@@ -84,7 +87,11 @@ public class StatisticEngine {
             List<Double> scalars = new ArrayList<>();
             for (FeatureVector fv : vectors) {
                 double value = switch (type) {
-                    case NORM -> AnalysisUtils.l2Norm(fv.getData().stream().mapToDouble(Double::doubleValue).toArray());
+                    case L1_NORM -> fv.getData().stream().mapToDouble(Math::abs).sum();
+                    case LINF_NORM -> fv.getData().stream()
+                                         .mapToDouble(Math::abs)
+                                         .max()
+                                         .orElse(0.0);
                     case MEAN -> fv.getData().stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
                     case MAX -> fv.getMax();
                     case MIN -> fv.getMin();
