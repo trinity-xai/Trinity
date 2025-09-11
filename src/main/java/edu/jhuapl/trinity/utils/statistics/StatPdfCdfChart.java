@@ -14,6 +14,10 @@ import java.util.Set;
  * LineChart that renders EITHER PDF-only or CDF-only for a chosen scalar type.
  * Use two instances if you want separate axes (one for PDF, one for CDF).
  *
+ * Supports:
+ *  - METRIC_DISTANCE_TO_MEAN via metric name and reference vector
+ *  - COMPONENT_AT_DIMENSION via componentIndex
+ *
  * @author Sean Phillips
  */
 public class StatPdfCdfChart extends LineChart<Number, Number> {
@@ -25,9 +29,12 @@ public class StatPdfCdfChart extends LineChart<Number, Number> {
     private Mode mode;
     private List<FeatureVector> vectors;
 
-    //optional metric & reference vector for METRIC_DISTANCE_TO_MEAN
-    private String metricNameForGeneric;                   // e.g., "euclidean"
-    private List<Double> referenceVectorForGeneric;        // e.g., mean vector
+    // Metric mode
+    private String metricNameForGeneric;
+    private List<Double> referenceVectorForGeneric;
+
+    // Component marginal mode
+    private Integer componentIndex;
 
     public StatPdfCdfChart(StatisticEngine.ScalarType scalarType, int bins, Mode mode) {
         super(new NumberAxis(), new NumberAxis());
@@ -72,18 +79,14 @@ public class StatPdfCdfChart extends LineChart<Number, Number> {
         refresh();
     }
 
-    /** Append more vectors and redraw. */
     public void addFeatureVectors(List<FeatureVector> newVectors) {
         if (newVectors == null || newVectors.isEmpty()) return;
-        if (this.vectors == null) {
-            this.vectors = new ArrayList<>(newVectors);
-        } else {
-            this.vectors.addAll(newVectors);
-        }
+        if (this.vectors == null) this.vectors = new ArrayList<>(newVectors);
+        else this.vectors.addAll(newVectors);
         refresh();
     }
 
-    // NEW: metric options setters
+    // Metric mode
     public void setMetricNameForGeneric(String metricNameForGeneric) {
         this.metricNameForGeneric = metricNameForGeneric;
         refresh();
@@ -94,29 +97,31 @@ public class StatPdfCdfChart extends LineChart<Number, Number> {
         refresh();
     }
 
+    // Component marginal mode
+    public void setComponentIndex(Integer componentIndex) {
+        this.componentIndex = componentIndex;
+        refresh();
+    }
+
     private void refresh() {
         getData().clear();
         if (vectors == null || vectors.isEmpty()) return;
 
         Set<StatisticEngine.ScalarType> types = Set.of(scalarType);
 
-        // Pass through metric options when applicable
-        String metricName = (scalarType == StatisticEngine.ScalarType.METRIC_DISTANCE_TO_MEAN)
-                ? metricNameForGeneric
-                : null;
-        List<Double> refVec = (scalarType == StatisticEngine.ScalarType.METRIC_DISTANCE_TO_MEAN)
-                ? referenceVectorForGeneric
-                : null;
+        String metricName = (scalarType == StatisticEngine.ScalarType.METRIC_DISTANCE_TO_MEAN) ? metricNameForGeneric : null;
+        List<Double> refVec = (scalarType == StatisticEngine.ScalarType.METRIC_DISTANCE_TO_MEAN) ? referenceVectorForGeneric : null;
+
+        Integer compIdx = (scalarType == StatisticEngine.ScalarType.COMPONENT_AT_DIMENSION) ? componentIndex : null;
 
         Map<StatisticEngine.ScalarType, StatisticResult> resultMap =
-            StatisticEngine.computeStatistics(vectors, types, bins, metricName, refVec);
+                StatisticEngine.computeStatistics(vectors, types, bins, metricName, refVec, compIdx);
 
         StatisticResult stat = resultMap.get(scalarType);
         if (stat == null) return;
 
         double[] x = stat.getPdfBins();
         XYChart.Series<Number, Number> series = new XYChart.Series<>();
-
         if (mode == Mode.PDF_ONLY) {
             double[] y = stat.getPdf();
             for (int i = 0; i < x.length; i++) series.getData().add(new XYChart.Data<>(x[i], y[i]));
@@ -130,8 +135,7 @@ public class StatPdfCdfChart extends LineChart<Number, Number> {
     public StatisticEngine.ScalarType getScalarType() { return scalarType; }
     public int getBins() { return bins; }
     public Mode getMode() { return mode; }
-
-    // Expose for panel if needed
     public String getMetricNameForGeneric() { return metricNameForGeneric; }
     public List<Double> getReferenceVectorForGeneric() { return referenceVectorForGeneric; }
+    public Integer getComponentIndex() { return componentIndex; }
 }
