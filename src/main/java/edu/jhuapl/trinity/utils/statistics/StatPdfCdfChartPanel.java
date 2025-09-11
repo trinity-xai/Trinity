@@ -2,37 +2,32 @@ package edu.jhuapl.trinity.utils.statistics;
 
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.utils.metric.Metric;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.function.Consumer;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
 import javafx.scene.control.ComboBox;
-import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
+import javafx.scene.control.RadioButton;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
-import javafx.scene.control.TextArea;
+import javafx.scene.control.ToggleGroup;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 
-import java.util.ArrayList;
-import java.util.List;
-
 /**
- * Chart panel with GUI controls on top and TWO independent charts stacked vertically:
- *  - Top chart renders PDF-only
- *  - Bottom chart renders CDF-only
+ * Chart panel for visualizing PDF and CDF statistics (2D) and
+ * triggering a 3D joint PDF/CDF surface computation.
  *
- * Controls split across two rows:
- *  Row 1: Feature, Bins, Refresh, Pop Out
- *  Row 2: Metric, Reference, Index (shared), Set Custom Vector...
+ * Minimal additions:
+ *  - Y feature + Y index
+ *  - "Compute 3D Surface" button
  *
- * Features:
- *  - METRIC_DISTANCE_TO_MEAN: choose metric; reference = Mean / Vector@Index / Custom
- *  - COMPONENT_AT_DIMENSION: choose a component index for the marginal using the same Index spinner
- *
- * Can be instantiated empty or with initial data.
+ * 2D charts still use X feature controls (existing).
  *
  * @author Sean Phillips
  */
@@ -40,52 +35,61 @@ public class StatPdfCdfChartPanel extends BorderPane {
     private StatPdfCdfChart pdfChart;
     private StatPdfCdfChart cdfChart;
 
-    private ComboBox<StatisticEngine.ScalarType> scalarTypeCombo;
+    // Existing X-feature controls
+    private ComboBox<StatisticEngine.ScalarType> xFeatureCombo;
     private Spinner<Integer> binsSpinner;
 
-    // Metric/reference controls (row 2)
+    // Metric/reference shared with X (unchanged)
     private ComboBox<String> metricCombo;
     private ComboBox<String> referenceCombo; // "Mean", "Vector @ Index", "Custom"
+    private Spinner<Integer> xIndexSpinner;
+    private Label xIndexLabel;
 
-    // Shared index spinner for both:
-    //  - Vector @ Index (reference selection)
-    //  - COMPONENT_AT_DIMENSION (component index)
-    private Spinner<Integer> indexSpinner;
-    private Label indexLabel;
+    // Y-feature (new, minimal)
+    private ComboBox<StatisticEngine.ScalarType> yFeatureCombo;
+    private Spinner<Integer> yIndexSpinner;
+    private Label yIndexLabel;
 
-    // Custom vector storage
+    private RadioButton pdfRadio;
+    private RadioButton cdfRadio;
+    private ToggleGroup surfaceToggle;    
+    
+    // Custom vector storage (used if X uses Custom)
     private List<Double> customReferenceVector;
 
-    private List<FeatureVector> currentVectors;
-    private StatisticEngine.ScalarType currentScalarType;
-    private int currentBins;
+    private List<FeatureVector> currentVectors = new ArrayList<>();
+    private StatisticEngine.ScalarType currentXFeature = StatisticEngine.ScalarType.L1_NORM;
+    private int currentBins = 40;
 
     private Runnable onPopOut = null;
+    private Consumer<GridDensityResult> onComputeSurface = null;
 
     public StatPdfCdfChartPanel() {
         this(null, StatisticEngine.ScalarType.L1_NORM, 40);
     }
 
-    public StatPdfCdfChartPanel(List<FeatureVector> initialVectors, StatisticEngine.ScalarType initialType, int initialBins) {
-        this.currentVectors = (initialVectors != null) ? initialVectors : new ArrayList<>();
-        this.currentScalarType = (initialType != null) ? initialType : StatisticEngine.ScalarType.L1_NORM;
-        this.currentBins = (initialBins > 0) ? initialBins : 40;
+    public StatPdfCdfChartPanel(List<FeatureVector> initialVectors,
+                                StatisticEngine.ScalarType initialType,
+                                int initialBins) {
+        if (initialVectors != null) currentVectors = initialVectors;
+        if (initialType != null) currentXFeature = initialType;
+        if (initialBins > 0) currentBins = initialBins;
 
-        // ===== Row 1 controls =====
-        scalarTypeCombo = new ComboBox<>();
-        scalarTypeCombo.getItems().addAll(StatisticEngine.ScalarType.values());
-        scalarTypeCombo.setValue(currentScalarType);
+        // ===== Row 1: X feature + bins + 2D actions =====
+        xFeatureCombo = new ComboBox<>();
+        xFeatureCombo.getItems().addAll(StatisticEngine.ScalarType.values());
+        xFeatureCombo.setValue(currentXFeature);
 
         binsSpinner = new Spinner<>(5, 100, currentBins, 5);
         binsSpinner.setPrefWidth(100);
         binsSpinner.setPrefHeight(40);
 
-        Button refreshButton = new Button("Refresh");
+        Button refreshButton = new Button("Refresh 2D");
         Button popOutButton = new Button("Pop Out");
 
         HBox row1 = new HBox(
             16,
-            new VBox(5, new Label("Feature"), scalarTypeCombo),
+            new VBox(5, new Label("X Feature (2D)"), xFeatureCombo),
             new VBox(5, new Label("Bins"), binsSpinner),
             refreshButton,
             popOutButton
@@ -93,7 +97,7 @@ public class StatPdfCdfChartPanel extends BorderPane {
         row1.setAlignment(Pos.CENTER_LEFT);
         row1.setPadding(new Insets(6, 6, 0, 6));
 
-        // ===== Row 2 controls =====
+        // ===== Row 2: X metric/ref/index =====
         metricCombo = new ComboBox<>();
         metricCombo.getItems().addAll(Metric.getMetricNames());
         if (metricCombo.getItems().contains("euclidean")) metricCombo.setValue("euclidean");
@@ -103,86 +107,145 @@ public class StatPdfCdfChartPanel extends BorderPane {
         referenceCombo.getItems().addAll("Mean", "Vector @ Index", "Custom");
         referenceCombo.setValue("Mean");
 
-        indexLabel = new Label("Index");
-        indexSpinner = new Spinner<>();
-        indexSpinner.setPrefWidth(100);
+        xIndexLabel = new Label("X Index");
+        xIndexSpinner = new Spinner<>();
+        xIndexSpinner.setPrefWidth(100);
 
         Button setCustomButton = new Button("Set Custom Vector…");
 
         HBox row2 = new HBox(
             16,
-            new VBox(5, new Label("Metric"), metricCombo),
-            new VBox(5, new Label("Reference"), referenceCombo),
-            new VBox(5, indexLabel, indexSpinner),
+            new VBox(5, new Label("Metric (X)"), metricCombo),
+            new VBox(5, new Label("Reference (X)"), referenceCombo),
+            new VBox(5, xIndexLabel, xIndexSpinner),
             setCustomButton
         );
         row2.setAlignment(Pos.CENTER_LEFT);
-        row2.setPadding(new Insets(4, 6, 6, 6));
+        row2.setPadding(new Insets(4, 6, 0, 6));
 
-        // Make rows stretch nicely if needed
+        // ===== Row 3: Y feature + Y index + 3D action =====
+        yFeatureCombo = new ComboBox<>();
+        yFeatureCombo.getItems().addAll(StatisticEngine.ScalarType.values());
+        yFeatureCombo.setValue(StatisticEngine.ScalarType.COMPONENT_AT_DIMENSION);
+
+        yIndexLabel = new Label("Y Index");
+        yIndexSpinner = new Spinner<>();
+        yIndexSpinner.setPrefWidth(100);
+
+        surfaceToggle = new ToggleGroup();
+
+        pdfRadio = new RadioButton("PDF");
+        pdfRadio.setToggleGroup(surfaceToggle);
+        pdfRadio.setSelected(true); // default
+
+        cdfRadio = new RadioButton("CDF");
+        cdfRadio.setToggleGroup(surfaceToggle);
+
+        HBox surfaceBox = new HBox(8, pdfRadio, cdfRadio);
+        surfaceBox.setAlignment(Pos.CENTER_LEFT);
+
+        Button compute3DButton = new Button("Compute 3D Surface");
+        
+        HBox row3 = new HBox(
+            16,
+            new VBox(5, new Label("Y Feature (3D)"), yFeatureCombo),
+            new VBox(5, yIndexLabel, yIndexSpinner),
+            new VBox(5, new Label("Surface"), surfaceBox),
+            compute3DButton
+        );
+
+        row3.setAlignment(Pos.CENTER_LEFT);
+        row3.setPadding(new Insets(4, 6, 6, 6));
+
         HBox.setHgrow(row1, Priority.ALWAYS);
         HBox.setHgrow(row2, Priority.ALWAYS);
+        HBox.setHgrow(row3, Priority.ALWAYS);
 
-        VBox controlBar = new VBox(row1, row2);
+        VBox controlBar = new VBox(row1, row2, row3);
         controlBar.setPadding(new Insets(0));
 
         // ===== Charts: PDF (top), CDF (bottom) =====
-        pdfChart = new StatPdfCdfChart(currentScalarType, currentBins, StatPdfCdfChart.Mode.PDF_ONLY);
-        cdfChart = new StatPdfCdfChart(currentScalarType, currentBins, StatPdfCdfChart.Mode.CDF_ONLY);
+        pdfChart = new StatPdfCdfChart(currentXFeature, currentBins, StatPdfCdfChart.Mode.PDF_ONLY);
+        cdfChart = new StatPdfCdfChart(currentXFeature, currentBins, StatPdfCdfChart.Mode.CDF_ONLY);
 
         if (!currentVectors.isEmpty()) {
-            applyFeatureSpecificOptions(); // sets metric/ref or component index
+            applyXFeatureOptions();
             pdfChart.setFeatureVectors(currentVectors);
             cdfChart.setFeatureVectors(currentVectors);
         }
 
         VBox chartsBox = new VBox(8, pdfChart, cdfChart);
-        chartsBox.setPadding(new Insets(2));
+        chartsBox.setPadding(new Insets(6));
         VBox.setVgrow(pdfChart, javafx.scene.layout.Priority.ALWAYS);
         VBox.setVgrow(cdfChart, javafx.scene.layout.Priority.ALWAYS);
 
         setTop(controlBar);
         setCenter(chartsBox);
 
-        // ===== Actions =====
-        refreshButton.setOnAction(e -> refreshCharts());
+        // ===== Handlers =====
+        refreshButton.setOnAction(e -> refresh2DCharts());
         popOutButton.setOnAction(e -> { if (onPopOut != null) onPopOut.run(); });
 
-        // Paste/import custom vector via dialog
         setCustomButton.setOnAction(e -> {
-            List<Double> parsed = showCustomVectorDialog();
-            if (parsed != null && !parsed.isEmpty()) {
-                setCustomReferenceVector(parsed);
-            }
+            List<Double> parsed = DialogUtils.showCustomVectorDialog();
+            if (parsed != null && !parsed.isEmpty()) setCustomReferenceVector(parsed);
         });
 
-        // Inter-control enable/disable + index label/bounds management
-        scalarTypeCombo.valueProperty().addListener((obs, oldVal, newVal) -> {
-            currentScalarType = newVal;
-            updateControlsEnablement();
-            updateIndexSpinnerBoundsAndLabel(); // reacts to feature change
+        compute3DButton.setOnAction(e -> compute3DSurface());
+
+        xFeatureCombo.valueProperty().addListener((obs, ov, nv) -> {
+            currentXFeature = nv;
+            updateXControlEnablement();
+            updateXIndexBoundsAndLabel();
+        });
+        referenceCombo.valueProperty().addListener((obs, ov, nv) -> {
+            updateXControlEnablement();
+            updateXIndexBoundsAndLabel();
+        });
+        yFeatureCombo.valueProperty().addListener((obs, ov, nv) -> {
+            updateYControlEnablement();
+            updateYIndexBoundsAndLabel();
         });
 
-        referenceCombo.valueProperty().addListener((obs, o, nv) -> {
-            updateControlsEnablement();
-            updateIndexSpinnerBoundsAndLabel(); // reacts to reference change
-        });
-
-        // Initialize UI states
-        updateControlsEnablement();
-        updateIndexSpinnerBoundsAndLabel();
+        // initialize control states
+        updateXControlEnablement();
+        updateYControlEnablement();
+        updateXIndexBoundsAndLabel();
+        updateYIndexBoundsAndLabel();
     }
 
-    // ===== Public API =====
+    // ----------------- Public API -----------------
+    public boolean isSurfaceCDF() {
+        return cdfRadio.isSelected();
+    }
+    /**
+     * Get a human-friendly description of the current Y feature type.
+     * Includes the component index if the Y feature is COMPONENT_AT_DIMENSION.
+     */
+    public String getYFeatureTypeForDisplay() {
+        if (yFeatureCombo == null) {
+            return "N/A";
+        }
+        StatisticEngine.ScalarType type = yFeatureCombo.getValue();
+        if (type == StatisticEngine.ScalarType.COMPONENT_AT_DIMENSION) {
+            Integer idx = yIndexSpinner.getValue();
+            return "COMPONENT_AT_DIMENSION[" + (idx != null ? idx : "?") + "]";
+        }
+        return type != null ? type.name() : "N/A";
+    }
 
-    public void setOnPopOut(Runnable handler) {
-        this.onPopOut = handler;
+    public void setOnPopOut(Runnable handler) { this.onPopOut = handler; }
+
+    /** Consumer invoked when "Compute 3D Surface" finishes successfully. */
+    public void setOnComputeSurface(Consumer<GridDensityResult> handler) {
+        this.onComputeSurface = handler;
     }
 
     public void setFeatureVectors(List<FeatureVector> vectors) {
         this.currentVectors = (vectors != null) ? vectors : new ArrayList<>();
-        updateIndexSpinnerBoundsAndLabel();
-        applyFeatureSpecificOptions();
+        updateXIndexBoundsAndLabel();
+        updateYIndexBoundsAndLabel();
+        applyXFeatureOptions();
         pdfChart.setFeatureVectors(this.currentVectors);
         cdfChart.setFeatureVectors(this.currentVectors);
     }
@@ -192,43 +255,42 @@ public class StatPdfCdfChartPanel extends BorderPane {
         if (this.currentVectors == null) this.currentVectors = new ArrayList<>(newVectors);
         else this.currentVectors.addAll(newVectors);
 
-        updateIndexSpinnerBoundsAndLabel();
-        applyFeatureSpecificOptions();
+        updateXIndexBoundsAndLabel();
+        updateYIndexBoundsAndLabel();
+        applyXFeatureOptions();
         pdfChart.addFeatureVectors(newVectors);
         cdfChart.addFeatureVectors(newVectors);
     }
 
-    /** Provide a custom reference vector for metric distance mode. */
-    public void setCustomReferenceVector(List<Double> customVector) {
-        this.customReferenceVector = customVector;
-        if (scalarTypeCombo.getValue() == StatisticEngine.ScalarType.METRIC_DISTANCE_TO_MEAN
-                && "Custom".equals(referenceCombo.getValue())) {
-            applyFeatureSpecificOptions();
-            if (!currentVectors.isEmpty()) {
-                pdfChart.setFeatureVectors(currentVectors);
-                cdfChart.setFeatureVectors(currentVectors);
-            }
-        }
-    }
-
     public int getBins() { return binsSpinner.getValue(); }
-    public StatisticEngine.ScalarType getScalarType() { return scalarTypeCombo.getValue(); }
+    public StatisticEngine.ScalarType getScalarType() { return xFeatureCombo.getValue(); }
     public StatPdfCdfChart getPdfChart() { return pdfChart; }
     public StatPdfCdfChart getCdfChart() { return cdfChart; }
 
-    // ===== Internal: behavior =====
+    public void setCustomReferenceVector(List<Double> customVector) {
+        this.customReferenceVector = customVector;
+        if (xFeatureCombo.getValue() == StatisticEngine.ScalarType.METRIC_DISTANCE_TO_MEAN
+                && "Custom".equals(referenceCombo.getValue())
+                && !currentVectors.isEmpty()) {
+            applyXFeatureOptions();
+            pdfChart.setFeatureVectors(currentVectors);
+            cdfChart.setFeatureVectors(currentVectors);
+        }
+    }
 
-    private void refreshCharts() {
-        currentScalarType = scalarTypeCombo.getValue();
+    // ----------------- 2D (X feature) behavior -----------------
+
+    private void refresh2DCharts() {
+        currentXFeature = xFeatureCombo.getValue();
         currentBins = binsSpinner.getValue();
 
-        pdfChart.setScalarType(currentScalarType);
+        pdfChart.setScalarType(currentXFeature);
         pdfChart.setBins(currentBins);
 
-        cdfChart.setScalarType(currentScalarType);
+        cdfChart.setScalarType(currentXFeature);
         cdfChart.setBins(currentBins);
 
-        applyFeatureSpecificOptions();
+        applyXFeatureOptions();
 
         if (currentVectors != null && !currentVectors.isEmpty()) {
             pdfChart.setFeatureVectors(currentVectors);
@@ -236,8 +298,8 @@ public class StatPdfCdfChartPanel extends BorderPane {
         }
     }
 
-    private void applyFeatureSpecificOptions() {
-        // Clear residuals first
+    private void applyXFeatureOptions() {
+        // Clear residuals
         pdfChart.setMetricNameForGeneric(null);
         pdfChart.setReferenceVectorForGeneric(null);
         pdfChart.setComponentIndex(null);
@@ -246,66 +308,124 @@ public class StatPdfCdfChartPanel extends BorderPane {
         cdfChart.setReferenceVectorForGeneric(null);
         cdfChart.setComponentIndex(null);
 
-        if (currentScalarType == StatisticEngine.ScalarType.METRIC_DISTANCE_TO_MEAN) {
+        if (currentXFeature == StatisticEngine.ScalarType.METRIC_DISTANCE_TO_MEAN) {
             String metricName = metricCombo.getValue();
             List<Double> ref = switch (referenceCombo.getValue()) {
-                case "Vector @ Index" -> getVectorAtIndexAsList(indexSpinner.getValue());
+                case "Vector @ Index" -> getVectorAtIndexAsList(xIndexSpinner.getValue());
                 case "Custom" -> customReferenceVector;
                 default -> currentVectors.isEmpty() ? null : FeatureVector.getMeanVector(currentVectors);
             };
-
             pdfChart.setMetricNameForGeneric(metricName);
             pdfChart.setReferenceVectorForGeneric(ref);
-
             cdfChart.setMetricNameForGeneric(metricName);
             cdfChart.setReferenceVectorForGeneric(ref);
-        } else if (currentScalarType == StatisticEngine.ScalarType.COMPONENT_AT_DIMENSION) {
-            pdfChart.setComponentIndex(indexSpinner.getValue());
-            cdfChart.setComponentIndex(indexSpinner.getValue());
+        } else if (currentXFeature == StatisticEngine.ScalarType.COMPONENT_AT_DIMENSION) {
+            Integer idx = xIndexSpinner.getValue();
+            pdfChart.setComponentIndex(idx);
+            cdfChart.setComponentIndex(idx);
         }
     }
 
-    private void updateControlsEnablement() {
-        boolean isMetric = scalarTypeCombo.getValue() == StatisticEngine.ScalarType.METRIC_DISTANCE_TO_MEAN;
-        boolean isComponent = scalarTypeCombo.getValue() == StatisticEngine.ScalarType.COMPONENT_AT_DIMENSION;
+    private void updateXControlEnablement() {
+        boolean isMetric = xFeatureCombo.getValue() == StatisticEngine.ScalarType.METRIC_DISTANCE_TO_MEAN;
+        boolean isComponent = xFeatureCombo.getValue() == StatisticEngine.ScalarType.COMPONENT_AT_DIMENSION;
 
         metricCombo.setDisable(!isMetric);
         referenceCombo.setDisable(!isMetric);
 
-        // The single Index spinner is enabled if:
-        //  - metric + "Vector @ Index", OR
-        //  - component feature is selected
         boolean indexEnabled = (isMetric && "Vector @ Index".equals(referenceCombo.getValue())) || isComponent;
-        indexSpinner.setDisable(!indexEnabled);
+        xIndexSpinner.setDisable(!indexEnabled);
     }
 
-    private void updateIndexSpinnerBoundsAndLabel() {
-        // Decide what the index means right now & set bounds accordingly
-        boolean isMetricVectorIdx = scalarTypeCombo.getValue() == StatisticEngine.ScalarType.METRIC_DISTANCE_TO_MEAN
+    private void updateXIndexBoundsAndLabel() {
+        boolean isMetricVectorIdx = xFeatureCombo.getValue() == StatisticEngine.ScalarType.METRIC_DISTANCE_TO_MEAN
                 && "Vector @ Index".equals(referenceCombo.getValue());
-        boolean isComponent = scalarTypeCombo.getValue() == StatisticEngine.ScalarType.COMPONENT_AT_DIMENSION;
+        boolean isComponent = xFeatureCombo.getValue() == StatisticEngine.ScalarType.COMPONENT_AT_DIMENSION;
 
         if (isMetricVectorIdx) {
-            // bounds: 0..(N-1)
             int maxIdx = Math.max(0, getMaxVectorIndex());
-            setSpinnerBounds(indexSpinner, 0, maxIdx, Math.min(indexSpinner.getValue() == null ? 0 : indexSpinner.getValue(), maxIdx));
-            indexLabel.setText("Index (Vector)");
+            setSpinnerBounds(xIndexSpinner, 0, maxIdx, safeSpinnerValue(xIndexSpinner, 0, maxIdx));
+            xIndexLabel.setText("X Index (Vector)");
         } else if (isComponent) {
-            // bounds: 0..(D-1)
             int maxDim = getMaxDimensionIndex();
-            setSpinnerBounds(indexSpinner, 0, maxDim, Math.min(indexSpinner.getValue() == null ? 0 : indexSpinner.getValue(), maxDim));
-            indexLabel.setText("Index (Dimension)");
+            setSpinnerBounds(xIndexSpinner, 0, maxDim, safeSpinnerValue(xIndexSpinner, 0, maxDim));
+            xIndexLabel.setText("X Index (Dimension)");
         } else {
-            // Not applicable right now; keep bounds reasonable but disabled by enablement logic
             int maxDim = getMaxDimensionIndex();
-            setSpinnerBounds(indexSpinner, 0, Math.max(0, maxDim), 0);
-            indexLabel.setText("Index");
+            setSpinnerBounds(xIndexSpinner, 0, Math.max(0, maxDim), 0);
+            xIndexLabel.setText("X Index");
         }
     }
+
+    // ----------------- 3D compute (new) -----------------
+
+    private void compute3DSurface() {
+        if (onComputeSurface == null || currentVectors == null || currentVectors.isEmpty()) return;
+
+        // Build X axis params from existing controls
+        AxisParams xAxis = new AxisParams();
+        xAxis.setType(xFeatureCombo.getValue());
+        if (xAxis.getType() == StatisticEngine.ScalarType.METRIC_DISTANCE_TO_MEAN) {
+            xAxis.setMetricName(metricCombo.getValue());
+            List<Double> ref = switch (referenceCombo.getValue()) {
+                case "Vector @ Index" -> getVectorAtIndexAsList(xIndexSpinner.getValue());
+                case "Custom" -> customReferenceVector;
+                default -> currentVectors.isEmpty() ? null : FeatureVector.getMeanVector(currentVectors);
+            };
+            xAxis.setReferenceVec(ref);
+        } else if (xAxis.getType() == StatisticEngine.ScalarType.COMPONENT_AT_DIMENSION) {
+            xAxis.setComponentIndex(xIndexSpinner.getValue());
+        }
+
+        // Build Y axis params (minimal: support component index and mirror metric/ref if used)
+        AxisParams yAxis = new AxisParams();
+        yAxis.setType(yFeatureCombo.getValue());
+        if (yAxis.getType() == StatisticEngine.ScalarType.COMPONENT_AT_DIMENSION) {
+            yAxis.setComponentIndex(yIndexSpinner.getValue());
+        } else if (yAxis.getType() == StatisticEngine.ScalarType.METRIC_DISTANCE_TO_MEAN) {
+            yAxis.setMetricName(metricCombo.getValue());
+            List<Double> ref = (referenceCombo.getValue().equals("Custom"))
+                    ? customReferenceVector
+                    : (currentVectors.isEmpty() ? null : FeatureVector.getMeanVector(currentVectors));
+            if ("Vector @ Index".equals(referenceCombo.getValue())) {
+                ref = getVectorAtIndexAsList(xIndexSpinner.getValue());
+            }
+            yAxis.setReferenceVec(ref);
+        }
+        int bins = binsSpinner.getValue();
+        GridSpec grid = new GridSpec(bins, bins);
+        GridDensityResult result = GridDensity3DEngine.computePdfCdf2D(currentVectors, xAxis, yAxis, grid);
+        onComputeSurface.accept(result);
+    }
+
+    private void updateYControlEnablement() {
+        boolean yNeedsDim = yFeatureCombo.getValue() == StatisticEngine.ScalarType.COMPONENT_AT_DIMENSION;
+        yIndexSpinner.setDisable(!yNeedsDim);
+    }
+
+    private void updateYIndexBoundsAndLabel() {
+        boolean yIsComponent = yFeatureCombo.getValue() == StatisticEngine.ScalarType.COMPONENT_AT_DIMENSION;
+        if (yIsComponent) {
+            int maxDim = getMaxDimensionIndex();
+            setSpinnerBounds(yIndexSpinner, 0, maxDim, safeSpinnerValue(yIndexSpinner, 0, maxDim));
+            yIndexLabel.setText("Y Index (Dimension)");
+        } else {
+            int maxDim = getMaxDimensionIndex();
+            setSpinnerBounds(yIndexSpinner, 0, Math.max(0, maxDim), 0);
+            yIndexLabel.setText("Y Index");
+        }
+    }
+
+    // ----------------- Utilities -----------------
 
     private static void setSpinnerBounds(Spinner<Integer> spinner, int min, int max, int value) {
         spinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(min, Math.max(min, max), value, 1));
         spinner.getValueFactory().setValue(Math.max(min, Math.min(max, value)));
+    }
+
+    private static int safeSpinnerValue(Spinner<Integer> spinner, int min, int max) {
+        Integer v = (spinner.getValue() == null) ? min : spinner.getValue();
+        return Math.max(min, Math.min(max, v));
     }
 
     private int getMaxVectorIndex() {
@@ -321,43 +441,5 @@ public class StatPdfCdfChartPanel extends BorderPane {
         if (currentVectors == null || currentVectors.isEmpty()) return null;
         int safe = Math.max(0, Math.min(idx, currentVectors.size() - 1));
         return currentVectors.get(safe).getData();
-    }
-
-    /** Simple paste dialog for a custom reference vector (comma/space separated doubles). */
-    private List<Double> showCustomVectorDialog() {
-        Dialog<List<Double>> dialog = new Dialog<>();
-        dialog.setTitle("Set Custom Reference Vector");
-        dialog.getDialogPane().getButtonTypes().addAll(javafx.scene.control.ButtonType.OK, javafx.scene.control.ButtonType.CANCEL);
-
-        TextArea ta = new TextArea();
-        ta.setPromptText("Paste numbers separated by commas or spaces, e.g.\n0.12, -1.3, 2.5, 0.0");
-        ta.setPrefRowCount(6);
-        dialog.getDialogPane().setContent(ta);
-
-        dialog.setResultConverter(bt -> {
-            if (bt == javafx.scene.control.ButtonType.OK) {
-                String text = ta.getText();
-                List<Double> parsed = parseDoubles(text);
-                return (parsed == null || parsed.isEmpty()) ? null : parsed;
-            }
-            return null;
-        });
-
-        return dialog.showAndWait().orElse(null);
-    }
-
-    private static List<Double> parseDoubles(String s) {
-        if (s == null || s.isBlank()) return null;
-        String norm = s.replaceAll("[\\n\\t]", " ").replaceAll(",", " ");
-        String[] parts = norm.trim().split("\\s+");
-        List<Double> out = new ArrayList<>(parts.length);
-        for (String p : parts) {
-            try {
-                out.add(Double.valueOf(p));
-            } catch (NumberFormatException ignore) {
-                // skip tokens that are not numbers
-            }
-        }
-        return out;
     }
 }

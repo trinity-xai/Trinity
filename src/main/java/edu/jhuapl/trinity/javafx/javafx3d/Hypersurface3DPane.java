@@ -20,6 +20,7 @@ import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.FactorAnalysisEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.events.HyperspaceEvent;
+import edu.jhuapl.trinity.javafx.events.HypersurfaceGridEvent;
 import edu.jhuapl.trinity.javafx.events.ImageEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.javafx.events.ShadowEvent;
@@ -35,10 +36,13 @@ import edu.jhuapl.trinity.javafx.javafx3d.tasks.KMediodsClusterTask;
 import edu.jhuapl.trinity.javafx.renderers.FeatureVectorRenderer;
 import edu.jhuapl.trinity.javafx.renderers.SemanticMapRenderer;
 import edu.jhuapl.trinity.javafx.renderers.ShapleyVectorRenderer;
+import edu.jhuapl.trinity.utils.DataUtils;
+import edu.jhuapl.trinity.utils.DataUtils.HeightMode;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import edu.jhuapl.trinity.utils.Utils;
 import edu.jhuapl.trinity.utils.metric.Metric;
+import edu.jhuapl.trinity.utils.statistics.GridDensityResult;
 import javafx.animation.AnimationTimer;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
@@ -126,6 +130,7 @@ import java.util.Map.Entry;
 import java.util.Optional;
 import java.util.Random;
 import java.util.function.Function;
+import javafx.scene.control.ComboBox;
 import javafx.scene.control.Menu;
 
 /**
@@ -182,7 +187,7 @@ public class Hypersurface3DPane extends StackPane
     boolean heightChanged = false;
     public boolean surfaceRender = true;
 
-    enum COLORATION {COLOR_BY_IMAGE, COLOR_BY_FEATURE, COLOR_BY_SHAPLEY}
+    public enum COLORATION {COLOR_BY_IMAGE, COLOR_BY_FEATURE, COLOR_BY_SHAPLEY}
 
     COLORATION colorationMethod = COLORATION.COLOR_BY_FEATURE;
     boolean hoverInteractionsEnabled = false;
@@ -253,6 +258,7 @@ public class Hypersurface3DPane extends StackPane
 
     public List<String> featureLabels = new ArrayList<>();
     public Spinner xWidthSpinner, zWidthSpinner;
+    private ComboBox<HeightMode> heightModeCombo;
     public Scene scene;
     HashMap<Shape3D, Callout> shape3DToCalloutMap;
     public String imageryBasePath = "";
@@ -776,6 +782,16 @@ public class Hypersurface3DPane extends StackPane
                 factorMaxIndex = newFactorMaxIndex;
         });
 
+        scene.addEventHandler(HypersurfaceGridEvent.RENDER_PDF, e -> {
+            applySurfaceGridToHypersurface(e.getZGrid());
+            e.consume();
+        });
+
+        scene.addEventHandler(HypersurfaceGridEvent.RENDER_CDF, e -> {
+            applySurfaceGridToHypersurface(e.getZGrid());
+            e.consume();
+        });
+
         scene.addEventHandler(HyperspaceEvent.NODE_QUEUELIMIT_GUI, e -> queueLimit = (int) e.object);
         scene.addEventHandler(HyperspaceEvent.REFRESH_RATE_GUI, e -> hypersurfaceRefreshRate = (long) e.object);
 
@@ -834,6 +850,46 @@ public class Hypersurface3DPane extends StackPane
                 cosineDistancesGrid.toArray(Double[]::new)));        
         System.out.println(cosineDistancesGrid.toString());
     }
+    private void applySurfaceGridToHypersurface(List<List<Double>> grid) {
+        // pick a mode; NORMALIZE_01 is a great default for CDF
+//        HeightMode mode = HeightMode.NORMALIZE_01;
+        HeightMode mode = heightModeCombo.getValue();
+        double userScale = 1.0; //yHeightScaleSpinner.getValue(); // your existing control (0..100)
+
+        List<List<Double>> scaled = DataUtils.normalizeAndScale(grid, mode, userScale);
+    
+        dataGrid.clear();
+        dataGrid.addAll(scaled);
+
+        xWidth = dataGrid.get(0).size();  // columns (X)
+        zWidth = dataGrid.size();         // rows (Y)
+
+        xWidthSpinner.getValueFactory().setValue(xWidth);
+        zWidthSpinner.getValueFactory().setValue(zWidth);
+
+        updateTheMesh();
+        updateView(true);
+    }    
+    public void setSurfaceFromDensity(GridDensityResult res, boolean useCDF, boolean flipY) {
+        // Choose which surface to render
+        List<List<Double>> grid = useCDF ? res.cdfAsListGrid() : res.pdfAsListGrid();
+        // Optional: flip Y if your renderer expects Y-up instead of row-major Y-down
+        if (flipY) {
+            java.util.Collections.reverse(grid); // reverse row order
+        }
+        dataGrid.clear();
+        dataGrid.addAll(grid);
+
+        xWidth = dataGrid.get(0).size();  // columns (X)
+        zWidth = dataGrid.size();         // rows (Y)
+
+        // keep your existing spinners/mesh update logic
+        xWidthSpinner.getValueFactory().setValue(xWidth);
+        zWidthSpinner.getValueFactory().setValue(zWidth);
+        updateTheMesh();
+        updateView(true);
+    }
+    
     public void computeSurfaceDifference(FeatureCollection collection) {
         double[][] newRayRay = collection.convertFeaturesToArray();
         //@DEBUG SMP
@@ -1539,6 +1595,15 @@ public class Hypersurface3DPane extends StackPane
             surfPlot.setTranslateZ(-(zWidth * surfScale) / 2.0);
         });
         zWidthSpinner.setPrefWidth(125);
+        // in constructor / initControls()
+        heightModeCombo = new ComboBox<>();
+        heightModeCombo.getItems().addAll(HeightMode.values());
+        heightModeCombo.setValue(HeightMode.RAW); // default
+
+        VBox heightControls = new VBox(5,
+            new Label("Height Mode"),
+            heightModeCombo
+        );
 
         ToggleGroup colorationToggle = new ToggleGroup();
         RadioButton colorByImageRadioButton = new RadioButton("Color by Image");
@@ -1679,6 +1744,7 @@ public class Hypersurface3DPane extends StackPane
             new HBox(10, xWidthLabel, xWidthSpinner),
             new HBox(10, zWidthLabel, zWidthSpinner),
             new HBox(10, yScaleLabel, yScaleSpinner),
+            heightControls,                
             new HBox(10, surfScaleLabel, surfScaleSpinner),
             new Label("Color Method"),
             colorationHBox,

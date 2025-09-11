@@ -1,6 +1,7 @@
 package edu.jhuapl.trinity.javafx.components.panes;
 
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
+import edu.jhuapl.trinity.utils.statistics.GridDensityResult;
 import edu.jhuapl.trinity.utils.statistics.StatPdfCdfChartPanel;
 import edu.jhuapl.trinity.utils.statistics.StatisticEngine;
 import javafx.geometry.Insets;
@@ -45,6 +46,7 @@ public class StatPdfCdfPane extends LitPathPane {
         borderPane.setPadding(new Insets(8));
 
         chartPanel = new StatPdfCdfChartPanel(); // empty state
+        chartPanel.setOnComputeSurface(result -> onComputeSurface(result));        
         borderPane.setCenter(chartPanel);
     }
 
@@ -73,9 +75,35 @@ public class StatPdfCdfPane extends LitPathPane {
         borderPane.setPadding(new Insets(8));
 
         chartPanel = new StatPdfCdfChartPanel(vectors, scalarType, bins);
+        chartPanel.setOnComputeSurface(result -> onComputeSurface(result));        
         borderPane.setCenter(chartPanel);
     }
 
+    private void onComputeSurface(GridDensityResult result) {
+        boolean useCDF = chartPanel.isSurfaceCDF();
+
+        List<List<Double>> grid = useCDF
+            ? result.cdfAsListGrid()
+            : result.pdfAsListGrid();
+
+        String label = (useCDF ? "CDF" : "PDF") + " : "
+                     + chartPanel.getScalarType() + " vs "
+                     + chartPanel.getYFeatureTypeForDisplay();
+
+        if (getScene() != null) {
+            getScene().getRoot().fireEvent(
+                new edu.jhuapl.trinity.javafx.events.HypersurfaceGridEvent(
+                    useCDF
+                        ? edu.jhuapl.trinity.javafx.events.HypersurfaceGridEvent.RENDER_CDF
+                        : edu.jhuapl.trinity.javafx.events.HypersurfaceGridEvent.RENDER_PDF,
+                    grid,
+                    result.getxCenters(),
+                    result.getyCenters(),
+                    label
+                )
+            );
+        }        
+    }
     public void setFeatureVectors(List<FeatureVector> vectors) {
         chartPanel.setFeatureVectors(vectors);
     }

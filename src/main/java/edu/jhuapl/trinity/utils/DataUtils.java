@@ -39,6 +39,12 @@ import java.util.stream.Collectors;
  */
 public enum DataUtils {
     INSTANCE;
+    public enum HeightMode {
+        RAW,           // use incoming values as-is
+        NORMALIZE_01,  // rescale to [0,1]
+        ZSCORE,        // (v - mean)/std
+        PERCENTILE_CLIP_1_99  // clip to 1–99th, then scale to [0,1]
+    }
     private static final Logger LOG = LoggerFactory.getLogger(DataUtils.class);
     private static Random rando = new Random();
 
@@ -53,6 +59,74 @@ public enum DataUtils {
     public static double normalize(double rawValue, double min, double max) {
         return (rawValue - min) / (max - min);
     }
+public static List<List<Double>> normalizeAndScale(
+        List<List<Double>> grid,
+        HeightMode mode,
+        double userScale // your existing height multiplier
+) {
+    if (grid == null || grid.isEmpty() || grid.get(0).isEmpty()) return grid;
+
+    int rows = grid.size();
+    int cols = grid.get(0).size();
+
+    double min = Double.POSITIVE_INFINITY, max = Double.NEGATIVE_INFINITY, sum = 0.0, sum2 = 0.0;
+    int n = rows * cols;
+
+    // 1) scan stats
+    for (List<Double> row : grid) {
+        for (double v : row) {
+            if (v < min) min = v;
+            if (v > max) max = v;
+            sum += v;
+            sum2 += v * v;
+        }
+    }
+    double mean = sum / n;
+    double var = Math.max(0.0, sum2 / n - mean * mean);
+    double std = Math.max(1e-12, Math.sqrt(var));
+    double range = Math.max(1e-12, max - min);
+
+    // For percentile mode, compute cutpoints
+    double p1 = 0, p99 = 1;
+    if (mode == HeightMode.PERCENTILE_CLIP_1_99) {
+        double[] flat = new double[n];
+        int k = 0;
+        for (List<Double> row : grid) for (double v : row) flat[k++] = v;
+        java.util.Arrays.sort(flat);
+        p1 = flat[(int) Math.floor(0.01 * (n - 1))];
+        p99 = flat[(int) Math.floor(0.99 * (n - 1))];
+        if (p99 <= p1) { p99 = p1 + 1e-12; }
+    }
+
+    // 2) produce output
+    List<List<Double>> out = new java.util.ArrayList<>(rows);
+    for (int r = 0; r < rows; r++) {
+        List<Double> src = grid.get(r);
+        List<Double> dst = new java.util.ArrayList<>(cols);
+        for (int c = 0; c < cols; c++) {
+            double v = src.get(c);
+            double z;
+            switch (mode) {
+                case NORMALIZE_01:
+                    z = (v - min) / range;
+                    break;
+                case ZSCORE:
+                    z = (v - mean) / std;
+                    break;
+                case PERCENTILE_CLIP_1_99:
+                    double clamped = Math.min(p99, Math.max(p1, v));
+                    z = (clamped - p1) / (p99 - p1);
+                    break;
+                case RAW:
+                default:
+                    z = v;
+            }
+            dst.add(z * userScale);  // ← apply your existing user multiplier LAST
+        }
+        out.add(dst);
+    }
+    return out;
+}
 
     public static List<Item> extractReconstructionEvents(ReconstructionAttributes attrs) {
         List<Item> items = new ArrayList<>(attrs.getEvents().size());

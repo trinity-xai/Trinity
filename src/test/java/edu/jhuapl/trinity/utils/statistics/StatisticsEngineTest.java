@@ -34,7 +34,7 @@ public static void randomGaussianTest() {
 
         // === 2. Select statistics to compute ===
         Set<StatisticEngine.ScalarType> types = Set.of(
-            StatisticEngine.ScalarType.NORM,
+            StatisticEngine.ScalarType.L1_NORM,
             StatisticEngine.ScalarType.MEAN,
             StatisticEngine.ScalarType.MAX
         );
@@ -106,7 +106,7 @@ public static void bimodalTest() {
     }
 
     Set<StatisticEngine.ScalarType> types = Set.of(
-        StatisticEngine.ScalarType.NORM,
+        StatisticEngine.ScalarType.L1_NORM,
         StatisticEngine.ScalarType.MEAN,
         StatisticEngine.ScalarType.MAX
     );
