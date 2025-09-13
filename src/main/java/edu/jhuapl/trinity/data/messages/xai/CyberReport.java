@@ -2,9 +2,11 @@ package edu.jhuapl.trinity.data.messages.xai;
 
 import com.fasterxml.jackson.annotation.JsonAnyGetter;
 import com.fasterxml.jackson.annotation.JsonAnySetter;
+import com.fasterxml.jackson.annotation.JsonFormat;
 import com.fasterxml.jackson.annotation.JsonIgnore;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonProperty;
+
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -12,15 +14,19 @@ import java.util.Map;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CyberReport {
-    public final static String GROUNDTRUTH = "Ground Truth";
-    public final static String INFERENCES = "Inferences";
-    public final static String ADJACENTNETWORK = "Adjacent Network";
-    public final static String MOD = "Mod";
-    public final static String SGTA = "S(GT, A)";
-    public final static String SINTELGT = "S(intel, GT)";
-    public final static String SINTELA = "S(intel, A)";
-    public final static String SINFGT = "S(inf, GT)";
-    public final static String DELTA = "delta";
+    public static final String GROUNDTRUTH    = "Ground Truth";
+    public static final String INFERENCES     = "Inferences";
+    public static final String ADJACENTNETWORK= "Adjacent Network";
+    public static final String MOD            = "Mod";
+    public static final String SGTA           = "S(GT, A)";
+    public static final String SINTELGT       = "S(intel, GT)";
+    public static final String SINTELA        = "S(intel, A)";
+    public static final String SINFGT         = "S(inf, GT)";
+    public static final String DELTA          = "delta";
+
+    // ---- small type for "Mod": [[10,"pod"], ...] ----
+    @JsonFormat(shape = JsonFormat.Shape.ARRAY) // maps [10,"pod"] -> new ModEntry(10,"pod")
+    public static record ModEntry(int value, String label) {}
 
     // ----- simple metadata -----
     @JsonProperty(GROUNDTRUTH)
@@ -33,7 +39,7 @@ public class CyberReport {
     private List<String> inferences = new ArrayList<>();
 
     @JsonProperty(MOD)
-    private List<String> mod = new ArrayList<>();
+    private List<ModEntry> mod = new ArrayList<>();
 
     // ----- score vectors (known names) -----
     @JsonProperty(SGTA)
@@ -52,20 +58,20 @@ public class CyberReport {
     @JsonProperty(DELTA)
     private CyberVector delta;
 
-    // ----- catch-all for any other S(... ) vectors so you can treat them like a list -----
+    // ----- catch-all for any other S(... ) vectors -----
     @JsonIgnore // avoid double-serializing; we expose via @JsonAnyGetter below
     private final Map<String, CyberVector> extraVectors = new LinkedHashMap<>();
 
     public static boolean isCyberReport(String body) {
-        return body.contains("Ground Truth") && body.contains("Adjacent Network") 
-            && body.contains("Inferences");        
+        return body != null
+            && body.contains(GROUNDTRUTH)
+            && body.contains(ADJACENTNETWORK)
+            && body.contains(INFERENCES);
     }
+
     /**
      * Any unrecognized property will land here. Jackson will deserialize the value
      * into a CyberVector because of the method signature.
-     * This is handy if future files add more S(?, ?) blocks without changing this class.
-     * @param name
-     * @param vector
      */
     @JsonAnySetter
     public void putUnknown(String name, CyberVector vector) {
@@ -75,23 +81,20 @@ public class CyberReport {
         }
     }
 
-    /**
-     * When serializing back to JSON, include the extra S(...) vectors naturally.
-     * @return 
-     */
+    /** When serializing back to JSON, include the extra S(...) vectors naturally. */
     @JsonAnyGetter
     public Map<String, CyberVector> getExtraVectors() {
         return extraVectors;
     }
 
-    // ----- convenience: expose all vectors (known + extra) as a collection if you want "a list of CyberVector" -----
+    // ----- convenience: expose all vectors (known + extra) as a collection -----
     @JsonIgnore
     public List<CyberVector> getAllVectors() {
         List<CyberVector> all = new ArrayList<>();
-        if (sGtA != null) all.add(sGtA);
+        if (sGtA != null)     all.add(sGtA);
         if (sIntelGt != null) all.add(sIntelGt);
-        if (sIntelA != null) all.add(sIntelA);
-        if (sInfGt != null) all.add(sInfGt);
+        if (sIntelA != null)  all.add(sIntelA);
+        if (sInfGt != null)   all.add(sInfGt);
         all.addAll(extraVectors.values());
         return all;
     }
@@ -106,8 +109,8 @@ public class CyberReport {
     public List<String> getInferences() { return inferences; }
     public void setInferences(List<String> inferences) { this.inferences = inferences; }
 
-    public List<String> getMod() { return mod; }
-    public void setMod(List<String> mod) { this.mod = mod; }
+    public List<ModEntry> getMod() { return mod; }
+    public void setMod(List<ModEntry> mod) { this.mod = mod; }
 
     public CyberVector getsGtA() { return sGtA; }
     public void setsGtA(CyberVector sGtA) { this.sGtA = sGtA; }

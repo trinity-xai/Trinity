@@ -629,7 +629,7 @@ public enum ResourceUtils {
                             } else if (CyberReporterFile.isFileType(file)) {
                                 CyberReporterFile cyberReportFile = new CyberReporterFile(file.getAbsolutePath(), true);
                                 Platform.runLater(() -> scene.getRoot().fireEvent(
-                                    new FeatureVectorEvent(FeatureVectorEvent.NEW_CYBER_REPORT, cyberReportFile.cyberReport)));
+                                    new FeatureVectorEvent(FeatureVectorEvent.NEW_CYBER_REPORT, cyberReportFile.cyberReports)));
                             }
                         } catch (IOException ex) {
                             LOG.error(null, ex);

@@ -3,11 +3,12 @@ package edu.jhuapl.trinity.data.messages.xai;
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.annotation.JsonProperty;
+import com.fasterxml.jackson.core.JsonProcessingException;
+import com.fasterxml.jackson.databind.ObjectMapper;
+import com.fasterxml.jackson.databind.SerializationFeature;
 import edu.jhuapl.trinity.data.messages.MessageData;
 import java.util.ArrayList;
-import java.util.HashMap;
 import java.util.List;
-import java.util.UUID;
 import java.util.function.Function;
 
 /**
@@ -130,7 +131,14 @@ public class CyberVector extends MessageData {
 
         return vector;
     };
-
+    public String asJSON(String objectName) throws JsonProcessingException {
+        ObjectMapper mapper = new ObjectMapper();
+        //mapper.configure(SerializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        // Enable pretty printing
+        mapper.enable(SerializationFeature.INDENT_OUTPUT);
+        // Convert object to pretty-printed JSON string
+        return "\"" + objectName + "\": " + mapper.writeValueAsString(this);
+    }
     //<editor-fold defaultstate="collapsed" desc="Properties">
 
     public double getImageCount() { return imageCount; }

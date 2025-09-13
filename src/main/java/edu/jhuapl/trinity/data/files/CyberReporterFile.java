@@ -3,16 +3,18 @@ package edu.jhuapl.trinity.data.files;
 import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.jhuapl.trinity.data.messages.xai.CyberReport;
+import edu.jhuapl.trinity.data.messages.xai.CyberReportIO;
 import java.awt.datatransfer.DataFlavor;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Files;
+import java.util.List;
 
 /**
  * @author Sean Phillips
  */
 public class CyberReporterFile extends DroppableFile {
-    public CyberReport cyberReport = null;
+    public List<CyberReport> cyberReports = null;
 
     public CyberReporterFile(String pathname) {
         super(pathname);
@@ -48,16 +50,17 @@ public class CyberReporterFile extends DroppableFile {
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
         String message = Files.readString(this.toPath());
-        cyberReport = mapper.readValue(message, CyberReport.class);
+        // From a string:
+        cyberReports = CyberReportIO.readReports(message);
     }
 
     @Override
     public void writeContent() throws IOException {
-        if (null != cyberReport) {
+        if (null != cyberReports) {
             ObjectMapper mapper = new ObjectMapper();
             //mapper.configure(SerializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
-            mapper.writeValue(this, cyberReport);
-            LOG.info("CyberReport serialized to file.");
+            mapper.writeValue(this, cyberReports);
+            LOG.info("CyberReports serialized to file.");
         }
     }
 }

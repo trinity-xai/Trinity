@@ -1,5 +1,6 @@
 package edu.jhuapl.trinity.javafx.handlers;
 
+import com.fasterxml.jackson.core.JsonProcessingException;
 import edu.jhuapl.trinity.App;
 import edu.jhuapl.trinity.data.Dimension;
 import edu.jhuapl.trinity.data.FactorLabel;
@@ -51,9 +52,18 @@ public class FeatureVectorEventHandler implements EventHandler<FeatureVectorEven
     public void addFeatureVectorRenderer(FeatureVectorRenderer renderer) {
         renderers.add(renderer);
     }
-    public static FeatureVector cyberToFeatureVector(CyberVector cyberVector) {
+    public static FeatureVector cyberToFeatureVector(String label, CyberVector cyberVector) {
         FeatureVector fv = new FeatureVector();
         fv.setData(CyberVector.mapToVectorList.apply(cyberVector));
+        if(null != label) {
+            fv.setLabel(label);
+            try {
+                fv.setText(cyberVector.asJSON(label));
+            } catch (JsonProcessingException ex) {
+                
+            }
+        }
+        
         return fv;
     }
 
@@ -89,38 +99,34 @@ public class FeatureVectorEventHandler implements EventHandler<FeatureVectorEven
         }
     }
     public void handleCyberReport(FeatureVectorEvent event) {
-        CyberReport cyberReport = (CyberReport) event.object;
-        HashMap<String, String> metaData = new HashMap();
-        metaData.put(CyberReport.GROUNDTRUTH, cyberReport.getGroundTruth());
-        metaData.put(CyberReport.ADJACENTNETWORK, cyberReport.getAdjacentNetwork());
-        metaData.put(CyberReport.INFERENCES, cyberReport.getInferences().toString());
-        metaData.put(CyberReport.MOD, cyberReport.getMod().toString());
+        List<CyberReport> cyberReports = (List<CyberReport>) event.object;
+        for(CyberReport cyberReport : cyberReports) {
+            HashMap<String, String> metaData = new HashMap();
+            metaData.put(CyberReport.GROUNDTRUTH, cyberReport.getGroundTruth());
+            metaData.put(CyberReport.ADJACENTNETWORK, cyberReport.getAdjacentNetwork());
+            metaData.put(CyberReport.INFERENCES, cyberReport.getInferences().toString());
+            metaData.put(CyberReport.MOD, cyberReport.getMod().toString());
 
-        FeatureVector sgtaFV = cyberToFeatureVector(cyberReport.getsGtA());
-        sgtaFV.setLabel(CyberReport.SGTA);
-        sgtaFV.getMetaData().putAll(metaData);
-        addNewFeatureVector(sgtaFV);
-        
-        FeatureVector sinfgtFV = cyberToFeatureVector(cyberReport.getsInfGt());
-        sinfgtFV.setLabel(CyberReport.SINFGT);
-        sinfgtFV.getMetaData().putAll(metaData);
-        addNewFeatureVector(sinfgtFV);
+            FeatureVector sgtaFV = cyberToFeatureVector(CyberReport.SGTA, cyberReport.getsGtA());
+            sgtaFV.getMetaData().putAll(metaData);
+            addNewFeatureVector(sgtaFV);
 
-        FeatureVector sintelaFV = cyberToFeatureVector(cyberReport.getsIntelA());
-        sintelaFV.setLabel(CyberReport.SINTELA);
-        sintelaFV.getMetaData().putAll(metaData);
-        addNewFeatureVector(sintelaFV);
+            FeatureVector sinfgtFV = cyberToFeatureVector(CyberReport.SINFGT, cyberReport.getsInfGt());
+            sinfgtFV.getMetaData().putAll(metaData);
+            addNewFeatureVector(sinfgtFV);
 
-        FeatureVector sintelgtFV = cyberToFeatureVector(cyberReport.getsIntelGt());
-        sintelgtFV.setLabel(CyberReport.SINTELGT);
-        sintelgtFV.getMetaData().putAll(metaData);
-        addNewFeatureVector(sintelgtFV);
+            FeatureVector sintelaFV = cyberToFeatureVector(CyberReport.SINTELA, cyberReport.getsIntelA());
+            sintelaFV.getMetaData().putAll(metaData);
+            addNewFeatureVector(sintelaFV);
 
-        FeatureVector deltaFV = cyberToFeatureVector(cyberReport.getDelta());
-        deltaFV.setLabel(CyberReport.DELTA);
-        deltaFV.getMetaData().putAll(metaData);
-        addNewFeatureVector(deltaFV);
-        
+            FeatureVector sintelgtFV = cyberToFeatureVector(CyberReport.SINTELGT, cyberReport.getsIntelGt());
+            sintelgtFV.getMetaData().putAll(metaData);
+            addNewFeatureVector(sintelgtFV);
+
+            FeatureVector deltaFV = cyberToFeatureVector(CyberReport.DELTA, cyberReport.getDelta());
+            deltaFV.getMetaData().putAll(metaData);
+            addNewFeatureVector(deltaFV);
+        }
     }    
     public void handleFeatureVectorEvent(FeatureVectorEvent event) {
         FeatureVector featureVector = (FeatureVector) event.object;
