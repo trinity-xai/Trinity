@@ -39,7 +39,7 @@ public class CyberReporterFile extends DroppableFile {
     }
     @Override
     public DataFlavor getDataFlavor() {
-        return new DataFlavor(CyberReportFile.class, "CYBERREPORT");
+        return new DataFlavor(CyberReporterFile.class, "CYBERREPORT");
     }
 
     @Override

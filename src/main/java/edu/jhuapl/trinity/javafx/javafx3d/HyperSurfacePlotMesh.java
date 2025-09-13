@@ -453,6 +453,9 @@ public class HyperSurfacePlotMesh extends TexturedMesh {
                 listFaces.add(new Face3(p11, p01, p00));
             }
         }
+        int[] faceSmoothingGroups = new int[listFaces.size()]; // 0 == hard edges
+        Arrays.fill(faceSmoothingGroups, 1); // 1: soft edges, all the faces in same surface
+        smoothingGroups = faceSmoothingGroups;        
         return createMesh();
     }
 
@@ -494,6 +497,9 @@ public class HyperSurfacePlotMesh extends TexturedMesh {
                 listFaces.add(new Face3(p11, p01, p00));
             }
         }
+        int[] faceSmoothingGroups = new int[listFaces.size()]; // 0 == hard edges
+        Arrays.fill(faceSmoothingGroups, 1); // 1: soft edges, all the faces in same surface
+        smoothingGroups = faceSmoothingGroups;        
         return createMesh();
     }
 
