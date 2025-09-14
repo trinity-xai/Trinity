@@ -94,6 +94,9 @@ import java.util.Map;
 import static edu.jhuapl.trinity.App.theConfig;
 import edu.jhuapl.trinity.javafx.components.panes.FeatureVectorManagerPane;
 import edu.jhuapl.trinity.javafx.components.panes.StatPdfCdfPane;
+import edu.jhuapl.trinity.javafx.services.FeatureVectorManagerService;
+import edu.jhuapl.trinity.javafx.services.FeatureVectorManagerServiceImpl;
+import edu.jhuapl.trinity.javafx.services.InMemoryFeatureVectorRepository;
 
 
 /**
@@ -148,6 +151,8 @@ public class AppAsyncManager extends Task {
 
     MissionTimerX missionTimerX;
     TimelineAnimation timelineAnimation;
+    
+    FeatureVectorManagerService fvService;
 
     public AppAsyncManager(Scene scene, StackPane centerStack, Pane desktopPane, CircleProgressIndicator progress, Map<String, String> namedParameters) {
         this.scene = scene;
@@ -155,6 +160,12 @@ public class AppAsyncManager extends Task {
         this.progress = progress;
         this.desktopPane = desktopPane;
         this.centerStack = centerStack;
+        // Shared FeatureVector Manager service (mirrors vectors/collections into the Manager view)
+        fvService = new FeatureVectorManagerServiceImpl(new InMemoryFeatureVectorRepository());
+        // Allow service to fire APPLY_ACTIVE_FEATUREVECTORS back to the app via scene root
+        if (fvService instanceof FeatureVectorManagerServiceImpl impl) {
+            impl.setEventTarget(scene.getRoot());
+        }        
         setOnSucceeded(e -> {
             Platform.runLater(() -> {
                 scene.getRoot().fireEvent(
@@ -554,10 +565,28 @@ public class AppAsyncManager extends Task {
                 Platform.runLater(() -> statPdfCdfPane.setFeatureVectors((List<FeatureVector>) e.object));
             }
         });
-        LOG.info("FeatureVector Manager");
+        LOG.info("FeatureVector Manager and Services");
+        // Mirror NEW_FEATURE_COLLECTION into the manager (ignore PROJECT_FEATURE_COLLECTION by design)
+        scene.getRoot().addEventHandler(FeatureVectorEvent.NEW_FEATURE_COLLECTION, ev -> {
+            if (ev.object instanceof FeatureCollection fc) {
+                String collName = FeatureVectorManagerService.deriveCollectionName(ev.object2, fc);
+                fvService.addCollection(collName, fc.getFeatures());
+            }
+        });
+        // Mirror single vector adds into the active collection
+        scene.getRoot().addEventHandler(FeatureVectorEvent.NEW_FEATURE_VECTOR, ev -> {
+            if (ev.object instanceof FeatureVector fv) {
+                fvService.appendVectorsToActive(java.util.List.of(fv));
+            }
+        });
+        // Optional: keep manager’s active view consistent with global clears
+        scene.getRoot().addEventHandler(FeatureVectorEvent.CLEAR_ALL_FEATUREVECTORS, ev -> {
+            fvService.replaceActiveVectors(java.util.List.of());
+        });         
         scene.addEventHandler(ApplicationEvent.SHOW_FEATUREVECTOR_MANAGER, e -> {
             if (null == featureVectorManagerPane) {
-                featureVectorManagerPane = new FeatureVectorManagerPane(scene, desktopPane);
+                // Use the shared service so the view reflects mirrored events
+                featureVectorManagerPane = new FeatureVectorManagerPane(scene, desktopPane, fvService);
             }
             if (!desktopPane.getChildren().contains(featureVectorManagerPane)) {
                 desktopPane.getChildren().add(featureVectorManagerPane);

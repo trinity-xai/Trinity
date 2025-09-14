@@ -27,6 +27,7 @@ public class FeatureVectorEvent extends Event {
     public static final EventType<FeatureVectorEvent> RESCAN_FACTOR_LABELS = new EventType(ANY, "RESCAN_FACTOR_LABELS");
     public static final EventType<FeatureVectorEvent> NEW_LABEL_CONFIG = new EventType(ANY, "NEW_LABEL_CONFIG");
     public static final EventType<FeatureVectorEvent> CLEAR_ALL_FEATUREVECTORS = new EventType(ANY, "CLEAR_ALL_FEATUREVECTORS");
+    public static final EventType<FeatureVectorEvent> APPLY_ACTIVE_FEATUREVECTORS = new EventType(ANY, "APPLY_ACTIVE_FEATURE_VECTORS");
     public static final EventType<FeatureVectorEvent> NEW_CYBER_VECTOR = new EventType(ANY, "NEW_CYBER_VECTOR");
     public static final EventType<FeatureVectorEvent> NEW_CYBER_REPORT = new EventType(ANY, "NEW_CYBER_REPORT");
 

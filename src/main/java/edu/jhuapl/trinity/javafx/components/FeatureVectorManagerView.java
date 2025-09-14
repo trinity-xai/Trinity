@@ -29,7 +29,7 @@ public class FeatureVectorManagerView extends BorderPane {
     private final ComboBox<String> collectionSelector = new ComboBox<>();
     private final ChoiceBox<String> samplingChoice = new ChoiceBox<>();
 
-    // Table and columns
+    // Table + columns
     private final TableView<FeatureVector> table = new TableView<>();
     private final TableColumn<FeatureVector, String> colIndex = new TableColumn<>("#");
     private final TableColumn<FeatureVector, String> colLabel = new TableColumn<>("Label");
@@ -41,7 +41,7 @@ public class FeatureVectorManagerView extends BorderPane {
 
     private final ObservableList<FeatureVector> items = FXCollections.observableArrayList();
 
-    // Bottom details
+    // Details
     private final Accordion detailsAccordion = new Accordion();
     private final TitledPane detailsSection = new TitledPane();
     private final TextArea valuesPreviewArea = new TextArea();
@@ -64,30 +64,27 @@ public class FeatureVectorManagerView extends BorderPane {
         bottomStack.setPadding(new Insets(2, 2, 2, 2));
         setBottom(bottomStack);
 
-        // Wire properties
-        samplingChoice.getSelectionModel().selectedItemProperty().addListener((obs, o, n) -> {
-            if (n != null) samplingMode.set(n);
+        // Wiring (internal)
+        samplingChoice.getSelectionModel().selectedItemProperty().addListener((o, oldV, newV) -> {
+            if (newV != null) samplingMode.set(newV);
         });
-        collectionSelector.getSelectionModel().selectedItemProperty().addListener((obs, o, n) -> {
-            if (n != null) selectedCollection.set(n);
+        collectionSelector.getSelectionModel().selectedItemProperty().addListener((o, oldV, newV) -> {
+            if (newV != null) selectedCollection.set(newV);
         });
-        detailLevel.addListener((obs, o, n) -> applyDetailLevel(n));
+        detailLevel.addListener((o, oldV, newV) -> applyDetailLevel(newV));
 
         detailsSection.setExpanded(false);
         progressBar.setVisible(false);
         applyDetailLevel(detailLevel.get());
     }
 
-    // --------------------- Builders ---------------------
+    // Header -------------------------------------------------
 
     private HBox buildHeaderBar() {
         Label lblCollection = new Label("Collection:");
         Label lblSampling   = new Label("Sampling:");
 
-        HBox header = new HBox(8,
-            lblCollection, collectionSelector,
-            lblSampling,   samplingChoice
-        );
+        HBox header = new HBox(8, lblCollection, collectionSelector, lblSampling, samplingChoice);
         header.setAlignment(Pos.CENTER_LEFT);
         header.setPadding(new Insets(4, 4, 4, 4));
         header.setBackground(new Background(new BackgroundFill(
@@ -97,7 +94,9 @@ public class FeatureVectorManagerView extends BorderPane {
             Color.color(1, 1, 1, 0.18), BorderStrokeStyle.SOLID, CornerRadii.EMPTY, BorderWidths.DEFAULT
         )));
 
-        // Let the inputs expand when there is space
+        // Let inputs expand/shrink with space
+        collectionSelector.setMaxWidth(Double.MAX_VALUE);
+        samplingChoice.setMaxWidth(Double.MAX_VALUE);
         HBox.setHgrow(collectionSelector, Priority.ALWAYS);
         HBox.setHgrow(samplingChoice,    Priority.ALWAYS);
 
@@ -116,6 +115,8 @@ public class FeatureVectorManagerView extends BorderPane {
         samplingChoice.setMinWidth(100);
         samplingChoice.setMaxWidth(Double.MAX_VALUE);
     }
+
+    // Table --------------------------------------------------
 
     private void buildTable() {
         table.setItems(items);
@@ -158,6 +159,8 @@ public class FeatureVectorManagerView extends BorderPane {
              .addListener((ListChangeListener<FeatureVector>) change -> updateDetailsPreview());
     }
 
+    // Details -----------------------------------------------
+
     private void buildDetails() {
         valuesPreviewArea.setEditable(false);
         valuesPreviewArea.setPrefRowCount(8);
@@ -188,6 +191,8 @@ public class FeatureVectorManagerView extends BorderPane {
         return wrapper;
     }
 
+    // Status -------------------------------------------------
+
     private HBox buildStatusBar() {
         Region spacer = new Region();
         HBox.setHgrow(spacer, Priority.ALWAYS);
@@ -207,7 +212,7 @@ public class FeatureVectorManagerView extends BorderPane {
         return status;
     }
 
-    // --------------------- Helpers ---------------------
+    // Helpers -----------------------------------------------
 
     private static String opt(String s) { return s == null ? "" : s; }
 
@@ -290,7 +295,7 @@ public class FeatureVectorManagerView extends BorderPane {
         }
     }
 
-    // --------------------- Public API ---------------------
+    // Public API --------------------------------------------
 
     public void setVectors(List<FeatureVector> vectors) {
         items.setAll(vectors == null ? Collections.emptyList() : vectors);
@@ -310,6 +315,7 @@ public class FeatureVectorManagerView extends BorderPane {
         if (!show) progressBar.setProgress(0);
     }
 
+    // Exposed controls/properties for container wiring
     public TableView<FeatureVector> getTable() { return table; }
     public ComboBox<String> getCollectionSelector() { return collectionSelector; }
     public ChoiceBox<String> getSamplingChoice() { return samplingChoice; }
