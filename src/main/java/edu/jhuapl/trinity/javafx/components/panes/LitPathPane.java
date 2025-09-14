@@ -54,6 +54,7 @@ public class LitPathPane extends PathPane {
     double hoverTopInset = -2;
     double hoverSideInset = -3;
     double effectsFitWidth = 40;
+    public double mainContentBorderFrameBuffer = 64;
     public Background opaqueBackground;
     public Background defaultBackground;
     public Background background;
@@ -159,12 +160,12 @@ public class LitPathPane extends PathPane {
         setEffects();
         mainContentBorderFrame.widthProperty().addListener(cl -> {
             if (!animating) {
-                contentPane.setPrefWidth(mainContentBorderFrame.getWidth() - 100);
+                contentPane.setPrefWidth(mainContentBorderFrame.getWidth() - mainContentBorderFrameBuffer);
             }
         });
         mainContentBorderFrame.heightProperty().addListener(cl -> {
             if (!animating) {
-                contentPane.setPrefHeight(mainContentBorderFrame.getHeight() - 100);
+                contentPane.setPrefHeight(mainContentBorderFrame.getHeight() - mainContentBorderFrameBuffer);
             }
         });
         opaqueBackground = new Background(new BackgroundFill(

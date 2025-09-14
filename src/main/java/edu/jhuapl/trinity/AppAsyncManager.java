@@ -92,6 +92,7 @@ import java.util.List;
 import java.util.Map;
 
 import static edu.jhuapl.trinity.App.theConfig;
+import edu.jhuapl.trinity.javafx.components.panes.FeatureVectorManagerPane;
 import edu.jhuapl.trinity.javafx.components.panes.StatPdfCdfPane;
 
 
@@ -120,6 +121,7 @@ public class AppAsyncManager extends Task {
     VideoPane videoPane;
     SpecialEffectsPane specialEffectsPane;
     StatPdfCdfPane statPdfCdfPane;
+    FeatureVectorManagerPane featureVectorManagerPane;    
     NavigatorPane navigatorPane;
     CocoViewerPane cocoViewerPane;
     WaveformPane waveformPane;
@@ -551,9 +553,19 @@ public class AppAsyncManager extends Task {
             if (null != e.object) {
                 Platform.runLater(() -> statPdfCdfPane.setFeatureVectors((List<FeatureVector>) e.object));
             }
-            
         });
-
+        LOG.info("FeatureVector Manager");
+        scene.addEventHandler(ApplicationEvent.SHOW_FEATUREVECTOR_MANAGER, e -> {
+            if (null == featureVectorManagerPane) {
+                featureVectorManagerPane = new FeatureVectorManagerPane(scene, desktopPane);
+            }
+            if (!desktopPane.getChildren().contains(featureVectorManagerPane)) {
+                desktopPane.getChildren().add(featureVectorManagerPane);
+                featureVectorManagerPane.slideInPane();
+            } else {
+                featureVectorManagerPane.show();
+            }
+        });
         scene.addEventHandler(ApplicationEvent.AUTO_PROJECTION_MODE, e -> {
             boolean enabled = (boolean) e.object;
             if (enabled) {
