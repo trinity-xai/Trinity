@@ -1,6 +1,7 @@
 package edu.jhuapl.trinity.javafx.components;
 
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
+import edu.jhuapl.trinity.javafx.services.FeatureVectorUtils;
 import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
@@ -15,7 +16,6 @@ import javafx.scene.paint.Color;
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
-import java.util.Locale;
 
 /**
  * FeatureVectorManagerView
@@ -162,7 +162,8 @@ public class FeatureVectorManagerView extends BorderPane {
         );
 
         colLabel.setMinWidth(120);
-        colLabel.setCellValueFactory(cd -> new ReadOnlyStringWrapper(opt(cd.getValue().getLabel())));
+        colLabel.setCellValueFactory(cd ->
+            new ReadOnlyStringWrapper(FeatureVectorUtils.nullToEmpty(cd.getValue().getLabel())));
 
         colDim.setMinWidth(70);
         colDim.setMaxWidth(90);
@@ -172,14 +173,18 @@ public class FeatureVectorManagerView extends BorderPane {
             return new ReadOnlyStringWrapper(String.valueOf(dim));
         });
 
-        colPreview.setCellValueFactory(cd -> new ReadOnlyStringWrapper(previewList(cd.getValue().getData(), 8)));
+        colPreview.setCellValueFactory(cd ->
+            new ReadOnlyStringWrapper(FeatureVectorUtils.previewList(cd.getValue().getData(), 8)));
 
         colScore.setMinWidth(80);
-        colScore.setCellValueFactory(cd -> new ReadOnlyStringWrapper(trim(cd.getValue().getScore())));
+        colScore.setCellValueFactory(cd ->
+            new ReadOnlyStringWrapper(FeatureVectorUtils.trimDouble(cd.getValue().getScore())));
         colPfa.setMinWidth(70);
-        colPfa.setCellValueFactory(cd -> new ReadOnlyStringWrapper(trim(cd.getValue().getPfa())));
+        colPfa.setCellValueFactory(cd ->
+            new ReadOnlyStringWrapper(FeatureVectorUtils.trimDouble(cd.getValue().getPfa())));
         colLayer.setMinWidth(70);
-        colLayer.setCellValueFactory(cd -> new ReadOnlyStringWrapper(String.valueOf(cd.getValue().getLayer())));
+        colLayer.setCellValueFactory(cd ->
+            new ReadOnlyStringWrapper(String.valueOf(cd.getValue().getLayer())));
 
         table.getColumns().setAll(colIndex, colLabel, colDim, colPreview);
 
@@ -284,34 +289,7 @@ public class FeatureVectorManagerView extends BorderPane {
         return status;
     }
 
-    // Helpers -----------------------------------------------
-
-    private static String opt(String s) { return s == null ? "" : s; }
-
-    private static String trim(double d) {
-        String s = String.format(Locale.ROOT, "%.6f", d);
-        if (s.contains(".")) s = s.replaceAll("0+$", "").replaceAll("\\.$", "");
-        return s;
-    }
-
-    private static String previewList(List<Double> data, int firstN) {
-        if (data == null || data.isEmpty()) return "[]";
-        int n = Math.min(firstN, data.size());
-        StringBuilder sb = new StringBuilder("[");
-        for (int i = 0; i < n; i++) {
-            if (i > 0) sb.append(", ");
-            Double v = data.get(i);
-            if (v == null) sb.append("NaN");
-            else {
-                String s = String.format(Locale.ROOT, "%.6f", v);
-                if (s.contains(".")) s = s.replaceAll("0+$", "").replaceAll("\\.$", "");
-                sb.append(s);
-            }
-        }
-        if (data.size() > n) sb.append(", …");
-        sb.append("]");
-        return sb.toString();
-    }
+    // Details/Metadata rendering ----------------------------
 
     private void updateDetailsPreview() {
         var sel = table.getSelectionModel().getSelectedItems();
@@ -326,9 +304,10 @@ public class FeatureVectorManagerView extends BorderPane {
 
         // Details text
         StringBuilder sb = new StringBuilder();
-        sb.append("Label: ").append(opt(fv.getLabel())).append("\n");
+        sb.append("Label: ").append(FeatureVectorUtils.nullToEmpty(fv.getLabel())).append("\n");
         sb.append("Dim: ").append(data == null ? 0 : data.size()).append("\n");
-        sb.append("Score: ").append(trim(fv.getScore())).append("   PFA: ").append(trim(fv.getPfa())).append("\n");
+        sb.append("Score: ").append(FeatureVectorUtils.trimDouble(fv.getScore()))
+          .append("   PFA: ").append(FeatureVectorUtils.trimDouble(fv.getPfa())).append("\n");
         sb.append("Layer: ").append(fv.getLayer()).append("   FrameId: ").append(fv.getFrameId()).append("\n");
         sb.append("BBox: ").append(fv.getBbox() == null ? "[]" : fv.getBbox().toString()).append("\n\n");
 
@@ -340,9 +319,7 @@ public class FeatureVectorManagerView extends BorderPane {
                 Double v = data.get(i);
                 if (v == null) sb.append("NaN");
                 else {
-                    String s = String.format(Locale.ROOT, "%.6f", v);
-                    if (s.contains(".")) s = s.replaceAll("0+$", "").replaceAll("\\.$", "");
-                    sb.append(s);
+                    sb.append(FeatureVectorUtils.trimDouble(v));
                 }
             }
             if (data.size() > n) sb.append(", …");
@@ -350,18 +327,7 @@ public class FeatureVectorManagerView extends BorderPane {
         valuesPreviewArea.setText(sb.toString());
 
         // Metadata text (key/value per line)
-        if (fv.getMetaData() == null || fv.getMetaData().isEmpty()) {
-            metaTextArea.setText("(no metadata)");
-        } else {
-            StringBuilder sbMeta = new StringBuilder();
-            fv.getMetaData().forEach((k, v) -> {
-                sbMeta.append(k == null ? "(null)" : k)
-                      .append(": ")
-                      .append(v == null ? "(null)" : v)
-                      .append("\n");
-            });
-            metaTextArea.setText(sbMeta.toString().trim());
-        }
+        metaTextArea.setText(FeatureVectorUtils.prettyMetadata(fv.getMetaData()));
     }
 
     private void applyDetailLevel(DetailLevel level) {

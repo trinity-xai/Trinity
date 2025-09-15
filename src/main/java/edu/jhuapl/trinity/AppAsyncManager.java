@@ -12,6 +12,7 @@ import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.javafx.components.MatrixOverlay;
 import edu.jhuapl.trinity.javafx.components.panes.AnalysisLogPane;
 import edu.jhuapl.trinity.javafx.components.panes.CocoViewerPane;
+import edu.jhuapl.trinity.javafx.components.panes.FeatureVectorManagerPane;
 import edu.jhuapl.trinity.javafx.components.panes.HyperdrivePane;
 import edu.jhuapl.trinity.javafx.components.panes.ImageInspectorPane;
 import edu.jhuapl.trinity.javafx.components.panes.JukeBoxPane;
@@ -19,6 +20,7 @@ import edu.jhuapl.trinity.javafx.components.panes.NavigatorPane;
 import edu.jhuapl.trinity.javafx.components.panes.PixelSelectionPane;
 import edu.jhuapl.trinity.javafx.components.panes.Shape3DControlPane;
 import edu.jhuapl.trinity.javafx.components.panes.SpecialEffectsPane;
+import edu.jhuapl.trinity.javafx.components.panes.StatPdfCdfPane;
 import edu.jhuapl.trinity.javafx.components.panes.TextPane;
 import edu.jhuapl.trinity.javafx.components.panes.TrajectoryTrackerPane;
 import edu.jhuapl.trinity.javafx.components.panes.VideoPane;
@@ -58,6 +60,10 @@ import edu.jhuapl.trinity.javafx.javafx3d.Manifold3D;
 import edu.jhuapl.trinity.javafx.javafx3d.Projections3DPane;
 import edu.jhuapl.trinity.javafx.javafx3d.ProjectorPane;
 import edu.jhuapl.trinity.javafx.javafx3d.RetroWavePane;
+import edu.jhuapl.trinity.javafx.services.FeatureVectorManagerService;
+import edu.jhuapl.trinity.javafx.services.FeatureVectorManagerServiceImpl;
+import edu.jhuapl.trinity.javafx.services.FeatureVectorUtils;
+import edu.jhuapl.trinity.javafx.services.InMemoryFeatureVectorRepository;
 import edu.jhuapl.trinity.messages.CommandTask;
 import edu.jhuapl.trinity.messages.MessageProcessor;
 import edu.jhuapl.trinity.messages.ZeroMQFeedManager;
@@ -92,17 +98,11 @@ import java.util.List;
 import java.util.Map;
 
 import static edu.jhuapl.trinity.App.theConfig;
-import edu.jhuapl.trinity.javafx.components.panes.FeatureVectorManagerPane;
-import edu.jhuapl.trinity.javafx.components.panes.StatPdfCdfPane;
-import edu.jhuapl.trinity.javafx.services.FeatureVectorManagerService;
-import edu.jhuapl.trinity.javafx.services.FeatureVectorManagerServiceImpl;
-import edu.jhuapl.trinity.javafx.services.InMemoryFeatureVectorRepository;
-
 
 /**
  * @author Sean Phillips
  */
-public class AppAsyncManager extends Task {
+public class AppAsyncManager extends Task<Void> {
     private static final Logger LOG = LoggerFactory.getLogger(AppAsyncManager.class);
     Scene scene;
     Pane desktopPane;
@@ -124,7 +124,7 @@ public class AppAsyncManager extends Task {
     VideoPane videoPane;
     SpecialEffectsPane specialEffectsPane;
     StatPdfCdfPane statPdfCdfPane;
-    FeatureVectorManagerPane featureVectorManagerPane;    
+    FeatureVectorManagerPane featureVectorManagerPane;
     NavigatorPane navigatorPane;
     CocoViewerPane cocoViewerPane;
     WaveformPane waveformPane;
@@ -151,7 +151,7 @@ public class AppAsyncManager extends Task {
 
     MissionTimerX missionTimerX;
     TimelineAnimation timelineAnimation;
-    
+
     FeatureVectorManagerService fvService;
 
     public AppAsyncManager(Scene scene, StackPane centerStack, Pane desktopPane, CircleProgressIndicator progress, Map<String, String> namedParameters) {
@@ -165,25 +165,13 @@ public class AppAsyncManager extends Task {
         // Allow service to fire APPLY_ACTIVE_FEATUREVECTORS back to the app via scene root
         if (fvService instanceof FeatureVectorManagerServiceImpl impl) {
             impl.setEventTarget(scene.getRoot());
-        }        
-        setOnSucceeded(e -> {
-            Platform.runLater(() -> {
-                scene.getRoot().fireEvent(
-                    new ApplicationEvent(ApplicationEvent.HIDE_BUSY_INDICATOR));
-            });
-        });
-        setOnFailed(e -> {
-            Platform.runLater(() -> {
-                scene.getRoot().fireEvent(
-                    new ApplicationEvent(ApplicationEvent.HIDE_BUSY_INDICATOR));
-            });
-        });
-        setOnCancelled(e -> {
-            Platform.runLater(() -> {
-                scene.getRoot().fireEvent(
-                    new ApplicationEvent(ApplicationEvent.HIDE_BUSY_INDICATOR));
-            });
-        });
+        }
+        setOnSucceeded(e -> Platform.runLater(() ->
+            scene.getRoot().fireEvent(new ApplicationEvent(ApplicationEvent.HIDE_BUSY_INDICATOR))));
+        setOnFailed(e -> Platform.runLater(() ->
+            scene.getRoot().fireEvent(new ApplicationEvent(ApplicationEvent.HIDE_BUSY_INDICATOR))));
+        setOnCancelled(e -> Platform.runLater(() ->
+            scene.getRoot().fireEvent(new ApplicationEvent(ApplicationEvent.HIDE_BUSY_INDICATOR))));
     }
 
     @Override
@@ -213,7 +201,7 @@ public class AppAsyncManager extends Task {
         progress.setPercentComplete(current++ / total);
         progress.setLabelLater("...Parsing Command Line...");
         parseParameters();
-        //ex: --scenario="C:\dev\cameratests" --geometry=1024x768+100+100
+        //ex: --scenario="C:\\dev\\cameratests" --geometry=1024x768+100+100
         boolean jukeBox = false;
         if (null != namedParameters) {
             LOG.info("Checking for geometry arguments...");
@@ -245,9 +233,7 @@ public class AppAsyncManager extends Task {
             jukeBox = namedParameters.containsKey("jukebox");
             if (jukeBox) {
                 LOG.info("jukebox found... enabling music.");
-                Platform.runLater(() -> {
-                    scene.getRoot().fireEvent(new AudioEvent(AudioEvent.ENABLE_MUSIC_TRACKS, true));
-                });
+                Platform.runLater(() -> scene.getRoot().fireEvent(new AudioEvent(AudioEvent.ENABLE_MUSIC_TRACKS, true)));
             }
             boolean surveillanceEnabled = namedParameters.containsKey("surveillance");
             if (surveillanceEnabled) {
@@ -454,8 +440,7 @@ public class AppAsyncManager extends Task {
                     switch (e.object) {
                         case File file -> cocoViewerPane.loadCocoFile(file);
                         case CocoObject cocoObject -> cocoViewerPane.loadCocoObject(cocoObject);
-                        default -> {
-                        }
+                        default -> { }
                     }
                 });
             }
@@ -545,9 +530,7 @@ public class AppAsyncManager extends Task {
                 }
                 hyperspace3DPane.setVisible(false);
                 hypersurface3DPane.setVisible(false);
-                Platform.runLater(() -> {
-                    projections3DPane.setVisible(true);
-                });
+                Platform.runLater(() -> projections3DPane.setVisible(true));
             }
         });
         LOG.info("Statistics Views");
@@ -565,18 +548,17 @@ public class AppAsyncManager extends Task {
                 Platform.runLater(() -> statPdfCdfPane.setFeatureVectors((List<FeatureVector>) e.object));
             }
         });
+
         LOG.info("FeatureVector Manager and Services");
-        // Mirror NEW_FEATURE_COLLECTION into the manager (ignore PROJECT_FEATURE_COLLECTION by design)
+        // Mirror NEW_FEATURE_COLLECTION into the manager (ignore when Manager itself applied it)
         scene.getRoot().addEventHandler(FeatureVectorEvent.NEW_FEATURE_COLLECTION, ev -> {
-            // ⬇⬇⬇ ADD THIS GUARD ⬇⬇⬇
+            // Guard: skip if this came from the Manager's Apply-to-Workspace action
             if (FeatureVectorManagerService.MANAGER_APPLY_TAG.equals(ev.object2)) {
-                // Let FeatureVectorEventHandler handle rendering,
-                // but do NOT add it back into the Manager service.
+                // Let FeatureVectorEventHandler handle rendering, but do NOT re-ingest into Manager
                 return;
             }
-            // existing code
             if (ev.object instanceof FeatureCollection fc) {
-                String collName = FeatureVectorManagerService.deriveCollectionName(ev.object2, fc);
+                String collName = FeatureVectorUtils.deriveCollectionName(ev.object2, fc.getFeatures());
                 fvService.addCollection(collName, fc.getFeatures());
             }
         });
@@ -589,7 +571,7 @@ public class AppAsyncManager extends Task {
         // Optional: keep manager’s active view consistent with global clears
         scene.getRoot().addEventHandler(FeatureVectorEvent.CLEAR_ALL_FEATUREVECTORS, ev -> {
             fvService.replaceActiveVectors(java.util.List.of());
-        });         
+        });
         scene.addEventHandler(ApplicationEvent.SHOW_FEATUREVECTOR_MANAGER, e -> {
             if (null == featureVectorManagerPane) {
                 // Use the shared service so the view reflects mirrored events
@@ -630,8 +612,6 @@ public class AppAsyncManager extends Task {
                 if (null != projections3DPane) {
                     projections3DPane.setVisible(false);
                 }
-                //@TODO SMP fadeOutConsole(500);
-                //scene.addEventHandler(CommandTerminalEvent.FADE_OUT, e -> fadeOutConsole(e.timeMS));
 
                 if (!hypersurfaceIntroShown) {
                     hypersurface3DPane.showFA3D();
@@ -648,7 +628,6 @@ public class AppAsyncManager extends Task {
                 if (null != retroWavePane) {
                     retroWavePane.animateShow();
                 }
-                //@TODO SMP fadeOutConsole(500);
             } else {
                 hypersurface3DPane.setVisible(false);
                 if (null != projections3DPane) {
@@ -662,7 +641,6 @@ public class AppAsyncManager extends Task {
                     hyperspace3DPane.intro(1000);
                     hyperspaceIntroShown = true;
                 }
-                //@TODO SMP fadeInConsole(500);
             }
         });
         scene.addEventHandler(ApplicationEvent.SHOW_SHAPE3D_CONTROLS, e -> {
@@ -751,7 +729,7 @@ public class AppAsyncManager extends Task {
         scene.getRoot().addEventHandler(ZeroMQEvent.ZEROMQ_ESTABLISH_CONNECTION, e -> {
             subscriberConfig = e.subscriberConfig;
             if (null != subscriberConfig) {
-                Task task = new Task() {
+                Task<Void> task = new Task<>() {
                     @Override
                     protected Void call() throws Exception {
                         feed.setConfig(subscriberConfig);
@@ -831,8 +809,6 @@ public class AppAsyncManager extends Task {
                 computeMetrics = (boolean) event.object2;
 
             ManifoldEvent.POINT_SOURCE source = ManifoldEvent.POINT_SOURCE.HYPERSPACE;
-//            if (null != event.object2)
-//                source = (ManifoldEvent.POINT_SOURCE) event.object2;
             FeatureCollection originalFC = getFeaturesBySource(source);
             projections3DPane.projectFeatureCollection(originalFC, params, computeMetrics);
         });
@@ -1089,11 +1065,8 @@ public class AppAsyncManager extends Task {
         progress.setLabelLater("User Interface Is Lit");
         progress.setPercentComplete(1.0);
 
-        Platform.runLater(() -> {
-            scene.getRoot().fireEvent(
-                new ApplicationEvent(ApplicationEvent.HIDE_BUSY_INDICATOR));
-        });
-        //System.out.println("Finished async load.");
+        Platform.runLater(() -> scene.getRoot().fireEvent(
+            new ApplicationEvent(ApplicationEvent.HIDE_BUSY_INDICATOR)));
         LOG.info("Finished async load.");
         return null;
     }

@@ -15,11 +15,8 @@ import javafx.event.EventTarget;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 
-import java.io.BufferedWriter;
 import java.io.File;
-import java.io.FileWriter;
 import java.util.*;
-import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
 /**
@@ -51,9 +48,9 @@ public class FeatureVectorManagerServiceImpl implements FeatureVectorManagerServ
     @Override
     public void addCollection(String proposedName, List<FeatureVector> vectors) {
         if (vectors == null) vectors = List.of();
-        final String clean = cleanName(proposedName);
-        final String name = uniquify(clean);
-        final List<FeatureVector> payload = copyVectors(vectors);
+        final String clean = FeatureVectorUtils.cleanCollectionName(proposedName);
+        final String name  = uniquify(clean);
+        final List<FeatureVector> payload = FeatureVectorUtils.copyVectors(vectors);
 
         runFx(() -> {
             collections.put(name, payload);
@@ -66,18 +63,20 @@ public class FeatureVectorManagerServiceImpl implements FeatureVectorManagerServ
     @Override
     public void appendVectorsToActive(List<FeatureVector> vectors) {
         if (vectors == null || vectors.isEmpty()) return;
+        final List<FeatureVector> payload = FeatureVectorUtils.copyVectors(vectors);
         runFx(() -> {
             String name = ensureActiveCollection();
-            collections.computeIfAbsent(name, k -> new ArrayList<>()).addAll(copyVectors(vectors));
+            collections.computeIfAbsent(name, k -> new ArrayList<>()).addAll(payload);
             refreshDisplayedFromActive();
         });
     }
 
     @Override
     public void replaceActiveVectors(List<FeatureVector> vectors) {
+        final List<FeatureVector> payload = FeatureVectorUtils.copyVectors(vectors == null ? List.of() : vectors);
         runFx(() -> {
             String name = ensureActiveCollection();
-            collections.put(name, copyVectors(vectors == null ? List.of() : vectors));
+            collections.put(name, payload);
             refreshDisplayedFromActive();
         });
     }
@@ -85,7 +84,7 @@ public class FeatureVectorManagerServiceImpl implements FeatureVectorManagerServ
     @Override
     public void renameCollection(String oldName, String newName) {
         if (oldName == null || newName == null) return;
-        final String cleanNew = uniquify(cleanName(newName));
+        final String cleanNew = uniquify(FeatureVectorUtils.cleanCollectionName(newName));
         runFx(() -> {
             List<FeatureVector> existing = collections.remove(oldName);
             if (existing == null) return;
@@ -104,9 +103,9 @@ public class FeatureVectorManagerServiceImpl implements FeatureVectorManagerServ
         if (sourceName == null) return null;
         List<FeatureVector> src = collections.get(sourceName);
         if (src == null) return null;
-        final String newName = uniquify(cleanName(
-            (proposedName == null || proposedName.isBlank()) ? ("Copy of " + sourceName) : proposedName));
-        final List<FeatureVector> payload = copyVectors(src);
+        final String base = (proposedName == null || proposedName.isBlank()) ? ("Copy of " + sourceName) : proposedName;
+        final String newName = uniquify(FeatureVectorUtils.cleanCollectionName(base));
+        final List<FeatureVector> payload = FeatureVectorUtils.copyVectors(src);
         runFx(() -> {
             collections.put(newName, payload);
             collectionNames.add(newName);
@@ -152,12 +151,12 @@ public class FeatureVectorManagerServiceImpl implements FeatureVectorManagerServ
                 for (FeatureVector fv : src) {
                     String id = fv.getEntityId();
                     if (id == null || !existingIds.contains(id)) {
-                        tgt.add(cloneVector(fv));
+                        tgt.add(FeatureVectorUtils.cloneVector(fv));
                         if (id != null) existingIds.add(id);
                     }
                 }
             } else {
-                tgt.addAll(copyVectors(src));
+                tgt.addAll(FeatureVectorUtils.copyVectors(src));
             }
             refreshDisplayedFromActive();
         });
@@ -169,12 +168,12 @@ public class FeatureVectorManagerServiceImpl implements FeatureVectorManagerServ
         List<FeatureVector> src = collections.getOrDefault(name, List.of());
         if (format == ExportFormat.JSON) {
             FeatureCollection fc = new FeatureCollection();
-            fc.setFeatures(copyVectors(src));
+            fc.setFeatures(FeatureVectorUtils.copyVectors(src));
             FeatureCollectionFile out = new FeatureCollectionFile(file.getAbsolutePath(), false);
             out.featureCollection = fc;
             out.writeContent();
         } else { // CSV
-            writeCsv(file, src);
+            FeatureVectorUtils.writeCsv(file, src);
         }
     }
 
@@ -203,6 +202,7 @@ public class FeatureVectorManagerServiceImpl implements FeatureVectorManagerServ
     @Override
     public void copyToCollection(List<FeatureVector> toCopy, String targetCollection) {
         if (toCopy == null || toCopy.isEmpty() || targetCollection == null) return;
+        final List<FeatureVector> payload = FeatureVectorUtils.copyVectors(toCopy);
         runFx(() -> {
             String target = (collectionNames.contains(targetCollection))
                     ? targetCollection
@@ -210,7 +210,7 @@ public class FeatureVectorManagerServiceImpl implements FeatureVectorManagerServ
             collections.computeIfAbsent(target, k -> {
                 if (!collectionNames.contains(target)) collectionNames.add(target);
                 return new ArrayList<>();
-            }).addAll(copyVectors(toCopy));
+            }).addAll(payload);
             refreshDisplayedFromActive();
         });
     }
@@ -253,30 +253,30 @@ public class FeatureVectorManagerServiceImpl implements FeatureVectorManagerServ
         });
     }
 
-@Override
-public void applyActiveToWorkspace(boolean replace) {
-    runFx(() -> {
-        String name = activeCollectionName.get();
-        List<FeatureVector> active = (name == null) ? List.of()
-            : collections.getOrDefault(name, List.of());
-        if (active == null || active.isEmpty()) return;
+    @Override
+    public void applyActiveToWorkspace(boolean replace) {
+        runFx(() -> {
+            String name = activeCollectionName.get();
+            List<FeatureVector> active = (name == null) ? List.of()
+                : collections.getOrDefault(name, List.of());
+            if (active == null || active.isEmpty()) return;
 
-        var fc = new FeatureCollection();
-        fc.setFeatures(active);
+            var fc = new FeatureCollection();
+            fc.setFeatures(active);
 
-        var evt = new FeatureVectorEvent(
-            FeatureVectorEvent.NEW_FEATURE_COLLECTION,
-            fc
-        );
-        // keep the “no-dup” tag so AppAsyncManager skips re-ingesting:
-        evt.object2 = MANAGER_APPLY_TAG;
-        // replace vs append:
-        evt.clearExisting = replace;
+            var evt = new FeatureVectorEvent(
+                FeatureVectorEvent.NEW_FEATURE_COLLECTION,
+                fc
+            );
+            // keep the “no-dup” tag so AppAsyncManager skips re-ingesting:
+            evt.object2 = MANAGER_APPLY_TAG;
+            // replace vs append:
+            evt.clearExisting = replace;
 
-        if (eventNode != null) eventNode.fireEvent(evt);
-        else if (eventScene != null) eventScene.getRoot().fireEvent(evt);
-    });
-}
+            if (eventNode != null) eventNode.fireEvent(evt);
+            else if (eventScene != null) eventScene.getRoot().fireEvent(evt);
+        });
+    }
 
     @Override
     public void setEventTarget(EventTarget target) {
@@ -297,41 +297,14 @@ public void applyActiveToWorkspace(boolean replace) {
     private void refreshDisplayedFromActive() {
         String name = activeCollectionName.get();
         List<FeatureVector> src = (name == null) ? List.of() : collections.getOrDefault(name, List.of());
-        List<FeatureVector> sampled = sample(src, samplingMode.get());
+        List<FeatureVector> sampled = FeatureVectorUtils.sample(src, samplingMode.get());
         displayedVectors.setAll(sampled);
     }
 
-    private static List<FeatureVector> sample(List<FeatureVector> src, SamplingMode mode) {
-        if (src == null || src.isEmpty()) return List.of();
-        int n = src.size();
-        switch (mode) {
-            case ALL -> { return src; }
-            case HEAD_1000 -> { return src.subList(0, Math.min(1000, n)); }
-            case TAIL_1000 -> {
-                if (n <= 1000) return src;
-                return src.subList(n - 1000, n);
-            }
-            case RANDOM_1000 -> {
-                if (n <= 1000) return src;
-                ThreadLocalRandom rng = ThreadLocalRandom.current();
-                ArrayList<FeatureVector> copy = new ArrayList<>(src);
-                for (int i = 0; i < 1000; i++) {
-                    int j = i + rng.nextInt(n - i);
-                    Collections.swap(copy, i, j);
-                }
-                return copy.subList(0, 1000);
-            }
-            default -> { return src; }
-        }
-    }
-
-    private static String cleanName(String s) {
-        if (s == null) return "";
-        return s.trim();
-    }
-
+    /** Ensure the name is unique among current collections. */
     private String uniquify(String base) {
-        String b = (base == null || base.isBlank()) ? "Collection" : base.trim();
+        String b = FeatureVectorUtils.cleanCollectionName(
+                (base == null || base.isBlank()) ? "Collection" : base);
         String name = b;
         int i = 2;
         while (collectionNames.contains(name)) {
@@ -340,6 +313,7 @@ public void applyActiveToWorkspace(boolean replace) {
         return name;
     }
 
+    /** Make sure there is an active collection and return its name. */
     private String ensureActiveCollection() {
         String name = activeCollectionName.get();
         if (name == null) {
@@ -354,69 +328,5 @@ public void applyActiveToWorkspace(boolean replace) {
     private static void runFx(Runnable r) {
         if (Platform.isFxApplicationThread()) r.run();
         else Platform.runLater(r);
-    }
-
-    private static List<FeatureVector> copyVectors(List<FeatureVector> in) {
-        if (in == null) return List.of();
-        return in.stream().map(FeatureVectorManagerServiceImpl::cloneVector).collect(Collectors.toCollection(ArrayList::new));
-    }
-
-    private static FeatureVector cloneVector(FeatureVector src) {
-        if (src == null) return null;
-        FeatureVector fv = new FeatureVector();
-        fv.setEntityId(src.getEntityId());
-        fv.setLabel(src.getLabel());
-        fv.setData(src.getData() == null ? null : new ArrayList<>(src.getData()));
-        fv.setBbox(src.getBbox() == null ? null : new ArrayList<>(src.getBbox()));
-        fv.setImageId(src.getImageId());
-        fv.setFrameId(src.getFrameId());
-        fv.setImageURL(src.getImageURL());
-        fv.setMediaURL(src.getMediaURL());
-        fv.setScore(src.getScore());
-        fv.setPfa(src.getPfa());
-        fv.setLayer(src.getLayer());
-        fv.setText(src.getText());
-        if (src.getMetaData() != null) {
-            fv.setMetaData(new java.util.HashMap<>(src.getMetaData()));
-        }
-        return fv;
-    }
-
-    private static void writeCsv(File file, List<FeatureVector> src) throws Exception {
-        int maxDim = 0;
-        for (FeatureVector fv : src) {
-            if (fv.getData() != null) maxDim = Math.max(maxDim, fv.getData().size());
-        }
-        try (BufferedWriter w = new BufferedWriter(new FileWriter(file))) {
-            // header
-            StringBuilder header = new StringBuilder("label,score,pfa,layer");
-            for (int i = 0; i < maxDim; i++) header.append(",v").append(i);
-            w.write(header.toString());
-            w.newLine();
-            // rows
-            for (FeatureVector fv : src) {
-                StringBuilder row = new StringBuilder();
-                row.append(escapeCsv(fv.getLabel())).append(",")
-                   .append(fv.getScore()).append(",")
-                   .append(fv.getPfa()).append(",")
-                   .append(fv.getLayer());
-                List<Double> data = fv.getData();
-                for (int i = 0; i < maxDim; i++) {
-                    row.append(",");
-                    if (data != null && i < data.size() && data.get(i) != null) {
-                        row.append(data.get(i));
-                    }
-                }
-                w.write(row.toString());
-                w.newLine();
-            }
-        }
-    }
-    private static String escapeCsv(String s) {
-        if (s == null) return "";
-        if (s.contains(",") || s.contains("\"") || s.contains("\n")) {
-            return "\"" + s.replace("\"", "\"\"") + "\"";
-        }
-        return s;
     }
 }

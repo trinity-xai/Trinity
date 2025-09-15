@@ -5,6 +5,7 @@ import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.javafx.components.FeatureVectorManagerView;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.services.FeatureVectorManagerService;
+import edu.jhuapl.trinity.javafx.services.FeatureVectorUtils;
 import javafx.beans.binding.Bindings;
 import javafx.collections.ListChangeListener;
 import javafx.geometry.Insets;
@@ -201,7 +202,8 @@ public class FeatureVectorManagerPane extends LitPathPane {
         String current = service.activeCollectionNameProperty().get();
         if (current == null) return;
         FileChooser fc = new FileChooser();
-        fc.setInitialFileName(safeFilename(current) + (fmt == FeatureVectorManagerService.ExportFormat.JSON ? ".json" : ".csv"));
+        fc.setInitialFileName(FeatureVectorUtils.safeFilename(current)
+                + (fmt == FeatureVectorManagerService.ExportFormat.JSON ? ".json" : ".csv"));
         fc.getExtensionFilters().setAll(
             new FileChooser.ExtensionFilter("JSON", "*.json"),
             new FileChooser.ExtensionFilter("CSV", "*.csv"),
@@ -278,7 +280,7 @@ public class FeatureVectorManagerPane extends LitPathPane {
 
             dlg.setResultConverter(btn -> {
                 if (btn == ButtonType.OK) {
-                    return parseKeyValues(ta.getText());
+                    return FeatureVectorUtils.parseKeyValues(ta.getText());
                 }
                 return null;
             });
@@ -346,30 +348,6 @@ public class FeatureVectorManagerPane extends LitPathPane {
     }
 
     // ---------------- Helpers ----------------
-
-    private static String safeFilename(String s) {
-        if (s == null) return "collection";
-        return s.replaceAll("[\\\\/:*?\"<>|]", "_");
-    }
-
-    private static Map<String, String> parseKeyValues(String text) {
-        Map<String, String> map = new LinkedHashMap<>();
-        if (text == null || text.isBlank()) return map;
-        String[] lines = text.split("\\R");
-        for (String line : lines) {
-            String ln = line.trim();
-            if (ln.isEmpty()) continue;
-            int eq = ln.indexOf('=');
-            if (eq < 0) {
-                map.put(ln, "");
-            } else {
-                String k = ln.substring(0, eq).trim();
-                String v = ln.substring(eq + 1).trim();
-                if (!k.isEmpty()) map.put(k, v);
-            }
-        }
-        return map;
-    }
 
     private void info(String msg) {
         Alert a = new Alert(Alert.AlertType.INFORMATION, msg, ButtonType.OK);

@@ -1,6 +1,5 @@
 package edu.jhuapl.trinity.javafx.services;
 
-import edu.jhuapl.trinity.data.messages.xai.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.StringProperty;
@@ -16,7 +15,7 @@ import java.util.Map;
  */
 public interface FeatureVectorManagerService {
 
-    public static String MANAGER_APPLY_TAG = "FV_MANAGER_APPLY";
+    String MANAGER_APPLY_TAG = "FV_MANAGER_APPLY";
 
     enum SamplingMode { ALL, HEAD_1000, TAIL_1000, RANDOM_1000 }
     enum ExportFormat { JSON, CSV }
@@ -72,28 +71,11 @@ public interface FeatureVectorManagerService {
     /** Fire APPLY_ACTIVE_FEATUREVECTORS back to the app (scene root). */
     void applyActiveToWorkspace(boolean replace);
 
-    // Convenience default 
+    // Convenience default (append mode)
     default void applyActiveToWorkspace() {
         applyActiveToWorkspace(false);
     }
+
     /** Optional: Where events should be fired (e.g., scene.getRoot()). */
     void setEventTarget(EventTarget target);
-
-    // ---------- Shared naming helper ----------
-    /**
-     * Derive a collection name from an import hint (e.g., file path) or fall back to a generic name.
-     */
-    static String deriveCollectionName(Object hint, FeatureCollection fc) {
-        String name = null;
-        if (hint instanceof String pathOrHint) {
-            int slash = Math.max(pathOrHint.lastIndexOf('/'), pathOrHint.lastIndexOf('\\'));
-            name = (slash >= 0) ? pathOrHint.substring(slash + 1) : pathOrHint;
-            int dot = name.lastIndexOf('.');
-            if (dot > 0) name = name.substring(0, dot);
-        }
-        if (name == null || name.trim().isEmpty()) {
-            name = "FeatureCollection-" + System.currentTimeMillis();
-        }
-        return name.trim();
-    }
 }
