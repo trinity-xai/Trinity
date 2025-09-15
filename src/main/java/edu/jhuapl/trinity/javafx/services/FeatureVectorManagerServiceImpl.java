@@ -3,214 +3,163 @@ package edu.jhuapl.trinity.javafx.services;
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import javafx.application.Platform;
-import javafx.beans.property.*;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-import javafx.concurrent.Task;
 import javafx.event.EventTarget;
+
+import java.util.*;
+import java.util.concurrent.ThreadLocalRandom;
 import javafx.scene.Node;
 
-import java.nio.file.Path;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-
+/**
+ * In-memory implementation; keeps a map of named collections and exposes a sampled "displayed" list.
+ */
 public class FeatureVectorManagerServiceImpl implements FeatureVectorManagerService {
 
-    private final FeatureVectorRepository repo;
-    private final ObservableList<FeatureVector> displayed = FXCollections.observableArrayList();
-
-    private final StringProperty activeCollection = new SimpleStringProperty("");
+    private final ObservableList<String> collectionNames = FXCollections.observableArrayList();
+    private final Map<String, List<FeatureVector>> collections = new LinkedHashMap<>();
+    private final StringProperty activeCollectionName = new SimpleStringProperty();
+    private final ObservableList<FeatureVector> displayedVectors = FXCollections.observableArrayList();
     private final ObjectProperty<SamplingMode> samplingMode = new SimpleObjectProperty<>(SamplingMode.ALL);
+    private Node eventTarget;
 
-    private final ReadOnlyIntegerWrapper totalCount = new ReadOnlyIntegerWrapper(0);
-    private final ReadOnlyIntegerWrapper displayedCount = new ReadOnlyIntegerWrapper(0);
+    public FeatureVectorManagerServiceImpl(InMemoryFeatureVectorRepository ignoredRepo) {
+        // repo placeholder kept for drop-in compatibility; not used in this in-memory impl.
 
-    private final ReadOnlyStringWrapper status = new ReadOnlyStringWrapper("Ready.");
-    private final ReadOnlyDoubleWrapper progress = new ReadOnlyDoubleWrapper(-1);
-
-    private final ExecutorService executor = Executors.newFixedThreadPool(Math.max(2, Runtime.getRuntime().availableProcessors()/2));
-
-    // Where to fire events (typically scene.getRoot())
-    private EventTarget eventTarget;
-
-    public FeatureVectorManagerServiceImpl(FeatureVectorRepository repo) {
-        this.repo = Objects.requireNonNull(repo, "repo");
-        activeCollection.addListener((obs,o,n) -> recomputeDisplayed());
-        samplingMode.addListener((obs,o,n) -> recomputeDisplayed());
+        // keep displayedVectors in sync whenever the active name or sampling mode changes
+        activeCollectionName.addListener((obs, o, n) -> refreshDisplayedFromActive());
+        samplingMode.addListener((obs, o, n) -> refreshDisplayedFromActive());
     }
 
-    public void setEventTarget(EventTarget target) { this.eventTarget = target; }
-
-    @Override public ObservableList<String> getCollectionNames() { return repo.getCollectionNames(); }
-    @Override public StringProperty activeCollectionNameProperty() { return activeCollection; }
-    @Override public ObservableList<FeatureVector> getDisplayedVectors() { return displayed; }
+    @Override public ObservableList<String> getCollectionNames() { return collectionNames; }
+    @Override public StringProperty activeCollectionNameProperty() { return activeCollectionName; }
+    @Override public ObservableList<FeatureVector> getDisplayedVectors() { return displayedVectors; }
     @Override public ObjectProperty<SamplingMode> samplingModeProperty() { return samplingMode; }
 
-    @Override public ReadOnlyIntegerProperty totalVectorCountProperty() { return totalCount.getReadOnlyProperty(); }
-    @Override public ReadOnlyIntegerProperty displayedCountProperty() { return displayedCount.getReadOnlyProperty(); }
-
-    @Override public ReadOnlyStringProperty statusProperty() { return status.getReadOnlyProperty(); }
-    @Override public ReadOnlyDoubleProperty progressProperty() { return progress.getReadOnlyProperty(); }
-
     @Override
-    public void addCollection(String name, List<FeatureVector> vectors) {
-        if (name == null || name.isBlank()) return;
-        repo.put(name, vectors);
-        if (activeCollection.get().isBlank()) activeCollection.set(name);
-        recomputeDisplayed();
-        setStatus("Added collection '" + name + "' (" + (vectors==null?0:vectors.size()) + " vectors).");
-    }
+    public void addCollection(String proposedName, List<FeatureVector> vectors) {
+        if (vectors == null) vectors = List.of();
+        final String clean = cleanName(proposedName);
+        final String name = uniquify(clean);
+        final List<FeatureVector> payload = List.copyOf(vectors); // defensive
 
-    @Override
-    public void removeCollection(String name) {
-        repo.remove(name);
-        if (name.equals(activeCollection.get())) {
-            activeCollection.set(repo.getCollectionNames().isEmpty() ? "" :
-                repo.getCollectionNames().get(0));
-        }
-        recomputeDisplayed();
-        setStatus("Removed collection '" + name + "'.");
-    }
-
-    @Override
-    public void renameCollection(String oldName, String newName) {
-        if (!repo.contains(oldName) || newName == null || newName.isBlank()) return;
-        List<FeatureVector> v = new ArrayList<>(repo.get(oldName));
-        repo.remove(oldName);
-        repo.put(newName, v);
-        if (oldName.equals(activeCollection.get())) activeCollection.set(newName);
-        setStatus("Renamed collection '" + oldName + "' → '" + newName + "'.");
+        runFx(() -> {
+            collections.put(name, new ArrayList<>(payload));
+            if (!collectionNames.contains(name)) collectionNames.add(name);
+            // Select new collection by default
+            activeCollectionName.set(name);
+            refreshDisplayedFromActive();
+        });
     }
 
     @Override
     public void appendVectorsToActive(List<FeatureVector> vectors) {
         if (vectors == null || vectors.isEmpty()) return;
-        String name = activeCollection.get();
-        if (name == null || name.isBlank()) {
-            name = "Collection-" + (repo.getCollectionNames().size() + 1);
-            repo.put(name, new ArrayList<>());
-            activeCollection.set(name);
-        }
-        repo.get(name).addAll(vectors);
-        recomputeDisplayed();
-        setStatus("Appended " + vectors.size() + " vectors to '" + name + "'.");
+        runFx(() -> {
+            String name = activeCollectionName.get();
+            if (name == null) {
+                // No collection yet: create a default one
+                name = uniquify("Collection");
+                collections.put(name, new ArrayList<>());
+                collectionNames.add(name);
+                activeCollectionName.set(name);
+            }
+            collections.computeIfAbsent(name, k -> new ArrayList<>()).addAll(vectors);
+            refreshDisplayedFromActive();
+        });
     }
 
     @Override
     public void replaceActiveVectors(List<FeatureVector> vectors) {
-        String name = activeCollection.get();
-        if (name == null || name.isBlank()) {
-            name = "Collection-" + (repo.getCollectionNames().size() + 1);
-            repo.put(name, new ArrayList<>());
-            activeCollection.set(name);
-        }
-        List<FeatureVector> dest = repo.get(name);
-        dest.clear();
-        if (vectors != null) dest.addAll(vectors);
-        recomputeDisplayed();
-        setStatus("Replaced active collection with " + dest.size() + " vectors.");
+        runFx(() -> {
+            String name = activeCollectionName.get();
+            if (name == null) {
+                name = uniquify("Collection");
+                collectionNames.add(name);
+                activeCollectionName.set(name);
+            }
+            collections.put(name, new ArrayList<>(vectors == null ? List.of() : vectors));
+            refreshDisplayedFromActive();
+        });
     }
 
     @Override
-    public void importJsonAsync(String collectionName, Path jsonPath) {
-        Task<List<FeatureVector>> task = new Task<>() {
-            @Override protected List<FeatureVector> call() throws Exception {
-                updateMessage("Importing JSON: " + jsonPath.getFileName());
-                updateProgress(-1, 1);
-                Thread.sleep(200);
-                return List.of();
+    public void applyActiveToWorkspace() {
+        runFx(() -> {
+            String name = activeCollectionName.get();
+            List<FeatureVector> active = (name == null) ? List.of()
+                : Collections.unmodifiableList(collections.getOrDefault(name, List.of()));
+            if (eventTarget != null) {
+                FeatureVectorEvent evt = new FeatureVectorEvent(FeatureVectorEvent.APPLY_ACTIVE_FEATUREVECTORS, active);
+                eventTarget.fireEvent(evt);
             }
-        };
-        task.messageProperty().addListener((obs,o,n) -> setStatus(n));
-        bindProgress(task);
-        task.setOnSucceeded(e -> { addCollection(collectionName, task.getValue()); clearProgress(); });
-        task.setOnFailed(e -> { setStatus("Import failed: " + task.getException()); clearProgress(); });
-        executor.submit(task);
-    }
-
-    @Override
-    public void importCsvAsync(String collectionName, Path csvPath, int expectedDim) {
-        Task<List<FeatureVector>> task = new Task<>() {
-            @Override protected List<FeatureVector> call() throws Exception {
-                updateMessage("Importing CSV: " + csvPath.getFileName());
-                updateProgress(-1, 1);
-                Thread.sleep(200);
-                return List.of();
-            }
-        };
-        task.messageProperty().addListener((obs,o,n) -> setStatus(n));
-        bindProgress(task);
-        task.setOnSucceeded(e -> { addCollection(collectionName, task.getValue()); clearProgress(); });
-        task.setOnFailed(e -> { setStatus("Import failed: " + task.getException()); clearProgress(); });
-        executor.submit(task);
-    }
-
-    @Override
-    public void exportCsvAsync(Path csvPath, List<FeatureVector> source) {
-        if (source == null) source = getActive();
-        Task<Void> task = new Task<>() {
-            @Override protected Void call() throws Exception {
-                updateMessage("Exporting CSV: " + csvPath.getFileName());
-                updateProgress(-1, 1);
-                Thread.sleep(200);
-                return null;
-            }
-        };
-        task.messageProperty().addListener((obs,o,n) -> setStatus(n));
-        bindProgress(task);
-        task.setOnSucceeded(e -> { setStatus("Export complete: " + csvPath.getFileName()); clearProgress(); });
-        task.setOnFailed(e -> { setStatus("Export failed: " + task.getException()); clearProgress(); });
-        executor.submit(task);
+        });
     }
 
 @Override
-public void applyActiveToWorkspace() {
-    if (eventTarget == null) {
-        setStatus("No event target set; cannot apply to workspace.");
-        return;
+public void setEventTarget(EventTarget target) {
+    if (target instanceof Node n) {
+        this.eventTarget = n;
+    } else {
+        this.eventTarget = null;
     }
-    List<FeatureVector> flat = new ArrayList<>(getActive());
-    Platform.runLater(() -> {
-        FeatureVectorEvent ev = new FeatureVectorEvent(
-            FeatureVectorEvent.APPLY_ACTIVE_FEATUREVECTORS,
-            flat
-        );
-        ev.clearExisting = false; // or true if you want to reset consumers
-        if (eventTarget instanceof Node node) {
-            node.fireEvent(ev);
-        }
-    });
-    setStatus("Applied " + flat.size() + " vectors to workspace.");
 }
 
-    private List<FeatureVector> getActive() {
-        String name = activeCollection.get();
-        return (name == null || name.isBlank()) ? List.of() : repo.get(name);
+    // ---------- internals ----------
+
+    private void refreshDisplayedFromActive() {
+        String name = activeCollectionName.get();
+        List<FeatureVector> src = (name == null) ? List.of() : collections.getOrDefault(name, List.of());
+        List<FeatureVector> sampled = sample(src, samplingMode.get());
+        displayedVectors.setAll(sampled);
     }
 
-    private void recomputeDisplayed() {
-        List<FeatureVector> active = getActive();
-        totalCount.set(active.size());
-        List<FeatureVector> sampled = DisplayListSampler.sample(active, samplingMode.get());
-        Platform.runLater(() -> {
-            displayed.setAll(sampled);
-            displayedCount.set(displayed.size());
-        });
+    private static List<FeatureVector> sample(List<FeatureVector> src, SamplingMode mode) {
+        if (src == null || src.isEmpty()) return List.of();
+        int n = src.size();
+        switch (mode) {
+            case ALL -> { return src; }
+            case HEAD_1000 -> { return src.subList(0, Math.min(1000, n)); }
+            case TAIL_1000 -> {
+                if (n <= 1000) return src;
+                return src.subList(n - 1000, n);
+            }
+            case RANDOM_1000 -> {
+                if (n <= 1000) return src;
+                ThreadLocalRandom rng = ThreadLocalRandom.current();
+                // reservoir-like quick sample
+                ArrayList<FeatureVector> copy = new ArrayList<>(src);
+                for (int i = 0; i < 1000; i++) {
+                    int j = i + rng.nextInt(n - i);
+                    Collections.swap(copy, i, j);
+                }
+                return copy.subList(0, 1000);
+            }
+            default -> { return src; }
+        }
     }
 
-    private void setStatus(String s) { Platform.runLater(() -> status.set(s == null ? "" : s)); }
-
-    private void bindProgress(Task<?> t) {
-        t.progressProperty().addListener((obs,o,n) -> {
-            double val = (n == null) ? -1 : n.doubleValue();
-            Platform.runLater(() -> progress.set(val));
-        });
+    private static String cleanName(String s) {
+        if (s == null) return "";
+        return s.trim();
     }
 
-    private void clearProgress() { Platform.runLater(() -> progress.set(-1)); }
+    private String uniquify(String base) {
+        String b = (base == null || base.isBlank()) ? "Collection" : base.trim();
+        String name = b;
+        int i = 2;
+        while (collectionNames.contains(name)) {
+            name = b + "-" + i++;
+        }
+        return name;
+    }
 
-    @Override public void dispose() { executor.shutdownNow(); }
+    private static void runFx(Runnable r) {
+        if (Platform.isFxApplicationThread()) r.run();
+        else Platform.runLater(r);
+    }
 }

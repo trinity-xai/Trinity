@@ -1,64 +1,52 @@
 package edu.jhuapl.trinity.javafx.components.panes;
 
-import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.javafx.components.FeatureVectorManagerView;
 import edu.jhuapl.trinity.javafx.services.FeatureVectorManagerService;
-import edu.jhuapl.trinity.javafx.services.FeatureVectorManagerService.SamplingMode;
-import edu.jhuapl.trinity.javafx.services.FeatureVectorManagerServiceImpl;
-import edu.jhuapl.trinity.javafx.services.InMemoryFeatureVectorRepository;
-import javafx.geometry.Insets;
+import javafx.beans.binding.Bindings;
+import javafx.collections.ListChangeListener;
 import javafx.scene.Scene;
-import javafx.scene.control.ContextMenu;
-import javafx.scene.control.MenuItem;
-import javafx.scene.layout.BorderPane;
+import javafx.scene.control.ListCell;
 import javafx.scene.layout.Pane;
 
-import java.util.List;
-
 public class FeatureVectorManagerPane extends LitPathPane {
-
-    private static final int DEFAULT_WIDTH = 980;
-    private static final int DEFAULT_HEIGHT = 680;
 
     private final FeatureVectorManagerView view;
     private final FeatureVectorManagerService service;
 
-    // Windowing context menu (RMB)
-    private final ContextMenu ctxMenu = new ContextMenu();
-    private final MenuItem miOpenFull = new MenuItem("Open Full View");
-    private final MenuItem miPopOut   = new MenuItem("Pop-out");
-
-    // External hooks
-    private Runnable onOpenFullRequested = () -> {};
-    private Runnable onPopOutRequested   = () -> {};
-
-    public FeatureVectorManagerPane(Scene scene, Pane parent) {
-        this(scene, parent, new FeatureVectorManagerServiceImpl(new InMemoryFeatureVectorRepository()));
-    }
-
     public FeatureVectorManagerPane(Scene scene, Pane parent, FeatureVectorManagerService service) {
-        super(scene, parent, DEFAULT_WIDTH, DEFAULT_HEIGHT,
-              new BorderPane(), "Feature Vectors", "Manager", 300.0, 400.0);
+        super(scene, parent, 900, 640, new FeatureVectorManagerView(),
+            "Feature Vectors", "Manager", 300.0, 400.0);
 
+        this.view = (FeatureVectorManagerView) this.contentPane;
         this.service = service;
 
-        // Allow service to fire events to the scene root (flattened list to workspace)
-        if (service instanceof FeatureVectorManagerServiceImpl impl && scene != null) {
-            impl.setEventTarget(scene.getRoot());
-        }
+        wireViewToService();
+    }
 
-        view = new FeatureVectorManagerView();
-        view.setDetailLevel(FeatureVectorManagerView.DetailLevel.COMPACT);
-
-        BorderPane root = (BorderPane) this.contentPane;
-        root.setCenter(view);
-        root.setPadding(new Insets(2));
-
-        // ---- Wire lists ----
+    private void wireViewToService() {
+        // Live-bind the table to service's displayed vectors
         view.getTable().setItems(service.getDisplayedVectors());
-        view.setCollections(service.getCollectionNames());
 
-        // ---- Active collection (two-way) ----
+        // Live-bind the ComboBox to service's collection names
+        var combo = view.getCollectionSelector();
+        combo.setItems(service.getCollectionNames());
+        combo.setVisibleRowCount(15);
+
+        // Render "(unnamed)" for empty names, both in popup and button cell
+        combo.setCellFactory(listView -> new ListCell<>() {
+            @Override protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty ? null : (item == null || item.trim().isEmpty() ? "(unnamed)" : item));
+            }
+        });
+        combo.setButtonCell(new ListCell<>() {
+            @Override protected void updateItem(String item, boolean empty) {
+                super.updateItem(item, empty);
+                setText(empty ? null : (item == null || item.trim().isEmpty() ? "(unnamed)" : item));
+            }
+        });
+
+        // Two-way selection sync between view and service
         view.selectedCollectionProperty().addListener((obs, o, n) -> {
             if (n != null && !n.equals(service.activeCollectionNameProperty().get())) {
                 service.activeCollectionNameProperty().set(n);
@@ -66,70 +54,41 @@ public class FeatureVectorManagerPane extends LitPathPane {
         });
         service.activeCollectionNameProperty().addListener((obs, o, n) -> {
             if (n != null && !n.equals(view.getSelectedCollection())) {
-                view.getCollectionSelector().getSelectionModel().select(n);
-            }
-        });
-        if (service.activeCollectionNameProperty().get() != null) {
-            view.getCollectionSelector().getSelectionModel().select(service.activeCollectionNameProperty().get());
-        }
-
-        // ---- Sampling mode (string <-> enum) ----
-        view.samplingModeProperty().addListener((obs, o, n) -> {
-            SamplingMode m = fromStringSampling(n);
-            if (m != service.samplingModeProperty().get()) {
-                service.samplingModeProperty().set(m);
-            }
-        });
-        service.samplingModeProperty().addListener((obs, o, n) -> {
-            String s = toStringSampling(n);
-            if (!s.equals(view.getSamplingMode())) {
-                view.samplingModeProperty().set(s);
+                combo.getSelectionModel().select(n);
             }
         });
 
-        // ---- Status / progress passthrough ----
-        service.statusProperty().addListener((obs, o, n) -> view.setStatus(n));
-        service.progressProperty().addListener((obs, o, n) -> {
-            double v = (n == null) ? -1 : n.doubleValue();
-            view.showProgress(v >= 0);
-            // If you decide to show determinate progress later, extend the view to set value.
+        // If names list changes and no selection, select the first
+        service.getCollectionNames().addListener((ListChangeListener<String>) c -> {
+            if (combo.getSelectionModel().isEmpty() && !service.getCollectionNames().isEmpty()) {
+                combo.getSelectionModel().select(service.getCollectionNames().get(0));
+            }
         });
 
-        // ---- Context menu (windowing only, as requested) ----
-        miOpenFull.setOnAction(e -> onOpenFullRequested.run());
-        miPopOut.setOnAction(e -> onPopOutRequested.run());
-        ctxMenu.getItems().setAll(miOpenFull, miPopOut);
+        // Map sampling text to enum
+        view.samplingModeProperty().addListener((obs, o, s) -> {
+            if (s == null) return;
+            FeatureVectorManagerService.SamplingMode mode = switch (s) {
+                case "Head (1000)" -> FeatureVectorManagerService.SamplingMode.HEAD_1000;
+                case "Tail (1000)" -> FeatureVectorManagerService.SamplingMode.TAIL_1000;
+                case "Random (1000)" -> FeatureVectorManagerService.SamplingMode.RANDOM_1000;
+                default -> FeatureVectorManagerService.SamplingMode.ALL;
+            };
+            if (service.samplingModeProperty().get() != mode) {
+                service.samplingModeProperty().set(mode);
+            }
+        });
 
-        this.setOnContextMenuRequested(e -> ctxMenu.show(this, e.getScreenX(), e.getScreenY()));
-        view.setOnContextMenuRequested(e -> ctxMenu.show(view, e.getScreenX(), e.getScreenY()));
-        view.getTable().setOnContextMenuRequested(e -> ctxMenu.show(view.getTable(), e.getScreenX(), e.getScreenY()));
+        // Keep bottom status roughly in sync with rows shown
+        view.getTable().itemsProperty().addListener((obs, o, n) -> {
+            view.setStatus("Showing " + (n == null ? 0 : n.size()) + " vectors.");
+        });
+        view.getTable().itemsProperty().bind(Bindings.createObjectBinding(
+            () -> service.getDisplayedVectors(), service.getDisplayedVectors()));
     }
 
-    // --- Sampling mapping helpers ---
-    private static SamplingMode fromStringSampling(String s) {
-        if (s == null) return SamplingMode.ALL;
-        String l = s.toLowerCase();
-        if (l.startsWith("head"))   return SamplingMode.HEAD_1000;
-        if (l.startsWith("tail"))   return SamplingMode.TAIL_1000;
-        if (l.startsWith("random")) return SamplingMode.RANDOM_1000;
-        return SamplingMode.ALL;
+    // Convenience for tests / external triggers
+    public void applyActiveToWorkspace() {
+        service.applyActiveToWorkspace();
     }
-    private static String toStringSampling(SamplingMode m) {
-        if (m == null) return "All";
-        switch (m) {
-            case HEAD_1000:   return "Head (1000)";
-            case TAIL_1000:   return "Tail (1000)";
-            case RANDOM_1000: return "Random (1000)";
-            default:          return "All";
-        }
-    }
-
-    // External hooks for windowing
-    public void setOnOpenFullRequested(Runnable r) { this.onOpenFullRequested = (r != null) ? r : () -> {}; }
-    public void setOnPopOutRequested(Runnable r)   { this.onPopOutRequested   = (r != null) ? r : () -> {}; }
-
-    // Convenience
-    public FeatureVectorManagerView getView() { return view; }
-    public void setDetailLevel(FeatureVectorManagerView.DetailLevel level) { view.setDetailLevel(level); }
-    public void setVectors(List<FeatureVector> vectors) { service.replaceActiveVectors(vectors); }
 }

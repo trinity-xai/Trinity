@@ -2,56 +2,49 @@ package edu.jhuapl.trinity.javafx.services;
 
 import edu.jhuapl.trinity.data.messages.xai.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
-import javafx.beans.property.*;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.StringProperty;
 import javafx.collections.ObservableList;
 
-import java.nio.file.Path;
-import java.util.List;
-
+/**
+ * Central manager API for FeatureVectors grouped as named collections.
+ */
 public interface FeatureVectorManagerService {
 
     enum SamplingMode { ALL, HEAD_1000, TAIL_1000, RANDOM_1000 }
 
-    // Collections
+    /** Live list of collection names (do not replace the instance; mutate it). */
     ObservableList<String> getCollectionNames();
+
+    /** Name of the currently active collection. */
     StringProperty activeCollectionNameProperty();
 
-    // Displayed vectors
+    /** Live list of vectors to display (sampling applied). */
     ObservableList<FeatureVector> getDisplayedVectors();
+
+    /** Current sampling mode. */
     ObjectProperty<SamplingMode> samplingModeProperty();
 
-    // Counts
-    ReadOnlyIntegerProperty totalVectorCountProperty();
-    ReadOnlyIntegerProperty displayedCountProperty();
+    /** Add a new collection (or replace existing if same name), selecting it active. */
+    void addCollection(String proposedName, java.util.List<FeatureVector> vectors);
 
-    // Mutations
-    void addCollection(String name, List<FeatureVector> vectors);
-    void removeCollection(String name);
-    void renameCollection(String oldName, String newName);
-    void appendVectorsToActive(List<FeatureVector> vectors);
-    void replaceActiveVectors(List<FeatureVector> vectors);
+    /** Append vectors to the currently active collection. */
+    void appendVectorsToActive(java.util.List<FeatureVector> vectors);
 
-    // Import / Export (background)
-    void importJsonAsync(String collectionName, Path jsonPath);
-    void importCsvAsync(String collectionName, Path csvPath, int expectedDim);
-    void exportCsvAsync(Path csvPath, List<FeatureVector> source);
+    /** Replace the vectors in the currently active collection. */
+    void replaceActiveVectors(java.util.List<FeatureVector> vectors);
 
-    // Status / progress
-    ReadOnlyStringProperty statusProperty();
-    ReadOnlyDoubleProperty progressProperty();
-
-    // Integration back to app (fires FeatureVectorEvent subtype)
+    /** Fire APPLY_ACTIVE_FEATUREVECTORS back to the app (scene root). */
     void applyActiveToWorkspace();
 
-    // Lifecycle
-    void dispose();
+    /** Optional: Where events should be fired (e.g., scene.getRoot()). */
+    void setEventTarget(javafx.event.EventTarget target);
+
+    // ---------- Shared naming helper ----------
     /**
-     * Derive a collection name from an import hint (e.g. filename) or fall back to a generic name.
-     * @param hint may be a String path, filename, or null
-     * @param fc   the FeatureCollection being imported
-     * @return a suitable collection name
+     * Derive a collection name from an import hint (e.g., file path) or fall back to a generic name.
      */
-    public static String deriveCollectionName(Object hint, FeatureCollection fc) {
+    static String deriveCollectionName(Object hint, FeatureCollection fc) {
         String name = null;
         if (hint instanceof String pathOrHint) {
             int slash = Math.max(pathOrHint.lastIndexOf('/'), pathOrHint.lastIndexOf('\\'));
@@ -59,9 +52,9 @@ public interface FeatureVectorManagerService {
             int dot = name.lastIndexOf('.');
             if (dot > 0) name = name.substring(0, dot);
         }
-        if (name == null || name.isBlank()) {
+        if (name == null || name.trim().isEmpty()) {
             name = "FeatureCollection-" + System.currentTimeMillis();
         }
-        return name;
-    }    
+        return name.trim();
+    }
 }

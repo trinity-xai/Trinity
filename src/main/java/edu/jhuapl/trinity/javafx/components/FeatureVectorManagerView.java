@@ -17,6 +17,16 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 
+/**
+ * FeatureVectorManagerView
+ * - Header with Collection selector + Sampling choice
+ * - Center TableView of FeatureVectors (compact/full columns)
+ * - Bottom stack: Details (values preview) and Metadata (formatted key/value), independent TitledPanes
+ * - Status bar with progress indicator
+ *
+ * Note: The collection ComboBox should be bound to a live ObservableList by the container/pane:
+ *   view.getCollectionSelector().setItems(service.getCollectionNames());
+ */
 public class FeatureVectorManagerView extends BorderPane {
 
     public enum DetailLevel { COMPACT, FULL }
@@ -41,11 +51,11 @@ public class FeatureVectorManagerView extends BorderPane {
 
     private final ObservableList<FeatureVector> items = FXCollections.observableArrayList();
 
-    // Details
-    private final Accordion detailsAccordion = new Accordion();
+    // Details + Metadata (independent panes)
     private final TitledPane detailsSection = new TitledPane();
+    private final TitledPane metadataSection = new TitledPane();
     private final TextArea valuesPreviewArea = new TextArea();
-    private final GridPane metaGrid = new GridPane();
+    private final TextArea metaTextArea = new TextArea();
 
     // Status
     private final Label statusLabel = new Label("Ready.");
@@ -54,13 +64,13 @@ public class FeatureVectorManagerView extends BorderPane {
     public FeatureVectorManagerView() {
         buildHeader();
         buildTable();
-        buildDetails();
+        buildDetailAndMetadataPanes();
 
         BorderPane.setMargin(table, Insets.EMPTY);
         setTop(buildHeaderBar());
         setCenter(table);
 
-        VBox bottomStack = new VBox(4, buildDetailsBlock(), buildStatusBar());
+        VBox bottomStack = new VBox(4, buildBottomBlock(), buildStatusBar());
         bottomStack.setPadding(new Insets(2, 2, 2, 2));
         setBottom(bottomStack);
 
@@ -74,6 +84,7 @@ public class FeatureVectorManagerView extends BorderPane {
         detailLevel.addListener((o, oldV, newV) -> applyDetailLevel(newV));
 
         detailsSection.setExpanded(false);
+        metadataSection.setExpanded(false);
         progressBar.setVisible(false);
         applyDetailLevel(detailLevel.get());
     }
@@ -159,29 +170,40 @@ public class FeatureVectorManagerView extends BorderPane {
              .addListener((ListChangeListener<FeatureVector>) change -> updateDetailsPreview());
     }
 
-    // Details -----------------------------------------------
+    // Details & Metadata panes -------------------------------
 
-    private void buildDetails() {
+    private void buildDetailAndMetadataPanes() {
+        // Details (values preview)
         valuesPreviewArea.setEditable(false);
         valuesPreviewArea.setPrefRowCount(8);
+        valuesPreviewArea.setWrapText(true);
 
-        metaGrid.setHgap(6);
-        metaGrid.setVgap(4);
-        metaGrid.addRow(0, new Label("Metadata:"), new Label("(shown when a vector is selected)"));
-
-        VBox detailsBox = new VBox(6, valuesPreviewArea, metaGrid);
+        VBox detailsBox = new VBox(6, valuesPreviewArea);
         detailsBox.setPadding(new Insets(6));
 
         detailsSection.setText("Details");
         detailsSection.setContent(detailsBox);
         detailsSection.setExpanded(false);
 
-        detailsAccordion.getPanes().setAll(detailsSection);
-        detailsAccordion.setExpandedPane(null);
+        // Metadata (formatted key/value pairs)
+        metaTextArea.setEditable(false);
+        metaTextArea.setPrefRowCount(8);
+        metaTextArea.setWrapText(true);
+
+        VBox metaBox = new VBox(6, metaTextArea);
+        metaBox.setPadding(new Insets(6));
+
+        metadataSection.setText("Metadata");
+        metadataSection.setContent(metaBox);
+        metadataSection.setExpanded(false);
     }
 
-    private Node buildDetailsBlock() {
-        BorderPane wrapper = new BorderPane(detailsAccordion);
+    private Node buildBottomBlock() {
+        // Independent (non-Accordion) so both panes can be open at once
+        VBox stack = new VBox(6, detailsSection, metadataSection);
+        stack.setPadding(new Insets(6));
+
+        BorderPane wrapper = new BorderPane(stack);
         wrapper.setBorder(new Border(new BorderStroke(
             Color.color(1, 1, 1, 0.15), BorderStrokeStyle.SOLID, CornerRadii.EMPTY, BorderWidths.DEFAULT
         )));
@@ -245,14 +267,14 @@ public class FeatureVectorManagerView extends BorderPane {
         var sel = table.getSelectionModel().getSelectedItems();
         if (sel == null || sel.isEmpty()) {
             valuesPreviewArea.clear();
-            if (metaGrid.getChildren().size() > 1) metaGrid.getChildren().set(1, new Label("(no selection)"));
-            detailsSection.setExpanded(false);
-            detailsAccordion.setExpandedPane(null);
+            metaTextArea.setText("(no metadata)");
+            // do not auto-collapse; let user control the panes independently
             return;
         }
         FeatureVector fv = sel.get(0);
         var data = fv.getData();
 
+        // Details text
         StringBuilder sb = new StringBuilder();
         sb.append("Label: ").append(opt(fv.getLabel())).append("\n");
         sb.append("Dim: ").append(data == null ? 0 : data.size()).append("\n");
@@ -277,13 +299,18 @@ public class FeatureVectorManagerView extends BorderPane {
         }
         valuesPreviewArea.setText(sb.toString());
 
-        Label metaLabel = new Label(fv.getMetaData() == null ? "{}" : fv.getMetaData().toString());
-        if (metaGrid.getChildren().size() > 1) metaGrid.getChildren().set(1, metaLabel);
-        else metaGrid.add(metaLabel, 1, 0);
-
-        if (!detailsSection.isExpanded()) {
-            detailsAccordion.setExpandedPane(detailsSection);
-            detailsSection.setExpanded(true);
+        // Metadata text (key/value per line)
+        if (fv.getMetaData() == null || fv.getMetaData().isEmpty()) {
+            metaTextArea.setText("(no metadata)");
+        } else {
+            StringBuilder sbMeta = new StringBuilder();
+            fv.getMetaData().forEach((k, v) -> {
+                sbMeta.append(k == null ? "(null)" : k)
+                      .append(": ")
+                      .append(v == null ? "(null)" : v)
+                      .append("\n");
+            });
+            metaTextArea.setText(sbMeta.toString().trim());
         }
     }
 
@@ -305,6 +332,7 @@ public class FeatureVectorManagerView extends BorderPane {
         if (vectors != null) items.addAll(vectors);
         setStatus("Loaded " + items.size() + " vectors.");
     }
+    /** Snapshot setter (optional). If you’re binding live in the pane, you can ignore this. */
     public void setCollections(List<String> names) {
         collectionSelector.getItems().setAll(names == null ? Collections.emptyList() : names);
         if (!collectionSelector.getItems().isEmpty()) collectionSelector.getSelectionModel().selectFirst();
@@ -319,8 +347,8 @@ public class FeatureVectorManagerView extends BorderPane {
     public TableView<FeatureVector> getTable() { return table; }
     public ComboBox<String> getCollectionSelector() { return collectionSelector; }
     public ChoiceBox<String> getSamplingChoice() { return samplingChoice; }
-    public Accordion getDetailsAccordion() { return detailsAccordion; }
     public TitledPane getDetailsSection() { return detailsSection; }
+    public TitledPane getMetadataSection() { return metadataSection; }
 
     public StringProperty samplingModeProperty() { return samplingMode; }
     public String getSamplingMode() { return samplingMode.get(); }
