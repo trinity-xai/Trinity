@@ -62,8 +62,7 @@ public class FeatureVectorEventHandler implements EventHandler<FeatureVectorEven
             } catch (JsonProcessingException ex) {
                 
             }
-        }
-        
+        }        
         return fv;
     }
 
@@ -185,7 +184,6 @@ public class FeatureVectorEventHandler implements EventHandler<FeatureVectorEven
             FactorLabel.addAllFactorLabels(newFactorLabels);
         if (!newFeatureLayers.isEmpty())
             FeatureLayer.addAllFeatureLayer(newFeatureLayers);
-
     }
 
     public void handleClearAllEvent(FeatureVectorEvent event) {
@@ -216,27 +214,30 @@ public class FeatureVectorEventHandler implements EventHandler<FeatureVectorEven
         }
         //Did the message specify any new dimensional label strings?
         if (null != featureCollection.getDimensionLabels() && !featureCollection.getDimensionLabels().isEmpty()) {
-            Dimension.removeAllDimensions();
-            int counter = 0;
-            for (String dimensionLabel : featureCollection.getDimensionLabels()) {
-                Dimension.addDimension(new Dimension(dimensionLabel,
-                    counter++, Color.ALICEBLUE));
-            }
-            Platform.runLater(() -> {
-                App.getAppScene().getRoot().fireEvent(
-                    new HyperspaceEvent(HyperspaceEvent.DIMENSION_LABELS_SET,
-                        featureCollection.getDimensionLabels()));
-
-                App.getAppScene().getRoot().fireEvent(
-                    new CommandTerminalEvent("New Dimensional Labels set",
-                        new Font("Consolas", 20), Color.GREEN));
-            });
-            //update the renderers with the new arraylist of strings
-            for (FeatureVectorRenderer renderer : renderers) {
-                renderer.setDimensionLabels(featureCollection.getDimensionLabels());
-                renderer.refresh(true);
-            }
+            updateDimensionLabels(featureCollection.getDimensionLabels());
         }
+    }
+    
+    public void updateDimensionLabels(ArrayList<String> labels) {
+        Dimension.removeAllDimensions();
+         int counter = 0;
+         for (String dimensionLabel : labels) {
+             Dimension.addDimension(new Dimension(dimensionLabel,
+                 counter++, Color.ALICEBLUE));
+         }
+         Platform.runLater(() -> {
+             App.getAppScene().getRoot().fireEvent(
+                 new HyperspaceEvent(HyperspaceEvent.DIMENSION_LABELS_SET, labels));
+
+             App.getAppScene().getRoot().fireEvent(
+                 new CommandTerminalEvent("New Dimensional Labels set",
+                     new Font("Consolas", 20), Color.GREEN));
+         });
+         //update the renderers with the new arraylist of strings
+         for (FeatureVectorRenderer renderer : renderers) {
+             renderer.setDimensionLabels(labels);
+             renderer.refresh(true);
+         }
     }
 
     public void handleLabelConfigEvent(FeatureVectorEvent event) {
@@ -302,11 +303,7 @@ public class FeatureVectorEventHandler implements EventHandler<FeatureVectorEven
         }
         //Did the message specify any new dimensional label strings?
         if (null != labelConfig.getDimensionLabels() && !labelConfig.getDimensionLabels().isEmpty()) {
-            //update the renderers with the new arraylist of strings
-            for (FeatureVectorRenderer renderer : renderers) {
-                renderer.setDimensionLabels(labelConfig.getDimensionLabels());
-                renderer.refresh(true);
-            }
+            updateDimensionLabels(labelConfig.getDimensionLabels());
         }
     }
 
