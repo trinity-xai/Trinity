@@ -569,7 +569,7 @@ public class AppAsyncManager extends Task {
         // Mirror NEW_FEATURE_COLLECTION into the manager (ignore PROJECT_FEATURE_COLLECTION by design)
         scene.getRoot().addEventHandler(FeatureVectorEvent.NEW_FEATURE_COLLECTION, ev -> {
             // ⬇⬇⬇ ADD THIS GUARD ⬇⬇⬇
-            if ("FV_MANAGER_APPLY".equals(ev.object2)) {
+            if (FeatureVectorManagerService.MANAGER_APPLY_TAG.equals(ev.object2)) {
                 // Let FeatureVectorEventHandler handle rendering,
                 // but do NOT add it back into the Manager service.
                 return;

@@ -1,5 +1,6 @@
 package edu.jhuapl.trinity.javafx.components.panes;
 
+import edu.jhuapl.trinity.data.messages.xai.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.javafx.components.FeatureVectorManagerView;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
@@ -160,7 +161,6 @@ public class FeatureVectorManagerPane extends LitPathPane {
             chooser.setContentText("Target collection:");
             chooser.getDialogPane().setPadding(new Insets(10));
             chooser.showAndWait().ifPresent(target -> {
-                // quick boolean choice via confirmation
                 Alert dedup = new Alert(Alert.AlertType.CONFIRMATION,
                         "De-duplicate by entityId while merging?",
                         ButtonType.YES, ButtonType.NO, ButtonType.CANCEL);
@@ -180,11 +180,16 @@ public class FeatureVectorManagerPane extends LitPathPane {
         miExportCsv.setOnAction(e -> exportCollection(FeatureVectorManagerService.ExportFormat.CSV));
         export.getItems().addAll(miExportJson, miExportCsv);
 
-        MenuItem miApply = new MenuItem("Apply Active to Workspace");
-        miApply.setOnAction(e -> service.applyActiveToWorkspace());
+        // Apply submenu (active collection)
+        Menu applyMenu = new Menu("Apply to workspace");
+        MenuItem miApplyAppend = new MenuItem("Apply (append)");
+        miApplyAppend.setOnAction(e -> service.applyActiveToWorkspace(false));
+        MenuItem miApplyReplace = new MenuItem("Apply (replace)");
+        miApplyReplace.setOnAction(e -> service.applyActiveToWorkspace(true));
+        applyMenu.getItems().addAll(miApplyAppend, miApplyReplace);
 
         ctx.getItems().addAll(miRename, miDuplicate, miDelete, new SeparatorMenuItem(),
-                miMergeInto, export, new SeparatorMenuItem(), miApply);
+                miMergeInto, export, new SeparatorMenuItem(), applyMenu);
 
         combo.addEventHandler(ContextMenuEvent.CONTEXT_MENU_REQUESTED, e -> {
             if (!ctx.isShowing()) ctx.show(combo, e.getScreenX(), e.getScreenY());
@@ -230,9 +235,7 @@ public class FeatureVectorManagerPane extends LitPathPane {
             List<FeatureVector> sel = new ArrayList<>(table.getSelectionModel().getSelectedItems());
             if (sel.isEmpty()) return;
 
-            List<String> options = new ArrayList<>(service.getCollectionNames());
             String current = service.activeCollectionNameProperty().get();
-            // allow typing a new name; use TextInputDialog to allow new
             TextInputDialog dlg = new TextInputDialog(current == null ? "NewCollection" : (current + "-copy"));
             dlg.setHeaderText("Copy Selected to Collection");
             dlg.setContentText("Target name (existing or new):");
@@ -295,16 +298,51 @@ public class FeatureVectorManagerPane extends LitPathPane {
             );
         });
 
-        MenuItem miApply = new MenuItem("Apply Active to Workspace");
-        miApply.setOnAction(e -> service.applyActiveToWorkspace());
+        // Apply submenu — uses selection if present, else whole active collection
+        Menu applyMenu = new Menu("Apply to workspace");
+
+        MenuItem miApplyAppend = new MenuItem("Apply (append)");
+        miApplyAppend.setOnAction(e -> applySelectionOrActive(false));
+
+        MenuItem miApplyReplace = new MenuItem("Apply (replace)");
+        miApplyReplace.setOnAction(e -> applySelectionOrActive(true));
+
+        applyMenu.getItems().addAll(miApplyAppend, miApplyReplace);
 
         ctx.getItems().addAll(miRemoveSel, miCopyTo, new SeparatorMenuItem(),
-                miEditLabel, miEditMeta, new SeparatorMenuItem(), miLocate, miApply);
+                miEditLabel, miEditMeta, new SeparatorMenuItem(),
+                miLocate, applyMenu);
 
         table.addEventHandler(ContextMenuEvent.CONTEXT_MENU_REQUESTED, e -> {
             if (!ctx.isShowing()) ctx.show(table, e.getScreenX(), e.getScreenY());
             e.consume();
         });
+    }
+
+    /**
+     * If there is a non-empty selection in the table, apply only those vectors to the workspace.
+     * Otherwise, fall back to applying the whole active collection via the service.
+     * @param replace true = replace in workspace, false = append
+     */
+    private void applySelectionOrActive(boolean replace) {
+        TableView<FeatureVector> table = view.getTable();
+        List<FeatureVector> sel = new ArrayList<>(table.getSelectionModel().getSelectedItems());
+
+        if (!sel.isEmpty()) {
+            // Apply only the selected vectors by firing NEW_FEATURE_COLLECTION,
+            // tagged so AppAsyncManager does not mirror it back into the manager.
+            FeatureCollection fc = new FeatureCollection();
+            fc.setFeatures(sel);
+            FeatureVectorEvent evt =
+                new FeatureVectorEvent(FeatureVectorEvent.NEW_FEATURE_COLLECTION, fc,
+                        FeatureVectorManagerService.MANAGER_APPLY_TAG);
+            evt.clearExisting = replace;
+
+            getScene().getRoot().fireEvent(evt);
+        } else {
+            // No selection -> use active collection pathway
+            service.applyActiveToWorkspace(replace);
+        }
     }
 
     // ---------------- Helpers ----------------
@@ -346,6 +384,6 @@ public class FeatureVectorManagerPane extends LitPathPane {
 
     // Convenience for tests / external triggers
     public void applyActiveToWorkspace() {
-        service.applyActiveToWorkspace();
+        service.applyActiveToWorkspace(false);
     }
 }

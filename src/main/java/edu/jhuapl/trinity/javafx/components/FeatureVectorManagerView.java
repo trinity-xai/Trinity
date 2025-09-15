@@ -24,6 +24,10 @@ import java.util.Locale;
  * - Bottom stack: Details (values preview) and Metadata (formatted key/value), independent TitledPanes
  * - Status bar with progress indicator
  *
+ * Context menus:
+ * - Collection ComboBox: Apply (append) / Apply (replace)
+ * - Table: Apply (append) / Apply (replace)
+ *
  * Note: The collection ComboBox should be bound to a live ObservableList by the container/pane:
  *   view.getCollectionSelector().setItems(service.getCollectionNames());
  */
@@ -61,6 +65,10 @@ public class FeatureVectorManagerView extends BorderPane {
     private final Label statusLabel = new Label("Ready.");
     private final ProgressBar progressBar = new ProgressBar();
 
+    // Callbacks (wired by container/pane)
+    private Runnable onApplyAppend;
+    private Runnable onApplyReplace;
+
     public FeatureVectorManagerView() {
         buildHeader();
         buildTable();
@@ -87,6 +95,16 @@ public class FeatureVectorManagerView extends BorderPane {
         metadataSection.setExpanded(false);
         progressBar.setVisible(false);
         applyDetailLevel(detailLevel.get());
+
+        // Context menus
+        collectionSelector.setContextMenu(buildCollectionContextMenu());
+        table.setContextMenu(buildTableContextMenu());
+        // Also show on right-click even if ComboBox popup is open
+        collectionSelector.setOnContextMenuRequested(e -> {
+            ContextMenu cm = collectionSelector.getContextMenu();
+            if (cm != null) cm.show(collectionSelector, e.getScreenX(), e.getScreenY());
+            e.consume();
+        });
     }
 
     // Header -------------------------------------------------
@@ -213,6 +231,38 @@ public class FeatureVectorManagerView extends BorderPane {
         return wrapper;
     }
 
+    // Context Menus -----------------------------------------
+
+    private ContextMenu buildCollectionContextMenu() {
+        Menu applyMenu = new Menu("Apply to workspace");
+
+        MenuItem applyAppend = new MenuItem("Apply (append)");
+        applyAppend.setOnAction(e -> { if (onApplyAppend != null) onApplyAppend.run(); });
+
+        MenuItem applyReplace = new MenuItem("Apply (replace)");
+        applyReplace.setOnAction(e -> { if (onApplyReplace != null) onApplyReplace.run(); });
+
+        applyMenu.getItems().addAll(applyAppend, applyReplace);
+
+        // (Future: Rename, Duplicate, Export, Remove …)
+        return new ContextMenu(applyMenu);
+    }
+
+    private ContextMenu buildTableContextMenu() {
+        Menu applyMenu = new Menu("Apply collection to workspace");
+
+        MenuItem applyAppend = new MenuItem("Apply (append)");
+        applyAppend.setOnAction(e -> { if (onApplyAppend != null) onApplyAppend.run(); });
+
+        MenuItem applyReplace = new MenuItem("Apply (replace)");
+        applyReplace.setOnAction(e -> { if (onApplyReplace != null) onApplyReplace.run(); });
+
+        applyMenu.getItems().addAll(applyAppend, applyReplace);
+
+        // (Future: Copy, Export rows, Delete rows …)
+        return new ContextMenu(applyMenu);
+    }
+
     // Status -------------------------------------------------
 
     private HBox buildStatusBar() {
@@ -328,16 +378,20 @@ public class FeatureVectorManagerView extends BorderPane {
         items.setAll(vectors == null ? Collections.emptyList() : vectors);
         setStatus("Loaded " + items.size() + " vectors.");
     }
+
     public void addVectors(Collection<FeatureVector> vectors) {
         if (vectors != null) items.addAll(vectors);
         setStatus("Loaded " + items.size() + " vectors.");
     }
+
     /** Snapshot setter (optional). If you’re binding live in the pane, you can ignore this. */
     public void setCollections(List<String> names) {
         collectionSelector.getItems().setAll(names == null ? Collections.emptyList() : names);
         if (!collectionSelector.getItems().isEmpty()) collectionSelector.getSelectionModel().selectFirst();
     }
+
     public void setStatus(String message) { statusLabel.setText(message == null ? "" : message); }
+
     public void showProgress(boolean show) {
         progressBar.setVisible(show);
         if (!show) progressBar.setProgress(0);
@@ -359,4 +413,8 @@ public class FeatureVectorManagerView extends BorderPane {
     public ObjectProperty<DetailLevel> detailLevelProperty() { return detailLevel; }
     public void setDetailLevel(DetailLevel level) { this.detailLevel.set(level); }
     public DetailLevel getDetailLevel() { return detailLevel.get(); }
+
+    // Callback setters (wired by container/pane)
+    public void setOnApplyAppend(Runnable r) { this.onApplyAppend = r; }
+    public void setOnApplyReplace(Runnable r) { this.onApplyReplace = r; }
 }

@@ -254,29 +254,29 @@ public class FeatureVectorManagerServiceImpl implements FeatureVectorManagerServ
     }
 
 @Override
-public void applyActiveToWorkspace() {
+public void applyActiveToWorkspace(boolean replace) {
     runFx(() -> {
         String name = activeCollectionName.get();
         List<FeatureVector> active = (name == null) ? List.of()
             : collections.getOrDefault(name, List.of());
         if (active == null || active.isEmpty()) return;
 
-        var fc = new edu.jhuapl.trinity.data.messages.xai.FeatureCollection();
+        var fc = new FeatureCollection();
         fc.setFeatures(active);
 
-        var evt = new edu.jhuapl.trinity.javafx.events.FeatureVectorEvent(
-            edu.jhuapl.trinity.javafx.events.FeatureVectorEvent.NEW_FEATURE_COLLECTION,
+        var evt = new FeatureVectorEvent(
+            FeatureVectorEvent.NEW_FEATURE_COLLECTION,
             fc
         );
-
-        // IMPORTANT: tag this so AppAsyncManager won’t re-import it
-        evt.object2 = "FV_MANAGER_APPLY";
+        // keep the “no-dup” tag so AppAsyncManager skips re-ingesting:
+        evt.object2 = MANAGER_APPLY_TAG;
+        // replace vs append:
+        evt.clearExisting = replace;
 
         if (eventNode != null) eventNode.fireEvent(evt);
         else if (eventScene != null) eventScene.getRoot().fireEvent(evt);
     });
 }
-
 
     @Override
     public void setEventTarget(EventTarget target) {

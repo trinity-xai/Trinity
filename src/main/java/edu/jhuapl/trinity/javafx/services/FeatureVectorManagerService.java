@@ -16,6 +16,8 @@ import java.util.Map;
  */
 public interface FeatureVectorManagerService {
 
+    public static String MANAGER_APPLY_TAG = "FV_MANAGER_APPLY";
+
     enum SamplingMode { ALL, HEAD_1000, TAIL_1000, RANDOM_1000 }
     enum ExportFormat { JSON, CSV }
 
@@ -68,8 +70,12 @@ public interface FeatureVectorManagerService {
     void bulkEditMetadataInActive(List<FeatureVector> targets, Map<String, String> kv);
 
     /** Fire APPLY_ACTIVE_FEATUREVECTORS back to the app (scene root). */
-    void applyActiveToWorkspace();
+    void applyActiveToWorkspace(boolean replace);
 
+    // Convenience default 
+    default void applyActiveToWorkspace() {
+        applyActiveToWorkspace(false);
+    }
     /** Optional: Where events should be fired (e.g., scene.getRoot()). */
     void setEventTarget(EventTarget target);
 
