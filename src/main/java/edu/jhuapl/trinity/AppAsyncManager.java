@@ -98,6 +98,7 @@ import java.util.List;
 import java.util.Map;
 
 import static edu.jhuapl.trinity.App.theConfig;
+import edu.jhuapl.trinity.javafx.controllers.FeatureVectorManagerPopoutController;
 
 /**
  * @author Sean Phillips
@@ -151,7 +152,7 @@ public class AppAsyncManager extends Task<Void> {
 
     MissionTimerX missionTimerX;
     TimelineAnimation timelineAnimation;
-
+    FeatureVectorManagerPopoutController fvPop;
     FeatureVectorManagerService fvService;
 
     public AppAsyncManager(Scene scene, StackPane centerStack, Pane desktopPane, CircleProgressIndicator progress, Map<String, String> namedParameters) {
@@ -166,6 +167,8 @@ public class AppAsyncManager extends Task<Void> {
         if (fvService instanceof FeatureVectorManagerServiceImpl impl) {
             impl.setEventTarget(scene.getRoot());
         }
+        fvPop = new FeatureVectorManagerPopoutController(fvService, scene);
+        
         setOnSucceeded(e -> Platform.runLater(() ->
             scene.getRoot().fireEvent(new ApplicationEvent(ApplicationEvent.HIDE_BUSY_INDICATOR))));
         setOnFailed(e -> Platform.runLater(() ->
@@ -577,12 +580,24 @@ public class AppAsyncManager extends Task<Void> {
                 // Use the shared service so the view reflects mirrored events
                 featureVectorManagerPane = new FeatureVectorManagerPane(scene, desktopPane, fvService);
             }
-            if (!desktopPane.getChildren().contains(featureVectorManagerPane)) {
-                desktopPane.getChildren().add(featureVectorManagerPane);
-                featureVectorManagerPane.slideInPane();
-            } else {
-                featureVectorManagerPane.show();
-            }
+            boolean show = (null != e.object && e.object instanceof Boolean) ? (boolean)e.object : true;
+            if(show)
+                if (!desktopPane.getChildren().contains(featureVectorManagerPane)) {
+                    desktopPane.getChildren().add(featureVectorManagerPane);
+                    featureVectorManagerPane.slideInPane();
+                } else {
+                    featureVectorManagerPane.show();
+                }
+            else
+                featureVectorManagerPane.close();
+        });
+        scene.addEventHandler(ApplicationEvent.POPOUT_FEATUREVECTOR_MANAGER, e -> {
+            boolean show = (null != e.object && e.object instanceof Boolean) ? (boolean)e.object : true;
+            if(show) {
+                featureVectorManagerPane.close(); 
+                fvPop.show();
+            } else
+                fvPop.close();
         });
         scene.addEventHandler(ApplicationEvent.AUTO_PROJECTION_MODE, e -> {
             boolean enabled = (boolean) e.object;

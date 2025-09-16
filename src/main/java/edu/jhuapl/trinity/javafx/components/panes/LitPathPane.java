@@ -238,7 +238,7 @@ public class LitPathPane extends PathPane {
 
         this.scene.getRoot().addEventHandler(CovalentPaneEvent.COVALENT_PANE_CLOSE, e -> {
             if (e.pathPane == this)
-                onClose();
+                close();
         });
         this.addEventHandler(MouseEvent.MOUSE_PRESSED, e -> this.toFront());
         gradientTimeline = setupGradientTimeline();
@@ -262,6 +262,11 @@ public class LitPathPane extends PathPane {
             } else
                 contentPane.setOpacity(0.8);
         });
+    }
+    @Override
+    public void close() {
+        super.close();
+        onClose();
     }
     public void onClose() {
         parent.getChildren().remove(this);

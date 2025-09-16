@@ -1,12 +1,10 @@
 package edu.jhuapl.trinity.javafx.services;
 
-import edu.jhuapl.trinity.data.messages.xai.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.ObservableList;
 import javafx.event.EventTarget;
-
 import java.io.File;
 import java.util.List;
 import java.util.Map;

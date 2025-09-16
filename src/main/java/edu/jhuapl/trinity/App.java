@@ -155,6 +155,8 @@ public class App extends Application {
         scene.getStylesheets().add(CSS);
         CSS = StyleResourceProvider.getResource("covalent.css").toExternalForm();
         scene.getStylesheets().add(CSS);
+        CSS = StyleResourceProvider.getResource("dialogstyles.css").toExternalForm();
+        scene.getStylesheets().add(CSS);
 
         //add just the dark necessities...
         JukeBox jukeBox = new JukeBox(scene);

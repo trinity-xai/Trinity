@@ -1,11 +1,12 @@
-package edu.jhuapl.trinity.javafx.components.panes;
+package edu.jhuapl.trinity.javafx.controllers;
 
+import edu.jhuapl.trinity.css.StyleResourceProvider;
 import edu.jhuapl.trinity.data.messages.xai.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.javafx.components.FeatureVectorManagerView;
-import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.services.FeatureVectorManagerService;
+import javafx.animation.PauseTransition;
 import javafx.beans.binding.Bindings;
 import javafx.collections.ListChangeListener;
 import javafx.geometry.Insets;
@@ -13,17 +14,18 @@ import javafx.scene.Scene;
 import javafx.scene.input.ContextMenuEvent;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
-import javafx.scene.layout.Pane;
-import javafx.stage.FileChooser;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.VBox;
 import java.io.File;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
-import java.util.Optional;
+import java.util.prefs.Preferences;
 import java.util.stream.Collectors;
 import javafx.scene.control.Alert;
+import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ChoiceDialog;
 import javafx.scene.control.ComboBox;
@@ -37,45 +39,135 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextInputDialog;
+import javafx.scene.control.ToolBar;
+import javafx.scene.layout.Background;
+import javafx.scene.paint.Color;
+import javafx.stage.FileChooser;
+import javafx.stage.Screen;
+import javafx.stage.Stage;
+import javafx.stage.StageStyle;
+import javafx.stage.Window;
 
-public class FeatureVectorManagerPane extends LitPathPane {
-
-    private final FeatureVectorManagerView view;
+public final class FeatureVectorManagerPopoutController {
+    public static double BUTTON_PREF_WIDTH = 200;
     private final FeatureVectorManagerService service;
+    private final Scene appScene; // main/original app Scene for event dispatch
+    private final Preferences prefs = Preferences.userNodeForPackage(FeatureVectorManagerPopoutController.class);
 
-    // simple debounce for search typing
-    private javafx.animation.PauseTransition searchDebounce;
+    private Stage stage;
+    private Scene scene;
+    private FeatureVectorManagerView view;
+    private PauseTransition searchDebounce;
 
-    public FeatureVectorManagerPane(Scene scene, Pane parent, FeatureVectorManagerService service) {
-        super(scene, parent, 900, 640, new FeatureVectorManagerView(),
-            "Feature Vectors", "Manager", 300.0, 400.0);
+    public FeatureVectorManagerPopoutController(FeatureVectorManagerService service, Scene appScene) {
+        this.service = Objects.requireNonNull(service, "service");
+        this.appScene = Objects.requireNonNull(appScene, "appScene");
+    }
 
-        this.view = (FeatureVectorManagerView) this.contentPane;
-        this.service = service;
+    /** Open (or focus) the pop-out window. */
+    public void show() {
+        if (stage != null && stage.isShowing()) {
+            stage.toFront();
+            stage.requestFocus();
+            return;
+        }
+        buildStageAndWire();
+        placeOnBestScreen();
+        restoreWindowPrefs();
+        stage.show();
+    }
 
+    /** Close the pop-out window (no service teardown). */
+    public void close() {
+        if (stage != null) stage.close();
+    }
+
+    public boolean isOpen() {
+        return stage != null && stage.isShowing();
+    }
+
+    /** Move to a secondary screen if available. */
+    public void sendToSecondScreen() {
+        if (stage == null) return;
+        Screen second = getSecondaryScreen();
+        if (second != null) moveToScreen(second);
+    }
+
+    // -------------------- internals --------------------
+
+    private void buildStageAndWire() {
+        view = new FeatureVectorManagerView();
+        view.setDetailLevel(FeatureVectorManagerView.DetailLevel.FULL);
+
+        // simple window toolbar (outside the View)
+        ToolBar tb = new ToolBar();
+        tb.setBackground(Background.EMPTY);
+        Button btnSecond = new Button("Second Screen");
+        btnSecond.setPrefWidth(BUTTON_PREF_WIDTH);
+        btnSecond.setOnAction(e -> sendToSecondScreen());
+        btnSecond.setDisable(Screen.getScreens().size() <= 1);
+        Button btnFull = new Button("Full Screen");
+        btnFull.setOnAction(e -> stage.setFullScreen(!stage.isFullScreen()));
+        btnFull.setPrefWidth(BUTTON_PREF_WIDTH);
+        tb.getItems().addAll(btnSecond, btnFull);
+
+        BorderPane root = new BorderPane();
+        root.setTop(tb);
+        root.setCenter(view);
+        root.setBackground(Background.EMPTY);
+
+        scene = new Scene(root, Color.BLACK);
+        
+        //Make everything pretty
+        String CSS = StyleResourceProvider.getResource("styles.css").toExternalForm();
+        scene.getStylesheets().add(CSS);
+        CSS = StyleResourceProvider.getResource("covalent.css").toExternalForm();
+        scene.getStylesheets().add(CSS);
+        CSS = StyleResourceProvider.getResource("dialogstyles.css").toExternalForm();
+        scene.getStylesheets().add(CSS);
+        
+        stage = new Stage(StageStyle.DECORATED);
+        stage.setTitle("Trinity — Feature Vectors");
+        stage.setMaximized(true);
+        stage.setScene(scene);
+
+        // make dialogs owned by this window; keep main Scene for event routing
+        Window owner = appScene.getWindow();
+        if (owner instanceof Stage ownerStage) {
+            stage.initOwner(ownerStage);
+        }
+
+        // wire view ↔ service exactly like FeatureVectorManagerPane
         wireViewToService();
+        installSearchWiring();
         installCollectionContextMenu();
         installTableContextMenu();
-        installSearchWiring(); 
+
+        stage.setOnCloseRequest(e -> {
+            saveWindowPrefs();
+            // release references that hold UI (service is shared and remains alive)
+            view = null;
+            scene.setRoot(new VBox()); // help GC
+            scene = null;
+            stage = null;
+        });
     }
 
-    @Override
-    public void maximize() {
-        this.scene.getRoot().fireEvent(new ApplicationEvent(
-            ApplicationEvent.POPOUT_FEATUREVECTOR_MANAGER, Boolean.TRUE));
-    }
-    
     private void wireViewToService() {
-        // Live-bind the table to service's displayed vectors
+        // live items list
         view.getTable().setItems(service.getDisplayedVectors());
+        view.getTable().itemsProperty().addListener((obs, o, n) ->
+            view.setStatus("Showing " + (n == null ? 0 : n.size()) + " vectors.")
+        );
+        view.getTable().itemsProperty().bind(Bindings.createObjectBinding(
+            service::getDisplayedVectors, service.getDisplayedVectors()));
 
-        // Live-bind the ComboBox to service's collection names
+        // collections list + two-way sync
         var combo = view.getCollectionSelector();
         combo.setItems(service.getCollectionNames());
         combo.setVisibleRowCount(15);
 
-        // Render "(unnamed)" for empty names, both in popup and button cell
-        combo.setCellFactory(listView -> new ListCell<>() {
+        combo.setCellFactory(lv -> new ListCell<>() {
             @Override protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
                 setText(empty ? null : (item == null || item.trim().isEmpty() ? "(unnamed)" : item));
@@ -88,26 +180,23 @@ public class FeatureVectorManagerPane extends LitPathPane {
             }
         });
 
-        // Two-way selection sync between view and service
         view.selectedCollectionProperty().addListener((obs, o, n) -> {
             if (n != null && !n.equals(service.activeCollectionNameProperty().get())) {
                 service.activeCollectionNameProperty().set(n);
             }
         });
         service.activeCollectionNameProperty().addListener((obs, o, n) -> {
-            if (n != null && !n.equals(view.getSelectedCollection())) {
+            if (n != null && null != view && !n.equals(view.getSelectedCollection())) {
                 combo.getSelectionModel().select(n);
             }
         });
-
-        // If names list changes and no selection, select the first
         service.getCollectionNames().addListener((ListChangeListener<String>) c -> {
             if (combo.getSelectionModel().isEmpty() && !service.getCollectionNames().isEmpty()) {
                 combo.getSelectionModel().select(service.getCollectionNames().get(0));
             }
         });
 
-        // Map sampling text to enum
+        // sampling mapping
         view.samplingModeProperty().addListener((obs, o, s) -> {
             if (s == null) return;
             FeatureVectorManagerService.SamplingMode mode = switch (s) {
@@ -120,27 +209,17 @@ public class FeatureVectorManagerPane extends LitPathPane {
                 service.samplingModeProperty().set(mode);
             }
         });
-
-        // Keep bottom status roughly in sync with rows shown
-        view.getTable().itemsProperty().addListener((obs, o, n) -> {
-            view.setStatus("Showing " + (n == null ? 0 : n.size()) + " vectors.");
-        });
-        view.getTable().itemsProperty().bind(Bindings.createObjectBinding(
-            () -> service.getDisplayedVectors(), service.getDisplayedVectors()));
     }
 
-    /** Wire the header Search TextField to the service text filter (with debounce). */
+    /** Debounced search → service.setTextFilter; Enter applies; Esc clears. */
     private void installSearchWiring() {
         TextField tf = view.getSearchField();
 
-        // init debounce timer (~200ms after last keypress)
-        searchDebounce = new javafx.animation.PauseTransition(javafx.util.Duration.millis(200));
+        searchDebounce = new PauseTransition(javafx.util.Duration.millis(200));
         searchDebounce.setOnFinished(e -> service.setTextFilter(tf.getText()));
 
-        // typing -> debounce -> set filter
         tf.textProperty().addListener((obs, o, n) -> searchDebounce.playFromStart());
 
-        // ENTER applies immediately, ESC clears
         tf.addEventFilter(KeyEvent.KEY_PRESSED, e -> {
             if (e.getCode() == KeyCode.ENTER) {
                 searchDebounce.stop();
@@ -154,14 +233,15 @@ public class FeatureVectorManagerPane extends LitPathPane {
             }
         });
 
-        // Also update placeholder status text if you want visual feedback (optional)
         service.textFilterProperty().addListener((obs, o, n) -> {
             boolean active = n != null && !n.isBlank();
-            view.setStatus(active ? "Showing filtered vectors." : "Showing " + service.getDisplayedVectors().size() + " vectors.");
+            view.setStatus(active
+                ? "Showing filtered vectors."
+                : "Showing " + service.getDisplayedVectors().size() + " vectors.");
         });
     }
 
-    // ---------------- Context Menu: Collections ----------------
+    // ---- collection context menu (rename, duplicate, delete, merge, export, apply) ----
 
     private void installCollectionContextMenu() {
         ComboBox<String> combo = view.getCollectionSelector();
@@ -174,8 +254,8 @@ public class FeatureVectorManagerPane extends LitPathPane {
             TextInputDialog dlg = new TextInputDialog(current);
             dlg.setHeaderText("Rename Collection");
             dlg.setContentText("New name:");
-            dlg.getEditor().setText(current);
             dlg.getDialogPane().setPadding(new Insets(10));
+            dlg.initOwner(stage);
             dlg.showAndWait().ifPresent(newName -> {
                 if (newName != null && !newName.trim().isEmpty()) {
                     service.renameCollection(current, newName.trim());
@@ -191,6 +271,7 @@ public class FeatureVectorManagerPane extends LitPathPane {
             dlg.setHeaderText("Duplicate Collection");
             dlg.setContentText("New name:");
             dlg.getDialogPane().setPadding(new Insets(10));
+            dlg.initOwner(stage);
             dlg.showAndWait().ifPresent(proposed -> service.duplicateCollection(current, proposed));
         });
 
@@ -199,9 +280,10 @@ public class FeatureVectorManagerPane extends LitPathPane {
             String current = service.activeCollectionNameProperty().get();
             if (current == null) return;
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
-                    "Delete collection \"" + current + "\"?\nThis cannot be undone.",
-                    ButtonType.OK, ButtonType.CANCEL);
+                "Delete collection \"" + current + "\"?\nThis cannot be undone.",
+                ButtonType.OK, ButtonType.CANCEL);
             alert.setHeaderText("Delete Collection");
+            alert.initOwner(stage);
             alert.showAndWait().ifPresent(btn -> {
                 if (btn == ButtonType.OK) service.deleteCollection(current);
             });
@@ -212,8 +294,8 @@ public class FeatureVectorManagerPane extends LitPathPane {
             String current = service.activeCollectionNameProperty().get();
             if (current == null) return;
             List<String> options = service.getCollectionNames().stream()
-                    .filter(n -> !Objects.equals(n, current))
-                    .collect(Collectors.toList());
+                .filter(n -> !Objects.equals(n, current))
+                .collect(Collectors.toList());
             if (options.isEmpty()) {
                 info("No other collections to merge into.");
                 return;
@@ -222,11 +304,13 @@ public class FeatureVectorManagerPane extends LitPathPane {
             chooser.setHeaderText("Merge \"" + current + "\" into…");
             chooser.setContentText("Target collection:");
             chooser.getDialogPane().setPadding(new Insets(10));
+            chooser.initOwner(stage);
             chooser.showAndWait().ifPresent(target -> {
                 Alert dedup = new Alert(Alert.AlertType.CONFIRMATION,
-                        "De-duplicate by entityId while merging?",
-                        ButtonType.YES, ButtonType.NO, ButtonType.CANCEL);
+                    "De-duplicate by entityId while merging?",
+                    ButtonType.YES, ButtonType.NO, ButtonType.CANCEL);
                 dedup.setHeaderText("Merge Options");
+                dedup.initOwner(stage);
                 dedup.showAndWait().ifPresent(resp -> {
                     if (resp == ButtonType.CANCEL) return;
                     boolean dd = (resp == ButtonType.YES);
@@ -242,7 +326,6 @@ public class FeatureVectorManagerPane extends LitPathPane {
         miExportCsv.setOnAction(e -> exportCollection(FeatureVectorManagerService.ExportFormat.CSV));
         export.getItems().addAll(miExportJson, miExportCsv);
 
-        // Apply submenu (active collection)
         Menu applyMenu = new Menu("Apply to workspace");
         MenuItem miApplyAppend = new MenuItem("Apply (append)");
         miApplyAppend.setOnAction(e -> service.applyActiveToWorkspace(false));
@@ -251,7 +334,7 @@ public class FeatureVectorManagerPane extends LitPathPane {
         applyMenu.getItems().addAll(miApplyAppend, miApplyReplace);
 
         ctx.getItems().addAll(miRename, miDuplicate, miDelete, new SeparatorMenuItem(),
-                miMergeInto, export, new SeparatorMenuItem(), applyMenu);
+            miMergeInto, export, new SeparatorMenuItem(), applyMenu);
 
         combo.addEventHandler(ContextMenuEvent.CONTEXT_MENU_REQUESTED, e -> {
             if (!ctx.isShowing()) ctx.show(combo, e.getScreenX(), e.getScreenY());
@@ -269,7 +352,7 @@ public class FeatureVectorManagerPane extends LitPathPane {
             new FileChooser.ExtensionFilter("CSV", "*.csv"),
             new FileChooser.ExtensionFilter("All Files", "*.*")
         );
-        File file = fc.showSaveDialog(getScene().getWindow());
+        File file = fc.showSaveDialog(stage);
         if (file != null) {
             try {
                 service.exportCollection(current, file, fmt);
@@ -280,7 +363,7 @@ public class FeatureVectorManagerPane extends LitPathPane {
         }
     }
 
-    // ---------------- Context Menu: Vectors (table) ----------------
+    // ---- table context menu (remove, copy, bulk edit, locate, apply) ----
 
     private void installTableContextMenu() {
         TableView<FeatureVector> table = view.getTable();
@@ -302,6 +385,7 @@ public class FeatureVectorManagerPane extends LitPathPane {
             dlg.setHeaderText("Copy Selected to Collection");
             dlg.setContentText("Target name (existing or new):");
             dlg.getDialogPane().setPadding(new Insets(10));
+            dlg.initOwner(stage);
             dlg.showAndWait().ifPresent(target -> {
                 if (target != null && !target.trim().isEmpty()) {
                     service.copyToCollection(sel, target.trim());
@@ -317,6 +401,7 @@ public class FeatureVectorManagerPane extends LitPathPane {
             dlg.setHeaderText("Bulk Set Label");
             dlg.setContentText("New label:");
             dlg.getDialogPane().setPadding(new Insets(10));
+            dlg.initOwner(stage);
             dlg.showAndWait().ifPresent(lbl -> {
                 if (lbl != null) service.bulkSetLabelInActive(sel, lbl);
             });
@@ -337,43 +422,31 @@ public class FeatureVectorManagerPane extends LitPathPane {
             ta.setWrapText(true);
             dlg.getDialogPane().setContent(ta);
             dlg.getDialogPane().setPadding(new Insets(10));
+            dlg.initOwner(stage);
 
-            dlg.setResultConverter(btn -> {
-                if (btn == ButtonType.OK) {
-                    return parseKeyValues(ta.getText());
-                }
-                return null;
-            });
-
-            Optional<Map<String, String>> res = dlg.showAndWait();
-            res.ifPresent(kv -> {
-                if (!kv.isEmpty()) service.bulkEditMetadataInActive(sel, kv);
-            });
+            dlg.setResultConverter(btn -> btn == ButtonType.OK ? parseKeyValues(ta.getText()) : null);
+            dlg.showAndWait().ifPresent(kv -> { if (!kv.isEmpty()) service.bulkEditMetadataInActive(sel, kv); });
         });
 
         MenuItem miLocate = new MenuItem("Locate in 3D");
         miLocate.setOnAction(e -> {
             var sel = table.getSelectionModel().getSelectedItems();
             if (sel == null || sel.isEmpty()) return;
-            sel.forEach(fv ->
-                getScene().getRoot().fireEvent(new FeatureVectorEvent(FeatureVectorEvent.LOCATE_FEATURE_VECTOR, fv))
-            );
+            sel.forEach(fv -> appScene.getRoot().fireEvent(
+                new FeatureVectorEvent(FeatureVectorEvent.LOCATE_FEATURE_VECTOR, fv)
+            ));
         });
 
-        // Apply submenu — uses selection if present, else whole active collection
         Menu applyMenu = new Menu("Apply to workspace");
-
         MenuItem miApplyAppend = new MenuItem("Apply (append)");
         miApplyAppend.setOnAction(e -> applySelectionOrActive(false));
-
         MenuItem miApplyReplace = new MenuItem("Apply (replace)");
         miApplyReplace.setOnAction(e -> applySelectionOrActive(true));
-
         applyMenu.getItems().addAll(miApplyAppend, miApplyReplace);
 
         ctx.getItems().addAll(miRemoveSel, miCopyTo, new SeparatorMenuItem(),
-                miEditLabel, miEditMeta, new SeparatorMenuItem(),
-                miLocate, applyMenu);
+            miEditLabel, miEditMeta, new SeparatorMenuItem(),
+            miLocate, applyMenu);
 
         table.addEventHandler(ContextMenuEvent.CONTEXT_MENU_REQUESTED, e -> {
             if (!ctx.isShowing()) ctx.show(table, e.getScreenX(), e.getScreenY());
@@ -381,11 +454,7 @@ public class FeatureVectorManagerPane extends LitPathPane {
         });
     }
 
-    /**
-     * If there is a non-empty selection in the table, apply only those vectors to the workspace.
-     * Otherwise, fall back to applying the whole active collection via the service.
-     * @param replace true = replace in workspace, false = append
-     */
+    /** Selection-aware apply: if selection present, fire NEW_FEATURE_COLLECTION to main scene; else use service. */
     private void applySelectionOrActive(boolean replace) {
         TableView<FeatureVector> table = view.getTable();
         List<FeatureVector> sel = new ArrayList<>(table.getSelectionModel().getSelectedItems());
@@ -395,16 +464,64 @@ public class FeatureVectorManagerPane extends LitPathPane {
             fc.setFeatures(sel);
             FeatureVectorEvent evt =
                 new FeatureVectorEvent(FeatureVectorEvent.NEW_FEATURE_COLLECTION, fc,
-                        FeatureVectorManagerService.MANAGER_APPLY_TAG);
+                    FeatureVectorManagerService.MANAGER_APPLY_TAG);
             evt.clearExisting = replace;
-
-            getScene().getRoot().fireEvent(evt);
+            appScene.getRoot().fireEvent(evt);
         } else {
             service.applyActiveToWorkspace(replace);
         }
     }
 
-    // ---------------- Helpers ----------------
+    // -------------------- window placement & prefs --------------------
+
+    private void placeOnBestScreen() {
+        Screen target = pickBestScreen();
+        moveToScreen(target);
+    }
+
+    private void moveToScreen(Screen screen) {
+        var b = screen.getVisualBounds();
+        stage.setX(b.getMinX() + 40);
+        stage.setY(b.getMinY() + 40);
+        if (!stage.isShowing()) {
+            stage.setWidth(Math.min(1200, b.getWidth() - 80));
+            stage.setHeight(Math.min(900, b.getHeight() - 80));
+        }
+    }
+
+    private static Screen pickBestScreen() {
+        var all = Screen.getScreens();
+        if (all.size() <= 1) return Screen.getPrimary();
+        for (Screen s : all) if (!s.equals(Screen.getPrimary())) return s;
+        return Screen.getPrimary();
+    }
+
+    private static Screen getSecondaryScreen() {
+        for (Screen s : Screen.getScreens()) if (!s.equals(Screen.getPrimary())) return s;
+        return null;
+    }
+
+    private void saveWindowPrefs() {
+        prefs.putDouble("fv_pop_x", stage.getX());
+        prefs.putDouble("fv_pop_y", stage.getY());
+        prefs.putDouble("fv_pop_w", stage.getWidth());
+        prefs.putDouble("fv_pop_h", stage.getHeight());
+        prefs.putBoolean("fv_pop_fs", stage.isFullScreen());
+    }
+
+    private void restoreWindowPrefs() {
+        double w = prefs.getDouble("fv_pop_w", -1);
+        double h = prefs.getDouble("fv_pop_h", -1);
+        double x = prefs.getDouble("fv_pop_x", Double.NaN);
+        double y = prefs.getDouble("fv_pop_y", Double.NaN);
+        boolean fs = prefs.getBoolean("fv_pop_fs", false);
+
+        if (w > 0 && h > 0) { stage.setWidth(w); stage.setHeight(h); }
+        if (!Double.isNaN(x) && !Double.isNaN(y)) { stage.setX(x); stage.setY(y); }
+        stage.setFullScreen(fs);
+    }
+
+    // -------------------- small utils --------------------
 
     private static String safeFilename(String s) {
         if (s == null) return "collection";
@@ -433,16 +550,14 @@ public class FeatureVectorManagerPane extends LitPathPane {
     private void info(String msg) {
         Alert a = new Alert(Alert.AlertType.INFORMATION, msg, ButtonType.OK);
         a.setHeaderText(null);
-        a.showAndWait();
-    }
-    private void error(String msg) {
-        Alert a = new Alert(Alert.AlertType.ERROR, msg, ButtonType.OK);
-        a.setHeaderText("Error");
+        a.initOwner(stage);
         a.showAndWait();
     }
 
-    // Convenience for tests / external triggers
-    public void applyActiveToWorkspace() {
-        service.applyActiveToWorkspace(false);
+    private void error(String msg) {
+        Alert a = new Alert(Alert.AlertType.ERROR, msg, ButtonType.OK);
+        a.setHeaderText("Error");
+        a.initOwner(stage);
+        a.showAndWait();
     }
 }

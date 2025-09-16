@@ -1,21 +1,48 @@
 package edu.jhuapl.trinity.javafx.components;
 
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
-import javafx.beans.property.*;
 import javafx.collections.FXCollections;
 import javafx.collections.ListChangeListener;
 import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
-import javafx.scene.control.*;
-import javafx.scene.layout.*;
 import javafx.scene.paint.Color;
-
 import java.util.Collection;
 import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.ReadOnlyStringWrapper;
+import javafx.beans.property.SimpleObjectProperty;
+import javafx.beans.property.SimpleStringProperty;
+import javafx.beans.property.StringProperty;
+import javafx.scene.control.ChoiceBox;
+import javafx.scene.control.ComboBox;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.Label;
+import javafx.scene.control.Menu;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.ProgressBar;
+import javafx.scene.control.SelectionMode;
+import javafx.scene.control.TableColumn;
+import javafx.scene.control.TableView;
+import javafx.scene.control.TextArea;
+import javafx.scene.control.TextField;
+import javafx.scene.control.TitledPane;
+import javafx.scene.control.Tooltip;
+import javafx.scene.layout.Background;
+import javafx.scene.layout.BackgroundFill;
+import javafx.scene.layout.Border;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.BorderStroke;
+import javafx.scene.layout.BorderStrokeStyle;
+import javafx.scene.layout.BorderWidths;
+import javafx.scene.layout.CornerRadii;
+import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
+import javafx.scene.layout.VBox;
 
 /**
  * FeatureVectorManagerView
@@ -48,10 +75,12 @@ public class FeatureVectorManagerView extends BorderPane {
     private final TableColumn<FeatureVector, String> colIndex = new TableColumn<>("#");
     private final TableColumn<FeatureVector, String> colLabel = new TableColumn<>("Label");
     private final TableColumn<FeatureVector, String> colDim = new TableColumn<>("Dim");
-    private final TableColumn<FeatureVector, String> colPreview = new TableColumn<>("Preview");
+    private final TableColumn<FeatureVector, String> colPreview = new TableColumn<>("Data Preview");
     private final TableColumn<FeatureVector, String> colScore = new TableColumn<>("Score");
     private final TableColumn<FeatureVector, String> colPfa = new TableColumn<>("PFA");
     private final TableColumn<FeatureVector, String> colLayer = new TableColumn<>("Layer");
+    private final TableColumn<FeatureVector, String> colImageUrl = new TableColumn<>("Image URL");
+    private final TableColumn<FeatureVector, String> colText = new TableColumn<>("Text");
 
     private final ObservableList<FeatureVector> items = FXCollections.observableArrayList();
 
@@ -179,6 +208,8 @@ public class FeatureVectorManagerView extends BorderPane {
 
         colPreview.setCellValueFactory(cd -> new ReadOnlyStringWrapper(previewList(cd.getValue().getData(), 8)));
 
+        colImageUrl.setCellValueFactory(cd -> new ReadOnlyStringWrapper(cd.getValue().getImageURL().trim()));
+        colText.setCellValueFactory(cd -> new ReadOnlyStringWrapper(cd.getValue().getText().trim()));        
         colScore.setMinWidth(80);
         colScore.setCellValueFactory(cd -> new ReadOnlyStringWrapper(trim(cd.getValue().getScore())));
         colPfa.setMinWidth(70);
@@ -361,7 +392,8 @@ public class FeatureVectorManagerView extends BorderPane {
         if (level == DetailLevel.COMPACT) {
             table.getColumns().setAll(colIndex, colLabel, colDim, colPreview);
         } else {
-            table.getColumns().setAll(colIndex, colLabel, colDim, colPreview, colScore, colPfa, colLayer);
+            table.getColumns().setAll(colIndex, colLabel, colDim, colPreview, 
+                colScore, colPfa, colLayer, colImageUrl, colText);
         }
     }
 
