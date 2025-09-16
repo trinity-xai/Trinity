@@ -98,6 +98,7 @@ import java.util.List;
 import java.util.Map;
 
 import static edu.jhuapl.trinity.App.theConfig;
+import edu.jhuapl.trinity.javafx.components.panes.HypersurfaceControlsPane;
 import edu.jhuapl.trinity.javafx.controllers.FeatureVectorManagerPopoutController;
 
 /**
@@ -117,6 +118,7 @@ public class AppAsyncManager extends Task<Void> {
 
     Hyperspace3DPane hyperspace3DPane;
     Hypersurface3DPane hypersurface3DPane;
+    HypersurfaceControlsPane hypersurfaceControlsPane;
     ProjectorPane projectorPane;
     Projections3DPane projections3DPane;
     TrajectoryTrackerPane trajectoryTrackerPane;
@@ -599,6 +601,23 @@ public class AppAsyncManager extends Task<Void> {
             } else
                 fvPop.close();
         });
+        scene.addEventHandler(ApplicationEvent.SHOW_HYPERSPACE_CONTROLS, e -> {
+            if (null == hypersurfaceControlsPane) {
+                // Use the shared service so the view reflects mirrored events
+                hypersurfaceControlsPane = new HypersurfaceControlsPane(scene, desktopPane, hypersurface3DPane);
+            }
+            boolean show = (null != e.object && e.object instanceof Boolean) ? (boolean)e.object : true;
+            if(show)
+                if (!desktopPane.getChildren().contains(hypersurfaceControlsPane)) {
+                    desktopPane.getChildren().add(hypersurfaceControlsPane);
+                    hypersurfaceControlsPane.slideInPane();
+                } else {
+                    hypersurfaceControlsPane.show();
+                }
+            else
+                hypersurfaceControlsPane.close();
+        });
+        
         scene.addEventHandler(ApplicationEvent.AUTO_PROJECTION_MODE, e -> {
             boolean enabled = (boolean) e.object;
             if (enabled) {

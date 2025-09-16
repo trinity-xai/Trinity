@@ -46,6 +46,7 @@ public class ApplicationEvent extends Event {
     public static final EventType<ApplicationEvent> SHOW_STATISTICS_PANE = new EventType(ANY, "SHOW_STATISTICS_PANE");
     public static final EventType<ApplicationEvent> SHOW_FEATUREVECTOR_MANAGER = new EventType(ANY, "SHOW_FEATUREVECTOR_MANAGER");
     public static final EventType<ApplicationEvent> POPOUT_FEATUREVECTOR_MANAGER = new EventType(ANY, "POPOUT_FEATUREVECTOR_MANAGER");
+    public static final EventType<ApplicationEvent> SHOW_HYPERSPACE_CONTROLS = new EventType(ANY, "SHOW_HYPERSPACE_CONTROLS");
 
     public ApplicationEvent(EventType<? extends Event> eventType, Object object) {
         this(eventType);

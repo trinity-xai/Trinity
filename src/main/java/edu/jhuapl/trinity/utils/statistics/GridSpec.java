@@ -7,12 +7,12 @@ package edu.jhuapl.trinity.utils.statistics;
  * @author Sean Phillips
  */
 public final class GridSpec {
-    private final int binsX;
-    private final int binsY;
-    private final Double minX;
-    private final Double maxX;
-    private final Double minY;
-    private final Double maxY;
+    private int binsX;
+    private int binsY;
+    private Double minX;
+    private Double maxX;
+    private Double minY;
+    private Double maxY;
 
     /**
      * Create a GridSpec with automatic bounds.
@@ -49,4 +49,46 @@ public final class GridSpec {
     public Double getMaxX() { return maxX; }
     public Double getMinY() { return minY; }
     public Double getMaxY() { return maxY; }
+
+    /**
+     * @param binsX the binsX to set
+     */
+    public void setBinsX(int binsX) {
+        this.binsX = binsX;
+    }
+
+    /**
+     * @param binsY the binsY to set
+     */
+    public void setBinsY(int binsY) {
+        this.binsY = binsY;
+    }
+
+    /**
+     * @param minX the minX to set
+     */
+    public void setMinX(Double minX) {
+        this.minX = minX;
+    }
+
+    /**
+     * @param maxX the maxX to set
+     */
+    public void setMaxX(Double maxX) {
+        this.maxX = maxX;
+    }
+
+    /**
+     * @param minY the minY to set
+     */
+    public void setMinY(Double minY) {
+        this.minY = minY;
+    }
+
+    /**
+     * @param maxY the maxY to set
+     */
+    public void setMaxY(Double maxY) {
+        this.maxY = maxY;
+    }
 }

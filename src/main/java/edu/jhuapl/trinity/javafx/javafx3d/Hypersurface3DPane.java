@@ -1,7 +1,6 @@
 package edu.jhuapl.trinity.javafx.javafx3d;
 
 import edu.jhuapl.trinity.App;
-import edu.jhuapl.trinity.css.StyleResourceProvider;
 import edu.jhuapl.trinity.data.CoordinateSet;
 import edu.jhuapl.trinity.data.files.FeatureCollectionFile;
 import edu.jhuapl.trinity.data.messages.bci.SemanticMap;
@@ -74,7 +73,6 @@ import javafx.scene.control.RadioButton;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.TitledPane;
-import javafx.scene.control.ToggleButton;
 import javafx.scene.control.ToggleGroup;
 import javafx.scene.effect.Glow;
 import javafx.scene.image.Image;
@@ -454,6 +452,13 @@ public class Hypersurface3DPane extends StackPane
         getChildren().clear();
         getChildren().addAll(bp, labelGroup);
 
+        
+        MenuItem showControlsItem = new MenuItem("Hypersurface Controls");
+        showControlsItem.setOnAction(e -> {
+            scene.getRoot().fireEvent(new ApplicationEvent(
+                ApplicationEvent.SHOW_HYPERSPACE_CONTROLS, Boolean.TRUE));
+        });
+                
         MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         copyAsImageItem.setOnAction((ActionEvent e) -> {
             Clipboard clipboard = Clipboard.getSystemClipboard();
@@ -568,8 +573,8 @@ public class Hypersurface3DPane extends StackPane
 
         MenuItem resetViewItem = new MenuItem("Reset View");
         resetViewItem.setOnAction(e -> resetView(1000, false));
-        ContextMenu cm = new ContextMenu(copyAsImageItem, saveSnapshotItem,
-            unrollHyperspaceItem, analysisMenu,
+        ContextMenu cm = new ContextMenu(showControlsItem, 
+            copyAsImageItem, saveSnapshotItem, unrollHyperspaceItem, analysisMenu,
             enableHoverItem, surfaceChartsItem, showDataMarkersItem, enableCrosshairsItem,
             updateAllItem, clearDataItem, resetViewItem);
         cm.setAutoFix(true); cm.setAutoHide(true); cm.setHideOnEscape(true); cm.setOpacity(0.85);
@@ -1598,7 +1603,7 @@ private Number vertToHeight(Vert3D p) {
     @Override public void addShapleyVector(ShapleyVector shapleyVector) { shapleyVectors.add(shapleyVector); }
     @Override public void clearShapleyVectors() { shapleyVectors.clear(); }
 
-    // ================= NEW: helpers for processing pipeline =================
+    // ================= helpers for processing pipeline =================
     private static List<List<Double>> deepCopyGrid(List<List<Double>> src) {
         List<List<Double>> out = new ArrayList<>(src.size());
         for (List<Double> row : src) out.add(new ArrayList<>(row));
@@ -1625,5 +1630,4 @@ private Number vertToHeight(Vert3D p) {
         zWidthSpinner.getValueFactory().setValue(zWidth);
         updateTheMesh(); updateView(true);
     }
-    // =========================================================================
 }

@@ -28,7 +28,7 @@ public class StatisticEngine {
         COSINE_TO_MEAN,
         PC1_PROJECTION,
         METRIC_DISTANCE_TO_MEAN,
-        COMPONENT_AT_DIMENSION   // NEW: marginal of a single component across vectors
+        COMPONENT_AT_DIMENSION   //marginal of a single component across vectors
     }
 
     /**
