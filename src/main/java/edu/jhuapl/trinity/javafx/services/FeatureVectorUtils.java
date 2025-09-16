@@ -269,11 +269,15 @@ public final class FeatureVectorUtils {
         }
     }
 
-    private static String escapeCsv(String s) {
+    public static String escapeCsv(String s) {
         if (s == null) return "";
         if (s.contains(",") || s.contains("\"") || s.contains("\n")) {
             return "\"" + s.replace("\"", "\"\"") + "\"";
         }
         return s;
     }
+    public static String cleanName(String s) {
+        if (s == null) return "";
+        return s.trim();
+    }    
 }

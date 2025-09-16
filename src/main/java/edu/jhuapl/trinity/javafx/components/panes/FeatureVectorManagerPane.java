@@ -5,17 +5,19 @@ import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.javafx.components.FeatureVectorManagerView;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.services.FeatureVectorManagerService;
-import edu.jhuapl.trinity.javafx.services.FeatureVectorUtils;
 import javafx.beans.binding.Bindings;
 import javafx.collections.ListChangeListener;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.*;
 import javafx.scene.input.ContextMenuEvent;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Pane;
 import javafx.stage.FileChooser;
 
 import java.io.File;
+import java.time.Duration;
 import java.util.*;
 import java.util.stream.Collectors;
 
@@ -23,6 +25,9 @@ public class FeatureVectorManagerPane extends LitPathPane {
 
     private final FeatureVectorManagerView view;
     private final FeatureVectorManagerService service;
+
+    // simple debounce for search typing
+    private javafx.animation.PauseTransition searchDebounce;
 
     public FeatureVectorManagerPane(Scene scene, Pane parent, FeatureVectorManagerService service) {
         super(scene, parent, 900, 640, new FeatureVectorManagerView(),
@@ -34,6 +39,7 @@ public class FeatureVectorManagerPane extends LitPathPane {
         wireViewToService();
         installCollectionContextMenu();
         installTableContextMenu();
+        installSearchWiring(); // <- hook the Search field
     }
 
     private void wireViewToService() {
@@ -98,6 +104,38 @@ public class FeatureVectorManagerPane extends LitPathPane {
         });
         view.getTable().itemsProperty().bind(Bindings.createObjectBinding(
             () -> service.getDisplayedVectors(), service.getDisplayedVectors()));
+    }
+
+    /** Wire the header Search TextField to the service text filter (with debounce). */
+    private void installSearchWiring() {
+        TextField tf = view.getSearchField();
+
+        // init debounce timer (~200ms after last keypress)
+        searchDebounce = new javafx.animation.PauseTransition(javafx.util.Duration.millis(200));
+        searchDebounce.setOnFinished(e -> service.setTextFilter(tf.getText()));
+
+        // typing -> debounce -> set filter
+        tf.textProperty().addListener((obs, o, n) -> searchDebounce.playFromStart());
+
+        // ENTER applies immediately, ESC clears
+        tf.addEventFilter(KeyEvent.KEY_PRESSED, e -> {
+            if (e.getCode() == KeyCode.ENTER) {
+                searchDebounce.stop();
+                service.setTextFilter(tf.getText());
+                e.consume();
+            } else if (e.getCode() == KeyCode.ESCAPE) {
+                tf.clear();
+                searchDebounce.stop();
+                service.setTextFilter("");
+                e.consume();
+            }
+        });
+
+        // Also update placeholder status text if you want visual feedback (optional)
+        service.textFilterProperty().addListener((obs, o, n) -> {
+            boolean active = n != null && !n.isBlank();
+            view.setStatus(active ? "Showing filtered vectors." : "Showing " + service.getDisplayedVectors().size() + " vectors.");
+        });
     }
 
     // ---------------- Context Menu: Collections ----------------
@@ -202,8 +240,7 @@ public class FeatureVectorManagerPane extends LitPathPane {
         String current = service.activeCollectionNameProperty().get();
         if (current == null) return;
         FileChooser fc = new FileChooser();
-        fc.setInitialFileName(FeatureVectorUtils.safeFilename(current)
-                + (fmt == FeatureVectorManagerService.ExportFormat.JSON ? ".json" : ".csv"));
+        fc.setInitialFileName(safeFilename(current) + (fmt == FeatureVectorManagerService.ExportFormat.JSON ? ".json" : ".csv"));
         fc.getExtensionFilters().setAll(
             new FileChooser.ExtensionFilter("JSON", "*.json"),
             new FileChooser.ExtensionFilter("CSV", "*.csv"),
@@ -280,7 +317,7 @@ public class FeatureVectorManagerPane extends LitPathPane {
 
             dlg.setResultConverter(btn -> {
                 if (btn == ButtonType.OK) {
-                    return FeatureVectorUtils.parseKeyValues(ta.getText());
+                    return parseKeyValues(ta.getText());
                 }
                 return null;
             });
@@ -331,8 +368,6 @@ public class FeatureVectorManagerPane extends LitPathPane {
         List<FeatureVector> sel = new ArrayList<>(table.getSelectionModel().getSelectedItems());
 
         if (!sel.isEmpty()) {
-            // Apply only the selected vectors by firing NEW_FEATURE_COLLECTION,
-            // tagged so AppAsyncManager does not mirror it back into the manager.
             FeatureCollection fc = new FeatureCollection();
             fc.setFeatures(sel);
             FeatureVectorEvent evt =
@@ -342,12 +377,35 @@ public class FeatureVectorManagerPane extends LitPathPane {
 
             getScene().getRoot().fireEvent(evt);
         } else {
-            // No selection -> use active collection pathway
             service.applyActiveToWorkspace(replace);
         }
     }
 
     // ---------------- Helpers ----------------
+
+    private static String safeFilename(String s) {
+        if (s == null) return "collection";
+        return s.replaceAll("[\\\\/:*?\"<>|]", "_");
+    }
+
+    private static Map<String, String> parseKeyValues(String text) {
+        Map<String, String> map = new LinkedHashMap<>();
+        if (text == null || text.isBlank()) return map;
+        String[] lines = text.split("\\R");
+        for (String line : lines) {
+            String ln = line.trim();
+            if (ln.isEmpty()) continue;
+            int eq = ln.indexOf('=');
+            if (eq < 0) {
+                map.put(ln, "");
+            } else {
+                String k = ln.substring(0, eq).trim();
+                String v = ln.substring(eq + 1).trim();
+                if (!k.isEmpty()) map.put(k, v);
+            }
+        }
+        return map;
+    }
 
     private void info(String msg) {
         Alert a = new Alert(Alert.AlertType.INFORMATION, msg, ButtonType.OK);

@@ -14,13 +14,18 @@ import javafx.collections.ObservableList;
 import javafx.event.EventTarget;
 import javafx.scene.Node;
 import javafx.scene.Scene;
-
 import java.io.File;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.LinkedHashSet;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 /**
- * In-memory implementation; keeps a map of named collections and exposes a sampled "displayed" list.
+ * In-memory implementation; keeps a map of named collections and exposes a sampled/filtered "displayed" list.
  */
 public class FeatureVectorManagerServiceImpl implements FeatureVectorManagerService {
 
@@ -29,27 +34,30 @@ public class FeatureVectorManagerServiceImpl implements FeatureVectorManagerServ
     private final StringProperty activeCollectionName = new SimpleStringProperty();
     private final ObservableList<FeatureVector> displayedVectors = FXCollections.observableArrayList();
     private final ObjectProperty<SamplingMode> samplingMode = new SimpleObjectProperty<>(SamplingMode.ALL);
+    private final StringProperty textFilter = new SimpleStringProperty("");
 
     // we store the target as Node or Scene to be able to call fireEvent
     private Node eventNode;
     private Scene eventScene;
 
     public FeatureVectorManagerServiceImpl(InMemoryFeatureVectorRepository ignoredRepo) {
-        // keep displayedVectors in sync whenever the active name or sampling mode changes
+        // keep displayedVectors in sync whenever active name, sampling mode, or filter changes
         activeCollectionName.addListener((obs, o, n) -> refreshDisplayedFromActive());
         samplingMode.addListener((obs, o, n) -> refreshDisplayedFromActive());
+        textFilter.addListener((obs, o, n) -> refreshDisplayedFromActive());
     }
 
     @Override public ObservableList<String> getCollectionNames() { return collectionNames; }
     @Override public StringProperty activeCollectionNameProperty() { return activeCollectionName; }
     @Override public ObservableList<FeatureVector> getDisplayedVectors() { return displayedVectors; }
     @Override public ObjectProperty<SamplingMode> samplingModeProperty() { return samplingMode; }
+    @Override public StringProperty textFilterProperty() { return textFilter; }
 
     @Override
     public void addCollection(String proposedName, List<FeatureVector> vectors) {
         if (vectors == null) vectors = List.of();
-        final String clean = FeatureVectorUtils.cleanCollectionName(proposedName);
-        final String name  = uniquify(clean);
+        final String clean = FeatureVectorUtils.cleanName(proposedName);
+        final String name = uniquify(clean);
         final List<FeatureVector> payload = FeatureVectorUtils.copyVectors(vectors);
 
         runFx(() -> {
@@ -63,20 +71,18 @@ public class FeatureVectorManagerServiceImpl implements FeatureVectorManagerServ
     @Override
     public void appendVectorsToActive(List<FeatureVector> vectors) {
         if (vectors == null || vectors.isEmpty()) return;
-        final List<FeatureVector> payload = FeatureVectorUtils.copyVectors(vectors);
         runFx(() -> {
             String name = ensureActiveCollection();
-            collections.computeIfAbsent(name, k -> new ArrayList<>()).addAll(payload);
+            collections.computeIfAbsent(name, k -> new ArrayList<>()).addAll(FeatureVectorUtils.copyVectors(vectors));
             refreshDisplayedFromActive();
         });
     }
 
     @Override
     public void replaceActiveVectors(List<FeatureVector> vectors) {
-        final List<FeatureVector> payload = FeatureVectorUtils.copyVectors(vectors == null ? List.of() : vectors);
         runFx(() -> {
             String name = ensureActiveCollection();
-            collections.put(name, payload);
+            collections.put(name, FeatureVectorUtils.copyVectors(vectors == null ? List.of() : vectors));
             refreshDisplayedFromActive();
         });
     }
@@ -84,7 +90,7 @@ public class FeatureVectorManagerServiceImpl implements FeatureVectorManagerServ
     @Override
     public void renameCollection(String oldName, String newName) {
         if (oldName == null || newName == null) return;
-        final String cleanNew = uniquify(FeatureVectorUtils.cleanCollectionName(newName));
+        final String cleanNew = uniquify(FeatureVectorUtils.cleanName(newName));
         runFx(() -> {
             List<FeatureVector> existing = collections.remove(oldName);
             if (existing == null) return;
@@ -103,8 +109,8 @@ public class FeatureVectorManagerServiceImpl implements FeatureVectorManagerServ
         if (sourceName == null) return null;
         List<FeatureVector> src = collections.get(sourceName);
         if (src == null) return null;
-        final String base = (proposedName == null || proposedName.isBlank()) ? ("Copy of " + sourceName) : proposedName;
-        final String newName = uniquify(FeatureVectorUtils.cleanCollectionName(base));
+        final String newName = uniquify(FeatureVectorUtils.cleanName(
+            (proposedName == null || proposedName.isBlank()) ? ("Copy of " + sourceName) : proposedName));
         final List<FeatureVector> payload = FeatureVectorUtils.copyVectors(src);
         runFx(() -> {
             collections.put(newName, payload);
@@ -122,7 +128,6 @@ public class FeatureVectorManagerServiceImpl implements FeatureVectorManagerServ
             collections.remove(name);
             collectionNames.remove(name);
             if (Objects.equals(activeCollectionName.get(), name)) {
-                // pick next or previous if any
                 if (!collectionNames.isEmpty()) {
                     activeCollectionName.set(collectionNames.get(0));
                 } else {
@@ -185,7 +190,6 @@ public class FeatureVectorManagerServiceImpl implements FeatureVectorManagerServ
             if (name == null) return;
             List<FeatureVector> list = collections.get(name);
             if (list == null) return;
-            // remove by identity (entityId preferred), fallback equals
             Set<String> ids = toRemove.stream()
                     .map(FeatureVector::getEntityId)
                     .filter(Objects::nonNull)
@@ -202,7 +206,6 @@ public class FeatureVectorManagerServiceImpl implements FeatureVectorManagerServ
     @Override
     public void copyToCollection(List<FeatureVector> toCopy, String targetCollection) {
         if (toCopy == null || toCopy.isEmpty() || targetCollection == null) return;
-        final List<FeatureVector> payload = FeatureVectorUtils.copyVectors(toCopy);
         runFx(() -> {
             String target = (collectionNames.contains(targetCollection))
                     ? targetCollection
@@ -210,7 +213,7 @@ public class FeatureVectorManagerServiceImpl implements FeatureVectorManagerServ
             collections.computeIfAbsent(target, k -> {
                 if (!collectionNames.contains(target)) collectionNames.add(target);
                 return new ArrayList<>();
-            }).addAll(payload);
+            }).addAll(FeatureVectorUtils.copyVectors(toCopy));
             refreshDisplayedFromActive();
         });
     }
@@ -268,10 +271,8 @@ public class FeatureVectorManagerServiceImpl implements FeatureVectorManagerServ
                 FeatureVectorEvent.NEW_FEATURE_COLLECTION,
                 fc
             );
-            // keep the “no-dup” tag so AppAsyncManager skips re-ingesting:
-            evt.object2 = MANAGER_APPLY_TAG;
-            // replace vs append:
-            evt.clearExisting = replace;
+            evt.object2 = MANAGER_APPLY_TAG;   // guard against re-mirroring
+            evt.clearExisting = replace;       // replace vs. append
 
             if (eventNode != null) eventNode.fireEvent(evt);
             else if (eventScene != null) eventScene.getRoot().fireEvent(evt);
@@ -293,18 +294,29 @@ public class FeatureVectorManagerServiceImpl implements FeatureVectorManagerServ
     }
 
     // ---------- internals ----------
+private void refreshDisplayedFromActive() {
+    String name = activeCollectionName.get();
+    List<FeatureVector> src = (name == null) ? List.of() : collections.getOrDefault(name, List.of());
 
-    private void refreshDisplayedFromActive() {
-        String name = activeCollectionName.get();
-        List<FeatureVector> src = (name == null) ? List.of() : collections.getOrDefault(name, List.of());
-        List<FeatureVector> sampled = FeatureVectorUtils.sample(src, samplingMode.get());
-        displayedVectors.setAll(sampled);
-    }
+    // normalize the query once
+    String q = edu.jhuapl.trinity.javafx.services.FeatureVectorUtils.normalize(textFilter.get());
 
-    /** Ensure the name is unique among current collections. */
+    // filter by label/text/metadata if query present
+    List<FeatureVector> filtered = (q == null || q.isEmpty())
+            ? src
+            : src.stream()
+                 .filter(fv -> edu.jhuapl.trinity.javafx.services.FeatureVectorUtils.matchesTextFilter(fv, q))
+                 .collect(java.util.stream.Collectors.toList());
+
+    // then apply sampling
+    List<FeatureVector> sampled =
+            edu.jhuapl.trinity.javafx.services.FeatureVectorUtils.applySampling(filtered, samplingMode.get());
+
+    displayedVectors.setAll(sampled);
+}
+
     private String uniquify(String base) {
-        String b = FeatureVectorUtils.cleanCollectionName(
-                (base == null || base.isBlank()) ? "Collection" : base);
+        String b = (base == null || base.isBlank()) ? "Collection" : base.trim();
         String name = b;
         int i = 2;
         while (collectionNames.contains(name)) {
@@ -313,7 +325,6 @@ public class FeatureVectorManagerServiceImpl implements FeatureVectorManagerServ
         return name;
     }
 
-    /** Make sure there is an active collection and return its name. */
     private String ensureActiveCollection() {
         String name = activeCollectionName.get();
         if (name == null) {

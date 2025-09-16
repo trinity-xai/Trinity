@@ -1,5 +1,6 @@
 package edu.jhuapl.trinity.javafx.services;
 
+import edu.jhuapl.trinity.data.messages.xai.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.StringProperty;
@@ -26,11 +27,17 @@ public interface FeatureVectorManagerService {
     /** Name of the currently active collection. */
     StringProperty activeCollectionNameProperty();
 
-    /** Live list of vectors to display (sampling applied). */
+    /** Live list of vectors to display (sampling + filters applied). */
     ObservableList<FeatureVector> getDisplayedVectors();
 
     /** Current sampling mode. */
     ObjectProperty<SamplingMode> samplingModeProperty();
+
+    /** Free-text filter across label/text/metadata (case-insensitive). */
+    StringProperty textFilterProperty();
+
+    /** Convenience setter for the text filter. */
+    default void setTextFilter(String text) { textFilterProperty().set(text == null ? "" : text); }
 
     /** Add a new collection (or replace existing if same name), selecting it active. */
     void addCollection(String proposedName, List<FeatureVector> vectors);
@@ -71,10 +78,8 @@ public interface FeatureVectorManagerService {
     /** Fire APPLY_ACTIVE_FEATUREVECTORS back to the app (scene root). */
     void applyActiveToWorkspace(boolean replace);
 
-    // Convenience default (append mode)
-    default void applyActiveToWorkspace() {
-        applyActiveToWorkspace(false);
-    }
+    // Convenience default
+    default void applyActiveToWorkspace() { applyActiveToWorkspace(false); }
 
     /** Optional: Where events should be fired (e.g., scene.getRoot()). */
     void setEventTarget(EventTarget target);
