@@ -1094,7 +1094,7 @@ public class Projections3DPane extends StackPane implements
             subScene.setFill(color);
         });
         this.scene.addEventHandler(HyperspaceEvent.ENABLE_HYPERSPACE_SKYBOX, e -> {
-            skybox.setVisible((Boolean) e.object);
+            if(null != skybox) skybox.setVisible((Boolean) e.object);
         });
 
         this.scene.addEventHandler(HyperspaceEvent.FACTOR_COORDINATES_GUI, e -> {

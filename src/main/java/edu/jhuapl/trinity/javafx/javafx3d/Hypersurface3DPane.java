@@ -19,6 +19,7 @@ import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.FactorAnalysisEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.events.HyperspaceEvent;
+import edu.jhuapl.trinity.javafx.events.HypersurfaceEvent;
 import edu.jhuapl.trinity.javafx.events.HypersurfaceGridEvent;
 import edu.jhuapl.trinity.javafx.events.ImageEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
@@ -50,7 +51,6 @@ import javafx.application.Platform;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
 import javafx.geometry.Point2D;
-import javafx.geometry.Pos;
 import javafx.scene.AmbientLight;
 import javafx.scene.Group;
 import javafx.scene.Node;
@@ -62,18 +62,12 @@ import javafx.scene.SnapshotParameters;
 import javafx.scene.SubScene;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
-import javafx.scene.control.CheckBox;
 import javafx.scene.control.CheckMenuItem;
-import javafx.scene.control.ColorPicker;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.DialogPane;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuItem;
-import javafx.scene.control.RadioButton;
-import javafx.scene.control.Spinner;
-import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.TitledPane;
-import javafx.scene.control.ToggleGroup;
 import javafx.scene.effect.Glow;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -88,7 +82,6 @@ import javafx.scene.input.MouseEvent;
 import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
@@ -121,7 +114,6 @@ import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.Function;
-import javafx.scene.control.ComboBox;
 import javafx.scene.control.Menu;
 
 /**
@@ -242,31 +234,25 @@ public class Hypersurface3DPane extends StackPane
     Text hoverText = new Text("Coordinates: ");
 
     public List<String> featureLabels = new ArrayList<>();
-    public Spinner xWidthSpinner, zWidthSpinner;
-    private ComboBox<HeightMode> heightModeCombo;
     public Scene scene;
     HashMap<Shape3D, Callout> shape3DToCalloutMap;
     public String imageryBasePath = "";
     SurfaceChartPane surfaceChartPane;
     public AmbientLight ambientLight;
     public PointLight pointLight;
-
-    // ================= NEW: Processing state & UI =================
-    private ComboBox<SurfaceUtils.Smoothing> smoothingCombo;
-    private Spinner<Integer> smoothingRadiusSpinner;
-    private Spinner<Double> gaussianSigmaSpinner;
-    private CheckBox enableSmoothingCheck;
-
-    private ComboBox<SurfaceUtils.Interpolation> interpCombo;
-    private SurfaceUtils.Interpolation interpMode = SurfaceUtils.Interpolation.NEAREST;
-
-    private CheckBox enableToneMapCheck;
-    private ComboBox<SurfaceUtils.ToneMap> toneMapCombo;
-    private Spinner<Double> toneParamSpinner; // k (TANH) or gamma (GAMMA)
-
     private List<List<Double>> originalGrid = new ArrayList<>();
-    // ==============================================================
 
+    // Event-driven state fields for settings previously set via controls
+    private HeightMode heightMode = HeightMode.RAW;
+    private boolean smoothingEnabled = false;
+    private SurfaceUtils.Smoothing smoothingMethod = SurfaceUtils.Smoothing.GAUSSIAN;
+    private int smoothingRadius = 2;
+    private double gaussianSigma = 1.0;
+    private SurfaceUtils.Interpolation interpMode = SurfaceUtils.Interpolation.NEAREST;
+    private boolean toneEnabled = false;
+    private SurfaceUtils.ToneMap toneOperator = SurfaceUtils.ToneMap.NONE;
+    private double toneParam = 2.0;    
+    
     public Hypersurface3DPane(Scene scene) {
         this.scene = scene;
         shape3DToCalloutMap = new HashMap<>();
@@ -338,8 +324,8 @@ public class Hypersurface3DPane extends StackPane
         pointLight.setTranslateY(camera.getTranslateY());
         pointLight.setTranslateZ(camera.getTranslateZ() + 500.0);
 
-        subScene.setOnMouseEntered(event -> subScene.requestFocus());
-        setOnMouseEntered(event -> subScene.requestFocus());
+//        subScene.setOnMouseEntered(event -> subScene.requestFocus());
+//        setOnMouseEntered(event -> subScene.requestFocus());
         subScene.setOnZoom(event -> {
             double modifier = 50.0;
             double modifierFactor = 0.1;
@@ -553,8 +539,8 @@ public class Hypersurface3DPane extends StackPane
             clearAll();
             xWidth = DEFAULT_XWIDTH;
             zWidth = DEFAULT_ZWIDTH;
-            xWidthSpinner.getValueFactory().setValue(xWidth);
-            zWidthSpinner.getValueFactory().setValue(zWidth);
+//            xWidthSpinner.getValueFactory().setValue(xWidth);
+//            zWidthSpinner.getValueFactory().setValue(zWidth);
             generateRandos(xWidth, zWidth, yScale);
             originalGrid = deepCopyGrid(dataGrid);
             updateTheMesh();
@@ -692,16 +678,15 @@ public class Hypersurface3DPane extends StackPane
     }
 
     private void applySurfaceGridToHypersurface(List<List<Double>> grid) {
-        HeightMode mode = heightModeCombo.getValue();
         double userScale = 1.0; // future: user control
-        List<List<Double>> scaled = DataUtils.normalizeAndScale(grid, mode, userScale);
+        List<List<Double>> scaled = DataUtils.normalizeAndScale(grid, heightMode, userScale);
         dataGrid.clear();
         dataGrid.addAll(scaled);
         originalGrid = deepCopyGrid(dataGrid); // NEW
         xWidth = dataGrid.get(0).size();
         zWidth = dataGrid.size();
-        xWidthSpinner.getValueFactory().setValue(xWidth);
-        zWidthSpinner.getValueFactory().setValue(zWidth);
+//        xWidthSpinner.getValueFactory().setValue(xWidth);
+//        zWidthSpinner.getValueFactory().setValue(zWidth);
         rebuildProcessedGridAndRefresh(); // NEW: run pipeline
     }
 
@@ -713,8 +698,8 @@ public class Hypersurface3DPane extends StackPane
         originalGrid = deepCopyGrid(dataGrid); // NEW
         xWidth = dataGrid.get(0).size();
         zWidth = dataGrid.size();
-        xWidthSpinner.getValueFactory().setValue(xWidth);
-        zWidthSpinner.getValueFactory().setValue(zWidth);
+//        xWidthSpinner.getValueFactory().setValue(xWidth);
+//        zWidthSpinner.getValueFactory().setValue(zWidth);
         rebuildProcessedGridAndRefresh(); // NEW
     }
 
@@ -737,8 +722,8 @@ public class Hypersurface3DPane extends StackPane
         originalGrid = deepCopyGrid(dataGrid); // NEW
         xWidth = dataGrid.get(0).size();
         zWidth = dataGrid.size();
-        xWidthSpinner.getValueFactory().setValue(xWidth);
-        zWidthSpinner.getValueFactory().setValue(zWidth);
+//        xWidthSpinner.getValueFactory().setValue(xWidth);
+//        zWidthSpinner.getValueFactory().setValue(zWidth);
         rebuildProcessedGridAndRefresh(); // NEW
     }
 
@@ -760,8 +745,8 @@ public class Hypersurface3DPane extends StackPane
         originalGrid = deepCopyGrid(dataGrid); // NEW
         xWidth = dataGrid.get(0).size();
         zWidth = dataGrid.size();
-        xWidthSpinner.getValueFactory().setValue(xWidth);
-        zWidthSpinner.getValueFactory().setValue(zWidth);
+//        xWidthSpinner.getValueFactory().setValue(xWidth);
+//        zWidthSpinner.getValueFactory().setValue(zWidth);
         rebuildProcessedGridAndRefresh(); // NEW
     }
 
@@ -1167,100 +1152,78 @@ private Number vertToHeight(Vert3D p) {
         });
 
         extrasGroup.getChildren().addAll(eastPole, eastKnob, westPole, westKnob, glowLineBox);
-
-        Spinner yScaleSpinner = new Spinner(new SpinnerValueFactory.DoubleSpinnerValueFactory(0.0, 500.0, yScale, 1.00));
-        yScaleSpinner.setEditable(true);
-        yScaleSpinner.getValueFactory().valueProperty().addListener(e -> {
-            yScale = ((Double) yScaleSpinner.getValue()).floatValue();
-            surfPlot.setFunctionScale(yScale);
-            updateTheMesh();
-        });
-        yScaleSpinner.setOnKeyTyped(e -> {
-            if (e.getCode() == KeyCode.ENTER) {
-                yScale = ((Double) yScaleSpinner.getValue()).floatValue();
-                surfPlot.setFunctionScale(yScale);
-                updateTheMesh();
-            }
-        });
-        yScaleSpinner.setPrefWidth(125);
-
-        Spinner surfScaleSpinner = new Spinner(new SpinnerValueFactory.DoubleSpinnerValueFactory(0.0, 100.0, surfScale, 1.0));
-        surfScaleSpinner.setEditable(true);
-        surfScaleSpinner.valueProperty().addListener(e -> {
-            surfScale = ((Double) surfScaleSpinner.getValue()).floatValue();
-            surfPlot.setRangeX(xWidth * surfScale);
-            surfPlot.setRangeY(zWidth * surfScale);
-            updateTheMesh();
-            surfPlot.setTranslateX(-(xWidth * surfScale) / 2.0);
-            surfPlot.setTranslateZ(-(zWidth * surfScale) / 2.0);
-        });
-        surfScaleSpinner.setPrefWidth(125);
-
-        xWidthSpinner = new Spinner(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 4000, 200, 4));
-        xWidthSpinner.setEditable(true);
-        xWidthSpinner.valueProperty().addListener(e -> {
-            xWidth = ((int) xWidthSpinner.getValue());
-            updateTheMesh();
-            surfPlot.setTranslateX(-(xWidth * surfScale) / 2.0);
-            surfPlot.setTranslateZ(-(zWidth * surfScale) / 2.0);
-        });
-        xWidthSpinner.setPrefWidth(125);
-
-        zWidthSpinner = new Spinner(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 4000, 200, 10));
-        zWidthSpinner.setEditable(true);
-        zWidthSpinner.valueProperty().addListener(e -> {
-            zWidth = ((int) zWidthSpinner.getValue());
-            updateTheMesh();
-            surfPlot.setTranslateX(-(xWidth * surfScale) / 2.0);
-            surfPlot.setTranslateZ(-(zWidth * surfScale) / 2.0);
-        });
-        zWidthSpinner.setPrefWidth(125);
-
-        heightModeCombo = new ComboBox<>();
-        heightModeCombo.getItems().addAll(HeightMode.values());
-        heightModeCombo.setValue(HeightMode.RAW);
-        VBox heightControls = new VBox(5,new Label("Height Mode"),heightModeCombo);
-
-        ToggleGroup colorationToggle = new ToggleGroup();
-        RadioButton colorByImageRadioButton = new RadioButton("Color by Image"); colorByImageRadioButton.setToggleGroup(colorationToggle);
-        RadioButton colorByFeatureValueRadioButton = new RadioButton("Color by Feature Value"); colorByFeatureValueRadioButton.setSelected(true); colorByFeatureValueRadioButton.setToggleGroup(colorationToggle);
-        RadioButton colorByShapleyValueRadioButton = new RadioButton("Color by Shapley Value"); colorByShapleyValueRadioButton.setSelected(false); colorByShapleyValueRadioButton.setToggleGroup(colorationToggle);
-        colorationToggle.selectedToggleProperty().addListener(cl -> {
-            if (colorByImageRadioButton.isSelected()) {
-                colorationMethod = COLORATION.COLOR_BY_IMAGE;
-                if (lastImageSource != null) {
-                    File imageFile = new File(imageryBasePath + lastImageSource);
-                    surfPlot.setTextureModeImage(imageFile.toURI().toString());
-                }
-            } else if (colorByFeatureValueRadioButton.isSelected()) {
-                colorationMethod = COLORATION.COLOR_BY_FEATURE;
-                surfPlot.setTextureModeVertices3D(TOTAL_COLORS, colorByHeight, 0.0, 360.0);
-            } else {
-                colorationMethod = COLORATION.COLOR_BY_SHAPLEY;
-                surfPlot.setTextureModeVertices3D(TOTAL_COLORS, colorByShapley, 0.0, 360.0);
-            }
-            updateTheMesh();
-        });
-        HBox colorationHBox = new HBox(10, colorByImageRadioButton, colorByFeatureValueRadioButton, colorByShapleyValueRadioButton);
-
-        ToggleGroup meshTypeToggle = new ToggleGroup();
-        RadioButton surfaceRadioButton = new RadioButton("Surface Projection"); surfaceRadioButton.setSelected(true); surfaceRadioButton.setToggleGroup(meshTypeToggle);
-        RadioButton cylinderRadioButton = new RadioButton("Cylindrical"); cylinderRadioButton.setToggleGroup(meshTypeToggle);
-        meshTypeToggle.selectedToggleProperty().addListener(cl -> { surfaceRender = surfaceRadioButton.isSelected(); updateTheMesh(); });
-        HBox meshTypeHBox = new HBox(10, surfaceRadioButton, cylinderRadioButton);
-
-        ToggleGroup drawModeToggle = new ToggleGroup();
-        RadioButton drawModeLine = new RadioButton("Line"); drawModeLine.setSelected(true); drawModeLine.setToggleGroup(drawModeToggle);
-        RadioButton drawModeFill = new RadioButton("Fill"); drawModeFill.setToggleGroup(drawModeToggle);
-        drawModeToggle.selectedToggleProperty().addListener(cl -> { if (drawModeLine.isSelected()) surfPlot.setDrawMode(DrawMode.LINE); else surfPlot.setDrawMode(DrawMode.FILL); });
-        HBox drawModeHBox = new HBox(10, drawModeLine, drawModeFill);
-
-        ToggleGroup cullFaceToggle = new ToggleGroup();
-        RadioButton cullFaceFront = new RadioButton("Front"); cullFaceFront.setToggleGroup(cullFaceToggle);
-        RadioButton cullFaceBack = new RadioButton("Back"); cullFaceBack.setToggleGroup(cullFaceToggle);
-        RadioButton cullFaceNone = new RadioButton("None"); cullFaceNone.setSelected(true); cullFaceNone.setToggleGroup(cullFaceToggle);
-        cullFaceToggle.selectedToggleProperty().addListener(cl -> { if (cullFaceFront.isSelected()) surfPlot.setCullFace(CullFace.FRONT); else if (cullFaceBack.isSelected()) surfPlot.setCullFace(CullFace.BACK); else surfPlot.setCullFace(CullFace.NONE); });
-        HBox cullFaceHBox = new HBox(10, cullFaceFront, cullFaceBack, cullFaceNone);
+        wireEventHandlers();
+        
+//        yScaleSpinner.getValueFactory().valueProperty().addListener(e -> {
+//            yScale = ((Double) yScaleSpinner.getValue()).floatValue();
+//            surfPlot.setFunctionScale(yScale);
+//            updateTheMesh();
+//        });
+//        yScaleSpinner.setOnKeyTyped(e -> {
+//            if (e.getCode() == KeyCode.ENTER) {
+//                yScale = ((Double) yScaleSpinner.getValue()).floatValue();
+//                surfPlot.setFunctionScale(yScale);
+//                updateTheMesh();
+//            }
+//        });
+//
+//        surfScaleSpinner.valueProperty().addListener(e -> {
+//            surfScale = ((Double) surfScaleSpinner.getValue()).floatValue();
+//            surfPlot.setRangeX(xWidth * surfScale);
+//            surfPlot.setRangeY(zWidth * surfScale);
+//            updateTheMesh();
+//            surfPlot.setTranslateX(-(xWidth * surfScale) / 2.0);
+//            surfPlot.setTranslateZ(-(zWidth * surfScale) / 2.0);
+//        });
+//        surfScaleSpinner.setPrefWidth(125);
+//
+//        xWidthSpinner.valueProperty().addListener(e -> {
+//            xWidth = ((int) xWidthSpinner.getValue());
+//            updateTheMesh();
+//            surfPlot.setTranslateX(-(xWidth * surfScale) / 2.0);
+//            surfPlot.setTranslateZ(-(zWidth * surfScale) / 2.0);
+//        });
+//
+//        zWidthSpinner.valueProperty().addListener(e -> {
+//            zWidth = ((int) zWidthSpinner.getValue());
+//            updateTheMesh();
+//            surfPlot.setTranslateX(-(xWidth * surfScale) / 2.0);
+//            surfPlot.setTranslateZ(-(zWidth * surfScale) / 2.0);
+//        });
+//
+//        colorationToggle.selectedToggleProperty().addListener(cl -> {
+//            if (colorByImageRadioButton.isSelected()) {
+//                colorationMethod = COLORATION.COLOR_BY_IMAGE;
+//                if (lastImageSource != null) {
+//                    File imageFile = new File(imageryBasePath + lastImageSource);
+//                    surfPlot.setTextureModeImage(imageFile.toURI().toString());
+//                }
+//            } else if (colorByFeatureValueRadioButton.isSelected()) {
+//                colorationMethod = COLORATION.COLOR_BY_FEATURE;
+//                surfPlot.setTextureModeVertices3D(TOTAL_COLORS, colorByHeight, 0.0, 360.0);
+//            } else {
+//                colorationMethod = COLORATION.COLOR_BY_SHAPLEY;
+//                surfPlot.setTextureModeVertices3D(TOTAL_COLORS, colorByShapley, 0.0, 360.0);
+//            }
+//            updateTheMesh();
+//        });
+//        meshTypeToggle.selectedToggleProperty().addListener(cl -> { 
+//            surfaceRender = surfaceRadioButton.isSelected(); 
+//            updateTheMesh(); 
+//        });
+//        drawModeToggle.selectedToggleProperty().addListener(cl -> { 
+//            if (drawModeLine.isSelected()) 
+//                surfPlot.setDrawMode(DrawMode.LINE); 
+//            else 
+//                surfPlot.setDrawMode(DrawMode.FILL); });
+//
+//        cullFaceToggle.selectedToggleProperty().addListener(cl -> { 
+//            if (cullFaceFront.isSelected()) 
+//                surfPlot.setCullFace(CullFace.FRONT); 
+//            else if (cullFaceBack.isSelected()) 
+//                surfPlot.setCullFace(CullFace.BACK); 
+//            else surfPlot.setCullFace(CullFace.NONE); 
+//        });
 
         pointLight.getScope().addAll(surfPlot);
         sceneRoot.getChildren().add(pointLight);
@@ -1270,94 +1233,30 @@ private Number vertToHeight(Vert3D p) {
         ambientLight.getScope().addAll(surfPlot);
         sceneRoot.getChildren().add(ambientLight);
 
-        ColorPicker lightPicker = new ColorPicker(Color.WHITE);
-        ambientLight.colorProperty().bind(lightPicker.valueProperty());
-        ColorPicker specPicker = new ColorPicker(Color.CYAN);
-        specPicker.setOnAction(e -> ((PhongMaterial) surfPlot.getMaterial()).setSpecularColor(specPicker.getValue()));
+//        ambientLight.colorProperty().bind(lightPicker.valueProperty());
+//        specPicker.setOnAction(e -> ((PhongMaterial) surfPlot.getMaterial()).setSpecularColor(specPicker.getValue()));
+//
+//        enableAmbient.setSelected(true);
+//        enableAmbient.setOnAction(e -> {
+//            if (enableAmbient.isSelected()) { lightPicker.setDisable(false); ambientLight.getScope().addAll(surfPlot); }
+//            else { lightPicker.setDisable(true); ambientLight.getScope().clear(); }
+//        });
+//
+//        enablePoint.setOnAction(e -> {
+//            if (enablePoint.isSelected()) { specPicker.setDisable(false); pointLight.getScope().addAll(surfPlot); }
+//            else { specPicker.setDisable(true); pointLight.getScope().clear(); }
+//        });
+//
+//        Runnable refreshProc = this::rebuildProcessedGridAndRefresh;
+//        enableSmoothingCheck.setOnAction(e -> refreshProc.run());
+//        smoothingCombo.setOnAction(e -> refreshProc.run());
+//        smoothingRadiusSpinner.valueProperty().addListener((obs,o,n) -> refreshProc.run());
+//        gaussianSigmaSpinner.valueProperty().addListener((obs,o,n) -> refreshProc.run());
+//        enableToneMapCheck.setOnAction(e -> refreshProc.run());
+//        toneMapCombo.setOnAction(e -> refreshProc.run());
+//        toneParamSpinner.valueProperty().addListener((obs,o,n) -> refreshProc.run());
+//        interpCombo.setOnAction(e -> { interpMode = interpCombo.getValue(); updateTheMesh(); });
 
-        CheckBox enableAmbient = new CheckBox("Enable Ambient Light");
-        enableAmbient.setSelected(true);
-        enableAmbient.setOnAction(e -> {
-            if (enableAmbient.isSelected()) { lightPicker.setDisable(false); ambientLight.getScope().addAll(surfPlot); }
-            else { lightPicker.setDisable(true); ambientLight.getScope().clear(); }
-        });
-
-        CheckBox enablePoint = new CheckBox("Enable Point Light");
-        enablePoint.setSelected(true);
-        enablePoint.setOnAction(e -> {
-            if (enablePoint.isSelected()) { specPicker.setDisable(false); pointLight.getScope().addAll(surfPlot); }
-            else { specPicker.setDisable(true); pointLight.getScope().clear(); }
-        });
-
-        // =================== NEW: Processing UI ===================
-        enableSmoothingCheck = new CheckBox("Enable Smoothing"); enableSmoothingCheck.setSelected(false);
-        smoothingCombo = new ComboBox<>(); smoothingCombo.getItems().addAll(SurfaceUtils.Smoothing.values()); smoothingCombo.setValue(SurfaceUtils.Smoothing.GAUSSIAN);
-        smoothingRadiusSpinner = new Spinner<>(1, 25, 2, 1); smoothingRadiusSpinner.setEditable(true);
-        gaussianSigmaSpinner = new Spinner<>(0.1, 10.0, 1.0, 0.1); gaussianSigmaSpinner.setEditable(true);
-
-        interpCombo = new ComboBox<>(); interpCombo.getItems().addAll(SurfaceUtils.Interpolation.values()); interpCombo.setValue(SurfaceUtils.Interpolation.NEAREST);
-
-        enableToneMapCheck = new CheckBox("Enable Tone Map"); enableToneMapCheck.setSelected(false);
-        toneMapCombo = new ComboBox<>(); toneMapCombo.getItems().addAll(SurfaceUtils.ToneMap.values()); toneMapCombo.setValue(SurfaceUtils.ToneMap.NONE);
-        toneParamSpinner = new Spinner<>(0.10, 10.0, 2.0, 0.10); toneParamSpinner.setEditable(true);
-
-        Runnable refreshProc = this::rebuildProcessedGridAndRefresh;
-        enableSmoothingCheck.setOnAction(e -> refreshProc.run());
-        smoothingCombo.setOnAction(e -> refreshProc.run());
-        smoothingRadiusSpinner.valueProperty().addListener((obs,o,n) -> refreshProc.run());
-        gaussianSigmaSpinner.valueProperty().addListener((obs,o,n) -> refreshProc.run());
-        enableToneMapCheck.setOnAction(e -> refreshProc.run());
-        toneMapCombo.setOnAction(e -> refreshProc.run());
-        toneParamSpinner.valueProperty().addListener((obs,o,n) -> refreshProc.run());
-        interpCombo.setOnAction(e -> { interpMode = interpCombo.getValue(); updateTheMesh(); });
-
-        VBox smoothingBox = new VBox(6,
-            new Label("Smoothing"),
-            enableSmoothingCheck,
-            new HBox(10, new Label("Method"), smoothingCombo),
-            new HBox(10, new Label("Radius"), smoothingRadiusSpinner),
-            new HBox(10, new Label("Sigma (Gaussian)"), gaussianSigmaSpinner)
-        );
-        VBox interpBox = new VBox(6, new Label("Interpolation"), new HBox(10, new Label("Mode"), interpCombo));
-        VBox toneBox = new VBox(6,
-            new Label("Tone Mapping"),
-            enableToneMapCheck,
-            new HBox(10, new Label("Operator"), toneMapCombo),
-            new HBox(10, new Label("k / γ"), toneParamSpinner)
-        );
-        // ==========================================================
-
-        Label xWidthLabel = new Label("Usable X Width"); xWidthLabel.setPrefWidth(125);
-        Label zWidthLabel = new Label("Usable Z Length"); zWidthLabel.setPrefWidth(125);
-        Label yScaleLabel = new Label("Y Scale"); yScaleLabel.setPrefWidth(125);
-        Label surfScaleLabel = new Label("Surface Range Scale"); surfScaleLabel.setPrefWidth(125);
-
-        VBox vbox = new VBox(10,
-            new HBox(10, xWidthLabel, xWidthSpinner),
-            new HBox(10, zWidthLabel, zWidthSpinner),
-            new HBox(10, yScaleLabel, yScaleSpinner),
-            heightControls,
-            smoothingBox, // NEW
-            interpBox,    // NEW
-            toneBox,      // NEW
-            new HBox(10, surfScaleLabel, surfScaleSpinner),
-            new Label("Color Method"),
-            colorationHBox,
-            new Label("Draw Mode"),
-            meshTypeHBox,
-            drawModeHBox,
-            new Label("Cull Face"),
-            cullFaceHBox,
-            new Label("Ambient Light Color"),
-            enableAmbient,
-            lightPicker,
-            new Label("Specular Color"),
-            enablePoint,
-            specPicker
-        );
-        StackPane.setAlignment(vbox, Pos.BOTTOM_LEFT);
-        vbox.setPickOnBounds(false);
-        getChildren().add(vbox);
         updateLabels();
         subScene.sceneProperty().addListener(c -> {
             Platform.runLater(() -> {
@@ -1367,7 +1266,133 @@ private Number vertToHeight(Vert3D p) {
             });
         });
     }
+    /**
+     * Sets up event handlers for HypersurfaceEvents sent from HypersurfaceControlsPane.
+     * Updates all rendering state and triggers updates as needed.
+     */
+    private void wireEventHandlers() {
+//        Scene scene = getScene();
+        if (scene == null) return;
+        // Geometry / scale
+        scene.addEventHandler(HypersurfaceEvent.XWIDTH_CHANGED, e -> {
+            this.xWidth = (int) e.object;
+            if (surfPlot != null) {
+                surfPlot.setTranslateX(-(xWidth * surfScale) / 2.0);
+                surfPlot.setTranslateZ(-(zWidth * surfScale) / 2.0);
+            }
+            updateTheMesh();
+        });
 
+        scene.addEventHandler(HypersurfaceEvent.ZWIDTH_CHANGED, e -> {
+            this.zWidth = (int) e.object;
+            if (surfPlot != null) {
+                surfPlot.setTranslateX(-(xWidth * surfScale) / 2.0);
+                surfPlot.setTranslateZ(-(zWidth * surfScale) / 2.0);
+            }
+            updateTheMesh();
+        });
+
+        scene.addEventHandler(HypersurfaceEvent.Y_SCALE_CHANGED, e -> {
+            this.yScale = ((Double) e.object).floatValue();
+            if (surfPlot != null) surfPlot.setFunctionScale(yScale);
+            updateTheMesh();
+        });
+
+        scene.addEventHandler(HypersurfaceEvent.SURF_SCALE_CHANGED, e -> {
+            this.surfScale = ((Double) e.object).floatValue();
+            if (surfPlot != null) {
+                surfPlot.setRangeX(xWidth * surfScale);
+                surfPlot.setRangeY(zWidth * surfScale);
+                surfPlot.setTranslateX(-(xWidth * surfScale) / 2.0);
+                surfPlot.setTranslateZ(-(zWidth * surfScale) / 2.0);
+            }
+            updateTheMesh();
+        });
+
+        // Rendering modes
+        scene.addEventHandler(HypersurfaceEvent.SURFACE_RENDER_CHANGED, e -> {
+            this.surfaceRender = (boolean) e.object;
+            updateTheMesh();
+        });
+        scene.addEventHandler(HypersurfaceEvent.DRAW_MODE_CHANGED, e -> {
+            if (surfPlot != null) surfPlot.setDrawMode((DrawMode) e.object);
+        });
+        scene.addEventHandler(HypersurfaceEvent.CULL_FACE_CHANGED, e -> {
+            if (surfPlot != null) surfPlot.setCullFace((CullFace) e.object);
+        });
+        scene.addEventHandler(HypersurfaceEvent.COLORATION_CHANGED, e -> {
+            this.colorationMethod = (Hypersurface3DPane.COLORATION) e.object;
+            updateTheMesh();
+        });
+
+        // Processing pipeline
+        scene.addEventHandler(HypersurfaceEvent.HEIGHT_MODE_CHANGED, e -> {
+            this.heightMode = (HeightMode) e.object;
+            rebuildProcessedGridAndRefresh();
+        });
+        scene.addEventHandler(HypersurfaceEvent.SMOOTHING_ENABLE_CHANGED, e -> {
+            this.smoothingEnabled = (boolean) e.object;
+            rebuildProcessedGridAndRefresh();
+        });
+        scene.addEventHandler(HypersurfaceEvent.SMOOTHING_METHOD_CHANGED, e -> {
+            this.smoothingMethod = (SurfaceUtils.Smoothing) e.object;
+            rebuildProcessedGridAndRefresh();
+        });
+        scene.addEventHandler(HypersurfaceEvent.SMOOTHING_RADIUS_CHANGED, e -> {
+            this.smoothingRadius = (int) e.object;
+            rebuildProcessedGridAndRefresh();
+        });
+        scene.addEventHandler(HypersurfaceEvent.GAUSSIAN_SIGMA_CHANGED, e -> {
+            this.gaussianSigma = (double) e.object;
+            rebuildProcessedGridAndRefresh();
+        });
+        scene.addEventHandler(HypersurfaceEvent.INTERP_MODE_CHANGED, e -> {
+            this.interpMode = (SurfaceUtils.Interpolation) e.object;
+            updateTheMesh();
+        });
+        scene.addEventHandler(HypersurfaceEvent.TONEMAP_ENABLE_CHANGED, e -> {
+            this.toneEnabled = (boolean) e.object;
+            rebuildProcessedGridAndRefresh();
+        });
+        scene.addEventHandler(HypersurfaceEvent.TONEMAP_OPERATOR_CHANGED, e -> {
+            this.toneOperator = (SurfaceUtils.ToneMap) e.object;
+            rebuildProcessedGridAndRefresh();
+        });
+        scene.addEventHandler(HypersurfaceEvent.TONEMAP_PARAM_CHANGED, e -> {
+            this.toneParam = (double) e.object;
+            rebuildProcessedGridAndRefresh();
+        });
+
+        // Lighting
+        scene.addEventHandler(HypersurfaceEvent.AMBIENT_ENABLED_CHANGED, e -> {
+            // (Optional: enable/disable ambientLight as desired)
+        });
+        scene.addEventHandler(HypersurfaceEvent.AMBIENT_COLOR_CHANGED, e -> {
+            if (ambientLight != null) ambientLight.setColor((Color) e.object);
+        });
+        scene.addEventHandler(HypersurfaceEvent.POINT_ENABLED_CHANGED, e -> {
+            // (Optional: enable/disable pointLight as desired)
+        });
+        scene.addEventHandler(HypersurfaceEvent.SPECULAR_COLOR_CHANGED, e -> {
+            if (surfPlot != null && surfPlot.getMaterial() instanceof PhongMaterial mat)
+                mat.setSpecularColor((Color) e.object);
+        });
+
+        // UX toggles
+        scene.addEventHandler(HypersurfaceEvent.HOVER_ENABLE_CHANGED, e -> hoverInteractionsEnabled = (boolean) e.object);
+        scene.addEventHandler(HypersurfaceEvent.SURFACE_CHARTS_ENABLE_CHANGED, e -> surfaceChartsEnabled = (boolean) e.object);
+        scene.addEventHandler(HypersurfaceEvent.DATA_MARKERS_ENABLE_CHANGED, e -> extrasGroup.setVisible((boolean) e.object));
+        scene.addEventHandler(HypersurfaceEvent.CROSSHAIRS_ENABLE_CHANGED, e -> crosshairsEnabled = (boolean) e.object);
+
+        // Commands/actions
+        scene.addEventHandler(HypersurfaceEvent.RESET_VIEW, e -> resetView(1000, false));
+        scene.addEventHandler(HypersurfaceEvent.UPDATE_RENDER, e -> updateTheMesh());
+        scene.addEventHandler(HypersurfaceEvent.CLEAR_DATA, e -> clearAll());
+        scene.addEventHandler(HypersurfaceEvent.UNROLL_REQUESTED, e -> unrollHyperspace());
+        scene.addEventHandler(HypersurfaceEvent.COMPUTE_VECTOR_DISTANCES, e -> computeVectorDistances());
+        scene.addEventHandler(HypersurfaceEvent.COMPUTE_COLLECTION_DIFF, e -> computeSurfaceDifference((FeatureCollection) e.object));
+        scene.addEventHandler(HypersurfaceEvent.COMPUTE_COSINE_DISTANCE, e -> computeCosineDistance((FeatureCollection) e.object));
+    }
     public void updateCalloutByFeatureVector(Callout callout, FeatureVector featureVector) {
         callout.setMainTitleText(featureVector.getLabel());
         callout.mainTitleTextNode.setText(callout.getMainTitleText());
@@ -1472,8 +1497,8 @@ private Number vertToHeight(Vert3D p) {
         LOG.info("Mapped Neural Magnitudes to Hypersurface: {}", Utils.totalTimeString(startTime));
         zWidth = neuralData.size();
         xWidth = neuralData.get(0).size() / 2;
-        zWidthSpinner.getValueFactory().setValue(zWidth);
-        xWidthSpinner.getValueFactory().setValue(xWidth);
+//        zWidthSpinner.getValueFactory().setValue(zWidth);
+//        xWidthSpinner.getValueFactory().setValue(xWidth);
         originalGrid = deepCopyGrid(dataGrid); // NEW
         rebuildProcessedGridAndRefresh();      // NEW
 
@@ -1512,8 +1537,8 @@ private Number vertToHeight(Vert3D p) {
         }
         zWidth = dataGrid.size();
         xWidth = dataGrid.get(0).size();
-        zWidthSpinner.getValueFactory().setValue(zWidth);
-        xWidthSpinner.getValueFactory().setValue(xWidth);
+//        zWidthSpinner.getValueFactory().setValue(zWidth);
+//        xWidthSpinner.getValueFactory().setValue(xWidth);
         originalGrid = deepCopyGrid(dataGrid); // NEW
         rebuildProcessedGridAndRefresh();      // NEW
 
@@ -1563,8 +1588,8 @@ private Number vertToHeight(Vert3D p) {
         LOG.info("Injecting Mesh into Hypersurface... ");
         startTime = System.nanoTime();
         zWidth = rows; xWidth = columns;
-        zWidthSpinner.getValueFactory().setValue(zWidth);
-        xWidthSpinner.getValueFactory().setValue(xWidth);
+//        zWidthSpinner.getValueFactory().setValue(zWidth);
+//        xWidthSpinner.getValueFactory().setValue(xWidth);
         originalGrid = deepCopyGrid(dataGrid); // NEW
         rebuildProcessedGridAndRefresh();      // NEW
         xSphere.setTranslateX((xWidth * surfScale) / 2.0);
@@ -1611,23 +1636,33 @@ private Number vertToHeight(Vert3D p) {
     }
 
     private void rebuildProcessedGridAndRefresh() {
+//    private HeightMode heightMode = HeightMode.RAW;
+//    private boolean smoothingEnabled = false;
+//    private SurfaceUtils.Smoothing smoothingMethod = SurfaceUtils.Smoothing.GAUSSIAN;
+//    private int smoothingRadius = 2;
+//    private double gaussianSigma = 1.0;
+//    private SurfaceUtils.Interpolation interpMode = SurfaceUtils.Interpolation.NEAREST;
+//    private boolean toneEnabled = false;
+//    private SurfaceUtils.ToneMap toneOperator = SurfaceUtils.ToneMap.NONE;
+//    private double toneParam = 2.0;   
+    
         if (originalGrid == null || originalGrid.isEmpty()) return;
         List<List<Double>> g = deepCopyGrid(originalGrid);
-        if (enableSmoothingCheck != null && enableSmoothingCheck.isSelected()) {
-            SurfaceUtils.Smoothing sm = smoothingCombo.getValue();
-            int radius = smoothingRadiusSpinner.getValue();
-            double sigma = gaussianSigmaSpinner.getValue();
-            g = SurfaceUtils.smooth(g, sm, sigma, radius);
+        if (smoothingEnabled) {
+//            SurfaceUtils.Smoothing sm = smoothingCombo.getValue();
+//            int radius = smoothingRadiusSpinner.getValue();
+//            double sigma = gaussianSigmaSpinner.getValue();
+            g = SurfaceUtils.smooth(g, smoothingMethod, gaussianSigma, smoothingRadius);
         }
-        if (enableToneMapCheck != null && enableToneMapCheck.isSelected()) {
-            SurfaceUtils.ToneMap tm = toneMapCombo.getValue();
-            double param = toneParamSpinner.getValue();
-            g = SurfaceUtils.toneMapGrid(g, tm, param);
+        if (toneEnabled) {
+//            SurfaceUtils.ToneMap tm = toneMapCombo.getValue();
+//            double param = toneParamSpinner.getValue();
+            g = SurfaceUtils.toneMapGrid(g, toneOperator, toneParam);
         }
         dataGrid.clear(); dataGrid.addAll(g);
         xWidth = dataGrid.get(0).size(); zWidth = dataGrid.size();
-        xWidthSpinner.getValueFactory().setValue(xWidth);
-        zWidthSpinner.getValueFactory().setValue(zWidth);
+//        xWidthSpinner.getValueFactory().setValue(xWidth);
+//        zWidthSpinner.getValueFactory().setValue(zWidth);
         updateTheMesh(); updateView(true);
     }
 }
