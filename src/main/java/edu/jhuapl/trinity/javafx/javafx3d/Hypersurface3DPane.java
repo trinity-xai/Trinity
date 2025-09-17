@@ -114,6 +114,7 @@ import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.*;
 import java.util.function.Function;
+import javafx.event.Event;
 import javafx.scene.control.Menu;
 
 /**
@@ -539,8 +540,7 @@ public class Hypersurface3DPane extends StackPane
             clearAll();
             xWidth = DEFAULT_XWIDTH;
             zWidth = DEFAULT_ZWIDTH;
-//            xWidthSpinner.getValueFactory().setValue(xWidth);
-//            zWidthSpinner.getValueFactory().setValue(zWidth);
+            syncGuiControls();
             generateRandos(xWidth, zWidth, yScale);
             originalGrid = deepCopyGrid(dataGrid);
             updateTheMesh();
@@ -685,8 +685,7 @@ public class Hypersurface3DPane extends StackPane
         originalGrid = deepCopyGrid(dataGrid); // NEW
         xWidth = dataGrid.get(0).size();
         zWidth = dataGrid.size();
-//        xWidthSpinner.getValueFactory().setValue(xWidth);
-//        zWidthSpinner.getValueFactory().setValue(zWidth);
+        syncGuiControls();
         rebuildProcessedGridAndRefresh(); // NEW: run pipeline
     }
 
@@ -698,8 +697,7 @@ public class Hypersurface3DPane extends StackPane
         originalGrid = deepCopyGrid(dataGrid); // NEW
         xWidth = dataGrid.get(0).size();
         zWidth = dataGrid.size();
-//        xWidthSpinner.getValueFactory().setValue(xWidth);
-//        zWidthSpinner.getValueFactory().setValue(zWidth);
+        syncGuiControls();
         rebuildProcessedGridAndRefresh(); // NEW
     }
 
@@ -722,8 +720,7 @@ public class Hypersurface3DPane extends StackPane
         originalGrid = deepCopyGrid(dataGrid); // NEW
         xWidth = dataGrid.get(0).size();
         zWidth = dataGrid.size();
-//        xWidthSpinner.getValueFactory().setValue(xWidth);
-//        zWidthSpinner.getValueFactory().setValue(zWidth);
+        syncGuiControls();
         rebuildProcessedGridAndRefresh(); // NEW
     }
 
@@ -745,8 +742,7 @@ public class Hypersurface3DPane extends StackPane
         originalGrid = deepCopyGrid(dataGrid); // NEW
         xWidth = dataGrid.get(0).size();
         zWidth = dataGrid.size();
-//        xWidthSpinner.getValueFactory().setValue(xWidth);
-//        zWidthSpinner.getValueFactory().setValue(zWidth);
+        syncGuiControls();
         rebuildProcessedGridAndRefresh(); // NEW
     }
 
@@ -1153,77 +1149,6 @@ private Number vertToHeight(Vert3D p) {
 
         extrasGroup.getChildren().addAll(eastPole, eastKnob, westPole, westKnob, glowLineBox);
         wireEventHandlers();
-        
-//        yScaleSpinner.getValueFactory().valueProperty().addListener(e -> {
-//            yScale = ((Double) yScaleSpinner.getValue()).floatValue();
-//            surfPlot.setFunctionScale(yScale);
-//            updateTheMesh();
-//        });
-//        yScaleSpinner.setOnKeyTyped(e -> {
-//            if (e.getCode() == KeyCode.ENTER) {
-//                yScale = ((Double) yScaleSpinner.getValue()).floatValue();
-//                surfPlot.setFunctionScale(yScale);
-//                updateTheMesh();
-//            }
-//        });
-//
-//        surfScaleSpinner.valueProperty().addListener(e -> {
-//            surfScale = ((Double) surfScaleSpinner.getValue()).floatValue();
-//            surfPlot.setRangeX(xWidth * surfScale);
-//            surfPlot.setRangeY(zWidth * surfScale);
-//            updateTheMesh();
-//            surfPlot.setTranslateX(-(xWidth * surfScale) / 2.0);
-//            surfPlot.setTranslateZ(-(zWidth * surfScale) / 2.0);
-//        });
-//        surfScaleSpinner.setPrefWidth(125);
-//
-//        xWidthSpinner.valueProperty().addListener(e -> {
-//            xWidth = ((int) xWidthSpinner.getValue());
-//            updateTheMesh();
-//            surfPlot.setTranslateX(-(xWidth * surfScale) / 2.0);
-//            surfPlot.setTranslateZ(-(zWidth * surfScale) / 2.0);
-//        });
-//
-//        zWidthSpinner.valueProperty().addListener(e -> {
-//            zWidth = ((int) zWidthSpinner.getValue());
-//            updateTheMesh();
-//            surfPlot.setTranslateX(-(xWidth * surfScale) / 2.0);
-//            surfPlot.setTranslateZ(-(zWidth * surfScale) / 2.0);
-//        });
-//
-//        colorationToggle.selectedToggleProperty().addListener(cl -> {
-//            if (colorByImageRadioButton.isSelected()) {
-//                colorationMethod = COLORATION.COLOR_BY_IMAGE;
-//                if (lastImageSource != null) {
-//                    File imageFile = new File(imageryBasePath + lastImageSource);
-//                    surfPlot.setTextureModeImage(imageFile.toURI().toString());
-//                }
-//            } else if (colorByFeatureValueRadioButton.isSelected()) {
-//                colorationMethod = COLORATION.COLOR_BY_FEATURE;
-//                surfPlot.setTextureModeVertices3D(TOTAL_COLORS, colorByHeight, 0.0, 360.0);
-//            } else {
-//                colorationMethod = COLORATION.COLOR_BY_SHAPLEY;
-//                surfPlot.setTextureModeVertices3D(TOTAL_COLORS, colorByShapley, 0.0, 360.0);
-//            }
-//            updateTheMesh();
-//        });
-//        meshTypeToggle.selectedToggleProperty().addListener(cl -> { 
-//            surfaceRender = surfaceRadioButton.isSelected(); 
-//            updateTheMesh(); 
-//        });
-//        drawModeToggle.selectedToggleProperty().addListener(cl -> { 
-//            if (drawModeLine.isSelected()) 
-//                surfPlot.setDrawMode(DrawMode.LINE); 
-//            else 
-//                surfPlot.setDrawMode(DrawMode.FILL); });
-//
-//        cullFaceToggle.selectedToggleProperty().addListener(cl -> { 
-//            if (cullFaceFront.isSelected()) 
-//                surfPlot.setCullFace(CullFace.FRONT); 
-//            else if (cullFaceBack.isSelected()) 
-//                surfPlot.setCullFace(CullFace.BACK); 
-//            else surfPlot.setCullFace(CullFace.NONE); 
-//        });
 
         pointLight.getScope().addAll(surfPlot);
         sceneRoot.getChildren().add(pointLight);
@@ -1232,30 +1157,6 @@ private Number vertToHeight(Vert3D p) {
         pointLight.translateZProperty().bind(camera.translateZProperty().add(500));
         ambientLight.getScope().addAll(surfPlot);
         sceneRoot.getChildren().add(ambientLight);
-
-//        ambientLight.colorProperty().bind(lightPicker.valueProperty());
-//        specPicker.setOnAction(e -> ((PhongMaterial) surfPlot.getMaterial()).setSpecularColor(specPicker.getValue()));
-//
-//        enableAmbient.setSelected(true);
-//        enableAmbient.setOnAction(e -> {
-//            if (enableAmbient.isSelected()) { lightPicker.setDisable(false); ambientLight.getScope().addAll(surfPlot); }
-//            else { lightPicker.setDisable(true); ambientLight.getScope().clear(); }
-//        });
-//
-//        enablePoint.setOnAction(e -> {
-//            if (enablePoint.isSelected()) { specPicker.setDisable(false); pointLight.getScope().addAll(surfPlot); }
-//            else { specPicker.setDisable(true); pointLight.getScope().clear(); }
-//        });
-//
-//        Runnable refreshProc = this::rebuildProcessedGridAndRefresh;
-//        enableSmoothingCheck.setOnAction(e -> refreshProc.run());
-//        smoothingCombo.setOnAction(e -> refreshProc.run());
-//        smoothingRadiusSpinner.valueProperty().addListener((obs,o,n) -> refreshProc.run());
-//        gaussianSigmaSpinner.valueProperty().addListener((obs,o,n) -> refreshProc.run());
-//        enableToneMapCheck.setOnAction(e -> refreshProc.run());
-//        toneMapCombo.setOnAction(e -> refreshProc.run());
-//        toneParamSpinner.valueProperty().addListener((obs,o,n) -> refreshProc.run());
-//        interpCombo.setOnAction(e -> { interpMode = interpCombo.getValue(); updateTheMesh(); });
 
         updateLabels();
         subScene.sceneProperty().addListener(c -> {
@@ -1266,6 +1167,30 @@ private Number vertToHeight(Vert3D p) {
             });
         });
     }
+    /** 
+     * Fires HypersurfaceEvent GUI sync events for all core geometry controls 
+     * (xWidth, zWidth, yScale, surfScale) to synchronize GUI controls with model state.
+     */
+    public void syncGuiControls() {
+        // Fire events to update GUI controls in the controls pane
+        // These will be handled by HypersurfaceControlsPane to update Spinner values.
+        fireOnRoot(HypersurfaceEvent.setXWidthGUI(xWidth));
+        fireOnRoot(HypersurfaceEvent.setZWidthGUI(zWidth));
+        fireOnRoot(HypersurfaceEvent.setYScaleGUI(yScale));
+        fireOnRoot(HypersurfaceEvent.setSurfScaleGUI(surfScale));
+    }
+
+    /** 
+     * Helper to fire on the JavaFX root, or self as fallback (copy this if not already present) 
+     */
+    private void fireOnRoot(Event evt) {
+        if (scene != null && scene.getRoot() != null) {
+            scene.getRoot().fireEvent(evt);
+        } else {
+            this.fireEvent(evt);
+        }
+    }
+    
     /**
      * Sets up event handlers for HypersurfaceEvents sent from HypersurfaceControlsPane.
      * Updates all rendering state and triggers updates as needed.
@@ -1497,8 +1422,7 @@ private Number vertToHeight(Vert3D p) {
         LOG.info("Mapped Neural Magnitudes to Hypersurface: {}", Utils.totalTimeString(startTime));
         zWidth = neuralData.size();
         xWidth = neuralData.get(0).size() / 2;
-//        zWidthSpinner.getValueFactory().setValue(zWidth);
-//        xWidthSpinner.getValueFactory().setValue(xWidth);
+        syncGuiControls();
         originalGrid = deepCopyGrid(dataGrid); // NEW
         rebuildProcessedGridAndRefresh();      // NEW
 
@@ -1537,11 +1461,9 @@ private Number vertToHeight(Vert3D p) {
         }
         zWidth = dataGrid.size();
         xWidth = dataGrid.get(0).size();
-//        zWidthSpinner.getValueFactory().setValue(zWidth);
-//        xWidthSpinner.getValueFactory().setValue(xWidth);
-        originalGrid = deepCopyGrid(dataGrid); // NEW
-        rebuildProcessedGridAndRefresh();      // NEW
-
+        syncGuiControls();
+        originalGrid = deepCopyGrid(dataGrid); 
+        rebuildProcessedGridAndRefresh();      
         getScene().getRoot().fireEvent(new CommandTerminalEvent("Hypersurface updated. ", new Font("Consolas", 20), Color.GREEN));
         featureVectors = featureCollection.getFeatures();
     }
@@ -1588,10 +1510,9 @@ private Number vertToHeight(Vert3D p) {
         LOG.info("Injecting Mesh into Hypersurface... ");
         startTime = System.nanoTime();
         zWidth = rows; xWidth = columns;
-//        zWidthSpinner.getValueFactory().setValue(zWidth);
-//        xWidthSpinner.getValueFactory().setValue(xWidth);
-        originalGrid = deepCopyGrid(dataGrid); // NEW
-        rebuildProcessedGridAndRefresh();      // NEW
+        syncGuiControls();
+        originalGrid = deepCopyGrid(dataGrid); 
+        rebuildProcessedGridAndRefresh();      
         xSphere.setTranslateX((xWidth * surfScale) / 2.0);
         zSphere.setTranslateZ((zWidth * surfScale) / 2.0);
         Utils.printTotalTime(startTime);
@@ -1636,33 +1557,17 @@ private Number vertToHeight(Vert3D p) {
     }
 
     private void rebuildProcessedGridAndRefresh() {
-//    private HeightMode heightMode = HeightMode.RAW;
-//    private boolean smoothingEnabled = false;
-//    private SurfaceUtils.Smoothing smoothingMethod = SurfaceUtils.Smoothing.GAUSSIAN;
-//    private int smoothingRadius = 2;
-//    private double gaussianSigma = 1.0;
-//    private SurfaceUtils.Interpolation interpMode = SurfaceUtils.Interpolation.NEAREST;
-//    private boolean toneEnabled = false;
-//    private SurfaceUtils.ToneMap toneOperator = SurfaceUtils.ToneMap.NONE;
-//    private double toneParam = 2.0;   
-    
         if (originalGrid == null || originalGrid.isEmpty()) return;
         List<List<Double>> g = deepCopyGrid(originalGrid);
         if (smoothingEnabled) {
-//            SurfaceUtils.Smoothing sm = smoothingCombo.getValue();
-//            int radius = smoothingRadiusSpinner.getValue();
-//            double sigma = gaussianSigmaSpinner.getValue();
             g = SurfaceUtils.smooth(g, smoothingMethod, gaussianSigma, smoothingRadius);
         }
         if (toneEnabled) {
-//            SurfaceUtils.ToneMap tm = toneMapCombo.getValue();
-//            double param = toneParamSpinner.getValue();
             g = SurfaceUtils.toneMapGrid(g, toneOperator, toneParam);
         }
         dataGrid.clear(); dataGrid.addAll(g);
         xWidth = dataGrid.get(0).size(); zWidth = dataGrid.size();
-//        xWidthSpinner.getValueFactory().setValue(xWidth);
-//        zWidthSpinner.getValueFactory().setValue(zWidth);
+        syncGuiControls();
         updateTheMesh(); updateView(true);
     }
 }

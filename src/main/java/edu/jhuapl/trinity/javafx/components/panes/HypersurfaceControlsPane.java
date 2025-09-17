@@ -84,6 +84,33 @@ public class HypersurfaceControlsPane extends LitPathPane {
         BorderPane bp = (BorderPane) this.contentPane;
         bp.setPadding(new Insets(6));
         bp.setCenter(buildTabs());
+        
+        scene.addEventHandler(HypersurfaceEvent.SET_XWIDTH_GUI, e -> {
+            // Set spinner value if different, *without* firing another event
+            if (xWidthSpinner != null && !xWidthSpinner.getValue().equals((Integer)e.object)) {
+                xWidthSpinner.getValueFactory().setValue((Integer)e.object);
+            }
+            e.consume();
+        });
+        scene.addEventHandler(HypersurfaceEvent.SET_ZWIDTH_GUI, e -> {
+            if (zWidthSpinner != null && !zWidthSpinner.getValue().equals((Integer)e.object)) {
+                zWidthSpinner.getValueFactory().setValue((Integer)e.object);
+            }
+            e.consume();
+        });
+        scene.addEventHandler(HypersurfaceEvent.SET_YSCALE_GUI, e -> {
+            if (yScaleSpinner != null && !yScaleSpinner.getValue().equals((Double)e.object)) {
+                yScaleSpinner.getValueFactory().setValue((Double)e.object);
+            }
+            e.consume();
+        });
+        scene.addEventHandler(HypersurfaceEvent.SET_SURFSCALE_GUI, e -> {
+            if (surfScaleSpinner != null && !surfScaleSpinner.getValue().equals((Double)e.object)) {
+                surfScaleSpinner.getValueFactory().setValue((Double)e.object);
+            }
+            e.consume();
+        });
+        
     }
 
     private TabPane buildTabs() {

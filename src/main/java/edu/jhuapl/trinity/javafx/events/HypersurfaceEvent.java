@@ -5,7 +5,8 @@ import javafx.event.EventTarget;
 import javafx.event.EventType;
 
 /**
- * Hypersurface-specific UI + render events.
+ * Hypersurface-specific UI + render events, including
+ * two-way sync for GUI control values.
  */
 public class HypersurfaceEvent extends Event {
 
@@ -23,6 +24,17 @@ public class HypersurfaceEvent extends Event {
             new EventType<>(ANY, "HYPERSURF_XWIDTH_CHANGED");             // Integer
     public static final EventType<HypersurfaceEvent> ZWIDTH_CHANGED =
             new EventType<>(ANY, "HYPERSURF_ZWIDTH_CHANGED");             // Integer
+
+    // --- GUI-to-GUI Sync: Set Spinner/Combo values from model ---
+    public static final EventType<HypersurfaceEvent> SET_XWIDTH_GUI =
+            new EventType<>(ANY, "HYPERSURF_SET_XWIDTH_GUI");             // Integer
+    public static final EventType<HypersurfaceEvent> SET_ZWIDTH_GUI =
+            new EventType<>(ANY, "HYPERSURF_SET_ZWIDTH_GUI");             // Integer
+    public static final EventType<HypersurfaceEvent> SET_YSCALE_GUI =
+            new EventType<>(ANY, "HYPERSURF_SET_YSCALE_GUI");             // Double
+    public static final EventType<HypersurfaceEvent> SET_SURFSCALE_GUI =
+            new EventType<>(ANY, "HYPERSURF_SET_SURFSCALE_GUI");          // Double
+    // (Add more as needed for other controls, e.g., combo selections.)
 
     // --- Rendering mode & draw settings ---
     public static final EventType<HypersurfaceEvent> SURFACE_RENDER_CHANGED =
@@ -111,11 +123,11 @@ public class HypersurfaceEvent extends Event {
         this.object = source;
     }
 
-    // --- Convenience factories (optional) ---
+    // --- Convenience factories ---
     public static HypersurfaceEvent of(EventType<HypersurfaceEvent> type) { return new HypersurfaceEvent(type); }
     public static HypersurfaceEvent of(EventType<HypersurfaceEvent> type, Object payload) { return new HypersurfaceEvent(type, payload); }
 
-    // Examples:
+    // Examples: (for all existing events)
     public static HypersurfaceEvent yScale(double v) { return of(Y_SCALE_CHANGED, v); }
     public static HypersurfaceEvent surfScale(double v) { return of(SURF_SCALE_CHANGED, v); }
     public static HypersurfaceEvent xWidth(int v) { return of(XWIDTH_CHANGED, v); }
@@ -148,4 +160,10 @@ public class HypersurfaceEvent extends Event {
     public static HypersurfaceEvent computeVectorDistances() { return of(COMPUTE_VECTOR_DISTANCES); }
     public static HypersurfaceEvent computeCollectionDiff(Object featureCollection) { return of(COMPUTE_COLLECTION_DIFF, featureCollection); }
     public static HypersurfaceEvent computeCosineDistance(Object featureCollection) { return of(COMPUTE_COSINE_DISTANCE, featureCollection); }
+
+    // --- Factories for GUI sync events ---
+    public static HypersurfaceEvent setXWidthGUI(int v) { return of(SET_XWIDTH_GUI, v); }
+    public static HypersurfaceEvent setZWidthGUI(int v) { return of(SET_ZWIDTH_GUI, v); }
+    public static HypersurfaceEvent setYScaleGUI(double v) { return of(SET_YSCALE_GUI, v); }
+    public static HypersurfaceEvent setSurfScaleGUI(double v) { return of(SET_SURFSCALE_GUI, v); }
 }
