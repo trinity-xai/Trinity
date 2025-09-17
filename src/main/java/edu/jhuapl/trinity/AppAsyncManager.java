@@ -99,6 +99,7 @@ import java.util.Map;
 
 import static edu.jhuapl.trinity.App.theConfig;
 import edu.jhuapl.trinity.javafx.components.panes.HypersurfaceControlsPane;
+import edu.jhuapl.trinity.javafx.components.panes.PairwiseJpdfPane;
 import edu.jhuapl.trinity.javafx.controllers.FeatureVectorManagerPopoutController;
 
 /**
@@ -127,6 +128,7 @@ public class AppAsyncManager extends Task<Void> {
     VideoPane videoPane;
     SpecialEffectsPane specialEffectsPane;
     StatPdfCdfPane statPdfCdfPane;
+    PairwiseJpdfPane pairwiseJpdfPane;
     FeatureVectorManagerPane featureVectorManagerPane;
     NavigatorPane navigatorPane;
     CocoViewerPane cocoViewerPane;
@@ -601,6 +603,23 @@ public class AppAsyncManager extends Task<Void> {
             } else
                 fvPop.close();
         });
+        scene.addEventHandler(ApplicationEvent.SHOW_PAIRWISEJPDF_PANE, e -> {
+            if (null == pairwiseJpdfPane) {
+                // Use the shared service so the view reflects mirrored events
+                pairwiseJpdfPane = new PairwiseJpdfPane(scene, desktopPane);
+            }
+            boolean show = (null != e.object && e.object instanceof Boolean) ? (boolean)e.object : true;
+            if(show)
+                if (!desktopPane.getChildren().contains(pairwiseJpdfPane)) {
+                    desktopPane.getChildren().add(pairwiseJpdfPane);
+                    pairwiseJpdfPane.slideInPane();
+                } else {
+                    pairwiseJpdfPane.show();
+                }
+            else
+                pairwiseJpdfPane.close();
+        });
+        
         scene.addEventHandler(ApplicationEvent.SHOW_HYPERSPACE_CONTROLS, e -> {
             if (null == hypersurfaceControlsPane) {
                 // Use the shared service so the view reflects mirrored events

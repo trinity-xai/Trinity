@@ -38,7 +38,7 @@ import java.util.concurrent.Future;
  */
 public final class JpdfBatchEngine {
 
-    private JpdfBatchEngine() {}
+    public JpdfBatchEngine() {}
 
     /** Per-pair output bundle. */
     public static final class PairJobResult implements Serializable {
