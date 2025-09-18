@@ -1,5 +1,6 @@
 package edu.jhuapl.trinity.utils.statistics;
 
+import edu.jhuapl.trinity.utils.ResourceUtils;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
@@ -14,6 +15,7 @@ import javafx.scene.Cursor;
 import javafx.scene.Node;
 import javafx.scene.control.Label;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.image.ImageView;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Border;
 import javafx.scene.layout.BorderPane;
@@ -21,53 +23,35 @@ import javafx.scene.layout.BorderStroke;
 import javafx.scene.layout.BorderStrokeStyle;
 import javafx.scene.layout.BorderWidths;
 import javafx.scene.layout.CornerRadii;
-import javafx.scene.layout.GridPane;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.StackPane;
+import javafx.scene.layout.TilePane;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 
 /**
- * PairGridPane
- * ------------
- * Scrollable grid of heatmap thumbnails (pairwise JPDF/CDFs/diffs).
- * Each cell shows a {@link HeatmapThumbnailView} with a compact title and optional score.
- *
- * Features:
- *  - Provide a list of {@link PairItem} (x/y labels, grid or GridDensityResult, palette, range, etc.)
- *  - Sorting (e.g., by score) and filtering (predicate)
- *  - Configurable columns, cell size, spacing, legend visibility
- *  - Click callback (emits {@link CellClick}) so caller can open a detailed/3D view
- *
- * This class is presentation-only; it does not compute densities.
- *
- * @author Sean Phillips
+ * PairGridPane (TilePane-backed)
+ * ------------------------------
+ * Responsive grid of heatmap thumbnails that wraps on resize without
+ * forcing the parent to expand.
  */
 public final class PairGridPane extends BorderPane {
 
-    // =====================================================================================
-    // Public API types
-    // =====================================================================================
+    // ---------- Public API types ----------
 
-    /** Immutable description of one grid to render as a thumbnail. */
     public static final class PairItem {
         public final String xLabel;
         public final String yLabel;
-
-        /** Render source: either grid is non-null or res is non-null (choose one). */
-        public final List<List<Double>> grid;     // z[row][col]
-        public final GridDensityResult res;       // optional
-        public final boolean useCDF;              // when res != null
+        public final List<List<Double>> grid;
+        public final GridDensityResult res;
+        public final boolean useCDF;
         public final boolean flipY;
-
-        /** Palette & range. If palette == DIVERGING, center is used. */
         public final HeatmapThumbnailView.PaletteKind palette;
-        public final Double center;               // diverging center (nullable)
+        public final Double center;
         public final boolean autoRange;
-        public final Double vmin;                 // when autoRange == false
-        public final Double vmax;                 // when autoRange == false
+        public final Double vmin;
+        public final Double vmax;
         public final boolean showLegend;
-
-        /** Optional score (for sorting / display) and arbitrary user data. */
         public final Double score;
         public final Object userData;
 
@@ -116,23 +100,16 @@ public final class PairGridPane extends BorderPane {
                 this.yLabel = Objects.requireNonNull(yLabel, "yLabel");
             }
 
-            /** Provide raw grid (row-major). */
-            public Builder grid(List<List<Double>> g) {
-                this.grid = g; this.res = null; return this;
-            }
-
-            /** Provide a GridDensityResult; set useCDF accordingly. */
+            public Builder grid(List<List<Double>> g) { this.grid = g; this.res = null; return this; }
             public Builder from(GridDensityResult r, boolean useCDF, boolean flipY) {
                 this.res = r; this.grid = null; this.useCDF = useCDF; this.flipY = flipY; return this;
             }
-
             public Builder palette(HeatmapThumbnailView.PaletteKind p) { this.palette = p; return this; }
             public Builder divergingCenter(double c) { this.center = c; return this; }
             public Builder autoRange(boolean on) { this.autoRange = on; return this; }
             public Builder fixedRange(double min, double max) { this.autoRange = false; this.vmin = min; this.vmax = max; return this; }
             public Builder flipY(boolean flip) { this.flipY = flip; return this; }
             public Builder showLegend(boolean show) { this.showLegend = show; return this; }
-
             public Builder score(Double s) { this.score = s; return this; }
             public Builder userData(Object d) { this.userData = d; return this; }
 
@@ -144,27 +121,24 @@ public final class PairGridPane extends BorderPane {
         }
     }
 
-    /** Click info for a cell. */
     public static final class CellClick {
-        public final int index;          // index within current (filtered/sorted) list
+        public final int index;
         public final PairItem item;
         public final String xLabel;
         public final String yLabel;
-
         public CellClick(int index, PairItem item) {
-            this.index = index;
-            this.item = item;
-            this.xLabel = item.xLabel;
-            this.yLabel = item.yLabel;
+            this.index = index; this.item = item;
+            this.xLabel = item.xLabel; this.yLabel = item.yLabel;
         }
     }
 
-    // =====================================================================================
-    // Fields & configuration
-    // =====================================================================================
+    // ---------- Fields & configuration ----------
 
-    private final GridPane gridPane = new GridPane();
-    private final ScrollPane scroller = new ScrollPane(gridPane);
+    private final TilePane tilePane = new TilePane();
+    private final ScrollPane scroller = new ScrollPane(tilePane);
+    private final StackPane contentStack = new StackPane();
+    private VBox placeholder;
+    private final Label placeholderLabel = new Label("No results loaded");
 
     private final List<PairItem> allItems = new ArrayList<>();
     private List<PairItem> visibleItems = new ArrayList<>();
@@ -172,7 +146,7 @@ public final class PairGridPane extends BorderPane {
     private Predicate<PairItem> filter = null;
     private Comparator<PairItem> sorter = null;
 
-    private int columns = 4;
+    private int columns = 4;                 // hint only; wrapping adapts to viewport width
     private double cellWidth = 180;
     private double cellHeight = 140;
     private double cellHGap = 8;
@@ -182,26 +156,61 @@ public final class PairGridPane extends BorderPane {
     private boolean showScoresInHeader = true;
     private Consumer<CellClick> onCellClick = null;
 
-    // =====================================================================================
-    // Construction
-    // =====================================================================================
+    // ---------- Construction ----------
 
     public PairGridPane() {
+        // ScrollPane: cap viewport so it never pushes parent
         scroller.setFitToWidth(true);
         scroller.setPannable(true);
         scroller.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         scroller.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        scroller.setMinHeight(0);
+        scroller.setPrefHeight(Region.USE_COMPUTED_SIZE);
+        scroller.setMaxHeight(Region.USE_COMPUTED_SIZE);
+        // modest defaults; parent can override via setPreferredViewport(...)
+        scroller.setPrefViewportWidth(720);
+        scroller.setPrefViewportHeight(420);
 
-        gridPane.setHgap(cellHGap);
-        gridPane.setVgap(cellVGap);
-        gridPane.setPadding(new Insets(6));
+        // TilePane: width bound to viewport; height doesn’t drive parent
+        tilePane.setPadding(new Insets(6));
+        tilePane.setHgap(cellHGap);
+        tilePane.setVgap(cellVGap);
+        tilePane.setTileAlignment(Pos.TOP_LEFT);
+        tilePane.setPrefColumns(columns);
+        tilePane.setMinWidth(0);
+        tilePane.setPrefWidth(0);
+        tilePane.setMaxWidth(Region.USE_PREF_SIZE);
+        tilePane.setMinHeight(0);
+        tilePane.setPrefHeight(Region.USE_COMPUTED_SIZE);
+        tilePane.setMaxHeight(Region.USE_PREF_SIZE);
 
-        setCenter(scroller);
+        // Bind tilePane width to the viewport so wrapping responds to resize
+        scroller.viewportBoundsProperty().addListener((obs, ov, nb) -> {
+            double w = Math.max(0, nb.getWidth() - 2);
+            tilePane.setPrefWidth(w);
+        });
+
+        // Placeholder (image + label) establishes an initial footprint
+        ImageView iv = ResourceUtils.loadIcon("data", 256);
+        placeholder = new VBox(10, iv, placeholderLabel);
+        placeholder.setAlignment(Pos.CENTER);
+        placeholder.setMinSize(0, 0);
+        placeholder.setPrefSize(560, 360); // gives initial size w/o pushing parent
+        placeholderLabel.setStyle("-fx-text-fill: derive(-fx-text-base-color, -30%); -fx-font-style: italic;");
+
+        contentStack.getChildren().addAll(scroller, placeholder);
+        placeholder.toFront();
+
+        setCenter(contentStack);
     }
 
-    // =====================================================================================
-    // Public API
-    // =====================================================================================
+    // Allow parent to suggest viewport size (prevents ScrollPane from enlarging parent)
+    public void setPreferredViewport(double width, double height) {
+        scroller.setPrefViewportWidth(Math.max(0, width));
+        scroller.setPrefViewportHeight(Math.max(0, height));
+    }
+
+    // ---------- Public API ----------
 
     public void setItems(List<PairItem> items) {
         allItems.clear();
@@ -221,19 +230,16 @@ public final class PairGridPane extends BorderPane {
         applyFilterSortAndRender();
     }
 
-    /** Filter: return true to keep an item visible. */
     public void setFilter(Predicate<PairItem> filter) {
         this.filter = filter;
         applyFilterSortAndRender();
     }
 
-    /** Sorter comparator (e.g., by descending score). */
     public void setSorter(Comparator<PairItem> sorter) {
         this.sorter = sorter;
         applyFilterSortAndRender();
     }
 
-    /** Convenience: sort by score descending, nulls last. */
     public void sortByScoreDescending() {
         setSorter(Comparator.nullsLast((a, b) -> {
             double sa = a.score == null ? Double.NEGATIVE_INFINITY : a.score;
@@ -242,48 +248,47 @@ public final class PairGridPane extends BorderPane {
         }));
     }
 
+    /** Preferred columns hint; wrapping still adapts to viewport width. */
     public void setColumns(int cols) {
         this.columns = Math.max(1, cols);
-        renderGrid();
+        tilePane.setPrefColumns(this.columns);
+        renderTiles();
     }
 
+    /** Sets the preferred content size of the heatmap region inside each tile. */
     public void setCellSize(double width, double height) {
         this.cellWidth = Math.max(60, width);
         this.cellHeight = Math.max(60, height);
-        renderGrid();
+        renderTiles();
     }
 
     public void setCellGaps(double hgap, double vgap) {
         this.cellHGap = Math.max(0, hgap);
         this.cellVGap = Math.max(0, vgap);
-        gridPane.setHgap(cellHGap);
-        gridPane.setVgap(cellVGap);
-        renderGrid();
+        tilePane.setHgap(cellHGap);
+        tilePane.setVgap(cellVGap);
+        renderTiles();
     }
 
     public void setCellPadding(Insets insets) {
         this.cellPadding = insets == null ? Insets.EMPTY : insets;
-        renderGrid();
+        renderTiles();
     }
 
     public void setShowScoresInHeader(boolean show) {
         this.showScoresInHeader = show;
-        renderGrid();
+        renderTiles();
     }
 
-    /** Register click callback for cells. */
     public void setOnCellClick(Consumer<CellClick> onClick) {
         this.onCellClick = onClick;
     }
 
-    /** Current visible (filtered/sorted) items snapshot. */
     public List<PairItem> getVisibleItems() {
         return Collections.unmodifiableList(visibleItems);
     }
 
-    // =====================================================================================
-    // Internal rendering
-    // =====================================================================================
+    // ---------- Internal rendering ----------
 
     private void applyFilterSortAndRender() {
         List<PairItem> tmp = new ArrayList<>();
@@ -292,27 +297,27 @@ public final class PairGridPane extends BorderPane {
         }
         if (sorter != null) tmp.sort(sorter);
         visibleItems = tmp;
-        renderGrid();
+        renderTiles();
     }
 
-    private void renderGrid() {
-        gridPane.getChildren().clear();
-        if (visibleItems.isEmpty()) return;
-
-        int colCount = Math.max(1, columns);
-        int row = 0, col = 0;
+    private void renderTiles() {
+        tilePane.getChildren().clear();
+        if (visibleItems.isEmpty()) {
+            placeholder.setVisible(true);
+            scroller.setVisible(false);
+            return;
+        }
+        placeholder.setVisible(false);
+        scroller.setVisible(true);
 
         for (int i = 0; i < visibleItems.size(); i++) {
             PairItem item = visibleItems.get(i);
             Node cell = buildCell(i, item);
-            gridPane.add(cell, col, row);
-            col++;
-            if (col >= colCount) { col = 0; row++; }
+            tilePane.getChildren().add(cell);
         }
     }
 
     private Node buildCell(int index, PairItem item) {
-        // Title (X | Y [+score])
         String title = item.xLabel + " | " + item.yLabel;
         if (showScoresInHeader && item.score != null) {
             title += "   " + String.format("score=%.4f", item.score);
@@ -321,7 +326,6 @@ public final class PairGridPane extends BorderPane {
         header.setPadding(new Insets(2, 4, 2, 4));
         header.setTextFill(Color.web("#E0E0E0"));
 
-        // Heatmap view
         HeatmapThumbnailView view = new HeatmapThumbnailView();
         view.setPrefSize(cellWidth, cellHeight);
         view.setMinSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
@@ -350,7 +354,6 @@ public final class PairGridPane extends BorderPane {
             view.setFromGridDensity(item.res, item.useCDF, item.flipY);
         }
 
-        // Layout: BorderPane per cell
         BorderPane cell = new BorderPane();
         cell.setTop(header);
         BorderPane.setAlignment(header, Pos.CENTER_LEFT);
@@ -368,7 +371,6 @@ public final class PairGridPane extends BorderPane {
         )));
         cell.setBackground(null);
 
-        // Click handling (entire cell)
         cell.addEventHandler(MouseEvent.MOUSE_ENTERED, e -> cell.setCursor(Cursor.HAND));
         cell.addEventHandler(MouseEvent.MOUSE_EXITED, e -> cell.setCursor(Cursor.DEFAULT));
         cell.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {

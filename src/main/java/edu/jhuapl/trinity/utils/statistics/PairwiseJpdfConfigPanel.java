@@ -18,7 +18,6 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
-import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
@@ -27,11 +26,10 @@ public final class PairwiseJpdfConfigPanel extends BorderPane {
 
     // ---- sizing knobs ----
     private static final double PANEL_PREF_WIDTH   = 390;
-    private static final double LABEL_COL_WIDTH    = 130; // main label col
+    private static final double LABEL_COL_WIDTH    = 130; // label column
     private static final double FIELD_MIN_W        = 180; // generic control minimum
     private static final double FIELD_PREF_W       = 240; // generic control preferred
-    private static final double FIELD_WIDE_W       = 300; // name
-    private static final double SUBLABEL_COL_W     = 90;  // sublabel in sub-grids
+    private static final double FIELD_WIDE_W       = 300; // name field
     private static final double SPINNER_MIN_W      = 100;
     private static final double SPINNER_PREF_W     = 120;
 
@@ -65,7 +63,10 @@ public final class PairwiseJpdfConfigPanel extends BorderPane {
     private final CheckBox cacheEnabledCheck = new CheckBox("Enable Cache");
     private final CheckBox saveThumbsCheck = new CheckBox("Save Thumbnails");
 
-    // Actions (now exposed to parent so they can be placed in the top bar)
+    // Whitelist (optional placeholder)
+    private final TextArea whitelistArea = new TextArea();
+
+    // Actions (exposed to parent top bar)
     private final Button runButton = new Button("Run");
     private final Button resetButton = new Button("Reset");
 
@@ -82,8 +83,9 @@ public final class PairwiseJpdfConfigPanel extends BorderPane {
 
         pairSelectionCombo.getItems().addAll(PairSelection.values());
         pairSelectionCombo.setValue(PairSelection.ALL);
-        pairSelectionCombo.setPrefWidth(FIELD_WIDE_W);
-        pairSelectionCombo.setMaxWidth(FIELD_WIDE_W);        
+        pairSelectionCombo.setMinWidth(FIELD_MIN_W);
+        pairSelectionCombo.setPrefWidth(FIELD_PREF_W);
+        pairSelectionCombo.setMaxWidth(FIELD_WIDE_W);
 
         scoreMetricCombo.getItems().addAll(ScoreMetric.values());
         scoreMetricCombo.setValue(ScoreMetric.PEARSON);
@@ -102,6 +104,8 @@ public final class PairwiseJpdfConfigPanel extends BorderPane {
         thresholdSpinner.setMaxWidth(SPINNER_PREF_W);
 
         componentPairsCheck.setSelected(true);
+        includeSelfPairsCheck.setSelected(false);
+        orderedPairsCheck.setSelected(false);
 
         compStartSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, Integer.MAX_VALUE, 0, 1));
         compStartSpinner.setEditable(true);
@@ -114,9 +118,6 @@ public final class PairwiseJpdfConfigPanel extends BorderPane {
         compEndSpinner.setMinWidth(SPINNER_MIN_W);
         compEndSpinner.setPrefWidth(SPINNER_PREF_W);
         compEndSpinner.setMaxWidth(SPINNER_PREF_W);
-
-        includeSelfPairsCheck.setSelected(false);
-        orderedPairsCheck.setSelected(false);
 
         binsXSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(2, 4096, 64, 2));
         binsXSpinner.setEditable(true);
@@ -151,7 +152,15 @@ public final class PairwiseJpdfConfigPanel extends BorderPane {
         cacheEnabledCheck.setSelected(true);
         saveThumbsCheck.setSelected(true);
 
-        // Layout: ONLY center form (no bottom buttons; parent will place buttons in its top bar)
+        whitelistArea.setPromptText("Optional whitelist of axis pairs (placeholder).");
+        whitelistArea.setPrefRowCount(2);
+        whitelistArea.setWrapText(true);
+        whitelistArea.setPrefWidth(FIELD_PREF_W);
+        whitelistArea.setMinWidth(FIELD_MIN_W);
+        whitelistArea.setMaxWidth(FIELD_PREF_W);
+        whitelistArea.setMaxHeight(Region.USE_PREF_SIZE);
+
+        // Layout
         setCenter(buildForm());
 
         // Reactive enable/disable
@@ -182,6 +191,7 @@ public final class PairwiseJpdfConfigPanel extends BorderPane {
         g.setPadding(new Insets(2));
         g.setMaxWidth(Region.USE_PREF_SIZE);
 
+        // Two columns: Label | Control
         ColumnConstraints c0 = new ColumnConstraints();
         c0.setMinWidth(LABEL_COL_WIDTH);
         c0.setPrefWidth(LABEL_COL_WIDTH);
@@ -197,46 +207,39 @@ public final class PairwiseJpdfConfigPanel extends BorderPane {
         g.getColumnConstraints().addAll(c0, c1);
 
         int r = 0;
-        g.add(compactLabel("Name"), 0, r); g.add(recipeNameField, 1, r++);
 
-        g.add(compactLabel("Pair Selection"), 0, r); g.add(pairSelectionCombo, 1, r++);
+        // General
+        g.add(compactLabel("Name"), 0, r);                   g.add(recipeNameField, 1, r++);
 
-        // --- Preselection sub-grid ---
-        GridPane pre = subGrid();
-        int pr = 0;
-        pre.add(sublabel("Score Metric"), 0, pr); pre.add(scoreMetricCombo, 1, pr++);
-        pre.add(sublabel("Top-K"), 0, pr); pre.add(topKSpinner, 1, pr++);
-        pre.add(sublabel("Threshold"), 0, pr); pre.add(thresholdSpinner, 1, pr++);
-        g.add(compactLabel("Preselection"), 0, r); g.add(pre, 1, r++);
+        // Pair selection
+        g.add(compactLabel("Pair Selection"), 0, r);         g.add(pairSelectionCombo, 1, r++);
+        g.add(compactLabel("Score Metric"), 0, r);           g.add(scoreMetricCombo, 1, r++);
+        g.add(compactLabel("Top-K"), 0, r);                  g.add(topKSpinner, 1, r++);
+        g.add(compactLabel("Threshold"), 0, r);              g.add(thresholdSpinner, 1, r++);
 
-        // --- Components sub-grid ---
-        GridPane comp = subGrid();
-        int cr = 0;
-        comp.add(componentPairsCheck, 0, cr, 2, 1); cr++;
-        comp.add(sublabel("Comp Start"), 0, cr); comp.add(compStartSpinner, 1, cr++);   // row
-        comp.add(sublabel("Comp End"),   0, cr); comp.add(compEndSpinner, 1, cr++);     // row
-        comp.add(includeSelfPairsCheck,  0, cr, 2, 1); cr++;                             // row
-        comp.add(orderedPairsCheck,      0, cr, 2, 1); cr++;                             // moved to next row
-        g.add(compactLabel("Components"), 0, r); g.add(comp, 1, r++);
+        // Component options
+        g.add(compactLabel(""), 0, r);                       g.add(componentPairsCheck, 1, r++); // checkbox row
+        g.add(compactLabel("Component Start"), 0, r);        g.add(compStartSpinner, 1, r++);
+        g.add(compactLabel("Component End"), 0, r);          g.add(compEndSpinner, 1, r++);
+        g.add(compactLabel(""), 0, r);                       g.add(includeSelfPairsCheck, 1, r++); // checkbox row
+        g.add(compactLabel(""), 0, r);                       g.add(orderedPairsCheck, 1, r++);    // checkbox row
 
-        // --- Grid / Bounds sub-grid ---
-        GridPane gridBox = subGrid();
-        int gr = 0;
-        gridBox.add(sublabel("Bins X"), 0, gr); gridBox.add(binsXSpinner, 1, gr++);      // row
-        gridBox.add(sublabel("Bins Y"), 0, gr); gridBox.add(binsYSpinner, 1, gr++);      // moved to next row
-        gridBox.add(sublabel("Bounds Policy"), 0, gr); gridBox.add(boundsPolicyCombo, 1, gr++); 
-        gridBox.add(sublabel("Canonical Id"), 0, gr);  gridBox.add(canonicalPolicyIdField, 1, gr++);
-        g.add(compactLabel("Grid / Bounds"), 0, r); g.add(gridBox, 1, r++);
+        // Grid / Bounds
+        g.add(compactLabel("Bins X"), 0, r);                 g.add(binsXSpinner, 1, r++);
+        g.add(compactLabel("Bins Y"), 0, r);                 g.add(binsYSpinner, 1, r++);
+        g.add(compactLabel("Bounds Policy"), 0, r);          g.add(boundsPolicyCombo, 1, r++);
+        g.add(compactLabel("Canonical Policy Id"), 0, r);    g.add(canonicalPolicyIdField, 1, r++);
 
-        g.add(compactLabel("Min Avg Count/Cell"), 0, r); g.add(minAvgCountPerCellSpinner, 1, r++);
+        // Guard
+        g.add(compactLabel("Min Avg Count/Cell"), 0, r);     g.add(minAvgCountPerCellSpinner, 1, r++);
 
         // Outputs
-        GridPane out = subGrid();
-        int or = 0;
-        out.add(sublabel("Output"), 0, or); out.add(outputKindCombo, 1, or++); 
-        HBox cacheFlags = new HBox(8, cacheEnabledCheck, saveThumbsCheck);
-        out.add(cacheFlags, 0, or, 2, 1);
-        g.add(compactLabel("Outputs"), 0, r); g.add(out, 1, r++);
+        g.add(compactLabel("Output"), 0, r);                 g.add(outputKindCombo, 1, r++);
+        g.add(compactLabel(""), 0, r);                       g.add(cacheEnabledCheck, 1, r++);    // checkbox row
+        g.add(compactLabel(""), 0, r);                       g.add(saveThumbsCheck, 1, r++);      // checkbox row
+
+        // Whitelist
+        g.add(compactLabel("Whitelist (opt)"), 0, r);        g.add(whitelistArea, 1, r++);
 
         VBox root = new VBox(8, g);
         root.setPadding(new Insets(2));
@@ -328,35 +331,6 @@ public final class PairwiseJpdfConfigPanel extends BorderPane {
         return l;
     }
 
-    private static Label sublabel(String text) {
-        Label l = new Label(text);
-        l.setMinWidth(SUBLABEL_COL_W);
-        l.setPrefWidth(SUBLABEL_COL_W);
-        l.setMaxWidth(SUBLABEL_COL_W);
-        return l;
-    }
-
-    private static GridPane subGrid() {
-        GridPane sg = new GridPane();
-        sg.setHgap(6);
-        sg.setVgap(4);
-
-        ColumnConstraints s0 = new ColumnConstraints();
-        s0.setMinWidth(SUBLABEL_COL_W);
-        s0.setPrefWidth(SUBLABEL_COL_W);
-        s0.setMaxWidth(SUBLABEL_COL_W);
-        s0.setHgrow(Priority.NEVER);
-
-        ColumnConstraints s1 = new ColumnConstraints();
-        s1.setMinWidth(FIELD_MIN_W);
-        s1.setPrefWidth(FIELD_PREF_W);
-        s1.setMaxWidth(FIELD_PREF_W);
-        s1.setHgrow(Priority.NEVER);
-
-        sg.getColumnConstraints().addAll(s0, s1);
-        return sg;
-    }
-
     private static void widenCombo(ComboBox<?> cb) {
         cb.setMinWidth(FIELD_MIN_W);
         cb.setPrefWidth(FIELD_PREF_W);
@@ -387,6 +361,7 @@ public final class PairwiseJpdfConfigPanel extends BorderPane {
         outputKindCombo.setValue(OutputKind.PDF_AND_CDF);
         cacheEnabledCheck.setSelected(true);
         saveThumbsCheck.setSelected(true);
+
         updateEnablement();
     }
 }
