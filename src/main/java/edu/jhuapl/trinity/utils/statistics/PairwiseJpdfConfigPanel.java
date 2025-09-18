@@ -6,13 +6,11 @@ import edu.jhuapl.trinity.utils.statistics.JpdfRecipe.PairSelection;
 import edu.jhuapl.trinity.utils.statistics.JpdfRecipe.ScoreMetric;
 import java.util.function.Consumer;
 import javafx.geometry.Insets;
-import javafx.geometry.Pos;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
-import javafx.scene.control.Separator;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.TextArea;
@@ -22,29 +20,27 @@ import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Priority;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 
-/**
- * PairwiseJpdfConfigPanel
- * -----------------------
- * Floating JavaFX pane that collects configuration for a JpdfRecipe and emits it via a callback.
- *
- * Notes:
- * - Pure UI: it does not perform computation. Use setOnRun(...) to receive a built JpdfRecipe.
- * - "Whitelist" entry is a free-text placeholder here; integrate with a dedicated AxisPair editor later.
- *
- * @author Sean Phillips
- */
 public final class PairwiseJpdfConfigPanel extends BorderPane {
 
-    // --- Callbacks ---
+    // ---- sizing knobs ----
+    private static final double PANEL_PREF_WIDTH   = 390;
+    private static final double LABEL_COL_WIDTH    = 130; // main label col
+    private static final double FIELD_MIN_W        = 180; // generic control minimum
+    private static final double FIELD_PREF_W       = 240; // generic control preferred
+    private static final double FIELD_WIDE_W       = 300; // name
+    private static final double SUBLABEL_COL_W     = 90;  // sublabel in sub-grids
+    private static final double SPINNER_MIN_W      = 100;
+    private static final double SPINNER_PREF_W     = 120;
+
     private Consumer<JpdfRecipe> onRun;
 
-    // --- General ---
+    // General
     private final TextField recipeNameField = new TextField();
-    private final TextArea descriptionArea = new TextArea();
 
-    // --- Pair selection ---
+    // Pair selection
     private final ComboBox<PairSelection> pairSelectionCombo = new ComboBox<>();
     private final ComboBox<ScoreMetric> scoreMetricCombo = new ComboBox<>();
     private final Spinner<Integer> topKSpinner = new Spinner<>();
@@ -55,83 +51,108 @@ public final class PairwiseJpdfConfigPanel extends BorderPane {
     private final CheckBox includeSelfPairsCheck = new CheckBox("Include (i,i)");
     private final CheckBox orderedPairsCheck = new CheckBox("Treat pairs as ordered (i,j) and (j,i)");
 
-    // --- Grid / Bounds ---
+    // Grid / Bounds
     private final Spinner<Integer> binsXSpinner = new Spinner<>();
     private final Spinner<Integer> binsYSpinner = new Spinner<>();
     private final ComboBox<BoundsPolicy> boundsPolicyCombo = new ComboBox<>();
     private final TextField canonicalPolicyIdField = new TextField("default");
 
-    // --- Data sufficiency guard ---
+    // Guard
     private final Spinner<Double> minAvgCountPerCellSpinner = new Spinner<>();
 
-    // --- Outputs & runtime ---
+    // Output/runtime
     private final ComboBox<OutputKind> outputKindCombo = new ComboBox<>();
     private final CheckBox cacheEnabledCheck = new CheckBox("Enable Cache");
     private final CheckBox saveThumbsCheck = new CheckBox("Save Thumbnails");
 
-    // --- Cohort labels (for provenance/reporting) ---
-    private final TextField cohortAField = new TextField("A");
-    private final TextField cohortBField = new TextField("B");
-
-    // --- Whitelist placeholder (optional future editor) ---
-    private final TextArea whitelistArea = new TextArea();
-
-    // --- Actions ---
+    // Actions (now exposed to parent so they can be placed in the top bar)
     private final Button runButton = new Button("Run");
     private final Button resetButton = new Button("Reset");
 
     public PairwiseJpdfConfigPanel() {
-        setPadding(new Insets(10));
+        setPadding(new Insets(2));
+        setPrefWidth(PANEL_PREF_WIDTH);
+        setMaxWidth(PANEL_PREF_WIDTH);
 
-        // Defaults
+        // Defaults & widths
         recipeNameField.setPromptText("Recipe name (required)");
-        descriptionArea.setPromptText("Optional description...");
-        descriptionArea.setPrefRowCount(2);
+        recipeNameField.setPrefWidth(FIELD_WIDE_W);
+        recipeNameField.setMinWidth(FIELD_MIN_W);
+        recipeNameField.setMaxWidth(FIELD_WIDE_W);
 
         pairSelectionCombo.getItems().addAll(PairSelection.values());
         pairSelectionCombo.setValue(PairSelection.ALL);
+        pairSelectionCombo.setPrefWidth(FIELD_WIDE_W);
+        pairSelectionCombo.setMaxWidth(FIELD_WIDE_W);        
 
         scoreMetricCombo.getItems().addAll(ScoreMetric.values());
         scoreMetricCombo.setValue(ScoreMetric.PEARSON);
+        widenCombo(scoreMetricCombo);
 
         topKSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 10_000, 20, 1));
         topKSpinner.setEditable(true);
+        topKSpinner.setMinWidth(SPINNER_MIN_W);
+        topKSpinner.setPrefWidth(SPINNER_PREF_W);
+        topKSpinner.setMaxWidth(SPINNER_PREF_W);
 
         thresholdSpinner.setValueFactory(new SpinnerValueFactory.DoubleSpinnerValueFactory(0.0, 1.0, 0.2, 0.01));
         thresholdSpinner.setEditable(true);
+        thresholdSpinner.setMinWidth(SPINNER_MIN_W);
+        thresholdSpinner.setPrefWidth(SPINNER_PREF_W);
+        thresholdSpinner.setMaxWidth(SPINNER_PREF_W);
 
         componentPairsCheck.setSelected(true);
+
         compStartSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, Integer.MAX_VALUE, 0, 1));
         compStartSpinner.setEditable(true);
+        compStartSpinner.setMinWidth(SPINNER_MIN_W);
+        compStartSpinner.setPrefWidth(SPINNER_PREF_W);
+        compStartSpinner.setMaxWidth(SPINNER_PREF_W);
+
         compEndSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, Integer.MAX_VALUE, 1, 1));
         compEndSpinner.setEditable(true);
+        compEndSpinner.setMinWidth(SPINNER_MIN_W);
+        compEndSpinner.setPrefWidth(SPINNER_PREF_W);
+        compEndSpinner.setMaxWidth(SPINNER_PREF_W);
 
         includeSelfPairsCheck.setSelected(false);
         orderedPairsCheck.setSelected(false);
 
         binsXSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(2, 4096, 64, 2));
         binsXSpinner.setEditable(true);
+        binsXSpinner.setMinWidth(SPINNER_MIN_W);
+        binsXSpinner.setPrefWidth(SPINNER_PREF_W);
+        binsXSpinner.setMaxWidth(SPINNER_PREF_W);
+
         binsYSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(2, 4096, 64, 2));
         binsYSpinner.setEditable(true);
+        binsYSpinner.setMinWidth(SPINNER_MIN_W);
+        binsYSpinner.setPrefWidth(SPINNER_PREF_W);
+        binsYSpinner.setMaxWidth(SPINNER_PREF_W);
 
         boundsPolicyCombo.getItems().addAll(BoundsPolicy.values());
         boundsPolicyCombo.setValue(BoundsPolicy.DATA_MIN_MAX);
+        widenCombo(boundsPolicyCombo);
+
+        canonicalPolicyIdField.setPrefWidth(FIELD_PREF_W);
+        canonicalPolicyIdField.setMinWidth(FIELD_MIN_W);
+        canonicalPolicyIdField.setMaxWidth(FIELD_PREF_W);
 
         minAvgCountPerCellSpinner.setValueFactory(new SpinnerValueFactory.DoubleSpinnerValueFactory(0.0, 1e9, 3.0, 0.5));
         minAvgCountPerCellSpinner.setEditable(true);
+        minAvgCountPerCellSpinner.setMinWidth(SPINNER_MIN_W);
+        minAvgCountPerCellSpinner.setPrefWidth(SPINNER_PREF_W);
+        minAvgCountPerCellSpinner.setMaxWidth(SPINNER_PREF_W);
 
         outputKindCombo.getItems().addAll(OutputKind.values());
         outputKindCombo.setValue(OutputKind.PDF_AND_CDF);
+        widenCombo(outputKindCombo);
 
         cacheEnabledCheck.setSelected(true);
         saveThumbsCheck.setSelected(true);
 
-        whitelistArea.setPromptText("Optional whitelist of axis pairs (placeholder).\nIntegrate with an AxisPair editor later.");
-        whitelistArea.setPrefRowCount(3);
-
-        // Layout
+        // Layout: ONLY center form (no bottom buttons; parent will place buttons in its top bar)
         setCenter(buildForm());
-        setBottom(buildButtons());
 
         // Reactive enable/disable
         pairSelectionCombo.valueProperty().addListener((obs, ov, nv) -> updateEnablement());
@@ -142,14 +163,13 @@ public final class PairwiseJpdfConfigPanel extends BorderPane {
         resetButton.setOnAction(e -> resetToDefaults());
     }
 
-    // ---------------------------------------------------------------------
-    // Public API
-    // ---------------------------------------------------------------------
+    /** Expose Run button so the parent pane can place it in the top bar. */
+    public Button getRunButton() { return runButton; }
+    /** Expose Reset button so the parent pane can place it in the top bar. */
+    public Button getResetButton() { return resetButton; }
 
     /** Set a callback to receive a fully-built JpdfRecipe when the user clicks Run. */
-    public void setOnRun(Consumer<JpdfRecipe> onRun) {
-        this.onRun = onRun;
-    }
+    public void setOnRun(Consumer<JpdfRecipe> onRun) { this.onRun = onRun; }
 
     // ---------------------------------------------------------------------
     // Internals
@@ -157,81 +177,78 @@ public final class PairwiseJpdfConfigPanel extends BorderPane {
 
     private VBox buildForm() {
         GridPane g = new GridPane();
-        g.setHgap(10);
-        g.setVgap(8);
-        g.setPadding(new Insets(8));
+        g.setHgap(8);
+        g.setVgap(6);
+        g.setPadding(new Insets(2));
+        g.setMaxWidth(Region.USE_PREF_SIZE);
 
         ColumnConstraints c0 = new ColumnConstraints();
-        c0.setPercentWidth(32);
+        c0.setMinWidth(LABEL_COL_WIDTH);
+        c0.setPrefWidth(LABEL_COL_WIDTH);
+        c0.setMaxWidth(LABEL_COL_WIDTH);
+        c0.setHgrow(Priority.NEVER);
+
         ColumnConstraints c1 = new ColumnConstraints();
-        c1.setPercentWidth(68);
+        c1.setMinWidth(FIELD_MIN_W);
+        c1.setPrefWidth(FIELD_PREF_W);
+        c1.setMaxWidth(FIELD_WIDE_W);
+        c1.setHgrow(Priority.SOMETIMES);
+
         g.getColumnConstraints().addAll(c0, c1);
 
         int r = 0;
-        g.add(new Label("Name"), 0, r); g.add(recipeNameField, 1, r++);
+        g.add(compactLabel("Name"), 0, r); g.add(recipeNameField, 1, r++);
 
-        g.add(new Label("Description"), 0, r); g.add(descriptionArea, 1, r++);
+        g.add(compactLabel("Pair Selection"), 0, r); g.add(pairSelectionCombo, 1, r++);
 
-        g.add(new Label("Pair Selection"), 0, r); g.add(pairSelectionCombo, 1, r++);
+        // --- Preselection sub-grid ---
+        GridPane pre = subGrid();
+        int pr = 0;
+        pre.add(sublabel("Score Metric"), 0, pr); pre.add(scoreMetricCombo, 1, pr++);
+        pre.add(sublabel("Top-K"), 0, pr); pre.add(topKSpinner, 1, pr++);
+        pre.add(sublabel("Threshold"), 0, pr); pre.add(thresholdSpinner, 1, pr++);
+        g.add(compactLabel("Preselection"), 0, r); g.add(pre, 1, r++);
 
-        HBox scoreBox = new HBox(10, new Label("Score Metric"), scoreMetricCombo);
-        HBox topkBox = new HBox(10, new Label("Top-K"), topKSpinner);
-        HBox thBox = new HBox(10, new Label("Threshold"), thresholdSpinner);
-        VBox selectBox = new VBox(6, scoreBox, topkBox, thBox);
-        g.add(new Label("Preselection Options"), 0, r); g.add(selectBox, 1, r++);
+        // --- Components sub-grid ---
+        GridPane comp = subGrid();
+        int cr = 0;
+        comp.add(componentPairsCheck, 0, cr, 2, 1); cr++;
+        comp.add(sublabel("Comp Start"), 0, cr); comp.add(compStartSpinner, 1, cr++);   // row
+        comp.add(sublabel("Comp End"),   0, cr); comp.add(compEndSpinner, 1, cr++);     // row
+        comp.add(includeSelfPairsCheck,  0, cr, 2, 1); cr++;                             // row
+        comp.add(orderedPairsCheck,      0, cr, 2, 1); cr++;                             // moved to next row
+        g.add(compactLabel("Components"), 0, r); g.add(comp, 1, r++);
 
-        VBox compBox = new VBox(6,
-                componentPairsCheck,
-                new HBox(10, new Label("Component Start"), compStartSpinner),
-                new HBox(10, new Label("Component End"), compEndSpinner),
-                new HBox(10, includeSelfPairsCheck, orderedPairsCheck)
-        );
-        g.add(new Label("Components"), 0, r); g.add(compBox, 1, r++);
+        // --- Grid / Bounds sub-grid ---
+        GridPane gridBox = subGrid();
+        int gr = 0;
+        gridBox.add(sublabel("Bins X"), 0, gr); gridBox.add(binsXSpinner, 1, gr++);      // row
+        gridBox.add(sublabel("Bins Y"), 0, gr); gridBox.add(binsYSpinner, 1, gr++);      // moved to next row
+        gridBox.add(sublabel("Bounds Policy"), 0, gr); gridBox.add(boundsPolicyCombo, 1, gr++); 
+        gridBox.add(sublabel("Canonical Id"), 0, gr);  gridBox.add(canonicalPolicyIdField, 1, gr++);
+        g.add(compactLabel("Grid / Bounds"), 0, r); g.add(gridBox, 1, r++);
 
-        VBox gridBox = new VBox(6,
-                new HBox(10, new Label("Bins X"), binsXSpinner, new Label("Bins Y"), binsYSpinner),
-                new HBox(10, new Label("Bounds Policy"), boundsPolicyCombo),
-                new HBox(10, new Label("Canonical Policy Id"), canonicalPolicyIdField)
-        );
-        g.add(new Label("Grid / Bounds"), 0, r); g.add(gridBox, 1, r++);
+        g.add(compactLabel("Min Avg Count/Cell"), 0, r); g.add(minAvgCountPerCellSpinner, 1, r++);
 
-        g.add(new Label("Min Avg Count / Cell"), 0, r); g.add(minAvgCountPerCellSpinner, 1, r++);
+        // Outputs
+        GridPane out = subGrid();
+        int or = 0;
+        out.add(sublabel("Output"), 0, or); out.add(outputKindCombo, 1, or++); 
+        HBox cacheFlags = new HBox(8, cacheEnabledCheck, saveThumbsCheck);
+        out.add(cacheFlags, 0, or, 2, 1);
+        g.add(compactLabel("Outputs"), 0, r); g.add(out, 1, r++);
 
-        VBox outBox = new VBox(6,
-                new HBox(10, new Label("Output"), outputKindCombo),
-                new HBox(10, cacheEnabledCheck, saveThumbsCheck)
-        );
-        g.add(new Label("Outputs"), 0, r); g.add(outBox, 1, r++);
-
-        VBox cohortsBox = new VBox(6,
-                new HBox(10, new Label("Cohort A"), cohortAField),
-                new HBox(10, new Label("Cohort B"), cohortBField)
-        );
-        g.add(new Label("Cohorts"), 0, r); g.add(cohortsBox, 1, r++);
-
-        g.add(new Label("Whitelist (optional)"), 0, r); g.add(whitelistArea, 1, r++);
-
-        VBox root = new VBox(8,
-                g,
-                new Separator()
-        );
-        root.setPadding(new Insets(4));
+        VBox root = new VBox(8, g);
+        root.setPadding(new Insets(2));
+        root.setFillWidth(false);
         return root;
-    }
-
-    private HBox buildButtons() {
-        HBox box = new HBox(10, resetButton, runButton);
-        box.setAlignment(Pos.CENTER_RIGHT);
-        BorderPane.setMargin(box, new Insets(8, 8, 8, 8));
-        HBox.setHgrow(runButton, Priority.NEVER);
-        return box;
     }
 
     private void updateEnablement() {
         PairSelection ps = pairSelectionCombo.getValue();
         boolean needTopK = ps == PairSelection.TOP_K_BY_SCORE;
         boolean needThreshold = ps == PairSelection.THRESHOLD_BY_SCORE;
-        boolean needScoring = ps == PairSelection.TOP_K_BY_SCORE || ps == PairSelection.THRESHOLD_BY_SCORE;
+        boolean needScoring = needTopK || needThreshold;
 
         scoreMetricCombo.setDisable(!needScoring);
         topKSpinner.setDisable(!needTopK);
@@ -278,7 +295,6 @@ public final class PairwiseJpdfConfigPanel extends BorderPane {
         }
 
         JpdfRecipe.Builder b = JpdfRecipe.newBuilder(name)
-                .description(descriptionArea.getText() == null ? "" : descriptionArea.getText())
                 .pairSelection(ps)
                 .scoreMetric(sm)
                 .bins(bx, by)
@@ -288,10 +304,6 @@ public final class PairwiseJpdfConfigPanel extends BorderPane {
                 .outputKind(outputKindCombo.getValue())
                 .cacheEnabled(cacheEnabledCheck.isSelected())
                 .saveThumbnails(saveThumbsCheck.isSelected())
-                .cohortLabels(
-                        safe(cohortAField.getText(), "A"),
-                        safe(cohortBField.getText(), "B")
-                )
                 .componentPairsMode(componentPairsCheck.isSelected())
                 .componentIndexRange(start, end)
                 .includeSelfPairs(includeSelfPairsCheck.isSelected())
@@ -305,20 +317,54 @@ public final class PairwiseJpdfConfigPanel extends BorderPane {
             b.scoreThreshold(thr);
         }
 
-        // NOTE: For WHITELIST mode, integrate an AxisPair editor later and call:
-        //   b.clearAxisPairs(); b.addAxisPair(...);
-        // For now we just emit the recipe with empty explicit list (builder will validate non-empty if WHITELIST is chosen).
         return b.build();
     }
 
-    private static String safe(String s, String fallback) {
-        String t = s == null ? "" : s.trim();
-        return t.isEmpty() ? fallback : t;
+    private static Label compactLabel(String text) {
+        Label l = new Label(text);
+        l.setMinWidth(LABEL_COL_WIDTH);
+        l.setPrefWidth(LABEL_COL_WIDTH);
+        l.setMaxWidth(LABEL_COL_WIDTH);
+        return l;
     }
 
-    private void resetToDefaults() {
+    private static Label sublabel(String text) {
+        Label l = new Label(text);
+        l.setMinWidth(SUBLABEL_COL_W);
+        l.setPrefWidth(SUBLABEL_COL_W);
+        l.setMaxWidth(SUBLABEL_COL_W);
+        return l;
+    }
+
+    private static GridPane subGrid() {
+        GridPane sg = new GridPane();
+        sg.setHgap(6);
+        sg.setVgap(4);
+
+        ColumnConstraints s0 = new ColumnConstraints();
+        s0.setMinWidth(SUBLABEL_COL_W);
+        s0.setPrefWidth(SUBLABEL_COL_W);
+        s0.setMaxWidth(SUBLABEL_COL_W);
+        s0.setHgrow(Priority.NEVER);
+
+        ColumnConstraints s1 = new ColumnConstraints();
+        s1.setMinWidth(FIELD_MIN_W);
+        s1.setPrefWidth(FIELD_PREF_W);
+        s1.setMaxWidth(FIELD_PREF_W);
+        s1.setHgrow(Priority.NEVER);
+
+        sg.getColumnConstraints().addAll(s0, s1);
+        return sg;
+    }
+
+    private static void widenCombo(ComboBox<?> cb) {
+        cb.setMinWidth(FIELD_MIN_W);
+        cb.setPrefWidth(FIELD_PREF_W);
+        cb.setMaxWidth(FIELD_PREF_W);
+    }
+
+    public void resetToDefaults() {
         recipeNameField.clear();
-        descriptionArea.clear();
 
         pairSelectionCombo.setValue(PairSelection.ALL);
         scoreMetricCombo.setValue(ScoreMetric.PEARSON);
@@ -341,11 +387,6 @@ public final class PairwiseJpdfConfigPanel extends BorderPane {
         outputKindCombo.setValue(OutputKind.PDF_AND_CDF);
         cacheEnabledCheck.setSelected(true);
         saveThumbsCheck.setSelected(true);
-
-        cohortAField.setText("A");
-        cohortBField.setText("B");
-
-        whitelistArea.clear();
         updateEnablement();
     }
 }
