@@ -149,7 +149,7 @@ public final class PairwiseJpdfPane extends LitPathPane {
         Button cfgReset = config.getResetButton();
         Button cfgRun   = config.getRunButton();
 
-        HBox bar = new HBox(10, cfgReset, cfgRun, new Separator(), runExternalBtn, clearBtn);
+        HBox bar = new HBox(10, cfgReset, cfgRun, runExternalBtn, clearBtn);
         bar.setAlignment(Pos.CENTER_LEFT);
         bar.setPadding(new Insets(6, 8, 6, 8));
 
@@ -160,9 +160,8 @@ public final class PairwiseJpdfPane extends LitPathPane {
 
         root.setLeft(left);
         root.setCenter(grid);
-        BorderPane.setMargin(grid, new Insets(6));
-        root.setPadding(new Insets(6));
-        // bottom separator removed—buttons are in the top bar now
+        BorderPane.setMargin(grid, new Insets(2));
+        root.setPadding(new Insets(2));
     }
 
     private void wireHandlers(Scene scene) {

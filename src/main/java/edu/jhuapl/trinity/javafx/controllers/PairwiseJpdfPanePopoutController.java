@@ -1,7 +1,12 @@
 package edu.jhuapl.trinity.javafx.controllers;
 
-import edu.jhuapl.trinity.javafx.components.panes.PairwiseJpdfPane;
+import edu.jhuapl.trinity.css.StyleResourceProvider;
+import edu.jhuapl.trinity.data.messages.xai.FeatureCollection;
+import edu.jhuapl.trinity.javafx.components.PairwiseJpdfView;
+import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
+import edu.jhuapl.trinity.javafx.events.HypersurfaceGridEvent;
 import edu.jhuapl.trinity.utils.statistics.DensityCache;
+import edu.jhuapl.trinity.utils.statistics.GridDensityResult;
 import edu.jhuapl.trinity.utils.statistics.JpdfBatchEngine;
 import edu.jhuapl.trinity.utils.statistics.PairwiseJpdfConfigPanel;
 import javafx.geometry.Insets;
@@ -16,6 +21,7 @@ import javafx.stage.StageStyle;
 import javafx.stage.Window;
 
 import java.util.prefs.Preferences;
+import javafx.scene.layout.Background;
 
 public class PairwiseJpdfPanePopoutController {
     private final Scene appScene;
@@ -23,7 +29,7 @@ public class PairwiseJpdfPanePopoutController {
 
     private Stage stage;
     private Scene scene;
-    private PairwiseJpdfPane pane;
+    private PairwiseJpdfView view;
 
     private final JpdfBatchEngine engine;
     private final DensityCache cache;
@@ -32,11 +38,16 @@ public class PairwiseJpdfPanePopoutController {
     public PairwiseJpdfPanePopoutController(Scene scene) {
         this(scene, null, null, null);
     }
-    public PairwiseJpdfPanePopoutController(Scene appScene, JpdfBatchEngine engine, DensityCache cache, PairwiseJpdfConfigPanel configPanel) {
+
+    public PairwiseJpdfPanePopoutController(
+            Scene appScene,
+            JpdfBatchEngine engine,
+            DensityCache cache,
+            PairwiseJpdfConfigPanel configPanel) {
         this.appScene = appScene;
-        this.engine = engine != null ? engine : new JpdfBatchEngine();
-        this.cache = cache != null ? cache : new DensityCache.Builder().maxEntries(128).ttlMillis(0).build();
-        this.configPanel = configPanel != null ? configPanel : new PairwiseJpdfConfigPanel();
+        this.engine = (engine != null) ? engine : new JpdfBatchEngine();
+        this.cache = (cache != null) ? cache : new DensityCache.Builder().maxEntries(128).ttlMillis(0).build();
+        this.configPanel = (configPanel != null) ? configPanel : new PairwiseJpdfConfigPanel();
     }
 
     /** Show the popout window (or focus if already open) */
@@ -67,16 +78,39 @@ public class PairwiseJpdfPanePopoutController {
     }
 
     private void buildStageAndWire() {
-        // IMPORTANT: Create a *fresh* PairwiseJpdfPane for the new window,
-        // passing in a new Scene (will be set below), and null for parent.
-        scene = new Scene(new BorderPane(), Color.BLACK);
-        pane = new PairwiseJpdfPane(scene, null, engine, cache, configPanel);
+        view = new PairwiseJpdfView(engine, cache, configPanel);
 
-        // Optional: if you want to sync state from the main window, expose methods to set cohorts/labels, etc.
-
-        // Simple toolbar for popout controls
+        view.setOnCellClick(item -> {
+            if (item == null || item.res == null) return;
+            GridDensityResult res = item.res;
+            var gridList = res.pdfAsListGrid();
+            // Use appScene.getRoot() so the event goes to the main app’s event system
+            appScene.getRoot().fireEvent(new HypersurfaceGridEvent(
+                HypersurfaceGridEvent.RENDER_PDF,
+                gridList,
+                res.getxCenters(),
+                res.getyCenters(),
+                item.xLabel + " | " + item.yLabel + " (PDF)"
+            ));
+            // Optionally, show a toast:
+            view.toast("Opened PDF in 3D.", false);
+        });
+        // ---- Optional: wire up toast handler if desired ----
+        // view.setToastHandler(msg -> { /* show in status bar or dialog */ });
+        appScene.addEventHandler(FeatureVectorEvent.NEW_FEATURE_COLLECTION, e -> {
+            if (view == null) return; // Defensive, in case view is not yet built
+            if (e.object instanceof FeatureCollection fc && fc.getFeatures() != null) {
+                view.setCohortA(fc.getFeatures(), "A");
+                // Optionally, show a toast to user
+                view.toast("Loaded " + fc.getFeatures().size() + " vectors into Cohort A.", false);
+            }
+        });
+        
+        // ---- ToolBar for popout controls ----
         ToolBar tb = new ToolBar();
         tb.setPadding(new Insets(5));
+        tb.setBackground(Background.EMPTY);
+        
         Button btnSecond = new Button("Second Screen");
         btnSecond.setOnAction(e -> sendToSecondScreen());
         btnSecond.setDisable(Screen.getScreens().size() <= 1);
@@ -86,12 +120,18 @@ public class PairwiseJpdfPanePopoutController {
 
         BorderPane root = new BorderPane();
         root.setTop(tb);
-        root.setCenter(pane);
-        scene.setRoot(root);
+        root.setCenter(view);
+        root.setBackground(Background.EMPTY);
+        scene = new Scene(root, 1000, 800, Color.BLACK);
 
-        // Style if desired
-        // scene.getStylesheets().add(...);
-
+        //Make everything pretty
+        String CSS = StyleResourceProvider.getResource("styles.css").toExternalForm();
+        scene.getStylesheets().add(CSS);
+        CSS = StyleResourceProvider.getResource("covalent.css").toExternalForm();
+        scene.getStylesheets().add(CSS);
+        CSS = StyleResourceProvider.getResource("dialogstyles.css").toExternalForm();
+        scene.getStylesheets().add(CSS);
+        
         stage = new Stage(StageStyle.DECORATED);
         stage.setTitle("Trinity — Pairwise Joint Densities");
         stage.setScene(scene);
@@ -103,7 +143,7 @@ public class PairwiseJpdfPanePopoutController {
 
         stage.setOnCloseRequest(e -> {
             saveWindowPrefs();
-            pane = null;
+            view = null;
             scene.setRoot(new BorderPane()); // help GC
             scene = null;
             stage = null;
@@ -116,7 +156,7 @@ public class PairwiseJpdfPanePopoutController {
     }
 
     private void moveToScreen(Screen screen) {
-        var b = screen.getVisualBounds();
+        javafx.geometry.Rectangle2D b = screen.getVisualBounds();
         stage.setX(b.getMinX() + 40);
         stage.setY(b.getMinY() + 40);
         if (!stage.isShowing()) {
@@ -155,5 +195,10 @@ public class PairwiseJpdfPanePopoutController {
         if (w > 0 && h > 0) { stage.setWidth(w); stage.setHeight(h); }
         if (!Double.isNaN(x) && !Double.isNaN(y)) { stage.setX(x); stage.setY(y); }
         stage.setFullScreen(fs);
+    }
+
+    // ---- Optional: add public getter for the view, to allow parent to set state after popout ----
+    public PairwiseJpdfView getView() {
+        return view;
     }
 }
