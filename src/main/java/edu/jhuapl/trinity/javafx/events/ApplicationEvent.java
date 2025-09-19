@@ -48,6 +48,7 @@ public class ApplicationEvent extends Event {
     public static final EventType<ApplicationEvent> POPOUT_FEATUREVECTOR_MANAGER = new EventType(ANY, "POPOUT_FEATUREVECTOR_MANAGER");
     public static final EventType<ApplicationEvent> SHOW_HYPERSPACE_CONTROLS = new EventType(ANY, "SHOW_HYPERSPACE_CONTROLS");
     public static final EventType<ApplicationEvent> SHOW_PAIRWISEJPDF_PANE = new EventType(ANY, "SHOW_PAIRWISEJPDF_PANE");
+    public static final EventType<ApplicationEvent> POPOUT_PAIRWISEJPDF_JPDF = new EventType(ANY, "POPOUT_PAIRWISEJPDF_JPDF");
 
     public ApplicationEvent(EventType<? extends Event> eventType, Object object) {
         this(eventType);

@@ -2,6 +2,7 @@ package edu.jhuapl.trinity.javafx.components.panes;
 
 import edu.jhuapl.trinity.data.messages.xai.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
+import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.events.HypersurfaceGridEvent;
@@ -129,7 +130,9 @@ public final class PairwiseJpdfPane extends LitPathPane {
 
     @Override
     public void maximize() {
-        // wire your popout event if desired
+        scene.getRoot().fireEvent(
+            new ApplicationEvent(ApplicationEvent.POPOUT_PAIRWISEJPDF_JPDF, Boolean.TRUE)
+        );
     }
 
     private void buildLayout() {

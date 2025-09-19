@@ -101,6 +101,7 @@ import static edu.jhuapl.trinity.App.theConfig;
 import edu.jhuapl.trinity.javafx.components.panes.HypersurfaceControlsPane;
 import edu.jhuapl.trinity.javafx.components.panes.PairwiseJpdfPane;
 import edu.jhuapl.trinity.javafx.controllers.FeatureVectorManagerPopoutController;
+import edu.jhuapl.trinity.javafx.controllers.PairwiseJpdfPanePopoutController;
 
 /**
  * @author Sean Phillips
@@ -129,6 +130,7 @@ public class AppAsyncManager extends Task<Void> {
     SpecialEffectsPane specialEffectsPane;
     StatPdfCdfPane statPdfCdfPane;
     PairwiseJpdfPane pairwiseJpdfPane;
+    PairwiseJpdfPanePopoutController pjpPop;
     FeatureVectorManagerPane featureVectorManagerPane;
     NavigatorPane navigatorPane;
     CocoViewerPane cocoViewerPane;
@@ -172,6 +174,7 @@ public class AppAsyncManager extends Task<Void> {
             impl.setEventTarget(scene.getRoot());
         }
         fvPop = new FeatureVectorManagerPopoutController(fvService, scene);
+        pjpPop = new PairwiseJpdfPanePopoutController(scene);
         
         setOnSucceeded(e -> Platform.runLater(() ->
             scene.getRoot().fireEvent(new ApplicationEvent(ApplicationEvent.HIDE_BUSY_INDICATOR))));
@@ -618,6 +621,14 @@ public class AppAsyncManager extends Task<Void> {
                 }
             else
                 pairwiseJpdfPane.close();
+        });
+        scene.addEventHandler(ApplicationEvent.POPOUT_PAIRWISEJPDF_JPDF, e -> {
+            boolean show = (null != e.object && e.object instanceof Boolean) ? (boolean)e.object : true;
+            if(show) {
+                pairwiseJpdfPane.close(); 
+                pjpPop.show();
+            } else
+                pjpPop.close();
         });
         
         scene.addEventHandler(ApplicationEvent.SHOW_HYPERSPACE_CONTROLS, e -> {
