@@ -161,6 +161,7 @@ public final class PairGridPane extends BorderPane {
     public PairGridPane() {
         // ScrollPane: cap viewport so it never pushes parent
         scroller.setFitToWidth(true);
+        scroller.setFitToHeight(false); // important: content height won’t try to expand the parent
         scroller.setPannable(true);
         scroller.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         scroller.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
@@ -196,7 +197,6 @@ public final class PairGridPane extends BorderPane {
         placeholder.setAlignment(Pos.CENTER);
         placeholder.setMinSize(0, 0);
         placeholder.setPrefSize(560, 360); // gives initial size w/o pushing parent
-        placeholderLabel.setStyle("-fx-text-fill: derive(-fx-text-base-color, -30%); -fx-font-style: italic;");
 
         contentStack.getChildren().addAll(scroller, placeholder);
         placeholder.toFront();
@@ -218,11 +218,37 @@ public final class PairGridPane extends BorderPane {
         applyFilterSortAndRender();
     }
 
+    /** Legacy add (rebuilds grid, respects filter/sort). */
     public void addItem(PairItem item) {
         if (item != null) {
             allItems.add(item);
             applyFilterSortAndRender();
         }
+    }
+
+    /**
+     * Streaming add: efficiently appends one tile without rebuilding the whole grid
+     * when no filter/sort is active. If filter or sorter is set, falls back to full render.
+     */
+    public void addItemStreaming(PairItem item) {
+        if (item == null) return;
+        allItems.add(item);
+
+        // If filtering or sorting is active, we must rebuild to preserve correctness.
+        if (filter != null || sorter != null) {
+            applyFilterSortAndRender();
+            return;
+        }
+
+        // No filter/sort: append directly.
+        if (visibleItems.isEmpty()) {
+            placeholder.setVisible(false);
+            scroller.setVisible(true);
+        }
+        int index = visibleItems.size();
+        visibleItems.add(item);
+        Node cell = buildCell(index, item);
+        tilePane.getChildren().add(cell);
     }
 
     public void clearItems() {
@@ -324,7 +350,7 @@ public final class PairGridPane extends BorderPane {
         }
         Label header = new Label(title);
         header.setPadding(new Insets(2, 4, 2, 4));
-        header.setTextFill(Color.web("#E0E0E0"));
+        // leave header unstyled (no textFill or CSS), per app-wide styling policy
 
         HeatmapThumbnailView view = new HeatmapThumbnailView();
         view.setPrefSize(cellWidth, cellHeight);
@@ -363,6 +389,7 @@ public final class PairGridPane extends BorderPane {
         center.setPadding(cellPadding);
         cell.setCenter(center);
 
+        // keep programmatic border (no CSS classes used)
         cell.setBorder(new Border(new BorderStroke(
                 Color.web("#3A3A3A"),
                 BorderStrokeStyle.SOLID,
