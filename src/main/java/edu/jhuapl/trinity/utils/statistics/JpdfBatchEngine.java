@@ -16,6 +16,7 @@ import java.util.concurrent.ExecutorCompletionService;
 import java.util.concurrent.ExecutorService;
 import java.util.concurrent.Executors;
 import java.util.concurrent.Future;
+import java.util.function.Consumer;
 
 /**
  * JpdfBatchEngine
@@ -117,10 +118,20 @@ public final class JpdfBatchEngine {
     // Component-pairs mode
     // =====================================================================================
 
+    /** Backwards-compatible entry (no live append). */
     public static BatchResult runComponentPairs(List<FeatureVector> vectors,
                                                 JpdfRecipe recipe,
                                                 CanonicalGridPolicy canonicalPolicy,
                                                 DensityCache cache) {
+        return runComponentPairs(vectors, recipe, canonicalPolicy, cache, null);
+    }
+
+    /** Live-append overload: calls onResult for each finished pair (may be null). */
+    public static BatchResult runComponentPairs(List<FeatureVector> vectors,
+                                                JpdfRecipe recipe,
+                                                CanonicalGridPolicy canonicalPolicy,
+                                                DensityCache cache,
+                                                Consumer<PairJobResult> onResult) {
         Objects.requireNonNull(vectors);
         Objects.requireNonNull(recipe);
         Objects.requireNonNull(canonicalPolicy);
@@ -201,6 +212,11 @@ public final class JpdfBatchEngine {
                 PairJobResult r = f.get();
                 if (r.fromCache) cacheHits++; else computed++;
                 out.add(r);
+
+                // Live-append hook (safe-guarded)
+                if (onResult != null) {
+                    try { onResult.accept(r); } catch (Throwable ignore) { /* isolate UI issues */ }
+                }
             }
         } catch (Exception ex) {
             pool.shutdownNow();
@@ -220,10 +236,20 @@ public final class JpdfBatchEngine {
     // Whitelist mode
     // =====================================================================================
 
+    /** Backwards-compatible entry (no live append). */
     public static BatchResult runWhitelistPairs(List<FeatureVector> vectors,
                                                 JpdfRecipe recipe,
                                                 CanonicalGridPolicy canonicalPolicy,
                                                 DensityCache cache) {
+        return runWhitelistPairs(vectors, recipe, canonicalPolicy, cache, null);
+    }
+
+    /** Live-append overload: calls onResult for each finished pair (may be null). */
+    public static BatchResult runWhitelistPairs(List<FeatureVector> vectors,
+                                                JpdfRecipe recipe,
+                                                CanonicalGridPolicy canonicalPolicy,
+                                                DensityCache cache,
+                                                Consumer<PairJobResult> onResult) {
         Objects.requireNonNull(vectors);
         Objects.requireNonNull(recipe);
         Objects.requireNonNull(canonicalPolicy);
@@ -260,6 +286,11 @@ public final class JpdfBatchEngine {
                 PairJobResult r = f.get();
                 if (r.fromCache) cacheHits++; else computed++;
                 out.add(r);
+
+                // Live-append hook (safe-guarded)
+                if (onResult != null) {
+                    try { onResult.accept(r); } catch (Throwable ignore) { /* isolate UI issues */ }
+                }
             }
         } catch (Exception ex) {
             pool.shutdownNow();

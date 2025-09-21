@@ -5,19 +5,20 @@ import edu.jhuapl.trinity.utils.statistics.CanonicalGridPolicy;
 import edu.jhuapl.trinity.utils.statistics.DensityCache;
 import edu.jhuapl.trinity.utils.statistics.HeatmapThumbnailView;
 import edu.jhuapl.trinity.utils.statistics.JpdfBatchEngine;
+import edu.jhuapl.trinity.utils.statistics.JpdfBatchEngine.BatchResult;
 import edu.jhuapl.trinity.utils.statistics.JpdfRecipe;
 import edu.jhuapl.trinity.utils.statistics.PairGridPane;
 import edu.jhuapl.trinity.utils.statistics.PairwiseJpdfConfigPanel;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.control.Button;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.HBox;
 
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import javafx.scene.control.Button;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
 
 /**
  * PairwiseJpdfView
@@ -34,6 +35,9 @@ public class PairwiseJpdfView extends BorderPane {
     private final PairGridPane gridPane;
     private final HBox topBar;
 
+    // Core engine/cache (now always non-null)
+    private final DensityCache cache;
+
     // State
     private List<FeatureVector> cohortA = new ArrayList<>();
     private List<FeatureVector> cohortB = new ArrayList<>();
@@ -43,8 +47,14 @@ public class PairwiseJpdfView extends BorderPane {
     private Supplier<JpdfRecipe> recipeSupplier; // optional, for run external button
     private Consumer<String> toastHandler; // optional, for showing user messages
 
+    // Cell click handler (e.g., for open in 3D)
+    private Consumer<PairGridPane.PairItem> onCellClickHandler;
+
     public PairwiseJpdfView(JpdfBatchEngine engine, DensityCache cache, PairwiseJpdfConfigPanel configPanel) {
-        this.configPanel = configPanel != null ? configPanel : new PairwiseJpdfConfigPanel();
+        // Defensive: always have a cache (if none supplied, create default)
+        this.cache = (cache != null) ? cache : new DensityCache.Builder().maxEntries(128).ttlMillis(0).build();
+        this.configPanel = (configPanel != null) ? configPanel : new PairwiseJpdfConfigPanel();
+
         this.gridPane = new PairGridPane();
         this.gridPane.setOnCellClick(click -> {
             if (onCellClickHandler != null) onCellClickHandler.accept(click.item);
@@ -63,8 +73,8 @@ public class PairwiseJpdfView extends BorderPane {
         Button clearBtn = new Button("Clear Grid");
         clearBtn.setOnAction(e -> gridPane.clearItems());
 
-        Button cfgReset = configPanel.getResetButton();
-        Button cfgRun   = configPanel.getRunButton();
+        Button cfgReset = this.configPanel.getResetButton();
+        Button cfgRun   = this.configPanel.getRunButton();
 
         topBar = new HBox(10, cfgReset, cfgRun, runExternalBtn, clearBtn);
         topBar.setAlignment(Pos.CENTER_LEFT);
@@ -73,8 +83,8 @@ public class PairwiseJpdfView extends BorderPane {
         // Left = VBox(topBar, configPanel)
         BorderPane left = new BorderPane();
         left.setTop(topBar);
-        left.setCenter(configPanel);
-        BorderPane.setMargin(configPanel, new Insets(6, 8, 6, 8));
+        left.setCenter(this.configPanel);
+        BorderPane.setMargin(this.configPanel, new Insets(6, 8, 6, 8));
 
         setLeft(left);
         setCenter(gridPane);
@@ -82,7 +92,7 @@ public class PairwiseJpdfView extends BorderPane {
         setPadding(new Insets(6));
 
         // Wire config panel 'Run' to runWithRecipe
-        configPanel.setOnRun(this::runWithRecipe);
+        this.configPanel.setOnRun(this::runWithRecipe);
     }
 
     // --- Public API ---
@@ -105,6 +115,9 @@ public class PairwiseJpdfView extends BorderPane {
     /** Set a custom handler for toasts/user messages (optional) */
     public void setToastHandler(Consumer<String> handler) { this.toastHandler = handler; }
 
+    /** Set cell click handler (e.g., open in 3D) */
+    public void setOnCellClick(Consumer<PairGridPane.PairItem> handler) { this.onCellClickHandler = handler; }
+
     /** Run computation and populate grid, using provided recipe */
     public void runWithRecipe(JpdfRecipe recipe) {
         if (recipe == null) { toast("No recipe provided.", true); return; }
@@ -116,13 +129,23 @@ public class PairwiseJpdfView extends BorderPane {
                 : "default"
         );
 
+        if (policy == null) {
+            toast("Failed to determine canonical grid policy for recipe.", true);
+            return;
+        }
+
+        if (this.cache == null) {
+            toast("DensityCache is null! This should never happen.", true);
+            return;
+        }
+
         toast("Computing pairwise densities…", false);
 
         // For now, only cohortA is used
-        JpdfBatchEngine.BatchResult batch;
+        BatchResult batch;
         switch (recipe.getPairSelection()) {
-            case WHITELIST -> batch = JpdfBatchEngine.runWhitelistPairs(cohortA, recipe, policy, null);
-            default -> batch = JpdfBatchEngine.runComponentPairs(cohortA, recipe, policy, null);
+            case WHITELIST -> batch = JpdfBatchEngine.runWhitelistPairs(cohortA, recipe, policy, this.cache);
+            default -> batch = JpdfBatchEngine.runComponentPairs(cohortA, recipe, policy, this.cache);
         }
 
         List<PairGridPane.PairItem> items = new ArrayList<>(batch.jobs.size());
@@ -143,10 +166,6 @@ public class PairwiseJpdfView extends BorderPane {
         toast("Batch complete: " + items.size() + " surfaces; cacheHits=" + batch.cacheHits +
                 "; wall=" + batch.wallMillis + " ms.", false);
     }
-
-    // --- Cell click handler (parent can use to wire up 3D open, etc.) ---
-    private Consumer<PairGridPane.PairItem> onCellClickHandler;
-    public void setOnCellClick(Consumer<PairGridPane.PairItem> handler) { this.onCellClickHandler = handler; }
 
     // --- Toast/user message ---
     public void toast(String msg, boolean isError) {
