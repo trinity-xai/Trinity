@@ -36,7 +36,11 @@ import javafx.scene.paint.Color;
  * forcing the parent to expand.
  */
 public final class PairGridPane extends BorderPane {
-
+    // --- Streaming support (thread-safe buffer -> periodic FX flush) ---
+    private final Object streamLock = new Object();
+    private final List<PairItem> pendingBuffer = new ArrayList<>();
+    private long lastFlushNanos = System.nanoTime();
+    private boolean flushScheduled = false;
     // ---------- Public API types ----------
 
     public static final class PairItem {
@@ -226,30 +230,63 @@ public final class PairGridPane extends BorderPane {
         }
     }
 
-    /**
-     * Streaming add: efficiently appends one tile without rebuilding the whole grid
-     * when no filter/sort is active. If filter or sorter is set, falls back to full render.
-     */
-    public void addItemStreaming(PairItem item) {
-        if (item == null) return;
-        allItems.add(item);
-
-        // If filtering or sorting is active, we must rebuild to preserve correctness.
-        if (filter != null || sorter != null) {
-            applyFilterSortAndRender();
-            return;
-        }
-
-        // No filter/sort: append directly.
-        if (visibleItems.isEmpty()) {
-            placeholder.setVisible(false);
-            scroller.setVisible(true);
-        }
-        int index = visibleItems.size();
-        visibleItems.add(item);
-        Node cell = buildCell(index, item);
-        tilePane.getChildren().add(cell);
+/** Recompute visibleItems with optional sort, then render. */
+private void applyFilterSortAndRenderInternal(boolean doSort) {
+    List<PairItem> tmp = new ArrayList<>();
+    for (PairItem it : allItems) {
+        if (filter == null || filter.test(it)) tmp.add(it);
     }
+    if (doSort && sorter != null) {
+        tmp.sort(sorter);
+    }
+    visibleItems = tmp;
+    renderTiles();
+}    
+/**
+ * Streaming add: buffer items and flush them to the UI based on either
+ * a count threshold (flushN) or a time threshold (flushMs).
+ *
+ * @param item the item to append
+ * @param flushN flush when at least this many pending items (>=1)
+ * @param flushMs flush if at least this many ms since last flush (>=0; 0 disables)
+ * @param incrementalSort if true, apply current sorter on each flush; if false, preserve append order
+ */
+public void addItemStreaming(PairItem item, int flushN, int flushMs, boolean incrementalSort) {
+    if (item == null) return;
+
+    // sanitize thresholds
+    if (flushN < 1) flushN = 1;
+    if (flushMs < 0) flushMs = 0;
+
+    boolean schedule = false;
+    long now = System.nanoTime();
+
+    synchronized (streamLock) {
+        pendingBuffer.add(item);
+        long elapsedMs = (now - lastFlushNanos) / 1_000_000L;
+        if (pendingBuffer.size() >= flushN || (flushMs > 0 && elapsedMs >= flushMs)) {
+            if (!flushScheduled) {
+                flushScheduled = true;
+                schedule = true;
+            }
+        }
+    }
+
+    if (schedule) {
+        final boolean doSort = incrementalSort;
+        javafx.application.Platform.runLater(() -> {
+            List<PairItem> toAdd;
+            synchronized (streamLock) {
+                toAdd = new ArrayList<>(pendingBuffer);
+                pendingBuffer.clear();
+                lastFlushNanos = System.nanoTime();
+                flushScheduled = false;
+            }
+            allItems.addAll(toAdd);
+            applyFilterSortAndRenderInternal(doSort);
+        });
+    }
+}
 
     public void clearItems() {
         allItems.clear();
