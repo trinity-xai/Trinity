@@ -9,44 +9,32 @@ import edu.jhuapl.trinity.utils.statistics.JpdfBatchEngine.BatchResult;
 import edu.jhuapl.trinity.utils.statistics.JpdfRecipe;
 import edu.jhuapl.trinity.utils.statistics.PairGridPane;
 import edu.jhuapl.trinity.utils.statistics.PairwiseJpdfConfigPanel;
+import edu.jhuapl.trinity.utils.statistics.RecipeIo;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
-import javafx.scene.control.Button;
-import javafx.scene.control.CheckBox;
-import javafx.scene.control.Label;
-import javafx.scene.control.Separator;
-import javafx.scene.control.Spinner;
-import javafx.scene.control.SpinnerValueFactory;
-import javafx.scene.control.SplitPane;
+import javafx.scene.control.*;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
+import javafx.stage.FileChooser;
+import javafx.scene.layout.Background;
 
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
-import java.util.function.Supplier;
-import javafx.scene.layout.Background;
 
 /**
- * PairwiseJpdfView (SplitPane-based)
- * ----------------------------------
- * Layout:
- *   [SplitPane HORIZONTAL]
- *     ├─ Left (VBox):
- *     │    ├─ Top bar (buttons + streaming controls on the left, progress label on the right)
- *     │    ├─ Separator
- *     │    └─ PairwiseJpdfConfigPanel (2-col compact)
- *     └─ Right:
- *          └─ PairGridPane (scrollable TilePane of thumbnails)
- *
- * Streaming:
- *   - Results are appended live via the engine’s onResult callback.
- *   - Flush cadence and incremental sorting can be tuned in the top bar.
+ * PairwiseJpdfView
+ * - Search/Sort are hosted in the PairGridPane header.
+ * - Toolbar is slim: Run, Reset, Collapse, Actions (MenuButton).
+ * - Actions menu contains Save/Load/Clear and streaming controls (Flush N/ms, Incremental sort).
  */
 public class PairwiseJpdfView extends BorderPane {
 
@@ -56,23 +44,29 @@ public class PairwiseJpdfView extends BorderPane {
 
     // Split layout
     private final SplitPane splitPane;
-    private final VBox controlsBox;           // left side of split
-    private final BorderPane topBar;          // top of left side
-    private final HBox topLeft;               // buttons + streaming controls (left)
-    private final Label progressLabel;        // progress (right)
-    private double lastDividerPos = 0.36;     // remembered position for collapse/expand
+    private final VBox controlsBox;
+    private final BorderPane topBar;
+    private final HBox topLeft;
+    private final Label progressLabel;
+    private double lastDividerPos = 0.36;
 
-    // Buttons
+    // Buttons (visible in toolbar)
     private final Button cfgResetBtn;
     private final Button cfgRunBtn;
-    private final Button runExternalBtn;
-    private final Button clearBtn;
     private final Button collapseBtn;
 
-    // Streaming controls
-    private final Spinner<Integer> flushSizeSpinner;      // how many completed items per UI flush
-    private final Spinner<Integer> flushIntervalSpinner;  // how many ms between forced UI flushes
-    private final CheckBox incrementalSortCheck;          // optional incremental sorting
+    // MenuButton (consolidated actions)
+    private final MenuButton actionsBtn;
+
+    // Streaming controls (now only inside menu)
+    private final Spinner<Integer> flushSizeSpinner;
+    private final Spinner<Integer> flushIntervalSpinner;
+    private final CheckBox incrementalSortCheck;
+
+    // Search / Sort controls (in grid header)
+    private final TextField searchField = new TextField();
+    private final ComboBox<String> sortCombo = new ComboBox<>();
+    private final CheckBox sortAscCheck = new CheckBox("Asc");
 
     // Cache (always non-null)
     private final DensityCache cache;
@@ -83,86 +77,81 @@ public class PairwiseJpdfView extends BorderPane {
     private String cohortALabel = "A";
     private String cohortBLabel = "B";
 
-    private Supplier<JpdfRecipe> recipeSupplier;    // optional for "Run (external)"
-    private Consumer<String> toastHandler;          // optional for user messages
+    private Consumer<String> toastHandler;
     private Consumer<PairGridPane.PairItem> onCellClickHandler;
 
-    // Background worker ref (optional cancellation)
     private volatile Thread workerThread;
 
     public PairwiseJpdfView(JpdfBatchEngine engine, DensityCache cache, PairwiseJpdfConfigPanel configPanel) {
-        // Engine is used indirectly via static calls; keep cache & config
         this.cache = (cache != null) ? cache : new DensityCache.Builder().maxEntries(128).ttlMillis(0).build();
         this.configPanel = (configPanel != null) ? configPanel : new PairwiseJpdfConfigPanel();
 
-        // Grid (right side)
+        // Grid (right)
         this.gridPane = new PairGridPane();
         this.gridPane.setOnCellClick(click -> {
             if (onCellClickHandler != null) onCellClickHandler.accept(click.item);
         });
 
-        // --- Buttons
+        // Buttons from config panel
         cfgResetBtn = this.configPanel.getResetButton();
         cfgRunBtn   = this.configPanel.getRunButton();
-
-        runExternalBtn = new Button("Run (external)");
-        runExternalBtn.setOnAction(e -> {
-            if (recipeSupplier != null) {
-                runWithRecipe(recipeSupplier.get());
-            } else {
-                toast("No recipe supplier set; use the panel’s Run button.", true);
-            }
-        });
-
-        clearBtn = new Button("Clear Grid");
-        clearBtn.setOnAction(e -> gridPane.clearItems());
 
         collapseBtn = new Button("Collapse Controls");
         collapseBtn.setOnAction(e -> toggleControlsCollapsed());
 
-        // --- Streaming controls
+        // Streaming controls (used inside the Actions menu)
         flushSizeSpinner = new Spinner<>(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 512, 6, 1));
         flushSizeSpinner.setEditable(true);
+        flushSizeSpinner.getEditor().setPrefColumnCount(4);
+        flushSizeSpinner.setMaxWidth(Region.USE_PREF_SIZE);
 
         flushIntervalSpinner = new Spinner<>(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 2000, 80, 10));
         flushIntervalSpinner.setEditable(true);
+        flushIntervalSpinner.getEditor().setPrefColumnCount(5);
+        flushIntervalSpinner.setMaxWidth(Region.USE_PREF_SIZE);
 
         incrementalSortCheck = new CheckBox("Incremental sort");
 
-        // --- Top left row (buttons + streaming controls)
-        HBox streamControls = new HBox(8,
-                new Label("Flush N"), flushSizeSpinner,
-                new Label("Flush ms"), flushIntervalSpinner,
-                incrementalSortCheck
-        );
-        streamControls.setAlignment(Pos.CENTER_LEFT);
+        // --- Build the compact grid header with Search + Sort ---
+        searchField.setPromptText("Search: e.g., x3 vs y*");
+        searchField.setPrefColumnCount(18);
+        sortCombo.getItems().addAll("Score", "i", "j", "label");
+        sortCombo.setValue("Score");
+        sortAscCheck.setSelected(false);
 
-        topLeft = new HBox(10, cfgResetBtn, cfgRunBtn, runExternalBtn, clearBtn, collapseBtn, streamControls);
+        HBox gridHeader = new HBox(8,
+                new Label("Search"), searchField,
+                new Label("Sort"), sortCombo, sortAscCheck
+        );
+        gridHeader.setAlignment(Pos.CENTER_LEFT);
+        gridHeader.setPadding(new Insets(4, 8, 2, 8));
+        gridPane.setHeader(gridHeader);
+
+        // --- Actions (MenuButton) ---
+        actionsBtn = buildActionsMenu();
+
+        // --- Slim toolbar ---
+        topLeft = new HBox(10, cfgResetBtn, cfgRunBtn, collapseBtn, actionsBtn);
         topLeft.setAlignment(Pos.CENTER_LEFT);
         topLeft.setPadding(new Insets(6, 8, 6, 8));
 
-        // --- Progress label (right)
         progressLabel = new Label("");
         BorderPane.setAlignment(progressLabel, Pos.CENTER_RIGHT);
         BorderPane.setMargin(progressLabel, new Insets(6, 8, 6, 8));
 
-        // --- Top bar (left=topLeft, right=progressLabel)
         topBar = new BorderPane();
         topBar.setLeft(topLeft);
         topBar.setRight(progressLabel);
         setTop(topBar);
-        
-        // --- Left controls area (VBox): topBar, Separator, configPanel
+
+        // Left controls box
         controlsBox = new VBox();
-//        controlsBox.getChildren().addAll(topBar, new Separator(), this.configPanel);
         controlsBox.getChildren().addAll(this.configPanel);
         VBox.setMargin(this.configPanel, new Insets(6, 8, 6, 8));
-
-        // Give controls a reasonable min/pref so divider behaves well
-        controlsBox.setMinWidth(220);
+        controlsBox.setMinWidth(0);
         controlsBox.setPrefWidth(390);
 
-        // --- SplitPane: controls (left), grid (right)
+        // SplitPane
         splitPane = new SplitPane(controlsBox, gridPane);
         splitPane.setOrientation(Orientation.HORIZONTAL);
         splitPane.setDividerPositions(lastDividerPos);
@@ -170,8 +159,46 @@ public class PairwiseJpdfView extends BorderPane {
         setCenter(splitPane);
         BorderPane.setMargin(splitPane, new Insets(6));
 
-        // Wire config panel Run to us
+        // Wiring
         this.configPanel.setOnRun(this::runWithRecipe);
+        searchField.textProperty().addListener((obs, ov, nv) -> applySearchPredicate(nv));
+        sortCombo.valueProperty().addListener((obs, ov, nv) -> applySortComparator());
+        sortAscCheck.selectedProperty().addListener((obs, ov, nv) -> applySortComparator());
+        applySortComparator();
+    }
+
+    // Build the consolidated Actions menu
+    private MenuButton buildActionsMenu() {
+        MenuButton mb = new MenuButton("Actions");
+
+        // Basic actions
+        MenuItem saveItem = new MenuItem("Save Config…");
+        saveItem.setOnAction(e -> doSaveRecipe());
+        MenuItem loadItem = new MenuItem("Load Config…");
+        loadItem.setOnAction(e -> doLoadRecipe());
+        MenuItem clearItem = new MenuItem("Clear Grid");
+        clearItem.setOnAction(e -> gridPane.clearItems());
+
+        // Streaming controls inside menu (keep menu open while adjusting)
+        CheckMenuItem incSortItem = new CheckMenuItem("Incremental sort");
+        incSortItem.selectedProperty().bindBidirectional(incrementalSortCheck.selectedProperty());
+
+        HBox flushNBox = new HBox(6, new Label("Flush N"), flushSizeSpinner);
+        flushNBox.setAlignment(Pos.CENTER_LEFT);
+        CustomMenuItem flushNItem = new CustomMenuItem(flushNBox);
+        flushNItem.setHideOnClick(false);
+
+        HBox flushMsBox = new HBox(6, new Label("Flush ms"), flushIntervalSpinner);
+        flushMsBox.setAlignment(Pos.CENTER_LEFT);
+        CustomMenuItem flushMsItem = new CustomMenuItem(flushMsBox);
+        flushMsItem.setHideOnClick(false);
+
+        mb.getItems().addAll(
+                saveItem, loadItem, clearItem,
+                new SeparatorMenuItem(),
+                incSortItem, flushNItem, flushMsItem
+        );
+        return mb;
     }
 
     // --- Public API ---
@@ -186,17 +213,13 @@ public class PairwiseJpdfView extends BorderPane {
         if (label != null && !label.isBlank()) this.cohortBLabel = label;
     }
 
-    public void setRecipeSupplier(Supplier<JpdfRecipe> supplier) { this.recipeSupplier = supplier; }
-
     public void setToastHandler(Consumer<String> handler) { this.toastHandler = handler; }
 
     public void setOnCellClick(Consumer<PairGridPane.PairItem> handler) { this.onCellClickHandler = handler; }
 
-    /** Run computation (background thread) and live-append thumbnails with tunable cadence. */
+    // --- Run ---
+
     public void runWithRecipe(JpdfRecipe recipe) {
-        if (recipe == null && recipeSupplier != null) {
-            recipe = recipeSupplier.get();
-        }
         if (recipe == null) { toast("No recipe provided.", true); return; }
         if (cohortA == null || cohortA.isEmpty()) { toast("Cohort A is empty. Load or set vectors first.", true); return; }
 
@@ -210,21 +233,16 @@ public class PairwiseJpdfView extends BorderPane {
             return;
         }
 
-        // Prepare UI
         gridPane.clearItems();
         setControlsDisabled(true);
         setProgressText("Preparing…");
         toast("Computing pairwise densities…", false);
 
-        // Progress counter
         AtomicInteger completed = new AtomicInteger(0);
-
-        // Streaming cadence
         final int flushN = safeSpinnerInt(flushSizeSpinner, 6);
         final int flushMs = safeSpinnerInt(flushIntervalSpinner, 80);
         final boolean doIncrementalSort = incrementalSortCheck.isSelected();
 
-        // On-result (invoked from engine worker threads)
         final java.util.function.Consumer<JpdfBatchEngine.PairJobResult> onResult = job -> {
             if (job == null || job.density == null) return;
 
@@ -233,7 +251,8 @@ public class PairwiseJpdfView extends BorderPane {
 
             PairGridPane.PairItem.Builder b = PairGridPane.PairItem
                     .newBuilder(xLbl, yLbl)
-                    .from(job.density, /*useCDF*/ false, /*flipY*/ true)
+                    .indices(job.i >= 0 ? job.i : null, job.j >= 0 ? job.j : null)
+                    .from(job.density, false, true)
                     .palette(HeatmapThumbnailView.PaletteKind.SEQUENTIAL)
                     .autoRange(true)
                     .showLegend(false);
@@ -278,9 +297,7 @@ public class PairwiseJpdfView extends BorderPane {
                 final long wall = System.currentTimeMillis() - start;
 
                 Platform.runLater(() -> {
-                    // Final sort by score (descending) to present a clean list at the end
                     gridPane.sortByScoreDescending();
-
                     int total = Math.max(finalBatch.submittedPairs, finalCompleted);
                     setProgressText("Loaded " + finalCompleted + " / " + total);
                     setControlsDisabled(false);
@@ -301,13 +318,17 @@ public class PairwiseJpdfView extends BorderPane {
 
     private void toggleControlsCollapsed() {
         double pos = splitPane.getDividerPositions()[0];
-        // Collapse if not already collapsed
-        if (pos > 0.02) {
+        if (pos > 0.02 || controlsBox.isVisible()) {
             lastDividerPos = pos;
+            controlsBox.setManaged(false);
+            controlsBox.setVisible(false);
             splitPane.setDividerPositions(0.0);
             collapseBtn.setText("Expand Controls");
         } else {
-            splitPane.setDividerPositions(Math.max(0.15, lastDividerPos));
+            controlsBox.setManaged(true);
+            controlsBox.setVisible(true);
+            double restore = (lastDividerPos <= 0.02) ? 0.36 : lastDividerPos;
+            splitPane.setDividerPositions(restore);
             collapseBtn.setText("Collapse Controls");
         }
     }
@@ -316,7 +337,7 @@ public class PairwiseJpdfView extends BorderPane {
         try {
             sp.commitValue();
             Integer v = sp.getValue();
-            return (v == null) ? fallback : v.intValue();
+            return (v == null) ? fallback : v;
         } catch (Throwable ignore) {
             return fallback;
         }
@@ -339,12 +360,10 @@ public class PairwiseJpdfView extends BorderPane {
         }
     }
 
-    // Expose underlying controls if needed
     public PairwiseJpdfConfigPanel getConfigPanel() { return configPanel; }
     public PairGridPane getGridPane() { return gridPane; }
     public SplitPane getSplitPane() { return splitPane; }
 
-    // Optional cancel hook (engine would need to check interrupts to honor it)
     public void cancelRun() {
         Thread t = workerThread;
         if (t != null && t.isAlive()) {
@@ -352,9 +371,103 @@ public class PairwiseJpdfView extends BorderPane {
         }
     }
 
-    // Current state (optional)
     public List<FeatureVector> getCohortA() { return cohortA; }
     public List<FeatureVector> getCohortB() { return cohortB; }
     public String getCohortALabel() { return cohortALabel; }
     public String getCohortBLabel() { return cohortBLabel; }
+
+    // --- Search / Sort helpers ---
+    private void applySearchPredicate(String query) {
+        final String q = (query == null) ? "" : query.trim();
+        if (q.isEmpty()) {
+            gridPane.setFilter(null);
+            return;
+        }
+        final String regex = globToRegex(q.toLowerCase());
+        gridPane.setFilter(pi -> {
+            String a = (pi.xLabel == null ? "" : pi.xLabel.toLowerCase());
+            String b = (pi.yLabel == null ? "" : pi.yLabel.toLowerCase());
+            String both = (a + " vs " + b);
+            return a.matches(regex) || b.matches(regex) || both.matches(regex);
+        });
+    }
+
+    private void applySortComparator() {
+        final String key = sortCombo.getValue();
+        final boolean asc = sortAscCheck.isSelected();
+        gridPane.setSorter((a, b) -> {
+            int s;
+            switch (key) {
+                case "i" -> {
+                    int ai = a.iIndex == null ? Integer.MIN_VALUE : a.iIndex;
+                    int bi = b.iIndex == null ? Integer.MIN_VALUE : b.iIndex;
+                    s = Integer.compare(ai, bi);
+                }
+                case "j" -> {
+                    int aj = a.jIndex == null ? Integer.MIN_VALUE : a.jIndex;
+                    int bj = b.jIndex == null ? Integer.MIN_VALUE : b.jIndex;
+                    s = Integer.compare(aj, bj);
+                }
+                case "label" -> {
+                    String al = (a.xLabel + " | " + a.yLabel);
+                    String bl = (b.xLabel + " | " + b.yLabel);
+                    s = al.compareToIgnoreCase(bl);
+                }
+                default -> {
+                    double sa = (a.score == null ? Double.NEGATIVE_INFINITY : a.score);
+                    double sb = (b.score == null ? Double.NEGATIVE_INFINITY : b.score);
+                    s = Double.compare(sa, sb);
+                }
+            }
+            return asc ? s : -s;
+        });
+    }
+
+    private static String globToRegex(String glob) {
+        StringBuilder sb = new StringBuilder();
+        for (char c : glob.toCharArray()) {
+            switch (c) {
+                case '*' -> sb.append(".*");
+                case '?' -> sb.append('.');
+                case '.', '(', ')', '+', '|', '^', '$', '@', '%', '{', '}', '[', ']', '\\' -> sb.append('\\').append(c);
+                default -> sb.append(c);
+            }
+        }
+        return "^" + sb + "$";
+    }
+
+    // --- Save/Load handlers ---
+    private void doSaveRecipe() {
+        try {
+            JpdfRecipe r = configPanel.snapshotRecipe();
+            FileChooser fc = new FileChooser();
+            fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("JSON", "*.json"));
+            fc.setInitialFileName(r.getName().replaceAll("\\s+", "_") + ".json");
+            var f = fc.showSaveDialog(getScene() != null ? getScene().getWindow() : null);
+            if (f == null) return;
+            try (FileOutputStream fos = new FileOutputStream(f)) {
+                RecipeIo.write(fos, r);
+            }
+            toast("Saved recipe to " + f.getName(), false);
+        } catch (Exception ex) {
+            toast("Save failed: " + ex.getMessage(), true);
+        }
+    }
+
+    private void doLoadRecipe() {
+        try {
+            FileChooser fc = new FileChooser();
+            fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("JSON", "*.json"));
+            var f = fc.showOpenDialog(getScene() != null ? getScene().getWindow() : null);
+            if (f == null) return;
+            JpdfRecipe r;
+            try (FileInputStream fis = new FileInputStream(f)) {
+                r = RecipeIo.read(fis);
+            }
+            configPanel.applyRecipe(r);
+            toast("Loaded recipe from " + f.getName(), false);
+        } catch (Exception ex) {
+            toast("Load failed: " + ex.getMessage(), true);
+        }
+    }
 }

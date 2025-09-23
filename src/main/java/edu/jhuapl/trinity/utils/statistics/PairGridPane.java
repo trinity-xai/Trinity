@@ -34,6 +34,8 @@ import javafx.scene.paint.Color;
  * ------------------------------
  * Responsive grid of heatmap thumbnails that wraps on resize without
  * forcing the parent to expand.
+ *
+ * New: Header slot via {@link #setHeader(Node)} to host controls like Search/Sort.
  */
 public final class PairGridPane extends BorderPane {
     // --- Streaming support (thread-safe buffer -> periodic FX flush) ---
@@ -41,11 +43,17 @@ public final class PairGridPane extends BorderPane {
     private final List<PairItem> pendingBuffer = new ArrayList<>();
     private long lastFlushNanos = System.nanoTime();
     private boolean flushScheduled = false;
+
     // ---------- Public API types ----------
 
     public static final class PairItem {
         public final String xLabel;
         public final String yLabel;
+
+        /** Optional component indices for sort-by-i/j convenience; may be null. */
+        public final Integer iIndex;
+        public final Integer jIndex;
+
         public final List<List<Double>> grid;
         public final GridDensityResult res;
         public final boolean useCDF;
@@ -62,6 +70,8 @@ public final class PairGridPane extends BorderPane {
         private PairItem(Builder b) {
             this.xLabel = b.xLabel;
             this.yLabel = b.yLabel;
+            this.iIndex = b.iIndex;
+            this.jIndex = b.jIndex;
             this.grid = b.grid;
             this.res = b.res;
             this.useCDF = b.useCDF;
@@ -83,6 +93,9 @@ public final class PairGridPane extends BorderPane {
         public static final class Builder {
             private final String xLabel;
             private final String yLabel;
+
+            private Integer iIndex = null;
+            private Integer jIndex = null;
 
             private List<List<Double>> grid;
             private GridDensityResult res;
@@ -116,6 +129,8 @@ public final class PairGridPane extends BorderPane {
             public Builder showLegend(boolean show) { this.showLegend = show; return this; }
             public Builder score(Double s) { this.score = s; return this; }
             public Builder userData(Object d) { this.userData = d; return this; }
+            /** Optional: attach component indices for downstream sort-by-i/j. */
+            public Builder indices(Integer i, Integer j) { this.iIndex = i; this.jIndex = j; return this; }
 
             public PairItem build() {
                 if (grid == null && res == null)
@@ -141,6 +156,10 @@ public final class PairGridPane extends BorderPane {
     private final TilePane tilePane = new TilePane();
     private final ScrollPane scroller = new ScrollPane(tilePane);
     private final StackPane contentStack = new StackPane();
+
+    /** Optional header area shown above the grid (e.g., Search/Sort). */
+    private Node headerNode = null;
+
     private VBox placeholder;
     private final Label placeholderLabel = new Label("No results loaded");
 
@@ -165,7 +184,7 @@ public final class PairGridPane extends BorderPane {
     public PairGridPane() {
         // ScrollPane: cap viewport so it never pushes parent
         scroller.setFitToWidth(true);
-        scroller.setFitToHeight(false); // important: content height won’t try to expand the parent
+        scroller.setFitToHeight(false); // content height won’t try to expand the parent
         scroller.setPannable(true);
         scroller.setHbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
         scroller.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
@@ -176,7 +195,7 @@ public final class PairGridPane extends BorderPane {
         scroller.setPrefViewportWidth(720);
         scroller.setPrefViewportHeight(420);
 
-        // TilePane: width bound to viewport; height doesn’t drive parent
+        // TilePane: width bound to the viewport; height doesn’t drive parent
         tilePane.setPadding(new Insets(6));
         tilePane.setHgap(cellHGap);
         tilePane.setVgap(cellVGap);
@@ -205,7 +224,22 @@ public final class PairGridPane extends BorderPane {
         contentStack.getChildren().addAll(scroller, placeholder);
         placeholder.toFront();
 
+        // Layout: optional header at TOP, content in CENTER
         setCenter(contentStack);
+    }
+
+    // ---------- Header API ----------
+
+    /** Optional header node above the grid (e.g., search/sort bar). Pass null to clear. */
+    public void setHeader(Node header) {
+        this.headerNode = header;
+        if (header == null) {
+            setTop(null);
+        } else {
+            BorderPane.setAlignment(header, Pos.CENTER_LEFT);
+            BorderPane.setMargin(header, new Insets(2, 8, 2, 8));
+            setTop(header);
+        }
     }
 
     // Allow parent to suggest viewport size (prevents ScrollPane from enlarging parent)
@@ -230,63 +264,51 @@ public final class PairGridPane extends BorderPane {
         }
     }
 
-/** Recompute visibleItems with optional sort, then render. */
-private void applyFilterSortAndRenderInternal(boolean doSort) {
-    List<PairItem> tmp = new ArrayList<>();
-    for (PairItem it : allItems) {
-        if (filter == null || filter.test(it)) tmp.add(it);
-    }
-    if (doSort && sorter != null) {
-        tmp.sort(sorter);
-    }
-    visibleItems = tmp;
-    renderTiles();
-}    
-/**
- * Streaming add: buffer items and flush them to the UI based on either
- * a count threshold (flushN) or a time threshold (flushMs).
- *
- * @param item the item to append
- * @param flushN flush when at least this many pending items (>=1)
- * @param flushMs flush if at least this many ms since last flush (>=0; 0 disables)
- * @param incrementalSort if true, apply current sorter on each flush; if false, preserve append order
- */
-public void addItemStreaming(PairItem item, int flushN, int flushMs, boolean incrementalSort) {
-    if (item == null) return;
+    /**
+     * Streaming add: buffer items and flush them to the UI based on either
+     * a count threshold (flushN) or a time threshold (flushMs).
+     *
+     * @param item              the item to append
+     * @param flushN            flush when at least this many pending items (>=1)
+     * @param flushMs           flush if at least this many ms since last flush (>=0; 0 disables)
+     * @param incrementalSort   if true, apply current sorter on each flush; if false, preserve append order
+     */
+    public void addItemStreaming(PairItem item, int flushN, int flushMs, boolean incrementalSort) {
+        if (item == null) return;
 
-    // sanitize thresholds
-    if (flushN < 1) flushN = 1;
-    if (flushMs < 0) flushMs = 0;
+        // sanitize thresholds
+        if (flushN < 1) flushN = 1;
+        if (flushMs < 0) flushMs = 0;
 
-    boolean schedule = false;
-    long now = System.nanoTime();
+        boolean schedule = false;
+        long now = System.nanoTime();
 
-    synchronized (streamLock) {
-        pendingBuffer.add(item);
-        long elapsedMs = (now - lastFlushNanos) / 1_000_000L;
-        if (pendingBuffer.size() >= flushN || (flushMs > 0 && elapsedMs >= flushMs)) {
-            if (!flushScheduled) {
-                flushScheduled = true;
-                schedule = true;
+        synchronized (streamLock) {
+            pendingBuffer.add(item);
+            long elapsedMs = (now - lastFlushNanos) / 1_000_000L;
+            if (pendingBuffer.size() >= flushN || (flushMs > 0 && elapsedMs >= flushMs)) {
+                if (!flushScheduled) {
+                    flushScheduled = true;
+                    schedule = true;
+                }
             }
         }
-    }
 
-    if (schedule) {
-        final boolean doSort = incrementalSort;
-        javafx.application.Platform.runLater(() -> {
-            List<PairItem> toAdd;
-            synchronized (streamLock) {
-                toAdd = new ArrayList<>(pendingBuffer);
-                pendingBuffer.clear();
-                lastFlushNanos = System.nanoTime();
-                flushScheduled = false;
-            }
-            allItems.addAll(toAdd);
-            applyFilterSortAndRenderInternal(doSort);
-        });
+        if (schedule) {
+            final boolean doSort = incrementalSort;
+            javafx.application.Platform.runLater(() -> {
+                List<PairItem> toAdd;
+                synchronized (streamLock) {
+                    toAdd = new ArrayList<>(pendingBuffer);
+                    pendingBuffer.clear();
+                    lastFlushNanos = System.nanoTime();
+                    flushScheduled = false;
+                }
+                allItems.addAll(toAdd);
+                applyFilterSortAndRenderInternal(doSort);
+            });
+        }
     }
-}
 
     public void clearItems() {
         allItems.clear();
@@ -363,6 +385,19 @@ public void addItemStreaming(PairItem item, int flushN, int flushMs, boolean inc
         renderTiles();
     }
 
+    /** Recompute visibleItems with optional sort, then render. */
+    private void applyFilterSortAndRenderInternal(boolean doSort) {
+        List<PairItem> tmp = new ArrayList<>();
+        for (PairItem it : allItems) {
+            if (filter == null || filter.test(it)) tmp.add(it);
+        }
+        if (doSort && sorter != null) {
+            tmp.sort(sorter);
+        }
+        visibleItems = tmp;
+        renderTiles();
+    }
+
     private void renderTiles() {
         tilePane.getChildren().clear();
         if (visibleItems.isEmpty()) {
@@ -387,7 +422,7 @@ public void addItemStreaming(PairItem item, int flushN, int flushMs, boolean inc
         }
         Label header = new Label(title);
         header.setPadding(new Insets(2, 4, 2, 4));
-        // leave header unstyled (no textFill or CSS), per app-wide styling policy
+        // leave header unstyled (no CSS classes), per app-wide styling policy
 
         HeatmapThumbnailView view = new HeatmapThumbnailView();
         view.setPrefSize(cellWidth, cellHeight);

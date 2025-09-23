@@ -17,9 +17,7 @@ import javafx.scene.Scene;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
-
 import java.util.List;
-import java.util.function.Supplier;
 
 public final class PairwiseJpdfPane extends LitPathPane {
 
@@ -80,9 +78,6 @@ public final class PairwiseJpdfPane extends LitPathPane {
     }
     public void setCohortB(List<FeatureVector> vectors, String label) {
         view.setCohortB(vectors, label);
-    }
-    public void setRecipeSupplier(Supplier<JpdfRecipe> supplier) {
-        view.setRecipeSupplier(supplier);
     }
     public void runWithRecipe(JpdfRecipe recipe) {
         view.runWithRecipe(recipe);

@@ -180,6 +180,41 @@ public final class PairwiseJpdfConfigPanel extends BorderPane {
     /** Set a callback to receive a fully-built JpdfRecipe when the user clicks Run. */
     public void setOnRun(Consumer<JpdfRecipe> onRun) { this.onRun = onRun; }
 
+    /**
+     * Build a JpdfRecipe from current UI state without running.
+     * @throws IllegalArgumentException if configuration is invalid
+     */
+    public JpdfRecipe snapshotRecipe() {
+        return buildRecipeFromUI();
+    }
+
+    /**
+     * Apply a recipe back into the UI controls.
+     * Fields not represented in the panel are ignored.
+     */
+    public void applyRecipe(JpdfRecipe r) {
+        if (r == null) return;
+        recipeNameField.setText(r.getName());
+        pairSelectionCombo.setValue(r.getPairSelection());
+        scoreMetricCombo.setValue(r.getScoreMetric());
+        topKSpinner.getValueFactory().setValue(r.getTopK());
+        thresholdSpinner.getValueFactory().setValue(r.getScoreThreshold());
+        componentPairsCheck.setSelected(r.isComponentPairsMode());
+        compStartSpinner.getValueFactory().setValue(r.getComponentIndexStart());
+        compEndSpinner.getValueFactory().setValue(r.getComponentIndexEnd());
+        includeSelfPairsCheck.setSelected(r.isIncludeSelfPairs());
+        orderedPairsCheck.setSelected(r.isOrderedPairs());
+        binsXSpinner.getValueFactory().setValue(r.getBinsX());
+        binsYSpinner.getValueFactory().setValue(r.getBinsY());
+        boundsPolicyCombo.setValue(r.getBoundsPolicy());
+        canonicalPolicyIdField.setText(r.getCanonicalPolicyId());
+        minAvgCountPerCellSpinner.getValueFactory().setValue(r.getMinAvgCountPerCell());
+        outputKindCombo.setValue(r.getOutputKind());
+        cacheEnabledCheck.setSelected(r.isCacheEnabled());
+        saveThumbsCheck.setSelected(r.isSaveThumbnails());
+        updateEnablement();
+    }
+
     // ---------------------------------------------------------------------
     // Internals
     // ---------------------------------------------------------------------

@@ -1,10 +1,8 @@
 package edu.jhuapl.trinity.utils.statistics;
 
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
-
 import java.io.Serial;
 import java.io.Serializable;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
