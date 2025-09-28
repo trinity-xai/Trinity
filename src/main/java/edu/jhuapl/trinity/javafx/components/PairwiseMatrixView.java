@@ -18,12 +18,12 @@ import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
-import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.SplitPane;
+import javafx.scene.control.TextInputDialog;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
@@ -35,10 +35,13 @@ import javafx.scene.layout.VBox;
  * Parent composite that hosts:
  *  - Left: PairwiseMatrixConfigPanel (inputs/controls)
  *  - Right: MatrixHeatmapView (rendered matrix)
- *  - Top bar: Run/Reset + Actions (+ quick A/B helpers)
+ *  - Top bar: Run/Reset + Actions
  *
  * Runs PairwiseMatrixEngine for Similarity or Divergence based on the panel request
  * and updates the MatrixHeatmapView with results and initial display settings.
+ *
+ * This view is suitable to be wrapped by a floating pane (e.g., PairwiseMatrixPane),
+ * similar to PairwiseJpdfView/Pane.
  *
  * @author Sean Phillips
  */
@@ -61,11 +64,7 @@ public final class PairwiseMatrixView extends BorderPane {
     private final Button cfgResetBtn;
     private final Button collapseBtn;
 
-    // Quick cohort helpers
-    private Button btnBEqualsA;
-    private Button btnSplitA;
-
-    // --- Actions (extensible)
+    // --- Actions (synthetic cohorts, derive by label, etc.)
     private final MenuButton actionsBtn;
 
     // --- State (data + cache)
@@ -75,9 +74,6 @@ public final class PairwiseMatrixView extends BorderPane {
     private String cohortBLabel = "B";
     private final DensityCache cache;
 
-    // Divergence preflight option
-    private boolean autoFillBFromAWhenMissing = true;
-
     // --- Hooks
     private Consumer<String> toastHandler;
     private Consumer<MatrixClick> onCellClickHandler;
@@ -86,6 +82,7 @@ public final class PairwiseMatrixView extends BorderPane {
         this.cache = (cache != null) ? cache : new DensityCache.Builder().maxEntries(128).ttlMillis(0).build();
         this.configPanel = (configPanel != null) ? configPanel : new PairwiseMatrixConfigPanel();
         this.heatmap = new MatrixHeatmapView();
+        this.heatmap.setCompactColumnLabels(true); // compact column labels by default
 
         // Hook matrix clicks to external handler if provided
         this.heatmap.setOnCellClick(click -> {
@@ -100,17 +97,11 @@ public final class PairwiseMatrixView extends BorderPane {
         this.collapseBtn = new Button("Collapse Controls");
         this.collapseBtn.setOnAction(e -> toggleControlsCollapsed());
 
-        // Actions menu (+ divergence helpers)
+        // Actions menu (synthetic cohorts + helpers)
         this.actionsBtn = buildActionsMenu();
 
-        // Quick A/B helper buttons
-        this.btnBEqualsA = new Button("B = A");
-        this.btnBEqualsA.setOnAction(e -> useCohortAForB(null));
-        this.btnSplitA = new Button("Split A→B");
-        this.btnSplitA.setOnAction(e -> splitACohortIntoAandB());
-
         // Slim toolbar (left = buttons; right = progress text)
-        this.topLeft = new HBox(10, cfgResetBtn, cfgRunBtn, collapseBtn, actionsBtn, btnBEqualsA, btnSplitA);
+        this.topLeft = new HBox(10, cfgResetBtn, cfgRunBtn, collapseBtn, actionsBtn);
         this.topLeft.setAlignment(Pos.CENTER_LEFT);
         this.topLeft.setPadding(new Insets(6, 8, 6, 8));
 
@@ -182,34 +173,18 @@ public final class PairwiseMatrixView extends BorderPane {
     private void runWithRequest(Request req) {
         if (req == null) { toast("No request provided.", true); return; }
 
-        // Build minimal recipe from UI request
+        // Build a minimal JpdfRecipe from the request (bins & bounds & indices & scoring).
         JpdfRecipe recipe = buildRecipeFromRequest(req);
 
-        // Heatmap display settings
         heatmap.setShowLegend(req.showLegend);
         if (req.paletteDiverging) heatmap.useDivergingPalette(req.divergingCenter != null ? req.divergingCenter : 0.0);
         else heatmap.useSequentialPalette();
 
-        if (req.autoRange) {
-            heatmap.setAutoRange(true);
-        } else {
-            heatmap.setFixedRange(
-                    req.fixedMin != null ? req.fixedMin : 0.0,
-                    req.fixedMax != null ? req.fixedMax : 1.0
-            );
-        }
-
-        // Preflight: ensure data availability
-        if (cohortA == null || cohortA.isEmpty()) {
-            toast("Cohort A is empty. Load or set vectors first.", true);
-            return;
-        }
-        if (req.mode == Mode.DIVERGENCE) {
-            if (!ensureBForDivergenceIfNeeded()) {
-                // ensureB already toasts a message
-                return;
-            }
-        }
+        if (req.autoRange) heatmap.setAutoRange(true);
+        else heatmap.setFixedRange(
+                req.fixedMin != null ? req.fixedMin : 0.0,
+                req.fixedMax != null ? req.fixedMax : 1.0
+        );
 
         setControlsDisabled(true);
         setProgressText("Running…");
@@ -221,15 +196,37 @@ public final class PairwiseMatrixView extends BorderPane {
                 MatrixResult result;
 
                 if (req.mode == Mode.SIMILARITY) {
+                    if (cohortA == null || cohortA.isEmpty()) {
+                        Platform.runLater(() -> {
+                            setControlsDisabled(false);
+                            setProgressText("");
+                            toast("Cohort A is empty. Load or set vectors first.", true);
+                        });
+                        return;
+                    }
                     result = PairwiseMatrixEngine.computeSimilarityMatrix(
                             cohortA, recipe, req.includeDiagonal
                     );
                 } else {
-                    // Divergence
+                    // DIVERGENCE
+                    if (cohortA == null || cohortA.isEmpty()) {
+                        Platform.runLater(() -> {
+                            setControlsDisabled(false);
+                            setProgressText("");
+                            toast("Cohort A is empty. Load or set vectors first.", true);
+                        });
+                        return;
+                    }
+                    if (cohortB == null || cohortB.isEmpty()) {
+                        Platform.runLater(() -> {
+                            setControlsDisabled(false);
+                            setProgressText("");
+                            toast("Cohort B is empty. Load or set vectors first.", true);
+                        });
+                        return;
+                    }
                     result = PairwiseMatrixEngine.computeDivergenceMatrix(
-                            cohortA, cohortB, recipe,
-                            nonNull(req.divergenceMetric, DivergenceMetric.JS),
-                            cache
+                            cohortA, cohortB, recipe, nonNull(req.divergenceMetric, DivergenceMetric.JS), cache
                     );
                 }
 
@@ -243,6 +240,7 @@ public final class PairwiseMatrixView extends BorderPane {
                         heatmap.setMatrix(result.matrix);
                         heatmap.setRowLabels(result.labels);
                         heatmap.setColLabels(result.labels);
+                        heatmap.setCompactColumnLabels(true); // ensure compact columns after labels set
                         toast((result.title != null ? result.title + " — " : "") +
                               "N=" + result.matrix.length + "; wall=" + wall + " ms.", false);
                     }
@@ -262,58 +260,242 @@ public final class PairwiseMatrixView extends BorderPane {
     private static <T> T nonNull(T v, T def) { return (v != null ? v : def); }
 
     private JpdfRecipe buildRecipeFromRequest(Request req) {
-        // Engines use bins/bounds/policy/indices and (for similarity) scoreMetric.
+        // We keep this minimal—engines only use bins/bounds/policy/indices/scoreMetric.
+        // For similarity path we include the requested ScoreMetric; divergence ignores score metric.
         JpdfRecipe.Builder b = JpdfRecipe.newBuilder(safeName(req.name))
                 .bins(req.binsX, req.binsY)
                 .boundsPolicy(req.boundsPolicy)
                 .canonicalPolicyId(req.canonicalPolicyId == null ? "default" : req.canonicalPolicyId)
-                .componentPairsMode(true)
+                .componentPairsMode(true) // not used directly here, but harmless
                 .componentIndexRange(req.componentStart, req.componentEnd)
-                .includeSelfPairs(req.includeDiagonal)
+                .includeSelfPairs(req.includeDiagonal) // used by similarity engine as hint
                 .orderedPairs(req.orderedPairs)
-                .cacheEnabled(true)
+                .cacheEnabled(true)                    // let Divergence/Comparison leverage cache if passed
                 .saveThumbnails(false)
-                .minAvgCountPerCell(3.0);
+                .minAvgCountPerCell(3.0);              // sufficiency default used by PairScorer
 
         if (req.mode == Mode.SIMILARITY && req.similarityMetric != null) {
             b.scoreMetric(req.similarityMetric);
         } else {
+            // fallback (unused for divergence)
             b.scoreMetric(JpdfRecipe.ScoreMetric.PEARSON);
         }
         return b.build();
     }
 
     // ---------------------------------------------------------------------
-    // Toolbar + Actions
+    // Actions menu (synthetic cohorts & helpers)
     // ---------------------------------------------------------------------
 
     private MenuButton buildActionsMenu() {
         MenuButton mb = new MenuButton("Actions");
 
-        // Clear matrix
+        // Clear heatmap
         MenuItem clearItem = new MenuItem("Clear Matrix");
         clearItem.setOnAction(e -> heatmap.setMatrix((double[][]) null));
 
-        // Divergence helpers
-        CheckMenuItem autoFillBItem = new CheckMenuItem("Auto-fill B from A when missing");
-        autoFillBItem.setSelected(autoFillBFromAWhenMissing);
-        autoFillBItem.selectedProperty().addListener((obs, ov, nv) -> autoFillBFromAWhenMissing = nv);
+        // Synthetic cohort tools
+        MenuItem copyAToB = new MenuItem("Set Cohort B = Cohort A (copy)");
+        copyAToB.setOnAction(e -> {
+            if (cohortA == null || cohortA.isEmpty()) { toast("Cohort A is empty.", true); return; }
+            setCohortB(new ArrayList<>(cohortA), cohortALabel + " (copy)");
+            toast("Cohort B set to copy of Cohort A.", false);
+        });
 
-        MenuItem useAasBItem = new MenuItem("Set B = A (copy)");
-        useAasBItem.setOnAction(e -> useCohortAForB(null));
+        MenuItem splitA = new MenuItem("Split Cohort A into A/B halves");
+        splitA.setOnAction(e -> {
+            if (cohortA == null || cohortA.size() < 2) { toast("Need ≥2 vectors in Cohort A to split.", true); return; }
+            int mid = cohortA.size() / 2;
+            List<FeatureVector> first = new ArrayList<>(cohortA.subList(0, mid));
+            List<FeatureVector> second = new ArrayList<>(cohortA.subList(mid, cohortA.size()));
+            setCohortA(first, cohortALabel + " (early)");
+            setCohortB(second, cohortALabel + " (late)");
+            toast("Split A into A(early)/B(late).", false);
+        });
 
-        MenuItem splitAItem = new MenuItem("Split A into A/B");
-        splitAItem.setOnAction(e -> splitACohortIntoAandB());
+        MenuItem bRandomGaussian = new MenuItem("Set Cohort B = Gaussian noise (match N, D)");
+        bRandomGaussian.setOnAction(e -> {
+            if (cohortA == null || cohortA.isEmpty()) { toast("Cohort A is empty.", true); return; }
+            List<FeatureVector> b = synthGaussianLikeA(cohortA, 0.0, 1.0);
+            setCohortB(b, "Gaussian");
+            toast("Cohort B generated: Gaussian(μ=0,σ=1)", false);
+        });
+
+        MenuItem bRandomNoise = new MenuItem("Set Cohort B = Uniform noise (match N, D)");
+        bRandomNoise.setOnAction(e -> {
+            if (cohortA == null || cohortA.isEmpty()) { toast("Cohort A is empty.", true); return; }
+            List<FeatureVector> b = synthUniformLikeA(cohortA, -1.0, 1.0);
+            setCohortB(b, "Uniform[-1,1]");
+            toast("Cohort B generated: Uniform[-1,1]", false);
+        });
+
+        MenuItem bShiftOneComp = new MenuItem("Set Cohort B = A shifted on one component…");
+        bShiftOneComp.setOnAction(e -> promptShiftOneComponent());
+
+        // Label-derived cohorts
+        MenuItem cohortsByLabel = new MenuItem("Derive A/B by vector label…");
+        cohortsByLabel.setOnAction(e -> promptDeriveCohortsByLabel());
 
         mb.getItems().addAll(
                 clearItem,
                 new SeparatorMenuItem(),
-                autoFillBItem,
-                useAasBItem,
-                splitAItem
+                copyAToB,
+                splitA,
+                bRandomGaussian,
+                bRandomNoise,
+                bShiftOneComp,
+                new SeparatorMenuItem(),
+                cohortsByLabel
         );
         return mb;
     }
+
+    // ---------------------------------------------------------------------
+    // Synthetic cohort helpers
+    // ---------------------------------------------------------------------
+
+    private List<FeatureVector> synthGaussianLikeA(List<FeatureVector> likeA, double mean, double stddev) {
+        int n = likeA.size();
+        int d = (likeA.get(0).getData() != null) ? likeA.get(0).getData().size() : 0;
+        java.util.Random rng = new java.util.Random(42);
+        List<FeatureVector> out = new ArrayList<>(n);
+        for (int i = 0; i < n; i++) {
+            ArrayList<Double> row = new ArrayList<>(d);
+            for (int j = 0; j < d; j++) {
+                double z = rng.nextGaussian() * stddev + mean;
+                row.add(z);
+            }
+            // Adjust constructor if your FeatureVector differs
+            out.add(new FeatureVector(row));
+        }
+        return out;
+    }
+
+    private List<FeatureVector> synthUniformLikeA(List<FeatureVector> likeA, double min, double max) {
+        int n = likeA.size();
+        int d = (likeA.get(0).getData() != null) ? likeA.get(0).getData().size() : 0;
+        java.util.Random rng = new java.util.Random(43);
+        double span = max - min;
+        List<FeatureVector> out = new ArrayList<>(n);
+        for (int i = 0; i < n; i++) {
+            ArrayList<Double> row = new ArrayList<>(d);
+            for (int j = 0; j < d; j++) {
+                double v = min + rng.nextDouble() * span;
+                row.add(v);
+            }
+            // Adjust constructor if your FeatureVector differs
+            out.add(new FeatureVector(row));
+        }
+        return out;
+    }
+
+    private void promptShiftOneComponent() {
+        if (cohortA == null || cohortA.isEmpty()) { toast("Cohort A is empty.", true); return; }
+        int d = (cohortA.get(0).getData() != null) ? cohortA.get(0).getData().size() : 0;
+        if (d == 0) { toast("Cohort A has zero-dimensional vectors.", true); return; }
+
+        TextInputDialog compDlg = new TextInputDialog("0");
+        compDlg.setTitle("Shift Component");
+        compDlg.setHeaderText("Shift one component in Cohort B");
+        compDlg.setContentText("Component index (0.." + (d - 1) + "):");
+        var compRes = compDlg.showAndWait();
+        if (compRes.isEmpty()) return;
+
+        int idx;
+        try {
+            idx = Integer.parseInt(compRes.get().trim());
+        } catch (Exception ex) {
+            toast("Invalid component index.", true);
+            return;
+        }
+        if (idx < 0 || idx >= d) { toast("Index out of range.", true); return; }
+
+        TextInputDialog deltaDlg = new TextInputDialog("1.0");
+        deltaDlg.setTitle("Shift Component");
+        deltaDlg.setHeaderText("Shift one component in Cohort B");
+        deltaDlg.setContentText("Delta to add:");
+        var deltaRes = deltaDlg.showAndWait();
+        if (deltaRes.isEmpty()) return;
+
+        double delta;
+        try {
+            delta = Double.parseDouble(deltaRes.get().trim());
+        } catch (Exception ex) {
+            toast("Invalid delta.", true);
+            return;
+        }
+
+        // Build B by copying A and adding delta on idx
+        List<FeatureVector> b = new ArrayList<>(cohortA.size());
+        for (FeatureVector fv : cohortA) {
+            List<Double> src = fv.getData();
+            ArrayList<Double> row = new ArrayList<>(src.size());
+            for (int j = 0; j < src.size(); j++) {
+                double v = src.get(j);
+                row.add(j == idx ? v + delta : v);
+            }
+            // Adjust constructor if your FeatureVector differs
+            b.add(new FeatureVector(row));
+        }
+        setCohortB(b, cohortALabel + " (shifted comp " + idx + " by " + delta + ")");
+        toast("Cohort B = A with comp " + idx + " shifted by " + delta, false);
+    }
+
+    private void promptDeriveCohortsByLabel() {
+        if (cohortA == null || cohortA.isEmpty()) {
+            toast("Load a FeatureCollection (A) first; we’ll derive A/B subsets from it.", true);
+            return;
+        }
+        TextInputDialog aDlg = new TextInputDialog("classA");
+        aDlg.setTitle("Cohorts by Label");
+        aDlg.setHeaderText("Derive cohorts from vector labels in Cohort A");
+        aDlg.setContentText("Label for Cohort A:");
+        var aRes = aDlg.showAndWait();
+        if (aRes.isEmpty()) return;
+
+        TextInputDialog bDlg = new TextInputDialog("classB");
+        bDlg.setTitle("Cohorts by Label");
+        bDlg.setHeaderText("Derive cohorts from vector labels in Cohort A");
+        bDlg.setContentText("Label for Cohort B:");
+        var bRes = bDlg.showAndWait();
+        if (bRes.isEmpty()) return;
+
+        String la = aRes.get().trim();
+        String lb = bRes.get().trim();
+        if (la.isEmpty() || lb.isEmpty()) { toast("Labels cannot be empty.", true); return; }
+
+        List<FeatureVector> aList = new ArrayList<>();
+        List<FeatureVector> bList = new ArrayList<>();
+
+        for (FeatureVector fv : cohortA) {
+            String lab = safeVectorLabel(fv);
+            if (la.equals(lab)) aList.add(fv);
+            else if (lb.equals(lab)) bList.add(fv);
+        }
+
+        if (aList.isEmpty() || bList.isEmpty()) {
+            toast("No matches for one or both labels. A=" + aList.size() + ", B=" + bList.size(), true);
+            return;
+        }
+
+        setCohortA(new ArrayList<>(aList), la);
+        setCohortB(new ArrayList<>(bList), lb);
+        toast("Derived cohorts by label: A=" + la + " (" + aList.size() + "), B=" + lb + " (" + bList.size() + ")", false);
+    }
+
+    private static String safeVectorLabel(FeatureVector fv) {
+        try {
+            // Adjust if your FeatureVector exposes labels differently.
+            String lbl = fv.getLabel(); // e.g., fv.getLabel() or fv.getName() or metadata map
+            return (lbl == null) ? "" : lbl.trim();
+        } catch (Throwable t) {
+            return "";
+        }
+    }
+
+    // ---------------------------------------------------------------------
+    // Toolbar helpers
+    // ---------------------------------------------------------------------
 
     private void toggleControlsCollapsed() {
         double pos = splitPane.getDividerPositions()[0];
@@ -331,44 +513,6 @@ public final class PairwiseMatrixView extends BorderPane {
             collapseBtn.setText("Collapse Controls");
         }
     }
-
-    // ---------------------------------------------------------------------
-    // Cohort helpers + divergence preflight
-    // ---------------------------------------------------------------------
-
-    /** Copy Cohort A into Cohort B (A vs A sanity check). */
-    private void useCohortAForB(String label) {
-        List<FeatureVector> a = getCohortA();
-        if (a == null || a.isEmpty()) return;
-        String lab = (label != null && !label.isBlank()) ? label : (getCohortALabel() + " (copy)");
-        setCohortB(new ArrayList<>(a), lab);
-    }
-
-    /** Split Cohort A into two halves: first half -> A, second half -> B. */
-    private void splitACohortIntoAandB() {
-        List<FeatureVector> a = getCohortA();
-        if (a == null || a.size() < 2) return;
-        int mid = a.size() / 2;
-        setCohortB(new ArrayList<>(a.subList(mid, a.size())), getCohortALabel() + " (late)");
-        setCohortA(new ArrayList<>(a.subList(0, mid)), getCohortALabel() + " (early)");
-    }
-
-    /** Ensure Cohort B exists for divergence runs. Auto-fill from A if enabled. */
-    private boolean ensureBForDivergenceIfNeeded() {
-        if (cohortB != null && !cohortB.isEmpty()) return true;
-        if (autoFillBFromAWhenMissing) {
-            useCohortAForB(getCohortALabel() + " (copy)");
-            toast("Cohort B was empty — auto-filled with a copy of A for testing.", false);
-            return true;
-        } else {
-            toast("Cohort B is empty. Set B or enable 'Auto-fill B from A' in Actions.", true);
-            return false;
-        }
-    }
-
-    // ---------------------------------------------------------------------
-    // Misc helpers
-    // ---------------------------------------------------------------------
 
     private void setControlsDisabled(boolean disabled) {
         topBar.setDisable(disabled);

@@ -80,6 +80,25 @@ public class FeatureVector extends MessageData {
         entityId = UUID.randomUUID().toString();
         metaData.put("uuid", entityId);
     }
+    /**
+     * Convenience constructor to initialize with data.
+     * The list reference is copied defensively.
+     */
+    public FeatureVector(List<Double> data) {
+        this(); // keep UUID/meta init
+        if (data != null) {
+            this.data = new ArrayList<>(data);
+        }
+    }
+
+    /**
+     * Convenience constructor to initialize with data and label.
+     * The list reference is copied defensively.
+     */
+    public FeatureVector(List<Double> data, String label) {
+        this(data);
+        this.label = label;
+    }
 
     public boolean isBBoxValid() {
         return null != getBbox() && !getBbox().isEmpty() && getBbox().size() > 3

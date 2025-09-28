@@ -36,9 +36,9 @@ import javafx.scene.text.TextAlignment;
 public final class MatrixHeatmapView extends BorderPane {
 
     // -------------------- Types --------------------
-// --- Compatibility enums (safe defaults) ---
-public enum ValueMode { RAW, ABS_VALUE }
-public enum ScaleMode { AUTO, FIXED }
+    // Compatibility enums (simple placeholders for future options)
+    public enum ValueMode { RAW, ABS_VALUE }
+    public enum ScaleMode { AUTO, FIXED }
 
     /** Color palette styles. */
     public enum PaletteKind {
@@ -68,8 +68,10 @@ public enum ScaleMode { AUTO, FIXED }
     // Rendering & layout knobs
     private final Canvas canvas = new Canvas();
     private final Insets padding = new Insets(6, 8, 8, 8);
-// Reusable node for text measurement to avoid per-call allocations
-private final Text measureText = new Text();    
+
+    // Reusable node for text measurement to avoid per-call allocations
+    private final Text measureText = new Text();
+
     // Axis label styling
     private Font labelFont = Font.font("Arial", 12);
     private double labelMargin = 4.0;
@@ -85,6 +87,9 @@ private final Text measureText = new Text();
     private Double fixedMin = null;
     private Double fixedMax = null;
     private Double divergingCenter = 0.0; // for DIVERGING only
+
+    // Column label compaction (e.g., "Comp 12" -> "12")
+    private boolean compactColumnLabels = false;
 
     // Interaction
     private Consumer<MatrixClick> onCellClick = null;
@@ -256,6 +261,14 @@ private final Text measureText = new Text();
         }
     }
 
+    /** When true, column labels like "Comp 12" are rendered without the "Comp " prefix. */
+    public void setCompactColumnLabels(boolean on) {
+        if (this.compactColumnLabels != on) {
+            this.compactColumnLabels = on;
+            layoutAndDraw();
+        }
+    }
+
     /** Set click handler for cell picks. */
     public void setOnCellClick(Consumer<MatrixClick> handler) {
         this.onCellClick = handler;
@@ -273,13 +286,8 @@ private final Text measureText = new Text();
 
     // -------------------- Internals: sizing + render --------------------
 
-    private int rows() {
-        return matrix.length;
-    }
-
-    private int cols() {
-        return (rows() == 0) ? 0 : matrix[0].length;
-    }
+    private int rows() { return matrix.length; }
+    private int cols() { return (rows() == 0) ? 0 : matrix[0].length; }
 
     private void layoutAndDraw() {
         double w = Math.max(1, getWidth() - getInsets().getLeft() - getInsets().getRight());
@@ -401,9 +409,10 @@ private final Text measureText = new Text();
 
         // Top (columns)
         for (int j = 0; j < c; j++) {
-            String lbl = (j < colLabels.length && colLabels[j] != null) ? colLabels[j] : ("c" + j);
+            String base = (j < colLabels.length && colLabels[j] != null) ? colLabels[j] : ("c" + j);
+            String lbl = compactColLabel(base, j);
             double x = contentX + (j + 0.5) * cellW;
-            double y = contentY - labelMargin - textHeight(g, lbl);
+            double y = contentY - labelMargin - textHeight(g);
             g.fillText(lbl, x, Math.max(0, y));
         }
 
@@ -553,33 +562,27 @@ private final Text measureText = new Text();
         return t;
     }
 
-    // Sequential palette: grayscale → viridis-like simple blend
+    // Sequential palette: simple gradient (dark blue → teal → yellow)
     private static Color sequentialColor(double t) {
-        // Simple perceptual-ish gradient (dark blue → teal → yellow)
-        // t in [0,1]
         double r = clamp01(-0.5 + 2.2 * t);
         double g = clamp01(0.1 + 1.9 * t);
         double b = clamp01(1.0 - 0.9 * t);
-        // Subtle gamma
         double gamma = 0.95;
         return Color.color(Math.pow(r, gamma), Math.pow(g, gamma), Math.pow(b, gamma));
     }
 
     // Diverging palette: cool (blue) below center, warm (red) above center; white at center
     private static Color divergingColor(double v, double min, double max, double center) {
-        // Map to [-1, 1] where 0 is center.
         double t = (v - center) / (Math.max(Math.abs(max - center), Math.abs(center - min)) + 1e-12);
         if (t < -1) t = -1;
         if (t > 1) t = 1;
         if (t >= 0) {
-            // 0..1: white → orange/red
             double a = t;
             double r = 1.0;
             double g = 1.0 - 0.6 * a;
             double b = 1.0 - 0.9 * a;
             return Color.color(r, g, b);
         } else {
-            // -1..0: blue → white
             double a = -t;
             double r = 1.0 - 0.9 * a;
             double g = 1.0 - 0.8 * a;
@@ -597,8 +600,7 @@ private final Text measureText = new Text();
     private double estimateTopLabelHeight(GraphicsContext g, int cols) {
         if (cols == 0) return 0;
         g.setFont(labelFont);
-        // Use one sample to estimate height
-        return Math.ceil(textHeight(g, "X") + 2);
+        return Math.ceil(textHeight(g));
     }
 
     private double estimateLeftLabelWidth(GraphicsContext g, int rows) {
@@ -614,18 +616,28 @@ private final Text measureText = new Text();
         }
         return Math.ceil(maxW + 2);
     }
-private double textWidth(GraphicsContext g, String s) {
-    if (s == null || s.isEmpty()) return 0.0;
-    measureText.setText(s);
-    measureText.setFont(g.getFont());
-    return measureText.getLayoutBounds().getWidth();
-}
 
-private double textHeight(GraphicsContext g, String s) {
-    // Use a representative sample for consistent line height
-    measureText.setText("Mg");
-    measureText.setFont(g.getFont());
-    return measureText.getLayoutBounds().getHeight();
-}
+    private double textWidth(GraphicsContext g, String s) {
+        if (s == null || s.isEmpty()) return 0.0;
+        measureText.setText(s);
+        measureText.setFont(g.getFont());
+        return measureText.getLayoutBounds().getWidth();
+    }
 
+    private double textHeight(GraphicsContext g) {
+        measureText.setText("Mg"); // representative sample
+        measureText.setFont(g.getFont());
+        return measureText.getLayoutBounds().getHeight();
+    }
+
+    /** If compactColumnLabels=true and label starts with "Comp", strip that prefix. */
+    private String compactColLabel(String original, int colIndex) {
+        if (!compactColumnLabels) return original;
+        if (original == null || original.isBlank()) return Integer.toString(colIndex);
+        String s = original.trim();
+        if (s.length() >= 4 && s.substring(0, 4).equalsIgnoreCase("comp")) {
+            s = s.substring(4).trim(); // drop "comp" + any space
+        }
+        return s.isEmpty() ? Integer.toString(colIndex) : s;
+    }
 }

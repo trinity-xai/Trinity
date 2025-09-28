@@ -351,6 +351,10 @@ public class App extends Application {
             stage.getScene().getRoot().fireEvent(
                 new ApplicationEvent(ApplicationEvent.SHOW_PAIRWISEJPDF_PANE));
         }
+        if (e.isAltDown() && e.isControlDown() && e.getCode().equals(KeyCode.U)) {
+            stage.getScene().getRoot().fireEvent(
+                new ApplicationEvent(ApplicationEvent.SHOW_PAIRWISEMATRIX_PANE));
+        }
         if (e.isAltDown() && e.isControlDown() && e.getCode().equals(KeyCode.S)) {
             stage.getScene().getRoot().fireEvent(
                 new ApplicationEvent(ApplicationEvent.SHOW_SPECIALEFFECTS_PANE));
