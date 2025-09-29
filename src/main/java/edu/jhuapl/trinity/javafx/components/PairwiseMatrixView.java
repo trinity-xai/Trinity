@@ -23,10 +23,10 @@ import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.SplitPane;
-import javafx.scene.control.TextInputDialog;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 
 /**
@@ -40,8 +40,7 @@ import javafx.scene.layout.VBox;
  * Runs PairwiseMatrixEngine for Similarity or Divergence based on the panel request
  * and updates the MatrixHeatmapView with results and initial display settings.
  *
- * This view is suitable to be wrapped by a floating pane (e.g., PairwiseMatrixPane),
- * similar to PairwiseJpdfView/Pane.
+ * Designed to be wrapped by a floating pane (e.g., PairwiseMatrixPane), similar to PairwiseJpdfView/Pane.
  *
  * @author Sean Phillips
  */
@@ -57,14 +56,18 @@ public final class PairwiseMatrixView extends BorderPane {
     private final BorderPane topBar;
     private final HBox topLeft;
     private final Label progressLabel;
+
+    // --- Collapse/expand state
+    private boolean controlsCollapsed = false;
     private double lastDividerPos = 0.36;
+    private double expandedControlsPrefWidth = 390.0;
 
     // --- Buttons (visible in toolbar)
     private final Button cfgRunBtn;
     private final Button cfgResetBtn;
     private final Button collapseBtn;
 
-    // --- Actions (synthetic cohorts, derive by label, etc.)
+    // --- Actions (for future extensibility)
     private final MenuButton actionsBtn;
 
     // --- State (data + cache)
@@ -82,7 +85,9 @@ public final class PairwiseMatrixView extends BorderPane {
         this.cache = (cache != null) ? cache : new DensityCache.Builder().maxEntries(128).ttlMillis(0).build();
         this.configPanel = (configPanel != null) ? configPanel : new PairwiseMatrixConfigPanel();
         this.heatmap = new MatrixHeatmapView();
-        this.heatmap.setCompactColumnLabels(true); // compact column labels by default
+
+        // Compact column labels: show indices only (no "Comp" prefix)
+        this.heatmap.setCompactColumnLabels(true);
 
         // Hook matrix clicks to external handler if provided
         this.heatmap.setOnCellClick(click -> {
@@ -94,40 +99,68 @@ public final class PairwiseMatrixView extends BorderPane {
         this.cfgResetBtn = this.configPanel.getResetButton();
 
         // Toolbar collapse toggle
-        this.collapseBtn = new Button("Collapse Controls");
-        this.collapseBtn.setOnAction(e -> toggleControlsCollapsed());
+        collapseBtn = new Button("Collapse Controls");
+        collapseBtn.setOnAction(e -> toggleControlsCollapsed());
 
-        // Actions menu (synthetic cohorts + helpers)
-        this.actionsBtn = buildActionsMenu();
+        // Actions menu (placeholder for future save/load/export)
+        actionsBtn = buildActionsMenu();
 
         // Slim toolbar (left = buttons; right = progress text)
-        this.topLeft = new HBox(10, cfgResetBtn, cfgRunBtn, collapseBtn, actionsBtn);
-        this.topLeft.setAlignment(Pos.CENTER_LEFT);
-        this.topLeft.setPadding(new Insets(6, 8, 6, 8));
+        topLeft = new HBox(10, cfgResetBtn, cfgRunBtn, collapseBtn, actionsBtn);
+        topLeft.setAlignment(Pos.CENTER_LEFT);
+        topLeft.setPadding(new Insets(6, 8, 6, 8));
 
-        this.progressLabel = new Label("");
+        progressLabel = new Label("");
         BorderPane.setAlignment(progressLabel, Pos.CENTER_RIGHT);
         BorderPane.setMargin(progressLabel, new Insets(6, 8, 6, 8));
 
-        this.topBar = new BorderPane();
-        this.topBar.setLeft(topLeft);
-        this.topBar.setRight(progressLabel);
+        topBar = new BorderPane();
+        topBar.setLeft(topLeft);
+        topBar.setRight(progressLabel);
         setTop(topBar);
 
         // Left controls box
-        this.controlsBox = new VBox();
-        this.controlsBox.getChildren().addAll(this.configPanel);
+        controlsBox = new VBox();
+        controlsBox.getChildren().addAll(this.configPanel);
         VBox.setMargin(this.configPanel, new Insets(6, 8, 6, 8));
-        this.controlsBox.setMinWidth(0);
-        this.controlsBox.setPrefWidth(390);
+
+        // Make both sides freely resizable
+        controlsBox.setMinWidth(0);
+        controlsBox.setPrefWidth(expandedControlsPrefWidth);
+        controlsBox.setMaxWidth(Region.USE_COMPUTED_SIZE);
+
+        heatmap.setMinWidth(0);
+        heatmap.setMaxWidth(Double.MAX_VALUE);
 
         // SplitPane: left controls, right heatmap
-        this.splitPane = new SplitPane(controlsBox, heatmap);
-        this.splitPane.setOrientation(Orientation.HORIZONTAL);
-        this.splitPane.setDividerPositions(lastDividerPos);
-        this.splitPane.setBackground(Background.EMPTY);
+        splitPane = new SplitPane(controlsBox, heatmap);
+        splitPane.setOrientation(Orientation.HORIZONTAL);
+        splitPane.setDividerPositions(lastDividerPos);
+        splitPane.setBackground(Background.EMPTY);
         setCenter(splitPane);
         BorderPane.setMargin(splitPane, new Insets(6));
+
+        // Let SplitPane resize both children
+        SplitPane.setResizableWithParent(controlsBox, Boolean.TRUE);
+        SplitPane.setResizableWithParent(heatmap, Boolean.TRUE);
+
+        // Track divider pos only when expanded; also remember an approximate expanded width
+        if (!splitPane.getDividers().isEmpty()) {
+            splitPane.getDividers().get(0).positionProperty().addListener((obs, ov, nv) -> {
+                if (!controlsCollapsed && nv != null) {
+                    double p = nv.doubleValue();
+                    if (p > 0.02 && p < 0.98) {
+                        lastDividerPos = p;
+                        double total = splitPane.getWidth() <= 0 ? getWidth() : splitPane.getWidth();
+                        if (total > 0) {
+                            // Keep a sensible floor for the left panel width
+                            expandedControlsPrefWidth = Math.max(220, Math.round(p * total));
+                            controlsBox.setPrefWidth(expandedControlsPrefWidth);
+                        }
+                    }
+                }
+            });
+        }
 
         // Wiring
         this.configPanel.setOnRun(this::runWithRequest);
@@ -176,6 +209,7 @@ public final class PairwiseMatrixView extends BorderPane {
         // Build a minimal JpdfRecipe from the request (bins & bounds & indices & scoring).
         JpdfRecipe recipe = buildRecipeFromRequest(req);
 
+        // Heatmap visual settings from request
         heatmap.setShowLegend(req.showLegend);
         if (req.paletteDiverging) heatmap.useDivergingPalette(req.divergingCenter != null ? req.divergingCenter : 0.0);
         else heatmap.useSequentialPalette();
@@ -240,7 +274,6 @@ public final class PairwiseMatrixView extends BorderPane {
                         heatmap.setMatrix(result.matrix);
                         heatmap.setRowLabels(result.labels);
                         heatmap.setColLabels(result.labels);
-                        heatmap.setCompactColumnLabels(true); // ensure compact columns after labels set
                         toast((result.title != null ? result.title + " — " : "") +
                               "N=" + result.matrix.length + "; wall=" + wall + " ms.", false);
                     }
@@ -260,259 +293,84 @@ public final class PairwiseMatrixView extends BorderPane {
     private static <T> T nonNull(T v, T def) { return (v != null ? v : def); }
 
     private JpdfRecipe buildRecipeFromRequest(Request req) {
-        // We keep this minimal—engines only use bins/bounds/policy/indices/scoreMetric.
-        // For similarity path we include the requested ScoreMetric; divergence ignores score metric.
+        // Engines only use bins/bounds/policy/indices/scoreMetric.
         JpdfRecipe.Builder b = JpdfRecipe.newBuilder(safeName(req.name))
                 .bins(req.binsX, req.binsY)
                 .boundsPolicy(req.boundsPolicy)
                 .canonicalPolicyId(req.canonicalPolicyId == null ? "default" : req.canonicalPolicyId)
-                .componentPairsMode(true) // not used directly here, but harmless
+                .componentPairsMode(true)
                 .componentIndexRange(req.componentStart, req.componentEnd)
-                .includeSelfPairs(req.includeDiagonal) // used by similarity engine as hint
+                .includeSelfPairs(req.includeDiagonal)
                 .orderedPairs(req.orderedPairs)
-                .cacheEnabled(true)                    // let Divergence/Comparison leverage cache if passed
+                .cacheEnabled(true)
                 .saveThumbnails(false)
-                .minAvgCountPerCell(3.0);              // sufficiency default used by PairScorer
+                .minAvgCountPerCell(3.0);
 
         if (req.mode == Mode.SIMILARITY && req.similarityMetric != null) {
             b.scoreMetric(req.similarityMetric);
         } else {
-            // fallback (unused for divergence)
+            // fallback (unused for divergence path)
             b.scoreMetric(JpdfRecipe.ScoreMetric.PEARSON);
         }
         return b.build();
     }
 
     // ---------------------------------------------------------------------
-    // Actions menu (synthetic cohorts & helpers)
+    // Toolbar helpers
     // ---------------------------------------------------------------------
 
     private MenuButton buildActionsMenu() {
         MenuButton mb = new MenuButton("Actions");
 
-        // Clear heatmap
+        // Simple "Clear" action for the heatmap
         MenuItem clearItem = new MenuItem("Clear Matrix");
         clearItem.setOnAction(e -> heatmap.setMatrix((double[][]) null));
 
-        // Synthetic cohort tools
-        MenuItem copyAToB = new MenuItem("Set Cohort B = Cohort A (copy)");
-        copyAToB.setOnAction(e -> {
-            if (cohortA == null || cohortA.isEmpty()) { toast("Cohort A is empty.", true); return; }
-            setCohortB(new ArrayList<>(cohortA), cohortALabel + " (copy)");
-            toast("Cohort B set to copy of Cohort A.", false);
-        });
+        // Reserved hooks for future: Save/Load config, export image, etc.
+        MenuItem sep = new SeparatorMenuItem();
 
-        MenuItem splitA = new MenuItem("Split Cohort A into A/B halves");
-        splitA.setOnAction(e -> {
-            if (cohortA == null || cohortA.size() < 2) { toast("Need ≥2 vectors in Cohort A to split.", true); return; }
-            int mid = cohortA.size() / 2;
-            List<FeatureVector> first = new ArrayList<>(cohortA.subList(0, mid));
-            List<FeatureVector> second = new ArrayList<>(cohortA.subList(mid, cohortA.size()));
-            setCohortA(first, cohortALabel + " (early)");
-            setCohortB(second, cohortALabel + " (late)");
-            toast("Split A into A(early)/B(late).", false);
-        });
-
-        MenuItem bRandomGaussian = new MenuItem("Set Cohort B = Gaussian noise (match N, D)");
-        bRandomGaussian.setOnAction(e -> {
-            if (cohortA == null || cohortA.isEmpty()) { toast("Cohort A is empty.", true); return; }
-            List<FeatureVector> b = synthGaussianLikeA(cohortA, 0.0, 1.0);
-            setCohortB(b, "Gaussian");
-            toast("Cohort B generated: Gaussian(μ=0,σ=1)", false);
-        });
-
-        MenuItem bRandomNoise = new MenuItem("Set Cohort B = Uniform noise (match N, D)");
-        bRandomNoise.setOnAction(e -> {
-            if (cohortA == null || cohortA.isEmpty()) { toast("Cohort A is empty.", true); return; }
-            List<FeatureVector> b = synthUniformLikeA(cohortA, -1.0, 1.0);
-            setCohortB(b, "Uniform[-1,1]");
-            toast("Cohort B generated: Uniform[-1,1]", false);
-        });
-
-        MenuItem bShiftOneComp = new MenuItem("Set Cohort B = A shifted on one component…");
-        bShiftOneComp.setOnAction(e -> promptShiftOneComponent());
-
-        // Label-derived cohorts
-        MenuItem cohortsByLabel = new MenuItem("Derive A/B by vector label…");
-        cohortsByLabel.setOnAction(e -> promptDeriveCohortsByLabel());
-
-        mb.getItems().addAll(
-                clearItem,
-                new SeparatorMenuItem(),
-                copyAToB,
-                splitA,
-                bRandomGaussian,
-                bRandomNoise,
-                bShiftOneComp,
-                new SeparatorMenuItem(),
-                cohortsByLabel
-        );
+        mb.getItems().addAll(clearItem, sep);
         return mb;
     }
 
     // ---------------------------------------------------------------------
-    // Synthetic cohort helpers
-    // ---------------------------------------------------------------------
-
-    private List<FeatureVector> synthGaussianLikeA(List<FeatureVector> likeA, double mean, double stddev) {
-        int n = likeA.size();
-        int d = (likeA.get(0).getData() != null) ? likeA.get(0).getData().size() : 0;
-        java.util.Random rng = new java.util.Random(42);
-        List<FeatureVector> out = new ArrayList<>(n);
-        for (int i = 0; i < n; i++) {
-            ArrayList<Double> row = new ArrayList<>(d);
-            for (int j = 0; j < d; j++) {
-                double z = rng.nextGaussian() * stddev + mean;
-                row.add(z);
-            }
-            // Adjust constructor if your FeatureVector differs
-            out.add(new FeatureVector(row));
-        }
-        return out;
-    }
-
-    private List<FeatureVector> synthUniformLikeA(List<FeatureVector> likeA, double min, double max) {
-        int n = likeA.size();
-        int d = (likeA.get(0).getData() != null) ? likeA.get(0).getData().size() : 0;
-        java.util.Random rng = new java.util.Random(43);
-        double span = max - min;
-        List<FeatureVector> out = new ArrayList<>(n);
-        for (int i = 0; i < n; i++) {
-            ArrayList<Double> row = new ArrayList<>(d);
-            for (int j = 0; j < d; j++) {
-                double v = min + rng.nextDouble() * span;
-                row.add(v);
-            }
-            // Adjust constructor if your FeatureVector differs
-            out.add(new FeatureVector(row));
-        }
-        return out;
-    }
-
-    private void promptShiftOneComponent() {
-        if (cohortA == null || cohortA.isEmpty()) { toast("Cohort A is empty.", true); return; }
-        int d = (cohortA.get(0).getData() != null) ? cohortA.get(0).getData().size() : 0;
-        if (d == 0) { toast("Cohort A has zero-dimensional vectors.", true); return; }
-
-        TextInputDialog compDlg = new TextInputDialog("0");
-        compDlg.setTitle("Shift Component");
-        compDlg.setHeaderText("Shift one component in Cohort B");
-        compDlg.setContentText("Component index (0.." + (d - 1) + "):");
-        var compRes = compDlg.showAndWait();
-        if (compRes.isEmpty()) return;
-
-        int idx;
-        try {
-            idx = Integer.parseInt(compRes.get().trim());
-        } catch (Exception ex) {
-            toast("Invalid component index.", true);
-            return;
-        }
-        if (idx < 0 || idx >= d) { toast("Index out of range.", true); return; }
-
-        TextInputDialog deltaDlg = new TextInputDialog("1.0");
-        deltaDlg.setTitle("Shift Component");
-        deltaDlg.setHeaderText("Shift one component in Cohort B");
-        deltaDlg.setContentText("Delta to add:");
-        var deltaRes = deltaDlg.showAndWait();
-        if (deltaRes.isEmpty()) return;
-
-        double delta;
-        try {
-            delta = Double.parseDouble(deltaRes.get().trim());
-        } catch (Exception ex) {
-            toast("Invalid delta.", true);
-            return;
-        }
-
-        // Build B by copying A and adding delta on idx
-        List<FeatureVector> b = new ArrayList<>(cohortA.size());
-        for (FeatureVector fv : cohortA) {
-            List<Double> src = fv.getData();
-            ArrayList<Double> row = new ArrayList<>(src.size());
-            for (int j = 0; j < src.size(); j++) {
-                double v = src.get(j);
-                row.add(j == idx ? v + delta : v);
-            }
-            // Adjust constructor if your FeatureVector differs
-            b.add(new FeatureVector(row));
-        }
-        setCohortB(b, cohortALabel + " (shifted comp " + idx + " by " + delta + ")");
-        toast("Cohort B = A with comp " + idx + " shifted by " + delta, false);
-    }
-
-    private void promptDeriveCohortsByLabel() {
-        if (cohortA == null || cohortA.isEmpty()) {
-            toast("Load a FeatureCollection (A) first; we’ll derive A/B subsets from it.", true);
-            return;
-        }
-        TextInputDialog aDlg = new TextInputDialog("classA");
-        aDlg.setTitle("Cohorts by Label");
-        aDlg.setHeaderText("Derive cohorts from vector labels in Cohort A");
-        aDlg.setContentText("Label for Cohort A:");
-        var aRes = aDlg.showAndWait();
-        if (aRes.isEmpty()) return;
-
-        TextInputDialog bDlg = new TextInputDialog("classB");
-        bDlg.setTitle("Cohorts by Label");
-        bDlg.setHeaderText("Derive cohorts from vector labels in Cohort A");
-        bDlg.setContentText("Label for Cohort B:");
-        var bRes = bDlg.showAndWait();
-        if (bRes.isEmpty()) return;
-
-        String la = aRes.get().trim();
-        String lb = bRes.get().trim();
-        if (la.isEmpty() || lb.isEmpty()) { toast("Labels cannot be empty.", true); return; }
-
-        List<FeatureVector> aList = new ArrayList<>();
-        List<FeatureVector> bList = new ArrayList<>();
-
-        for (FeatureVector fv : cohortA) {
-            String lab = safeVectorLabel(fv);
-            if (la.equals(lab)) aList.add(fv);
-            else if (lb.equals(lab)) bList.add(fv);
-        }
-
-        if (aList.isEmpty() || bList.isEmpty()) {
-            toast("No matches for one or both labels. A=" + aList.size() + ", B=" + bList.size(), true);
-            return;
-        }
-
-        setCohortA(new ArrayList<>(aList), la);
-        setCohortB(new ArrayList<>(bList), lb);
-        toast("Derived cohorts by label: A=" + la + " (" + aList.size() + "), B=" + lb + " (" + bList.size() + ")", false);
-    }
-
-    private static String safeVectorLabel(FeatureVector fv) {
-        try {
-            // Adjust if your FeatureVector exposes labels differently.
-            String lbl = fv.getLabel(); // e.g., fv.getLabel() or fv.getName() or metadata map
-            return (lbl == null) ? "" : lbl.trim();
-        } catch (Throwable t) {
-            return "";
-        }
-    }
-
-    // ---------------------------------------------------------------------
-    // Toolbar helpers
+    // Collapse/Expand (no node swapping; width-based)
     // ---------------------------------------------------------------------
 
     private void toggleControlsCollapsed() {
-        double pos = splitPane.getDividerPositions()[0];
-        if (pos > 0.02 || controlsBox.isVisible()) {
-            lastDividerPos = pos;
-            controlsBox.setManaged(false);
-            controlsBox.setVisible(false);
-            splitPane.setDividerPositions(0.0);
+        if (!controlsCollapsed) {
+            // Save current divider position if sensible
+            double pos = splitPane.getDividerPositions()[0];
+            if (pos > 0.02 && pos < 0.98) lastDividerPos = pos;
+
+            // Collapse by width (keep node in SplitPane)
+            controlsCollapsed = true;
             collapseBtn.setText("Expand Controls");
+
+            controlsBox.setPrefWidth(0);
+            controlsBox.setMaxWidth(0);
+
+            splitPane.setDividerPositions(0.0);
+            splitPane.requestLayout();
         } else {
-            controlsBox.setManaged(true);
-            controlsBox.setVisible(true);
-            double restore = (lastDividerPos <= 0.02) ? 0.36 : lastDividerPos;
-            splitPane.setDividerPositions(restore);
+            // Expand: restore widths and divider
+            controlsCollapsed = false;
             collapseBtn.setText("Collapse Controls");
+
+            controlsBox.setMaxWidth(Region.USE_COMPUTED_SIZE);
+            controlsBox.setPrefWidth(expandedControlsPrefWidth);
+
+            final double target = (lastDividerPos > 0.02 && lastDividerPos < 0.98) ? lastDividerPos : 0.36;
+            Platform.runLater(() -> {
+                splitPane.setDividerPositions(target);
+                splitPane.requestLayout();
+            });
         }
     }
+
+    // ---------------------------------------------------------------------
+    // Misc helpers
+    // ---------------------------------------------------------------------
 
     private void setControlsDisabled(boolean disabled) {
         topBar.setDisable(disabled);
