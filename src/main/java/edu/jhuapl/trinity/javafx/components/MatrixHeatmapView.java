@@ -2,6 +2,8 @@ package edu.jhuapl.trinity.javafx.components;
 
 import edu.jhuapl.trinity.javafx.util.MatrixViewUtil;
 import java.text.DecimalFormat;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 import java.util.function.Consumer;
 import javafx.beans.InvalidationListener;
@@ -182,6 +184,9 @@ public final class MatrixHeatmapView extends BorderPane {
         setMatrix(arr);
     }
 
+    public List<String> getRowLabels() {
+        return Arrays.asList(rowLabels);
+    }
     /** Optional row labels (length must equal rows). */
     public void setRowLabels(List<String> labels) {
         if (labels == null || labels.isEmpty()) {

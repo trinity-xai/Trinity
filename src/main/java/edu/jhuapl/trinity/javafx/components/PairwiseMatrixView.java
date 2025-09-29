@@ -1,7 +1,11 @@
 package edu.jhuapl.trinity.javafx.components;
 
+import com.github.trinity.supermds.SuperMDS;
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.javafx.components.MatrixHeatmapView.MatrixClick;
+import edu.jhuapl.trinity.javafx.javafx3d.tasks.BuildGraphFromMatrixTask;
+import edu.jhuapl.trinity.utils.graph.GraphLayoutParams;
+import edu.jhuapl.trinity.utils.graph.MatrixToGraphAdapter;
 import edu.jhuapl.trinity.utils.statistics.DensityCache;
 import edu.jhuapl.trinity.utils.statistics.DivergenceComputer.DivergenceMetric;
 import edu.jhuapl.trinity.utils.statistics.JpdfRecipe;
@@ -23,6 +27,7 @@ import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.SplitPane;
+import javafx.scene.control.TextInputDialog;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
@@ -80,6 +85,7 @@ public final class PairwiseMatrixView extends BorderPane {
     // --- Hooks
     private Consumer<String> toastHandler;
     private Consumer<MatrixClick> onCellClickHandler;
+    
 
     public PairwiseMatrixView(PairwiseMatrixConfigPanel configPanel, DensityCache cache) {
         this.cache = (cache != null) ? cache : new DensityCache.Builder().maxEntries(128).ttlMillis(0).build();
@@ -318,21 +324,250 @@ public final class PairwiseMatrixView extends BorderPane {
     // ---------------------------------------------------------------------
     // Toolbar helpers
     // ---------------------------------------------------------------------
+private MenuButton buildActionsMenu() {
+    MenuButton mb = new MenuButton("Actions");
 
-    private MenuButton buildActionsMenu() {
-        MenuButton mb = new MenuButton("Actions");
+    MenuItem clearItem = new MenuItem("Clear Matrix");
+    clearItem.setOnAction(e -> heatmap.setMatrix((double[][]) null));
 
-        // Simple "Clear" action for the heatmap
-        MenuItem clearItem = new MenuItem("Clear Matrix");
-        clearItem.setOnAction(e -> heatmap.setMatrix((double[][]) null));
+    MenuItem buildGraphFromSim = new MenuItem("Build Graph from Similarity");
+    buildGraphFromSim.setOnAction(e -> triggerGraphBuild(MatrixToGraphAdapter.MatrixKind.SIMILARITY));
 
-        // Reserved hooks for future: Save/Load config, export image, etc.
-        MenuItem sep = new SeparatorMenuItem();
+    MenuItem buildGraphFromDiv = new MenuItem("Build Graph from Divergence");
+    buildGraphFromDiv.setOnAction(e -> triggerGraphBuild(MatrixToGraphAdapter.MatrixKind.DIVERGENCE));
 
-        mb.getItems().addAll(clearItem, sep);
-        return mb;
+        // Synthetic cohort tools
+        MenuItem copyAToB = new MenuItem("Set Cohort B = Cohort A (copy)");
+        copyAToB.setOnAction(e -> {
+            if (cohortA == null || cohortA.isEmpty()) { toast("Cohort A is empty.", true); return; }
+            setCohortB(new ArrayList<>(cohortA), cohortALabel + " (copy)");
+            toast("Cohort B set to copy of Cohort A.", false);
+        });
+
+        MenuItem splitA = new MenuItem("Split Cohort A into A/B halves");
+        splitA.setOnAction(e -> {
+            if (cohortA == null || cohortA.size() < 2) { toast("Need ≥2 vectors in Cohort A to split.", true); return; }
+            int mid = cohortA.size() / 2;
+            List<FeatureVector> first = new ArrayList<>(cohortA.subList(0, mid));
+            List<FeatureVector> second = new ArrayList<>(cohortA.subList(mid, cohortA.size()));
+            setCohortA(first, cohortALabel + " (early)");
+            setCohortB(second, cohortALabel + " (late)");
+            toast("Split A into A(early)/B(late).", false);
+        });
+
+        MenuItem bRandomGaussian = new MenuItem("Set Cohort B = Gaussian noise (match N, D)");
+        bRandomGaussian.setOnAction(e -> {
+            if (cohortA == null || cohortA.isEmpty()) { toast("Cohort A is empty.", true); return; }
+            List<FeatureVector> b = synthGaussianLikeA(cohortA, 0.0, 1.0);
+            setCohortB(b, "Gaussian");
+            toast("Cohort B generated: Gaussian(μ=0,σ=1)", false);
+        });
+
+        MenuItem bRandomNoise = new MenuItem("Set Cohort B = Uniform noise (match N, D)");
+        bRandomNoise.setOnAction(e -> {
+            if (cohortA == null || cohortA.isEmpty()) { toast("Cohort A is empty.", true); return; }
+            List<FeatureVector> b = synthUniformLikeA(cohortA, -1.0, 1.0);
+            setCohortB(b, "Uniform[-1,1]");
+            toast("Cohort B generated: Uniform[-1,1]", false);
+        });
+
+        MenuItem bShiftOneComp = new MenuItem("Set Cohort B = A shifted on one component…");
+        bShiftOneComp.setOnAction(e -> promptShiftOneComponent());
+
+        // Label-derived cohorts
+        MenuItem cohortsByLabel = new MenuItem("Derive A/B by vector label…");
+        cohortsByLabel.setOnAction(e -> promptDeriveCohortsByLabel());
+        
+    mb.getItems().addAll(buildGraphFromSim, buildGraphFromDiv, 
+        new SeparatorMenuItem(), copyAToB, splitA, bShiftOneComp, cohortsByLabel,
+        new SeparatorMenuItem(), bRandomGaussian, bRandomNoise,
+        new SeparatorMenuItem(), clearItem);
+    
+    return mb;
+}
+private void triggerGraphBuild(MatrixToGraphAdapter.MatrixKind kind) {
+    double[][] M = currentMatrix();
+    if (M == null || M.length == 0) { toast("No matrix to build a graph from.", true); return; }
+
+    var labels = currentRowLabels();
+    var scene = getScene();
+    if (scene == null) { toast("Scene not ready.", true); return; }
+
+    // Choose how to interpret the matrix and how to lay it out
+    MatrixToGraphAdapter.WeightMode weightMode = 
+        MatrixToGraphAdapter.WeightMode.DIRECT; // use your preferred default
+
+    GraphLayoutParams layout = new GraphLayoutParams();
+    layout.kind = GraphLayoutParams.LayoutKind.MDS_3D;   // or FORCE_FR, CIRCLE_XZ, etc.
+    // (If your GraphLayoutParams uses setters/builder, adjust these two lines accordingly.)
+
+    SuperMDS.Params mdsParams = new SuperMDS.Params();
+    mdsParams.outputDim = 3; // ensure 3D
+
+    setControlsDisabled(true);
+    setProgressText("Building graph…");
+
+    BuildGraphFromMatrixTask task = new BuildGraphFromMatrixTask(
+            scene, M, labels, kind, weightMode, layout, mdsParams);
+
+    task.setOnSucceeded(ev -> {
+        setControlsDisabled(false);
+        setProgressText("");
+        toast("Graph built and dispatched.", false);
+    });
+    task.setOnFailed(ev -> {
+        setControlsDisabled(false);
+        setProgressText("");
+        var t = task.getException();
+        toast("Graph build failed: " + (t == null ? "unknown error" : t.getMessage()), true);
+    });
+
+    Thread th = new Thread(task, "BuildGraphFromMatrixTask");
+    th.setDaemon(true);
+    th.start();
+}
+    // ---------------------------------------------------------------------
+    // Synthetic cohort helpers
+    // ---------------------------------------------------------------------
+
+    private List<FeatureVector> synthGaussianLikeA(List<FeatureVector> likeA, double mean, double stddev) {
+        int n = likeA.size();
+        int d = (likeA.get(0).getData() != null) ? likeA.get(0).getData().size() : 0;
+        java.util.Random rng = new java.util.Random(42);
+        List<FeatureVector> out = new ArrayList<>(n);
+        for (int i = 0; i < n; i++) {
+            ArrayList<Double> row = new ArrayList<>(d);
+            for (int j = 0; j < d; j++) {
+                double z = rng.nextGaussian() * stddev + mean;
+                row.add(z);
+            }
+            // Adjust constructor if your FeatureVector differs
+            out.add(new FeatureVector(row));
+        }
+        return out;
     }
 
+    private List<FeatureVector> synthUniformLikeA(List<FeatureVector> likeA, double min, double max) {
+        int n = likeA.size();
+        int d = (likeA.get(0).getData() != null) ? likeA.get(0).getData().size() : 0;
+        java.util.Random rng = new java.util.Random(43);
+        double span = max - min;
+        List<FeatureVector> out = new ArrayList<>(n);
+        for (int i = 0; i < n; i++) {
+            ArrayList<Double> row = new ArrayList<>(d);
+            for (int j = 0; j < d; j++) {
+                double v = min + rng.nextDouble() * span;
+                row.add(v);
+            }
+            // Adjust constructor if your FeatureVector differs
+            out.add(new FeatureVector(row));
+        }
+        return out;
+    }
+
+    private void promptShiftOneComponent() {
+        if (cohortA == null || cohortA.isEmpty()) { toast("Cohort A is empty.", true); return; }
+        int d = (cohortA.get(0).getData() != null) ? cohortA.get(0).getData().size() : 0;
+        if (d == 0) { toast("Cohort A has zero-dimensional vectors.", true); return; }
+
+        TextInputDialog compDlg = new TextInputDialog("0");
+        compDlg.setTitle("Shift Component");
+        compDlg.setHeaderText("Shift one component in Cohort B");
+        compDlg.setContentText("Component index (0.." + (d - 1) + "):");
+        var compRes = compDlg.showAndWait();
+        if (compRes.isEmpty()) return;
+
+        int idx;
+        try {
+            idx = Integer.parseInt(compRes.get().trim());
+        } catch (Exception ex) {
+            toast("Invalid component index.", true);
+            return;
+        }
+        if (idx < 0 || idx >= d) { toast("Index out of range.", true); return; }
+
+        TextInputDialog deltaDlg = new TextInputDialog("1.0");
+        deltaDlg.setTitle("Shift Component");
+        deltaDlg.setHeaderText("Shift one component in Cohort B");
+        deltaDlg.setContentText("Delta to add:");
+        var deltaRes = deltaDlg.showAndWait();
+        if (deltaRes.isEmpty()) return;
+
+        double delta;
+        try {
+            delta = Double.parseDouble(deltaRes.get().trim());
+        } catch (Exception ex) {
+            toast("Invalid delta.", true);
+            return;
+        }
+
+        // Build B by copying A and adding delta on idx
+        List<FeatureVector> b = new ArrayList<>(cohortA.size());
+        for (FeatureVector fv : cohortA) {
+            List<Double> src = fv.getData();
+            ArrayList<Double> row = new ArrayList<>(src.size());
+            for (int j = 0; j < src.size(); j++) {
+                double v = src.get(j);
+                row.add(j == idx ? v + delta : v);
+            }
+            // Adjust constructor if your FeatureVector differs
+            b.add(new FeatureVector(row));
+        }
+        setCohortB(b, cohortALabel + " (shifted comp " + idx + " by " + delta + ")");
+        toast("Cohort B = A with comp " + idx + " shifted by " + delta, false);
+    }
+
+    private void promptDeriveCohortsByLabel() {
+        if (cohortA == null || cohortA.isEmpty()) {
+            toast("Load a FeatureCollection (A) first; we’ll derive A/B subsets from it.", true);
+            return;
+        }
+        TextInputDialog aDlg = new TextInputDialog("classA");
+        aDlg.setTitle("Cohorts by Label");
+        aDlg.setHeaderText("Derive cohorts from vector labels in Cohort A");
+        aDlg.setContentText("Label for Cohort A:");
+        var aRes = aDlg.showAndWait();
+        if (aRes.isEmpty()) return;
+
+        TextInputDialog bDlg = new TextInputDialog("classB");
+        bDlg.setTitle("Cohorts by Label");
+        bDlg.setHeaderText("Derive cohorts from vector labels in Cohort A");
+        bDlg.setContentText("Label for Cohort B:");
+        var bRes = bDlg.showAndWait();
+        if (bRes.isEmpty()) return;
+
+        String la = aRes.get().trim();
+        String lb = bRes.get().trim();
+        if (la.isEmpty() || lb.isEmpty()) { toast("Labels cannot be empty.", true); return; }
+
+        List<FeatureVector> aList = new ArrayList<>();
+        List<FeatureVector> bList = new ArrayList<>();
+
+        for (FeatureVector fv : cohortA) {
+            String lab = safeVectorLabel(fv);
+            if (la.equals(lab)) aList.add(fv);
+            else if (lb.equals(lab)) bList.add(fv);
+        }
+
+        if (aList.isEmpty() || bList.isEmpty()) {
+            toast("No matches for one or both labels. A=" + aList.size() + ", B=" + bList.size(), true);
+            return;
+        }
+
+        setCohortA(new ArrayList<>(aList), la);
+        setCohortB(new ArrayList<>(bList), lb);
+        toast("Derived cohorts by label: A=" + la + " (" + aList.size() + "), B=" + lb + " (" + bList.size() + ")", false);
+    }
+
+    private static String safeVectorLabel(FeatureVector fv) {
+        try {
+            // Adjust if your FeatureVector exposes labels differently.
+            String lbl = fv.getLabel(); // e.g., fv.getLabel() or fv.getName() or metadata map
+            return (lbl == null) ? "" : lbl.trim();
+        } catch (Throwable t) {
+            return "";
+        }
+    }
     // ---------------------------------------------------------------------
     // Collapse/Expand (no node swapping; width-based)
     // ---------------------------------------------------------------------
@@ -388,6 +623,8 @@ public final class PairwiseMatrixView extends BorderPane {
             System.out.println((isError ? "[Error] " : "[Info] ") + msg);
         }
     }
+    private double[][] currentMatrix() { return heatmap.getMatrixCopy(); }
+    private List<String> currentRowLabels() { return heatmap.getRowLabels(); }
 
     private static String safeName(String s) {
         String x = (s == null) ? "" : s.trim();

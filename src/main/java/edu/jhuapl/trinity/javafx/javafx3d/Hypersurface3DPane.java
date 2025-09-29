@@ -3,6 +3,7 @@ package edu.jhuapl.trinity.javafx.javafx3d;
 import edu.jhuapl.trinity.App;
 import edu.jhuapl.trinity.data.CoordinateSet;
 import edu.jhuapl.trinity.data.files.FeatureCollectionFile;
+import edu.jhuapl.trinity.data.graph.GraphDirectedCollection;
 import edu.jhuapl.trinity.data.messages.bci.SemanticMap;
 import edu.jhuapl.trinity.data.messages.bci.SemanticMapCollection;
 import edu.jhuapl.trinity.data.messages.bci.SemanticReconstruction;
@@ -18,6 +19,7 @@ import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.FactorAnalysisEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
+import edu.jhuapl.trinity.javafx.events.GraphEvent;
 import edu.jhuapl.trinity.javafx.events.HyperspaceEvent;
 import edu.jhuapl.trinity.javafx.events.HypersurfaceEvent;
 import edu.jhuapl.trinity.javafx.events.HypersurfaceGridEvent;
@@ -34,6 +36,7 @@ import edu.jhuapl.trinity.javafx.javafx3d.tasks.HDDBSCANClusterTask;
 import edu.jhuapl.trinity.javafx.javafx3d.tasks.KMeansClusterTask;
 import edu.jhuapl.trinity.javafx.javafx3d.tasks.KMediodsClusterTask;
 import edu.jhuapl.trinity.javafx.renderers.FeatureVectorRenderer;
+import edu.jhuapl.trinity.javafx.renderers.Graph3DRenderer;
 import edu.jhuapl.trinity.javafx.renderers.SemanticMapRenderer;
 import edu.jhuapl.trinity.javafx.renderers.ShapleyVectorRenderer;
 import edu.jhuapl.trinity.utils.DataUtils;
@@ -253,7 +256,14 @@ public class Hypersurface3DPane extends StackPane
     private boolean toneEnabled = false;
     private SurfaceUtils.ToneMap toneOperator = SurfaceUtils.ToneMap.NONE;
     private double toneParam = 2.0;    
-    
+    // --- Graph layer support ---
+    private final Group graphLayer = new Group(); // sits in sceneRoot
+    private GraphDirectedCollection currentGraph = null;
+    private Graph3DRenderer.Params graphParams = new Graph3DRenderer.Params()
+            .withNodeRadius(20.0)
+            .withEdgeWidth(8.0f)
+            .withPositionScalar(1.0);
+
     public Hypersurface3DPane(Scene scene) {
         this.scene = scene;
         shape3DToCalloutMap = new HashMap<>();
@@ -317,7 +327,8 @@ public class Hypersurface3DPane extends StackPane
         labelGroup.setVisible(false);
         sceneRoot.getChildren().addAll(cameraTransform, highlightedPoint,
             nodeGroup, extrasGroup, debugGroup, dataXForm);
-
+        // Add graph layer last so it draws above the surface (z-order within Group)
+        sceneRoot.getChildren().add(graphLayer);
         subScene.setCamera(camera);
         pointLight = new PointLight(Color.WHITE);
         cameraTransform.getChildren().add(pointLight);
@@ -572,6 +583,17 @@ public class Hypersurface3DPane extends StackPane
                 e.consume();
             }
         });
+        
+        this.scene.addEventHandler(GraphEvent.NEW_GRAPHDIRECTED_COLLECTION, e -> {
+            if (!(e.object instanceof GraphDirectedCollection gc)) return;
+            currentGraph = gc;
+            graphLayer.getChildren().clear();
+            graphLayer.getChildren().add(Graph3DRenderer.buildGraphGroup(gc, graphParams));
+            scene.getRoot().fireEvent(new CommandTerminalEvent(
+                "Rendered 3D graph: nodes=" + gc.getNodes().size() + ", edges=" + gc.getEdges().size(),
+                new Font("Consolas", 18), Color.LIGHTGREEN));
+        });
+
 
         loadSurf3D();
         this.scene.addEventHandler(HyperspaceEvent.HYPERSPACE_BACKGROUND_COLOR, e -> {
