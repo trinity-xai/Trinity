@@ -15,6 +15,10 @@ public class GraphEvent extends Event {
     public static final EventType<GraphEvent> EXPORT_GRAPH_COLLECTION = new EventType(ANY, "EXPORT_GRAPH_COLLECTION");
     public static final EventType<GraphEvent> NEW_GRAPHDIRECTED_COLLECTION = new EventType(ANY, "NEW_GRAPHDIRECTED_COLLECTION");
     public static final EventType<GraphEvent> UPDATE_GRAPH_COMPONENTS = new EventType(ANY, "UPDATE_GRAPH_COMPONENTS");
+    // in edu.jhuapl.trinity.javafx.events.GraphEvent
+    public static final EventType<GraphEvent> GRAPH_PARAMS_CHANGED = new EventType<>(ANY, "GRAPH_PARAMS_CHANGED");
+    public static final EventType<GraphEvent> GRAPH_REBUILD_PARAMS = new EventType<>(ANY, "GRAPH_REBUILD_PARAMS");
+    public static final EventType<GraphEvent> GRAPH_RESET_PARAMS = new EventType<>(ANY, "GRAPH_RESET_PARAMS");
 
     public GraphEvent(EventType<? extends Event> arg0) {
         super(arg0);

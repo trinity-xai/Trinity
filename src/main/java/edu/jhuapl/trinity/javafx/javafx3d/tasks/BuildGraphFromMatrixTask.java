@@ -5,6 +5,7 @@ import com.github.trinity.supermds.SuperMDS.Params;
 import edu.jhuapl.trinity.data.graph.GraphDirectedCollection;
 import edu.jhuapl.trinity.javafx.components.radial.ProgressStatus;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
+import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.GraphEvent;
 import edu.jhuapl.trinity.utils.graph.GraphLayoutParams;
 import edu.jhuapl.trinity.utils.graph.MatrixToGraphAdapter;
@@ -15,11 +16,10 @@ import javafx.scene.Scene;
 import javafx.scene.paint.Color;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
 import java.time.Duration;
 import java.util.List;
-
 import static edu.jhuapl.trinity.utils.Utils.totalTimeString;
+import javafx.scene.text.Font;
 
 /**
  * BuildGraphFromMatrixTask
@@ -121,13 +121,14 @@ public class BuildGraphFromMatrixTask extends Task<GraphDirectedCollection> {
             ps.innerStrokeColor = Color.AQUA;
             ps.outerStrokeColor = Color.DODGERBLUE;
             scene.getRoot().fireEvent(new ApplicationEvent(ApplicationEvent.UPDATE_BUSY_INDICATOR, ps));
-            scene.getRoot().fireEvent(new ApplicationEvent(ApplicationEvent.SHOW_TEXT_CONSOLE, msg, true));
+            postConsole(msg);
         });
     }
 
     private void postConsole(String msg) {
         Platform.runLater(() ->
-            scene.getRoot().fireEvent(new ApplicationEvent(ApplicationEvent.SHOW_TEXT_CONSOLE, msg, true))
+            scene.getRoot().fireEvent(new CommandTerminalEvent(
+                msg, new Font("Consolas", 18), Color.LIGHTGREEN))
         );
     }
 

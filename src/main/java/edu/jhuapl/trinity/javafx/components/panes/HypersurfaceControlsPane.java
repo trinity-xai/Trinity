@@ -1,5 +1,6 @@
 package edu.jhuapl.trinity.javafx.components.panes;
 
+import edu.jhuapl.trinity.javafx.components.GraphControlsView;
 import edu.jhuapl.trinity.javafx.events.HyperspaceEvent;
 import edu.jhuapl.trinity.javafx.events.HypersurfaceEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.Hypersurface3DPane;
@@ -330,11 +331,12 @@ public class HypersurfaceControlsPane extends LitPathPane {
         TabPane tabs = new TabPane();
         tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
         tabs.setPrefWidth(PANEL_WIDTH - 8);
-
+        GraphControlsView gcv = new GraphControlsView(scene);
+        
         Tab t1 = new Tab("View", viewTabContent);
         Tab t2 = new Tab("Processing", procTabContent);
-
-        tabs.getTabs().addAll(t1, t2);
+        Tab t3 = new Tab("Graph", gcv);
+        tabs.getTabs().addAll(t1, t2, t3);
         return tabs;
     }
 

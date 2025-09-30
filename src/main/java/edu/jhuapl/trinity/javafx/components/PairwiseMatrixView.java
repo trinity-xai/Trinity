@@ -83,6 +83,7 @@ public final class PairwiseMatrixView extends BorderPane {
     private String cohortALabel = "A";
     private String cohortBLabel = "B";
     private final DensityCache cache;
+    MatrixToGraphAdapter.MatrixKind currentMatrixKind = MatrixToGraphAdapter.MatrixKind.SIMILARITY;
 
     // --- Hooks
     private Consumer<String> toastHandler;
@@ -220,10 +221,10 @@ public final class PairwiseMatrixView extends BorderPane {
     public MatrixHeatmapView getHeatmapView() { return heatmap; }
     public SplitPane getSplitPane() { return splitPane; }
 
-    /** Optional: send toast/status to Terminal/Console integration. */
+    /**send toast/status to Terminal/Console integration. */
     public void setToastHandler(Consumer<String> handler) { this.toastHandler = handler; }
 
-    /** Optional: observe cell clicks from the heatmap. */
+    /** observe cell clicks from the heatmap. */
     public void setOnCellClick(Consumer<MatrixClick> handler) { this.onCellClickHandler = handler; }
 
     // ---------------------------------------------------------------------
@@ -477,8 +478,7 @@ private void renderDeltaPdfForCellUsingEngine(int i, int j, Request req) {
 
         return mb;
     }
-
-    private void triggerGraphBuild(MatrixToGraphAdapter.MatrixKind kind) {
+    public void triggerGraphBuildWithParams(GraphLayoutParams layout) {
         double[][] M = currentMatrix();
         if (M == null || M.length == 0) { toast("No matrix to build a graph from.", true); return; }
 
@@ -486,36 +486,52 @@ private void renderDeltaPdfForCellUsingEngine(int i, int j, Request req) {
         var scene = getScene();
         if (scene == null) { toast("Scene not ready.", true); return; }
 
-        MatrixToGraphAdapter.WeightMode weightMode = MatrixToGraphAdapter.WeightMode.DIRECT;
+//        GraphLayoutParams layout = new GraphLayoutParams()
+//                .withKind(GraphLayoutParams.LayoutKind.MDS_3D) // or FORCE_FR, etc.
+//                .withRadius(600)
+//                .withEdgePolicy(GraphLayoutParams.EdgePolicy.KNN)
+//                .withKnnK(8)
+//                .withKnnSymmetrize(true)
+//                .withMaxEdges(5000)
+//                .withMaxDegreePerNode(32)
+//                .withNormalizeWeights01(true);
 
-        GraphLayoutParams layout = new GraphLayoutParams();
-        layout.kind = GraphLayoutParams.LayoutKind.MDS_3D; // or FORCE_FR, etc.
+        // Choose weight mapping here (not in params)
+        MatrixToGraphAdapter.WeightMode wmode =
+                (currentMatrixKind == MatrixToGraphAdapter.MatrixKind.SIMILARITY)
+                        ? MatrixToGraphAdapter.WeightMode.DIRECT
+                        : MatrixToGraphAdapter.WeightMode.INVERSE_FOR_DIVERGENCE;
 
         SuperMDS.Params mdsParams = new SuperMDS.Params();
-        mdsParams.outputDim = 3; // ensure 3D
+        mdsParams.outputDim = 3;
 
         setControlsDisabled(true);
         setProgressText("Building graph…");
 
         BuildGraphFromMatrixTask task = new BuildGraphFromMatrixTask(
-                scene, M, labels, kind, weightMode, layout, mdsParams);
+                scene, M, labels, currentMatrixKind, wmode, layout, mdsParams);
 
-        task.setOnSucceeded(ev -> {
-            setControlsDisabled(false);
-            setProgressText("");
-            toast("Graph built and dispatched.", false);
-        });
-        task.setOnFailed(ev -> {
-            setControlsDisabled(false);
-            setProgressText("");
-            var t = task.getException();
-            toast("Graph build failed: " + (t == null ? "unknown error" : t.getMessage()), true);
-        });
+        task.setOnSucceeded(ev -> { setControlsDisabled(false); setProgressText(""); toast("Graph built and dispatched.", false); });
+        task.setOnFailed(ev -> { setControlsDisabled(false); setProgressText(""); var t = task.getException(); toast("Graph build failed: " + (t == null ? "unknown error" : t.getMessage()), true); });
 
-        Thread th = new Thread(task, "BuildGraphFromMatrixTask");
-        th.setDaemon(true);
-        th.start();
+        Thread th = new Thread(task, "BuildGraphFromMatrixTask"); th.setDaemon(true); th.start();
+    
     }
+
+private void triggerGraphBuild(MatrixToGraphAdapter.MatrixKind kind) {
+    currentMatrixKind = kind;
+    GraphLayoutParams layout = new GraphLayoutParams()
+            .withKind(GraphLayoutParams.LayoutKind.MDS_3D) // or FORCE_FR, etc.
+            .withRadius(600)
+            .withEdgePolicy(GraphLayoutParams.EdgePolicy.KNN)
+            .withKnnK(8)
+            .withKnnSymmetrize(true)
+            .withMaxEdges(5000)
+            .withMaxDegreePerNode(32)
+            .withNormalizeWeights01(true);
+
+    triggerGraphBuildWithParams(layout);
+}
 
     // ---------------------------------------------------------------------
     // Synthetic cohort helpers

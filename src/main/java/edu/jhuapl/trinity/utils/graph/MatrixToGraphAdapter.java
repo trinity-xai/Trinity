@@ -3,10 +3,12 @@ package edu.jhuapl.trinity.utils.graph;
 import edu.jhuapl.trinity.data.graph.GraphDirectedCollection;
 import edu.jhuapl.trinity.data.graph.GraphEdge;
 import edu.jhuapl.trinity.data.graph.GraphNode;
-
 import java.util.ArrayList;
 import java.util.Comparator;
+import java.util.HashSet;
 import java.util.List;
+import java.util.PriorityQueue;
+import java.util.Set;
 
 /**
  * MatrixToGraphAdapter
@@ -14,10 +16,17 @@ import java.util.List;
  * Converts a similarity or divergence matrix into a GraphDirectedCollection,
  * and computes node positions using a chosen layout (Static, MDS-3D, Force-FR).
  *
- * - STATIC layouts (CIRCLE_XZ, CIRCLE_XY, SPHERE) ignore the matrix for positions.
- * - MDS_3D: uses a provided embedding function (plug your existing MDS).
- * - FORCE_FR: uses simple 3D Fruchterman–Reingold with edge weights
- *   derived from the matrix (see WeightMode).
+ * New: supports edge sparsification via GraphLayoutParams.EdgePolicy:
+ *   - ALL: fully connected (except diagonal)
+ *   - KNN: k-nearest neighbors per node (with optional symmetrization)
+ *   - EPSILON: keep edges with weight >= epsilon (uses transformed weights)
+ *   - MST_PLUS_K: minimum spanning tree (built on 1/weight distances) plus KNN edges
+ *
+ * Notes:
+ *  • We convert the input matrix to a symmetric, non-negative "weight" matrix first
+ *    using {@link WeightMode} and {@link MatrixKind}. Policies operate on these weights.
+ *  • For MDS, we build a distance matrix via {@link #toDistances(double[][], MatrixKind)}.
+ *  • For MST, we use distances derived from the weight matrix: dist = 1/(eps + w).
  *
  * @author Sean Phillips
  */
@@ -64,16 +73,16 @@ public final class MatrixToGraphAdapter {
         // 1) Prepare a weight matrix for edges (symmetric, non-negative).
         double[][] weights = toEdgeWeights(matrix, kind, weightMode, layoutParams.normalizeWeights01);
 
-        // 2) Build edges (sparsify by global top-K with per-node degree cap).
-        List<EdgeRec> edgeList = selectEdges(weights, layoutParams.maxEdges, layoutParams.maxDegreePerNode, layoutParams.minEdgeWeight);
+        // 2) Build edges using selected policy and post-constraints
+        List<EdgeRec> edgeList = buildEdgesByPolicy(weights, layoutParams, kind);
 
         // 3) Choose / run layout
         double[][] pos;
         switch (layoutParams.kind) {
             case CIRCLE_XZ -> pos = StaticLayouts.circleXZ(n, layoutParams.radius);
             case CIRCLE_XY -> pos = StaticLayouts.circleXY(n, layoutParams.radius);
-            case SPHERE -> pos = StaticLayouts.sphere(n, layoutParams.radius);
-            case MDS_3D -> {
+            case SPHERE   -> pos = StaticLayouts.sphere(n, layoutParams.radius);
+            case MDS_3D   -> {
                 // Need distances for MDS
                 double[][] distances = toDistances(matrix, kind);
                 if (mds3d == null) {
@@ -81,7 +90,6 @@ public final class MatrixToGraphAdapter {
                     pos = StaticLayouts.sphere(n, layoutParams.radius);
                 } else {
                     pos = mds3d.embed(distances, labels);
-                    // Normalize/scale to radius
                     pos = normalizeToRadius(pos, layoutParams.radius);
                 }
             }
@@ -132,7 +140,7 @@ public final class MatrixToGraphAdapter {
         return gc;
     }
 
-    // ----- Helpers -----
+    // ===== Helpers =====
 
     private static GraphDirectedCollection emptyGraph() {
         GraphDirectedCollection gc = new GraphDirectedCollection();
@@ -234,21 +242,169 @@ public final class MatrixToGraphAdapter {
         return d;
     }
 
-    /** Pick a sparse edge set: global top-K by weight with per-node degree cap. */
-    private static List<EdgeRec> selectEdges(double[][] weights, int maxEdges, int maxDeg, double minW) {
-        final int n = weights.length;
-        List<EdgeRec> all = new ArrayList<>();
+    // ===== Edge policies =====
+
+    private static List<EdgeRec> buildEdgesByPolicy(double[][] weights,
+                                                    GraphLayoutParams lp,
+                                                    MatrixKind kind) {
+        return switch (lp.edgePolicy) {
+            case ALL -> selectAll(weights, lp);
+            case KNN -> selectKnn(weights, lp);
+            case EPSILON -> selectByEpsilon(weights, lp);
+            case MST_PLUS_K -> selectMstPlusK(weights, lp);
+        };
+    }
+
+    /** ALL: keep all i<j edges above minEdgeWeight, then enforce caps. */
+    private static List<EdgeRec> selectAll(double[][] w, GraphLayoutParams lp) {
+        int n = w.length;
+        List<EdgeRec> edges = new ArrayList<>();
         for (int i = 0; i < n; i++) {
             for (int j = i + 1; j < n; j++) {
-                double w = weights[i][j];
-                if (w > minW) all.add(new EdgeRec(i, j, w));
+                double wij = w[i][j];
+                if (wij > lp.minEdgeWeight) edges.add(new EdgeRec(i, j, wij));
             }
         }
-        all.sort(Comparator.comparingDouble((EdgeRec e) -> e.w).reversed());
+        // Sort by weight desc and enforce caps
+        edges.sort(Comparator.comparingDouble((EdgeRec e) -> e.w).reversed());
+        return applyGlobalAndDegreeCaps(edges, n, lp.maxEdges, lp.maxDegreePerNode);
+        // (Note: this still can be dense; caps limit total/degree.)
+    }
 
+    /** KNN: per node, take top-k neighbors by weight; union; optional symmetrization; then caps. */
+    private static List<EdgeRec> selectKnn(double[][] w, GraphLayoutParams lp) {
+        int n = w.length;
+        int k = Math.max(1, lp.knnK);
+        // Collect neighbors
+        Set<Long> edgeSet = new HashSet<>();  // packed (min,max) -> key
+        for (int i = 0; i < n; i++) {
+            // top-k for row i
+            PriorityQueue<int[]> pq = new PriorityQueue<>(Comparator.comparingDouble(a -> a[1]));
+            for (int j = 0; j < n; j++) {
+                if (j == i) continue;
+                double wij = w[i][j];
+                if (wij <= lp.minEdgeWeight) continue;
+                if (pq.size() < k) {
+                    pq.offer(new int[]{j, (int)Double.doubleToLongBits(wij)});
+                } else {
+                    double smallest = Double.longBitsToDouble(pq.peek()[1]);
+                    if (wij > smallest) {
+                        pq.poll();
+                        pq.offer(new int[]{j, (int)Double.doubleToLongBits(wij)});
+                    }
+                }
+            }
+            // add edges
+            while (!pq.isEmpty()) {
+                int[] entry = pq.poll();
+                int j = entry[0];
+                double wij = Double.longBitsToDouble(entry[1]);
+                addUndirectedEdgeKey(edgeSet, i, j);
+            }
+        }
+
+        if (lp.knnSymmetrize) {
+            // ensure i∈N_k(j) OR j∈N_k(i) → keep both directions already covered by union.
+            // (The union above already covers both endpoints’ selections.)
+        }
+
+        List<EdgeRec> edges = unpackEdgeSet(edgeSet, w);
+        // Sort by weight desc & apply degree/global caps
+        edges.sort(Comparator.comparingDouble((EdgeRec e) -> e.w).reversed());
+        return applyGlobalAndDegreeCaps(edges, n, lp.maxEdges, lp.maxDegreePerNode);
+    }
+
+    /** EPSILON: keep all edges with weight >= epsilon (after transforms), then caps. */
+    private static List<EdgeRec> selectByEpsilon(double[][] w, GraphLayoutParams lp) {
+        int n = w.length;
+        double thr = lp.epsilon;
+        List<EdgeRec> edges = new ArrayList<>();
+        for (int i = 0; i < n; i++) {
+            for (int j = i + 1; j < n; j++) {
+                double wij = w[i][j];
+                if (wij >= thr && wij > lp.minEdgeWeight)
+                    edges.add(new EdgeRec(i, j, wij));
+            }
+        }
+        edges.sort(Comparator.comparingDouble((EdgeRec e) -> e.w).reversed());
+        return applyGlobalAndDegreeCaps(edges, n, lp.maxEdges, lp.maxDegreePerNode);
+    }
+
+    /** MST_PLUS_K: build MST on distances (1/(eps+w)), then union with KNN(k), then caps. */
+    private static List<EdgeRec> selectMstPlusK(double[][] w, GraphLayoutParams lp) {
+        int n = w.length;
+        // Distances from weights (avoid div by 0)
+        final double EPS = 1e-9;
+        double[][] dist = new double[n][n];
+        for (int i = 0; i < n; i++) {
+            dist[i][i] = 0.0;
+            for (int j = i + 1; j < n; j++) {
+                double wij = w[i][j];
+                double dij = 1.0 / (EPS + wij); // large when weight small
+                dist[i][j] = dist[j][i] = dij;
+            }
+        }
+
+        // Build MST via Kruskal on (i,j,dist) ascending
+        List<EdgeRec> mst = kruskalMstFromDistances(dist, w);
+
+        // Union with KNN edges
+        List<EdgeRec> knn = selectKnn(w, lp); // this already applies caps; we want raw KNN edges first
+        // Make a set to union without duplicates
+        Set<Long> edgeSet = new HashSet<>();
+        for (EdgeRec e : mst) addUndirectedEdgeKey(edgeSet, e.i, e.j);
+        for (EdgeRec e : knn) addUndirectedEdgeKey(edgeSet, e.i, e.j);
+
+        List<EdgeRec> union = unpackEdgeSet(edgeSet, w);
+        // Sort by weight desc & then apply final caps
+        union.sort(Comparator.comparingDouble((EdgeRec e) -> e.w).reversed());
+        return applyGlobalAndDegreeCaps(union, n, lp.maxEdges, lp.maxDegreePerNode);
+    }
+
+    // ===== Edge utilities =====
+
+    private static List<EdgeRec> kruskalMstFromDistances(double[][] dist, double[][] weights) {
+        int n = dist.length;
+        List<MstEdge> all = new ArrayList<>();
+        for (int i = 0; i < n; i++) {
+            for (int j = i + 1; j < n; j++) {
+                all.add(new MstEdge(i, j, dist[i][j]));
+            }
+        }
+        all.sort(Comparator.comparingDouble(e -> e.d));
+
+        UnionFind uf = new UnionFind(n);
+        List<EdgeRec> out = new ArrayList<>(n - 1);
+        for (MstEdge e : all) {
+            if (uf.union(e.i, e.j)) {
+                out.add(new EdgeRec(e.i, e.j, weights[e.i][e.j]));
+                if (out.size() == n - 1) break;
+            }
+        }
+        return out;
+    }
+
+    private static void addUndirectedEdgeKey(Set<Long> set, int i, int j) {
+        int a = Math.min(i, j), b = Math.max(i, j);
+        long key = (((long) a) << 32) ^ (long) b;
+        set.add(key);
+    }
+
+    private static List<EdgeRec> unpackEdgeSet(Set<Long> set, double[][] w) {
+        List<EdgeRec> list = new ArrayList<>(set.size());
+        for (long key : set) {
+            int i = (int) (key >> 32);
+            int j = (int) (key & 0xFFFFFFFFL);
+            list.add(new EdgeRec(i, j, w[i][j]));
+        }
+        return list;
+    }
+
+    private static List<EdgeRec> applyGlobalAndDegreeCaps(List<EdgeRec> edges, int n, int maxEdges, int maxDeg) {
+        if (edges.isEmpty()) return edges;
         int[] deg = new int[n];
-        List<EdgeRec> out = new ArrayList<>();
-        for (EdgeRec e : all) {
+        List<EdgeRec> out = new ArrayList<>(Math.min(edges.size(), Math.max(1, maxEdges)));
+        for (EdgeRec e : edges) {
             if (maxEdges > 0 && out.size() >= maxEdges) break;
             if (maxDeg > 0 && (deg[e.i] >= maxDeg || deg[e.j] >= maxDeg)) continue;
             out.add(e);
@@ -258,6 +414,21 @@ public final class MatrixToGraphAdapter {
     }
 
     private record EdgeRec(int i, int j, double w) {}
+    private record MstEdge(int i, int j, double d) {}
+
+    private static final class UnionFind {
+        private final int[] p, r;
+        UnionFind(int n) { p = new int[n]; r = new int[n]; for (int i = 0; i < n; i++) p[i] = i; }
+        int find(int x) { return p[x] == x ? x : (p[x] = find(p[x])); }
+        boolean union(int a, int b) {
+            int pa = find(a), pb = find(b);
+            if (pa == pb) return false;
+            if (r[pa] < r[pb]) { p[pa] = pb; }
+            else if (r[pa] > r[pb]) { p[pb] = pa; }
+            else { p[pb] = pa; r[pa]++; }
+            return true;
+        }
+    }
 
     // ---------- Static layouts & helpers ----------
 
@@ -286,8 +457,8 @@ public final class MatrixToGraphAdapter {
             double[][] p = new double[n][3];
             final double phi = Math.PI * (3.0 - Math.sqrt(5.0));
             for (int i = 0; i < n; i++) {
-                double y = 1.0 - (i / (double)(n - 1)) * 2.0;
-                double radius = Math.sqrt(1.0 - y*y);
+                double y = 1.0 - (i / (double)(Math.max(1, n - 1))) * 2.0;
+                double radius = Math.sqrt(Math.max(0.0, 1.0 - y*y));
                 double theta = phi * i;
                 double x = Math.cos(theta) * radius;
                 double z = Math.sin(theta) * radius;
@@ -298,7 +469,6 @@ public final class MatrixToGraphAdapter {
     }
 
     private static double[][] normalizeToRadius(double[][] pos, double radius) {
-        // Normalize RMS radius then scale to target radius (keeps aspect, avoids huge spread)
         double s2 = 0.0; int n = pos.length;
         for (int i = 0; i < n; i++) s2 += pos[i][0]*pos[i][0] + pos[i][1]*pos[i][1] + pos[i][2]*pos[i][2];
         double rms = Math.sqrt(s2 / Math.max(1, n));

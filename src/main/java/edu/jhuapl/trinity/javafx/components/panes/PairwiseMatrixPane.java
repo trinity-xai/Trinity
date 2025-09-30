@@ -6,6 +6,8 @@ import edu.jhuapl.trinity.javafx.components.PairwiseMatrixView;
 import edu.jhuapl.trinity.javafx.components.MatrixHeatmapView.MatrixClick;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
+import edu.jhuapl.trinity.javafx.events.GraphEvent;
+import edu.jhuapl.trinity.utils.graph.GraphLayoutParams;
 import edu.jhuapl.trinity.utils.statistics.DensityCache;
 import edu.jhuapl.trinity.utils.statistics.PairwiseMatrixConfigPanel;
 import java.util.List;
@@ -50,6 +52,10 @@ public final class PairwiseMatrixPane extends LitPathPane {
                 toast("Loaded " + fc.getFeatures().size() + " vectors into Cohort A.", false);
             }
         });
+        scene.addEventHandler(GraphEvent.GRAPH_REBUILD_PARAMS, e -> {
+            GraphLayoutParams p = (GraphLayoutParams) e.object; 
+            view.triggerGraphBuildWithParams(p); 
+        });        
 
         // wire matrix cell clicks (i,j,value). 
         view.setOnCellClick(click -> {
@@ -63,7 +69,7 @@ public final class PairwiseMatrixPane extends LitPathPane {
         // Forward view toasts to the command terminal
         view.setToastHandler(msg -> {
             Platform.runLater(() -> scene.getRoot().fireEvent(
-                    new CommandTerminalEvent(msg, new Font("Consolas", 18), Color.LIGHTGREEN)));
+                new CommandTerminalEvent(msg, new Font("Consolas", 18), Color.LIGHTGREEN)));
         });
     }
 
