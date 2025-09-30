@@ -51,13 +51,15 @@ public final class PairwiseMatrixPane extends LitPathPane {
             }
         });
 
-        // Optional: wire matrix cell clicks (i,j,value). For now, just toast.
-        view.setOnCellClick((MatrixClick click) -> {
+        // wire matrix cell clicks (i,j,value). 
+        view.setOnCellClick(click -> {
             if (click == null) return;
+            // Use the latest request the user executed (or rebuild one)
+            var req = view.getLastRequestOrBuild();
+            view.renderPdfForCellUsingEngine(click.row, click.col,req);
             String msg = "Cell (" + click.row + "," + click.col + ") = " + click.value;
             toast(msg, false);
         });
-
         // Forward view toasts to the command terminal
         view.setToastHandler(msg -> {
             Platform.runLater(() -> scene.getRoot().fireEvent(

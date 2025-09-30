@@ -3,20 +3,28 @@ package edu.jhuapl.trinity.javafx.components;
 import com.github.trinity.supermds.SuperMDS;
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.javafx.components.MatrixHeatmapView.MatrixClick;
+import edu.jhuapl.trinity.javafx.events.HypersurfaceGridEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.tasks.BuildGraphFromMatrixTask;
 import edu.jhuapl.trinity.utils.graph.GraphLayoutParams;
 import edu.jhuapl.trinity.utils.graph.MatrixToGraphAdapter;
+import edu.jhuapl.trinity.utils.statistics.AxisParams;
+import edu.jhuapl.trinity.utils.statistics.CanonicalGridPolicy;
 import edu.jhuapl.trinity.utils.statistics.DensityCache;
 import edu.jhuapl.trinity.utils.statistics.DivergenceComputer.DivergenceMetric;
+import edu.jhuapl.trinity.utils.statistics.GridDensityResult;
+import edu.jhuapl.trinity.utils.statistics.JpdfBatchEngine;
 import edu.jhuapl.trinity.utils.statistics.JpdfRecipe;
 import edu.jhuapl.trinity.utils.statistics.PairwiseMatrixConfigPanel;
 import edu.jhuapl.trinity.utils.statistics.PairwiseMatrixConfigPanel.Mode;
 import edu.jhuapl.trinity.utils.statistics.PairwiseMatrixConfigPanel.Request;
 import edu.jhuapl.trinity.utils.statistics.PairwiseMatrixEngine;
 import edu.jhuapl.trinity.utils.statistics.PairwiseMatrixEngine.MatrixResult;
+import edu.jhuapl.trinity.utils.statistics.StatisticEngine;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
+
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
@@ -37,17 +45,11 @@ import javafx.scene.layout.VBox;
 /**
  * PairwiseMatrixView
  * ------------------
- * Parent composite that hosts:
- *  - Left: PairwiseMatrixConfigPanel (inputs/controls)
- *  - Right: MatrixHeatmapView (rendered matrix)
- *  - Top bar: Run/Reset + Actions
+ * Hosts config (left) + heatmap (right) + toolbar.
+ * Runs PairwiseMatrixEngine to produce Similarity/Divergence matrices.
+ * Also renders per-cell JPDF surfaces (Similarity) or ΔPDF (Divergence) into Hypersurface3DPane.
  *
- * Runs PairwiseMatrixEngine for Similarity or Divergence based on the panel request
- * and updates the MatrixHeatmapView with results and initial display settings.
- *
- * Designed to be wrapped by a floating pane (e.g., PairwiseMatrixPane), similar to PairwiseJpdfView/Pane.
- *
- * @author Sean Phillips
+ * This version reuses your existing Jpdf pipeline (JpdfBatchEngine/JpdfRecipe).
  */
 public final class PairwiseMatrixView extends BorderPane {
 
@@ -85,18 +87,40 @@ public final class PairwiseMatrixView extends BorderPane {
     // --- Hooks
     private Consumer<String> toastHandler;
     private Consumer<MatrixClick> onCellClickHandler;
-    
+
+    // Remember the last executed configuration
+    private PairwiseMatrixConfigPanel.Request lastRequest;
 
     public PairwiseMatrixView(PairwiseMatrixConfigPanel configPanel, DensityCache cache) {
         this.cache = (cache != null) ? cache : new DensityCache.Builder().maxEntries(128).ttlMillis(0).build();
         this.configPanel = (configPanel != null) ? configPanel : new PairwiseMatrixConfigPanel();
         this.heatmap = new MatrixHeatmapView();
 
-        // Compact column labels: show indices only (no "Comp" prefix)
+        // Compact column labels: show indices only
         this.heatmap.setCompactColumnLabels(true);
 
-        // Hook matrix clicks to external handler if provided
+        // Cell click → render JPDF (Similarity) or ΔPDF (Divergence) via existing Jpdf pipeline
         this.heatmap.setOnCellClick(click -> {
+            if (click == null) return;
+
+            try {
+                Request effective = getLastRequestOrBuild();
+                if (effective == null) {
+                    toast("No configuration to render (run once or provide defaults).", true);
+                } else if (cohortA == null || cohortA.isEmpty()) {
+                    toast("Cohort A is empty. Load or set vectors first.", true);
+                } else {
+                    if (effective.mode == Mode.SIMILARITY) {
+                        renderPdfForCellUsingEngine(click.row, click.col, effective);
+                    } else {
+                        renderDeltaPdfForCellUsingEngine(click.row, click.col, effective);
+                    }
+                }
+            } catch (Throwable t) {
+                toast("Cell render failed: " + t.getClass().getSimpleName() + ": " + String.valueOf(t.getMessage()), true);
+            }
+
+            // still notify any external listener you set via setOnCellClick(...)
             if (onCellClickHandler != null) onCellClickHandler.accept(click);
         });
 
@@ -159,7 +183,6 @@ public final class PairwiseMatrixView extends BorderPane {
                         lastDividerPos = p;
                         double total = splitPane.getWidth() <= 0 ? getWidth() : splitPane.getWidth();
                         if (total > 0) {
-                            // Keep a sensible floor for the left panel width
                             expandedControlsPrefWidth = Math.max(220, Math.round(p * total));
                             controlsBox.setPrefWidth(expandedControlsPrefWidth);
                         }
@@ -172,9 +195,7 @@ public final class PairwiseMatrixView extends BorderPane {
         this.configPanel.setOnRun(this::runWithRequest);
     }
 
-    public PairwiseMatrixView() {
-        this(null, null);
-    }
+    public PairwiseMatrixView() { this(null, null); }
 
     // ---------------------------------------------------------------------
     // Public API
@@ -211,8 +232,9 @@ public final class PairwiseMatrixView extends BorderPane {
 
     private void runWithRequest(Request req) {
         if (req == null) { toast("No request provided.", true); return; }
+        this.lastRequest = req; // cache config used for "Run"
 
-        // Build a minimal JpdfRecipe from the request (bins & bounds & indices & scoring).
+        // Build recipe used by engine runs (for matrix building; per-click builds a single-pair recipe)
         JpdfRecipe recipe = buildRecipeFromRequest(req);
 
         // Heatmap visual settings from request
@@ -229,7 +251,6 @@ public final class PairwiseMatrixView extends BorderPane {
         setControlsDisabled(true);
         setProgressText("Running…");
 
-        // Run off FX thread (computations can be non-trivial)
         new Thread(() -> {
             long start = System.currentTimeMillis();
             try {
@@ -281,7 +302,7 @@ public final class PairwiseMatrixView extends BorderPane {
                         heatmap.setRowLabels(result.labels);
                         heatmap.setColLabels(result.labels);
                         toast((result.title != null ? result.title + " — " : "") +
-                              "N=" + result.matrix.length + "; wall=" + wall + " ms.", false);
+                                "N=" + result.matrix.length + "; wall=" + wall + " ms.", false);
                     }
                     setProgressText("");
                     setControlsDisabled(false);
@@ -296,45 +317,116 @@ public final class PairwiseMatrixView extends BorderPane {
         }, "PairwiseMatrixView-Worker").start();
     }
 
-    private static <T> T nonNull(T v, T def) { return (v != null ? v : def); }
-
-    private JpdfRecipe buildRecipeFromRequest(Request req) {
-        // Engines only use bins/bounds/policy/indices/scoreMetric.
-        JpdfRecipe.Builder b = JpdfRecipe.newBuilder(safeName(req.name))
-                .bins(req.binsX, req.binsY)
-                .boundsPolicy(req.boundsPolicy)
-                .canonicalPolicyId(req.canonicalPolicyId == null ? "default" : req.canonicalPolicyId)
-                .componentPairsMode(true)
-                .componentIndexRange(req.componentStart, req.componentEnd)
-                .includeSelfPairs(req.includeDiagonal)
-                .orderedPairs(req.orderedPairs)
-                .cacheEnabled(true)
-                .saveThumbnails(false)
-                .minAvgCountPerCell(3.0);
-
-        if (req.mode == Mode.SIMILARITY && req.similarityMetric != null) {
-            b.scoreMetric(req.similarityMetric);
-        } else {
-            // fallback (unused for divergence path)
-            b.scoreMetric(JpdfRecipe.ScoreMetric.PEARSON);
-        }
-        return b.build();
+    public PairwiseMatrixConfigPanel.Request getLastRequestOrBuild() {
+        if (lastRequest != null) return lastRequest;
+        return (configPanel != null ? configPanel.snapshotRequest() : null);
     }
 
     // ---------------------------------------------------------------------
-    // Toolbar helpers
+    // Cell-click → JPDF surface (Similarity)
     // ---------------------------------------------------------------------
-private MenuButton buildActionsMenu() {
-    MenuButton mb = new MenuButton("Actions");
 
-    MenuItem clearItem = new MenuItem("Clear Matrix");
-    clearItem.setOnAction(e -> heatmap.setMatrix((double[][]) null));
+    public void renderPdfForCellUsingEngine(int i, int j, Request req) {
+        if (req == null) { toast("No configuration available to build JPDF.", true); return; }
+        if (cohortA == null || cohortA.isEmpty()) { toast("Cohort A is empty.", true); return; }
 
-    MenuItem buildGraphFromSim = new MenuItem("Build Graph from Similarity");
-    buildGraphFromSim.setOnAction(e -> triggerGraphBuild(MatrixToGraphAdapter.MatrixKind.SIMILARITY));
+        // (1) Build a single-pair whitelist recipe from the current request
+        JpdfRecipe recipe = buildSinglePairWhitelistRecipe(req, i, j);
 
-    MenuItem buildGraphFromDiv = new MenuItem("Build Graph from Divergence");
-    buildGraphFromDiv.setOnAction(e -> triggerGraphBuild(MatrixToGraphAdapter.MatrixKind.DIVERGENCE));
+        // (2) Resolve policy + cache
+        CanonicalGridPolicy policy = resolveCanonicalPolicy(recipe);
+        DensityCache useCache = resolveDensityCache();
+
+        // (3) Run for just this pair (Similarity uses A only)
+        JpdfBatchEngine.runWhitelistPairs(
+                cohortA,
+                recipe,
+                policy,
+                useCache,
+                (pair) -> {
+                    GridDensityResult gdr = pair.density;
+                    List<List<Double>> zGrid = gdr.pdfAsListGrid();
+                    getScene().getRoot().fireEvent(new HypersurfaceGridEvent(
+                        HypersurfaceGridEvent.RENDER_PDF,
+                        zGrid,
+                        gdr.getxCenters(),
+                        gdr.getyCenters(),
+                        "Comp " + Math.min(i, j) + " | Comp " + Math.max(i, j) + " (PDF)"
+                    ));
+                }
+        );
+
+        toast("Rendered JPDF for pair (" + i + "," + j + ").", false);
+    }
+
+    // ---------------------------------------------------------------------
+    // Cell-click → ΔPDF surface (Divergence: A − B)
+    // ---------------------------------------------------------------------
+private void renderDeltaPdfForCellUsingEngine(int i, int j, Request req) {
+    if (req == null) { toast("No configuration available to build ΔPDF.", true); return; }
+    if (cohortA == null || cohortA.isEmpty()) { toast("Cohort A is empty.", true); return; }
+    if (cohortB == null || cohortB.isEmpty()) { toast("Cohort B is empty.", true); return; }
+
+    // (1) Pair-specific recipe (single pair via WHITELIST)
+    JpdfRecipe recipe = buildSinglePairWhitelistRecipe(req, i, j);
+
+    // (2) Resolve policy + cache
+    CanonicalGridPolicy policy = resolveCanonicalPolicy(recipe);
+    DensityCache useCache = resolveDensityCache();
+
+    // (3) Run A and B separately, grab the single job result from each batch
+    JpdfBatchEngine.BatchResult batchA =
+        JpdfBatchEngine.runWhitelistPairs(cohortA, recipe, policy, useCache);
+    JpdfBatchEngine.BatchResult batchB =
+        JpdfBatchEngine.runWhitelistPairs(cohortB, recipe, policy, useCache);
+
+    if (batchA.jobs.isEmpty() || batchB.jobs.isEmpty()
+        || batchA.jobs.get(0).density == null || batchB.jobs.get(0).density == null) {
+        toast("Could not compute ΔPDF for (" + i + "," + j + ").", true);
+        return;
+    }
+
+    GridDensityResult a = batchA.jobs.get(0).density;
+    GridDensityResult b = batchB.jobs.get(0).density;
+
+    // (4) Align grids if necessary; then out = A.pdf - B.pdf
+    double[] ax = a.getxCenters(), ay = a.getyCenters();
+    double[] bx = b.getxCenters(), by = b.getyCenters();
+
+    List<List<Double>> out;
+    if (sameCenters(ax, bx) && sameCenters(ay, by)) {
+        out = subtract(a.pdfAsListGrid(), b.pdfAsListGrid());
+    } else {
+        out = subtract(a.pdfAsListGrid(), bilinearResample(b.pdfAsListGrid(), bx, by, ax, ay));
+    }
+
+    // (5) Render into Hypersurface3DPane (your working event)
+    getScene().getRoot().fireEvent(new HypersurfaceGridEvent(
+        HypersurfaceGridEvent.RENDER_PDF,
+        out,
+        ax,
+        ay,
+        "Comp " + Math.min(i, j) + " | Comp " + Math.max(i, j) + " (ΔPDF A−B)"
+    ));
+
+    toast("Rendered ΔPDF (A−B) for pair (" + i + "," + j + ").", false);
+}
+
+    // ---------------------------------------------------------------------
+    // Graph build actions
+    // ---------------------------------------------------------------------
+
+    private MenuButton buildActionsMenu() {
+        MenuButton mb = new MenuButton("Actions");
+
+        MenuItem clearItem = new MenuItem("Clear Matrix");
+        clearItem.setOnAction(e -> heatmap.setMatrix((double[][]) null));
+
+        MenuItem buildGraphFromSim = new MenuItem("Build Graph from Similarity");
+        buildGraphFromSim.setOnAction(e -> triggerGraphBuild(MatrixToGraphAdapter.MatrixKind.SIMILARITY));
+
+        MenuItem buildGraphFromDiv = new MenuItem("Build Graph from Divergence");
+        buildGraphFromDiv.setOnAction(e -> triggerGraphBuild(MatrixToGraphAdapter.MatrixKind.DIVERGENCE));
 
         // Synthetic cohort tools
         MenuItem copyAToB = new MenuItem("Set Cohort B = Cohort A (copy)");
@@ -377,55 +469,54 @@ private MenuButton buildActionsMenu() {
         // Label-derived cohorts
         MenuItem cohortsByLabel = new MenuItem("Derive A/B by vector label…");
         cohortsByLabel.setOnAction(e -> promptDeriveCohortsByLabel());
-        
-    mb.getItems().addAll(buildGraphFromSim, buildGraphFromDiv, 
-        new SeparatorMenuItem(), copyAToB, splitA, bShiftOneComp, cohortsByLabel,
-        new SeparatorMenuItem(), bRandomGaussian, bRandomNoise,
-        new SeparatorMenuItem(), clearItem);
-    
-    return mb;
-}
-private void triggerGraphBuild(MatrixToGraphAdapter.MatrixKind kind) {
-    double[][] M = currentMatrix();
-    if (M == null || M.length == 0) { toast("No matrix to build a graph from.", true); return; }
 
-    var labels = currentRowLabels();
-    var scene = getScene();
-    if (scene == null) { toast("Scene not ready.", true); return; }
+        mb.getItems().addAll(buildGraphFromSim, buildGraphFromDiv,
+                new SeparatorMenuItem(), copyAToB, splitA, bShiftOneComp, cohortsByLabel,
+                new SeparatorMenuItem(), bRandomGaussian, bRandomNoise,
+                new SeparatorMenuItem(), clearItem);
 
-    // Choose how to interpret the matrix and how to lay it out
-    MatrixToGraphAdapter.WeightMode weightMode = 
-        MatrixToGraphAdapter.WeightMode.DIRECT; // use your preferred default
+        return mb;
+    }
 
-    GraphLayoutParams layout = new GraphLayoutParams();
-    layout.kind = GraphLayoutParams.LayoutKind.MDS_3D;   // or FORCE_FR, CIRCLE_XZ, etc.
-    // (If your GraphLayoutParams uses setters/builder, adjust these two lines accordingly.)
+    private void triggerGraphBuild(MatrixToGraphAdapter.MatrixKind kind) {
+        double[][] M = currentMatrix();
+        if (M == null || M.length == 0) { toast("No matrix to build a graph from.", true); return; }
 
-    SuperMDS.Params mdsParams = new SuperMDS.Params();
-    mdsParams.outputDim = 3; // ensure 3D
+        var labels = currentRowLabels();
+        var scene = getScene();
+        if (scene == null) { toast("Scene not ready.", true); return; }
 
-    setControlsDisabled(true);
-    setProgressText("Building graph…");
+        MatrixToGraphAdapter.WeightMode weightMode = MatrixToGraphAdapter.WeightMode.DIRECT;
 
-    BuildGraphFromMatrixTask task = new BuildGraphFromMatrixTask(
-            scene, M, labels, kind, weightMode, layout, mdsParams);
+        GraphLayoutParams layout = new GraphLayoutParams();
+        layout.kind = GraphLayoutParams.LayoutKind.MDS_3D; // or FORCE_FR, etc.
 
-    task.setOnSucceeded(ev -> {
-        setControlsDisabled(false);
-        setProgressText("");
-        toast("Graph built and dispatched.", false);
-    });
-    task.setOnFailed(ev -> {
-        setControlsDisabled(false);
-        setProgressText("");
-        var t = task.getException();
-        toast("Graph build failed: " + (t == null ? "unknown error" : t.getMessage()), true);
-    });
+        SuperMDS.Params mdsParams = new SuperMDS.Params();
+        mdsParams.outputDim = 3; // ensure 3D
 
-    Thread th = new Thread(task, "BuildGraphFromMatrixTask");
-    th.setDaemon(true);
-    th.start();
-}
+        setControlsDisabled(true);
+        setProgressText("Building graph…");
+
+        BuildGraphFromMatrixTask task = new BuildGraphFromMatrixTask(
+                scene, M, labels, kind, weightMode, layout, mdsParams);
+
+        task.setOnSucceeded(ev -> {
+            setControlsDisabled(false);
+            setProgressText("");
+            toast("Graph built and dispatched.", false);
+        });
+        task.setOnFailed(ev -> {
+            setControlsDisabled(false);
+            setProgressText("");
+            var t = task.getException();
+            toast("Graph build failed: " + (t == null ? "unknown error" : t.getMessage()), true);
+        });
+
+        Thread th = new Thread(task, "BuildGraphFromMatrixTask");
+        th.setDaemon(true);
+        th.start();
+    }
+
     // ---------------------------------------------------------------------
     // Synthetic cohort helpers
     // ---------------------------------------------------------------------
@@ -441,7 +532,6 @@ private void triggerGraphBuild(MatrixToGraphAdapter.MatrixKind kind) {
                 double z = rng.nextGaussian() * stddev + mean;
                 row.add(z);
             }
-            // Adjust constructor if your FeatureVector differs
             out.add(new FeatureVector(row));
         }
         return out;
@@ -459,7 +549,6 @@ private void triggerGraphBuild(MatrixToGraphAdapter.MatrixKind kind) {
                 double v = min + rng.nextDouble() * span;
                 row.add(v);
             }
-            // Adjust constructor if your FeatureVector differs
             out.add(new FeatureVector(row));
         }
         return out;
@@ -478,12 +567,8 @@ private void triggerGraphBuild(MatrixToGraphAdapter.MatrixKind kind) {
         if (compRes.isEmpty()) return;
 
         int idx;
-        try {
-            idx = Integer.parseInt(compRes.get().trim());
-        } catch (Exception ex) {
-            toast("Invalid component index.", true);
-            return;
-        }
+        try { idx = Integer.parseInt(compRes.get().trim()); }
+        catch (Exception ex) { toast("Invalid component index.", true); return; }
         if (idx < 0 || idx >= d) { toast("Index out of range.", true); return; }
 
         TextInputDialog deltaDlg = new TextInputDialog("1.0");
@@ -494,14 +579,9 @@ private void triggerGraphBuild(MatrixToGraphAdapter.MatrixKind kind) {
         if (deltaRes.isEmpty()) return;
 
         double delta;
-        try {
-            delta = Double.parseDouble(deltaRes.get().trim());
-        } catch (Exception ex) {
-            toast("Invalid delta.", true);
-            return;
-        }
+        try { delta = Double.parseDouble(deltaRes.get().trim()); }
+        catch (Exception ex) { toast("Invalid delta.", true); return; }
 
-        // Build B by copying A and adding delta on idx
         List<FeatureVector> b = new ArrayList<>(cohortA.size());
         for (FeatureVector fv : cohortA) {
             List<Double> src = fv.getData();
@@ -510,7 +590,6 @@ private void triggerGraphBuild(MatrixToGraphAdapter.MatrixKind kind) {
                 double v = src.get(j);
                 row.add(j == idx ? v + delta : v);
             }
-            // Adjust constructor if your FeatureVector differs
             b.add(new FeatureVector(row));
         }
         setCohortB(b, cohortALabel + " (shifted comp " + idx + " by " + delta + ")");
@@ -561,24 +640,20 @@ private void triggerGraphBuild(MatrixToGraphAdapter.MatrixKind kind) {
 
     private static String safeVectorLabel(FeatureVector fv) {
         try {
-            // Adjust if your FeatureVector exposes labels differently.
-            String lbl = fv.getLabel(); // e.g., fv.getLabel() or fv.getName() or metadata map
+            String lbl = fv.getLabel();
             return (lbl == null) ? "" : lbl.trim();
-        } catch (Throwable t) {
-            return "";
-        }
+        } catch (Throwable t) { return ""; }
     }
+
     // ---------------------------------------------------------------------
-    // Collapse/Expand (no node swapping; width-based)
+    // Collapse/Expand
     // ---------------------------------------------------------------------
 
     private void toggleControlsCollapsed() {
         if (!controlsCollapsed) {
-            // Save current divider position if sensible
             double pos = splitPane.getDividerPositions()[0];
             if (pos > 0.02 && pos < 0.98) lastDividerPos = pos;
 
-            // Collapse by width (keep node in SplitPane)
             controlsCollapsed = true;
             collapseBtn.setText("Expand Controls");
 
@@ -588,7 +663,6 @@ private void triggerGraphBuild(MatrixToGraphAdapter.MatrixKind kind) {
             splitPane.setDividerPositions(0.0);
             splitPane.requestLayout();
         } else {
-            // Expand: restore widths and divider
             controlsCollapsed = false;
             collapseBtn.setText("Collapse Controls");
 
@@ -630,4 +704,152 @@ private void triggerGraphBuild(MatrixToGraphAdapter.MatrixKind kind) {
         String x = (s == null) ? "" : s.trim();
         return x.isEmpty() ? "PairwiseMatrix" : x;
     }
+
+    private static <T> T nonNull(T v, T def) { return (v != null ? v : def); }
+
+    // ---------------------------------------------------------------------
+    // Jpdf recipe builders & policy/cache resolvers
+    // ---------------------------------------------------------------------
+
+    private JpdfRecipe buildRecipeFromRequest(Request req) {
+        // Used for matrix construction (broad run). Clicks will use the single-pair builder below.
+        JpdfRecipe.Builder b = JpdfRecipe.newBuilder(safeName(req.name))
+                .bins(req.binsX, req.binsY)
+                .boundsPolicy(req.boundsPolicy)
+                .canonicalPolicyId(req.canonicalPolicyId == null ? "default" : req.canonicalPolicyId)
+                .componentPairsMode(true)
+                .componentIndexRange(req.componentStart, req.componentEnd)
+                .includeSelfPairs(req.includeDiagonal)
+                .orderedPairs(req.orderedPairs)
+                .cacheEnabled(true)
+                .saveThumbnails(false)
+                .minAvgCountPerCell(3.0);
+
+        if (req.mode == Mode.SIMILARITY && req.similarityMetric != null) {
+            b.scoreMetric(req.similarityMetric);
+        } else {
+            b.scoreMetric(JpdfRecipe.ScoreMetric.PEARSON);
+        }
+        return b.build();
+    }
+
+    /** Build a whitelist recipe for a single (i,j) pair. */
+    private JpdfRecipe buildSinglePairWhitelistRecipe(Request req, int i, int j) {
+        int lo = Math.min(i, j);
+        int hi = Math.max(i, j);
+
+        AxisParams x = new AxisParams();
+        x.setType(StatisticEngine.ScalarType.COMPONENT_AT_DIMENSION);
+        x.setComponentIndex(lo);
+
+        AxisParams y = new AxisParams();
+        y.setType(StatisticEngine.ScalarType.COMPONENT_AT_DIMENSION);
+        y.setComponentIndex(hi);
+
+        String name = safeName(req.name);
+        JpdfRecipe.Builder b = JpdfRecipe.newBuilder(name)
+                .pairSelection(JpdfRecipe.PairSelection.WHITELIST)
+                .addAxisPair(x, y)
+                .componentPairsMode(false)
+                .includeSelfPairs(true)
+                .orderedPairs(false)
+                .bins(req.binsX, req.binsY)
+                .boundsPolicy(req.boundsPolicy)
+                .canonicalPolicyId(req.canonicalPolicyId == null ? "default" : req.canonicalPolicyId)
+                .minAvgCountPerCell(3.0)
+                .outputKind(JpdfRecipe.OutputKind.PDF_AND_CDF)
+                .cacheEnabled(true);
+
+        if (req.similarityMetric != null) b.scoreMetric(req.similarityMetric);
+        if (req.cohortALabel != null || req.cohortBLabel != null) {
+            b.cohortLabels(
+                    req.cohortALabel != null ? req.cohortALabel : "A",
+                    req.cohortBLabel != null ? req.cohortBLabel : "B"
+            );
+        }
+        return b.build();
+    }
+
+    private CanonicalGridPolicy resolveCanonicalPolicy(JpdfRecipe recipe) {
+        return CanonicalGridPolicy.get(
+                (recipe.getBoundsPolicy() == JpdfRecipe.BoundsPolicy.CANONICAL_BY_FEATURE)
+                        ? recipe.getCanonicalPolicyId()
+                        : "default");
+    }
+
+    private DensityCache resolveDensityCache() { return this.cache; }
+
+    // ---------------------------------------------------------------------
+    // Grid math helpers for ΔPDF
+    // ---------------------------------------------------------------------
+
+    private static boolean sameCenters(double[] a, double[] b) {
+        if (a == null || b == null || a.length != b.length) return false;
+        for (int k = 0; k < a.length; k++) if (Math.abs(a[k] - b[k]) > 1e-9) return false;
+        return true;
+    }
+
+    private static List<List<Double>> subtract(List<List<Double>> A, List<List<Double>> B) {
+        int rows = Math.min(A.size(), B.size());
+        int cols = Math.min(A.get(0).size(), B.get(0).size());
+        List<List<Double>> out = new ArrayList<>(rows);
+        for (int r = 0; r < rows; r++) {
+            List<Double> row = new ArrayList<>(cols);
+            List<Double> ar = A.get(r);
+            List<Double> br = B.get(r);
+            for (int c = 0; c < cols; c++) row.add(ar.get(c) - br.get(c));
+            out.add(row);
+        }
+        return out;
+    }
+
+    /** Bilinear-resample grid G (srcX,srcY) → (dstX,dstY). Returns |dstY| x |dstX|. */
+    private static List<List<Double>> bilinearResample(List<List<Double>> G,
+                                                       double[] srcX, double[] srcY,
+                                                       double[] dstX, double[] dstY) {
+        int h = dstY.length, w = dstX.length;
+        List<List<Double>> out = new ArrayList<>(h);
+
+        for (int r = 0; r < h; r++) {
+            double y = dstY[r];
+            int jy = clamp(upperFloor(srcY, y), 0, srcY.length - 2);
+            double y0 = srcY[jy], y1 = srcY[jy + 1];
+            double ty = safeT(y, y0, y1);
+
+            List<Double> row = new ArrayList<>(w);
+            for (int c = 0; c < w; c++) {
+                double x = dstX[c];
+                int ix = clamp(upperFloor(srcX, x), 0, srcX.length - 2);
+                double x0 = srcX[ix], x1 = srcX[ix + 1];
+                double tx = safeT(x, x0, x1);
+
+                double f00 = G.get(jy).get(ix);
+                double f10 = G.get(jy).get(ix + 1);
+                double f01 = G.get(jy + 1).get(ix);
+                double f11 = G.get(jy + 1).get(ix + 1);
+
+                double f0 = lerp(f00, f10, tx);
+                double f1 = lerp(f01, f11, tx);
+                row.add(lerp(f0, f1, ty));
+            }
+            out.add(row);
+        }
+        return out;
+    }
+
+    /** largest k such that src[k] <= v, or 0 if v <= src[0] */
+    private static int upperFloor(double[] src, double v) {
+        int lo = 0, hi = src.length - 1;
+        if (v <= src[0]) return 0;
+        if (v >= src[hi]) return hi - 1;
+        while (lo + 1 < hi) {
+            int mid = (lo + hi) >>> 1;
+            if (src[mid] <= v) lo = mid; else hi = mid;
+        }
+        return lo;
+    }
+
+    private static int clamp(int x, int lo, int hi) { return Math.max(lo, Math.min(hi, x)); }
+    private static double lerp(double a, double b, double t) { return a + t * (b - a); }
+    private static double safeT(double v, double a, double b) { double d = (b - a); return d == 0 ? 0.0 : (v - a) / d; }
 }
