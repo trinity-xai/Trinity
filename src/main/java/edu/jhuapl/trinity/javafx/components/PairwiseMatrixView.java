@@ -3,6 +3,7 @@ package edu.jhuapl.trinity.javafx.components;
 import com.github.trinity.supermds.SuperMDS;
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.javafx.components.MatrixHeatmapView.MatrixClick;
+import edu.jhuapl.trinity.javafx.components.dialogs.SyntheticDataDialog;
 import edu.jhuapl.trinity.javafx.events.HypersurfaceGridEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.tasks.BuildGraphFromMatrixTask;
 import edu.jhuapl.trinity.utils.graph.GraphLayoutParams;
@@ -20,11 +21,10 @@ import edu.jhuapl.trinity.utils.statistics.PairwiseMatrixConfigPanel.Request;
 import edu.jhuapl.trinity.utils.statistics.PairwiseMatrixEngine;
 import edu.jhuapl.trinity.utils.statistics.PairwiseMatrixEngine.MatrixResult;
 import edu.jhuapl.trinity.utils.statistics.StatisticEngine;
-
+import edu.jhuapl.trinity.utils.statistics.SyntheticMatrixFactory.SyntheticMatrix;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
-
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
@@ -471,10 +471,22 @@ private void renderDeltaPdfForCellUsingEngine(int i, int j, Request req) {
         MenuItem cohortsByLabel = new MenuItem("Derive A/B by vector label…");
         cohortsByLabel.setOnAction(e -> promptDeriveCohortsByLabel());
 
+        MenuItem syntheticDataDialogItem = new MenuItem("Synthetic Data Controller");
+        syntheticDataDialogItem.setOnAction(e -> { 
+            SyntheticDataDialog dlg = new SyntheticDataDialog();
+            dlg.initOwner(getScene().getWindow());
+            dlg.showAndWait().ifPresent(res -> {
+                switch (res.kind()) {
+                    case SIMILARITY_MATRIX, DIVERGENCE_MATRIX -> loadSyntheticMatrix(res.matrix());
+                    case COHORTS -> setCohorts(res.cohorts().cohortA, "A", res.cohorts().cohortB, "B");
+                }
+            });
+        });
+
         mb.getItems().addAll(buildGraphFromSim, buildGraphFromDiv,
                 new SeparatorMenuItem(), copyAToB, splitA, bShiftOneComp, cohortsByLabel,
                 new SeparatorMenuItem(), bRandomGaussian, bRandomNoise,
-                new SeparatorMenuItem(), clearItem);
+                new SeparatorMenuItem(), syntheticDataDialogItem, clearItem);
 
         return mb;
     }
@@ -485,16 +497,6 @@ private void renderDeltaPdfForCellUsingEngine(int i, int j, Request req) {
         var labels = currentRowLabels();
         var scene = getScene();
         if (scene == null) { toast("Scene not ready.", true); return; }
-
-//        GraphLayoutParams layout = new GraphLayoutParams()
-//                .withKind(GraphLayoutParams.LayoutKind.MDS_3D) // or FORCE_FR, etc.
-//                .withRadius(600)
-//                .withEdgePolicy(GraphLayoutParams.EdgePolicy.KNN)
-//                .withKnnK(8)
-//                .withKnnSymmetrize(true)
-//                .withMaxEdges(5000)
-//                .withMaxDegreePerNode(32)
-//                .withNormalizeWeights01(true);
 
         // Choose weight mapping here (not in params)
         MatrixToGraphAdapter.WeightMode wmode =
@@ -515,7 +517,6 @@ private void renderDeltaPdfForCellUsingEngine(int i, int j, Request req) {
         task.setOnFailed(ev -> { setControlsDisabled(false); setProgressText(""); var t = task.getException(); toast("Graph build failed: " + (t == null ? "unknown error" : t.getMessage()), true); });
 
         Thread th = new Thread(task, "BuildGraphFromMatrixTask"); th.setDaemon(true); th.start();
-    
     }
 
 private void triggerGraphBuild(MatrixToGraphAdapter.MatrixKind kind) {
@@ -536,6 +537,84 @@ private void triggerGraphBuild(MatrixToGraphAdapter.MatrixKind kind) {
     // ---------------------------------------------------------------------
     // Synthetic cohort helpers
     // ---------------------------------------------------------------------
+/** Load a synthetic matrix (similarity or divergence) into the heatmap. */
+public void loadSyntheticMatrix(SyntheticMatrix sm) {
+    if (sm == null || sm.matrix == null || sm.matrix.length == 0) {
+        toast("Synthetic matrix is empty.", true);
+        heatmap.setMatrix((double[][]) null);
+        return;
+    }
+
+    // Render the matrix
+    heatmap.setMatrix(sm.matrix);
+    if (sm.labels != null && !sm.labels.isEmpty()) {
+        heatmap.setRowLabels(sm.labels);
+        heatmap.setColLabels(sm.labels);
+    } else {
+        // fallback label set
+        List<String> labels = new java.util.ArrayList<>(sm.matrix.length);
+        for (int i = 0; i < sm.matrix.length; i++) labels.add("F" + i);
+        heatmap.setRowLabels(labels);
+        heatmap.setColLabels(labels);
+    }
+
+    // Palette + range defaults based on kind
+    applyHeatmapDefaultsFor(sm.kind, sm.matrix);
+
+    // Nice toast
+    String title = (sm.title != null && !sm.title.isBlank()) ? sm.title : "Synthetic";
+    toast(title + " — N=" + sm.matrix.length + " loaded.", false);
+}
+
+/** Convenience: set both cohorts at once with labels. */
+public void setCohorts(List<FeatureVector> a, String labelA, List<FeatureVector> b, String labelB) {
+    setCohortA(a, labelA);
+    setCohortB(b, labelB);
+    int na = (a == null ? 0 : a.size());
+    int nb = (b == null ? 0 : b.size());
+    toast("Cohorts set: A=" + labelA + " (" + na + "), B=" + labelB + " (" + nb + ")", false);
+}
+
+/** Convenience overload with default labels. */
+public void setCohorts(List<FeatureVector> a, List<FeatureVector> b) {
+    setCohorts(a, "A", b, "B");
+}
+
+/* ---------- helpers ---------- */
+
+private void applyHeatmapDefaultsFor(MatrixToGraphAdapter.MatrixKind kind, double[][] M) {
+    // Legend ON, auto range ON
+    heatmap.setShowLegend(true);
+    heatmap.setAutoRange(true);
+
+    // Palette: Similarity -> sequential; Divergence -> diverging centered at mid-range
+    if (kind == MatrixToGraphAdapter.MatrixKind.DIVERGENCE) {
+        double[] mm = minMax(M);
+        double center = (mm[0] + mm[1]) * 0.5;
+        heatmap.useDivergingPalette(center);
+    } else {
+        heatmap.useSequentialPalette();
+    }
+}
+
+/** Returns [min,max] over finite entries. */
+private static double[] minMax(double[][] M) {
+    double min = Double.POSITIVE_INFINITY, max = Double.NEGATIVE_INFINITY;
+    for (int i = 0; i < M.length; i++) {
+        double[] row = M[i];
+        for (int j = 0; j < row.length; j++) {
+            double v = row[j];
+            if (Double.isFinite(v)) {
+                if (v < min) min = v;
+                if (v > max) max = v;
+            }
+        }
+    }
+    if (!(max > min)) { // degenerate
+        min = 0.0; max = 1.0;
+    }
+    return new double[]{min, max};
+}
 
     private List<FeatureVector> synthGaussianLikeA(List<FeatureVector> likeA, double mean, double stddev) {
         int n = likeA.size();

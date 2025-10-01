@@ -3,7 +3,6 @@ package edu.jhuapl.trinity.javafx.components.panes;
 import edu.jhuapl.trinity.data.messages.xai.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.javafx.components.PairwiseMatrixView;
-import edu.jhuapl.trinity.javafx.components.MatrixHeatmapView.MatrixClick;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.events.GraphEvent;

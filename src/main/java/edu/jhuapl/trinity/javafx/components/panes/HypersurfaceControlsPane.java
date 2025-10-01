@@ -1,6 +1,7 @@
 package edu.jhuapl.trinity.javafx.components.panes;
 
 import edu.jhuapl.trinity.javafx.components.GraphControlsView;
+import edu.jhuapl.trinity.javafx.components.GraphStyleControlsView;
 import edu.jhuapl.trinity.javafx.events.HyperspaceEvent;
 import edu.jhuapl.trinity.javafx.events.HypersurfaceEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.Hypersurface3DPane;
@@ -85,33 +86,33 @@ public class HypersurfaceControlsPane extends LitPathPane {
         BorderPane bp = (BorderPane) this.contentPane;
         bp.setPadding(new Insets(6));
         bp.setCenter(buildTabs());
-        
+
         scene.addEventHandler(HypersurfaceEvent.SET_XWIDTH_GUI, e -> {
             // Set spinner value if different, *without* firing another event
-            if (xWidthSpinner != null && !xWidthSpinner.getValue().equals((Integer)e.object)) {
-                xWidthSpinner.getValueFactory().setValue((Integer)e.object);
+            if (xWidthSpinner != null && !xWidthSpinner.getValue().equals((Integer) e.object)) {
+                xWidthSpinner.getValueFactory().setValue((Integer) e.object);
             }
             e.consume();
         });
         scene.addEventHandler(HypersurfaceEvent.SET_ZWIDTH_GUI, e -> {
-            if (zWidthSpinner != null && !zWidthSpinner.getValue().equals((Integer)e.object)) {
-                zWidthSpinner.getValueFactory().setValue((Integer)e.object);
+            if (zWidthSpinner != null && !zWidthSpinner.getValue().equals((Integer) e.object)) {
+                zWidthSpinner.getValueFactory().setValue((Integer) e.object);
             }
             e.consume();
         });
         scene.addEventHandler(HypersurfaceEvent.SET_YSCALE_GUI, e -> {
-            if (yScaleSpinner != null && !yScaleSpinner.getValue().equals((Double)e.object)) {
-                yScaleSpinner.getValueFactory().setValue((Double)e.object);
+            if (yScaleSpinner != null && !yScaleSpinner.getValue().equals((Double) e.object)) {
+                yScaleSpinner.getValueFactory().setValue((Double) e.object);
             }
             e.consume();
         });
         scene.addEventHandler(HypersurfaceEvent.SET_SURFSCALE_GUI, e -> {
-            if (surfScaleSpinner != null && !surfScaleSpinner.getValue().equals((Double)e.object)) {
-                surfScaleSpinner.getValueFactory().setValue((Double)e.object);
+            if (surfScaleSpinner != null && !surfScaleSpinner.getValue().equals((Double) e.object)) {
+                surfScaleSpinner.getValueFactory().setValue((Double) e.object);
             }
             e.consume();
         });
-        
+
     }
 
     private TabPane buildTabs() {
@@ -331,12 +332,16 @@ public class HypersurfaceControlsPane extends LitPathPane {
         TabPane tabs = new TabPane();
         tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
         tabs.setPrefWidth(PANEL_WIDTH - 8);
-        GraphControlsView gcv = new GraphControlsView(scene);
-        
+
+        GraphControlsView graphLayoutView = new GraphControlsView(scene);
+        GraphStyleControlsView graphStyleView = new GraphStyleControlsView(scene);
+
         Tab t1 = new Tab("View", viewTabContent);
         Tab t2 = new Tab("Processing", procTabContent);
-        Tab t3 = new Tab("Graph", gcv);
-        tabs.getTabs().addAll(t1, t2, t3);
+        Tab t3 = new Tab("Graph Layout", graphLayoutView);
+        Tab t4 = new Tab("Graph Style", graphStyleView);
+
+        tabs.getTabs().addAll(t1, t2, t3, t4);
         return tabs;
     }
 

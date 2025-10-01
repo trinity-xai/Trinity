@@ -125,7 +125,22 @@ public class AnimatedSphere extends Sphere implements Selectable3D {
 //        contract();
         setMaterial(phongMaterial);
     }
-
+    public void setMaterialOpacity(double alpha) {
+        double a = Math.max(0.0, Math.min(1.0, alpha));
+        Color base = phongMaterial.getDiffuseColor();
+        if (base == null) {
+            base = (color != null) ? color : Color.WHITE;
+        }
+        Color withAlpha = new Color(base.getRed(), base.getGreen(), base.getBlue(), a);
+        // keep the cached color field in sync
+        this.color = withAlpha;
+        phongMaterial.setDiffuseColor(withAlpha);
+        // Optional: match specular alpha for a more consistent look
+        Color spec = phongMaterial.getSpecularColor();
+        if (spec != null) {
+            phongMaterial.setSpecularColor(new Color(spec.getRed(), spec.getGreen(), spec.getBlue(), a));
+        }
+    }
     @Override
     public boolean isSelected() {
         throw new UnsupportedOperationException("Not supported yet."); // Generated from nbfs://nbhost/SystemFileSystem/Templates/Classes/Code/GeneratedMethodBody
