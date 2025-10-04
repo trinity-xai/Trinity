@@ -2,6 +2,7 @@ package edu.jhuapl.trinity.javafx.components.panes;
 
 import edu.jhuapl.trinity.javafx.components.GraphControlsView;
 import edu.jhuapl.trinity.javafx.components.GraphStyleControlsView;
+import edu.jhuapl.trinity.javafx.events.GraphEvent;
 import edu.jhuapl.trinity.javafx.events.HyperspaceEvent;
 import edu.jhuapl.trinity.javafx.events.HypersurfaceEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.Hypersurface3DPane;
@@ -20,6 +21,7 @@ import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
+import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.ColumnConstraints;
 import javafx.scene.layout.GridPane;
@@ -75,6 +77,9 @@ public class HypersurfaceControlsPane extends LitPathPane {
     private CheckBox enablePointCheck;
     private ColorPicker specularColorPicker;
 
+    // Graph overlay visibility
+    private ToggleButton showGraphToggle;
+
     public HypersurfaceControlsPane(Scene scene, Pane parent, Hypersurface3DPane target) {
         super(scene, parent, PANEL_WIDTH, PANEL_HEIGHT, new BorderPane(), "Hypersurface Controls", "", 200.0, 300.0);
         this.scene = scene;
@@ -87,8 +92,8 @@ public class HypersurfaceControlsPane extends LitPathPane {
         bp.setPadding(new Insets(6));
         bp.setCenter(buildTabs());
 
+        // --- GUI sync from model → controls
         scene.addEventHandler(HypersurfaceEvent.SET_XWIDTH_GUI, e -> {
-            // Set spinner value if different, *without* firing another event
             if (xWidthSpinner != null && !xWidthSpinner.getValue().equals((Integer) e.object)) {
                 xWidthSpinner.getValueFactory().setValue((Integer) e.object);
             }
@@ -113,6 +118,14 @@ public class HypersurfaceControlsPane extends LitPathPane {
             e.consume();
         });
 
+        // Graph overlay visibility GUI sync
+        scene.addEventHandler(GraphEvent.SET_GRAPH_VISIBILITY_GUI, e -> {
+            if (showGraphToggle != null) {
+                boolean v = (Boolean) e.object;
+                if (showGraphToggle.isSelected() != v) showGraphToggle.setSelected(v);
+            }
+            e.consume();
+        });
     }
 
     private TabPane buildTabs() {
@@ -242,10 +255,20 @@ public class HypersurfaceControlsPane extends LitPathPane {
         specularColorPicker.setOnAction(e ->
             fireOnRoot(HypersurfaceEvent.specularColor(specularColorPicker.getValue())));
 
+        // --- Graph Overlay visibility ---
+        GridPane graphOverlayGrid = formGrid();
+        showGraphToggle = new ToggleButton("Show Graph");
+        showGraphToggle.setSelected(true); // will be synced on startup via SET_GRAPH_VISIBILITY_GUI
+        showGraphToggle.setOnAction(e ->
+            fireOnRoot(new GraphEvent(GraphEvent.GRAPH_VISIBILITY_CHANGED, showGraphToggle.isSelected()))
+        );
+        addRow(graphOverlayGrid, 0, "Graph Overlay", showGraphToggle);
+
         VBox viewTabContent = new VBox(10,
             titledBox("Dimensions", dimsGrid),
             titledBox("Rendering", renderGrid),
-            titledBox("Scene", sceneGrid)
+            titledBox("Scene", sceneGrid),
+            titledBox("Graph Overlay", graphOverlayGrid)
         );
         viewTabContent.setPadding(new Insets(6));
 

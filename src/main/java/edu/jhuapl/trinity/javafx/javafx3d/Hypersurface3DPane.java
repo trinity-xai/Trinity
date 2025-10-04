@@ -4,6 +4,8 @@ import edu.jhuapl.trinity.App;
 import edu.jhuapl.trinity.data.CoordinateSet;
 import edu.jhuapl.trinity.data.files.FeatureCollectionFile;
 import edu.jhuapl.trinity.data.graph.GraphDirectedCollection;
+import edu.jhuapl.trinity.data.graph.GraphEdge;
+import edu.jhuapl.trinity.data.graph.GraphNode;
 import edu.jhuapl.trinity.data.messages.bci.SemanticMap;
 import edu.jhuapl.trinity.data.messages.bci.SemanticMapCollection;
 import edu.jhuapl.trinity.data.messages.bci.SemanticReconstruction;
@@ -262,6 +264,7 @@ public class Hypersurface3DPane extends StackPane
     private double toneParam = 2.0;    
     // --- Graph layer support ---
     private final Group graphLayer = new Group(); // sits in sceneRoot
+    private boolean graphVisible = true;
     private GraphDirectedCollection currentGraph = null;
     private Graph3DRenderer.Params graphParams = new Graph3DRenderer.Params()
             .withNodeRadius(20.0)
@@ -335,6 +338,9 @@ public class Hypersurface3DPane extends StackPane
             nodeGroup, extrasGroup, debugGroup, dataXForm);
         // Add graph layer last so it draws above the surface (z-order within Group)
         sceneRoot.getChildren().add(graphLayer);
+        graphLayer.setVisible(graphVisible);
+        // Sync controls with current visibility on startup
+        fireOnRoot(new GraphEvent(GraphEvent.SET_GRAPH_VISIBILITY_GUI, graphVisible));        
         subScene.setCamera(camera);
         pointLight = new PointLight(Color.WHITE);
         cameraTransform.getChildren().add(pointLight);
@@ -635,7 +641,7 @@ this.scene.addEventHandler(GraphEvent.GRAPH_STYLE_RESET_DEFAULTS, e -> {
 
             // GUI-sync so pickers/sliders reflect the active style
             fireOnRoot(new GraphEvent(GraphEvent.SET_STYLE_GUI, styleParams));
-
+            fireOnRoot(new GraphEvent(GraphEvent.SET_GRAPH_VISIBILITY_GUI, graphVisible));
             scene.getRoot().fireEvent(new CommandTerminalEvent(
                 "Rendered 3D graph: nodes=" + gc.getNodes().size() + ", edges=" + gc.getEdges().size(),
                 new Font("Consolas", 18), Color.LIGHTGREEN));
@@ -1451,6 +1457,66 @@ private Number vertToHeight(Vert3D p) {
         scene.addEventHandler(HypersurfaceEvent.COMPUTE_VECTOR_DISTANCES, e -> computeVectorDistances());
         scene.addEventHandler(HypersurfaceEvent.COMPUTE_COLLECTION_DIFF, e -> computeSurfaceDifference((FeatureCollection) e.object));
         scene.addEventHandler(HypersurfaceEvent.COMPUTE_COSINE_DISTANCE, e -> computeCosineDistance((FeatureCollection) e.object));
+        // Hover a node: emit its similarity row (from graph) and optionally highlight a surface row
+        scene.addEventHandler(GraphEvent.GRAPH_NODE_HOVER, e -> {
+            if (!(e.object instanceof GraphNode gNode)) return;
+
+            // Build a row vector from the sparse graph
+            Double[] row = buildSimilarityRowFromGraph(gNode);
+
+            // Publish for analysis panels/plots (reuses your existing pattern)
+            scene.getRoot().fireEvent(new FactorAnalysisEvent(
+                FactorAnalysisEvent.ANALYSIS_DATA_VECTOR,
+                "Graph Similarity Row (hover): " + String.valueOf(gNode),
+                row
+            ));
+
+            // Optional: try to relate back to hypersurface row
+            highlightSurfaceRowIfPossible(gNode);
+        });
+
+        // Click a node: same as hover but labeled and could be made "sticky"
+        scene.addEventHandler(GraphEvent.GRAPH_NODE_CLICK, e -> {
+            if (!(e.object instanceof GraphNode gNode)) return;
+            Double[] row = buildSimilarityRowFromGraph(gNode);
+            scene.getRoot().fireEvent(new FactorAnalysisEvent(
+                FactorAnalysisEvent.ANALYSIS_DATA_VECTOR,
+                "Graph Similarity Row (click): " + String.valueOf(gNode),
+                row
+            ));
+            highlightSurfaceRowIfPossible(gNode);
+        });
+
+        // Hover an edge: emit its endpoints + weight
+        scene.addEventHandler(GraphEvent.GRAPH_EDGE_HOVER, e -> {
+            if (!(e.object instanceof GraphEdge ge)) return;
+
+            Optional<GraphNode> a = currentGraph != null ? currentGraph.findNodeById(ge.getStartID()) : Optional.empty();
+            Optional<GraphNode> b = currentGraph != null ? currentGraph.findNodeById(ge.getEndID()) : Optional.empty();
+            double w = getEdgeWeightSafe(ge);
+
+            scene.getRoot().fireEvent(new CommandTerminalEvent(
+                "Edge hover: " + a.map(Object::toString).orElse("?") + " → " +
+                b.map(Object::toString).orElse("?") + " | weight = " + w,
+                new Font("Consolas", 16), Color.ALICEBLUE
+            ));
+        });
+
+        // Click an edge: emit a tiny 2-entry vector [w] or a pairwise slice if you prefer
+        scene.addEventHandler(GraphEvent.GRAPH_EDGE_CLICK, e -> {
+            if (!(e.object instanceof GraphEdge ge)) return;
+            double w = getEdgeWeightSafe(ge);
+            scene.getRoot().fireEvent(new FactorAnalysisEvent(
+                FactorAnalysisEvent.ANALYSIS_DATA_VECTOR,
+                "Graph Edge Weight (click): " + ge.getStartID() + " → " + ge.getEndID(),
+                new Double[]{ w }
+            ));
+        });
+        scene.addEventHandler(GraphEvent.GRAPH_VISIBILITY_CHANGED, e -> {
+            if (!(e.object instanceof Boolean b)) return;
+            graphVisible = b;
+            graphLayer.setVisible(graphVisible);
+        });        
     }
     public void updateCalloutByFeatureVector(Callout callout, FeatureVector featureVector) {
         callout.setMainTitleText(featureVector.getLabel());
@@ -1689,7 +1755,6 @@ private Number vertToHeight(Vert3D p) {
         for (List<Double> row : src) out.add(new ArrayList<>(row));
         return out;
     }
-
     private void rebuildProcessedGridAndRefresh() {
         if (originalGrid == null || originalGrid.isEmpty()) return;
         List<List<Double>> g = deepCopyGrid(originalGrid);
@@ -1704,4 +1769,81 @@ private Number vertToHeight(Vert3D p) {
         syncGuiControls();
         updateTheMesh(); updateView(true);
     }
+    /** Build a dense similarity/divergence row for a node from the current sparse graph. */
+    private Double[] buildSimilarityRowFromGraph(GraphNode node) {
+        if (currentGraph == null || node == null) return new Double[0];
+
+        final List<GraphNode> nodes = currentGraph.getNodes();
+        int n = nodes.size();
+        double[] row = new double[n];
+
+        // map: GraphNode -> index (by reference)
+        // using indexOf is okay for typical sizes; can optimize later with a HashMap
+        for (GraphEdge e : currentGraph.getEdges()) {
+            // outgoing (node -> other)
+            if (currentGraph.findNodeById(e.getStartID()).filter(node::equals).isPresent()) {
+                currentGraph.findNodeById(e.getEndID()).ifPresent(other -> {
+                    int j = nodes.indexOf(other);
+                    if (j >= 0) {
+                        double w = getEdgeWeightSafe(e);
+                        row[j] = w;
+                    }
+                });
+            }
+            // incoming (other -> node) — include if you want undirected row
+            if (currentGraph.findNodeById(e.getEndID()).filter(node::equals).isPresent()) {
+                currentGraph.findNodeById(e.getStartID()).ifPresent(other -> {
+                    int j = nodes.indexOf(other);
+                    if (j >= 0) {
+                        double w = getEdgeWeightSafe(e);
+                        // for undirected behavior, you can take max/avg; here we keep the larger magnitude
+                        row[j] = Math.abs(row[j]) >= Math.abs(w) ? row[j] : w;
+                    }
+                });
+            }
+        }
+
+        Double[] out = new Double[n];
+        for (int i = 0; i < n; i++) out[i] = row[i];
+        return out;
+    }
+
+    /** Prefer GraphEdge#getWeight(); fallback to 1.0 if unavailable. */
+    private double getEdgeWeightSafe(GraphEdge e) {
+        try {
+            // Adjust if your API uses a different accessor
+            return (double) GraphEdge.class.getMethod("getWeight").invoke(e);
+        } catch (Throwable t) {
+            return 1.0; // default if weight not present
+        }
+    }
+
+    /** Optional: if a GraphNode encodes a source row index for the hypersurface, try to extract it. */
+    private Optional<Integer> tryGetSourceRowIndex(GraphNode node) {
+        // Heuristics:
+        // (a) if there's a "getIndex()" method
+        try {
+            Object idx = GraphNode.class.getMethod("getIndex").invoke(node);
+            if (idx instanceof Number n) return Optional.of(n.intValue());
+        } catch (Throwable ignored) { }
+        // (b) if ID is numeric
+        try {
+            Object id = GraphNode.class.getMethod("getId").invoke(node);
+            if (id != null) return Optional.of(Integer.valueOf(String.valueOf(id)));
+        } catch (Throwable ignored) { }
+        return Optional.empty();
+    }
+
+    /** Highlight a row on the hypersurface if we can map a node to a data row. */
+    private void highlightSurfaceRowIfPossible(GraphNode node) {
+        tryGetSourceRowIndex(node).ifPresent(rowIndex -> {
+            // Clamp row and paint crosshair
+            int clamped = Math.max(0, Math.min(rowIndex, Math.max(0, zWidth - 1)));
+            paintSingleColor(Color.TRANSPARENT);
+            // Crosshair expects world coordinates; Z increases with rows
+            Point3D center = new Point3D((xWidth * surfScale) / 2.0, 0, clamped * surfScale);
+            illuminateCrosshair(center);
+        });
+    }
+    
 }

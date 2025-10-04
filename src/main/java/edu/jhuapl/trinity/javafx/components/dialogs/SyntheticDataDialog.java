@@ -7,12 +7,15 @@ import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
 import javafx.util.Callback;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Dialog;
 import javafx.scene.control.Label;
@@ -32,25 +35,8 @@ import javafx.scene.layout.VBox;
  *   • Divergence synthetic matrices (3 clusters)
  *   • Synthetic cohorts (Gaussian vs Uniform) for divergence workflows
  *
- * Returns a Result that indicates which artifact was created.
- *
- * Usage:
- *   SyntheticDataDialog dlg = new SyntheticDataDialog();
- *   Optional<SyntheticDataDialog.Result> out = dlg.showAndWait();
- *   out.ifPresent(r -> {
- *     switch (r.kind()) {
- *       case SIMILARITY_MATRIX, DIVERGENCE_MATRIX -> {
- *           double[][] M = r.matrix().matrix;
- *           List<String> labels = r.matrix().labels;
- *           // set heatmap, etc.
- *       }
- *       case COHORTS -> {
- *           List<FeatureVector> A = r.cohorts().cohortA;
- *           List<FeatureVector> B = r.cohorts().cohortB;
- *           // set cohorts in PairwiseMatrixView, etc.
- *       }
- *     }
- *   });
+ * New: You can optionally attach cohorts to any generated matrix so
+ * PairwiseMatrixView can render JPDF/ΔPDF even without real data.
  */
 public final class SyntheticDataDialog extends Dialog<SyntheticDataDialog.Result> {
 
@@ -131,6 +117,17 @@ public final class SyntheticDataDialog extends Dialog<SyntheticDataDialog.Result
     private final TextField simNoise = tf("0.02", 80);
     private final TextField simSeed = tf("42", 120);
 
+    // Similarity: optional cohorts
+    private final CheckBox simAttachCohorts = new CheckBox("Attach cohorts (Gaussian A vs Uniform B)");
+    private final TextField simCohN = tf("400", 100);
+    private final TextField simCohMu = tf("0.0", 80);
+    private final TextField simCohSigma = tf("1.0", 80);
+    private final TextField simCohMin = tf("-2.0", 80);
+    private final TextField simCohMax = tf("2.0", 80);
+    private final TextField simCohSeedA = tf("100", 120);
+    private final TextField simCohSeedB = tf("101", 120);
+    private VBox simCohSection; // toggled
+
     // Divergence tab controls
     private final TextField divSizes = tf("10,10,10", 160);
     private final TextField divWithin = tf("0.10", 80);
@@ -138,7 +135,19 @@ public final class SyntheticDataDialog extends Dialog<SyntheticDataDialog.Result
     private final TextField divNoise = tf("0.02", 80);
     private final TextField divSeed = tf("46", 120);
 
-    // Cohorts tab controls (Gaussian vs Uniform)
+    // Divergence: optional cohorts
+    private final CheckBox divAttachCohorts = new CheckBox("Attach cohorts (Gaussian A vs Uniform B)");
+    private final TextField divCohN = tf("400", 100);
+    private final TextField divCohD = tf("16", 100);
+    private final TextField divCohMu = tf("0.0", 80);
+    private final TextField divCohSigma = tf("1.0", 80);
+    private final TextField divCohMin = tf("-2.0", 80);
+    private final TextField divCohMax = tf("2.0", 80);
+    private final TextField divCohSeedA = tf("100", 120);
+    private final TextField divCohSeedB = tf("101", 120);
+    private VBox divCohSection; // toggled
+
+    // Cohorts tab controls (standalone)
     private final TextField cohN = tf("200", 100);
     private final TextField cohD = tf("16", 100);
     private final TextField cohMu = tf("0.0", 80);
@@ -182,8 +191,9 @@ public final class SyntheticDataDialog extends Dialog<SyntheticDataDialog.Result
                         default -> null;
                     };
                 } catch (Throwable t) {
-                    // Show an inline alert so users know why it failed
-                    Alert a = new Alert(Alert.AlertType.ERROR, "Build failed: " + t.getClass().getSimpleName() + " – " + String.valueOf(t.getMessage()), ButtonType.OK);
+                    Alert a = new Alert(Alert.AlertType.ERROR,
+                            "Build failed: " + t.getClass().getSimpleName() + " – " + String.valueOf(t.getMessage()),
+                            ButtonType.OK);
                     a.showAndWait();
                     return null;
                 }
@@ -198,10 +208,25 @@ public final class SyntheticDataDialog extends Dialog<SyntheticDataDialog.Result
         simKind.getItems().addAll("2 Clusters", "K Clusters", "Ring", "Grid");
         simKind.getSelectionModel().selectFirst();
 
-        // Cluster sizes hint
-        Label hintSizes = new Label("K Cluster sizes (csv):");
         HBox sizesRow = new HBox(8, new Label("Sizes (csv)"), simSizes);
         sizesRow.setAlignment(Pos.CENTER_LEFT);
+
+        // Cohort section (hidden unless checkbox selected)
+        simAttachCohorts.setSelected(false);
+        simCohSection = section("Attach Cohorts (optional)",
+                row("N (vectors)", simCohN),
+                row("Gaussian A (μ, σ)", new HBox(6, simCohMu, simCohSigma)),
+                row("Uniform B [min, max]", new HBox(6, simCohMin, simCohMax)),
+                row("Seed A / B", new HBox(6, simCohSeedA, simCohSeedB))
+        );
+        simCohSection.setDisable(true);
+        simCohSection.setOpacity(0.45);
+
+        simAttachCohorts.setOnAction(e -> {
+            boolean on = simAttachCohorts.isSelected();
+            simCohSection.setDisable(!on);
+            simCohSection.setOpacity(on ? 1.0 : 0.45);
+        });
 
         VBox top = new VBox(10,
             section("Structure",
@@ -219,7 +244,10 @@ public final class SyntheticDataDialog extends Dialog<SyntheticDataDialog.Result
             ),
             section("Random",
                 row("Seed", simSeed)
-            )
+            ),
+            new Separator(),
+            row("", simAttachCohorts),
+            simCohSection
         );
         top.setPadding(new Insets(8));
         return new ScrollPane(top);
@@ -257,6 +285,21 @@ public final class SyntheticDataDialog extends Dialog<SyntheticDataDialog.Result
             }
             default -> throw new IllegalArgumentException("Unsupported similarity kind: " + kind);
         }
+
+        if (simAttachCohorts.isSelected()) {
+            int N = ival(simCohN, 400);
+            int D = sm.matrix.length; // match feature dimension to matrix size
+            double mu = dval(simCohMu, 0.0);
+            double sigma = dval(simCohSigma, 1.0);
+            double min = dval(simCohMin, -2.0);
+            double max = dval(simCohMax, 2.0);
+            long seedA = lval(simCohSeedA, 100L);
+            long seedB = lval(simCohSeedB, 101L);
+
+            Cohorts c = SyntheticMatrixFactory.makeCohorts_GaussianVsUniform(N, D, mu, sigma, min, max, seedA, seedB);
+            sm = sm.withCohorts(c.cohortA, c.cohortB).withTitle(" + Cohorts(Gauss μ=" + mu + ",σ=" + sigma + " vs Uniform[" + min + "," + max + "], N=" + N + ")");
+        }
+
         return Result.similarity(sm);
     }
 
@@ -264,6 +307,24 @@ public final class SyntheticDataDialog extends Dialog<SyntheticDataDialog.Result
     // Divergence tab
     // ------------------------------
     private Node buildDivergenceContent() {
+        // Cohort section (hidden unless checkbox selected)
+        divAttachCohorts.setSelected(false);
+        divCohSection = section("Attach Cohorts (optional)",
+                row("N (vectors)", divCohN),
+                row("D (dimensions)", divCohD),
+                row("Gaussian A (μ, σ)", new HBox(6, divCohMu, divCohSigma)),
+                row("Uniform B [min, max]", new HBox(6, divCohMin, divCohMax)),
+                row("Seed A / B", new HBox(6, divCohSeedA, divCohSeedB))
+        );
+        divCohSection.setDisable(true);
+        divCohSection.setOpacity(0.45);
+
+        divAttachCohorts.setOnAction(e -> {
+            boolean on = divAttachCohorts.isSelected();
+            divCohSection.setDisable(!on);
+            divCohSection.setOpacity(on ? 1.0 : 0.45);
+        });
+
         VBox top = new VBox(10,
             section("Cluster Sizes",
                 row("Sizes (csv)", divSizes)
@@ -275,7 +336,10 @@ public final class SyntheticDataDialog extends Dialog<SyntheticDataDialog.Result
             ),
             section("Random",
                 row("Seed", divSeed)
-            )
+            ),
+            new Separator(),
+            row("", divAttachCohorts),
+            divCohSection
         );
         top.setPadding(new Insets(8));
         return new ScrollPane(top);
@@ -287,12 +351,28 @@ public final class SyntheticDataDialog extends Dialog<SyntheticDataDialog.Result
         double between = dval(divBetween, 0.90);
         double noise = dval(divNoise, 0.02);
         long seed = lval(divSeed, 46L);
+
         SyntheticMatrix sm = SyntheticMatrixFactory.threeClustersDivergence(sizes, within, between, noise, seed);
+
+        if (divAttachCohorts.isSelected()) {
+            int N = ival(divCohN, 400);
+            int D = ival(divCohD, 16);
+            double mu = dval(divCohMu, 0.0);
+            double sigma = dval(divCohSigma, 1.0);
+            double min = dval(divCohMin, -2.0);
+            double max = dval(divCohMax, 2.0);
+            long seedA = lval(divCohSeedA, 100L);
+            long seedB = lval(divCohSeedB, 101L);
+
+            Cohorts c = SyntheticMatrixFactory.makeCohorts_GaussianVsUniform(N, D, mu, sigma, min, max, seedA, seedB);
+            sm = sm.withCohorts(c.cohortA, c.cohortB).withTitle(" + Cohorts(Gauss μ=" + mu + ",σ=" + sigma + " vs Uniform[" + min + "," + max + "], N=" + N + ", D=" + D + ")");
+        }
+
         return Result.divergence(sm);
     }
 
     // ------------------------------
-    // Cohorts tab
+    // Cohorts tab (standalone)
     // ------------------------------
     private Node buildCohortsContent() {
         VBox top = new VBox(10,

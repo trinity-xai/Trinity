@@ -21,6 +21,7 @@ import edu.jhuapl.trinity.utils.statistics.PairwiseMatrixConfigPanel.Request;
 import edu.jhuapl.trinity.utils.statistics.PairwiseMatrixEngine;
 import edu.jhuapl.trinity.utils.statistics.PairwiseMatrixEngine.MatrixResult;
 import edu.jhuapl.trinity.utils.statistics.StatisticEngine;
+import edu.jhuapl.trinity.utils.statistics.SyntheticMatrixFactory;
 import edu.jhuapl.trinity.utils.statistics.SyntheticMatrixFactory.SyntheticMatrix;
 import java.util.ArrayList;
 import java.util.List;
@@ -49,7 +50,8 @@ import javafx.scene.layout.VBox;
  * Runs PairwiseMatrixEngine to produce Similarity/Divergence matrices.
  * Also renders per-cell JPDF surfaces (Similarity) or ΔPDF (Divergence) into Hypersurface3DPane.
  *
- * This version reuses your existing Jpdf pipeline (JpdfBatchEngine/JpdfRecipe).
+ * This version reuses your existing Jpdf pipeline and supports synthetic matrices by
+ * adopting fallback cohorts (carried by SyntheticMatrix) when needed.
  */
 public final class PairwiseMatrixView extends BorderPane {
 
@@ -83,6 +85,12 @@ public final class PairwiseMatrixView extends BorderPane {
     private String cohortALabel = "A";
     private String cohortBLabel = "B";
     private final DensityCache cache;
+
+    // If user loaded a synthetic matrix, we may get underlying vectors—stash them here.
+    private List<FeatureVector> fallbackCohortA;
+    private List<FeatureVector> fallbackCohortB;
+
+    // What the current heatmap represents (used to pick weight mapping for graph)
     MatrixToGraphAdapter.MatrixKind currentMatrixKind = MatrixToGraphAdapter.MatrixKind.SIMILARITY;
 
     // --- Hooks
@@ -100,7 +108,7 @@ public final class PairwiseMatrixView extends BorderPane {
         // Compact column labels: show indices only
         this.heatmap.setCompactColumnLabels(true);
 
-        // Cell click → render JPDF (Similarity) or ΔPDF (Divergence) via existing Jpdf pipeline
+        // Cell click → render JPDF (Similarity) or ΔPDF (Divergence)
         this.heatmap.setOnCellClick(click -> {
             if (click == null) return;
 
@@ -108,12 +116,21 @@ public final class PairwiseMatrixView extends BorderPane {
                 Request effective = getLastRequestOrBuild();
                 if (effective == null) {
                     toast("No configuration to render (run once or provide defaults).", true);
-                } else if (cohortA == null || cohortA.isEmpty()) {
-                    toast("Cohort A is empty. Load or set vectors first.", true);
                 } else {
+                    // Adopt fallback cohorts if needed based on the expected mode
+                    ensureCohortsFromFallbackIfAvailable(effective.mode == Mode.DIVERGENCE);
+
                     if (effective.mode == Mode.SIMILARITY) {
+                        if (cohortA == null || cohortA.isEmpty()) {
+                            toast("Cohort A is empty and no synthetic cohorts were provided.", true);
+                            return;
+                        }
                         renderPdfForCellUsingEngine(click.row, click.col, effective);
                     } else {
+                        if (cohortA == null || cohortA.isEmpty() || cohortB == null || cohortB.isEmpty()) {
+                            toast("Cohorts A/B are empty and no synthetic cohorts were provided.", true);
+                            return;
+                        }
                         renderDeltaPdfForCellUsingEngine(click.row, click.col, effective);
                     }
                 }
@@ -133,7 +150,7 @@ public final class PairwiseMatrixView extends BorderPane {
         collapseBtn = new Button("Collapse Controls");
         collapseBtn.setOnAction(e -> toggleControlsCollapsed());
 
-        // Actions menu (placeholder for future save/load/export)
+        // Actions menu
         actionsBtn = buildActionsMenu();
 
         // Slim toolbar (left = buttons; right = progress text)
@@ -221,7 +238,7 @@ public final class PairwiseMatrixView extends BorderPane {
     public MatrixHeatmapView getHeatmapView() { return heatmap; }
     public SplitPane getSplitPane() { return splitPane; }
 
-    /**send toast/status to Terminal/Console integration. */
+    /** send toast/status to Terminal/Console integration. */
     public void setToastHandler(Consumer<String> handler) { this.toastHandler = handler; }
 
     /** observe cell clicks from the heatmap. */
@@ -302,6 +319,9 @@ public final class PairwiseMatrixView extends BorderPane {
                         heatmap.setMatrix(result.matrix);
                         heatmap.setRowLabels(result.labels);
                         heatmap.setColLabels(result.labels);
+                        currentMatrixKind = (req.mode == Mode.SIMILARITY)
+                                ? MatrixToGraphAdapter.MatrixKind.SIMILARITY
+                                : MatrixToGraphAdapter.MatrixKind.DIVERGENCE;
                         toast((result.title != null ? result.title + " — " : "") +
                                 "N=" + result.matrix.length + "; wall=" + wall + " ms.", false);
                     }
@@ -329,6 +349,8 @@ public final class PairwiseMatrixView extends BorderPane {
 
     public void renderPdfForCellUsingEngine(int i, int j, Request req) {
         if (req == null) { toast("No configuration available to build JPDF.", true); return; }
+        // Adopt fallbacks if present
+        ensureCohortsFromFallbackIfAvailable(false);
         if (cohortA == null || cohortA.isEmpty()) { toast("Cohort A is empty.", true); return; }
 
         // (1) Build a single-pair whitelist recipe from the current request
@@ -363,55 +385,57 @@ public final class PairwiseMatrixView extends BorderPane {
     // ---------------------------------------------------------------------
     // Cell-click → ΔPDF surface (Divergence: A − B)
     // ---------------------------------------------------------------------
-private void renderDeltaPdfForCellUsingEngine(int i, int j, Request req) {
-    if (req == null) { toast("No configuration available to build ΔPDF.", true); return; }
-    if (cohortA == null || cohortA.isEmpty()) { toast("Cohort A is empty.", true); return; }
-    if (cohortB == null || cohortB.isEmpty()) { toast("Cohort B is empty.", true); return; }
+    private void renderDeltaPdfForCellUsingEngine(int i, int j, Request req) {
+        if (req == null) { toast("No configuration available to build ΔPDF.", true); return; }
+        // Adopt fallbacks if present
+        ensureCohortsFromFallbackIfAvailable(true);
+        if (cohortA == null || cohortA.isEmpty()) { toast("Cohort A is empty.", true); return; }
+        if (cohortB == null || cohortB.isEmpty()) { toast("Cohort B is empty.", true); return; }
 
-    // (1) Pair-specific recipe (single pair via WHITELIST)
-    JpdfRecipe recipe = buildSinglePairWhitelistRecipe(req, i, j);
+        // (1) Pair-specific recipe (single pair via WHITELIST)
+        JpdfRecipe recipe = buildSinglePairWhitelistRecipe(req, i, j);
 
-    // (2) Resolve policy + cache
-    CanonicalGridPolicy policy = resolveCanonicalPolicy(recipe);
-    DensityCache useCache = resolveDensityCache();
+        // (2) Resolve policy + cache
+        CanonicalGridPolicy policy = resolveCanonicalPolicy(recipe);
+        DensityCache useCache = resolveDensityCache();
 
-    // (3) Run A and B separately, grab the single job result from each batch
-    JpdfBatchEngine.BatchResult batchA =
-        JpdfBatchEngine.runWhitelistPairs(cohortA, recipe, policy, useCache);
-    JpdfBatchEngine.BatchResult batchB =
-        JpdfBatchEngine.runWhitelistPairs(cohortB, recipe, policy, useCache);
+        // (3) Run A and B separately, grab the single job result from each batch
+        JpdfBatchEngine.BatchResult batchA =
+            JpdfBatchEngine.runWhitelistPairs(cohortA, recipe, policy, useCache);
+        JpdfBatchEngine.BatchResult batchB =
+            JpdfBatchEngine.runWhitelistPairs(cohortB, recipe, policy, useCache);
 
-    if (batchA.jobs.isEmpty() || batchB.jobs.isEmpty()
-        || batchA.jobs.get(0).density == null || batchB.jobs.get(0).density == null) {
-        toast("Could not compute ΔPDF for (" + i + "," + j + ").", true);
-        return;
+        if (batchA.jobs.isEmpty() || batchB.jobs.isEmpty()
+            || batchA.jobs.get(0).density == null || batchB.jobs.get(0).density == null) {
+            toast("Could not compute ΔPDF for (" + i + "," + j + ").", true);
+            return;
+        }
+
+        GridDensityResult a = batchA.jobs.get(0).density;
+        GridDensityResult b = batchB.jobs.get(0).density;
+
+        // (4) Align grids if necessary; then out = A.pdf - B.pdf
+        double[] ax = a.getxCenters(), ay = a.getyCenters();
+        double[] bx = b.getxCenters(), by = b.getyCenters();
+
+        List<List<Double>> out;
+        if (sameCenters(ax, bx) && sameCenters(ay, by)) {
+            out = subtract(a.pdfAsListGrid(), b.pdfAsListGrid());
+        } else {
+            out = subtract(a.pdfAsListGrid(), bilinearResample(b.pdfAsListGrid(), bx, by, ax, ay));
+        }
+
+        // (5) Render into Hypersurface3DPane (your working event)
+        getScene().getRoot().fireEvent(new HypersurfaceGridEvent(
+            HypersurfaceGridEvent.RENDER_PDF,
+            out,
+            ax,
+            ay,
+            "Comp " + Math.min(i, j) + " | Comp " + Math.max(i, j) + " (ΔPDF A−B)"
+        ));
+
+        toast("Rendered ΔPDF (A−B) for pair (" + i + "," + j + ").", false);
     }
-
-    GridDensityResult a = batchA.jobs.get(0).density;
-    GridDensityResult b = batchB.jobs.get(0).density;
-
-    // (4) Align grids if necessary; then out = A.pdf - B.pdf
-    double[] ax = a.getxCenters(), ay = a.getyCenters();
-    double[] bx = b.getxCenters(), by = b.getyCenters();
-
-    List<List<Double>> out;
-    if (sameCenters(ax, bx) && sameCenters(ay, by)) {
-        out = subtract(a.pdfAsListGrid(), b.pdfAsListGrid());
-    } else {
-        out = subtract(a.pdfAsListGrid(), bilinearResample(b.pdfAsListGrid(), bx, by, ax, ay));
-    }
-
-    // (5) Render into Hypersurface3DPane (your working event)
-    getScene().getRoot().fireEvent(new HypersurfaceGridEvent(
-        HypersurfaceGridEvent.RENDER_PDF,
-        out,
-        ax,
-        ay,
-        "Comp " + Math.min(i, j) + " | Comp " + Math.max(i, j) + " (ΔPDF A−B)"
-    ));
-
-    toast("Rendered ΔPDF (A−B) for pair (" + i + "," + j + ").", false);
-}
 
     // ---------------------------------------------------------------------
     // Graph build actions
@@ -471,8 +495,9 @@ private void renderDeltaPdfForCellUsingEngine(int i, int j, Request req) {
         MenuItem cohortsByLabel = new MenuItem("Derive A/B by vector label…");
         cohortsByLabel.setOnAction(e -> promptDeriveCohortsByLabel());
 
+        // Synthetic Data Controller
         MenuItem syntheticDataDialogItem = new MenuItem("Synthetic Data Controller");
-        syntheticDataDialogItem.setOnAction(e -> { 
+        syntheticDataDialogItem.setOnAction(e -> {
             SyntheticDataDialog dlg = new SyntheticDataDialog();
             dlg.initOwner(getScene().getWindow());
             dlg.showAndWait().ifPresent(res -> {
@@ -490,6 +515,7 @@ private void renderDeltaPdfForCellUsingEngine(int i, int j, Request req) {
 
         return mb;
     }
+
     public void triggerGraphBuildWithParams(GraphLayoutParams layout) {
         double[][] M = currentMatrix();
         if (M == null || M.length == 0) { toast("No matrix to build a graph from.", true); return; }
@@ -519,102 +545,129 @@ private void renderDeltaPdfForCellUsingEngine(int i, int j, Request req) {
         Thread th = new Thread(task, "BuildGraphFromMatrixTask"); th.setDaemon(true); th.start();
     }
 
-private void triggerGraphBuild(MatrixToGraphAdapter.MatrixKind kind) {
-    currentMatrixKind = kind;
-    GraphLayoutParams layout = new GraphLayoutParams()
-            .withKind(GraphLayoutParams.LayoutKind.MDS_3D) // or FORCE_FR, etc.
-            .withRadius(600)
-            .withEdgePolicy(GraphLayoutParams.EdgePolicy.KNN)
-            .withKnnK(8)
-            .withKnnSymmetrize(true)
-            .withMaxEdges(5000)
-            .withMaxDegreePerNode(32)
-            .withNormalizeWeights01(true);
+    private void triggerGraphBuild(MatrixToGraphAdapter.MatrixKind kind) {
+        currentMatrixKind = kind;
+        GraphLayoutParams layout = new GraphLayoutParams()
+                .withKind(GraphLayoutParams.LayoutKind.MDS_3D) // or FORCE_FR, etc.
+                .withRadius(600)
+                .withEdgePolicy(GraphLayoutParams.EdgePolicy.KNN)
+                .withKnnK(8)
+                .withKnnSymmetrize(true)
+                .withMaxEdges(5000)
+                .withMaxDegreePerNode(32)
+                .withNormalizeWeights01(true);
 
-    triggerGraphBuildWithParams(layout);
-}
+        triggerGraphBuildWithParams(layout);
+    }
 
     // ---------------------------------------------------------------------
-    // Synthetic cohort helpers
+    // Synthetic matrix & cohort helpers
     // ---------------------------------------------------------------------
-/** Load a synthetic matrix (similarity or divergence) into the heatmap. */
-public void loadSyntheticMatrix(SyntheticMatrix sm) {
-    if (sm == null || sm.matrix == null || sm.matrix.length == 0) {
-        toast("Synthetic matrix is empty.", true);
-        heatmap.setMatrix((double[][]) null);
-        return;
+
+    /** Load a synthetic matrix (similarity or divergence) into the heatmap and stash fallback cohorts if provided. */
+    public void loadSyntheticMatrix(SyntheticMatrix sm) {
+        if (sm == null || sm.matrix == null || sm.matrix.length == 0) {
+            toast("Synthetic matrix is empty.", true);
+            heatmap.setMatrix((double[][]) null);
+            return;
+        }
+
+        // Map factory kind to adapter kind
+        this.currentMatrixKind = (sm.kind == MatrixToGraphAdapter.MatrixKind.DIVERGENCE)
+                ? MatrixToGraphAdapter.MatrixKind.DIVERGENCE
+                : MatrixToGraphAdapter.MatrixKind.SIMILARITY;
+
+        // Render the matrix
+        heatmap.setMatrix(sm.matrix);
+        if (sm.labels != null && !sm.labels.isEmpty()) {
+            heatmap.setRowLabels(sm.labels);
+            heatmap.setColLabels(sm.labels);
+        } else {
+            // fallback label set
+            List<String> labels = new java.util.ArrayList<>(sm.matrix.length);
+            for (int i = 0; i < sm.matrix.length; i++) labels.add("F" + i);
+            heatmap.setRowLabels(labels);
+            heatmap.setColLabels(labels);
+        }
+
+        // Palette + range defaults based on kind
+        applyHeatmapDefaultsFor(this.currentMatrixKind, sm.matrix);
+
+        // Stash possible underlying vectors as *fallback* cohorts
+        this.fallbackCohortA = sm.cohortA != null ? new ArrayList<>(sm.cohortA) : null;
+        this.fallbackCohortB = sm.cohortB != null ? new ArrayList<>(sm.cohortB) : null;
+
+        // If user hasn't loaded cohorts yet, adopt the fallbacks now (keeps UX simple)
+        if ((cohortA == null || cohortA.isEmpty()) && fallbackCohortA != null) {
+            setCohortA(fallbackCohortA, "A");
+        }
+        if ((cohortB == null || cohortB.isEmpty()) && fallbackCohortB != null) {
+            setCohortB(fallbackCohortB, "B");
+        }
+
+        String title = (sm.title != null && !sm.title.isBlank()) ? sm.title : "Synthetic";
+        toast(title + " — N=" + sm.matrix.length + " loaded.", false);
     }
 
-    // Render the matrix
-    heatmap.setMatrix(sm.matrix);
-    if (sm.labels != null && !sm.labels.isEmpty()) {
-        heatmap.setRowLabels(sm.labels);
-        heatmap.setColLabels(sm.labels);
-    } else {
-        // fallback label set
-        List<String> labels = new java.util.ArrayList<>(sm.matrix.length);
-        for (int i = 0; i < sm.matrix.length; i++) labels.add("F" + i);
-        heatmap.setRowLabels(labels);
-        heatmap.setColLabels(labels);
+    /** Convenience: set both cohorts at once with labels. */
+    public void setCohorts(List<FeatureVector> a, String labelA, List<FeatureVector> b, String labelB) {
+        setCohortA(a, labelA);
+        setCohortB(b, labelB);
+        int na = (a == null ? 0 : a.size());
+        int nb = (b == null ? 0 : b.size());
+        toast("Cohorts set: A=" + labelA + " (" + na + "), B=" + labelB + " (" + nb + ")", false);
     }
 
-    // Palette + range defaults based on kind
-    applyHeatmapDefaultsFor(sm.kind, sm.matrix);
-
-    // Nice toast
-    String title = (sm.title != null && !sm.title.isBlank()) ? sm.title : "Synthetic";
-    toast(title + " — N=" + sm.matrix.length + " loaded.", false);
-}
-
-/** Convenience: set both cohorts at once with labels. */
-public void setCohorts(List<FeatureVector> a, String labelA, List<FeatureVector> b, String labelB) {
-    setCohortA(a, labelA);
-    setCohortB(b, labelB);
-    int na = (a == null ? 0 : a.size());
-    int nb = (b == null ? 0 : b.size());
-    toast("Cohorts set: A=" + labelA + " (" + na + "), B=" + labelB + " (" + nb + ")", false);
-}
-
-/** Convenience overload with default labels. */
-public void setCohorts(List<FeatureVector> a, List<FeatureVector> b) {
-    setCohorts(a, "A", b, "B");
-}
-
-/* ---------- helpers ---------- */
-
-private void applyHeatmapDefaultsFor(MatrixToGraphAdapter.MatrixKind kind, double[][] M) {
-    // Legend ON, auto range ON
-    heatmap.setShowLegend(true);
-    heatmap.setAutoRange(true);
-
-    // Palette: Similarity -> sequential; Divergence -> diverging centered at mid-range
-    if (kind == MatrixToGraphAdapter.MatrixKind.DIVERGENCE) {
-        double[] mm = minMax(M);
-        double center = (mm[0] + mm[1]) * 0.5;
-        heatmap.useDivergingPalette(center);
-    } else {
-        heatmap.useSequentialPalette();
+    /** Convenience overload with default labels. */
+    public void setCohorts(List<FeatureVector> a, List<FeatureVector> b) {
+        setCohorts(a, "A", b, "B");
     }
-}
 
-/** Returns [min,max] over finite entries. */
-private static double[] minMax(double[][] M) {
-    double min = Double.POSITIVE_INFINITY, max = Double.NEGATIVE_INFINITY;
-    for (int i = 0; i < M.length; i++) {
-        double[] row = M[i];
-        for (int j = 0; j < row.length; j++) {
-            double v = row[j];
-            if (Double.isFinite(v)) {
-                if (v < min) min = v;
-                if (v > max) max = v;
-            }
+    /** If cohorts are empty but fallbacks are available (from synthetic data), adopt them. */
+    private void ensureCohortsFromFallbackIfAvailable(boolean needB) {
+        if ((cohortA == null || cohortA.isEmpty()) && fallbackCohortA != null) {
+            setCohortA(fallbackCohortA, (cohortALabel == null || cohortALabel.isBlank()) ? "A" : cohortALabel);
+        }
+        if (needB && (cohortB == null || cohortB.isEmpty()) && fallbackCohortB != null) {
+            setCohortB(fallbackCohortB, (cohortBLabel == null || cohortBLabel.isBlank()) ? "B" : cohortBLabel);
         }
     }
-    if (!(max > min)) { // degenerate
-        min = 0.0; max = 1.0;
+
+    /* ---------- internal helpers ---------- */
+
+    private void applyHeatmapDefaultsFor(MatrixToGraphAdapter.MatrixKind kind, double[][] M) {
+        // Legend ON, auto range ON
+        heatmap.setShowLegend(true);
+        heatmap.setAutoRange(true);
+
+        // Palette: Similarity -> sequential; Divergence -> diverging centered at mid-range
+        if (kind == MatrixToGraphAdapter.MatrixKind.DIVERGENCE) {
+            double[] mm = minMax(M);
+            double center = (mm[0] + mm[1]) * 0.5;
+            heatmap.useDivergingPalette(center);
+        } else {
+            heatmap.useSequentialPalette();
+        }
     }
-    return new double[]{min, max};
-}
+
+    /** Returns [min,max] over finite entries. */
+    private static double[] minMax(double[][] M) {
+        double min = Double.POSITIVE_INFINITY, max = Double.NEGATIVE_INFINITY;
+        for (int i = 0; i < M.length; i++) {
+            double[] row = M[i];
+            for (int j = 0; j < row.length; j++) {
+                double v = row[j];
+                if (Double.isFinite(v)) {
+                    if (v < min) min = v;
+                    if (v > max) max = v;
+                }
+            }
+        }
+        if (!(max > min)) { // degenerate
+            min = 0.0; max = 1.0;
+        }
+        return new double[]{min, max};
+    }
 
     private List<FeatureVector> synthGaussianLikeA(List<FeatureVector> likeA, double mean, double stddev) {
         int n = likeA.size();

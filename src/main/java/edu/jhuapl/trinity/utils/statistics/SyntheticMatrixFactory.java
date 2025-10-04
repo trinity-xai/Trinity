@@ -28,6 +28,7 @@ import java.util.Random;
  *  - List<Integer> clusterIds (optional ground-truth: cluster index, -1 if not applicable)
  *  - MatrixKind (SIMILARITY or DIVERGENCE)
  *  - title (brief description)
+ *  - OPTIONAL: cohortA / cohortB (if you attach them)
  *
  * Notes:
  *  - Similarity matrices are normalized to [0,1], symmetric, and have 1.0 on the diagonal.
@@ -51,16 +52,45 @@ public final class SyntheticMatrixFactory {
         public final MatrixToGraphAdapter.MatrixKind kind;
         public final String title;
 
+        /** Optional cohorts (may be null). If present, PairwiseMatrixView can fall back to them for JPDF/ΔPDF. */
+        public final List<FeatureVector> cohortA;
+        public final List<FeatureVector> cohortB;
+
         public SyntheticMatrix(double[][] matrix,
                                List<String> labels,
                                List<Integer> clusterIds,
                                MatrixToGraphAdapter.MatrixKind kind,
                                String title) {
+            this(matrix, labels, clusterIds, kind, title, null, null);
+        }
+
+        public SyntheticMatrix(double[][] matrix,
+                               List<String> labels,
+                               List<Integer> clusterIds,
+                               MatrixToGraphAdapter.MatrixKind kind,
+                               String title,
+                               List<FeatureVector> cohortA,
+                               List<FeatureVector> cohortB) {
             this.matrix = matrix;
             this.labels = labels;
             this.clusterIds = clusterIds;
             this.kind = kind;
             this.title = title;
+            this.cohortA = cohortA;
+            this.cohortB = cohortB;
+        }
+
+        /** Return a copy of this SyntheticMatrix with cohorts attached (immutably). */
+        public SyntheticMatrix withCohorts(List<FeatureVector> a, List<FeatureVector> b) {
+            return new SyntheticMatrix(matrix, labels, clusterIds, kind, title,
+                    a != null ? new ArrayList<>(a) : null,
+                    b != null ? new ArrayList<>(b) : null);
+        }
+
+        /** Return a copy with a modified title (e.g., to annotate how cohorts were produced). */
+        public SyntheticMatrix withTitle(String extra) {
+            String t = (extra == null || extra.isBlank()) ? title : (title + " — " + extra);
+            return new SyntheticMatrix(matrix, labels, clusterIds, kind, t, cohortA, cohortB);
         }
     }
 

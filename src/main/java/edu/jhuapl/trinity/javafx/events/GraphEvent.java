@@ -30,9 +30,16 @@ public class GraphEvent extends Event {
     public static final EventType<GraphEvent> SET_EDGE_COLOR_GUI = new EventType<>(ANY, "SET_EDGE_COLOR_GUI");
     public static final EventType<GraphEvent> SET_EDGE_WIDTH_GUI = new EventType<>(ANY, "SET_EDGE_WIDTH_GUI");
     public static final EventType<GraphEvent> SET_EDGE_OPACITY_GUI = new EventType<>(ANY, "SET_EDGE_OPACITY_GUI");
-
     // Optional: coarse-grained hydrate — model → UI
     public static final EventType<GraphEvent> SET_STYLE_GUI = new EventType<>(ANY, "SET_STYLE_GUI");
+    // Interaction / inspect
+    public static final EventType<GraphEvent> GRAPH_NODE_HOVER = new EventType<>(ANY, "GRAPH_NODE_HOVER");
+    public static final EventType<GraphEvent> GRAPH_NODE_CLICK = new EventType<>(ANY, "GRAPH_NODE_CLICK");
+    public static final EventType<GraphEvent> GRAPH_EDGE_HOVER = new EventType<>(ANY, "GRAPH_EDGE_HOVER");
+    public static final EventType<GraphEvent> GRAPH_EDGE_CLICK = new EventType<>(ANY, "GRAPH_EDGE_CLICK");
+    // Graph overlay visibility
+    public static final EventType<GraphEvent> GRAPH_VISIBILITY_CHANGED = new EventType<>(ANY, "GRAPH_VISIBILITY_CHANGED");
+    public static final EventType<GraphEvent> SET_GRAPH_VISIBILITY_GUI = new EventType<>(ANY, "SET_GRAPH_VISIBILITY_GUI");
 
     public GraphEvent(EventType<? extends Event> arg0) { super(arg0); }
     public GraphEvent(EventType<? extends Event> arg0, Object arg1) { this(arg0); object = arg1; }
