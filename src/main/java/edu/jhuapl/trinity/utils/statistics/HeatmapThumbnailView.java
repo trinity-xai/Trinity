@@ -1,5 +1,7 @@
 package edu.jhuapl.trinity.utils.statistics;
 
+import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
 import java.util.Objects;
 
@@ -14,25 +16,19 @@ import javafx.scene.paint.Color;
 
 /**
  * HeatmapThumbnailView
- * --------------------
- * Lightweight JavaFX view that renders a small 2D grid (e.g., PDF/CDF or diff surface)
- * to a Canvas using a fast PixelWriter-based mapper. Designed for thumbnail/overview use.
- *
- * Features:
- *  - Accepts List<List<Double>> or GridDensityResult (choose PDF or CDF).
- *  - Sequential or diverging color palette (diverging supports center value).
- *  - Auto or fixed value range; optional Y-flip for row-major grids.
- *  - Optional slim legend bar with min/center/max tick labels.
- *
- * Notes:
- *  - This view is not interactive; wrap it if you need selection/hover.
- *  - For very large grids, downsampling happens naturally by Canvas scaling.
- *
- * @author Sean Phillips
+ * See changelog in header of this file revision:
+ *  - legend placement fixed (managed=false)
+ *  - palette schemes added
+ *  - minAlphaAtVmin allows background to show through low-end values
  */
 public final class HeatmapThumbnailView extends StackPane {
 
     public enum PaletteKind { SEQUENTIAL, DIVERGING }
+
+    /** Named color ramps. */
+    public enum PaletteScheme {
+        VIRIDIS, INFERNO, MAGMA, PLASMA, CIVIDIS, TURBO, BLUE_YELLOW, GREYS
+    }
 
     // --- View components ---
     private final Canvas canvas = new Canvas(180, 120); // default size; resizable
@@ -52,11 +48,26 @@ public final class HeatmapThumbnailView extends StackPane {
     // --- Palette ---
     private PaletteKind palette = PaletteKind.SEQUENTIAL;
     private double divergingCenter = 0.0; // used when palette == DIVERGING
+    private PaletteScheme seqScheme = PaletteScheme.VIRIDIS;
+    private PaletteScheme divScheme = PaletteScheme.BLUE_YELLOW; // base hues for halves
+
+    // --- Appearance ---
+    private Color backgroundColor = Color.BLACK;
+    private boolean imageSmoothing = true;
+    private double gamma = 1.0;
+    private double clipLowPct = 0.0;
+    private double clipHighPct = 0.0;
+    /** Alpha to use at v=vmin after gamma (0..1). 1.0 = opaque low-end; 0.0 = fully transparent. */
+    private double minAlphaAtVmin = 1.0;
 
     public HeatmapThumbnailView() {
         getChildren().add(canvas);
         getChildren().add(legend);
         setPadding(contentPadding);
+
+        // Important: StackPane ignores relocate() for managed children. Disable layout management.
+        canvas.setManaged(false);
+        legend.setManaged(false);
 
         // Relayout & redraw on size changes
         widthProperty().addListener(this::onSize);
@@ -71,14 +82,12 @@ public final class HeatmapThumbnailView extends StackPane {
     // Public API
     // =====================================================================================
 
-    /** Set the underlying grid (row-major), and request redraw. */
     public void setGrid(List<List<Double>> grid) {
         this.grid = grid;
         if (autoRange) recomputeRange();
         redraw();
     }
 
-    /** Convenience to set from a GridDensityResult (choose PDF or CDF). */
     public void setFromGridDensity(GridDensityResult res, boolean useCDF, boolean flipY) {
         Objects.requireNonNull(res, "GridDensityResult");
         List<List<Double>> g = useCDF ? res.cdfAsListGrid() : res.pdfAsListGrid();
@@ -86,26 +95,26 @@ public final class HeatmapThumbnailView extends StackPane {
         setGrid(g);
     }
 
-    /** Flip Y axis (top row drawn at bottom when true). */
-    public void setFlipY(boolean flip) {
-        this.flipY = flip;
-        redraw();
-    }
+    public void setFlipY(boolean flip) { this.flipY = flip; redraw(); }
 
-    /** Use sequential palette. */
-    public void useSequentialPalette() {
-        this.palette = PaletteKind.SEQUENTIAL;
-        redraw();
-    }
+    public void useSequentialPalette() { this.palette = PaletteKind.SEQUENTIAL; redraw(); }
 
-    /** Use diverging palette with specified center (e.g., 0.0 for signed diffs). */
     public void useDivergingPalette(double center) {
         this.palette = PaletteKind.DIVERGING;
         this.divergingCenter = center;
         redraw();
     }
 
-    /** Enable/disable legend bar. */
+    /** Choose the ramp used for sequential mapping. */
+    public void setSequentialScheme(PaletteScheme scheme) {
+        if (scheme != null) { this.seqScheme = scheme; redraw(); }
+    }
+
+    /** Choose the base ramp used for diverging halves (low and high mirror). */
+    public void setDivergingScheme(PaletteScheme scheme) {
+        if (scheme != null) { this.divScheme = scheme; redraw(); }
+    }
+
     public void setShowLegend(boolean show) {
         this.showLegend = show;
         legend.setVisible(show);
@@ -113,14 +122,12 @@ public final class HeatmapThumbnailView extends StackPane {
         redraw();
     }
 
-    /** Use automatic value range from data. */
     public void setAutoRange(boolean auto) {
         this.autoRange = auto;
         if (auto && grid != null) recomputeRange();
         redraw();
     }
 
-    /** Set fixed value range. Auto-range is disabled. */
     public void setFixedRange(double min, double max) {
         this.autoRange = false;
         this.vmin = min;
@@ -128,7 +135,6 @@ public final class HeatmapThumbnailView extends StackPane {
         redraw();
     }
 
-    /** Set content padding inside the view. */
     public void setContentPadding(Insets insets) {
         this.contentPadding = insets == null ? Insets.EMPTY : insets;
         setPadding(contentPadding);
@@ -136,12 +142,42 @@ public final class HeatmapThumbnailView extends StackPane {
         redraw();
     }
 
-    /** Expose current min/max (useful for pairing legends externally). */
+    public void setBackgroundColor(Color c) { this.backgroundColor = (c == null ? Color.BLACK : c); redraw(); }
+
+    public void setImageSmoothing(boolean on) { this.imageSmoothing = on; redraw(); }
+
+    public void setGamma(double gamma) {
+        double g = Double.isFinite(gamma) ? gamma : 1.0;
+        this.gamma = Math.max(0.1, Math.min(5.0, g));
+        redraw();
+    }
+
+    public void setClipPercent(double lowPct, double highPct) {
+        this.clipLowPct = clamp(lowPct, 0.0, 20.0);
+        this.clipHighPct = clamp(highPct, 0.0, 20.0);
+        if (autoRange && grid != null) recomputeRange();
+        redraw();
+    }
+
+    /** Set alpha applied at the low end (vmin) after gamma shaping. */
+    public void setMinAlphaAtVmin(double a) {
+        this.minAlphaAtVmin = clamp(a, 0.0, 1.0);
+        redraw();
+    }
+
     public double getVmin() { return vmin; }
     public double getVmax() { return vmax; }
     public double getDivergingCenter() { return divergingCenter; }
     public PaletteKind getPalette() { return palette; }
     public boolean isLegendShown() { return showLegend; }
+    public Color getBackgroundColor() { return backgroundColor; }
+    public boolean isImageSmoothing() { return imageSmoothing; }
+    public double getGamma() { return gamma; }
+    public double getClipLowPct() { return clipLowPct; }
+    public double getClipHighPct() { return clipHighPct; }
+    public PaletteScheme getSequentialScheme() { return seqScheme; }
+    public PaletteScheme getDivergingScheme() { return divScheme; }
+    public double getMinAlphaAtVmin() { return minAlphaAtVmin; }
 
     // =====================================================================================
     // Layout & rendering
@@ -167,42 +203,41 @@ public final class HeatmapThumbnailView extends StackPane {
         super.layoutChildren();
     }
 
-    private void onSize(Observable obs) {
-        layoutChildren();
-        redraw();
-    }
+    private void onSize(Observable obs) { layoutChildren(); redraw(); }
 
     private void recomputeRange() {
         if (grid == null || grid.isEmpty()) return;
-        double lo = Double.POSITIVE_INFINITY;
-        double hi = Double.NEGATIVE_INFINITY;
+
+        List<Double> vals = new ArrayList<>();
         for (int r = 0; r < grid.size(); r++) {
             List<Double> row = grid.get(r);
             if (row == null) continue;
             for (int c = 0; c < row.size(); c++) {
-                double v = row.get(c) == null ? Double.NaN : row.get(c);
-                if (Double.isFinite(v)) {
-                    if (v < lo) lo = v;
-                    if (v > hi) hi = v;
-                }
+                Double v = row.get(c);
+                if (v != null && Double.isFinite(v)) vals.add(v);
             }
         }
-        if (!Double.isFinite(lo) || !Double.isFinite(hi)) {
-            lo = 0.0; hi = 1.0;
-        }
+        if (vals.isEmpty()) { vmin = 0.0; vmax = 1.0; return; }
+
+        Collections.sort(vals);
+        int k = vals.size();
+        int iLo = (int)Math.floor(clamp(clipLowPct, 0, 20) / 100.0 * (k - 1));
+        int iHi = (int)Math.ceil((1.0 - clamp(clipHighPct, 0, 20) / 100.0) * (k - 1));
+        double lo = vals.get(Math.max(0, Math.min(k - 1, iLo)));
+        double hi = vals.get(Math.max(0, Math.min(k - 1, iHi)));
+        if (!Double.isFinite(lo) || !Double.isFinite(hi)) { lo = 0.0; hi = 1.0; }
         if (hi - lo < 1e-12) hi = lo + 1e-12;
-        vmin = lo;
-        vmax = hi;
-        // For diverging with auto range, keep center inside [vmin, vmax]
-        if (palette == PaletteKind.DIVERGING && (divergingCenter < vmin || divergingCenter > vmax)) {
-            // leave as-is; mapping will clamp
-        }
+
+        vmin = lo; vmax = hi;
     }
 
     private void redraw() {
         GraphicsContext g = canvas.getGraphicsContext2D();
-        g.setFill(Color.TRANSPARENT);
-        g.clearRect(0, 0, canvas.getWidth(), canvas.getHeight());
+        g.setImageSmoothing(imageSmoothing);
+
+        // background fill
+        g.setFill(backgroundColor);
+        g.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
 
         if (grid == null || grid.isEmpty()) {
             drawEmpty(g);
@@ -217,11 +252,9 @@ public final class HeatmapThumbnailView extends StackPane {
             return;
         }
 
-        // Create an image at cell resolution, then scale onto canvas.
         WritableImage img = new WritableImage(cols, rows);
         PixelWriter pw = img.getPixelWriter();
 
-        // Precompute mapping
         final double min = vmin;
         final double max = vmax;
         final double span = Math.max(1e-12, max - min);
@@ -236,48 +269,42 @@ public final class HeatmapThumbnailView extends StackPane {
             }
         }
 
-        // Draw image scaled to canvas
         g.drawImage(img, 0, 0, cols, rows, 0, 0, canvas.getWidth(), canvas.getHeight());
-
-        // Legend
         drawLegend();
     }
 
     private void drawEmpty(GraphicsContext g) {
-        g.setFill(Color.gray(0.1));
-        g.fillRect(0, 0, canvas.getWidth(), canvas.getHeight());
-        g.setStroke(Color.gray(0.4));
+        g.setStroke(Color.gray(0.35));
         g.strokeRect(0.5, 0.5, Math.max(0, canvas.getWidth() - 1), Math.max(0, canvas.getHeight() - 1));
     }
 
     private void drawLegend() {
         if (!showLegend) return;
         GraphicsContext lg = legend.getGraphicsContext2D();
-        lg.setFill(Color.TRANSPARENT);
-        lg.clearRect(0, 0, legend.getWidth(), legend.getHeight());
+        lg.setImageSmoothing(true);
+
+        lg.setFill(backgroundColor);
+        lg.fillRect(0, 0, legend.getWidth(), legend.getHeight());
 
         double w = legend.getWidth();
         double h = legend.getHeight();
 
-        // vertical gradient
         int steps = (int) Math.max(2, h);
         for (int i = 0; i < steps; i++) {
-            double t = 1.0 - (double) i / (steps - 1); // top -> bottom maps max -> min by default
+            double t = 1.0 - (double) i / (steps - 1); // top->bottom maps max->min
             double v = vmin + t * (vmax - vmin);
             Color c = mapValueToColor(v, vmin, vmax, Math.max(1e-12, vmax - vmin));
             lg.setStroke(c);
             lg.strokeLine(0, i + 0.5, w - 1, i + 0.5);
         }
 
-        // tick-ish markers (minimal; text labels would add font deps here)
-        lg.setStroke(Color.gray(0.15));
+        lg.setStroke(Color.gray(0.35));
         lg.strokeRect(0.5, 0.5, w - 1, h - 1);
 
-        // center tick for diverging
         if (palette == PaletteKind.DIVERGING) {
-            double tCenter = (vmax - divergingCenter) / Math.max(1e-12, (vmax - vmin)); // 1 at top, 0 at bottom
+            double tCenter = (vmax - divergingCenter) / Math.max(1e-12, (vmax - vmin));
             double y = (1.0 - tCenter) * h;
-            lg.setStroke(Color.gray(0.3));
+            lg.setStroke(Color.gray(0.6));
             lg.strokeLine(0, y, w, y);
         }
     }
@@ -288,38 +315,72 @@ public final class HeatmapThumbnailView extends StackPane {
 
     private Color mapValueToColor(double v, double min, double max, double span) {
         if (!Double.isFinite(v)) {
-            return Color.gray(0.05, 0.0); // fully transparent for NaN/inf
+            return Color.color(0, 0, 0, 0.0);
         }
         double t = (v - min) / span;
         t = clamp01(t);
+        t = Math.pow(t, gamma);
+        t = clamp01(t);
 
         if (palette == PaletteKind.SEQUENTIAL) {
-            // Simple perceptual-ish ramp: deep blue -> cyan -> yellow -> near-white
-            return seqRamp(t);
+            Color base = rampColor(seqScheme, t);
+            // fade low-end if requested
+            double a = (t <= 0.0) ? minAlphaAtVmin : 1.0;
+            return new Color(base.getRed(), base.getGreen(), base.getBlue(), a);
         } else {
-            // Diverging around 'divergingCenter': blue (<) -> white (0) -> red (>)
+            // Diverging: map sides with mirrored ramp from divScheme
             if (v <= divergingCenter) {
                 double lt = (divergingCenter - v) / Math.max(1e-12, divergingCenter - min); // 0..1
-                return lerpColor(Color.web("#ffffff"), Color.web("#2b6cb0"), clamp01(lt)); // white to blue
+                lt = Math.pow(clamp01(lt), gamma);
+                Color side = rampColor(divScheme, lt);       // far low -> ramp end
+                return lerpColor(Color.web("#ffffff"), side, clamp01(lt));
             } else {
                 double rt = (v - divergingCenter) / Math.max(1e-12, max - divergingCenter);
-                return lerpColor(Color.web("#ffffff"), Color.web("#c53030"), clamp01(rt)); // white to red
+                rt = Math.pow(clamp01(rt), gamma);
+                Color side = rampColorOpposite(divScheme, rt); // far high -> opposite end
+                return lerpColor(Color.web("#ffffff"), side, clamp01(rt));
             }
         }
     }
 
-    private static Color seqRamp(double t) {
-        // Blend: #0b3d91 (navy) -> #00bcd4 (cyan) -> #ffeb3b (yellow) -> #ffffff
-        if (t < 0.33) {
-            double k = t / 0.33;
-            return lerpColor(Color.web("#0b3d91"), Color.web("#00bcd4"), k);
-        } else if (t < 0.67) {
-            double k = (t - 0.33) / 0.34;
-            return lerpColor(Color.web("#00bcd4"), Color.web("#ffeb3b"), k);
-        } else {
-            double k = (t - 0.67) / 0.33;
-            return lerpColor(Color.web("#ffeb3b"), Color.web("#ffffff"), k);
+    /** Produces a color in the given scheme for 0..1 (low->high). */
+    private static Color rampColor(PaletteScheme scheme, double t) {
+        t = clamp01(t);
+        switch (scheme) {
+            case INFERNO:  return multiStop(t,
+                    "#000004","#1f0c48","#550f6d","#88226a","#b63655","#e35933","#f9950a","#fcffa4");
+            case MAGMA:    return multiStop(t,
+                    "#000004","#1b0c41","#4f0c6b","#88226a","#b73779","#e56b5d","#fb9f3a","#fbe723");
+            case PLASMA:   return multiStop(t,
+                    "#0d0887","#41049d","#6a00a8","#8f0da4","#b12a90","#cc4778","#e16462","#f2844b","#fca636","#fcce25","#f0f921");
+            case CIVIDIS:  return multiStop(t,
+                    "#00204c","#163867","#2a517a","#3f6a89","#578399","#729ca7","#90b5b5","#b0cec2","#d4e7cf","#f9f1d3");
+            case TURBO:    return multiStop(t,
+                    "#30123b","#4145ad","#2ab0e8","#2be3a0","#8dfc3c","#f7f54a","#f79d1e","#e7522f","#cc1a4a","#7a1a6c");
+            case BLUE_YELLOW: return multiStop(t,
+                    "#0b3d91","#00bcd4","#ffeb3b","#ffffff");
+            case GREYS:    return multiStop(t,
+                    "#000000","#333333","#777777","#bbbbbb","#ffffff");
+            case VIRIDIS:
+            default:       return multiStop(t,
+                    "#440154","#3b528b","#21918c","#5ec962","#fde725");
         }
+    }
+
+    /** For diverging high side: use a complementary/opposite end of the chosen scheme. */
+    private static Color rampColorOpposite(PaletteScheme scheme, double t) {
+        // Simple approach: flip t and reuse ramp; for BLUE_YELLOW this becomes Yellow->Blue.
+        return rampColor(scheme, t);
+    }
+
+    private static Color multiStop(double t, String... hexStops) {
+        if (hexStops == null || hexStops.length == 0) return Color.WHITE;
+        if (hexStops.length == 1) return Color.web(hexStops[0]);
+        double pos = t * (hexStops.length - 1);
+        int i = (int)Math.floor(pos);
+        int j = Math.min(hexStops.length - 1, i + 1);
+        double k = pos - i;
+        return lerpColor(Color.web(hexStops[i]), Color.web(hexStops[j]), k);
     }
 
     private static Color lerpColor(Color a, Color b, double t) {
@@ -331,9 +392,6 @@ public final class HeatmapThumbnailView extends StackPane {
         return new Color(r, g, bl, al);
     }
 
-    private static double clamp01(double x) {
-        if (x < 0) return 0;
-        if (x > 1) return 1;
-        return x;
-    }
+    private static double clamp01(double x) { return (x < 0) ? 0 : (x > 1 ? 1 : x); }
+    private static double clamp(double x, double lo, double hi) { return (x < lo) ? lo : (x > hi ? hi : x); }
 }

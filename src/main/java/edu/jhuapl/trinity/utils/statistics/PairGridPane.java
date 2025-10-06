@@ -9,13 +9,19 @@ import java.util.Objects;
 import java.util.function.Consumer;
 import java.util.function.Predicate;
 
+import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Cursor;
 import javafx.scene.Node;
+import javafx.scene.SnapshotParameters;
+import javafx.scene.control.ContextMenu;
+import javafx.scene.control.CustomMenuItem;
 import javafx.scene.control.Label;
+import javafx.scene.control.MenuItem;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.image.ImageView;
+import javafx.scene.image.WritableImage;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.layout.Border;
 import javafx.scene.layout.BorderPane;
@@ -35,7 +41,14 @@ import javafx.scene.paint.Color;
  * Responsive grid of heatmap thumbnails that wraps on resize without
  * forcing the parent to expand.
  *
- * New: Header slot via {@link #setHeader(Node)} to host controls like Search/Sort.
+ * Header slot via {@link #setHeader(Node)} to host controls like Search/Sort.
+ *
+ * New (appearance & UX):
+ *  - Grid-wide "display state" (palette, legend, background, smoothing, gamma, clip%, range mode)
+ *  - Setters to update existing tiles immediately and apply to future tiles
+ *  - Global range compute across visible items
+ *  - Per-tile context menu (autoscale, pin fixed range from tile, compute global, export PNG)
+ *  - Hover preview: temporarily autoscale a tile while hovered if grid is in Global/Fixed
  */
 public final class PairGridPane extends BorderPane {
     // --- Streaming support (thread-safe buffer -> periodic FX flush) ---
@@ -151,6 +164,28 @@ public final class PairGridPane extends BorderPane {
         }
     }
 
+    /** Range struct for global/fixed usage. */
+    public static final class Range {
+        public final double vmin, vmax;
+        public Range(double vmin, double vmax) { this.vmin = vmin; this.vmax = vmax; }
+    }
+
+    public enum RangeMode { AUTO, GLOBAL, FIXED }
+
+    /** Captures grid-wide display preferences to apply to tiles. */
+    private static final class DisplayState {
+        HeatmapThumbnailView.PaletteKind palette = HeatmapThumbnailView.PaletteKind.SEQUENTIAL;
+        boolean legend = false;
+        boolean smoothing = true;
+        double gamma = 1.0;
+        double clipLow = 0.0;
+        double clipHigh = 0.0;
+        Color background = Color.BLACK;
+        RangeMode rangeMode = RangeMode.AUTO;
+        double fixedMin = Double.NaN;
+        double fixedMax = Double.NaN;
+    }
+
     // ---------- Fields & configuration ----------
 
     private final TilePane tilePane = new TilePane();
@@ -178,6 +213,22 @@ public final class PairGridPane extends BorderPane {
 
     private boolean showScoresInHeader = true;
     private Consumer<CellClick> onCellClick = null;
+
+    // New: display state applied to tiles
+    private final DisplayState display = new DisplayState();
+    private Range globalRange = null;
+
+    // Optional export hook
+    public static final class ExportRequest {
+        public final PairItem item;
+        public final WritableImage image;
+        public ExportRequest(PairItem item, WritableImage image) { this.item = item; this.image = image; }
+    }
+    private Consumer<ExportRequest> onExportRequest;
+
+    public void setOnExportRequest(Consumer<ExportRequest> handler) {
+        this.onExportRequest = handler;
+    }
 
     // ---------- Construction ----------
 
@@ -248,7 +299,7 @@ public final class PairGridPane extends BorderPane {
         scroller.setPrefViewportHeight(Math.max(0, height));
     }
 
-    // ---------- Public API ----------
+    // ---------- Public API (items) ----------
 
     public void setItems(List<PairItem> items) {
         allItems.clear();
@@ -296,7 +347,7 @@ public final class PairGridPane extends BorderPane {
 
         if (schedule) {
             final boolean doSort = incrementalSort;
-            javafx.application.Platform.runLater(() -> {
+            Platform.runLater(() -> {
                 List<PairItem> toAdd;
                 synchronized (streamLock) {
                     toAdd = new ArrayList<>(pendingBuffer);
@@ -373,6 +424,93 @@ public final class PairGridPane extends BorderPane {
         return Collections.unmodifiableList(visibleItems);
     }
 
+    // ---------- Public API (appearance) ----------
+
+    public void setPalette(HeatmapThumbnailView.PaletteKind p) {
+        if (p == null) return;
+        display.palette = p;
+        refreshExistingTiles();
+    }
+
+    public void setLegendVisible(boolean visible) {
+        display.legend = visible;
+        refreshExistingTiles();
+    }
+
+    public void setBackgroundColor(Color c) {
+        display.background = (c == null ? Color.BLACK : c);
+        refreshExistingTiles();
+    }
+
+    public void setImageSmoothing(boolean smoothing) {
+        display.smoothing = smoothing;
+        refreshExistingTiles();
+    }
+
+    public void setGamma(double gamma) {
+        display.gamma = clamp(gamma, 0.1, 5.0);
+        refreshExistingTiles();
+    }
+
+    public void setClipLowPct(double pct) {
+        display.clipLow = clamp(pct, 0.0, 20.0);
+        recomputeGlobalIfNeeded();
+        refreshExistingTiles();
+    }
+
+    public void setClipHighPct(double pct) {
+        display.clipHigh = clamp(pct, 0.0, 20.0);
+        recomputeGlobalIfNeeded();
+        refreshExistingTiles();
+    }
+
+    public void setRangeModeAuto() {
+        display.rangeMode = RangeMode.AUTO;
+        refreshExistingTiles();
+    }
+
+    public void setRangeModeGlobal() {
+        display.rangeMode = RangeMode.GLOBAL;
+        this.globalRange = computeGlobalRange();
+        refreshExistingTiles();
+    }
+
+    public void setRangeModeFixed(double vmin, double vmax) {
+        if (!(Double.isFinite(vmin) && Double.isFinite(vmax))) return;
+        double mn = Math.min(vmin, vmax);
+        double mx = Math.max(vmin, vmax);
+        if (mx - mn < 1e-12) mx = mn + 1e-12;
+        display.rangeMode = RangeMode.FIXED;
+        display.fixedMin = mn; display.fixedMax = mx;
+        refreshExistingTiles();
+    }
+
+    /** Computes min/max across visible items’ data (grids or res). */
+    public Range computeGlobalRange() {
+        double lo = Double.POSITIVE_INFINITY, hi = Double.NEGATIVE_INFINITY;
+        for (PairItem it : visibleItems) {
+            List<List<Double>> g = it.grid;
+            if (g == null && it.res != null) {
+                g = (it.useCDF ? it.res.cdfAsListGrid() : it.res.pdfAsListGrid());
+            }
+            if (g == null) continue;
+            for (int r=0; r<g.size(); r++){
+                List<Double> row = g.get(r);
+                if (row == null) continue;
+                for (int c=0; c<row.size(); c++){
+                    Double vv = row.get(c);
+                    if (vv!=null && Double.isFinite(vv)){
+                        if (vv < lo) lo = vv;
+                        if (vv > hi) hi = vv;
+                    }
+                }
+            }
+        }
+        if (!Double.isFinite(lo) || !Double.isFinite(hi)) return null;
+        if (hi - lo < 1e-12) hi = lo + 1e-12;
+        return new Range(lo, hi);
+    }
+
     // ---------- Internal rendering ----------
 
     private void applyFilterSortAndRender() {
@@ -422,13 +560,14 @@ public final class PairGridPane extends BorderPane {
         }
         Label header = new Label(title);
         header.setPadding(new Insets(2, 4, 2, 4));
-        // leave header unstyled (no CSS classes), per app-wide styling policy
 
         HeatmapThumbnailView view = new HeatmapThumbnailView();
         view.setPrefSize(cellWidth, cellHeight);
         view.setMinSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
         view.setMaxSize(Region.USE_PREF_SIZE, Region.USE_PREF_SIZE);
 
+        // Apply item-specific basics first (flip, palette choice)
+        view.setFlipY(item.flipY);
         if (item.palette == HeatmapThumbnailView.PaletteKind.DIVERGING) {
             double c = item.center == null ? 0.0 : item.center;
             view.useDivergingPalette(c);
@@ -436,21 +575,16 @@ public final class PairGridPane extends BorderPane {
             view.useSequentialPalette();
         }
         view.setShowLegend(item.showLegend);
-        view.setFlipY(item.flipY);
 
-        if (item.autoRange) {
-            view.setAutoRange(true);
-        } else {
-            double mn = item.vmin == null ? 0.0 : item.vmin;
-            double mx = item.vmax == null ? 1.0 : item.vmax;
-            view.setFixedRange(mn, mx);
-        }
-
+        // Data
         if (item.grid != null) {
             view.setGrid(item.grid);
         } else if (item.res != null) {
             view.setFromGridDensity(item.res, item.useCDF, item.flipY);
         }
+
+        // Apply grid-wide display state (overrides range choice)
+        applyViewDisplay(view, item);
 
         BorderPane cell = new BorderPane();
         cell.setTop(header);
@@ -461,7 +595,7 @@ public final class PairGridPane extends BorderPane {
         center.setPadding(cellPadding);
         cell.setCenter(center);
 
-        // keep programmatic border (no CSS classes used)
+        // keep programmatic border (no inline CSS classes)
         cell.setBorder(new Border(new BorderStroke(
                 Color.web("#3A3A3A"),
                 BorderStrokeStyle.SOLID,
@@ -470,12 +604,156 @@ public final class PairGridPane extends BorderPane {
         )));
         cell.setBackground(null);
 
+        // Click handling
         cell.addEventHandler(MouseEvent.MOUSE_ENTERED, e -> cell.setCursor(Cursor.HAND));
         cell.addEventHandler(MouseEvent.MOUSE_EXITED, e -> cell.setCursor(Cursor.DEFAULT));
         cell.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
             if (onCellClick != null) onCellClick.accept(new CellClick(index, item));
         });
 
+        // Context menu per-tile
+        ContextMenu cm = buildContextMenuForTile(view, item);
+        cell.setOnContextMenuRequested(e -> cm.show(cell, e.getScreenX(), e.getScreenY()));
+        view.setOnContextMenuRequested(e -> cm.show(view, e.getScreenX(), e.getScreenY()));
+
+        // Hover preview: temporarily autoscale this tile if grid is in Global/Fixed
+        cell.setOnMouseEntered(e -> {
+            if (display.rangeMode != RangeMode.AUTO) {
+                // Temporarily show local auto contrast
+                view.setAutoRange(true);
+                // respect clip/gamma/background/smoothing
+                view.setClipPercent(display.clipLow, display.clipHigh);
+                view.setGamma(display.gamma);
+                view.setImageSmoothing(display.smoothing);
+                view.setBackgroundColor(display.background);
+            }
+        });
+        cell.setOnMouseExited(e -> {
+            if (display.rangeMode != RangeMode.AUTO) {
+                // Restore grid-wide settings
+                applyViewDisplay(view, item);
+            }
+        });
+
         return cell;
+    }
+
+    private ContextMenu buildContextMenuForTile(HeatmapThumbnailView view, PairItem item) {
+        MenuItem autoscaleThis = new MenuItem("Autoscale this tile");
+        autoscaleThis.setOnAction(e -> {
+            view.setAutoRange(true);
+            view.setClipPercent(display.clipLow, display.clipHigh);
+        });
+
+        MenuItem pinFixedFromThis = new MenuItem("Pin fixed range from this tile");
+        pinFixedFromThis.setOnAction(e -> {
+            double mn = view.getVmin();
+            double mx = view.getVmax();
+            setRangeModeFixed(mn, mx);
+        });
+
+        MenuItem computeGlobal = new MenuItem("Compute global range from visible");
+        computeGlobal.setOnAction(e -> {
+            Range r = computeGlobalRange();
+            if (r != null) {
+                this.globalRange = r;
+                setRangeModeGlobal();
+            }
+        });
+
+        MenuItem exportPng = new MenuItem("Export PNG…");
+        exportPng.setOnAction(e -> {
+            if (onExportRequest != null) {
+                SnapshotParameters sp = new SnapshotParameters();
+                WritableImage snap = view.snapshot(sp, null);
+                onExportRequest.accept(new ExportRequest(item, snap));
+            }
+        });
+
+        ContextMenu cm = new ContextMenu(autoscaleThis, pinFixedFromThis, computeGlobal, exportPng);
+
+        // Optional live summary row (title only) as disabled CustomMenuItem
+        Label meta = new Label(item.xLabel + " vs " + item.yLabel);
+        CustomMenuItem info = new CustomMenuItem(meta, false);
+        info.setDisable(true);
+        cm.getItems().add(0, info);
+
+        return cm;
+    }
+
+    /** Apply current grid-wide display state to a specific view. */
+    private void applyViewDisplay(HeatmapThumbnailView view, PairItem item) {
+        // palette base is already set from the item; allow grid palette override if desired
+        if (display.palette == HeatmapThumbnailView.PaletteKind.DIVERGING) {
+            double c = (item.center != null) ? item.center : view.getDivergingCenter();
+            view.useDivergingPalette(c);
+        } else {
+            view.useSequentialPalette();
+        }
+
+        view.setShowLegend(display.legend);
+        view.setBackgroundColor(display.background);
+        view.setImageSmoothing(display.smoothing);
+        view.setGamma(display.gamma);
+        view.setClipPercent(display.clipLow, display.clipHigh);
+
+        // Range precedence: FIXED > GLOBAL > item-setting
+        if (display.rangeMode == RangeMode.FIXED &&
+                Double.isFinite(display.fixedMin) && Double.isFinite(display.fixedMax)) {
+            view.setFixedRange(display.fixedMin, display.fixedMax);
+        } else if (display.rangeMode == RangeMode.GLOBAL && globalRange != null) {
+            view.setFixedRange(globalRange.vmin, globalRange.vmax);
+        } else {
+            // respect item preference
+            if (!item.autoRange && item.vmin != null && item.vmax != null) {
+                view.setFixedRange(item.vmin, item.vmax);
+            } else {
+                view.setAutoRange(true);
+            }
+        }
+    }
+
+    /** Re-apply display state to all existing tiles. */
+    private void refreshExistingTiles() {
+        for (Node n : tilePane.getChildren()) {
+            if (!(n instanceof BorderPane bp)) continue;
+            Node center = bp.getCenter();
+            if (!(center instanceof StackPane sp)) continue;
+            if (sp.getChildren().isEmpty()) continue;
+
+            Node hv = sp.getChildren().get(0);
+            if (!(hv instanceof HeatmapThumbnailView view)) continue;
+
+            // Find the PairItem associated to this cell (by header label lookup index)
+            // Safer: rebuild association by index position in tilePane.
+            int idx = tilePane.getChildren().indexOf(n);
+            if (idx < 0 || idx >= visibleItems.size()) continue;
+            PairItem item = visibleItems.get(idx);
+
+            applyViewDisplay(view, item);
+        }
+    }
+
+    private void recomputeGlobalIfNeeded() {
+        if (display.rangeMode == RangeMode.GLOBAL) {
+            this.globalRange = computeGlobalRange();
+        }
+    }
+    // In PairGridPane (public helper)
+    public interface ViewConsumer { void accept(HeatmapThumbnailView v); }
+    public void forEachView(ViewConsumer fn) {
+        for (Node n : tilePane.getChildren()) {
+            if (!(n instanceof BorderPane bp)) continue;
+            Node center = bp.getCenter();
+            if (!(center instanceof StackPane sp) || sp.getChildren().isEmpty()) continue;
+            Node hv = sp.getChildren().get(0);
+            if (hv instanceof HeatmapThumbnailView v) fn.accept(v);
+        }
+    }
+
+    // ---------- Utils ----------
+
+    private static double clamp(double v, double lo, double hi) {
+        return (v < lo) ? lo : (v > hi ? hi : v);
     }
 }

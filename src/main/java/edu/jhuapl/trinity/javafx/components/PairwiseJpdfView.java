@@ -10,19 +10,22 @@ import edu.jhuapl.trinity.utils.statistics.JpdfRecipe;
 import edu.jhuapl.trinity.utils.statistics.PairGridPane;
 import edu.jhuapl.trinity.utils.statistics.PairwiseJpdfConfigPanel;
 import edu.jhuapl.trinity.utils.statistics.RecipeIo;
+
 import javafx.application.Platform;
 import javafx.concurrent.Task;
+import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
+import javafx.scene.SnapshotParameters;
 import javafx.scene.control.*;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.HBox;
-import javafx.scene.layout.Region;
-import javafx.scene.layout.VBox;
+import javafx.scene.image.WritableImage;
+import javafx.scene.layout.*;
+import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
-import javafx.scene.layout.Background;
 
+import javax.imageio.ImageIO;
+import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileOutputStream;
 import java.util.ArrayList;
@@ -33,8 +36,9 @@ import java.util.function.Consumer;
 /**
  * PairwiseJpdfView
  * - Search/Sort are hosted in the PairGridPane header.
- * - Toolbar is slim: Run, Reset, Collapse, Actions (MenuButton).
+ * - Toolbar is slim: Run, Reset, Collapse, Actions (MenuButton), Appearance (MenuButton).
  * - Actions menu contains Save/Load/Clear and streaming controls (Flush N/ms, Incremental sort).
+ * - Appearance menu controls visual/display options applied via PairGridPane.
  */
 public class PairwiseJpdfView extends BorderPane {
 
@@ -55,10 +59,11 @@ public class PairwiseJpdfView extends BorderPane {
     private final Button cfgRunBtn;
     private final Button collapseBtn;
 
-    // MenuButton (consolidated actions)
+    // MenuButtons
     private final MenuButton actionsBtn;
+    private final MenuButton appearanceBtn;
 
-    // Streaming controls (now only inside menu)
+    // Streaming controls (inside Actions menu)
     private final Spinner<Integer> flushSizeSpinner;
     private final Spinner<Integer> flushIntervalSpinner;
     private final CheckBox incrementalSortCheck;
@@ -67,6 +72,32 @@ public class PairwiseJpdfView extends BorderPane {
     private final TextField searchField = new TextField();
     private final ComboBox<String> sortCombo = new ComboBox<>();
     private final CheckBox sortAscCheck = new CheckBox("Asc");
+
+    // Appearance controls (inside Appearance menu)
+    private final ComboBox<HeatmapThumbnailView.PaletteKind> paletteCombo = new ComboBox<>();
+    private final CheckBox legendCheck = new CheckBox("Legend");
+    private final ColorPicker backgroundPicker = new ColorPicker(Color.BLACK);
+
+    private final ToggleGroup rangeModeGroup = new ToggleGroup();
+    private final RadioButton rangeAutoBtn   = new RadioButton("Auto");
+    private final RadioButton rangeGlobalBtn = new RadioButton("Global");
+    private final RadioButton rangeFixedBtn  = new RadioButton("Fixed");
+    private final TextField vminField = new TextField();
+    private final TextField vmaxField = new TextField();
+    private final Button normalizeAllBtn = new Button("Normalize All");
+
+    private final Slider gammaSlider =
+            new Slider(0.1, 5.0, 1.0);
+    private final Spinner<Double> clipLowPctSp  =
+            new Spinner<>(new SpinnerValueFactory.DoubleSpinnerValueFactory(0.0, 20.0, 0.0, 0.5));
+    private final Spinner<Double> clipHighPctSp =
+            new Spinner<>(new SpinnerValueFactory.DoubleSpinnerValueFactory(0.0, 20.0, 0.0, 0.5));
+    private final CheckBox smoothingCheck = new CheckBox("Smooth");
+
+    private final Spinner<Integer> canvasWSp =
+            new Spinner<>(new SpinnerValueFactory.IntegerSpinnerValueFactory(60, 800, 180, 10));
+    private final Spinner<Integer> canvasHSp =
+            new Spinner<>(new SpinnerValueFactory.IntegerSpinnerValueFactory(60, 800, 140, 10));
 
     // Cache (always non-null)
     private final DensityCache cache;
@@ -90,6 +121,21 @@ public class PairwiseJpdfView extends BorderPane {
         this.gridPane = new PairGridPane();
         this.gridPane.setOnCellClick(click -> {
             if (onCellClickHandler != null) onCellClickHandler.accept(click.item);
+        });
+        // Wire export hook (context menu -> PNG)
+        this.gridPane.setOnExportRequest(req -> {
+            try {
+                FileChooser fc = new FileChooser();
+                fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("PNG Image", "*.png"));
+                fc.setInitialFileName(safeFilename(req.item.xLabel + "_" + req.item.yLabel) + ".png");
+                File f = fc.showSaveDialog(getScene() != null ? getScene().getWindow() : null);
+                if (f == null) return;
+                WritableImage img = req.image;
+                ImageIO.write(SwingFXUtils.fromFXImage(img, null), "png", f);
+                toast("Saved " + f.getName(), false);
+            } catch (Exception ex) {
+                toast("Export failed: " + ex.getMessage(), true);
+            }
         });
 
         // Buttons from config panel
@@ -119,19 +165,21 @@ public class PairwiseJpdfView extends BorderPane {
         sortCombo.setValue("Score");
         sortAscCheck.setSelected(false);
 
-        HBox gridHeader = new HBox(8,
+        HBox searchSort = new HBox(8,
                 new Label("Search"), searchField,
                 new Label("Sort"), sortCombo, sortAscCheck
         );
-        gridHeader.setAlignment(Pos.CENTER_LEFT);
-        gridHeader.setPadding(new Insets(4, 8, 2, 8));
-        gridPane.setHeader(gridHeader);
+        searchSort.setAlignment(Pos.CENTER_LEFT);
+        searchSort.setPadding(new Insets(4, 8, 2, 8));
 
         // --- Actions (MenuButton) ---
         actionsBtn = buildActionsMenu();
 
+        // --- Appearance (MenuButton) ---
+        appearanceBtn = buildAppearanceMenu();
+
         // --- Slim toolbar ---
-        topLeft = new HBox(10, cfgResetBtn, cfgRunBtn, collapseBtn, actionsBtn);
+        topLeft = new HBox(10, cfgResetBtn, cfgRunBtn, collapseBtn, actionsBtn, appearanceBtn);
         topLeft.setAlignment(Pos.CENTER_LEFT);
         topLeft.setPadding(new Insets(6, 8, 6, 8));
 
@@ -165,6 +213,12 @@ public class PairwiseJpdfView extends BorderPane {
         sortCombo.valueProperty().addListener((obs, ov, nv) -> applySortComparator());
         sortAscCheck.selectedProperty().addListener((obs, ov, nv) -> applySortComparator());
         applySortComparator();
+
+        // Inject header (search/sort row; appearance is in toolbar menu)
+        VBox gridHeader = new VBox(4, searchSort);
+        gridHeader.setAlignment(Pos.CENTER_LEFT);
+        gridHeader.setPadding(new Insets(4, 8, 2, 8));
+        gridPane.setHeader(gridHeader);
     }
 
     // Build the consolidated Actions menu
@@ -199,6 +253,153 @@ public class PairwiseJpdfView extends BorderPane {
                 incSortItem, flushNItem, flushMsItem
         );
         return mb;
+    }
+
+private MenuButton buildAppearanceMenu() {
+    MenuButton mb = new MenuButton("Appearance");
+
+    // ---- Palette & Legend & Background ----
+    // (paletteCombo, legendCheck, backgroundPicker are class fields)
+    paletteCombo.getItems().setAll(
+            HeatmapThumbnailView.PaletteKind.SEQUENTIAL,
+            HeatmapThumbnailView.PaletteKind.DIVERGING
+    );
+    if (paletteCombo.getValue() == null) {
+        paletteCombo.setValue(HeatmapThumbnailView.PaletteKind.SEQUENTIAL);
+    }
+    if (backgroundPicker.getValue() == null) {
+        backgroundPicker.setValue(Color.BLACK);
+    }
+
+    // Per-scheme selectors (locals; applied to all current tiles via forEachView)
+    ComboBox<HeatmapThumbnailView.PaletteScheme> seqSchemeCombo = new ComboBox<>();
+    seqSchemeCombo.getItems().addAll(HeatmapThumbnailView.PaletteScheme.values());
+    seqSchemeCombo.setValue(HeatmapThumbnailView.PaletteScheme.VIRIDIS);
+
+    ComboBox<HeatmapThumbnailView.PaletteScheme> divSchemeCombo = new ComboBox<>();
+    divSchemeCombo.getItems().addAll(HeatmapThumbnailView.PaletteScheme.values());
+    divSchemeCombo.setValue(HeatmapThumbnailView.PaletteScheme.BLUE_YELLOW);
+
+    GridPane paletteGrid = new GridPane();
+    paletteGrid.setHgap(8); paletteGrid.setVgap(6); paletteGrid.setPadding(new Insets(6, 8, 6, 8));
+    paletteGrid.add(new Label("Palette"), 0, 0); paletteGrid.add(paletteCombo, 1, 0);
+    paletteGrid.add(new Label("Seq Scheme"), 0, 1); paletteGrid.add(seqSchemeCombo, 1, 1);
+    paletteGrid.add(new Label("Div Scheme"), 0, 2); paletteGrid.add(divSchemeCombo, 1, 2);
+    paletteGrid.add(new Label("Legend"), 0, 3); paletteGrid.add(legendCheck, 1, 3);
+    paletteGrid.add(new Label("Background"), 0, 4); paletteGrid.add(backgroundPicker, 1, 4);
+
+    CustomMenuItem paletteItem = new CustomMenuItem(paletteGrid); paletteItem.setHideOnClick(false);
+
+    // ---- Range (Auto / Global / Fixed) ----
+    // (rangeAutoBtn, rangeGlobalBtn, rangeFixedBtn, vminField, vmaxField, normalizeAllBtn are class fields)
+    rangeAutoBtn.setToggleGroup(rangeModeGroup);
+    rangeGlobalBtn.setToggleGroup(rangeModeGroup);
+    rangeFixedBtn.setToggleGroup(rangeModeGroup);
+    if (rangeModeGroup.getSelectedToggle() == null) rangeAutoBtn.setSelected(true);
+
+    vminField.setPromptText("vmin");
+    vmaxField.setPromptText("vmax");
+    vminField.setPrefColumnCount(6);
+    vmaxField.setPrefColumnCount(6);
+    vminField.setDisable(true);
+    vmaxField.setDisable(true);
+
+    GridPane rangeGrid = new GridPane();
+    rangeGrid.setHgap(8); rangeGrid.setVgap(6); rangeGrid.setPadding(new Insets(6, 8, 6, 8));
+    HBox modeRow = new HBox(10, rangeAutoBtn, rangeGlobalBtn, rangeFixedBtn);
+    rangeGrid.add(new Label("Range"), 0, 0); rangeGrid.add(modeRow, 1, 0);
+    HBox fixedRow = new HBox(6, new Label("Min"), vminField, new Label("Max"), vmaxField, normalizeAllBtn);
+    rangeGrid.add(new Label("Fixed"), 0, 1); rangeGrid.add(fixedRow, 1, 1);
+
+    CustomMenuItem rangeItem = new CustomMenuItem(rangeGrid); rangeItem.setHideOnClick(false);
+
+    // ---- Contrast & Rendering basics ----
+    // (gammaSlider, smoothingCheck are class fields)
+    gammaSlider.setMin(0.1);
+    gammaSlider.setMax(5.0);
+    gammaSlider.setValue(1.0);
+
+    // Low-end alpha: lets background show through low values (v ~ vmin)
+    Slider lowEndAlpha = new Slider(0.0, 1.0, 1.0);
+    lowEndAlpha.setBlockIncrement(0.05);
+
+    HBox gammaRow = new HBox(8, new Label("Gamma"), gammaSlider);
+    HBox alphaRow = new HBox(8, new Label("Low-end α"), lowEndAlpha);
+    VBox contrastBox = new VBox(8, gammaRow, alphaRow, smoothingCheck);
+    contrastBox.setPadding(new Insets(6, 8, 6, 8));
+    CustomMenuItem contrastItem = new CustomMenuItem(contrastBox); contrastItem.setHideOnClick(false);
+
+    // ---- Canvas size (thumbnail sizing) ----
+    // (canvasWSp, canvasHSp are class fields and initialized in the constructor)
+    HBox sizeRow = new HBox(6, new Label("Canvas W"), canvasWSp, new Label("H"), canvasHSp);
+    VBox renderBox = new VBox(8, sizeRow);
+    renderBox.setPadding(new Insets(6, 8, 6, 8));
+    CustomMenuItem renderItem = new CustomMenuItem(renderBox); renderItem.setHideOnClick(false);
+
+    // ---- Add blocks to menu ----
+    mb.getItems().addAll(paletteItem, rangeItem, contrastItem, renderItem);
+
+    // ---- Wiring to grid ----
+    paletteCombo.valueProperty().addListener((o,ov,nv) -> gridPane.setPalette(nv));
+    legendCheck.selectedProperty().addListener((o,ov,nv) -> gridPane.setLegendVisible(nv));
+    backgroundPicker.valueProperty().addListener((o,ov,nv) -> gridPane.setBackgroundColor(nv));
+
+    // Scheme changes apply to all existing views
+    seqSchemeCombo.valueProperty().addListener((o,ov,nv) ->
+            gridPane.forEachView(v -> v.setSequentialScheme(nv)));
+    divSchemeCombo.valueProperty().addListener((o,ov,nv) ->
+            gridPane.forEachView(v -> v.setDivergingScheme(nv)));
+
+    smoothingCheck.setSelected(true);
+    smoothingCheck.selectedProperty().addListener((o,ov,nv) -> gridPane.setImageSmoothing(nv));
+    gammaSlider.valueProperty().addListener((o,ov,nv) -> gridPane.setGamma(nv.doubleValue()));
+    lowEndAlpha.valueProperty().addListener((o,ov,nv) ->
+            gridPane.forEachView(v -> v.setMinAlphaAtVmin(nv.doubleValue())));
+
+    rangeModeGroup.selectedToggleProperty().addListener((o,ov,nv) -> {
+        boolean fixed = nv == rangeFixedBtn;
+        boolean global = nv == rangeGlobalBtn;
+        vminField.setDisable(!fixed);
+        vmaxField.setDisable(!fixed);
+        if (fixed) {
+            double mn = parseDoubleSafe(vminField.getText(), Double.NaN);
+            double mx = parseDoubleSafe(vmaxField.getText(), Double.NaN);
+            if (Double.isFinite(mn) && Double.isFinite(mx)) {
+                gridPane.setRangeModeFixed(mn, mx);
+            }
+        } else if (global) {
+            gridPane.setRangeModeGlobal();
+        } else {
+            gridPane.setRangeModeAuto();
+        }
+    });
+
+    normalizeAllBtn.setOnAction(e -> {
+        PairGridPane.Range r = gridPane.computeGlobalRange();
+        if (r != null) {
+            vminField.setText(String.format("%.6g", r.vmin));
+            vmaxField.setText(String.format("%.6g", r.vmax));
+            rangeFixedBtn.setSelected(true);
+            gridPane.setRangeModeFixed(r.vmin, r.vmax);
+        }
+    });
+
+    vminField.setOnAction(e -> applyFixedRangeFromFields());
+    vmaxField.setOnAction(e -> applyFixedRangeFromFields());
+
+    canvasWSp.valueProperty().addListener((o,ov,nv) -> gridPane.setCellSize(nv, canvasHSp.getValue()));
+    canvasHSp.valueProperty().addListener((o,ov,nv) -> gridPane.setCellSize(canvasWSp.getValue(), nv));
+
+    return mb;
+}
+
+    private void applyFixedRangeFromFields() {
+        if (rangeModeGroup.getSelectedToggle() != rangeFixedBtn) return;
+        double mn = parseDoubleSafe(vminField.getText(), Double.NaN);
+        double mx = parseDoubleSafe(vmaxField.getText(), Double.NaN);
+        if (Double.isFinite(mn) && Double.isFinite(mx)) {
+            gridPane.setRangeModeFixed(mn, mx);
+        }
     }
 
     // --- Public API ---
@@ -277,9 +478,9 @@ public class PairwiseJpdfView extends BorderPane {
                 try {
                     switch (runRecipe.getPairSelection()) {
                         case WHITELIST ->
-                                batch = JpdfBatchEngine.runWhitelistPairs(cohortA, runRecipe, policy, cache, onResult);
+                                batch = JpdfBatchEngine.runWhitelistPairs(cohortA, runRecipe, policy, PairwiseJpdfView.this.cache, onResult);
                         default ->
-                                batch = JpdfBatchEngine.runComponentPairs(cohortA, runRecipe, policy, cache, onResult);
+                                batch = JpdfBatchEngine.runComponentPairs(cohortA, runRecipe, policy, PairwiseJpdfView.this.cache, onResult);
                     }
                 } catch (Throwable t) {
                     final String msg = "Batch failed: " + t.getClass().getSimpleName()
@@ -341,6 +542,15 @@ public class PairwiseJpdfView extends BorderPane {
         } catch (Throwable ignore) {
             return fallback;
         }
+    }
+
+    private static double parseDoubleSafe(String s, double def) {
+        try { return Double.parseDouble(s); } catch (Exception ex) { return def; }
+    }
+
+    private static String safeFilename(String s) {
+        String base = (s == null ? "image" : s);
+        return base.replaceAll("[^a-zA-Z0-9._-]+", "_");
     }
 
     private void setControlsDisabled(boolean disabled) {

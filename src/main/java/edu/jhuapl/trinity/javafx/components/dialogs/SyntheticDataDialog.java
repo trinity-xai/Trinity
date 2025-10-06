@@ -177,26 +177,24 @@ public final class SyntheticDataDialog extends Dialog<SyntheticDataDialog.Result
         getDialogPane().setPadding(new Insets(8));
 
         // Result converter
-        setResultConverter(new Callback<ButtonType, Result>() {
-            @Override public Result call(ButtonType param) {
-                if (param != buildBtn) return null;
-                Tab sel = tabs.getSelectionModel().getSelectedItem();
-                if (sel == null) return null;
-                String name = sel.getText();
-                try {
-                    return switch (name) {
-                        case "Similarity" -> buildSimilarity();
-                        case "Divergence" -> buildDivergence();
-                        case "Cohorts"    -> buildCohorts();
-                        default -> null;
-                    };
-                } catch (Throwable t) {
-                    Alert a = new Alert(Alert.AlertType.ERROR,
-                            "Build failed: " + t.getClass().getSimpleName() + " – " + String.valueOf(t.getMessage()),
-                            ButtonType.OK);
-                    a.showAndWait();
-                    return null;
-                }
+        setResultConverter((ButtonType param) -> {
+            if (param != buildBtn) return null;
+            Tab sel = tabs.getSelectionModel().getSelectedItem();
+            if (sel == null) return null;
+            String name = sel.getText();
+            try {
+                return switch (name) {
+                    case "Similarity" -> buildSimilarity();
+                    case "Divergence" -> buildDivergence();
+                    case "Cohorts"    -> buildCohorts();
+                    default -> null;
+                };
+            } catch (Throwable t) {
+                Alert a = new Alert(Alert.AlertType.ERROR,
+                        "Build failed: " + t.getClass().getSimpleName() + " – " + String.valueOf(t.getMessage()),
+                        ButtonType.OK);
+                a.showAndWait();
+                return null;
             }
         });
     }

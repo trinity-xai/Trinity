@@ -30,6 +30,7 @@ import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
+import javafx.scene.control.DialogPane;
 import javafx.scene.control.Label;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
@@ -41,6 +42,8 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
+import javafx.stage.StageStyle;
 
 /**
  * PairwiseMatrixView
@@ -499,6 +502,10 @@ public final class PairwiseMatrixView extends BorderPane {
         syntheticDataDialogItem.setOnAction(e -> {
             SyntheticDataDialog dlg = new SyntheticDataDialog();
             dlg.initOwner(getScene().getWindow());
+            dlg.initStyle(StageStyle.TRANSPARENT);
+            DialogPane dialogPane = dlg.getDialogPane();
+            dialogPane.setBackground(Background.EMPTY);
+            dialogPane.getScene().setFill(Color.TRANSPARENT);            
             dlg.showAndWait().ifPresent(res -> {
                 switch (res.kind()) {
                     case SIMILARITY_MATRIX, DIVERGENCE_MATRIX -> loadSyntheticMatrix(res.matrix());

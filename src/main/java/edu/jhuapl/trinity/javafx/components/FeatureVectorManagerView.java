@@ -208,8 +208,10 @@ public class FeatureVectorManagerView extends BorderPane {
 
         colPreview.setCellValueFactory(cd -> new ReadOnlyStringWrapper(previewList(cd.getValue().getData(), 8)));
 
-        colImageUrl.setCellValueFactory(cd -> new ReadOnlyStringWrapper(cd.getValue().getImageURL().trim()));
-        colText.setCellValueFactory(cd -> new ReadOnlyStringWrapper(cd.getValue().getText().trim()));        
+        colImageUrl.setCellValueFactory(cd -> new ReadOnlyStringWrapper(
+            cd.getValue().getImageURL() != null ? cd.getValue().getImageURL().trim() : "" ));
+        colText.setCellValueFactory(cd -> new ReadOnlyStringWrapper(
+            cd.getValue().getText() != null ? cd.getValue().getText().trim() : "" ));
         colScore.setMinWidth(80);
         colScore.setCellValueFactory(cd -> new ReadOnlyStringWrapper(trim(cd.getValue().getScore())));
         colPfa.setMinWidth(70);
