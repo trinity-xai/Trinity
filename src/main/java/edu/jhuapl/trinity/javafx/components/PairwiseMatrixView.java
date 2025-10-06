@@ -21,7 +21,6 @@ import edu.jhuapl.trinity.utils.statistics.PairwiseMatrixConfigPanel.Request;
 import edu.jhuapl.trinity.utils.statistics.PairwiseMatrixEngine;
 import edu.jhuapl.trinity.utils.statistics.PairwiseMatrixEngine.MatrixResult;
 import edu.jhuapl.trinity.utils.statistics.StatisticEngine;
-import edu.jhuapl.trinity.utils.statistics.SyntheticMatrixFactory;
 import edu.jhuapl.trinity.utils.statistics.SyntheticMatrixFactory.SyntheticMatrix;
 import java.util.ArrayList;
 import java.util.List;

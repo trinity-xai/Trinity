@@ -14,6 +14,7 @@ import java.util.Map;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CyberReport {
+    public static final String PERCENTAGE    = "Percentage of Original Network";
     public static final String GROUNDTRUTH    = "Ground Truth";
     public static final String INFERENCES     = "Inferences";
     public static final String ADJACENTNETWORK= "Adjacent Network";
@@ -29,6 +30,10 @@ public class CyberReport {
     public static record ModEntry(int value, String label) {}
 
     // ----- simple metadata -----
+
+    @JsonProperty(PERCENTAGE)
+    private Double percentage;
+
     @JsonProperty(GROUNDTRUTH)
     private String groundTruth;
 
@@ -62,6 +67,8 @@ public class CyberReport {
     @JsonIgnore // avoid double-serializing; we expose via @JsonAnyGetter below
     private final Map<String, CyberVector> extraVectors = new LinkedHashMap<>();
 
+    public CyberReport() {}
+    
     public static boolean isCyberReport(String body) {
         return body != null
             && body.contains(GROUNDTRUTH)
@@ -100,6 +107,20 @@ public class CyberReport {
     }
 
     // ----- getters/setters -----
+
+    /**
+     * @return the percentage
+     */
+    public Double getPercentage() {
+        return percentage;
+    }
+
+    /**
+     * @param percentage the percentage to set
+     */
+    public void setPercentage(Double percentage) {
+        this.percentage = percentage;
+    }
     public String getGroundTruth() { return groundTruth; }
     public void setGroundTruth(String groundTruth) { this.groundTruth = groundTruth; }
 

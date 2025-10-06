@@ -99,6 +99,9 @@ public class FeatureVectorEventHandler implements EventHandler<FeatureVectorEven
     }
     public void handleCyberReport(FeatureVectorEvent event) {
         List<CyberReport> cyberReports = (List<CyberReport>) event.object;
+        FeatureCollection fc = new FeatureCollection();
+        List<FeatureVector> features = new ArrayList<>();
+        
         for(CyberReport cyberReport : cyberReports) {
             HashMap<String, String> metaData = new HashMap();
             metaData.put(CyberReport.GROUNDTRUTH, cyberReport.getGroundTruth());
@@ -108,24 +111,35 @@ public class FeatureVectorEventHandler implements EventHandler<FeatureVectorEven
 
             FeatureVector sgtaFV = cyberToFeatureVector(CyberReport.SGTA, cyberReport.getsGtA());
             sgtaFV.getMetaData().putAll(metaData);
-            addNewFeatureVector(sgtaFV);
-
+            //addNewFeatureVector(sgtaFV);
+            features.add(sgtaFV);
+            
             FeatureVector sinfgtFV = cyberToFeatureVector(CyberReport.SINFGT, cyberReport.getsInfGt());
             sinfgtFV.getMetaData().putAll(metaData);
-            addNewFeatureVector(sinfgtFV);
-
+            //addNewFeatureVector(sinfgtFV);
+            features.add(sinfgtFV);
+            
             FeatureVector sintelaFV = cyberToFeatureVector(CyberReport.SINTELA, cyberReport.getsIntelA());
             sintelaFV.getMetaData().putAll(metaData);
-            addNewFeatureVector(sintelaFV);
+            //addNewFeatureVector(sintelaFV);
+            features.add(sintelaFV);
 
             FeatureVector sintelgtFV = cyberToFeatureVector(CyberReport.SINTELGT, cyberReport.getsIntelGt());
             sintelgtFV.getMetaData().putAll(metaData);
-            addNewFeatureVector(sintelgtFV);
-
+            //addNewFeatureVector(sintelgtFV);
+            features.add(sintelgtFV);
+            
             FeatureVector deltaFV = cyberToFeatureVector(CyberReport.DELTA, cyberReport.getDelta());
             deltaFV.getMetaData().putAll(metaData);
-            addNewFeatureVector(deltaFV);
+            //addNewFeatureVector(deltaFV);
+            features.add(deltaFV);
         }
+        fc.setFeatures(features);
+        Platform.runLater(() -> {
+            App.getAppScene().getRoot().fireEvent(
+                new FeatureVectorEvent(
+                    FeatureVectorEvent.NEW_FEATURE_COLLECTION, fc));
+        });
     }    
     public void handleFeatureVectorEvent(FeatureVectorEvent event) {
         FeatureVector featureVector = (FeatureVector) event.object;
