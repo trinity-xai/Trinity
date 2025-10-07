@@ -103,6 +103,7 @@ import edu.jhuapl.trinity.javafx.components.panes.PairwiseJpdfPane;
 import edu.jhuapl.trinity.javafx.components.panes.PairwiseMatrixPane;
 import edu.jhuapl.trinity.javafx.controllers.FeatureVectorManagerPopoutController;
 import edu.jhuapl.trinity.javafx.controllers.PairwiseJpdfPanePopoutController;
+import edu.jhuapl.trinity.javafx.controllers.StatPdfCdfPopoutController;
 
 /**
  * @author Sean Phillips
@@ -162,6 +163,7 @@ public class AppAsyncManager extends Task<Void> {
     TimelineAnimation timelineAnimation;
     FeatureVectorManagerPopoutController fvPop;
     FeatureVectorManagerService fvService;
+    StatPdfCdfPopoutController statPop;
 
     public AppAsyncManager(Scene scene, StackPane centerStack, Pane desktopPane, CircleProgressIndicator progress, Map<String, String> namedParameters) {
         this.scene = scene;
@@ -177,7 +179,8 @@ public class AppAsyncManager extends Task<Void> {
         }
         fvPop = new FeatureVectorManagerPopoutController(fvService, scene);
         pjpPop = new PairwiseJpdfPanePopoutController(scene);
-        
+        statPop = new StatPdfCdfPopoutController(scene);
+                
         setOnSucceeded(e -> Platform.runLater(() ->
             scene.getRoot().fireEvent(new ApplicationEvent(ApplicationEvent.HIDE_BUSY_INDICATOR))));
         setOnFailed(e -> Platform.runLater(() ->
@@ -560,6 +563,21 @@ public class AppAsyncManager extends Task<Void> {
                 Platform.runLater(() -> statPdfCdfPane.setFeatureVectors((List<FeatureVector>) e.object));
             }
         });
+        scene.addEventHandler(ApplicationEvent.POPOUT_STATISTICS_PANE, e -> {
+            boolean show = (null != e.object && e.object instanceof Boolean) ? (boolean)e.object : true;
+            if(show) {
+                if(null != statPdfCdfPane) {
+                    statPop.setInitialState(statPdfCdfPane.getChartPanel().exportState());
+                    statPdfCdfPane.close(); 
+                }
+                statPop.show();
+            } else {
+                if (statPdfCdfPane != null) 
+                    statPop.getCurrentState().ifPresent(
+                        statPdfCdfPane.getChartPanel()::applyState);            
+                statPop.close();
+            }
+        });        
 
         LOG.info("FeatureVector Manager and Services");
         // Mirror NEW_FEATURE_COLLECTION into the manager (ignore when Manager itself applied it)

@@ -340,8 +340,8 @@ public class App extends Application {
         }
         //J cuz i'm running out of letters
         if (e.isAltDown() && e.isControlDown() && e.getCode().equals(KeyCode.J)) {
-            stage.getScene().getRoot().fireEvent(
-                new ApplicationEvent(ApplicationEvent.SHOW_STATISTICS_PANE));
+            stage.getScene().getRoot().fireEvent(new ApplicationEvent(e.isShiftDown() 
+                ? ApplicationEvent.POPOUT_STATISTICS_PANE : ApplicationEvent.SHOW_STATISTICS_PANE));
         }
         if (e.isAltDown() && e.isControlDown() && e.getCode().equals(KeyCode.F)) {
             stage.getScene().getRoot().fireEvent(

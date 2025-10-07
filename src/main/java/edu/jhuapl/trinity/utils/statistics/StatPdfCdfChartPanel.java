@@ -4,7 +4,9 @@ import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.utils.metric.Metric;
 import edu.jhuapl.trinity.utils.statistics.DialogUtils.ScalarInputResult;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.List;
+import java.util.Objects;
 import java.util.function.Consumer;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -25,12 +27,12 @@ import javafx.scene.layout.VBox;
  * Chart panel for visualizing PDF and CDF statistics (2D) and
  * triggering a 3D joint PDF/CDF surface computation.
  *
- * Adds "Precomputed Scalars" data source support:
- *  - Paste rows of "score" or "score, infoPercent" (both in [0,1])
- *  - Choose which field (Score or Info%) to visualize
- *  - Axis lock control to fix X to [0,1] for consistent comparisons
+ * Snapshot API:
+ *  - exportState(): capture current UI/data settings
+ *  - applyState(State): apply a previously captured snapshot
  *
- * Vectors mode remains unchanged; 3D surface is enabled only in Vectors mode.
+ * The snapshot is used to keep the pane and a popout window in sync
+ * without reparenting JavaFX nodes.
  *
  * @author Sean Phillips
  */
@@ -72,7 +74,6 @@ public class StatPdfCdfChartPanel extends BorderPane {
     private ToggleGroup surfaceToggle;
 
     private Button refresh2DButton;
-    private Button popOutButton;
     private Button setCustomButton;
     private Button compute3DButton;
 
@@ -83,7 +84,6 @@ public class StatPdfCdfChartPanel extends BorderPane {
     private List<Double> customReferenceVector;
 
     // Callbacks
-    private Runnable onPopOut = null;
     private Consumer<GridDensityResult> onComputeSurface = null;
 
     public StatPdfCdfChartPanel() {
@@ -148,14 +148,12 @@ public class StatPdfCdfChartPanel extends BorderPane {
         binsSpinner.setPrefHeight(40);
 
         refresh2DButton = new Button("Refresh 2D");
-        popOutButton = new Button("Pop Out");
 
         HBox row1Vectors = new HBox(
             16,
             new VBox(5, new Label("X Feature (2D)"), xFeatureCombo),
             new VBox(5, new Label("Bins"), binsSpinner),
-            refresh2DButton,
-            popOutButton
+            refresh2DButton
         );
         row1Vectors.setAlignment(Pos.CENTER_LEFT);
         row1Vectors.setPadding(new Insets(6, 6, 0, 6));
@@ -163,8 +161,11 @@ public class StatPdfCdfChartPanel extends BorderPane {
         // ===== Row 2 (Vectors): X metric/ref/index =====
         metricCombo = new ComboBox<>();
         metricCombo.getItems().addAll(Metric.getMetricNames());
-        if (metricCombo.getItems().contains("euclidean")) metricCombo.setValue("euclidean");
-        else if (!metricCombo.getItems().isEmpty()) metricCombo.setValue(metricCombo.getItems().get(0));
+        if (metricCombo.getItems().contains("euclidean")) {
+            metricCombo.setValue("euclidean");
+        } else if (!metricCombo.getItems().isEmpty()) {
+            metricCombo.setValue(metricCombo.getItems().get(0));
+        }
 
         referenceCombo = new ComboBox<>();
         referenceCombo.getItems().addAll("Mean", "Vector @ Index", "Custom");
@@ -267,12 +268,9 @@ public class StatPdfCdfChartPanel extends BorderPane {
             row3Vectors.setVisible(!usingScalars);
 
             if (usingScalars) {
-                // Switch charts to raw scalar mode
                 applyScalarSamplesToCharts();
-                // Disable 3D compute in scalars mode
                 compute3DButton.setDisable(true);
             } else {
-                // Back to Vectors mode
                 pdfChart.clearScalarSamples();
                 cdfChart.clearScalarSamples();
                 compute3DButton.setDisable(false);
@@ -301,10 +299,8 @@ public class StatPdfCdfChartPanel extends BorderPane {
 
         // Vectors handlers
         refresh2DButton.setOnAction(e -> refresh2DCharts());
-        popOutButton.setOnAction(e -> { if (onPopOut != null) onPopOut.run(); });
 
         setCustomButton.setOnAction(e -> {
-            // Optional: enforce expected dimension
             Integer expectedDim = (currentVectors != null && !currentVectors.isEmpty())
                     ? currentVectors.get(0).getData().size() : null;
             List<Double> parsed = (expectedDim != null)
@@ -351,8 +347,6 @@ public class StatPdfCdfChartPanel extends BorderPane {
         }
         return (type != null) ? type.name() : "N/A";
     }
-
-    public void setOnPopOut(Runnable handler) { this.onPopOut = handler; }
 
     /** Consumer invoked when "Compute 3D Surface" finishes successfully. */
     public void setOnComputeSurface(Consumer<GridDensityResult> handler) {
@@ -401,6 +395,176 @@ public class StatPdfCdfChartPanel extends BorderPane {
         }
     }
 
+    // ----------------- Snapshot API -----------------
+
+    /**
+     * Immutable snapshot of the panel's current state. Contains plain data only (no JavaFX nodes).
+     */
+    public static final class State {
+        public final boolean usingScalarsMode;
+
+        // Scalars mode
+        public final String scalarsField; // "Score" or "Info%"
+        public final List<Double> scalarScores;
+        public final List<Double> scalarInfos;
+
+        // Shared
+        public final boolean lockXAxisToUnit;
+
+        // Vectors mode
+        public final List<FeatureVector> vectors;
+        public final StatisticEngine.ScalarType xFeature;
+        public final int bins;
+        public final String metricName;       // for METRIC_DISTANCE_TO_MEAN
+        public final String referenceMode;    // "Mean" | "Vector @ Index" | "Custom"
+        public final Integer xIndex;          // for component or vector index
+        public final StatisticEngine.ScalarType yFeature;
+        public final Integer yIndex;
+        public final boolean surfaceCDF;      // true = CDF, false = PDF
+        public final List<Double> customReference; // optional
+
+        public State(
+                boolean usingScalarsMode,
+                String scalarsField,
+                List<Double> scalarScores,
+                List<Double> scalarInfos,
+                boolean lockXAxisToUnit,
+                List<FeatureVector> vectors,
+                StatisticEngine.ScalarType xFeature,
+                int bins,
+                String metricName,
+                String referenceMode,
+                Integer xIndex,
+                StatisticEngine.ScalarType yFeature,
+                Integer yIndex,
+                boolean surfaceCDF,
+                List<Double> customReference) {
+
+            this.usingScalarsMode = usingScalarsMode;
+            this.scalarsField = scalarsField;
+            this.scalarScores = scalarScores == null ? Collections.emptyList() : new ArrayList<>(scalarScores);
+            this.scalarInfos = scalarInfos == null ? Collections.emptyList() : new ArrayList<>(scalarInfos);
+            this.lockXAxisToUnit = lockXAxisToUnit;
+
+            this.vectors = vectors == null ? Collections.emptyList() : new ArrayList<>(vectors);
+            this.xFeature = xFeature;
+            this.bins = bins;
+            this.metricName = metricName;
+            this.referenceMode = referenceMode;
+            this.xIndex = xIndex;
+            this.yFeature = yFeature;
+            this.yIndex = yIndex;
+            this.surfaceCDF = surfaceCDF;
+            this.customReference = customReference == null ? null : new ArrayList<>(customReference);
+        }
+    }
+
+    /** Capture a snapshot of the current settings and data. */
+    public State exportState() {
+        boolean usingScalars = dataSourceCombo.getValue() == DataSource.SCALARS;
+
+        return new State(
+            usingScalars,
+            usingScalars ? scalarFieldCombo.getValue() : null,
+            usingScalars ? scalarScores : null,
+            usingScalars ? scalarInfos : null,
+            lockXCheck.isSelected(),
+            usingScalars ? null : currentVectors,
+            usingScalars ? null : xFeatureCombo.getValue(),
+            usingScalars ? 0 : binsSpinner.getValue(),
+            usingScalars ? null : metricCombo.getValue(),
+            usingScalars ? null : referenceCombo.getValue(),
+            usingScalars ? null : xIndexSpinner.getValue(),
+            usingScalars ? null : yFeatureCombo.getValue(),
+            usingScalars ? null : yIndexSpinner.getValue(),
+            cdfRadio3D.isSelected(),
+            usingScalars ? null : customReferenceVector
+        );
+    }
+
+    /** Apply a previously exported snapshot to this panel. */
+    public void applyState(State s) {
+        Objects.requireNonNull(s, "state");
+
+        // Lock X axis (applied later to charts too)
+        lockXCheck.setSelected(s.lockXAxisToUnit);
+
+        if (s.usingScalarsMode) {
+            // Switch to Scalars mode
+            dataSourceCombo.setValue(DataSource.SCALARS);
+
+            // Scalars payload
+            scalarScores = new ArrayList<>(s.scalarScores);
+            scalarInfos  = new ArrayList<>(s.scalarInfos);
+            scalarFieldCombo.setValue(s.scalarsField != null ? s.scalarsField : "Score");
+
+            // Apply to charts
+            applyScalarSamplesToCharts();
+        } else {
+            // Switch to Vectors mode
+            dataSourceCombo.setValue(DataSource.VECTORS);
+
+            // Vectors payload
+            currentVectors = s.vectors == null ? new ArrayList<>() : new ArrayList<>(s.vectors);
+            xFeatureCombo.setValue(s.xFeature != null ? s.xFeature : StatisticEngine.ScalarType.L1_NORM);
+
+            int safeBins = (s.bins > 0) ? s.bins : 40;
+            if (binsSpinner.getValueFactory() == null) {
+                binsSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(5, 100, safeBins, 5));
+            } else {
+                binsSpinner.getValueFactory().setValue(safeBins);
+            }
+
+            if (s.metricName != null && !metricCombo.getItems().isEmpty()) {
+                if (metricCombo.getItems().contains(s.metricName)) {
+                    metricCombo.setValue(s.metricName);
+                } else {
+                    metricCombo.setValue(metricCombo.getItems().get(0));
+                }
+            }
+
+            if (s.referenceMode != null) {
+                referenceCombo.setValue(s.referenceMode);
+            }
+
+            if (s.xIndex != null) {
+                if (xIndexSpinner.getValueFactory() == null) {
+                    xIndexSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, Math.max(0, getMaxDimensionIndex()), s.xIndex, 1));
+                } else {
+                    xIndexSpinner.getValueFactory().setValue(Math.max(0, s.xIndex));
+                }
+            }
+
+            if (s.yFeature != null) {
+                yFeatureCombo.setValue(s.yFeature);
+            }
+            if (s.yIndex != null) {
+                if (yIndexSpinner.getValueFactory() == null) {
+                    yIndexSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, Math.max(0, getMaxDimensionIndex()), s.yIndex, 1));
+                } else {
+                    yIndexSpinner.getValueFactory().setValue(Math.max(0, s.yIndex));
+                }
+            }
+
+            customReferenceVector = s.customReference == null ? null : new ArrayList<>(s.customReference);
+
+            // Surface toggle
+            if (s.surfaceCDF) {
+                cdfRadio3D.setSelected(true);
+            } else {
+                pdfRadio3D.setSelected(true);
+            }
+
+            // Refresh charts under current settings
+            refresh2DCharts();
+        }
+
+        // Ensure lock applied to both charts after any mode switch
+        boolean lock = lockXCheck.isSelected();
+        pdfChart.setLockXAxis(lock, 0.0, 1.0);
+        cdfChart.setLockXAxis(lock, 0.0, 1.0);
+    }
+
     // ----------------- Scalars helpers -----------------
 
     private void applyScalarSamplesToCharts() {
@@ -416,7 +580,6 @@ public class StatPdfCdfChartPanel extends BorderPane {
         pdfChart.setScalarSamples(chosen);
         cdfChart.setScalarSamples(chosen);
 
-        // Respect lock checkbox
         boolean lock = lockXCheck.isSelected();
         pdfChart.setLockXAxis(lock, 0.0, 1.0);
         cdfChart.setLockXAxis(lock, 0.0, 1.0);
@@ -533,7 +696,7 @@ public class StatPdfCdfChartPanel extends BorderPane {
             yAxis.setComponentIndex(yIndexSpinner.getValue());
         } else if (yAxis.getType() == StatisticEngine.ScalarType.METRIC_DISTANCE_TO_MEAN) {
             yAxis.setMetricName(metricCombo.getValue());
-            List<Double> ref = (referenceCombo.getValue().equals("Custom"))
+            List<Double> ref = ("Custom".equals(referenceCombo.getValue()))
                     ? customReferenceVector
                     : (currentVectors.isEmpty() ? null : FeatureVector.getMeanVector(currentVectors));
             if ("Vector @ Index".equals(referenceCombo.getValue())) {

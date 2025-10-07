@@ -1,19 +1,22 @@
 package edu.jhuapl.trinity.javafx.components.panes;
 
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
+import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.utils.statistics.GridDensityResult;
 import edu.jhuapl.trinity.utils.statistics.StatPdfCdfChartPanel;
 import edu.jhuapl.trinity.utils.statistics.StatisticEngine;
+import java.util.List;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
 
-import java.util.List;
-
 /**
  * Floating statistics PDF/CDF pane for Trinity analytics.
  * Displays a single StatPdfCdfChartPanel, fully resizable and ready for future controls.
+ *
+ * Popout behavior: triggered exclusively via {@link #maximize()} which
+ * fires an ApplicationEvent (POPOUT_STATPDFCDF) that a controller listens for.
  *
  * @author Sean Phillips
  */
@@ -45,7 +48,7 @@ public class StatPdfCdfPane extends LitPathPane {
         borderPane.setPadding(new Insets(8));
 
         chartPanel = new StatPdfCdfChartPanel(); // empty state
-        chartPanel.setOnComputeSurface(result -> onComputeSurface(result));        
+        chartPanel.setOnComputeSurface(result -> onComputeSurface(result));
         borderPane.setCenter(chartPanel);
     }
 
@@ -74,8 +77,15 @@ public class StatPdfCdfPane extends LitPathPane {
         borderPane.setPadding(new Insets(8));
 
         chartPanel = new StatPdfCdfChartPanel(vectors, scalarType, bins);
-        chartPanel.setOnComputeSurface(result -> onComputeSurface(result));        
+        chartPanel.setOnComputeSurface(result -> onComputeSurface(result));
         borderPane.setCenter(chartPanel);
+    }
+
+    @Override
+    public void maximize() {
+        this.scene.getRoot().fireEvent(
+            new ApplicationEvent(
+                ApplicationEvent.POPOUT_STATISTICS_PANE, Boolean.TRUE));
     }
 
     private void onComputeSurface(GridDensityResult result) {
@@ -101,8 +111,9 @@ public class StatPdfCdfPane extends LitPathPane {
                     label
                 )
             );
-        }        
+        }
     }
+
     public void setFeatureVectors(List<FeatureVector> vectors) {
         chartPanel.setFeatureVectors(vectors);
     }
