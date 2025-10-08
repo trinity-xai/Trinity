@@ -56,7 +56,8 @@ public class StatPdfCdfChart extends LineChart<Number, Number> {
         setTitle(titleForCurrentState());
     }
 
-    // ---- configuration (unchanged) ----
+    // ---- configuration ----
+    
     public void setScalarType(StatisticEngine.ScalarType scalarType) {
         this.scalarType = (scalarType != null) ? scalarType : StatisticEngine.ScalarType.L1_NORM;
         setTitle(titleForCurrentState());
