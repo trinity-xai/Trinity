@@ -5,6 +5,11 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+import java.util.function.Consumer;
+
+import javafx.application.Platform;
+import javafx.geometry.Point2D;
+import javafx.scene.Node;
 import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
@@ -34,8 +39,38 @@ public class StatPdfCdfChart extends LineChart<Number, Number> {
     private boolean showSymbols = true;
     private double seriesStrokeWidth = 2.0;
 
-    // --- NEW: raw-sample override for 2D charts ---
+    // --- raw-sample override for 2D charts ---
     private List<Double> scalarSamples = null; // if non-null & non-empty, use this instead of vectors
+
+    // --- NEW: retain last stat and expose interactions ---
+    private StatisticResult lastStat = null;
+
+    public static final class BinSelection {
+        public final int bin;
+        public final double xCenter;
+        public final double xFrom, xTo;
+        public final int count;
+        public final double fraction;
+        public final int[] sampleIdx;
+
+        public BinSelection(int bin, double xCenter, double xFrom, double xTo,
+                            int count, double fraction, int[] sampleIdx) {
+            this.bin = bin;
+            this.xCenter = xCenter;
+            this.xFrom = xFrom;
+            this.xTo = xTo;
+            this.count = count;
+            this.fraction = fraction;
+            this.sampleIdx = sampleIdx;
+        }
+    }
+
+    private Consumer<BinSelection> onBinHover;
+    private Consumer<BinSelection> onBinClick;
+
+    public void setOnBinHover(Consumer<BinSelection> h) { this.onBinHover = h; }
+    public void setOnBinClick(Consumer<BinSelection> h) { this.onBinClick = h; }
+    public StatisticResult getLastStatisticResult() { return lastStat; }
 
     public StatPdfCdfChart(StatisticEngine.ScalarType scalarType, int bins, Mode mode) {
         super(new NumberAxis(), new NumberAxis());
@@ -57,7 +92,7 @@ public class StatPdfCdfChart extends LineChart<Number, Number> {
     }
 
     // ---- configuration ----
-    
+
     public void setScalarType(StatisticEngine.ScalarType scalarType) {
         this.scalarType = (scalarType != null) ? scalarType : StatisticEngine.ScalarType.L1_NORM;
         setTitle(titleForCurrentState());
@@ -129,7 +164,7 @@ public class StatPdfCdfChart extends LineChart<Number, Number> {
         });
     }
 
-    // ---- NEW: raw samples API ----
+    // ---- raw samples API ----
     /** Use precomputed scalar samples instead of deriving scalars from FeatureVectors. */
     public void setScalarSamples(List<Double> samples) {
         if (samples == null || samples.isEmpty()) {
@@ -173,6 +208,7 @@ public class StatPdfCdfChart extends LineChart<Number, Number> {
 
     private void refresh() {
         getData().clear();
+        lastStat = null;
 
         if (isUsingRawSamples()) {
             // Directly bin the provided samples
@@ -198,6 +234,7 @@ public class StatPdfCdfChart extends LineChart<Number, Number> {
     }
 
     private void plotFromStatistic(StatisticResult stat) {
+        lastStat = stat;
         if (stat == null) {
             applyAxisLock();
             return;
@@ -220,6 +257,8 @@ public class StatPdfCdfChart extends LineChart<Number, Number> {
             series.getNode().setStyle("-fx-stroke-width: " + seriesStrokeWidth + "px;");
         }
         applyAxisLock();
+
+        attachPlotInteractions();
     }
 
     private void applyAxisLock() {
@@ -237,5 +276,70 @@ public class StatPdfCdfChart extends LineChart<Number, Number> {
         } else {
             xAxis.setAutoRanging(true);
         }
+    }
+
+    // ===== NEW: interaction plumbing =====
+
+    private void attachPlotInteractions() {
+        Platform.runLater(() -> {
+            Node plotArea = lookup(".chart-plot-background");
+            if (plotArea == null) return;
+
+            plotArea.setOnMouseMoved(evt -> {
+                if (onBinHover == null || lastStat == null || lastStat.getBinEdges() == null) return;
+                Double xVal = xValueFromPlotPixel(plotArea, evt.getX());
+                if (xVal == null) return;
+                BinSelection sel = selectionForX(xVal);
+                if (sel != null) onBinHover.accept(sel);
+            });
+
+            plotArea.setOnMouseClicked(evt -> {
+                if (onBinClick == null || lastStat == null || lastStat.getBinEdges() == null) return;
+                Double xVal = xValueFromPlotPixel(plotArea, evt.getX());
+                if (xVal == null) return;
+                BinSelection sel = selectionForX(xVal);
+                if (sel != null) onBinClick.accept(sel);
+            });
+        });
+    }
+
+    private Double xValueFromPlotPixel(Node plotArea, double xInPlotLocal) {
+        try {
+            Point2D scenePt = plotArea.localToScene(xInPlotLocal, 0);
+            Point2D axisPt = getXAxis().sceneToLocal(scenePt);
+            return ((NumberAxis) getXAxis()).getValueForDisplay(axisPt.getX()).doubleValue();
+        } catch (Exception ex) {
+            return null;
+        }
+    }
+
+    private BinSelection selectionForX(double xVal) {
+        double[] edges = (lastStat != null) ? lastStat.getBinEdges() : null;
+        if (edges == null || edges.length < 2) return null;
+
+        int n = edges.length - 1;
+        if (xVal <= edges[0]) xVal = edges[0] + 1e-12;
+        if (xVal >= edges[n]) xVal = edges[n] - 1e-12;
+
+        // binary search for bin
+        int lo = 0, hi = n - 1;
+        while (lo <= hi) {
+            int mid = (lo + hi) >>> 1;
+            if (xVal < edges[mid]) {
+                hi = mid - 1;
+            } else if (xVal >= edges[mid + 1]) {
+                lo = mid + 1;
+            } else {
+                int b = mid;
+                double center = lastStat.getPdfBins()[b];
+                int count = lastStat.getBinCounts()[b];
+                double frac = (lastStat.getTotalSamples() > 0)
+                        ? ((double) count) / lastStat.getTotalSamples()
+                        : 0.0;
+                int[] idx = lastStat.getBinToSampleIdx()[b];
+                return new BinSelection(b, center, edges[b], edges[b + 1], count, frac, idx);
+            }
+        }
+        return null;
     }
 }
