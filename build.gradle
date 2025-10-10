@@ -173,7 +173,7 @@ idea {
 }
 
 tasks.named('wrapper', Wrapper) {
-    gradleVersion = '8.14.2'
+    gradleVersion = '9.1.0'
     distributionType = Wrapper.DistributionType.BIN
 }
 

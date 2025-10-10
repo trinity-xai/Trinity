@@ -5,7 +5,7 @@ name: Gradle Build
 on:
   push:
     branches:
-      - main
+      - jdk25
   pull_request:
     branches:
       - main
@@ -31,7 +31,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        jdk-version: [ 21 ]
+        jdk-version: [ 25 ]
         os:
           - ubuntu-latest
           - windows-latest
@@ -96,7 +96,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        jdk-version: [ 21 ]
+        jdk-version: [ 25 ]
         os:
           - ubuntu-latest
           - windows-latest
@@ -160,7 +160,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        jdk-version: [ 21 ]
+        jdk-version: [ 25 ]
         os:
           - ubuntu-latest
           - windows-latest

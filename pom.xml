@@ -19,8 +19,8 @@
         <revision>${maven.build.timestamp}</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <java.version>21</java.version>
-        <javafx.version>21.0.7</javafx.version>
+        <java.version>25</java.version>
+        <javafx.version>25</javafx.version>
         <maven.min.version>3.8.8</maven.min.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
