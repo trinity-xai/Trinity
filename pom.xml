@@ -19,40 +19,40 @@
         <revision>${maven.build.timestamp}</revision>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>
-        <java.version>21</java.version>
-        <javafx.version>21.0.7</javafx.version>
-        <maven.min.version>3.8.8</maven.min.version>
+        <java.version>25</java.version>
+        <javafx.version>25.0.1</javafx.version>
+        <maven.min.version>3.9.9</maven.min.version>
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
         <maven.compiler.release>${java.version}</maven.compiler.release>
         <maven.build.timestamp.format>yyyy.MM.dd</maven.build.timestamp.format>
-        <maven.compiler.plugin.version>3.14.0</maven.compiler.plugin.version>
-        <maven.enforcer.plugin.version>3.5.0</maven.enforcer.plugin.version>
+        <maven.compiler.plugin.version>3.14.1</maven.compiler.plugin.version>
+        <maven.enforcer.plugin.version>3.6.2</maven.enforcer.plugin.version>
         <maven.assembly.plugin.version>3.7.1</maven.assembly.plugin.version>
-        <maven.surefire.plugin.version>3.5.3</maven.surefire.plugin.version>
+        <maven.surefire.plugin.version>3.5.4</maven.surefire.plugin.version>
         <maven.site.plugin.version>4.0.0-M16</maven.site.plugin.version>
         <javafx.maven.plugin.version>0.0.8</javafx.maven.plugin.version>
-        <codehaus.flatten.plugin.version>1.7.1</codehaus.flatten.plugin.version>
+        <codehaus.flatten.plugin.version>1.7.3</codehaus.flatten.plugin.version>
         <codehaus.build.helper.maven.plugin.version>3.6.1</codehaus.build.helper.maven.plugin.version>
         <git.commit.maven.plugin.version>9.0.2</git.commit.maven.plugin.version>
-        <org.owasp.dependency-check-maven.plugin.version>12.1.3</org.owasp.dependency-check-maven.plugin.version>
-        <junit.jupiter.version>5.13.2</junit.jupiter.version>
-        <junit.jupiter.platform.version>1.13.2</junit.jupiter.platform.version>
+        <org.owasp.dependency-check-maven.plugin.version>12.1.8</org.owasp.dependency-check-maven.plugin.version>
+        <junit.jupiter.version>5.14.0</junit.jupiter.version>
+        <junit.jupiter.platform.version>1.14.0</junit.jupiter.platform.version>
         <litfx.controls.version>0.1.3</litfx.controls.version>
         <fxyz3d.version>0.6.0</fxyz3d.version>
-        <hansolo.charts.version>21.0.25</hansolo.charts.version>
+        <hansolo.charts.version>21.0.27</hansolo.charts.version>
         <quickhull3d.version>1.0.0</quickhull3d.version>
         <apache.commons.math3.version>3.6.1</apache.commons.math3.version>
-        <apache.commons.lang3.version>3.18.0</apache.commons.lang3.version>
+        <apache.commons.lang3.version>3.19.0</apache.commons.lang3.version>
         <zeromq.jeromq.version>0.6.0</zeromq.jeromq.version>
-        <jackson.version>2.19.1</jackson.version>
+        <jackson.version>2.19.2</jackson.version>
         <sarxos.webcam.capture.version>0.3.12</sarxos.webcam.capture.version>
         <org.jflac.jflac-codec.version>1.5.2</org.jflac.jflac-codec.version>
         <com.tambapps.fft4j.version>2.0</com.tambapps.fft4j.version>
         <supermds.version>v2025.06.29</supermds.version>
-        <pdfbox.version>3.0.5</pdfbox.version>
+        <pdfbox.version>3.0.6</pdfbox.version>
         <slf4j.version>2.0.17</slf4j.version>
-        <logback.version>1.5.18</logback.version>
+        <logback.version>1.5.20</logback.version>
         <mainClassName>edu.jhuapl.trinity.TrinityMain</mainClassName>
         <!-- Values for build.properties -->
         <trinity.title>Trinity</trinity.title>
@@ -69,6 +69,10 @@
     </properties>
 
     <repositories>
+        <repository>
+            <id>central</id>
+            <url>https://repo1.maven.org/maven2/</url>
+        </repository>
         <repository>
             <id>jitpack.io</id>
             <url>https://jitpack.io</url>
@@ -123,16 +127,62 @@
             <groupId>com.github.birdasaur.litfx</groupId>
             <artifactId>litfx-controls</artifactId>
             <version>${litfx.controls.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.openjfx</groupId>
+                    <artifactId>javafx-controls</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.openjfx</groupId>
+                    <artifactId>javafx-fxml</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>org.fxyz3d</groupId>
             <artifactId>fxyz3d</artifactId>
             <version>${fxyz3d.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.openjfx</groupId>
+                    <artifactId>javafx-controls</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.openjfx</groupId>
+                    <artifactId>javafx-fxml</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.openjfx</groupId>
+                    <artifactId>javafx-swing</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>eu.hansolo.fx</groupId>
             <artifactId>charts</artifactId>
             <version>${hansolo.charts.version}</version>
+            <exclusions>
+                <exclusion>
+                    <groupId>org.openjfx</groupId>
+                    <artifactId>javafx-base</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.openjfx</groupId>
+                    <artifactId>javafx-graphics</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.openjfx</groupId>
+                    <artifactId>javafx-controls</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>org.openjfx</groupId>
+                    <artifactId>javafx-swing</artifactId>
+                </exclusion>
+                <exclusion>
+                    <groupId>ch.qos.logback</groupId>
+                    <artifactId>logback-classic</artifactId>
+                </exclusion>
+            </exclusions>
         </dependency>
         <dependency>
             <groupId>com.github.quickhull3d</groupId>
