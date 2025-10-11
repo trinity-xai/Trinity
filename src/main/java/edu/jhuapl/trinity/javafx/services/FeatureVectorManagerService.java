@@ -79,6 +79,11 @@ public interface FeatureVectorManagerService {
     // Convenience default
     default void applyActiveToWorkspace() { applyActiveToWorkspace(false); }
 
+    /** Also Fire APPLY_ACTIVE_FEATUREVECTORS back to the app (scene root). */
+    void applyAllToWorkspace(boolean replace);
+
+    default void applyAllToWorkspace() { applyAllToWorkspace(false); }
+
     /** Optional: Where events should be fired (e.g., scene.getRoot()). */
     void setEventTarget(EventTarget target);
 }

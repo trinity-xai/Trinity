@@ -3,7 +3,6 @@ package edu.jhuapl.trinity.utils.statistics;
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.utils.metric.Metric;
 import edu.jhuapl.trinity.utils.statistics.DialogUtils.ScalarInputResult;
-
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
 import java.util.LinkedHashSet;
@@ -11,7 +10,8 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 import java.util.function.Consumer;
-
+import javafx.collections.FXCollections;
+import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
@@ -19,12 +19,12 @@ import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.CustomMenuItem;
 import javafx.scene.control.Label;
+import javafx.scene.control.ListView;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuButton;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.RadioButton;
 import javafx.scene.control.RadioMenuItem;
-import javafx.scene.control.ScrollPane;
 import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
@@ -36,24 +36,35 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 
 /**
- * Chart panel showing PDF, CDF, and a time-series chart (vertical stack),
- * with linked interactions between the distribution charts and the time-series,
- * label filtering, Contribution (Δ log-odds), Cumulative log-odds, and a
- * Top-K contributors list ranked by |Δ log-odds|.
+ * PDF, CDF, and a time-series chart (vertical stack) with linked interactions,
+ * label filtering, and Similarity / Contribution / Cumulative modes.
+ * 
+ * No scroll panes, no wildcard imports, and no inline CSS.
  *
- * PDF/CDF hover/click -> highlights contributing samples in the time-series.
- * Time-series hover shows sample index/value (and bin info in the readout).
+ * Top-K contributors live to the right of the time-series in a fixed-width panel.
+ *
+ * @author Sean Phillips
  */
 public class StatPdfCdfChartPanel extends BorderPane {
-
-    // ===== Layout constants =====
-    private static final double RIGHT_PANE_WIDTH = 260.0;
-    private static final double TOPK_SPINNER_WIDTH = 72.0;
 
     // ===== Charts =====
     private StatPdfCdfChart pdfChart;
     private StatPdfCdfChart cdfChart;
     private StatTimeSeriesChart tsChart;
+
+    // ===== Time-series row (chart + Top-K) =====
+    private HBox tsRow;
+
+    // ===== Top-K contributors UI =====
+    private Spinner<Integer> topKSpinner;
+    private ListView<String> topKList;
+    private final ObservableList<String> topKItems = FXCollections.observableArrayList();
+    private final List<Integer> topKIndices = new ArrayList<>();
+    private int topKFixedWidth = 220;   // fixed width for side panel
+    private int topKSpinnerWidth = 80;  // fixed width for spinner
+
+    // Cap time-series row height (no pref height set)
+    private double tsMaxHeight = 280.0;
 
     // ===== Data source mode =====
     private enum DataSource { VECTORS, SCALARS }
@@ -86,39 +97,24 @@ public class StatPdfCdfChartPanel extends BorderPane {
     private int currentBins = 40;
     private List<Double> customReferenceVector;
 
-    // Time-series state
-    private List<Double> scalarSeries = new ArrayList<>();
-    private boolean persistSelection = false;
-
-    // Maintain persistent highlight indices locally (no addHighlights() needed on tsChart)
-    private final Set<Integer> persistentHighlights = new LinkedHashSet<>();
-
-    // ===== Time-series mode: Similarity vs Contribution vs Cumulative =====
+    // Time-series mode & aggregator
     private enum TSMode { SIMILARITY, CONTRIBUTION, CUMULATIVE }
-    private TSMode tsMode = TSMode.CONTRIBUTION; // default
+    private TSMode tsMode = TSMode.CONTRIBUTION;
     private StatisticEngine.SimilarityAggregator agg = StatisticEngine.SimilarityAggregator.MEAN;
     private final double contribEps = 1e-6;
 
-    // Keep last contributions for Top-K list
-    private StatisticEngine.ContributionSeries lastContrib = null;
-
-    // Readout
+    // Selection
+    private boolean persistSelection = false;
     private final Label selectionInfo = new Label("—");
 
-    // ===== Label filter state & UI =====
+    // ===== Label filter =====
     private static final String UNLABELED = "(unlabeled)";
     private List<String> allLabels = new ArrayList<>();
     private List<String> selectedLabels = new ArrayList<>();
     private final Map<String, CheckMenuItem> labelChecks = new LinkedHashMap<>();
     private Menu labelsMenu; // built in Options
 
-    // ===== Top-K contributors panel =====
-    private VBox topKRoot;
-    private VBox topKListBox;
-    private Spinner<Integer> topKSpinner;
-    private int topK = 5;
-
-    // Callbacks
+    // Callback
     private Consumer<GridDensityResult> onComputeSurface = null;
 
     // ===== Constructor =====
@@ -158,26 +154,63 @@ public class StatPdfCdfChartPanel extends BorderPane {
         topBar.setPadding(new Insets(6, 8, 4, 8));
         HBox.setHgrow(optionsMenu, Priority.NEVER);
 
-        // --- Charts: PDF (top), CDF (middle), Time Series (bottom) ---
+        // --- Charts: PDF (top), CDF (middle) ---
         pdfChart = new StatPdfCdfChart(currentXFeature, currentBins, StatPdfCdfChart.Mode.PDF_ONLY);
         cdfChart = new StatPdfCdfChart(currentXFeature, currentBins, StatPdfCdfChart.Mode.CDF_ONLY);
-        tsChart  = new StatTimeSeriesChart();
 
-        // modest sizing
+        // baseline sizes (no pref height on the container)
         pdfChart.setMinHeight(120);
         cdfChart.setMinHeight(120);
-        tsChart.setMinHeight(140);
         pdfChart.setPrefHeight(220);
         cdfChart.setPrefHeight(220);
+
+        // --- Time Series + Top-K row ---
+        tsChart = new StatTimeSeriesChart();
+        tsChart.setMinHeight(140);
         tsChart.setPrefHeight(240);
 
+        VBox topKPanel = buildTopKPanel(); // fixed-width side panel
+        tsRow = new HBox(10, tsChart, topKPanel);
+        tsRow.setAlignment(Pos.CENTER_LEFT);
+        tsRow.setFillHeight(false);
+        tsRow.setMaxHeight(tsMaxHeight);
+        HBox.setHgrow(tsChart, Priority.ALWAYS);
+        HBox.setHgrow(topKPanel, Priority.NEVER);
+        VBox.setVgrow(tsRow, Priority.NEVER); // don't let TS row push others
+
+        // --- Bottom utility bar ---
+        Button clearBtn = new Button("Clear Highlights");
+        clearBtn.setOnAction(e -> { tsChart.clearHighlights(); selectionInfo.setText("—"); });
+        HBox bottomBar = new HBox(12, new Label("Selection:"), selectionInfo, new Region(), clearBtn);
+        HBox.setHgrow(bottomBar.getChildren().get(2), Priority.ALWAYS);
+        bottomBar.setAlignment(Pos.CENTER_LEFT);
+        bottomBar.setPadding(new Insets(2, 8, 8, 8));
+
+        // --- Vertical stack without scroll, with spacer to absorb extra height ---
+        Region spacer = new Region();
+        VBox chartsBox = new VBox(8, pdfChart, cdfChart, tsRow, bottomBar, spacer);
+        chartsBox.setPadding(new Insets(6));
+
+        // Do NOT let charts grow vertically
+        VBox.setVgrow(pdfChart, Priority.NEVER);
+        VBox.setVgrow(cdfChart, Priority.NEVER);
+        VBox.setVgrow(tsRow, Priority.NEVER);
+        VBox.setVgrow(bottomBar, Priority.NEVER);
+
+        // The spacer eats any leftover space so charts don't stretch
+        VBox.setVgrow(spacer, Priority.ALWAYS);
+
+        setTop(topBar);
+        setCenter(chartsBox);
+
+        // Initial data render
         if (!currentVectors.isEmpty()) {
-            rebuildLabelsFromCurrentVectors(); // build labels before first render
+            rebuildLabelsFromCurrentVectors();
             applyXFeatureOptions();
-            List<FeatureVector> use = getFilteredVectors();
-            pdfChart.setFeatureVectors(use);
-            cdfChart.setFeatureVectors(use);
-            updateTimeSeries(); // populate TS based on tsMode
+            List<FeatureVector> filtered = getFilteredVectors();
+            pdfChart.setFeatureVectors(filtered);
+            cdfChart.setFeatureVectors(filtered);
+            updateTimeSeries();
         }
         if (lockXToUnit) {
             pdfChart.setLockXAxis(true, 0.0, 1.0);
@@ -187,39 +220,97 @@ public class StatPdfCdfChartPanel extends BorderPane {
         // linked interactions: PDF/CDF -> TS
         wireChartInteractions();
 
-        // Bottom utility bar
-        Button clearBtn = new Button("Clear Highlights");
-        clearBtn.setOnAction(e -> {
-            persistentHighlights.clear();
-            tsChart.clearHighlights();
-            selectionInfo.setText("—");
-        });
-
-        HBox bottomBar = new HBox(12, new Label("Selection:"), selectionInfo, new Region(), clearBtn);
-        HBox.setHgrow(bottomBar.getChildren().get(2), Priority.ALWAYS);
-        bottomBar.setAlignment(Pos.CENTER_LEFT);
-        bottomBar.setPadding(new Insets(2, 8, 8, 8));
-
-        VBox chartsBox = new VBox(8, pdfChart, cdfChart, tsChart, bottomBar);
-        chartsBox.setPadding(new Insets(6));
-        VBox.setVgrow(pdfChart, Priority.ALWAYS);
-        VBox.setVgrow(cdfChart, Priority.ALWAYS);
-        VBox.setVgrow(tsChart, Priority.ALWAYS);
-        chartsBox.setFillWidth(true);
-        chartsBox.setPrefHeight(Region.USE_COMPUTED_SIZE);
-
-        setTop(topBar);
-        setCenter(chartsBox);
-
-        // Right-side: Top-K contributors (fixed width)
-        setRight(buildTopKPane());
-
-        // handler
+        // Handlers
         xFeatureCombo.valueProperty().addListener((obs, ov, nv) -> {
             currentXFeature = nv;
             updateXControlEnablement();
             updateXIndexBoundsAndValue();
         });
+    }
+
+    // ===== Top-K panel =====
+
+    private VBox buildTopKPanel() {
+        Label title = new Label("Top-K Contributors");
+        Label kLabel = new Label("K:");
+        topKSpinner = new Spinner<>();
+        topKSpinner.setValueFactory(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 1000, 10, 1));
+        topKSpinner.setPrefWidth(topKSpinnerWidth);
+        topKSpinner.setMinWidth(topKSpinnerWidth);
+        topKSpinner.setMaxWidth(topKSpinnerWidth);
+        topKSpinner.valueProperty().addListener((obs, ov, nv) -> refreshTopK());
+
+        HBox header = new HBox(6, title, new Region(), kLabel, topKSpinner);
+        HBox.setHgrow(header.getChildren().get(1), Priority.ALWAYS);
+        header.setAlignment(Pos.CENTER_LEFT);
+
+        topKList = new ListView<>(topKItems);
+        // Fixed width for the whole side panel
+        VBox panel = new VBox(6, header, topKList);
+        panel.setPadding(new Insets(0, 0, 0, 0));
+        panel.setMinWidth(topKFixedWidth);
+        panel.setPrefWidth(topKFixedWidth);
+        panel.setMaxWidth(topKFixedWidth);
+        VBox.setVgrow(topKList, Priority.ALWAYS); // list consumes vertical space inside panel only
+
+        // Clicking an item highlights that sample
+        topKList.setOnMouseClicked(e -> {
+            int idx = topKList.getSelectionModel().getSelectedIndex();
+            if (idx >= 0 && idx < topKIndices.size()) {
+                int sampleIdx = topKIndices.get(idx);
+                tsChart.clearHighlights();
+                tsChart.highlightSamples(new int[]{sampleIdx});
+                selectionInfo.setText("Top-K picked sample #" + sampleIdx);
+            }
+        });
+
+        return panel;
+    }
+
+    private void refreshTopK() {
+        List<Double> series = getCurrentTSValues();
+        topKItems.clear();
+        topKIndices.clear();
+        if (series == null || series.isEmpty()) return;
+
+        int k = Math.max(1, Math.min(topKSpinner.getValue(), series.size()));
+        List<int[]> pairs = new ArrayList<>(series.size());
+        for (int i = 0; i < series.size(); i++) {
+            double v = series.get(i) == null ? 0.0 : series.get(i);
+            pairs.add(new int[]{i, (int) Math.round(Math.abs(v) * 1_000_000)}); // keep stable sort with abs magnitude
+        }
+        pairs.sort((a, b) -> Integer.compare(b[1], a[1]));
+
+        for (int i = 0; i < k; i++) {
+            int idx = pairs.get(i)[0];
+            double val = Math.abs(series.get(idx) == null ? 0.0 : series.get(idx));
+            topKIndices.add(idx);
+            topKItems.add(String.format("#%d  |  |Δ|=%.6f", idx, val));
+        }
+    }
+
+    private List<Double> getCurrentTSValues() {
+        List<FeatureVector> use = getFilteredVectors();
+        if (dataSource == DataSource.SCALARS) {
+            // For pasted scalars, only Similarity mode is supported
+            return new ArrayList<>(scalarField.equals("Info%") ? scalarInfos : scalarScores);
+        }
+        if (use == null || use.isEmpty()) return new ArrayList<>();
+
+        if (tsMode == TSMode.CONTRIBUTION) {
+            StatisticEngine.ContributionSeries cs =
+                StatisticEngine.computeContributions(use, agg, null, contribEps);
+            return cs.delta;
+        } else if (tsMode == TSMode.CUMULATIVE) {
+            StatisticEngine.ContributionSeries cs =
+                StatisticEngine.computeContributions(use, agg, null, contribEps);
+            return StatisticEngine.cumulativeFromDeltas(cs.delta);
+        } else {
+            // SIMILARITY: show the same scalar values that fed the PDF/CDF
+            StatisticResult stat = (pdfChart != null) ? pdfChart.getLastStatisticResult() : null;
+            List<Double> vals = (stat != null) ? stat.getValues() : null;
+            return (vals != null) ? new ArrayList<>(vals) : new ArrayList<>();
+        }
     }
 
     // ===== Options menu =====
@@ -250,11 +341,7 @@ public class StatPdfCdfChartPanel extends BorderPane {
 
         CheckMenuItem persistSel = new CheckMenuItem("Persist Selection");
         persistSel.setSelected(persistSelection);
-        persistSel.selectedProperty().addListener((o, oldV, nv) -> {
-            persistSelection = nv;
-            if (!persistSelection) persistentHighlights.clear();
-            applyCurrentHighlights();
-        });
+        persistSel.selectedProperty().addListener((o, oldV, nv) -> persistSelection = nv);
 
         // Scalars submenu
         Menu scalarsMenu = new Menu("Scalars");
@@ -288,8 +375,7 @@ public class StatPdfCdfChartPanel extends BorderPane {
             tsChart.clearHighlights();
             tsChart.setSeries(new ArrayList<>());
             selectionInfo.setText("—");
-            lastContrib = null;
-            updateTopKList(); // clear list
+            refreshTopK();
         });
 
         scalarsMenu.getItems().addAll(scoreItem, infoItem, new SeparatorMenuItem(), pasteScalars, clearScalars);
@@ -315,6 +401,8 @@ public class StatPdfCdfChartPanel extends BorderPane {
 
         xIndexSpinner = new Spinner<>();
         xIndexSpinner.setPrefWidth(100);
+        xIndexSpinner.setMinWidth(100);
+        xIndexSpinner.setMaxWidth(100);
 
         Button setCustomButton = new Button("Set Custom Vector…");
         setCustomButton.setOnAction(e -> {
@@ -350,6 +438,8 @@ public class StatPdfCdfChartPanel extends BorderPane {
 
         yIndexSpinner = new Spinner<>();
         yIndexSpinner.setPrefWidth(100);
+        yIndexSpinner.setMinWidth(100);
+        yIndexSpinner.setMaxWidth(100);
 
         ToggleGroup surfaceGroup = new ToggleGroup();
         RadioButton surfacePdf = new RadioButton("PDF");
@@ -378,7 +468,7 @@ public class StatPdfCdfChartPanel extends BorderPane {
         MenuItem surfaceHeader = new MenuItem("3D Surface");
         surfaceHeader.setDisable(true);
 
-        // ---- Time-Series Mode & Aggregator ----
+        // Time-Series Mode & Aggregator
         Menu tsModeMenu = new Menu("Time-Series Mode");
         ToggleGroup tsModeGroup = new ToggleGroup();
         RadioMenuItem tsSimilarity = new RadioMenuItem("Similarity (matches PDF feature)");
@@ -391,14 +481,14 @@ public class StatPdfCdfChartPanel extends BorderPane {
         tsContribution.setSelected(tsMode == TSMode.CONTRIBUTION);
         tsContribution.setOnAction(e -> { tsMode = TSMode.CONTRIBUTION; updateTimeSeries(); });
 
-        RadioMenuItem tsCumulative = new RadioMenuItem("Cumulative Log-odds (ΣΔ)");
+        RadioMenuItem tsCumulative = new RadioMenuItem("Cumulative log-odds");
         tsCumulative.setToggleGroup(tsModeGroup);
         tsCumulative.setSelected(tsMode == TSMode.CUMULATIVE);
         tsCumulative.setOnAction(e -> { tsMode = TSMode.CUMULATIVE; updateTimeSeries(); });
 
         tsModeMenu.getItems().addAll(tsSimilarity, tsContribution, tsCumulative);
 
-        Menu aggregatorMenu = new Menu("Aggregator (Contribution/Cumulative)");
+        Menu aggregatorMenu = new Menu("Aggregator (Contribution)");
         ToggleGroup aggGroup = new ToggleGroup();
         RadioMenuItem aggMean = new RadioMenuItem("Mean");
         RadioMenuItem aggGeo  = new RadioMenuItem("Geomean");
@@ -413,8 +503,7 @@ public class StatPdfCdfChartPanel extends BorderPane {
         aggGeo.setOnAction(e -> { agg = StatisticEngine.SimilarityAggregator.GEOMEAN; if (tsMode!=TSMode.SIMILARITY) updateTimeSeries(); });
         aggMin.setOnAction(e -> { agg = StatisticEngine.SimilarityAggregator.MIN; if (tsMode!=TSMode.SIMILARITY) updateTimeSeries(); });
         aggregatorMenu.getItems().addAll(aggMean, aggGeo, aggMin);
-
-        // ---- Final assembly ----
+        // Final assembly
         mb.getItems().addAll(
             useScalars,
             lockX,
@@ -440,100 +529,6 @@ public class StatPdfCdfChartPanel extends BorderPane {
         updateYIndexBoundsAndValue();
 
         return mb;
-    }
-
-    // ===== Top-K Pane (fixed width) =====
-    private VBox buildTopKPane() {
-        Label title = new Label("Top-K Contributors");
-
-        topKSpinner = new Spinner<>(1, 100, topK, 1);
-        topKSpinner.setEditable(false);
-        // Fix spinner width so it doesn't stretch the parent
-        topKSpinner.setMinWidth(TOPK_SPINNER_WIDTH);
-        topKSpinner.setPrefWidth(TOPK_SPINNER_WIDTH);
-        topKSpinner.setMaxWidth(TOPK_SPINNER_WIDTH);
-        // Optional: constrain editor text columns (even though not editable)
-        if (topKSpinner.getEditor() != null) {
-            topKSpinner.getEditor().setPrefColumnCount(3);
-        }
-        topKSpinner.valueProperty().addListener((obs, ov, nv) -> {
-            topK = (nv != null) ? nv : topK;
-            updateTopKList();
-        });
-
-        HBox header = new HBox(8, title, new Region(), new Label("K:"), topKSpinner);
-        HBox.setHgrow(header.getChildren().get(1), Priority.ALWAYS);
-        header.setAlignment(Pos.CENTER_LEFT);
-
-        topKListBox = new VBox(4);
-
-        ScrollPane scroll = new ScrollPane(topKListBox);
-        // Grow vertically with parent; let the viewport width be respected
-        VBox.setVgrow(scroll, Priority.ALWAYS);
-        scroll.setFitToWidth(true);
-        scroll.setFitToHeight(true);
-
-        topKRoot = new VBox(8, header, scroll);
-        topKRoot.setPadding(new Insets(8));
-        topKRoot.setFillWidth(false);
-
-        // Fix the right pane width
-        topKRoot.setMinWidth(RIGHT_PANE_WIDTH);
-        topKRoot.setPrefWidth(RIGHT_PANE_WIDTH);
-        topKRoot.setMaxWidth(RIGHT_PANE_WIDTH);
-
-        return topKRoot;
-    }
-
-    private void updateTopKList() {
-        if (topKListBox == null) return;
-        topKListBox.getChildren().clear();
-
-        // Only defined in Contribution/Cumulative (uses Δ)
-        if (lastContrib == null || lastContrib.delta == null || lastContrib.delta.isEmpty()) {
-            Label none = new Label("No contribution data.");
-            topKListBox.getChildren().add(none);
-            return;
-        }
-
-        // Build indices and sort by |Δ|
-        List<Integer> indices = new ArrayList<>();
-        int n = lastContrib.delta.size();
-        for (int i = 0; i < n; i++) indices.add(i);
-
-        indices.sort((a, b) -> {
-            double da = Math.abs(lastContrib.delta.get(a));
-            double db = Math.abs(lastContrib.delta.get(b));
-            return Double.compare(db, da);
-        });
-
-        int count = Math.min(topK, indices.size());
-        for (int i = 0; i < count; i++) {
-            int idx = indices.get(i);
-            double abs = Math.abs(lastContrib.delta.get(idx));
-            String text = String.format("#%d  |Δ|= %.6f", idx, abs);
-
-            Button row = new Button(text);
-            // Keep buttons compact; do not stretch to container width
-            row.setMaxWidth(RIGHT_PANE_WIDTH * 0.9);
-            row.setMinWidth(RIGHT_PANE_WIDTH * 0.9);
-            row.setOnAction(e -> {
-                if (!persistSelection) persistentHighlights.clear();
-                persistentHighlights.add(idx);
-                applyCurrentHighlights();
-                selectionInfo.setText(String.format("Top-K • Sample #%d: |Δ| = %.6f", idx, abs));
-            });
-            topKListBox.getChildren().add(row);
-        }
-    }
-
-    private void applyCurrentHighlights() {
-        if (persistentHighlights.isEmpty()) {
-            tsChart.clearHighlights();
-            return;
-        }
-        int[] arr = persistentHighlights.stream().mapToInt(Integer::intValue).toArray();
-        tsChart.highlightSamples(arr);
     }
 
     // ===== Public API =====
@@ -623,14 +618,9 @@ public class StatPdfCdfChartPanel extends BorderPane {
         public List<Double> scalarInfos;
         public List<Double> customRef; // nullable
         public boolean persistSelection;
-
-        // Label filter
         public List<String> selectedLabels;
-
-        // Time-series mode & aggregator
-        public String tsMode; // "SIMILARITY" or "CONTRIBUTION" or "CUMULATIVE"
+        public String tsMode; // "SIMILARITY" / "CONTRIBUTION" / "CUMULATIVE"
         public String aggregator; // "MEAN","GEOMEAN","MIN"
-        public Integer topK; // optional
     }
 
     public State exportState() {
@@ -653,7 +643,6 @@ public class StatPdfCdfChartPanel extends BorderPane {
         s.selectedLabels = new ArrayList<>(selectedLabels);
         s.tsMode = this.tsMode.name();
         s.aggregator = this.agg.name();
-        s.topK = this.topK;
         return s;
     }
 
@@ -685,14 +674,6 @@ public class StatPdfCdfChartPanel extends BorderPane {
         if (s.selectedLabels != null) selectedLabels = new ArrayList<>(s.selectedLabels);
         if (s.tsMode != null) tsMode = TSMode.valueOf(s.tsMode);
         if (s.aggregator != null) agg = StatisticEngine.SimilarityAggregator.valueOf(s.aggregator);
-        if (s.topK != null) {
-            topK = Math.max(1, Math.min(100, s.topK));
-            if (topKSpinner != null) topKSpinner.getValueFactory().setValue(topK);
-        }
-
-        // Reset persisted highlights when applying state (safer)
-        persistentHighlights.clear();
-        applyCurrentHighlights();
 
         // Apply visuals
         rebuildLabelsFromCurrentVectors();
@@ -718,25 +699,20 @@ public class StatPdfCdfChartPanel extends BorderPane {
             cdfChart.clearScalarSamples();
             tsChart.setSeries(new ArrayList<>());
             selectionInfo.setText("—");
-            lastContrib = null;
-            updateTopKList();
+            refreshTopK();
             return;
         }
         pdfChart.setScalarSamples(chosen);
         cdfChart.setScalarSamples(chosen);
 
-        // In Scalars mode, treat TS as similarity only.
+        // For pasted scalars, show Similarity
         tsMode = TSMode.SIMILARITY;
         tsChart.setAxisLabels("Sample Index", "Scalar Value");
         tsChart.setSeries(chosen);
-        scalarSeries = new ArrayList<>(chosen);
-        lastContrib = null;
-        persistentHighlights.clear();
-        applyCurrentHighlights();
-        updateTopKList();
 
         pdfChart.setLockXAxis(lockXToUnit, 0.0, 1.0);
         cdfChart.setLockXAxis(lockXToUnit, 0.0, 1.0);
+        refreshTopK();
     }
 
     // ===== 2D (Vectors) behavior =====
@@ -765,10 +741,7 @@ public class StatPdfCdfChartPanel extends BorderPane {
             cdfChart.setFeatureVectors(new ArrayList<>());
             tsChart.setSeries(new ArrayList<>());
             selectionInfo.setText("—");
-            lastContrib = null;
-            persistentHighlights.clear();
-            applyCurrentHighlights();
-            updateTopKList();
+            refreshTopK();
         }
 
         pdfChart.setLockXAxis(lockXToUnit, 0.0, 1.0);
@@ -787,16 +760,11 @@ public class StatPdfCdfChartPanel extends BorderPane {
 
         if (currentXFeature == StatisticEngine.ScalarType.METRIC_DISTANCE_TO_MEAN) {
             String metricName = (metricCombo != null) ? metricCombo.getValue() : null;
-
             List<Double> ref = switch (referenceMode) {
                 case "Vector @ Index" -> getVectorAtIndexAsList(xIndexSpinner.getValue());
                 case "Custom" -> customReferenceVector;
-                default -> {
-                    List<FeatureVector> use = getFilteredVectors();
-                    yield use.isEmpty() ? null : FeatureVector.getMeanVector(use);
-                }
+                default -> currentVectors.isEmpty() ? null : FeatureVector.getMeanVector(currentVectors);
             };
-
             pdfChart.setMetricNameForGeneric(metricName);
             pdfChart.setReferenceVectorForGeneric(ref);
             cdfChart.setMetricNameForGeneric(metricName);
@@ -872,7 +840,7 @@ public class StatPdfCdfChartPanel extends BorderPane {
         if (xIndexSpinner == null) return;
 
         if (isMetricVectorIdx) {
-            int maxIdx = Math.max(0, getFilteredVectors().size() - 1);
+            int maxIdx = Math.max(0, getMaxVectorIndex());
             setSpinnerBounds(xIndexSpinner, 0, maxIdx, safeSpinnerValue(xIndexSpinner, 0, maxIdx));
         } else if (isComponent) {
             int maxDim = getMaxDimensionIndex();
@@ -917,10 +885,9 @@ public class StatPdfCdfChartPanel extends BorderPane {
     }
 
     private List<Double> getVectorAtIndexAsList(int idx) {
-        List<FeatureVector> use = getFilteredVectors();
-        if (use == null || use.isEmpty()) return null;
-        int safe = Math.max(0, Math.min(idx, use.size() - 1));
-        return use.get(safe).getData();
+        if (currentVectors == null || currentVectors.isEmpty()) return null;
+        int safe = Math.max(0, Math.min(idx, currentVectors.size() - 1));
+        return currentVectors.get(safe).getData();
     }
 
     // ===== Label filter logic =====
@@ -972,14 +939,14 @@ public class StatPdfCdfChartPanel extends BorderPane {
         MenuItem selectAll = new MenuItem("Select All");
         selectAll.setOnAction(e -> {
             selectedLabels = new ArrayList<>(allLabels);
-            labelChecks.values().forEach(c -> c.setSelected(true));
+            for (CheckMenuItem c : labelChecks.values()) c.setSelected(true);
             refresh2DCharts();
         });
 
         MenuItem selectNone = new MenuItem("Select None");
         selectNone.setOnAction(e -> {
             selectedLabels.clear();
-            labelChecks.values().forEach(c -> c.setSelected(false));
+            for (CheckMenuItem c : labelChecks.values()) c.setSelected(false);
             refresh2DCharts();
         });
 
@@ -1008,65 +975,52 @@ public class StatPdfCdfChartPanel extends BorderPane {
     private void updateTimeSeries() {
         if (dataSource == DataSource.SCALARS) {
             // handled in applyScalarSamplesToCharts
+            refreshTopK();
             return;
         }
         List<FeatureVector> use = getFilteredVectors();
         if (use == null || use.isEmpty()) {
             tsChart.setSeries(new ArrayList<>());
-            lastContrib = null;
-            persistentHighlights.clear();
-            applyCurrentHighlights();
-            updateTopKList();
+            selectionInfo.setText("—");
+            refreshTopK();
             return;
         }
 
-        if (tsMode == TSMode.CONTRIBUTION || tsMode == TSMode.CUMULATIVE) {
-            lastContrib = StatisticEngine.computeContributions(use, agg, null, contribEps);
-
-            if (tsMode == TSMode.CONTRIBUTION) {
-                tsChart.setAxisLabels("Sample Index", "Δ log-odds");
-                tsChart.setSeries(lastContrib.delta);
-            } else {
-                // Cumulative: C_t = sum_{k<=t} Δ_k; start at 0 (50-50 prior odds)
-                List<Double> cum = new ArrayList<>(lastContrib.delta.size());
-                double running = 0.0;
-                for (double d : lastContrib.delta) {
-                    running += d;
-                    cum.add(running);
-                }
-                tsChart.setAxisLabels("Sample Index", "Cumulative log-odds (ΣΔ)");
-                tsChart.setSeries(cum);
-            }
-
-            persistentHighlights.clear();
-            applyCurrentHighlights();
-            updateTopKList(); // uses Δ for ranking
+        if (tsMode == TSMode.CONTRIBUTION) {
+            StatisticEngine.ContributionSeries cs =
+                StatisticEngine.computeContributions(use, agg, null, contribEps);
+            tsChart.setAxisLabels("Sample Index", "Δ log-odds");
+            tsChart.setSeries(cs.delta);
+        } else if (tsMode == TSMode.CUMULATIVE) {
+            StatisticEngine.ContributionSeries cs =
+                StatisticEngine.computeContributions(use, agg, null, contribEps);
+            List<Double> cumulative = StatisticEngine.cumulativeFromDeltas(cs.delta);
+            tsChart.setAxisLabels("Sample Index", "Cumulative log-odds");
+            tsChart.setSeries(cumulative);
         } else {
-            // Similarity: same scalar values that fed the PDF/CDF
+            // SIMILARITY
             StatisticResult stat = (pdfChart != null) ? pdfChart.getLastStatisticResult() : null;
             List<Double> vals = (stat != null) ? stat.getValues() : null;
             if (vals == null) vals = new ArrayList<>();
             tsChart.setAxisLabels("Sample Index", "Scalar Value");
             tsChart.setSeries(vals);
-            scalarSeries = new ArrayList<>(vals);
-            lastContrib = null; // not defined in similarity mode
-            persistentHighlights.clear();
-            applyCurrentHighlights();
-            updateTopKList();
         }
+
+        refreshTopK();
     }
 
     private void wireChartInteractions() {
         // PDF -> TS
         pdfChart.setOnBinHover(sel -> {
-            handleIncomingHighlight(sel.sampleIdx);
+            if (!persistSelection) tsChart.clearHighlights();
+            tsChart.highlightSamples(sel.sampleIdx);
             selectionInfo.setText(
                 String.format("PDF bin %d: [%.4f, %.4f) center≈%.4f • count=%d (%.2f%%)",
                     sel.bin, sel.xFrom, sel.xTo, sel.xCenter, sel.count, 100.0 * sel.fraction)
             );
         });
         pdfChart.setOnBinClick(sel -> {
-            handleIncomingHighlight(sel.sampleIdx);
+            tsChart.highlightSamples(sel.sampleIdx);
             selectionInfo.setText(
                 String.format("PDF bin %d (clicked): [%.4f, %.4f) center≈%.4f • count=%d (%.2f%%)",
                     sel.bin, sel.xFrom, sel.xTo, sel.xCenter, sel.count, 100.0 * sel.fraction)
@@ -1075,14 +1029,15 @@ public class StatPdfCdfChartPanel extends BorderPane {
 
         // CDF -> TS
         cdfChart.setOnBinHover(sel -> {
-            handleIncomingHighlight(sel.sampleIdx);
+            if (!persistSelection) tsChart.clearHighlights();
+            tsChart.highlightSamples(sel.sampleIdx);
             selectionInfo.setText(
                 String.format("CDF bin %d: [%.4f, %.4f) center≈%.4f • count=%d (%.2f%%)",
                     sel.bin, sel.xFrom, sel.xTo, sel.xCenter, sel.count, 100.0 * sel.fraction)
             );
         });
         cdfChart.setOnBinClick(sel -> {
-            handleIncomingHighlight(sel.sampleIdx);
+            tsChart.highlightSamples(sel.sampleIdx);
             selectionInfo.setText(
                 String.format("CDF bin %d (clicked): [%.4f, %.4f) center≈%.4f • count=%d (%.2f%%)",
                     sel.bin, sel.xFrom, sel.xTo, sel.xCenter, sel.count, 100.0 * sel.fraction)
@@ -1094,7 +1049,7 @@ public class StatPdfCdfChartPanel extends BorderPane {
             if (tsMode == TSMode.CONTRIBUTION) {
                 selectionInfo.setText(String.format("Sample #%d: Δ log-odds = %.6f", p.sampleIdx, p.y));
             } else if (tsMode == TSMode.CUMULATIVE) {
-                selectionInfo.setText(String.format("Sample #%d: Cumulative log-odds = %.6f", p.sampleIdx, p.y));
+                selectionInfo.setText(String.format("Sample #%d: cumulative log-odds = %.6f", p.sampleIdx, p.y));
             } else {
                 StatisticResult stat = pdfChart.getLastStatisticResult();
                 String extra = "";
@@ -1111,22 +1066,15 @@ public class StatPdfCdfChartPanel extends BorderPane {
         });
 
         tsChart.setOnPointClick(p -> {
-            handleIncomingHighlight(new int[]{p.sampleIdx});
+            if (!persistSelection) tsChart.clearHighlights();
+            tsChart.highlightSamples(new int[]{p.sampleIdx});
             if (tsMode == TSMode.CONTRIBUTION) {
                 selectionInfo.setText(String.format("Sample #%d (clicked): Δ log-odds = %.6f", p.sampleIdx, p.y));
             } else if (tsMode == TSMode.CUMULATIVE) {
-                selectionInfo.setText(String.format("Sample #%d (clicked): Cumulative log-odds = %.6f", p.sampleIdx, p.y));
+                selectionInfo.setText(String.format("Sample #%d (clicked): cumulative log-odds = %.6f", p.sampleIdx, p.y));
             } else {
                 selectionInfo.setText(String.format("Sample #%d (clicked): value=%.6f", p.sampleIdx, p.y));
             }
         });
-    }
-
-    private void handleIncomingHighlight(int[] newIdx) {
-        if (!persistSelection) {
-            persistentHighlights.clear();
-        }
-        for (int idx : newIdx) persistentHighlights.add(idx);
-        applyCurrentHighlights();
     }
 }

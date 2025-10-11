@@ -171,6 +171,29 @@ public class StatisticEngine {
         }
         return results;
     }
+    /**
+     * Build a cumulative series from a list of delta values.
+     * Intended for converting per-step Δ log-odds into cumulative log-odds.
+     *
+     * Rules:
+     * - Null or NaN entries are treated as 0.0.
+     * - Empty or null input returns an empty list.
+     *
+     * @param deltas List of per-step changes (e.g., Δ log-odds)
+     * @return cumulative sum series of the same length
+     */
+    public static List<Double> cumulativeFromDeltas(List<Double> deltas) {
+        List<Double> out = new ArrayList<>();
+        if (deltas == null || deltas.isEmpty()) return out;
+
+        double acc = 0.0;
+        for (Double d : deltas) {
+            double v = (d == null || d.isNaN()) ? 0.0 : d;
+            acc += v;
+            out.add(acc);
+        }
+        return out;
+    }
 
     // ===== Contribution series (Similarity -> Logit -> Δ) =====
 

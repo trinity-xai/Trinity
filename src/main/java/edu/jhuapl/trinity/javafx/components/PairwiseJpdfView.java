@@ -1,6 +1,7 @@
 package edu.jhuapl.trinity.javafx.components;
 
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
+import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.utils.statistics.CanonicalGridPolicy;
 import edu.jhuapl.trinity.utils.statistics.DensityCache;
 import edu.jhuapl.trinity.utils.statistics.HeatmapThumbnailView;
@@ -32,6 +33,7 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
+import javafx.scene.text.Font;
 
 /**
  * PairwiseJpdfView
@@ -566,7 +568,11 @@ private MenuButton buildAppearanceMenu() {
         if (toastHandler != null) {
             toastHandler.accept((isError ? "[Error] " : "") + msg);
         } else {
-            System.out.println((isError ? "[Error] " : "[Info] ") + msg);
+            Platform.runLater(() -> {
+                this.getScene().getRoot().fireEvent(
+                    new CommandTerminalEvent(msg, new Font("Consolas", 18), 
+                        isError ? Color.RED : Color.LIGHTGREEN));                
+            });
         }
     }
 

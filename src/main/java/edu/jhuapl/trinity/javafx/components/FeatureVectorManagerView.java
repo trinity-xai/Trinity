@@ -97,6 +97,7 @@ public class FeatureVectorManagerView extends BorderPane {
     // Callbacks (wired by container/pane)
     private Runnable onApplyAppend;
     private Runnable onApplyReplace;
+    private Runnable onSetAll;
 
     public FeatureVectorManagerView() {
         buildHeader();
@@ -277,7 +278,10 @@ public class FeatureVectorManagerView extends BorderPane {
         MenuItem applyReplace = new MenuItem("Apply (replace)");
         applyReplace.setOnAction(e -> { if (onApplyReplace != null) onApplyReplace.run(); });
 
-        applyMenu.getItems().addAll(applyAppend, applyReplace);
+        MenuItem setAllReplace = new MenuItem("Set All");
+        setAllReplace.setOnAction(e -> { if (onSetAll != null) onSetAll.run(); });
+
+        applyMenu.getItems().addAll(applyAppend, applyReplace, setAllReplace);
         return new ContextMenu(applyMenu);
     }
 
@@ -445,4 +449,5 @@ public class FeatureVectorManagerView extends BorderPane {
     // Callback setters (wired by container/pane)
     public void setOnApplyAppend(Runnable r) { this.onApplyAppend = r; }
     public void setOnApplyReplace(Runnable r) { this.onApplyReplace = r; }
+    public void setSetAll(Runnable r) { this.onSetAll = r; }
 }

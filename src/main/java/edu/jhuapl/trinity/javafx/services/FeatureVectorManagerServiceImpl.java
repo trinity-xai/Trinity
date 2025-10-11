@@ -278,7 +278,25 @@ public class FeatureVectorManagerServiceImpl implements FeatureVectorManagerServ
             else if (eventScene != null) eventScene.getRoot().fireEvent(evt);
         });
     }
+    @Override
+    public void applyAllToWorkspace(boolean replace) {
+        runFx(() -> {
+            List<FeatureVector> all = new ArrayList<>();
+            collections.values().forEach(all::addAll);
+            var fc = new FeatureCollection();
+            fc.setFeatures(all);
 
+            var evt = new FeatureVectorEvent(
+                FeatureVectorEvent.NEW_FEATURE_COLLECTION,
+                fc
+            );
+            evt.object2 = MANAGER_APPLY_TAG;   // guard against re-mirroring
+            evt.clearExisting = replace;       // replace vs. append
+
+            if (eventNode != null) eventNode.fireEvent(evt);
+            else if (eventScene != null) eventScene.getRoot().fireEvent(evt);
+        });
+    }
     @Override
     public void setEventTarget(EventTarget target) {
         if (target instanceof Node n) {

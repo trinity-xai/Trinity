@@ -64,7 +64,7 @@ public final class PairwiseJpdfPane extends LitPathPane {
         // Wire up toast to send to terminal
         view.setToastHandler(msg -> {
             Platform.runLater(() -> scene.getRoot().fireEvent(
-                    new CommandTerminalEvent(msg, new Font("Consolas", 18), Color.LIGHTGREEN)));
+                new CommandTerminalEvent(msg, new Font("Consolas", 18), Color.LIGHTGREEN)));
         });
     }
 

@@ -331,8 +331,13 @@ public final class FeatureVectorManagerPopoutController {
         miApplyAppend.setOnAction(e -> service.applyActiveToWorkspace(false));
         MenuItem miApplyReplace = new MenuItem("Apply (replace)");
         miApplyReplace.setOnAction(e -> service.applyActiveToWorkspace(true));
-        applyMenu.getItems().addAll(miApplyAppend, miApplyReplace);
 
+        MenuItem miSetAllAppend = new MenuItem("Set All (append)");
+        miSetAllAppend.setOnAction(e -> service.applyAllToWorkspace(false));
+        MenuItem miSetAllReplace = new MenuItem("Set All (replace)");
+        miSetAllReplace.setOnAction(e -> service.applyAllToWorkspace(true));
+        applyMenu.getItems().addAll(miApplyAppend, miApplyReplace, miSetAllAppend, miSetAllReplace);
+        
         ctx.getItems().addAll(miRename, miDuplicate, miDelete, new SeparatorMenuItem(),
             miMergeInto, export, new SeparatorMenuItem(), applyMenu);
 
