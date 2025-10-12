@@ -42,7 +42,7 @@ public class StatPdfCdfChart extends LineChart<Number, Number> {
     // --- raw-sample override for 2D charts ---
     private List<Double> scalarSamples = null; // if non-null & non-empty, use this instead of vectors
 
-    // --- NEW: retain last stat and expose interactions ---
+    //retain last stat and expose interactions
     private StatisticResult lastStat = null;
 
     public static final class BinSelection {
@@ -278,8 +278,7 @@ public class StatPdfCdfChart extends LineChart<Number, Number> {
         }
     }
 
-    // ===== NEW: interaction plumbing =====
-
+    //interaction plumbing 
     private void attachPlotInteractions() {
         Platform.runLater(() -> {
             Node plotArea = lookup(".chart-plot-background");

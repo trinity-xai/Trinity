@@ -15,6 +15,7 @@ import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.CustomMenuItem;
@@ -51,9 +52,6 @@ public class StatPdfCdfChartPanel extends BorderPane {
     private StatPdfCdfChart pdfChart;
     private StatPdfCdfChart cdfChart;
     private StatTimeSeriesChart tsChart;
-
-    // ===== Time-series row (chart + Top-K) =====
-    private HBox tsRow;
 
     // ===== Top-K contributors UI =====
     private Spinner<Integer> topKSpinner;
@@ -102,7 +100,7 @@ public class StatPdfCdfChartPanel extends BorderPane {
     private TSMode tsMode = TSMode.CONTRIBUTION;
     private StatisticEngine.SimilarityAggregator agg = StatisticEngine.SimilarityAggregator.MEAN;
     private final double contribEps = 1e-6;
-
+    private HBox tsRow;
     // Selection
     private boolean persistSelection = false;
     private final Label selectionInfo = new Label("—");
@@ -111,125 +109,130 @@ public class StatPdfCdfChartPanel extends BorderPane {
     private static final String UNLABELED = "(unlabeled)";
     private List<String> allLabels = new ArrayList<>();
     private List<String> selectedLabels = new ArrayList<>();
-    private final Map<String, CheckMenuItem> labelChecks = new LinkedHashMap<>();
+    private final Map<String, CheckBox> labelChecks = new LinkedHashMap<>();
     private Menu labelsMenu; // built in Options
-
+    private CustomMenuItem labelsCustom;
+    private VBox labelsBox;
     // Callback
     private Consumer<GridDensityResult> onComputeSurface = null;
-
-    // ===== Constructor =====
 
     public StatPdfCdfChartPanel() {
         this(null, StatisticEngine.ScalarType.L1_NORM, 40);
     }
+public StatPdfCdfChartPanel(List<FeatureVector> initialVectors,
+                            StatisticEngine.ScalarType initialType,
+                            int initialBins) {
+    if (initialVectors != null) currentVectors = initialVectors;
+    if (initialType != null) currentXFeature = initialType;
+    if (initialBins > 0) currentBins = initialBins;
 
-    public StatPdfCdfChartPanel(List<FeatureVector> initialVectors,
-                                StatisticEngine.ScalarType initialType,
-                                int initialBins) {
-        if (initialVectors != null) currentVectors = initialVectors;
-        if (initialType != null) currentXFeature = initialType;
-        if (initialBins > 0) currentBins = initialBins;
+    // --- Visible row: X Feature (2D), Bins, X Dim (always visible), Refresh, Options ---
+    xFeatureCombo = new ComboBox<>();
+    xFeatureCombo.getItems().addAll(StatisticEngine.ScalarType.values());
+    xFeatureCombo.setValue(currentXFeature);
 
-        // --- Visible row ---
-        xFeatureCombo = new ComboBox<>();
-        xFeatureCombo.getItems().addAll(StatisticEngine.ScalarType.values());
-        xFeatureCombo.setValue(currentXFeature);
+    binsSpinner = new Spinner<>(5, 100, currentBins, 5);
+    binsSpinner.setPrefWidth(100);
+    binsSpinner.setPrefHeight(34);
 
-        binsSpinner = new Spinner<>(5, 100, currentBins, 5);
-        binsSpinner.setPrefWidth(100);
-        binsSpinner.setPrefHeight(34);
+    // Always-visible X dimension spinner
+    xIndexSpinner = new Spinner<>();
+    xIndexSpinner.setPrefWidth(100);
+    xIndexSpinner.setMinWidth(100);
+    xIndexSpinner.setMaxWidth(100);
+    xIndexSpinner.valueProperty().addListener((obs, ov, nv) -> {
+        if (nv == null) return;
+        if (dataSource == DataSource.VECTORS) refresh2DCharts();
+    });
 
-        Button refresh2DButton = new Button("Refresh 2D");
-        refresh2DButton.setOnAction(e -> refresh2DCharts());
+    Button refresh2DButton = new Button("Refresh");
+    refresh2DButton.setOnAction(e -> refresh2DCharts());
 
-        MenuButton optionsMenu = buildOptionsMenu();
+    MenuButton optionsMenu = buildOptionsMenu();
 
-        HBox topBar = new HBox(12,
-            new VBox(2, new Label("X Feature (2D)"), xFeatureCombo),
-            new VBox(2, new Label("Bins"), binsSpinner),
-            refresh2DButton,
-            optionsMenu
-        );
-        topBar.setAlignment(Pos.CENTER_LEFT);
-        topBar.setPadding(new Insets(6, 8, 4, 8));
-        HBox.setHgrow(optionsMenu, Priority.NEVER);
+    HBox topBar = new HBox(12,
+        new VBox(2, new Label("X Feature"), xFeatureCombo),
+        new VBox(2, new Label("Bins"), binsSpinner),
+        new VBox(2, new Label("X Dim"), xIndexSpinner),
+        refresh2DButton,
+        optionsMenu
+    );
+    topBar.setAlignment(Pos.CENTER_LEFT);
+    topBar.setPadding(new Insets(6, 8, 4, 8));
+    HBox.setHgrow(optionsMenu, Priority.NEVER);
 
-        // --- Charts: PDF (top), CDF (middle) ---
-        pdfChart = new StatPdfCdfChart(currentXFeature, currentBins, StatPdfCdfChart.Mode.PDF_ONLY);
-        cdfChart = new StatPdfCdfChart(currentXFeature, currentBins, StatPdfCdfChart.Mode.CDF_ONLY);
+    // --- Charts: PDF (top), CDF (middle), TS+TopK (bottom) ---
+    pdfChart = new StatPdfCdfChart(currentXFeature, currentBins, StatPdfCdfChart.Mode.PDF_ONLY);
+    cdfChart = new StatPdfCdfChart(currentXFeature, currentBins, StatPdfCdfChart.Mode.CDF_ONLY);
+    tsChart  = new StatTimeSeriesChart();
 
-        // baseline sizes (no pref height on the container)
-        pdfChart.setMinHeight(120);
-        cdfChart.setMinHeight(120);
-        pdfChart.setPrefHeight(220);
-        cdfChart.setPrefHeight(220);
+    // Build the Top-K panel and place it to the right of the time-series
+    VBox topKPanel = buildTopKPanel();
+    this.tsRow = new HBox(8, tsChart, topKPanel);   // <-- use the FIELD, not a local
+    HBox.setHgrow(tsChart, Priority.ALWAYS);
+    this.tsRow.setFillHeight(true);
 
-        // --- Time Series + Top-K row ---
-        tsChart = new StatTimeSeriesChart();
-        tsChart.setMinHeight(140);
-        tsChart.setPrefHeight(240);
-
-        VBox topKPanel = buildTopKPanel(); // fixed-width side panel
-        tsRow = new HBox(10, tsChart, topKPanel);
-        tsRow.setAlignment(Pos.CENTER_LEFT);
-        tsRow.setFillHeight(false);
-        tsRow.setMaxHeight(tsMaxHeight);
-        HBox.setHgrow(tsChart, Priority.ALWAYS);
-        HBox.setHgrow(topKPanel, Priority.NEVER);
-        VBox.setVgrow(tsRow, Priority.NEVER); // don't let TS row push others
-
-        // --- Bottom utility bar ---
-        Button clearBtn = new Button("Clear Highlights");
-        clearBtn.setOnAction(e -> { tsChart.clearHighlights(); selectionInfo.setText("—"); });
-        HBox bottomBar = new HBox(12, new Label("Selection:"), selectionInfo, new Region(), clearBtn);
-        HBox.setHgrow(bottomBar.getChildren().get(2), Priority.ALWAYS);
-        bottomBar.setAlignment(Pos.CENTER_LEFT);
-        bottomBar.setPadding(new Insets(2, 8, 8, 8));
-
-        // --- Vertical stack without scroll, with spacer to absorb extra height ---
-        Region spacer = new Region();
-        VBox chartsBox = new VBox(8, pdfChart, cdfChart, tsRow, bottomBar, spacer);
-        chartsBox.setPadding(new Insets(6));
-
-        // Do NOT let charts grow vertically
-        VBox.setVgrow(pdfChart, Priority.NEVER);
-        VBox.setVgrow(cdfChart, Priority.NEVER);
-        VBox.setVgrow(tsRow, Priority.NEVER);
-        VBox.setVgrow(bottomBar, Priority.NEVER);
-
-        // The spacer eats any leftover space so charts don't stretch
-        VBox.setVgrow(spacer, Priority.ALWAYS);
-
-        setTop(topBar);
-        setCenter(chartsBox);
-
-        // Initial data render
-        if (!currentVectors.isEmpty()) {
-            rebuildLabelsFromCurrentVectors();
-            applyXFeatureOptions();
-            List<FeatureVector> filtered = getFilteredVectors();
-            pdfChart.setFeatureVectors(filtered);
-            cdfChart.setFeatureVectors(filtered);
-            updateTimeSeries();
-        }
-        if (lockXToUnit) {
-            pdfChart.setLockXAxis(true, 0.0, 1.0);
-            cdfChart.setLockXAxis(true, 0.0, 1.0);
-        }
-
-        // linked interactions: PDF/CDF -> TS
-        wireChartInteractions();
-
-        // Handlers
-        xFeatureCombo.valueProperty().addListener((obs, ov, nv) -> {
-            currentXFeature = nv;
-            updateXControlEnablement();
-            updateXIndexBoundsAndValue();
-        });
+    // Initial data
+    if (!currentVectors.isEmpty()) {
+        rebuildLabelsFromCurrentVectors();
+        applyXFeatureOptions();
+        List<FeatureVector> use = getFilteredVectors();
+        pdfChart.setFeatureVectors(use);
+        cdfChart.setFeatureVectors(use);
+        updateTimeSeries(); // also refreshes Top-K
+    }
+    if (lockXToUnit) {
+        pdfChart.setLockXAxis(true, 0.0, 1.0);
+        cdfChart.setLockXAxis(true, 0.0, 1.0);
     }
 
-    // ===== Top-K panel =====
+    wireChartInteractions();
 
+    Button clearBtn = new Button("Clear Highlights");
+    clearBtn.setOnAction(e -> { tsChart.clearHighlights(); selectionInfo.setText("—"); });
+
+    HBox bottomBar = new HBox(12, new Label("Selection:"), selectionInfo, new Region(), clearBtn);
+    HBox.setHgrow(bottomBar.getChildren().get(2), Priority.ALWAYS);
+    bottomBar.setAlignment(Pos.CENTER_LEFT);
+    bottomBar.setPadding(new Insets(2, 8, 8, 8));
+
+    // Container
+    VBox chartsBox = new VBox(8, pdfChart, cdfChart, this.tsRow, bottomBar);
+    chartsBox.setPadding(new Insets(6));
+    chartsBox.setFillWidth(true);
+
+    // Make all three main sections share vertical space equally
+    enforceEqualSectionHeights();
+
+    setTop(topBar);
+    setCenter(chartsBox);
+
+    xFeatureCombo.valueProperty().addListener((obs, ov, nv) -> {
+        currentXFeature = nv;
+        updateXControlEnablement();
+        updateXIndexBoundsAndValue();
+    });
+}
+/** Force PDF, CDF, and TS rows to share vertical space and not inflate the parent. */
+private void enforceEqualSectionHeights() {
+    // Give each section a reasonable minimum so they don't collapse
+    pdfChart.setMinHeight(120);
+    cdfChart.setMinHeight(120);
+    tsChart.setMinHeight(120);
+
+    // Shrink preferred heights so the parent does NOT expand to large computed prefs.
+    // (Charts default to a large prefHeight; zeroing it avoids vertical oversizing.)
+    pdfChart.setPrefHeight(0);
+    cdfChart.setPrefHeight(0);
+    this.tsRow.setPrefHeight(0);
+
+    // Let VBox distribute extra space equally across all three
+    VBox.setVgrow(pdfChart, Priority.ALWAYS);
+    VBox.setVgrow(cdfChart, Priority.ALWAYS);
+    VBox.setVgrow(this.tsRow, Priority.ALWAYS);
+}
+
+    // ===== Top-K panel =====
     private VBox buildTopKPanel() {
         Label title = new Label("Top-K Contributors");
         Label kLabel = new Label("K:");
@@ -283,9 +286,9 @@ public class StatPdfCdfChartPanel extends BorderPane {
 
         for (int i = 0; i < k; i++) {
             int idx = pairs.get(i)[0];
-            double val = Math.abs(series.get(idx) == null ? 0.0 : series.get(idx));
+            double val = series.get(idx) == null ? 0.0 : series.get(idx);
             topKIndices.add(idx);
-            topKItems.add(String.format("#%d  |  |Δ|=%.6f", idx, val));
+            topKItems.add(String.format("#%d  |  Δ=%.6f", idx, val));
         }
     }
 
@@ -314,222 +317,225 @@ public class StatPdfCdfChartPanel extends BorderPane {
     }
 
     // ===== Options menu =====
-    private MenuButton buildOptionsMenu() {
-        MenuButton mb = new MenuButton("Options");
+private MenuButton buildOptionsMenu() {
+    MenuButton mb = new MenuButton("Options");
 
-        // Data source
-        CheckMenuItem useScalars = new CheckMenuItem("Use Scalars Mode");
-        useScalars.setSelected(false);
-        useScalars.selectedProperty().addListener((o, oldV, nv) -> {
-            dataSource = nv ? DataSource.SCALARS : DataSource.VECTORS;
-            if (nv) {
-                applyScalarSamplesToCharts();
-            } else {
-                pdfChart.clearScalarSamples();
-                cdfChart.clearScalarSamples();
-                refresh2DCharts();
-            }
-        });
-
-        CheckMenuItem lockX = new CheckMenuItem("Lock X to [0,1]");
-        lockX.setSelected(lockXToUnit);
-        lockX.selectedProperty().addListener((o, oldV, nv) -> {
-            lockXToUnit = nv;
-            pdfChart.setLockXAxis(nv, 0.0, 1.0);
-            cdfChart.setLockXAxis(nv, 0.0, 1.0);
-        });
-
-        CheckMenuItem persistSel = new CheckMenuItem("Persist Selection");
-        persistSel.setSelected(persistSelection);
-        persistSel.selectedProperty().addListener((o, oldV, nv) -> persistSelection = nv);
-
-        // Scalars submenu
-        Menu scalarsMenu = new Menu("Scalars");
-        ToggleGroup scalarFieldGroup = new ToggleGroup();
-
-        RadioMenuItem scoreItem = new RadioMenuItem("Field: Score");
-        scoreItem.setToggleGroup(scalarFieldGroup);
-        scoreItem.setSelected("Score".equals(scalarField));
-        scoreItem.setOnAction(e -> { scalarField = "Score"; applyScalarSamplesToCharts(); });
-
-        RadioMenuItem infoItem = new RadioMenuItem("Field: Info%");
-        infoItem.setToggleGroup(scalarFieldGroup);
-        infoItem.setSelected("Info%".equals(scalarField));
-        infoItem.setOnAction(e -> { scalarField = "Info%"; applyScalarSamplesToCharts(); });
-
-        MenuItem pasteScalars = new MenuItem("Paste Scalars…");
-        pasteScalars.setOnAction(e -> {
-            ScalarInputResult res = DialogUtils.showScalarSamplesDialog();
-            if (res == null) return;
-            if (res.scores != null && !res.scores.isEmpty()) scalarScores = res.scores;
-            if (res.infos  != null && !res.infos.isEmpty())  scalarInfos  = res.infos;
+    // Data source
+    CheckMenuItem useScalars = new CheckMenuItem("Use Scalars Mode");
+    useScalars.setSelected(false);
+    useScalars.selectedProperty().addListener((o, oldV, nv) -> {
+        dataSource = nv ? DataSource.SCALARS : DataSource.VECTORS;
+        if (nv) {
             applyScalarSamplesToCharts();
-        });
-
-        MenuItem clearScalars = new MenuItem("Clear Scalars");
-        clearScalars.setOnAction(e -> {
-            scalarScores.clear();
-            scalarInfos.clear();
+        } else {
             pdfChart.clearScalarSamples();
             cdfChart.clearScalarSamples();
-            tsChart.clearHighlights();
-            tsChart.setSeries(new ArrayList<>());
-            selectionInfo.setText("—");
-            refreshTopK();
-        });
+            refresh2DCharts();
+        }
+    });
 
-        scalarsMenu.getItems().addAll(scoreItem, infoItem, new SeparatorMenuItem(), pasteScalars, clearScalars);
+    CheckMenuItem lockX = new CheckMenuItem("Lock X to [0,1]");
+    lockX.setSelected(lockXToUnit);
+    lockX.selectedProperty().addListener((o, oldV, nv) -> {
+        lockXToUnit = nv;
+        pdfChart.setLockXAxis(nv, 0.0, 1.0);
+        cdfChart.setLockXAxis(nv, 0.0, 1.0);
+    });
 
-        // Labels Filter submenu
-        labelsMenu = new Menu("Labels (Filter)");
-        labelsMenu.getItems().add(new MenuItem("No labels found"));
+    CheckMenuItem persistSel = new CheckMenuItem("Persist Selection");
+    persistSel.setSelected(persistSelection);
+    persistSel.selectedProperty().addListener((o, oldV, nv) -> persistSelection = nv);
 
-        // Metric/Reference (X) section
-        metricCombo = new ComboBox<>();
-        metricCombo.getItems().addAll(Metric.getMetricNames());
-        if (metricCombo.getItems().contains("euclidean")) metricCombo.setValue("euclidean");
-        else if (!metricCombo.getItems().isEmpty()) metricCombo.setValue(metricCombo.getItems().get(0));
+    // Scalars submenu
+    Menu scalarsMenu = new Menu("Scalars");
+    ToggleGroup scalarFieldGroup = new ToggleGroup();
 
-        ComboBox<String> referenceCombo = new ComboBox<>();
-        referenceCombo.getItems().addAll("Mean", "Vector @ Index", "Custom");
-        referenceCombo.setValue(referenceMode);
-        referenceCombo.valueProperty().addListener((obs, ov, nv) -> {
-            referenceMode = nv;
-            updateXControlEnablement();
-            updateXIndexBoundsAndValue();
-        });
+    RadioMenuItem scoreItem = new RadioMenuItem("Field: Score");
+    scoreItem.setToggleGroup(scalarFieldGroup);
+    scoreItem.setSelected("Score".equals(scalarField));
+    scoreItem.setOnAction(e -> { scalarField = "Score"; applyScalarSamplesToCharts(); });
 
-        xIndexSpinner = new Spinner<>();
-        xIndexSpinner.setPrefWidth(100);
-        xIndexSpinner.setMinWidth(100);
-        xIndexSpinner.setMaxWidth(100);
+    RadioMenuItem infoItem = new RadioMenuItem("Field: Info%");
+    infoItem.setToggleGroup(scalarFieldGroup);
+    infoItem.setSelected("Info%".equals(scalarField));
+    infoItem.setOnAction(e -> { scalarField = "Info%"; applyScalarSamplesToCharts(); });
 
-        Button setCustomButton = new Button("Set Custom Vector…");
-        setCustomButton.setOnAction(e -> {
-            Integer expectedDim = (currentVectors != null && !currentVectors.isEmpty())
-                ? currentVectors.get(0).getData().size() : null;
-            List<Double> parsed = (expectedDim != null)
-                ? DialogUtils.showCustomVectorDialog(expectedDim)
-                : DialogUtils.showCustomVectorDialog();
-            if (parsed != null && !parsed.isEmpty()) setCustomReferenceVector(parsed);
-        });
+    MenuItem pasteScalars = new MenuItem("Paste Scalars…");
+    pasteScalars.setOnAction(e -> {
+        ScalarInputResult res = DialogUtils.showScalarSamplesDialog();
+        if (res == null) return;
+        if (res.scores != null && !res.scores.isEmpty()) scalarScores = res.scores;
+        if (res.infos  != null && !res.infos.isEmpty())  scalarInfos  = res.infos;
+        applyScalarSamplesToCharts();
+    });
 
-        VBox metricBox = new VBox(6,
-            new HBox(8, new Label("Metric (X)"), metricCombo),
-            new HBox(8, new Label("Reference"), referenceCombo),
-            new HBox(8, new Label("X Index"), xIndexSpinner),
-            setCustomButton
-        );
-        metricBox.setPadding(new Insets(6, 10, 6, 10));
-        CustomMenuItem metricCustom = new CustomMenuItem(metricBox);
-        metricCustom.setHideOnClick(false);
+    MenuItem clearScalars = new MenuItem("Clear Scalars");
+    clearScalars.setOnAction(e -> {
+        scalarScores.clear();
+        scalarInfos.clear();
+        pdfChart.clearScalarSamples();
+        cdfChart.clearScalarSamples();
+        tsChart.clearHighlights();
+        tsChart.setSeries(new ArrayList<>());
+        selectionInfo.setText("—");
+        refreshTopK();
+    });
 
-        MenuItem metricHeader = new MenuItem("X Metric & Reference");
-        metricHeader.setDisable(true);
+    scalarsMenu.getItems().addAll(scoreItem, infoItem, new SeparatorMenuItem(), pasteScalars, clearScalars);
 
-        // 3D Surface section
-        yFeatureCombo = new ComboBox<>();
-        yFeatureCombo.getItems().addAll(StatisticEngine.ScalarType.values());
-        yFeatureCombo.setValue(StatisticEngine.ScalarType.COMPONENT_AT_DIMENSION);
-        yFeatureCombo.valueProperty().addListener((obs, ov, nv) -> {
-            updateYControlEnablement();
-            updateYIndexBoundsAndValue();
-        });
+    // ----- Labels Filter submenu (custom content that stays open) -----
+    labelsMenu = new Menu("Labels (Filter)");
+    labelsBox = new VBox(6);
+    labelsBox.setPadding(new Insets(6, 10, 6, 10));
+    labelsCustom = new CustomMenuItem(labelsBox);
+    labelsCustom.setHideOnClick(false); // keep menu open while clicking checkboxes
+    labelsMenu.getItems().setAll(labelsCustom); // single custom content node
 
-        yIndexSpinner = new Spinner<>();
-        yIndexSpinner.setPrefWidth(100);
-        yIndexSpinner.setMinWidth(100);
-        yIndexSpinner.setMaxWidth(100);
+    // Metric/Reference (X) section (no X Index here anymore)
+    metricCombo = new ComboBox<>();
+    metricCombo.getItems().addAll(Metric.getMetricNames());
+    if (metricCombo.getItems().contains("euclidean")) metricCombo.setValue("euclidean");
+    else if (!metricCombo.getItems().isEmpty()) metricCombo.setValue(metricCombo.getItems().get(0));
 
-        ToggleGroup surfaceGroup = new ToggleGroup();
-        RadioButton surfacePdf = new RadioButton("PDF");
-        surfacePdf.setToggleGroup(surfaceGroup);
-        surfacePdf.setSelected(!surfaceCDF);
-        surfacePdf.setOnAction(e -> surfaceCDF = false);
-
-        RadioButton surfaceCdf = new RadioButton("CDF");
-        surfaceCdf.setToggleGroup(surfaceGroup);
-        surfaceCdf.setSelected(surfaceCDF);
-        surfaceCdf.setOnAction(e -> surfaceCDF = true);
-
-        Button compute3DButton = new Button("Compute 3D Surface");
-        compute3DButton.setOnAction(e -> compute3DSurface());
-
-        VBox surfaceBox = new VBox(6,
-            new HBox(8, new Label("Y Feature"), yFeatureCombo),
-            new HBox(8, new Label("Y Index"), yIndexSpinner),
-            new HBox(8, new Label("Surface"), surfacePdf, surfaceCdf),
-            compute3DButton
-        );
-        surfaceBox.setPadding(new Insets(6, 10, 6, 10));
-        CustomMenuItem surfaceCustom = new CustomMenuItem(surfaceBox);
-        surfaceCustom.setHideOnClick(false);
-
-        MenuItem surfaceHeader = new MenuItem("3D Surface");
-        surfaceHeader.setDisable(true);
-
-        // Time-Series Mode & Aggregator
-        Menu tsModeMenu = new Menu("Time-Series Mode");
-        ToggleGroup tsModeGroup = new ToggleGroup();
-        RadioMenuItem tsSimilarity = new RadioMenuItem("Similarity (matches PDF feature)");
-        tsSimilarity.setToggleGroup(tsModeGroup);
-        tsSimilarity.setSelected(tsMode == TSMode.SIMILARITY);
-        tsSimilarity.setOnAction(e -> { tsMode = TSMode.SIMILARITY; updateTimeSeries(); });
-
-        RadioMenuItem tsContribution = new RadioMenuItem("Contribution (Δ log-odds)");
-        tsContribution.setToggleGroup(tsModeGroup);
-        tsContribution.setSelected(tsMode == TSMode.CONTRIBUTION);
-        tsContribution.setOnAction(e -> { tsMode = TSMode.CONTRIBUTION; updateTimeSeries(); });
-
-        RadioMenuItem tsCumulative = new RadioMenuItem("Cumulative log-odds");
-        tsCumulative.setToggleGroup(tsModeGroup);
-        tsCumulative.setSelected(tsMode == TSMode.CUMULATIVE);
-        tsCumulative.setOnAction(e -> { tsMode = TSMode.CUMULATIVE; updateTimeSeries(); });
-
-        tsModeMenu.getItems().addAll(tsSimilarity, tsContribution, tsCumulative);
-
-        Menu aggregatorMenu = new Menu("Aggregator (Contribution)");
-        ToggleGroup aggGroup = new ToggleGroup();
-        RadioMenuItem aggMean = new RadioMenuItem("Mean");
-        RadioMenuItem aggGeo  = new RadioMenuItem("Geomean");
-        RadioMenuItem aggMin  = new RadioMenuItem("Min");
-        aggMean.setToggleGroup(aggGroup);
-        aggGeo.setToggleGroup(aggGroup);
-        aggMin.setToggleGroup(aggGroup);
-        aggMean.setSelected(agg == StatisticEngine.SimilarityAggregator.MEAN);
-        aggGeo.setSelected(agg == StatisticEngine.SimilarityAggregator.GEOMEAN);
-        aggMin.setSelected(agg == StatisticEngine.SimilarityAggregator.MIN);
-        aggMean.setOnAction(e -> { agg = StatisticEngine.SimilarityAggregator.MEAN; if (tsMode!=TSMode.SIMILARITY) updateTimeSeries(); });
-        aggGeo.setOnAction(e -> { agg = StatisticEngine.SimilarityAggregator.GEOMEAN; if (tsMode!=TSMode.SIMILARITY) updateTimeSeries(); });
-        aggMin.setOnAction(e -> { agg = StatisticEngine.SimilarityAggregator.MIN; if (tsMode!=TSMode.SIMILARITY) updateTimeSeries(); });
-        aggregatorMenu.getItems().addAll(aggMean, aggGeo, aggMin);
-        // Final assembly
-        mb.getItems().addAll(
-            useScalars,
-            lockX,
-            persistSel,
-            new SeparatorMenuItem(),
-            scalarsMenu,
-            labelsMenu,
-            new SeparatorMenuItem(),
-            tsModeMenu,
-            aggregatorMenu,
-            new SeparatorMenuItem(),
-            metricHeader,
-            metricCustom,
-            new SeparatorMenuItem(),
-            surfaceHeader,
-            surfaceCustom
-        );
-
-        // initialize enablement/bounds
+    ComboBox<String> referenceCombo = new ComboBox<>();
+    referenceCombo.getItems().addAll("Mean", "Vector @ Index", "Custom");
+    referenceCombo.setValue(referenceMode);
+    referenceCombo.valueProperty().addListener((obs, ov, nv) -> {
+        referenceMode = nv;
         updateXControlEnablement();
-        updateYControlEnablement();
         updateXIndexBoundsAndValue();
-        updateYIndexBoundsAndValue();
+    });
 
-        return mb;
-    }
+    Button setCustomButton = new Button("Set Custom Vector…");
+    setCustomButton.setOnAction(e -> {
+        Integer expectedDim = (currentVectors != null && !currentVectors.isEmpty())
+            ? currentVectors.get(0).getData().size() : null;
+        List<Double> parsed = (expectedDim != null)
+            ? DialogUtils.showCustomVectorDialog(expectedDim)
+            : DialogUtils.showCustomVectorDialog();
+        if (parsed != null && !parsed.isEmpty()) setCustomReferenceVector(parsed);
+    });
+
+    VBox metricBox = new VBox(6,
+        new HBox(8, new Label("Metric (X)"), metricCombo),
+        new HBox(8, new Label("Reference"), referenceCombo),
+        setCustomButton
+    );
+    metricBox.setPadding(new Insets(6, 10, 6, 10));
+    CustomMenuItem metricCustom = new CustomMenuItem(metricBox);
+    metricCustom.setHideOnClick(false);
+
+    MenuItem metricHeader = new MenuItem("X Metric & Reference");
+    metricHeader.setDisable(true);
+
+    // 3D Surface section
+    yFeatureCombo = new ComboBox<>();
+    yFeatureCombo.getItems().addAll(StatisticEngine.ScalarType.values());
+    yFeatureCombo.setValue(StatisticEngine.ScalarType.COMPONENT_AT_DIMENSION);
+    yFeatureCombo.valueProperty().addListener((obs, ov, nv) -> {
+        updateYControlEnablement();
+        updateYIndexBoundsAndValue();
+    });
+
+    yIndexSpinner = new Spinner<>();
+    yIndexSpinner.setPrefWidth(100);
+    yIndexSpinner.setMinWidth(100);
+    yIndexSpinner.setMaxWidth(100);
+
+    ToggleGroup surfaceGroup = new ToggleGroup();
+    RadioButton surfacePdf = new RadioButton("PDF");
+    surfacePdf.setToggleGroup(surfaceGroup);
+    surfacePdf.setSelected(!surfaceCDF);
+    surfacePdf.setOnAction(e -> surfaceCDF = false);
+
+    RadioButton surfaceCdf = new RadioButton("CDF");
+    surfaceCdf.setToggleGroup(surfaceGroup);
+    surfaceCdf.setSelected(surfaceCDF);
+    surfaceCdf.setOnAction(e -> surfaceCDF = true);
+
+    Button compute3DButton = new Button("Compute 3D Surface");
+    compute3DButton.setOnAction(e -> compute3DSurface());
+
+    VBox surfaceBox = new VBox(6,
+        new HBox(8, new Label("Y Feature"), yFeatureCombo),
+        new HBox(8, new Label("Y Index"), yIndexSpinner),
+        new HBox(8, new Label("Surface"), surfacePdf, surfaceCdf),
+        compute3DButton
+    );
+    surfaceBox.setPadding(new Insets(6, 10, 6, 10));
+    CustomMenuItem surfaceCustom = new CustomMenuItem(surfaceBox);
+    surfaceCustom.setHideOnClick(false);
+
+    MenuItem surfaceHeader = new MenuItem("3D Surface");
+    surfaceHeader.setDisable(true);
+
+    // Time-Series Mode & Aggregator
+    Menu tsModeMenu = new Menu("Time-Series Mode");
+    ToggleGroup tsModeGroup = new ToggleGroup();
+    RadioMenuItem tsSimilarity = new RadioMenuItem("Similarity (matches PDF feature)");
+    tsSimilarity.setToggleGroup(tsModeGroup);
+    tsSimilarity.setSelected(tsMode == TSMode.SIMILARITY);
+    tsSimilarity.setOnAction(e -> { tsMode = TSMode.SIMILARITY; updateTimeSeries(); });
+
+    RadioMenuItem tsContribution = new RadioMenuItem("Contribution (Δ log-odds)");
+    tsContribution.setToggleGroup(tsModeGroup);
+    tsContribution.setSelected(tsMode == TSMode.CONTRIBUTION);
+    tsContribution.setOnAction(e -> { tsMode = TSMode.CONTRIBUTION; updateTimeSeries(); });
+
+    RadioMenuItem tsCumulative = new RadioMenuItem("Cumulative log-odds");
+    tsCumulative.setToggleGroup(tsModeGroup);
+    tsCumulative.setSelected(tsMode == TSMode.CUMULATIVE);
+    tsCumulative.setOnAction(e -> { tsMode = TSMode.CUMULATIVE; updateTimeSeries(); });
+
+    tsModeMenu.getItems().addAll(tsSimilarity, tsContribution, tsCumulative);
+
+    Menu aggregatorMenu = new Menu("Aggregator (Contribution)");
+    ToggleGroup aggGroup = new ToggleGroup();
+    RadioMenuItem aggMean = new RadioMenuItem("Mean");
+    RadioMenuItem aggGeo  = new RadioMenuItem("Geomean");
+    RadioMenuItem aggMin  = new RadioMenuItem("Min");
+    aggMean.setToggleGroup(aggGroup);
+    aggGeo.setToggleGroup(aggGroup);
+    aggMin.setToggleGroup(aggGroup);
+    aggMean.setSelected(agg == StatisticEngine.SimilarityAggregator.MEAN);
+    aggGeo.setSelected(agg == StatisticEngine.SimilarityAggregator.GEOMEAN);
+    aggMin.setSelected(agg == StatisticEngine.SimilarityAggregator.MIN);
+    aggMean.setOnAction(e -> { agg = StatisticEngine.SimilarityAggregator.MEAN; if (tsMode!=TSMode.SIMILARITY) updateTimeSeries(); });
+    aggGeo.setOnAction(e -> { agg = StatisticEngine.SimilarityAggregator.GEOMEAN; if (tsMode!=TSMode.SIMILARITY) updateTimeSeries(); });
+    aggMin.setOnAction(e -> { agg = StatisticEngine.SimilarityAggregator.MIN; if (tsMode!=TSMode.SIMILARITY) updateTimeSeries(); });
+    aggregatorMenu.getItems().addAll(aggMean, aggGeo, aggMin);
+
+    // Final assembly
+    mb.getItems().addAll(
+        useScalars,
+        lockX,
+        persistSel,
+        new SeparatorMenuItem(),
+        scalarsMenu,
+        labelsMenu,
+        new SeparatorMenuItem(),
+        tsModeMenu,
+        aggregatorMenu,
+        new SeparatorMenuItem(),
+        metricHeader,
+        metricCustom,
+        new SeparatorMenuItem(),
+        surfaceHeader,
+        surfaceCustom
+    );
+
+    // initialize enablement/bounds
+    updateXControlEnablement();
+    updateYControlEnablement();
+    updateXIndexBoundsAndValue();
+    updateYIndexBoundsAndValue();
+
+    // Populate labels panel with current state (if vectors already set)
+    rebuildLabelsMenu();
+
+    return mb;
+}
+
 
     // ===== Public API =====
 
@@ -719,7 +725,7 @@ public class StatPdfCdfChartPanel extends BorderPane {
 
     private void refresh2DCharts() {
         if (dataSource != DataSource.VECTORS) return;
-
+        if(null == pdfChart || null == cdfChart) return;
         currentXFeature = xFeatureCombo.getValue();
         currentBins = binsSpinner.getValue();
 
@@ -817,39 +823,44 @@ public class StatPdfCdfChartPanel extends BorderPane {
     }
 
     // ===== Enablement / bounds =====
+private void updateXControlEnablement() {
+    boolean isMetric = xFeatureCombo.getValue() == StatisticEngine.ScalarType.METRIC_DISTANCE_TO_MEAN;
+    boolean isComponent = xFeatureCombo.getValue() == StatisticEngine.ScalarType.COMPONENT_AT_DIMENSION;
 
-    private void updateXControlEnablement() {
-        boolean isMetric = xFeatureCombo.getValue() == StatisticEngine.ScalarType.METRIC_DISTANCE_TO_MEAN;
-        boolean isComponent = xFeatureCombo.getValue() == StatisticEngine.ScalarType.COMPONENT_AT_DIMENSION;
-
-        if (metricCombo != null) metricCombo.setDisable(!isMetric);
-        boolean indexEnabled = (isMetric && "Vector @ Index".equals(referenceMode)) || isComponent;
-        if (xIndexSpinner != null) xIndexSpinner.setDisable(!indexEnabled);
+    if (metricCombo != null) {
+        metricCombo.setDisable(!isMetric);
     }
 
+    // Keep the spinner ALWAYS visible; only disable when it doesn't apply
+    boolean indexEnabled = (isMetric && "Vector @ Index".equals(referenceMode)) || isComponent;
+    if (xIndexSpinner != null) {
+        xIndexSpinner.setDisable(!indexEnabled);
+        // NOTE: do NOT toggle visible/managed here; we want it shown at all times.
+    }
+}
     private void updateYControlEnablement() {
         boolean yNeedsDim = yFeatureCombo.getValue() == StatisticEngine.ScalarType.COMPONENT_AT_DIMENSION;
         if (yIndexSpinner != null) yIndexSpinner.setDisable(!yNeedsDim);
     }
 
-    private void updateXIndexBoundsAndValue() {
-        boolean isMetricVectorIdx = xFeatureCombo.getValue() == StatisticEngine.ScalarType.METRIC_DISTANCE_TO_MEAN
-            && "Vector @ Index".equals(referenceMode);
-        boolean isComponent = xFeatureCombo.getValue() == StatisticEngine.ScalarType.COMPONENT_AT_DIMENSION;
+private void updateXIndexBoundsAndValue() {
+    boolean isMetricVectorIdx = xFeatureCombo.getValue() == StatisticEngine.ScalarType.METRIC_DISTANCE_TO_MEAN
+        && "Vector @ Index".equals(referenceMode);
+    boolean isComponent = xFeatureCombo.getValue() == StatisticEngine.ScalarType.COMPONENT_AT_DIMENSION;
 
-        if (xIndexSpinner == null) return;
+    if (xIndexSpinner == null) return;
 
-        if (isMetricVectorIdx) {
-            int maxIdx = Math.max(0, getMaxVectorIndex());
-            setSpinnerBounds(xIndexSpinner, 0, maxIdx, safeSpinnerValue(xIndexSpinner, 0, maxIdx));
-        } else if (isComponent) {
-            int maxDim = getMaxDimensionIndex();
-            setSpinnerBounds(xIndexSpinner, 0, maxDim, safeSpinnerValue(xIndexSpinner, 0, maxDim));
-        } else {
-            int maxDim = getMaxDimensionIndex();
-            setSpinnerBounds(xIndexSpinner, 0, Math.max(0, maxDim), 0);
-        }
+    if (isMetricVectorIdx) {
+        int maxIdx = Math.max(0, getMaxVectorIndex());
+        setSpinnerBounds(xIndexSpinner, 0, maxIdx, safeSpinnerValue(xIndexSpinner, 0, maxIdx));
+    } else if (isComponent) {
+        int maxDim = getMaxDimensionIndex();
+        setSpinnerBounds(xIndexSpinner, 0, maxDim, safeSpinnerValue(xIndexSpinner, 0, maxDim));
+    } else {
+        int maxDim = getMaxDimensionIndex();
+        setSpinnerBounds(xIndexSpinner, 0, Math.max(0, maxDim), 0);
     }
+}
 
     private void updateYIndexBoundsAndValue() {
         if (yIndexSpinner == null) return;
@@ -908,53 +919,54 @@ public class StatPdfCdfChartPanel extends BorderPane {
         rebuildLabelsMenu();
     }
 
-    private void rebuildLabelsMenu() {
-        if (labelsMenu == null) return;
-        labelsMenu.getItems().clear();
-        labelChecks.clear();
+private void rebuildLabelsMenu() {
+    if (labelsMenu == null || labelsBox == null) return;
 
-        if (allLabels.isEmpty()) {
-            MenuItem none = new MenuItem("No labels found");
-            none.setDisable(true);
-            labelsMenu.getItems().add(none);
-            return;
-        }
+    labelsBox.getChildren().clear();
+    labelChecks.clear();
 
-        for (String lab : allLabels) {
-            CheckMenuItem ci = new CheckMenuItem(lab);
-            ci.setSelected(selectedLabels.contains(lab));
-            ci.selectedProperty().addListener((obs, ov, nv) -> {
-                if (nv) {
-                    if (!selectedLabels.contains(lab)) selectedLabels.add(lab);
-                } else {
-                    selectedLabels.remove(lab);
-                }
-            });
-            labelChecks.put(lab, ci);
-            labelsMenu.getItems().add(ci);
-        }
-
-        labelsMenu.getItems().add(new SeparatorMenuItem());
-
-        MenuItem selectAll = new MenuItem("Select All");
-        selectAll.setOnAction(e -> {
-            selectedLabels = new ArrayList<>(allLabels);
-            for (CheckMenuItem c : labelChecks.values()) c.setSelected(true);
-            refresh2DCharts();
-        });
-
-        MenuItem selectNone = new MenuItem("Select None");
-        selectNone.setOnAction(e -> {
-            selectedLabels.clear();
-            for (CheckMenuItem c : labelChecks.values()) c.setSelected(false);
-            refresh2DCharts();
-        });
-
-        MenuItem apply = new MenuItem("Apply Label Filter");
-        apply.setOnAction(e -> refresh2DCharts());
-
-        labelsMenu.getItems().addAll(selectAll, selectNone, new SeparatorMenuItem(), apply);
+    if (allLabels.isEmpty()) {
+        labelsBox.getChildren().add(new Label("No labels found"));
+        return;
     }
+
+    // Header row with All / None / Apply (doesn't close the menu)
+    Label lbl = new Label("Visible labels:");
+    Button bAll  = new Button("All");
+    Button bNone = new Button("None");
+    Button bApply = new Button("Apply");
+    HBox header = new HBox(8, lbl, new Region(), bAll, bNone, bApply);
+    HBox.setHgrow(header.getChildren().get(1), Priority.ALWAYS);
+    header.setAlignment(Pos.CENTER_LEFT);
+
+    VBox list = new VBox(4);
+    for (String lab : allLabels) {
+        CheckBox cb = new CheckBox(lab);
+        cb.setSelected(selectedLabels.contains(lab));
+        cb.selectedProperty().addListener((obs, ov, nv) -> {
+            if (nv) {
+                if (!selectedLabels.contains(lab)) selectedLabels.add(lab);
+            } else {
+                selectedLabels.remove(lab);
+            }
+        });
+        labelChecks.put(lab, cb);
+        list.getChildren().add(cb);
+    }
+
+    bAll.setOnAction(e -> {
+        selectedLabels = new ArrayList<>(allLabels);
+        for (CheckBox cb : labelChecks.values()) cb.setSelected(true);
+    });
+    bNone.setOnAction(e -> {
+        selectedLabels.clear();
+        for (CheckBox cb : labelChecks.values()) cb.setSelected(false);
+    });
+    bApply.setOnAction(e -> refresh2DCharts());
+
+    labelsBox.getChildren().addAll(header, list);
+}
+
 
     private List<FeatureVector> getFilteredVectors() {
         if (currentVectors == null || currentVectors.isEmpty()) return new ArrayList<>();
@@ -971,43 +983,43 @@ public class StatPdfCdfChartPanel extends BorderPane {
     }
 
     // ===== Linking & time-series update =====
-
-    private void updateTimeSeries() {
-        if (dataSource == DataSource.SCALARS) {
-            // handled in applyScalarSamplesToCharts
-            refreshTopK();
-            return;
-        }
-        List<FeatureVector> use = getFilteredVectors();
-        if (use == null || use.isEmpty()) {
-            tsChart.setSeries(new ArrayList<>());
-            selectionInfo.setText("—");
-            refreshTopK();
-            return;
-        }
-
-        if (tsMode == TSMode.CONTRIBUTION) {
-            StatisticEngine.ContributionSeries cs =
-                StatisticEngine.computeContributions(use, agg, null, contribEps);
-            tsChart.setAxisLabels("Sample Index", "Δ log-odds");
-            tsChart.setSeries(cs.delta);
-        } else if (tsMode == TSMode.CUMULATIVE) {
-            StatisticEngine.ContributionSeries cs =
-                StatisticEngine.computeContributions(use, agg, null, contribEps);
-            List<Double> cumulative = StatisticEngine.cumulativeFromDeltas(cs.delta);
-            tsChart.setAxisLabels("Sample Index", "Cumulative log-odds");
-            tsChart.setSeries(cumulative);
-        } else {
-            // SIMILARITY
-            StatisticResult stat = (pdfChart != null) ? pdfChart.getLastStatisticResult() : null;
-            List<Double> vals = (stat != null) ? stat.getValues() : null;
-            if (vals == null) vals = new ArrayList<>();
-            tsChart.setAxisLabels("Sample Index", "Scalar Value");
-            tsChart.setSeries(vals);
-        }
-
+// ===== Linking & time-series update =====
+private void updateTimeSeries() {
+    if (dataSource == DataSource.SCALARS) {
+        // handled in applyScalarSamplesToCharts()
         refreshTopK();
+        return;
     }
+    List<FeatureVector> use = getFilteredVectors();
+    if (use == null || use.isEmpty()) {
+        tsChart.setSeries(new ArrayList<>());
+        selectionInfo.setText("—");
+        refreshTopK();
+        return;
+    }
+
+    if (tsMode == TSMode.CONTRIBUTION) {
+        StatisticEngine.ContributionSeries cs =
+            StatisticEngine.computeContributions(use, agg, null, contribEps);
+        tsChart.setAxisLabels("Sample Index", "Δ log-odds");
+        tsChart.setSeries(cs.delta);
+    } else if (tsMode == TSMode.CUMULATIVE) {
+        StatisticEngine.ContributionSeries cs =
+            StatisticEngine.computeContributions(use, agg, null, contribEps);
+        List<Double> cum = StatisticEngine.cumulativeFromDeltas(cs.delta);
+        tsChart.setAxisLabels("Sample Index", "Cumulative log-odds");
+        tsChart.setSeries(cum);
+    } else { // SIMILARITY
+        StatisticResult stat = (pdfChart != null) ? pdfChart.getLastStatisticResult() : null;
+        List<Double> vals = (stat != null) ? stat.getValues() : new ArrayList<>();
+        tsChart.setAxisLabels("Sample Index", "Scalar Value");
+        tsChart.setSeries(vals);
+    }
+
+    // Make sure the Top-K list reflects the current TS mode/series
+    refreshTopK();
+}
+
 
     private void wireChartInteractions() {
         // PDF -> TS

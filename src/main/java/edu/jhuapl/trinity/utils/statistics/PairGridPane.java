@@ -214,7 +214,7 @@ public final class PairGridPane extends BorderPane {
     private boolean showScoresInHeader = true;
     private Consumer<CellClick> onCellClick = null;
 
-    // New: display state applied to tiles
+    //display state applied to tiles
     private final DisplayState display = new DisplayState();
     private Range globalRange = null;
 

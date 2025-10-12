@@ -200,8 +200,8 @@ public class StatTimeSeriesChart extends LineChart<Number, Number> {
         for (XYChart.Data<Number, Number> d : highlightSeries.getData()) {
             if (d.getNode() != null) {
                 d.getNode().setStyle(
-                    "-fx-background-color: -fx-default-button; " +
-                    "-fx-background-radius: 6px; -fx-padding: 6px;"
+                    "-fx-background-color: #00FF00AA; " +
+                    "-fx-background-radius: 8px; -fx-padding: 6px;"
                 );
             }
         }

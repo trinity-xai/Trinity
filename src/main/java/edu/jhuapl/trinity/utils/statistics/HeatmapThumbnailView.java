@@ -1,5 +1,7 @@
 package edu.jhuapl.trinity.utils.statistics;
 
+import static edu.jhuapl.trinity.utils.AnalysisUtils.clamp01;
+import static edu.jhuapl.trinity.utils.AnalysisUtils.clamp;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
@@ -391,7 +393,4 @@ public final class HeatmapThumbnailView extends StackPane {
         double al = a.getOpacity() + (b.getOpacity() - a.getOpacity()) * t;
         return new Color(r, g, bl, al);
     }
-
-    private static double clamp01(double x) { return (x < 0) ? 0 : (x > 1 ? 1 : x); }
-    private static double clamp(double x, double lo, double hi) { return (x < lo) ? lo : (x > hi ? hi : x); }
 }

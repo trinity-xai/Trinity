@@ -65,6 +65,30 @@ public enum AnalysisUtils {
         ObjectMapper mapper = new ObjectMapper();
         mapper.writeValue(file, currentAnalysisConfig);
     }
+    public static double[] normalizedWeights(double[] w, int dim) {
+        double[] out = new double[dim];
+        if (w == null || w.length == 0) {
+            double u = 1.0 / dim;
+            for (int i = 0; i < dim; i++) out[i] = u;
+            return out;
+        }
+        double sum = 0.0;
+        for (int i = 0; i < dim; i++) {
+            out[i] = (i < w.length ? Math.max(0.0, w[i]) : 0.0);
+            sum += out[i];
+        }
+        if (sum <= 0) {
+            double u = 1.0 / dim;
+            for (int i = 0; i < dim; i++) out[i] = u;
+        } else {
+            for (int i = 0; i < dim; i++) out[i] /= sum;
+        }
+        return out;
+    }
+    
+    public static double clamp01(double x) { return (x < 0) ? 0 : (x > 1 ? 1 : x); }
+    public static double clamp(double x, double lo, double hi) { return (x < lo) ? lo : (x > hi ? hi : x); }
+    public static double clip(double v, double lo, double hi) { return Math.max(lo, Math.min(hi, v)); }
 
     public static double lerp1(double start, double end, double ratio) {
         return start * (1 - ratio) + end * ratio;

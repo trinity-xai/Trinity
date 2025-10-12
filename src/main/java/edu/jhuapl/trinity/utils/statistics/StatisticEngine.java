@@ -2,6 +2,8 @@ package edu.jhuapl.trinity.utils.statistics;
 
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.utils.AnalysisUtils;
+import static edu.jhuapl.trinity.utils.AnalysisUtils.clamp01;
+import static edu.jhuapl.trinity.utils.AnalysisUtils.clip;
 import edu.jhuapl.trinity.utils.metric.Metric;
 
 import java.util.ArrayList;
@@ -253,7 +255,7 @@ public class StatisticEngine {
                     }
                     s = mval;
                 }
-//                case MEAN:
+//                case MEAN: //For now the default case is the same as standard mean
                 default -> {
                     double sum = 0.0, wsum = 0.0;
                     int m = Math.min(dim, z.size());
@@ -444,7 +446,4 @@ public class StatisticEngine {
         }
         return out;
     }
-
-    private static double clamp01(double v) { return Math.max(0.0, Math.min(1.0, v)); }
-    private static double clip(double v, double lo, double hi) { return Math.max(lo, Math.min(hi, v)); }
 }

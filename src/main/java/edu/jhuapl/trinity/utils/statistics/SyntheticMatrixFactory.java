@@ -1,6 +1,7 @@
 package edu.jhuapl.trinity.utils.statistics;
 
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
+import static edu.jhuapl.trinity.utils.AnalysisUtils.clamp01;
 import edu.jhuapl.trinity.utils.graph.MatrixToGraphAdapter;
 
 import java.io.Serial;
@@ -377,12 +378,6 @@ public final class SyntheticMatrixFactory {
         if (amp <= 0) return 0.0;
         // small zero-mean noise in [-amp, +amp]
         return (rng.nextDouble() * 2.0 - 1.0) * amp;
-    }
-
-    private static double clamp01(double v) {
-        if (v < 0.0) return 0.0;
-        if (v > 1.0) return 1.0;
-        return v;
     }
 
     /**
