@@ -1,21 +1,27 @@
 package edu.jhuapl.trinity.utils.statistics;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Random;
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
-import edu.jhuapl.trinity.utils.AnalysisUtils;
-import edu.jhuapl.trinity.utils.metric.Metric;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.List;
+import java.util.Map;
+import java.util.Random;
+import java.util.Set;
 import java.util.stream.Collectors;
 
 public class StatisticsEngineTest {
+    private static final Logger LOG = LoggerFactory.getLogger(StatisticsEngineTest.class);
+
     public static void main(String[] args) {
         randomGaussianTest();
         bimodalTest();
     }
-public static void randomGaussianTest() {
+
+    public static void randomGaussianTest() {
         // === 1. Generate synthetic data ===
         int numVectors = 1000;
         int dim = 10;
@@ -60,88 +66,93 @@ public static void randomGaussianTest() {
         // For dim=10: approx 1.538 (by order stats), but sample max ~ 2.0–2.3 is typical
         double approxMaxTheoretical = approxNormalMax(dim);
 
-        System.out.println("========= Theory vs. Empirical Spot Check =========");
-        System.out.println("Dimension: " + dim + "   Number of vectors: " + numVectors);
-        System.out.printf("Expected L2 norm:       mean ≈ %.3f\n", normTheoreticalMean);
-        System.out.printf("Expected mean of vec:   mean = %.3f   std = %.3f\n", meanTheoreticalMean, meanTheoreticalStd);
-        System.out.printf("Expected max per vec:   approx ≈ %.3f (see comments)\n", approxMaxTheoretical);
-        System.out.println();
+
+        LOG.info("========= Theory vs. Empirical Spot Check =========");
+        LOG.info("Dimension: {}   Number of vectors: {}", dim, numVectors);
+        LOG.info("Expected L2 norm:       mean ≈ {}", String.format("%.3f", normTheoreticalMean));
+        LOG.info("Expected mean of vec:   mean = {}   std = {}", String.format("%.3f", meanTheoreticalMean), String.format("%.3f", meanTheoreticalStd));
+        LOG.info("Expected max per vec:   approx ≈ {} (see comments)", String.format("%.3f", approxMaxTheoretical));
+        LOG.info("");
 
         for (StatisticEngine.ScalarType type : types) {
             StatisticResult sr = stats.get(type);
             double empiricalMean = sr.getValues().stream().mapToDouble(Double::doubleValue).average().orElse(0.0);
             double empiricalStd = std(sr.getValues(), empiricalMean);
 
-            System.out.println("---- " + type + " ----");
-            System.out.printf("Sample min:  %.4f\n", Collections.min(sr.getValues()));
-            System.out.printf("Sample max:  %.4f\n", Collections.max(sr.getValues()));
-            System.out.printf("Sample mean: %.4f\n", empiricalMean);
-            System.out.printf("Sample std:  %.4f\n", empiricalStd);
+            LOG.info("---- {} ----", type);
+            LOG.info("Sample min:  {}", String.format("%.4f", Collections.min(sr.getValues())));
+            LOG.info("Sample max:  {}", String.format("%.4f", Collections.max(sr.getValues())));
+            LOG.info("Sample mean: {}", String.format("%.4f", empiricalMean));
+            LOG.info("Sample std:  {}", String.format("%.4f", empiricalStd));
 
-            System.out.println("First 5 PDF bins:  " + Arrays.toString(Arrays.copyOf(sr.getPdfBins(), 5)));
-            System.out.println("First 5 PDF vals:  " + Arrays.toString(Arrays.copyOf(sr.getPdf(), 5)));
-            System.out.println("First 5 CDF vals:  " + Arrays.toString(Arrays.copyOf(sr.getCdf(), 5)));
-            System.out.println();
+            LOG.info("First 5 PDF bins:  {}", Arrays.toString(Arrays.copyOf(sr.getPdfBins(), 5)));
+            LOG.info("First 5 PDF vals:  {}", Arrays.toString(Arrays.copyOf(sr.getPdf(), 5)));
+            LOG.info("First 5 CDF vals:  {}", Arrays.toString(Arrays.copyOf(sr.getCdf(), 5)));
+            LOG.info("");
         }
 
         // === 5. Spot-check summary ===
-        System.out.println("If these match theory (see above), PDF/CDF logic is likely correct!");
-    
-}    
-public static void bimodalTest() {
-    int numVectors = 1000;
-    int dim = 10;
-    List<FeatureVector> vectors = new ArrayList<>();
-    // First half: all zeros
-    for (int i = 0; i < numVectors / 2; i++) {
-        FeatureVector fv = new FeatureVector();
-        fv.setData(Collections.nCopies(dim, 0.0));
-        vectors.add(fv);
-    }
-    // Second half: all ones
-    for (int i = 0; i < numVectors / 2; i++) {
-        FeatureVector fv = new FeatureVector();
-        fv.setData(Collections.nCopies(dim, 1.0));
-        vectors.add(fv);
+        LOG.info("If these match theory (see above), PDF/CDF logic is likely correct!");
+
     }
 
-    Set<StatisticEngine.ScalarType> types = Set.of(
-        StatisticEngine.ScalarType.L1_NORM,
-        StatisticEngine.ScalarType.MEAN,
-        StatisticEngine.ScalarType.MAX
-    );
-    int pdfBins = 10; // fewer bins to make PDF more obvious for discrete values
+    public static void bimodalTest() {
+        int numVectors = 1000;
+        int dim = 10;
+        List<FeatureVector> vectors = new ArrayList<>();
+        // First half: all zeros
+        for (int i = 0; i < numVectors / 2; i++) {
+            FeatureVector fv = new FeatureVector();
+            fv.setData(Collections.nCopies(dim, 0.0));
+            vectors.add(fv);
+        }
+        // Second half: all ones
+        for (int i = 0; i < numVectors / 2; i++) {
+            FeatureVector fv = new FeatureVector();
+            fv.setData(Collections.nCopies(dim, 1.0));
+            vectors.add(fv);
+        }
 
-    Map<StatisticEngine.ScalarType, StatisticResult> stats =
-        StatisticEngine.computeStatistics(
-            vectors, types, pdfBins, null, null
+        Set<StatisticEngine.ScalarType> types = Set.of(
+            StatisticEngine.ScalarType.L1_NORM,
+            StatisticEngine.ScalarType.MEAN,
+            StatisticEngine.ScalarType.MAX
         );
+        int pdfBins = 10; // fewer bins to make PDF more obvious for discrete values
 
-    double normPeak = Math.sqrt(dim);
+        Map<StatisticEngine.ScalarType, StatisticResult> stats =
+            StatisticEngine.computeStatistics(
+                vectors, types, pdfBins, null, null
+            );
 
-    System.out.println("========= Bimodal (two-cluster) Test =========");
-    System.out.println("Dimension: " + dim + "   Number of vectors: " + numVectors);
-    System.out.println("Expected NORM: two peaks at 0 and " + normPeak);
-    System.out.println("Expected MEAN: two peaks at 0 and 1");
-    System.out.println("Expected MAX: two peaks at 0 and 1\n");
+        double normPeak = Math.sqrt(dim);
 
-    for (StatisticEngine.ScalarType type : types) {
-        StatisticResult sr = stats.get(type);
-        Map<Double, Long> counts = sr.getValues().stream()
-            .collect(Collectors.groupingBy(x -> Math.round(x*10000.0)/10000.0, Collectors.counting()));
+        LOG.info("========= Bimodal (two-cluster) Test =========");
+        LOG.info("Dimension: {}   Number of vectors: {}", dim, numVectors);
+        LOG.info("Expected NORM: two peaks at 0 and {}", normPeak);
+        LOG.info("Expected MEAN: two peaks at 0 and 1");
+        LOG.info("Expected MAX: two peaks at 0 and 1");
+        LOG.info("");
 
-        System.out.println("---- " + type + " ----");
-        System.out.printf("Unique value counts: %s\n", counts);
-        System.out.printf("Sample min:  %.4f\n", Collections.min(sr.getValues()));
-        System.out.printf("Sample max:  %.4f\n", Collections.max(sr.getValues()));
-        System.out.printf("Sample mean: %.4f\n", sr.getValues().stream().mapToDouble(Double::doubleValue).average().orElse(0.0));
-        System.out.println("PDF: " + Arrays.toString(sr.getPdf()));
-        System.out.println("CDF: " + Arrays.toString(sr.getCdf()));
-        System.out.println();
+        for (StatisticEngine.ScalarType type : types) {
+            StatisticResult sr = stats.get(type);
+            Map<Double, Long> counts = sr.getValues().stream()
+                .collect(Collectors.groupingBy(x -> Math.round(x * 10000.0) / 10000.0, Collectors.counting()));
+
+            LOG.info("---- {} ----", type);
+            LOG.info("Unique value counts: {}", counts);
+            LOG.info("Sample min:  {}", String.format("%.4f", Collections.min(sr.getValues())));
+            LOG.info("Sample max:  {}", String.format("%.4f", Collections.max(sr.getValues())));
+            LOG.info("Sample mean: {}", String.format("%.4f", sr.getValues().stream().mapToDouble(Double::doubleValue).average().orElse(0.0)));
+            LOG.info("PDF: {}", Arrays.toString(sr.getPdf()));
+            LOG.info("CDF: {}", Arrays.toString(sr.getCdf()));
+            LOG.info("");
+        }
+
+        LOG.info("Check that all values are at expected peaks, and that the PDF/CDF reflects a perfect 50/50 split.");
+
     }
 
-    System.out.println("Check that all values are at expected peaks, and that the PDF/CDF reflects a perfect 50/50 split.");
-}
     // Utility: sample stddev
     private static double std(List<Double> vals, double mean) {
         double sum = 0.0;

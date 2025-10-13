@@ -6,12 +6,6 @@ import edu.jhuapl.trinity.utils.statistics.SyntheticMatrixFactory.SyntheticMatri
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Node;
-import javafx.util.Callback;
-
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Objects;
-
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonBar;
 import javafx.scene.control.ButtonType;
@@ -27,22 +21,28 @@ import javafx.scene.control.TextField;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Objects;
+
 /**
  * SyntheticDataDialog
  * -------------------
  * A reusable JavaFX dialog that lets the user generate:
- *   • Similarity synthetic matrices (2-cluster, K-cluster, Ring, Grid)
- *   • Divergence synthetic matrices (3 clusters)
- *   • Synthetic cohorts (Gaussian vs Uniform) for divergence workflows
- *
+ * • Similarity synthetic matrices (2-cluster, K-cluster, Ring, Grid)
+ * • Divergence synthetic matrices (3 clusters)
+ * • Synthetic cohorts (Gaussian vs Uniform) for divergence workflows
+ * <p>
  * New: You can optionally attach cohorts to any generated matrix so
  * PairwiseMatrixView can render JPDF/ΔPDF even without real data.
  */
 public final class SyntheticDataDialog extends Dialog<SyntheticDataDialog.Result> {
 
-    public enum Kind { SIMILARITY_MATRIX, DIVERGENCE_MATRIX, COHORTS }
+    public enum Kind {SIMILARITY_MATRIX, DIVERGENCE_MATRIX, COHORTS}
 
-    /** Discriminated union for dialog output. */
+    /**
+     * Discriminated union for dialog output.
+     */
     public static final class Result {
         private final Kind kind;
         private final SyntheticMatrix matrix; // non-null for SIMILARITY_MATRIX or DIVERGENCE_MATRIX
@@ -53,13 +53,30 @@ public final class SyntheticDataDialog extends Dialog<SyntheticDataDialog.Result
             this.matrix = matrix;
             this.cohorts = cohorts;
         }
-        public Kind kind() { return kind; }
-        public SyntheticMatrix matrix() { return matrix; }
-        public Cohorts cohorts() { return cohorts; }
 
-        public static Result similarity(SyntheticMatrix m) { return new Result(Kind.SIMILARITY_MATRIX, m, null); }
-        public static Result divergence(SyntheticMatrix m) { return new Result(Kind.DIVERGENCE_MATRIX, m, null); }
-        public static Result cohorts(Cohorts c)           { return new Result(Kind.COHORTS, null, c); }
+        public Kind kind() {
+            return kind;
+        }
+
+        public SyntheticMatrix matrix() {
+            return matrix;
+        }
+
+        public Cohorts cohorts() {
+            return cohorts;
+        }
+
+        public static Result similarity(SyntheticMatrix m) {
+            return new Result(Kind.SIMILARITY_MATRIX, m, null);
+        }
+
+        public static Result divergence(SyntheticMatrix m) {
+            return new Result(Kind.DIVERGENCE_MATRIX, m, null);
+        }
+
+        public static Result cohorts(Cohorts c) {
+            return new Result(Kind.COHORTS, null, c);
+        }
     }
 
     // ------------------------------
@@ -70,6 +87,7 @@ public final class SyntheticDataDialog extends Dialog<SyntheticDataDialog.Result
         t.setPrefWidth(prefWidth);
         return t;
     }
+
     private static HBox row(String label, Node control) {
         Label l = new Label(label);
         l.setPrefWidth(160);
@@ -77,6 +95,7 @@ public final class SyntheticDataDialog extends Dialog<SyntheticDataDialog.Result
         hb.setAlignment(Pos.CENTER_LEFT);
         return hb;
     }
+
     private static VBox section(String title, Node... rows) {
         Label t = new Label(title);
         t.getStyleClass().add("section-title");
@@ -86,14 +105,29 @@ public final class SyntheticDataDialog extends Dialog<SyntheticDataDialog.Result
         v.getChildren().addAll(rows);
         return v;
     }
+
     private static double dval(TextField tf, double def) {
-        try { return Double.parseDouble(tf.getText().trim()); } catch (Exception e) { return def; }
+        try {
+            return Double.parseDouble(tf.getText().trim());
+        } catch (Exception e) {
+            return def;
+        }
     }
+
     private static int ival(TextField tf, int def) {
-        try { return Integer.parseInt(tf.getText().trim()); } catch (Exception e) { return def; }
+        try {
+            return Integer.parseInt(tf.getText().trim());
+        } catch (Exception e) {
+            return def;
+        }
     }
+
     private static long lval(TextField tf, long def) {
-        try { return Long.parseLong(tf.getText().trim()); } catch (Exception e) { return def; }
+        try {
+            return Long.parseLong(tf.getText().trim());
+        } catch (Exception e) {
+            return def;
+        }
     }
 
     // ------------------------------
@@ -169,9 +203,9 @@ public final class SyntheticDataDialog extends Dialog<SyntheticDataDialog.Result
         // Content
         tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
         tabs.getTabs().addAll(
-                new Tab("Similarity", buildSimilarityContent()),
-                new Tab("Divergence", buildDivergenceContent()),
-                new Tab("Cohorts", buildCohortsContent())
+            new Tab("Similarity", buildSimilarityContent()),
+            new Tab("Divergence", buildDivergenceContent()),
+            new Tab("Cohorts", buildCohortsContent())
         );
         getDialogPane().setContent(tabs);
         getDialogPane().setPadding(new Insets(8));
@@ -186,13 +220,13 @@ public final class SyntheticDataDialog extends Dialog<SyntheticDataDialog.Result
                 return switch (name) {
                     case "Similarity" -> buildSimilarity();
                     case "Divergence" -> buildDivergence();
-                    case "Cohorts"    -> buildCohorts();
+                    case "Cohorts" -> buildCohorts();
                     default -> null;
                 };
             } catch (Throwable t) {
                 Alert a = new Alert(Alert.AlertType.ERROR,
-                        "Build failed: " + t.getClass().getSimpleName() + " – " + String.valueOf(t.getMessage()),
-                        ButtonType.OK);
+                    "Build failed: " + t.getClass().getSimpleName() + " – " + String.valueOf(t.getMessage()),
+                    ButtonType.OK);
                 a.showAndWait();
                 return null;
             }
@@ -212,10 +246,10 @@ public final class SyntheticDataDialog extends Dialog<SyntheticDataDialog.Result
         // Cohort section (hidden unless checkbox selected)
         simAttachCohorts.setSelected(false);
         simCohSection = section("Attach Cohorts (optional)",
-                row("N (vectors)", simCohN),
-                row("Gaussian A (μ, σ)", new HBox(6, simCohMu, simCohSigma)),
-                row("Uniform B [min, max]", new HBox(6, simCohMin, simCohMax)),
-                row("Seed A / B", new HBox(6, simCohSeedA, simCohSeedB))
+            row("N (vectors)", simCohN),
+            row("Gaussian A (μ, σ)", new HBox(6, simCohMu, simCohSigma)),
+            row("Uniform B [min, max]", new HBox(6, simCohMin, simCohMax)),
+            row("Seed A / B", new HBox(6, simCohSeedA, simCohSeedB))
         );
         simCohSection.setDisable(true);
         simCohSection.setOpacity(0.45);
@@ -308,11 +342,11 @@ public final class SyntheticDataDialog extends Dialog<SyntheticDataDialog.Result
         // Cohort section (hidden unless checkbox selected)
         divAttachCohorts.setSelected(false);
         divCohSection = section("Attach Cohorts (optional)",
-                row("N (vectors)", divCohN),
-                row("D (dimensions)", divCohD),
-                row("Gaussian A (μ, σ)", new HBox(6, divCohMu, divCohSigma)),
-                row("Uniform B [min, max]", new HBox(6, divCohMin, divCohMax)),
-                row("Seed A / B", new HBox(6, divCohSeedA, divCohSeedB))
+            row("N (vectors)", divCohN),
+            row("D (dimensions)", divCohD),
+            row("Gaussian A (μ, σ)", new HBox(6, divCohMu, divCohSigma)),
+            row("Uniform B [min, max]", new HBox(6, divCohMin, divCohMax)),
+            row("Seed A / B", new HBox(6, divCohSeedA, divCohSeedB))
         );
         divCohSection.setDisable(true);
         divCohSection.setOpacity(0.45);
@@ -413,7 +447,7 @@ public final class SyntheticDataDialog extends Dialog<SyntheticDataDialog.Result
                 for (int i = 0; i < enforceK; i++) def[i] = 8;
                 return def;
             }
-            return new int[]{10,10,10};
+            return new int[]{10, 10, 10};
         }
         String[] toks = csv.split("[,;\\s]+");
         List<Integer> vals = new ArrayList<>();
@@ -429,12 +463,12 @@ public final class SyntheticDataDialog extends Dialog<SyntheticDataDialog.Result
                 for (int i = 0; i < enforceK; i++) def[i] = 8;
                 return def;
             }
-            return new int[]{10,10,10};
+            return new int[]{10, 10, 10};
         }
         if (enforceK > 0 && vals.size() != enforceK) {
             // Resize to K
             int[] out = new int[enforceK];
-            for (int i = 0; i < enforceK; i++) out[i] = (i < vals.size()) ? vals.get(i) : vals.get(vals.size()-1);
+            for (int i = 0; i < enforceK; i++) out[i] = (i < vals.size()) ? vals.get(i) : vals.get(vals.size() - 1);
             return out;
         }
         int[] out = new int[vals.size()];

@@ -11,19 +11,19 @@ import java.util.Set;
 /**
  * Builds 2D joint PDF/CDF grids (Z surfaces) from a collection of FeatureVectors
  * for Trinity's 3D hypersurface renderer.
- *
+ * <p>
  * Core:
- *  - Joint PDF surface z = f(x, y) via 2D histogram (normalized to density).
- *  - Joint CDF surface z = F(x, y) = P(X ≤ x, Y ≤ y) via 2D prefix sums over per-cell probability mass.
- *
+ * - Joint PDF surface z = f(x, y) via 2D histogram (normalized to density).
+ * - Joint CDF surface z = F(x, y) = P(X ≤ x, Y ≤ y) via 2D prefix sums over per-cell probability mass.
+ * <p>
  * Axes are defined by AxisParams (per-axis scalar type + optional metric/reference/componentIndex).
  * Grid discretization and optional bounds are defined by GridSpec.
- *
+ * <p>
  * Notes:
- *  - PDF integrates to ~1: sum(pdfZ) * dx * dy ≈ 1.
- *  - CDF is monotone in +x and +y and ends near 1.
- *  - If you need PCA/UMAP coordinates as axes, precompute them and pass via COMPONENT_AT_DIMENSION,
- *    or adapt this engine to accept externally supplied (x,y) arrays.
+ * - PDF integrates to ~1: sum(pdfZ) * dx * dy ≈ 1.
+ * - CDF is monotone in +x and +y and ends near 1.
+ * - If you need PCA/UMAP coordinates as axes, precompute them and pass via COMPONENT_AT_DIMENSION,
+ * or adapt this engine to accept externally supplied (x,y) arrays.
  *
  * @author Sean Phillips
  */
@@ -44,10 +44,10 @@ public class GridDensity3DEngine {
      * @return GridDensityResult containing PDF grid, CDF grid, axis edges/centers, and bin sizes
      */
     public static GridDensityResult computePdfCdf2D(
-            List<FeatureVector> vectors,
-            AxisParams xAxis,
-            AxisParams yAxis,
-            GridSpec gridSpec
+        List<FeatureVector> vectors,
+        AxisParams xAxis,
+        AxisParams yAxis,
+        GridSpec gridSpec
     ) {
         Objects.requireNonNull(xAxis, "xAxis");
         Objects.requireNonNull(yAxis, "yAxis");
@@ -60,8 +60,8 @@ public class GridDensity3DEngine {
         // Prepare auxiliary data only when required by selected scalar types
         List<Double> meanVector = null;
         Set<StatisticEngine.ScalarType> needMean = Set.of(
-                StatisticEngine.ScalarType.DIST_TO_MEAN,
-                StatisticEngine.ScalarType.COSINE_TO_MEAN
+            StatisticEngine.ScalarType.DIST_TO_MEAN,
+            StatisticEngine.ScalarType.COSINE_TO_MEAN
         );
         if (needMean.contains(xAxis.getType()) || needMean.contains(yAxis.getType())) {
             meanVector = FeatureVector.getMeanVector(vectors);
@@ -69,14 +69,14 @@ public class GridDensity3DEngine {
 
         Metric metricX = null;
         if (xAxis.getType() == StatisticEngine.ScalarType.METRIC_DISTANCE_TO_MEAN
-                && xAxis.getMetricName() != null
-                && xAxis.getReferenceVec() != null) {
+            && xAxis.getMetricName() != null
+            && xAxis.getReferenceVec() != null) {
             metricX = Metric.getMetric(xAxis.getMetricName());
         }
         Metric metricY = null;
         if (yAxis.getType() == StatisticEngine.ScalarType.METRIC_DISTANCE_TO_MEAN
-                && yAxis.getMetricName() != null
-                && yAxis.getReferenceVec() != null) {
+            && yAxis.getMetricName() != null
+            && yAxis.getReferenceVec() != null) {
             metricY = Metric.getMetric(yAxis.getMetricName());
         }
 
@@ -88,20 +88,20 @@ public class GridDensity3DEngine {
         for (int i = 0; i < n; i++) {
             FeatureVector fv = vectors.get(i);
             xs[i] = scalarValue(
-                    fv,
-                    xAxis.getType(),
-                    meanVector,
-                    metricX,
-                    xAxis.getReferenceVec(),
-                    xAxis.getComponentIndex()
+                fv,
+                xAxis.getType(),
+                meanVector,
+                metricX,
+                xAxis.getReferenceVec(),
+                xAxis.getComponentIndex()
             );
             ys[i] = scalarValue(
-                    fv,
-                    yAxis.getType(),
-                    meanVector,
-                    metricY,
-                    yAxis.getReferenceVec(),
-                    yAxis.getComponentIndex()
+                fv,
+                yAxis.getType(),
+                meanVector,
+                metricY,
+                yAxis.getReferenceVec(),
+                yAxis.getComponentIndex()
             );
         }
 

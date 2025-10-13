@@ -3,19 +3,19 @@ package edu.jhuapl.trinity.javafx.components.hyperdrive;
 import edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageBatchInput;
 import edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageUrl;
 import edu.jhuapl.trinity.javafx.components.listviews.EmbeddingsImageListItem;
+import edu.jhuapl.trinity.messages.EmbeddingsImageCallback;
 import edu.jhuapl.trinity.messages.RestAccessLayer;
+import edu.jhuapl.trinity.utils.ResourceUtils;
 import javafx.scene.Scene;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.io.IOException;
+import java.util.ArrayList;
 import java.util.List;
 import java.util.function.BiConsumer;
 
 import static edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageUrl.imageUrlFromImage;
-import edu.jhuapl.trinity.messages.EmbeddingsImageCallback;
-import edu.jhuapl.trinity.utils.ResourceUtils;
-import java.io.IOException;
-import java.util.ArrayList;
 
 /**
  * Utility for launching a batch of image embedding requests and registering
@@ -37,25 +37,25 @@ public class ImageEmbeddingsBatchLauncher {
      * Launch a batch of embedding requests and register the completion
      * callback.
      *
-     * @param batch List of EmbeddingsImageListItem to process in this batch.
+     * @param batch       List of EmbeddingsImageListItem to process in this batch.
      * @param batchNumber The unique batch number for this batch.
-     * @param reqId The request number for this REST batch submission.
-     * @param callback Completion callback, signature: (success, Exception)
+     * @param reqId       The request number for this REST batch submission.
+     * @param callback    Completion callback, signature: (success, Exception)
      */
     public void launchBatch(List<EmbeddingsImageListItem> batch, int batchNumber, int reqId,
-            BiConsumer<Boolean, Exception> callback) {
+                            BiConsumer<Boolean, Exception> callback) {
         //register the callback and fire the REST request.
         EmbeddingsImageCallback.completionCallbacks.put(reqId, callback);
 
         List<EmbeddingsImageUrl> inputs = new ArrayList<>();
-        
+
         //Serial encoding (preserves GUI thread order)
         for (int i = 0; i < batch.size(); i++) {
             EmbeddingsImageListItem item = batch.get(i);
-            if(!item.isImageLoaded()){
+            if (!item.isImageLoaded()) {
                 try {
                     inputs.add(imageUrlFromImage.apply(
-                            ResourceUtils.loadImageFile(item.getFile())));
+                        ResourceUtils.loadImageFile(item.getFile())));
                 } catch (IOException ex) {
                     LOG.error("Failed to load Image from source: " + item.getFile().getAbsolutePath());
                 }
@@ -75,10 +75,10 @@ public class ImageEmbeddingsBatchLauncher {
 
         try {
             RestAccessLayer.requestImageEmbeddings(
-                    input,
-                    scene,
-                    batch.stream().map(i -> i.imageID).toList(),
-                    reqId
+                input,
+                scene,
+                batch.stream().map(i -> i.imageID).toList(),
+                reqId
             );
             LOG.info("Image batch (reqId={}, batchNumber={}) sent: {} items.", reqId, batchNumber, batch.size());
         } catch (Exception ex) {

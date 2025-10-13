@@ -1,7 +1,6 @@
 package edu.jhuapl.trinity.utils.statistics;
 
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
-import static edu.jhuapl.trinity.utils.AnalysisUtils.clamp01;
 import edu.jhuapl.trinity.utils.graph.MatrixToGraphAdapter;
 
 import java.io.Serial;
@@ -10,42 +9,46 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.Random;
 
+import static edu.jhuapl.trinity.utils.AnalysisUtils.clamp01;
+
 /**
  * SyntheticMatrixFactory
  * ----------------------
  * Utilities for producing small, controllable synthetic matrices and cohorts
  * that are visually easy to validate with the 3D graph layouts.
- *
+ * <p>
  * Provided generators:
- *  1) twoClustersSimilarity / kClustersSimilarity  (block-diagonal similarity)
- *  2) ringSimilarity                               (circular 1D manifold)
- *  3) threeClustersDivergence                      (triangular separation)
- *  4) gridSimilarity                               (2D lattice with RBF kernel)
- *  5) makeCohorts_GaussianVsUniform                (cohorts; useful for divergence workflows)
- *
+ * 1) twoClustersSimilarity / kClustersSimilarity  (block-diagonal similarity)
+ * 2) ringSimilarity                               (circular 1D manifold)
+ * 3) threeClustersDivergence                      (triangular separation)
+ * 4) gridSimilarity                               (2D lattice with RBF kernel)
+ * 5) makeCohorts_GaussianVsUniform                (cohorts; useful for divergence workflows)
+ * <p>
  * All matrix builders return a SyntheticMatrix bundle containing:
- *  - double[][] matrix
- *  - List<String> labels (one per feature)
- *  - List<Integer> clusterIds (optional ground-truth: cluster index, -1 if not applicable)
- *  - MatrixKind (SIMILARITY or DIVERGENCE)
- *  - title (brief description)
- *  - OPTIONAL: cohortA / cohortB (if you attach them)
- *
+ * - double[][] matrix
+ * - List<String> labels (one per feature)
+ * - List<Integer> clusterIds (optional ground-truth: cluster index, -1 if not applicable)
+ * - MatrixKind (SIMILARITY or DIVERGENCE)
+ * - title (brief description)
+ * - OPTIONAL: cohortA / cohortB (if you attach them)
+ * <p>
  * Notes:
- *  - Similarity matrices are normalized to [0,1], symmetric, and have 1.0 on the diagonal.
- *  - Divergence matrices are normalized to [0,1], symmetric, and have 0.0 on the diagonal.
- *  - Jitter adds small random noise to off-diagonals to break ties / make layouts less rigid.
+ * - Similarity matrices are normalized to [0,1], symmetric, and have 1.0 on the diagonal.
+ * - Divergence matrices are normalized to [0,1], symmetric, and have 0.0 on the diagonal.
+ * - Jitter adds small random noise to off-diagonals to break ties / make layouts less rigid.
  */
 public final class SyntheticMatrixFactory {
 
-    private SyntheticMatrixFactory() {}
+    private SyntheticMatrixFactory() {
+    }
 
     // ---------------------------------------------------------------------
     // Result bundle
     // ---------------------------------------------------------------------
 
     public static final class SyntheticMatrix implements Serializable {
-        @Serial private static final long serialVersionUID = 1L;
+        @Serial
+        private static final long serialVersionUID = 1L;
 
         public final double[][] matrix;
         public final List<String> labels;
@@ -53,7 +56,9 @@ public final class SyntheticMatrixFactory {
         public final MatrixToGraphAdapter.MatrixKind kind;
         public final String title;
 
-        /** Optional cohorts (may be null). If present, PairwiseMatrixView can fall back to them for JPDF/ΔPDF. */
+        /**
+         * Optional cohorts (may be null). If present, PairwiseMatrixView can fall back to them for JPDF/ΔPDF.
+         */
         public final List<FeatureVector> cohortA;
         public final List<FeatureVector> cohortB;
 
@@ -81,14 +86,18 @@ public final class SyntheticMatrixFactory {
             this.cohortB = cohortB;
         }
 
-        /** Return a copy of this SyntheticMatrix with cohorts attached (immutably). */
+        /**
+         * Return a copy of this SyntheticMatrix with cohorts attached (immutably).
+         */
         public SyntheticMatrix withCohorts(List<FeatureVector> a, List<FeatureVector> b) {
             return new SyntheticMatrix(matrix, labels, clusterIds, kind, title,
-                    a != null ? new ArrayList<>(a) : null,
-                    b != null ? new ArrayList<>(b) : null);
+                a != null ? new ArrayList<>(a) : null,
+                b != null ? new ArrayList<>(b) : null);
         }
 
-        /** Return a copy with a modified title (e.g., to annotate how cohorts were produced). */
+        /**
+         * Return a copy with a modified title (e.g., to annotate how cohorts were produced).
+         */
         public SyntheticMatrix withTitle(String extra) {
             String t = (extra == null || extra.isBlank()) ? title : (title + " — " + extra);
             return new SyntheticMatrix(matrix, labels, clusterIds, kind, t, cohortA, cohortB);
@@ -101,12 +110,13 @@ public final class SyntheticMatrixFactory {
 
     /**
      * Two clusters: N = n1 + n2. Within-cluster similarity ≈ withinSim, across ≈ betweenSim.
-     * @param n1           size of cluster 0
-     * @param n2           size of cluster 1
-     * @param withinSim    e.g., 0.85
-     * @param betweenSim   e.g., 0.10
-     * @param jitter       small noise added to off-diagonals (e.g., 0.02)
-     * @param seed         RNG seed
+     *
+     * @param n1         size of cluster 0
+     * @param n2         size of cluster 1
+     * @param withinSim  e.g., 0.85
+     * @param betweenSim e.g., 0.10
+     * @param jitter     small noise added to off-diagonals (e.g., 0.02)
+     * @param seed       RNG seed
      */
     public static SyntheticMatrix twoClustersSimilarity(int n1, int n2,
                                                         double withinSim,
@@ -159,7 +169,8 @@ public final class SyntheticMatrixFactory {
             for (int i = start; i <= end; i++) {
                 for (int j = crossStart; j < n; j++) {
                     double val = clamp01(betweenSim + noise(rng, jitter));
-                    S[i][j] = val; S[j][i] = val;
+                    S[i][j] = val;
+                    S[j][i] = val;
                 }
             }
 
@@ -169,7 +180,7 @@ public final class SyntheticMatrixFactory {
         symmetrize(S, true);       // force symmetry + diag=1
         normalize01(S, true);      // re-normalize to [0,1], keep diag=1
         String title = "Similarity: " + sizes.length + " clusters (K="
-                + sizes.length + ", within≈" + withinSim + ", between≈" + betweenSim + ")";
+            + sizes.length + ", within≈" + withinSim + ", between≈" + betweenSim + ")";
         return new SyntheticMatrix(S, labels, clusterIds, MatrixToGraphAdapter.MatrixKind.SIMILARITY, title);
     }
 
@@ -179,10 +190,11 @@ public final class SyntheticMatrixFactory {
 
     /**
      * A 1D ring (cycle) whose pairwise similarity decays with circular distance (Gaussian kernel).
-     * @param n       number of features on the ring
-     * @param sigma   kernel width in ring steps (e.g., 3.0)
-     * @param jitter  noise on off-diagonal (e.g., 0.01)
-     * @param seed    RNG seed
+     *
+     * @param n      number of features on the ring
+     * @param sigma  kernel width in ring steps (e.g., 3.0)
+     * @param jitter noise on off-diagonal (e.g., 0.01)
+     * @param seed   RNG seed
      */
     public static SyntheticMatrix ringSimilarity(int n, double sigma, double jitter, long seed) {
         double[][] S = new double[n][n];
@@ -201,7 +213,7 @@ public final class SyntheticMatrixFactory {
         symmetrize(S, true);
         normalize01(S, true);
         return new SyntheticMatrix(S, labels, null, MatrixToGraphAdapter.MatrixKind.SIMILARITY,
-                "Similarity: Ring (n=" + n + ", σ=" + sigma + ")");
+            "Similarity: Ring (n=" + n + ", σ=" + sigma + ")");
     }
 
     // ---------------------------------------------------------------------
@@ -210,11 +222,12 @@ public final class SyntheticMatrixFactory {
 
     /**
      * Three groups with small within divergence and large across divergence.
-     * @param sizes     array of 3 sizes (e.g., {10,10,10})
-     * @param withinD   e.g., 0.1
-     * @param betweenD  e.g., 0.9
-     * @param jitter    noise added to off-diagonals (e.g., 0.02)
-     * @param seed      RNG seed
+     *
+     * @param sizes    array of 3 sizes (e.g., {10,10,10})
+     * @param withinD  e.g., 0.1
+     * @param betweenD e.g., 0.9
+     * @param jitter   noise added to off-diagonals (e.g., 0.02)
+     * @param seed     RNG seed
      */
     public static SyntheticMatrix threeClustersDivergence(int[] sizes,
                                                           double withinD,
@@ -276,11 +289,12 @@ public final class SyntheticMatrixFactory {
 
     /**
      * Features positioned on a rows×cols lattice; similarity uses an RBF kernel on the 2D grid distance.
-     * @param rows    grid rows (e.g., 6)
-     * @param cols    grid cols (e.g., 6)
-     * @param sigma   kernel width in grid steps (e.g., 1.5)
-     * @param jitter  off-diagonal noise
-     * @param seed    RNG seed
+     *
+     * @param rows   grid rows (e.g., 6)
+     * @param cols   grid cols (e.g., 6)
+     * @param sigma  kernel width in grid steps (e.g., 1.5)
+     * @param jitter off-diagonal noise
+     * @param seed   RNG seed
      */
     public static SyntheticMatrix gridSimilarity(int rows, int cols, double sigma, double jitter, long seed) {
         int n = Math.max(1, rows) * Math.max(1, cols);
@@ -293,7 +307,9 @@ public final class SyntheticMatrixFactory {
         int t = 0;
         for (int r = 0; r < rows; r++) {
             for (int c = 0; c < cols; c++) {
-                coords[t][0] = r; coords[t][1] = c; t++;
+                coords[t][0] = r;
+                coords[t][1] = c;
+                t++;
             }
         }
 
@@ -311,7 +327,7 @@ public final class SyntheticMatrixFactory {
         symmetrize(S, true);
         normalize01(S, true);
         return new SyntheticMatrix(S, labels, null, MatrixToGraphAdapter.MatrixKind.SIMILARITY,
-                "Similarity: Grid " + rows + "×" + cols + " (σ=" + sigma + ")");
+            "Similarity: Grid " + rows + "×" + cols + " (σ=" + sigma + ")");
     }
 
     // ---------------------------------------------------------------------
@@ -320,8 +336,8 @@ public final class SyntheticMatrixFactory {
 
     /**
      * Build two cohorts of FeatureVectors:
-     *   - A: Gaussian(μ, σ) per component
-     *   - B: Uniform[min,max] per component
+     * - A: Gaussian(μ, σ) per component
+     * - B: Uniform[min,max] per component
      * Both with N samples and D dimensions (matching shapes).
      */
     public static Cohorts makeCohorts_GaussianVsUniform(int N, int D,
@@ -355,7 +371,11 @@ public final class SyntheticMatrixFactory {
     public static final class Cohorts {
         public final List<FeatureVector> cohortA;
         public final List<FeatureVector> cohortB;
-        public Cohorts(List<FeatureVector> a, List<FeatureVector> b) { this.cohortA = a; this.cohortB = b; }
+
+        public Cohorts(List<FeatureVector> a, List<FeatureVector> b) {
+            this.cohortA = a;
+            this.cohortB = b;
+        }
     }
 
     // ---------------------------------------------------------------------

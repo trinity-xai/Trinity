@@ -80,6 +80,7 @@ public class FeatureVector extends MessageData {
         entityId = UUID.randomUUID().toString();
         metaData.put("uuid", entityId);
     }
+
     /**
      * Convenience constructor to initialize with data.
      * The list reference is copied defensively.
@@ -243,6 +244,7 @@ public class FeatureVector extends MessageData {
         return sb.toString();
     }
     //<editor-fold defaultstate="collapsed" desc="Properties">
+
     /**
      * @return the entityId
      */

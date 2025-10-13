@@ -46,7 +46,7 @@ public final class ForceFrLayout3D implements GraphLayoutEngine {
                     double dx = pos[i][0] - pos[j][0];
                     double dy = pos[i][1] - pos[j][1];
                     double dz = pos[i][2] - pos[j][2];
-                    double d2 = dx*dx + dy*dy + dz*dz + 1e-9;
+                    double d2 = dx * dx + dy * dy + dz * dz + 1e-9;
                     double d = Math.sqrt(d2);
                     // Fr repulsion ~ (k^2 / d)
                     double f = (p.repulsion * k * k) / d;
@@ -54,8 +54,12 @@ public final class ForceFrLayout3D implements GraphLayoutEngine {
                     double fy = f * dy / d;
                     double fz = f * dz / d;
 
-                    disp[i][0] += fx; disp[i][1] += fy; disp[i][2] += fz;
-                    disp[j][0] -= fx; disp[j][1] -= fy; disp[j][2] -= fz;
+                    disp[i][0] += fx;
+                    disp[i][1] += fy;
+                    disp[i][2] += fz;
+                    disp[j][0] -= fx;
+                    disp[j][1] -= fy;
+                    disp[j][2] -= fz;
                 }
             }
 
@@ -68,7 +72,7 @@ public final class ForceFrLayout3D implements GraphLayoutEngine {
                         double dx = pos[i][0] - pos[j][0];
                         double dy = pos[i][1] - pos[j][1];
                         double dz = pos[i][2] - pos[j][2];
-                        double d2 = dx*dx + dy*dy + dz*dz + 1e-9;
+                        double d2 = dx * dx + dy * dy + dz * dz + 1e-9;
                         double d = Math.sqrt(d2);
                         // Fr attraction ~ (d^2 / k)
                         double f = p.attraction * w * (d2 / k);
@@ -76,8 +80,12 @@ public final class ForceFrLayout3D implements GraphLayoutEngine {
                         double fy = f * dy / d;
                         double fz = f * dz / d;
 
-                        disp[i][0] -= fx; disp[i][1] -= fy; disp[i][2] -= fz;
-                        disp[j][0] += fx; disp[j][1] += fy; disp[j][2] += fz;
+                        disp[i][0] -= fx;
+                        disp[i][1] -= fy;
+                        disp[i][2] -= fz;
+                        disp[j][0] += fx;
+                        disp[j][1] += fy;
+                        disp[j][2] += fz;
                     }
                 }
             }
@@ -95,7 +103,7 @@ public final class ForceFrLayout3D implements GraphLayoutEngine {
             // Move with clipping to temperature t
             for (int i = 0; i < n; i++) {
                 double dx = disp[i][0], dy = disp[i][1], dz = disp[i][2];
-                double m = Math.sqrt(dx*dx + dy*dy + dz*dz) + 1e-9;
+                double m = Math.sqrt(dx * dx + dy * dy + dz * dz) + 1e-9;
                 double lim = t / m;
                 pos[i][0] += dx * Math.min(1.0, lim);
                 pos[i][1] += dy * Math.min(1.0, lim);
@@ -123,8 +131,8 @@ public final class ForceFrLayout3D implements GraphLayoutEngine {
         // Fibonacci sphere distribution (nice uniform spread)
         final double phi = Math.PI * (3.0 - Math.sqrt(5.0));
         for (int i = 0; i < n; i++) {
-            double y = 1.0 - (i / (double)(n - 1)) * 2.0;
-            double radius = Math.sqrt(1.0 - y*y);
+            double y = 1.0 - (i / (double) (n - 1)) * 2.0;
+            double radius = Math.sqrt(1.0 - y * y);
             double theta = phi * i;
             double x = Math.cos(theta) * radius;
             double z = Math.sin(theta) * radius;

@@ -14,20 +14,21 @@ import java.util.Map;
 
 @JsonIgnoreProperties(ignoreUnknown = true)
 public class CyberReport {
-    public static final String PERCENTAGE    = "Percentage of Original Network";
-    public static final String GROUNDTRUTH    = "Ground Truth";
-    public static final String INFERENCES     = "Inferences";
-    public static final String ADJACENTNETWORK= "Adjacent Network";
-    public static final String MOD            = "Mod";
-    public static final String SGTA           = "S(GT, A)";
-    public static final String SINTELGT       = "S(intel, GT)";
-    public static final String SINTELA        = "S(intel, A)";
-    public static final String SINFGT         = "S(inf, GT)";
-    public static final String DELTA          = "delta";
+    public static final String PERCENTAGE = "Percentage of Original Network";
+    public static final String GROUNDTRUTH = "Ground Truth";
+    public static final String INFERENCES = "Inferences";
+    public static final String ADJACENTNETWORK = "Adjacent Network";
+    public static final String MOD = "Mod";
+    public static final String SGTA = "S(GT, A)";
+    public static final String SINTELGT = "S(intel, GT)";
+    public static final String SINTELA = "S(intel, A)";
+    public static final String SINFGT = "S(inf, GT)";
+    public static final String DELTA = "delta";
 
     // ---- small type for "Mod": [[10,"pod"], ...] ----
     @JsonFormat(shape = JsonFormat.Shape.ARRAY) // maps [10,"pod"] -> new ModEntry(10,"pod")
-    public static record ModEntry(int value, String label) {}
+    public static record ModEntry(int value, String label) {
+    }
 
     // ----- simple metadata -----
 
@@ -67,8 +68,9 @@ public class CyberReport {
     @JsonIgnore // avoid double-serializing; we expose via @JsonAnyGetter below
     private final Map<String, CyberVector> extraVectors = new LinkedHashMap<>();
 
-    public CyberReport() {}
-    
+    public CyberReport() {
+    }
+
     public static boolean isCyberReport(String body) {
         return body != null
             && body.contains(GROUNDTRUTH)
@@ -88,7 +90,9 @@ public class CyberReport {
         }
     }
 
-    /** When serializing back to JSON, include the extra S(...) vectors naturally. */
+    /**
+     * When serializing back to JSON, include the extra S(...) vectors naturally.
+     */
     @JsonAnyGetter
     public Map<String, CyberVector> getExtraVectors() {
         return extraVectors;
@@ -98,10 +102,10 @@ public class CyberReport {
     @JsonIgnore
     public List<CyberVector> getAllVectors() {
         List<CyberVector> all = new ArrayList<>();
-        if (sGtA != null)     all.add(sGtA);
+        if (sGtA != null) all.add(sGtA);
         if (sIntelGt != null) all.add(sIntelGt);
-        if (sIntelA != null)  all.add(sIntelA);
-        if (sInfGt != null)   all.add(sInfGt);
+        if (sIntelA != null) all.add(sIntelA);
+        if (sInfGt != null) all.add(sInfGt);
         all.addAll(extraVectors.values());
         return all;
     }
@@ -121,30 +125,76 @@ public class CyberReport {
     public void setPercentage(Double percentage) {
         this.percentage = percentage;
     }
-    public String getGroundTruth() { return groundTruth; }
-    public void setGroundTruth(String groundTruth) { this.groundTruth = groundTruth; }
 
-    public String getAdjacentNetwork() { return adjacentNetwork; }
-    public void setAdjacentNetwork(String adjacentNetwork) { this.adjacentNetwork = adjacentNetwork; }
+    public String getGroundTruth() {
+        return groundTruth;
+    }
 
-    public List<String> getInferences() { return inferences; }
-    public void setInferences(List<String> inferences) { this.inferences = inferences; }
+    public void setGroundTruth(String groundTruth) {
+        this.groundTruth = groundTruth;
+    }
 
-    public List<ModEntry> getMod() { return mod; }
-    public void setMod(List<ModEntry> mod) { this.mod = mod; }
+    public String getAdjacentNetwork() {
+        return adjacentNetwork;
+    }
 
-    public CyberVector getsGtA() { return sGtA; }
-    public void setsGtA(CyberVector sGtA) { this.sGtA = sGtA; }
+    public void setAdjacentNetwork(String adjacentNetwork) {
+        this.adjacentNetwork = adjacentNetwork;
+    }
 
-    public CyberVector getsIntelGt() { return sIntelGt; }
-    public void setsIntelGt(CyberVector sIntelGt) { this.sIntelGt = sIntelGt; }
+    public List<String> getInferences() {
+        return inferences;
+    }
 
-    public CyberVector getsIntelA() { return sIntelA; }
-    public void setsIntelA(CyberVector sIntelA) { this.sIntelA = sIntelA; }
+    public void setInferences(List<String> inferences) {
+        this.inferences = inferences;
+    }
 
-    public CyberVector getsInfGt() { return sInfGt; }
-    public void setsInfGt(CyberVector sInfGt) { this.sInfGt = sInfGt; }
+    public List<ModEntry> getMod() {
+        return mod;
+    }
 
-    public CyberVector getDelta() { return delta; }
-    public void setDelta(CyberVector delta) { this.delta = delta; }
+    public void setMod(List<ModEntry> mod) {
+        this.mod = mod;
+    }
+
+    public CyberVector getsGtA() {
+        return sGtA;
+    }
+
+    public void setsGtA(CyberVector sGtA) {
+        this.sGtA = sGtA;
+    }
+
+    public CyberVector getsIntelGt() {
+        return sIntelGt;
+    }
+
+    public void setsIntelGt(CyberVector sIntelGt) {
+        this.sIntelGt = sIntelGt;
+    }
+
+    public CyberVector getsIntelA() {
+        return sIntelA;
+    }
+
+    public void setsIntelA(CyberVector sIntelA) {
+        this.sIntelA = sIntelA;
+    }
+
+    public CyberVector getsInfGt() {
+        return sInfGt;
+    }
+
+    public void setsInfGt(CyberVector sInfGt) {
+        this.sInfGt = sInfGt;
+    }
+
+    public CyberVector getDelta() {
+        return delta;
+    }
+
+    public void setDelta(CyberVector delta) {
+        this.delta = delta;
+    }
 }

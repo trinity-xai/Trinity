@@ -8,7 +8,7 @@ public class GridComparisonUtils {
 
     /**
      * Calculates the Euclidean distance between two 2D grids.
-     * 
+     *
      * @param grid1 the first grid
      * @param grid2 the second grid
      * @return the Euclidean distance between the two grids
@@ -26,7 +26,7 @@ public class GridComparisonUtils {
 
     /**
      * Calculates the root mean squared error (RMSE) between two 2D grids.
-     * 
+     *
      * @param grid1 the first grid
      * @param grid2 the second grid
      * @return the RMSE between the two grids
@@ -46,7 +46,7 @@ public class GridComparisonUtils {
 
     /**
      * Calculates the mean absolute difference (MAD) between two 2D grids.
-     * 
+     *
      * @param grid1 the first grid
      * @param grid2 the second grid
      * @return the MAD between the two grids
@@ -66,7 +66,7 @@ public class GridComparisonUtils {
 
     /**
      * Calculates the coefficient of variation (CV) for a single 2D grid.
-     * 
+     *
      * @param grid the grid
      * @return the CV of the grid
      */
@@ -94,7 +94,7 @@ public class GridComparisonUtils {
     /**
      * Calculates theCharsets structural similarity index (SSIM) between two 2D grids.
      * Note that this implementation uses a simplified version of the SSIM formula.
-     * 
+     *
      * @param grid1 the first grid
      * @param grid2 the second grid
      * @return the SSIM between the two grids

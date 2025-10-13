@@ -1,6 +1,7 @@
 package edu.jhuapl.trinity.utils.statistics;
 
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
+
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -15,64 +16,89 @@ import java.util.concurrent.Future;
  * SimilarityComputer
  * ------------------
  * Builds a feature-by-feature similarity matrix for a single cohort (FeatureCollection A).
- *
+ * <p>
  * Metrics supported:
- *  - NMI:      Normalized Mutual Information in [0,1] via equal-width binning + add-one smoothing
- *  - PEARSON:  |Pearson r| in [0,1]
- *  - DIST_CORR:Distance correlation (biased estimator) in [0,1]
- *
+ * - NMI:      Normalized Mutual Information in [0,1] via equal-width binning + add-one smoothing
+ * - PEARSON:  |Pearson r| in [0,1]
+ * - DIST_CORR:Distance correlation (biased estimator) in [0,1]
+ * <p>
  * Inputs:
- *  - Feature vectors (List<FeatureVector>) assumed to share dimensionality.
- *  - A JpdfRecipe for binning/guards (minAvgCountPerCell) and to pull component index range.
- *    Only component-based features are supported here (COMPONENT_AT_DIMENSION).
- *
+ * - Feature vectors (List<FeatureVector>) assumed to share dimensionality.
+ * - A JpdfRecipe for binning/guards (minAvgCountPerCell) and to pull component index range.
+ * Only component-based features are supported here (COMPONENT_AT_DIMENSION).
+ * <p>
  * Outputs:
- *  - SimilarityResult: matrix (double[F][F]), labels, selected component indices, metric, and simple quality stats.
- *
+ * - SimilarityResult: matrix (double[F][F]), labels, selected component indices, metric, and simple quality stats.
+ * <p>
  * Notes:
- *  - This class does NOT build Joint PDFs and does not require GridSpec; it works on raw columns.
- *  - Bounds for NMI are per-pair (min..max per each variable).
- *  - Computation is parallelized over the upper triangle.
+ * - This class does NOT build Joint PDFs and does not require GridSpec; it works on raw columns.
+ * - Bounds for NMI are per-pair (min..max per each variable).
+ * - Computation is parallelized over the upper triangle.
  *
- * @author Sean Phillips 
+ * @author Sean Phillips
  */
 public final class SimilarityComputer {
 
     public enum Metric {
-        /** Normalized mutual information in [0,1] (symmetric, robust to monotone transforms roughly). */
+        /**
+         * Normalized mutual information in [0,1] (symmetric, robust to monotone transforms roughly).
+         */
         NMI,
-        /** Absolute Pearson correlation |r| in [0,1]. */
+        /**
+         * Absolute Pearson correlation |r| in [0,1].
+         */
         PEARSON_ABS,
-        /** Distance correlation (biased), in [0,1]. */
+        /**
+         * Distance correlation (biased), in [0,1].
+         */
         DIST_CORR
     }
 
-    /** Output bundle for a single similarity computation. */
+    /**
+     * Output bundle for a single similarity computation.
+     */
     public static final class SimilarityResult implements Serializable {
-        @Serial private static final long serialVersionUID = 1L;
+        @Serial
+        private static final long serialVersionUID = 1L;
 
-        /** Symmetric matrix (F x F). Diagonal is 1.0 when defined. */
+        /**
+         * Symmetric matrix (F x F). Diagonal is 1.0 when defined.
+         */
         public final double[][] matrix;
 
-        /** Optional quality matrix (F x F), e.g., fraction of finite pairs used. In [0,1]. */
+        /**
+         * Optional quality matrix (F x F), e.g., fraction of finite pairs used. In [0,1].
+         */
         public final double[][] quality;
 
-        /** Chosen metric. */
+        /**
+         * Chosen metric.
+         */
         public final Metric metric;
 
-        /** Selected component indices (length F). */
+        /**
+         * Selected component indices (length F).
+         */
         public final int[] componentIndices;
 
-        /** Human-readable labels per feature (length F), e.g., "Comp 0", "Comp 1". */
+        /**
+         * Human-readable labels per feature (length F), e.g., "Comp 0", "Comp 1".
+         */
         public final List<String> labels;
 
-        /** Number of sample rows used per pair (ideally equals N unless NaNs encountered). */
+        /**
+         * Number of sample rows used per pair (ideally equals N unless NaNs encountered).
+         */
         public final int nSamples;
 
-        /** Effective bin count used by NMI (null when metric != NMI). */
+        /**
+         * Effective bin count used by NMI (null when metric != NMI).
+         */
         public final Integer nmiBins;
 
-        /** Guard threshold from recipe (for FYI / UI badges). */
+        /**
+         * Guard threshold from recipe (for FYI / UI badges).
+         */
         public final double minAvgCountPerCell;
 
         public SimilarityResult(double[][] matrix,
@@ -94,7 +120,8 @@ public final class SimilarityComputer {
         }
     }
 
-    private SimilarityComputer() {}
+    private SimilarityComputer() {
+    }
 
     // ---------------------------------------------------------------------
     // Public API
@@ -110,9 +137,9 @@ public final class SimilarityComputer {
      * @return SimilarityResult containing the matrix and metadata.
      */
     public static SimilarityResult computeForComponentRange(
-            List<FeatureVector> vectors,
-            JpdfRecipe recipe,
-            Metric metric
+        List<FeatureVector> vectors,
+        JpdfRecipe recipe,
+        Metric metric
     ) {
         Objects.requireNonNull(vectors, "vectors");
         Objects.requireNonNull(recipe, "recipe");
@@ -134,17 +161,17 @@ public final class SimilarityComputer {
     /**
      * Compute a similarity matrix for an explicit list of component indices.
      *
-     * @param vectors feature vectors (rows)
+     * @param vectors          feature vectors (rows)
      * @param componentIndices list of dimensions to include (0-based)
-     * @param recipe recipe for bins/guards (NMI), ignored bounds policy here
-     * @param metric metric to compute
+     * @param recipe           recipe for bins/guards (NMI), ignored bounds policy here
+     * @param metric           metric to compute
      * @return SimilarityResult
      */
     public static SimilarityResult computeForComponents(
-            List<FeatureVector> vectors,
-            List<Integer> componentIndices,
-            JpdfRecipe recipe,
-            Metric metric
+        List<FeatureVector> vectors,
+        List<Integer> componentIndices,
+        JpdfRecipe recipe,
+        Metric metric
     ) {
         Objects.requireNonNull(vectors, "vectors");
         Objects.requireNonNull(componentIndices, "componentIndices");
@@ -154,9 +181,9 @@ public final class SimilarityComputer {
         // Early outs
         if (vectors.isEmpty() || componentIndices.isEmpty()) {
             return new SimilarityResult(new double[0][0], new double[0][0], metric,
-                    new int[0], List.of(), 0,
-                    metric == Metric.NMI ? Math.min(recipe.getBinsX(), recipe.getBinsY()) : null,
-                    recipe.getMinAvgCountPerCell());
+                new int[0], List.of(), 0,
+                metric == Metric.NMI ? Math.min(recipe.getBinsX(), recipe.getBinsY()) : null,
+                recipe.getMinAvgCountPerCell());
         }
 
         // Extract selected columns into dense arrays: cols[k][row]
@@ -177,8 +204,8 @@ public final class SimilarityComputer {
 
         // NMI bins: choose something sane. Use recipe bins, but not too huge for 1D discretization.
         final int nmiBins = (metric == Metric.NMI)
-                ? Math.max(4, Math.min(128, Math.min(recipe.getBinsX(), recipe.getBinsY())))
-                : -1;
+            ? Math.max(4, Math.min(128, Math.min(recipe.getBinsX(), recipe.getBinsY())))
+            : -1;
 
         // Parallel upper-triangle computation
         int threads = Math.max(1, Runtime.getRuntime().availableProcessors());
@@ -213,7 +240,9 @@ public final class SimilarityComputer {
 
         // Wait
         for (Future<?> f : futures) {
-            try { f.get(); } catch (Exception e) {
+            try {
+                f.get();
+            } catch (Exception e) {
                 pool.shutdownNow();
                 throw new RuntimeException("SimilarityComputer: task failed", e);
             }
@@ -226,14 +255,14 @@ public final class SimilarityComputer {
 
         // Return
         return new SimilarityResult(
-                M,
-                Q,
-                metric,
-                comps,
-                labels,
-                N,
-                (metric == Metric.NMI ? nmiBins : null),
-                recipe.getMinAvgCountPerCell()
+            M,
+            Q,
+            metric,
+            comps,
+            labels,
+            N,
+            (metric == Metric.NMI ? nmiBins : null),
+            recipe.getMinAvgCountPerCell()
         );
     }
 
@@ -241,7 +270,9 @@ public final class SimilarityComputer {
     // Internals
     // ---------------------------------------------------------------------
 
-    /** Extracts an array per selected component index: cols[k][row]. */
+    /**
+     * Extracts an array per selected component index: cols[k][row].
+     */
     private static double[][] extractColumns(List<FeatureVector> vectors, int[] comps) {
         int F = comps.length;
         int N = vectors.size();
@@ -251,22 +282,31 @@ public final class SimilarityComputer {
             for (int k = 0; k < F; k++) {
                 int idx = comps[k];
                 double v = (row != null && idx >= 0 && idx < row.size() && row.get(idx) != null)
-                        ? row.get(idx)
-                        : Double.NaN;
+                    ? row.get(idx)
+                    : Double.NaN;
                 cols[k][r] = v;
             }
         }
         return cols;
     }
 
-    /** Holder for filtered finite pairs. */
+    /**
+     * Holder for filtered finite pairs.
+     */
     private static final class PairXY {
         final double[] x, y;
         final int n;
-        PairXY(double[] x, double[] y) { this.x = x; this.y = y; this.n = x.length; }
+
+        PairXY(double[] x, double[] y) {
+            this.x = x;
+            this.y = y;
+            this.n = x.length;
+        }
     }
 
-    /** Remove any rows with non-finite x or y. */
+    /**
+     * Remove any rows with non-finite x or y.
+     */
     private static PairXY finitePairs(double[] x, double[] y) {
         int n = Math.min(x.length, y.length);
         double[] xx = new double[n];
@@ -275,7 +315,9 @@ public final class SimilarityComputer {
         for (int i = 0; i < n; i++) {
             double a = x[i], b = y[i];
             if (Double.isFinite(a) && Double.isFinite(b)) {
-                xx[m] = a; yy[m] = b; m++;
+                xx[m] = a;
+                yy[m] = b;
+                m++;
             }
         }
         if (m == n) return new PairXY(xx, yy);
@@ -292,8 +334,10 @@ public final class SimilarityComputer {
         double sx = 0, sy = 0, sxx = 0, syy = 0, sxy = 0;
         for (int i = 0; i < n; i++) {
             double xi = x[i], yi = y[i];
-            sx += xi; sy += yi;
-            sxx += xi * xi; syy += yi * yi;
+            sx += xi;
+            sy += yi;
+            sxx += xi * xi;
+            syy += yi * yi;
             sxy += xi * yi;
         }
         double num = n * sxy - sx * sy;
@@ -322,7 +366,8 @@ public final class SimilarityComputer {
         if (dvarx <= 0 || dvary <= 0) return 0.0;
         double dcor = Math.sqrt(Math.max(0, dcov2)) / Math.sqrt(dvarx * dvary);
         if (Double.isNaN(dcor) || Double.isInfinite(dcor)) return 0.0;
-        if (dcor < 0) dcor = 0; else if (dcor > 1) dcor = 1;
+        if (dcor < 0) dcor = 0;
+        else if (dcor > 1) dcor = 1;
         return dcor;
     }
 
@@ -333,7 +378,8 @@ public final class SimilarityComputer {
             d[i][i] = 0;
             for (int j = i + 1; j < n; j++) {
                 double dij = Math.abs(v[i] - v[j]);
-                d[i][j] = dij; d[j][i] = dij;
+                d[i][j] = dij;
+                d[j][i] = dij;
             }
         }
         return d;
@@ -386,8 +432,10 @@ public final class SimilarityComputer {
         double minY = Double.POSITIVE_INFINITY, maxY = Double.NEGATIVE_INFINITY;
         for (int i = 0; i < n; i++) {
             double xi = x[i], yi = y[i];
-            if (xi < minX) minX = xi; if (xi > maxX) maxX = xi;
-            if (yi < minY) minY = yi; if (yi > maxY) maxY = yi;
+            if (xi < minX) minX = xi;
+            if (xi > maxX) maxX = xi;
+            if (yi < minY) minY = yi;
+            if (yi > maxY) maxY = yi;
         }
         if (!(maxX > minX)) maxX = minX + 1e-8;
         if (!(maxY > minY)) maxY = minY + 1e-8;
@@ -399,16 +447,23 @@ public final class SimilarityComputer {
         double[][] joint = new double[bins][bins];
         double[] px = new double[bins];
         double[] py = new double[bins];
-        for (int bx = 0; bx < bins; bx++) { px[bx] = 1.0; }
-        for (int by = 0; by < bins; by++) { py[by] = 1.0; for (int bx = 0; bx < bins; bx++) joint[by][bx] = 1.0; }
+        for (int bx = 0; bx < bins; bx++) {
+            px[bx] = 1.0;
+        }
+        for (int by = 0; by < bins; by++) {
+            py[by] = 1.0;
+            for (int bx = 0; bx < bins; bx++) joint[by][bx] = 1.0;
+        }
 
         double nEff = n + bins + bins + bins * bins;
 
         for (int i = 0; i < n; i++) {
             int bx = (int) Math.floor((x[i] - minX) / dx);
             int by = (int) Math.floor((y[i] - minY) / dy);
-            if (bx < 0) bx = 0; if (bx >= bins) bx = bins - 1;
-            if (by < 0) by = 0; if (by >= bins) by = bins - 1;
+            if (bx < 0) bx = 0;
+            if (bx >= bins) bx = bins - 1;
+            if (by < 0) by = 0;
+            if (by >= bins) by = bins - 1;
             joint[by][bx] += 1.0;
             px[bx] += 1.0;
             py[by] += 1.0;
@@ -433,7 +488,8 @@ public final class SimilarityComputer {
         double denom = Math.sqrt(Math.max(hx, 1e-12) * Math.max(hy, 1e-12));
         double nmi = (denom > 0) ? (mi / denom) : 0.0;
         if (Double.isNaN(nmi) || Double.isInfinite(nmi)) nmi = 0.0;
-        if (nmi < 0) nmi = 0; else if (nmi > 1) nmi = 1;
+        if (nmi < 0) nmi = 0;
+        else if (nmi > 1) nmi = 1;
         return nmi;
     }
 

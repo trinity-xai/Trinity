@@ -15,26 +15,28 @@ import java.util.Objects;
  * Computes an N x N feature similarity matrix for a single cohort (one FeatureCollection),
  * where N = (endIndex - startIndex + 1). Each entry S[i,j] encodes dependence between
  * component @i and component @j using one of:
- *
- *   - PEARSON   : |r|
- *   - KENDALL   : |tau_b| (approx; stride-sampled for large N)
- *   - MI_LITE   : Normalized Mutual Information in [0,1] using fixed equal-width binning
- *   - DIST_CORR : Distance correlation in [0,1] (biased estimator)
- *
+ * <p>
+ * - PEARSON   : |r|
+ * - KENDALL   : |tau_b| (approx; stride-sampled for large N)
+ * - MI_LITE   : Normalized Mutual Information in [0,1] using fixed equal-width binning
+ * - DIST_CORR : Distance correlation in [0,1] (biased estimator)
+ * <p>
  * Data sufficiency guard:
- *   sufficient <=> (#samples) / (binsX * binsY) >= minAvgCountPerCell
+ * sufficient <=> (#samples) / (binsX * binsY) >= minAvgCountPerCell
  * If insufficient, S[i,j] is set to Double.NaN and mask[i][j] = false.
- *
+ * <p>
  * Diagonal:
- *   S[i,i] = 1.0 when sufficient; else NaN.
- *
+ * S[i,i] = 1.0 when sufficient; else NaN.
+ * <p>
  * Output includes labels ("Comp <k>") for convenience and a metadata block.
  *
  * @author Sean Phillips
  */
 public final class FeatureSimilarityComputer {
 
-    /** Similarity metric options (aligned with JpdfRecipe.ScoreMetric names). */
+    /**
+     * Similarity metric options (aligned with JpdfRecipe.ScoreMetric names).
+     */
     public enum SimilarityMetric {
         PEARSON,
         KENDALL,
@@ -42,20 +44,31 @@ public final class FeatureSimilarityComputer {
         DIST_CORR
     }
 
-    /** Result bundle for a single cohort. */
+    /**
+     * Result bundle for a single cohort.
+     */
     public static final class Result implements Serializable {
-        @Serial private static final long serialVersionUID = 1L;
+        @Serial
+        private static final long serialVersionUID = 1L;
 
-        /** Similarity matrix, size N x N. May contain NaN where insufficient. */
+        /**
+         * Similarity matrix, size N x N. May contain NaN where insufficient.
+         */
         public final double[][] sim;
 
-        /** True where the corresponding sim[i][j] passed the sufficiency guard. */
+        /**
+         * True where the corresponding sim[i][j] passed the sufficiency guard.
+         */
         public final boolean[][] sufficient;
 
-        /** Display labels for each component (length N), e.g., "Comp 7". */
+        /**
+         * Display labels for each component (length N), e.g., "Comp 7".
+         */
         public final List<String> labels;
 
-        /** Metadata for auditing and UI badges. */
+        /**
+         * Metadata for auditing and UI badges.
+         */
         public final Meta meta;
 
         public Result(double[][] sim, boolean[][] sufficient, List<String> labels, Meta meta) {
@@ -66,9 +79,12 @@ public final class FeatureSimilarityComputer {
         }
     }
 
-    /** Metadata captured for the matrix computation. */
+    /**
+     * Metadata captured for the matrix computation.
+     */
     public static final class Meta implements Serializable {
-        @Serial private static final long serialVersionUID = 1L;
+        @Serial
+        private static final long serialVersionUID = 1L;
 
         public final int startIndex;
         public final int endIndex;
@@ -108,15 +124,15 @@ public final class FeatureSimilarityComputer {
     /**
      * Compute an N x N similarity matrix across components [startIndex..endIndex] for one cohort.
      *
-     * @param vectors                cohort feature vectors (rows); required
-     * @param startIndex             inclusive component start (clamped to [0, D-1])
-     * @param endIndex               inclusive component end (clamped to [start, D-1])
-     * @param metric                 similarity metric to use
-     * @param miBins                 MI-lite bin count (>=4) used only when metric == MI_LITE
-     * @param kendallMaxN            stride-sampling cap for Kendall tau (>=50)
-     * @param binsX                  guard param for avg count per cell (>=2)
-     * @param binsY                  guard param for avg count per cell (>=2)
-     * @param minAvgCountPerCell     sufficiency threshold; if <=0 no pairs are blocked
+     * @param vectors            cohort feature vectors (rows); required
+     * @param startIndex         inclusive component start (clamped to [0, D-1])
+     * @param endIndex           inclusive component end (clamped to [start, D-1])
+     * @param metric             similarity metric to use
+     * @param miBins             MI-lite bin count (>=4) used only when metric == MI_LITE
+     * @param kendallMaxN        stride-sampling cap for Kendall tau (>=50)
+     * @param binsX              guard param for avg count per cell (>=2)
+     * @param binsY              guard param for avg count per cell (>=2)
+     * @param minAvgCountPerCell sufficiency threshold; if <=0 no pairs are blocked
      */
     public static Result compute(List<FeatureVector> vectors,
                                  int startIndex,
@@ -186,9 +202,9 @@ public final class FeatureSimilarityComputer {
         for (int k = 0; k < N; k++) labels.add("Comp " + (s + k));
 
         Meta meta = new Meta(s, e, nSamples, metric,
-                Math.max(4, miBins), Math.max(50, kendallMaxN),
-                Math.max(2, binsX), Math.max(2, binsY),
-                Math.max(0.0, minAvgCountPerCell));
+            Math.max(4, miBins), Math.max(50, kendallMaxN),
+            Math.max(2, binsX), Math.max(2, binsY),
+            Math.max(0.0, minAvgCountPerCell));
 
         return new Result(S, ok, labels, meta);
     }
@@ -208,9 +224,9 @@ public final class FeatureSimilarityComputer {
         boolean[][] ok = new boolean[0][0];
         List<String> labels = new ArrayList<>(0);
         Meta meta = new Meta(s, e, 0L, metric,
-                Math.max(4, miBins), Math.max(50, kendallMaxN),
-                Math.max(2, binsX), Math.max(2, binsY),
-                Math.max(0.0, minAvgCountPerCell));
+            Math.max(4, miBins), Math.max(50, kendallMaxN),
+            Math.max(2, binsX), Math.max(2, binsY),
+            Math.max(0.0, minAvgCountPerCell));
         return new Result(S, ok, labels, meta);
     }
 
@@ -244,13 +260,15 @@ public final class FeatureSimilarityComputer {
         double sx = 0, sy = 0, sxx = 0, syy = 0, sxy = 0;
         for (int i = 0; i < n; i++) {
             double xi = x[i], yi = y[i];
-            sx += xi; sy += yi;
-            sxx += xi * xi; syy += yi * yi;
+            sx += xi;
+            sy += yi;
+            sxx += xi * xi;
+            syy += yi * yi;
             sxy += xi * yi;
         }
         double num = n * sxy - sx * sy;
         double den = Math.sqrt(Math.max(0.0, n * sxx - sx * sx)) *
-                     Math.sqrt(Math.max(0.0, n * syy - sy * sy));
+            Math.sqrt(Math.max(0.0, n * syy - sy * sy));
         if (den == 0.0) return 0.0;
         double r = num / den;
         if (Double.isNaN(r) || Double.isInfinite(r)) return 0.0;
@@ -278,8 +296,14 @@ public final class FeatureSimilarityComputer {
                 double dy = y[i] - y[j];
 
                 if (dx == 0.0 && dy == 0.0) continue; // joint tie
-                if (dx == 0.0) { tiesX++; continue; }
-                if (dy == 0.0) { tiesY++; continue; }
+                if (dx == 0.0) {
+                    tiesX++;
+                    continue;
+                }
+                if (dy == 0.0) {
+                    tiesY++;
+                    continue;
+                }
 
                 double prod = dx * dy;
                 if (prod > 0) concordant++;
@@ -287,7 +311,7 @@ public final class FeatureSimilarityComputer {
             }
         }
         double denom = Math.sqrt((concordant + discordant + tiesX) * 1.0) *
-                       Math.sqrt((concordant + discordant + tiesY) * 1.0);
+            Math.sqrt((concordant + discordant + tiesY) * 1.0);
         if (denom == 0.0) return 0.0;
         return (concordant - discordant) / denom;
     }
@@ -315,8 +339,10 @@ public final class FeatureSimilarityComputer {
         double minY = Double.POSITIVE_INFINITY, maxY = Double.NEGATIVE_INFINITY;
         for (int i = 0; i < n; i++) {
             double xi = x[i], yi = y[i];
-            if (xi < minX) minX = xi; if (xi > maxX) maxX = xi;
-            if (yi < minY) minY = yi; if (yi > maxY) maxY = yi;
+            if (xi < minX) minX = xi;
+            if (xi > maxX) maxX = xi;
+            if (yi < minY) minY = yi;
+            if (yi > maxY) maxY = yi;
         }
         if (!(maxX > minX)) maxX = minX + 1e-8;
         if (!(maxY > minY)) maxY = minY + 1e-8;
@@ -337,8 +363,10 @@ public final class FeatureSimilarityComputer {
         for (int i = 0; i < n; i++) {
             int bx = (int) Math.floor((x[i] - minX) / dx);
             int by = (int) Math.floor((y[i] - minY) / dy);
-            if (bx < 0) bx = 0; if (bx >= bins) bx = bins - 1;
-            if (by < 0) by = 0; if (by >= bins) by = bins - 1;
+            if (bx < 0) bx = 0;
+            if (bx >= bins) bx = bins - 1;
+            if (by < 0) by = 0;
+            if (by >= bins) by = bins - 1;
             joint[by][bx] += 1.0;
             px[bx] += 1.0;
             py[by] += 1.0;
@@ -369,7 +397,8 @@ public final class FeatureSimilarityComputer {
         double denom = Math.sqrt(Math.max(hx, 1e-12) * Math.max(hy, 1e-12));
         double nmi = (denom > 0.0) ? (mi / denom) : 0.0;
         if (Double.isNaN(nmi) || Double.isInfinite(nmi)) nmi = 0.0;
-        if (nmi < 0.0) nmi = 0.0; else if (nmi > 1.0) nmi = 1.0;
+        if (nmi < 0.0) nmi = 0.0;
+        else if (nmi > 1.0) nmi = 1.0;
         return nmi;
     }
 
@@ -399,7 +428,8 @@ public final class FeatureSimilarityComputer {
         if (dvarx <= 0.0 || dvary <= 0.0) return 0.0;
         double dcor = Math.sqrt(Math.max(0.0, dcov2)) / Math.sqrt(dvarx * dvary);
         if (Double.isNaN(dcor) || Double.isInfinite(dcor)) return 0.0;
-        if (dcor < 0.0) dcor = 0.0; else if (dcor > 1.0) dcor = 1.0;
+        if (dcor < 0.0) dcor = 0.0;
+        else if (dcor > 1.0) dcor = 1.0;
         return dcor;
     }
 
@@ -409,7 +439,8 @@ public final class FeatureSimilarityComputer {
             d[i][i] = 0.0;
             for (int j = i + 1; j < n; j++) {
                 double dij = Math.abs(v[i] - v[j]);
-                d[i][j] = dij; d[j][i] = dij;
+                d[i][j] = dij;
+                d[j][i] = dij;
             }
         }
         return d;

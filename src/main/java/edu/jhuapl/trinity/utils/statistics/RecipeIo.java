@@ -3,6 +3,7 @@ package edu.jhuapl.trinity.utils.statistics;
 import com.fasterxml.jackson.annotation.JsonInclude;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
+
 import java.io.IOException;
 import java.io.InputStream;
 import java.io.OutputStream;
@@ -16,18 +17,23 @@ import java.io.OutputStream;
  */
 public final class RecipeIo {
     private static final ObjectMapper M = new ObjectMapper()
-            .enable(SerializationFeature.INDENT_OUTPUT)
-            .setSerializationInclusion(JsonInclude.Include.NON_NULL);
+        .enable(SerializationFeature.INDENT_OUTPUT)
+        .setSerializationInclusion(JsonInclude.Include.NON_NULL);
 
-    private RecipeIo() {}
+    private RecipeIo() {
+    }
 
-    /** Write a recipe as JSON to the given stream. */
+    /**
+     * Write a recipe as JSON to the given stream.
+     */
     public static void write(OutputStream os, JpdfRecipe r) throws IOException {
         if (r == null) throw new IllegalArgumentException("recipe null");
         M.writeValue(os, RecipeDto.from(r));
     }
 
-    /** Read a recipe from JSON stream. */
+    /**
+     * Read a recipe from JSON stream.
+     */
     public static JpdfRecipe read(InputStream is) throws IOException {
         RecipeDto dto = M.readValue(is, RecipeDto.class);
         return dto.toRecipe();
@@ -95,20 +101,20 @@ public final class RecipeIo {
 
         public JpdfRecipe toRecipe() {
             JpdfRecipe.Builder b = JpdfRecipe.newBuilder(nonBlank(name, "Unnamed"))
-                    .description(nvl(description, ""))
-                    .pairSelection(JpdfRecipe.PairSelection.valueOf(nvl(pairSelection, "ALL")))
-                    .scoreMetric(JpdfRecipe.ScoreMetric.valueOf(nvl(scoreMetric, "PEARSON")))
-                    .bins(nvl(binsX, 64), nvl(binsY, 64))
-                    .boundsPolicy(JpdfRecipe.BoundsPolicy.valueOf(nvl(boundsPolicy, "DATA_MIN_MAX")))
-                    .canonicalPolicyId(nvl(canonicalPolicyId, "default"))
-                    .minAvgCountPerCell(nvl(minAvgCountPerCell, 3.0))
-                    .outputKind(JpdfRecipe.OutputKind.valueOf(nvl(outputKind, "PDF_AND_CDF")))
-                    .cacheEnabled(nvl(cacheEnabled, true))
-                    .saveThumbnails(nvl(saveThumbnails, true))
-                    .componentPairsMode(nvl(componentPairsMode, true))
-                    .componentIndexRange(nvl(componentIndexStart, 0), nvl(componentIndexEnd, 1))
-                    .includeSelfPairs(nvl(includeSelfPairs, false))
-                    .orderedPairs(nvl(orderedPairs, false));
+                .description(nvl(description, ""))
+                .pairSelection(JpdfRecipe.PairSelection.valueOf(nvl(pairSelection, "ALL")))
+                .scoreMetric(JpdfRecipe.ScoreMetric.valueOf(nvl(scoreMetric, "PEARSON")))
+                .bins(nvl(binsX, 64), nvl(binsY, 64))
+                .boundsPolicy(JpdfRecipe.BoundsPolicy.valueOf(nvl(boundsPolicy, "DATA_MIN_MAX")))
+                .canonicalPolicyId(nvl(canonicalPolicyId, "default"))
+                .minAvgCountPerCell(nvl(minAvgCountPerCell, 3.0))
+                .outputKind(JpdfRecipe.OutputKind.valueOf(nvl(outputKind, "PDF_AND_CDF")))
+                .cacheEnabled(nvl(cacheEnabled, true))
+                .saveThumbnails(nvl(saveThumbnails, true))
+                .componentPairsMode(nvl(componentPairsMode, true))
+                .componentIndexRange(nvl(componentIndexStart, 0), nvl(componentIndexEnd, 1))
+                .includeSelfPairs(nvl(includeSelfPairs, false))
+                .orderedPairs(nvl(orderedPairs, false));
 
             if (topK != null) b.topK(topK);
             if (scoreThreshold != null) b.scoreThreshold(scoreThreshold);
@@ -119,10 +125,24 @@ public final class RecipeIo {
         }
 
         // helpers
-        private static String nonBlank(String s, String def) { return (s == null || s.isBlank()) ? def : s; }
-        private static String nvl(String s, String def) { return s == null ? def : s; }
-        private static int nvl(Integer v, int def) { return v == null ? def : v; }
-        private static double nvl(Double v, double def) { return v == null ? def : v; }
-        private static boolean nvl(Boolean v, boolean def) { return v == null ? def : v; }
+        private static String nonBlank(String s, String def) {
+            return (s == null || s.isBlank()) ? def : s;
+        }
+
+        private static String nvl(String s, String def) {
+            return s == null ? def : s;
+        }
+
+        private static int nvl(Integer v, int def) {
+            return v == null ? def : v;
+        }
+
+        private static double nvl(Double v, double def) {
+            return v == null ? def : v;
+        }
+
+        private static boolean nvl(Boolean v, boolean def) {
+            return v == null ? def : v;
+        }
     }
 }

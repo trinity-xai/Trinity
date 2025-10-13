@@ -164,7 +164,7 @@ public class LitPathPane extends PathPane {
             mainTitleArea,   // title bar with free space
             this,                 // whole pane (for "include frame")
             contentPane,     // content-only
-            mainTitleArea,   // right-click target 
+            mainTitleArea,   // right-click target
             this.scene,
             toolbarFitWidth
         );
@@ -275,14 +275,17 @@ public class LitPathPane extends PathPane {
                 contentPane.setOpacity(0.8);
         });
     }
+
     @Override
     public void close() {
         super.close();
         onClose();
     }
+
     public void onClose() {
         parent.getChildren().remove(this);
     }
+
     public Timeline setupGradientTimeline() {
         Timeline timeline = new Timeline(
             new KeyFrame(Duration.millis(30), new KeyValue(percentComplete, 0.0)),

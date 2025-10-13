@@ -4,10 +4,6 @@ import edu.jhuapl.trinity.css.StyleResourceProvider;
 import edu.jhuapl.trinity.javafx.events.HypersurfaceGridEvent;
 import edu.jhuapl.trinity.utils.statistics.GridDensityResult;
 import edu.jhuapl.trinity.utils.statistics.StatPdfCdfChartPanel;
-import java.util.List;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.prefs.Preferences;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ToolBar;
@@ -20,9 +16,14 @@ import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.Window;
 
+import java.util.List;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.prefs.Preferences;
+
 /**
  * Popout controller for the Statistics PDF/CDF panel.
- *
+ * <p>
  * - Requires an application Scene (owner & event routing) in the constructor.
  * - Accepts and applies a pure-data State snapshot for initialization.
  * - Exposes the current State snapshot for the caller to retrieve and use as needed.
@@ -46,7 +47,9 @@ public final class StatPdfCdfPopoutController {
         this.appScene = Objects.requireNonNull(appScene, "appScene");
     }
 
-    /** Provide an initial state to apply to the popout chart. */
+    /**
+     * Provide an initial state to apply to the popout chart.
+     */
     public void setInitialState(StatPdfCdfChartPanel.State state) {
         if (state == null) return;
         if (isOpen() && chart != null) {
@@ -56,7 +59,9 @@ public final class StatPdfCdfPopoutController {
         }
     }
 
-    /** Retrieve the latest state: live export if open, else the last pending/applied state if available. */
+    /**
+     * Retrieve the latest state: live export if open, else the last pending/applied state if available.
+     */
     public Optional<StatPdfCdfChartPanel.State> getCurrentState() {
         if (isOpen() && chart != null) {
             return Optional.of(chart.exportState());
@@ -64,7 +69,9 @@ public final class StatPdfCdfPopoutController {
         return Optional.ofNullable(pendingState);
     }
 
-    /** Open (or focus) the popout window. */
+    /**
+     * Open (or focus) the popout window.
+     */
     public void show() {
         if (stage != null && stage.isShowing()) {
             stage.toFront();
@@ -77,7 +84,9 @@ public final class StatPdfCdfPopoutController {
         stage.show();
     }
 
-    /** Close the window. The latest state remains accessible via getCurrentState(). */
+    /**
+     * Close the window. The latest state remains accessible via getCurrentState().
+     */
     public void close() {
         if (stage == null) return;
         saveWindowPrefs();
@@ -93,7 +102,9 @@ public final class StatPdfCdfPopoutController {
         return stage != null && stage.isShowing();
     }
 
-    /** Move the window to a secondary screen if available. */
+    /**
+     * Move the window to a secondary screen if available.
+     */
     public void sendToSecondScreen() {
         if (stage == null) return;
         Screen second = getSecondaryScreen();
@@ -178,8 +189,8 @@ public final class StatPdfCdfPopoutController {
             : result.pdfAsListGrid();
 
         String label = (useCDF ? "CDF" : "PDF") + " : "
-                     + chart.getScalarType() + " vs "
-                     + chart.getYFeatureTypeForDisplay();
+            + chart.getScalarType() + " vs "
+            + chart.getYFeatureTypeForDisplay();
 
         appScene.getRoot().fireEvent(
             new HypersurfaceGridEvent(
@@ -247,8 +258,14 @@ public final class StatPdfCdfPopoutController {
         double y = prefs.getDouble("statpdfcdf_pop_y", Double.NaN);
         boolean fs = prefs.getBoolean("statpdfcdf_pop_fs", false);
 
-        if (w > 0.0 && h > 0.0) { stage.setWidth(w); stage.setHeight(h); }
-        if (!Double.isNaN(x) && !Double.isNaN(y)) { stage.setX(x); stage.setY(y); }
+        if (w > 0.0 && h > 0.0) {
+            stage.setWidth(w);
+            stage.setHeight(h);
+        }
+        if (!Double.isNaN(x) && !Double.isNaN(y)) {
+            stage.setX(x);
+            stage.setY(y);
+        }
         stage.setFullScreen(fs);
     }
 }

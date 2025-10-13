@@ -10,8 +10,9 @@ public class AxisParams {
     private Integer componentIndex;    // for COMPONENT_AT_DIMENSION
 
     public AxisParams() {
-        
+
     }
+
     public AxisParams(StatisticEngine.ScalarType type,
                       String metricName,
                       List<Double> referenceVec,
@@ -21,6 +22,7 @@ public class AxisParams {
         this.referenceVec = referenceVec;
         this.componentIndex = componentIndex;
     }
+
     /**
      * @return the type
      */

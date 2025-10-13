@@ -3,6 +3,7 @@ package edu.jhuapl.trinity.utils.graph;
 import edu.jhuapl.trinity.data.graph.GraphDirectedCollection;
 import edu.jhuapl.trinity.data.graph.GraphEdge;
 import edu.jhuapl.trinity.data.graph.GraphNode;
+
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashSet;
@@ -15,33 +16,37 @@ import java.util.Set;
  * --------------------
  * Converts a similarity or divergence matrix into a GraphDirectedCollection,
  * and computes node positions using a chosen layout (Static, MDS-3D, Force-FR).
- *
+ * <p>
  * New: supports edge sparsification via GraphLayoutParams.EdgePolicy:
- *   - ALL: fully connected (except diagonal)
- *   - KNN: k-nearest neighbors per node (with optional symmetrization)
- *   - EPSILON: keep edges with weight >= epsilon (uses transformed weights)
- *   - MST_PLUS_K: minimum spanning tree (built on 1/weight distances) plus KNN edges
- *
+ * - ALL: fully connected (except diagonal)
+ * - KNN: k-nearest neighbors per node (with optional symmetrization)
+ * - EPSILON: keep edges with weight >= epsilon (uses transformed weights)
+ * - MST_PLUS_K: minimum spanning tree (built on 1/weight distances) plus KNN edges
+ * <p>
  * Notes:
- *  • We convert the input matrix to a symmetric, non-negative "weight" matrix first
- *    using {@link WeightMode} and {@link MatrixKind}. Policies operate on these weights.
- *  • For MDS, we build a distance matrix via {@link #toDistances(double[][], MatrixKind)}.
- *  • For MST, we use distances derived from the weight matrix: dist = 1/(eps + w).
+ * • We convert the input matrix to a symmetric, non-negative "weight" matrix first
+ * using {@link WeightMode} and {@link MatrixKind}. Policies operate on these weights.
+ * • For MDS, we build a distance matrix via {@link #toDistances(double[][], MatrixKind)}.
+ * • For MST, we use distances derived from the weight matrix: dist = 1/(eps + w).
  *
  * @author Sean Phillips
  */
 public final class MatrixToGraphAdapter {
 
-    public enum MatrixKind { SIMILARITY, DIVERGENCE }
+    public enum MatrixKind {SIMILARITY, DIVERGENCE}
 
     /**
      * How to turn matrix entries into edge weights for the graph.
      * SIMILARITY: higher means stronger attraction; DIVERGENCE: lower means stronger attraction.
      */
     public enum WeightMode {
-        /** Use raw entries (optionally normalized 0..1). */
+        /**
+         * Use raw entries (optionally normalized 0..1).
+         */
         DIRECT,
-        /** For divergence: w = 1 / (eps + d). For similarity: same as DIRECT. */
+        /**
+         * For divergence: w = 1 / (eps + d). For similarity: same as DIRECT.
+         */
         INVERSE_FOR_DIVERGENCE
     }
 
@@ -81,8 +86,8 @@ public final class MatrixToGraphAdapter {
         switch (layoutParams.kind) {
             case CIRCLE_XZ -> pos = StaticLayouts.circleXZ(n, layoutParams.radius);
             case CIRCLE_XY -> pos = StaticLayouts.circleXY(n, layoutParams.radius);
-            case SPHERE   -> pos = StaticLayouts.sphere(n, layoutParams.radius);
-            case MDS_3D   -> {
+            case SPHERE -> pos = StaticLayouts.sphere(n, layoutParams.radius);
+            case MDS_3D -> {
                 // Need distances for MDS
                 double[][] distances = toDistances(matrix, kind);
                 if (mds3d == null) {
@@ -156,7 +161,9 @@ public final class MatrixToGraphAdapter {
         return out;
     }
 
-    /** Build symmetric weight matrix for edges from similarity/divergence. */
+    /**
+     * Build symmetric weight matrix for edges from similarity/divergence.
+     */
     private static double[][] toEdgeWeights(double[][] m, MatrixKind kind, WeightMode wmode, boolean normalize01) {
         final int n = m.length;
         double[][] w = new double[n][n];
@@ -172,7 +179,9 @@ public final class MatrixToGraphAdapter {
                     }
                 }
             }
-            if (!(max > min)) { max = min + 1e-9; }
+            if (!(max > min)) {
+                max = min + 1e-9;
+            }
         }
 
         for (int i = 0; i < n; i++) {
@@ -203,7 +212,9 @@ public final class MatrixToGraphAdapter {
         return w;
     }
 
-    /** Distances for MDS: for similarity convert to distance; for divergence use as-is. */
+    /**
+     * Distances for MDS: for similarity convert to distance; for divergence use as-is.
+     */
     private static double[][] toDistances(double[][] m, MatrixKind kind) {
         final int n = m.length;
         double[][] d = new double[n][n];
@@ -220,7 +231,9 @@ public final class MatrixToGraphAdapter {
                     }
                 }
             }
-            if (!(max > min)) { max = min + 1e-9; }
+            if (!(max > min)) {
+                max = min + 1e-9;
+            }
         }
 
         for (int i = 0; i < n; i++) {
@@ -255,7 +268,9 @@ public final class MatrixToGraphAdapter {
         };
     }
 
-    /** ALL: keep all i<j edges above minEdgeWeight, then enforce caps. */
+    /**
+     * ALL: keep all i<j edges above minEdgeWeight, then enforce caps.
+     */
     private static List<EdgeRec> selectAll(double[][] w, GraphLayoutParams lp) {
         int n = w.length;
         List<EdgeRec> edges = new ArrayList<>();
@@ -271,7 +286,9 @@ public final class MatrixToGraphAdapter {
         // (Note: this still can be dense; caps limit total/degree.)
     }
 
-    /** KNN: per node, take top-k neighbors by weight; union; optional symmetrization; then caps. */
+    /**
+     * KNN: per node, take top-k neighbors by weight; union; optional symmetrization; then caps.
+     */
     private static List<EdgeRec> selectKnn(double[][] w, GraphLayoutParams lp) {
         int n = w.length;
         int k = Math.max(1, lp.knnK);
@@ -285,12 +302,12 @@ public final class MatrixToGraphAdapter {
                 double wij = w[i][j];
                 if (wij <= lp.minEdgeWeight) continue;
                 if (pq.size() < k) {
-                    pq.offer(new int[]{j, (int)Double.doubleToLongBits(wij)});
+                    pq.offer(new int[]{j, (int) Double.doubleToLongBits(wij)});
                 } else {
                     double smallest = Double.longBitsToDouble(pq.peek()[1]);
                     if (wij > smallest) {
                         pq.poll();
-                        pq.offer(new int[]{j, (int)Double.doubleToLongBits(wij)});
+                        pq.offer(new int[]{j, (int) Double.doubleToLongBits(wij)});
                     }
                 }
             }
@@ -314,7 +331,9 @@ public final class MatrixToGraphAdapter {
         return applyGlobalAndDegreeCaps(edges, n, lp.maxEdges, lp.maxDegreePerNode);
     }
 
-    /** EPSILON: keep all edges with weight >= epsilon (after transforms), then caps. */
+    /**
+     * EPSILON: keep all edges with weight >= epsilon (after transforms), then caps.
+     */
     private static List<EdgeRec> selectByEpsilon(double[][] w, GraphLayoutParams lp) {
         int n = w.length;
         double thr = lp.epsilon;
@@ -330,7 +349,9 @@ public final class MatrixToGraphAdapter {
         return applyGlobalAndDegreeCaps(edges, n, lp.maxEdges, lp.maxDegreePerNode);
     }
 
-    /** MST_PLUS_K: build MST on distances (1/(eps+w)), then union with KNN(k), then caps. */
+    /**
+     * MST_PLUS_K: build MST on distances (1/(eps+w)), then union with KNN(k), then caps.
+     */
     private static List<EdgeRec> selectMstPlusK(double[][] w, GraphLayoutParams lp) {
         int n = w.length;
         // Distances from weights (avoid div by 0)
@@ -408,24 +429,42 @@ public final class MatrixToGraphAdapter {
             if (maxEdges > 0 && out.size() >= maxEdges) break;
             if (maxDeg > 0 && (deg[e.i] >= maxDeg || deg[e.j] >= maxDeg)) continue;
             out.add(e);
-            deg[e.i]++; deg[e.j]++;
+            deg[e.i]++;
+            deg[e.j]++;
         }
         return out;
     }
 
-    private record EdgeRec(int i, int j, double w) {}
-    private record MstEdge(int i, int j, double d) {}
+    private record EdgeRec(int i, int j, double w) {
+    }
+
+    private record MstEdge(int i, int j, double d) {
+    }
 
     private static final class UnionFind {
         private final int[] p, r;
-        UnionFind(int n) { p = new int[n]; r = new int[n]; for (int i = 0; i < n; i++) p[i] = i; }
-        int find(int x) { return p[x] == x ? x : (p[x] = find(p[x])); }
+
+        UnionFind(int n) {
+            p = new int[n];
+            r = new int[n];
+            for (int i = 0; i < n; i++) p[i] = i;
+        }
+
+        int find(int x) {
+            return p[x] == x ? x : (p[x] = find(p[x]));
+        }
+
         boolean union(int a, int b) {
             int pa = find(a), pb = find(b);
             if (pa == pb) return false;
-            if (r[pa] < r[pb]) { p[pa] = pb; }
-            else if (r[pa] > r[pb]) { p[pb] = pa; }
-            else { p[pb] = pa; r[pa]++; }
+            if (r[pa] < r[pb]) {
+                p[pa] = pb;
+            } else if (r[pa] > r[pb]) {
+                p[pb] = pa;
+            } else {
+                p[pb] = pa;
+                r[pa]++;
+            }
             return true;
         }
     }
@@ -443,6 +482,7 @@ public final class MatrixToGraphAdapter {
             }
             return p;
         }
+
         static double[][] circleXY(int n, double r) {
             double[][] p = new double[n][3];
             for (int i = 0; i < n; i++) {
@@ -453,29 +493,35 @@ public final class MatrixToGraphAdapter {
             }
             return p;
         }
+
         static double[][] sphere(int n, double r) {
             double[][] p = new double[n][3];
             final double phi = Math.PI * (3.0 - Math.sqrt(5.0));
             for (int i = 0; i < n; i++) {
-                double y = 1.0 - (i / (double)(Math.max(1, n - 1))) * 2.0;
-                double radius = Math.sqrt(Math.max(0.0, 1.0 - y*y));
+                double y = 1.0 - (i / (double) (Math.max(1, n - 1))) * 2.0;
+                double radius = Math.sqrt(Math.max(0.0, 1.0 - y * y));
                 double theta = phi * i;
                 double x = Math.cos(theta) * radius;
                 double z = Math.sin(theta) * radius;
-                p[i][0] = r * x; p[i][1] = r * y; p[i][2] = r * z;
+                p[i][0] = r * x;
+                p[i][1] = r * y;
+                p[i][2] = r * z;
             }
             return p;
         }
     }
 
     private static double[][] normalizeToRadius(double[][] pos, double radius) {
-        double s2 = 0.0; int n = pos.length;
-        for (int i = 0; i < n; i++) s2 += pos[i][0]*pos[i][0] + pos[i][1]*pos[i][1] + pos[i][2]*pos[i][2];
+        double s2 = 0.0;
+        int n = pos.length;
+        for (int i = 0; i < n; i++) s2 += pos[i][0] * pos[i][0] + pos[i][1] * pos[i][1] + pos[i][2] * pos[i][2];
         double rms = Math.sqrt(s2 / Math.max(1, n));
         double scale = (rms > 1e-9) ? (radius / rms) : 1.0;
         if (scale != 1.0) {
             for (int i = 0; i < n; i++) {
-                pos[i][0] *= scale; pos[i][1] *= scale; pos[i][2] *= scale;
+                pos[i][0] *= scale;
+                pos[i][1] *= scale;
+                pos[i][2] *= scale;
             }
         }
         return pos;

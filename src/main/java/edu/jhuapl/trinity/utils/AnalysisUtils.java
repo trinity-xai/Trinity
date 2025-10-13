@@ -65,6 +65,7 @@ public enum AnalysisUtils {
         ObjectMapper mapper = new ObjectMapper();
         mapper.writeValue(file, currentAnalysisConfig);
     }
+
     public static double[] normalizedWeights(double[] w, int dim) {
         double[] out = new double[dim];
         if (w == null || w.length == 0) {
@@ -85,10 +86,18 @@ public enum AnalysisUtils {
         }
         return out;
     }
-    
-    public static double clamp01(double x) { return (x < 0) ? 0 : (x > 1 ? 1 : x); }
-    public static double clamp(double x, double lo, double hi) { return (x < lo) ? lo : (x > hi ? hi : x); }
-    public static double clip(double v, double lo, double hi) { return Math.max(lo, Math.min(hi, v)); }
+
+    public static double clamp01(double x) {
+        return (x < 0) ? 0 : (x > 1 ? 1 : x);
+    }
+
+    public static double clamp(double x, double lo, double hi) {
+        return (x < lo) ? lo : (x > hi ? hi : x);
+    }
+
+    public static double clip(double v, double lo, double hi) {
+        return Math.max(lo, Math.min(hi, v));
+    }
 
     public static double lerp1(double start, double end, double ratio) {
         return start * (1 - ratio) + end * ratio;
@@ -473,6 +482,7 @@ public enum AnalysisUtils {
         Utils.printTotalTime(start);
         return projected;
     }
+
     public static double cosineSimilarity(List<Double> v1, List<Double> v2) {
         double dot = 0.0, norm1 = 0.0, norm2 = 0.0;
         for (int i = 0; i < v1.size(); i++) {
@@ -482,6 +492,6 @@ public enum AnalysisUtils {
             norm2 += b * b;
         }
         return dot / (Math.sqrt(norm1) * Math.sqrt(norm2) + 1e-12); // safe divide
-    }    
+    }
 
 }

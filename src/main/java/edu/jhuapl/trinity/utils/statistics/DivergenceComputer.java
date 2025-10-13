@@ -1,6 +1,7 @@
 package edu.jhuapl.trinity.utils.statistics;
 
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
+
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -16,30 +17,30 @@ import java.util.concurrent.Future;
  * Builds a feature-by-feature divergence matrix D for two cohorts (A vs B), where
  * each entry D[i][j] measures the separation between cohort A and cohort B
  * on the joint PDF over (component i, component j).
- *
+ * <p>
  * Supported divergences:
- *  - JS:         Jensen–Shannon divergence (base-2 logs). Range: [0, 1].
- *  - HELLINGER:  Hellinger distance. Range: [0, 1].
- *  - TV:         Total Variation distance (L1/2). Range: [0, 1].
- *
+ * - JS:         Jensen–Shannon divergence (base-2 logs). Range: [0, 1].
+ * - HELLINGER:  Hellinger distance. Range: [0, 1].
+ * - TV:         Total Variation distance (L1/2). Range: [0, 1].
+ * <p>
  * Inputs:
- *  - cohortA, cohortB: Feature vectors (rows). Must be non-null; may be empty.
- *  - component indices: explicit list or recipe-provided range [start..end].
- *  - recipe: controls bins and bounds policy for consistent, aligned grids.
- *  - cache: optional; respected if recipe.isCacheEnabled() is true.
- *
+ * - cohortA, cohortB: Feature vectors (rows). Must be non-null; may be empty.
+ * - component indices: explicit list or recipe-provided range [start..end].
+ * - recipe: controls bins and bounds policy for consistent, aligned grids.
+ * - cache: optional; respected if recipe.isCacheEnabled() is true.
+ * <p>
  * Outputs:
- *  - DivergenceResult: symmetric matrix (F x F), labels, indices, metadata, and a quality matrix.
- *
+ * - DivergenceResult: symmetric matrix (F x F), labels, indices, metadata, and a quality matrix.
+ * <p>
  * Notes:
- *  - For each (i,j), we compute aligned GridDensityResult for A and B on the
- *    SAME GridSpec (union bounds under the chosen policy), then convert PDFs
- *    to mass per cell (pdf * dx * dy) to form discrete distributions over the grid.
- *  - We normalize the flattened masses to sum to 1 (guarding numerics) then
- *    compute the divergence.
- *  - Diagonal cells compare A vs B on the *joint (i,i)* surface (allowed if desired).
- *    If you prefer to force diagonal to 0, you can post-process in the UI.
- *
+ * - For each (i,j), we compute aligned GridDensityResult for A and B on the
+ * SAME GridSpec (union bounds under the chosen policy), then convert PDFs
+ * to mass per cell (pdf * dx * dy) to form discrete distributions over the grid.
+ * - We normalize the flattened masses to sum to 1 (guarding numerics) then
+ * compute the divergence.
+ * - Diagonal cells compare A vs B on the *joint (i,i)* surface (allowed if desired).
+ * If you prefer to force diagonal to 0, you can post-process in the UI.
+ * <p>
  * This class does not modify any global UI state and is thread-safe per call.
  *
  * @author Sean Phillips (Trinity)
@@ -57,36 +58,57 @@ public final class DivergenceComputer {
         TV          // Total variation distance in [0,1]
     }
 
-    /** Output bundle for a single divergence computation. */
+    /**
+     * Output bundle for a single divergence computation.
+     */
     public static final class DivergenceResult implements Serializable {
-        @Serial private static final long serialVersionUID = 1L;
+        @Serial
+        private static final long serialVersionUID = 1L;
 
-        /** Symmetric divergence matrix (F x F). */
+        /**
+         * Symmetric divergence matrix (F x F).
+         */
         public final double[][] matrix;
 
-        /** Optional quality matrix (F x F), e.g., min(coverageA, coverageB) fraction in [0,1]. */
+        /**
+         * Optional quality matrix (F x F), e.g., min(coverageA, coverageB) fraction in [0,1].
+         */
         public final double[][] quality;
 
-        /** Chosen divergence metric. */
+        /**
+         * Chosen divergence metric.
+         */
         public final DivergenceMetric metric;
 
-        /** Selected component indices (length F). */
+        /**
+         * Selected component indices (length F).
+         */
         public final int[] componentIndices;
 
-        /** Human-friendly labels "Comp i", length F. */
+        /**
+         * Human-friendly labels "Comp i", length F.
+         */
         public final List<String> labels;
 
-        /** Binning used for X and Y (from recipe). */
+        /**
+         * Binning used for X and Y (from recipe).
+         */
         public final int binsX;
         public final int binsY;
 
-        /** Bounds policy applied (from recipe). */
+        /**
+         * Bounds policy applied (from recipe).
+         */
         public final JpdfRecipe.BoundsPolicy boundsPolicy;
 
-        /** Canonical policy id (when boundsPolicy == CANONICAL_BY_FEATURE). */
+        /**
+         * Canonical policy id (when boundsPolicy == CANONICAL_BY_FEATURE).
+         */
         public final String canonicalPolicyId;
 
-        /** Whether cache was allowed (recipe-level flag; not a guarantee of hits). */
+        /**
+         * Whether cache was allowed (recipe-level flag; not a guarantee of hits).
+         */
         public final boolean cacheEnabled;
 
         public DivergenceResult(double[][] matrix,
@@ -112,7 +134,8 @@ public final class DivergenceComputer {
         }
     }
 
-    private DivergenceComputer() {}
+    private DivergenceComputer() {
+    }
 
     // ---------------------------------------------------------------------
     // Public API
@@ -122,11 +145,11 @@ public final class DivergenceComputer {
      * Convenience: compute over the component index range specified by the recipe.
      */
     public static DivergenceResult computeForComponentRange(
-            List<FeatureVector> cohortA,
-            List<FeatureVector> cohortB,
-            JpdfRecipe recipe,
-            DivergenceMetric metric,
-            DensityCache cache
+        List<FeatureVector> cohortA,
+        List<FeatureVector> cohortB,
+        JpdfRecipe recipe,
+        DivergenceMetric metric,
+        DensityCache cache
     ) {
         Objects.requireNonNull(recipe, "recipe");
         int start = Math.max(0, recipe.getComponentIndexStart());
@@ -134,9 +157,9 @@ public final class DivergenceComputer {
 
         // Clamp to dimensionality if available
         int dimA = (cohortA == null || cohortA.isEmpty() || cohortA.get(0).getData() == null)
-                ? -1 : cohortA.get(0).getData().size();
+            ? -1 : cohortA.get(0).getData().size();
         int dimB = (cohortB == null || cohortB.isEmpty() || cohortB.get(0).getData() == null)
-                ? -1 : cohortB.get(0).getData().size();
+            ? -1 : cohortB.get(0).getData().size();
         int dim = Math.max(dimA, dimB);
         if (dim >= 0) end = Math.min(end, Math.max(0, dim - 1));
 
@@ -149,20 +172,20 @@ public final class DivergenceComputer {
     /**
      * Compute the divergence matrix for explicit component indices.
      *
-     * @param cohortA cohort A feature vectors
-     * @param cohortB cohort B feature vectors
+     * @param cohortA          cohort A feature vectors
+     * @param cohortB          cohort B feature vectors
      * @param componentIndices component indices (0-based) to include
-     * @param recipe controls bins & bounds alignment policy
-     * @param metric divergence metric
-     * @param cache optional; used if recipe.isCacheEnabled()
+     * @param recipe           controls bins & bounds alignment policy
+     * @param metric           divergence metric
+     * @param cache            optional; used if recipe.isCacheEnabled()
      */
     public static DivergenceResult computeForComponents(
-            List<FeatureVector> cohortA,
-            List<FeatureVector> cohortB,
-            List<Integer> componentIndices,
-            JpdfRecipe recipe,
-            DivergenceMetric metric,
-            DensityCache cache
+        List<FeatureVector> cohortA,
+        List<FeatureVector> cohortB,
+        List<Integer> componentIndices,
+        JpdfRecipe recipe,
+        DivergenceMetric metric,
+        DensityCache cache
     ) {
         Objects.requireNonNull(cohortA, "cohortA");
         Objects.requireNonNull(cohortB, "cohortB");
@@ -173,17 +196,17 @@ public final class DivergenceComputer {
         // Early out
         if (componentIndices.isEmpty()) {
             return new DivergenceResult(new double[0][0], new double[0][0], metric,
-                    new int[0], List.of(),
-                    recipe.getBinsX(), recipe.getBinsY(),
-                    recipe.getBoundsPolicy(), recipe.getCanonicalPolicyId(),
-                    recipe.isCacheEnabled());
+                new int[0], List.of(),
+                recipe.getBinsX(), recipe.getBinsY(),
+                recipe.getBoundsPolicy(), recipe.getCanonicalPolicyId(),
+                recipe.isCacheEnabled());
         }
 
         // Canonical policy (alignment)
         final CanonicalGridPolicy policy = CanonicalGridPolicy.get(
-                (recipe.getBoundsPolicy() == JpdfRecipe.BoundsPolicy.CANONICAL_BY_FEATURE)
-                        ? recipe.getCanonicalPolicyId()
-                        : "default"
+            (recipe.getBoundsPolicy() == JpdfRecipe.BoundsPolicy.CANONICAL_BY_FEATURE)
+                ? recipe.getCanonicalPolicyId()
+                : "default"
         );
 
         final boolean useCache = recipe.isCacheEnabled() && cache != null;
@@ -231,11 +254,11 @@ public final class DivergenceComputer {
 
                     // Compute aligned baselines using ABComparisonEngine
                     ABComparisonEngine.AbResult ab = ABComparisonEngine.compare(
-                            cohortA, cohortB,
-                            x, y,
-                            recipe,
-                            useCache ? cache : null,
-                            idA, idB
+                        cohortA, cohortB,
+                        x, y,
+                        recipe,
+                        useCache ? cache : null,
+                        idA, idB
                     );
 
                     // Convert PDFs to mass distributions (flatten)
@@ -270,7 +293,9 @@ public final class DivergenceComputer {
 
         // Wait for all
         for (Future<?> f : futures) {
-            try { f.get(); } catch (Exception e) {
+            try {
+                f.get();
+            } catch (Exception e) {
                 pool.shutdownNow();
                 throw new RuntimeException("DivergenceComputer: task failed", e);
             }
@@ -278,11 +303,11 @@ public final class DivergenceComputer {
         pool.shutdown();
 
         return new DivergenceResult(
-                D, Q, metric,
-                comps, labels,
-                recipe.getBinsX(), recipe.getBinsY(),
-                recipe.getBoundsPolicy(), recipe.getCanonicalPolicyId(),
-                recipe.isCacheEnabled()
+            D, Q, metric,
+            comps, labels,
+            recipe.getBinsX(), recipe.getBinsY(),
+            recipe.getBoundsPolicy(), recipe.getCanonicalPolicyId(),
+            recipe.isCacheEnabled()
         );
     }
 
@@ -290,7 +315,9 @@ public final class DivergenceComputer {
     // Internals
     // ---------------------------------------------------------------------
 
-    /** Flatten pdf grid to mass vector (z * dx * dy). */
+    /**
+     * Flatten pdf grid to mass vector (z * dx * dy).
+     */
     private static MassVec toMass(GridDensityResult r) {
         double[][] pdf = r.getPdfZ();
         int by = pdf.length;
@@ -310,10 +337,15 @@ public final class DivergenceComputer {
 
     private static final class MassVec {
         final double[] values;
-        MassVec(double[] v) { this.values = v; }
+
+        MassVec(double[] v) {
+            this.values = v;
+        }
     }
 
-    /** Normalize a vector to sum=1 (if sum<=0, make uniform). */
+    /**
+     * Normalize a vector to sum=1 (if sum<=0, make uniform).
+     */
     private static void normalizeInPlace(double[] p) {
         double s = 0.0;
         for (double v : p) s += v;
@@ -338,7 +370,9 @@ public final class DivergenceComputer {
         return 0.5 * d; // already base-2
     }
 
-    /** KL term with base-2 logs, guarding for zeros. */
+    /**
+     * KL term with base-2 logs, guarding for zeros.
+     */
     private static double klTerm(double a, double b) {
         if (a <= 0 || b <= 0) return 0.0;
         return a * log2(a / b);

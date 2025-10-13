@@ -4,6 +4,7 @@ import com.fasterxml.jackson.databind.DeserializationFeature;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import edu.jhuapl.trinity.data.messages.xai.CyberReport;
 import edu.jhuapl.trinity.data.messages.xai.CyberReportIO;
+
 import java.awt.datatransfer.DataFlavor;
 import java.io.File;
 import java.io.IOException;
@@ -19,18 +20,20 @@ public class CyberReporterFile extends DroppableFile {
     public CyberReporterFile(String pathname) {
         super(pathname);
     }
+
     public CyberReporterFile(String pathname, Boolean parseExisting) throws IOException {
         super(pathname);
         if (parseExisting)
             parseContent();
-    }    
+    }
+
     /**
      * Tests whether a given File is this type of file or not
      *
      * @param file The File to be tested
      * @return True if the file being tested is this type of file
      * @throws java.io.IOException
-     */    
+     */
     public static boolean isFileType(File file) throws IOException {
         String extension = file.getName().substring(file.getName().lastIndexOf("."));
         if (extension.equalsIgnoreCase(".json")) {
@@ -39,6 +42,7 @@ public class CyberReporterFile extends DroppableFile {
         }
         return false;
     }
+
     @Override
     public DataFlavor getDataFlavor() {
         return new DataFlavor(CyberReporterFile.class, "CYBERREPORT");

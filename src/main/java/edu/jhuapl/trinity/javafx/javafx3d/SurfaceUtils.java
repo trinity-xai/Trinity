@@ -9,15 +9,16 @@ import java.util.List;
  * used by Hypersurface rendering.
  */
 public final class SurfaceUtils {
-    private SurfaceUtils() {}
+    private SurfaceUtils() {
+    }
 
     // ============================== Enums ===============================
 
-    public enum Interpolation { NEAREST, BILINEAR, BICUBIC }
+    public enum Interpolation {NEAREST, BILINEAR, BICUBIC}
 
-    public enum Smoothing { NONE, BOX, GAUSSIAN, MEDIAN }
+    public enum Smoothing {NONE, BOX, GAUSSIAN, MEDIAN}
 
-    public enum ToneMap { NONE, CLAMP_01, NORMALIZE_01, LOG1P, GAMMA, ZSCORE }
+    public enum ToneMap {NONE, CLAMP_01, NORMALIZE_01, LOG1P, GAMMA, ZSCORE}
 
     // ============================ Sampling ==============================
 
@@ -27,9 +28,9 @@ public final class SurfaceUtils {
         x = clamp(x, 0.0, w - 1.0);
         y = clamp(y, 0.0, h - 1.0);
         return switch (mode) {
-            case NEAREST  -> sampleNearest(grid, x, y);
+            case NEAREST -> sampleNearest(grid, x, y);
             case BILINEAR -> sampleBilinear(grid, x, y);
-            case BICUBIC  -> sampleBicubicSafe(grid, x, y); // edge-safe w/ fallback
+            case BICUBIC -> sampleBicubicSafe(grid, x, y); // edge-safe w/ fallback
         };
     }
 
@@ -37,7 +38,9 @@ public final class SurfaceUtils {
         return sample(grid, x, y, Interpolation.BILINEAR);
     }
 
-    /** Kept for compatibility with older call sites. */
+    /**
+     * Kept for compatibility with older call sites.
+     */
     public static double sampleBicubic(List<List<Double>> grid, double x, double y) {
         if (isEmpty(grid)) return 0.0;
         final int h = height(grid), w = width(grid);
@@ -53,57 +56,57 @@ public final class SurfaceUtils {
         return g.get(iy).get(ix);
     }
 
-public static double sampleBilinear(List<List<Double>> g, double x, double y) {
-    final int w = width(g), h = height(g);
+    public static double sampleBilinear(List<List<Double>> g, double x, double y) {
+        final int w = width(g), h = height(g);
 
-    // Compute base indices and fractions from the *original* x,y
-    int x0 = (int) Math.floor(x);
-    int y0 = (int) Math.floor(y);
-    int x1 = x0 + 1;
-    int y1 = y0 + 1;
+        // Compute base indices and fractions from the *original* x,y
+        int x0 = (int) Math.floor(x);
+        int y0 = (int) Math.floor(y);
+        int x1 = x0 + 1;
+        int y1 = y0 + 1;
 
-    double tx = x - x0;
-    double ty = y - y0;
+        double tx = x - x0;
+        double ty = y - y0;
 
-    // Clamp indices to valid range; if we collapsed a side, zero the fraction
-    x0 = clamp(x0, 0, w - 1);
-    x1 = clamp(x1, 0, w - 1);
-    y0 = clamp(y0, 0, h - 1);
-    y1 = clamp(y1, 0, h - 1);
-    if (x0 == x1) tx = 0.0;
-    if (y0 == y1) ty = 0.0;
+        // Clamp indices to valid range; if we collapsed a side, zero the fraction
+        x0 = clamp(x0, 0, w - 1);
+        x1 = clamp(x1, 0, w - 1);
+        y0 = clamp(y0, 0, h - 1);
+        y1 = clamp(y1, 0, h - 1);
+        if (x0 == x1) tx = 0.0;
+        if (y0 == y1) ty = 0.0;
 
-    double c00 = g.get(y0).get(x0);
-    double c10 = g.get(y0).get(x1);
-    double c01 = g.get(y1).get(x0);
-    double c11 = g.get(y1).get(x1);
+        double c00 = g.get(y0).get(x0);
+        double c10 = g.get(y0).get(x1);
+        double c01 = g.get(y1).get(x0);
+        double c11 = g.get(y1).get(x1);
 
-    double cx0 = lerp(c00, c10, tx);
-    double cx1 = lerp(c01, c11, tx);
-    return lerp(cx0, cx1, ty);
-}
-
-public static double sampleBicubicSafe(List<List<Double>> g, double x, double y) {
-    final int w = width(g), h = height(g);
-    final int ix = (int) Math.floor(x);
-    final int iy = (int) Math.floor(y);
-    // Need a 1-cell border; otherwise fall back to bilinear
-    if (ix < 1 || ix > w - 3 || iy < 1 || iy > h - 3) {
-        return sampleBilinear(g, x, y);
+        double cx0 = lerp(c00, c10, tx);
+        double cx1 = lerp(c01, c11, tx);
+        return lerp(cx0, cx1, ty);
     }
-    final double tx = x - ix, ty = y - iy;
-    final double[][] p = new double[4][4];
-    for (int m = -1; m <= 2; m++) {
-        for (int n = -1; n <= 2; n++) {
-            p[m + 1][n + 1] = g.get(iy + m).get(ix + n);
+
+    public static double sampleBicubicSafe(List<List<Double>> g, double x, double y) {
+        final int w = width(g), h = height(g);
+        final int ix = (int) Math.floor(x);
+        final int iy = (int) Math.floor(y);
+        // Need a 1-cell border; otherwise fall back to bilinear
+        if (ix < 1 || ix > w - 3 || iy < 1 || iy > h - 3) {
+            return sampleBilinear(g, x, y);
         }
+        final double tx = x - ix, ty = y - iy;
+        final double[][] p = new double[4][4];
+        for (int m = -1; m <= 2; m++) {
+            for (int n = -1; n <= 2; n++) {
+                p[m + 1][n + 1] = g.get(iy + m).get(ix + n);
+            }
+        }
+        final double[] col = new double[4];
+        for (int row = 0; row < 4; row++) {
+            col[row] = cubicCatmullRom(p[row][0], p[row][1], p[row][2], p[row][3], tx);
+        }
+        return cubicCatmullRom(col[0], col[1], col[2], col[3], ty);
     }
-    final double[] col = new double[4];
-    for (int row = 0; row < 4; row++) {
-        col[row] = cubicCatmullRom(p[row][0], p[row][1], p[row][2], p[row][3], tx);
-    }
-    return cubicCatmullRom(col[0], col[1], col[2], col[3], ty);
-}
 
     // =========================== Smoothing ==============================
 
@@ -113,30 +116,34 @@ public static double sampleBicubicSafe(List<List<Double>> g, double x, double y)
      * One iteration; GAUSSIAN uses {@code sigma}; other methods ignore it.
      */
     public static List<List<Double>> smooth(
-            List<List<Double>> grid,
-            Smoothing method,
-            double sigma,
-            int radius
+        List<List<Double>> grid,
+        Smoothing method,
+        double sigma,
+        int radius
     ) {
         return smoothCopy(grid, method, radius, 1, sigma);
     }
 
-    /** Overload: BOX/MEDIAN/GAUSSIAN with default sigma heuristic (one iteration). */
+    /**
+     * Overload: BOX/MEDIAN/GAUSSIAN with default sigma heuristic (one iteration).
+     */
     public static List<List<Double>> smooth(
-            List<List<Double>> grid,
-            Smoothing method,
-            int radius
+        List<List<Double>> grid,
+        Smoothing method,
+        int radius
     ) {
         return smoothCopy(grid, method, radius, 1, -1.0);
     }
 
-    /** Overload with explicit iterations (sigma used only for GAUSSIAN). */
+    /**
+     * Overload with explicit iterations (sigma used only for GAUSSIAN).
+     */
     public static List<List<Double>> smooth(
-            List<List<Double>> grid,
-            Smoothing method,
-            int radius,
-            int iterations,
-            double sigma
+        List<List<Double>> grid,
+        Smoothing method,
+        int radius,
+        int iterations,
+        double sigma
     ) {
         return smoothCopy(grid, method, radius, iterations, sigma);
     }
@@ -144,16 +151,16 @@ public static double sampleBicubicSafe(List<List<Double>> g, double x, double y)
     /**
      * Create a smoothed copy of the grid.
      *
-     * @param radius kernel radius (>=0), size = 2r+1
+     * @param radius     kernel radius (>=0), size = 2r+1
      * @param iterations number of passes (>=1)
-     * @param sigma standard deviation for GAUSSIAN; if <=0 a heuristic is used
+     * @param sigma      standard deviation for GAUSSIAN; if <=0 a heuristic is used
      */
     public static List<List<Double>> smoothCopy(
-            List<List<Double>> grid,
-            Smoothing method,
-            int radius,
-            int iterations,
-            double sigma
+        List<List<Double>> grid,
+        Smoothing method,
+        int radius,
+        int iterations,
+        double sigma
     ) {
         if (isEmpty(grid) || method == Smoothing.NONE || radius <= 0 || iterations <= 0) {
             return deepCopy(grid);
@@ -164,20 +171,26 @@ public static double sampleBicubicSafe(List<List<Double>> g, double x, double y)
             case BOX -> {
                 for (int i = 0; i < iterations; i++) {
                     boxBlurSeparable(src, dst, radius);
-                    List<List<Double>> tmp = src; src = dst; dst = tmp;
+                    List<List<Double>> tmp = src;
+                    src = dst;
+                    dst = tmp;
                 }
             }
             case GAUSSIAN -> {
                 double[] k = gaussianKernel(radius, sigma);
                 for (int i = 0; i < iterations; i++) {
                     convolveSeparable(src, dst, k);
-                    List<List<Double>> tmp = src; src = dst; dst = tmp;
+                    List<List<Double>> tmp = src;
+                    src = dst;
+                    dst = tmp;
                 }
             }
             case MEDIAN -> {
                 for (int i = 0; i < iterations; i++) {
                     medianFilter(src, dst, radius);
-                    List<List<Double>> tmp = src; src = dst; dst = tmp;
+                    List<List<Double>> tmp = src;
+                    src = dst;
+                    dst = tmp;
                 }
             }
             default -> { /* NONE already returned above */ }
@@ -185,13 +198,15 @@ public static double sampleBicubicSafe(List<List<Double>> g, double x, double y)
         return src;
     }
 
-    /** In-place smoothing (replaces {@code grid}). */
+    /**
+     * In-place smoothing (replaces {@code grid}).
+     */
     public static void smoothInPlace(
-            List<List<Double>> grid,
-            Smoothing method,
-            int radius,
-            int iterations,
-            double sigma
+        List<List<Double>> grid,
+        Smoothing method,
+        int radius,
+        int iterations,
+        double sigma
     ) {
         List<List<Double>> out = smoothCopy(grid, method, radius, iterations, sigma);
         replaceContents(grid, out);
@@ -203,14 +218,16 @@ public static double sampleBicubicSafe(List<List<Double>> g, double x, double y)
      * ***New:*** Alias to match your call site {@code toneMapGrid(g, tm, param)}.
      */
     public static List<List<Double>> toneMapGrid(
-            List<List<Double>> grid,
-            ToneMap mode,
-            double param
+        List<List<Double>> grid,
+        ToneMap mode,
+        double param
     ) {
         return toneMapCopy(grid, mode, param);
     }
 
-    /** Create a tone-mapped copy of the grid. */
+    /**
+     * Create a tone-mapped copy of the grid.
+     */
     public static List<List<Double>> toneMapCopy(List<List<Double>> grid, ToneMap mode, double param) {
         if (isEmpty(grid) || mode == ToneMap.NONE) return deepCopy(grid);
 
@@ -218,7 +235,8 @@ public static double sampleBicubicSafe(List<List<Double>> g, double x, double y)
         List<List<Double>> out = makeZeroGrid(h, w);
 
         double min = Double.POSITIVE_INFINITY, max = Double.NEGATIVE_INFINITY;
-        double mean = 0.0, m2 = 0.0; int n = 0;
+        double mean = 0.0, m2 = 0.0;
+        int n = 0;
 
         if (mode == ToneMap.NORMALIZE_01 || mode == ToneMap.LOG1P || mode == ToneMap.GAMMA) {
             for (int y = 0; y < h; y++) {
@@ -234,7 +252,11 @@ public static double sampleBicubicSafe(List<List<Double>> g, double x, double y)
                 List<Double> row = grid.get(y);
                 for (int x = 0; x < w; x++) {
                     double v = row.get(x);
-                    n++; double d = v - mean; mean += d / n; double d2 = v - mean; m2 += d * d2;
+                    n++;
+                    double d = v - mean;
+                    mean += d / n;
+                    double d2 = v - mean;
+                    m2 += d * d2;
                 }
             }
         }
@@ -348,7 +370,8 @@ public static double sampleBicubicSafe(List<List<Double>> g, double x, double y)
         double sum = 0.0, twoSigma2 = 2.0 * sigma * sigma;
         for (int i = -radius; i <= radius; i++) {
             double val = Math.exp(-(i * i) / twoSigma2);
-            k[i + radius] = val; sum += val;
+            k[i + radius] = val;
+            sum += val;
         }
         for (int i = 0; i < n; i++) k[i] /= sum;
         return k;
@@ -359,22 +382,30 @@ public static double sampleBicubicSafe(List<List<Double>> g, double x, double y)
     private static double cubicCatmullRom(double p0, double p1, double p2, double p3, double t) {
         final double t2 = t * t, t3 = t2 * t;
         return 0.5 * (2.0 * p1
-                + (-p0 + p2) * t
-                + (2.0 * p0 - 5.0 * p1 + 4.0 * p2 - p3) * t2
-                + (-p0 + 3.0 * p1 - 3.0 * p2 + p3) * t3);
+            + (-p0 + p2) * t
+            + (2.0 * p0 - 5.0 * p1 + 4.0 * p2 - p3) * t2
+            + (-p0 + 3.0 * p1 - 3.0 * p2 + p3) * t3);
     }
 
-    private static double lerp(double a, double b, double t) { return a + (b - a) * t; }
+    private static double lerp(double a, double b, double t) {
+        return a + (b - a) * t;
+    }
 
-    private static int width(List<List<Double>> g) { return g.get(0).size(); }
+    private static int width(List<List<Double>> g) {
+        return g.get(0).size();
+    }
 
-    private static int height(List<List<Double>> g) { return g.size(); }
+    private static int height(List<List<Double>> g) {
+        return g.size();
+    }
 
     private static boolean isEmpty(List<List<Double>> g) {
         return g == null || g.isEmpty() || g.get(0) == null || g.get(0).isEmpty();
     }
 
-    private static int clamp(int v, int lo, int hi) { return (v < lo) ? lo : (v > hi) ? hi : v; }
+    private static int clamp(int v, int lo, int hi) {
+        return (v < lo) ? lo : (v > hi) ? hi : v;
+    }
 
     private static double clamp(double v, double lo, double hi) {
         return (v < lo) ? lo : (v > hi) ? hi : v;

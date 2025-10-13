@@ -7,10 +7,10 @@ import java.util.List;
  * Result container for 2D joint PDF/CDF surfaces.
  * <p>
  * Holds:
- *  - PDF grid (normalized density)
- *  - CDF grid (cumulative probability)
- *  - Axis edges and centers
- *  - Bin widths
+ * - PDF grid (normalized density)
+ * - CDF grid (cumulative probability)
+ * - Axis edges and centers
+ * - Bin widths
  * </p>
  * Designed for use in Trinity’s 3D Hypersurface renderer.
  *
@@ -44,16 +44,41 @@ public final class GridDensityResult {
         this.dy = dy;
     }
 
-    public double[][] getPdfZ() { return pdfZ; }
-    public double[][] getCdfZ() { return cdfZ; }
-    public double[] getxEdges() { return xEdges; }
-    public double[] getyEdges() { return yEdges; }
-    public double[] getxCenters() { return xCenters; }
-    public double[] getyCenters() { return yCenters; }
-    public double getDx() { return dx; }
-    public double getDy() { return dy; }
+    public double[][] getPdfZ() {
+        return pdfZ;
+    }
 
-    /** Convert PDF grid to List<List<Double>> (row-major). */
+    public double[][] getCdfZ() {
+        return cdfZ;
+    }
+
+    public double[] getxEdges() {
+        return xEdges;
+    }
+
+    public double[] getyEdges() {
+        return yEdges;
+    }
+
+    public double[] getxCenters() {
+        return xCenters;
+    }
+
+    public double[] getyCenters() {
+        return yCenters;
+    }
+
+    public double getDx() {
+        return dx;
+    }
+
+    public double getDy() {
+        return dy;
+    }
+
+    /**
+     * Convert PDF grid to List<List<Double>> (row-major).
+     */
     public List<List<Double>> pdfAsListGrid() {
         List<List<Double>> grid = new ArrayList<>(pdfZ.length);
         for (double[] row : pdfZ) {
@@ -64,7 +89,9 @@ public final class GridDensityResult {
         return grid;
     }
 
-    /** Convert CDF grid to List<List<Double>> (row-major). */
+    /**
+     * Convert CDF grid to List<List<Double>> (row-major).
+     */
     public List<List<Double>> cdfAsListGrid() {
         List<List<Double>> grid = new ArrayList<>(cdfZ.length);
         for (double[] row : cdfZ) {

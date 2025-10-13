@@ -43,7 +43,7 @@ public class EmbeddingsImageListItem extends HBox {
     private Label dimensionsLabel;
     private TextField labelTextField;
     private FeatureVector featureVector = null;
-    
+
     public EmbeddingsImageListItem(File file) {
         this(file, true);
     }
@@ -71,7 +71,7 @@ public class EmbeddingsImageListItem extends HBox {
         setPrefHeight(32);
         featureVector = FeatureVector.EMPTY_FEATURE_VECTOR("", 3);
         featureVector.setImageURL(file.getAbsolutePath());
-        if(renderIcon) //conserve VRAM
+        if (renderIcon) //conserve VRAM
             Tooltip.install(this, new Tooltip(file.getAbsolutePath()));
 
         imageView.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
@@ -132,11 +132,11 @@ public class EmbeddingsImageListItem extends HBox {
         fileLabel.setPrefWidth(width);
     }
 
-    
+
     public boolean isImageLoaded() {
         return imageLoaded;
     }
-         
+
     public Image getCurrentImage() {
         return imageView.getImage();
     }

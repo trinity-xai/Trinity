@@ -1,6 +1,7 @@
 package edu.jhuapl.trinity.utils.statistics;
 
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
+
 import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -20,28 +21,32 @@ import java.util.function.Consumer;
  * JpdfBatchEngine
  * ---------------
  * Orchestrates batch generation of joint PDF/CDF surfaces based on a JpdfRecipe.
- *
+ * <p>
  * Supports:
- *  • Component-pairs mode (auto enumerate COMPONENT_AT_DIMENSION pairs).
- *  • Whitelist mode (explicit AxisParams pairs from the recipe).
- *
+ * • Component-pairs mode (auto enumerate COMPONENT_AT_DIMENSION pairs).
+ * • Whitelist mode (explicit AxisParams pairs from the recipe).
+ * <p>
  * Honors recipe:
- *  • PairSelection: ALL / WHITELIST / TOP_K_BY_SCORE / THRESHOLD_BY_SCORE
- *  • BoundsPolicy: DATA_MIN_MAX / FIXED_01 / CANONICAL_BY_FEATURE
- *  • ScoreMetric, minAvgCountPerCell, binsX/binsY, cacheEnabled
- *
+ * • PairSelection: ALL / WHITELIST / TOP_K_BY_SCORE / THRESHOLD_BY_SCORE
+ * • BoundsPolicy: DATA_MIN_MAX / FIXED_01 / CANONICAL_BY_FEATURE
+ * • ScoreMetric, minAvgCountPerCell, binsX/binsY, cacheEnabled
+ * <p>
  * Threading: fixed pool sized to Runtime.availableProcessors().
- *
+ * <p>
  * Note: GridDensityResult contains both PDF and CDF; OutputKind is recorded in provenance
- *       by the UI later; engine returns both so consumers can choose.
+ * by the UI later; engine returns both so consumers can choose.
  */
 public final class JpdfBatchEngine {
 
-    public JpdfBatchEngine() {}
+    public JpdfBatchEngine() {
+    }
 
-    /** Per-pair output bundle. */
+    /**
+     * Per-pair output bundle.
+     */
     public static final class PairJobResult implements Serializable {
-        @Serial private static final long serialVersionUID = 1L;
+        @Serial
+        private static final long serialVersionUID = 1L;
 
         public final int i;                     // component index for X (or -1 if not component-mode)
         public final int j;                     // component index for Y (or -1 if not component-mode)
@@ -77,9 +82,12 @@ public final class JpdfBatchEngine {
         }
     }
 
-    /** Batch summary + outputs. */
+    /**
+     * Batch summary + outputs.
+     */
     public static final class BatchResult implements Serializable {
-        @Serial private static final long serialVersionUID = 1L;
+        @Serial
+        private static final long serialVersionUID = 1L;
 
         public final String datasetFingerprint;
         public final String recipeName;
@@ -116,7 +124,9 @@ public final class JpdfBatchEngine {
     // Component-pairs mode
     // =====================================================================================
 
-    /** Backwards-compatible entry (no live append). */
+    /**
+     * Backwards-compatible entry (no live append).
+     */
     public static BatchResult runComponentPairs(List<FeatureVector> vectors,
                                                 JpdfRecipe recipe,
                                                 CanonicalGridPolicy canonicalPolicy,
@@ -124,7 +134,9 @@ public final class JpdfBatchEngine {
         return runComponentPairs(vectors, recipe, canonicalPolicy, cache, null);
     }
 
-    /** Live-append overload: calls onResult for each finished pair (may be null). */
+    /**
+     * Live-append overload: calls onResult for each finished pair (may be null).
+     */
     public static BatchResult runComponentPairs(List<FeatureVector> vectors,
                                                 JpdfRecipe recipe,
                                                 CanonicalGridPolicy canonicalPolicy,
@@ -140,23 +152,23 @@ public final class JpdfBatchEngine {
 
         if (vectors.isEmpty() || !recipe.isComponentPairsMode()) {
             return new BatchResult(dsFp, recipe.getName(), canonicalPolicy.id(),
-                    Collections.emptyList(), 0L, 0, 0, 0, cache.stats());
+                Collections.emptyList(), 0L, 0, 0, 0, cache.stats());
         }
 
         PairScorer.Config scorerCfg = PairScorer.Config.defaultFor(
-                recipe.getScoreMetric(),
-                recipe.getBinsX(),
-                recipe.getBinsY(),
-                recipe.getMinAvgCountPerCell()
+            recipe.getScoreMetric(),
+            recipe.getBinsX(),
+            recipe.getBinsY(),
+            recipe.getMinAvgCountPerCell()
         );
 
         List<PairScorer.PairScore> candidates = PairScorer.scoreComponentPairs(
-                vectors,
-                recipe.getComponentIndexStart(),
-                recipe.getComponentIndexEnd(),
-                recipe.isIncludeSelfPairs(),
-                recipe.isOrderedPairs(),
-                scorerCfg
+            vectors,
+            recipe.getComponentIndexStart(),
+            recipe.getComponentIndexEnd(),
+            recipe.isIncludeSelfPairs(),
+            recipe.isOrderedPairs(),
+            scorerCfg
         );
 
         List<PairScorer.PairScore> selected = switch (recipe.getPairSelection()) {
@@ -180,7 +192,7 @@ public final class JpdfBatchEngine {
 
         if (recipe.getPairSelection() == JpdfRecipe.PairSelection.WHITELIST) {
             return new BatchResult(dsFp, recipe.getName(), canonicalPolicy.id(),
-                    Collections.emptyList(), 0L, 0, 0, 0, cache.stats());
+                Collections.emptyList(), 0L, 0, 0, 0, cache.stats());
         }
 
         int threads = Math.max(1, Runtime.getRuntime().availableProcessors());
@@ -208,12 +220,15 @@ public final class JpdfBatchEngine {
             for (int k = 0; k < submitted; k++) {
                 Future<PairJobResult> f = ecs.take();
                 PairJobResult r = f.get();
-                if (r.fromCache) cacheHits++; else computed++;
+                if (r.fromCache) cacheHits++;
+                else computed++;
                 out.add(r);
 
                 // Live-append hook (safe-guarded)
                 if (onResult != null) {
-                    try { onResult.accept(r); } catch (Throwable ignore) { /* isolate UI issues */ }
+                    try {
+                        onResult.accept(r);
+                    } catch (Throwable ignore) { /* isolate UI issues */ }
                 }
             }
         } catch (Exception ex) {
@@ -227,14 +242,16 @@ public final class JpdfBatchEngine {
 
         long wall = System.currentTimeMillis() - t0;
         return new BatchResult(dsFp, recipe.getName(), canonicalPolicy.id(),
-                out, wall, submitted, computed, cacheHits, cache.stats());
+            out, wall, submitted, computed, cacheHits, cache.stats());
     }
 
     // =====================================================================================
     // Whitelist mode
     // =====================================================================================
 
-    /** Backwards-compatible entry (no live append). */
+    /**
+     * Backwards-compatible entry (no live append).
+     */
     public static BatchResult runWhitelistPairs(List<FeatureVector> vectors,
                                                 JpdfRecipe recipe,
                                                 CanonicalGridPolicy canonicalPolicy,
@@ -242,7 +259,9 @@ public final class JpdfBatchEngine {
         return runWhitelistPairs(vectors, recipe, canonicalPolicy, cache, null);
     }
 
-    /** Live-append overload: calls onResult for each finished pair (may be null). */
+    /**
+     * Live-append overload: calls onResult for each finished pair (may be null).
+     */
     public static BatchResult runWhitelistPairs(List<FeatureVector> vectors,
                                                 JpdfRecipe recipe,
                                                 CanonicalGridPolicy canonicalPolicy,
@@ -257,10 +276,10 @@ public final class JpdfBatchEngine {
         final String dsFp = DensityCache.fingerprintDataset(vectors, 256, 64);
 
         if (vectors.isEmpty()
-                || recipe.getPairSelection() != JpdfRecipe.PairSelection.WHITELIST
-                || recipe.getExplicitAxisPairs().isEmpty()) {
+            || recipe.getPairSelection() != JpdfRecipe.PairSelection.WHITELIST
+            || recipe.getExplicitAxisPairs().isEmpty()) {
             return new BatchResult(dsFp, recipe.getName(), canonicalPolicy.id(),
-                    Collections.emptyList(), 0L, 0, 0, 0, cache.stats());
+                Collections.emptyList(), 0L, 0, 0, 0, cache.stats());
         }
 
         int threads = Math.max(1, Runtime.getRuntime().availableProcessors());
@@ -282,12 +301,15 @@ public final class JpdfBatchEngine {
             for (int k = 0; k < submitted; k++) {
                 Future<PairJobResult> f = ecs.take();
                 PairJobResult r = f.get();
-                if (r.fromCache) cacheHits++; else computed++;
+                if (r.fromCache) cacheHits++;
+                else computed++;
                 out.add(r);
 
                 // Live-append hook (safe-guarded)
                 if (onResult != null) {
-                    try { onResult.accept(r); } catch (Throwable ignore) { /* isolate UI issues */ }
+                    try {
+                        onResult.accept(r);
+                    } catch (Throwable ignore) { /* isolate UI issues */ }
                 }
             }
         } catch (Exception ex) {
@@ -299,7 +321,7 @@ public final class JpdfBatchEngine {
 
         long wall = System.currentTimeMillis() - t0;
         return new BatchResult(dsFp, recipe.getName(), canonicalPolicy.id(),
-                out, wall, submitted, computed, cacheHits, cache.stats());
+            out, wall, submitted, computed, cacheHits, cache.stats());
     }
 
     // =====================================================================================
@@ -360,15 +382,15 @@ public final class JpdfBatchEngine {
             long t2 = System.currentTimeMillis();
 
             int ii = (x.getType() == StatisticEngine.ScalarType.COMPONENT_AT_DIMENSION && x.getComponentIndex() != null)
-                    ? x.getComponentIndex() : -1;
+                ? x.getComponentIndex() : -1;
             int jj = (y.getType() == StatisticEngine.ScalarType.COMPONENT_AT_DIMENSION && y.getComponentIndex() != null)
-                    ? y.getComponentIndex() : -1;
+                ? y.getComponentIndex() : -1;
 
             // Try to retrieve provenance if cache tracks it; otherwise leave null.
             JpdfProvenance prov = (useCache && key != null) ? cache.getProvenance(key) : null;
 
             return new PairJobResult(ii, jj, x, y, grid,
-                    res, rank, fromCache, Math.max(0, t2 - t1), prov);
+                res, rank, fromCache, Math.max(0, t2 - t1), prov);
         }
     }
 
@@ -388,8 +410,10 @@ public final class JpdfBatchEngine {
         return switch (recipe.getBoundsPolicy()) {
             case FIXED_01 -> {
                 GridSpec g = new GridSpec(bx, by);
-                g.setMinX(0.0); g.setMaxX(1.0);
-                g.setMinY(0.0); g.setMaxY(1.0);
+                g.setMinX(0.0);
+                g.setMaxX(1.0);
+                g.setMinY(0.0);
+                g.setMaxY(1.0);
                 yield g;
             }
             case CANONICAL_BY_FEATURE -> canonicalPolicy.gridForAxes(vectors, x, y, bx, by, dsFp);

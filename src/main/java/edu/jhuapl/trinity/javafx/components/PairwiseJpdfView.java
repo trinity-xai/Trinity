@@ -17,17 +17,6 @@ import javafx.embed.swing.SwingFXUtils;
 import javafx.geometry.Insets;
 import javafx.geometry.Orientation;
 import javafx.geometry.Pos;
-import javafx.scene.image.WritableImage;
-import javafx.scene.paint.Color;
-import javafx.stage.FileChooser;
-import javax.imageio.ImageIO;
-import java.io.File;
-import java.io.FileInputStream;
-import java.io.FileOutputStream;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.concurrent.atomic.AtomicInteger;
-import java.util.function.Consumer;
 import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.CheckMenuItem;
@@ -45,13 +34,25 @@ import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.SplitPane;
 import javafx.scene.control.TextField;
 import javafx.scene.control.ToggleGroup;
+import javafx.scene.image.WritableImage;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
+import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
+import javafx.stage.FileChooser;
+
+import javax.imageio.ImageIO;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.util.ArrayList;
+import java.util.List;
+import java.util.concurrent.atomic.AtomicInteger;
+import java.util.function.Consumer;
 
 /**
  * PairwiseJpdfView
@@ -99,25 +100,25 @@ public class PairwiseJpdfView extends BorderPane {
     private final ColorPicker backgroundPicker = new ColorPicker(Color.BLACK);
 
     private final ToggleGroup rangeModeGroup = new ToggleGroup();
-    private final RadioButton rangeAutoBtn   = new RadioButton("Auto");
+    private final RadioButton rangeAutoBtn = new RadioButton("Auto");
     private final RadioButton rangeGlobalBtn = new RadioButton("Global");
-    private final RadioButton rangeFixedBtn  = new RadioButton("Fixed");
+    private final RadioButton rangeFixedBtn = new RadioButton("Fixed");
     private final TextField vminField = new TextField();
     private final TextField vmaxField = new TextField();
     private final Button normalizeAllBtn = new Button("Normalize All");
 
     private final Slider gammaSlider =
-            new Slider(0.1, 5.0, 1.0);
-    private final Spinner<Double> clipLowPctSp  =
-            new Spinner<>(new SpinnerValueFactory.DoubleSpinnerValueFactory(0.0, 20.0, 0.0, 0.5));
+        new Slider(0.1, 5.0, 1.0);
+    private final Spinner<Double> clipLowPctSp =
+        new Spinner<>(new SpinnerValueFactory.DoubleSpinnerValueFactory(0.0, 20.0, 0.0, 0.5));
     private final Spinner<Double> clipHighPctSp =
-            new Spinner<>(new SpinnerValueFactory.DoubleSpinnerValueFactory(0.0, 20.0, 0.0, 0.5));
+        new Spinner<>(new SpinnerValueFactory.DoubleSpinnerValueFactory(0.0, 20.0, 0.0, 0.5));
     private final CheckBox smoothingCheck = new CheckBox("Smooth");
 
     private final Spinner<Integer> canvasWSp =
-            new Spinner<>(new SpinnerValueFactory.IntegerSpinnerValueFactory(60, 800, 180, 10));
+        new Spinner<>(new SpinnerValueFactory.IntegerSpinnerValueFactory(60, 800, 180, 10));
     private final Spinner<Integer> canvasHSp =
-            new Spinner<>(new SpinnerValueFactory.IntegerSpinnerValueFactory(60, 800, 140, 10));
+        new Spinner<>(new SpinnerValueFactory.IntegerSpinnerValueFactory(60, 800, 140, 10));
 
     // Cache (always non-null)
     private final DensityCache cache;
@@ -160,7 +161,7 @@ public class PairwiseJpdfView extends BorderPane {
 
         // Buttons from config panel
         cfgResetBtn = this.configPanel.getResetButton();
-        cfgRunBtn   = this.configPanel.getRunButton();
+        cfgRunBtn = this.configPanel.getRunButton();
 
         collapseBtn = new Button("Collapse Controls");
         collapseBtn.setOnAction(e -> toggleControlsCollapsed());
@@ -186,8 +187,8 @@ public class PairwiseJpdfView extends BorderPane {
         sortAscCheck.setSelected(false);
 
         HBox searchSort = new HBox(8,
-                new Label("Search"), searchField,
-                new Label("Sort"), sortCombo, sortAscCheck
+            new Label("Search"), searchField,
+            new Label("Sort"), sortCombo, sortAscCheck
         );
         searchSort.setAlignment(Pos.CENTER_LEFT);
         searchSort.setPadding(new Insets(4, 8, 2, 8));
@@ -268,150 +269,165 @@ public class PairwiseJpdfView extends BorderPane {
         flushMsItem.setHideOnClick(false);
 
         mb.getItems().addAll(
-                saveItem, loadItem, clearItem,
-                new SeparatorMenuItem(),
-                incSortItem, flushNItem, flushMsItem
+            saveItem, loadItem, clearItem,
+            new SeparatorMenuItem(),
+            incSortItem, flushNItem, flushMsItem
         );
         return mb;
     }
 
-private MenuButton buildAppearanceMenu() {
-    MenuButton mb = new MenuButton("Appearance");
+    private MenuButton buildAppearanceMenu() {
+        MenuButton mb = new MenuButton("Appearance");
 
-    // ---- Palette & Legend & Background ----
-    // (paletteCombo, legendCheck, backgroundPicker are class fields)
-    paletteCombo.getItems().setAll(
+        // ---- Palette & Legend & Background ----
+        // (paletteCombo, legendCheck, backgroundPicker are class fields)
+        paletteCombo.getItems().setAll(
             HeatmapThumbnailView.PaletteKind.SEQUENTIAL,
             HeatmapThumbnailView.PaletteKind.DIVERGING
-    );
-    if (paletteCombo.getValue() == null) {
-        paletteCombo.setValue(HeatmapThumbnailView.PaletteKind.SEQUENTIAL);
-    }
-    if (backgroundPicker.getValue() == null) {
-        backgroundPicker.setValue(Color.BLACK);
-    }
+        );
+        if (paletteCombo.getValue() == null) {
+            paletteCombo.setValue(HeatmapThumbnailView.PaletteKind.SEQUENTIAL);
+        }
+        if (backgroundPicker.getValue() == null) {
+            backgroundPicker.setValue(Color.BLACK);
+        }
 
-    // Per-scheme selectors (locals; applied to all current tiles via forEachView)
-    ComboBox<HeatmapThumbnailView.PaletteScheme> seqSchemeCombo = new ComboBox<>();
-    seqSchemeCombo.getItems().addAll(HeatmapThumbnailView.PaletteScheme.values());
-    seqSchemeCombo.setValue(HeatmapThumbnailView.PaletteScheme.VIRIDIS);
+        // Per-scheme selectors (locals; applied to all current tiles via forEachView)
+        ComboBox<HeatmapThumbnailView.PaletteScheme> seqSchemeCombo = new ComboBox<>();
+        seqSchemeCombo.getItems().addAll(HeatmapThumbnailView.PaletteScheme.values());
+        seqSchemeCombo.setValue(HeatmapThumbnailView.PaletteScheme.VIRIDIS);
 
-    ComboBox<HeatmapThumbnailView.PaletteScheme> divSchemeCombo = new ComboBox<>();
-    divSchemeCombo.getItems().addAll(HeatmapThumbnailView.PaletteScheme.values());
-    divSchemeCombo.setValue(HeatmapThumbnailView.PaletteScheme.BLUE_YELLOW);
+        ComboBox<HeatmapThumbnailView.PaletteScheme> divSchemeCombo = new ComboBox<>();
+        divSchemeCombo.getItems().addAll(HeatmapThumbnailView.PaletteScheme.values());
+        divSchemeCombo.setValue(HeatmapThumbnailView.PaletteScheme.BLUE_YELLOW);
 
-    GridPane paletteGrid = new GridPane();
-    paletteGrid.setHgap(8); paletteGrid.setVgap(6); paletteGrid.setPadding(new Insets(6, 8, 6, 8));
-    paletteGrid.add(new Label("Palette"), 0, 0); paletteGrid.add(paletteCombo, 1, 0);
-    paletteGrid.add(new Label("Seq Scheme"), 0, 1); paletteGrid.add(seqSchemeCombo, 1, 1);
-    paletteGrid.add(new Label("Div Scheme"), 0, 2); paletteGrid.add(divSchemeCombo, 1, 2);
-    paletteGrid.add(new Label("Legend"), 0, 3); paletteGrid.add(legendCheck, 1, 3);
-    paletteGrid.add(new Label("Background"), 0, 4); paletteGrid.add(backgroundPicker, 1, 4);
+        GridPane paletteGrid = new GridPane();
+        paletteGrid.setHgap(8);
+        paletteGrid.setVgap(6);
+        paletteGrid.setPadding(new Insets(6, 8, 6, 8));
+        paletteGrid.add(new Label("Palette"), 0, 0);
+        paletteGrid.add(paletteCombo, 1, 0);
+        paletteGrid.add(new Label("Seq Scheme"), 0, 1);
+        paletteGrid.add(seqSchemeCombo, 1, 1);
+        paletteGrid.add(new Label("Div Scheme"), 0, 2);
+        paletteGrid.add(divSchemeCombo, 1, 2);
+        paletteGrid.add(new Label("Legend"), 0, 3);
+        paletteGrid.add(legendCheck, 1, 3);
+        paletteGrid.add(new Label("Background"), 0, 4);
+        paletteGrid.add(backgroundPicker, 1, 4);
 
-    CustomMenuItem paletteItem = new CustomMenuItem(paletteGrid); paletteItem.setHideOnClick(false);
+        CustomMenuItem paletteItem = new CustomMenuItem(paletteGrid);
+        paletteItem.setHideOnClick(false);
 
-    // ---- Range (Auto / Global / Fixed) ----
-    // (rangeAutoBtn, rangeGlobalBtn, rangeFixedBtn, vminField, vmaxField, normalizeAllBtn are class fields)
-    rangeAutoBtn.setToggleGroup(rangeModeGroup);
-    rangeGlobalBtn.setToggleGroup(rangeModeGroup);
-    rangeFixedBtn.setToggleGroup(rangeModeGroup);
-    if (rangeModeGroup.getSelectedToggle() == null) rangeAutoBtn.setSelected(true);
+        // ---- Range (Auto / Global / Fixed) ----
+        // (rangeAutoBtn, rangeGlobalBtn, rangeFixedBtn, vminField, vmaxField, normalizeAllBtn are class fields)
+        rangeAutoBtn.setToggleGroup(rangeModeGroup);
+        rangeGlobalBtn.setToggleGroup(rangeModeGroup);
+        rangeFixedBtn.setToggleGroup(rangeModeGroup);
+        if (rangeModeGroup.getSelectedToggle() == null) rangeAutoBtn.setSelected(true);
 
-    vminField.setPromptText("vmin");
-    vmaxField.setPromptText("vmax");
-    vminField.setPrefColumnCount(6);
-    vmaxField.setPrefColumnCount(6);
-    vminField.setDisable(true);
-    vmaxField.setDisable(true);
+        vminField.setPromptText("vmin");
+        vmaxField.setPromptText("vmax");
+        vminField.setPrefColumnCount(6);
+        vmaxField.setPrefColumnCount(6);
+        vminField.setDisable(true);
+        vmaxField.setDisable(true);
 
-    GridPane rangeGrid = new GridPane();
-    rangeGrid.setHgap(8); rangeGrid.setVgap(6); rangeGrid.setPadding(new Insets(6, 8, 6, 8));
-    HBox modeRow = new HBox(10, rangeAutoBtn, rangeGlobalBtn, rangeFixedBtn);
-    rangeGrid.add(new Label("Range"), 0, 0); rangeGrid.add(modeRow, 1, 0);
-    HBox fixedRow = new HBox(6, new Label("Min"), vminField, new Label("Max"), vmaxField, normalizeAllBtn);
-    rangeGrid.add(new Label("Fixed"), 0, 1); rangeGrid.add(fixedRow, 1, 1);
+        GridPane rangeGrid = new GridPane();
+        rangeGrid.setHgap(8);
+        rangeGrid.setVgap(6);
+        rangeGrid.setPadding(new Insets(6, 8, 6, 8));
+        HBox modeRow = new HBox(10, rangeAutoBtn, rangeGlobalBtn, rangeFixedBtn);
+        rangeGrid.add(new Label("Range"), 0, 0);
+        rangeGrid.add(modeRow, 1, 0);
+        HBox fixedRow = new HBox(6, new Label("Min"), vminField, new Label("Max"), vmaxField, normalizeAllBtn);
+        rangeGrid.add(new Label("Fixed"), 0, 1);
+        rangeGrid.add(fixedRow, 1, 1);
 
-    CustomMenuItem rangeItem = new CustomMenuItem(rangeGrid); rangeItem.setHideOnClick(false);
+        CustomMenuItem rangeItem = new CustomMenuItem(rangeGrid);
+        rangeItem.setHideOnClick(false);
 
-    // ---- Contrast & Rendering basics ----
-    // (gammaSlider, smoothingCheck are class fields)
-    gammaSlider.setMin(0.1);
-    gammaSlider.setMax(5.0);
-    gammaSlider.setValue(1.0);
+        // ---- Contrast & Rendering basics ----
+        // (gammaSlider, smoothingCheck are class fields)
+        gammaSlider.setMin(0.1);
+        gammaSlider.setMax(5.0);
+        gammaSlider.setValue(1.0);
 
-    // Low-end alpha: lets background show through low values (v ~ vmin)
-    Slider lowEndAlpha = new Slider(0.0, 1.0, 1.0);
-    lowEndAlpha.setBlockIncrement(0.05);
+        // Low-end alpha: lets background show through low values (v ~ vmin)
+        Slider lowEndAlpha = new Slider(0.0, 1.0, 1.0);
+        lowEndAlpha.setBlockIncrement(0.05);
 
-    HBox gammaRow = new HBox(8, new Label("Gamma"), gammaSlider);
-    HBox alphaRow = new HBox(8, new Label("Low-end α"), lowEndAlpha);
-    VBox contrastBox = new VBox(8, gammaRow, alphaRow, smoothingCheck);
-    contrastBox.setPadding(new Insets(6, 8, 6, 8));
-    CustomMenuItem contrastItem = new CustomMenuItem(contrastBox); contrastItem.setHideOnClick(false);
+        HBox gammaRow = new HBox(8, new Label("Gamma"), gammaSlider);
+        HBox alphaRow = new HBox(8, new Label("Low-end α"), lowEndAlpha);
+        VBox contrastBox = new VBox(8, gammaRow, alphaRow, smoothingCheck);
+        contrastBox.setPadding(new Insets(6, 8, 6, 8));
+        CustomMenuItem contrastItem = new CustomMenuItem(contrastBox);
+        contrastItem.setHideOnClick(false);
 
-    // ---- Canvas size (thumbnail sizing) ----
-    // (canvasWSp, canvasHSp are class fields and initialized in the constructor)
-    HBox sizeRow = new HBox(6, new Label("Canvas W"), canvasWSp, new Label("H"), canvasHSp);
-    VBox renderBox = new VBox(8, sizeRow);
-    renderBox.setPadding(new Insets(6, 8, 6, 8));
-    CustomMenuItem renderItem = new CustomMenuItem(renderBox); renderItem.setHideOnClick(false);
+        // ---- Canvas size (thumbnail sizing) ----
+        // (canvasWSp, canvasHSp are class fields and initialized in the constructor)
+        HBox sizeRow = new HBox(6, new Label("Canvas W"), canvasWSp, new Label("H"), canvasHSp);
+        VBox renderBox = new VBox(8, sizeRow);
+        renderBox.setPadding(new Insets(6, 8, 6, 8));
+        CustomMenuItem renderItem = new CustomMenuItem(renderBox);
+        renderItem.setHideOnClick(false);
 
-    // ---- Add blocks to menu ----
-    mb.getItems().addAll(paletteItem, rangeItem, contrastItem, renderItem);
+        // ---- Add blocks to menu ----
+        mb.getItems().addAll(paletteItem, rangeItem, contrastItem, renderItem);
 
-    // ---- Wiring to grid ----
-    paletteCombo.valueProperty().addListener((o,ov,nv) -> gridPane.setPalette(nv));
-    legendCheck.selectedProperty().addListener((o,ov,nv) -> gridPane.setLegendVisible(nv));
-    backgroundPicker.valueProperty().addListener((o,ov,nv) -> gridPane.setBackgroundColor(nv));
+        // ---- Wiring to grid ----
+        paletteCombo.valueProperty().addListener((o, ov, nv) -> gridPane.setPalette(nv));
+        legendCheck.selectedProperty().addListener((o, ov, nv) -> gridPane.setLegendVisible(nv));
+        backgroundPicker.valueProperty().addListener((o, ov, nv) -> gridPane.setBackgroundColor(nv));
 
-    // Scheme changes apply to all existing views
-    seqSchemeCombo.valueProperty().addListener((o,ov,nv) ->
+        // Scheme changes apply to all existing views
+        seqSchemeCombo.valueProperty().addListener((o, ov, nv) ->
             gridPane.forEachView(v -> v.setSequentialScheme(nv)));
-    divSchemeCombo.valueProperty().addListener((o,ov,nv) ->
+        divSchemeCombo.valueProperty().addListener((o, ov, nv) ->
             gridPane.forEachView(v -> v.setDivergingScheme(nv)));
 
-    smoothingCheck.setSelected(true);
-    smoothingCheck.selectedProperty().addListener((o,ov,nv) -> gridPane.setImageSmoothing(nv));
-    gammaSlider.valueProperty().addListener((o,ov,nv) -> gridPane.setGamma(nv.doubleValue()));
-    lowEndAlpha.valueProperty().addListener((o,ov,nv) ->
+        smoothingCheck.setSelected(true);
+        smoothingCheck.selectedProperty().addListener((o, ov, nv) -> gridPane.setImageSmoothing(nv));
+        gammaSlider.valueProperty().addListener((o, ov, nv) -> gridPane.setGamma(nv.doubleValue()));
+        lowEndAlpha.valueProperty().addListener((o, ov, nv) ->
             gridPane.forEachView(v -> v.setMinAlphaAtVmin(nv.doubleValue())));
 
-    rangeModeGroup.selectedToggleProperty().addListener((o,ov,nv) -> {
-        boolean fixed = nv == rangeFixedBtn;
-        boolean global = nv == rangeGlobalBtn;
-        vminField.setDisable(!fixed);
-        vmaxField.setDisable(!fixed);
-        if (fixed) {
-            double mn = parseDoubleSafe(vminField.getText(), Double.NaN);
-            double mx = parseDoubleSafe(vmaxField.getText(), Double.NaN);
-            if (Double.isFinite(mn) && Double.isFinite(mx)) {
-                gridPane.setRangeModeFixed(mn, mx);
+        rangeModeGroup.selectedToggleProperty().addListener((o, ov, nv) -> {
+            boolean fixed = nv == rangeFixedBtn;
+            boolean global = nv == rangeGlobalBtn;
+            vminField.setDisable(!fixed);
+            vmaxField.setDisable(!fixed);
+            if (fixed) {
+                double mn = parseDoubleSafe(vminField.getText(), Double.NaN);
+                double mx = parseDoubleSafe(vmaxField.getText(), Double.NaN);
+                if (Double.isFinite(mn) && Double.isFinite(mx)) {
+                    gridPane.setRangeModeFixed(mn, mx);
+                }
+            } else if (global) {
+                gridPane.setRangeModeGlobal();
+            } else {
+                gridPane.setRangeModeAuto();
             }
-        } else if (global) {
-            gridPane.setRangeModeGlobal();
-        } else {
-            gridPane.setRangeModeAuto();
-        }
-    });
+        });
 
-    normalizeAllBtn.setOnAction(e -> {
-        PairGridPane.Range r = gridPane.computeGlobalRange();
-        if (r != null) {
-            vminField.setText(String.format("%.6g", r.vmin));
-            vmaxField.setText(String.format("%.6g", r.vmax));
-            rangeFixedBtn.setSelected(true);
-            gridPane.setRangeModeFixed(r.vmin, r.vmax);
-        }
-    });
+        normalizeAllBtn.setOnAction(e -> {
+            PairGridPane.Range r = gridPane.computeGlobalRange();
+            if (r != null) {
+                vminField.setText(String.format("%.6g", r.vmin));
+                vmaxField.setText(String.format("%.6g", r.vmax));
+                rangeFixedBtn.setSelected(true);
+                gridPane.setRangeModeFixed(r.vmin, r.vmax);
+            }
+        });
 
-    vminField.setOnAction(e -> applyFixedRangeFromFields());
-    vmaxField.setOnAction(e -> applyFixedRangeFromFields());
+        vminField.setOnAction(e -> applyFixedRangeFromFields());
+        vmaxField.setOnAction(e -> applyFixedRangeFromFields());
 
-    canvasWSp.valueProperty().addListener((o,ov,nv) -> gridPane.setCellSize(nv, canvasHSp.getValue()));
-    canvasHSp.valueProperty().addListener((o,ov,nv) -> gridPane.setCellSize(canvasWSp.getValue(), nv));
+        canvasWSp.valueProperty().addListener((o, ov, nv) -> gridPane.setCellSize(nv, canvasHSp.getValue()));
+        canvasHSp.valueProperty().addListener((o, ov, nv) -> gridPane.setCellSize(canvasWSp.getValue(), nv));
 
-    return mb;
-}
+        return mb;
+    }
 
     private void applyFixedRangeFromFields() {
         if (rangeModeGroup.getSelectedToggle() != rangeFixedBtn) return;
@@ -434,20 +450,30 @@ private MenuButton buildAppearanceMenu() {
         if (label != null && !label.isBlank()) this.cohortBLabel = label;
     }
 
-    public void setToastHandler(Consumer<String> handler) { this.toastHandler = handler; }
+    public void setToastHandler(Consumer<String> handler) {
+        this.toastHandler = handler;
+    }
 
-    public void setOnCellClick(Consumer<PairGridPane.PairItem> handler) { this.onCellClickHandler = handler; }
+    public void setOnCellClick(Consumer<PairGridPane.PairItem> handler) {
+        this.onCellClickHandler = handler;
+    }
 
     // --- Run ---
 
     public void runWithRecipe(JpdfRecipe recipe) {
-        if (recipe == null) { toast("No recipe provided.", true); return; }
-        if (cohortA == null || cohortA.isEmpty()) { toast("Cohort A is empty. Load or set vectors first.", true); return; }
+        if (recipe == null) {
+            toast("No recipe provided.", true);
+            return;
+        }
+        if (cohortA == null || cohortA.isEmpty()) {
+            toast("Cohort A is empty. Load or set vectors first.", true);
+            return;
+        }
 
         final CanonicalGridPolicy policy = CanonicalGridPolicy.get(
-                (recipe.getBoundsPolicy() == JpdfRecipe.BoundsPolicy.CANONICAL_BY_FEATURE)
-                        ? recipe.getCanonicalPolicyId()
-                        : "default"
+            (recipe.getBoundsPolicy() == JpdfRecipe.BoundsPolicy.CANONICAL_BY_FEATURE)
+                ? recipe.getCanonicalPolicyId()
+                : "default"
         );
         if (policy == null) {
             toast("Failed to determine canonical grid policy for recipe.", true);
@@ -471,12 +497,12 @@ private MenuButton buildAppearanceMenu() {
             String yLbl = (job.j >= 0) ? ("Comp " + job.j) : "Y";
 
             PairGridPane.PairItem.Builder b = PairGridPane.PairItem
-                    .newBuilder(xLbl, yLbl)
-                    .indices(job.i >= 0 ? job.i : null, job.j >= 0 ? job.j : null)
-                    .from(job.density, false, true)
-                    .palette(HeatmapThumbnailView.PaletteKind.SEQUENTIAL)
-                    .autoRange(true)
-                    .showLegend(false);
+                .newBuilder(xLbl, yLbl)
+                .indices(job.i >= 0 ? job.i : null, job.j >= 0 ? job.j : null)
+                .from(job.density, false, true)
+                .palette(HeatmapThumbnailView.PaletteKind.SEQUENTIAL)
+                .autoRange(true)
+                .showLegend(false);
 
             if (job.rank != null) b.score(job.rank.score);
             PairGridPane.PairItem item = b.build();
@@ -492,19 +518,18 @@ private MenuButton buildAppearanceMenu() {
         final JpdfRecipe runRecipe = recipe;
 
         Task<Void> task = new Task<>() {
-            @Override protected Void call() {
+            @Override
+            protected Void call() {
                 JpdfBatchEngine.BatchResult batch;
                 long start = System.currentTimeMillis();
                 try {
                     switch (runRecipe.getPairSelection()) {
-                        case WHITELIST ->
-                                batch = JpdfBatchEngine.runWhitelistPairs(cohortA, runRecipe, policy, PairwiseJpdfView.this.cache, onResult);
-                        default ->
-                                batch = JpdfBatchEngine.runComponentPairs(cohortA, runRecipe, policy, PairwiseJpdfView.this.cache, onResult);
+                        case WHITELIST -> batch = JpdfBatchEngine.runWhitelistPairs(cohortA, runRecipe, policy, PairwiseJpdfView.this.cache, onResult);
+                        default -> batch = JpdfBatchEngine.runComponentPairs(cohortA, runRecipe, policy, PairwiseJpdfView.this.cache, onResult);
                     }
                 } catch (Throwable t) {
                     final String msg = "Batch failed: " + t.getClass().getSimpleName()
-                            + " - " + String.valueOf(t.getMessage());
+                        + " - " + String.valueOf(t.getMessage());
                     Platform.runLater(() -> {
                         setControlsDisabled(false);
                         setProgressText("");
@@ -523,8 +548,8 @@ private MenuButton buildAppearanceMenu() {
                     setProgressText("Loaded " + finalCompleted + " / " + total);
                     setControlsDisabled(false);
                     toast("Batch complete: " + finalCompleted
-                            + " surfaces; cacheHits=" + finalBatch.cacheHits
-                            + "; wall=" + wall + " ms.", false);
+                        + " surfaces; cacheHits=" + finalBatch.cacheHits
+                        + "; wall=" + wall + " ms.", false);
                 });
                 return null;
             }
@@ -565,7 +590,11 @@ private MenuButton buildAppearanceMenu() {
     }
 
     private static double parseDoubleSafe(String s, double def) {
-        try { return Double.parseDouble(s); } catch (Exception ex) { return def; }
+        try {
+            return Double.parseDouble(s);
+        } catch (Exception ex) {
+            return def;
+        }
     }
 
     private static String safeFilename(String s) {
@@ -588,15 +617,23 @@ private MenuButton buildAppearanceMenu() {
         } else {
             Platform.runLater(() -> {
                 this.getScene().getRoot().fireEvent(
-                    new CommandTerminalEvent(msg, new Font("Consolas", 18), 
-                        isError ? Color.RED : Color.LIGHTGREEN));                
+                    new CommandTerminalEvent(msg, new Font("Consolas", 18),
+                        isError ? Color.RED : Color.LIGHTGREEN));
             });
         }
     }
 
-    public PairwiseJpdfConfigPanel getConfigPanel() { return configPanel; }
-    public PairGridPane getGridPane() { return gridPane; }
-    public SplitPane getSplitPane() { return splitPane; }
+    public PairwiseJpdfConfigPanel getConfigPanel() {
+        return configPanel;
+    }
+
+    public PairGridPane getGridPane() {
+        return gridPane;
+    }
+
+    public SplitPane getSplitPane() {
+        return splitPane;
+    }
 
     public void cancelRun() {
         Thread t = workerThread;
@@ -605,10 +642,21 @@ private MenuButton buildAppearanceMenu() {
         }
     }
 
-    public List<FeatureVector> getCohortA() { return cohortA; }
-    public List<FeatureVector> getCohortB() { return cohortB; }
-    public String getCohortALabel() { return cohortALabel; }
-    public String getCohortBLabel() { return cohortBLabel; }
+    public List<FeatureVector> getCohortA() {
+        return cohortA;
+    }
+
+    public List<FeatureVector> getCohortB() {
+        return cohortB;
+    }
+
+    public String getCohortALabel() {
+        return cohortALabel;
+    }
+
+    public String getCohortBLabel() {
+        return cohortBLabel;
+    }
 
     // --- Search / Sort helpers ---
     private void applySearchPredicate(String query) {

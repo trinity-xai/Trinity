@@ -1,13 +1,14 @@
 package edu.jhuapl.trinity.javafx.events;
 
-import java.util.List;
 import javafx.event.Event;
 import javafx.event.EventTarget;
 import javafx.event.EventType;
 
+import java.util.List;
+
 /**
  * Dispatch a surface grid (PDF or CDF) to the hypersurface renderer.
- *
+ * <p>
  * Z is row-major by Y then X (double[rowsY][colsX]).
  * If your renderer expects Y-up, flip rows before rendering.
  *
@@ -29,11 +30,11 @@ public class HypersurfaceGridEvent extends Event {
     private final String label;
 
     public HypersurfaceGridEvent(
-            EventType<? extends Event> eventType,
-            List<List<Double>> zGrid,
-            double[] xCenters,
-            double[] yCenters,
-            String label
+        EventType<? extends Event> eventType,
+        List<List<Double>> zGrid,
+        double[] xCenters,
+        double[] yCenters,
+        String label
     ) {
         super(eventType);
         this.zGrid = zGrid;
@@ -43,13 +44,13 @@ public class HypersurfaceGridEvent extends Event {
     }
 
     public HypersurfaceGridEvent(
-            Object source,
-            EventTarget target,
-            EventType<? extends Event> eventType,
-            List<List<Double>> zGrid,
-            double[] xCenters,
-            double[] yCenters,
-            String label
+        Object source,
+        EventTarget target,
+        EventType<? extends Event> eventType,
+        List<List<Double>> zGrid,
+        double[] xCenters,
+        double[] yCenters,
+        String label
     ) {
         super(source, target, eventType);
         this.zGrid = zGrid;
@@ -58,8 +59,19 @@ public class HypersurfaceGridEvent extends Event {
         this.label = label;
     }
 
-    public List<List<Double>> getZGrid() { return zGrid; }
-    public double[] getXCenters() { return xCenters; }
-    public double[] getYCenters() { return yCenters; }
-    public String getLabel() { return label; }
+    public List<List<Double>> getZGrid() {
+        return zGrid;
+    }
+
+    public double[] getXCenters() {
+        return xCenters;
+    }
+
+    public double[] getYCenters() {
+        return yCenters;
+    }
+
+    public String getLabel() {
+        return label;
+    }
 }

@@ -11,19 +11,6 @@ import javafx.beans.binding.Bindings;
 import javafx.collections.ListChangeListener;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
-import javafx.scene.input.ContextMenuEvent;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
-import javafx.scene.layout.BorderPane;
-import javafx.scene.layout.VBox;
-import java.io.File;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.prefs.Preferences;
-import java.util.stream.Collectors;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
@@ -40,13 +27,27 @@ import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextInputDialog;
 import javafx.scene.control.ToolBar;
+import javafx.scene.input.ContextMenuEvent;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.Background;
+import javafx.scene.layout.BorderPane;
+import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.stage.FileChooser;
 import javafx.stage.Screen;
 import javafx.stage.Stage;
 import javafx.stage.StageStyle;
 import javafx.stage.Window;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.prefs.Preferences;
+import java.util.stream.Collectors;
 
 public final class FeatureVectorManagerPopoutController {
     public static double BUTTON_PREF_WIDTH = 200;
@@ -64,7 +65,9 @@ public final class FeatureVectorManagerPopoutController {
         this.appScene = Objects.requireNonNull(appScene, "appScene");
     }
 
-    /** Open (or focus) the pop-out window. */
+    /**
+     * Open (or focus) the pop-out window.
+     */
     public void show() {
         if (stage != null && stage.isShowing()) {
             stage.toFront();
@@ -77,7 +80,9 @@ public final class FeatureVectorManagerPopoutController {
         stage.show();
     }
 
-    /** Close the pop-out window (no service teardown). */
+    /**
+     * Close the pop-out window (no service teardown).
+     */
     public void close() {
         if (stage != null) stage.close();
     }
@@ -86,7 +91,9 @@ public final class FeatureVectorManagerPopoutController {
         return stage != null && stage.isShowing();
     }
 
-    /** Move to a secondary screen if available. */
+    /**
+     * Move to a secondary screen if available.
+     */
     public void sendToSecondScreen() {
         if (stage == null) return;
         Screen second = getSecondaryScreen();
@@ -117,7 +124,7 @@ public final class FeatureVectorManagerPopoutController {
         root.setBackground(Background.EMPTY);
 
         scene = new Scene(root, Color.BLACK);
-        
+
         //Make everything pretty
         String CSS = StyleResourceProvider.getResource("styles.css").toExternalForm();
         scene.getStylesheets().add(CSS);
@@ -125,7 +132,7 @@ public final class FeatureVectorManagerPopoutController {
         scene.getStylesheets().add(CSS);
         CSS = StyleResourceProvider.getResource("dialogstyles.css").toExternalForm();
         scene.getStylesheets().add(CSS);
-        
+
         stage = new Stage(StageStyle.DECORATED);
         stage.setTitle("Trinity — Feature Vectors");
         stage.setMaximized(true);
@@ -168,13 +175,15 @@ public final class FeatureVectorManagerPopoutController {
         combo.setVisibleRowCount(15);
 
         combo.setCellFactory(lv -> new ListCell<>() {
-            @Override protected void updateItem(String item, boolean empty) {
+            @Override
+            protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
                 setText(empty ? null : (item == null || item.trim().isEmpty() ? "(unnamed)" : item));
             }
         });
         combo.setButtonCell(new ListCell<>() {
-            @Override protected void updateItem(String item, boolean empty) {
+            @Override
+            protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
                 setText(empty ? null : (item == null || item.trim().isEmpty() ? "(unnamed)" : item));
             }
@@ -211,7 +220,9 @@ public final class FeatureVectorManagerPopoutController {
         });
     }
 
-    /** Debounced search → service.setTextFilter; Enter applies; Esc clears. */
+    /**
+     * Debounced search → service.setTextFilter; Enter applies; Esc clears.
+     */
     private void installSearchWiring() {
         TextField tf = view.getSearchField();
 
@@ -337,7 +348,7 @@ public final class FeatureVectorManagerPopoutController {
         MenuItem miSetAllReplace = new MenuItem("Set All (replace)");
         miSetAllReplace.setOnAction(e -> service.applyAllToWorkspace(true));
         applyMenu.getItems().addAll(miApplyAppend, miApplyReplace, miSetAllAppend, miSetAllReplace);
-        
+
         ctx.getItems().addAll(miRename, miDuplicate, miDelete, new SeparatorMenuItem(),
             miMergeInto, export, new SeparatorMenuItem(), applyMenu);
 
@@ -430,7 +441,9 @@ public final class FeatureVectorManagerPopoutController {
             dlg.initOwner(stage);
 
             dlg.setResultConverter(btn -> btn == ButtonType.OK ? parseKeyValues(ta.getText()) : null);
-            dlg.showAndWait().ifPresent(kv -> { if (!kv.isEmpty()) service.bulkEditMetadataInActive(sel, kv); });
+            dlg.showAndWait().ifPresent(kv -> {
+                if (!kv.isEmpty()) service.bulkEditMetadataInActive(sel, kv);
+            });
         });
 
         MenuItem miLocate = new MenuItem("Locate in 3D");
@@ -459,7 +472,9 @@ public final class FeatureVectorManagerPopoutController {
         });
     }
 
-    /** Selection-aware apply: if selection present, fire NEW_FEATURE_COLLECTION to main scene; else use service. */
+    /**
+     * Selection-aware apply: if selection present, fire NEW_FEATURE_COLLECTION to main scene; else use service.
+     */
     private void applySelectionOrActive(boolean replace) {
         TableView<FeatureVector> table = view.getTable();
         List<FeatureVector> sel = new ArrayList<>(table.getSelectionModel().getSelectedItems());
@@ -521,8 +536,14 @@ public final class FeatureVectorManagerPopoutController {
         double y = prefs.getDouble("fv_pop_y", Double.NaN);
         boolean fs = prefs.getBoolean("fv_pop_fs", false);
 
-        if (w > 0 && h > 0) { stage.setWidth(w); stage.setHeight(h); }
-        if (!Double.isNaN(x) && !Double.isNaN(y)) { stage.setX(x); stage.setY(y); }
+        if (w > 0 && h > 0) {
+            stage.setWidth(w);
+            stage.setHeight(h);
+        }
+        if (!Double.isNaN(x) && !Double.isNaN(y)) {
+            stage.setX(x);
+            stage.setY(y);
+        }
         stage.setFullScreen(fs);
     }
 

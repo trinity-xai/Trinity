@@ -24,14 +24,14 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 
 /**
- * GraphControlsView 
+ * GraphControlsView
  * ------------------------------------------------------------
  * Exposes layout + edge-sparsification + FR knobs.
  * Fires:
- *   - GraphEvent.PARAMS_CHANGED with a copy of GraphLayoutParams on any change
- *   - GraphEvent.REBUILD_WITH_PARAMS on "Rebuild Graph"
- *   - GraphEvent.RESET_PARAMS on "Reset Defaults"
- *
+ * - GraphEvent.PARAMS_CHANGED with a copy of GraphLayoutParams on any change
+ * - GraphEvent.REBUILD_WITH_PARAMS on "Rebuild Graph"
+ * - GraphEvent.RESET_PARAMS on "Reset Defaults"
+ * <p>
  * NOTE: Weight mapping (DIRECT vs INVERSE_FOR_DIVERGENCE) is *not* in GraphLayoutParams.
  * Choose it at the call site based on matrix kind.
  */
@@ -77,6 +77,7 @@ public final class GraphControlsView extends VBox {
     public GraphLayoutParams getParamsCopy() {
         return copyParams(params);
     }
+
     public void setParams(GraphLayoutParams p) {
         if (p == null) return;
         copyInto(p, params);
@@ -176,14 +177,38 @@ public final class GraphControlsView extends VBox {
             toggleEdgePolicyFields();
             fireParamsChanged();
         });
-        kSpinner.valueProperty().addListener((o, ov, nv) -> { params.knnK = nv; fireParamsChanged(); });
-        knnSymmetrizeCheck.setOnAction(e -> { params.knnSymmetrize = knnSymmetrizeCheck.isSelected(); fireParamsChanged(); });
-        epsSpinner.valueProperty().addListener((o, ov, nv) -> { params.epsilon = nv; fireParamsChanged(); });
-        buildMstCheck.setOnAction(e -> { params.buildMst = buildMstCheck.isSelected(); fireParamsChanged(); });
-        maxEdgesSpinner.valueProperty().addListener((o, ov, nv) -> { params.maxEdges = nv; fireParamsChanged(); });
-        maxDegreeSpinner.valueProperty().addListener((o, ov, nv) -> { params.maxDegreePerNode = nv; fireParamsChanged(); });
-        minWeightSpinner.valueProperty().addListener((o, ov, nv) -> { params.minEdgeWeight = nv; fireParamsChanged(); });
-        norm01Check.setOnAction(e -> { params.normalizeWeights01 = norm01Check.isSelected(); fireParamsChanged(); });
+        kSpinner.valueProperty().addListener((o, ov, nv) -> {
+            params.knnK = nv;
+            fireParamsChanged();
+        });
+        knnSymmetrizeCheck.setOnAction(e -> {
+            params.knnSymmetrize = knnSymmetrizeCheck.isSelected();
+            fireParamsChanged();
+        });
+        epsSpinner.valueProperty().addListener((o, ov, nv) -> {
+            params.epsilon = nv;
+            fireParamsChanged();
+        });
+        buildMstCheck.setOnAction(e -> {
+            params.buildMst = buildMstCheck.isSelected();
+            fireParamsChanged();
+        });
+        maxEdgesSpinner.valueProperty().addListener((o, ov, nv) -> {
+            params.maxEdges = nv;
+            fireParamsChanged();
+        });
+        maxDegreeSpinner.valueProperty().addListener((o, ov, nv) -> {
+            params.maxDegreePerNode = nv;
+            fireParamsChanged();
+        });
+        minWeightSpinner.valueProperty().addListener((o, ov, nv) -> {
+            params.minEdgeWeight = nv;
+            fireParamsChanged();
+        });
+        norm01Check.setOnAction(e -> {
+            params.normalizeWeights01 = norm01Check.isSelected();
+            fireParamsChanged();
+        });
 
         toggleEdgePolicyFields();
         return gp;
@@ -222,12 +247,30 @@ public final class GraphControlsView extends VBox {
         styleSpinner(coolingSpinner);
         addRow(gp, 5, "Cooling", coolingSpinner);
 
-        itersSpinner.valueProperty().addListener((o, ov, nv) -> { params.iterations = nv; fireParamsChanged(); });
-        stepSpinner.valueProperty().addListener((o, ov, nv) -> { params.step = nv; fireParamsChanged(); });
-        repulseSpinner.valueProperty().addListener((o, ov, nv) -> { params.repulsion = nv; fireParamsChanged(); });
-        attractSpinner.valueProperty().addListener((o, ov, nv) -> { params.attraction = nv; fireParamsChanged(); });
-        gravitySpinner.valueProperty().addListener((o, ov, nv) -> { params.gravity = nv; fireParamsChanged(); });
-        coolingSpinner.valueProperty().addListener((o, ov, nv) -> { params.cooling = nv; fireParamsChanged(); });
+        itersSpinner.valueProperty().addListener((o, ov, nv) -> {
+            params.iterations = nv;
+            fireParamsChanged();
+        });
+        stepSpinner.valueProperty().addListener((o, ov, nv) -> {
+            params.step = nv;
+            fireParamsChanged();
+        });
+        repulseSpinner.valueProperty().addListener((o, ov, nv) -> {
+            params.repulsion = nv;
+            fireParamsChanged();
+        });
+        attractSpinner.valueProperty().addListener((o, ov, nv) -> {
+            params.attraction = nv;
+            fireParamsChanged();
+        });
+        gravitySpinner.valueProperty().addListener((o, ov, nv) -> {
+            params.gravity = nv;
+            fireParamsChanged();
+        });
+        coolingSpinner.valueProperty().addListener((o, ov, nv) -> {
+            params.cooling = nv;
+            fireParamsChanged();
+        });
 
         toggleForceSectionVisibility();
         return gp;
@@ -314,12 +357,18 @@ public final class GraphControlsView extends VBox {
 
     private static GridPane formGrid() {
         GridPane gp = new GridPane();
-        gp.setHgap(8); gp.setVgap(6); gp.setAlignment(Pos.TOP_LEFT);
-        ColumnConstraints c0 = new ColumnConstraints(); c0.setPercentWidth(40);
-        ColumnConstraints c1 = new ColumnConstraints(); c1.setPercentWidth(60); c1.setHgrow(Priority.ALWAYS);
+        gp.setHgap(8);
+        gp.setVgap(6);
+        gp.setAlignment(Pos.TOP_LEFT);
+        ColumnConstraints c0 = new ColumnConstraints();
+        c0.setPercentWidth(40);
+        ColumnConstraints c1 = new ColumnConstraints();
+        c1.setPercentWidth(60);
+        c1.setHgrow(Priority.ALWAYS);
         gp.getColumnConstraints().addAll(c0, c1);
         return gp;
     }
+
     private static void addRow(GridPane gp, int row, String label, javafx.scene.Node control) {
         Label l = new Label(label);
         gp.add(l, 0, row);
@@ -331,20 +380,31 @@ public final class GraphControlsView extends VBox {
         }
         gp.add(control, 1, row);
     }
+
     private static VBox titledBox(String title, javafx.scene.Node content) {
-        Label t = new Label(title); t.getStyleClass().add("section-title");
+        Label t = new Label(title);
+        t.getStyleClass().add("section-title");
         VBox box = new VBox(6, t, new Separator(), content);
         box.setPadding(new Insets(4, 2, 6, 2));
         return box;
     }
+
     private static <T> void styleSpinner(Spinner<T> spinner) {
-        spinner.setPrefWidth(125.0); spinner.setMaxWidth(125.0); spinner.setMinWidth(Region.USE_PREF_SIZE);
+        spinner.setPrefWidth(125.0);
+        spinner.setMaxWidth(125.0);
+        spinner.setMinWidth(Region.USE_PREF_SIZE);
     }
+
     private static <T> void styleCombo(ComboBox<T> combo) {
-        combo.setPrefWidth(220.0); combo.setMaxWidth(220.0); combo.setMinWidth(Region.USE_PREF_SIZE);
+        combo.setPrefWidth(220.0);
+        combo.setMaxWidth(220.0);
+        combo.setMinWidth(Region.USE_PREF_SIZE);
     }
+
     private static void styleCheck(CheckBox cb) {
-        cb.setPrefWidth(100.0); cb.setMaxWidth(100.0); cb.setMinWidth(Region.USE_PREF_SIZE);
+        cb.setPrefWidth(100.0);
+        cb.setMaxWidth(100.0);
+        cb.setMinWidth(Region.USE_PREF_SIZE);
     }
 
     private static GraphLayoutParams copyParams(GraphLayoutParams in) {
@@ -352,6 +412,7 @@ public final class GraphControlsView extends VBox {
         copyInto(in, p);
         return p;
     }
+
     private static void copyInto(GraphLayoutParams src, GraphLayoutParams dst) {
         // layout
         dst.kind = src.kind;

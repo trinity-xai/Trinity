@@ -5,16 +5,17 @@ import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.utils.statistics.GridDensityResult;
 import edu.jhuapl.trinity.utils.statistics.StatPdfCdfChartPanel;
 import edu.jhuapl.trinity.utils.statistics.StatisticEngine;
-import java.util.List;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
 
+import java.util.List;
+
 /**
  * Floating statistics PDF/CDF pane for Trinity analytics.
  * Displays a single StatPdfCdfChartPanel, fully resizable and ready for future controls.
- *
+ * <p>
  * Popout behavior: triggered exclusively via {@link #maximize()} which
  * fires an ApplicationEvent (POPOUT_STATPDFCDF) that a controller listens for.
  *
@@ -56,11 +57,11 @@ public class StatPdfCdfPane extends LitPathPane {
      * Create a floating PDF/CDF chart pane with initial data and settings.
      */
     public StatPdfCdfPane(
-            Scene scene,
-            Pane parent,
-            List<FeatureVector> vectors,
-            StatisticEngine.ScalarType scalarType,
-            int bins
+        Scene scene,
+        Pane parent,
+        List<FeatureVector> vectors,
+        StatisticEngine.ScalarType scalarType,
+        int bins
     ) {
         super(
             scene,
@@ -96,8 +97,8 @@ public class StatPdfCdfPane extends LitPathPane {
             : result.pdfAsListGrid();
 
         String label = (useCDF ? "CDF" : "PDF") + " : "
-                     + chartPanel.getScalarType() + " vs "
-                     + chartPanel.getYFeatureTypeForDisplay();
+            + chartPanel.getScalarType() + " vs "
+            + chartPanel.getYFeatureTypeForDisplay();
 
         if (getScene() != null) {
             getScene().getRoot().fireEvent(

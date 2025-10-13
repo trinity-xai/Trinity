@@ -16,7 +16,7 @@ import java.util.function.Consumer;
  * Simple time-series chart that plots scalar values against sample index (0..N-1)
  * and supports highlighting arbitrary sample indices, plus hover/click callbacks
  * that report the nearest sample index under the mouse.
- *
+ * <p>
  * Now supports "append" highlights for a persist-selection workflow.
  */
 public class StatTimeSeriesChart extends LineChart<Number, Number> {
@@ -26,8 +26,11 @@ public class StatTimeSeriesChart extends LineChart<Number, Number> {
         public final int sampleIdx;
         public final double x; // index
         public final double y; // value
+
         public PointSelection(int sampleIdx, double x, double y) {
-            this.sampleIdx = sampleIdx; this.x = x; this.y = y;
+            this.sampleIdx = sampleIdx;
+            this.x = x;
+            this.y = y;
         }
     }
 
@@ -75,7 +78,9 @@ public class StatTimeSeriesChart extends LineChart<Number, Number> {
 
     // ===== Public API =====
 
-    /** Replace the entire series (x = sample index 0..N-1, y = values[i]). */
+    /**
+     * Replace the entire series (x = sample index 0..N-1, y = values[i]).
+     */
     public void setSeries(List<Double> values) {
         currentValues = (values != null) ? new ArrayList<>(values) : new ArrayList<>();
         lineSeries.getData().clear();
@@ -105,15 +110,18 @@ public class StatTimeSeriesChart extends LineChart<Number, Number> {
 
     /**
      * Highlight a set of sample indices, optionally appending to any existing highlights.
+     *
      * @param indices indices to (add) highlight
-     * @param append if false, replaces existing highlights; if true, appends/dedupes
+     * @param append  if false, replaces existing highlights; if true, appends/dedupes
      */
     public void highlightSamples(int[] indices, boolean append) {
         if (!append) clearHighlights();
         addHighlights(indices);
     }
 
-    /** Append highlights without removing existing ones. */
+    /**
+     * Append highlights without removing existing ones.
+     */
     public void addHighlights(int[] indices) {
         if (indices == null || currentValues.isEmpty()) return;
 
@@ -134,20 +142,29 @@ public class StatTimeSeriesChart extends LineChart<Number, Number> {
         });
     }
 
-    /** Clear any highlighted samples. */
+    /**
+     * Clear any highlighted samples.
+     */
     public void clearHighlights() {
         highlightSeries.getData().clear();
         highlighted.clear();
     }
 
-    /** Optional: customize axis labels. */
+    /**
+     * Optional: customize axis labels.
+     */
     public void setAxisLabels(String xLabel, String yLabel) {
         if (xLabel != null) ((NumberAxis) getXAxis()).setLabel(xLabel);
         if (yLabel != null) ((NumberAxis) getYAxis()).setLabel(yLabel);
     }
 
-    public void setOnPointHover(Consumer<PointSelection> handler) { this.onHover = handler; }
-    public void setOnPointClick(Consumer<PointSelection> handler) { this.onClick = handler; }
+    public void setOnPointHover(Consumer<PointSelection> handler) {
+        this.onHover = handler;
+    }
+
+    public void setOnPointClick(Consumer<PointSelection> handler) {
+        this.onClick = handler;
+    }
 
     // ===== Internals =====
 
@@ -201,7 +218,7 @@ public class StatTimeSeriesChart extends LineChart<Number, Number> {
             if (d.getNode() != null) {
                 d.getNode().setStyle(
                     "-fx-background-color: #00FF00AA; " +
-                    "-fx-background-radius: 8px; -fx-padding: 6px;"
+                        "-fx-background-radius: 8px; -fx-padding: 6px;"
                 );
             }
         }

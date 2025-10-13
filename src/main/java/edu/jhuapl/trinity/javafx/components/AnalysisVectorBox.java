@@ -18,7 +18,7 @@ public class AnalysisVectorBox extends VBox {
     public XYChart.Series series;
     private LineChart lineChart;
     Label vectorLabel;
-        
+
     public AnalysisVectorBox(double width, double height) {
         setPrefSize(width, height);
         analysisVector = FXCollections.observableArrayList();
@@ -35,7 +35,7 @@ public class AnalysisVectorBox extends VBox {
     }
 
     public void setAnalysisVector(String label, Double[] newData) {
-        if(null != label) {
+        if (null != label) {
             vectorLabel.setText(label);
         }
         analysisVector.clear();

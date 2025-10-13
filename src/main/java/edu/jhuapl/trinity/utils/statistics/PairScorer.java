@@ -17,22 +17,22 @@ import java.util.Set;
  * PairScorer
  * ----------
  * Pre-ranks 2D axis pairs for Joint PDF/CDF generation.
- *
+ * <p>
  * Primary path: COMPONENT_AT_DIMENSION pairs over an index range (fast, cached columns).
  * Also includes a convenience scorer for an arbitrary AxisParams pair (slower; extracts scalars).
- *
+ * <p>
  * Score metrics (normalized to ~[0,1] where possible):
- *  - PEARSON       : |r| (abs Pearson correlation), robust to sign
- *  - KENDALL       : |tau_b| (approx; down-samples if very large N)
- *  - MI_LITE       : NMI = I(X;Y) / sqrt(H(X) * H(Y)) using fixed equal-width binning + add-one smoothing
- *  - DIST_CORR     : distance correlation (biased estimator), ∈ [0,1]
- *
+ * - PEARSON       : |r| (abs Pearson correlation), robust to sign
+ * - KENDALL       : |tau_b| (approx; down-samples if very large N)
+ * - MI_LITE       : NMI = I(X;Y) / sqrt(H(X) * H(Y)) using fixed equal-width binning + add-one smoothing
+ * - DIST_CORR     : distance correlation (biased estimator), ∈ [0,1]
+ * <p>
  * Data sufficiency flag: sufficient iff N / (binsX*binsY) >= minAvgCountPerCell (when bins params provided).
- *
+ * <p>
  * Notes:
- *  - This class does not mutate input data and is dependency-free.
- *  - MI-lite assumes finite values; if inputs are near-constant, entropy guards avoid divide-by-zero.
- *  - Kendall tau computation is O(N^2); for N>MAX_KENDALL_N we stride-sample to MAX_KENDALL_N.
+ * - This class does not mutate input data and is dependency-free.
+ * - MI-lite assumes finite values; if inputs are near-constant, entropy guards avoid divide-by-zero.
+ * - Kendall tau computation is O(N^2); for N>MAX_KENDALL_N we stride-sample to MAX_KENDALL_N.
  *
  * @author Sean Phillips
  */
@@ -41,9 +41,12 @@ public final class PairScorer {
     // ----------- Result type -----------
 
     public static final class PairScore implements Serializable, Comparable<PairScore> {
-        @Serial private static final long serialVersionUID = 1L;
+        @Serial
+        private static final long serialVersionUID = 1L;
 
-        /** For component-mode: i and j are component indices. For axis-mode: both are -1. */
+        /**
+         * For component-mode: i and j are component indices. For axis-mode: both are -1.
+         */
         public final int i;
         public final int j;
         public final double score;           // normalized score used for ranking (>=0)
@@ -52,19 +55,28 @@ public final class PairScorer {
         public final String reason;          // optional note (e.g., "low variance", "insufficient N")
 
         public PairScore(int i, int j, double score, long nSamples, boolean sufficient, String reason) {
-            this.i = i; this.j = j; this.score = score; this.nSamples = nSamples;
-            this.sufficient = sufficient; this.reason = reason;
+            this.i = i;
+            this.j = j;
+            this.score = score;
+            this.nSamples = nSamples;
+            this.sufficient = sufficient;
+            this.reason = reason;
         }
 
-        @Override public int compareTo(PairScore o) { return -Double.compare(this.score, o.score); } // desc
-        @Override public String toString() {
+        @Override
+        public int compareTo(PairScore o) {
+            return -Double.compare(this.score, o.score);
+        } // desc
+
+        @Override
+        public String toString() {
             return "PairScore{" +
-                    "i=" + i + ", j=" + j +
-                    ", score=" + score +
-                    ", n=" + nSamples +
-                    ", sufficient=" + sufficient +
-                    (reason != null ? (", reason='" + reason + '\'') : "") +
-                    '}';
+                "i=" + i + ", j=" + j +
+                ", score=" + score +
+                ", n=" + nSamples +
+                ", sufficient=" + sufficient +
+                (reason != null ? (", reason='" + reason + '\'') : "") +
+                '}';
         }
     }
 
@@ -97,7 +109,8 @@ public final class PairScorer {
         }
     }
 
-    private PairScorer() {}
+    private PairScorer() {
+    }
 
     // ====================================================================================
     // COMPONENT MODE: fast scoring over (start..end) component indices with caching
@@ -107,12 +120,12 @@ public final class PairScorer {
      * Score all valid component pairs in [start..end], respecting includeSelf/ordered flags.
      */
     public static List<PairScore> scoreComponentPairs(
-            List<FeatureVector> vectors,
-            int startInclusive,
-            int endInclusive,
-            boolean includeSelfPairs,
-            boolean orderedPairs,
-            Config cfg
+        List<FeatureVector> vectors,
+        int startInclusive,
+        int endInclusive,
+        boolean includeSelfPairs,
+        boolean orderedPairs,
+        Config cfg
     ) {
         Objects.requireNonNull(vectors, "vectors");
         if (vectors.isEmpty()) return Collections.emptyList();
@@ -141,10 +154,10 @@ public final class PairScorer {
                 double[] y = cols[jj];
 
                 PairScore ps = new PairScore(i, j,
-                        scorePair(x, y, cfg),
-                        nSamples,
-                        suff,
-                        suff ? null : insuffReason);
+                    scorePair(x, y, cfg),
+                    nSamples,
+                    suff,
+                    suff ? null : insuffReason);
                 out.add(ps);
             }
         }
@@ -157,10 +170,10 @@ public final class PairScorer {
     // ====================================================================================
 
     public static PairScore scoreAxisPair(
-            List<FeatureVector> vectors,
-            AxisParams xAxis,
-            AxisParams yAxis,
-            Config cfg
+        List<FeatureVector> vectors,
+        AxisParams xAxis,
+        AxisParams yAxis,
+        Config cfg
     ) {
         Objects.requireNonNull(vectors, "vectors");
         if (vectors.isEmpty()) return new PairScore(-1, -1, 0.0, 0, false, "no data");
@@ -203,8 +216,10 @@ public final class PairScorer {
         double sx = 0, sy = 0, sxx = 0, syy = 0, sxy = 0;
         for (int i = 0; i < n; i++) {
             double xi = x[i], yi = y[i];
-            sx += xi; sy += yi;
-            sxx += xi * xi; syy += yi * yi;
+            sx += xi;
+            sy += yi;
+            sxx += xi * xi;
+            syy += yi * yi;
             sxy += xi * yi;
         }
         double num = n * sxy - sx * sy;
@@ -235,8 +250,14 @@ public final class PairScorer {
                 double dy = y[i] - y[j];
 
                 if (dx == 0 && dy == 0) continue; // joint tie: ignore
-                if (dx == 0) { tiesX++; continue; }
-                if (dy == 0) { tiesY++; continue; }
+                if (dx == 0) {
+                    tiesX++;
+                    continue;
+                }
+                if (dy == 0) {
+                    tiesY++;
+                    continue;
+                }
 
                 double prod = dx * dy;
                 if (prod > 0) concordant++;
@@ -245,7 +266,7 @@ public final class PairScorer {
             }
         }
         double denom = Math.sqrt((concordant + discordant + tiesX) * 1.0) *
-                       Math.sqrt((concordant + discordant + tiesY) * 1.0);
+            Math.sqrt((concordant + discordant + tiesY) * 1.0);
         if (denom == 0) return 0.0;
         return (concordant - discordant) / denom;
     }
@@ -273,9 +294,12 @@ public final class PairScorer {
         double minX = Double.POSITIVE_INFINITY, maxX = Double.NEGATIVE_INFINITY;
         double minY = Double.POSITIVE_INFINITY, maxY = Double.NEGATIVE_INFINITY;
         for (int i = 0; i < n; i++) {
-            double xi = x[i]; double yi = y[i];
-            if (xi < minX) minX = xi; if (xi > maxX) maxX = xi;
-            if (yi < minY) minY = yi; if (yi > maxY) maxY = yi;
+            double xi = x[i];
+            double yi = y[i];
+            if (xi < minX) minX = xi;
+            if (xi > maxX) maxX = xi;
+            if (yi < minY) minY = yi;
+            if (yi > maxY) maxY = yi;
         }
         if (!(maxX > minX)) maxX = minX + 1e-8;
         if (!(maxY > minY)) maxY = minY + 1e-8;
@@ -297,8 +321,10 @@ public final class PairScorer {
         for (int i = 0; i < n; i++) {
             int bx = (int) Math.floor((x[i] - minX) / dx);
             int by = (int) Math.floor((y[i] - minY) / dy);
-            if (bx < 0) bx = 0; if (bx >= bins) bx = bins - 1;
-            if (by < 0) by = 0; if (by >= bins) by = bins - 1;
+            if (bx < 0) bx = 0;
+            if (bx >= bins) bx = bins - 1;
+            if (by < 0) by = 0;
+            if (by >= bins) by = bins - 1;
 
             joint[by][bx] += 1.0;
             px[bx] += 1.0;
@@ -329,7 +355,8 @@ public final class PairScorer {
         double nmi = (denom > 0) ? (mi / denom) : 0.0;
         // Clamp to [0,1] range for numeric stability
         if (Double.isNaN(nmi) || Double.isInfinite(nmi)) nmi = 0.0;
-        if (nmi < 0) nmi = 0; else if (nmi > 1) nmi = 1;
+        if (nmi < 0) nmi = 0;
+        else if (nmi > 1) nmi = 1;
         return nmi;
     }
 
@@ -359,7 +386,8 @@ public final class PairScorer {
         double dcor = Math.sqrt(Math.max(0, dcov2)) / Math.sqrt(dvarx * dvary);
         if (Double.isNaN(dcor) || Double.isInfinite(dcor)) return 0.0;
         // Clamp
-        if (dcor < 0) dcor = 0; else if (dcor > 1) dcor = 1;
+        if (dcor < 0) dcor = 0;
+        else if (dcor > 1) dcor = 1;
         return dcor;
     }
 
@@ -370,7 +398,8 @@ public final class PairScorer {
             d[i][i] = 0;
             for (int j = i + 1; j < n; j++) {
                 double dij = Math.abs(v[i] - v[j]);
-                d[i][j] = dij; d[j][i] = dij;
+                d[i][j] = dij;
+                d[j][i] = dij;
             }
         }
         return d;
@@ -444,8 +473,8 @@ public final class PairScorer {
         // Precompute mean if needed
         List<Double> meanVector = null;
         Set<StatisticEngine.ScalarType> needMean = Set.of(
-                StatisticEngine.ScalarType.DIST_TO_MEAN,
-                StatisticEngine.ScalarType.COSINE_TO_MEAN
+            StatisticEngine.ScalarType.DIST_TO_MEAN,
+            StatisticEngine.ScalarType.COSINE_TO_MEAN
         );
         if (needMean.contains(axis.getType())) {
             meanVector = FeatureVector.getMeanVector(vectors);
@@ -453,8 +482,8 @@ public final class PairScorer {
 
         Metric metric = null;
         if (axis.getType() == StatisticEngine.ScalarType.METRIC_DISTANCE_TO_MEAN
-                && axis.getMetricName() != null
-                && axis.getReferenceVec() != null) {
+            && axis.getMetricName() != null
+            && axis.getReferenceVec() != null) {
             metric = Metric.getMetric(axis.getMetricName());
         }
 

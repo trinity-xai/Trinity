@@ -10,41 +10,52 @@ import java.util.Objects;
  * PairGridRecord
  * ---------------
  * Minimal, serializable container for a single (X,Y) joint surface result intended for UI / IO.
- *
+ * <p>
  * Carries:
- *  - Axes (AxisParams snapshots used during compute)
- *  - The canonical GridSpec used
- *  - Optional PDF and/or CDF grids (List<List<Double>>), same shape as GridSpec
- *  - Provenance objects for PDF/CDF (if present)
- *
+ * - Axes (AxisParams snapshots used during compute)
+ * - The canonical GridSpec used
+ * - Optional PDF and/or CDF grids (List<List<Double>>), same shape as GridSpec
+ * - Provenance objects for PDF/CDF (if present)
+ * <p>
  * Notes:
- *  - This is a data record, not a compute class.
- *  - It is agnostic to the source (single cohort vs A/B); use the static factories.
- *  - If you plan to persist, prefer List<List<Double>> over primitive arrays for JSON friendliness.
+ * - This is a data record, not a compute class.
+ * - It is agnostic to the source (single cohort vs A/B); use the static factories.
+ * - If you plan to persist, prefer List<List<Double>> over primitive arrays for JSON friendliness.
  *
  * @author Sean Phillips
  */
 public final class PairGridRecord implements Serializable {
 
-    @Serial private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     private final AxisParams xAxis;
     private final AxisParams yAxis;
     private final GridSpec grid;
 
-    /** Optional PDF values; null if not requested. */
+    /**
+     * Optional PDF values; null if not requested.
+     */
     private final List<List<Double>> pdf;
 
-    /** Optional CDF values; null if not requested. */
+    /**
+     * Optional CDF values; null if not requested.
+     */
     private final List<List<Double>> cdf;
 
-    /** Provenance for the PDF; null when pdf == null. */
+    /**
+     * Provenance for the PDF; null when pdf == null.
+     */
     private final JpdfProvenance pdfProvenance;
 
-    /** Provenance for the CDF; null when cdf == null. */
+    /**
+     * Provenance for the CDF; null when cdf == null.
+     */
     private final JpdfProvenance cdfProvenance;
 
-    /** Optional human label for this record (e.g., cohort name or composite tag). */
+    /**
+     * Optional human label for this record (e.g., cohort name or composite tag).
+     */
     private final String label;
 
     // ---------------------------- Constructors ----------------------------
@@ -81,11 +92,30 @@ public final class PairGridRecord implements Serializable {
             this.grid = Objects.requireNonNull(grid, "grid");
         }
 
-        public Builder pdf(List<List<Double>> v) { this.pdf = v; return this; }
-        public Builder cdf(List<List<Double>> v) { this.cdf = v; return this; }
-        public Builder pdfProvenance(JpdfProvenance p) { this.pdfProvenance = p; return this; }
-        public Builder cdfProvenance(JpdfProvenance p) { this.cdfProvenance = p; return this; }
-        public Builder label(String v) { this.label = v; return this; }
+        public Builder pdf(List<List<Double>> v) {
+            this.pdf = v;
+            return this;
+        }
+
+        public Builder cdf(List<List<Double>> v) {
+            this.cdf = v;
+            return this;
+        }
+
+        public Builder pdfProvenance(JpdfProvenance p) {
+            this.pdfProvenance = p;
+            return this;
+        }
+
+        public Builder cdfProvenance(JpdfProvenance p) {
+            this.cdfProvenance = p;
+            return this;
+        }
+
+        public Builder label(String v) {
+            this.label = v;
+            return this;
+        }
 
         public PairGridRecord build() {
             return new PairGridRecord(this);
@@ -117,12 +147,12 @@ public final class PairGridRecord implements Serializable {
         }
 
         return PairGridRecord.newBuilder(xAxis, yAxis, grid)
-                .pdf(pdf)
-                .cdf(cdf)
-                .pdfProvenance(pdfProv)
-                .cdfProvenance(cdfProv)
-                .label(label)
-                .build();
+            .pdf(pdf)
+            .cdf(cdf)
+            .pdfProvenance(pdfProv)
+            .cdfProvenance(cdfProv)
+            .label(label)
+            .build();
     }
 
     /**
@@ -140,12 +170,12 @@ public final class PairGridRecord implements Serializable {
         GridSpec grid = ab.grid;
 
         PairGridRecord a = fromSingle(
-                xAxis, yAxis, grid, ab.a, ok,
-                ab.pdfProvA, ab.cdfProvA, labelA
+            xAxis, yAxis, grid, ab.a, ok,
+            ab.pdfProvA, ab.cdfProvA, labelA
         );
         PairGridRecord b = fromSingle(
-                xAxis, yAxis, grid, ab.b, ok,
-                ab.pdfProvB, ab.cdfProvB, labelB
+            xAxis, yAxis, grid, ab.b, ok,
+            ab.pdfProvB, ab.cdfProvB, labelB
         );
 
         PairGridRecord diff = null;
@@ -157,12 +187,12 @@ public final class PairGridRecord implements Serializable {
 
         if ((pdf != null) || (cdf != null)) {
             diff = PairGridRecord.newBuilder(xAxis, yAxis, grid)
-                    .pdf(pdf)
-                    .cdf(cdf)
-                    .pdfProvenance(ab.pdfProvDiff)
-                    .cdfProvenance(ab.cdfProvDiff)
-                    .label(labelDiff)
-                    .build();
+                .pdf(pdf)
+                .cdf(cdf)
+                .pdfProvenance(ab.pdfProvDiff)
+                .cdfProvenance(ab.cdfProvDiff)
+                .label(labelDiff)
+                .build();
         }
 
         return new Triple<>(a, b, diff);
@@ -170,14 +200,37 @@ public final class PairGridRecord implements Serializable {
 
     // ---------------------------- Getters ----------------------------
 
-    public AxisParams getxAxis() { return xAxis; }
-    public AxisParams getyAxis() { return yAxis; }
-    public GridSpec getGrid() { return grid; }
-    public List<List<Double>> getPdf() { return pdf; }
-    public List<List<Double>> getCdf() { return cdf; }
-    public JpdfProvenance getPdfProvenance() { return pdfProvenance; }
-    public JpdfProvenance getCdfProvenance() { return cdfProvenance; }
-    public String getLabel() { return label; }
+    public AxisParams getxAxis() {
+        return xAxis;
+    }
+
+    public AxisParams getyAxis() {
+        return yAxis;
+    }
+
+    public GridSpec getGrid() {
+        return grid;
+    }
+
+    public List<List<Double>> getPdf() {
+        return pdf;
+    }
+
+    public List<List<Double>> getCdf() {
+        return cdf;
+    }
+
+    public JpdfProvenance getPdfProvenance() {
+        return pdfProvenance;
+    }
+
+    public JpdfProvenance getCdfProvenance() {
+        return cdfProvenance;
+    }
+
+    public String getLabel() {
+        return label;
+    }
 
     // ---------------------------- Helpers ----------------------------
 
@@ -192,12 +245,16 @@ public final class PairGridRecord implements Serializable {
      * Tiny generic triple carrier (kept local to avoid extra dependencies).
      */
     public static final class Triple<A, B, C> implements Serializable {
-        @Serial private static final long serialVersionUID = 1L;
+        @Serial
+        private static final long serialVersionUID = 1L;
         public final A first;
         public final B second;
         public final C third;
+
         public Triple(A first, B second, C third) {
-            this.first = first; this.second = second; this.third = third;
+            this.first = first;
+            this.second = second;
+            this.third = third;
         }
     }
 }

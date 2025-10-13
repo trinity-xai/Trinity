@@ -14,22 +14,24 @@ import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.scene.Scene;
 import javafx.scene.paint.Color;
+import javafx.scene.text.Font;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.time.Duration;
 import java.util.List;
+
 import static edu.jhuapl.trinity.utils.Utils.totalTimeString;
-import javafx.scene.text.Font;
 
 /**
  * BuildGraphFromMatrixTask
  * ------------------------
  * Background task that converts a SIMILARITY or DIVERGENCE matrix into a GraphDirectedCollection,
  * laying out nodes using either:
- *   - MDS_3D (via SuperMDS),
- *   - FORCE_FR (Fruchterman–Reingold 3D),
- *   - or a static layout (CIRCLE_XZ/CIRCLE_XY/SPHERE).
- *
+ * - MDS_3D (via SuperMDS),
+ * - FORCE_FR (Fruchterman–Reingold 3D),
+ * - or a static layout (CIRCLE_XZ/CIRCLE_XY/SPHERE).
+ * <p>
  * Emits GraphEvent.NEW_GRAPHDIRECTED_COLLECTION on success.
  *
  * @author Sean Phillips

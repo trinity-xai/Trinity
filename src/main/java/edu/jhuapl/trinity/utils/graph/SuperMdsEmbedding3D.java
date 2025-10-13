@@ -10,7 +10,7 @@ import java.util.List;
  * SuperMdsEmbedding3D
  * -------------------
  * Pluggable adapter that uses SuperMDS to produce a 3D embedding from a distance matrix.
- *
+ * <p>
  * Input must be an NxN distance matrix (symmetric, non-negative). We normalize it
  * similarly to your ProjectMdsFeaturesTask before running MDS.
  *

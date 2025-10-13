@@ -1,14 +1,6 @@
 package edu.jhuapl.trinity.utils.statistics;
 
 import edu.jhuapl.trinity.utils.ResourceUtils;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
-import java.util.Objects;
-import java.util.function.Consumer;
-import java.util.function.Predicate;
-
 import javafx.application.Platform;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -35,20 +27,28 @@ import javafx.scene.layout.TilePane;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
+import java.util.Objects;
+import java.util.function.Consumer;
+import java.util.function.Predicate;
+
 /**
  * PairGridPane (TilePane-backed)
  * ------------------------------
  * Responsive grid of heatmap thumbnails that wraps on resize without
  * forcing the parent to expand.
- *
+ * <p>
  * Header slot via {@link #setHeader(Node)} to host controls like Search/Sort.
- *
+ * <p>
  * New (appearance & UX):
- *  - Grid-wide "display state" (palette, legend, background, smoothing, gamma, clip%, range mode)
- *  - Setters to update existing tiles immediately and apply to future tiles
- *  - Global range compute across visible items
- *  - Per-tile context menu (autoscale, pin fixed range from tile, compute global, export PNG)
- *  - Hover preview: temporarily autoscale a tile while hovered if grid is in Global/Fixed
+ * - Grid-wide "display state" (palette, legend, background, smoothing, gamma, clip%, range mode)
+ * - Setters to update existing tiles immediately and apply to future tiles
+ * - Global range compute across visible items
+ * - Per-tile context menu (autoscale, pin fixed range from tile, compute global, export PNG)
+ * - Hover preview: temporarily autoscale a tile while hovered if grid is in Global/Fixed
  */
 public final class PairGridPane extends BorderPane {
     // --- Streaming support (thread-safe buffer -> periodic FX flush) ---
@@ -63,7 +63,9 @@ public final class PairGridPane extends BorderPane {
         public final String xLabel;
         public final String yLabel;
 
-        /** Optional component indices for sort-by-i/j convenience; may be null. */
+        /**
+         * Optional component indices for sort-by-i/j convenience; may be null.
+         */
         public final Integer iIndex;
         public final Integer jIndex;
 
@@ -130,20 +132,70 @@ public final class PairGridPane extends BorderPane {
                 this.yLabel = Objects.requireNonNull(yLabel, "yLabel");
             }
 
-            public Builder grid(List<List<Double>> g) { this.grid = g; this.res = null; return this; }
-            public Builder from(GridDensityResult r, boolean useCDF, boolean flipY) {
-                this.res = r; this.grid = null; this.useCDF = useCDF; this.flipY = flipY; return this;
+            public Builder grid(List<List<Double>> g) {
+                this.grid = g;
+                this.res = null;
+                return this;
             }
-            public Builder palette(HeatmapThumbnailView.PaletteKind p) { this.palette = p; return this; }
-            public Builder divergingCenter(double c) { this.center = c; return this; }
-            public Builder autoRange(boolean on) { this.autoRange = on; return this; }
-            public Builder fixedRange(double min, double max) { this.autoRange = false; this.vmin = min; this.vmax = max; return this; }
-            public Builder flipY(boolean flip) { this.flipY = flip; return this; }
-            public Builder showLegend(boolean show) { this.showLegend = show; return this; }
-            public Builder score(Double s) { this.score = s; return this; }
-            public Builder userData(Object d) { this.userData = d; return this; }
-            /** Optional: attach component indices for downstream sort-by-i/j. */
-            public Builder indices(Integer i, Integer j) { this.iIndex = i; this.jIndex = j; return this; }
+
+            public Builder from(GridDensityResult r, boolean useCDF, boolean flipY) {
+                this.res = r;
+                this.grid = null;
+                this.useCDF = useCDF;
+                this.flipY = flipY;
+                return this;
+            }
+
+            public Builder palette(HeatmapThumbnailView.PaletteKind p) {
+                this.palette = p;
+                return this;
+            }
+
+            public Builder divergingCenter(double c) {
+                this.center = c;
+                return this;
+            }
+
+            public Builder autoRange(boolean on) {
+                this.autoRange = on;
+                return this;
+            }
+
+            public Builder fixedRange(double min, double max) {
+                this.autoRange = false;
+                this.vmin = min;
+                this.vmax = max;
+                return this;
+            }
+
+            public Builder flipY(boolean flip) {
+                this.flipY = flip;
+                return this;
+            }
+
+            public Builder showLegend(boolean show) {
+                this.showLegend = show;
+                return this;
+            }
+
+            public Builder score(Double s) {
+                this.score = s;
+                return this;
+            }
+
+            public Builder userData(Object d) {
+                this.userData = d;
+                return this;
+            }
+
+            /**
+             * Optional: attach component indices for downstream sort-by-i/j.
+             */
+            public Builder indices(Integer i, Integer j) {
+                this.iIndex = i;
+                this.jIndex = j;
+                return this;
+            }
 
             public PairItem build() {
                 if (grid == null && res == null)
@@ -158,21 +210,32 @@ public final class PairGridPane extends BorderPane {
         public final PairItem item;
         public final String xLabel;
         public final String yLabel;
+
         public CellClick(int index, PairItem item) {
-            this.index = index; this.item = item;
-            this.xLabel = item.xLabel; this.yLabel = item.yLabel;
+            this.index = index;
+            this.item = item;
+            this.xLabel = item.xLabel;
+            this.yLabel = item.yLabel;
         }
     }
 
-    /** Range struct for global/fixed usage. */
+    /**
+     * Range struct for global/fixed usage.
+     */
     public static final class Range {
         public final double vmin, vmax;
-        public Range(double vmin, double vmax) { this.vmin = vmin; this.vmax = vmax; }
+
+        public Range(double vmin, double vmax) {
+            this.vmin = vmin;
+            this.vmax = vmax;
+        }
     }
 
-    public enum RangeMode { AUTO, GLOBAL, FIXED }
+    public enum RangeMode {AUTO, GLOBAL, FIXED}
 
-    /** Captures grid-wide display preferences to apply to tiles. */
+    /**
+     * Captures grid-wide display preferences to apply to tiles.
+     */
     private static final class DisplayState {
         HeatmapThumbnailView.PaletteKind palette = HeatmapThumbnailView.PaletteKind.SEQUENTIAL;
         boolean legend = false;
@@ -192,7 +255,9 @@ public final class PairGridPane extends BorderPane {
     private final ScrollPane scroller = new ScrollPane(tilePane);
     private final StackPane contentStack = new StackPane();
 
-    /** Optional header area shown above the grid (e.g., Search/Sort). */
+    /**
+     * Optional header area shown above the grid (e.g., Search/Sort).
+     */
     private Node headerNode = null;
 
     private VBox placeholder;
@@ -222,8 +287,13 @@ public final class PairGridPane extends BorderPane {
     public static final class ExportRequest {
         public final PairItem item;
         public final WritableImage image;
-        public ExportRequest(PairItem item, WritableImage image) { this.item = item; this.image = image; }
+
+        public ExportRequest(PairItem item, WritableImage image) {
+            this.item = item;
+            this.image = image;
+        }
     }
+
     private Consumer<ExportRequest> onExportRequest;
 
     public void setOnExportRequest(Consumer<ExportRequest> handler) {
@@ -281,7 +351,9 @@ public final class PairGridPane extends BorderPane {
 
     // ---------- Header API ----------
 
-    /** Optional header node above the grid (e.g., search/sort bar). Pass null to clear. */
+    /**
+     * Optional header node above the grid (e.g., search/sort bar). Pass null to clear.
+     */
     public void setHeader(Node header) {
         this.headerNode = header;
         if (header == null) {
@@ -307,7 +379,9 @@ public final class PairGridPane extends BorderPane {
         applyFilterSortAndRender();
     }
 
-    /** Legacy add (rebuilds grid, respects filter/sort). */
+    /**
+     * Legacy add (rebuilds grid, respects filter/sort).
+     */
     public void addItem(PairItem item) {
         if (item != null) {
             allItems.add(item);
@@ -319,10 +393,10 @@ public final class PairGridPane extends BorderPane {
      * Streaming add: buffer items and flush them to the UI based on either
      * a count threshold (flushN) or a time threshold (flushMs).
      *
-     * @param item              the item to append
-     * @param flushN            flush when at least this many pending items (>=1)
-     * @param flushMs           flush if at least this many ms since last flush (>=0; 0 disables)
-     * @param incrementalSort   if true, apply current sorter on each flush; if false, preserve append order
+     * @param item            the item to append
+     * @param flushN          flush when at least this many pending items (>=1)
+     * @param flushMs         flush if at least this many ms since last flush (>=0; 0 disables)
+     * @param incrementalSort if true, apply current sorter on each flush; if false, preserve append order
      */
     public void addItemStreaming(PairItem item, int flushN, int flushMs, boolean incrementalSort) {
         if (item == null) return;
@@ -384,14 +458,18 @@ public final class PairGridPane extends BorderPane {
         }));
     }
 
-    /** Preferred columns hint; wrapping still adapts to viewport width. */
+    /**
+     * Preferred columns hint; wrapping still adapts to viewport width.
+     */
     public void setColumns(int cols) {
         this.columns = Math.max(1, cols);
         tilePane.setPrefColumns(this.columns);
         renderTiles();
     }
 
-    /** Sets the preferred content size of the heatmap region inside each tile. */
+    /**
+     * Sets the preferred content size of the heatmap region inside each tile.
+     */
     public void setCellSize(double width, double height) {
         this.cellWidth = Math.max(60, width);
         this.cellHeight = Math.max(60, height);
@@ -481,11 +559,14 @@ public final class PairGridPane extends BorderPane {
         double mx = Math.max(vmin, vmax);
         if (mx - mn < 1e-12) mx = mn + 1e-12;
         display.rangeMode = RangeMode.FIXED;
-        display.fixedMin = mn; display.fixedMax = mx;
+        display.fixedMin = mn;
+        display.fixedMax = mx;
         refreshExistingTiles();
     }
 
-    /** Computes min/max across visible items’ data (grids or res). */
+    /**
+     * Computes min/max across visible items’ data (grids or res).
+     */
     public Range computeGlobalRange() {
         double lo = Double.POSITIVE_INFINITY, hi = Double.NEGATIVE_INFINITY;
         for (PairItem it : visibleItems) {
@@ -494,12 +575,12 @@ public final class PairGridPane extends BorderPane {
                 g = (it.useCDF ? it.res.cdfAsListGrid() : it.res.pdfAsListGrid());
             }
             if (g == null) continue;
-            for (int r=0; r<g.size(); r++){
+            for (int r = 0; r < g.size(); r++) {
                 List<Double> row = g.get(r);
                 if (row == null) continue;
-                for (int c=0; c<row.size(); c++){
+                for (int c = 0; c < row.size(); c++) {
                     Double vv = row.get(c);
-                    if (vv!=null && Double.isFinite(vv)){
+                    if (vv != null && Double.isFinite(vv)) {
                         if (vv < lo) lo = vv;
                         if (vv > hi) hi = vv;
                     }
@@ -523,7 +604,9 @@ public final class PairGridPane extends BorderPane {
         renderTiles();
     }
 
-    /** Recompute visibleItems with optional sort, then render. */
+    /**
+     * Recompute visibleItems with optional sort, then render.
+     */
     private void applyFilterSortAndRenderInternal(boolean doSort) {
         List<PairItem> tmp = new ArrayList<>();
         for (PairItem it : allItems) {
@@ -597,10 +680,10 @@ public final class PairGridPane extends BorderPane {
 
         // keep programmatic border (no inline CSS classes)
         cell.setBorder(new Border(new BorderStroke(
-                Color.web("#3A3A3A"),
-                BorderStrokeStyle.SOLID,
-                new CornerRadii(6),
-                new BorderWidths(1.0)
+            Color.web("#3A3A3A"),
+            BorderStrokeStyle.SOLID,
+            new CornerRadii(6),
+            new BorderWidths(1.0)
         )));
         cell.setBackground(null);
 
@@ -681,7 +764,9 @@ public final class PairGridPane extends BorderPane {
         return cm;
     }
 
-    /** Apply current grid-wide display state to a specific view. */
+    /**
+     * Apply current grid-wide display state to a specific view.
+     */
     private void applyViewDisplay(HeatmapThumbnailView view, PairItem item) {
         // palette base is already set from the item; allow grid palette override if desired
         if (display.palette == HeatmapThumbnailView.PaletteKind.DIVERGING) {
@@ -699,7 +784,7 @@ public final class PairGridPane extends BorderPane {
 
         // Range precedence: FIXED > GLOBAL > item-setting
         if (display.rangeMode == RangeMode.FIXED &&
-                Double.isFinite(display.fixedMin) && Double.isFinite(display.fixedMax)) {
+            Double.isFinite(display.fixedMin) && Double.isFinite(display.fixedMax)) {
             view.setFixedRange(display.fixedMin, display.fixedMax);
         } else if (display.rangeMode == RangeMode.GLOBAL && globalRange != null) {
             view.setFixedRange(globalRange.vmin, globalRange.vmax);
@@ -713,7 +798,9 @@ public final class PairGridPane extends BorderPane {
         }
     }
 
-    /** Re-apply display state to all existing tiles. */
+    /**
+     * Re-apply display state to all existing tiles.
+     */
     private void refreshExistingTiles() {
         for (Node n : tilePane.getChildren()) {
             if (!(n instanceof BorderPane bp)) continue;
@@ -739,8 +826,12 @@ public final class PairGridPane extends BorderPane {
             this.globalRange = computeGlobalRange();
         }
     }
+
     // In PairGridPane (public helper)
-    public interface ViewConsumer { void accept(HeatmapThumbnailView v); }
+    public interface ViewConsumer {
+        void accept(HeatmapThumbnailView v);
+    }
+
     public void forEachView(ViewConsumer fn) {
         for (Node n : tilePane.getChildren()) {
             if (!(n instanceof BorderPane bp)) continue;

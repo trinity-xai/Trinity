@@ -17,6 +17,7 @@ import javafx.scene.Scene;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
+
 import java.util.List;
 
 public final class PairwiseJpdfPane extends LitPathPane {
@@ -24,17 +25,17 @@ public final class PairwiseJpdfPane extends LitPathPane {
     private final PairwiseJpdfView view;
 
     public PairwiseJpdfPane(
-            Scene scene,
-            Pane parent,
-            JpdfBatchEngine engine,
-            DensityCache cache,
-            PairwiseJpdfConfigPanel configPanel
+        Scene scene,
+        Pane parent,
+        JpdfBatchEngine engine,
+        DensityCache cache,
+        PairwiseJpdfConfigPanel configPanel
     ) {
         super(scene, parent,
-                1100, 760,
-                new PairwiseJpdfView(engine, cache, configPanel),
-                "Pairwise Joint Densities", "Batch",
-                420.0, 400.0);
+            1100, 760,
+            new PairwiseJpdfView(engine, cache, configPanel),
+            "Pairwise Joint Densities", "Batch",
+            420.0, 400.0);
 
         this.view = (PairwiseJpdfView) this.contentPane;
 
@@ -52,11 +53,11 @@ public final class PairwiseJpdfPane extends LitPathPane {
             GridDensityResult res = item.res;
             var gridList = res.pdfAsListGrid();
             scene.getRoot().fireEvent(new HypersurfaceGridEvent(
-                    HypersurfaceGridEvent.RENDER_PDF,
-                    gridList,
-                    res.getxCenters(),
-                    res.getyCenters(),
-                    item.xLabel + " | " + item.yLabel + " (PDF)"
+                HypersurfaceGridEvent.RENDER_PDF,
+                gridList,
+                res.getxCenters(),
+                res.getyCenters(),
+                item.xLabel + " | " + item.yLabel + " (PDF)"
             ));
             view.toast("Opened PDF in 3D.", false);
         });
@@ -76,12 +77,15 @@ public final class PairwiseJpdfPane extends LitPathPane {
     public void setCohortA(List<FeatureVector> vectors, String label) {
         view.setCohortA(vectors, label);
     }
+
     public void setCohortB(List<FeatureVector> vectors, String label) {
         view.setCohortB(vectors, label);
     }
+
     public void runWithRecipe(JpdfRecipe recipe) {
         view.runWithRecipe(recipe);
     }
+
     public PairwiseJpdfView getView() {
         return view;
     }
@@ -89,7 +93,7 @@ public final class PairwiseJpdfPane extends LitPathPane {
     @Override
     public void maximize() {
         scene.getRoot().fireEvent(
-                new ApplicationEvent(ApplicationEvent.POPOUT_PAIRWISEJPDF_JPDF, Boolean.TRUE)
+            new ApplicationEvent(ApplicationEvent.POPOUT_PAIRWISEJPDF_JPDF, Boolean.TRUE)
         );
     }
 }

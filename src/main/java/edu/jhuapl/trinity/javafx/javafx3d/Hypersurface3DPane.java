@@ -58,10 +58,12 @@ import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
+import javafx.event.Event;
 import javafx.geometry.Point2D;
 import javafx.scene.AmbientLight;
 import javafx.scene.Group;
 import javafx.scene.Node;
+import javafx.scene.Parent;
 import javafx.scene.PerspectiveCamera;
 import javafx.scene.PointLight;
 import javafx.scene.Scene;
@@ -74,6 +76,7 @@ import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.DialogPane;
 import javafx.scene.control.Label;
+import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
 import javafx.scene.control.TitledPane;
 import javafx.scene.effect.Glow;
@@ -129,9 +132,6 @@ import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.function.Function;
-import javafx.event.Event;
-import javafx.scene.Parent;
-import javafx.scene.control.Menu;
 
 /**
  * @author Sean Phillips
@@ -268,15 +268,15 @@ public class Hypersurface3DPane extends StackPane
     private SurfaceUtils.Interpolation interpMode = SurfaceUtils.Interpolation.NEAREST;
     private boolean toneEnabled = false;
     private SurfaceUtils.ToneMap toneOperator = SurfaceUtils.ToneMap.NONE;
-    private double toneParam = 2.0;    
+    private double toneParam = 2.0;
     // --- Graph layer support ---
     private final Group graphLayer = new Group(); // sits in sceneRoot
     private boolean graphVisible = true;
     private GraphDirectedCollection currentGraph = null;
     private Graph3DRenderer.Params graphParams = new Graph3DRenderer.Params()
-            .withNodeRadius(20.0)
-            .withEdgeWidth(8.0f)
-            .withPositionScalar(1.0);
+        .withNodeRadius(20.0)
+        .withEdgeWidth(8.0f)
+        .withPositionScalar(1.0);
     // Graph visual style state (synced with GraphStyleControlsView)
     private GraphStyleParams styleParams = new GraphStyleParams();
 
@@ -347,7 +347,7 @@ public class Hypersurface3DPane extends StackPane
         sceneRoot.getChildren().add(graphLayer);
         graphLayer.setVisible(graphVisible);
         // Sync controls with current visibility on startup
-        fireOnRoot(new GraphEvent(GraphEvent.SET_GRAPH_VISIBILITY_GUI, graphVisible));        
+        fireOnRoot(new GraphEvent(GraphEvent.SET_GRAPH_VISIBILITY_GUI, graphVisible));
         subScene.setCamera(camera);
         pointLight = new PointLight(Color.WHITE);
         cameraTransform.getChildren().add(pointLight);
@@ -389,34 +389,47 @@ public class Hypersurface3DPane extends StackPane
 
             change = event.isShiftDown() ? 10.0 : 1.0;
             if (keycode == KeyCode.NUMPAD7 || (keycode == KeyCode.DIGIT8)) cameraTransform.ry.setAngle(cameraTransform.ry.getAngle() + change);
-            if (keycode == KeyCode.NUMPAD9 || (keycode == KeyCode.DIGIT8 && event.isControlDown())) cameraTransform.ry.setAngle(cameraTransform.ry.getAngle() - change);
+            if (keycode == KeyCode.NUMPAD9 || (keycode == KeyCode.DIGIT8 && event.isControlDown()))
+                cameraTransform.ry.setAngle(cameraTransform.ry.getAngle() - change);
             if (keycode == KeyCode.NUMPAD4 || (keycode == KeyCode.DIGIT9)) cameraTransform.rx.setAngle(cameraTransform.rx.getAngle() + change);
-            if (keycode == KeyCode.NUMPAD6 || (keycode == KeyCode.DIGIT9 && event.isControlDown())) cameraTransform.rx.setAngle(cameraTransform.rx.getAngle() - change);
+            if (keycode == KeyCode.NUMPAD6 || (keycode == KeyCode.DIGIT9 && event.isControlDown()))
+                cameraTransform.rx.setAngle(cameraTransform.rx.getAngle() - change);
             if (keycode == KeyCode.NUMPAD1 || (keycode == KeyCode.DIGIT0)) cameraTransform.rz.setAngle(cameraTransform.rz.getAngle() + change);
-            if (keycode == KeyCode.NUMPAD3 || (keycode == KeyCode.DIGIT0 && event.isControlDown())) cameraTransform.rz.setAngle(cameraTransform.rz.getAngle() - change);
+            if (keycode == KeyCode.NUMPAD3 || (keycode == KeyCode.DIGIT0 && event.isControlDown()))
+                cameraTransform.rz.setAngle(cameraTransform.rz.getAngle() - change);
 
             if (keycode == KeyCode.COMMA) {
                 if (xFactorIndex > 0 && yFactorIndex > 0 && zFactorIndex > 0) {
-                    xFactorIndex -= 1; yFactorIndex -= 1; zFactorIndex -= 1;
+                    xFactorIndex -= 1;
+                    yFactorIndex -= 1;
+                    zFactorIndex -= 1;
                     Platform.runLater(() -> scene.getRoot().fireEvent(
                         new HyperspaceEvent(HyperspaceEvent.FACTOR_COORDINATES_KEYPRESS,
                             new CoordinateSet(xFactorIndex, yFactorIndex, zFactorIndex))));
                     boolean redraw = true;
-                    if (redraw) { updateView(false); notifyIndexChange(); }
+                    if (redraw) {
+                        updateView(false);
+                        notifyIndexChange();
+                    }
                     updateLabels();
                 }
             }
             if (keycode == KeyCode.PERIOD) {
-                int featureSize = featureVectors.isEmpty()? factorMaxIndex : featureVectors.get(0).getData().size();
+                int featureSize = featureVectors.isEmpty() ? factorMaxIndex : featureVectors.get(0).getData().size();
                 if (xFactorIndex < factorMaxIndex - 1 && yFactorIndex < factorMaxIndex - 1
                     && zFactorIndex < factorMaxIndex - 1 && xFactorIndex < featureSize - 1
                     && yFactorIndex < featureSize - 1 && zFactorIndex < featureSize - 1) {
-                    xFactorIndex += 1; yFactorIndex += 1; zFactorIndex += 1;
+                    xFactorIndex += 1;
+                    yFactorIndex += 1;
+                    zFactorIndex += 1;
                     Platform.runLater(() -> scene.getRoot().fireEvent(
                         new HyperspaceEvent(HyperspaceEvent.FACTOR_COORDINATES_KEYPRESS,
                             new CoordinateSet(xFactorIndex, yFactorIndex, zFactorIndex))));
                     boolean redraw = true;
-                    if (redraw) { updateView(false); notifyIndexChange(); }
+                    if (redraw) {
+                        updateView(false);
+                        notifyIndexChange();
+                    }
                     updateLabels();
                 } else {
                     scene.getRoot().fireEvent(new CommandTerminalEvent("Feature Index Max Reached: ("
@@ -427,8 +440,14 @@ public class Hypersurface3DPane extends StackPane
             if (keycode == KeyCode.Y) surfPlot.scaleHeight(1.1f);
             if (keycode == KeyCode.H) surfPlot.scaleHeight(0.9f);
 
-            if (keycode == KeyCode.I) { double tz = event.isShiftDown()? 50:5; glowLineBox.setTranslateZ(glowLineBox.getTranslateZ() + tz);} 
-            if (keycode == KeyCode.K) { double tz = event.isShiftDown()? 50:5; glowLineBox.setTranslateZ(glowLineBox.getTranslateZ() - tz);} 
+            if (keycode == KeyCode.I) {
+                double tz = event.isShiftDown() ? 50 : 5;
+                glowLineBox.setTranslateZ(glowLineBox.getTranslateZ() + tz);
+            }
+            if (keycode == KeyCode.K) {
+                double tz = event.isShiftDown() ? 50 : 5;
+                glowLineBox.setTranslateZ(glowLineBox.getTranslateZ() - tz);
+            }
 
             updateLabels();
             updateCalloutHeadPoints(subScene);
@@ -450,7 +469,8 @@ public class Hypersurface3DPane extends StackPane
             e.consume();
         });
         subScene.setOnScroll((ScrollEvent event) -> {
-            double modifier = 50.0; double modifierFactor = 0.1;
+            double modifier = 50.0;
+            double modifierFactor = 0.1;
             if (event.isControlDown()) modifier = 1;
             if (event.isShiftDown()) modifier = 100.0;
             double z = camera.getTranslateZ();
@@ -467,13 +487,13 @@ public class Hypersurface3DPane extends StackPane
         getChildren().clear();
         getChildren().addAll(bp, labelGroup);
 
-        
+
         MenuItem showControlsItem = new MenuItem("Hypersurface Controls");
         showControlsItem.setOnAction(e -> {
             scene.getRoot().fireEvent(new ApplicationEvent(
                 ApplicationEvent.SHOW_HYPERSPACE_CONTROLS, Boolean.TRUE));
         });
-                
+
         MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         copyAsImageItem.setOnAction((ActionEvent e) -> {
             Clipboard clipboard = Clipboard.getSystemClipboard();
@@ -491,7 +511,10 @@ public class Hypersurface3DPane extends StackPane
             File file = fileChooser.showSaveDialog(null);
             if (file != null) {
                 WritableImage image = this.snapshot(new SnapshotParameters(), null);
-                try { ImageIO.write(SwingFXUtils.fromFXImage(image, null), "png", file); } catch (IOException ioe) { }
+                try {
+                    ImageIO.write(SwingFXUtils.fromFXImage(image, null), "png", file);
+                } catch (IOException ioe) {
+                }
             }
         });
         MenuItem unrollHyperspaceItem = new MenuItem("Unroll Hyperspace Data");
@@ -512,7 +535,9 @@ public class Hypersurface3DPane extends StackPane
                 try {
                     fcf = new FeatureCollectionFile(file.getAbsolutePath(), true);
                     computeSurfaceDifference(fcf.featureCollection);
-                } catch (IOException ex) { LOG.error(null, ex); }
+                } catch (IOException ex) {
+                    LOG.error(null, ex);
+                }
             }
         });
         MenuItem cosineSimilarityItem = new MenuItem("Feature Collection Cosine Distance");
@@ -527,7 +552,9 @@ public class Hypersurface3DPane extends StackPane
                 try {
                     fcf = new FeatureCollectionFile(file.getAbsolutePath(), true);
                     computeCosineDistance(fcf.featureCollection);
-                } catch (IOException ex) { LOG.error(null, ex); }
+                } catch (IOException ex) {
+                    LOG.error(null, ex);
+                }
             }
         });
 
@@ -587,11 +614,14 @@ public class Hypersurface3DPane extends StackPane
 
         MenuItem resetViewItem = new MenuItem("Reset View");
         resetViewItem.setOnAction(e -> resetView(1000, false));
-        ContextMenu cm = new ContextMenu(showControlsItem, 
+        ContextMenu cm = new ContextMenu(showControlsItem,
             copyAsImageItem, saveSnapshotItem, unrollHyperspaceItem, analysisMenu,
             enableHoverItem, surfaceChartsItem, showDataMarkersItem, enableCrosshairsItem,
             updateAllItem, clearDataItem, resetViewItem);
-        cm.setAutoFix(true); cm.setAutoHide(true); cm.setHideOnEscape(true); cm.setOpacity(0.85);
+        cm.setAutoFix(true);
+        cm.setAutoHide(true);
+        cm.setHideOnEscape(true);
+        cm.setOpacity(0.85);
 
         subScene.setOnMouseClicked((MouseEvent e) -> {
             if (e.getButton() == MouseButton.SECONDARY) {
@@ -601,42 +631,42 @@ public class Hypersurface3DPane extends StackPane
             }
         });
 // Style params changed from GraphStyleControlsView
-this.scene.addEventHandler(GraphEvent.GRAPH_STYLE_PARAMS_CHANGED, e -> {
-    GraphStyleParams p = (GraphStyleParams) e.object;
-    if (p == null) return;
+        this.scene.addEventHandler(GraphEvent.GRAPH_STYLE_PARAMS_CHANGED, e -> {
+            GraphStyleParams p = (GraphStyleParams) e.object;
+            if (p == null) return;
 
-    // Update local style state
-    styleParams.nodeColor   = p.nodeColor;
-    styleParams.nodeRadius  = p.nodeRadius;
-    styleParams.nodeOpacity = clamp01(p.nodeOpacity);
-    styleParams.edgeColor   = p.edgeColor;
-    styleParams.edgeWidth   = p.edgeWidth;
-    styleParams.edgeOpacity = clamp01(p.edgeOpacity);
+            // Update local style state
+            styleParams.nodeColor = p.nodeColor;
+            styleParams.nodeRadius = p.nodeRadius;
+            styleParams.nodeOpacity = clamp01(p.nodeOpacity);
+            styleParams.edgeColor = p.edgeColor;
+            styleParams.edgeWidth = p.edgeWidth;
+            styleParams.edgeOpacity = clamp01(p.edgeOpacity);
 
-    // Apply style. Rebuild graph only if edge width changed.
-    applyGraphStyle(styleParams, /*rebuildIfNeeded*/ true);
-});
+            // Apply style. Rebuild graph only if edge width changed.
+            applyGraphStyle(styleParams, /*rebuildIfNeeded*/ true);
+        });
 
 // Reset style defaults
-this.scene.addEventHandler(GraphEvent.GRAPH_STYLE_RESET_DEFAULTS, e -> {
-    styleParams = new GraphStyleParams(); // back to defaults
+        this.scene.addEventHandler(GraphEvent.GRAPH_STYLE_RESET_DEFAULTS, e -> {
+            styleParams = new GraphStyleParams(); // back to defaults
 
-    // Keep renderer params consistent for rebuilds
-    graphParams.withNodeRadius(styleParams.nodeRadius)
-               .withEdgeWidth((float) styleParams.edgeWidth);
+            // Keep renderer params consistent for rebuilds
+            graphParams.withNodeRadius(styleParams.nodeRadius)
+                .withEdgeWidth((float) styleParams.edgeWidth);
 
-    // Rebuild (edge width) then apply everything else live
-    if (currentGraph != null) {
-        graphLayer.getChildren().setAll(
-            Graph3DRenderer.buildGraphGroup(currentGraph, graphParams)
-        );
-    }
-    applyGraphStyle(styleParams, /*rebuildIfNeeded*/ false);
+            // Rebuild (edge width) then apply everything else live
+            if (currentGraph != null) {
+                graphLayer.getChildren().setAll(
+                    Graph3DRenderer.buildGraphGroup(currentGraph, graphParams)
+                );
+            }
+            applyGraphStyle(styleParams, /*rebuildIfNeeded*/ false);
 
-    // GUI-sync so controls show defaults
-    fireOnRoot(new GraphEvent(GraphEvent.SET_STYLE_GUI, styleParams));
-});
-        
+            // GUI-sync so controls show defaults
+            fireOnRoot(new GraphEvent(GraphEvent.SET_STYLE_GUI, styleParams));
+        });
+
         this.scene.addEventHandler(GraphEvent.NEW_GRAPHDIRECTED_COLLECTION, e -> {
             if (!(e.object instanceof GraphDirectedCollection gc)) return;
             currentGraph = gc;
@@ -656,15 +686,18 @@ this.scene.addEventHandler(GraphEvent.GRAPH_STYLE_RESET_DEFAULTS, e -> {
 
         loadSurf3D();
         this.scene.addEventHandler(HyperspaceEvent.HYPERSPACE_BACKGROUND_COLOR, e -> {
-            Color color = (Color) e.object; subScene.setFill(color);
+            Color color = (Color) e.object;
+            subScene.setFill(color);
         });
         this.scene.addEventHandler(HyperspaceEvent.ENABLE_HYPERSPACE_SKYBOX, e -> {
             skybox.setVisible((Boolean) e.object);
         });
         this.scene.addEventHandler(ImageEvent.NEW_TEXTURE_SURFACE, e -> {
             Image image = (Image) e.object;
-            int x1 = 0; int y1 = 0;
-            int x2 = (int) image.getWidth(); int y2 = (int) image.getHeight();
+            int x1 = 0;
+            int y1 = 0;
+            int x2 = (int) image.getWidth();
+            int y2 = (int) image.getHeight();
             if (x2 > 512 || y2 > 512) {
                 boolean split = false;
                 Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
@@ -707,15 +740,33 @@ this.scene.addEventHandler(GraphEvent.GRAPH_STYLE_RESET_DEFAULTS, e -> {
             if (newFactorMaxIndex < factorMaxIndex) {
                 factorMaxIndex = newFactorMaxIndex;
                 boolean update = false;
-                if (xFactorIndex > factorMaxIndex) { xFactorIndex = factorMaxIndex; update = true; }
-                if (yFactorIndex > factorMaxIndex) { yFactorIndex = factorMaxIndex; update = true; }
-                if (zFactorIndex > factorMaxIndex) { zFactorIndex = factorMaxIndex; update = true; }
-                if (update) { updateView(true); notifyIndexChange(); }
+                if (xFactorIndex > factorMaxIndex) {
+                    xFactorIndex = factorMaxIndex;
+                    update = true;
+                }
+                if (yFactorIndex > factorMaxIndex) {
+                    yFactorIndex = factorMaxIndex;
+                    update = true;
+                }
+                if (zFactorIndex > factorMaxIndex) {
+                    zFactorIndex = factorMaxIndex;
+                    update = true;
+                }
+                if (update) {
+                    updateView(true);
+                    notifyIndexChange();
+                }
             } else factorMaxIndex = newFactorMaxIndex;
         });
 
-        scene.addEventHandler(HypersurfaceGridEvent.RENDER_PDF, e -> { applySurfaceGridToHypersurface(e.getZGrid()); e.consume(); });
-        scene.addEventHandler(HypersurfaceGridEvent.RENDER_CDF, e -> { applySurfaceGridToHypersurface(e.getZGrid()); e.consume(); });
+        scene.addEventHandler(HypersurfaceGridEvent.RENDER_PDF, e -> {
+            applySurfaceGridToHypersurface(e.getZGrid());
+            e.consume();
+        });
+        scene.addEventHandler(HypersurfaceGridEvent.RENDER_CDF, e -> {
+            applySurfaceGridToHypersurface(e.getZGrid());
+            e.consume();
+        });
 
         scene.addEventHandler(HyperspaceEvent.NODE_QUEUELIMIT_GUI, e -> queueLimit = (int) e.object);
         scene.addEventHandler(HyperspaceEvent.REFRESH_RATE_GUI, e -> hypersurfaceRefreshRate = (long) e.object);
@@ -731,84 +782,98 @@ this.scene.addEventHandler(GraphEvent.GRAPH_STYLE_RESET_DEFAULTS, e -> {
             updateTheMesh();
         });
         AnimationTimer surfUpdateAnimationTimer = new AnimationTimer() {
-            long sleepNs = 0; long prevTime = 0; long NANOS_IN_MILLI = 1_000_000;
-            @Override public void handle(long now) {
+            long sleepNs = 0;
+            long prevTime = 0;
+            long NANOS_IN_MILLI = 1_000_000;
+
+            @Override
+            public void handle(long now) {
                 sleepNs = hypersurfaceRefreshRate * NANOS_IN_MILLI;
-                if ((now - prevTime) < sleepNs) return; prevTime = now;
+                if ((now - prevTime) < sleepNs) return;
+                prevTime = now;
                 long startTime;
-                if (computeRandos) { generateRandos(xWidth, zWidth, yScale); }
-                if (animated || isDirty) { startTime = System.nanoTime(); updateTheMesh(); LOG.info("updateTheMesh(): {}", Utils.totalTimeString(startTime)); }
+                if (computeRandos) {
+                    generateRandos(xWidth, zWidth, yScale);
+                }
+                if (animated || isDirty) {
+                    startTime = System.nanoTime();
+                    updateTheMesh();
+                    LOG.info("updateTheMesh(): {}", Utils.totalTimeString(startTime));
+                }
             }
         };
         surfUpdateAnimationTimer.start();
     }
-/** Apply style to current graph. Rebuild only if edge-width changed and requested. */
-private void applyGraphStyle(GraphStyleParams p, boolean rebuildIfNeeded) {
-    if (p == null) return;
 
-    // Determine if edge width differs from the built state
-    double currentEdgeWidth = graphParams.edgeWidth; // float in params, promoted to double
-    boolean needRebuild = Math.abs(p.edgeWidth - currentEdgeWidth) > 1e-6;
+    /**
+     * Apply style to current graph. Rebuild only if edge-width changed and requested.
+     */
+    private void applyGraphStyle(GraphStyleParams p, boolean rebuildIfNeeded) {
+        if (p == null) return;
 
-    if (needRebuild && rebuildIfNeeded && currentGraph != null) {
-        // Update params and rebuild to reflect edge width + node radius
-        graphParams.withNodeRadius(p.nodeRadius)
-                   .withEdgeWidth((float) p.edgeWidth);
-        graphLayer.getChildren().setAll(
-            Graph3DRenderer.buildGraphGroup(currentGraph, graphParams)
-        );
-    }
+        // Determine if edge width differs from the built state
+        double currentEdgeWidth = graphParams.edgeWidth; // float in params, promoted to double
+        boolean needRebuild = Math.abs(p.edgeWidth - currentEdgeWidth) > 1e-6;
 
-    // Apply color/opacity/radius live to existing nodes/edges
-    for (Node n : graphLayer.getChildren()) {
-        applyGraphStyleRecursive(n, p);
-    }
-}
-
-private void applyGraphStyleRecursive(Node n, GraphStyleParams p) {
-    if (n instanceof AnimatedSphere s) {
-        // color
-        if (p.nodeColor != null) {
-            s.setColor(new Color(
-                p.nodeColor.getRed(),
-                p.nodeColor.getGreen(),
-                p.nodeColor.getBlue(),
-                // keep whatever alpha the sphere currently has; set below
-                s.getPhongMaterial().getDiffuseColor() != null
-                    ? s.getPhongMaterial().getDiffuseColor().getOpacity()
-                    : 1.0
-            ));
+        if (needRebuild && rebuildIfNeeded && currentGraph != null) {
+            // Update params and rebuild to reflect edge width + node radius
+            graphParams.withNodeRadius(p.nodeRadius)
+                .withEdgeWidth((float) p.edgeWidth);
+            graphLayer.getChildren().setAll(
+                Graph3DRenderer.buildGraphGroup(currentGraph, graphParams)
+            );
         }
-        // radius
-        s.setSphereRadius(p.nodeRadius);
-        // opacity via material alpha
-        s.setMaterialOpacity(p.nodeOpacity);
 
-    } else if (n instanceof Tracer t) {
-        // color
-        if (p.edgeColor != null) {
-            t.setDiffuseColor(new Color(
-                p.edgeColor.getRed(),
-                p.edgeColor.getGreen(),
-                p.edgeColor.getBlue(),
-                // keep current alpha; set below
-                1.0
-            ));
-        }
-        // opacity via material alpha
-        t.setOpacityAlpha(p.edgeOpacity);
-
-    } else if (n instanceof Parent parent) {
-        for (Node c : parent.getChildrenUnmodifiable()) {
-            applyGraphStyleRecursive(c, p);
+        // Apply color/opacity/radius live to existing nodes/edges
+        for (Node n : graphLayer.getChildren()) {
+            applyGraphStyleRecursive(n, p);
         }
     }
-}
+
+    private void applyGraphStyleRecursive(Node n, GraphStyleParams p) {
+        if (n instanceof AnimatedSphere s) {
+            // color
+            if (p.nodeColor != null) {
+                s.setColor(new Color(
+                    p.nodeColor.getRed(),
+                    p.nodeColor.getGreen(),
+                    p.nodeColor.getBlue(),
+                    // keep whatever alpha the sphere currently has; set below
+                    s.getPhongMaterial().getDiffuseColor() != null
+                        ? s.getPhongMaterial().getDiffuseColor().getOpacity()
+                        : 1.0
+                ));
+            }
+            // radius
+            s.setSphereRadius(p.nodeRadius);
+            // opacity via material alpha
+            s.setMaterialOpacity(p.nodeOpacity);
+
+        } else if (n instanceof Tracer t) {
+            // color
+            if (p.edgeColor != null) {
+                t.setDiffuseColor(new Color(
+                    p.edgeColor.getRed(),
+                    p.edgeColor.getGreen(),
+                    p.edgeColor.getBlue(),
+                    // keep current alpha; set below
+                    1.0
+                ));
+            }
+            // opacity via material alpha
+            t.setOpacityAlpha(p.edgeOpacity);
+
+        } else if (n instanceof Parent parent) {
+            for (Node c : parent.getChildrenUnmodifiable()) {
+                applyGraphStyleRecursive(c, p);
+            }
+        }
+    }
 
 
-private static double clamp01(double v) {
-    return Math.max(0.0, Math.min(1.0, v));
-}
+    private static double clamp01(double v) {
+        return Math.max(0.0, Math.min(1.0, v));
+    }
 
     public void computeCosineDistance(FeatureCollection collection) {
         double[][] newRayRay = collection.convertFeaturesToArray();
@@ -821,8 +886,8 @@ private static double clamp01(double v) {
         }
         scene.getRoot().fireEvent(new FactorAnalysisEvent(
             FactorAnalysisEvent.ANALYSIS_DATA_VECTOR, "Feature Collection Cosine Similarity",
-                cosineDistancesGrid.toArray(Double[]::new)));
-        System.out.println(cosineDistancesGrid.toString());
+            cosineDistancesGrid.toArray(Double[]::new)));
+        LOG.info("{}", cosineDistancesGrid);
     }
 
     private void applySurfaceGridToHypersurface(List<List<Double>> grid) {
@@ -911,13 +976,20 @@ private static double clamp01(double v) {
 
     public Callout createCallout(Shape3D shape3D, FeatureVector featureVector, SubScene subScene) {
         ImageView iv = loadImageView(featureVector, featureVector.isBBoxValid());
-        iv.setPreserveRatio(true); iv.setFitWidth(CHIP_FIT_WIDTH); iv.setFitHeight(CHIP_FIT_WIDTH);
-        TitledPane imageTP = new TitledPane(); imageTP.setContent(iv); imageTP.setText("Imagery");
+        iv.setPreserveRatio(true);
+        iv.setFitWidth(CHIP_FIT_WIDTH);
+        iv.setFitHeight(CHIP_FIT_WIDTH);
+        TitledPane imageTP = new TitledPane();
+        imageTP.setContent(iv);
+        imageTP.setText("Imagery");
         Point2D p2D = JavaFX3DUtils.getTransformedP2D(shape3D, subScene, Callout.DEFAULT_HEAD_RADIUS + 5);
         StringBuilder sb = new StringBuilder();
-        for (Map.Entry<String, String> entry : featureVector.getMetaData().entrySet()) sb.append(entry.getKey()).append(" : ").append(entry.getValue()).append("\n");
+        for (Map.Entry<String, String> entry : featureVector.getMetaData().entrySet())
+            sb.append(entry.getKey()).append(" : ").append(entry.getValue()).append("\n");
         Text metaText = new Text(sb.toString());
-        TitledPane metaTP = new TitledPane(); metaTP.setContent(metaText); metaTP.setText("Metadata");
+        TitledPane metaTP = new TitledPane();
+        metaTP.setContent(metaText);
+        metaTP.setText("Metadata");
         Callout infoCallout = CalloutBuilder.create()
             .headPoint(p2D.getX(), p2D.getY())
             .leaderLineToPoint(p2D.getX() - 100, p2D.getY() - 150)
@@ -929,7 +1001,9 @@ private static double clamp01(double v) {
         infoCallout.setPickOnBounds(false);
         infoCallout.setManaged(false);
         addCallout(infoCallout, shape3D);
-        infoCallout.play().setOnFinished(eh -> { if (null == featureVector.getImageURL() || featureVector.getImageURL().isBlank()) imageTP.setExpanded(false); });
+        infoCallout.play().setOnFinished(eh -> {
+            if (null == featureVector.getImageURL() || featureVector.getImageURL().isBlank()) imageTP.setExpanded(false);
+        });
         return infoCallout;
     }
 
@@ -1005,13 +1079,29 @@ private static double clamp01(double v) {
                 texCoords[index] = currX;
                 texCoords[index + 1] = currZ;
 
-                p00 = z * numDivX + x; p01 = p00 + 1; p10 = p00 + numDivX; p11 = p10 + 1;
-                tc00 = z * numDivX + x; tc01 = tc00 + 1; tc10 = tc00 + numDivX; tc11 = tc10 + 1;
+                p00 = z * numDivX + x;
+                p01 = p00 + 1;
+                p10 = p00 + numDivX;
+                p11 = p10 + 1;
+                tc00 = z * numDivX + x;
+                tc01 = tc00 + 1;
+                tc10 = tc00 + numDivX;
+                tc11 = tc10 + 1;
 
                 index = (z * subDivX * faceSize + (x * faceSize)) * 2;
-                faces[index + 0] = p00; faces[index + 1] = tc00; faces[index + 2] = p10; faces[index + 3] = tc10; faces[index + 4] = p11; faces[index + 5] = tc11;
+                faces[index + 0] = p00;
+                faces[index + 1] = tc00;
+                faces[index + 2] = p10;
+                faces[index + 3] = tc10;
+                faces[index + 4] = p11;
+                faces[index + 5] = tc11;
                 index += faceSize;
-                faces[index + 0] = p11; faces[index + 1] = tc11; faces[index + 2] = p01; faces[index + 3] = tc01; faces[index + 4] = p00; faces[index + 5] = tc00;
+                faces[index + 0] = p11;
+                faces[index + 1] = tc11;
+                faces[index + 2] = p01;
+                faces[index + 3] = tc01;
+                faces[index + 4] = p00;
+                faces[index + 5] = tc00;
                 diffusePaintImage.getPixelWriter().setColor(x, z, Color.TRANSPARENT);
             }
         }
@@ -1048,7 +1138,7 @@ private static double clamp01(double v) {
         Image front = new Image(ImageResourceProvider.getResource("1500_blackgrid.png").toExternalForm());
         Image back = new Image(ImageResourceProvider.getResource("1500_blackgrid.png").toExternalForm());
         double size = 100000D;
-        skybox = new Skybox(top,bottom,left,right,front,back,size,camera);
+        skybox = new Skybox(top, bottom, left, right, front, back, size, camera);
         sceneRoot.getChildren().add(skybox);
         ambientLight.getScope().addAll(skybox);
         skybox.setVisible(false);
@@ -1075,19 +1165,28 @@ private static double clamp01(double v) {
         JavaFX3DUtils.zoomTransition(milliseconds, camera, cameraDistance);
     }
 
-    public void outtro(double milliseconds) { JavaFX3DUtils.zoomTransition(milliseconds, camera, DEFAULT_INTRO_DISTANCE); }
+    public void outtro(double milliseconds) {
+        JavaFX3DUtils.zoomTransition(milliseconds, camera, DEFAULT_INTRO_DISTANCE);
+    }
 
-    public void updateAll() { Platform.runLater(() -> updateView(true)); }
+    public void updateAll() {
+        Platform.runLater(() -> updateView(true));
+    }
 
     private void mouseDragCamera(MouseEvent me) {
-        mouseOldX = mousePosX; mouseOldY = mousePosY;
-        mousePosX = me.getSceneX(); mousePosY = me.getSceneY();
-        mouseDeltaX = (mousePosX - mouseOldX); mouseDeltaY = (mousePosY - mouseOldY);
-        double modifier = 1.0; double modifierFactor = 0.1;
+        mouseOldX = mousePosX;
+        mouseOldY = mousePosY;
+        mousePosX = me.getSceneX();
+        mousePosY = me.getSceneY();
+        mouseDeltaX = (mousePosX - mouseOldX);
+        mouseDeltaY = (mousePosY - mouseOldY);
+        double modifier = 1.0;
+        double modifierFactor = 0.1;
         if (me.isControlDown()) modifier = 0.1;
         if (me.isShiftDown()) modifier = 25.0;
         if (me.isPrimaryButtonDown()) {
-            if (me.isAltDown()) cameraTransform.rz.setAngle(((cameraTransform.rz.getAngle() + mouseDeltaX * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180);
+            if (me.isAltDown())
+                cameraTransform.rz.setAngle(((cameraTransform.rz.getAngle() + mouseDeltaX * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180);
             else {
                 cameraTransform.ry.setAngle(((cameraTransform.ry.getAngle() + mouseDeltaX * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180);
                 cameraTransform.rx.setAngle(((cameraTransform.rx.getAngle() - mouseDeltaY * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180);
@@ -1103,7 +1202,8 @@ private static double clamp01(double v) {
     private void updateLabels() {
         shape3DToLabel.forEach((shape3D, node) -> {
             Point2D p2Ditty = JavaFX3DUtils.getTransformedP2D(shape3D, subScene, 5);
-            double x = p2Ditty.getX(); double y = p2Ditty.getY() - 25;
+            double x = p2Ditty.getX();
+            double y = p2Ditty.getY() - 25;
             node.getTransforms().setAll(new Translate(x, y));
         });
     }
@@ -1121,21 +1221,26 @@ private static double clamp01(double v) {
             } else if (null != featureVector.getImageURL() && !featureVector.getImageURL().isBlank()) {
                 iv = new ImageView(ResourceUtils.loadImageFile(imageryBasePath + featureVector.getImageURL()));
             } else iv = new ImageView(ResourceUtils.loadIconFile("noimage"));
-        } catch (Exception ex) { iv = new ImageView(ResourceUtils.loadIconFile("noimage")); }
+        } catch (Exception ex) {
+            iv = new ImageView(ResourceUtils.loadIconFile("noimage"));
+        }
         return iv;
     }
 
     public void updateView(boolean forcePNodeUpdate) {
         if (null != surfPlot) {
             Platform.runLater(() -> {
-                if (heightChanged) { heightChanged = false; }
+                if (heightChanged) {
+                    heightChanged = false;
+                }
                 isDirty = false;
             });
         }
     }
 
     private void generateRandos(int xWidth, int zWidth, float yScale) {
-        if (null == dataGrid) dataGrid = new ArrayList<>(zWidth); else dataGrid.clear();
+        if (null == dataGrid) dataGrid = new ArrayList<>(zWidth);
+        else dataGrid.clear();
         List<Double> xList;
         for (int z = 0; z < zWidth; z++) {
             xList = new ArrayList<>(xWidth);
@@ -1144,33 +1249,33 @@ private static double clamp01(double v) {
         }
     }
 
-private static double frac(double v) {
-    v = v - Math.floor(v);
-    return (v < 0) ? v + 1.0 : v;
-}
-
-private Number vertToHeight(Vert3D p) {
-    if (dataGrid == null) return 0.0;
-
-    if (!surfaceRender) {
-        // cylinder path unchanged
-        return findBlerpHeight(p);
+    private static double frac(double v) {
+        v = v - Math.floor(v);
+        return (v < 0) ? v + 1.0 : v;
     }
-    switch (interpMode) {
-        case BILINEAR:
-        case BICUBIC: {
-            // Convert to grid space: index + in-cell fraction.
-            // If p.getX()/getY() are already grid-space, this still works.
-            // If they are world-space, the /surfScale fixes it.
-            double gx = p.xIndex + frac(p.getX() / Math.max(1.0, (double) surfScale));
-            double gy = p.yIndex + frac(p.getY() / Math.max(1.0, (double) surfScale));
-            return SurfaceUtils.sample(dataGrid, gx, gy, interpMode);
+
+    private Number vertToHeight(Vert3D p) {
+        if (dataGrid == null) return 0.0;
+
+        if (!surfaceRender) {
+            // cylinder path unchanged
+            return findBlerpHeight(p);
         }
-        case NEAREST:
-        default:
-            return lookupPoint(p);
+        switch (interpMode) {
+            case BILINEAR:
+            case BICUBIC: {
+                // Convert to grid space: index + in-cell fraction.
+                // If p.getX()/getY() are already grid-space, this still works.
+                // If they are world-space, the /surfScale fixes it.
+                double gx = p.xIndex + frac(p.getX() / Math.max(1.0, (double) surfScale));
+                double gy = p.yIndex + frac(p.getY() / Math.max(1.0, (double) surfScale));
+                return SurfaceUtils.sample(dataGrid, gx, gy, interpMode);
+            }
+            case NEAREST:
+            default:
+                return lookupPoint(p);
+        }
     }
-}
 
     private Number lookupPoint(Vert3D p) {
         if (p.yIndex >= dataGrid.size() || p.xIndex >= dataGrid.get(0).size()) return 0.0;
@@ -1199,7 +1304,8 @@ private Number vertToHeight(Vert3D p) {
         return f12 + (f34 - f12) * yratio;
     }
 
-    int vert; Point3D vertP3D;
+    int vert;
+    Point3D vertP3D;
 
     private void loadSurf3D() {
         LOG.info("Rendering Hypersurface Mesh...");
@@ -1227,19 +1333,29 @@ private Number vertToHeight(Vert3D p) {
                     if (row < featureVectors.size()) updateCalloutByFeatureVector(anchorCallout, featureVectors.get(row));
                     setSpheroidAnchor(false, row);
                 }
-                if (crosshairsEnabled) { paintSingleColor(Color.TRANSPARENT); illuminateCrosshair(vertP3D); }
+                if (crosshairsEnabled) {
+                    paintSingleColor(Color.TRANSPARENT);
+                    illuminateCrosshair(vertP3D);
+                }
                 if (surfaceChartsEnabled) {
-                    List<Double> xlist = dataGrid.get(Math.max(0, Math.min(row, dataGrid.size()-1)));
+                    List<Double> xlist = dataGrid.get(Math.max(0, Math.min(row, dataGrid.size() - 1)));
                     Double[] xRay = xlist.toArray(Double[]::new);
                     Double[] zRay = new Double[dataGrid.size()];
-                    for (int i = 0; i < dataGrid.size(); i++) zRay[i] = dataGrid.get(i).get(Math.max(0, Math.min(column, dataGrid.get(0).size()-1)));
+                    for (int i = 0; i < dataGrid.size(); i++) zRay[i] = dataGrid.get(i).get(Math.max(0, Math.min(column, dataGrid.get(0).size() - 1)));
                     String text = "Coordinates: " + column + ", " + row + System.lineSeparator();
-                    text = text.concat("Value: ").concat(String.valueOf(dataGrid.get(Math.max(0, Math.min(row, dataGrid.size()-1))).get(Math.max(0, Math.min(column, dataGrid.get(0).size()-1))))).concat(System.lineSeparator());
-                    double maxX = xlist.stream().max(Double::compare).get(); text = text.concat("Max X: ").concat(String.valueOf(maxX)).concat(System.lineSeparator());
-                    double minX = xlist.stream().min(Double::compare).get(); text = text.concat("Min X: ").concat(String.valueOf(minX)).concat(System.lineSeparator());
-                    double maxZ = Arrays.stream(zRay).max(Double::compare).get(); text = text.concat("Max Z: ").concat(String.valueOf(maxZ)).concat(System.lineSeparator());
-                    double minZ = Arrays.stream(zRay).min(Double::compare).get(); text = text.concat("Min Z: ").concat(String.valueOf(minZ)).concat(System.lineSeparator());
-                    hoverText.setText(text); hoverText.setStrokeWidth(1); hoverText.setLayoutX(50); hoverText.setLayoutY(50);
+                    text = text.concat("Value: ").concat(String.valueOf(dataGrid.get(Math.max(0, Math.min(row, dataGrid.size() - 1))).get(Math.max(0, Math.min(column, dataGrid.get(0).size() - 1))))).concat(System.lineSeparator());
+                    double maxX = xlist.stream().max(Double::compare).get();
+                    text = text.concat("Max X: ").concat(String.valueOf(maxX)).concat(System.lineSeparator());
+                    double minX = xlist.stream().min(Double::compare).get();
+                    text = text.concat("Min X: ").concat(String.valueOf(minX)).concat(System.lineSeparator());
+                    double maxZ = Arrays.stream(zRay).max(Double::compare).get();
+                    text = text.concat("Max Z: ").concat(String.valueOf(maxZ)).concat(System.lineSeparator());
+                    double minZ = Arrays.stream(zRay).min(Double::compare).get();
+                    text = text.concat("Min Z: ").concat(String.valueOf(minZ)).concat(System.lineSeparator());
+                    hoverText.setText(text);
+                    hoverText.setStrokeWidth(1);
+                    hoverText.setLayoutX(50);
+                    hoverText.setLayoutY(50);
                     scene.getRoot().fireEvent(new FactorAnalysisEvent(FactorAnalysisEvent.SURFACE_XFACTOR_VECTOR, xRay));
                     scene.getRoot().fireEvent(new FactorAnalysisEvent(FactorAnalysisEvent.SURFACE_ZFACTOR_VECTOR, zRay));
                 }
@@ -1248,7 +1364,8 @@ private Number vertToHeight(Vert3D p) {
         });
 
         Glow glow = new Glow(0.8);
-        double poleHeight = 60; double radius = 3;
+        double poleHeight = 60;
+        double radius = 3;
         glowLineBox = new Box(xWidth * surfScale, poleHeight, radius);
         glowLineBox.setMaterial(new PhongMaterial(Color.ALICEBLUE.deriveColor(1, 1, 1, 0.2)));
         glowLineBox.setDrawMode(DrawMode.FILL);
@@ -1261,8 +1378,10 @@ private Number vertToHeight(Vert3D p) {
         PhongMaterial eastPoleMaterial = new PhongMaterial(Color.STEELBLUE);
         PhongMaterial westPoleMaterial = new PhongMaterial(Color.STEELBLUE);
         PhongMaterial knobMaterial = new PhongMaterial(Color.ALICEBLUE);
-        eastPole.setMaterial(eastPoleMaterial); westPole.setMaterial(westPoleMaterial);
-        eastKnob.setMaterial(knobMaterial); westKnob.setMaterial(knobMaterial);
+        eastPole.setMaterial(eastPoleMaterial);
+        westPole.setMaterial(westPoleMaterial);
+        eastKnob.setMaterial(knobMaterial);
+        westKnob.setMaterial(knobMaterial);
         eastPole.setTranslateX((xWidth * surfScale) / 2.0);
         westPole.setTranslateX(-(xWidth * surfScale) / 2.0);
         eastKnob.setTranslateX((xWidth * surfScale) / 2.0);
@@ -1274,19 +1393,26 @@ private Number vertToHeight(Vert3D p) {
         eastKnob.translateZProperty().bind(glowLineBox.translateZProperty());
         westKnob.translateZProperty().bind(glowLineBox.translateZProperty());
 
-        eastLabel = new Label("Data Index"); eastLabel.setTextFill(Color.ALICEBLUE); eastLabel.setFont(new Font("calibri", 20));
-        westLabel = new Label("Data Index"); westLabel.setTextFill(Color.ALICEBLUE); westLabel.setFont(new Font("calibri", 20));
+        eastLabel = new Label("Data Index");
+        eastLabel.setTextFill(Color.ALICEBLUE);
+        eastLabel.setFont(new Font("calibri", 20));
+        westLabel = new Label("Data Index");
+        westLabel.setTextFill(Color.ALICEBLUE);
+        westLabel.setFont(new Font("calibri", 20));
         labelGroup.getChildren().addAll(eastLabel, westLabel);
-        shape3DToLabel.put(eastKnob, eastLabel); shape3DToLabel.put(westKnob, westLabel);
+        shape3DToLabel.put(eastKnob, eastLabel);
+        shape3DToLabel.put(westKnob, westLabel);
 
         scene.addEventHandler(TimelineEvent.TIMELINE_SAMPLE_INDEX, e -> {
             anchorIndex = (int) e.object;
-            if (anchorIndex < 0) anchorIndex = 0; else if (anchorIndex > dataGrid.size()) anchorIndex = dataGrid.size();
+            if (anchorIndex < 0) anchorIndex = 0;
+            else if (anchorIndex > dataGrid.size()) anchorIndex = dataGrid.size();
             glowLineBox.setTranslateZ((anchorIndex * surfScale) - ((zWidth * surfScale) / 2.0));
             setSpheroidAnchor(true, anchorIndex);
             eastLabel.setText("Sample: " + anchorIndex + ", Neural Feature: " + xWidth);
             westLabel.setText("Sample: " + anchorIndex + ", Neural Feature: 0");
-            updateLabels(); updateCalloutHeadPoints(subScene);
+            updateLabels();
+            updateCalloutHeadPoints(subScene);
         });
         scene.addEventHandler(FeatureVectorEvent.SELECT_FEATURE_VECTOR, e -> {
             if (null != anchorCallout) {
@@ -1315,8 +1441,9 @@ private Number vertToHeight(Vert3D p) {
             });
         });
     }
-    /** 
-     * Fires HypersurfaceEvent GUI sync events for all core geometry controls 
+
+    /**
+     * Fires HypersurfaceEvent GUI sync events for all core geometry controls
      * (xWidth, zWidth, yScale, surfScale) to synchronize GUI controls with model state.
      */
     public void syncGuiControls() {
@@ -1328,8 +1455,8 @@ private Number vertToHeight(Vert3D p) {
         fireOnRoot(HypersurfaceEvent.setSurfScaleGUI(surfScale));
     }
 
-    /** 
-     * Helper to fire on the JavaFX root, or self as fallback (copy this if not already present) 
+    /**
+     * Helper to fire on the JavaFX root, or self as fallback (copy this if not already present)
      */
     private void fireOnRoot(Event evt) {
         if (scene != null && scene.getRoot() != null) {
@@ -1338,7 +1465,7 @@ private Number vertToHeight(Vert3D p) {
             this.fireEvent(evt);
         }
     }
-    
+
     /**
      * Sets up event handlers for HypersurfaceEvents sent from HypersurfaceControlsPane.
      * Updates all rendering state and triggers updates as needed.
@@ -1504,7 +1631,7 @@ private Number vertToHeight(Vert3D p) {
 
             scene.getRoot().fireEvent(new CommandTerminalEvent(
                 "Edge hover: " + a.map(Object::toString).orElse("?") + " → " +
-                b.map(Object::toString).orElse("?") + " | weight = " + w,
+                    b.map(Object::toString).orElse("?") + " | weight = " + w,
                 new Font("Consolas", 16), Color.ALICEBLUE
             ));
         });
@@ -1516,15 +1643,16 @@ private Number vertToHeight(Vert3D p) {
             scene.getRoot().fireEvent(new FactorAnalysisEvent(
                 FactorAnalysisEvent.ANALYSIS_DATA_VECTOR,
                 "Graph Edge Weight (click): " + ge.getStartID() + " → " + ge.getEndID(),
-                new Double[]{ w }
+                new Double[]{w}
             ));
         });
         scene.addEventHandler(GraphEvent.GRAPH_VISIBILITY_CHANGED, e -> {
             if (!(e.object instanceof Boolean b)) return;
             graphVisible = b;
             graphLayer.setVisible(graphVisible);
-        });        
+        });
     }
+
     public void updateCalloutByFeatureVector(Callout callout, FeatureVector featureVector) {
         callout.setMainTitleText(featureVector.getLabel());
         callout.mainTitleTextNode.setText(callout.getMainTitleText());
@@ -1534,7 +1662,8 @@ private Number vertToHeight(Vert3D p) {
         Image image = iv.getImage();
         ((ImageView) tp0.getContent()).setImage(image);
         StringBuilder sb = new StringBuilder();
-        for (Map.Entry<String, String> entry : featureVector.getMetaData().entrySet()) sb.append(entry.getKey()).append(" : ").append(entry.getValue()).append("\n");
+        for (Map.Entry<String, String> entry : featureVector.getMetaData().entrySet())
+            sb.append(entry.getKey()).append(" : ").append(entry.getValue()).append("\n");
         TitledPane tp1 = (TitledPane) vbox.getChildren().get(1);
         ((Text) tp1.getContent()).setText(sb.toString());
     }
@@ -1555,7 +1684,9 @@ private Number vertToHeight(Vert3D p) {
     }
 
     public void clearAll() {
-        xFactorIndex = 0; yFactorIndex = 1; zFactorIndex = 2;
+        xFactorIndex = 0;
+        yFactorIndex = 1;
+        zFactorIndex = 2;
         Platform.runLater(() -> scene.getRoot().fireEvent(
             new HyperspaceEvent(HyperspaceEvent.FACTOR_COORDINATES_KEYPRESS,
                 new CoordinateSet(xFactorIndex, yFactorIndex, zFactorIndex))));
@@ -1571,7 +1702,9 @@ private Number vertToHeight(Vert3D p) {
         originalGrid.clear();
     }
 
-    public void showAll() { updateView(true); }
+    public void showAll() {
+        updateView(true);
+    }
 
     public void hideFA3D() {
         Timeline timeline = new Timeline(
@@ -1596,19 +1729,64 @@ private Number vertToHeight(Vert3D p) {
         timeline.playFromStart();
     }
 
-    @Override public void setFeatureCollection(FeatureCollection fc) { featureVectors = fc.getFeatures(); }
+    @Override
+    public void setFeatureCollection(FeatureCollection fc) {
+        featureVectors = fc.getFeatures();
+    }
 
     public void findClusters(ManifoldEvent.ProjectionConfig pc) {
         if (pc.dataSource != ManifoldEvent.ProjectionConfig.DATA_SOURCE.HYPERSURFACE) return;
         double[][] observations = FeatureCollection.toData(featureVectors);
         double projectionScalar = 1000.0;
         switch (pc.clusterMethod) {
-            case DBSCAN -> { DBSCANClusterTask t = new DBSCANClusterTask(scene, camera, projectionScalar, observations, pc); if (!t.isCancelledByUser()) { Thread th = new Thread(t); th.setDaemon(true); th.start(); } }
-            case HDDBSCAN -> { HDDBSCANClusterTask t = new HDDBSCANClusterTask(scene, camera, projectionScalar, observations, pc); if (!t.isCancelledByUser()) { Thread th = new Thread(t); th.setDaemon(true); th.start(); } }
-            case KMEANS -> { KMeansClusterTask t = new KMeansClusterTask(scene, camera, projectionScalar, observations, pc); if (!t.isCancelledByUser()) { Thread th = new Thread(t); th.setDaemon(true); th.start(); } }
-            case KMEDIODS -> { KMediodsClusterTask t = new KMediodsClusterTask(scene, camera, projectionScalar, observations, pc); if (!t.isCancelledByUser()) { Thread th = new Thread(t); th.setDaemon(true); th.start(); } }
-            case EX_MAX -> { ExMaxClusterTask t = new ExMaxClusterTask(scene, camera, projectionScalar, observations, pc); if (!t.isCancelledByUser()) { Thread th = new Thread(t); th.setDaemon(true); th.start(); } }
-            case AFFINITY -> { AffinityClusterTask t = new AffinityClusterTask(scene, camera, projectionScalar, observations, pc); if (!t.isCancelledByUser()) { Thread th = new Thread(t); th.setDaemon(true); th.start(); } }
+            case DBSCAN -> {
+                DBSCANClusterTask t = new DBSCANClusterTask(scene, camera, projectionScalar, observations, pc);
+                if (!t.isCancelledByUser()) {
+                    Thread th = new Thread(t);
+                    th.setDaemon(true);
+                    th.start();
+                }
+            }
+            case HDDBSCAN -> {
+                HDDBSCANClusterTask t = new HDDBSCANClusterTask(scene, camera, projectionScalar, observations, pc);
+                if (!t.isCancelledByUser()) {
+                    Thread th = new Thread(t);
+                    th.setDaemon(true);
+                    th.start();
+                }
+            }
+            case KMEANS -> {
+                KMeansClusterTask t = new KMeansClusterTask(scene, camera, projectionScalar, observations, pc);
+                if (!t.isCancelledByUser()) {
+                    Thread th = new Thread(t);
+                    th.setDaemon(true);
+                    th.start();
+                }
+            }
+            case KMEDIODS -> {
+                KMediodsClusterTask t = new KMediodsClusterTask(scene, camera, projectionScalar, observations, pc);
+                if (!t.isCancelledByUser()) {
+                    Thread th = new Thread(t);
+                    th.setDaemon(true);
+                    th.start();
+                }
+            }
+            case EX_MAX -> {
+                ExMaxClusterTask t = new ExMaxClusterTask(scene, camera, projectionScalar, observations, pc);
+                if (!t.isCancelledByUser()) {
+                    Thread th = new Thread(t);
+                    th.setDaemon(true);
+                    th.start();
+                }
+            }
+            case AFFINITY -> {
+                AffinityClusterTask t = new AffinityClusterTask(scene, camera, projectionScalar, observations, pc);
+                if (!t.isCancelledByUser()) {
+                    Thread th = new Thread(t);
+                    th.setDaemon(true);
+                    th.start();
+                }
+            }
         }
     }
 
@@ -1652,14 +1830,30 @@ private Number vertToHeight(Vert3D p) {
         updateLabels();
     }
 
-    @Override public void addSemanticMap(SemanticMap semanticMap) { throw new UnsupportedOperationException("Not supported yet."); }
-    @Override public SemanticMap getSemanticMap(long id) { throw new UnsupportedOperationException("Not supported yet."); }
-    @Override public void locateSemanticMap(SemanticMap semanticMap) { throw new UnsupportedOperationException("Not supported yet."); }
-    @Override public void clearSemanticMaps() { throw new UnsupportedOperationException("Not supported yet."); }
+    @Override
+    public void addSemanticMap(SemanticMap semanticMap) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public SemanticMap getSemanticMap(long id) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public void locateSemanticMap(SemanticMap semanticMap) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public void clearSemanticMaps() {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
 
     @Override
     public void addFeatureCollection(FeatureCollection featureCollection, boolean clearQueue) {
-        if (null == dataGrid) dataGrid = new ArrayList<>(featureCollection.getFeatures().size()); else dataGrid.clear();
+        if (null == dataGrid) dataGrid = new ArrayList<>(featureCollection.getFeatures().size());
+        else dataGrid.clear();
         List<Double> xList;
         for (FeatureVector fv : featureCollection.getFeatures()) {
             xList = new ArrayList<>(fv.getData().size());
@@ -1669,23 +1863,72 @@ private Number vertToHeight(Vert3D p) {
         zWidth = dataGrid.size();
         xWidth = dataGrid.get(0).size();
         syncGuiControls();
-        originalGrid = deepCopyGrid(dataGrid); 
-        rebuildProcessedGridAndRefresh();      
+        originalGrid = deepCopyGrid(dataGrid);
+        rebuildProcessedGridAndRefresh();
         getScene().getRoot().fireEvent(new CommandTerminalEvent("Hypersurface updated. ", new Font("Consolas", 20), Color.GREEN));
         featureVectors = featureCollection.getFeatures();
     }
 
-    @Override public void addFeatureVector(FeatureVector featureVector) { featureVectors.add(featureVector); dataGrid.add(featureVector.getData()); originalGrid = deepCopyGrid(dataGrid); rebuildProcessedGridAndRefresh(); }
-    @Override public void locateFeatureVector(FeatureVector featureVector) { throw new UnsupportedOperationException("Not supported yet."); }
-    @Override public void clearFeatureVectors() { featureVectors.clear(); dataGrid.clear(); originalGrid.clear(); }
-    @Override public List<FeatureVector> getAllFeatureVectors() { if (null == featureVectors) return Collections.EMPTY_LIST; return featureVectors; }
-    @Override public void setColorByID(String iGotID, Color color) { throw new UnsupportedOperationException("Not supported yet."); }
-    @Override public void setColorByIndex(int i, Color color) { throw new UnsupportedOperationException("Not supported yet."); }
-    @Override public void setVisibleByIndex(int i, boolean b) { throw new UnsupportedOperationException("Not supported yet."); }
-    @Override public void refresh() { refresh(true); }
-    @Override public void refresh(boolean forceNodeUpdate) { updateTheMesh(); }
-    @Override public void setDimensionLabels(List<String> labelStrings) { featureLabels = labelStrings; }
-    @Override public void setSpheroidAnchor(boolean animate, int index) { double z = index * surfScale; }
+    @Override
+    public void addFeatureVector(FeatureVector featureVector) {
+        featureVectors.add(featureVector);
+        dataGrid.add(featureVector.getData());
+        originalGrid = deepCopyGrid(dataGrid);
+        rebuildProcessedGridAndRefresh();
+    }
+
+    @Override
+    public void locateFeatureVector(FeatureVector featureVector) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public void clearFeatureVectors() {
+        featureVectors.clear();
+        dataGrid.clear();
+        originalGrid.clear();
+    }
+
+    @Override
+    public List<FeatureVector> getAllFeatureVectors() {
+        if (null == featureVectors) return Collections.EMPTY_LIST;
+        return featureVectors;
+    }
+
+    @Override
+    public void setColorByID(String iGotID, Color color) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public void setColorByIndex(int i, Color color) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public void setVisibleByIndex(int i, boolean b) {
+        throw new UnsupportedOperationException("Not supported yet.");
+    }
+
+    @Override
+    public void refresh() {
+        refresh(true);
+    }
+
+    @Override
+    public void refresh(boolean forceNodeUpdate) {
+        updateTheMesh();
+    }
+
+    @Override
+    public void setDimensionLabels(List<String> labelStrings) {
+        featureLabels = labelStrings;
+    }
+
+    @Override
+    public void setSpheroidAnchor(boolean animate, int index) {
+        double z = index * surfScale;
+    }
 
     private void tessellateImage(Image image, int x1, int y1, int x2, int y2) {
         lastImage = image;
@@ -1694,8 +1937,11 @@ private Number vertToHeight(Vert3D p) {
         int rows = (int) image.getHeight();
         int columns = (int) image.getWidth();
         PixelReader pr = image.getPixelReader();
-        Color color = null; int rgb, r, g, b = 0; double dataValue = 0;
-        if (null == dataGrid) dataGrid = new ArrayList<>(rows); else dataGrid.clear();
+        Color color = null;
+        int rgb, r, g, b = 0;
+        double dataValue = 0;
+        if (null == dataGrid) dataGrid = new ArrayList<>(rows);
+        else dataGrid.clear();
         featureVectors.clear();
         for (int rowIndex = y1; rowIndex < y2; rowIndex++) {
             List<Double> currentDataRow = new ArrayList<>();
@@ -1705,7 +1951,9 @@ private Number vertToHeight(Vert3D p) {
                 FeatureVector fv = FeatureVector.EMPTY_FEATURE_VECTOR(color.toString(), 3);
                 fv.getData().set(0, (double) colIndex / columns);
                 fv.getData().set(1, (double) rowIndex / rows);
-                r = (rgb >> 16) & 0xFF; g = (rgb >> 8) & 0xFF; b = rgb & 0xFF;
+                r = (rgb >> 16) & 0xFF;
+                g = (rgb >> 8) & 0xFF;
+                b = rgb & 0xFF;
                 dataValue = (((r + g + b) / 3.0) / 255.0);
                 fv.getData().set(2, dataValue);
                 featureVectors.add(fv);
@@ -1716,10 +1964,11 @@ private Number vertToHeight(Vert3D p) {
         Utils.printTotalTime(startTime);
         LOG.info("Injecting Mesh into Hypersurface... ");
         startTime = System.nanoTime();
-        zWidth = rows; xWidth = columns;
+        zWidth = rows;
+        xWidth = columns;
         syncGuiControls();
-        originalGrid = deepCopyGrid(dataGrid); 
-        rebuildProcessedGridAndRefresh();      
+        originalGrid = deepCopyGrid(dataGrid);
+        rebuildProcessedGridAndRefresh();
         xSphere.setTranslateX((xWidth * surfScale) / 2.0);
         zSphere.setTranslateZ((zWidth * surfScale) / 2.0);
         Utils.printTotalTime(startTime);
@@ -1733,7 +1982,8 @@ private Number vertToHeight(Vert3D p) {
         try {
             WritableImage wi = ResourceUtils.loadImageFile(imageryBasePath + shapleyCollection.getSourceInput());
             if (null != wi) {
-                int x2 = (int) wi.getWidth(); int y2 = (int) wi.getHeight();
+                int x2 = (int) wi.getWidth();
+                int y2 = (int) wi.getHeight();
                 tessellateImage(wi, 0, 0, x2, y2);
                 lastImage = wi;
                 LOG.info("injecting Shapley function values into Vertices... ");
@@ -1750,11 +2000,20 @@ private Number vertToHeight(Vert3D p) {
                     default -> surfPlot.setTextureModeVertices3D(TOTAL_COLORS, colorByShapley, 0.0, 360.0);
                 }
             }
-        } catch (IOException ex) { LOG.error(null, ex); }
+        } catch (IOException ex) {
+            LOG.error(null, ex);
+        }
     }
 
-    @Override public void addShapleyVector(ShapleyVector shapleyVector) { shapleyVectors.add(shapleyVector); }
-    @Override public void clearShapleyVectors() { shapleyVectors.clear(); }
+    @Override
+    public void addShapleyVector(ShapleyVector shapleyVector) {
+        shapleyVectors.add(shapleyVector);
+    }
+
+    @Override
+    public void clearShapleyVectors() {
+        shapleyVectors.clear();
+    }
 
     // ================= helpers for processing pipeline =================
     private static List<List<Double>> deepCopyGrid(List<List<Double>> src) {
@@ -1762,6 +2021,7 @@ private Number vertToHeight(Vert3D p) {
         for (List<Double> row : src) out.add(new ArrayList<>(row));
         return out;
     }
+
     private void rebuildProcessedGridAndRefresh() {
         if (originalGrid == null || originalGrid.isEmpty()) return;
         List<List<Double>> g = deepCopyGrid(originalGrid);
@@ -1771,12 +2031,18 @@ private Number vertToHeight(Vert3D p) {
         if (toneEnabled) {
             g = SurfaceUtils.toneMapGrid(g, toneOperator, toneParam);
         }
-        dataGrid.clear(); dataGrid.addAll(g);
-        xWidth = dataGrid.get(0).size(); zWidth = dataGrid.size();
+        dataGrid.clear();
+        dataGrid.addAll(g);
+        xWidth = dataGrid.get(0).size();
+        zWidth = dataGrid.size();
         syncGuiControls();
-        updateTheMesh(); updateView(true);
+        updateTheMesh();
+        updateView(true);
     }
-    /** Build a dense similarity/divergence row for a node from the current sparse graph. */
+
+    /**
+     * Build a dense similarity/divergence row for a node from the current sparse graph.
+     */
     private Double[] buildSimilarityRowFromGraph(GraphNode node) {
         if (currentGraph == null || node == null) return new Double[0];
 
@@ -1815,7 +2081,9 @@ private Number vertToHeight(Vert3D p) {
         return out;
     }
 
-    /** Prefer GraphEdge#getWeight(); fallback to 1.0 if unavailable. */
+    /**
+     * Prefer GraphEdge#getWeight(); fallback to 1.0 if unavailable.
+     */
     private double getEdgeWeightSafe(GraphEdge e) {
         try {
             // Adjust if your API uses a different accessor
@@ -1825,23 +2093,29 @@ private Number vertToHeight(Vert3D p) {
         }
     }
 
-    /** Optional: if a GraphNode encodes a source row index for the hypersurface, try to extract it. */
+    /**
+     * Optional: if a GraphNode encodes a source row index for the hypersurface, try to extract it.
+     */
     private Optional<Integer> tryGetSourceRowIndex(GraphNode node) {
         // Heuristics:
         // (a) if there's a "getIndex()" method
         try {
             Object idx = GraphNode.class.getMethod("getIndex").invoke(node);
             if (idx instanceof Number n) return Optional.of(n.intValue());
-        } catch (Throwable ignored) { }
+        } catch (Throwable ignored) {
+        }
         // (b) if ID is numeric
         try {
             Object id = GraphNode.class.getMethod("getId").invoke(node);
             if (id != null) return Optional.of(Integer.valueOf(String.valueOf(id)));
-        } catch (Throwable ignored) { }
+        } catch (Throwable ignored) {
+        }
         return Optional.empty();
     }
 
-    /** Highlight a row on the hypersurface if we can map a node to a data row. */
+    /**
+     * Highlight a row on the hypersurface if we can map a node to a data row.
+     */
     private void highlightSurfaceRowIfPossible(GraphNode node) {
         tryGetSourceRowIndex(node).ifPresent(rowIndex -> {
             // Clamp row and paint crosshair
@@ -1851,5 +2125,5 @@ private Number vertToHeight(Vert3D p) {
             Point3D center = new Point3D((xWidth * surfScale) / 2.0, 0, clamped * surfScale);
             illuminateCrosshair(center);
         });
-    }    
+    }
 }

@@ -21,15 +21,15 @@ import java.util.concurrent.ConcurrentHashMap;
  * -------------------
  * Produces consistent 2D grid specs (bounds + bins) for joint PDF/CDF surfaces
  * given axis definitions (AxisParams) and a dataset (FeatureVectors).
- *
+ * <p>
  * Modes:
- *  - FIXED_01:     [0,1] x [0,1]
- *  - DATA_MIN_MAX: per-axis min..max from data
- *  - ROBUST_PCT:   per-axis [pLow..pHigh] percentiles (robust to outliers)
- *
+ * - FIXED_01:     [0,1] x [0,1]
+ * - DATA_MIN_MAX: per-axis min..max from data
+ * - ROBUST_PCT:   per-axis [pLow..pHigh] percentiles (robust to outliers)
+ * <p>
  * Per-axis overrides (by AxisKey) can supply explicit min/max and/or bins.
  * A static registry allows lookup by policy id (e.g., "default").
- *
+ * <p>
  * Note: This class re-derives axis scalars (x_i or y_i) in order to compute bounds.
  * It mirrors the scalar extraction used in GridDensity3DEngine.
  *
@@ -37,7 +37,8 @@ import java.util.concurrent.ConcurrentHashMap;
  */
 public final class CanonicalGridPolicy implements Serializable {
 
-    @Serial private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     // ---------- Modes ----------
 
@@ -54,7 +55,8 @@ public final class CanonicalGridPolicy implements Serializable {
      * This lets you set per-axis canonical overrides and cache computed ranges.
      */
     public static final class AxisKey implements Serializable {
-        @Serial private static final long serialVersionUID = 1L;
+        @Serial
+        private static final long serialVersionUID = 1L;
 
         public final StatisticEngine.ScalarType type;
         public final String metricName;     // for METRIC_DISTANCE_TO_MEAN
@@ -72,50 +74,71 @@ public final class CanonicalGridPolicy implements Serializable {
             return new AxisKey(a.getType(), a.getMetricName(), a.getComponentIndex(), a.getMetricName());
         }
 
-        @Override public boolean equals(Object o) {
+        @Override
+        public boolean equals(Object o) {
             if (this == o) return true;
             if (!(o instanceof AxisKey)) return false;
             AxisKey that = (AxisKey) o;
             return type == that.type &&
-                    Objects.equals(metricName, that.metricName) &&
-                    Objects.equals(componentIndex, that.componentIndex) &&
-                    Objects.equals(label, that.label);
+                Objects.equals(metricName, that.metricName) &&
+                Objects.equals(componentIndex, that.componentIndex) &&
+                Objects.equals(label, that.label);
         }
 
-        @Override public int hashCode() {
+        @Override
+        public int hashCode() {
             return Objects.hash(type, metricName, componentIndex, label);
         }
 
-        @Override public String toString() {
+        @Override
+        public String toString() {
             return "AxisKey{" +
-                    "type=" + type +
-                    ", metricName='" + metricName + '\'' +
-                    ", componentIndex=" + componentIndex +
-                    ", label='" + label + '\'' +
-                    '}';
+                "type=" + type +
+                ", metricName='" + metricName + '\'' +
+                ", componentIndex=" + componentIndex +
+                ", label='" + label + '\'' +
+                '}';
         }
     }
 
-    /** Per-axis explicit override (any field nullable = leave to policy). */
+    /**
+     * Per-axis explicit override (any field nullable = leave to policy).
+     */
     public static final class AxisOverride implements Serializable {
-        @Serial private static final long serialVersionUID = 1L;
+        @Serial
+        private static final long serialVersionUID = 1L;
         public final Double min;
         public final Double max;
         public final Integer bins;
 
         public AxisOverride(Double min, Double max, Integer bins) {
-            this.min = min; this.max = max; this.bins = bins;
+            this.min = min;
+            this.max = max;
+            this.bins = bins;
         }
 
-        public AxisOverride withBins(Integer b) { return new AxisOverride(min, max, b); }
+        public AxisOverride withBins(Integer b) {
+            return new AxisOverride(min, max, b);
+        }
     }
 
-    /** Simple holder for numeric range. */
+    /**
+     * Simple holder for numeric range.
+     */
     public static final class AxisRange implements Serializable {
-        @Serial private static final long serialVersionUID = 1L;
+        @Serial
+        private static final long serialVersionUID = 1L;
         public final double min, max;
-        public AxisRange(double min, double max) { this.min = min; this.max = max; }
-        @Override public String toString() { return "[" + min + ", " + max + "]"; }
+
+        public AxisRange(double min, double max) {
+            this.min = min;
+            this.max = max;
+        }
+
+        @Override
+        public String toString() {
+            return "[" + min + ", " + max + "]";
+        }
     }
 
     // ---------- Policy fields ----------
@@ -146,10 +169,10 @@ public final class CanonicalGridPolicy implements Serializable {
     /** Default policy: robust percentiles [1%, 99%], 64x64 bins. */
     static {
         CanonicalGridPolicy def = new Builder("default", Mode.ROBUST_PCT)
-                .bins(64, 64)
-                .percentiles(0.01, 0.99)
-                .epsilon(1e-8)
-                .build();
+            .bins(64, 64)
+            .percentiles(0.01, 0.99)
+            .epsilon(1e-8)
+            .build();
         register(def);
         register(new Builder("fixed01", Mode.FIXED_01).bins(64, 64).build());
         register(new Builder("minmax", Mode.DATA_MIN_MAX).bins(64, 64).epsilon(1e-8).build());
@@ -178,10 +201,27 @@ public final class CanonicalGridPolicy implements Serializable {
             this.mode = Objects.requireNonNull(mode, "mode");
         }
 
-        public Builder bins(int bx, int by) { this.defaultBinsX = bx; this.defaultBinsY = by; return this; }
-        public Builder percentiles(double low, double high) { this.pLow = low; this.pHigh = high; return this; }
-        public Builder epsilon(double e) { this.epsilon = e; return this; }
-        public Builder override(AxisKey key, AxisOverride ov) { this.overrides.put(key, ov); return this; }
+        public Builder bins(int bx, int by) {
+            this.defaultBinsX = bx;
+            this.defaultBinsY = by;
+            return this;
+        }
+
+        public Builder percentiles(double low, double high) {
+            this.pLow = low;
+            this.pHigh = high;
+            return this;
+        }
+
+        public Builder epsilon(double e) {
+            this.epsilon = e;
+            return this;
+        }
+
+        public Builder override(AxisKey key, AxisOverride ov) {
+            this.overrides.put(key, ov);
+            return this;
+        }
 
         public CanonicalGridPolicy build() {
             if (mode == Mode.ROBUST_PCT && !(pLow >= 0 && pLow < pHigh && pHigh <= 1))
@@ -224,20 +264,22 @@ public final class CanonicalGridPolicy implements Serializable {
         AxisOverride oy = overrides.get(ky);
 
         AxisRange rx = (ox != null && ox.min != null && ox.max != null)
-                ? new AxisRange(ox.min, ox.max)
-                : computeAxisRange(vectors, xAxis, datasetCacheKey);
+            ? new AxisRange(ox.min, ox.max)
+            : computeAxisRange(vectors, xAxis, datasetCacheKey);
 
         AxisRange ry = (oy != null && oy.min != null && oy.max != null)
-                ? new AxisRange(oy.min, oy.max)
-                : computeAxisRange(vectors, yAxis, datasetCacheKey);
+            ? new AxisRange(oy.min, oy.max)
+            : computeAxisRange(vectors, yAxis, datasetCacheKey);
 
         if (ox != null && ox.bins != null) bx = ox.bins;
         if (oy != null && oy.bins != null) by = oy.bins;
 
         // Construct GridSpec with explicit bounds.
         GridSpec g = new GridSpec(bx, by);
-        g.setMinX(rx.min); g.setMaxX(rx.max);
-        g.setMinY(ry.min); g.setMaxY(ry.max);
+        g.setMinX(rx.min);
+        g.setMaxX(rx.max);
+        g.setMinY(ry.min);
+        g.setMaxY(ry.max);
         return g;
     }
 
@@ -273,8 +315,8 @@ public final class CanonicalGridPolicy implements Serializable {
         // Cache path
         if (datasetCacheKey != null) {
             AxisRange cached = datasetRangeCache
-                    .computeIfAbsent(datasetCacheKey, k -> new ConcurrentHashMap<>())
-                    .get(AxisKey.from(axis));
+                .computeIfAbsent(datasetCacheKey, k -> new ConcurrentHashMap<>())
+                .get(AxisKey.from(axis));
             if (cached != null) return cached;
         }
 
@@ -305,7 +347,7 @@ public final class CanonicalGridPolicy implements Serializable {
 
         if (datasetCacheKey != null) {
             datasetRangeCache.computeIfAbsent(datasetCacheKey, k -> new ConcurrentHashMap<>())
-                    .put(AxisKey.from(axis), r);
+                .put(AxisKey.from(axis), r);
         }
         return r;
     }
@@ -317,8 +359,8 @@ public final class CanonicalGridPolicy implements Serializable {
         // Precompute mean if needed
         List<Double> meanVector = null;
         Set<StatisticEngine.ScalarType> needMean = Set.of(
-                StatisticEngine.ScalarType.DIST_TO_MEAN,
-                StatisticEngine.ScalarType.COSINE_TO_MEAN
+            StatisticEngine.ScalarType.DIST_TO_MEAN,
+            StatisticEngine.ScalarType.COSINE_TO_MEAN
         );
         if (needMean.contains(axis.getType())) {
             meanVector = FeatureVector.getMeanVector(vectors);
@@ -327,8 +369,8 @@ public final class CanonicalGridPolicy implements Serializable {
         // Metric if needed
         Metric metric = null;
         if (axis.getType() == StatisticEngine.ScalarType.METRIC_DISTANCE_TO_MEAN
-                && axis.getMetricName() != null
-                && axis.getReferenceVec() != null) {
+            && axis.getMetricName() != null
+            && axis.getReferenceVec() != null) {
             metric = Metric.getMetric(axis.getMetricName());
         }
 
@@ -396,26 +438,49 @@ public final class CanonicalGridPolicy implements Serializable {
 
     // ---------- Accessors ----------
 
-    public String id() { return id; }
-    public Mode mode() { return mode; }
-    public int defaultBinsX() { return defaultBinsX; }
-    public int defaultBinsY() { return defaultBinsY; }
-    public double pLow() { return pLow; }
-    public double pHigh() { return pHigh; }
-    public double epsilon() { return epsilon; }
+    public String id() {
+        return id;
+    }
 
-    public Map<AxisKey, AxisOverride> overridesView() { return Collections.unmodifiableMap(overrides); }
+    public Mode mode() {
+        return mode;
+    }
 
-    @Override public String toString() {
+    public int defaultBinsX() {
+        return defaultBinsX;
+    }
+
+    public int defaultBinsY() {
+        return defaultBinsY;
+    }
+
+    public double pLow() {
+        return pLow;
+    }
+
+    public double pHigh() {
+        return pHigh;
+    }
+
+    public double epsilon() {
+        return epsilon;
+    }
+
+    public Map<AxisKey, AxisOverride> overridesView() {
+        return Collections.unmodifiableMap(overrides);
+    }
+
+    @Override
+    public String toString() {
         return "CanonicalGridPolicy{" +
-                "id='" + id + '\'' +
-                ", mode=" + mode +
-                ", defaultBinsX=" + defaultBinsX +
-                ", defaultBinsY=" + defaultBinsY +
-                ", pLow=" + pLow +
-                ", pHigh=" + pHigh +
-                ", epsilon=" + epsilon +
-                ", overrides=" + overrides.size() +
-                '}';
+            "id='" + id + '\'' +
+            ", mode=" + mode +
+            ", defaultBinsX=" + defaultBinsX +
+            ", defaultBinsY=" + defaultBinsY +
+            ", pLow=" + pLow +
+            ", pHigh=" + pHigh +
+            ", epsilon=" + epsilon +
+            ", overrides=" + overrides.size() +
+            '}';
     }
 }

@@ -336,10 +336,10 @@ public class HyperspaceMenu extends RadialEntity {
         }));
         exportSubMenuItem.addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Compute Stats", stats, e -> {
             hyperspace3DPane.getScene().getRoot().fireEvent(
-                new ApplicationEvent(ApplicationEvent.SHOW_STATISTICS_PANE, 
+                new ApplicationEvent(ApplicationEvent.SHOW_STATISTICS_PANE,
                     hyperspace3DPane.getAllFeatureVectors()));
         }));
-        
+
         addMenuItem(exportSubMenuItem);
 
         addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Refresh Render", refresh, e -> {

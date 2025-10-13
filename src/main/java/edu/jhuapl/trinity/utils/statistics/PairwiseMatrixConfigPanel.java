@@ -3,8 +3,6 @@ package edu.jhuapl.trinity.utils.statistics;
 import edu.jhuapl.trinity.utils.statistics.DivergenceComputer.DivergenceMetric;
 import edu.jhuapl.trinity.utils.statistics.JpdfRecipe.BoundsPolicy;
 import edu.jhuapl.trinity.utils.statistics.JpdfRecipe.ScoreMetric;
-import java.util.Objects;
-import java.util.function.Consumer;
 import javafx.geometry.Insets;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
@@ -21,24 +19,29 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 
+import java.util.Objects;
+import java.util.function.Consumer;
+
 /**
  * PairwiseMatrixConfigPanel
  * -------------------------
  * Compact configuration panel for building a request to compute a pairwise matrix:
- *  - Mode: SIMILARITY (single cohort) or DIVERGENCE (A vs B)
- *  - Metric per mode (ScoreMetric for similarity, DivergenceMetric for divergence)
- *  - Component index range (inclusive), diagonal inclusion, ordered pairs
- *  - Grid bins and bounds policy (for underlying JPDF alignment)
- *  - Initial visualization hints (palette/range/legend)
- *
+ * - Mode: SIMILARITY (single cohort) or DIVERGENCE (A vs B)
+ * - Metric per mode (ScoreMetric for similarity, DivergenceMetric for divergence)
+ * - Component index range (inclusive), diagonal inclusion, ordered pairs
+ * - Grid bins and bounds policy (for underlying JPDF alignment)
+ * - Initial visualization hints (palette/range/legend)
+ * <p>
  * Emits a {@link Request} via {@link #setOnRun(Consumer)}.
  *
  * @author Sean Phillips
  */
 public final class PairwiseMatrixConfigPanel extends BorderPane {
 
-    /** Execution mode. */
-    public enum Mode { SIMILARITY, DIVERGENCE }
+    /**
+     * Execution mode.
+     */
+    public enum Mode {SIMILARITY, DIVERGENCE}
 
     /**
      * Immutable request DTO produced by this panel.
@@ -121,22 +124,90 @@ public final class PairwiseMatrixConfigPanel extends BorderPane {
             private Double divergingCenter = 0.0;
             private boolean showLegend = true;
 
-            public Builder name(String v) { this.name = v; return this; }
-            public Builder mode(Mode v) { this.mode = v; return this; }
-            public Builder similarityMetric(ScoreMetric v) { this.similarityMetric = v; return this; }
-            public Builder divergenceMetric(DivergenceMetric v) { this.divergenceMetric = v; return this; }
-            public Builder componentIndexRange(int s, int e) { this.componentStart = s; this.componentEnd = e; return this; }
-            public Builder includeDiagonal(boolean v) { this.includeDiagonal = v; return this; }
-            public Builder orderedPairs(boolean v) { this.orderedPairs = v; return this; }
-            public Builder bins(int bx, int by) { this.binsX = bx; this.binsY = by; return this; }
-            public Builder boundsPolicy(BoundsPolicy v) { this.boundsPolicy = v; return this; }
-            public Builder canonicalPolicyId(String v) { this.canonicalPolicyId = v; return this; }
-            public Builder cohortLabels(String a, String b) { this.cohortALabel = a; this.cohortBLabel = b; return this; }
-            public Builder paletteDiverging(boolean v) { this.paletteDiverging = v; return this; }
-            public Builder autoRange(boolean v) { this.autoRange = v; return this; }
-            public Builder fixedRange(Double min, Double max) { this.fixedMin = min; this.fixedMax = max; return this; }
-            public Builder divergingCenter(Double v) { this.divergingCenter = v; return this; }
-            public Builder showLegend(boolean v) { this.showLegend = v; return this; }
+            public Builder name(String v) {
+                this.name = v;
+                return this;
+            }
+
+            public Builder mode(Mode v) {
+                this.mode = v;
+                return this;
+            }
+
+            public Builder similarityMetric(ScoreMetric v) {
+                this.similarityMetric = v;
+                return this;
+            }
+
+            public Builder divergenceMetric(DivergenceMetric v) {
+                this.divergenceMetric = v;
+                return this;
+            }
+
+            public Builder componentIndexRange(int s, int e) {
+                this.componentStart = s;
+                this.componentEnd = e;
+                return this;
+            }
+
+            public Builder includeDiagonal(boolean v) {
+                this.includeDiagonal = v;
+                return this;
+            }
+
+            public Builder orderedPairs(boolean v) {
+                this.orderedPairs = v;
+                return this;
+            }
+
+            public Builder bins(int bx, int by) {
+                this.binsX = bx;
+                this.binsY = by;
+                return this;
+            }
+
+            public Builder boundsPolicy(BoundsPolicy v) {
+                this.boundsPolicy = v;
+                return this;
+            }
+
+            public Builder canonicalPolicyId(String v) {
+                this.canonicalPolicyId = v;
+                return this;
+            }
+
+            public Builder cohortLabels(String a, String b) {
+                this.cohortALabel = a;
+                this.cohortBLabel = b;
+                return this;
+            }
+
+            public Builder paletteDiverging(boolean v) {
+                this.paletteDiverging = v;
+                return this;
+            }
+
+            public Builder autoRange(boolean v) {
+                this.autoRange = v;
+                return this;
+            }
+
+            public Builder fixedRange(Double min, Double max) {
+                this.fixedMin = min;
+                this.fixedMax = max;
+                return this;
+            }
+
+            public Builder divergingCenter(Double v) {
+                this.divergingCenter = v;
+                return this;
+            }
+
+            public Builder showLegend(boolean v) {
+                this.showLegend = v;
+                return this;
+            }
+
             public Request build() {
                 Objects.requireNonNull(name, "name");
                 Objects.requireNonNull(mode, "mode");
@@ -147,10 +218,10 @@ public final class PairwiseMatrixConfigPanel extends BorderPane {
     }
 
     // ---- sizing knobs ----
-    private static final double PANEL_PREF_WIDTH   = 390;
-    private static final double LABEL_COL_WIDTH    = 150;
-    private static final double FIELD_MIN_W        = 180;
-    private static final double FIELD_PREF_W       = 240;
+    private static final double PANEL_PREF_WIDTH = 390;
+    private static final double LABEL_COL_WIDTH = 150;
+    private static final double FIELD_MIN_W = 180;
+    private static final double FIELD_PREF_W = 240;
 
     private Consumer<Request> onRun;
 
@@ -270,14 +341,33 @@ public final class PairwiseMatrixConfigPanel extends BorderPane {
 
     // ---- Public API ----
 
-    /** Expose Run button (for toolbar placement). */
-    public Button getRunButton() { return runButton; }
-    /** Expose Reset button (for toolbar placement). */
-    public Button getResetButton() { return resetButton; }
-    /** Register callback to receive a fully-built Request when the user clicks Run. */
-    public void setOnRun(Consumer<Request> onRun) { this.onRun = onRun; }
-    /** Snapshot the current UI into a Request without running. */
-    public Request snapshotRequest() { return buildRequestFromUI(); }
+    /**
+     * Expose Run button (for toolbar placement).
+     */
+    public Button getRunButton() {
+        return runButton;
+    }
+
+    /**
+     * Expose Reset button (for toolbar placement).
+     */
+    public Button getResetButton() {
+        return resetButton;
+    }
+
+    /**
+     * Register callback to receive a fully-built Request when the user clicks Run.
+     */
+    public void setOnRun(Consumer<Request> onRun) {
+        this.onRun = onRun;
+    }
+
+    /**
+     * Snapshot the current UI into a Request without running.
+     */
+    public Request snapshotRequest() {
+        return buildRequestFromUI();
+    }
 
     // ---- Internals ----
 
@@ -305,36 +395,56 @@ public final class PairwiseMatrixConfigPanel extends BorderPane {
         int r = 0;
 
         // General
-        g.add(compactLabel("Name"), 0, r);                        g.add(nameField, 1, r++);
+        g.add(compactLabel("Name"), 0, r);
+        g.add(nameField, 1, r++);
 
         // Mode & metric
-        g.add(compactLabel("Mode"), 0, r);                        g.add(modeCombo, 1, r++);
-        g.add(compactLabel("Similarity Metric"), 0, r);           g.add(simMetricCombo, 1, r++);
-        g.add(compactLabel("Divergence Metric"), 0, r);           g.add(divMetricCombo, 1, r++);
+        g.add(compactLabel("Mode"), 0, r);
+        g.add(modeCombo, 1, r++);
+        g.add(compactLabel("Similarity Metric"), 0, r);
+        g.add(simMetricCombo, 1, r++);
+        g.add(compactLabel("Divergence Metric"), 0, r);
+        g.add(divMetricCombo, 1, r++);
 
         // Components
-        g.add(compactLabel("Component Start"), 0, r);             g.add(compStartSpinner, 1, r++);
-        g.add(compactLabel("Component End"), 0, r);               g.add(compEndSpinner, 1, r++);
-        g.add(compactLabel(""), 0, r);                            g.add(includeDiagonalCheck, 1, r++);
-        g.add(compactLabel(""), 0, r);                            g.add(orderedPairsCheck, 1, r++);
+        g.add(compactLabel("Component Start"), 0, r);
+        g.add(compStartSpinner, 1, r++);
+        g.add(compactLabel("Component End"), 0, r);
+        g.add(compEndSpinner, 1, r++);
+        g.add(compactLabel(""), 0, r);
+        g.add(includeDiagonalCheck, 1, r++);
+        g.add(compactLabel(""), 0, r);
+        g.add(orderedPairsCheck, 1, r++);
 
         // Grid / Bounds
-        g.add(compactLabel("Bins X"), 0, r);                      g.add(binsXSpinner, 1, r++);
-        g.add(compactLabel("Bins Y"), 0, r);                      g.add(binsYSpinner, 1, r++);
-        g.add(compactLabel("Bounds Policy"), 0, r);               g.add(boundsPolicyCombo, 1, r++);
-        g.add(compactLabel("Canonical Policy Id"), 0, r);         g.add(canonicalPolicyIdField, 1, r++);
+        g.add(compactLabel("Bins X"), 0, r);
+        g.add(binsXSpinner, 1, r++);
+        g.add(compactLabel("Bins Y"), 0, r);
+        g.add(binsYSpinner, 1, r++);
+        g.add(compactLabel("Bounds Policy"), 0, r);
+        g.add(boundsPolicyCombo, 1, r++);
+        g.add(compactLabel("Canonical Policy Id"), 0, r);
+        g.add(canonicalPolicyIdField, 1, r++);
 
         // Visual defaults
-        g.add(compactLabel("Palette"), 0, r);                     g.add(paletteCombo, 1, r++);
-        g.add(compactLabel(""), 0, r);                            g.add(autoRangeCheck, 1, r++);
-        g.add(compactLabel("Fixed Min"), 0, r);                   g.add(fixedMinSpinner, 1, r++);
-        g.add(compactLabel("Fixed Max"), 0, r);                   g.add(fixedMaxSpinner, 1, r++);
-        g.add(compactLabel("Diverging Center"), 0, r);            g.add(divergingCenterSpinner, 1, r++);
-        g.add(compactLabel(""), 0, r);                            g.add(showLegendCheck, 1, r++);
+        g.add(compactLabel("Palette"), 0, r);
+        g.add(paletteCombo, 1, r++);
+        g.add(compactLabel(""), 0, r);
+        g.add(autoRangeCheck, 1, r++);
+        g.add(compactLabel("Fixed Min"), 0, r);
+        g.add(fixedMinSpinner, 1, r++);
+        g.add(compactLabel("Fixed Max"), 0, r);
+        g.add(fixedMaxSpinner, 1, r++);
+        g.add(compactLabel("Diverging Center"), 0, r);
+        g.add(divergingCenterSpinner, 1, r++);
+        g.add(compactLabel(""), 0, r);
+        g.add(showLegendCheck, 1, r++);
 
         // Cohort labels
-        g.add(compactLabel("Cohort A Label"), 0, r);              g.add(cohortALabelField, 1, r++);
-        g.add(compactLabel("Cohort B Label"), 0, r);              g.add(cohortBLabelField, 1, r++);
+        g.add(compactLabel("Cohort A Label"), 0, r);
+        g.add(cohortALabelField, 1, r++);
+        g.add(compactLabel("Cohort B Label"), 0, r);
+        g.add(cohortBLabelField, 1, r++);
 
         VBox root = new VBox(8, g);
         root.setPadding(new Insets(2));
@@ -412,26 +522,26 @@ public final class PairwiseMatrixConfigPanel extends BorderPane {
         }
 
         return new Request.Builder()
-                .name(name)
-                .mode(mode)
-                .similarityMetric(simMetric == null ? ScoreMetric.PEARSON : simMetric)
-                .divergenceMetric(divMetric == null ? DivergenceMetric.JS : divMetric)
-                .componentIndexRange(start, end)
-                .includeDiagonal(includeDiagonalCheck.isSelected())
-                .orderedPairs(orderedPairsCheck.isSelected())
-                .bins(bx, by)
-                .boundsPolicy(bp)
-                .canonicalPolicyId(canonicalId == null ? "" : canonicalId.trim())
-                .cohortLabels(
-                        safeText(cohortALabelField.getText(), "A"),
-                        safeText(cohortBLabelField.getText(), "B")
-                )
-                .paletteDiverging(center != null)
-                .autoRange(auto)
-                .fixedRange(vmin, vmax)
-                .divergingCenter(center)
-                .showLegend(showLegendCheck.isSelected())
-                .build();
+            .name(name)
+            .mode(mode)
+            .similarityMetric(simMetric == null ? ScoreMetric.PEARSON : simMetric)
+            .divergenceMetric(divMetric == null ? DivergenceMetric.JS : divMetric)
+            .componentIndexRange(start, end)
+            .includeDiagonal(includeDiagonalCheck.isSelected())
+            .orderedPairs(orderedPairsCheck.isSelected())
+            .bins(bx, by)
+            .boundsPolicy(bp)
+            .canonicalPolicyId(canonicalId == null ? "" : canonicalId.trim())
+            .cohortLabels(
+                safeText(cohortALabelField.getText(), "A"),
+                safeText(cohortBLabelField.getText(), "B")
+            )
+            .paletteDiverging(center != null)
+            .autoRange(auto)
+            .fixedRange(vmin, vmax)
+            .divergingCenter(center)
+            .showLegend(showLegendCheck.isSelected())
+            .build();
     }
 
     private static String safeText(String s, String def) {
@@ -452,7 +562,9 @@ public final class PairwiseMatrixConfigPanel extends BorderPane {
         cb.setMaxWidth(FIELD_PREF_W);
     }
 
-    /** Reset fields to sensible defaults. */
+    /**
+     * Reset fields to sensible defaults.
+     */
     public void resetToDefaults() {
         nameField.clear();
         modeCombo.setValue(Mode.SIMILARITY);

@@ -15,51 +15,67 @@ import java.util.Objects;
  * PairwiseMatrixEngine
  * --------------------
  * High-level orchestration to produce N×N matrices over component indices:
- *
+ * <p>
  * 1) Similarity (single cohort)
- *    - Uses {@link PairScorer} for pairwise scores (PEARSON, KENDALL, MI_LITE, DIST_CORR).
- *    - Fills a symmetric matrix S[i][j] over a selected component index range from {@link JpdfRecipe}.
- *    - Also returns a "quality" matrix Q[i][j] based on PairScorer's sufficiency flag (1.0 or 0.0).
- *
+ * - Uses {@link PairScorer} for pairwise scores (PEARSON, KENDALL, MI_LITE, DIST_CORR).
+ * - Fills a symmetric matrix S[i][j] over a selected component index range from {@link JpdfRecipe}.
+ * - Also returns a "quality" matrix Q[i][j] based on PairScorer's sufficiency flag (1.0 or 0.0).
+ * <p>
  * 2) Divergence (A vs B)
- *    - Uses {@link DivergenceComputer} (JS / HELLINGER / TV).
- *    - Reuses canonical grid alignment via {@link ABComparisonEngine} under the hood.
- *    - Returns D[i][j] and (optionally) a quality matrix carried from DivergenceComputer.
- *
+ * - Uses {@link DivergenceComputer} (JS / HELLINGER / TV).
+ * - Reuses canonical grid alignment via {@link ABComparisonEngine} under the hood.
+ * - Returns D[i][j] and (optionally) a quality matrix carried from DivergenceComputer.
+ * <p>
  * Output is a compact {@link MatrixResult} suitable for {@code MatrixHeatmapView}.
- *
+ * <p>
  * This class contains no UI code and is thread-safe per call.
  *
  * @author Sean Phillips
  */
 public final class PairwiseMatrixEngine {
 
-    private PairwiseMatrixEngine() { }
+    private PairwiseMatrixEngine() {
+    }
 
     // ------------------------------------------------------------------------------------
     // Result DTO
     // ------------------------------------------------------------------------------------
 
-    /** Immutable result bundle for a computed matrix (similarity or divergence). */
+    /**
+     * Immutable result bundle for a computed matrix (similarity or divergence).
+     */
     public static final class MatrixResult implements Serializable {
-        @Serial private static final long serialVersionUID = 1L;
+        @Serial
+        private static final long serialVersionUID = 1L;
 
-        /** The primary N×N matrix (scores or divergences). */
+        /**
+         * The primary N×N matrix (scores or divergences).
+         */
         public final double[][] matrix;
 
-        /** Optional N×N quality matrix (same shape), may be null. */
+        /**
+         * Optional N×N quality matrix (same shape), may be null.
+         */
         public final double[][] quality;
 
-        /** Component indices (length N). */
+        /**
+         * Component indices (length N).
+         */
         public final int[] componentIndices;
 
-        /** Human-readable labels for rows/cols (length N). */
+        /**
+         * Human-readable labels for rows/cols (length N).
+         */
         public final List<String> labels;
 
-        /** Legend label for UI (e.g., "Pearson |r|" or "JS divergence"). */
+        /**
+         * Legend label for UI (e.g., "Pearson |r|" or "JS divergence").
+         */
         public final String legendLabel;
 
-        /** Suggested title (e.g., "Similarity: PEARSON" or "Divergence: JS"). */
+        /**
+         * Suggested title (e.g., "Similarity: PEARSON" or "Divergence: JS").
+         */
         public final String title;
 
         private MatrixResult(double[][] matrix,
@@ -93,14 +109,14 @@ public final class PairwiseMatrixEngine {
     /**
      * Compute a component-by-component similarity matrix for a single cohort
      * using the score metric specified in the recipe.
-     *
+     * <p>
      * Diagonal entries are computed as the metric of a component with itself
      * when {@code includeDiagonal} is true; otherwise set to 0.
      */
     public static MatrixResult computeSimilarityMatrix(
-            List<FeatureVector> cohort,
-            JpdfRecipe recipe,
-            boolean includeDiagonal
+        List<FeatureVector> cohort,
+        JpdfRecipe recipe,
+        boolean includeDiagonal
     ) {
         Objects.requireNonNull(cohort, "cohort");
         Objects.requireNonNull(recipe, "recipe");
@@ -115,13 +131,13 @@ public final class PairwiseMatrixEngine {
         for (int i = start; i <= end; i++) compsList.add(i);
 
         return computeSimilarityMatrixForComponents(
-                cohort,
-                compsList,
-                recipe.getScoreMetric(),
-                recipe.getBinsX(),
-                recipe.getBinsY(),
-                recipe.getMinAvgCountPerCell(),
-                includeDiagonal
+            cohort,
+            compsList,
+            recipe.getScoreMetric(),
+            recipe.getBinsX(),
+            recipe.getBinsY(),
+            recipe.getMinAvgCountPerCell(),
+            includeDiagonal
         );
     }
 
@@ -129,13 +145,13 @@ public final class PairwiseMatrixEngine {
      * Compute a similarity matrix for an explicit list of component indices using a chosen score metric.
      */
     public static MatrixResult computeSimilarityMatrixForComponents(
-            List<FeatureVector> cohort,
-            List<Integer> componentIndices,
-            JpdfRecipe.ScoreMetric scoreMetric,
-            int binsX,
-            int binsY,
-            double minAvgCountPerCell,
-            boolean includeDiagonal
+        List<FeatureVector> cohort,
+        List<Integer> componentIndices,
+        JpdfRecipe.ScoreMetric scoreMetric,
+        int binsX,
+        int binsY,
+        double minAvgCountPerCell,
+        boolean includeDiagonal
     ) {
         Objects.requireNonNull(cohort, "cohort");
         Objects.requireNonNull(componentIndices, "componentIndices");
@@ -143,7 +159,7 @@ public final class PairwiseMatrixEngine {
 
         if (componentIndices.isEmpty()) {
             return MatrixResult.of(new double[0][0], new double[0][0], new int[0], List.of(),
-                    legendForScore(scoreMetric), "Similarity: " + scoreMetric.name());
+                legendForScore(scoreMetric), "Similarity: " + scoreMetric.name());
         }
 
         // Build contiguous range if possible, otherwise map indices through a dense temporary space
@@ -156,7 +172,7 @@ public final class PairwiseMatrixEngine {
         }
         if (minIdx == Integer.MAX_VALUE) {
             return MatrixResult.of(new double[0][0], new double[0][0], new int[0], List.of(),
-                    legendForScore(scoreMetric), "Similarity: " + scoreMetric.name());
+                legendForScore(scoreMetric), "Similarity: " + scoreMetric.name());
         }
 
         // Configure PairScorer (used only for scoring and sufficiency flags)
@@ -164,12 +180,12 @@ public final class PairwiseMatrixEngine {
 
         // We will compute pairwise scores for all pairs in [minIdx..maxIdx], then select the subset we need.
         List<PairScore> allScores = PairScorer.scoreComponentPairs(
-                cohort,
-                minIdx,
-                maxIdx,
-                includeDiagonal,   // include (i,i) if requested
-                false,             // unordered pairs → only i<j from scorer
-                cfg
+            cohort,
+            minIdx,
+            maxIdx,
+            includeDiagonal,   // include (i,i) if requested
+            false,             // unordered pairs → only i<j from scorer
+            cfg
         );
 
         // Build a lookup table for quick access (i,j) → score/sufficient
@@ -218,12 +234,12 @@ public final class PairwiseMatrixEngine {
         for (int k = 0; k < N; k++) labels.add("Comp " + comps[k]);
 
         return MatrixResult.of(
-                M,
-                Q,
-                comps,
-                labels,
-                legendForScore(scoreMetric),
-                "Similarity: " + scoreMetric.name()
+            M,
+            Q,
+            comps,
+            labels,
+            legendForScore(scoreMetric),
+            "Similarity: " + scoreMetric.name()
         );
     }
 
@@ -236,11 +252,11 @@ public final class PairwiseMatrixEngine {
      * This defers to {@link DivergenceComputer} to ensure aligned PDF grids and stable metrics.
      */
     public static MatrixResult computeDivergenceMatrix(
-            List<FeatureVector> cohortA,
-            List<FeatureVector> cohortB,
-            JpdfRecipe recipe,
-            DivergenceMetric metric,
-            DensityCache cache
+        List<FeatureVector> cohortA,
+        List<FeatureVector> cohortB,
+        JpdfRecipe recipe,
+        DivergenceMetric metric,
+        DensityCache cache
     ) {
         Objects.requireNonNull(cohortA, "cohortA");
         Objects.requireNonNull(cohortB, "cohortB");
@@ -248,19 +264,19 @@ public final class PairwiseMatrixEngine {
         Objects.requireNonNull(metric, "metric");
 
         DivergenceComputer.DivergenceResult dr = DivergenceComputer.computeForComponentRange(
-                cohortA, cohortB, recipe, metric, cache
+            cohortA, cohortB, recipe, metric, cache
         );
 
         // Labels/indices already computed by DivergenceComputer
         List<String> labels = (dr.labels != null) ? dr.labels : buildDefaultLabels(dr.componentIndices);
 
         return MatrixResult.of(
-                dr.matrix,
-                dr.quality,
-                dr.componentIndices,
-                labels,
-                legendForDivergence(metric),
-                "Divergence: " + metric.name()
+            dr.matrix,
+            dr.quality,
+            dr.componentIndices,
+            labels,
+            legendForDivergence(metric),
+            "Divergence: " + metric.name()
         );
     }
 

@@ -3,6 +3,7 @@ package edu.jhuapl.trinity.data.messages.xai;
 import com.fasterxml.jackson.core.type.TypeReference;
 import com.fasterxml.jackson.databind.JsonNode;
 import com.fasterxml.jackson.databind.ObjectMapper;
+
 import java.io.File;
 import java.io.IOException;
 import java.io.Reader;
@@ -11,31 +12,40 @@ import java.util.ArrayList;
 import java.util.List;
 
 public final class CyberReportIO {
-    private CyberReportIO() {}
+    private CyberReportIO() {
+    }
 
     private static final ObjectMapper MAPPER = new ObjectMapper();
 
     // --- Public convenience overloads ---
 
-    /** Read from a File and return a flattened list of reports. */
+    /**
+     * Read from a File and return a flattened list of reports.
+     */
     public static List<CyberReport> readReports(File file) throws IOException {
         JsonNode root = MAPPER.readTree(file);
         return toReports(root);
     }
 
-    /** Read from a Path and return a flattened list of reports. */
+    /**
+     * Read from a Path and return a flattened list of reports.
+     */
     public static List<CyberReport> readReports(Path path) throws IOException {
         JsonNode root = MAPPER.readTree(path.toFile());
         return toReports(root);
     }
 
-    /** Read from a Reader and return a flattened list of reports. */
+    /**
+     * Read from a Reader and return a flattened list of reports.
+     */
     public static List<CyberReport> readReports(Reader in) throws IOException {
         JsonNode root = MAPPER.readTree(in);
         return toReports(root);
     }
 
-    /** Read from a JSON string and return a flattened list of reports. */
+    /**
+     * Read from a JSON string and return a flattened list of reports.
+     */
     public static List<CyberReport> readReports(String json) throws IOException {
         JsonNode root = MAPPER.readTree(json);
         return toReports(root);
@@ -57,7 +67,8 @@ public final class CyberReportIO {
 
             // Fast path: top-level array of objects
             if (allObjects(root)) {
-                out.addAll(MAPPER.convertValue(root, new TypeReference<List<CyberReport>>() {}));
+                out.addAll(MAPPER.convertValue(root, new TypeReference<List<CyberReport>>() {
+                }));
                 return out;
             }
 

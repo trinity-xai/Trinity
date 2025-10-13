@@ -17,46 +17,67 @@ import java.util.UUID;
 import java.util.concurrent.ThreadLocalRandom;
 import java.util.stream.Collectors;
 
-/** Grab-bag of common helpers used by FeatureVector Manager UI & service. */
+/**
+ * Grab-bag of common helpers used by FeatureVector Manager UI & service.
+ */
 public final class FeatureVectorUtils {
-    private FeatureVectorUtils() {}
+    private FeatureVectorUtils() {
+    }
 
     /* ---------------- String helpers ---------------- */
 
-    /** null-safe: returns empty string when s==null */
-    public static String nullToEmpty(String s) { return s == null ? "" : s; }
+    /**
+     * null-safe: returns empty string when s==null
+     */
+    public static String nullToEmpty(String s) {
+        return s == null ? "" : s;
+    }
 
-    /** Normalizes for case-insensitive contains. */
-    public static String normalize(String s) { return s == null ? null : s.toLowerCase(Locale.ROOT).trim(); }
+    /**
+     * Normalizes for case-insensitive contains.
+     */
+    public static String normalize(String s) {
+        return s == null ? null : s.toLowerCase(Locale.ROOT).trim();
+    }
 
-    /** Case-insensitive "contains" against any object (via toString()); q must be normalized already. */
+    /**
+     * Case-insensitive "contains" against any object (via toString()); q must be normalized already.
+     */
     public static boolean containsIgnoreCase(Object value, String qNormalized) {
         if (value == null || qNormalized == null || qNormalized.isEmpty()) return false;
         String v = normalize(String.valueOf(value));
         return v != null && v.contains(qNormalized);
     }
 
-    /** Trims trailing zeros from a decimal representation. */
+    /**
+     * Trims trailing zeros from a decimal representation.
+     */
     public static String trimDouble(double d) {
         String s = String.format(Locale.ROOT, "%.6f", d);
         if (s.contains(".")) s = s.replaceAll("0+$", "").replaceAll("\\.$", "");
         return s;
     }
 
-    /** Safe filename mapping (Windows reserved chars, etc.). */
+    /**
+     * Safe filename mapping (Windows reserved chars, etc.).
+     */
     public static String safeFilename(String s) {
         if (s == null) return "collection";
         return s.replaceAll("[\\\\/:*?\"<>|]", "_");
     }
 
-    /** Normalize/clean a collection name (null-safe trim). */
+    /**
+     * Normalize/clean a collection name (null-safe trim).
+     */
     public static String cleanCollectionName(String s) {
         return (s == null) ? "" : s.trim();
     }
 
     /* ---------------- Vector cloning/copying ---------------- */
 
-    /** Deep-ish clone of a FeatureVector (copies lists and metadata map). */
+    /**
+     * Deep-ish clone of a FeatureVector (copies lists and metadata map).
+     */
     public static FeatureVector cloneVector(FeatureVector src) {
         if (src == null) return null;
         FeatureVector fv = new FeatureVector();
@@ -78,7 +99,9 @@ public final class FeatureVectorUtils {
         return fv;
     }
 
-    /** Copy a list of FeatureVectors via {@link #cloneVector(FeatureVector)}. */
+    /**
+     * Copy a list of FeatureVectors via {@link #cloneVector(FeatureVector)}.
+     */
     public static List<FeatureVector> copyVectors(List<FeatureVector> in) {
         if (in == null || in.isEmpty()) return List.of();
         ArrayList<FeatureVector> out = new ArrayList<>(in.size());
@@ -88,7 +111,9 @@ public final class FeatureVectorUtils {
 
     /* ---------------- Preview/format helpers ---------------- */
 
-    /** Small numeric preview for a vector’s data list. */
+    /**
+     * Small numeric preview for a vector’s data list.
+     */
     public static String previewList(List<Double> data, int firstN) {
         if (data == null || data.isEmpty()) return "[]";
         int n = Math.min(firstN, data.size());
@@ -108,20 +133,24 @@ public final class FeatureVectorUtils {
         return sb.toString();
     }
 
-    /** Pretty prints metadata as lines of "key: value". */
+    /**
+     * Pretty prints metadata as lines of "key: value".
+     */
     public static String prettyMetadata(Map<String, String> md) {
         if (md == null || md.isEmpty()) return "(no metadata)";
         StringBuilder sb = new StringBuilder();
         md.forEach((k, v) -> sb.append(k == null ? "(null)" : k)
-                               .append(": ")
-                               .append(v == null ? "(null)" : v)
-                               .append("\n"));
+            .append(": ")
+            .append(v == null ? "(null)" : v)
+            .append("\n"));
         // strip trailing newline
         int len = sb.length();
         return len > 0 ? sb.deleteCharAt(len - 1).toString() : "";
     }
 
-    /** Parses simple `key=value` lines into a LinkedHashMap (preserves input order). */
+    /**
+     * Parses simple `key=value` lines into a LinkedHashMap (preserves input order).
+     */
     public static Map<String, String> parseKeyValues(String text) {
         Map<String, String> map = new LinkedHashMap<>();
         if (text == null || text.isBlank()) return map;
@@ -163,7 +192,9 @@ public final class FeatureVectorUtils {
         return "Collection-" + UUID.randomUUID().toString().substring(0, 8);
     }
 
-    /** Merge helper with optional dedupe by entityId (null IDs are always appended). */
+    /**
+     * Merge helper with optional dedupe by entityId (null IDs are always appended).
+     */
     public static List<FeatureVector> mergeVectors(List<FeatureVector> target,
                                                    Collection<FeatureVector> source,
                                                    boolean dedupeByEntityId) {
@@ -187,7 +218,9 @@ public final class FeatureVectorUtils {
 
     /* ---------------- Sampling & filtering ---------------- */
 
-    /** Applies sampling policy used by the Manager. */
+    /**
+     * Applies sampling policy used by the Manager.
+     */
     public static List<FeatureVector> applySampling(List<FeatureVector> all,
                                                     FeatureVectorManagerService.SamplingMode mode) {
         if (all == null || all.isEmpty() || mode == null || mode == FeatureVectorManagerService.SamplingMode.ALL)
@@ -216,12 +249,16 @@ public final class FeatureVectorUtils {
         }
     }
 
-    /** Alias used by the service refactor; delegates to {@link #applySampling(List, FeatureVectorManagerService.SamplingMode)}. */
+    /**
+     * Alias used by the service refactor; delegates to {@link #applySampling(List, FeatureVectorManagerService.SamplingMode)}.
+     */
     public static List<FeatureVector> sample(List<FeatureVector> src, FeatureVectorManagerService.SamplingMode mode) {
         return applySampling(src, mode);
     }
 
-    /** Returns true if any of label, text, or metadata values contains the normalized query. */
+    /**
+     * Returns true if any of label, text, or metadata values contains the normalized query.
+     */
     public static boolean matchesTextFilter(FeatureVector fv, String normalizedQuery) {
         if (fv == null) return false;
         if (normalizedQuery == null || normalizedQuery.isEmpty()) return true;
@@ -258,9 +295,9 @@ public final class FeatureVectorUtils {
                     if (fv == null) continue;
                     StringBuilder row = new StringBuilder();
                     row.append(escapeCsv(fv.getLabel())).append(",")
-                       .append(fv.getScore()).append(",")
-                       .append(fv.getPfa()).append(",")
-                       .append(fv.getLayer());
+                        .append(fv.getScore()).append(",")
+                        .append(fv.getPfa()).append(",")
+                        .append(fv.getLayer());
                     List<Double> data = fv.getData();
                     for (int i = 0; i < maxDim; i++) {
                         row.append(",");
@@ -283,8 +320,9 @@ public final class FeatureVectorUtils {
         }
         return s;
     }
+
     public static String cleanName(String s) {
         if (s == null) return "";
         return s.trim();
-    }    
+    }
 }

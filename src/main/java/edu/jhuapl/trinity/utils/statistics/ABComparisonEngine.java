@@ -4,7 +4,6 @@ import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 
 import java.io.Serial;
 import java.io.Serializable;
-import java.time.Instant;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
@@ -15,27 +14,30 @@ import java.util.Objects;
  * Computes aligned baseline PDF/CDF surfaces for cohorts A and B on the same axes,
  * then (optionally) produces signed difference maps (A - B). Bins come from the recipe;
  * bounds come from the recipe policy (unioned across cohorts for canonical alignment).
- *
+ * <p>
  * This class does NOT select axis pairs; it assumes the caller already chose (xAxis,yAxis).
  * For batch pair selection use JpdfBatchEngine (which can call into this for A/B).
- *
+ * <p>
  * Outputs:
- *  - Baseline A and B GridDensityResult (PDF and/or CDF depending on recipe)
- *  - Signed difference maps as List<List<Double>> (PDF and/or CDF), same grid
- *  - JpdfProvenance for each produced surface
- *
+ * - Baseline A and B GridDensityResult (PDF and/or CDF depending on recipe)
+ * - Signed difference maps as List<List<Double>> (PDF and/or CDF), same grid
+ * - JpdfProvenance for each produced surface
+ * <p>
  * Notes:
- *  - We align both cohorts on one canonical GridSpec to ensure apples-to-apples differences.
- *  - Bounds are the union of each cohort's axis ranges under the chosen CanonicalGridPolicy.
- *  - When cache is provided & enabled in the recipe, we use it; otherwise compute directly.
+ * - We align both cohorts on one canonical GridSpec to ensure apples-to-apples differences.
+ * - Bounds are the union of each cohort's axis ranges under the chosen CanonicalGridPolicy.
+ * - When cache is provided & enabled in the recipe, we use it; otherwise compute directly.
  *
  * @author Sean Phillips
  */
 public final class ABComparisonEngine {
 
-    /** Immutable result bundle for a single A/B compare on one (x,y) pair. */
+    /**
+     * Immutable result bundle for a single A/B compare on one (x,y) pair.
+     */
     public static final class AbResult implements Serializable {
-        @Serial private static final long serialVersionUID = 1L;
+        @Serial
+        private static final long serialVersionUID = 1L;
 
         public final GridSpec grid;
 
@@ -78,7 +80,8 @@ public final class ABComparisonEngine {
         }
     }
 
-    private ABComparisonEngine() { }
+    private ABComparisonEngine() {
+    }
 
     /**
      * Compute an A/B comparison for given axes. Uses recipe bins & bounds policy.
@@ -111,18 +114,18 @@ public final class ABComparisonEngine {
         // 2) Compute baselines (A and B) using cache if available/allowed.
         boolean useCache = cache != null && recipe.isCacheEnabled();
         GridDensityResult resA = useCache
-                ? cache.getOrCompute(aVectors, xAxis, yAxis, grid, datasetIdA)
-                : GridDensity3DEngine.computePdfCdf2D(aVectors, xAxis, yAxis, grid);
+            ? cache.getOrCompute(aVectors, xAxis, yAxis, grid, datasetIdA)
+            : GridDensity3DEngine.computePdfCdf2D(aVectors, xAxis, yAxis, grid);
 
         GridDensityResult resB = useCache
-                ? cache.getOrCompute(bVectors, xAxis, yAxis, grid, datasetIdB)
-                : GridDensity3DEngine.computePdfCdf2D(bVectors, xAxis, yAxis, grid);
+            ? cache.getOrCompute(bVectors, xAxis, yAxis, grid, datasetIdB)
+            : GridDensity3DEngine.computePdfCdf2D(bVectors, xAxis, yAxis, grid);
 
         // 3) Optionally build signed differences.
         boolean needPdf = recipe.getOutputKind() == JpdfRecipe.OutputKind.PDF_ONLY
-                || recipe.getOutputKind() == JpdfRecipe.OutputKind.PDF_AND_CDF;
+            || recipe.getOutputKind() == JpdfRecipe.OutputKind.PDF_AND_CDF;
         boolean needCdf = recipe.getOutputKind() == JpdfRecipe.OutputKind.CDF_ONLY
-                || recipe.getOutputKind() == JpdfRecipe.OutputKind.PDF_AND_CDF;
+            || recipe.getOutputKind() == JpdfRecipe.OutputKind.PDF_AND_CDF;
 
         List<List<Double>> pdfDiff = null;
         List<List<Double>> cdfDiff = null;
@@ -163,17 +166,17 @@ public final class ABComparisonEngine {
         }
 
         return new AbResult(
-                grid,
-                resA,
-                resB,
-                pdfDiff,
-                cdfDiff,
-                pdfProvA,
-                pdfProvB,
-                pdfProvDiff,
-                cdfProvA,
-                cdfProvB,
-                cdfProvDiff
+            grid,
+            resA,
+            resB,
+            pdfDiff,
+            cdfDiff,
+            pdfProvA,
+            pdfProvB,
+            pdfProvDiff,
+            cdfProvA,
+            cdfProvB,
+            cdfProvDiff
         );
     }
 
@@ -181,7 +184,9 @@ public final class ABComparisonEngine {
     // Helpers
     // -------------------------------------------------------------------------------------
 
-    /** Build one canonical grid for BOTH cohorts using the recipe's bounds policy and bins. */
+    /**
+     * Build one canonical grid for BOTH cohorts using the recipe's bounds policy and bins.
+     */
     private static GridSpec buildAlignedGrid(List<FeatureVector> aVectors,
                                              List<FeatureVector> bVectors,
                                              AxisParams xAxis,
@@ -194,8 +199,10 @@ public final class ABComparisonEngine {
 
         switch (recipe.getBoundsPolicy()) {
             case FIXED_01 -> {
-                g.setMinX(0.0); g.setMaxX(1.0);
-                g.setMinY(0.0); g.setMaxY(1.0);
+                g.setMinX(0.0);
+                g.setMaxX(1.0);
+                g.setMinY(0.0);
+                g.setMaxY(1.0);
             }
             case DATA_MIN_MAX -> {
                 // derive per-cohort ranges then take union
@@ -225,7 +232,9 @@ public final class ABComparisonEngine {
         return g;
     }
 
-    /** Create a provenance AxisSummary from AxisParams (best-effort without extra context). */
+    /**
+     * Create a provenance AxisSummary from AxisParams (best-effort without extra context).
+     */
     private static JpdfProvenance.AxisSummary toAxisSummary(AxisParams a) {
         // We don't know if a "mean" or "vector@idx" was used; treat METRIC reference as CUSTOM when present.
         JpdfProvenance.AxisSummary.ReferenceKind refKind;
@@ -233,7 +242,7 @@ public final class ABComparisonEngine {
 
         if (a.getType() == StatisticEngine.ScalarType.METRIC_DISTANCE_TO_MEAN) {
             refKind = (a.getReferenceVec() != null) ? JpdfProvenance.AxisSummary.ReferenceKind.CUSTOM
-                                                    : JpdfProvenance.AxisSummary.ReferenceKind.NONE;
+                : JpdfProvenance.AxisSummary.ReferenceKind.NONE;
         } else if (a.getType() == StatisticEngine.ScalarType.COMPONENT_AT_DIMENSION) {
             refKind = JpdfProvenance.AxisSummary.ReferenceKind.NONE;
         } else {
@@ -242,16 +251,18 @@ public final class ABComparisonEngine {
 
         String label = a.getMetricName(); // harmless display hint; may be null
         return new JpdfProvenance.AxisSummary(
-                a.getType(),
-                a.getMetricName(),
-                a.getComponentIndex(),
-                refKind,
-                refIndex,
-                label
+            a.getType(),
+            a.getMetricName(),
+            a.getComponentIndex(),
+            refKind,
+            refIndex,
+            label
         );
     }
 
-    /** Convert GridSpec + recipe bounds policy into a provenance GridSummary. */
+    /**
+     * Convert GridSpec + recipe bounds policy into a provenance GridSummary.
+     */
     private static JpdfProvenance.GridSummary toGridSummary(GridSpec g, JpdfRecipe recipe) {
         int bx = g.getBinsX();
         int by = g.getBinsY();
@@ -269,17 +280,21 @@ public final class ABComparisonEngine {
         };
 
         return new JpdfProvenance.GridSummary(
-                bx, by,
-                minX, maxX, minY, maxY,
-                dx, dy,
-                bp,
-                recipe.getCanonicalPolicyId()
+            bx, by,
+            minX, maxX, minY, maxY,
+            dx, dy,
+            bp,
+            recipe.getCanonicalPolicyId()
         );
     }
 
-    private static double nz(Double v, double dflt) { return v == null ? dflt : v; }
+    private static double nz(Double v, double dflt) {
+        return v == null ? dflt : v;
+    }
 
-    /** Element-wise A - B (assumes equal shape). Returns null if either is null. */
+    /**
+     * Element-wise A - B (assumes equal shape). Returns null if either is null.
+     */
     private static List<List<Double>> subtractGrids(List<List<Double>> a, List<List<Double>> b) {
         if (a == null || b == null) return null;
         int rows = Math.min(a.size(), b.size());

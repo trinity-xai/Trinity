@@ -117,6 +117,7 @@ import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.CullFace;
 import javafx.scene.shape.DrawMode;
+import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Rectangle;
 import javafx.scene.shape.Shape3D;
 import javafx.scene.shape.Sphere;
@@ -147,7 +148,6 @@ import java.util.stream.Collectors;
 
 import static edu.jhuapl.trinity.javafx.handlers.GaussianMixtureEventHandler.generateEllipsoidDiagonal;
 import static edu.jhuapl.trinity.utils.ResourceUtils.removeExtension;
-import javafx.scene.shape.Polygon;
 
 /**
  * @author Sean Phillips
@@ -769,7 +769,7 @@ public class Projections3DPane extends StackPane implements
                     mousePosX - selectionRectangle.getX());
                 selectionRectangle.setHeight(
                     mousePosY - selectionRectangle.getY());
-                lassoPolygon.getPoints().addAll(mousePosX, mousePosY);                
+                lassoPolygon.getPoints().addAll(mousePosX, mousePosY);
             } else
                 mouseDragCamera(me);
         });
@@ -1094,7 +1094,7 @@ public class Projections3DPane extends StackPane implements
             subScene.setFill(color);
         });
         this.scene.addEventHandler(HyperspaceEvent.ENABLE_HYPERSPACE_SKYBOX, e -> {
-            if(null != skybox) skybox.setVisible((Boolean) e.object);
+            if (null != skybox) skybox.setVisible((Boolean) e.object);
         });
 
         this.scene.addEventHandler(HyperspaceEvent.FACTOR_COORDINATES_GUI, e -> {

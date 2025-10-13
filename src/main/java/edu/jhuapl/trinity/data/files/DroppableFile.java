@@ -1,12 +1,13 @@
 package edu.jhuapl.trinity.data.files;
 
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.awt.datatransfer.DataFlavor;
 import java.awt.datatransfer.Transferable;
 import java.awt.datatransfer.UnsupportedFlavorException;
 import java.io.File;
 import java.io.IOException;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  *
@@ -19,10 +20,11 @@ public abstract class DroppableFile extends File implements Transferable {
      * Constructor that extends File super constructor
      *
      * @param pathname Full path string to the file
-     */    
+     */
     public DroppableFile(String pathname) {
         super(pathname);
     }
+
     /**
      * Constructor that allows for automatically parsing the content of the file
      *
@@ -35,7 +37,8 @@ public abstract class DroppableFile extends File implements Transferable {
         super(pathname);
         if (parseExisting)
             parseContent();
-    }   
+    }
+
     /**
      * Parses the file specified via this object's constructor
      * Assumes the file exists and is readable and conforms to expected format.
@@ -44,16 +47,19 @@ public abstract class DroppableFile extends File implements Transferable {
      */
     public void parse() throws IOException {
         parseContent();
-    }  
+    }
+
     public abstract DataFlavor getDataFlavor();
+
     public abstract void parseContent() throws IOException;
+
     /**
      * Writes out the content of this File at the location
      * specified via this object's constructor.
      * Assumes the file exists.
      *
      * @throws java.io.IOException
-     */    
+     */
     public abstract void writeContent() throws IOException;
 
     @Override
@@ -73,5 +79,5 @@ public abstract class DroppableFile extends File implements Transferable {
         } else {
             throw new UnsupportedFlavorException(df);
         }
-    }    
+    }
 }

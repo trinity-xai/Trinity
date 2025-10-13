@@ -1,12 +1,6 @@
 package edu.jhuapl.trinity.utils.statistics;
 
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Map;
-import java.util.Set;
-import java.util.function.Consumer;
-
 import javafx.application.Platform;
 import javafx.geometry.Point2D;
 import javafx.scene.Node;
@@ -14,9 +8,15 @@ import javafx.scene.chart.LineChart;
 import javafx.scene.chart.NumberAxis;
 import javafx.scene.chart.XYChart;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Map;
+import java.util.Set;
+import java.util.function.Consumer;
+
 public class StatPdfCdfChart extends LineChart<Number, Number> {
 
-    public enum Mode { PDF_ONLY, CDF_ONLY }
+    public enum Mode {PDF_ONLY, CDF_ONLY}
 
     private StatisticEngine.ScalarType scalarType;
     private int bins;
@@ -68,9 +68,17 @@ public class StatPdfCdfChart extends LineChart<Number, Number> {
     private Consumer<BinSelection> onBinHover;
     private Consumer<BinSelection> onBinClick;
 
-    public void setOnBinHover(Consumer<BinSelection> h) { this.onBinHover = h; }
-    public void setOnBinClick(Consumer<BinSelection> h) { this.onBinClick = h; }
-    public StatisticResult getLastStatisticResult() { return lastStat; }
+    public void setOnBinHover(Consumer<BinSelection> h) {
+        this.onBinHover = h;
+    }
+
+    public void setOnBinClick(Consumer<BinSelection> h) {
+        this.onBinClick = h;
+    }
+
+    public StatisticResult getLastStatisticResult() {
+        return lastStat;
+    }
 
     public StatPdfCdfChart(StatisticEngine.ScalarType scalarType, int bins, Mode mode) {
         super(new NumberAxis(), new NumberAxis());
@@ -165,7 +173,10 @@ public class StatPdfCdfChart extends LineChart<Number, Number> {
     }
 
     // ---- raw samples API ----
-    /** Use precomputed scalar samples instead of deriving scalars from FeatureVectors. */
+
+    /**
+     * Use precomputed scalar samples instead of deriving scalars from FeatureVectors.
+     */
     public void setScalarSamples(List<Double> samples) {
         if (samples == null || samples.isEmpty()) {
             this.scalarSamples = null;
@@ -188,18 +199,53 @@ public class StatPdfCdfChart extends LineChart<Number, Number> {
     }
 
     // getters
-    public StatisticEngine.ScalarType getScalarType() { return scalarType; }
-    public int getBins() { return bins; }
-    public Mode getMode() { return mode; }
-    public String getMetricNameForGeneric() { return metricNameForGeneric; }
-    public List<Double> getReferenceVectorForGeneric() { return referenceVectorForGeneric; }
-    public Integer getComponentIndex() { return componentIndex; }
-    public boolean isLockXAxis() { return lockXAxis; }
-    public double getLockLower() { return lockLower; }
-    public double getLockUpper() { return lockUpper; }
-    public boolean isShowSymbols() { return showSymbols; }
-    public double getSeriesStrokeWidth() { return seriesStrokeWidth; }
-    public boolean isUsingRawSamples() { return scalarSamples != null && !scalarSamples.isEmpty(); }
+    public StatisticEngine.ScalarType getScalarType() {
+        return scalarType;
+    }
+
+    public int getBins() {
+        return bins;
+    }
+
+    public Mode getMode() {
+        return mode;
+    }
+
+    public String getMetricNameForGeneric() {
+        return metricNameForGeneric;
+    }
+
+    public List<Double> getReferenceVectorForGeneric() {
+        return referenceVectorForGeneric;
+    }
+
+    public Integer getComponentIndex() {
+        return componentIndex;
+    }
+
+    public boolean isLockXAxis() {
+        return lockXAxis;
+    }
+
+    public double getLockLower() {
+        return lockLower;
+    }
+
+    public double getLockUpper() {
+        return lockUpper;
+    }
+
+    public boolean isShowSymbols() {
+        return showSymbols;
+    }
+
+    public double getSeriesStrokeWidth() {
+        return seriesStrokeWidth;
+    }
+
+    public boolean isUsingRawSamples() {
+        return scalarSamples != null && !scalarSamples.isEmpty();
+    }
 
     // internal
     private String titleForCurrentState() {
@@ -228,7 +274,7 @@ public class StatPdfCdfChart extends LineChart<Number, Number> {
         Integer compIdx = (scalarType == StatisticEngine.ScalarType.COMPONENT_AT_DIMENSION) ? componentIndex : null;
 
         Map<StatisticEngine.ScalarType, StatisticResult> resultMap =
-                StatisticEngine.computeStatistics(vectors, types, bins, metricName, refVec, compIdx);
+            StatisticEngine.computeStatistics(vectors, types, bins, metricName, refVec, compIdx);
 
         plotFromStatistic(resultMap.get(scalarType));
     }
@@ -278,7 +324,7 @@ public class StatPdfCdfChart extends LineChart<Number, Number> {
         }
     }
 
-    //interaction plumbing 
+    //interaction plumbing
     private void attachPlotInteractions() {
         Platform.runLater(() -> {
             Node plotArea = lookup(".chart-plot-background");
@@ -333,8 +379,8 @@ public class StatPdfCdfChart extends LineChart<Number, Number> {
                 double center = lastStat.getPdfBins()[b];
                 int count = lastStat.getBinCounts()[b];
                 double frac = (lastStat.getTotalSamples() > 0)
-                        ? ((double) count) / lastStat.getTotalSamples()
-                        : 0.0;
+                    ? ((double) count) / lastStat.getTotalSamples()
+                    : 0.0;
                 int[] idx = lastStat.getBinToSampleIdx()[b];
                 return new BinSelection(b, center, edges[b], edges[b + 1], count, frac, idx);
             }

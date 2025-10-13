@@ -1,8 +1,9 @@
 package edu.jhuapl.trinity.utils.graph;
 
+import javafx.scene.paint.Color;
+
 import java.io.Serial;
 import java.io.Serializable;
-import javafx.scene.paint.Color;
 
 /**
  * Visual styling parameters for 3D graph rendering.
@@ -12,17 +13,17 @@ public final class GraphStyleParams implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
 
-// Nodes
+    // Nodes
     public Color nodeColor = Color.CYAN; // default aligned with Graph3DRenderer.Params
     public double nodeRadius = 20.0;
     public double nodeOpacity = 1.0; // [0..1]
 
-// Edges
+    // Edges
     public Color edgeColor = Color.ALICEBLUE; // default aligned with Graph3DRenderer.Params
     public double edgeWidth = 8.0; // rendered as float in Tracer
     public double edgeOpacity = 1.0; // [0..1]
 
-// Fluent setters
+    // Fluent setters
     public GraphStyleParams withNodeColor(Color c) {
         this.nodeColor = c;
         return this;
@@ -53,7 +54,7 @@ public final class GraphStyleParams implements Serializable {
         return this;
     }
 
-// Shallow copy helpers
+    // Shallow copy helpers
     public static GraphStyleParams copyOf(GraphStyleParams src) {
         GraphStyleParams p = new GraphStyleParams();
         if (src == null) {

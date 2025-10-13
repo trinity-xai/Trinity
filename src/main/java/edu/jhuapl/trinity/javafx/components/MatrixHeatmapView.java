@@ -1,11 +1,6 @@
 package edu.jhuapl.trinity.javafx.components;
 
-import edu.jhuapl.trinity.javafx.util.MatrixViewUtil;
-import java.text.DecimalFormat;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
-import java.util.function.Consumer;
+import edu.jhuapl.trinity.utils.MatrixViewUtil;
 import javafx.beans.InvalidationListener;
 import javafx.beans.Observable;
 import javafx.geometry.Insets;
@@ -20,6 +15,11 @@ import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.scene.text.TextAlignment;
 
+import java.text.DecimalFormat;
+import java.util.Arrays;
+import java.util.List;
+import java.util.function.Consumer;
+
 /**
  * MatrixHeatmapView
  * -----------------
@@ -31,7 +31,7 @@ import javafx.scene.text.TextAlignment;
  * - Axis labels (top / left).
  * - Hover tooltips with (row, col, value).
  * - Click callback with cell picking.
- *
+ * <p>
  * Public API is intentionally generic so it can be reused by multiple Trinity tools.
  *
  * @author Sean Phillips
@@ -40,16 +40,21 @@ public final class MatrixHeatmapView extends BorderPane {
 
     // -------------------- Types --------------------
 
-    public enum ValueMode { RAW, ABS_VALUE }
-    public enum ScaleMode { AUTO, FIXED }
+    public enum ValueMode {RAW, ABS_VALUE}
 
-    /** Color palette styles. */
+    public enum ScaleMode {AUTO, FIXED}
+
+    /**
+     * Color palette styles.
+     */
     public enum PaletteKind {
         SEQUENTIAL,   // low -> high mapped 0..1
         DIVERGING     // < center on cool, > center on warm (center maps to mid color)
     }
 
-    /** Simple click payload. */
+    /**
+     * Simple click payload.
+     */
     public static final class MatrixClick {
         public final int row;
         public final int col;
@@ -136,7 +141,9 @@ public final class MatrixHeatmapView extends BorderPane {
 
     // -------------------- Public API --------------------
 
-    /** Set a new matrix. Null or empty → clears view. */
+    /**
+     * Set a new matrix. Null or empty → clears view.
+     */
     public void setMatrix(double[][] values) {
         if (values == null || values.length == 0 || values[0].length == 0) {
             this.matrix = new double[0][0];
@@ -162,7 +169,9 @@ public final class MatrixHeatmapView extends BorderPane {
         layoutAndDraw();
     }
 
-    /** Convenience: accept List<List<Double>>. */
+    /**
+     * Convenience: accept List<List<Double>>.
+     */
     public void setMatrix(List<List<Double>> values) {
         if (values == null || values.isEmpty()) {
             setMatrix((double[][]) null);
@@ -187,7 +196,10 @@ public final class MatrixHeatmapView extends BorderPane {
     public List<String> getRowLabels() {
         return Arrays.asList(rowLabels);
     }
-    /** Optional row labels (length must equal rows). */
+
+    /**
+     * Optional row labels (length must equal rows).
+     */
     public void setRowLabels(List<String> labels) {
         if (labels == null || labels.isEmpty()) {
             this.rowLabels = new String[rows()];
@@ -200,7 +212,9 @@ public final class MatrixHeatmapView extends BorderPane {
         layoutAndDraw();
     }
 
-    /** Optional column labels (length must equal cols). Applies compacting if enabled. */
+    /**
+     * Optional column labels (length must equal cols). Applies compacting if enabled.
+     */
     public void setColLabels(List<String> labels) {
         if (labels == null || labels.isEmpty()) {
             this.colLabels = new String[cols()];
@@ -222,7 +236,9 @@ public final class MatrixHeatmapView extends BorderPane {
         layoutAndDraw();
     }
 
-    /** Control whether columns compact "Comp 7" → "7". Default: true. */
+    /**
+     * Control whether columns compact "Comp 7" → "7". Default: true.
+     */
     public void setCompactColumnLabels(boolean compact) {
         this.compactColumnLabels = compact;
         // Re-apply compaction on currently loaded labels
@@ -236,7 +252,9 @@ public final class MatrixHeatmapView extends BorderPane {
         }
     }
 
-    /** Set a uniform label prefix if none provided yet (e.g., "F0..F(n-1)"). */
+    /**
+     * Set a uniform label prefix if none provided yet (e.g., "F0..F(n-1)").
+     */
     public void setDefaultAxisLabels(String rowPrefix, String colPrefix) {
         if (rows() > 0 && (rowLabels == null || rowLabels.length != rows())) {
             rowLabels = defaultLabels(rows(), rowPrefix == null ? "r" : rowPrefix);
@@ -247,32 +265,42 @@ public final class MatrixHeatmapView extends BorderPane {
         layoutAndDraw();
     }
 
-    /** Optional legend title (short); rendered above the legend inside the canvas. */
+    /**
+     * Optional legend title (short); rendered above the legend inside the canvas.
+     */
     public void setLegendTitle(String title) {
         this.legendTitle = (title == null || title.isBlank()) ? null : title.trim();
         layoutAndDraw();
     }
 
-    /** Sequential palette. */
+    /**
+     * Sequential palette.
+     */
     public void useSequentialPalette() {
         this.paletteKind = PaletteKind.SEQUENTIAL;
         layoutAndDraw();
     }
 
-    /** Diverging palette (values below/above center split colors). */
+    /**
+     * Diverging palette (values below/above center split colors).
+     */
     public void useDivergingPalette(double center) {
         this.paletteKind = PaletteKind.DIVERGING;
         this.divergingCenter = center;
         layoutAndDraw();
     }
 
-    /** Auto-range on (min/max derived from current matrix). */
+    /**
+     * Auto-range on (min/max derived from current matrix).
+     */
     public void setAutoRange(boolean on) {
         this.autoRange = on;
         layoutAndDraw();
     }
 
-    /** Fixed range mapping. */
+    /**
+     * Fixed range mapping.
+     */
     public void setFixedRange(double vmin, double vmax) {
         if (!(vmax > vmin)) {
             throw new IllegalArgumentException("vmax must be greater than vmin.");
@@ -283,13 +311,17 @@ public final class MatrixHeatmapView extends BorderPane {
         layoutAndDraw();
     }
 
-    /** Show or hide the color legend bar. */
+    /**
+     * Show or hide the color legend bar.
+     */
     public void setShowLegend(boolean show) {
         this.showLegend = show;
         layoutAndDraw();
     }
 
-    /** Set axis label font. */
+    /**
+     * Set axis label font.
+     */
     public void setLabelFont(Font f) {
         if (f != null) {
             this.labelFont = f;
@@ -297,12 +329,16 @@ public final class MatrixHeatmapView extends BorderPane {
         }
     }
 
-    /** Set click handler for cell picks. */
+    /**
+     * Set click handler for cell picks.
+     */
     public void setOnCellClick(Consumer<MatrixClick> handler) {
         this.onCellClick = handler;
     }
 
-    /** Return a defensive copy of the matrix (for external reads). */
+    /**
+     * Return a defensive copy of the matrix (for external reads).
+     */
     public double[][] getMatrixCopy() {
         int r = rows(), c = cols();
         double[][] out = new double[r][c];
@@ -314,8 +350,13 @@ public final class MatrixHeatmapView extends BorderPane {
 
     // -------------------- Internals: sizing + render --------------------
 
-    private int rows() { return matrix.length; }
-    private int cols() { return (rows() == 0) ? 0 : matrix[0].length; }
+    private int rows() {
+        return matrix.length;
+    }
+
+    private int cols() {
+        return (rows() == 0) ? 0 : matrix[0].length;
+    }
 
     private void layoutAndDraw() {
         double w = Math.max(1, getWidth() - getInsets().getLeft() - getInsets().getRight());
@@ -395,8 +436,8 @@ public final class MatrixHeatmapView extends BorderPane {
 
                 Color col = switch (paletteKind) {
                     case SEQUENTIAL -> MatrixViewUtil.sequentialColor(MatrixViewUtil.norm01(v, vmin, vmax));
-                    case DIVERGING  -> MatrixViewUtil.divergingColor(v, vmin, vmax,
-                                        divergingCenter != null ? divergingCenter.doubleValue() : 0.0);
+                    case DIVERGING -> MatrixViewUtil.divergingColor(v, vmin, vmax,
+                        divergingCenter != null ? divergingCenter.doubleValue() : 0.0);
                 };
 
                 g.setFill(col);
@@ -475,8 +516,8 @@ public final class MatrixHeatmapView extends BorderPane {
             double v = vmin + t * (vmax - vmin);
             Color col = switch (paletteKind) {
                 case SEQUENTIAL -> MatrixViewUtil.sequentialColor(MatrixViewUtil.norm01(v, vmin, vmax));
-                case DIVERGING  -> MatrixViewUtil.divergingColor(v, vmin, vmax,
-                                    divergingCenter != null ? divergingCenter.doubleValue() : 0.0);
+                case DIVERGING -> MatrixViewUtil.divergingColor(v, vmin, vmax,
+                    divergingCenter != null ? divergingCenter.doubleValue() : 0.0);
             };
             g.setFill(col);
             double yy = y0 + k * (h / steps);
@@ -500,10 +541,10 @@ public final class MatrixHeatmapView extends BorderPane {
 
         if (paletteKind == PaletteKind.DIVERGING) {
             double t = MatrixViewUtil.norm01(
-                    divergingCenter != null ? divergingCenter.doubleValue() : 0.0, vmin, vmax);
+                divergingCenter != null ? divergingCenter.doubleValue() : 0.0, vmin, vmax);
             double y = y0 + (1.0 - t) * h;
             g.fillText(df.format(
-                    divergingCenter != null ? divergingCenter.doubleValue() : 0.0), x0 + pad, y);
+                divergingCenter != null ? divergingCenter.doubleValue() : 0.0), x0 + pad, y);
         }
     }
 
@@ -549,7 +590,9 @@ public final class MatrixHeatmapView extends BorderPane {
         onCellClick.accept(new MatrixClick(i, j, MatrixViewUtil.sanitize(matrix[i][j])));
     }
 
-    /** Return {row, col} or null if mouse is outside content box. */
+    /**
+     * Return {row, col} or null if mouse is outside content box.
+     */
     private int[] pickCell(double x, double y) {
         int r = rows(), c = cols();
         if (r == 0 || c == 0) return null;

@@ -7,14 +7,15 @@ import edu.jhuapl.trinity.javafx.events.GraphEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.AnimatedSphere;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.Tracer;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
-import java.util.ArrayList;
-import java.util.List;
-import java.util.Optional;
 import javafx.scene.Group;
 import javafx.scene.Scene;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import org.fxyz3d.geometry.Point3D;
+
+import java.util.ArrayList;
+import java.util.List;
+import java.util.Optional;
 
 /**
  * Turns a GraphDirectedCollection into a 3D Group (nodes = AnimatedSphere,
@@ -77,9 +78,9 @@ public final class Graph3DRenderer {
         Params p = (params != null) ? params : new Params();
 
         Color nodeDefault = (graph.getDefaultNodeColor() != null)
-                ? Color.valueOf(graph.getDefaultNodeColor()) : p.defaultNodeColor;
+            ? Color.valueOf(graph.getDefaultNodeColor()) : p.defaultNodeColor;
         Color edgeDefault = (graph.getDefaultEdgeColor() != null)
-                ? Color.valueOf(graph.getDefaultEdgeColor()) : p.defaultEdgeColor;
+            ? Color.valueOf(graph.getDefaultEdgeColor()) : p.defaultEdgeColor;
 
         // Nodes
         List<AnimatedSphere> nodes = new ArrayList<>(graph.getNodes().size());

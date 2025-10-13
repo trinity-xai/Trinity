@@ -14,8 +14,10 @@ import javafx.scene.shape.TriangleMesh;
 import javafx.util.Duration;
 import org.fxyz3d.geometry.Point3D;
 import org.fxyz3d.shapes.composites.PolyLine3D;
+
 import java.util.ArrayList;
 import java.util.List;
+
 import static javafx.animation.Animation.INDEFINITE;
 
 /**
@@ -165,6 +167,7 @@ public class Tracer extends PolyLine3D {
             }
         }
     }
+
     public void setOpacityAlpha(double alpha) {
         double a = Math.max(0.0, Math.min(1.0, alpha));
         if (this.meshView != null) {
@@ -184,5 +187,5 @@ public class Tracer extends PolyLine3D {
                 this.meshView.setMaterial(new PhongMaterial(new Color(base.getRed(), base.getGreen(), base.getBlue(), a)));
             }
         }
-    }    
+    }
 }

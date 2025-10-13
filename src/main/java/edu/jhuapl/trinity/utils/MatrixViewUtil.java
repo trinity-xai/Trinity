@@ -1,4 +1,4 @@
-package edu.jhuapl.trinity.javafx.util;
+package edu.jhuapl.trinity.utils;
 
 import javafx.scene.paint.Color;
 
@@ -11,7 +11,8 @@ import javafx.scene.paint.Color;
  */
 public final class MatrixViewUtil {
 
-    private MatrixViewUtil() {}
+    private MatrixViewUtil() {
+    }
 
     // ---- math helpers ----
     public static double[] minMax(double[][] m) {
@@ -25,7 +26,10 @@ public final class MatrixViewUtil {
                 if (v > max) max = v;
             }
         }
-        if (min == Double.POSITIVE_INFINITY) { min = 0.0; max = 1.0; }
+        if (min == Double.POSITIVE_INFINITY) {
+            min = 0.0;
+            max = 1.0;
+        }
         if (max - min < 1e-12) max = min + 1e-12;
         return new double[]{min, max};
     }
@@ -79,7 +83,10 @@ public final class MatrixViewUtil {
     }
 
     // ---- labels ----
-    /** Replace "Comp 7" → "7"; "Comp7" → "7"; otherwise returns original. */
+
+    /**
+     * Replace "Comp 7" → "7"; "Comp7" → "7"; otherwise returns original.
+     */
     public static String compactCompLabel(String s) {
         if (s == null) return null;
         String x = s.trim();

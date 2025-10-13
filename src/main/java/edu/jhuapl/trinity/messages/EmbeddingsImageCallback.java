@@ -2,12 +2,13 @@ package edu.jhuapl.trinity.messages;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageOutput;
-import edu.jhuapl.trinity.javafx.events.RestEvent;
 import edu.jhuapl.trinity.javafx.events.ErrorEvent;
+import edu.jhuapl.trinity.javafx.events.RestEvent;
 import javafx.application.Platform;
 import javafx.scene.Scene;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
+
 import java.util.List;
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;

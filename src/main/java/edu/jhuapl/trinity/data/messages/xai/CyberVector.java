@@ -7,6 +7,7 @@ import com.fasterxml.jackson.core.JsonProcessingException;
 import com.fasterxml.jackson.databind.ObjectMapper;
 import com.fasterxml.jackson.databind.SerializationFeature;
 import edu.jhuapl.trinity.data.messages.MessageData;
+
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Function;
@@ -110,8 +111,8 @@ public class CyberVector extends MessageData {
 //        "Role Permissions Intersection" : 0.5,
 //        "Role Resource Distribution" : 0.5,
 //        "Role Permissions Distribution" : 0.5,
-//        "Namespace Per User Distribution" : 0.5 
-        
+//        "Namespace Per User Distribution" : 0.5
+
         List<Double> vector = new ArrayList<>();
         vector.add(state.getImageCount());
         vector.add(state.getImageDistribution());
@@ -131,6 +132,7 @@ public class CyberVector extends MessageData {
 
         return vector;
     };
+
     public String asJSON(String objectName) throws JsonProcessingException {
         ObjectMapper mapper = new ObjectMapper();
         //mapper.configure(SerializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
@@ -141,50 +143,125 @@ public class CyberVector extends MessageData {
     }
     //<editor-fold defaultstate="collapsed" desc="Properties">
 
-    public double getImageCount() { return imageCount; }
-    public void setImageCount(double imageCount) { this.imageCount = imageCount; }
+    public double getImageCount() {
+        return imageCount;
+    }
 
-    public double getImageDistribution() { return imageDistribution; }
-    public void setImageDistribution(double imageDistribution) { this.imageDistribution = imageDistribution; }
+    public void setImageCount(double imageCount) {
+        this.imageCount = imageCount;
+    }
 
-    public double getPodCount() { return podCount; }
-    public void setPodCount(double podCount) { this.podCount = podCount; }
+    public double getImageDistribution() {
+        return imageDistribution;
+    }
 
-    public double getServiceIntersection() { return serviceIntersection; }
-    public void setServiceIntersection(double serviceIntersection) { this.serviceIntersection = serviceIntersection; }
+    public void setImageDistribution(double imageDistribution) {
+        this.imageDistribution = imageDistribution;
+    }
 
-    public double getNamespaceIntersection() { return namespaceIntersection; }
-    public void setNamespaceIntersection(double namespaceIntersection) { this.namespaceIntersection = namespaceIntersection; }
+    public double getPodCount() {
+        return podCount;
+    }
 
-    public double getNamespacesPerPodDistribution() { return namespacesPerPodDistribution; }
-    public void setNamespacesPerPodDistribution(double namespacesPerPodDistribution) { this.namespacesPerPodDistribution = namespacesPerPodDistribution; }
+    public void setPodCount(double podCount) {
+        this.podCount = podCount;
+    }
 
-    public double getNamespaceCount() { return namespaceCount; }
-    public void setNamespaceCount(double namespaceCount) { this.namespaceCount = namespaceCount; }
+    public double getServiceIntersection() {
+        return serviceIntersection;
+    }
 
-    public double getRoleCount() { return roleCount; }
-    public void setRoleCount(double roleCount) { this.roleCount = roleCount; }
+    public void setServiceIntersection(double serviceIntersection) {
+        this.serviceIntersection = serviceIntersection;
+    }
 
-    public double getRoleNameIntersection() { return roleNameIntersection; }
-    public void setRoleNameIntersection(double roleNameIntersection) { this.roleNameIntersection = roleNameIntersection; }
+    public double getNamespaceIntersection() {
+        return namespaceIntersection;
+    }
 
-    public double getResourceCount() { return resourceCount; }
-    public void setResourceCount(double resourceCount) { this.resourceCount = resourceCount; }
+    public void setNamespaceIntersection(double namespaceIntersection) {
+        this.namespaceIntersection = namespaceIntersection;
+    }
 
-    public double getResourceNameIntersection() { return resourceNameIntersection; }
-    public void setResourceNameIntersection(double resourceNameIntersection) { this.resourceNameIntersection = resourceNameIntersection; }
+    public double getNamespacesPerPodDistribution() {
+        return namespacesPerPodDistribution;
+    }
 
-    public double getRolePermissionsIntersection() { return rolePermissionsIntersection; }
-    public void setRolePermissionsIntersection(double rolePermissionsIntersection) { this.rolePermissionsIntersection = rolePermissionsIntersection; }
+    public void setNamespacesPerPodDistribution(double namespacesPerPodDistribution) {
+        this.namespacesPerPodDistribution = namespacesPerPodDistribution;
+    }
 
-    public double getRoleResourceDistribution() { return roleResourceDistribution; }
-    public void setRoleResourceDistribution(double roleResourceDistribution) { this.roleResourceDistribution = roleResourceDistribution; }
+    public double getNamespaceCount() {
+        return namespaceCount;
+    }
 
-    public double getRolePermissionsDistribution() { return rolePermissionsDistribution; }
-    public void setRolePermissionsDistribution(double rolePermissionsDistribution) { this.rolePermissionsDistribution = rolePermissionsDistribution; }
+    public void setNamespaceCount(double namespaceCount) {
+        this.namespaceCount = namespaceCount;
+    }
 
-    public double getNamespacePerUserDistribution() { return namespacePerUserDistribution; }
-    public void setNamespacePerUserDistribution(double namespacePerUserDistribution) { this.namespacePerUserDistribution = namespacePerUserDistribution; }
+    public double getRoleCount() {
+        return roleCount;
+    }
+
+    public void setRoleCount(double roleCount) {
+        this.roleCount = roleCount;
+    }
+
+    public double getRoleNameIntersection() {
+        return roleNameIntersection;
+    }
+
+    public void setRoleNameIntersection(double roleNameIntersection) {
+        this.roleNameIntersection = roleNameIntersection;
+    }
+
+    public double getResourceCount() {
+        return resourceCount;
+    }
+
+    public void setResourceCount(double resourceCount) {
+        this.resourceCount = resourceCount;
+    }
+
+    public double getResourceNameIntersection() {
+        return resourceNameIntersection;
+    }
+
+    public void setResourceNameIntersection(double resourceNameIntersection) {
+        this.resourceNameIntersection = resourceNameIntersection;
+    }
+
+    public double getRolePermissionsIntersection() {
+        return rolePermissionsIntersection;
+    }
+
+    public void setRolePermissionsIntersection(double rolePermissionsIntersection) {
+        this.rolePermissionsIntersection = rolePermissionsIntersection;
+    }
+
+    public double getRoleResourceDistribution() {
+        return roleResourceDistribution;
+    }
+
+    public void setRoleResourceDistribution(double roleResourceDistribution) {
+        this.roleResourceDistribution = roleResourceDistribution;
+    }
+
+    public double getRolePermissionsDistribution() {
+        return rolePermissionsDistribution;
+    }
+
+    public void setRolePermissionsDistribution(double rolePermissionsDistribution) {
+        this.rolePermissionsDistribution = rolePermissionsDistribution;
+    }
+
+    public double getNamespacePerUserDistribution() {
+        return namespacePerUserDistribution;
+    }
+
+    public void setNamespacePerUserDistribution(double namespacePerUserDistribution) {
+        this.namespacePerUserDistribution = namespacePerUserDistribution;
+    }
     //</editor-fold>
 
 }

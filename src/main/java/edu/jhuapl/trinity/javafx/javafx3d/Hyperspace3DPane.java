@@ -1955,7 +1955,7 @@ public class Hyperspace3DPane extends StackPane implements
                 getScene().getRoot().fireEvent(
                     new ApplicationEvent(ApplicationEvent.HIDE_BUSY_INDICATOR, ps));
                 getScene().getRoot().fireEvent(
-                    new CommandTerminalEvent("Error Adding FeatureCollection.", new Font("Consolas", 20), Color.RED));                
+                    new CommandTerminalEvent("Error Adding FeatureCollection.", new Font("Consolas", 20), Color.RED));
             });
         });
         Thread thread = new Thread(task);

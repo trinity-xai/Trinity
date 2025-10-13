@@ -2,10 +2,11 @@ package edu.jhuapl.trinity.javafx.components;
 
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import javafx.animation.FadeTransition;
-import javafx.animation.ParallelTransition;
-import javafx.animation.PauseTransition;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
+import javafx.animation.ParallelTransition;
+import javafx.animation.PauseTransition;
+import javafx.animation.SequentialTransition;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
 import javafx.beans.property.SimpleDoubleProperty;
@@ -46,6 +47,8 @@ import javafx.scene.paint.Color;
 import javafx.scene.paint.Paint;
 import javafx.scene.transform.Transform;
 import javafx.stage.FileChooser;
+import javafx.stage.Popup;
+import javafx.stage.Window;
 import javafx.util.Duration;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
@@ -55,17 +58,14 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.Objects;
-import javafx.animation.SequentialTransition;
-import javafx.stage.Popup;
-import javafx.stage.Window;
 
 /**
  * Hover-reveal micro toolbar for export actions (Copy, Save, More).
  * Intended for placement in a title bar (e.g., mainTitleView).
- *
+ * <p>
  * Sticky behavior: clicking the Export icon toggles a "sticky hold".
- *   - Sticky ON: toolbar remains expanded even when the mouse leaves (export icon shows pinned indicator).
- *   - Sticky OFF: toolbar collapses on mouse exit (with a short delay).
+ * - Sticky ON: toolbar remains expanded even when the mouse leaves (export icon shows pinned indicator).
+ * - Sticky OFF: toolbar collapses on mouse exit (with a short delay).
  */
 public class ExportMicroToolbar {
 
@@ -93,7 +93,7 @@ public class ExportMicroToolbar {
     // Guard and geometry caches for robust animations
     private ParallelTransition currentAnim;
     private double collapsedWidth = -1;
-    private double expandedWidth  = -1;
+    private double expandedWidth = -1;
 
     // Options state
     private boolean includeChrome = false;
@@ -111,12 +111,12 @@ public class ExportMicroToolbar {
     private Border pinnedBorder;
 
     public ExportMicroToolbar(
-            Pane titleBarParent,
-            Node chromeNode,
-            Node contentNode,
-            Node contextTarget,
-            javafx.scene.Scene scene,
-            double iconFitWidth
+        Pane titleBarParent,
+        Node chromeNode,
+        Node contentNode,
+        Node contextTarget,
+        javafx.scene.Scene scene,
+        double iconFitWidth
     ) {
         this.titleBarParent = Objects.requireNonNull(titleBarParent);
         this.chromeNode = Objects.requireNonNull(chromeNode);
@@ -126,7 +126,9 @@ public class ExportMicroToolbar {
         this.iconFitWidth = (iconFitWidth > 0) ? iconFitWidth : 32.0;
     }
 
-    /** Attach to the right side of the title bar (default right inset = 12, vertical center). */
+    /**
+     * Attach to the right side of the title bar (default right inset = 12, vertical center).
+     */
     public void installInTitleBarRight() {
         installInTitleBarRight(12.0, 0.0);
     }
@@ -517,7 +519,7 @@ public class ExportMicroToolbar {
             Label toast = new Label(msg);
             toast.setTextFill(Color.WHITE);
             toast.setBackground(new Background(new BackgroundFill(
-                    Color.rgb(0, 0, 0, 0.75), new CornerRadii(6), Insets.EMPTY)));
+                Color.rgb(0, 0, 0, 0.75), new CornerRadii(6), Insets.EMPTY)));
             toast.setPadding(new Insets(6, 10, 6, 10));
             toast.setMouseTransparent(true);
             toast.setOpacity(0.0); // start transparent for fade-in

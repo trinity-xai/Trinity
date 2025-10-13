@@ -10,19 +10,6 @@ import javafx.beans.binding.Bindings;
 import javafx.collections.ListChangeListener;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
-import javafx.scene.input.ContextMenuEvent;
-import javafx.scene.input.KeyCode;
-import javafx.scene.input.KeyEvent;
-import javafx.scene.layout.Pane;
-import javafx.stage.FileChooser;
-import java.io.File;
-import java.util.ArrayList;
-import java.util.LinkedHashMap;
-import java.util.List;
-import java.util.Map;
-import java.util.Objects;
-import java.util.Optional;
-import java.util.stream.Collectors;
 import javafx.scene.control.Alert;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.ChoiceDialog;
@@ -37,6 +24,20 @@ import javafx.scene.control.TableView;
 import javafx.scene.control.TextArea;
 import javafx.scene.control.TextField;
 import javafx.scene.control.TextInputDialog;
+import javafx.scene.input.ContextMenuEvent;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.layout.Pane;
+import javafx.stage.FileChooser;
+
+import java.io.File;
+import java.util.ArrayList;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Objects;
+import java.util.Optional;
+import java.util.stream.Collectors;
 
 public class FeatureVectorManagerPane extends LitPathPane {
 
@@ -56,7 +57,7 @@ public class FeatureVectorManagerPane extends LitPathPane {
         wireViewToService();
         installCollectionContextMenu();
         installTableContextMenu();
-        installSearchWiring(); 
+        installSearchWiring();
     }
 
     @Override
@@ -64,7 +65,7 @@ public class FeatureVectorManagerPane extends LitPathPane {
         this.scene.getRoot().fireEvent(new ApplicationEvent(
             ApplicationEvent.POPOUT_FEATUREVECTOR_MANAGER, Boolean.TRUE));
     }
-    
+
     private void wireViewToService() {
         // Live-bind the table to service's displayed vectors
         view.getTable().setItems(service.getDisplayedVectors());
@@ -76,13 +77,15 @@ public class FeatureVectorManagerPane extends LitPathPane {
 
         // Render "(unnamed)" for empty names, both in popup and button cell
         combo.setCellFactory(listView -> new ListCell<>() {
-            @Override protected void updateItem(String item, boolean empty) {
+            @Override
+            protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
                 setText(empty ? null : (item == null || item.trim().isEmpty() ? "(unnamed)" : item));
             }
         });
         combo.setButtonCell(new ListCell<>() {
-            @Override protected void updateItem(String item, boolean empty) {
+            @Override
+            protected void updateItem(String item, boolean empty) {
                 super.updateItem(item, empty);
                 setText(empty ? null : (item == null || item.trim().isEmpty() ? "(unnamed)" : item));
             }
@@ -129,7 +132,9 @@ public class FeatureVectorManagerPane extends LitPathPane {
             () -> service.getDisplayedVectors(), service.getDisplayedVectors()));
     }
 
-    /** Wire the header Search TextField to the service text filter (with debounce). */
+    /**
+     * Wire the header Search TextField to the service text filter (with debounce).
+     */
     private void installSearchWiring() {
         TextField tf = view.getSearchField();
 
@@ -199,8 +204,8 @@ public class FeatureVectorManagerPane extends LitPathPane {
             String current = service.activeCollectionNameProperty().get();
             if (current == null) return;
             Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
-                    "Delete collection \"" + current + "\"?\nThis cannot be undone.",
-                    ButtonType.OK, ButtonType.CANCEL);
+                "Delete collection \"" + current + "\"?\nThis cannot be undone.",
+                ButtonType.OK, ButtonType.CANCEL);
             alert.setHeaderText("Delete Collection");
             alert.showAndWait().ifPresent(btn -> {
                 if (btn == ButtonType.OK) service.deleteCollection(current);
@@ -212,8 +217,8 @@ public class FeatureVectorManagerPane extends LitPathPane {
             String current = service.activeCollectionNameProperty().get();
             if (current == null) return;
             List<String> options = service.getCollectionNames().stream()
-                    .filter(n -> !Objects.equals(n, current))
-                    .collect(Collectors.toList());
+                .filter(n -> !Objects.equals(n, current))
+                .collect(Collectors.toList());
             if (options.isEmpty()) {
                 info("No other collections to merge into.");
                 return;
@@ -224,8 +229,8 @@ public class FeatureVectorManagerPane extends LitPathPane {
             chooser.getDialogPane().setPadding(new Insets(10));
             chooser.showAndWait().ifPresent(target -> {
                 Alert dedup = new Alert(Alert.AlertType.CONFIRMATION,
-                        "De-duplicate by entityId while merging?",
-                        ButtonType.YES, ButtonType.NO, ButtonType.CANCEL);
+                    "De-duplicate by entityId while merging?",
+                    ButtonType.YES, ButtonType.NO, ButtonType.CANCEL);
                 dedup.setHeaderText("Merge Options");
                 dedup.showAndWait().ifPresent(resp -> {
                     if (resp == ButtonType.CANCEL) return;
@@ -256,7 +261,7 @@ public class FeatureVectorManagerPane extends LitPathPane {
         applyMenu.getItems().addAll(miApplyAppend, miApplyReplace, miSetAllAppend, miSetAllReplace);
 
         ctx.getItems().addAll(miRename, miDuplicate, miDelete, new SeparatorMenuItem(),
-                miMergeInto, export, new SeparatorMenuItem(), applyMenu);
+            miMergeInto, export, new SeparatorMenuItem(), applyMenu);
 
         combo.addEventHandler(ContextMenuEvent.CONTEXT_MENU_REQUESTED, e -> {
             if (!ctx.isShowing()) ctx.show(combo, e.getScreenX(), e.getScreenY());
@@ -377,8 +382,8 @@ public class FeatureVectorManagerPane extends LitPathPane {
         applyMenu.getItems().addAll(miApplyAppend, miApplyReplace);
 
         ctx.getItems().addAll(miRemoveSel, miCopyTo, new SeparatorMenuItem(),
-                miEditLabel, miEditMeta, new SeparatorMenuItem(),
-                miLocate, applyMenu);
+            miEditLabel, miEditMeta, new SeparatorMenuItem(),
+            miLocate, applyMenu);
 
         table.addEventHandler(ContextMenuEvent.CONTEXT_MENU_REQUESTED, e -> {
             if (!ctx.isShowing()) ctx.show(table, e.getScreenX(), e.getScreenY());
@@ -389,6 +394,7 @@ public class FeatureVectorManagerPane extends LitPathPane {
     /**
      * If there is a non-empty selection in the table, apply only those vectors to the workspace.
      * Otherwise, fall back to applying the whole active collection via the service.
+     *
      * @param replace true = replace in workspace, false = append
      */
     private void applySelectionOrActive(boolean replace) {
@@ -400,7 +406,7 @@ public class FeatureVectorManagerPane extends LitPathPane {
             fc.setFeatures(sel);
             FeatureVectorEvent evt =
                 new FeatureVectorEvent(FeatureVectorEvent.NEW_FEATURE_COLLECTION, fc,
-                        FeatureVectorManagerService.MANAGER_APPLY_TAG);
+                    FeatureVectorManagerService.MANAGER_APPLY_TAG);
             evt.clearExisting = replace;
 
             getScene().getRoot().fireEvent(evt);
@@ -440,6 +446,7 @@ public class FeatureVectorManagerPane extends LitPathPane {
         a.setHeaderText(null);
         a.showAndWait();
     }
+
     private void error(String msg) {
         Alert a = new Alert(Alert.AlertType.ERROR, msg, ButtonType.OK);
         a.setHeaderText("Error");

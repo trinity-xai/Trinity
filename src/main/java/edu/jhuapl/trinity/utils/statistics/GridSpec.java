@@ -43,12 +43,29 @@ public final class GridSpec {
         this.maxY = maxY;
     }
 
-    public int getBinsX() { return binsX; }
-    public int getBinsY() { return binsY; }
-    public Double getMinX() { return minX; }
-    public Double getMaxX() { return maxX; }
-    public Double getMinY() { return minY; }
-    public Double getMaxY() { return maxY; }
+    public int getBinsX() {
+        return binsX;
+    }
+
+    public int getBinsY() {
+        return binsY;
+    }
+
+    public Double getMinX() {
+        return minX;
+    }
+
+    public Double getMaxX() {
+        return maxX;
+    }
+
+    public Double getMinY() {
+        return minY;
+    }
+
+    public Double getMaxY() {
+        return maxY;
+    }
 
     /**
      * @param binsX the binsX to set

@@ -8,6 +8,9 @@ import javafx.scene.Scene;
 import javafx.scene.layout.Pane;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+import org.slf4j.event.Level;
 
 import java.util.List;
 import java.util.function.Consumer;
@@ -17,20 +20,20 @@ import java.util.function.Consumer;
  * -----------------
  * Floating-pane wrapper around {@link MatrixHeatmapView} so it integrates with
  * Trinity's windowing system (matches the pattern used by PairwiseJpdfPane).
- *
+ * <p>
  * Usage:
- *   MatrixHeatmapPane pane = new MatrixHeatmapPane(scene, parent);
- *   pane.setMatrix(values);
- *   pane.setAxisLabels(labels);
- *   pane.useSequentialPalette(); // or pane.useDivergingPalette(0.0);
- *   pane.setAutoRange(true);     // or pane.setFixedRange(min, max);
- *   pane.setShowLegend(true);
- *   pane.setOnCellClick(click -> { ... });
+ * MatrixHeatmapPane pane = new MatrixHeatmapPane(scene, parent);
+ * pane.setMatrix(values);
+ * pane.setAxisLabels(labels);
+ * pane.useSequentialPalette(); // or pane.useDivergingPalette(0.0);
+ * pane.setAutoRange(true);     // or pane.setFixedRange(min, max);
+ * pane.setShowLegend(true);
+ * pane.setOnCellClick(click -> { ... });
  *
  * @author Sean Phillips
  */
 public final class MatrixHeatmapPane extends LitPathPane {
-
+    private static final Logger LOG = LoggerFactory.getLogger(MatrixHeatmapPane.class);
     private final MatrixHeatmapView view;
 
     /**
@@ -38,23 +41,23 @@ public final class MatrixHeatmapPane extends LitPathPane {
      */
     public MatrixHeatmapPane(Scene scene, Pane parent) {
         super(
-                scene,
-                parent,
-                900,                 // pref width
-                640,                 // pref height
-                new MatrixHeatmapView(),
-                "Matrix Heatmap",    // window title
-                "Analysis",          // category badge
-                380.0,               // min width before popout
-                300.0                // min height before popout
+            scene,
+            parent,
+            900,                 // pref width
+            640,                 // pref height
+            new MatrixHeatmapView(),
+            "Matrix Heatmap",    // window title
+            "Analysis",          // category badge
+            380.0,               // min width before popout
+            300.0                // min height before popout
         );
         this.view = (MatrixHeatmapView) this.contentPane;
 
         // Wire default toast handler to CommandTerminal
         setToastHandler(msg -> Platform.runLater(() ->
-                scene.getRoot().fireEvent(
-                        new CommandTerminalEvent(msg, new Font("Consolas", 18), Color.LIGHTGREEN)
-                )));
+            scene.getRoot().fireEvent(
+                new CommandTerminalEvent(msg, new Font("Consolas", 18), Color.LIGHTGREEN)
+            )));
     }
 
     /**
@@ -62,86 +65,110 @@ public final class MatrixHeatmapPane extends LitPathPane {
      */
     public MatrixHeatmapPane(Scene scene, Pane parent, MatrixHeatmapView customView) {
         super(
-                scene,
-                parent,
-                900,
-                640,
-                customView != null ? customView : new MatrixHeatmapView(),
-                "Matrix Heatmap",
-                "Analysis",
-                380.0,
-                300.0
+            scene,
+            parent,
+            900,
+            640,
+            customView != null ? customView : new MatrixHeatmapView(),
+            "Matrix Heatmap",
+            "Analysis",
+            380.0,
+            300.0
         );
         this.view = (MatrixHeatmapView) this.contentPane;
 
         setToastHandler(msg -> Platform.runLater(() ->
-                scene.getRoot().fireEvent(
-                        new CommandTerminalEvent(msg, new Font("Consolas", 18), Color.LIGHTGREEN)
-                )));
+            scene.getRoot().fireEvent(
+                new CommandTerminalEvent(msg, new Font("Consolas", 18), Color.LIGHTGREEN)
+            )));
     }
 
     // ---------------------------------------------------------------------
     // Public API (thin pass-throughs to MatrixHeatmapView)
     // ---------------------------------------------------------------------
 
-    /** Replace the matrix (null/empty clears the view). */
+    /**
+     * Replace the matrix (null/empty clears the view).
+     */
     public void setMatrix(double[][] matrix) {
         view.setMatrix(matrix);
     }
 
-    /** Convenience overload for List<List<Double>> matrices. */
+    /**
+     * Convenience overload for List<List<Double>> matrices.
+     */
     public void setMatrix(List<List<Double>> matrix) {
         view.setMatrix(matrix);
     }
 
-    /** Apply the same labels to rows and columns (square matrices). */
+    /**
+     * Apply the same labels to rows and columns (square matrices).
+     */
     public void setAxisLabels(List<String> labels) {
         if (labels == null) return;
         view.setRowLabels(labels);
         view.setColLabels(labels);
     }
 
-    /** Set row labels only. */
+    /**
+     * Set row labels only.
+     */
     public void setRowLabels(List<String> labels) {
         view.setRowLabels(labels);
     }
 
-    /** Set column labels only. */
+    /**
+     * Set column labels only.
+     */
     public void setColLabels(List<String> labels) {
         view.setColLabels(labels);
     }
 
-    /** Use a sequential (single-hue) palette. */
+    /**
+     * Use a sequential (single-hue) palette.
+     */
     public void useSequentialPalette() {
         view.useSequentialPalette();
     }
 
-    /** Use a diverging palette split around the given center value. */
+    /**
+     * Use a diverging palette split around the given center value.
+     */
     public void useDivergingPalette(double center) {
         view.useDivergingPalette(center);
     }
 
-    /** Map values using auto min/max derived from current matrix. */
+    /**
+     * Map values using auto min/max derived from current matrix.
+     */
     public void setAutoRange(boolean on) {
         view.setAutoRange(on);
     }
 
-    /** Map values using an explicit [vmin, vmax] range. */
+    /**
+     * Map values using an explicit [vmin, vmax] range.
+     */
     public void setFixedRange(double vmin, double vmax) {
         view.setFixedRange(vmin, vmax);
     }
 
-    /** Show or hide the legend bar. */
+    /**
+     * Show or hide the legend bar.
+     */
     public void setShowLegend(boolean show) {
         view.setShowLegend(show);
     }
 
-    /** Handle cell clicks (row, col, value). */
+    /**
+     * Handle cell clicks (row, col, value).
+     */
     public void setOnCellClick(Consumer<MatrixClick> handler) {
         view.setOnCellClick(handler);
     }
 
-    /** Access to the embedded view for advanced customization. */
+    /**
+     * Access to the embedded view for advanced customization.
+     */
     public MatrixHeatmapView getView() {
         return view;
     }
@@ -162,7 +189,7 @@ public final class MatrixHeatmapPane extends LitPathPane {
         if (h != null) {
             h.accept(prefixed);
         } else {
-            System.out.println(prefixed);
+            LOG.atLevel(isError ? Level.ERROR : Level.INFO).log(msg);
         }
     }
 

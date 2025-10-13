@@ -52,17 +52,18 @@ public class FeatureVectorEventHandler implements EventHandler<FeatureVectorEven
     public void addFeatureVectorRenderer(FeatureVectorRenderer renderer) {
         renderers.add(renderer);
     }
+
     public static FeatureVector cyberToFeatureVector(String label, CyberVector cyberVector) {
         FeatureVector fv = new FeatureVector();
         fv.setData(CyberVector.mapToVectorList.apply(cyberVector));
-        if(null != label) {
+        if (null != label) {
             fv.setLabel(label);
             try {
                 fv.setText(cyberVector.asJSON(label));
             } catch (JsonProcessingException ex) {
-                
+
             }
-        }        
+        }
         return fv;
     }
 
@@ -97,12 +98,13 @@ public class FeatureVectorEventHandler implements EventHandler<FeatureVectorEven
             renderer.addFeatureVector(featureVector);
         }
     }
+
     public void handleCyberReport(FeatureVectorEvent event) {
         List<CyberReport> cyberReports = (List<CyberReport>) event.object;
         FeatureCollection fc = new FeatureCollection();
         List<FeatureVector> features = new ArrayList<>();
-        
-        for(CyberReport cyberReport : cyberReports) {
+
+        for (CyberReport cyberReport : cyberReports) {
             HashMap<String, String> metaData = new HashMap();
             metaData.put(CyberReport.GROUNDTRUTH, cyberReport.getGroundTruth());
             metaData.put(CyberReport.ADJACENTNETWORK, cyberReport.getAdjacentNetwork());
@@ -113,12 +115,12 @@ public class FeatureVectorEventHandler implements EventHandler<FeatureVectorEven
             sgtaFV.getMetaData().putAll(metaData);
             //addNewFeatureVector(sgtaFV);
             features.add(sgtaFV);
-            
+
             FeatureVector sinfgtFV = cyberToFeatureVector(CyberReport.SINFGT, cyberReport.getsInfGt());
             sinfgtFV.getMetaData().putAll(metaData);
             //addNewFeatureVector(sinfgtFV);
             features.add(sinfgtFV);
-            
+
             FeatureVector sintelaFV = cyberToFeatureVector(CyberReport.SINTELA, cyberReport.getsIntelA());
             sintelaFV.getMetaData().putAll(metaData);
             //addNewFeatureVector(sintelaFV);
@@ -128,7 +130,7 @@ public class FeatureVectorEventHandler implements EventHandler<FeatureVectorEven
             sintelgtFV.getMetaData().putAll(metaData);
             //addNewFeatureVector(sintelgtFV);
             features.add(sintelgtFV);
-            
+
             FeatureVector deltaFV = cyberToFeatureVector(CyberReport.DELTA, cyberReport.getDelta());
             deltaFV.getMetaData().putAll(metaData);
             //addNewFeatureVector(deltaFV);
@@ -140,7 +142,8 @@ public class FeatureVectorEventHandler implements EventHandler<FeatureVectorEven
                 new FeatureVectorEvent(
                     FeatureVectorEvent.NEW_FEATURE_COLLECTION, fc));
         });
-    }    
+    }
+
     public void handleFeatureVectorEvent(FeatureVectorEvent event) {
         FeatureVector featureVector = (FeatureVector) event.object;
         if (event.getEventType().equals(FeatureVectorEvent.LOCATE_FEATURE_VECTOR)) {
@@ -231,27 +234,27 @@ public class FeatureVectorEventHandler implements EventHandler<FeatureVectorEven
             updateDimensionLabels(featureCollection.getDimensionLabels());
         }
     }
-    
+
     public void updateDimensionLabels(ArrayList<String> labels) {
         Dimension.removeAllDimensions();
-         int counter = 0;
-         for (String dimensionLabel : labels) {
-             Dimension.addDimension(new Dimension(dimensionLabel,
-                 counter++, Color.ALICEBLUE));
-         }
-         Platform.runLater(() -> {
-             App.getAppScene().getRoot().fireEvent(
-                 new HyperspaceEvent(HyperspaceEvent.DIMENSION_LABELS_SET, labels));
+        int counter = 0;
+        for (String dimensionLabel : labels) {
+            Dimension.addDimension(new Dimension(dimensionLabel,
+                counter++, Color.ALICEBLUE));
+        }
+        Platform.runLater(() -> {
+            App.getAppScene().getRoot().fireEvent(
+                new HyperspaceEvent(HyperspaceEvent.DIMENSION_LABELS_SET, labels));
 
-             App.getAppScene().getRoot().fireEvent(
-                 new CommandTerminalEvent("New Dimensional Labels set",
-                     new Font("Consolas", 20), Color.GREEN));
-         });
-         //update the renderers with the new arraylist of strings
-         for (FeatureVectorRenderer renderer : renderers) {
-             renderer.setDimensionLabels(labels);
-             renderer.refresh(true);
-         }
+            App.getAppScene().getRoot().fireEvent(
+                new CommandTerminalEvent("New Dimensional Labels set",
+                    new Font("Consolas", 20), Color.GREEN));
+        });
+        //update the renderers with the new arraylist of strings
+        for (FeatureVectorRenderer renderer : renderers) {
+            renderer.setDimensionLabels(labels);
+            renderer.refresh(true);
+        }
     }
 
     public void handleLabelConfigEvent(FeatureVectorEvent event) {

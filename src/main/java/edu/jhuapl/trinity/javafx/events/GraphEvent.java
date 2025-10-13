@@ -41,19 +41,60 @@ public class GraphEvent extends Event {
     public static final EventType<GraphEvent> GRAPH_VISIBILITY_CHANGED = new EventType<>(ANY, "GRAPH_VISIBILITY_CHANGED");
     public static final EventType<GraphEvent> SET_GRAPH_VISIBILITY_GUI = new EventType<>(ANY, "SET_GRAPH_VISIBILITY_GUI");
 
-    public GraphEvent(EventType<? extends Event> arg0) { super(arg0); }
-    public GraphEvent(EventType<? extends Event> arg0, Object arg1) { this(arg0); object = arg1; }
-    public GraphEvent(EventType<? extends Event> arg0, Object arg1, Object arg2) { this(arg0); object = arg1; object2 = arg2; }
-    public GraphEvent(Object arg0, EventTarget arg1, EventType<? extends Event> arg2) { super(arg0, arg1, arg2); object = arg0; }
+    public GraphEvent(EventType<? extends Event> arg0) {
+        super(arg0);
+    }
+
+    public GraphEvent(EventType<? extends Event> arg0, Object arg1) {
+        this(arg0);
+        object = arg1;
+    }
+
+    public GraphEvent(EventType<? extends Event> arg0, Object arg1, Object arg2) {
+        this(arg0);
+        object = arg1;
+        object2 = arg2;
+    }
+
+    public GraphEvent(Object arg0, EventTarget arg1, EventType<? extends Event> arg2) {
+        super(arg0, arg1, arg2);
+        object = arg0;
+    }
 
     // Convenience factory methods (optional, mirrors HypersurfaceEvent style)
-    public static GraphEvent styleParamsChanged(GraphStyleParams p){ return new GraphEvent(GRAPH_STYLE_PARAMS_CHANGED, GraphStyleParams.copyOf(p)); }
-    public static GraphEvent resetStyleDefaults(){ return new GraphEvent(GRAPH_STYLE_RESET_DEFAULTS, null); }
-    public static GraphEvent setNodeColorGUI(Color c){ return new GraphEvent(SET_NODE_COLOR_GUI, c); }
-    public static GraphEvent setNodeRadiusGUI(double r){ return new GraphEvent(SET_NODE_RADIUS_GUI, r); }
-    public static GraphEvent setNodeOpacityGUI(double o){ return new GraphEvent(SET_NODE_OPACITY_GUI, o); }
-    public static GraphEvent setEdgeColorGUI(Color c){ return new GraphEvent(SET_EDGE_COLOR_GUI, c); }
-    public static GraphEvent setEdgeWidthGUI(double w){ return new GraphEvent(SET_EDGE_WIDTH_GUI, w); }
-    public static GraphEvent setEdgeOpacityGUI(double o){ return new GraphEvent(SET_EDGE_OPACITY_GUI, o); }
-    public static GraphEvent setStyleGUI(GraphStyleParams p){ return new GraphEvent(SET_STYLE_GUI, GraphStyleParams.copyOf(p)); }
+    public static GraphEvent styleParamsChanged(GraphStyleParams p) {
+        return new GraphEvent(GRAPH_STYLE_PARAMS_CHANGED, GraphStyleParams.copyOf(p));
+    }
+
+    public static GraphEvent resetStyleDefaults() {
+        return new GraphEvent(GRAPH_STYLE_RESET_DEFAULTS, null);
+    }
+
+    public static GraphEvent setNodeColorGUI(Color c) {
+        return new GraphEvent(SET_NODE_COLOR_GUI, c);
+    }
+
+    public static GraphEvent setNodeRadiusGUI(double r) {
+        return new GraphEvent(SET_NODE_RADIUS_GUI, r);
+    }
+
+    public static GraphEvent setNodeOpacityGUI(double o) {
+        return new GraphEvent(SET_NODE_OPACITY_GUI, o);
+    }
+
+    public static GraphEvent setEdgeColorGUI(Color c) {
+        return new GraphEvent(SET_EDGE_COLOR_GUI, c);
+    }
+
+    public static GraphEvent setEdgeWidthGUI(double w) {
+        return new GraphEvent(SET_EDGE_WIDTH_GUI, w);
+    }
+
+    public static GraphEvent setEdgeOpacityGUI(double o) {
+        return new GraphEvent(SET_EDGE_OPACITY_GUI, o);
+    }
+
+    public static GraphEvent setStyleGUI(GraphStyleParams p) {
+        return new GraphEvent(SET_STYLE_GUI, GraphStyleParams.copyOf(p));
+    }
 }

@@ -2,7 +2,6 @@ package edu.jhuapl.trinity.javafx.components;
 
 import edu.jhuapl.trinity.javafx.events.GraphEvent;
 import edu.jhuapl.trinity.utils.graph.GraphStyleParams;
-import java.util.Objects;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -23,24 +22,26 @@ import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 
+import java.util.Objects;
+
 /**
  * GraphStyleControlsView
  * ------------------------------------------------------------
  * Separate tab view for graph appearance (nodes/edges).
- *
+ * <p>
  * Fires:
- *   - GraphEvent.GRAPH_STYLE_PARAMS_CHANGED (object = GraphStyleParams snapshot) on change
- *   - GraphEvent.GRAPH_STYLE_RESET_DEFAULTS on "Reset Style"
- *
+ * - GraphEvent.GRAPH_STYLE_PARAMS_CHANGED (object = GraphStyleParams snapshot) on change
+ * - GraphEvent.GRAPH_STYLE_RESET_DEFAULTS on "Reset Style"
+ * <p>
  * Listens (GUI-sync, model → UI):
- *   - GraphEvent.SET_STYLE_GUI (object = GraphStyleParams)
- *   - GraphEvent.SET_NODE_COLOR_GUI (object = Color)
- *   - GraphEvent.SET_NODE_RADIUS_GUI (object = Double)
- *   - GraphEvent.SET_NODE_OPACITY_GUI (object = Double)
- *   - GraphEvent.SET_EDGE_COLOR_GUI (object = Color)
- *   - GraphEvent.SET_EDGE_WIDTH_GUI (object = Double)
- *   - GraphEvent.SET_EDGE_OPACITY_GUI (object = Double)
- *
+ * - GraphEvent.SET_STYLE_GUI (object = GraphStyleParams)
+ * - GraphEvent.SET_NODE_COLOR_GUI (object = Color)
+ * - GraphEvent.SET_NODE_RADIUS_GUI (object = Double)
+ * - GraphEvent.SET_NODE_OPACITY_GUI (object = Double)
+ * - GraphEvent.SET_EDGE_COLOR_GUI (object = Color)
+ * - GraphEvent.SET_EDGE_WIDTH_GUI (object = Double)
+ * - GraphEvent.SET_EDGE_OPACITY_GUI (object = Double)
+ * <p>
  * Notes:
  * - Uses sliders for opacity.
  * - Updates controls only when incoming GUI-sync differs (prevents event ping-pong).
@@ -111,9 +112,18 @@ public final class GraphStyleControlsView extends VBox {
         nodeOpacitySlider.setBlockIncrement(0.05);
         addRow(gp, 2, "Opacity", nodeOpacitySlider);
 
-        nodeColorPicker.setOnAction(e -> { params.nodeColor = nodeColorPicker.getValue(); fireParamsChanged(); });
-        nodeRadiusSpinner.valueProperty().addListener((o, ov, nv) -> { params.nodeRadius = nv; fireParamsChanged(); });
-        nodeOpacitySlider.valueProperty().addListener((o, ov, nv) -> { params.nodeOpacity = clamp01(nv.doubleValue()); fireParamsChanged(); });
+        nodeColorPicker.setOnAction(e -> {
+            params.nodeColor = nodeColorPicker.getValue();
+            fireParamsChanged();
+        });
+        nodeRadiusSpinner.valueProperty().addListener((o, ov, nv) -> {
+            params.nodeRadius = nv;
+            fireParamsChanged();
+        });
+        nodeOpacitySlider.valueProperty().addListener((o, ov, nv) -> {
+            params.nodeOpacity = clamp01(nv.doubleValue());
+            fireParamsChanged();
+        });
 
         return gp;
     }
@@ -137,9 +147,18 @@ public final class GraphStyleControlsView extends VBox {
         edgeOpacitySlider.setBlockIncrement(0.05);
         addRow(gp, 2, "Opacity", edgeOpacitySlider);
 
-        edgeColorPicker.setOnAction(e -> { params.edgeColor = edgeColorPicker.getValue(); fireParamsChanged(); });
-        edgeWidthSpinner.valueProperty().addListener((o, ov, nv) -> { params.edgeWidth = nv; fireParamsChanged(); });
-        edgeOpacitySlider.valueProperty().addListener((o, ov, nv) -> { params.edgeOpacity = clamp01(nv.doubleValue()); fireParamsChanged(); });
+        edgeColorPicker.setOnAction(e -> {
+            params.edgeColor = edgeColorPicker.getValue();
+            fireParamsChanged();
+        });
+        edgeWidthSpinner.valueProperty().addListener((o, ov, nv) -> {
+            params.edgeWidth = nv;
+            fireParamsChanged();
+        });
+        edgeOpacitySlider.valueProperty().addListener((o, ov, nv) -> {
+            params.edgeOpacity = clamp01(nv.doubleValue());
+            fireParamsChanged();
+        });
 
         return gp;
     }
@@ -181,57 +200,75 @@ public final class GraphStyleControlsView extends VBox {
 
         // Fine-grained
         scene.addEventHandler(GraphEvent.SET_NODE_COLOR_GUI, e -> {
-            Color c = (Color) e.object; if (c == null) return;
+            Color c = (Color) e.object;
+            if (c == null) return;
             isUpdatingFromGuiSync = true;
             try {
                 if (!Objects.equals(nodeColorPicker.getValue(), c)) nodeColorPicker.setValue(c);
                 params.nodeColor = c;
-            } finally { isUpdatingFromGuiSync = false; }
+            } finally {
+                isUpdatingFromGuiSync = false;
+            }
         });
 
         scene.addEventHandler(GraphEvent.SET_NODE_RADIUS_GUI, e -> {
-            Double v = (Double) e.object; if (v == null) return;
+            Double v = (Double) e.object;
+            if (v == null) return;
             isUpdatingFromGuiSync = true;
             try {
                 if (!Objects.equals(nodeRadiusSpinner.getValue(), v)) nodeRadiusSpinner.getValueFactory().setValue(v);
                 params.nodeRadius = v;
-            } finally { isUpdatingFromGuiSync = false; }
+            } finally {
+                isUpdatingFromGuiSync = false;
+            }
         });
 
         scene.addEventHandler(GraphEvent.SET_NODE_OPACITY_GUI, e -> {
-            Double v = (Double) e.object; if (v == null) return;
+            Double v = (Double) e.object;
+            if (v == null) return;
             isUpdatingFromGuiSync = true;
             try {
                 if (differs(nodeOpacitySlider.getValue(), v)) nodeOpacitySlider.setValue(v);
                 params.nodeOpacity = clamp01(v);
-            } finally { isUpdatingFromGuiSync = false; }
+            } finally {
+                isUpdatingFromGuiSync = false;
+            }
         });
 
         scene.addEventHandler(GraphEvent.SET_EDGE_COLOR_GUI, e -> {
-            Color c = (Color) e.object; if (c == null) return;
+            Color c = (Color) e.object;
+            if (c == null) return;
             isUpdatingFromGuiSync = true;
             try {
                 if (!Objects.equals(edgeColorPicker.getValue(), c)) edgeColorPicker.setValue(c);
                 params.edgeColor = c;
-            } finally { isUpdatingFromGuiSync = false; }
+            } finally {
+                isUpdatingFromGuiSync = false;
+            }
         });
 
         scene.addEventHandler(GraphEvent.SET_EDGE_WIDTH_GUI, e -> {
-            Double v = (Double) e.object; if (v == null) return;
+            Double v = (Double) e.object;
+            if (v == null) return;
             isUpdatingFromGuiSync = true;
             try {
                 if (!Objects.equals(edgeWidthSpinner.getValue(), v)) edgeWidthSpinner.getValueFactory().setValue(v);
                 params.edgeWidth = v;
-            } finally { isUpdatingFromGuiSync = false; }
+            } finally {
+                isUpdatingFromGuiSync = false;
+            }
         });
 
         scene.addEventHandler(GraphEvent.SET_EDGE_OPACITY_GUI, e -> {
-            Double v = (Double) e.object; if (v == null) return;
+            Double v = (Double) e.object;
+            if (v == null) return;
             isUpdatingFromGuiSync = true;
             try {
                 if (differs(edgeOpacitySlider.getValue(), v)) edgeOpacitySlider.setValue(v);
                 params.edgeOpacity = clamp01(v);
-            } finally { isUpdatingFromGuiSync = false; }
+            } finally {
+                isUpdatingFromGuiSync = false;
+            }
         });
     }
 

@@ -29,7 +29,7 @@ public class SurfaceChartPane extends LitPathPane {
         fcb = new FactorControlBox(500, 400);
         avb = new AnalysisVectorBox(500, 400);
         bp = (BorderPane) this.contentPane;
-        
+
         Tab factorTab = new Tab("Factor Vectors");
         factorTab.setClosable(false);
         factorTab.setContent(fcb);
@@ -37,10 +37,10 @@ public class SurfaceChartPane extends LitPathPane {
         Tab analysisTab = new Tab("Analysis Vector");
         analysisTab.setClosable(false);
         analysisTab.setContent(avb);
-        
+
         TabPane tabPane = new TabPane(factorTab, analysisTab);
         bp.setCenter(tabPane);
-        
+
         this.scene.getRoot().addEventHandler(FactorAnalysisEvent.SURFACE_XFACTOR_VECTOR, e -> {
             fcb.setFactorVector(fcb.xFactorVector, (Double[]) e.object1);
         });
@@ -48,8 +48,8 @@ public class SurfaceChartPane extends LitPathPane {
             fcb.setFactorVector(fcb.zFactorVector, (Double[]) e.object1);
         });
         this.scene.getRoot().addEventHandler(FactorAnalysisEvent.ANALYSIS_DATA_VECTOR, e -> {
-            avb.setAnalysisVector((String)e.object1, (Double[]) e.object2);
+            avb.setAnalysisVector((String) e.object1, (Double[]) e.object2);
         });
-        
+
     }
 }

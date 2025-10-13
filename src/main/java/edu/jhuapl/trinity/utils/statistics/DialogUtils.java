@@ -1,8 +1,5 @@
 package edu.jhuapl.trinity.utils.statistics;
 
-import java.util.ArrayList;
-import java.util.List;
-import java.util.StringJoiner;
 import javafx.geometry.Insets;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Alert.AlertType;
@@ -13,9 +10,13 @@ import javafx.scene.control.Label;
 import javafx.scene.control.TextArea;
 import javafx.scene.layout.VBox;
 
+import java.util.ArrayList;
+import java.util.List;
+import java.util.StringJoiner;
+
 /**
  * Simple dialog utilities for entering custom vectors or precomputed scalars.
- *
+ * <p>
  * Features:
  * - Supports single or multiple vectors (multi-line paste).
  * - Pads/truncates vectors to an expected dimension if provided.
@@ -26,11 +27,14 @@ import javafx.scene.layout.VBox;
  */
 public final class DialogUtils {
 
-    private DialogUtils() { }
+    private DialogUtils() {
+    }
 
     // ----------------- Vector Input -----------------
 
-    /** Show a dialog that collects a single vector (no enforced dimension). */
+    /**
+     * Show a dialog that collects a single vector (no enforced dimension).
+     */
     public static List<Double> showCustomVectorDialog() {
         List<List<Double>> all = showCustomVectorsDialog(null);
         if (all == null || all.isEmpty()) return null;
@@ -61,15 +65,15 @@ public final class DialogUtils {
 
         TextArea textArea = new TextArea();
         textArea.setPromptText("Examples:\n" +
-                "0.12, -1.3, 2.5\n" +
-                "1.0 2.0 3.0\n" +
-                "0.5; -1.2; 3");
+            "0.12, -1.3, 2.5\n" +
+            "1.0 2.0 3.0\n" +
+            "0.5; -1.2; 3");
         textArea.setPrefColumnCount(60);
         textArea.setPrefRowCount(10);
 
         Label hint = new Label(expectedDim == null
-                ? "No fixed dimension enforced."
-                : ("Expected dimension: " + expectedDim + "  (rows will be padded/truncated)"));
+            ? "No fixed dimension enforced."
+            : ("Expected dimension: " + expectedDim + "  (rows will be padded/truncated)"));
 
         VBox content = new VBox(8, hint, textArea);
         content.setPadding(new Insets(10));
@@ -87,7 +91,7 @@ public final class DialogUtils {
 
         if (!parsed.warnings.isEmpty()) {
             showWarnings(parsed.warnings, "Vector Input Warnings",
-                    "Some rows required padding/truncation or had invalid tokens.");
+                "Some rows required padding/truncation or had invalid tokens.");
         }
 
         return parsed.vectors.isEmpty() ? null : parsed.vectors;
@@ -95,10 +99,12 @@ public final class DialogUtils {
 
     // ----------------- Scalars Input -----------------
 
-    /** Result container for scalar inputs (score + optional info fraction). */
+    /**
+     * Result container for scalar inputs (score + optional info fraction).
+     */
     public static final class ScalarInputResult {
         public final List<Double> scores = new ArrayList<>();
-        public final List<Double> infos  = new ArrayList<>(); // may be empty
+        public final List<Double> infos = new ArrayList<>(); // may be empty
     }
 
     /**
@@ -113,16 +119,16 @@ public final class DialogUtils {
 
         TextArea textArea = new TextArea();
         textArea.setPromptText("Examples:\n" +
-                "0.73\n" +
-                "0.91, 0.62\n" +
-                "0.50 0.25\n" +
-                "0.33; 1.0");
+            "0.73\n" +
+            "0.91, 0.62\n" +
+            "0.50 0.25\n" +
+            "0.33; 1.0");
         textArea.setPrefColumnCount(60);
         textArea.setPrefRowCount(12);
 
         VBox content = new VBox(8,
-                new Label("Separators: comma, semicolon, or whitespace."),
-                textArea);
+            new Label("Separators: comma, semicolon, or whitespace."),
+            textArea);
         content.setPadding(new Insets(10));
         dialog.getDialogPane().setContent(content);
 
@@ -217,8 +223,14 @@ public final class DialogUtils {
             String[] tokens = normalized.trim().split("\\s+");
 
             Double score = null, info = null;
-            try { if (tokens.length >= 1) score = Double.parseDouble(tokens[0]); } catch (NumberFormatException ignore) {}
-            try { if (tokens.length >= 2) info  = Double.parseDouble(tokens[1]); } catch (NumberFormatException ignore) {}
+            try {
+                if (tokens.length >= 1) score = Double.parseDouble(tokens[0]);
+            } catch (NumberFormatException ignore) {
+            }
+            try {
+                if (tokens.length >= 2) info = Double.parseDouble(tokens[1]);
+            } catch (NumberFormatException ignore) {
+            }
 
             if (score == null) {
                 warnings.add("Line " + lineNo + ": invalid score; skipped.");
@@ -241,7 +253,7 @@ public final class DialogUtils {
 
         if (!warnings.isEmpty()) {
             showWarnings(warnings, "Scalar Input Warnings",
-                    "Some rows had invalid values or were clamped to [0,1].");
+                "Some rows had invalid values or were clamped to [0,1].");
         }
         return out;
     }

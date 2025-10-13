@@ -14,6 +14,7 @@ import javafx.collections.ObservableList;
 import javafx.event.EventTarget;
 import javafx.scene.Node;
 import javafx.scene.Scene;
+
 import java.io.File;
 import java.util.ArrayList;
 import java.util.LinkedHashMap;
@@ -47,11 +48,30 @@ public class FeatureVectorManagerServiceImpl implements FeatureVectorManagerServ
         textFilter.addListener((obs, o, n) -> refreshDisplayedFromActive());
     }
 
-    @Override public ObservableList<String> getCollectionNames() { return collectionNames; }
-    @Override public StringProperty activeCollectionNameProperty() { return activeCollectionName; }
-    @Override public ObservableList<FeatureVector> getDisplayedVectors() { return displayedVectors; }
-    @Override public ObjectProperty<SamplingMode> samplingModeProperty() { return samplingMode; }
-    @Override public StringProperty textFilterProperty() { return textFilter; }
+    @Override
+    public ObservableList<String> getCollectionNames() {
+        return collectionNames;
+    }
+
+    @Override
+    public StringProperty activeCollectionNameProperty() {
+        return activeCollectionName;
+    }
+
+    @Override
+    public ObservableList<FeatureVector> getDisplayedVectors() {
+        return displayedVectors;
+    }
+
+    @Override
+    public ObjectProperty<SamplingMode> samplingModeProperty() {
+        return samplingMode;
+    }
+
+    @Override
+    public StringProperty textFilterProperty() {
+        return textFilter;
+    }
 
     @Override
     public void addCollection(String proposedName, List<FeatureVector> vectors) {
@@ -150,9 +170,9 @@ public class FeatureVectorManagerServiceImpl implements FeatureVectorManagerServ
 
             if (dedupByEntityId) {
                 Set<String> existingIds = tgt.stream()
-                        .map(FeatureVector::getEntityId)
-                        .filter(Objects::nonNull)
-                        .collect(Collectors.toCollection(LinkedHashSet::new));
+                    .map(FeatureVector::getEntityId)
+                    .filter(Objects::nonNull)
+                    .collect(Collectors.toCollection(LinkedHashSet::new));
                 for (FeatureVector fv : src) {
                     String id = fv.getEntityId();
                     if (id == null || !existingIds.contains(id)) {
@@ -191,9 +211,9 @@ public class FeatureVectorManagerServiceImpl implements FeatureVectorManagerServ
             List<FeatureVector> list = collections.get(name);
             if (list == null) return;
             Set<String> ids = toRemove.stream()
-                    .map(FeatureVector::getEntityId)
-                    .filter(Objects::nonNull)
-                    .collect(Collectors.toSet());
+                .map(FeatureVector::getEntityId)
+                .filter(Objects::nonNull)
+                .collect(Collectors.toSet());
             if (!ids.isEmpty()) {
                 list.removeIf(fv -> fv.getEntityId() != null && ids.contains(fv.getEntityId()));
             } else {
@@ -208,8 +228,8 @@ public class FeatureVectorManagerServiceImpl implements FeatureVectorManagerServ
         if (toCopy == null || toCopy.isEmpty() || targetCollection == null) return;
         runFx(() -> {
             String target = (collectionNames.contains(targetCollection))
-                    ? targetCollection
-                    : uniquify(targetCollection);
+                ? targetCollection
+                : uniquify(targetCollection);
             collections.computeIfAbsent(target, k -> {
                 if (!collectionNames.contains(target)) collectionNames.add(target);
                 return new ArrayList<>();
@@ -278,6 +298,7 @@ public class FeatureVectorManagerServiceImpl implements FeatureVectorManagerServ
             else if (eventScene != null) eventScene.getRoot().fireEvent(evt);
         });
     }
+
     @Override
     public void applyAllToWorkspace(boolean replace) {
         runFx(() -> {
@@ -297,6 +318,7 @@ public class FeatureVectorManagerServiceImpl implements FeatureVectorManagerServ
             else if (eventScene != null) eventScene.getRoot().fireEvent(evt);
         });
     }
+
     @Override
     public void setEventTarget(EventTarget target) {
         if (target instanceof Node n) {
@@ -312,26 +334,26 @@ public class FeatureVectorManagerServiceImpl implements FeatureVectorManagerServ
     }
 
     // ---------- internals ----------
-private void refreshDisplayedFromActive() {
-    String name = activeCollectionName.get();
-    List<FeatureVector> src = (name == null) ? List.of() : collections.getOrDefault(name, List.of());
+    private void refreshDisplayedFromActive() {
+        String name = activeCollectionName.get();
+        List<FeatureVector> src = (name == null) ? List.of() : collections.getOrDefault(name, List.of());
 
-    // normalize the query once
-    String q = edu.jhuapl.trinity.javafx.services.FeatureVectorUtils.normalize(textFilter.get());
+        // normalize the query once
+        String q = edu.jhuapl.trinity.javafx.services.FeatureVectorUtils.normalize(textFilter.get());
 
-    // filter by label/text/metadata if query present
-    List<FeatureVector> filtered = (q == null || q.isEmpty())
+        // filter by label/text/metadata if query present
+        List<FeatureVector> filtered = (q == null || q.isEmpty())
             ? src
             : src.stream()
-                 .filter(fv -> edu.jhuapl.trinity.javafx.services.FeatureVectorUtils.matchesTextFilter(fv, q))
-                 .collect(java.util.stream.Collectors.toList());
+            .filter(fv -> edu.jhuapl.trinity.javafx.services.FeatureVectorUtils.matchesTextFilter(fv, q))
+            .collect(java.util.stream.Collectors.toList());
 
-    // then apply sampling
-    List<FeatureVector> sampled =
+        // then apply sampling
+        List<FeatureVector> sampled =
             edu.jhuapl.trinity.javafx.services.FeatureVectorUtils.applySampling(filtered, samplingMode.get());
 
-    displayedVectors.setAll(sampled);
-}
+        displayedVectors.setAll(sampled);
+    }
 
     private String uniquify(String base) {
         String b = (base == null || base.isBlank()) ? "Collection" : base.trim();

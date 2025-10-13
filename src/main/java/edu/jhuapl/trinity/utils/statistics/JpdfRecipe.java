@@ -11,43 +11,56 @@ import java.util.Objects;
  * JpdfRecipe
  * -----------
  * Serializable configuration for batch generation of pairwise Joint PDF/CDF surfaces.
- *
+ * <p>
  * Scope:
- *  - Generate from COMPONENT_AT_DIMENSION pairs (index-index) OR from an explicit whitelist of Axis pairs.
- *  - Select pairs via ALL / WHITELIST / TOP_K_BY_SCORE / THRESHOLD_BY_SCORE.
- *  - Choose scoring metric used during preselection (Pearson / Kendall / MI_LITE / DIST_CORR).
- *
+ * - Generate from COMPONENT_AT_DIMENSION pairs (index-index) OR from an explicit whitelist of Axis pairs.
+ * - Select pairs via ALL / WHITELIST / TOP_K_BY_SCORE / THRESHOLD_BY_SCORE.
+ * - Choose scoring metric used during preselection (Pearson / Kendall / MI_LITE / DIST_CORR).
+ * <p>
  * Grid / Bounds:
- *  - binsX/binsY plus a bounds policy (DATA_MIN_MAX, FIXED_01, or CANONICAL_BY_FEATURE via CanonicalGridPolicy id).
- *  - Data-sufficiency guard (minAvgCountPerCell) to suppress low-sample surfaces.
- *
+ * - binsX/binsY plus a bounds policy (DATA_MIN_MAX, FIXED_01, or CANONICAL_BY_FEATURE via CanonicalGridPolicy id).
+ * - Data-sufficiency guard (minAvgCountPerCell) to suppress low-sample surfaces.
+ * <p>
  * Outputs:
- *  - PDF, CDF or BOTH.
- *  - Optional flags: enable cache, save thumbnails, labels for cohorts (for provenance/reporting).
- *
+ * - PDF, CDF or BOTH.
+ * - Optional flags: enable cache, save thumbnails, labels for cohorts (for provenance/reporting).
+ * <p>
  * Note: This class is a pure configuration object. Execution is handled by JpdfBatchEngine/AbComparisonEngine.
  *
  * @author Sean Phillips
  */
 public final class JpdfRecipe implements Serializable {
 
-    @Serial private static final long serialVersionUID = 1L;
+    @Serial
+    private static final long serialVersionUID = 1L;
 
     // ---------- Enums ----------
 
-    /** How to choose which pairs are built. */
+    /**
+     * How to choose which pairs are built.
+     */
     public enum PairSelection {
-        /** Build all valid pairs from COMPONENT_AT_DIMENSION (respecting includeSelf/ordered flags). */
+        /**
+         * Build all valid pairs from COMPONENT_AT_DIMENSION (respecting includeSelf/ordered flags).
+         */
         ALL,
-        /** Only build the pairs explicitly provided in {@link #explicitAxisPairs}. */
+        /**
+         * Only build the pairs explicitly provided in {@link #explicitAxisPairs}.
+         */
         WHITELIST,
-        /** Pre-score all candidate pairs, then build the top-K by {@link #scoreMetric}. */
+        /**
+         * Pre-score all candidate pairs, then build the top-K by {@link #scoreMetric}.
+         */
         TOP_K_BY_SCORE,
-        /** Pre-score all candidate pairs, then build all pairs >= {@link #scoreThreshold}. */
+        /**
+         * Pre-score all candidate pairs, then build all pairs >= {@link #scoreThreshold}.
+         */
         THRESHOLD_BY_SCORE
     }
 
-    /** Which dependence score to use for preselection. */
+    /**
+     * Which dependence score to use for preselection.
+     */
     public enum ScoreMetric {
         PEARSON,
         KENDALL,
@@ -55,18 +68,26 @@ public final class JpdfRecipe implements Serializable {
         DIST_CORR       // distance correlation (lite implementation)
     }
 
-    /** What to emit for each selected pair. */
+    /**
+     * What to emit for each selected pair.
+     */
     public enum OutputKind {
         PDF_ONLY,
         CDF_ONLY,
         PDF_AND_CDF
     }
 
-    /** How X/Y bounds are defined for the 2D grid. */
+    /**
+     * How X/Y bounds are defined for the 2D grid.
+     */
     public enum BoundsPolicy {
-        /** Use min/max from the data actually used for this surface (per-axis). */
+        /**
+         * Use min/max from the data actually used for this surface (per-axis).
+         */
         DATA_MIN_MAX,
-        /** Lock to [0,1] x [0,1] (useful for probabilities/scores). */
+        /**
+         * Lock to [0,1] x [0,1] (useful for probabilities/scores).
+         */
         FIXED_01,
         /**
          * Ask CanonicalGridPolicy (by {@link #canonicalPolicyId}) to provide per-feature canonical bounds.
@@ -82,7 +103,8 @@ public final class JpdfRecipe implements Serializable {
      * In whitelist mode, each pair defines (X axis, Y axis) explicitly.
      */
     public static final class AxisPair implements Serializable {
-        @Serial private static final long serialVersionUID = 1L;
+        @Serial
+        private static final long serialVersionUID = 1L;
         private final AxisParams xAxis;
         private final AxisParams yAxis;
 
@@ -90,8 +112,14 @@ public final class JpdfRecipe implements Serializable {
             this.xAxis = Objects.requireNonNull(xAxis, "xAxis");
             this.yAxis = Objects.requireNonNull(yAxis, "yAxis");
         }
-        public AxisParams xAxis() { return xAxis; }
-        public AxisParams yAxis() { return yAxis; }
+
+        public AxisParams xAxis() {
+            return xAxis;
+        }
+
+        public AxisParams yAxis() {
+            return yAxis;
+        }
     }
 
     // ---------- Immutable fields ----------
@@ -221,100 +249,238 @@ public final class JpdfRecipe implements Serializable {
         private String cohortALabel = "A";
         private String cohortBLabel = "B";
 
-        private Builder(String name) { this.name = name; }
+        private Builder(String name) {
+            this.name = name;
+        }
 
-        public Builder description(String v) { this.description = v; return this; }
+        public Builder description(String v) {
+            this.description = v;
+            return this;
+        }
 
-        public Builder pairSelection(PairSelection v) { this.pairSelection = v; return this; }
-        public Builder scoreMetric(ScoreMetric v) { this.scoreMetric = v; return this; }
-        public Builder topK(int v) { this.topK = v; return this; }
-        public Builder scoreThreshold(double v) { this.scoreThreshold = v; return this; }
+        public Builder pairSelection(PairSelection v) {
+            this.pairSelection = v;
+            return this;
+        }
 
-        public Builder componentPairsMode(boolean v) { this.componentPairsMode = v; return this; }
+        public Builder scoreMetric(ScoreMetric v) {
+            this.scoreMetric = v;
+            return this;
+        }
+
+        public Builder topK(int v) {
+            this.topK = v;
+            return this;
+        }
+
+        public Builder scoreThreshold(double v) {
+            this.scoreThreshold = v;
+            return this;
+        }
+
+        public Builder componentPairsMode(boolean v) {
+            this.componentPairsMode = v;
+            return this;
+        }
+
         public Builder componentIndexRange(int startInclusive, int endInclusive) {
             this.componentIndexStart = startInclusive;
             this.componentIndexEnd = endInclusive;
             return this;
         }
-        public Builder includeSelfPairs(boolean v) { this.includeSelfPairs = v; return this; }
-        public Builder orderedPairs(boolean v) { this.orderedPairs = v; return this; }
 
-        public Builder addAxisPair(AxisPair p) { this.explicitAxisPairs.add(Objects.requireNonNull(p)); return this; }
-        public Builder addAxisPair(AxisParams x, AxisParams y) { return addAxisPair(new AxisPair(x, y)); }
-        public Builder clearAxisPairs() { this.explicitAxisPairs.clear(); return this; }
+        public Builder includeSelfPairs(boolean v) {
+            this.includeSelfPairs = v;
+            return this;
+        }
 
-        public Builder bins(int sameForBoth) { this.binsX = sameForBoth; this.binsY = sameForBoth; return this; }
-        public Builder bins(int bx, int by) { this.binsX = bx; this.binsY = by; return this; }
-        public Builder boundsPolicy(BoundsPolicy v) { this.boundsPolicy = v; return this; }
-        public Builder canonicalPolicyId(String v) { this.canonicalPolicyId = v; return this; }
+        public Builder orderedPairs(boolean v) {
+            this.orderedPairs = v;
+            return this;
+        }
 
-        public Builder minAvgCountPerCell(double v) { this.minAvgCountPerCell = v; return this; }
+        public Builder addAxisPair(AxisPair p) {
+            this.explicitAxisPairs.add(Objects.requireNonNull(p));
+            return this;
+        }
 
-        public Builder outputKind(OutputKind v) { this.outputKind = v; return this; }
-        public Builder cacheEnabled(boolean v) { this.cacheEnabled = v; return this; }
-        public Builder saveThumbnails(boolean v) { this.saveThumbnails = v; return this; }
+        public Builder addAxisPair(AxisParams x, AxisParams y) {
+            return addAxisPair(new AxisPair(x, y));
+        }
 
-        public Builder cohortLabels(String a, String b) { this.cohortALabel = a; this.cohortBLabel = b; return this; }
+        public Builder clearAxisPairs() {
+            this.explicitAxisPairs.clear();
+            return this;
+        }
 
-        public JpdfRecipe build() { return new JpdfRecipe(this); }
+        public Builder bins(int sameForBoth) {
+            this.binsX = sameForBoth;
+            this.binsY = sameForBoth;
+            return this;
+        }
+
+        public Builder bins(int bx, int by) {
+            this.binsX = bx;
+            this.binsY = by;
+            return this;
+        }
+
+        public Builder boundsPolicy(BoundsPolicy v) {
+            this.boundsPolicy = v;
+            return this;
+        }
+
+        public Builder canonicalPolicyId(String v) {
+            this.canonicalPolicyId = v;
+            return this;
+        }
+
+        public Builder minAvgCountPerCell(double v) {
+            this.minAvgCountPerCell = v;
+            return this;
+        }
+
+        public Builder outputKind(OutputKind v) {
+            this.outputKind = v;
+            return this;
+        }
+
+        public Builder cacheEnabled(boolean v) {
+            this.cacheEnabled = v;
+            return this;
+        }
+
+        public Builder saveThumbnails(boolean v) {
+            this.saveThumbnails = v;
+            return this;
+        }
+
+        public Builder cohortLabels(String a, String b) {
+            this.cohortALabel = a;
+            this.cohortBLabel = b;
+            return this;
+        }
+
+        public JpdfRecipe build() {
+            return new JpdfRecipe(this);
+        }
     }
 
     // ---------- Getters ----------
 
-    public String getName() { return name; }
-    public String getDescription() { return description; }
+    public String getName() {
+        return name;
+    }
 
-    public PairSelection getPairSelection() { return pairSelection; }
-    public ScoreMetric getScoreMetric() { return scoreMetric; }
-    public int getTopK() { return topK; }
-    public double getScoreThreshold() { return scoreThreshold; }
+    public String getDescription() {
+        return description;
+    }
 
-    public boolean isComponentPairsMode() { return componentPairsMode; }
-    public int getComponentIndexStart() { return componentIndexStart; }
-    public int getComponentIndexEnd() { return componentIndexEnd; }
-    public boolean isIncludeSelfPairs() { return includeSelfPairs; }
-    public boolean isOrderedPairs() { return orderedPairs; }
+    public PairSelection getPairSelection() {
+        return pairSelection;
+    }
 
-    public List<AxisPair> getExplicitAxisPairs() { return explicitAxisPairs; }
+    public ScoreMetric getScoreMetric() {
+        return scoreMetric;
+    }
 
-    public int getBinsX() { return binsX; }
-    public int getBinsY() { return binsY; }
-    public BoundsPolicy getBoundsPolicy() { return boundsPolicy; }
-    public String getCanonicalPolicyId() { return canonicalPolicyId; }
+    public int getTopK() {
+        return topK;
+    }
 
-    public double getMinAvgCountPerCell() { return minAvgCountPerCell; }
+    public double getScoreThreshold() {
+        return scoreThreshold;
+    }
 
-    public OutputKind getOutputKind() { return outputKind; }
-    public boolean isCacheEnabled() { return cacheEnabled; }
-    public boolean isSaveThumbnails() { return saveThumbnails; }
+    public boolean isComponentPairsMode() {
+        return componentPairsMode;
+    }
 
-    public String getCohortALabel() { return cohortALabel; }
-    public String getCohortBLabel() { return cohortBLabel; }
+    public int getComponentIndexStart() {
+        return componentIndexStart;
+    }
+
+    public int getComponentIndexEnd() {
+        return componentIndexEnd;
+    }
+
+    public boolean isIncludeSelfPairs() {
+        return includeSelfPairs;
+    }
+
+    public boolean isOrderedPairs() {
+        return orderedPairs;
+    }
+
+    public List<AxisPair> getExplicitAxisPairs() {
+        return explicitAxisPairs;
+    }
+
+    public int getBinsX() {
+        return binsX;
+    }
+
+    public int getBinsY() {
+        return binsY;
+    }
+
+    public BoundsPolicy getBoundsPolicy() {
+        return boundsPolicy;
+    }
+
+    public String getCanonicalPolicyId() {
+        return canonicalPolicyId;
+    }
+
+    public double getMinAvgCountPerCell() {
+        return minAvgCountPerCell;
+    }
+
+    public OutputKind getOutputKind() {
+        return outputKind;
+    }
+
+    public boolean isCacheEnabled() {
+        return cacheEnabled;
+    }
+
+    public boolean isSaveThumbnails() {
+        return saveThumbnails;
+    }
+
+    public String getCohortALabel() {
+        return cohortALabel;
+    }
+
+    public String getCohortBLabel() {
+        return cohortBLabel;
+    }
 
     // ---------- Convenience ----------
 
-    @Override public String toString() {
+    @Override
+    public String toString() {
         return "JpdfRecipe{" +
-                "name='" + name + '\'' +
-                ", pairSelection=" + pairSelection +
-                ", scoreMetric=" + scoreMetric +
-                ", topK=" + topK +
-                ", scoreThreshold=" + scoreThreshold +
-                ", componentPairsMode=" + componentPairsMode +
-                ", componentIndexRange=[" + componentIndexStart + "," + componentIndexEnd + "]" +
-                ", includeSelfPairs=" + includeSelfPairs +
-                ", orderedPairs=" + orderedPairs +
-                ", explicitAxisPairs=" + explicitAxisPairs.size() +
-                ", binsX=" + binsX +
-                ", binsY=" + binsY +
-                ", boundsPolicy=" + boundsPolicy +
-                ", canonicalPolicyId='" + canonicalPolicyId + '\'' +
-                ", minAvgCountPerCell=" + minAvgCountPerCell +
-                ", outputKind=" + outputKind +
-                ", cacheEnabled=" + cacheEnabled +
-                ", saveThumbnails=" + saveThumbnails +
-                ", cohortALabel='" + cohortALabel + '\'' +
-                ", cohortBLabel='" + cohortBLabel + '\'' +
-                '}';
+            "name='" + name + '\'' +
+            ", pairSelection=" + pairSelection +
+            ", scoreMetric=" + scoreMetric +
+            ", topK=" + topK +
+            ", scoreThreshold=" + scoreThreshold +
+            ", componentPairsMode=" + componentPairsMode +
+            ", componentIndexRange=[" + componentIndexStart + "," + componentIndexEnd + "]" +
+            ", includeSelfPairs=" + includeSelfPairs +
+            ", orderedPairs=" + orderedPairs +
+            ", explicitAxisPairs=" + explicitAxisPairs.size() +
+            ", binsX=" + binsX +
+            ", binsY=" + binsY +
+            ", boundsPolicy=" + boundsPolicy +
+            ", canonicalPolicyId='" + canonicalPolicyId + '\'' +
+            ", minAvgCountPerCell=" + minAvgCountPerCell +
+            ", outputKind=" + outputKind +
+            ", cacheEnabled=" + cacheEnabled +
+            ", saveThumbnails=" + saveThumbnails +
+            ", cohortALabel='" + cohortALabel + '\'' +
+            ", cohortBLabel='" + cohortBLabel + '\'' +
+            '}';
     }
 }

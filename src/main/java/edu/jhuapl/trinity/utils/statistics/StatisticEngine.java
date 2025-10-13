@@ -2,8 +2,6 @@ package edu.jhuapl.trinity.utils.statistics;
 
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.utils.AnalysisUtils;
-import static edu.jhuapl.trinity.utils.AnalysisUtils.clamp01;
-import static edu.jhuapl.trinity.utils.AnalysisUtils.clip;
 import edu.jhuapl.trinity.utils.metric.Metric;
 
 import java.util.ArrayList;
@@ -12,15 +10,18 @@ import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
+import static edu.jhuapl.trinity.utils.AnalysisUtils.clamp01;
+import static edu.jhuapl.trinity.utils.AnalysisUtils.clip;
+
 /**
  * StatisticEngine for extracting scalar statistics and their distributions
  * from FeatureVector collections, plus utilities for stepwise "contribution"
  * series derived from time-ordered FeatureVectors.
- *
+ * <p>
  * - PDF/CDF: histogram-based density/cumulative distributions for chosen scalars
  * - Contribution series: aggregate each FeatureVector's [0,1] similarities to S_t,
- *   convert to log-odds L_t=log(S_t/(1-S_t)), then Δ_t=L_t-L_{t-1}.
- *
+ * convert to log-odds L_t=log(S_t/(1-S_t)), then Δ_t=L_t-L_{t-1}.
+ * <p>
  * NOTE: FeatureVectors are assumed order-aligned with time when computing contributions.
  *
  * @author Sean Phillips
@@ -48,35 +49,41 @@ public class StatisticEngine {
         MIN          // strict: weakest dimension dominates
     }
 
-    /** Holder for contribution computation outputs. */
+    /**
+     * Holder for contribution computation outputs.
+     */
     public static final class ContributionSeries {
         public final List<Double> similarity; // S_t in (0,1)
         public final List<Double> logit;      // L_t
         public final List<Double> delta;      // Δ_t = L_t - L_{t-1}, with Δ_0 = L_0
+
         public ContributionSeries(List<Double> s, List<Double> l, List<Double> d) {
-            this.similarity = s; this.logit = l; this.delta = d;
+            this.similarity = s;
+            this.logit = l;
+            this.delta = d;
         }
     }
 
     /**
      * Main entry point to compute selected statistics for a list of FeatureVectors.
-     * @param vectors List of FeatureVector
-     * @param selectedTypes Set of ScalarTypes to calculate
-     * @param pdfBins Number of bins for PDF/CDF histograms
-     * @param metricNameForGeneric (Optional) Metric name for METRIC_DISTANCE_TO_MEAN, e.g. "manhattan"
+     *
+     * @param vectors                   List of FeatureVector
+     * @param selectedTypes             Set of ScalarTypes to calculate
+     * @param pdfBins                   Number of bins for PDF/CDF histograms
+     * @param metricNameForGeneric      (Optional) Metric name for METRIC_DISTANCE_TO_MEAN, e.g. "manhattan"
      * @param referenceVectorForGeneric (Optional) Reference vector (mean, centroid, etc.) for METRIC_DISTANCE_TO_MEAN
      * @return Map of ScalarType to StatisticResult
      */
     public static Map<ScalarType, StatisticResult> computeStatistics(
-            List<FeatureVector> vectors,
-            Set<ScalarType> selectedTypes,
-            int pdfBins,
-            String metricNameForGeneric,
-            List<Double> referenceVectorForGeneric
+        List<FeatureVector> vectors,
+        Set<ScalarType> selectedTypes,
+        int pdfBins,
+        String metricNameForGeneric,
+        List<Double> referenceVectorForGeneric
     ) {
         // Default to no component selection
         return computeStatistics(vectors, selectedTypes, pdfBins, metricNameForGeneric,
-                referenceVectorForGeneric, null);
+            referenceVectorForGeneric, null);
     }
 
     /**
@@ -85,12 +92,12 @@ public class StatisticEngine {
      * the component result will be omitted.
      */
     public static Map<ScalarType, StatisticResult> computeStatistics(
-            List<FeatureVector> vectors,
-            Set<ScalarType> selectedTypes,
-            int pdfBins,
-            String metricNameForGeneric,
-            List<Double> referenceVectorForGeneric,
-            Integer componentIndex
+        List<FeatureVector> vectors,
+        Set<ScalarType> selectedTypes,
+        int pdfBins,
+        String metricNameForGeneric,
+        List<Double> referenceVectorForGeneric,
+        Integer componentIndex
     ) {
         Map<ScalarType, StatisticResult> results = new HashMap<>();
         if (vectors == null || vectors.isEmpty() || selectedTypes == null || selectedTypes.isEmpty()) {
@@ -105,8 +112,8 @@ public class StatisticEngine {
         // PC1 projections, if needed
         if (selectedTypes.contains(ScalarType.PC1_PROJECTION)) {
             double[][] dataArr = vectors.stream()
-                    .map(fv -> fv.getData().stream().mapToDouble(Double::doubleValue).toArray())
-                    .toArray(double[][]::new);
+                .map(fv -> fv.getData().stream().mapToDouble(Double::doubleValue).toArray())
+                .toArray(double[][]::new);
 
             double[][] pcaProjected = AnalysisUtils.doCommonsPCA(dataArr);
             List<Double> pc1Projections = new ArrayList<>();
@@ -160,11 +167,11 @@ public class StatisticEngine {
                     case MAX -> fv.getMax();
                     case MIN -> fv.getMin();
                     case DIST_TO_MEAN -> (meanVector != null)
-                            ? AnalysisUtils.l2Norm(diffList(fv.getData(), meanVector))
-                            : 0.0;
+                        ? AnalysisUtils.l2Norm(diffList(fv.getData(), meanVector))
+                        : 0.0;
                     case COSINE_TO_MEAN -> (meanVector != null)
-                            ? AnalysisUtils.cosineSimilarity(fv.getData(), meanVector)
-                            : 0.0;
+                        ? AnalysisUtils.cosineSimilarity(fv.getData(), meanVector)
+                        : 0.0;
                     default -> 0.0;
                 };
                 scalars.add(value);
@@ -173,10 +180,11 @@ public class StatisticEngine {
         }
         return results;
     }
+
     /**
      * Build a cumulative series from a list of delta values.
      * Intended for converting per-step Δ log-odds into cumulative log-odds.
-     *
+     * <p>
      * Rules:
      * - Null or NaN entries are treated as 0.0.
      * - Empty or null input returns an empty list.
@@ -201,16 +209,17 @@ public class StatisticEngine {
 
     /**
      * Compute per-step contributions from a sequence of FeatureVectors.
-     * @param vectors   sequential FeatureVectors (each element in [0,1])
-     * @param agg       how to aggregate each vector to a single S_t
-     * @param weights   optional per-dimension weights (will be normalized to sum=1). If null, uniform.
-     * @param epsilon   small value used to clip S_t into (ε, 1-ε) and for GEOMEAN stability (e.g., 1e-6).
+     *
+     * @param vectors sequential FeatureVectors (each element in [0,1])
+     * @param agg     how to aggregate each vector to a single S_t
+     * @param weights optional per-dimension weights (will be normalized to sum=1). If null, uniform.
+     * @param epsilon small value used to clip S_t into (ε, 1-ε) and for GEOMEAN stability (e.g., 1e-6).
      */
     public static ContributionSeries computeContributions(
-            List<FeatureVector> vectors,
-            SimilarityAggregator agg,
-            double[] weights,
-            double epsilon
+        List<FeatureVector> vectors,
+        SimilarityAggregator agg,
+        double[] weights,
+        double epsilon
     ) {
         List<Double> S = aggregateSimilaritySeries(vectors, agg, weights, epsilon);
         List<Double> L = logitSeries(S, epsilon);
@@ -218,12 +227,14 @@ public class StatisticEngine {
         return new ContributionSeries(S, L, D);
     }
 
-    /** Aggregate each FeatureVector to a single similarity S_t in (0,1). */
+    /**
+     * Aggregate each FeatureVector to a single similarity S_t in (0,1).
+     */
     public static List<Double> aggregateSimilaritySeries(
-            List<FeatureVector> vectors,
-            SimilarityAggregator agg,
-            double[] weights,
-            double epsilon
+        List<FeatureVector> vectors,
+        SimilarityAggregator agg,
+        double[] weights,
+        double epsilon
     ) {
         List<Double> out = new ArrayList<>();
         if (vectors == null || vectors.isEmpty()) return out;
@@ -233,7 +244,10 @@ public class StatisticEngine {
 
         for (FeatureVector fv : vectors) {
             List<Double> z = fv.getData();
-            if (z == null || z.isEmpty()) { out.add(0.5); continue; }
+            if (z == null || z.isEmpty()) {
+                out.add(0.5);
+                continue;
+            }
 
             double s;
             switch (agg != null ? agg : SimilarityAggregator.MEAN) {
@@ -272,7 +286,9 @@ public class StatisticEngine {
         return out;
     }
 
-    /** Logit(L) for each S_t with clipping to avoid infinities. */
+    /**
+     * Logit(L) for each S_t with clipping to avoid infinities.
+     */
     public static List<Double> logitSeries(List<Double> s, double epsilon) {
         List<Double> out = new ArrayList<>();
         if (s == null) return out;
@@ -283,7 +299,9 @@ public class StatisticEngine {
         return out;
     }
 
-    /** Δ_t = L_t - L_{t-1} with Δ_0 = L_0 (baseline probability 0.5 → log-odds 0). */
+    /**
+     * Δ_t = L_t - L_{t-1} with Δ_0 = L_0 (baseline probability 0.5 → log-odds 0).
+     */
     public static List<Double> contributionSeriesFromLogit(List<Double> L) {
         List<Double> out = new ArrayList<>();
         if (L == null || L.isEmpty()) return out;
@@ -314,7 +332,9 @@ public class StatisticEngine {
         return sr;
     }
 
-    /** Internal container for histogram outputs. */
+    /**
+     * Internal container for histogram outputs.
+     */
     public static class PDFCDFResult {
         double[] bins;           // bin centers
         double[] pdf;            // density values
@@ -326,13 +346,17 @@ public class StatisticEngine {
         int totalSamples;        // number of valid samples counted
 
         PDFCDFResult(
-                double[] bins, double[] pdf, double[] cdf,
-                double[] binEdges, int[] sampleToBin,
-                int[] binCounts, int[][] binToSampleIdx, int totalSamples
+            double[] bins, double[] pdf, double[] cdf,
+            double[] binEdges, int[] sampleToBin,
+            int[] binCounts, int[][] binToSampleIdx, int totalSamples
         ) {
-            this.bins = bins; this.pdf = pdf; this.cdf = cdf;
-            this.binEdges = binEdges; this.sampleToBin = sampleToBin;
-            this.binCounts = binCounts; this.binToSampleIdx = binToSampleIdx;
+            this.bins = bins;
+            this.pdf = pdf;
+            this.cdf = cdf;
+            this.binEdges = binEdges;
+            this.sampleToBin = sampleToBin;
+            this.binCounts = binCounts;
+            this.binToSampleIdx = binToSampleIdx;
             this.totalSamples = totalSamples;
         }
     }

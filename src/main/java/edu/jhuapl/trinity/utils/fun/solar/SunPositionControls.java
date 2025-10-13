@@ -1,9 +1,6 @@
 package edu.jhuapl.trinity.utils.fun.solar;
 
 import edu.jhuapl.trinity.javafx.events.EffectEvent;
-import static edu.jhuapl.trinity.javafx.events.EffectEvent.SUN_POSITION_ARCHEIGHT;
-import static edu.jhuapl.trinity.javafx.events.EffectEvent.SUN_POSITION_ARCWIDTH;
-import static edu.jhuapl.trinity.javafx.events.EffectEvent.SUN_POSITION_VELOCITY;
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleDoubleProperty;
@@ -16,6 +13,8 @@ import javafx.scene.control.Slider;
 import javafx.scene.control.ToggleButton;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
+
+import static edu.jhuapl.trinity.javafx.events.EffectEvent.*;
 
 
 /**

@@ -4,7 +4,6 @@ import edu.jhuapl.trinity.utils.statistics.JpdfRecipe.BoundsPolicy;
 import edu.jhuapl.trinity.utils.statistics.JpdfRecipe.OutputKind;
 import edu.jhuapl.trinity.utils.statistics.JpdfRecipe.PairSelection;
 import edu.jhuapl.trinity.utils.statistics.JpdfRecipe.ScoreMetric;
-import java.util.function.Consumer;
 import javafx.geometry.Insets;
 import javafx.scene.control.Alert;
 import javafx.scene.control.Button;
@@ -22,16 +21,18 @@ import javafx.scene.layout.Priority;
 import javafx.scene.layout.Region;
 import javafx.scene.layout.VBox;
 
+import java.util.function.Consumer;
+
 public final class PairwiseJpdfConfigPanel extends BorderPane {
 
     // ---- sizing knobs ----
-    private static final double PANEL_PREF_WIDTH   = 390;
-    private static final double LABEL_COL_WIDTH    = 130; // label column
-    private static final double FIELD_MIN_W        = 180; // generic control minimum
-    private static final double FIELD_PREF_W       = 240; // generic control preferred
-    private static final double FIELD_WIDE_W       = 300; // name field
-    private static final double SPINNER_MIN_W      = 100;
-    private static final double SPINNER_PREF_W     = 120;
+    private static final double PANEL_PREF_WIDTH = 390;
+    private static final double LABEL_COL_WIDTH = 130; // label column
+    private static final double FIELD_MIN_W = 180; // generic control minimum
+    private static final double FIELD_PREF_W = 240; // generic control preferred
+    private static final double FIELD_WIDE_W = 300; // name field
+    private static final double SPINNER_MIN_W = 100;
+    private static final double SPINNER_PREF_W = 120;
 
     private Consumer<JpdfRecipe> onRun;
 
@@ -172,16 +173,30 @@ public final class PairwiseJpdfConfigPanel extends BorderPane {
         resetButton.setOnAction(e -> resetToDefaults());
     }
 
-    /** Expose Run button so the parent pane can place it in the top bar. */
-    public Button getRunButton() { return runButton; }
-    /** Expose Reset button so the parent pane can place it in the top bar. */
-    public Button getResetButton() { return resetButton; }
+    /**
+     * Expose Run button so the parent pane can place it in the top bar.
+     */
+    public Button getRunButton() {
+        return runButton;
+    }
 
-    /** Set a callback to receive a fully-built JpdfRecipe when the user clicks Run. */
-    public void setOnRun(Consumer<JpdfRecipe> onRun) { this.onRun = onRun; }
+    /**
+     * Expose Reset button so the parent pane can place it in the top bar.
+     */
+    public Button getResetButton() {
+        return resetButton;
+    }
+
+    /**
+     * Set a callback to receive a fully-built JpdfRecipe when the user clicks Run.
+     */
+    public void setOnRun(Consumer<JpdfRecipe> onRun) {
+        this.onRun = onRun;
+    }
 
     /**
      * Build a JpdfRecipe from current UI state without running.
+     *
      * @throws IllegalArgumentException if configuration is invalid
      */
     public JpdfRecipe snapshotRecipe() {
@@ -244,37 +259,56 @@ public final class PairwiseJpdfConfigPanel extends BorderPane {
         int r = 0;
 
         // General
-        g.add(compactLabel("Name"), 0, r);                   g.add(recipeNameField, 1, r++);
+        g.add(compactLabel("Name"), 0, r);
+        g.add(recipeNameField, 1, r++);
 
         // Pair selection
-        g.add(compactLabel("Pair Selection"), 0, r);         g.add(pairSelectionCombo, 1, r++);
-        g.add(compactLabel("Score Metric"), 0, r);           g.add(scoreMetricCombo, 1, r++);
-        g.add(compactLabel("Top-K"), 0, r);                  g.add(topKSpinner, 1, r++);
-        g.add(compactLabel("Threshold"), 0, r);              g.add(thresholdSpinner, 1, r++);
+        g.add(compactLabel("Pair Selection"), 0, r);
+        g.add(pairSelectionCombo, 1, r++);
+        g.add(compactLabel("Score Metric"), 0, r);
+        g.add(scoreMetricCombo, 1, r++);
+        g.add(compactLabel("Top-K"), 0, r);
+        g.add(topKSpinner, 1, r++);
+        g.add(compactLabel("Threshold"), 0, r);
+        g.add(thresholdSpinner, 1, r++);
 
         // Component options
-        g.add(compactLabel(""), 0, r);                       g.add(componentPairsCheck, 1, r++); // checkbox row
-        g.add(compactLabel("Component Start"), 0, r);        g.add(compStartSpinner, 1, r++);
-        g.add(compactLabel("Component End"), 0, r);          g.add(compEndSpinner, 1, r++);
-        g.add(compactLabel(""), 0, r);                       g.add(includeSelfPairsCheck, 1, r++); // checkbox row
-        g.add(compactLabel(""), 0, r);                       g.add(orderedPairsCheck, 1, r++);    // checkbox row
+        g.add(compactLabel(""), 0, r);
+        g.add(componentPairsCheck, 1, r++); // checkbox row
+        g.add(compactLabel("Component Start"), 0, r);
+        g.add(compStartSpinner, 1, r++);
+        g.add(compactLabel("Component End"), 0, r);
+        g.add(compEndSpinner, 1, r++);
+        g.add(compactLabel(""), 0, r);
+        g.add(includeSelfPairsCheck, 1, r++); // checkbox row
+        g.add(compactLabel(""), 0, r);
+        g.add(orderedPairsCheck, 1, r++);    // checkbox row
 
         // Grid / Bounds
-        g.add(compactLabel("Bins X"), 0, r);                 g.add(binsXSpinner, 1, r++);
-        g.add(compactLabel("Bins Y"), 0, r);                 g.add(binsYSpinner, 1, r++);
-        g.add(compactLabel("Bounds Policy"), 0, r);          g.add(boundsPolicyCombo, 1, r++);
-        g.add(compactLabel("Canonical Policy Id"), 0, r);    g.add(canonicalPolicyIdField, 1, r++);
+        g.add(compactLabel("Bins X"), 0, r);
+        g.add(binsXSpinner, 1, r++);
+        g.add(compactLabel("Bins Y"), 0, r);
+        g.add(binsYSpinner, 1, r++);
+        g.add(compactLabel("Bounds Policy"), 0, r);
+        g.add(boundsPolicyCombo, 1, r++);
+        g.add(compactLabel("Canonical Policy Id"), 0, r);
+        g.add(canonicalPolicyIdField, 1, r++);
 
         // Guard
-        g.add(compactLabel("Min Avg Count/Cell"), 0, r);     g.add(minAvgCountPerCellSpinner, 1, r++);
+        g.add(compactLabel("Min Avg Count/Cell"), 0, r);
+        g.add(minAvgCountPerCellSpinner, 1, r++);
 
         // Outputs
-        g.add(compactLabel("Output"), 0, r);                 g.add(outputKindCombo, 1, r++);
-        g.add(compactLabel(""), 0, r);                       g.add(cacheEnabledCheck, 1, r++);    // checkbox row
-        g.add(compactLabel(""), 0, r);                       g.add(saveThumbsCheck, 1, r++);      // checkbox row
+        g.add(compactLabel("Output"), 0, r);
+        g.add(outputKindCombo, 1, r++);
+        g.add(compactLabel(""), 0, r);
+        g.add(cacheEnabledCheck, 1, r++);    // checkbox row
+        g.add(compactLabel(""), 0, r);
+        g.add(saveThumbsCheck, 1, r++);      // checkbox row
 
         // Whitelist
-        g.add(compactLabel("Whitelist (opt)"), 0, r);        g.add(whitelistArea, 1, r++);
+        g.add(compactLabel("Whitelist (opt)"), 0, r);
+        g.add(whitelistArea, 1, r++);
 
         VBox root = new VBox(8, g);
         root.setPadding(new Insets(2));
@@ -333,19 +367,19 @@ public final class PairwiseJpdfConfigPanel extends BorderPane {
         }
 
         JpdfRecipe.Builder b = JpdfRecipe.newBuilder(name)
-                .pairSelection(ps)
-                .scoreMetric(sm)
-                .bins(bx, by)
-                .boundsPolicy(bp)
-                .canonicalPolicyId(canonicalId == null ? "" : canonicalId.trim())
-                .minAvgCountPerCell(minAvgCountPerCellSpinner.getValue())
-                .outputKind(outputKindCombo.getValue())
-                .cacheEnabled(cacheEnabledCheck.isSelected())
-                .saveThumbnails(saveThumbsCheck.isSelected())
-                .componentPairsMode(componentPairsCheck.isSelected())
-                .componentIndexRange(start, end)
-                .includeSelfPairs(includeSelfPairsCheck.isSelected())
-                .orderedPairs(orderedPairsCheck.isSelected());
+            .pairSelection(ps)
+            .scoreMetric(sm)
+            .bins(bx, by)
+            .boundsPolicy(bp)
+            .canonicalPolicyId(canonicalId == null ? "" : canonicalId.trim())
+            .minAvgCountPerCell(minAvgCountPerCellSpinner.getValue())
+            .outputKind(outputKindCombo.getValue())
+            .cacheEnabled(cacheEnabledCheck.isSelected())
+            .saveThumbnails(saveThumbsCheck.isSelected())
+            .componentPairsMode(componentPairsCheck.isSelected())
+            .componentIndexRange(start, end)
+            .includeSelfPairs(includeSelfPairsCheck.isSelected())
+            .orderedPairs(orderedPairsCheck.isSelected());
 
         if (ps == PairSelection.TOP_K_BY_SCORE) {
             if (topK <= 0) throw new IllegalArgumentException("Top-K must be > 0.");
