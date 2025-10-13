@@ -1,7 +1,6 @@
 package edu.jhuapl.trinity.javafx.javafx3d.tasks;
 
 import edu.jhuapl.trinity.css.StyleResourceProvider;
-import edu.jhuapl.trinity.data.Dimension;
 import edu.jhuapl.trinity.data.FactorLabel;
 import edu.jhuapl.trinity.data.Manifold;
 import edu.jhuapl.trinity.data.files.FeatureCollectionFile;
@@ -10,13 +9,10 @@ import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.javafx.components.radial.ProgressStatus;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
-import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.Manifold3D;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
-import java.io.File;
-import java.io.IOException;
 import javafx.application.Platform;
 import javafx.geometry.Pos;
 import javafx.scene.PerspectiveCamera;
@@ -37,25 +33,28 @@ import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.CullFace;
+import javafx.scene.shape.Polygon;
 import javafx.scene.shape.Sphere;
 import javafx.scene.text.Font;
+import javafx.stage.FileChooser;
 import javafx.stage.StageStyle;
 import org.fxyz3d.geometry.Point3D;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.io.File;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
-import javafx.scene.shape.Polygon;
-import javafx.stage.FileChooser;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * @author Sean Phillips
  */
 public class ManifoldClusterTask extends ClusterTask {
     private static final Logger LOG = LoggerFactory.getLogger(ManifoldClusterTask.class);
-    
+
     HashMap<Sphere, FeatureVector> currentMap;
     Polygon lassoPolygon;
     Boolean export = false;
@@ -64,7 +63,7 @@ public class ManifoldClusterTask extends ClusterTask {
     File latestDir = new File(".");
 
     public ManifoldClusterTask(Scene scene, PerspectiveCamera camera,
-            HashMap<Sphere, FeatureVector> currentMap, Polygon lassoPolygon) {
+                               HashMap<Sphere, FeatureVector> currentMap, Polygon lassoPolygon) {
         super(scene, camera);
         this.currentMap = currentMap;
         this.lassoPolygon = lassoPolygon;
@@ -98,7 +97,7 @@ public class ManifoldClusterTask extends ClusterTask {
 
         CheckBox exportCheckBox = new CheckBox("Export Features");
         CheckBox manifoldCheckBox = new CheckBox("Create Manifold");
-        
+
         Label nameLabel = new Label("Name");
         nameLabel.setMinWidth(100);
         TextField labelTextField = new TextField("Selected Manifold " + ai.getAndIncrement());
@@ -158,7 +157,7 @@ public class ManifoldClusterTask extends ClusterTask {
                 labelMatchedPoints.add(JavaFX3DUtils.toFXYZ3D.apply(p3D));
                 labelMatchedFeatureVectors.add(fv);
             }
-        }        
+        }
         if (export) {
             Platform.runLater(() -> {
                 FileChooser fc = new FileChooser();
@@ -172,8 +171,8 @@ public class ManifoldClusterTask extends ClusterTask {
                     if (file.getParentFile().isDirectory())
                         latestDir = file;
                     scene.getRoot().fireEvent(
-                            new CommandTerminalEvent("Exporting " + labelMatchedFeatureVectors.size() + " FeatureVectors.",
-                                new Font("Consolas", 20), Color.GREEN));
+                        new CommandTerminalEvent("Exporting " + labelMatchedFeatureVectors.size() + " FeatureVectors.",
+                            new Font("Consolas", 20), Color.GREEN));
                     FeatureCollection featureCollection = new FeatureCollection();
                     featureCollection.setFeatures(labelMatchedFeatureVectors);
                     try {
@@ -182,9 +181,9 @@ public class ManifoldClusterTask extends ClusterTask {
                         fcf.writeContent();
                     } catch (IOException ex) {
                         LOG.error(null, ex);
-                    }            
+                    }
                 }
-            });            
+            });
         }
         if (create && indices.size() > 4) {
             Manifold manifold = new Manifold(manPoints, manifoldName, manifoldName, getDiffuseColor());

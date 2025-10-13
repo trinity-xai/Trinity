@@ -137,6 +137,7 @@ public class CircleProgressIndicator extends StackPane {
         ft.setOnFinished(e -> setVisible(!fadeOut));
         ft.playFromStart();
     }
+
     public boolean inView() {
         return getOpacity() >= defaultOpacity && isVisible();
     }

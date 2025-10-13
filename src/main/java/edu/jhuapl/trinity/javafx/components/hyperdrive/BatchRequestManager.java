@@ -4,6 +4,10 @@ package edu.jhuapl.trinity.javafx.components.hyperdrive;
  *
  * @author Sean Phillips
  */
+
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.Collections;
@@ -19,8 +23,6 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Consumer;
 import java.util.function.Supplier;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
 
 /**
  * Generic manager for batching and throttling REST requests with retries and
@@ -43,9 +45,9 @@ public class BatchRequestManager<T> {
     private int totalBatches = 0;
     private final ScheduledExecutorService scheduler = Executors.newScheduledThreadPool(2);
     private final Map<Integer, ScheduledFuture<?>> timeouts = new ConcurrentHashMap<>();
-private final Map<Integer, Long> batchStartTimes = new ConcurrentHashMap<>();
-private final List<Long> batchDurations = Collections.synchronizedList(new ArrayList<>());
-private final Map<Integer, Long> batchEndDurations = new ConcurrentHashMap<>();
+    private final Map<Integer, Long> batchStartTimes = new ConcurrentHashMap<>();
+    private final List<Long> batchDurations = Collections.synchronizedList(new ArrayList<>());
+    private final Map<Integer, Long> batchEndDurations = new ConcurrentHashMap<>();
 
     private final Supplier<Integer> requestIdSupplier;
     private final Supplier<Integer> batchNumberSupplier;
@@ -95,13 +97,13 @@ private final Map<Integer, Long> batchEndDurations = new ConcurrentHashMap<>();
     }
 
     public BatchRequestManager(
-            int maxInFlight,
-            long timeoutMillis,
-            int maxRetries,
-            Supplier<Integer> batchNumberSupplier,
-            Supplier<Integer> requestIdSupplier,
-            TriFunction<T, Integer, Integer, Runnable> taskFactory, // (batch, batchNumber, reqId) -> Runnable
-            Consumer<BatchResult<T>> onComplete
+        int maxInFlight,
+        long timeoutMillis,
+        int maxRetries,
+        Supplier<Integer> batchNumberSupplier,
+        Supplier<Integer> requestIdSupplier,
+        TriFunction<T, Integer, Integer, Runnable> taskFactory, // (batch, batchNumber, reqId) -> Runnable
+        Consumer<BatchResult<T>> onComplete
     ) {
         this.maxInFlight = maxInFlight;
         this.timeoutMillis = timeoutMillis;
@@ -112,84 +114,86 @@ private final Map<Integer, Long> batchEndDurations = new ConcurrentHashMap<>();
         this.onComplete = onComplete;
     }
 
-public void enqueue(Collection<T> batches) {
-    totalBatches = batches.size();
-    batchesCompleted = 0;
-    batchDurations.clear();
-    batchEndDurations.clear();
-    batchStartTimes.clear();    
-    for (T batch : batches) {
-        int batchNum = batchNumberSupplier.get();
-        int reqId = requestIdSupplier.get();
-        pendingQueue.add(new BatchWrapper<>(batch, batchNum, reqId));
+    public void enqueue(Collection<T> batches) {
+        totalBatches = batches.size();
+        batchesCompleted = 0;
+        batchDurations.clear();
+        batchEndDurations.clear();
+        batchStartTimes.clear();
+        for (T batch : batches) {
+            int batchNum = batchNumberSupplier.get();
+            int reqId = requestIdSupplier.get();
+            pendingQueue.add(new BatchWrapper<>(batch, batchNum, reqId));
+        }
+        // Prime the pipeline: fill all concurrency slots now
+        initialDispatch();
     }
-    // Prime the pipeline: fill all concurrency slots now
-    initialDispatch();
-}
-public void stopAndClear() {
-    pendingQueue.clear();
-    // Cancel all outstanding timeouts
-    for (ScheduledFuture<?> future : timeouts.values()) {
-        if (future != null && !future.isDone()) {
-            future.cancel(true);
+
+    public void stopAndClear() {
+        pendingQueue.clear();
+        // Cancel all outstanding timeouts
+        for (ScheduledFuture<?> future : timeouts.values()) {
+            if (future != null && !future.isDone()) {
+                future.cancel(true);
+            }
+        }
+        timeouts.clear();
+        clearCounters();
+    }
+
+    public void clearCounters() {
+        //clear batch durations, starts, etc.
+        batchStartTimes.clear();
+        batchEndDurations.clear();
+        batchDurations.clear();
+        //reset counters
+        inFlight.set(0);
+        batchesCompleted = 0;
+        totalBatches = 0;
+        LOG.warn("BatchRequestManager: All queued batches and timers stopped and cleared by user.");
+    }
+
+    // Call this from enqueue() only
+    private void initialDispatch() {
+        while (inFlight.get() < maxInFlight && !pendingQueue.isEmpty()) {
+            scheduleNextBatch();
         }
     }
-    timeouts.clear();
-    clearCounters();
-}
-public void clearCounters() {
-    //clear batch durations, starts, etc.
-    batchStartTimes.clear();
-    batchEndDurations.clear();
-    batchDurations.clear();
-    //reset counters
-    inFlight.set(0);
-    batchesCompleted = 0;
-    totalBatches = 0;
-    LOG.warn("BatchRequestManager: All queued batches and timers stopped and cleared by user.");
-}
 
-// Call this from enqueue() only
-private void initialDispatch() {
-    while (inFlight.get() < maxInFlight && !pendingQueue.isEmpty()) {
-        scheduleNextBatch();
+    // Call this from completion/failure/timeout
+    private void dispatch() {
+        while (inFlight.get() < maxInFlight && !pendingQueue.isEmpty()) {
+            scheduleNextBatch();
+        }
     }
-}
 
-// Call this from completion/failure/timeout
-private void dispatch() {
-    while(inFlight.get() < maxInFlight && !pendingQueue.isEmpty()) {
-        scheduleNextBatch();
+    private void scheduleNextBatch() {
+        BatchWrapper<T> wrapper = pendingQueue.poll();
+        if (wrapper != null) {
+            inFlight.incrementAndGet();
+            LOG.info("Dispatching batch {} (batchNumber={}) (retry #{})", wrapper.requestId, wrapper.batchNumber, wrapper.retries);
+
+            // Timeout for this batch
+            ScheduledFuture<?> timeout = scheduler.schedule(() -> {
+                onTimeout(wrapper);
+            }, timeoutMillis, TimeUnit.MILLISECONDS);
+            timeouts.put(wrapper.requestId, timeout);
+
+            // Schedule the batch with delay
+            scheduler.schedule(() -> {
+                Runnable task = taskFactory.apply(wrapper.batch, wrapper.batchNumber, wrapper.requestId);
+                try {
+                    task.run();
+                } catch (Exception ex) {
+                    LOG.error("Batch {} (batchNumber={}) threw exception: {}", wrapper.requestId, wrapper.batchNumber, ex.toString());
+                    handleFailure(wrapper, ex);
+                }
+            }, requestDelayMillis, TimeUnit.MILLISECONDS);
+
+            long now = System.currentTimeMillis();
+            batchStartTimes.put(wrapper.requestId, now);
+        }
     }
-}
-
-private void scheduleNextBatch() {
-    BatchWrapper<T> wrapper = pendingQueue.poll();
-    if (wrapper != null) {
-        inFlight.incrementAndGet();
-        LOG.info("Dispatching batch {} (batchNumber={}) (retry #{})", wrapper.requestId, wrapper.batchNumber, wrapper.retries);
-
-        // Timeout for this batch
-        ScheduledFuture<?> timeout = scheduler.schedule(() -> {
-            onTimeout(wrapper);
-        }, timeoutMillis, TimeUnit.MILLISECONDS);
-        timeouts.put(wrapper.requestId, timeout);
-
-        // Schedule the batch with delay
-        scheduler.schedule(() -> {
-            Runnable task = taskFactory.apply(wrapper.batch, wrapper.batchNumber, wrapper.requestId);
-            try {
-                task.run();
-            } catch (Exception ex) {
-                LOG.error("Batch {} (batchNumber={}) threw exception: {}", wrapper.requestId, wrapper.batchNumber, ex.toString());
-                handleFailure(wrapper, ex);
-            }
-        }, requestDelayMillis, TimeUnit.MILLISECONDS);
-
-        long now = System.currentTimeMillis();
-        batchStartTimes.put(wrapper.requestId, now);        
-    }
-}
 
     public void completeSuccess(int requestId, int batchNumber, T batch, int retries) {
         handleCompletion(requestId, batchNumber, batch, retries, BatchResult.Status.SUCCESS, null);
@@ -199,66 +203,69 @@ private void scheduleNextBatch() {
         handleCompletion(requestId, batchNumber, batch, retries, BatchResult.Status.FAILURE, ex);
     }
 
-private void onTimeout(BatchWrapper<T> wrapper) {
-    LOG.warn("Batch {} (batchNumber={}) timed out after {}ms (retry #{})",
+    private void onTimeout(BatchWrapper<T> wrapper) {
+        LOG.warn("Batch {} (batchNumber={}) timed out after {}ms (retry #{})",
             wrapper.requestId, wrapper.batchNumber, timeoutMillis, wrapper.retries);
-    handleFailure(wrapper, null); // handleFailure will call dispatch()
-}
-
-private void handleCompletion(int requestId, int batchNumber, T batch, int retries, BatchResult.Status status, Exception ex) {
-    ScheduledFuture<?> timeout = timeouts.remove(requestId);
-    if (timeout != null) {
-        timeout.cancel(false);
-    }
-    inFlight.decrementAndGet();
-    batchesCompleted++;
-
-    //Compute and store batch duration
-    Long startTime = batchStartTimes.remove(requestId);
-    if (startTime != null) {
-        long duration = System.currentTimeMillis() - startTime;
-        batchDurations.add(duration); // keep this as "most recent"
-        LOG.info("Batch {} completed in {} ms (avg: {} ms)", requestId, duration, getAvgBatchDurationMillis());
-        batchEndDurations.put(requestId, duration);
+        handleFailure(wrapper, null); // handleFailure will call dispatch()
     }
 
-    if (onComplete != null) {
-        onComplete.accept(new BatchResultImpl<>(requestId, batchNumber, batch, status, retries, ex));
-    }
-    dispatch();
-}
-
-private void handleFailure(BatchWrapper<T> wrapper, Exception ex) {
-    timeouts.remove(wrapper.requestId);
-    inFlight.decrementAndGet();
-    if (wrapper.retries < maxRetries) {
-        wrapper.retries++;
-        LOG.info("Retrying batch {} (batchNumber={}) (retry #{})", wrapper.requestId, wrapper.batchNumber, wrapper.retries);
-        pendingQueue.add(wrapper);
-    } else {
-        LOG.error("Batch {} (batchNumber={}) failed after {} retries", wrapper.requestId, wrapper.batchNumber, wrapper.retries);
-        if (onComplete != null) {
-            onComplete.accept(new BatchResultImpl<>(wrapper.requestId, wrapper.batchNumber, wrapper.batch, BatchResult.Status.FAILURE, wrapper.retries, ex));
+    private void handleCompletion(int requestId, int batchNumber, T batch, int retries, BatchResult.Status status, Exception ex) {
+        ScheduledFuture<?> timeout = timeouts.remove(requestId);
+        if (timeout != null) {
+            timeout.cancel(false);
         }
-    }
-    dispatch();
-}
-public double getAvgBatchDurationMillis() {
-    if (batchDurations.isEmpty()) return 0;
-    return batchDurations.stream().mapToLong(Long::longValue).average().orElse(0);
-}
-public long getTotalBatchDurationMillis() {
-    if (batchDurations.isEmpty()) return 0;
-    return batchDurations.stream().mapToLong(Long::longValue).sum();
-}
-public long getLastBatchDurationMillis() {
-    if (batchDurations.isEmpty()) return 0;
-    return batchDurations.get(batchDurations.size() - 1);
-}
+        inFlight.decrementAndGet();
+        batchesCompleted++;
 
-public long getBatchDurationByID(int id) {
-    return batchEndDurations.getOrDefault(id, 0L);
-}
+        //Compute and store batch duration
+        Long startTime = batchStartTimes.remove(requestId);
+        if (startTime != null) {
+            long duration = System.currentTimeMillis() - startTime;
+            batchDurations.add(duration); // keep this as "most recent"
+            LOG.info("Batch {} completed in {} ms (avg: {} ms)", requestId, duration, getAvgBatchDurationMillis());
+            batchEndDurations.put(requestId, duration);
+        }
+
+        if (onComplete != null) {
+            onComplete.accept(new BatchResultImpl<>(requestId, batchNumber, batch, status, retries, ex));
+        }
+        dispatch();
+    }
+
+    private void handleFailure(BatchWrapper<T> wrapper, Exception ex) {
+        timeouts.remove(wrapper.requestId);
+        inFlight.decrementAndGet();
+        if (wrapper.retries < maxRetries) {
+            wrapper.retries++;
+            LOG.info("Retrying batch {} (batchNumber={}) (retry #{})", wrapper.requestId, wrapper.batchNumber, wrapper.retries);
+            pendingQueue.add(wrapper);
+        } else {
+            LOG.error("Batch {} (batchNumber={}) failed after {} retries", wrapper.requestId, wrapper.batchNumber, wrapper.retries);
+            if (onComplete != null) {
+                onComplete.accept(new BatchResultImpl<>(wrapper.requestId, wrapper.batchNumber, wrapper.batch, BatchResult.Status.FAILURE, wrapper.retries, ex));
+            }
+        }
+        dispatch();
+    }
+
+    public double getAvgBatchDurationMillis() {
+        if (batchDurations.isEmpty()) return 0;
+        return batchDurations.stream().mapToLong(Long::longValue).average().orElse(0);
+    }
+
+    public long getTotalBatchDurationMillis() {
+        if (batchDurations.isEmpty()) return 0;
+        return batchDurations.stream().mapToLong(Long::longValue).sum();
+    }
+
+    public long getLastBatchDurationMillis() {
+        if (batchDurations.isEmpty()) return 0;
+        return batchDurations.get(batchDurations.size() - 1);
+    }
+
+    public long getBatchDurationByID(int id) {
+        return batchEndDurations.getOrDefault(id, 0L);
+    }
 
     public long getRequestDelayMillis() {
         return requestDelayMillis;

@@ -37,12 +37,15 @@ import javafx.scene.transform.Scale;
 import javafx.scene.transform.Translate;
 import org.fxyz3d.geometry.Face3;
 import org.fxyz3d.geometry.Point3D;
+import org.fxyz3d.scene.paint.Palette;
 import org.fxyz3d.scene.paint.Palette.ColorPalette;
 import org.fxyz3d.scene.paint.Palette.FunctionColorPalette;
 import org.fxyz3d.scene.paint.Patterns.CarbonPatterns;
 import org.fxyz3d.shapes.primitives.helper.MeshHelper;
 import org.fxyz3d.shapes.primitives.helper.TextureMode;
 import org.fxyz3d.shapes.primitives.helper.TriangleMeshHelper;
+import org.fxyz3d.shapes.primitives.helper.TriangleMeshHelper.SectionType;
+import org.fxyz3d.shapes.primitives.helper.TriangleMeshHelper.TextureType;
 
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -50,9 +53,6 @@ import java.util.List;
 import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
-
-import static org.fxyz3d.scene.paint.Palette.DEFAULT_COLOR_PALETTE;
-import static org.fxyz3d.shapes.primitives.helper.TriangleMeshHelper.*;
 
 /**
  * TexturedMesh is a base class that provides support for different mesh implementations
@@ -276,7 +276,7 @@ public abstract class DirectedTexturedMesh extends MeshView implements TextureMo
         return textureType;
     }
 
-    private final DoubleProperty patternScale = new SimpleDoubleProperty(DEFAULT_PATTERN_SCALE) {
+    private final DoubleProperty patternScale = new SimpleDoubleProperty(TriangleMeshHelper.DEFAULT_PATTERN_SCALE) {
 
         @Override
         protected void invalidated() {
@@ -297,7 +297,7 @@ public abstract class DirectedTexturedMesh extends MeshView implements TextureMo
         return patternScale;
     }
 
-    private final IntegerProperty colors = new SimpleIntegerProperty(DEFAULT_COLORS) {
+    private final IntegerProperty colors = new SimpleIntegerProperty(TriangleMeshHelper.DEFAULT_COLORS) {
 
         @Override
         protected void invalidated() {
@@ -317,7 +317,7 @@ public abstract class DirectedTexturedMesh extends MeshView implements TextureMo
         return colors;
     }
 
-    private final ObjectProperty<ColorPalette> colorPalette = new SimpleObjectProperty<ColorPalette>(DEFAULT_COLOR_PALETTE) {
+    private final ObjectProperty<ColorPalette> colorPalette = new SimpleObjectProperty<ColorPalette>(Palette.DEFAULT_COLOR_PALETTE) {
 
         @Override
         protected void invalidated() {
@@ -339,7 +339,7 @@ public abstract class DirectedTexturedMesh extends MeshView implements TextureMo
         return colorPalette;
     }
 
-    private final ObjectProperty<Color> diffuseColor = new SimpleObjectProperty<Color>(DEFAULT_DIFFUSE_COLOR) {
+    private final ObjectProperty<Color> diffuseColor = new SimpleObjectProperty<Color>(TriangleMeshHelper.DEFAULT_DIFFUSE_COLOR) {
 
         @Override
         protected void invalidated() {
@@ -347,7 +347,7 @@ public abstract class DirectedTexturedMesh extends MeshView implements TextureMo
         }
     };
 
-    private final ObjectProperty<CarbonPatterns> carbonPatterns = new SimpleObjectProperty<CarbonPatterns>(DEFAULT_PATTERN) {
+    private final ObjectProperty<CarbonPatterns> carbonPatterns = new SimpleObjectProperty<CarbonPatterns>(TriangleMeshHelper.DEFAULT_PATTERN) {
         @Override
         protected void invalidated() {
             helper.getMaterialWithPattern(get());
@@ -379,7 +379,7 @@ public abstract class DirectedTexturedMesh extends MeshView implements TextureMo
     }
 
 
-    private final ObjectProperty<Function<Point3D, Number>> density = new SimpleObjectProperty<Function<Point3D, Number>>(DEFAULT_DENSITY_FUNCTION) {
+    private final ObjectProperty<Function<Point3D, Number>> density = new SimpleObjectProperty<Function<Point3D, Number>>(TriangleMeshHelper.DEFAULT_DENSITY_FUNCTION) {
 
         @Override
         protected void invalidated() {
@@ -400,7 +400,7 @@ public abstract class DirectedTexturedMesh extends MeshView implements TextureMo
         return density;
     }
 
-    private final ObjectProperty<Function<Number, Number>> function = new SimpleObjectProperty<Function<Number, Number>>(DEFAULT_UNIDIM_FUNCTION) {
+    private final ObjectProperty<Function<Number, Number>> function = new SimpleObjectProperty<Function<Number, Number>>(TriangleMeshHelper.DEFAULT_UNIDIM_FUNCTION) {
 
         @Override
         protected void invalidated() {

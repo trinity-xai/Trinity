@@ -90,6 +90,7 @@ module edu.jhuapl.trinity {
     exports edu.jhuapl.trinity.javafx.javafx3d.tasks;
     exports edu.jhuapl.trinity.javafx.javafx3d;
     exports edu.jhuapl.trinity.javafx.renderers;
+    exports edu.jhuapl.trinity.javafx.services;
     exports edu.jhuapl.trinity.messages;
     exports edu.jhuapl.trinity.utils.clustering;
     exports edu.jhuapl.trinity.utils.fun;
@@ -97,6 +98,7 @@ module edu.jhuapl.trinity {
     exports edu.jhuapl.trinity.utils.metric;
     exports edu.jhuapl.trinity.utils.umap;
     exports edu.jhuapl.trinity.utils.volumetric;
+    exports edu.jhuapl.trinity.utils.statistics;
     exports edu.jhuapl.trinity.utils;
     exports edu.jhuapl.trinity;
 }

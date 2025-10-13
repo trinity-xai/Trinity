@@ -43,6 +43,15 @@ public class ApplicationEvent extends Event {
     public static final EventType<ApplicationEvent> SHOW_PIXEL_SELECTION = new EventType(ANY, "SHOW_PIXEL_SELECTION");
     public static final EventType<ApplicationEvent> SHOW_IMAGE_INSPECTION = new EventType(ANY, "SHOW_IMAGE_INSPECTION");
     public static final EventType<ApplicationEvent> SHOW_SPECIALEFFECTS_PANE = new EventType(ANY, "SHOW_SPECIALEFFECTS_PANE");
+    public static final EventType<ApplicationEvent> SHOW_STATISTICS_PANE = new EventType(ANY, "SHOW_STATISTICS_PANE");
+    public static final EventType<ApplicationEvent> POPOUT_STATISTICS_PANE = new EventType(ANY, "POPOUT_STATISTICS_PANE");
+    public static final EventType<ApplicationEvent> SHOW_FEATUREVECTOR_MANAGER = new EventType(ANY, "SHOW_FEATUREVECTOR_MANAGER");
+    public static final EventType<ApplicationEvent> POPOUT_FEATUREVECTOR_MANAGER = new EventType(ANY, "POPOUT_FEATUREVECTOR_MANAGER");
+    public static final EventType<ApplicationEvent> SHOW_HYPERSPACE_CONTROLS = new EventType(ANY, "SHOW_HYPERSPACE_CONTROLS");
+    public static final EventType<ApplicationEvent> SHOW_PAIRWISEJPDF_PANE = new EventType(ANY, "SHOW_PAIRWISEJPDF_PANE");
+    public static final EventType<ApplicationEvent> POPOUT_PAIRWISEJPDF_JPDF = new EventType(ANY, "POPOUT_PAIRWISEJPDF_JPDF");
+    public static final EventType<ApplicationEvent> POPOUT_MATRIX_HEATMAP = new EventType(ANY, "POPOUT_MATRIX_HEATMAP");
+    public static final EventType<ApplicationEvent> SHOW_PAIRWISEMATRIX_PANE = new EventType(ANY, "SHOW_PAIRWISEMATRIX_PANE");
 
     public ApplicationEvent(EventType<? extends Event> eventType, Object object) {
         this(eventType);

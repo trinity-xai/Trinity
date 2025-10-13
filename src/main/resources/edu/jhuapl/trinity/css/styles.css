@@ -1407,6 +1407,7 @@
     -fx-padding: 0 2.0 0 2.0;
 }
 
+
 /*******************************************************************************
  *                                                                             *
  * GridPane                                                                  *
@@ -1611,9 +1612,7 @@
 .split-menu-button > .label {
     -fx-border-color: transparent;
     -fx-border-width: 2px;
-
     -fx-text-fill: -text_color;
-
     -fx-background-color: -button_background_color;
     -fx-background-insets: 0;
     -fx-background-radius: 0;
@@ -1622,7 +1621,6 @@
 .split-menu-button > .arrow-button {
     -fx-border-color: transparent;
     -fx-border-width: 2px;
-
     -fx-background-color: -button_background_color;
     -fx-background-insets: 0;
     -fx-background-radius: 0;
@@ -1631,7 +1629,6 @@
 .split-menu-button > .arrow-button > .arrow {
     -fx-padding: 0.208em 0.358em 0.208em 0.358em; /* 2.5px 4.29px 2.5px 4.29px */
     -fx-shape: "M21.361,12.736l0.527,0.527L16,19.152l-5.889-5.889l0.527-0.527L16,18.098L21.361,12.736z";
-
     -fx-background-color: -arrow_color;
 }
 
@@ -1660,14 +1657,92 @@
     -fx-border-color: -focus_ring_border_color;
     -fx-border-width: 1px;
     -fx-border-insets: -2;
-
     -fx-border-style: segments(1, 2) outside;
-
     -fx-padding: 0px;
-
     -fx-background-color: -button_background_color;
     -fx-background-insets: 0;
     -fx-background-radius: 0;
+}
+
+/***************************************
+ * Standalone MenuButton (toolbar, etc.)
+ * Matches .button look & feel
+ ***************************************/
+.menu-button {
+    /* mirror your .button variables/colors */
+    -fx-background-color: #333333; /* like -var-background_color */
+    -fx-background-insets: 0;
+    -fx-background-radius: 0;
+
+    -fx-border-color: transparent;
+    -fx-border-width: 2;
+
+    -fx-padding: 0.25em 1.666666em 0.25em 1.666666em; /* same rhythm as .button */
+
+    -fx-font-family: "Segoe UI Semilight";
+    -fx-font-size: 1.333333em; /* 16 */
+    -fx-text-fill: white;
+}
+
+/* hover */
+.menu-button:hover {
+    -fx-border-color: #858585; /* -var-border_hover_color */
+}
+
+/* pressed / menu open */
+.menu-button:armed,
+.menu-button:showing {
+    -fx-background-color: #666666; /* -var-background_pressed_color */
+    -fx-border-color: #666666;
+}
+
+/* keyboard focus ring (match .button) */
+.menu-button:focused {
+    -fx-border-color: transparent, white; /* -var-focus_ring_border_color */
+    -fx-border-width: 1, 1;
+    /*noinspection CssInvalidFunction*/
+    -fx-border-style: solid, segments(1, 2);
+    -fx-border-insets: 1 1 1 1, 0;
+}
+
+/* disabled */
+.menu-button:disabled {
+    -fx-opacity: 0.4;
+    -fx-background-color: #333333;
+    -fx-text-fill: white;
+}
+
+/* label text */
+.menu-button > .label {
+    -fx-text-fill: white;
+}
+
+/* arrow button region follows the same background/border */
+.menu-button > .arrow-button {
+    -fx-background-color: transparent;
+    -fx-background-insets: 0;
+    -fx-background-radius: 0;
+    -fx-border-color: transparent;
+    -fx-border-width: 0;
+}
+
+/* arrow glyph — ensure visibility on dark bg */
+.menu-button > .arrow-button > .arrow {
+    -fx-background-color: white;
+    -fx-padding: 0.2em 0.35em 0.2em 0.35em; /* subtle breathing room */
+    /* default triangle is fine; no custom shape required */
+}
+
+/* hover feedback on the arrow area too */
+.menu-button:hover > .arrow-button {
+    -fx-border-color: #858585;
+    -fx-border-width: 0; /* no split look; keep it unified */
+}
+
+/* pressed/open visual on arrow area */
+.menu-button:armed > .arrow-button,
+.menu-button:showing > .arrow-button {
+    -fx-background-color: #666666;
 }
 
 /*******************************************************************************

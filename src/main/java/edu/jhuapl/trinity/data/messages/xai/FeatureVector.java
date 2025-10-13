@@ -81,6 +81,26 @@ public class FeatureVector extends MessageData {
         metaData.put("uuid", entityId);
     }
 
+    /**
+     * Convenience constructor to initialize with data.
+     * The list reference is copied defensively.
+     */
+    public FeatureVector(List<Double> data) {
+        this(); // keep UUID/meta init
+        if (data != null) {
+            this.data = new ArrayList<>(data);
+        }
+    }
+
+    /**
+     * Convenience constructor to initialize with data and label.
+     * The list reference is copied defensively.
+     */
+    public FeatureVector(List<Double> data, String label) {
+        this(data);
+        this.label = label;
+    }
+
     public boolean isBBoxValid() {
         return null != getBbox() && !getBbox().isEmpty() && getBbox().size() > 3
             && getBbox().get(2) > 0.0 && getBbox().get(3) > 0.0;
@@ -378,7 +398,6 @@ public class FeatureVector extends MessageData {
     public void setMetaData(HashMap<String, String> metaData) {
         this.metaData = metaData;
     }
-    //</editor-fold>
 
     /**
      * @return the text
@@ -407,4 +426,5 @@ public class FeatureVector extends MessageData {
     public void setMediaURL(String mediaURL) {
         this.mediaURL = mediaURL;
     }
+    //</editor-fold>
 }

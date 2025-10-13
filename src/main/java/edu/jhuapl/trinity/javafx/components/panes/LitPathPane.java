@@ -1,5 +1,6 @@
 package edu.jhuapl.trinity.javafx.components.panes;
 
+import edu.jhuapl.trinity.javafx.components.ExportMicroToolbar;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import javafx.animation.FadeTransition;
 import javafx.animation.KeyFrame;
@@ -53,7 +54,9 @@ public class LitPathPane extends PathPane {
     double fadeSideInset = -5;
     double hoverTopInset = -2;
     double hoverSideInset = -3;
+    double toolbarFitWidth = 32;
     double effectsFitWidth = 40;
+    public double mainContentBorderFrameBuffer = 64;
     public Background opaqueBackground;
     public Background defaultBackground;
     public Background background;
@@ -157,14 +160,24 @@ public class LitPathPane extends PathPane {
         setMinWidth(300);
         setMinHeight(200);
         setEffects();
+        ExportMicroToolbar toolbar = new ExportMicroToolbar(
+            mainTitleArea,   // title bar with free space
+            this,                 // whole pane (for "include frame")
+            contentPane,     // content-only
+            mainTitleArea,   // right-click target
+            this.scene,
+            toolbarFitWidth
+        );
+        toolbar.installInTitleBarRight(); // or toolbar.installInTitleBarRight(12.0, 0.0);
+
         mainContentBorderFrame.widthProperty().addListener(cl -> {
             if (!animating) {
-                contentPane.setPrefWidth(mainContentBorderFrame.getWidth() - 100);
+                contentPane.setPrefWidth(mainContentBorderFrame.getWidth() - mainContentBorderFrameBuffer);
             }
         });
         mainContentBorderFrame.heightProperty().addListener(cl -> {
             if (!animating) {
-                contentPane.setPrefHeight(mainContentBorderFrame.getHeight() - 100);
+                contentPane.setPrefHeight(mainContentBorderFrame.getHeight() - mainContentBorderFrameBuffer);
             }
         });
         opaqueBackground = new Background(new BackgroundFill(
@@ -237,7 +250,7 @@ public class LitPathPane extends PathPane {
 
         this.scene.getRoot().addEventHandler(CovalentPaneEvent.COVALENT_PANE_CLOSE, e -> {
             if (e.pathPane == this)
-                onClose();
+                close();
         });
         this.addEventHandler(MouseEvent.MOUSE_PRESSED, e -> this.toFront());
         gradientTimeline = setupGradientTimeline();
@@ -262,9 +275,17 @@ public class LitPathPane extends PathPane {
                 contentPane.setOpacity(0.8);
         });
     }
+
+    @Override
+    public void close() {
+        super.close();
+        onClose();
+    }
+
     public void onClose() {
         parent.getChildren().remove(this);
     }
+
     public Timeline setupGradientTimeline() {
         Timeline timeline = new Timeline(
             new KeyFrame(Duration.millis(30), new KeyValue(percentComplete, 0.0)),

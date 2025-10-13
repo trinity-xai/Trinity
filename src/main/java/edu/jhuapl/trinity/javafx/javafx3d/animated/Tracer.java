@@ -8,6 +8,8 @@ import javafx.animation.Timeline;
 import javafx.beans.property.IntegerProperty;
 import javafx.beans.property.SimpleIntegerProperty;
 import javafx.scene.paint.Color;
+import javafx.scene.paint.Material;
+import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.TriangleMesh;
 import javafx.util.Duration;
 import org.fxyz3d.geometry.Point3D;
@@ -145,5 +147,45 @@ public class Tracer extends PolyLine3D {
      */
     public synchronized void setRateOfChange(double rateOfChange) {
         this.rateOfChange = rateOfChange;
+    }
+
+    /**
+     * Update the diffuse (base) color of this edge's material at runtime, without rebuilding the mesh.
+     * If the current material is not a PhongMaterial, a new PhongMaterial is attached.
+     *
+     * @param color new diffuse color (ignored if null)
+     */
+    public void setDiffuseColor(Color color) {
+        if (color == null) return;
+        this.diffuseColor = color;
+        if (this.meshView != null) {
+            Material m = this.meshView.getMaterial();
+            if (m instanceof PhongMaterial pm) {
+                pm.setDiffuseColor(color);
+            } else {
+                this.meshView.setMaterial(new PhongMaterial(color));
+            }
+        }
+    }
+
+    public void setOpacityAlpha(double alpha) {
+        double a = Math.max(0.0, Math.min(1.0, alpha));
+        if (this.meshView != null) {
+            javafx.scene.paint.Material m = this.meshView.getMaterial();
+            Color base;
+            if (m instanceof PhongMaterial pm) {
+                base = pm.getDiffuseColor();
+                if (base == null) base = (diffuseColor != null) ? diffuseColor : Color.WHITE;
+                pm.setDiffuseColor(new Color(base.getRed(), base.getGreen(), base.getBlue(), a));
+                // Optional: keep specular alpha aligned
+                Color spec = pm.getSpecularColor();
+                if (spec != null) {
+                    pm.setSpecularColor(new Color(spec.getRed(), spec.getGreen(), spec.getBlue(), a));
+                }
+            } else {
+                base = (diffuseColor != null) ? diffuseColor : Color.WHITE;
+                this.meshView.setMaterial(new PhongMaterial(new Color(base.getRed(), base.getGreen(), base.getBlue(), a)));
+            }
+        }
     }
 }

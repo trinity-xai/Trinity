@@ -16,6 +16,7 @@ import javafx.scene.layout.VBox;
 
 import static edu.jhuapl.trinity.javafx.events.EffectEvent.*;
 
+
 /**
  * @author Sean Phillips
  */

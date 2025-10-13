@@ -33,6 +33,7 @@ public enum MessageUtils {
         return (possibleJson.startsWith("{") && possibleJson.endsWith("}"))
             || (possibleJson.startsWith("[") && possibleJson.endsWith("]"));
     }
+
     public static boolean probablyCSV(String filename) {
         return filename.endsWith("csv") || filename.endsWith("CSV");
     }

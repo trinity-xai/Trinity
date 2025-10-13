@@ -573,12 +573,12 @@ public class Hyperspace3DPane extends StackPane implements
             if (!event.isControlDown() && event.isAltDown() && keycode == KeyCode.H) {
                 makeHull(false, null, null);
             }
-            if (keycode == KeyCode.F) {
+            if (!event.isControlDown() && event.isAltDown() && keycode == KeyCode.F) {
                 anchorIndex--;
                 if (anchorIndex < 0) anchorIndex = 0;
                 setSpheroidAnchor(true, anchorIndex);
             }
-            if (keycode == KeyCode.G) {
+            if (!event.isControlDown() && event.isAltDown() && keycode == KeyCode.G) {
                 anchorIndex++;
                 if (anchorIndex > scatterModel.data.size()) anchorIndex = scatterModel.data.size();
                 setSpheroidAnchor(true, anchorIndex);
@@ -1603,7 +1603,7 @@ public class Hyperspace3DPane extends StackPane implements
 
     @Override
     public void setSpheroidAnchor(boolean animate, int index) {
-        if (index >= scatterModel.data.size()) {
+        if (index >= scatterModel.data.size() || scatterModel.data.isEmpty()) {
             //System.out.println("Requested anchor index of " + index + " greater than scatterModel.data size");
             return;
         } else if (index < 0) {
@@ -1955,7 +1955,7 @@ public class Hyperspace3DPane extends StackPane implements
                 getScene().getRoot().fireEvent(
                     new ApplicationEvent(ApplicationEvent.HIDE_BUSY_INDICATOR, ps));
                 getScene().getRoot().fireEvent(
-                    new CommandTerminalEvent("Error Adding FeatureCollection.", new Font("Consolas", 20), Color.RED));                
+                    new CommandTerminalEvent("Error Adding FeatureCollection.", new Font("Consolas", 20), Color.RED));
             });
         });
         Thread thread = new Thread(task);
