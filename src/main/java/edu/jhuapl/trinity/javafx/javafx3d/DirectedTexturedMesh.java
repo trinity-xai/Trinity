@@ -43,7 +43,15 @@ import org.fxyz3d.scene.paint.Patterns.CarbonPatterns;
 import org.fxyz3d.shapes.primitives.helper.MeshHelper;
 import org.fxyz3d.shapes.primitives.helper.TextureMode;
 import org.fxyz3d.shapes.primitives.helper.TriangleMeshHelper;
-
+import org.fxyz3d.shapes.primitives.helper.TriangleMeshHelper.SectionType;
+import org.fxyz3d.shapes.primitives.helper.TriangleMeshHelper.TextureType;
+import static org.fxyz3d.scene.paint.Palette.DEFAULT_COLOR_PALETTE;
+import static org.fxyz3d.shapes.primitives.helper.TriangleMeshHelper.DEFAULT_COLORS;
+import static org.fxyz3d.shapes.primitives.helper.TriangleMeshHelper.DEFAULT_DENSITY_FUNCTION;
+import static org.fxyz3d.shapes.primitives.helper.TriangleMeshHelper.DEFAULT_DIFFUSE_COLOR;
+import static org.fxyz3d.shapes.primitives.helper.TriangleMeshHelper.DEFAULT_PATTERN;
+import static org.fxyz3d.shapes.primitives.helper.TriangleMeshHelper.DEFAULT_PATTERN_SCALE;
+import static org.fxyz3d.shapes.primitives.helper.TriangleMeshHelper.DEFAULT_UNIDIM_FUNCTION;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -51,8 +59,6 @@ import java.util.function.Function;
 import java.util.stream.Collectors;
 import java.util.stream.IntStream;
 
-import static org.fxyz3d.scene.paint.Palette.DEFAULT_COLOR_PALETTE;
-import static org.fxyz3d.shapes.primitives.helper.TriangleMeshHelper.*;
 
 /**
  * TexturedMesh is a base class that provides support for different mesh implementations

@@ -120,7 +120,14 @@ import javax.imageio.ImageIO;
 import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
-import java.util.*;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.HashMap;
+import java.util.List;
+import java.util.Map;
+import java.util.Optional;
+import java.util.Random;
 import java.util.function.Function;
 import javafx.event.Event;
 import javafx.scene.Parent;
@@ -1844,6 +1851,5 @@ private Number vertToHeight(Vert3D p) {
             Point3D center = new Point3D((xWidth * surfScale) / 2.0, 0, clamped * surfScale);
             illuminateCrosshair(center);
         });
-    }
-    
+    }    
 }

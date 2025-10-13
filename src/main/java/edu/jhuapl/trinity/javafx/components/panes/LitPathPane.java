@@ -1,5 +1,6 @@
 package edu.jhuapl.trinity.javafx.components.panes;
 
+import edu.jhuapl.trinity.javafx.components.ExportMicroToolbar;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import javafx.animation.FadeTransition;
 import javafx.animation.KeyFrame;
@@ -53,6 +54,7 @@ public class LitPathPane extends PathPane {
     double fadeSideInset = -5;
     double hoverTopInset = -2;
     double hoverSideInset = -3;
+    double toolbarFitWidth = 32;
     double effectsFitWidth = 40;
     public double mainContentBorderFrameBuffer = 64;
     public Background opaqueBackground;
@@ -158,6 +160,16 @@ public class LitPathPane extends PathPane {
         setMinWidth(300);
         setMinHeight(200);
         setEffects();
+        ExportMicroToolbar toolbar = new ExportMicroToolbar(
+            mainTitleArea,   // title bar with free space
+            this,                 // whole pane (for "include frame")
+            contentPane,     // content-only
+            mainTitleArea,   // right-click target 
+            this.scene,
+            toolbarFitWidth
+        );
+        toolbar.installInTitleBarRight(); // or toolbar.installInTitleBarRight(12.0, 0.0);
+
         mainContentBorderFrame.widthProperty().addListener(cl -> {
             if (!animating) {
                 contentPane.setPrefWidth(mainContentBorderFrame.getWidth() - mainContentBorderFrameBuffer);

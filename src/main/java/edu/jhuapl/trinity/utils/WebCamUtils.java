@@ -1,13 +1,12 @@
 package edu.jhuapl.trinity.utils;
 
 import com.github.sarxos.webcam.Webcam;
+import java.awt.Dimension;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.image.Image;
 import javafx.scene.image.WritableImage;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
-
-import java.awt.*;
 import java.awt.image.BufferedImage;
 import java.util.concurrent.TimeUnit;
 

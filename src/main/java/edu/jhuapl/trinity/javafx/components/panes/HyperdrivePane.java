@@ -93,13 +93,14 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Optional;
 import java.util.concurrent.atomic.AtomicInteger;
-
-import static edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageUrl.imageUrlFromImage;
 import edu.jhuapl.trinity.javafx.components.hyperdrive.BatchRequestManager;
 import edu.jhuapl.trinity.javafx.components.hyperdrive.ImageEmbeddingsBatchLauncher;
+import static edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageUrl.imageUrlFromImage;
 import static edu.jhuapl.trinity.javafx.events.CommandTerminalEvent.notifyTerminalSuccess;
 import static edu.jhuapl.trinity.javafx.events.CommandTerminalEvent.notifyTerminalWarning;
-import static edu.jhuapl.trinity.messages.RestAccessLayer.*;
+import static edu.jhuapl.trinity.messages.RestAccessLayer.currentEmbeddingsModel;
+import static edu.jhuapl.trinity.messages.RestAccessLayer.currentChatModel;
+import static edu.jhuapl.trinity.messages.RestAccessLayer.stringToChatCaptionResponse;
 import java.util.Collections;
 import java.util.Map;
 import javafx.stage.FileChooser;

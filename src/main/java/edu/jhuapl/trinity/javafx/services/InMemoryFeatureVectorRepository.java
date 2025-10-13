@@ -1,10 +1,13 @@
 package edu.jhuapl.trinity.javafx.services;
 
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.LinkedHashMap;
+import java.util.List;
+import java.util.Map;
 import javafx.collections.FXCollections;
 import javafx.collections.ObservableList;
-
-import java.util.*;
 
 public class InMemoryFeatureVectorRepository implements FeatureVectorRepository {
     private final Map<String, List<FeatureVector>> map = new LinkedHashMap<>();
