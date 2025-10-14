@@ -15,6 +15,7 @@ import javafx.event.EventHandler;
 import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
+import javafx.scene.Scene;
 import javafx.scene.Node;
 import javafx.scene.Parent;
 import javafx.scene.SnapshotParameters;
@@ -110,12 +111,14 @@ public class ExportMicroToolbar {
     private Border hoverBorder;
     private Border pinnedBorder;
 
+    File latestDirectory = new File(".");
+
     public ExportMicroToolbar(
         Pane titleBarParent,
         Node chromeNode,
         Node contentNode,
         Node contextTarget,
-        javafx.scene.Scene scene,
+        Scene scene,
         double iconFitWidth
     ) {
         this.titleBarParent = Objects.requireNonNull(titleBarParent);
@@ -474,9 +477,12 @@ public class ExportMicroToolbar {
         FileChooser fc = new FileChooser();
         fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("PNG Image", "*.png"));
         fc.setInitialFileName("snapshot_content-" + exportScale + "x.png");
+        fc.setInitialDirectory(latestDirectory);
         File f = fc.showSaveDialog(scene.getWindow());
         if (f == null) return;
         try {
+            if(f.getParentFile().isDirectory())
+                latestDirectory = f.getParentFile();
             BufferedImage bi = SwingFXUtils.fromFXImage(wi, null);
             ImageIO.write(bi, "png", f);
             toast("Saved: " + f.getName());

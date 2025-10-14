@@ -140,7 +140,7 @@ public class FeatureVectorEventHandler implements EventHandler<FeatureVectorEven
         Platform.runLater(() -> {
             App.getAppScene().getRoot().fireEvent(
                 new FeatureVectorEvent(
-                    FeatureVectorEvent.NEW_FEATURE_COLLECTION, fc));
+                    FeatureVectorEvent.NEW_FEATURE_COLLECTION, fc, event.object2));
         });
     }
 

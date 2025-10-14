@@ -545,7 +545,7 @@ public enum ResourceUtils {
                                 //convert to Feature Vector Collection for the lulz
                                 FeatureCollection fc = DataUtils.convertCdcCsv(cdcCsvFile.cdcCsvList, true);
                                 Platform.runLater(() -> scene.getRoot().fireEvent(
-                                    new FeatureVectorEvent(FeatureVectorEvent.NEW_FEATURE_COLLECTION, fc)));
+                                    new FeatureVectorEvent(FeatureVectorEvent.NEW_FEATURE_COLLECTION, fc, file.getName())));
                                 Trajectory trajectory = new Trajectory(file.getName());
                                 trajectory.totalStates = fc.getFeatures().size();
                                 Platform.runLater(() -> scene.getRoot().fireEvent(
@@ -629,7 +629,7 @@ public enum ResourceUtils {
                             } else if (CyberReporterFile.isFileType(file)) {
                                 CyberReporterFile cyberReportFile = new CyberReporterFile(file.getAbsolutePath(), true);
                                 Platform.runLater(() -> scene.getRoot().fireEvent(
-                                    new FeatureVectorEvent(FeatureVectorEvent.NEW_CYBER_REPORT, cyberReportFile.cyberReports)));
+                                    new FeatureVectorEvent(FeatureVectorEvent.NEW_CYBER_REPORT, cyberReportFile.cyberReports, file.getName())));
                             }
                         } catch (IOException ex) {
                             LOG.error(null, ex);
