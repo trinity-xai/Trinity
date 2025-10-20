@@ -1912,7 +1912,6 @@ public class Hyperspace3DPane extends StackPane implements
                 if (end >= queueLimit) {
                     start = end - queueLimit;
                 }
-
                 featureCollection.getFeatures().subList(start, end)
                     .stream().forEach(featureVector -> {
                         //fail safe to gaurantee 3 dimensions
@@ -1950,6 +1949,8 @@ public class Hyperspace3DPane extends StackPane implements
             }
         };
         task.setOnFailed(e -> {
+            //@DEBUG SMP useful print
+            //System.out.println(task.getException().getMessage());
             Platform.runLater(() -> {
                 ProgressStatus ps = new ProgressStatus("Error Adding FeatureCollection.", -1);
                 getScene().getRoot().fireEvent(
@@ -1964,9 +1965,12 @@ public class Hyperspace3DPane extends StackPane implements
     }
 
     public void updateMaxAndMeans() {
-        meanVector = FeatureVector.getMeanVector(featureVectors);
-        maxAbsValue = FeatureVector.getMaxAbsValue(featureVectors);
-        meanCenteredMaxAbsValue = FeatureVector.getMeanCenteredMaxAbsValue(featureVectors, meanVector);
+    // Snapshot the list at call time to avoid ConcurrentModificationException
+        final List<FeatureVector> snapshot = List.copyOf(featureVectors);
+        if (snapshot.isEmpty()) return;
+        meanVector = FeatureVector.getMeanVector(snapshot);
+        maxAbsValue = FeatureVector.getMaxAbsValue(snapshot);
+        meanCenteredMaxAbsValue = FeatureVector.getMeanCenteredMaxAbsValue(snapshot, meanVector);
 
         String str = "Mean Centered MaxAbsValue: " + meanCenteredMaxAbsValue;
         cubeWorld.meanVector.clear();
