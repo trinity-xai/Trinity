@@ -943,7 +943,8 @@ public class AppAsyncManager extends Task<Void> {
             }
             if (null != originalFC.getDimensionLabels()) {
                 projectedFC.setDimensionLabels(originalFC.getDimensionLabels());
-                projections3DPane.setDimensionLabels(originalFC.getDimensionLabels());
+                //@SMP Projections are of a lower embedding and so labels are not meaningfl
+                //projections3DPane.setDimensionLabels(originalFC.getDimensionLabels());
             }
             projections3DPane.setHyperDimensionFeatures(originalFC);
             projections3DPane.addFeatureCollection(projectedFC, false);
@@ -964,7 +965,8 @@ public class AppAsyncManager extends Task<Void> {
             }
             if (null != originalFC.getDimensionLabels()) {
                 projectedFC.setDimensionLabels(originalFC.getDimensionLabels());
-                projections3DPane.setDimensionLabels(originalFC.getDimensionLabels());
+                //@SMP Projections are of a lower embedding and so labels are not meaningfl
+                //projections3DPane.setDimensionLabels(originalFC.getDimensionLabels());
             }
             projections3DPane.setHyperDimensionFeatures(originalFC);
             projections3DPane.addFeatureCollection(projectedFC, false);

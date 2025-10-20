@@ -1578,9 +1578,11 @@ public class Projections3DPane extends StackPane implements
         sphereToFeatureVectorMap.forEach((s, fv) -> {
             if (null != fv.getLabel()) {
                 FactorLabel fl = FactorLabel.getFactorLabel(fv.getLabel());
-                s.setVisible(fl.getVisible());
-                ((PhongMaterial) s.getMaterial()).setDiffuseColor(fl.getColor());
-                ((PhongMaterial) s.getMaterial()).setSpecularColor(fl.getColor());
+                if(null != fl) {
+                    s.setVisible(fl.getVisible());
+                    ((PhongMaterial) s.getMaterial()).setDiffuseColor(fl.getColor());
+                    ((PhongMaterial) s.getMaterial()).setSpecularColor(fl.getColor());
+                }
             }
         });
     }
@@ -2609,7 +2611,8 @@ public class Projections3DPane extends StackPane implements
 
     @Override
     public void setDimensionLabels(List<String> labelStrings) {
-        featureLabels = labelStrings;
+        //featureLabels = labelStrings;
+        //need to override... projections should not have specific labels.
     }
 
     public void setHyperDimensionFeatures(FeatureCollection originalFC) {
@@ -2624,7 +2627,8 @@ public class Projections3DPane extends StackPane implements
                 setHyperDimensionFeatures(originalFC);
                 fc = (FeatureCollection) task.get();
                 if (null != originalFC.getDimensionLabels()) {
-                    setDimensionLabels(originalFC.getDimensionLabels());
+                    //@SMP Projections are of a lower embedding and so labels are not meaningfl
+                    //setDimensionLabels(originalFC.getDimensionLabels());
                     fc.setDimensionLabels(originalFC.getDimensionLabels());
                 }
                 addFeatureCollection(fc, false);
@@ -2742,7 +2746,8 @@ public class Projections3DPane extends StackPane implements
                 setHyperDimensionFeatures(originalFC);
                 fc = (FeatureCollection) task.get();
                 if (null != originalFC.getDimensionLabels()) {
-                    setDimensionLabels(originalFC.getDimensionLabels());
+                    //@SMP Projections are of a lower embedding and so labels are not meaningfl
+                    //setDimensionLabels(originalFC.getDimensionLabels());
                     fc.setDimensionLabels(originalFC.getDimensionLabels());
                 }
                 addFeatureCollection(fc, false);
@@ -2765,7 +2770,8 @@ public class Projections3DPane extends StackPane implements
                 setHyperDimensionFeatures(originalFC);
                 fc = (FeatureCollection) task.get();
                 if (null != originalFC.getDimensionLabels()) {
-                    setDimensionLabels(originalFC.getDimensionLabels());
+                    //@SMP Projections are of a lower embedding and so labels are not meaningfl
+                    //setDimensionLabels(originalFC.getDimensionLabels());
                     fc.setDimensionLabels(originalFC.getDimensionLabels());
                 }
                 addFeatureCollection(fc, false);
