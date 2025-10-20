@@ -1965,7 +1965,7 @@ public class Hyperspace3DPane extends StackPane implements
     }
 
     public void updateMaxAndMeans() {
-    // Snapshot the list at call time to avoid ConcurrentModificationException
+        // Snapshot the list at call time to avoid ConcurrentModificationException
         final List<FeatureVector> snapshot = List.copyOf(featureVectors);
         if (snapshot.isEmpty()) return;
         meanVector = FeatureVector.getMeanVector(snapshot);

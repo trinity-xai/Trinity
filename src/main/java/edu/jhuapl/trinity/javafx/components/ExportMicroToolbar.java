@@ -481,7 +481,7 @@ public class ExportMicroToolbar {
         File f = fc.showSaveDialog(scene.getWindow());
         if (f == null) return;
         try {
-            if(f.getParentFile().isDirectory())
+            if (f.getParentFile().isDirectory())
                 latestDirectory = f.getParentFile();
             BufferedImage bi = SwingFXUtils.fromFXImage(wi, null);
             ImageIO.write(bi, "png", f);

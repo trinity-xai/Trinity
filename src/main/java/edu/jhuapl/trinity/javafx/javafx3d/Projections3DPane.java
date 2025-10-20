@@ -1578,7 +1578,7 @@ public class Projections3DPane extends StackPane implements
         sphereToFeatureVectorMap.forEach((s, fv) -> {
             if (null != fv.getLabel()) {
                 FactorLabel fl = FactorLabel.getFactorLabel(fv.getLabel());
-                if(null != fl) {
+                if (null != fl) {
                     s.setVisible(fl.getVisible());
                     ((PhongMaterial) s.getMaterial()).setDiffuseColor(fl.getColor());
                     ((PhongMaterial) s.getMaterial()).setSpecularColor(fl.getColor());
