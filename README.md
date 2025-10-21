@@ -234,6 +234,19 @@ of 2D panes to provide extra helper tools. These overlays are extensions of the
 of the author of LitFX is rivaled only possibly by the author's stunning
 lumberjack good looks. A few of these helper tools are shown below:
 
+### Probability Density and Cumulative Distribution Functions
+
+![Trinity-PDFCDF-Generator](/media/Trinity-PDFCDF-Generator.png)
+
+### Joint Probability Density Grid
+
+![Trinity-JointPDFGenerator](/media/Trinity-JointPDFGenerator.png)
+
+### Similarity and Divergence Matrix
+
+![Trinity-SimilarityMatrix](/media/Trinity-SimilarityMatrix.png)
+ 
+
 ### Natural Language Query
 
 There is a command terminal that you can enter natural language queries to using
@@ -305,6 +318,7 @@ inverse FFT, can be tessellated into the Hypersurface on demand.
 - Sean M Phillips
 - Melanie Lockhart
 - Samuel Matos
+- David Penn
 - Gene Whipps
 - Griffin Milsap
 - David Newcomer
