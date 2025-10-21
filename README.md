@@ -242,6 +242,37 @@ lumberjack good looks. A few of these helper tools are shown below:
 
 ![Trinity-JointPDFGenerator](/media/Trinity-JointPDFGenerator.png)
 
+This grid of Joint PDFs becomes a diagnostic dashboard for understanding and 
+improving scoring systems. Each plot thumbnail shows how two of the dimensions 
+of a vector system behave together across many samples. The color pattern 
+indicates a density of occurrence and can indicate strength of presence over time.
+
+A Pearson correlation coefficient for each pair of variables/dimensions is computed.
+This provides a correlation score between -1 and 1:
+
++1: Perfect positive relationship (metrics move together).
+
+0: No relationship.
+
+-1: Perfect negative relationship (as one goes up, the other goes down).
+
+This allows Trinity to order the combinations by correlation and establish a 
+ranking. Correlation ranking illuminates which metrics overlap in meaning versus 
+which ones bring new perspective.
+
+Ranking:
+
+Descending (high → low correlation):
+
+Pairs at the top are most similar — possibly redundant metrics.
+Pairs at the bottom are least related — they provide unique information.
+
+Ascending (low → high correlation):
+
+Pairs at the top are most distinct — potentially the most valuable for diversifying how we measure similarity.
+Pairs at the bottom are redundant — maybe candidates for pruning or simplifying the model.
+
+
 ### Similarity and Divergence Matrix
 
 ![Trinity-SimilarityMatrix](/media/Trinity-SimilarityMatrix.png)
