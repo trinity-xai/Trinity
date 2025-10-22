@@ -240,10 +240,16 @@ lumberjack good looks. A few of these helper tools are shown below:
 
 ### Joint Probability Density Grid
 
+A Joint PDF shows how two variables tend to behave together. It shows 
+relationships between different variables/dimensions. This then helps identify 
+redundant metrics (those that behave almost the same) or complementary metrics 
+(those that capture different aspects of network similarity). It can reveal 
+nonlinear patterns that a simple average correlation might miss.
+
 ![Trinity-JointPDFGenerator](/media/Trinity-JointPDFGenerator.png)
 
-This grid of Joint PDFs becomes a diagnostic dashboard for understanding and 
-improving scoring systems. Each plot thumbnail shows how two of the dimensions 
+This grid of Joint PDFs is a diagnostic dashboard for understanding and 
+improving systems of variables (or scores). Each plot thumbnail shows how two of the dimensions 
 of a vector system behave together across many samples. The color pattern 
 indicates a density of occurrence and can indicate strength of presence over time.
 
