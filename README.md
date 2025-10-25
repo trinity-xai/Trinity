@@ -282,7 +282,18 @@ Pairs at the bottom are redundant — maybe candidates for pruning or simplifyin
 ### Similarity and Divergence Matrix
 
 ![Trinity-SimilarityMatrix](/media/Trinity-SimilarityMatrix.png)
- 
+
+The Similarity Matrix is a heatmap where every row/column is one similarity 
+feature computed between two features of your vectors. Each square shows how 
+strongly two features “move together” across all samples of a "cohort".
+How to read:
+- Bright/hot = those two features usually agree 
+- Dark/cold = they tell different stories 
+
+Per-cell JPDF surface (3D “joint probability” view): clicking any square opens 
+a surface plot for just that pair of features. It shows where the data actually 
+lives when you look at those two similarity scores together for all network-pairs. 
+Think of it as the shape of agreement/disagreement between two metrics. 
 
 ### Natural Language Query
 
