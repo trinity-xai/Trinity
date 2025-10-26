@@ -234,6 +234,67 @@ of 2D panes to provide extra helper tools. These overlays are extensions of the
 of the author of LitFX is rivaled only possibly by the author's stunning
 lumberjack good looks. A few of these helper tools are shown below:
 
+### Probability Density and Cumulative Distribution Functions
+
+![Trinity-PDFCDF-Generator](/media/Trinity-PDFCDF-Generator.png)
+
+### Joint Probability Density Grid
+
+A Joint PDF shows how two variables tend to behave together. It shows 
+relationships between different variables/dimensions. This then helps identify 
+redundant metrics (those that behave almost the same) or complementary metrics 
+(those that capture different aspects of network similarity). It can reveal 
+nonlinear patterns that a simple average correlation might miss.
+
+![Trinity-JointPDFGenerator](/media/Trinity-JointPDFGenerator.png)
+
+This grid of Joint PDFs is a diagnostic dashboard for understanding and 
+improving systems of variables (or scores). Each plot thumbnail shows how two of the dimensions 
+of a vector system behave together across many samples. The color pattern 
+indicates a density of occurrence and can indicate strength of presence over time.
+
+A Pearson correlation coefficient for each pair of variables/dimensions is computed.
+This provides a correlation score between -1 and 1:
+
++1: Perfect positive relationship (metrics move together).
+
+0: No relationship.
+
+-1: Perfect negative relationship (as one goes up, the other goes down).
+
+This allows Trinity to order the combinations by correlation and establish a 
+ranking. Correlation ranking illuminates which metrics overlap in meaning versus 
+which ones bring new perspective.
+
+Ranking:
+
+Descending (high → low correlation):
+
+Pairs at the top are most similar — possibly redundant metrics.
+Pairs at the bottom are least related — they provide unique information.
+
+Ascending (low → high correlation):
+
+Pairs at the top are most distinct — potentially the most valuable for diversifying how we measure similarity.
+Pairs at the bottom are redundant — maybe candidates for pruning or simplifying the model.
+
+
+### Similarity and Divergence Matrix
+
+![Trinity-SimilarityMatrix](/media/Trinity-SimilarityMatrix.png)
+
+The Similarity Matrix is a heatmap where every row/column is one similarity 
+feature computed between two features of your vectors. Each square shows how 
+strongly two features “move together” across all samples of a "cohort".
+How to read:
+- Bright/hot = those two features usually agree 
+- Dark/cold = they tell different stories 
+
+Per-cell JPDF surface (3D “joint probability” view): clicking any square opens 
+a surface plot for just that pair of features. It shows where the data actually 
+lives when you look at those two similarity scores together for all network-pairs. 
+Think of it as the shape of agreement/disagreement between two metrics. 
+
 ### Natural Language Query
 
 There is a command terminal that you can enter natural language queries to using
@@ -305,6 +366,7 @@ inverse FFT, can be tessellated into the Hypersurface on demand.
 - Sean M Phillips
 - Melanie Lockhart
 - Samuel Matos
+- David Penn
 - Gene Whipps
 - Griffin Milsap
 - David Newcomer
