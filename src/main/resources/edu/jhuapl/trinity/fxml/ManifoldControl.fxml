@@ -450,9 +450,9 @@
                                                         </HBox>
                                                         <HBox alignment="CENTER" spacing="10.0" GridPane.rowIndex="2">
                                                             <children>
-                                                                <CheckBox fx:id="showWireframeCheckBox" mnemonicParsing="false" selected="true"
+                                                                <CheckBox fx:id="showWireframeCheckBox" mnemonicParsing="false" selected="false"
                                                                           text="Show Wire Frame"/>
-                                                                <CheckBox fx:id="showControlPointsCheckBox" mnemonicParsing="false" selected="true"
+                                                                <CheckBox fx:id="showControlPointsCheckBox" mnemonicParsing="false" selected="false"
                                                                           text="Show Control Points"/>
                                                             </children>
                                                         </HBox>

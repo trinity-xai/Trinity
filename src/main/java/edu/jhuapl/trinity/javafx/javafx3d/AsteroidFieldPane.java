@@ -757,7 +757,7 @@ public class AsteroidFieldPane extends StackPane {
 
     public Manifold3D makeHull(List<Point3D> labelMatchedPoints, String label, Double tolerance) {
         Manifold3D manifold3D = new Manifold3D(
-            labelMatchedPoints, true, true, true, tolerance
+            labelMatchedPoints, true, false, false, tolerance
         );
         manifold3D.quickhullMeshView.setCullFace(CullFace.FRONT);
 //        manifold3D.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {

@@ -199,19 +199,19 @@ public class GaussianDistribution {
     public double scatter() {
         return sigmaDet;
     }
-
+public double mahalanobis2(double[] x) {
+    double[] v = x.clone();
+    ClusterUtils.sub(v, mu);
+    double[] Av = sigmaInv.operate(v);
+    return ClusterUtils.dot(v, Av);
+}
     public double logp(double[] x) {
-        if (x.length != dim) {
-            throw new IllegalArgumentException("Sample has different dimension.");
-        }
-
+        if (x.length != dim) throw new IllegalArgumentException("Sample has different dimension.");
         double[] v = x.clone();
-        ClusterUtils.sub(v, mu);
-//        double result = sigmaInv.xAx(v) / -2.0;
-//        double[] Ax = mv(x);
-        double[] Ax = sigmaInv.operate(v);
-        double result = ClusterUtils.dot(x, Ax) / -2.0;
-        return result - pdfConstant;
+        ClusterUtils.sub(v, mu);                 // v = x - μ
+        double[] Av = sigmaInv.operate(v);       // Σ⁻¹ v
+        double quad = ClusterUtils.dot(v, Av);   // vᵀ Σ⁻¹ v   
+        return -0.5 * quad - pdfConstant;
     }
 
     public double p(double[] x) {
@@ -471,7 +471,9 @@ public class GaussianDistribution {
 
         return L;
     }
-
+    public int dim() {
+        return dim;
+    }
     @Override
     public String toString() {
         return String.format("Gaussian(mu = %s, sigma = %s)", Arrays.toString(mu), sigma);

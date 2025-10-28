@@ -77,7 +77,7 @@ public class Manifold3D extends Group {
 
     public Manifold3D(List<Point3D> point3DList, boolean triangulate, boolean makeLines, boolean makePoints, Double tolerance) {
         originalPoint3Ds = point3DList;
-        buildHullMesh(point3DList, triangulate, makeLines, makePoints, tolerance);
+        buildHullMesh(point3DList, triangulate, tolerance);
 
         List<Point3D> fxyzPoints = new ArrayList<>();
         for (int i = 0; i < hull.getNumVertices(); i++) {
@@ -349,7 +349,7 @@ public class Manifold3D extends Group {
         quickhullLinesTriangleMesh.getPoints().clear();
         quickhullLinesTriangleMesh.getTexCoords().clear();
         quickhullLinesTriangleMesh.getFaces().clear();
-        buildHullMesh(point3DList, triangulate, makeLines, makePoints, tolerance);
+        buildHullMesh(point3DList, triangulate, tolerance);
         quickhullMeshView.setMesh(quickhullTriangleMesh);
         if (makeLines) {
             quickhullLinesTriangleMesh.getPoints().addAll(quickhullTriangleMesh.getPoints());
@@ -361,7 +361,7 @@ public class Manifold3D extends Group {
 //            makeDebugPoints(hull, artScale, false);
     }
 
-    private void buildHullMesh(List<Point3D> point3DList, boolean triangulate, boolean makeLines, boolean makePoints, Double tolerance) {
+    private void buildHullMesh(List<Point3D> point3DList, boolean triangulate, Double tolerance) {
         hull = new QuickHull3D();
         if (null != tolerance)
             hull.setExplicitDistanceTolerance(tolerance);
@@ -455,19 +455,21 @@ public class Manifold3D extends Group {
     }
 
     public void makeLines() {
+        boolean wasVisible = null != quickhullLinesMeshView 
+            ? quickhullLinesMeshView.isVisible() : false;
         quickhullLinesTriangleMesh = new TriangleMesh();
         quickhullLinesTriangleMesh.getPoints().addAll(quickhullTriangleMesh.getPoints());
         quickhullLinesTriangleMesh.getTexCoords().addAll(quickhullTriangleMesh.getTexCoords());
         quickhullLinesTriangleMesh.getFaces().addAll(quickhullTriangleMesh.getFaces());
 
         quickhullLinesMeshView = new MeshView(quickhullLinesTriangleMesh);
-        PhongMaterial quickhullLinesMaterial = new PhongMaterial(Color.BLUE);
-        quickhullLinesMaterial.setSpecularColor(Color.BLUE); //fix for aarch64 Mac Ventura
+        PhongMaterial quickhullLinesMaterial = new PhongMaterial(Color.ALICEBLUE);
+        quickhullLinesMaterial.setSpecularColor(Color.ALICEBLUE); //fix for aarch64 Mac Ventura
         quickhullLinesMeshView.setMaterial(quickhullLinesMaterial);
         quickhullLinesMeshView.setDrawMode(DrawMode.LINE);
         quickhullLinesMeshView.setCullFace(CullFace.NONE);
         quickhullLinesMeshView.setMouseTransparent(true);
-
+        quickhullLinesMeshView.setVisible(wasVisible);
         getChildren().add(quickhullLinesMeshView);
     }
 
@@ -489,14 +491,15 @@ public class Manifold3D extends Group {
                     sb.append(", ");
             }
 
-            Sphere sphere = new Sphere(2.5);
-            PhongMaterial mat = new PhongMaterial(Color.BLUE);
-            mat.setSpecularColor(Color.BLUE); // fix for aarch64 Mac Ventura
+            Sphere sphere = new Sphere(1.5);
+            PhongMaterial mat = new PhongMaterial(Color.ALICEBLUE);
+            mat.setSpecularColor(Color.ALICEBLUE); // fix for aarch64 Mac Ventura
             sphere.setMaterial(mat);
             sphere.setTranslateX(point3D.x);
             sphere.setTranslateY(point3D.y);
             sphere.setTranslateZ(point3D.z);
             extrasGroup.getChildren().add(sphere);
+            sphere.setVisible(false);
 
             Label newLabel = new Label(String.valueOf(i));
             labelGroup.getChildren().addAll(newLabel);
