@@ -121,7 +121,7 @@ public class Shape3DControlPane extends LitPathPane {
         findClustersTab.setContent(findClusterBorderPane);
 
         componentsSpinner = new Spinner(
-            new SpinnerValueFactory.IntegerSpinnerValueFactory(2, 20, 5, 1));
+            new SpinnerValueFactory.IntegerSpinnerValueFactory(2, 500, 5, 1));
         componentsSpinner.setPrefWidth(SPINNER_PREF_WIDTH);
         componentsSpinner.setEditable(true);
         iterationsSpinner = new Spinner(
