@@ -19,7 +19,6 @@ module edu.jhuapl.trinity {
     requires javafx.graphics;
     requires javafx.media;
     requires javafx.swing;
-    requires jdk.crypto.ec;
     requires jdk.httpserver;
     requires jflac.codec;
     requires lit.litfx.controls;

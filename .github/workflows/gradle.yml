@@ -31,33 +31,35 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        jdk-version: [ 21 ]
+        jdk-version: [ 25 ]
         os:
-          - ubuntu-latest
-          - windows-latest
-          - macos-13 # Intel OSX
+          - ubuntu-24.04
+          - windows-2025
+          - macos-15-intel # Intel OSX
           - macos-14 # ARM64 OSX
 
     steps:
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: "false"
 
       - name: Set Up JDK ${{ matrix.jdk-version }}
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: ${{ matrix.jdk-version }}
-          distribution: 'temurin'
+          distribution: 'zulu'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v5
         with:
           add-job-summary: 'on-failure'
 
       - name: Gradle Build Jar
-        run: ./gradlew clean assemble -Penv=prod-jar
+        run: ./gradlew clean assemble -Penv=release-jar
 
       - name: Upload Jar
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         continue-on-error: true
         with:
           name: java-${{ matrix.jdk-version }}-${{ runner.os }}-${{ runner.arch }}-jar
@@ -96,33 +98,35 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        jdk-version: [ 21 ]
+        jdk-version: [ 25 ]
         os:
-          - ubuntu-latest
-          - windows-latest
-          - macos-13 # Intel OSX
+          - ubuntu-24.04
+          - windows-2025
+          - macos-15-intel # Intel OSX
           - macos-14 # ARM64 OSX
 
     steps:
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: "false"
 
       - name: Set Up JDK ${{ matrix.jdk-version }}
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: ${{ matrix.jdk-version }}
-          distribution: 'temurin'
+          distribution: 'zulu'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v5
         with:
           add-job-summary: 'on-failure'
 
       - name: Gradle Build JLink Zip
-        run: ./gradlew clean jlink -Penv=prod-jlink
+        run: ./gradlew clean jlink -Penv=release-jlink
 
       - name: Upload JLink Zip
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         continue-on-error: true
         with:
           name: java-${{ matrix.jdk-version }}-${{ runner.os }}-${{ runner.arch }}-jlink-zip
@@ -160,33 +164,35 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        jdk-version: [ 21 ]
+        jdk-version: [ 25 ]
         os:
-          - ubuntu-latest
-          - windows-latest
-          - macos-13 # Intel OSX
+          - ubuntu-24.04
+          - windows-2025
+          - macos-15-intel # Intel OSX
           - macos-14 # ARM64 OSX
 
     steps:
 
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v5
+        with:
+          persist-credentials: "false"
 
       - name: Set Up JDK ${{ matrix.jdk-version }}
-        uses: actions/setup-java@v4
+        uses: actions/setup-java@v5
         with:
           java-version: ${{ matrix.jdk-version }}
-          distribution: 'temurin'
+          distribution: 'zulu'
 
       - name: Setup Gradle
-        uses: gradle/actions/setup-gradle@v4
+        uses: gradle/actions/setup-gradle@v5
         with:
           add-job-summary: 'on-failure'
 
       - name: Gradle Build JPackage
-        run: ./gradlew clean jpackage -Penv=prod-jlink
+        run: ./gradlew clean jpackage -Penv=release-jlink
 
       - name: Upload JPackage
-        uses: actions/upload-artifact@v4
+        uses: actions/upload-artifact@v5
         continue-on-error: true
         with:
           name: java-${{ matrix.jdk-version }}-${{ runner.os }}-${{ runner.arch }}-jpackage

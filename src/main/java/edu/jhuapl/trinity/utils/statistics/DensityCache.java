@@ -121,7 +121,7 @@ public final class DensityCache implements Serializable {
         this.ttlMillis = ttlMillis;
         this.map = new LinkedHashMap<>(16, 0.75f, true) {
             @Override
-            protected boolean removeEldestEntry(Map.Entry<String, Entry> eldest) {
+            protected boolean removeEldestEntry(Map.Entry<String, DensityCache.Entry> eldest) {
                 boolean evict = size() > DensityCache.this.maxEntries;
                 if (evict) evictions++;
                 return evict;
