@@ -66,7 +66,7 @@ public class Umap {
      * The distance to the first nearest neighbor for each point.
      */
     private static double[][] smoothKnnDist(final double[][] distances, final double k, final int nIter, final int localConnectivity, final double bandwidth) {
-        final double target = (double) (MathUtils.log2(k) * bandwidth);
+        final double target = MathUtils.log2(k) * bandwidth;
         final double[] rho = new double[distances.length];
         final double[] result = new double[distances.length];
 
@@ -256,7 +256,7 @@ public class Umap {
                 } else if (knnDists[i][j] - rhos[i] <= 0) {
                     val = 1;
                 } else {
-                    val = (double) Math.exp(-((knnDists[i][j] - rhos[i]) / (sigmas[i])));
+                    val = Math.exp(-((knnDists[i][j] - rhos[i]) / (sigmas[i])));
                 }
                 rows[i * nNeighbors + j] = i;
                 cols[i * nNeighbors + j] = knnIndices[i][j];
@@ -458,7 +458,7 @@ public class Umap {
 
                     double gradCoeff;
                     if (distSquared > 0.0) {
-                        gradCoeff = (double) ((-2.0 * a * b * Math.pow(distSquared, b - 1.0)) / (a * Math.pow(distSquared, b) + 1.0));
+                        gradCoeff = (-2.0 * a * b * Math.pow(distSquared, b - 1.0)) / (a * Math.pow(distSquared, b) + 1.0);
                     } else {
                         gradCoeff = 0;
                     }
@@ -481,7 +481,7 @@ public class Umap {
                         distSquared = ReducedEuclideanMetric.SINGLETON.distance(current, other);
 
                         if (distSquared > 0) {
-                            gradCoeff = 2.0F * gamma * b / (double) ((0.001 + distSquared) * (a * Math.pow(distSquared, b) + 1));
+                            gradCoeff = 2.0F * gamma * b / ((0.001 + distSquared) * (a * Math.pow(distSquared, b) + 1));
                         } else if (j == kr) {
                             continue;
                         } else {

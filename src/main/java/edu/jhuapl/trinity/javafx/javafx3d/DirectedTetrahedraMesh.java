@@ -377,7 +377,7 @@ public class DirectedTetrahedraMesh extends DirectedTexturedMesh {
     private final HashMap<String, Integer> map = new HashMap<>();
 
     private int getMiddle(int v1, Point3D p1, int v2, Point3D p2) {
-        String key = "" + Math.min(v1, v2) + "_" + Math.max(v1, v2);
+        String key = Math.min(v1, v2) + "_" + Math.max(v1, v2);
         if (map.get(key) != null) {
             return map.get(key);
         }
@@ -389,7 +389,7 @@ public class DirectedTetrahedraMesh extends DirectedTexturedMesh {
     }
 
     private int getMiddle(int v1, Point2D p1, int v2, Point2D p2) {
-        String key = "" + Math.min(v1, v2) + "_" + Math.max(v1, v2);
+        String key = Math.min(v1, v2) + "_" + Math.max(v1, v2);
         if (map.get(key) != null) {
             return map.get(key);
         }

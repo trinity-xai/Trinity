@@ -1033,7 +1033,7 @@ public class Hypersurface3DPane extends StackPane
     }
 
     public void updatePaintMesh() {
-        diffusePaintImage = new WritableImage((int) xWidth, (int) zWidth);
+        diffusePaintImage = new WritableImage(xWidth, zWidth);
         if (null == paintTriangleMesh) {
             paintTriangleMesh = new TriangleMesh();
             paintMeshView = new MeshView(paintTriangleMesh);
@@ -1065,10 +1065,10 @@ public class Hypersurface3DPane extends StackPane
         int numDivX = subDivX + 1;
         int numVerts = (subDivZ + 1) * numDivX;
         float currZ, currX;
-        float texCoords[] = new float[numVerts * texCoordSize];
+        float[] texCoords = new float[numVerts * texCoordSize];
         int faceCount = subDivX * subDivZ * 2;
         final int faceSize = 6;
-        int faces[] = new int[faceCount * faceSize];
+        int[] faces = new int[faceCount * faceSize];
         int index, p00, p01, p10, p11, tc00, tc01, tc10, tc11;
 
         for (int z = 0; z < subDivZ; z++) {
@@ -1267,8 +1267,8 @@ public class Hypersurface3DPane extends StackPane
                 // Convert to grid space: index + in-cell fraction.
                 // If p.getX()/getY() are already grid-space, this still works.
                 // If they are world-space, the /surfScale fixes it.
-                double gx = p.xIndex + frac(p.getX() / Math.max(1.0, (double) surfScale));
-                double gy = p.yIndex + frac(p.getY() / Math.max(1.0, (double) surfScale));
+                double gx = p.xIndex + frac(p.getX() / Math.max(1.0, surfScale));
+                double gy = p.yIndex + frac(p.getY() / Math.max(1.0, surfScale));
                 return SurfaceUtils.sample(dataGrid, gx, gy, interpMode);
             }
             case NEAREST:
@@ -1601,7 +1601,7 @@ public class Hypersurface3DPane extends StackPane
             // Publish for analysis panels/plots (reuses your existing pattern)
             scene.getRoot().fireEvent(new FactorAnalysisEvent(
                 FactorAnalysisEvent.ANALYSIS_DATA_VECTOR,
-                "Graph Similarity Row (hover): " + String.valueOf(gNode),
+                "Graph Similarity Row (hover): " + gNode,
                 row
             ));
 
@@ -1615,7 +1615,7 @@ public class Hypersurface3DPane extends StackPane
             Double[] row = buildSimilarityRowFromGraph(gNode);
             scene.getRoot().fireEvent(new FactorAnalysisEvent(
                 FactorAnalysisEvent.ANALYSIS_DATA_VECTOR,
-                "Graph Similarity Row (click): " + String.valueOf(gNode),
+                "Graph Similarity Row (click): " + gNode,
                 row
             ));
             highlightSurfaceRowIfPossible(gNode);

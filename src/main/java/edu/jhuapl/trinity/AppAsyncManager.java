@@ -228,10 +228,10 @@ public class AppAsyncManager extends Task<Void> {
                         //example: 200x100+800+800
                         String[] tokens = geometryParamString.split("\\+");
                         String[] sizeTokens = tokens[0].split("x");
-                        ((Stage) scene.getWindow()).setWidth(Double.parseDouble(sizeTokens[0]));
-                        ((Stage) scene.getWindow()).setHeight(Double.parseDouble(sizeTokens[1]));
-                        ((Stage) scene.getWindow()).setX(Double.parseDouble(tokens[1]));
-                        ((Stage) scene.getWindow()).setY(Double.parseDouble(tokens[2]));
+                        scene.getWindow().setWidth(Double.parseDouble(sizeTokens[0]));
+                        scene.getWindow().setHeight(Double.parseDouble(sizeTokens[1]));
+                        scene.getWindow().setX(Double.parseDouble(tokens[1]));
+                        scene.getWindow().setY(Double.parseDouble(tokens[2]));
                     });
                 } catch (NumberFormatException ex) {
                     LOG.info("Exception thrown parsing: {}. Setting to Maximized.", geometryParamString);
@@ -764,7 +764,7 @@ public class AppAsyncManager extends Task<Void> {
             if (null != e.object)
                 visible = (boolean) e.object;
             projectorPane.setVisible(visible);
-            if (visible && projectorPane.firstTime == true) {
+            if (visible && projectorPane.firstTime) {
                 projectorPane.firstTime = false;
                 projectorPane.scanAndAnimate();
             }

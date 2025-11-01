@@ -29,7 +29,7 @@ public class ImageTest {
      * @throws java.net.MalformedURLException
      */
     //@Test
-    public void scrapeFlags() throws MalformedURLException, IOException {
+    public void scrapeFlags() throws IOException {
         LOG.info("scrapeFlags");
         DecimalFormat df = new DecimalFormat("##");
         df.setDecimalSeparatorAlwaysShown(false);

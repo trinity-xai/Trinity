@@ -62,7 +62,7 @@ public class RidgeLineChartTestApp extends Application {
 
         Map<Integer, List<XYChartItem>> items = createItems();
 
-        for (int i = 0; i < items.keySet().size(); i++) {
+        for (int i = 0; i < items.size(); i++) {
             XYSeries xySeries = XYSeriesBuilder.create()
                 .items(items.get(i))
                 .chartType(ChartType.SMOOTH_AREA)

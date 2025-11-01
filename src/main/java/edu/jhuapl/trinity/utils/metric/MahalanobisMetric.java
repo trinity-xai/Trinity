@@ -39,6 +39,6 @@ public class MahalanobisMetric extends Metric {
             }
             result += tmp * diff[i];
         }
-        return (double) Math.sqrt(result);
+        return Math.sqrt(result);
     }
 }

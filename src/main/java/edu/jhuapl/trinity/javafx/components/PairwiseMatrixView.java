@@ -142,7 +142,7 @@ public final class PairwiseMatrixView extends BorderPane {
                     }
                 }
             } catch (Throwable t) {
-                toast("Cell render failed: " + t.getClass().getSimpleName() + ": " + String.valueOf(t.getMessage()), true);
+                toast("Cell render failed: " + t.getClass().getSimpleName() + ": " + t.getMessage(), true);
             }
 
             // still notify any external listener you set via setOnCellClick(...)
@@ -371,7 +371,7 @@ public final class PairwiseMatrixView extends BorderPane {
                 Platform.runLater(() -> {
                     setControlsDisabled(false);
                     setProgressText("");
-                    toast("Matrix run failed: " + t.getClass().getSimpleName() + " - " + String.valueOf(t.getMessage()), true);
+                    toast("Matrix run failed: " + t.getClass().getSimpleName() + " - " + t.getMessage(), true);
                 });
             }
         }, "PairwiseMatrixView-Worker").start();

@@ -94,25 +94,25 @@ public class HypersurfaceControlsPane extends LitPathPane {
 
         // --- GUI sync from model → controls
         scene.addEventHandler(HypersurfaceEvent.SET_XWIDTH_GUI, e -> {
-            if (xWidthSpinner != null && !xWidthSpinner.getValue().equals((Integer) e.object)) {
+            if (xWidthSpinner != null && !xWidthSpinner.getValue().equals(e.object)) {
                 xWidthSpinner.getValueFactory().setValue((Integer) e.object);
             }
             e.consume();
         });
         scene.addEventHandler(HypersurfaceEvent.SET_ZWIDTH_GUI, e -> {
-            if (zWidthSpinner != null && !zWidthSpinner.getValue().equals((Integer) e.object)) {
+            if (zWidthSpinner != null && !zWidthSpinner.getValue().equals(e.object)) {
                 zWidthSpinner.getValueFactory().setValue((Integer) e.object);
             }
             e.consume();
         });
         scene.addEventHandler(HypersurfaceEvent.SET_YSCALE_GUI, e -> {
-            if (yScaleSpinner != null && !yScaleSpinner.getValue().equals((Double) e.object)) {
+            if (yScaleSpinner != null && !yScaleSpinner.getValue().equals(e.object)) {
                 yScaleSpinner.getValueFactory().setValue((Double) e.object);
             }
             e.consume();
         });
         scene.addEventHandler(HypersurfaceEvent.SET_SURFSCALE_GUI, e -> {
-            if (surfScaleSpinner != null && !surfScaleSpinner.getValue().equals((Double) e.object)) {
+            if (surfScaleSpinner != null && !surfScaleSpinner.getValue().equals(e.object)) {
                 surfScaleSpinner.getValueFactory().setValue((Double) e.object);
             }
             e.consume();

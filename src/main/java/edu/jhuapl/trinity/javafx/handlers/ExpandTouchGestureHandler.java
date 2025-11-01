@@ -56,7 +56,6 @@ public class ExpandTouchGestureHandler implements EventHandler<TouchEvent> {
                 }
             }
 
-            ;
         };
         animationTimer.start();
     }
@@ -73,7 +72,7 @@ public class ExpandTouchGestureHandler implements EventHandler<TouchEvent> {
         if (event.getEventType() == TouchEvent.TOUCH_MOVED) {
             isDirty = true;
             event.getTouchPoints().parallelStream().forEach(t -> {
-                activeTouchPoints.put((Integer) t.getId(), t);
+                activeTouchPoints.put(t.getId(), t);
             });
         } else if (event.getEventType() == TouchEvent.TOUCH_PRESSED) {
             isDirty = true;

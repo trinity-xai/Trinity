@@ -112,7 +112,6 @@ public class TessellationMesh extends MeshView {
                 updateMaterial(image);
             }
 
-            ;
         };
         matrixTimer.start();
     }
@@ -161,7 +160,6 @@ public class TessellationMesh extends MeshView {
                 }
             }
 
-            ;
         };
         tessellationTimer.start();
     }
@@ -178,10 +176,10 @@ public class TessellationMesh extends MeshView {
         int numVerts = (subDivZ + 1) * numDivX;
         final int texCoordSize = 2;
         float currZ, currX;
-        float texCoords[] = new float[numVerts * texCoordSize];
+        float[] texCoords = new float[numVerts * texCoordSize];
         int faceCount = subDivX * subDivZ * 2;
         final int faceSize = 6; //should always be 6 for a triangle mesh
-        int faces[] = new int[faceCount * faceSize];
+        int[] faces = new int[faceCount * faceSize];
         int index, p00, p01, p10, p11, tc00, tc01, tc10, tc11;
         double yValue;
         for (int z = 0; z < subDivZ; z++) {
@@ -190,7 +188,7 @@ public class TessellationMesh extends MeshView {
             for (int x = 0; x < subDivX; x++) {
                 currX = (float) x / subDivX;
                 // color value for pixel at point
-                rgb = ((int) image.getPixelReader().getArgb(x * pskip, z * pskip));
+                rgb = image.getPixelReader().getArgb(x * pskip, z * pskip);
                 r = (rgb >> 16) & 0xFF;
                 g = (rgb >> 8) & 0xFF;
                 b = rgb & 0xFF;

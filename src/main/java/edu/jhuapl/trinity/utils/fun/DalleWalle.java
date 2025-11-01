@@ -388,7 +388,7 @@ public class DalleWalle extends Application {
                         LOG.info("New file created: {}", newPath);
                         if (newPath.toString().endsWith("png") || newPath.toString().endsWith("PNG")) {
                             try {
-                                String filePath = path.toString() + "/" + newPath.toString();
+                                String filePath = path + "/" + newPath;
                                 File file = new File(filePath);
                                 String fixedPath = file.getAbsolutePath();
                                 int tempIndex = imageIndex;

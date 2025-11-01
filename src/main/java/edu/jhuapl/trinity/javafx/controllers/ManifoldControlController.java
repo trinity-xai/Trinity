@@ -400,7 +400,7 @@ public class ManifoldControlController implements Initializable {
         manualSpinner.valueProperty().addListener(e -> {
             scene.getRoot().fireEvent(
                 new ManifoldEvent(ManifoldEvent.SET_DISTANCE_TOLERANCE,
-                    (Double) manualSpinner.getValue()));
+                    manualSpinner.getValue()));
         });
         manualSpinner.disableProperty().bind(automaticCheckBox.selectedProperty());
 
@@ -624,7 +624,7 @@ public class ManifoldControlController implements Initializable {
         uc.setNumberNearestNeighbours((int) nearestNeighborsSpinner.getValue());
         uc.setNegativeSampleRate((int) negativeSampleRateSpinner.getValue());
         uc.setLocalConnectivity((int) localConnectivitySpinner.getValue());
-        uc.setThreshold((double) thresholdSpinner.getValue());
+        uc.setThreshold(thresholdSpinner.getValue());
         uc.setMetric((String) metricChoiceBox.getValue());
         uc.setVerbose(verboseCheckBox.isSelected());
         return uc;
@@ -722,7 +722,7 @@ public class ManifoldControlController implements Initializable {
         umap.setNumberNearestNeighbours((int) nearestNeighborsSpinner.getValue());
         umap.setNegativeSampleRate((int) negativeSampleRateSpinner.getValue());
         umap.setLocalConnectivity((int) localConnectivitySpinner.getValue());
-        umap.setThreshold((double) thresholdSpinner.getValue());
+        umap.setThreshold(thresholdSpinner.getValue());
         umap.setMetric((String) metricChoiceBox.getValue());
         umap.setVerbose(verboseCheckBox.isSelected());
         ManifoldEvent.POINT_SOURCE pointSource = useHypersurfaceButton.isSelected() ?
@@ -740,7 +740,7 @@ public class ManifoldControlController implements Initializable {
         scene.getRoot().fireEvent(new ManifoldEvent(
             ManifoldEvent.GENERATE_PROJECTION_MANIFOLD,
             useVisibleRadioButton.isSelected(),
-            (String) labelChoiceBox.getValue(), tolerance
+            labelChoiceBox.getValue(), tolerance
         ));
     }
 

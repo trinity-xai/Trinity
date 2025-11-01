@@ -54,7 +54,7 @@ public class MessageProcessor {
 //        mapper.registerModule(new JavaTimeModule());
     }
 
-    public void process(String message) throws JsonProcessingException, IOException {
+    public void process(String message) throws IOException {
         if (CommandRequest.isCommandRequest(message)) {
             CommandRequest command = mapper.readValue(message, CommandRequest.class);
             CommandTask commandTask = new CommandTask(command, scene);

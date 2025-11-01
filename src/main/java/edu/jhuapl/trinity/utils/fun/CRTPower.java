@@ -74,9 +74,7 @@ public class CRTPower {
 
     private void playScanlineFlash() {
         Node parent = target.getParent();
-        if (!(parent instanceof Pane)) return;
-
-        Pane parentPane = (Pane) parent;
+        if (!(parent instanceof Pane parentPane)) return;
 
         Rectangle scanline = new Rectangle();
         scanline.setFill(Color.WHITE);

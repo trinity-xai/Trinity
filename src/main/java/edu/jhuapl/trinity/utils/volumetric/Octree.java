@@ -207,7 +207,7 @@ public class Octree {
         for (int i : new int[]{-1, 1}) {
             for (int j : new int[]{-1, 1}) {
                 for (int k : new int[]{-1, 1}) {
-                    long index = (long) (((i + 1) * 2 + (j + 1) * 1 + (k + 1) / 2));
+                    long index = ((i + 1) * 2 + (j + 1) * 1 + (k + 1) / 2);
 //                    index <<= (currentDepth - 1) * 3;
                     index = currentNode.index | (index << (3 * currentDepth + 3));
                     double length = currentNode.getxExtent(); // xExtent == yExtent == zExtent

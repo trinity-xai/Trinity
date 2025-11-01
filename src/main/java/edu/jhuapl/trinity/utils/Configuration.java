@@ -27,7 +27,7 @@ public class Configuration {
 
     }
 
-    public Configuration(String filename) throws FileNotFoundException, IOException {
+    public Configuration(String filename) throws IOException {
         Properties madProps = new Properties();
         madProps.load(new FileInputStream(filename));
         configProps = madProps;
