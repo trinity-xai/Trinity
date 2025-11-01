@@ -259,10 +259,10 @@ public class MissionTimerXBuilder<B extends MissionTimerXBuilder<B>> {
             }
         }
 
-        if (properties.keySet().contains("itemArray")) {
+        if (properties.containsKey("itemArray")) {
             timer.getItems().addAll(((ObjectProperty<Item[]>) properties.get("itemArray")).get());
         }
-        if (properties.keySet().contains("itemList")) {
+        if (properties.containsKey("itemList")) {
             timer.getItems().addAll(((ObjectProperty<List<Item>>) properties.get("itemList")).get());
         }
 

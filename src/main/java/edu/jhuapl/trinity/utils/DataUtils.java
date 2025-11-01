@@ -158,7 +158,7 @@ public enum DataUtils {
         ArrayList<Double>[] timesTouples = new ArrayList[eventsSet.size()];
         timesTouples = reconstruction.getAttrs().getEvents().values().toArray(timesTouples);
 
-        String[] eventLabels = new String[eventsMap.keySet().size()];
+        String[] eventLabels = new String[eventsMap.size()];
         eventLabels = eventsMap.keySet().toArray(eventLabels);
         double framerate = reconstruction.getAttrs().getFramerate();
 

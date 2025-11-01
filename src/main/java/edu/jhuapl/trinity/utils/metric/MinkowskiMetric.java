@@ -28,6 +28,6 @@ public class MinkowskiMetric extends Metric {
         for (int i = 0; i < x.length; ++i) {
             result += Math.pow(Math.abs(x[i] - y[i]), mPower);
         }
-        return (double) Math.pow(result, 1 / mPower);
+        return Math.pow(result, 1 / mPower);
     }
 }

@@ -187,9 +187,9 @@ class CsrMatrix extends Matrix {
             if (leftVal > leftMin || rightVal > rightMin) {
                 final double f;
                 if (mixWeight < 0.5) {
-                    f = (double) (leftVal * Math.pow(rightVal, mixWeight / (1.0 - mixWeight)));
+                    f = leftVal * Math.pow(rightVal, mixWeight / (1.0 - mixWeight));
                 } else {
-                    f = (double) (Math.pow(leftVal, (1.0 - mixWeight) / mixWeight) * rightVal);
+                    f = Math.pow(leftVal, (1.0 - mixWeight) / mixWeight) * rightVal;
                 }
                 data[idx] = f;
             }

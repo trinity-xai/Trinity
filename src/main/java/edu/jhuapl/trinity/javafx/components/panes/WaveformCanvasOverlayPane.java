@@ -323,7 +323,7 @@ public class WaveformCanvasOverlayPane extends CanvasOverlayPane {
                 protected Boolean call() {
                     try {
                         if (audioFile != null) {
-                            LOG.info("Attempting to load {}", audioFile.toURI().toString());
+                            LOG.info("Attempting to load {}", audioFile.toURI());
                             Media m = new Media(audioFile.toURI().toString());
                             setMedia(m);
                             //@DEBUG SMP System.out.println("Setting up media player...");
@@ -352,7 +352,7 @@ public class WaveformCanvasOverlayPane extends CanvasOverlayPane {
 
                 /**
                  * Calculate and initialize {@link WaveformVisualizationService#audioAmplitudes} and
-                 * {@link WaveformVisualization#waveformData}
+                 * {@link WaveformVisualizationService#waveformData}
                  * @throws IOException if encountered IO error
                  * @throws UnsupportedAudioFileException if encountered invalid audio file
                  */
@@ -431,7 +431,7 @@ public class WaveformCanvasOverlayPane extends CanvasOverlayPane {
         }
 
         /**
-         * Calculate and initialize {@link WaveformVisualization#waveformData}
+         * Calculate and initialize {@link WaveformVisualizationService#waveformData}
          */
         public void processAudioAmplitudes() {
             // The width of the resulting waveform panel

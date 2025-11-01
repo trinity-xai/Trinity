@@ -301,8 +301,7 @@ public class RadialEntity extends LitRadialMenu {
             subItems.forEach(item -> {
                 item.getItems().forEach((t) -> {
                     Node node = t.getGraphic();
-                    if (node instanceof ImageView) {
-                        ImageView iv = (ImageView) node;
+                    if (node instanceof ImageView iv) {
                         iv.setFitWidth(event.newValue);
                     }
                 });
@@ -409,8 +408,7 @@ public class RadialEntity extends LitRadialMenu {
         double pixelsPerItem = (getRadius() * scaling) / items.size();
         items.stream().forEach(item -> {
             Node node = item.getGraphic();
-            if (node instanceof ImageView) {
-                ImageView iv = (ImageView) node;
+            if (node instanceof ImageView iv) {
                 iv.setPreserveRatio(true);
                 iv.setFitWidth(pixelsPerItem);
             }
@@ -419,8 +417,7 @@ public class RadialEntity extends LitRadialMenu {
 
     public void setCenterFitWidth(double fitWidth) {
         Node centerNode = getCenterGraphic();
-        if (centerNode instanceof ImageView) {
-            ImageView civ = (ImageView) centerNode;
+        if (centerNode instanceof ImageView civ) {
             civ.setFitWidth(fitWidth);
             civ.setTranslateX(-fitWidth / 2.0);
             civ.setTranslateY(-fitWidth / 2.0);

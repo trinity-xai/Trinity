@@ -584,7 +584,7 @@ public class ConfigurationController implements Initializable {
         point3DSizeSpinner.valueProperty().addListener(e -> {
             scene.getRoot().fireEvent(
                 new HyperspaceEvent(HyperspaceEvent.POINT3D_SIZE_GUI,
-                    (Double) point3DSizeSpinner.getValue()));
+                    point3DSizeSpinner.getValue()));
         });
 
         pointScaleSpinner.setValueFactory(
@@ -594,7 +594,7 @@ public class ConfigurationController implements Initializable {
         pointScaleSpinner.valueProperty().addListener(e -> {
             scene.getRoot().fireEvent(
                 new HyperspaceEvent(HyperspaceEvent.POINT_SCALE_GUI,
-                    (Double) pointScaleSpinner.getValue()));
+                    pointScaleSpinner.getValue()));
         });
 
         scatterBuffScalingSpinner.setValueFactory(
@@ -604,7 +604,7 @@ public class ConfigurationController implements Initializable {
         scatterBuffScalingSpinner.valueProperty().addListener(e -> {
             scene.getRoot().fireEvent(
                 new HyperspaceEvent(HyperspaceEvent.SCATTERBUFF_SCALING_GUI,
-                    (Double) scatterBuffScalingSpinner.getValue()));
+                    scatterBuffScalingSpinner.getValue()));
         });
     }
 
@@ -932,7 +932,7 @@ public class ConfigurationController implements Initializable {
         domainMinimumSpinner.valueProperty().addListener(e -> {
             scene.getRoot().fireEvent(
                 new ShadowEvent(ShadowEvent.SET_DOMAIN_MINIMUM,
-                    (double) domainMinimumSpinner.getValue()));
+                    domainMinimumSpinner.getValue()));
         });
         domainMinimumSpinner.disableProperty().bind(
             overrideDomainTransformCheckBox.selectedProperty().not());
@@ -944,7 +944,7 @@ public class ConfigurationController implements Initializable {
         domainMaximumSpinner.valueProperty().addListener(e -> {
             scene.getRoot().fireEvent(
                 new ShadowEvent(ShadowEvent.SET_DOMAIN_MAXIMUM,
-                    (double) domainMaximumSpinner.getValue()));
+                    domainMaximumSpinner.getValue()));
         });
         domainMaximumSpinner.disableProperty().bind(
             overrideDomainTransformCheckBox.selectedProperty().not());
@@ -958,7 +958,7 @@ public class ConfigurationController implements Initializable {
         pointScalingSpinner.valueProperty().addListener(e -> {
             scene.getRoot().fireEvent(
                 new ShadowEvent(ShadowEvent.SET_POINT_SCALING,
-                    (double) pointScalingSpinner.getValue()));
+                    pointScalingSpinner.getValue()));
         });
     }
 

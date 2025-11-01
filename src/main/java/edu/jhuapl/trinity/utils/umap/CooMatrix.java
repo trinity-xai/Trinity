@@ -291,10 +291,9 @@ class CooMatrix extends Matrix {
 
     @Override
     Matrix add(final Matrix matrix) {
-        if (!(matrix instanceof CooMatrix)) {
+        if (!(matrix instanceof CooMatrix m)) {
             return super.add(matrix).toCoo();
         }
-        final CooMatrix m = (CooMatrix) matrix;
         if (!isShapeSame(m)) {
             throw new IllegalArgumentException("Incompatible matrix sizes");
         }
@@ -355,10 +354,9 @@ class CooMatrix extends Matrix {
 
     @Override
     Matrix subtract(final Matrix matrix) {
-        if (!(matrix instanceof CooMatrix)) {
+        if (!(matrix instanceof CooMatrix m)) {
             return super.subtract(matrix).toCoo();
         }
-        final CooMatrix m = (CooMatrix) matrix;
         if (!isShapeSame(m)) {
             throw new IllegalArgumentException("Incompatible matrix sizes");
         }
@@ -419,10 +417,9 @@ class CooMatrix extends Matrix {
 
     @Override
     Matrix hadamardMultiply(final Matrix matrix) {
-        if (!(matrix instanceof CooMatrix)) {
+        if (!(matrix instanceof CooMatrix m)) {
             return super.hadamardMultiply(matrix).toCoo();
         }
-        final CooMatrix m = (CooMatrix) matrix;
         if (!isShapeSame(m)) {
             throw new IllegalArgumentException("Incompatible matrix sizes");
         }
@@ -514,10 +511,9 @@ class CooMatrix extends Matrix {
 
     @Override
     Matrix multiply(final Matrix m) {
-        if (!(m instanceof CooMatrix)) {
+        if (!(m instanceof CooMatrix a)) {
             return super.multiply(m).toCoo();
         }
-        final CooMatrix a = (CooMatrix) m;
         if (cols() != m.rows()) {
             throw new IllegalArgumentException("Incompatible matrix sizes");
         }

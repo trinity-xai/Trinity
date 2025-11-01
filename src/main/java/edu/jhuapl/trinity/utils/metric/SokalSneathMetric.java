@@ -35,6 +35,6 @@ public final class SokalSneathMetric extends Metric {
                 ++numNotEqual;
             }
         }
-        return numNotEqual == 0 ? 0 : numNotEqual / (double) (0.5 * numTrueTrue + numNotEqual);
+        return numNotEqual == 0 ? 0 : numNotEqual / (0.5 * numTrueTrue + numNotEqual);
     }
 }

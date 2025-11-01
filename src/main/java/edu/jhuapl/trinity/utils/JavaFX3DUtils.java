@@ -413,11 +413,8 @@ public enum JavaFX3DUtils {
 
     public static void zoomTransition(double milliseconds, Camera camera, double distance) {
         Timeline timeline = new Timeline();
-        timeline.getKeyFrames().addAll(new KeyFrame[]{
-            new KeyFrame(Duration.millis(milliseconds), new KeyValue[]{// Frame End
-                new KeyValue(camera.translateZProperty(), distance, Interpolator.EASE_OUT),
-            })
-        });
+        timeline.getKeyFrames().addAll(new KeyFrame(Duration.millis(milliseconds), // Frame End
+            new KeyValue(camera.translateZProperty(), distance, Interpolator.EASE_OUT)));
         timeline.playFromStart();
 
     }
@@ -425,16 +422,13 @@ public enum JavaFX3DUtils {
     public static Timeline transitionCameraTo(double milliseconds, Camera camera, CameraTransformer transformer,
                                               double tx, double ty, double tz, double rx, double ry, double rz) {
         Timeline timeline = new Timeline();
-        timeline.getKeyFrames().addAll(new KeyFrame[]{
-            new KeyFrame(Duration.millis(milliseconds), new KeyValue[]{// Frame End
-                new KeyValue(transformer.rx.angleProperty(), rx, Interpolator.EASE_BOTH),
-                new KeyValue(transformer.ry.angleProperty(), ry, Interpolator.EASE_BOTH),
-                new KeyValue(transformer.rz.angleProperty(), rz, Interpolator.EASE_BOTH),
-                new KeyValue(camera.translateXProperty(), tx, Interpolator.EASE_BOTH),
-                new KeyValue(camera.translateYProperty(), ty, Interpolator.EASE_BOTH),
-                new KeyValue(camera.translateZProperty(), tz, Interpolator.EASE_BOTH)
-            })
-        });
+        timeline.getKeyFrames().addAll(new KeyFrame(Duration.millis(milliseconds), // Frame End
+            new KeyValue(transformer.rx.angleProperty(), rx, Interpolator.EASE_BOTH),
+            new KeyValue(transformer.ry.angleProperty(), ry, Interpolator.EASE_BOTH),
+            new KeyValue(transformer.rz.angleProperty(), rz, Interpolator.EASE_BOTH),
+            new KeyValue(camera.translateXProperty(), tx, Interpolator.EASE_BOTH),
+            new KeyValue(camera.translateYProperty(), ty, Interpolator.EASE_BOTH),
+            new KeyValue(camera.translateZProperty(), tz, Interpolator.EASE_BOTH)));
         timeline.playFromStart();
         return timeline;
     }
@@ -507,10 +501,10 @@ public enum JavaFX3DUtils {
         final int faceSize = 6;
         int numDivX = subDivX + 1;
         int numVerts = (subDivZ + 1) * numDivX;
-        float points[] = new float[numVerts * pointSize];
-        float texCoords[] = new float[numVerts * texCoordSize];
+        float[] points = new float[numVerts * pointSize];
+        float[] texCoords = new float[numVerts * texCoordSize];
         int faceCount = subDivX * subDivZ * 2;
-        int faces[] = new int[faceCount * faceSize];
+        int[] faces = new int[faceCount * faceSize];
         float currZ, currX;
         double fz, fx;
         int index, rgb, r, g, b;
@@ -525,7 +519,7 @@ public enum JavaFX3DUtils {
                 points[index] = (float) fx * scale;   // x
 
                 // color value for pixel at point
-                rgb = ((int) image.getPixelReader().getArgb(x * pskip, z * pskip));
+                rgb = image.getPixelReader().getArgb(x * pskip, z * pskip);
                 r = (rgb >> 16) & 0xFF;
                 g = (rgb >> 8) & 0xFF;
                 b = rgb & 0xFF;

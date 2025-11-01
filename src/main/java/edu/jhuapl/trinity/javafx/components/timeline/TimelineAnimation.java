@@ -83,7 +83,7 @@ public class TimelineAnimation implements Runnable {
 
     // RESTART THE Animation at time 0
     public void restartProp() {
-        stepsFromStart = (long) 0;
+        stepsFromStart = 0;
     }
 
     // INCREASE PROPAGATION RATE.

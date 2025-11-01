@@ -59,7 +59,7 @@ public class DirectedScatterMesh extends Group implements TextureMode {
     private final static double DEFAULT_HEIGHT = 0.1d;
     private final static int DEFAULT_LEVEL = 0;
     private final static boolean DEFAULT_JOIN_SEGMENTS = true;
-    private ObservableList<DirectedTexturedMesh> meshes = FXCollections.<DirectedTexturedMesh>observableArrayList();
+    private ObservableList<DirectedTexturedMesh> meshes = FXCollections.observableArrayList();
     public boolean renderOnChange = true;
 
     public DirectedScatterMesh() {

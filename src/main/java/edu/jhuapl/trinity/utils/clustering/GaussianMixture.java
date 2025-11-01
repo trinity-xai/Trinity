@@ -130,7 +130,7 @@ public class GaussianMixture {
             // Maximization step
             double Z = 0.0;
             for (int i = 0; i < k; i++) {
-                components[i] = ((GaussianDistribution) components[i].distribution).maximization(x, posteriori[i]);
+                components[i] = components[i].distribution.maximization(x, posteriori[i]);
                 Z += components[i].priori;
             }
 
