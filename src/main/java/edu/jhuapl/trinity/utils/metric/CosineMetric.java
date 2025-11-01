@@ -39,7 +39,7 @@ public final class CosineMetric extends Metric {
         } else if (normX == 0.0 || normY == 0.0) {
             return 1;
         } else {
-            return (double) (1 - (result / Math.sqrt(normX * normY)));
+            return 1 - (result / Math.sqrt(normX * normY));
         }
     }
 }

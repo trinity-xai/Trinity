@@ -16,8 +16,6 @@ public class ChatCompletionCallback extends RestConsumer {
 
     public enum STATUS {REQUESTED, SUCCEEDED, FAILED}
 
-    ;
-
     public ChatCompletionCallback(Scene scene, int inputID, int requestNumber) {
         super(scene);
         this.requestNumber = requestNumber;

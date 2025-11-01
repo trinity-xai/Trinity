@@ -35,19 +35,12 @@ public enum AnalysisUtils {
 
     public static enum ANALYSIS_METHOD {PCA, SVD, KPCA}
 
-    ;
-
     public static enum SOURCE {HYPERSPACE, HYPERSURFACE}
-
-    ;
 
     public static enum KERNEL {Gaussian, Laplacian, Linear, Pearson, Polynomial}
 
-    ;
-
     public static enum RANGE {MINIMUM, MAXIMUM}
 
-    ;
     public static double EPISILON = 0.0000000001;
 
     public static void clearAnalysisConfig() {
@@ -219,12 +212,12 @@ public enum AnalysisUtils {
 
     // A function to randomly select k items from
     // stream[0..n-1].
-    public static double[][] selectKItems(double stream[][], int n, int k) {
+    public static double[][] selectKItems(double[][] stream, int n, int k) {
         int i; // index for elements in stream[]
 
         // reservoir[] is the output array. Initialize it
         // with first k elements from stream[]
-        double reservoir[][] = new double[k][stream[0].length];
+        double[][] reservoir = new double[k][stream[0].length];
         for (i = 0; i < k; i++)
             reservoir[i] = stream[i];
 

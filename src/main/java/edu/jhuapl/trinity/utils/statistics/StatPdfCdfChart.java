@@ -352,7 +352,7 @@ public class StatPdfCdfChart extends LineChart<Number, Number> {
         try {
             Point2D scenePt = plotArea.localToScene(xInPlotLocal, 0);
             Point2D axisPt = getXAxis().sceneToLocal(scenePt);
-            return ((NumberAxis) getXAxis()).getValueForDisplay(axisPt.getX()).doubleValue();
+            return getXAxis().getValueForDisplay(axisPt.getX()).doubleValue();
         } catch (Exception ex) {
             return null;
         }

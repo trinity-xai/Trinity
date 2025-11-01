@@ -7,7 +7,6 @@ import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.FileInputStream;
-import java.io.FileNotFoundException;
 import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStream;
@@ -89,7 +88,7 @@ public enum Utils {
         return d;
     }
 
-    public static Properties readProps(String propsPath, Properties defaults) throws FileNotFoundException, IOException {
+    public static Properties readProps(String propsPath, Properties defaults) throws IOException {
         Properties newProps = new Properties();
         if (null != defaults)
             newProps = new Properties(defaults);
@@ -99,7 +98,7 @@ public enum Utils {
         return newProps;
     }
 
-    public static Properties readProps(File file, Properties defaults) throws FileNotFoundException, IOException {
+    public static Properties readProps(File file, Properties defaults) throws IOException {
         Properties newProps = new Properties();
         if (null != defaults)
             newProps = new Properties(defaults);
@@ -109,7 +108,7 @@ public enum Utils {
         return newProps;
     }
 
-    public static void writeProps(String propsPath, Properties madProps, String comments) throws FileNotFoundException, IOException {
+    public static void writeProps(String propsPath, Properties madProps, String comments) throws IOException {
         try (OutputStream os = new FileOutputStream(new File(propsPath))) {
             madProps.store(os, comments);
         }

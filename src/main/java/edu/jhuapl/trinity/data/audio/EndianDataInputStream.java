@@ -2,6 +2,7 @@ package edu.jhuapl.trinity.data.audio;
 
 import java.io.DataInputStream;
 import java.io.InputStream;
+import java.nio.charset.StandardCharsets;
 
 public class EndianDataInputStream extends DataInputStream {
     public EndianDataInputStream(InputStream in) {
@@ -11,7 +12,7 @@ public class EndianDataInputStream extends DataInputStream {
     public String read4ByteString() throws Exception {
         byte[] bytes = new byte[4];
         readFully(bytes);
-        return new String(bytes, "US-ASCII");
+        return new String(bytes, StandardCharsets.US_ASCII);
     }
 
     public short readShortLittleEndian() throws Exception {

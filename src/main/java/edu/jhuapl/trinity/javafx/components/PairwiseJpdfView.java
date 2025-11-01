@@ -529,7 +529,7 @@ public class PairwiseJpdfView extends BorderPane {
                     }
                 } catch (Throwable t) {
                     final String msg = "Batch failed: " + t.getClass().getSimpleName()
-                        + " - " + String.valueOf(t.getMessage());
+                        + " - " + t.getMessage();
                     Platform.runLater(() -> {
                         setControlsDisabled(false);
                         setProgressText("");

@@ -86,7 +86,7 @@ final class Curve {
     private static double[] wrapCurve(final double[] x, final double[] y, final double a, final double b) {
         final double[] res = new double[x.length];
         for (int i = 0; i < x.length; i++) {
-            res[i] = (double) (curve(x[i], a, b) - y[i]);
+            res[i] = curve(x[i], a, b) - y[i];
         }
         return res;
     }

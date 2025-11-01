@@ -433,9 +433,9 @@ public class HyperSurfacePlotMesh extends TexturedMesh {
         int p00, p01, p10, p11;
         // Create points
         for (int z = 0; z <= divisionsZ; z++) {
-            dz = (float) (((float) z / (float) divisionsZ) * rangeZ);
+            dz = ((float) z / (float) divisionsZ) * rangeZ;
             for (int x = 0; x <= divisionsX; x++) {
-                dx = (float) (((float) x / (float) divisionsX) * rangeX);
+                dx = ((float) x / (float) divisionsX) * rangeX;
                 pointY = (float) yScale * vertFunction.apply(new Vert3D(dx, dz, x, z)).floatValue();
                 listVertices.add(new Point3D(dx, pointY, dz));
             }

@@ -15,9 +15,9 @@ import javafx.event.EventHandler;
 import javafx.geometry.Bounds;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
-import javafx.scene.Scene;
 import javafx.scene.Node;
 import javafx.scene.Parent;
+import javafx.scene.Scene;
 import javafx.scene.SnapshotParameters;
 import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.ContentDisplay;
@@ -500,7 +500,7 @@ public class ExportMicroToolbar {
         } else if (target.getParent() != null) {
             target.getParent().applyCss();
             if (target.getParent() instanceof Parent) {
-                ((Parent) target.getParent()).layout();
+                target.getParent().layout();
             }
         }
 

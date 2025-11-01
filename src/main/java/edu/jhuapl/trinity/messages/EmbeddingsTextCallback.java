@@ -18,8 +18,6 @@ public class EmbeddingsTextCallback extends RestConsumer {
 
     public enum STATUS {REQUESTED, SUCCEEDED, FAILED}
 
-    ;
-
     public EmbeddingsTextCallback(Scene scene, List<Integer> inputIDs, int requestNumber) {
         super(scene);
         this.inputIDs = inputIDs;

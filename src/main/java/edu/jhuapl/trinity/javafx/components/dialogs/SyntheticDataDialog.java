@@ -225,7 +225,7 @@ public final class SyntheticDataDialog extends Dialog<SyntheticDataDialog.Result
                 };
             } catch (Throwable t) {
                 Alert a = new Alert(Alert.AlertType.ERROR,
-                    "Build failed: " + t.getClass().getSimpleName() + " – " + String.valueOf(t.getMessage()),
+                    "Build failed: " + t.getClass().getSimpleName() + " – " + t.getMessage(),
                     ButtonType.OK);
                 a.showAndWait();
                 return null;

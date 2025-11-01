@@ -266,12 +266,9 @@ public class RayShooting extends Application {
     }
 
     /**
-     * @param r    The Ray that holds the info
-     * @param tx   to x
-     * @param ty   to y
-     * @param tz   to z
-     * @param dps  distance per step to move ray
-     * @param time length of animation
+     * @param r      The Ray that holds the info
+     * @param target target to move ray
+     * @param time   length of animation
      */
     private void animateRayTo(final Ray r, final Shape3D target, final Duration time) {
 
@@ -332,8 +329,8 @@ public class RayShooting extends Application {
     // resets materisl on targets
     private void reset() {
 
-        ((Shape3D) ((Group) targetGroup).getChildren().get(0)).setMaterial(red);
-        ((Shape3D) ((Group) targetGroup).getChildren().get(1)).setMaterial(blue);
+        ((Shape3D) targetGroup.getChildren().get(0)).setMaterial(red);
+        ((Shape3D) targetGroup.getChildren().get(1)).setMaterial(blue);
 
     }
 

@@ -7,7 +7,6 @@ import javax.imageio.ImageIO;
 import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
-import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URL;
 import java.text.DecimalFormat;
@@ -29,7 +28,7 @@ public class ImageTest {
      * @throws java.net.MalformedURLException
      */
     //@Test
-    public void scrapeFlags() throws MalformedURLException, IOException {
+    public void scrapeFlags() throws IOException {
         LOG.info("scrapeFlags");
         DecimalFormat df = new DecimalFormat("##");
         df.setDecimalSeparatorAlwaysShown(false);

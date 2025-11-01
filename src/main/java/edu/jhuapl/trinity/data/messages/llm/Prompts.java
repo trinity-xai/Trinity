@@ -88,7 +88,7 @@ public enum Prompts {
     }
 
     public static String insertAutochooseChoices(String captionPrompt, List<String> choices) {
-        StringBuilder choicesCSV = new StringBuilder("");
+        StringBuilder choicesCSV = new StringBuilder();
         for (int i = 0; i < choices.size(); i++) {
             choicesCSV.append(choices.get(i));
             if (i < choices.size() - 1)

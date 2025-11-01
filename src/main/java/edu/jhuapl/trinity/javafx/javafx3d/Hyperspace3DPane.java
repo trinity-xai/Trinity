@@ -1248,15 +1248,15 @@ public class Hyperspace3DPane extends StackPane implements
         if (xFactorIndex < featureLabels.size())
             xLabel.setText(featureLabels.get(xFactorIndex));
         else
-            xLabel.setText("Factor X(" + String.valueOf(xFactorIndex) + ")");
+            xLabel.setText("Factor X(" + xFactorIndex + ")");
         if (yFactorIndex < featureLabels.size())
             yLabel.setText(featureLabels.get(yFactorIndex));
         else
-            yLabel.setText("Factor Y(" + String.valueOf(yFactorIndex) + ")");
+            yLabel.setText("Factor Y(" + yFactorIndex + ")");
         if (zFactorIndex < featureLabels.size())
             zLabel.setText(featureLabels.get(zFactorIndex));
         else
-            zLabel.setText("Factor Z(" + String.valueOf(zFactorIndex) + ")");
+            zLabel.setText("Factor Z(" + zFactorIndex + ")");
         shape3DToLabel.forEach((node, label) -> {
             javafx.geometry.Point3D coordinates = node.localToScene(javafx.geometry.Point3D.ZERO, true);
             //@DEBUG SMP  useful debugging print

@@ -76,9 +76,8 @@ public class CVAEInverseTest {
         Normalizer embeddingNormalizer = new Normalizer(mdsEmbedding, Normalizer.Type.Z_SCORE);
         double[][] normalizedEmbedding = embeddingNormalizer.normalizeAll(mdsEmbedding);
         double[][] conditions = new double[numPoints][embeddingDim];
-        for (int i = 0; i < numPoints; i++) {
-            conditions[i] = normalizedEmbedding[i];  // full 3D embedding as condition
-        }
+        // full 3D embedding as condition
+        System.arraycopy(normalizedEmbedding, 0, conditions, 0, numPoints);
 
         for (int outerLoop = 0; outerLoop < 10; outerLoop++) {
             // Initialize CVAE

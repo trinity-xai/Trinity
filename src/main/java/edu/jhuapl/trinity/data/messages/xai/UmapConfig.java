@@ -72,7 +72,7 @@ public class UmapConfig extends MessageData {
         NumberFormat format = new DecimalFormat("0.00");
         StringBuilder sb = new StringBuilder("UmapConfig-");
 //        sb.append(targetWeightSlider.getValue()).append("-");
-        sb.append((String) uc.getMetric()).append("-");
+        sb.append(uc.getMetric()).append("-");
         sb.append("R").append(format.format(uc.getRepulsionStrength())).append("-");
         sb.append("MD").append(format.format(uc.getMinDist())).append("-");
         sb.append("S").append(format.format(uc.getSpread())).append("-");

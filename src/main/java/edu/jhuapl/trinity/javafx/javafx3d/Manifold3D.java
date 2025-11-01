@@ -450,7 +450,6 @@ public class Manifold3D extends Group {
                 }
             }
 
-            ;
         };
         tessellationTimer.start();
     }

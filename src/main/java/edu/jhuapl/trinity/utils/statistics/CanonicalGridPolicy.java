@@ -77,8 +77,7 @@ public final class CanonicalGridPolicy implements Serializable {
         @Override
         public boolean equals(Object o) {
             if (this == o) return true;
-            if (!(o instanceof AxisKey)) return false;
-            AxisKey that = (AxisKey) o;
+            if (!(o instanceof AxisKey that)) return false;
             return type == that.type &&
                 Objects.equals(metricName, that.metricName) &&
                 Objects.equals(componentIndex, that.componentIndex) &&

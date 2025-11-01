@@ -374,10 +374,10 @@ public final class DensityCache implements Serializable {
         StringBuilder sb = new StringBuilder(64);
         sb.append(a.getType());
         if (a.getType() == StatisticEngine.ScalarType.METRIC_DISTANCE_TO_MEAN) {
-            sb.append(":metric=").append(String.valueOf(a.getMetricName()));
+            sb.append(":metric=").append(a.getMetricName());
             sb.append(":ref=").append(vecHash(a.getReferenceVec()));
         } else if (a.getType() == StatisticEngine.ScalarType.COMPONENT_AT_DIMENSION) {
-            sb.append(":comp=").append(String.valueOf(a.getComponentIndex()));
+            sb.append(":comp=").append(a.getComponentIndex());
         }
         String lbl = a.getMetricName();
         if (lbl != null && !lbl.isBlank()) sb.append(":lbl=").append(lbl);

@@ -90,7 +90,7 @@ public class ConcaveUtils {
     public double calcPCDistance(double[] pointA, int idxComponentB) {
         double dist = -1;
 
-        int getRecord[] = (int[]) cvxList.get(idxComponentB);
+        int[] getRecord = cvxList.get(idxComponentB);
 
         switch (NO_OF_DIM) {
             case 2:  ////////////////////////////////////////////////////////////////////// 2-Dimensional
@@ -115,7 +115,7 @@ public class ConcaveUtils {
                 } else {
                     //t=sa.x*sb.y-sb.x*sa.y+sb.x*pa.y-pa.x*sb.y+pa.x*sa.y-sa.x*pa.y;
                     t = x1 * y2 - x2 * y1 + x2 * y0 - x0 * y2 + x0 * y1 - x1 * y0;
-                    dist = (double) Math.abs(t) / (double) Math.sqrt(c);
+                    dist = Math.abs(t) / Math.sqrt(c);
                 }
                 return dist;
             //break;
@@ -184,7 +184,7 @@ public class ConcaveUtils {
             orgData[pointIndex][2] = points[pointIndex].z;
         }
         //for every point which is a convex hull face mark that with a 1 (true)
-        int getRecord[];
+        int[] getRecord;
         for (int i = 0; i < cvxList.size(); i++) {
             getRecord = cvxList.get(i);
             for (int j = 0; j < getRecord.length; j++) {
@@ -206,7 +206,7 @@ public class ConcaveUtils {
             // Step. 0 Calculate average of edges of each component
             double avgEdgeLength = 0;
             int cCnt = 0;
-            int getRecord[] = (int[]) cvxList.get(i);
+            int[] getRecord = cvxList.get(i);
 
             int[] indices;
             CombinationGenerator cg = new CombinationGenerator(getRecord.length, 2);
@@ -219,7 +219,7 @@ public class ConcaveUtils {
                 cCnt++;
             }
 
-            avgEdgeLength /= (double) cCnt;
+            avgEdgeLength /= cCnt;
             // End of Step. 0
 
             // Step. 1 Find nearest inner point of each component
@@ -237,7 +237,7 @@ public class ConcaveUtils {
                     double tmpLength = calcEDistance(orgData[j], orgData[getRecord[x] - 1]);
                     tmpAverage += tmpLength;
                 }
-                tmpAverage /= (double) NO_OF_DIM;
+                tmpAverage /= NO_OF_DIM;
 
                 arrLength.add(tmpAverage);
                 arrIdx.add(j);
@@ -251,7 +251,7 @@ public class ConcaveUtils {
             double shortestLength = 999999;
             int nearestPoint = 0;
             for (int k = 0; k < arrLength.size(); k++) {
-                double currLength = (double) arrLength.get(k);
+                double currLength = arrLength.get(k);
                 if (currLength < shortestLength) {
                     // check if current point is close to neighbor compoinnt OH 20110111
                     {   ////////////////////////////////////////////////////////////////////////////
@@ -260,7 +260,7 @@ public class ConcaveUtils {
                         double minDistance = 999999;
 
                         for (int m = 0; m < NO_OF_DIM; m++) {
-                            double tmpDistance = calcEDistance(orgData[(int) arrIdx.get(k)], orgData[getRecord[m] - 1]);
+                            double tmpDistance = calcEDistance(orgData[arrIdx.get(k)], orgData[getRecord[m] - 1]);
                             if (tmpDistance < minDistance) {
                                 minDistance = tmpDistance;
                                 idxNearEdgePoint = getRecord[m];
@@ -289,13 +289,13 @@ public class ConcaveUtils {
                         int closerToNeighbor = 0;
                         for (int r = 0; r < linkComponent.size(); r++) {
                             int idxLinkComponent = Integer.parseInt(linkComponent.get(r));
-                            if (calcPCDistance(orgData[(int) arrIdx.get(k)], idxLinkComponent) < calcPCDistance(orgData[(int) arrIdx.get(k)], i)) {
+                            if (calcPCDistance(orgData[arrIdx.get(k)], idxLinkComponent) < calcPCDistance(orgData[arrIdx.get(k)], i)) {
                                 closerToNeighbor = 1;
                             }
                         }
 
                         if (closerToNeighbor == 0) {
-                            nearestPoint = (int) arrIdx.get(k);
+                            nearestPoint = arrIdx.get(k);
                             shortestLength = currLength;
                         }
                     } ////////////////////////////////////////////////////////////////////////////
@@ -322,7 +322,7 @@ public class ConcaveUtils {
 
             // step. 3 Compare the ratio of decision distance with threshold N.
             // if the ratio bigger than N, nearest inner point is inserted to concave list.
-            double diggRatio = (double) avgEdgeLength / (double) minLength;
+            double diggRatio = avgEdgeLength / minLength;
             if (diggRatio < 0)
                 LOG.info("Negative diggRatio!");
             if (minLength > 0 && diggRatio > N) {
@@ -333,7 +333,7 @@ public class ConcaveUtils {
                 cg = new CombinationGenerator(NO_OF_DIM, NO_OF_DIM - 1);
                 while (cg.hasMore()) {
                     indices = cg.getNext();
-                    int newRecord[] = new int[NO_OF_DIM];
+                    int[] newRecord = new int[NO_OF_DIM];
 
                     for (int q = 0; q < NO_OF_DIM - 1; q++) {
                         newRecord[q] = getRecord[indices[q]];

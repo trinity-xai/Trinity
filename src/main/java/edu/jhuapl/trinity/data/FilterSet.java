@@ -9,7 +9,6 @@ public class FilterSet {
         INNER, OUTER, BOUNDARIES
     }
 
-    ;
     public Inclusion inclusion;
     public Number minimum = -1;
     public Number maximum = 1;

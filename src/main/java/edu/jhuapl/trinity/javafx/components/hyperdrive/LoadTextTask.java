@@ -35,7 +35,7 @@ public class LoadTextTask extends HyperdriveTask {
         AtomicInteger atomicCount = new AtomicInteger(0);
         if (null != progressIndicator) {
             progressIndicator.setFadeTimeMS(250);
-            progressIndicator.setLabelLater("Loading " + atomicCount.toString() + " files...");
+            progressIndicator.setLabelLater("Loading " + atomicCount + " files...");
             progressIndicator.spin(true);
             progressIndicator.fadeBusy(false);
         }
@@ -71,7 +71,7 @@ public class LoadTextTask extends HyperdriveTask {
                 }).toList();
         Utils.logTotalTime(startTime);
 
-        LOG.info("loaded {} ASCII/PDF files.", String.valueOf(textFilesList.size()));
+        LOG.info("loaded {} ASCII/PDF files.", textFilesList.size());
         Platform.runLater(() -> {
             scene.getRoot().fireEvent(
                 new HyperdriveEvent(HyperdriveEvent.NEW_BATCH_TEXTLOAD, newItems, textFilesList));

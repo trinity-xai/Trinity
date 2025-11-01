@@ -50,7 +50,7 @@ public final class CorrelationMetric extends Metric {
         } else if (dotProduct == 0.0) {
             return 1;
         } else {
-            return (double) (1 - (dotProduct / Math.sqrt(normX * normY)));
+            return 1 - (dotProduct / Math.sqrt(normX * normY));
         }
     }
 }

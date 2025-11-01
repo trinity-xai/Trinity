@@ -79,14 +79,12 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.IOException;
 import java.io.InputStream;
-import java.io.UnsupportedEncodingException;
 import java.net.MalformedURLException;
 import java.net.URI;
 import java.net.URISyntaxException;
 import java.net.URL;
 import java.net.URLDecoder;
 import java.nio.IntBuffer;
-import java.nio.charset.Charset;
 import java.nio.charset.StandardCharsets;
 import java.nio.file.Files;
 import java.nio.file.Paths;
@@ -115,7 +113,7 @@ public enum ResourceUtils {
         InputStream is = ResourceUtils.class.getClassLoader().getResourceAsStream(path);
         StringBuilder sb = new StringBuilder();
         byte[] buffer = is.readAllBytes();
-        sb.append(new String(buffer, Charset.defaultCharset()));
+        sb.append(new String(buffer, StandardCharsets.UTF_8));
 
         return Arrays
             .asList(sb.toString().split("\n")) // Convert StringBuilder to individual lines
@@ -140,7 +138,7 @@ public enum ResourceUtils {
     public static String[] getResourceListing(Class clazz, String path) throws URISyntaxException, IOException {
         URL dirURL = clazz.getClassLoader().getResource(path);
         if (dirURL != null && dirURL.getProtocol().equals("file")) {
-            LOG.info("dirURL {}", dirURL.toString());
+            LOG.info("dirURL {}", dirURL);
             /* A file path: easy enough */
             return new File(dirURL.toURI()).list();
         }
@@ -159,7 +157,7 @@ public enum ResourceUtils {
         if (dirURL.getProtocol().equals("jar")) {
             /* A JAR path */
             String jarPath = dirURL.getPath().substring(5, dirURL.getPath().indexOf("!")); //strip out only the JAR file
-            JarFile jar = new JarFile(URLDecoder.decode(jarPath, "UTF-8"));
+            JarFile jar = new JarFile(URLDecoder.decode(jarPath, StandardCharsets.UTF_8));
             Enumeration<JarEntry> entries = jar.entries(); //gives ALL entries in jar
             Set<String> result = new HashSet<>(); //avoid duplicates in case it is a subdirectory
             while (entries.hasMoreElements()) {
@@ -180,7 +178,7 @@ public enum ResourceUtils {
         throw new UnsupportedOperationException("Cannot list files for URL " + dirURL);
     }
 
-    public static List<String> getFilenamesForDirnameFromCP(String directoryName) throws URISyntaxException, UnsupportedEncodingException, IOException {
+    public static List<String> getFilenamesForDirnameFromCP(String directoryName) throws URISyntaxException, IOException {
         List<String> filenames = new ArrayList<>();
 
         URL url = ResourceUtils.class.getResource(directoryName);
@@ -200,7 +198,7 @@ public enum ResourceUtils {
                 String dirname = directoryName + "/";
                 String path = url.getPath();
                 String jarPath = path.substring(5, path.indexOf("!"));
-                try (JarFile jar = new JarFile(URLDecoder.decode(jarPath, StandardCharsets.UTF_8.name()))) {
+                try (JarFile jar = new JarFile(URLDecoder.decode(jarPath, StandardCharsets.UTF_8))) {
                     Enumeration<JarEntry> entries = jar.entries();
                     while (entries.hasMoreElements()) {
                         JarEntry entry = entries.nextElement();
@@ -218,7 +216,7 @@ public enum ResourceUtils {
 
     public static File saveImageFile(Image image) throws IOException {
 
-        File newFile = new File("imagery/Trinity-scan-" + UUID.randomUUID().toString() + ".png");
+        File newFile = new File("imagery/Trinity-scan-" + UUID.randomUUID() + ".png");
         BufferedImage buff = SwingFXUtils.fromFXImage(image, null);
         ImageIO.write(buff, "PNG", newFile);
         return newFile;
@@ -368,7 +366,7 @@ public enum ResourceUtils {
                 size = 1000;
             data = new byte[size];
             in.read(data);
-            String s = new String(data, "ISO-8859-1");
+            String s = new String(data, StandardCharsets.ISO_8859_1);
             String s2 = s.replaceAll(
                 "[a-zA-Z0-9ßöäü\\.\\*!\"§\\$\\%&/()=\\?@~'#:,;\\" +
                     "+><\\|\\[\\]\\{\\}\\^°²³\\\\ \\n\\r\\t_\\-`´âêîô" +

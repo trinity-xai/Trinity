@@ -68,8 +68,8 @@ public class TessellationTube extends Group {
         int numVerts = (rowHeight + 1) * numDivX;
         final int faceSize = 6; //should always be 6 for a triangle mesh
         int faceCount = rowHeight * columnWidth * faceGroupSize;
-        int faces[] = new int[faceCount * faceSize];
-        float texCoords[] = new float[numVerts * texCoordSize];
+        int[] faces = new int[faceCount * faceSize];
+        float[] texCoords = new float[numVerts * texCoordSize];
         float tIndex, tSize;
         int index, p00, p01, p10, p11, tc00, tc01, tc10, tc11;
 

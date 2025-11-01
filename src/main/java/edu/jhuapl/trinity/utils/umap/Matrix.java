@@ -96,10 +96,9 @@ public abstract class Matrix {
 
     @Override
     public boolean equals(final Object obj) {
-        if (!(obj instanceof Matrix)) {
+        if (!(obj instanceof Matrix m)) {
             return false;
         }
-        final Matrix m = (Matrix) obj;
         if (!isShapeSame(m)) {
             return false;
         }
@@ -114,7 +113,7 @@ public abstract class Matrix {
     }
 
     long length() {
-        return mRowCount * mColCount;
+        return (long) mRowCount * mColCount;
     }
 
     Matrix transpose() {
