@@ -208,8 +208,12 @@ compileJava {
 run {
     jvmArgs '-Dprism.maxvram=2G'
     jvmArgs '-Djavafx.animation.fullspeed=true'
-    jvmArgs '--enable-native-access=javafx.graphics'
-    jvmArgs '--enable-native-access=javafx.media'
+    jvmArgs '--sun-misc-unsafe-memory-access=warn'
+    jvmArgs '--enable-native-access=javafx.graphics,javafx.media'
+    jvmArgs '--illegal-native-access=warn'
+    jvmArgs '-XX:+UseCompactObjectHeaders'
+    jvmArgs '-XX:+UseShenandoahGC'
+    jvmArgs '-XX:ShenandoahGCMode=generational'
 }
 
 tasks.named('test', Test) {
@@ -377,7 +381,12 @@ jlink {
         } else {
             jvmArgs += ["-Dtrinity.app.dir={{BIN_DIR}}"]
         }
-        jvmArgs += ['--enable-native-access=javafx.graphics', '--enable-native-access=javafx.media']
+        jvmArgs += ['--sun-misc-unsafe-memory-access=warn']
+        jvmArgs += ['--enable-native-access=javafx.graphics,javafx.media']
+        jvmArgs += ['--illegal-native-access=warn']
+        jvmArgs += ['-XX:+UseCompactObjectHeaders']
+        jvmArgs += ['-XX:+UseShenandoahGC']
+        jvmArgs += ['-XX:ShenandoahGCMode=generational']
         //jvmArgs += ["--add-exports external.module.name/external.package.name=$sModuleName", ...]
     }
     //forceMerge('javafx')
@@ -391,7 +400,12 @@ jlink {
         jvmArgs = ['-Dprism.maxvram=2G', '-Djavafx.animation.fullspeed=true']
         jvmArgs += ["-Dlogback.configurationFile=\$APPDIR${fileSep}logback.xml"]
         jvmArgs += ["-Dtrinity.app.dir=\$APPDIR"]
-        jvmArgs += ['--enable-native-access=javafx.graphics', '--enable-native-access=javafx.media']
+        jvmArgs += ['--sun-misc-unsafe-memory-access=warn']
+        jvmArgs += ['--enable-native-access=javafx.graphics,javafx.media']
+        jvmArgs += ['--illegal-native-access=warn']
+        jvmArgs += ['-XX:+UseCompactObjectHeaders']
+        jvmArgs += ['-XX:+UseShenandoahGC']
+        jvmArgs += ['-XX:ShenandoahGCMode=generational']
         jvmArgs += ['--module-path', '.']
         if (currentOS.windows) {
             skipInstaller = true
