@@ -313,11 +313,11 @@ public class StatPdfCdfChartPanel extends BorderPane {
         if (tsMode == TSMode.CONTRIBUTION) {
             StatisticEngine.ContributionSeries cs =
                 StatisticEngine.computeContributions(use, agg, null, contribEps);
-            return cs.delta;
+            return cs.delta();
         } else if (tsMode == TSMode.CUMULATIVE) {
             StatisticEngine.ContributionSeries cs =
                 StatisticEngine.computeContributions(use, agg, null, contribEps);
-            return StatisticEngine.cumulativeFromDeltas(cs.delta);
+            return StatisticEngine.cumulativeFromDeltas(cs.delta());
         } else {
             // SIMILARITY: show the same scalar values that fed the PDF/CDF
             StatisticResult stat = (pdfChart != null) ? pdfChart.getLastStatisticResult() : null;
@@ -1055,11 +1055,11 @@ public class StatPdfCdfChartPanel extends BorderPane {
             StatisticEngine.ContributionSeries cs =
                 StatisticEngine.computeContributions(use, agg, null, contribEps);
             tsChart.setAxisLabels("Sample Index", "Δ log-odds");
-            tsChart.setSeries(cs.delta);
+            tsChart.setSeries(cs.delta());
         } else if (tsMode == TSMode.CUMULATIVE) {
             StatisticEngine.ContributionSeries cs =
                 StatisticEngine.computeContributions(use, agg, null, contribEps);
-            List<Double> cum = StatisticEngine.cumulativeFromDeltas(cs.delta);
+            List<Double> cum = StatisticEngine.cumulativeFromDeltas(cs.delta());
             tsChart.setAxisLabels("Sample Index", "Cumulative log-odds");
             tsChart.setSeries(cum);
         } else { // SIMILARITY
@@ -1078,67 +1078,67 @@ public class StatPdfCdfChartPanel extends BorderPane {
         // PDF -> TS
         pdfChart.setOnBinHover(sel -> {
             if (!persistSelection) tsChart.clearHighlights();
-            tsChart.highlightSamples(sel.sampleIdx);
+            tsChart.highlightSamples(sel.sampleIdx());
             selectionInfo.setText(
                 String.format("PDF bin %d: [%.4f, %.4f) center≈%.4f • count=%d (%.2f%%)",
-                    sel.bin, sel.xFrom, sel.xTo, sel.xCenter, sel.count, 100.0 * sel.fraction)
+                    sel.bin(), sel.xFrom(), sel.xTo(), sel.xCenter(), sel.count(), 100.0 * sel.fraction())
             );
         });
         pdfChart.setOnBinClick(sel -> {
-            tsChart.highlightSamples(sel.sampleIdx);
+            tsChart.highlightSamples(sel.sampleIdx());
             selectionInfo.setText(
                 String.format("PDF bin %d (clicked): [%.4f, %.4f) center≈%.4f • count=%d (%.2f%%)",
-                    sel.bin, sel.xFrom, sel.xTo, sel.xCenter, sel.count, 100.0 * sel.fraction)
+                    sel.bin(), sel.xFrom(), sel.xTo(), sel.xCenter(), sel.count(), 100.0 * sel.fraction())
             );
         });
 
         // CDF -> TS
         cdfChart.setOnBinHover(sel -> {
             if (!persistSelection) tsChart.clearHighlights();
-            tsChart.highlightSamples(sel.sampleIdx);
+            tsChart.highlightSamples(sel.sampleIdx());
             selectionInfo.setText(
                 String.format("CDF bin %d: [%.4f, %.4f) center≈%.4f • count=%d (%.2f%%)",
-                    sel.bin, sel.xFrom, sel.xTo, sel.xCenter, sel.count, 100.0 * sel.fraction)
+                    sel.bin(), sel.xFrom(), sel.xTo(), sel.xCenter(), sel.count(), 100.0 * sel.fraction())
             );
         });
         cdfChart.setOnBinClick(sel -> {
-            tsChart.highlightSamples(sel.sampleIdx);
+            tsChart.highlightSamples(sel.sampleIdx());
             selectionInfo.setText(
                 String.format("CDF bin %d (clicked): [%.4f, %.4f) center≈%.4f • count=%d (%.2f%%)",
-                    sel.bin, sel.xFrom, sel.xTo, sel.xCenter, sel.count, 100.0 * sel.fraction)
+                    sel.bin(), sel.xFrom(), sel.xTo(), sel.xCenter(), sel.count(), 100.0 * sel.fraction())
             );
         });
 
         // TS -> readout
         tsChart.setOnPointHover(p -> {
             if (tsMode == TSMode.CONTRIBUTION) {
-                selectionInfo.setText(String.format("Sample #%d: Δ log-odds = %.6f", p.sampleIdx, p.y));
+                selectionInfo.setText(String.format("Sample #%d: Δ log-odds = %.6f", p.sampleIdx(), p.y()));
             } else if (tsMode == TSMode.CUMULATIVE) {
-                selectionInfo.setText(String.format("Sample #%d: cumulative log-odds = %.6f", p.sampleIdx, p.y));
+                selectionInfo.setText(String.format("Sample #%d: cumulative log-odds = %.6f", p.sampleIdx(), p.y()));
             } else {
                 StatisticResult stat = pdfChart.getLastStatisticResult();
                 String extra = "";
-                if (stat != null && stat.getSampleToBin() != null && p.sampleIdx >= 0 && p.sampleIdx < stat.getSampleToBin().length) {
-                    int b = stat.getSampleToBin()[p.sampleIdx];
+                if (stat != null && stat.getSampleToBin() != null && p.sampleIdx() >= 0 && p.sampleIdx() < stat.getSampleToBin().length) {
+                    int b = stat.getSampleToBin()[p.sampleIdx()];
                     if (b >= 0 && stat.getBinEdges() != null && b + 1 < stat.getBinEdges().length) {
                         double from = stat.getBinEdges()[b];
                         double to = stat.getBinEdges()[b + 1];
                         extra = String.format(" • bin=%d [%.4f, %.4f)", b, from, to);
                     }
                 }
-                selectionInfo.setText(String.format("Sample #%d: value=%.6f%s", p.sampleIdx, p.y, extra));
+                selectionInfo.setText(String.format("Sample #%d: value=%.6f%s", p.sampleIdx(), p.y(), extra));
             }
         });
 
         tsChart.setOnPointClick(p -> {
             if (!persistSelection) tsChart.clearHighlights();
-            tsChart.highlightSamples(new int[]{p.sampleIdx});
+            tsChart.highlightSamples(new int[]{p.sampleIdx()});
             if (tsMode == TSMode.CONTRIBUTION) {
-                selectionInfo.setText(String.format("Sample #%d (clicked): Δ log-odds = %.6f", p.sampleIdx, p.y));
+                selectionInfo.setText(String.format("Sample #%d (clicked): Δ log-odds = %.6f", p.sampleIdx(), p.y()));
             } else if (tsMode == TSMode.CUMULATIVE) {
-                selectionInfo.setText(String.format("Sample #%d (clicked): cumulative log-odds = %.6f", p.sampleIdx, p.y));
+                selectionInfo.setText(String.format("Sample #%d (clicked): cumulative log-odds = %.6f", p.sampleIdx(), p.y()));
             } else {
-                selectionInfo.setText(String.format("Sample #%d (clicked): value=%.6f", p.sampleIdx, p.y));
+                selectionInfo.setText(String.format("Sample #%d (clicked): value=%.6f", p.sampleIdx(), p.y()));
             }
         });
     }

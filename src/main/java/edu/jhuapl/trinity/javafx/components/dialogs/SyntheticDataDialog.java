@@ -320,7 +320,7 @@ public final class SyntheticDataDialog extends Dialog<SyntheticDataDialog.Result
 
         if (simAttachCohorts.isSelected()) {
             int N = ival(simCohN, 400);
-            int D = sm.matrix.length; // match feature dimension to matrix size
+            int D = sm.matrix().length; // match feature dimension to matrix size
             double mu = dval(simCohMu, 0.0);
             double sigma = dval(simCohSigma, 1.0);
             double min = dval(simCohMin, -2.0);
@@ -329,7 +329,7 @@ public final class SyntheticDataDialog extends Dialog<SyntheticDataDialog.Result
             long seedB = lval(simCohSeedB, 101L);
 
             Cohorts c = SyntheticMatrixFactory.makeCohorts_GaussianVsUniform(N, D, mu, sigma, min, max, seedA, seedB);
-            sm = sm.withCohorts(c.cohortA, c.cohortB).withTitle(" + Cohorts(Gauss μ=" + mu + ",σ=" + sigma + " vs Uniform[" + min + "," + max + "], N=" + N + ")");
+            sm = sm.withCohorts(c.cohortA(), c.cohortB()).withTitle(" + Cohorts(Gauss μ=" + mu + ",σ=" + sigma + " vs Uniform[" + min + "," + max + "], N=" + N + ")");
         }
 
         return Result.similarity(sm);
@@ -397,7 +397,7 @@ public final class SyntheticDataDialog extends Dialog<SyntheticDataDialog.Result
             long seedB = lval(divCohSeedB, 101L);
 
             Cohorts c = SyntheticMatrixFactory.makeCohorts_GaussianVsUniform(N, D, mu, sigma, min, max, seedA, seedB);
-            sm = sm.withCohorts(c.cohortA, c.cohortB).withTitle(" + Cohorts(Gauss μ=" + mu + ",σ=" + sigma + " vs Uniform[" + min + "," + max + "], N=" + N + ", D=" + D + ")");
+            sm = sm.withCohorts(c.cohortA(), c.cohortB()).withTitle(" + Cohorts(Gauss μ=" + mu + ",σ=" + sigma + " vs Uniform[" + min + "," + max + "], N=" + N + ", D=" + D + ")");
         }
 
         return Result.divergence(sm);

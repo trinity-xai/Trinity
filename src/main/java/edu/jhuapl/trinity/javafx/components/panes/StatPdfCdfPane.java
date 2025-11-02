@@ -107,8 +107,8 @@ public class StatPdfCdfPane extends LitPathPane {
                         ? edu.jhuapl.trinity.javafx.events.HypersurfaceGridEvent.RENDER_CDF
                         : edu.jhuapl.trinity.javafx.events.HypersurfaceGridEvent.RENDER_PDF,
                     grid,
-                    result.getxCenters(),
-                    result.getyCenters(),
+                    result.xCenters(),
+                    result.yCenters(),
                     label
                 )
             );

@@ -2,7 +2,6 @@ package edu.jhuapl.trinity.utils.statistics;
 
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 
-import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Collections;
@@ -43,81 +42,25 @@ public final class JpdfBatchEngine {
 
     /**
      * Per-pair output bundle.
+     *
+     * @param i          component index for X (or -1 if not component-mode)
+     * @param j          component index for Y (or -1 if not component-mode)
+     * @param rank       may be null in whitelist mode
+     * @param provenance may be null if cache doesn't store it
      */
-    public static final class PairJobResult implements Serializable {
-        @Serial
-        private static final long serialVersionUID = 1L;
+    public record PairJobResult(int i, int j, AxisParams xAxis, AxisParams yAxis, GridSpec grid, GridDensityResult density, PairScorer.PairScore rank,
+                                boolean fromCache, long computeMillis, JpdfProvenance provenance) implements Serializable {
 
-        public final int i;                     // component index for X (or -1 if not component-mode)
-        public final int j;                     // component index for Y (or -1 if not component-mode)
-        public final AxisParams xAxis;
-        public final AxisParams yAxis;
-        public final GridSpec grid;
-        public final GridDensityResult density;
-        public final PairScorer.PairScore rank; // may be null in whitelist mode
-        public final boolean fromCache;
-        public final long computeMillis;
-        public final JpdfProvenance provenance; // may be null if cache doesn't store it
 
-        public PairJobResult(int i,
-                             int j,
-                             AxisParams xAxis,
-                             AxisParams yAxis,
-                             GridSpec grid,
-                             GridDensityResult density,
-                             PairScorer.PairScore rank,
-                             boolean fromCache,
-                             long computeMillis,
-                             JpdfProvenance provenance) {
-            this.i = i;
-            this.j = j;
-            this.xAxis = xAxis;
-            this.yAxis = yAxis;
-            this.grid = grid;
-            this.density = density;
-            this.rank = rank;
-            this.fromCache = fromCache;
-            this.computeMillis = computeMillis;
-            this.provenance = provenance;
-        }
     }
 
     /**
      * Batch summary + outputs.
      */
-    public static final class BatchResult implements Serializable {
-        @Serial
-        private static final long serialVersionUID = 1L;
+    public record BatchResult(String datasetFingerprint, String recipeName, String policyId, List<PairJobResult> jobs, long wallMillis, int submittedPairs,
+                              int computedPairs, int cacheHits, DensityCache.Stats cacheStatsSnapshot) implements Serializable {
 
-        public final String datasetFingerprint;
-        public final String recipeName;
-        public final String policyId;
-        public final List<PairJobResult> jobs;
-        public final long wallMillis;
-        public final int submittedPairs;
-        public final int computedPairs;
-        public final int cacheHits;
-        public final DensityCache.Stats cacheStatsSnapshot;
 
-        public BatchResult(String datasetFingerprint,
-                           String recipeName,
-                           String policyId,
-                           List<PairJobResult> jobs,
-                           long wallMillis,
-                           int submittedPairs,
-                           int computedPairs,
-                           int cacheHits,
-                           DensityCache.Stats cacheStatsSnapshot) {
-            this.datasetFingerprint = datasetFingerprint;
-            this.recipeName = recipeName;
-            this.policyId = policyId;
-            this.jobs = jobs;
-            this.wallMillis = wallMillis;
-            this.submittedPairs = submittedPairs;
-            this.computedPairs = computedPairs;
-            this.cacheHits = cacheHits;
-            this.cacheStatsSnapshot = cacheStatsSnapshot;
-        }
     }
 
     // =====================================================================================
@@ -181,7 +124,7 @@ public final class JpdfBatchEngine {
             case THRESHOLD_BY_SCORE -> {
                 List<PairScorer.PairScore> out = new ArrayList<>();
                 for (PairScorer.PairScore ps : candidates) {
-                    if (ps.score >= recipe.getScoreThreshold() && ps.sufficient) {
+                    if (ps.score() >= recipe.getScoreThreshold() && ps.sufficient()) {
                         out.add(ps);
                     }
                 }
@@ -203,11 +146,11 @@ public final class JpdfBatchEngine {
         for (PairScorer.PairScore ps : selected) {
             AxisParams x = new AxisParams();
             x.setType(StatisticEngine.ScalarType.COMPONENT_AT_DIMENSION);
-            x.setComponentIndex(ps.i);
+            x.setComponentIndex(ps.i());
 
             AxisParams y = new AxisParams();
             y.setType(StatisticEngine.ScalarType.COMPONENT_AT_DIMENSION);
-            y.setComponentIndex(ps.j);
+            y.setComponentIndex(ps.j());
 
             GridSpec grid = resolveGrid(vectors, x, y, recipe, canonicalPolicy, dsFp);
             ecs.submit(new ComputeTask(vectors, x, y, grid, ps, recipe, cache, dsFp));
@@ -238,7 +181,7 @@ public final class JpdfBatchEngine {
             pool.shutdown();
         }
 
-        out.sort(Comparator.comparingDouble(o -> o.rank != null ? -o.rank.score : 0.0));
+        out.sort(Comparator.comparingDouble(o -> o.rank != null ? -o.rank.score() : 0.0));
 
         long wall = System.currentTimeMillis() - t0;
         return new BatchResult(dsFp, recipe.getName(), canonicalPolicy.id(),
@@ -328,33 +271,8 @@ public final class JpdfBatchEngine {
     // Worker
     // =====================================================================================
 
-    private static final class ComputeTask implements Callable<PairJobResult> {
-        private final List<FeatureVector> vectors;
-        private final AxisParams x;
-        private final AxisParams y;
-        private final GridSpec grid;
-        private final PairScorer.PairScore rank;
-        private final JpdfRecipe recipe;
-        private final DensityCache cache;
-        private final String datasetFp;
-
-        ComputeTask(List<FeatureVector> vectors,
-                    AxisParams x,
-                    AxisParams y,
-                    GridSpec grid,
-                    PairScorer.PairScore rank,
-                    JpdfRecipe recipe,
-                    DensityCache cache,
-                    String datasetFp) {
-            this.vectors = vectors;
-            this.x = x;
-            this.y = y;
-            this.grid = grid;
-            this.rank = rank;
-            this.recipe = recipe;
-            this.cache = cache;
-            this.datasetFp = datasetFp;
-        }
+    private record ComputeTask(List<FeatureVector> vectors, AxisParams x, AxisParams y, GridSpec grid, PairScorer.PairScore rank, JpdfRecipe recipe,
+                               DensityCache cache, String datasetFp) implements Callable<PairJobResult> {
 
         @Override
         public PairJobResult call() {

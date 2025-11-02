@@ -56,17 +56,17 @@ public class BatchRequestManager<T> {
 
     public interface BatchResult<T> {
 
-        int getBatchNumber();
+        int batchNumber();
 
-        int getRequestId();
+        int requestId();
 
-        T getBatch();
+        T batch();
 
-        Status getStatus();
+        Status status();
 
-        int getRetryCount();
+        int retryCount();
 
-        Exception getException();
+        Exception exception();
 
         enum Status {
             SUCCESS, FAILURE, TIMEOUT
@@ -331,51 +331,10 @@ public class BatchRequestManager<T> {
         this.totalBatches = totalBatches;
     }
 
-    private static class BatchResultImpl<T> implements BatchResult<T> {
-
-        private final int requestId;
-        private final int batchNumber;
-        private final T batch;
-        private final Status status;
-        private final int retryCount;
-        private final Exception ex;
-
-        BatchResultImpl(int requestId, int batchNumber, T batch, Status status, int retryCount, Exception ex) {
-            this.requestId = requestId;
-            this.batchNumber = batchNumber;
-            this.batch = batch;
-            this.status = status;
-            this.retryCount = retryCount;
-            this.ex = ex;
-        }
-
+    private record BatchResultImpl<T>(int requestId, int batchNumber, T batch, Status status, int retryCount, Exception ex) implements BatchResult<T> {
+        // Java records don't like deeply mutable values like this on interfaces
         @Override
-        public int getRequestId() {
-            return requestId;
-        }
-
-        @Override
-        public int getBatchNumber() {
-            return batchNumber;
-        }
-
-        @Override
-        public T getBatch() {
-            return batch;
-        }
-
-        @Override
-        public Status getStatus() {
-            return status;
-        }
-
-        @Override
-        public int getRetryCount() {
-            return retryCount;
-        }
-
-        @Override
-        public Exception getException() {
+        public Exception exception() {
             return ex;
         }
     }

@@ -89,19 +89,10 @@ public final class DensityCache implements Serializable {
 
     /**
      * Internal entry.
+     *
+     * @param provenance optional; may be null
      */
-    private static final class Entry implements Serializable {
-        @Serial
-        private static final long serialVersionUID = 1L;
-        final GridDensityResult result;
-        final long createdAt;
-        final JpdfProvenance provenance; // optional; may be null
-
-        Entry(GridDensityResult r, long t, JpdfProvenance p) {
-            this.result = r;
-            this.createdAt = t;
-            this.provenance = p;
-        }
+    private record Entry(GridDensityResult result, long createdAt, JpdfProvenance provenance) implements Serializable {
     }
 
     private final int maxEntries;

@@ -55,8 +55,8 @@ public final class PairwiseJpdfPane extends LitPathPane {
             scene.getRoot().fireEvent(new HypersurfaceGridEvent(
                 HypersurfaceGridEvent.RENDER_PDF,
                 gridList,
-                res.getxCenters(),
-                res.getyCenters(),
+                res.xCenters(),
+                res.yCenters(),
                 item.xLabel + " | " + item.yLabel + " (PDF)"
             ));
             view.toast("Opened PDF in 3D.", false);

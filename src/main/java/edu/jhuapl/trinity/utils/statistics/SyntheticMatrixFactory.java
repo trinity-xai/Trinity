@@ -3,7 +3,6 @@ package edu.jhuapl.trinity.utils.statistics;
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.utils.graph.MatrixToGraphAdapter;
 
-import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -46,44 +45,18 @@ public final class SyntheticMatrixFactory {
     // Result bundle
     // ---------------------------------------------------------------------
 
-    public static final class SyntheticMatrix implements Serializable {
-        @Serial
-        private static final long serialVersionUID = 1L;
-
-        public final double[][] matrix;
-        public final List<String> labels;
-        public final List<Integer> clusterIds; // may be null or size N (useful for coloring)
-        public final MatrixToGraphAdapter.MatrixKind kind;
-        public final String title;
-
-        /**
-         * Optional cohorts (may be null). If present, PairwiseMatrixView can fall back to them for JPDF/ΔPDF.
-         */
-        public final List<FeatureVector> cohortA;
-        public final List<FeatureVector> cohortB;
-
+    /**
+     * @param clusterIds may be null or size N (useful for coloring)
+     * @param cohortA    Optional cohorts (may be null). If present, PairwiseMatrixView can fall back to them for JPDF/ΔPDF.
+     */
+    public record SyntheticMatrix(double[][] matrix, List<String> labels, List<Integer> clusterIds, MatrixToGraphAdapter.MatrixKind kind, String title,
+                                  List<FeatureVector> cohortA, List<FeatureVector> cohortB) implements Serializable {
         public SyntheticMatrix(double[][] matrix,
                                List<String> labels,
                                List<Integer> clusterIds,
                                MatrixToGraphAdapter.MatrixKind kind,
                                String title) {
             this(matrix, labels, clusterIds, kind, title, null, null);
-        }
-
-        public SyntheticMatrix(double[][] matrix,
-                               List<String> labels,
-                               List<Integer> clusterIds,
-                               MatrixToGraphAdapter.MatrixKind kind,
-                               String title,
-                               List<FeatureVector> cohortA,
-                               List<FeatureVector> cohortB) {
-            this.matrix = matrix;
-            this.labels = labels;
-            this.clusterIds = clusterIds;
-            this.kind = kind;
-            this.title = title;
-            this.cohortA = cohortA;
-            this.cohortB = cohortB;
         }
 
         /**
@@ -368,14 +341,7 @@ public final class SyntheticMatrixFactory {
         return new Cohorts(a, b);
     }
 
-    public static final class Cohorts {
-        public final List<FeatureVector> cohortA;
-        public final List<FeatureVector> cohortB;
-
-        public Cohorts(List<FeatureVector> a, List<FeatureVector> b) {
-            this.cohortA = a;
-            this.cohortB = b;
-        }
+    public record Cohorts(List<FeatureVector> cohortA, List<FeatureVector> cohortB) {
     }
 
     // ---------------------------------------------------------------------

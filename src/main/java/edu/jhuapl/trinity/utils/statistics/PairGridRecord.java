@@ -167,30 +167,30 @@ public final class PairGridRecord implements Serializable {
                                                                                 String labelB,
                                                                                 String labelDiff) {
         Objects.requireNonNull(ab, "ab");
-        GridSpec grid = ab.grid;
+        GridSpec grid = ab.grid();
 
         PairGridRecord a = fromSingle(
-            xAxis, yAxis, grid, ab.a, ok,
-            ab.pdfProvA, ab.cdfProvA, labelA
+            xAxis, yAxis, grid, ab.a(), ok,
+            ab.pdfProvA(), ab.cdfProvA(), labelA
         );
         PairGridRecord b = fromSingle(
-            xAxis, yAxis, grid, ab.b, ok,
-            ab.pdfProvB, ab.cdfProvB, labelB
+            xAxis, yAxis, grid, ab.b(), ok,
+            ab.pdfProvB(), ab.cdfProvB(), labelB
         );
 
         PairGridRecord diff = null;
         boolean needPdf = ok == JpdfRecipe.OutputKind.PDF_ONLY || ok == JpdfRecipe.OutputKind.PDF_AND_CDF;
         boolean needCdf = ok == JpdfRecipe.OutputKind.CDF_ONLY || ok == JpdfRecipe.OutputKind.PDF_AND_CDF;
 
-        List<List<Double>> pdf = needPdf ? safeCopy2D(ab.pdfDiff) : null;
-        List<List<Double>> cdf = needCdf ? safeCopy2D(ab.cdfDiff) : null;
+        List<List<Double>> pdf = needPdf ? safeCopy2D(ab.pdfDiff()) : null;
+        List<List<Double>> cdf = needCdf ? safeCopy2D(ab.cdfDiff()) : null;
 
         if ((pdf != null) || (cdf != null)) {
             diff = PairGridRecord.newBuilder(xAxis, yAxis, grid)
                 .pdf(pdf)
                 .cdf(cdf)
-                .pdfProvenance(ab.pdfProvDiff)
-                .cdfProvenance(ab.cdfProvDiff)
+                .pdfProvenance(ab.pdfProvDiff())
+                .cdfProvenance(ab.cdfProvDiff())
                 .label(labelDiff)
                 .build();
         }
@@ -244,17 +244,6 @@ public final class PairGridRecord implements Serializable {
     /**
      * Tiny generic triple carrier (kept local to avoid extra dependencies).
      */
-    public static final class Triple<A, B, C> implements Serializable {
-        @Serial
-        private static final long serialVersionUID = 1L;
-        public final A first;
-        public final B second;
-        public final C third;
-
-        public Triple(A first, B second, C third) {
-            this.first = first;
-            this.second = second;
-            this.third = third;
-        }
+    public record Triple<A, B, C>(A first, B second, C third) implements Serializable {
     }
 }

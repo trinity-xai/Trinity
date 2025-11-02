@@ -21,17 +21,13 @@ import java.util.function.Consumer;
  */
 public class StatTimeSeriesChart extends LineChart<Number, Number> {
 
-    // ===== Public event payload =====
-    public static final class PointSelection {
-        public final int sampleIdx;
-        public final double x; // index
-        public final double y; // value
-
-        public PointSelection(int sampleIdx, double x, double y) {
-            this.sampleIdx = sampleIdx;
-            this.x = x;
-            this.y = y;
-        }
+    /**
+     * Public event payload
+     *
+     * @param x index
+     * @param y value
+     */
+    public record PointSelection(int sampleIdx, double x, double y) {
     }
 
     // ===== Series =====

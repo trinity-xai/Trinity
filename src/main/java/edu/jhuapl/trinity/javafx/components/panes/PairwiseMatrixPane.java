@@ -62,8 +62,8 @@ public final class PairwiseMatrixPane extends LitPathPane {
             if (click == null) return;
             // Use the latest request the user executed (or rebuild one)
             var req = view.getLastRequestOrBuild();
-            view.renderPdfForCellUsingEngine(click.row, click.col, req);
-            String msg = "Cell (" + click.row + "," + click.col + ") = " + click.value;
+            view.renderPdfForCellUsingEngine(click.row(), click.col(), req);
+            String msg = "Cell (" + click.row() + "," + click.col() + ") = " + click.value();
             toast(msg, false);
         });
         // Forward view toasts to the command terminal

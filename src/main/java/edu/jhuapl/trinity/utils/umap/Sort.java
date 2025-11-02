@@ -32,14 +32,7 @@ final class Sort {
         void swap(final int a, final int b);
     }
 
-    private static class FloatIntSwapper implements Swapper {
-        FloatIntSwapper(final double[] primary, final int[] secondary) {
-            mPrimary = primary;
-            mSecondary = secondary;
-        }
-
-        private final double[] mPrimary;
-        private final int[] mSecondary;
+    private record FloatIntSwapper(double[] mPrimary, int[] mSecondary) implements Swapper {
 
         @Override
         public void swap(final int a, final int b) {

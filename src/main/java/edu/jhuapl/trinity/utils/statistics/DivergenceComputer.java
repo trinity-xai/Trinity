@@ -2,7 +2,6 @@ package edu.jhuapl.trinity.utils.statistics;
 
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 
-import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -60,78 +59,19 @@ public final class DivergenceComputer {
 
     /**
      * Output bundle for a single divergence computation.
+     *
+     * @param matrix            Symmetric divergence matrix (F x F).
+     * @param quality           Optional quality matrix (F x F), e.g., min(coverageA, coverageB) fraction in [0,1].
+     * @param metric            Chosen divergence metric.
+     * @param componentIndices  Selected component indices (length F).
+     * @param labels            Human-friendly labels "Comp i", length F.
+     * @param binsX             Binning used for X and Y (from recipe).
+     * @param boundsPolicy      Bounds policy applied (from recipe).
+     * @param canonicalPolicyId Canonical policy id (when boundsPolicy == CANONICAL_BY_FEATURE).
+     * @param cacheEnabled      Whether cache was allowed (recipe-level flag; not a guarantee of hits).
      */
-    public static final class DivergenceResult implements Serializable {
-        @Serial
-        private static final long serialVersionUID = 1L;
-
-        /**
-         * Symmetric divergence matrix (F x F).
-         */
-        public final double[][] matrix;
-
-        /**
-         * Optional quality matrix (F x F), e.g., min(coverageA, coverageB) fraction in [0,1].
-         */
-        public final double[][] quality;
-
-        /**
-         * Chosen divergence metric.
-         */
-        public final DivergenceMetric metric;
-
-        /**
-         * Selected component indices (length F).
-         */
-        public final int[] componentIndices;
-
-        /**
-         * Human-friendly labels "Comp i", length F.
-         */
-        public final List<String> labels;
-
-        /**
-         * Binning used for X and Y (from recipe).
-         */
-        public final int binsX;
-        public final int binsY;
-
-        /**
-         * Bounds policy applied (from recipe).
-         */
-        public final JpdfRecipe.BoundsPolicy boundsPolicy;
-
-        /**
-         * Canonical policy id (when boundsPolicy == CANONICAL_BY_FEATURE).
-         */
-        public final String canonicalPolicyId;
-
-        /**
-         * Whether cache was allowed (recipe-level flag; not a guarantee of hits).
-         */
-        public final boolean cacheEnabled;
-
-        public DivergenceResult(double[][] matrix,
-                                double[][] quality,
-                                DivergenceMetric metric,
-                                int[] componentIndices,
-                                List<String> labels,
-                                int binsX,
-                                int binsY,
-                                JpdfRecipe.BoundsPolicy boundsPolicy,
-                                String canonicalPolicyId,
-                                boolean cacheEnabled) {
-            this.matrix = matrix;
-            this.quality = quality;
-            this.metric = metric;
-            this.componentIndices = componentIndices;
-            this.labels = labels;
-            this.binsX = binsX;
-            this.binsY = binsY;
-            this.boundsPolicy = boundsPolicy;
-            this.canonicalPolicyId = canonicalPolicyId;
-            this.cacheEnabled = cacheEnabled;
-        }
+    public record DivergenceResult(double[][] matrix, double[][] quality, DivergenceMetric metric, int[] componentIndices, List<String> labels, int binsX,
+                                   int binsY, JpdfRecipe.BoundsPolicy boundsPolicy, String canonicalPolicyId, boolean cacheEnabled) implements Serializable {
     }
 
     private DivergenceComputer() {
@@ -262,8 +202,8 @@ public final class DivergenceComputer {
                     );
 
                     // Convert PDFs to mass distributions (flatten)
-                    MassVec pa = toMass(ab.a);
-                    MassVec pb = toMass(ab.b);
+                    MassVec pa = toMass(ab.a());
+                    MassVec pb = toMass(ab.b());
 
                     // Normalize (guard if sums deviate from 1 by numeric noise)
                     normalizeInPlace(pa.values);
@@ -319,11 +259,11 @@ public final class DivergenceComputer {
      * Flatten pdf grid to mass vector (z * dx * dy).
      */
     private static MassVec toMass(GridDensityResult r) {
-        double[][] pdf = r.getPdfZ();
+        double[][] pdf = r.pdfZ();
         int by = pdf.length;
         int bx = (by == 0) ? 0 : pdf[0].length;
         double[] out = new double[bx * by];
-        double w = r.getDx() * r.getDy();
+        double w = r.dx() * r.dy();
         int k = 0;
         for (int y = 0; y < by; y++) {
             double[] row = pdf[y];
@@ -335,12 +275,7 @@ public final class DivergenceComputer {
         return new MassVec(out);
     }
 
-    private static final class MassVec {
-        final double[] values;
-
-        MassVec(double[] v) {
-            this.values = v;
-        }
+    private record MassVec(double[] values) {
     }
 
     /**
