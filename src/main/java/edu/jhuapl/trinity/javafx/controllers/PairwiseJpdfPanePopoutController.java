@@ -90,8 +90,8 @@ public class PairwiseJpdfPanePopoutController {
             appScene.getRoot().fireEvent(new HypersurfaceGridEvent(
                 HypersurfaceGridEvent.RENDER_PDF,
                 gridList,
-                res.getxCenters(),
-                res.getyCenters(),
+                res.xCenters(),
+                res.yCenters(),
                 item.xLabel + " | " + item.yLabel + " (PDF)"
             ));
             // Optionally, show a toast:

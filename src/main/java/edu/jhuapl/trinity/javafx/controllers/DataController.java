@@ -128,7 +128,7 @@ public class DataController implements Initializable {
         trajectorySizeSpinner.valueProperty().addListener(e -> {
             scene.getRoot().fireEvent(
                 new TrajectoryEvent(TrajectoryEvent.TRAJECTORY_TAIL_SIZE,
-                    (int) trajectorySizeSpinner.getValue()));
+                    trajectorySizeSpinner.getValue()));
         });
         trajectorySizeSpinner.disableProperty().bind(
             showStateTrajectoryCheckBox.selectedProperty().not());
@@ -141,7 +141,7 @@ public class DataController implements Initializable {
         projectionQueueSizeSpinner.valueProperty().addListener(e -> {
             scene.getRoot().fireEvent(
                 new ManifoldEvent(ManifoldEvent.SET_PROJECTIONQUEUE_SIZE,
-                    (int) projectionQueueSizeSpinner.getValue()));
+                    projectionQueueSizeSpinner.getValue()));
         });
 
         restProgressIndicator.visibleProperty().bind(restInjectToggleButton.selectedProperty());

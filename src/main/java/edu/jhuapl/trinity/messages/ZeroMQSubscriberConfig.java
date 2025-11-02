@@ -7,8 +7,6 @@ public class ZeroMQSubscriberConfig {
 
     public static enum CONNECTION {SUBSCRIBER, PULL}
 
-    ;
-
     public static final String DEFAULT_NAME = "ZeroMQ";
     public static final String DEFAULT_DESCRIPTION = "Default";
     public static final String DEFAULT_HOST = "tcp://localhost:5563";

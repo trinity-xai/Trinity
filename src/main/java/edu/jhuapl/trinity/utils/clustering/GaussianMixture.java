@@ -99,7 +99,7 @@ public class GaussianMixture {
                 GaussianMixtureComponent c = components[i];
 
                 for (int j = 0; j < n; j++) {
-                    posteriori[i][j] = c.priori * c.distribution.p(x[j]);
+                    posteriori[i][j] = c.priori() * c.distribution().p(x[j]);
                 }
             }
 
@@ -130,19 +130,19 @@ public class GaussianMixture {
             // Maximization step
             double Z = 0.0;
             for (int i = 0; i < k; i++) {
-                components[i] = ((GaussianDistribution) components[i].distribution).maximization(x, posteriori[i]);
-                Z += components[i].priori;
+                components[i] = components[i].distribution().maximization(x, posteriori[i]);
+                Z += components[i].priori();
             }
 
             for (int i = 0; i < k; i++) {
-                components[i] = new GaussianMixtureComponent(components[i].priori / Z, components[i].distribution);
+                components[i] = new GaussianMixtureComponent(components[i].priori() / Z, components[i].distribution());
             }
 
             double loglikelihood = 0.0;
             for (double[] xi : x) {
                 double p = 0.0;
                 for (GaussianMixtureComponent c : components) {
-                    p += c.priori * c.distribution.p(xi);
+                    p += c.priori() * c.distribution().p(xi);
                 }
                 if (p > 0) loglikelihood += Math.log(p);
             }
@@ -163,7 +163,7 @@ public class GaussianMixture {
     public int length() {
         int f = components.length - 1; // independent priori parameters
         for (GaussianMixtureComponent component : components) {
-            f += component.distribution.length();
+            f += component.distribution().length();
         }
 
         return f;
@@ -173,7 +173,7 @@ public class GaussianMixture {
         double p = 0.0;
 
         for (GaussianMixtureComponent c : components) {
-            p += c.priori * c.distribution.p(x);
+            p += c.priori() * c.distribution().p(x);
         }
 
         return p;
@@ -210,7 +210,7 @@ public class GaussianMixture {
         double[] prob = new double[k];
         for (int i = 0; i < k; i++) {
             GaussianMixtureComponent c = components[i];
-            prob[i] = c.priori * c.distribution.p(x);
+            prob[i] = c.priori() * c.distribution().p(x);
         }
 
         double p = ClusterUtils.sum(prob);
@@ -221,16 +221,16 @@ public class GaussianMixture {
     }
 
     public double[] mean() {
-        double w = components[0].priori;
-        double[] m = components[0].distribution.mean();
+        double w = components[0].priori();
+        double[] m = components[0].distribution().mean();
         double[] mu = new double[m.length];
         for (int i = 0; i < m.length; i++) {
             mu[i] = w * m[i];
         }
 
         for (int k = 1; k < components.length; k++) {
-            w = components[k].priori;
-            m = components[k].distribution.mean();
+            w = components[k].priori();
+            m = components[k].distribution().mean();
             for (int i = 0; i < m.length; i++) {
                 mu[i] += w * m[i];
             }
@@ -240,8 +240,8 @@ public class GaussianMixture {
     }
 
     public RealMatrix cov() {
-        double w = components[0].priori;
-        RealMatrix v = components[0].distribution.cov();
+        double w = components[0].priori();
+        RealMatrix v = components[0].distribution().cov();
 
         int m = v.getRowDimension();
         int n = v.getColumnDimension();
@@ -254,8 +254,8 @@ public class GaussianMixture {
         }
 
         for (int k = 1; k < components.length; k++) {
-            w = components[k].priori;
-            v = components[k].distribution.cov();
+            w = components[k].priori();
+            v = components[k].distribution().cov();
             for (int i = 0; i < m; i++) {
                 for (int j = 0; j < n; j++) {
                     cov.addToEntry(i, j, w * w * v.getEntry(i, j));
@@ -271,7 +271,7 @@ public class GaussianMixture {
         double[] prob = new double[k];
         for (int i = 0; i < k; i++) {
             GaussianMixtureComponent c = components[i];
-            prob[i] = c.priori * c.distribution.p(x);
+            prob[i] = c.priori() * c.distribution().p(x);
         }
         int maxIndex = ClusterUtils.whichMax(prob);
         return new Pair<>(maxIndex, prob[maxIndex]);

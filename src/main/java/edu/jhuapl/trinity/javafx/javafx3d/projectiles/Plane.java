@@ -267,8 +267,8 @@ public final class Plane {
      * @return The smallest magnitude distance from the plane to the point. Positive values indicate the point is on the
      * positive side of the plane (where the normal points), and negative values indicate the opposite side.
      */
-    public static final double distanceToPlane(final Vector3D planeNormal, final Point3D planePoint, final double x,
-                                               final double y, final double z) {
+    public static double distanceToPlane(final Vector3D planeNormal, final Point3D planePoint, final double x,
+                                         final double y, final double z) {
         return ((planeNormal.x * (x - planePoint.x)) + (planeNormal.y * (y - planePoint.y)) + (planeNormal.z * (z - planePoint.z)));
     }
 

@@ -55,16 +55,7 @@ public final class MatrixHeatmapView extends BorderPane {
     /**
      * Simple click payload.
      */
-    public static final class MatrixClick {
-        public final int row;
-        public final int col;
-        public final double value;
-
-        public MatrixClick(int row, int col, double value) {
-            this.row = row;
-            this.col = col;
-            this.value = value;
-        }
+    public record MatrixClick(int row, int col, double value) {
     }
 
     // -------------------- State --------------------

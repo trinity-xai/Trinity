@@ -29,6 +29,6 @@ public final class EuclideanMetric extends Metric {
             final double d = x[i] - y[i];
             result += d * d;
         }
-        return (double) Math.sqrt(result);
+        return Math.sqrt(result);
     }
 }

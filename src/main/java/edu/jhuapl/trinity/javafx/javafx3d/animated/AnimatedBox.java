@@ -83,7 +83,7 @@ public class AnimatedBox extends MeshView {
         float hh = h / 2f;
         float hd = d / 2f;
 
-        float points[] = {
+        float[] points = {
             -hw, -hh, -hd,
             hw, -hh, -hd,
             hw, hh, -hd,
@@ -93,14 +93,14 @@ public class AnimatedBox extends MeshView {
             hw, hh, hd,
             -hw, hh, hd};
 
-        float texCoords[] = {0, 0, 1, 0, 1, 1, 0, 1};
+        float[] texCoords = {0, 0, 1, 0, 1, 1, 0, 1};
 
         // Specifies hard edges.
-        int faceSmoothingGroups[] = {
+        int[] faceSmoothingGroups = {
             0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
         };
 
-        int faces[] = {
+        int[] faces = {
             0, 0, 2, 2, 1, 1,
             2, 2, 0, 0, 3, 3,
             1, 0, 6, 2, 5, 1,

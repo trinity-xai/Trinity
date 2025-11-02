@@ -57,7 +57,7 @@ public abstract class BillboardNode<T extends Node> extends Group {
     public enum BillboardMode {
 
         SPHERICAL,
-        CYLINDRICAL;
+        CYLINDRICAL
     }
 
     protected abstract T getBillboardNode();

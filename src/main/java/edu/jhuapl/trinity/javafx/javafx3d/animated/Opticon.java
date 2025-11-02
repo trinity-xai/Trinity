@@ -257,13 +257,10 @@ public class Opticon extends Group {
         dataSphere.setMaterial(new PhongMaterial(dataColor));
 
         Timeline timeline = new Timeline();
-        timeline.getKeyFrames().addAll(new KeyFrame[]{
-            new KeyFrame(Duration.millis(milliseconds), new KeyValue[]{// Frame End
-                new KeyValue(dataSphere.translateXProperty(), sceneToLocalPoint.getX(), Interpolator.EASE_OUT),
-                new KeyValue(dataSphere.translateYProperty(), sceneToLocalPoint.getY(), Interpolator.EASE_OUT),
-                new KeyValue(dataSphere.translateZProperty(), sceneToLocalPoint.getZ(), Interpolator.EASE_OUT),
-            })
-        });
+        timeline.getKeyFrames().addAll(new KeyFrame(Duration.millis(milliseconds), // Frame End
+            new KeyValue(dataSphere.translateXProperty(), sceneToLocalPoint.getX(), Interpolator.EASE_OUT),
+            new KeyValue(dataSphere.translateYProperty(), sceneToLocalPoint.getY(), Interpolator.EASE_OUT),
+            new KeyValue(dataSphere.translateZProperty(), sceneToLocalPoint.getZ(), Interpolator.EASE_OUT)));
         timeline.setOnFinished(e -> {
             parent.getChildren().remove(dataSphere);
         });

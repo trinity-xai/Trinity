@@ -17,5 +17,5 @@
 package edu.jhuapl.trinity.javafx.components;
 
 public enum LockState {
-    UNLOCKED, X_LOCKED, Y_LOCKED;
+    UNLOCKED, X_LOCKED, Y_LOCKED
 }

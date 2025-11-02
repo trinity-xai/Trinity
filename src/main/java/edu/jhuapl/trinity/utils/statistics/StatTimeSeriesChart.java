@@ -21,17 +21,13 @@ import java.util.function.Consumer;
  */
 public class StatTimeSeriesChart extends LineChart<Number, Number> {
 
-    // ===== Public event payload =====
-    public static final class PointSelection {
-        public final int sampleIdx;
-        public final double x; // index
-        public final double y; // value
-
-        public PointSelection(int sampleIdx, double x, double y) {
-            this.sampleIdx = sampleIdx;
-            this.x = x;
-            this.y = y;
-        }
+    /**
+     * Public event payload
+     *
+     * @param x index
+     * @param y value
+     */
+    public record PointSelection(int sampleIdx, double x, double y) {
     }
 
     // ===== Series =====
@@ -154,8 +150,8 @@ public class StatTimeSeriesChart extends LineChart<Number, Number> {
      * Optional: customize axis labels.
      */
     public void setAxisLabels(String xLabel, String yLabel) {
-        if (xLabel != null) ((NumberAxis) getXAxis()).setLabel(xLabel);
-        if (yLabel != null) ((NumberAxis) getYAxis()).setLabel(yLabel);
+        if (xLabel != null) getXAxis().setLabel(xLabel);
+        if (yLabel != null) getYAxis().setLabel(yLabel);
     }
 
     public void setOnPointHover(Consumer<PointSelection> handler) {
@@ -195,7 +191,7 @@ public class StatTimeSeriesChart extends LineChart<Number, Number> {
         try {
             Point2D scenePt = plotArea.localToScene(xInPlotLocal, 0);
             Point2D axisPt = getXAxis().sceneToLocal(scenePt);
-            double xVal = ((NumberAxis) getXAxis()).getValueForDisplay(axisPt.getX()).doubleValue();
+            double xVal = getXAxis().getValueForDisplay(axisPt.getX()).doubleValue();
             if (currentValues == null || currentValues.isEmpty()) return null;
             int idx = (int) Math.round(xVal);
             if (idx < 0) idx = 0;

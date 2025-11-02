@@ -66,273 +66,62 @@ public final class JpdfProvenance implements Serializable {
 
     /**
      * Summary of a single axis' semantic definition.
+     *
+     * @param metricName     for METRIC_DISTANCE_TO_MEAN
+     * @param componentIndex for COMPONENT_AT_DIMENSION
+     * @param referenceIndex when VECTOR_AT_INDEX
+     * @param label          optional display label
      */
-    public static final class AxisSummary implements Serializable {
-        @Serial
-        private static final long serialVersionUID = 1L;
+    public record AxisSummary(StatisticEngine.ScalarType scalarType, String metricName, Integer componentIndex, ReferenceKind referenceKind,
+                              Integer referenceIndex, String label) implements Serializable {
 
         public enum ReferenceKind {NONE, MEAN, VECTOR_AT_INDEX, CUSTOM}
 
-        private final StatisticEngine.ScalarType scalarType;
-        private final String metricName;          // for METRIC_DISTANCE_TO_MEAN
-        private final Integer componentIndex;     // for COMPONENT_AT_DIMENSION
-        private final ReferenceKind referenceKind;
-        private final Integer referenceIndex;     // when VECTOR_AT_INDEX
-        private final String label;               // optional display label
-
-        public AxisSummary(StatisticEngine.ScalarType scalarType,
-                           String metricName,
-                           Integer componentIndex,
-                           ReferenceKind referenceKind,
-                           Integer referenceIndex,
-                           String label) {
-            this.scalarType = Objects.requireNonNull(scalarType, "scalarType");
-            this.metricName = metricName;
-            this.componentIndex = componentIndex;
-            this.referenceKind = referenceKind == null ? ReferenceKind.NONE : referenceKind;
-            this.referenceIndex = referenceIndex;
-            this.label = label;
+        public AxisSummary {
+            Objects.requireNonNull(scalarType);
+            referenceKind = referenceKind == null ? ReferenceKind.NONE : referenceKind;
         }
 
-        public StatisticEngine.ScalarType scalarType() {
-            return scalarType;
-        }
-
-        public String metricName() {
-            return metricName;
-        }
-
-        public Integer componentIndex() {
-            return componentIndex;
-        }
-
-        public ReferenceKind referenceKind() {
-            return referenceKind;
-        }
-
-        public Integer referenceIndex() {
-            return referenceIndex;
-        }
-
-        public String label() {
-            return label;
-        }
-
-        @Override
-        public String toString() {
-            return "AxisSummary{" +
-                "scalarType=" + scalarType +
-                ", metricName='" + metricName + '\'' +
-                ", componentIndex=" + componentIndex +
-                ", referenceKind=" + referenceKind +
-                ", referenceIndex=" + referenceIndex +
-                ", label='" + label + '\'' +
-                '}';
-        }
     }
 
     /**
      * Canonical grid & bounds.
+     *
+     * @param canonicalPolicyId when CANONICAL_BY_FEATURE
      */
-    public static final class GridSummary implements Serializable {
-        @Serial
-        private static final long serialVersionUID = 1L;
+    public record GridSummary(int binsX, int binsY, double minX, double maxX, double minY, double maxY, double dx, double dy, BoundsPolicy boundsPolicy,
+                              String canonicalPolicyId) implements Serializable {
 
-        private final int binsX, binsY;
-        private final double minX, maxX, minY, maxY;
-        private final double dx, dy;
-        private final BoundsPolicy boundsPolicy;
-        private final String canonicalPolicyId;   // when CANONICAL_BY_FEATURE
-
-        public GridSummary(int binsX, int binsY,
-                           double minX, double maxX, double minY, double maxY,
-                           double dx, double dy,
-                           BoundsPolicy boundsPolicy,
-                           String canonicalPolicyId) {
-            this.binsX = binsX;
-            this.binsY = binsY;
-            this.minX = minX;
-            this.maxX = maxX;
-            this.minY = minY;
-            this.maxY = maxY;
-            this.dx = dx;
-            this.dy = dy;
-            this.boundsPolicy = boundsPolicy == null ? BoundsPolicy.DATA_MIN_MAX : boundsPolicy;
-            this.canonicalPolicyId = canonicalPolicyId;
+        public GridSummary {
+            boundsPolicy = boundsPolicy == null ? BoundsPolicy.DATA_MIN_MAX : boundsPolicy;
         }
 
-        public int binsX() {
-            return binsX;
-        }
-
-        public int binsY() {
-            return binsY;
-        }
-
-        public double minX() {
-            return minX;
-        }
-
-        public double maxX() {
-            return maxX;
-        }
-
-        public double minY() {
-            return minY;
-        }
-
-        public double maxY() {
-            return maxY;
-        }
-
-        public double dx() {
-            return dx;
-        }
-
-        public double dy() {
-            return dy;
-        }
-
-        public BoundsPolicy boundsPolicy() {
-            return boundsPolicy;
-        }
-
-        public String canonicalPolicyId() {
-            return canonicalPolicyId;
-        }
-
-        @Override
-        public String toString() {
-            return "GridSummary{" +
-                "binsX=" + binsX +
-                ", binsY=" + binsY +
-                ", minX=" + minX +
-                ", maxX=" + maxX +
-                ", minY=" + minY +
-                ", maxY=" + maxY +
-                ", dx=" + dx +
-                ", dy=" + dy +
-                ", boundsPolicy=" + boundsPolicy +
-                ", canonicalPolicyId='" + canonicalPolicyId + '\'' +
-                '}';
-        }
     }
 
     /**
      * Data/quality/selection details useful for auditing & UI badges.
+     *
+     * @param nSamples           number of (x,y) pairs used
+     * @param minAvgCountPerCell guard from recipe
+     * @param sufficiencyPass    N/(bx*by) >= minAvgCountPerCell
+     * @param selectionScore     preselection score for this pair (nullable)
+     * @param selectionRank      rank among candidates (nullable)
      */
-    public static final class DataSummary implements Serializable {
-        @Serial
-        private static final long serialVersionUID = 1L;
+    public record DataSummary(long nSamples, double minAvgCountPerCell, boolean sufficiencyPass, JpdfRecipe.ScoreMetric scoreMetric, Double selectionScore,
+                              Integer selectionRank) implements Serializable {
 
-        private final long nSamples;                 // number of (x,y) pairs used
-        private final double minAvgCountPerCell;     // guard from recipe
-        private final boolean sufficiencyPass;       // N/(bx*by) >= minAvgCountPerCell
-        private final JpdfRecipe.ScoreMetric scoreMetric;
-        private final Double selectionScore;         // preselection score for this pair (nullable)
-        private final Integer selectionRank;         // rank among candidates (nullable)
-
-        public DataSummary(long nSamples,
-                           double minAvgCountPerCell,
-                           boolean sufficiencyPass,
-                           JpdfRecipe.ScoreMetric scoreMetric,
-                           Double selectionScore,
-                           Integer selectionRank) {
-            this.nSamples = nSamples;
-            this.minAvgCountPerCell = minAvgCountPerCell;
-            this.sufficiencyPass = sufficiencyPass;
-            this.scoreMetric = scoreMetric;
-            this.selectionScore = selectionScore;
-            this.selectionRank = selectionRank;
-        }
-
-        public long nSamples() {
-            return nSamples;
-        }
-
-        public double minAvgCountPerCell() {
-            return minAvgCountPerCell;
-        }
-
-        public boolean sufficiencyPass() {
-            return sufficiencyPass;
-        }
-
-        public JpdfRecipe.ScoreMetric scoreMetric() {
-            return scoreMetric;
-        }
-
-        public Double selectionScore() {
-            return selectionScore;
-        }
-
-        public Integer selectionRank() {
-            return selectionRank;
-        }
-
-        @Override
-        public String toString() {
-            return "DataSummary{" +
-                "nSamples=" + nSamples +
-                ", minAvgCountPerCell=" + minAvgCountPerCell +
-                ", sufficiencyPass=" + sufficiencyPass +
-                ", scoreMetric=" + scoreMetric +
-                ", selectionScore=" + selectionScore +
-                ", selectionRank=" + selectionRank +
-                '}';
-        }
     }
 
     /**
      * Numeric hygiene checks for the produced surface.
+     *
+     * @param pdfMass       sum(pdf)*dx*dy (≈1 for PDFs)
+     * @param cdfTerminal   cdf[bY-1][bX-1] (≈1 for CDFs)
+     * @param cdfMonotoneXY true if monotone in +x and +y
+     * @param maxZ          value range
      */
-    public static final class NumericChecks implements Serializable {
-        @Serial
-        private static final long serialVersionUID = 1L;
+    public record NumericChecks(Double pdfMass, Double cdfTerminal, Boolean cdfMonotoneXY, Double minZ, Double maxZ) implements Serializable {
 
-        private final Double pdfMass;          // sum(pdf)*dx*dy (≈1 for PDFs)
-        private final Double cdfTerminal;      // cdf[bY-1][bX-1] (≈1 for CDFs)
-        private final Boolean cdfMonotoneXY;   // true if monotone in +x and +y
-        private final Double minZ, maxZ;       // value range
-
-        public NumericChecks(Double pdfMass, Double cdfTerminal, Boolean cdfMonotoneXY, Double minZ, Double maxZ) {
-            this.pdfMass = pdfMass;
-            this.cdfTerminal = cdfTerminal;
-            this.cdfMonotoneXY = cdfMonotoneXY;
-            this.minZ = minZ;
-            this.maxZ = maxZ;
-        }
-
-        public Double pdfMass() {
-            return pdfMass;
-        }
-
-        public Double cdfTerminal() {
-            return cdfTerminal;
-        }
-
-        public Boolean cdfMonotoneXY() {
-            return cdfMonotoneXY;
-        }
-
-        public Double minZ() {
-            return minZ;
-        }
-
-        public Double maxZ() {
-            return maxZ;
-        }
-
-        @Override
-        public String toString() {
-            return "NumericChecks{" +
-                "pdfMass=" + pdfMass +
-                ", cdfTerminal=" + cdfTerminal +
-                ", cdfMonotoneXY=" + cdfMonotoneXY +
-                ", minZ=" + minZ +
-                ", maxZ=" + maxZ +
-                '}';
-        }
     }
 
     // ---------- Immutable fields ----------

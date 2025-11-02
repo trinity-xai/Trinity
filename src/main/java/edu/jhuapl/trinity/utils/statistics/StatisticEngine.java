@@ -51,17 +51,12 @@ public class StatisticEngine {
 
     /**
      * Holder for contribution computation outputs.
+     *
+     * @param similarity S_t in (0,1)
+     * @param logit      L_t
+     * @param delta      Δ_t = L_t - L_{t-1}, with Δ_0 = L_0
      */
-    public static final class ContributionSeries {
-        public final List<Double> similarity; // S_t in (0,1)
-        public final List<Double> logit;      // L_t
-        public final List<Double> delta;      // Δ_t = L_t - L_{t-1}, with Δ_0 = L_0
-
-        public ContributionSeries(List<Double> s, List<Double> l, List<Double> d) {
-            this.similarity = s;
-            this.logit = l;
-            this.delta = d;
-        }
+    public record ContributionSeries(List<Double> similarity, List<Double> logit, List<Double> delta) {
     }
 
     /**

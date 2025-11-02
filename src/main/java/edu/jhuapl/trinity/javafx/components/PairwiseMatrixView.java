@@ -132,17 +132,17 @@ public final class PairwiseMatrixView extends BorderPane {
                             toast("Cohort A is empty and no synthetic cohorts were provided.", true);
                             return;
                         }
-                        renderPdfForCellUsingEngine(click.row, click.col, effective);
+                        renderPdfForCellUsingEngine(click.row(), click.col(), effective);
                     } else {
                         if (cohortA == null || cohortA.isEmpty() || cohortB == null || cohortB.isEmpty()) {
                             toast("Cohorts A/B are empty and no synthetic cohorts were provided.", true);
                             return;
                         }
-                        renderDeltaPdfForCellUsingEngine(click.row, click.col, effective);
+                        renderDeltaPdfForCellUsingEngine(click.row(), click.col(), effective);
                     }
                 }
             } catch (Throwable t) {
-                toast("Cell render failed: " + t.getClass().getSimpleName() + ": " + String.valueOf(t.getMessage()), true);
+                toast("Cell render failed: " + t.getClass().getSimpleName() + ": " + t.getMessage(), true);
             }
 
             // still notify any external listener you set via setOnCellClick(...)
@@ -371,7 +371,7 @@ public final class PairwiseMatrixView extends BorderPane {
                 Platform.runLater(() -> {
                     setControlsDisabled(false);
                     setProgressText("");
-                    toast("Matrix run failed: " + t.getClass().getSimpleName() + " - " + String.valueOf(t.getMessage()), true);
+                    toast("Matrix run failed: " + t.getClass().getSimpleName() + " - " + t.getMessage(), true);
                 });
             }
         }, "PairwiseMatrixView-Worker").start();
@@ -412,13 +412,13 @@ public final class PairwiseMatrixView extends BorderPane {
             policy,
             useCache,
             (pair) -> {
-                GridDensityResult gdr = pair.density;
+                GridDensityResult gdr = pair.density();
                 List<List<Double>> zGrid = gdr.pdfAsListGrid();
                 getScene().getRoot().fireEvent(new HypersurfaceGridEvent(
                     HypersurfaceGridEvent.RENDER_PDF,
                     zGrid,
-                    gdr.getxCenters(),
-                    gdr.getyCenters(),
+                    gdr.xCenters(),
+                    gdr.yCenters(),
                     "Comp " + Math.min(i, j) + " | Comp " + Math.max(i, j) + " (PDF)"
                 ));
             }
@@ -459,18 +459,18 @@ public final class PairwiseMatrixView extends BorderPane {
         JpdfBatchEngine.BatchResult batchB =
             JpdfBatchEngine.runWhitelistPairs(cohortB, recipe, policy, useCache);
 
-        if (batchA.jobs.isEmpty() || batchB.jobs.isEmpty()
-            || batchA.jobs.get(0).density == null || batchB.jobs.get(0).density == null) {
+        if (batchA.jobs().isEmpty() || batchB.jobs().isEmpty()
+            || batchA.jobs().get(0).density() == null || batchB.jobs().get(0).density() == null) {
             toast("Could not compute ΔPDF for (" + i + "," + j + ").", true);
             return;
         }
 
-        GridDensityResult a = batchA.jobs.get(0).density;
-        GridDensityResult b = batchB.jobs.get(0).density;
+        GridDensityResult a = batchA.jobs().get(0).density();
+        GridDensityResult b = batchB.jobs().get(0).density();
 
         // (4) Align grids if necessary; then out = A.pdf - B.pdf
-        double[] ax = a.getxCenters(), ay = a.getyCenters();
-        double[] bx = b.getxCenters(), by = b.getyCenters();
+        double[] ax = a.xCenters(), ay = a.yCenters();
+        double[] bx = b.xCenters(), by = b.yCenters();
 
         List<List<Double>> out;
         if (sameCenters(ax, bx) && sameCenters(ay, by)) {
@@ -573,7 +573,7 @@ public final class PairwiseMatrixView extends BorderPane {
             dlg.showAndWait().ifPresent(res -> {
                 switch (res.kind()) {
                     case SIMILARITY_MATRIX, DIVERGENCE_MATRIX -> loadSyntheticMatrix(res.matrix());
-                    case COHORTS -> setCohorts(res.cohorts().cohortA, "A", res.cohorts().cohortB, "B");
+                    case COHORTS -> setCohorts(res.cohorts().cohortA(), "A", res.cohorts().cohortB(), "B");
                 }
             });
         });
@@ -655,36 +655,36 @@ public final class PairwiseMatrixView extends BorderPane {
      * Load a synthetic matrix (similarity or divergence) into the heatmap and stash fallback cohorts if provided.
      */
     public void loadSyntheticMatrix(SyntheticMatrix sm) {
-        if (sm == null || sm.matrix == null || sm.matrix.length == 0) {
+        if (sm == null || sm.matrix() == null || sm.matrix().length == 0) {
             toast("Synthetic matrix is empty.", true);
             heatmap.setMatrix((double[][]) null);
             return;
         }
 
         // Map factory kind to adapter kind
-        this.currentMatrixKind = (sm.kind == MatrixToGraphAdapter.MatrixKind.DIVERGENCE)
+        this.currentMatrixKind = (sm.kind() == MatrixToGraphAdapter.MatrixKind.DIVERGENCE)
             ? MatrixToGraphAdapter.MatrixKind.DIVERGENCE
             : MatrixToGraphAdapter.MatrixKind.SIMILARITY;
 
         // Render the matrix
-        heatmap.setMatrix(sm.matrix);
-        if (sm.labels != null && !sm.labels.isEmpty()) {
-            heatmap.setRowLabels(sm.labels);
-            heatmap.setColLabels(sm.labels);
+        heatmap.setMatrix(sm.matrix());
+        if (sm.labels() != null && !sm.labels().isEmpty()) {
+            heatmap.setRowLabels(sm.labels());
+            heatmap.setColLabels(sm.labels());
         } else {
             // fallback label set
-            List<String> labels = new java.util.ArrayList<>(sm.matrix.length);
-            for (int i = 0; i < sm.matrix.length; i++) labels.add("F" + i);
+            List<String> labels = new java.util.ArrayList<>(sm.matrix().length);
+            for (int i = 0; i < sm.matrix().length; i++) labels.add("F" + i);
             heatmap.setRowLabels(labels);
             heatmap.setColLabels(labels);
         }
 
         // Palette + range defaults based on kind
-        applyHeatmapDefaultsFor(this.currentMatrixKind, sm.matrix);
+        applyHeatmapDefaultsFor(this.currentMatrixKind, sm.matrix());
 
         // Stash possible underlying vectors as *fallback* cohorts
-        this.fallbackCohortA = sm.cohortA != null ? new ArrayList<>(sm.cohortA) : null;
-        this.fallbackCohortB = sm.cohortB != null ? new ArrayList<>(sm.cohortB) : null;
+        this.fallbackCohortA = sm.cohortA() != null ? new ArrayList<>(sm.cohortA()) : null;
+        this.fallbackCohortB = sm.cohortB() != null ? new ArrayList<>(sm.cohortB()) : null;
 
         // If user hasn't loaded cohorts yet, adopt the fallbacks now (keeps UX simple)
         if ((cohortA == null || cohortA.isEmpty()) && fallbackCohortA != null) {
@@ -694,8 +694,8 @@ public final class PairwiseMatrixView extends BorderPane {
             setCohortB(fallbackCohortB, "B");
         }
 
-        String title = (sm.title != null && !sm.title.isBlank()) ? sm.title : "Synthetic";
-        toast(title + " — N=" + sm.matrix.length + " loaded.", false);
+        String title = (sm.title() != null && !sm.title().isBlank()) ? sm.title() : "Synthetic";
+        toast(title + " — N=" + sm.matrix().length + " loaded.", false);
     }
 
     /**

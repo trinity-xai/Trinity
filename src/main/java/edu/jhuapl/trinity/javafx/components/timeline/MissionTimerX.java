@@ -78,8 +78,8 @@ public class MissionTimerX extends Region {
     private double outerCircleDiameterAspect = 1.84; //this.outerCircleDiameter = 1.84 * width;
     private double middleCircleDiameterAspect = 1.75; //this.middleCircleDiameter = 1.75 * width;
     private double innerCircleDiameterAspect = 1.66; //this.innerCircleDiameter = 1.66 * width;
-    private static final long REALTIME_REDRAW = 1_000_000l;
-    private static final long REALTIME_TIMER = 1_000_000_000l;
+    private static final long REALTIME_REDRAW = 1_000_000L;
+    private static final long REALTIME_TIMER = 1_000_000_000L;
     public int timeDialator = 2; //@TODO SMP... I am not sure yet why I need this hack
     private LocalDateTime currentPropagationTime;
     private String stringCurrentPropRate;
@@ -216,9 +216,9 @@ public class MissionTimerX extends Region {
                     lastRedrawCall = now;
                 }
                 if (now > lastTimerCall + timerStepSize) {
-                    long timeSpan = Math.abs((getStartTime() + duration) < 0 ? getStartTime() + duration : (duration + getStartTime()));
+                    long timeSpan = Math.abs(getStartTime() + duration);
                     days = (int) TimeUnit.SECONDS.toDays(timeSpan);
-                    hours = TimeUnit.SECONDS.toHours(timeSpan) - (days * 24);
+                    hours = TimeUnit.SECONDS.toHours(timeSpan) - (days * 24L);
                     minutes = TimeUnit.SECONDS.toMinutes(timeSpan) - (TimeUnit.SECONDS.toHours(timeSpan) * 60);
                     seconds = TimeUnit.SECONDS.toSeconds(timeSpan) - (TimeUnit.SECONDS.toMinutes(timeSpan) * 60);
                     if (internalClock)
@@ -883,9 +883,9 @@ public class MissionTimerX extends Region {
         if (null == this.startTime) {
             stop();
             _startTime = startTime;
-            long timeSpan = Math.abs((getStartTime() + duration) < 0 ? getStartTime() + duration : (duration + getStartTime()));
+            long timeSpan = Math.abs(getStartTime() + duration);
             days = (int) TimeUnit.SECONDS.toDays(timeSpan);
-            hours = TimeUnit.SECONDS.toHours(timeSpan) - (days * 24);
+            hours = TimeUnit.SECONDS.toHours(timeSpan) - (days * 24L);
             minutes = TimeUnit.SECONDS.toMinutes(timeSpan) - (TimeUnit.SECONDS.toHours(timeSpan) * 60);
             seconds = TimeUnit.SECONDS.toSeconds(timeSpan) - (TimeUnit.SECONDS.toMinutes(timeSpan) * 60);
             redraw();

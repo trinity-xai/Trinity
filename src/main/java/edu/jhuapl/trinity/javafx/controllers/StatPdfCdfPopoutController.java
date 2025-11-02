@@ -196,8 +196,8 @@ public final class StatPdfCdfPopoutController {
             new HypersurfaceGridEvent(
                 useCDF ? HypersurfaceGridEvent.RENDER_CDF : HypersurfaceGridEvent.RENDER_PDF,
                 grid,
-                result.getxCenters(),
-                result.getyCenters(),
+                result.xCenters(),
+                result.yCenters(),
                 label
             )
         );

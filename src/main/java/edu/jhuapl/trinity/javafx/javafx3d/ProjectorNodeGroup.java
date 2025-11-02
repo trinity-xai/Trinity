@@ -84,7 +84,7 @@ public class ProjectorNodeGroup extends Group {
             //this logic should alternate row placement in the 3D scene such that
             //0 is equitorial, negative goes Y up and positive goes Y down...
             int r = rows.isEmpty() ? 0 : rows.size() / 2 + 1;
-            if (positiveRow == false)
+            if (!positiveRow)
                 r *= -1;
 
             ProjectorRow newRow = new ProjectorRow(rowLabel, r, originRadius);

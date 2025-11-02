@@ -1170,7 +1170,7 @@ public class HyperdrivePane extends LitPathPane {
             List<File> inputFiles = (List<File>) event.object;
             int request = (int) event.object2;
             outstandingRequests.put(request, REQUEST_STATUS.FAILED);
-            long totalRequests = outstandingRequests.entrySet().size();
+            long totalRequests = outstandingRequests.size();
             long remainingRequests = outstandingRequests.entrySet().stream()
                 .filter(t -> t.getValue() == REQUEST_STATUS.REQUESTED).count();
             textEmbeddingRequestIndicator.setTopLabelLater("Received "

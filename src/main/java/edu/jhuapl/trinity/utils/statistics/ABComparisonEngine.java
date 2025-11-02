@@ -2,7 +2,6 @@ package edu.jhuapl.trinity.utils.statistics;
 
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 
-import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -34,50 +33,21 @@ public final class ABComparisonEngine {
 
     /**
      * Immutable result bundle for a single A/B compare on one (x,y) pair.
+     *
+     * @param a           baseline A (may contain both PDF/CDF)
+     * @param b           baseline B
+     * @param pdfDiff     A.pdf - B.pdf (nullable if not requested)
+     * @param cdfDiff     A.cdf - B.cdf (nullable if not requested)
+     * @param pdfProvA    nullable when recipe does not request PDF
+     * @param pdfProvB    nullable when recipe does not request PDF
+     * @param pdfProvDiff nullable when recipe does not request PDF
+     * @param cdfProvA    nullable when recipe does not request CDF
+     * @param cdfProvB    nullable when recipe does not request CDF
+     * @param cdfProvDiff nullable when recipe does not request CDF
      */
-    public static final class AbResult implements Serializable {
-        @Serial
-        private static final long serialVersionUID = 1L;
-
-        public final GridSpec grid;
-
-        public final GridDensityResult a;             // baseline A (may contain both PDF/CDF)
-        public final GridDensityResult b;             // baseline B
-
-        public final List<List<Double>> pdfDiff;      // A.pdf - B.pdf (nullable if not requested)
-        public final List<List<Double>> cdfDiff;      // A.cdf - B.cdf (nullable if not requested)
-
-        public final JpdfProvenance pdfProvA;         // nullable when recipe does not request PDF
-        public final JpdfProvenance pdfProvB;         // nullable when recipe does not request PDF
-        public final JpdfProvenance pdfProvDiff;      // nullable when recipe does not request PDF
-
-        public final JpdfProvenance cdfProvA;         // nullable when recipe does not request CDF
-        public final JpdfProvenance cdfProvB;         // nullable when recipe does not request CDF
-        public final JpdfProvenance cdfProvDiff;      // nullable when recipe does not request CDF
-
-        public AbResult(GridSpec grid,
-                        GridDensityResult a,
-                        GridDensityResult b,
-                        List<List<Double>> pdfDiff,
-                        List<List<Double>> cdfDiff,
-                        JpdfProvenance pdfProvA,
-                        JpdfProvenance pdfProvB,
-                        JpdfProvenance pdfProvDiff,
-                        JpdfProvenance cdfProvA,
-                        JpdfProvenance cdfProvB,
-                        JpdfProvenance cdfProvDiff) {
-            this.grid = grid;
-            this.a = a;
-            this.b = b;
-            this.pdfDiff = pdfDiff;
-            this.cdfDiff = cdfDiff;
-            this.pdfProvA = pdfProvA;
-            this.pdfProvB = pdfProvB;
-            this.pdfProvDiff = pdfProvDiff;
-            this.cdfProvA = cdfProvA;
-            this.cdfProvB = cdfProvB;
-            this.cdfProvDiff = cdfProvDiff;
-        }
+    public record AbResult(GridSpec grid, GridDensityResult a, GridDensityResult b, List<List<Double>> pdfDiff, List<List<Double>> cdfDiff,
+                           JpdfProvenance pdfProvA, JpdfProvenance pdfProvB, JpdfProvenance pdfProvDiff, JpdfProvenance cdfProvA, JpdfProvenance cdfProvB,
+                           JpdfProvenance cdfProvDiff) implements Serializable {
     }
 
     private ABComparisonEngine() {
@@ -211,10 +181,10 @@ public final class ABComparisonEngine {
                 CanonicalGridPolicy.AxisRange ryA = policy.axisRange(aVectors, yAxis, "A");
                 CanonicalGridPolicy.AxisRange rxB = policy.axisRange(bVectors, xAxis, "B");
                 CanonicalGridPolicy.AxisRange ryB = policy.axisRange(bVectors, yAxis, "B");
-                g.setMinX(Math.min(rxA.min, rxB.min));
-                g.setMaxX(Math.max(rxA.max, rxB.max));
-                g.setMinY(Math.min(ryA.min, ryB.min));
-                g.setMaxY(Math.max(ryA.max, ryB.max));
+                g.setMinX(Math.min(rxA.min(), rxB.min()));
+                g.setMaxX(Math.max(rxA.max(), rxB.max()));
+                g.setMinY(Math.min(ryA.min(), ryB.min()));
+                g.setMaxY(Math.max(ryA.max(), ryB.max()));
             }
             case CANONICAL_BY_FEATURE -> {
                 // Use the named policy, but union A/B axis ranges to avoid clipping one cohort.
@@ -223,10 +193,10 @@ public final class ABComparisonEngine {
                 CanonicalGridPolicy.AxisRange ryA = policy.axisRange(aVectors, yAxis, "A");
                 CanonicalGridPolicy.AxisRange rxB = policy.axisRange(bVectors, xAxis, "B");
                 CanonicalGridPolicy.AxisRange ryB = policy.axisRange(bVectors, yAxis, "B");
-                g.setMinX(Math.min(rxA.min, rxB.min));
-                g.setMaxX(Math.max(rxA.max, rxB.max));
-                g.setMinY(Math.min(ryA.min, ryB.min));
-                g.setMaxY(Math.max(ryA.max, ryB.max));
+                g.setMinX(Math.min(rxA.min(), rxB.min()));
+                g.setMaxX(Math.max(rxA.max(), rxB.max()));
+                g.setMinY(Math.min(ryA.min(), ryB.min()));
+                g.setMaxY(Math.max(ryA.max(), ryB.max()));
             }
         }
         return g;

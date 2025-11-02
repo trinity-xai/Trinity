@@ -4,7 +4,6 @@ import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.utils.AnalysisUtils;
 import edu.jhuapl.trinity.utils.metric.Metric;
 
-import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -40,68 +39,36 @@ public final class PairScorer {
 
     // ----------- Result type -----------
 
-    public static final class PairScore implements Serializable, Comparable<PairScore> {
-        @Serial
-        private static final long serialVersionUID = 1L;
-
-        /**
-         * For component-mode: i and j are component indices. For axis-mode: both are -1.
-         */
-        public final int i;
-        public final int j;
-        public final double score;           // normalized score used for ranking (>=0)
-        public final long nSamples;
-        public final boolean sufficient;
-        public final String reason;          // optional note (e.g., "low variance", "insufficient N")
-
-        public PairScore(int i, int j, double score, long nSamples, boolean sufficient, String reason) {
-            this.i = i;
-            this.j = j;
-            this.score = score;
-            this.nSamples = nSamples;
-            this.sufficient = sufficient;
-            this.reason = reason;
-        }
+    /**
+     * @param i      For component-mode: i and j are component indices. For axis-mode: both are -1.
+     * @param score  normalized score used for ranking (>=0)
+     * @param reason optional note (e.g., "low variance", "insufficient N")
+     */
+    public record PairScore(int i, int j, double score, long nSamples, boolean sufficient, String reason) implements Serializable, Comparable<PairScore> {
 
         @Override
         public int compareTo(PairScore o) {
             return -Double.compare(this.score, o.score);
         } // desc
 
-        @Override
-        public String toString() {
-            return "PairScore{" +
-                "i=" + i + ", j=" + j +
-                ", score=" + score +
-                ", n=" + nSamples +
-                ", sufficient=" + sufficient +
-                (reason != null ? (", reason='" + reason + '\'') : "") +
-                '}';
-        }
     }
 
     // ----------- Config -----------
 
-    public static final class Config {
-        public final JpdfRecipe.ScoreMetric metric;
-        public final int miBins;                 // for MI-lite (equal-width)
-        public final int maxKendallN;            // downsample limit for Kendall
-        public final Integer binsX;              // for sufficiency flag (nullable)
-        public final Integer binsY;              // for sufficiency flag (nullable)
-        public final double minAvgCountPerCell;  // sufficiency threshold
+    /**
+     * @param miBins             for MI-lite (equal-width)
+     * @param maxKendallN        downsample limit for Kendall
+     * @param binsX              for sufficiency flag (nullable)
+     * @param binsY              for sufficiency flag (nullable)
+     * @param minAvgCountPerCell sufficiency threshold
+     */
+    public record Config(JpdfRecipe.ScoreMetric metric, int miBins, int maxKendallN, Integer binsX, Integer binsY, double minAvgCountPerCell) {
 
-        public Config(JpdfRecipe.ScoreMetric metric,
-                      int miBins,
-                      int maxKendallN,
-                      Integer binsX,
-                      Integer binsY,
-                      double minAvgCountPerCell) {
-            this.metric = Objects.requireNonNull(metric);
-            this.miBins = Math.max(4, miBins);
-            this.maxKendallN = Math.max(50, maxKendallN);
-            this.binsX = binsX;
-            this.binsY = binsY;
-            this.minAvgCountPerCell = Math.max(0.0, minAvgCountPerCell);
+        public Config {
+            Objects.requireNonNull(metric);
+            miBins = Math.max(4, miBins);
+            maxKendallN = Math.max(50, maxKendallN);
+            minAvgCountPerCell = Math.max(0.0, minAvgCountPerCell);
         }
 
         public static Config defaultFor(JpdfRecipe.ScoreMetric metric, Integer binsX, Integer binsY, double minAvgPerCell) {

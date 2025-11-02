@@ -18,8 +18,6 @@ public class EmbeddingsImageLandmarkCallback extends RestConsumer {
 
     public enum STATUS {REQUESTED, SUCCEEDED, FAILED}
 
-    ;
-
     public EmbeddingsImageLandmarkCallback(Scene scene, List<Integer> inputIDs, int requestNumber) {
         super(scene);
         this.inputIDs = inputIDs;

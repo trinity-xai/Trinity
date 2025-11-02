@@ -89,19 +89,10 @@ public final class DensityCache implements Serializable {
 
     /**
      * Internal entry.
+     *
+     * @param provenance optional; may be null
      */
-    private static final class Entry implements Serializable {
-        @Serial
-        private static final long serialVersionUID = 1L;
-        final GridDensityResult result;
-        final long createdAt;
-        final JpdfProvenance provenance; // optional; may be null
-
-        Entry(GridDensityResult r, long t, JpdfProvenance p) {
-            this.result = r;
-            this.createdAt = t;
-            this.provenance = p;
-        }
+    private record Entry(GridDensityResult result, long createdAt, JpdfProvenance provenance) implements Serializable {
     }
 
     private final int maxEntries;
@@ -374,10 +365,10 @@ public final class DensityCache implements Serializable {
         StringBuilder sb = new StringBuilder(64);
         sb.append(a.getType());
         if (a.getType() == StatisticEngine.ScalarType.METRIC_DISTANCE_TO_MEAN) {
-            sb.append(":metric=").append(String.valueOf(a.getMetricName()));
+            sb.append(":metric=").append(a.getMetricName());
             sb.append(":ref=").append(vecHash(a.getReferenceVec()));
         } else if (a.getType() == StatisticEngine.ScalarType.COMPONENT_AT_DIMENSION) {
-            sb.append(":comp=").append(String.valueOf(a.getComponentIndex()));
+            sb.append(":comp=").append(a.getComponentIndex());
         }
         String lbl = a.getMetricName();
         if (lbl != null && !lbl.isBlank()) sb.append(":lbl=").append(lbl);

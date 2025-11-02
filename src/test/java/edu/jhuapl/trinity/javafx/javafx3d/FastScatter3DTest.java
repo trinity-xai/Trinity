@@ -219,7 +219,6 @@ public class FastScatter3DTest extends Application {
                 updatePositions();
             }
 
-            ;
         };
         animationTimer.start();
     }

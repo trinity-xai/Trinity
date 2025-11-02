@@ -45,24 +45,7 @@ public class StatPdfCdfChart extends LineChart<Number, Number> {
     //retain last stat and expose interactions
     private StatisticResult lastStat = null;
 
-    public static final class BinSelection {
-        public final int bin;
-        public final double xCenter;
-        public final double xFrom, xTo;
-        public final int count;
-        public final double fraction;
-        public final int[] sampleIdx;
-
-        public BinSelection(int bin, double xCenter, double xFrom, double xTo,
-                            int count, double fraction, int[] sampleIdx) {
-            this.bin = bin;
-            this.xCenter = xCenter;
-            this.xFrom = xFrom;
-            this.xTo = xTo;
-            this.count = count;
-            this.fraction = fraction;
-            this.sampleIdx = sampleIdx;
-        }
+    public record BinSelection(int bin, double xCenter, double xFrom, double xTo, int count, double fraction, int[] sampleIdx) {
     }
 
     private Consumer<BinSelection> onBinHover;
@@ -352,7 +335,7 @@ public class StatPdfCdfChart extends LineChart<Number, Number> {
         try {
             Point2D scenePt = plotArea.localToScene(xInPlotLocal, 0);
             Point2D axisPt = getXAxis().sceneToLocal(scenePt);
-            return ((NumberAxis) getXAxis()).getValueForDisplay(axisPt.getX()).doubleValue();
+            return getXAxis().getValueForDisplay(axisPt.getX()).doubleValue();
         } catch (Exception ex) {
             return null;
         }

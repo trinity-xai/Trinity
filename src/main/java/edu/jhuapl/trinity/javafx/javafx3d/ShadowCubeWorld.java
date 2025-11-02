@@ -373,16 +373,14 @@ public class ShadowCubeWorld extends CubeWorld {
 
     public Timeline animateOut(double milliseconds, double distance) {
         Timeline timeline = new Timeline();
-        timeline.getKeyFrames().addAll(new KeyFrame[]{
-            new KeyFrame(Duration.millis(milliseconds), new KeyValue[]{// Frame End
+        timeline.getKeyFrames().addAll(new KeyFrame(Duration.millis(milliseconds), // Frame End
                 new KeyValue(x1AxisRectangle.translateZProperty(), -distance, Interpolator.EASE_OUT),
                 new KeyValue(x2AxisRectangle.translateZProperty(), distance, Interpolator.EASE_OUT),
                 new KeyValue(y1AxisRectangle.translateXProperty(), -distance, Interpolator.EASE_OUT),
                 new KeyValue(y2AxisRectangle.translateXProperty(), distance, Interpolator.EASE_OUT),
                 new KeyValue(z1AxisRectangle.translateYProperty(), distance, Interpolator.EASE_OUT),
-                new KeyValue(z2AxisRectangle.translateYProperty(), -distance, Interpolator.EASE_OUT)
-            }),
-            new KeyFrame(Duration.millis(milliseconds * 1.5), new KeyValue[]{// Frame End
+                new KeyValue(z2AxisRectangle.translateYProperty(), -distance, Interpolator.EASE_OUT)),
+            new KeyFrame(Duration.millis(milliseconds * 1.5), // Frame End
                 new KeyValue(xy1GridLinesGroup.translateZProperty(), -distance, Interpolator.EASE_OUT),
                 new KeyValue(xx1GridLinesGroup.translateZProperty(), -distance, Interpolator.EASE_OUT),
                 new KeyValue(xy2GridLinesGroup.translateZProperty(), distance, Interpolator.EASE_OUT),
@@ -396,25 +394,21 @@ public class ShadowCubeWorld extends CubeWorld {
                 new KeyValue(zy1GridLinesGroup.translateYProperty(), distance, Interpolator.EASE_OUT),
                 new KeyValue(zx1GridLinesGroup.translateYProperty(), distance, Interpolator.EASE_OUT),
                 new KeyValue(zy2GridLinesGroup.translateYProperty(), -distance, Interpolator.EASE_OUT),
-                new KeyValue(zx2GridLinesGroup.translateYProperty(), -distance, Interpolator.EASE_OUT)
-            })
-        });
+                new KeyValue(zx2GridLinesGroup.translateYProperty(), -distance, Interpolator.EASE_OUT)));
         timeline.playFromStart();
         return timeline;
     }
 
     public Timeline animateIn(long milliseconds, double size) {
         Timeline timeline = new Timeline();
-        timeline.getKeyFrames().addAll(new KeyFrame[]{
-            new KeyFrame(Duration.millis(milliseconds * 1.5), new KeyValue[]{// Frame End
+        timeline.getKeyFrames().addAll(new KeyFrame(Duration.millis(milliseconds * 1.5), // Frame End
                 new KeyValue(x1AxisRectangle.translateZProperty(), -size / 2.0, Interpolator.EASE_OUT),
                 new KeyValue(x2AxisRectangle.translateZProperty(), size / 2.0, Interpolator.EASE_OUT),
                 new KeyValue(y1AxisRectangle.translateXProperty(), -size, Interpolator.EASE_OUT),
                 new KeyValue(y2AxisRectangle.translateXProperty(), 0, Interpolator.EASE_OUT),
                 new KeyValue(z1AxisRectangle.translateYProperty(), 0, Interpolator.EASE_OUT),
-                new KeyValue(z2AxisRectangle.translateYProperty(), -size, Interpolator.EASE_OUT)
-            }),
-            new KeyFrame(Duration.millis(milliseconds), new KeyValue[]{// Frame End
+                new KeyValue(z2AxisRectangle.translateYProperty(), -size, Interpolator.EASE_OUT)),
+            new KeyFrame(Duration.millis(milliseconds), // Frame End
                 new KeyValue(xy1GridLinesGroup.translateZProperty(), 0, Interpolator.EASE_OUT),
                 new KeyValue(xx1GridLinesGroup.translateZProperty(), 0, Interpolator.EASE_OUT),
                 new KeyValue(xy2GridLinesGroup.translateZProperty(), 0, Interpolator.EASE_OUT),
@@ -428,9 +422,7 @@ public class ShadowCubeWorld extends CubeWorld {
                 new KeyValue(zy1GridLinesGroup.translateYProperty(), 0, Interpolator.EASE_OUT),
                 new KeyValue(zx1GridLinesGroup.translateYProperty(), 0, Interpolator.EASE_OUT),
                 new KeyValue(zy2GridLinesGroup.translateYProperty(), 0, Interpolator.EASE_OUT),
-                new KeyValue(zx2GridLinesGroup.translateYProperty(), 0, Interpolator.EASE_OUT)
-            })
-        });
+                new KeyValue(zx2GridLinesGroup.translateYProperty(), 0, Interpolator.EASE_OUT)));
         timeline.playFromStart();
         return timeline;
     }
@@ -781,8 +773,7 @@ public class ShadowCubeWorld extends CubeWorld {
     }
 
     private void mouseDrawHandler(MouseEvent me) {
-        if (me.getSource() instanceof ShadowPane) {
-            ShadowPane shadowPane = (ShadowPane) me.getSource();
+        if (me.getSource() instanceof ShadowPane shadowPane) {
             if (me.isControlDown()) {
                 Platform.runLater(() -> {
 

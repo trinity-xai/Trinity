@@ -222,13 +222,7 @@ public final class PairGridPane extends BorderPane {
     /**
      * Range struct for global/fixed usage.
      */
-    public static final class Range {
-        public final double vmin, vmax;
-
-        public Range(double vmin, double vmax) {
-            this.vmin = vmin;
-            this.vmax = vmax;
-        }
+    public record Range(double vmin, double vmax) {
     }
 
     public enum RangeMode {AUTO, GLOBAL, FIXED}
@@ -284,14 +278,7 @@ public final class PairGridPane extends BorderPane {
     private Range globalRange = null;
 
     // Optional export hook
-    public static final class ExportRequest {
-        public final PairItem item;
-        public final WritableImage image;
-
-        public ExportRequest(PairItem item, WritableImage image) {
-            this.item = item;
-            this.image = image;
-        }
+    public record ExportRequest(PairItem item, WritableImage image) {
     }
 
     private Consumer<ExportRequest> onExportRequest;

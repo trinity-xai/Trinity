@@ -148,10 +148,10 @@ public class PairwiseJpdfView extends BorderPane {
             try {
                 FileChooser fc = new FileChooser();
                 fc.getExtensionFilters().add(new FileChooser.ExtensionFilter("PNG Image", "*.png"));
-                fc.setInitialFileName(safeFilename(req.item.xLabel + "_" + req.item.yLabel) + ".png");
+                fc.setInitialFileName(safeFilename(req.item().xLabel + "_" + req.item().yLabel) + ".png");
                 File f = fc.showSaveDialog(getScene() != null ? getScene().getWindow() : null);
                 if (f == null) return;
-                WritableImage img = req.image;
+                WritableImage img = req.image();
                 ImageIO.write(SwingFXUtils.fromFXImage(img, null), "png", f);
                 toast("Saved " + f.getName(), false);
             } catch (Exception ex) {
@@ -413,10 +413,10 @@ public class PairwiseJpdfView extends BorderPane {
         normalizeAllBtn.setOnAction(e -> {
             PairGridPane.Range r = gridPane.computeGlobalRange();
             if (r != null) {
-                vminField.setText(String.format("%.6g", r.vmin));
-                vmaxField.setText(String.format("%.6g", r.vmax));
+                vminField.setText(String.format("%.6g", r.vmin()));
+                vmaxField.setText(String.format("%.6g", r.vmax()));
                 rangeFixedBtn.setSelected(true);
-                gridPane.setRangeModeFixed(r.vmin, r.vmax);
+                gridPane.setRangeModeFixed(r.vmin(), r.vmax());
             }
         });
 
@@ -491,20 +491,20 @@ public class PairwiseJpdfView extends BorderPane {
         final boolean doIncrementalSort = incrementalSortCheck.isSelected();
 
         final java.util.function.Consumer<JpdfBatchEngine.PairJobResult> onResult = job -> {
-            if (job == null || job.density == null) return;
+            if (job == null || job.density() == null) return;
 
-            String xLbl = (job.i >= 0) ? ("Comp " + job.i) : "X";
-            String yLbl = (job.j >= 0) ? ("Comp " + job.j) : "Y";
+            String xLbl = (job.i() >= 0) ? ("Comp " + job.i()) : "X";
+            String yLbl = (job.j() >= 0) ? ("Comp " + job.j()) : "Y";
 
             PairGridPane.PairItem.Builder b = PairGridPane.PairItem
                 .newBuilder(xLbl, yLbl)
-                .indices(job.i >= 0 ? job.i : null, job.j >= 0 ? job.j : null)
-                .from(job.density, false, true)
+                .indices(job.i() >= 0 ? job.i() : null, job.j() >= 0 ? job.j() : null)
+                .from(job.density(), false, true)
                 .palette(HeatmapThumbnailView.PaletteKind.SEQUENTIAL)
                 .autoRange(true)
                 .showLegend(false);
 
-            if (job.rank != null) b.score(job.rank.score);
+            if (job.rank() != null) b.score(job.rank().score());
             PairGridPane.PairItem item = b.build();
 
             gridPane.addItemStreaming(item, flushN, flushMs, doIncrementalSort);
@@ -529,7 +529,7 @@ public class PairwiseJpdfView extends BorderPane {
                     }
                 } catch (Throwable t) {
                     final String msg = "Batch failed: " + t.getClass().getSimpleName()
-                        + " - " + String.valueOf(t.getMessage());
+                        + " - " + t.getMessage();
                     Platform.runLater(() -> {
                         setControlsDisabled(false);
                         setProgressText("");
@@ -544,11 +544,11 @@ public class PairwiseJpdfView extends BorderPane {
 
                 Platform.runLater(() -> {
                     gridPane.sortByScoreDescending();
-                    int total = Math.max(finalBatch.submittedPairs, finalCompleted);
+                    int total = Math.max(finalBatch.submittedPairs(), finalCompleted);
                     setProgressText("Loaded " + finalCompleted + " / " + total);
                     setControlsDisabled(false);
                     toast("Batch complete: " + finalCompleted
-                        + " surfaces; cacheHits=" + finalBatch.cacheHits
+                        + " surfaces; cacheHits=" + finalBatch.cacheHits()
                         + "; wall=" + wall + " ms.", false);
                 });
                 return null;

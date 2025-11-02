@@ -2,7 +2,6 @@ package edu.jhuapl.trinity.utils.statistics;
 
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 
-import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.List;
@@ -56,68 +55,19 @@ public final class SimilarityComputer {
 
     /**
      * Output bundle for a single similarity computation.
+     *
+     * @param matrix             Symmetric matrix (F x F). Diagonal is 1.0 when defined.
+     * @param quality            Optional quality matrix (F x F), e.g., fraction of finite pairs used. In [0,1].
+     * @param metric             Chosen metric.
+     * @param componentIndices   Selected component indices (length F).
+     * @param labels             Human-readable labels per feature (length F), e.g., "Comp 0", "Comp 1".
+     * @param nSamples           Number of sample rows used per pair (ideally equals N unless NaNs encountered).
+     * @param nmiBins            Effective bin count used by NMI (null when metric != NMI).
+     * @param minAvgCountPerCell Guard threshold from recipe (for FYI / UI badges).
      */
-    public static final class SimilarityResult implements Serializable {
-        @Serial
-        private static final long serialVersionUID = 1L;
+    public record SimilarityResult(double[][] matrix, double[][] quality, Metric metric, int[] componentIndices, List<String> labels, int nSamples,
+                                   Integer nmiBins, double minAvgCountPerCell) implements Serializable {
 
-        /**
-         * Symmetric matrix (F x F). Diagonal is 1.0 when defined.
-         */
-        public final double[][] matrix;
-
-        /**
-         * Optional quality matrix (F x F), e.g., fraction of finite pairs used. In [0,1].
-         */
-        public final double[][] quality;
-
-        /**
-         * Chosen metric.
-         */
-        public final Metric metric;
-
-        /**
-         * Selected component indices (length F).
-         */
-        public final int[] componentIndices;
-
-        /**
-         * Human-readable labels per feature (length F), e.g., "Comp 0", "Comp 1".
-         */
-        public final List<String> labels;
-
-        /**
-         * Number of sample rows used per pair (ideally equals N unless NaNs encountered).
-         */
-        public final int nSamples;
-
-        /**
-         * Effective bin count used by NMI (null when metric != NMI).
-         */
-        public final Integer nmiBins;
-
-        /**
-         * Guard threshold from recipe (for FYI / UI badges).
-         */
-        public final double minAvgCountPerCell;
-
-        public SimilarityResult(double[][] matrix,
-                                double[][] quality,
-                                Metric metric,
-                                int[] componentIndices,
-                                List<String> labels,
-                                int nSamples,
-                                Integer nmiBins,
-                                double minAvgCountPerCell) {
-            this.matrix = matrix;
-            this.quality = quality;
-            this.metric = metric;
-            this.componentIndices = componentIndices;
-            this.labels = labels;
-            this.nSamples = nSamples;
-            this.nmiBins = nmiBins;
-            this.minAvgCountPerCell = minAvgCountPerCell;
-        }
     }
 
     private SimilarityComputer() {

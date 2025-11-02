@@ -103,7 +103,7 @@ final class Utils {
         for (final double v : vec) {
             result += v * v;
         }
-        return (double) Math.sqrt(result);
+        return Math.sqrt(result);
     }
 
     /**

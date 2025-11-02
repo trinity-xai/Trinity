@@ -59,7 +59,7 @@ public class ExMaxClusterTask extends ClusterTask {
         ArrayList<Cluster> clusters = new ArrayList<>();
         int i = 0;
         for (GaussianMixtureComponent c : gmm.components) {
-            LOG.info("After GMM Fit Centroid {}: {}", i, Arrays.toString(c.distribution.mu));
+            LOG.info("After GMM Fit Centroid {}: {}", i, Arrays.toString(c.distribution().mu));
             clusters.add(new Cluster(observations[0].length));
             i++;
         }

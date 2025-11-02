@@ -2,7 +2,6 @@ package edu.jhuapl.trinity.utils.statistics;
 
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 
-import java.io.Serial;
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -46,75 +45,28 @@ public final class FeatureSimilarityComputer {
 
     /**
      * Result bundle for a single cohort.
+     *
+     * @param sim        Similarity matrix, size N x N. May contain NaN where insufficient.
+     * @param sufficient True where the corresponding sim[i][j] passed the sufficiency guard.
+     * @param labels     Display labels for each component (length N), e.g., "Comp 7".
+     * @param meta       Metadata for auditing and UI badges.
      */
-    public static final class Result implements Serializable {
-        @Serial
-        private static final long serialVersionUID = 1L;
+    public record Result(double[][] sim, boolean[][] sufficient, List<String> labels, Meta meta) implements Serializable {
 
-        /**
-         * Similarity matrix, size N x N. May contain NaN where insufficient.
-         */
-        public final double[][] sim;
 
-        /**
-         * True where the corresponding sim[i][j] passed the sufficiency guard.
-         */
-        public final boolean[][] sufficient;
-
-        /**
-         * Display labels for each component (length N), e.g., "Comp 7".
-         */
-        public final List<String> labels;
-
-        /**
-         * Metadata for auditing and UI badges.
-         */
-        public final Meta meta;
-
-        public Result(double[][] sim, boolean[][] sufficient, List<String> labels, Meta meta) {
-            this.sim = sim;
-            this.sufficient = sufficient;
-            this.labels = labels;
-            this.meta = meta;
-        }
     }
 
     /**
      * Metadata captured for the matrix computation.
+     *
+     * @param miBins      for MI_LITE
+     * @param kendallMaxN for KENDALL sampling
+     * @param binsX       for sufficiency guard
+     * @param binsY       for sufficiency guard
      */
-    public static final class Meta implements Serializable {
-        @Serial
-        private static final long serialVersionUID = 1L;
+    public record Meta(int startIndex, int endIndex, long nSamples, SimilarityMetric metric, int miBins, int kendallMaxN, int binsX, int binsY,
+                       double minAvgCountPerCell) implements Serializable {
 
-        public final int startIndex;
-        public final int endIndex;
-        public final long nSamples;
-        public final SimilarityMetric metric;
-        public final int miBins;                 // for MI_LITE
-        public final int kendallMaxN;            // for KENDALL sampling
-        public final int binsX;                  // for sufficiency guard
-        public final int binsY;                  // for sufficiency guard
-        public final double minAvgCountPerCell;
-
-        public Meta(int startIndex,
-                    int endIndex,
-                    long nSamples,
-                    SimilarityMetric metric,
-                    int miBins,
-                    int kendallMaxN,
-                    int binsX,
-                    int binsY,
-                    double minAvgCountPerCell) {
-            this.startIndex = startIndex;
-            this.endIndex = endIndex;
-            this.nSamples = nSamples;
-            this.metric = metric;
-            this.miBins = miBins;
-            this.kendallMaxN = kendallMaxN;
-            this.binsX = binsX;
-            this.binsY = binsY;
-            this.minAvgCountPerCell = minAvgCountPerCell;
-        }
     }
 
     private FeatureSimilarityComputer() {

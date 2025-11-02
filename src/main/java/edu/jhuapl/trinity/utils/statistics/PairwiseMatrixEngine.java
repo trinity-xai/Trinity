@@ -213,14 +213,14 @@ public final class PairwiseMatrixEngine {
         // Populate from PairScorer results
         for (PairScore ps : allScores) {
             // Ignore pairs outside requested subset
-            int iComp = ps.i;
-            int jComp = ps.j;
+            int iComp = ps.i();
+            int jComp = ps.j();
             int ai = indexOf(comps, iComp);
             int aj = indexOf(comps, jComp);
             if (ai < 0 || aj < 0) continue;
 
-            double v = ps.score;
-            double q = ps.sufficient ? 1.0 : 0.0;
+            double v = ps.score();
+            double q = ps.sufficient() ? 1.0 : 0.0;
 
             // If scorer gave i==j (allowed when includeSelfPairs=true), it lands on the diagonal.
             M[ai][aj] = v;
@@ -268,12 +268,12 @@ public final class PairwiseMatrixEngine {
         );
 
         // Labels/indices already computed by DivergenceComputer
-        List<String> labels = (dr.labels != null) ? dr.labels : buildDefaultLabels(dr.componentIndices);
+        List<String> labels = (dr.labels() != null) ? dr.labels() : buildDefaultLabels(dr.componentIndices());
 
         return MatrixResult.of(
-            dr.matrix,
-            dr.quality,
-            dr.componentIndices,
+            dr.matrix(),
+            dr.quality(),
+            dr.componentIndices(),
             labels,
             legendForDivergence(metric),
             "Divergence: " + metric.name()

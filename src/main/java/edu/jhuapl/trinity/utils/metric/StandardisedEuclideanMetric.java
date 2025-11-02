@@ -29,6 +29,6 @@ public class StandardisedEuclideanMetric extends Metric {
             final double d = x[i] - y[i];
             result += d * d / mSigma[i];
         }
-        return (double) Math.sqrt(result);
+        return Math.sqrt(result);
     }
 }

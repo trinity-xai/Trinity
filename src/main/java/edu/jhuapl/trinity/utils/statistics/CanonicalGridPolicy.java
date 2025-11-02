@@ -53,69 +53,27 @@ public final class CanonicalGridPolicy implements Serializable {
     /**
      * AxisKey identifies the semantic axis (ScalarType + metric/component/ref hints).
      * This lets you set per-axis canonical overrides and cache computed ranges.
+     *
+     * @param metricName     for METRIC_DISTANCE_TO_MEAN
+     * @param componentIndex for COMPONENT_AT_DIMENSION
+     * @param label          optional display tag
      */
-    public static final class AxisKey implements Serializable {
-        @Serial
-        private static final long serialVersionUID = 1L;
+    public record AxisKey(StatisticEngine.ScalarType type, String metricName, Integer componentIndex, String label) implements Serializable {
 
-        public final StatisticEngine.ScalarType type;
-        public final String metricName;     // for METRIC_DISTANCE_TO_MEAN
-        public final Integer componentIndex;// for COMPONENT_AT_DIMENSION
-        public final String label;          // optional display tag
-
-        public AxisKey(StatisticEngine.ScalarType type, String metricName, Integer componentIndex, String label) {
-            this.type = Objects.requireNonNull(type, "type");
-            this.metricName = metricName;
-            this.componentIndex = componentIndex;
-            this.label = label;
+        public AxisKey {
+            Objects.requireNonNull(type);
         }
 
         public static AxisKey from(AxisParams a) {
             return new AxisKey(a.getType(), a.getMetricName(), a.getComponentIndex(), a.getMetricName());
         }
 
-        @Override
-        public boolean equals(Object o) {
-            if (this == o) return true;
-            if (!(o instanceof AxisKey)) return false;
-            AxisKey that = (AxisKey) o;
-            return type == that.type &&
-                Objects.equals(metricName, that.metricName) &&
-                Objects.equals(componentIndex, that.componentIndex) &&
-                Objects.equals(label, that.label);
-        }
-
-        @Override
-        public int hashCode() {
-            return Objects.hash(type, metricName, componentIndex, label);
-        }
-
-        @Override
-        public String toString() {
-            return "AxisKey{" +
-                "type=" + type +
-                ", metricName='" + metricName + '\'' +
-                ", componentIndex=" + componentIndex +
-                ", label='" + label + '\'' +
-                '}';
-        }
     }
 
     /**
      * Per-axis explicit override (any field nullable = leave to policy).
      */
-    public static final class AxisOverride implements Serializable {
-        @Serial
-        private static final long serialVersionUID = 1L;
-        public final Double min;
-        public final Double max;
-        public final Integer bins;
-
-        public AxisOverride(Double min, Double max, Integer bins) {
-            this.min = min;
-            this.max = max;
-            this.bins = bins;
-        }
+    public record AxisOverride(Double min, Double max, Integer bins) implements Serializable {
 
         public AxisOverride withBins(Integer b) {
             return new AxisOverride(min, max, b);
@@ -125,20 +83,8 @@ public final class CanonicalGridPolicy implements Serializable {
     /**
      * Simple holder for numeric range.
      */
-    public static final class AxisRange implements Serializable {
-        @Serial
-        private static final long serialVersionUID = 1L;
-        public final double min, max;
+    public record AxisRange(double min, double max) implements Serializable {
 
-        public AxisRange(double min, double max) {
-            this.min = min;
-            this.max = max;
-        }
-
-        @Override
-        public String toString() {
-            return "[" + min + ", " + max + "]";
-        }
     }
 
     // ---------- Policy fields ----------

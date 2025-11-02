@@ -577,24 +577,18 @@ public class RetroWavePane extends StackPane {
                         new Font("Consolas", 50), Color.GREEN));
                 resetView(1000, false);
             });
-            timeline.getKeyFrames().addAll(new KeyFrame[]{
-                new KeyFrame(Duration.millis(milliseconds * 0.333), new KeyValue[]{
-                    new KeyValue(cameraTransform.rx.angleProperty(), 0, Interpolator.EASE_IN),
+            timeline.getKeyFrames().addAll(new KeyFrame(Duration.millis(milliseconds * 0.333), new KeyValue(cameraTransform.rx.angleProperty(), 0, Interpolator.EASE_IN),
                     new KeyValue(cameraTransform.ry.angleProperty(), 0, Interpolator.EASE_IN),
                     new KeyValue(cameraTransform.rz.angleProperty(), 0, Interpolator.EASE_IN),
                     new KeyValue(camera.translateXProperty(), 0, Interpolator.EASE_IN),
                     new KeyValue(camera.translateYProperty(), 0, Interpolator.EASE_IN),
-                    new KeyValue(camera.translateZProperty(), 0, Interpolator.EASE_IN)
-                })
-                , new KeyFrame(Duration.millis(milliseconds), new KeyValue[]{
-                new KeyValue(cameraTransform.ry.angleProperty(), 180, Interpolator.EASE_OUT),
-                new KeyValue(camera.translateYProperty(), -sunTranslateY / 3.0, Interpolator.EASE_OUT),
-                new KeyValue(camera.translateZProperty(), -1200, Interpolator.EASE_OUT)
-            })
+                    new KeyValue(camera.translateZProperty(), 0, Interpolator.EASE_IN))
+                , new KeyFrame(Duration.millis(milliseconds), new KeyValue(cameraTransform.ry.angleProperty(), 180, Interpolator.EASE_OUT),
+                    new KeyValue(camera.translateYProperty(), -sunTranslateY / 3.0, Interpolator.EASE_OUT),
+                    new KeyValue(camera.translateZProperty(), -1200, Interpolator.EASE_OUT))
                 , new KeyFrame(Duration.millis(milliseconds * 1.25), kv -> {
-                creditsTimeline.playFromStart();
-            })
-            });
+                    creditsTimeline.playFromStart();
+                }));
             timeline.playFromStart();
         } else {
             dataXForm.reset();

@@ -102,23 +102,10 @@ public final class JpdfRecipe implements Serializable {
      * AxisPair wraps the axis definitions used by GridDensity3DEngine.
      * In whitelist mode, each pair defines (X axis, Y axis) explicitly.
      */
-    public static final class AxisPair implements Serializable {
-        @Serial
-        private static final long serialVersionUID = 1L;
-        private final AxisParams xAxis;
-        private final AxisParams yAxis;
-
-        public AxisPair(AxisParams xAxis, AxisParams yAxis) {
-            this.xAxis = Objects.requireNonNull(xAxis, "xAxis");
-            this.yAxis = Objects.requireNonNull(yAxis, "yAxis");
-        }
-
-        public AxisParams xAxis() {
-            return xAxis;
-        }
-
-        public AxisParams yAxis() {
-            return yAxis;
+    public record AxisPair(AxisParams xAxis, AxisParams yAxis) implements Serializable {
+        public AxisPair {
+            Objects.requireNonNull(xAxis);
+            Objects.requireNonNull(yAxis);
         }
     }
 
