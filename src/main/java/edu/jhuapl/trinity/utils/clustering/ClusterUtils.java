@@ -3,6 +3,9 @@ package edu.jhuapl.trinity.utils.clustering;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
+import java.util.ArrayList;
+import java.util.List;
+
 import static java.lang.Math.abs;
 import static java.lang.Math.sqrt;
 
@@ -54,6 +57,29 @@ public class ClusterUtils {
         }
 
         return dist;
+    }
+
+    public static List<List<double[]>> extractGMMClusters(
+        double[][] data,
+        GaussianMixture gmm,
+        double threshold) {
+        List<List<double[]>> clusterPoints = new ArrayList<>();
+        for (int i = 0; i < gmm.components.length; i++) {
+            clusterPoints.add(new ArrayList<>());
+        }
+
+        for (double[] x : data) {
+            double[] post = gmm.posteriori(x);
+            int k = ClusterUtils.whichMax(post);
+            if (post[k] >= threshold) {
+                clusterPoints.get(k).add(x);
+            }
+        }
+
+        // Filter out tiny/degenerate clusters if needed
+        clusterPoints.removeIf(list -> list.size() < 4);
+
+        return clusterPoints;
     }
 
     /**

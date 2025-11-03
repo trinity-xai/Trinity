@@ -367,7 +367,7 @@ assemble {
 jlink {
     def fileSep = System.getProperty('file.separator')
     def imageZipFile = layout.buildDirectory.file("${artifactNameUpper}-${project.version}.zip")
-    options.set(['--strip-debug', '--compress', '2', '--no-header-files', '--no-man-pages'])
+    options.set(['--strip-debug', '--compress', 'zip-6', '--no-header-files', '--no-man-pages'])
     imageZip.set(imageZipFile)
     launcher {
         def currentOS = org.gradle.internal.os.OperatingSystem.current()
