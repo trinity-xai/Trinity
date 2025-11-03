@@ -455,7 +455,7 @@ public class Manifold3D extends Group {
     }
 
     public void makeLines() {
-        boolean wasVisible = null != quickhullLinesMeshView 
+        boolean wasVisible = null != quickhullLinesMeshView
             ? quickhullLinesMeshView.isVisible() : false;
         quickhullLinesTriangleMesh = new TriangleMesh();
         quickhullLinesTriangleMesh.getPoints().addAll(quickhullTriangleMesh.getPoints());

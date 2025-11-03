@@ -246,39 +246,41 @@ public class GaussianMixture {
 
         // within-component variance
         for (GaussianMixtureComponent c : components) {
-            double w = c.priori;
-            RealMatrix Sk = c.distribution.cov();
+            double w = c.priori();
+            RealMatrix Sk = c.distribution().cov();
             C = C.add(Sk.scalarMultiply(w));
         }
 
         // between-component variance
         for (GaussianMixtureComponent c : components) {
-            double w = c.priori;
-            double[] mk = c.distribution.mean();
+            double w = c.priori();
+            double[] mk = c.distribution().mean();
             double[] diff = mk.clone();
             ClusterUtils.sub(diff, mu);
             RealMatrix outer = MatrixUtils.createColumnRealMatrix(diff)
-                                  .multiply(MatrixUtils.createRowRealMatrix(diff));
+                .multiply(MatrixUtils.createRowRealMatrix(diff));
             C = C.add(outer.scalarMultiply(w));
         }
         return C;
     }
-public boolean inDistribution(double[] x, double q) {
-    // choose most responsible component
-    double[] r = posteriori(x);
-    int idx = ClusterUtils.whichMax(r);
-    GaussianMixtureComponent c = components[idx];
-    double d2 = c.distribution.mahalanobis2(x);
-    // chi-square threshold
-    org.apache.commons.math3.distribution.ChiSquaredDistribution chi =
-        new org.apache.commons.math3.distribution.ChiSquaredDistribution(c.distribution.dim());
-    double thresh = chi.inverseCumulativeProbability(q);
-    return d2 <= thresh;
-}
 
-public boolean inDistributionByLogP(double[] x, double tau) {
-    return Math.log(p(x)) >= tau;
-}
+    public boolean inDistribution(double[] x, double q) {
+        // choose most responsible component
+        double[] r = posteriori(x);
+        int idx = ClusterUtils.whichMax(r);
+        GaussianMixtureComponent c = components[idx];
+        double d2 = c.distribution().mahalanobis2(x);
+        // chi-square threshold
+        org.apache.commons.math3.distribution.ChiSquaredDistribution chi =
+            new org.apache.commons.math3.distribution.ChiSquaredDistribution(c.distribution().dim());
+        double thresh = chi.inverseCumulativeProbability(q);
+        return d2 <= thresh;
+    }
+
+    public boolean inDistributionByLogP(double[] x, double tau) {
+        return Math.log(p(x)) >= tau;
+    }
+
     public Pair<Integer, Double> maxPostProb(double[] x) {
         int k = components.length;
         double[] prob = new double[k];

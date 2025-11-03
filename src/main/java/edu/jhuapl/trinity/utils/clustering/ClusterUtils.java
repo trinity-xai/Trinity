@@ -3,10 +3,11 @@ package edu.jhuapl.trinity.utils.clustering;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
-import static java.lang.Math.abs;
-import static java.lang.Math.sqrt;
 import java.util.ArrayList;
 import java.util.List;
+
+import static java.lang.Math.abs;
+import static java.lang.Math.sqrt;
 
 /**
  * Cherry Picked Math functions used for GMM processing.
@@ -57,11 +58,11 @@ public class ClusterUtils {
 
         return dist;
     }
+
     public static List<List<double[]>> extractGMMClusters(
-            double[][] data,
-            GaussianMixture gmm,
-            double threshold)
-    {
+        double[][] data,
+        GaussianMixture gmm,
+        double threshold) {
         List<List<double[]>> clusterPoints = new ArrayList<>();
         for (int i = 0; i < gmm.components.length; i++) {
             clusterPoints.add(new ArrayList<>());
@@ -80,6 +81,7 @@ public class ClusterUtils {
 
         return clusterPoints;
     }
+
     /**
      * Returns the sum of an array.
      *
