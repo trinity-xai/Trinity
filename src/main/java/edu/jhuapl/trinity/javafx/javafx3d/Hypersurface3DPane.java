@@ -259,7 +259,41 @@ public class Hypersurface3DPane extends StackPane
     public PointLight pointLight;
     private List<List<Double>> originalGrid = new ArrayList<>();
 
-    // Event-driven state fields for settings previously set via controls
+    
+
+    // ============================================================
+    // Primitive HeightField + Global LOD Cap (via LodManager)
+    // ============================================================
+
+    /** Max render dimension for L0 (aspect-preserving). Default safe limit: 2048. */
+    private int maxRenderResolution = 2048;
+    /** Minimum LOD dimension (stop generating levels below this). Default: 512. */
+    private int minRenderResolution = 512;
+
+    /** Full-resolution height data (primitive). Derived from originalGrid or other data sources. */
+    private HeightField fullResHeightField = null;
+
+    /** Processed LOD pyramid (Option B: process L0 then downsample processed). */
+    private List<HeightField> lodProcessedLevels = List.of();
+
+    /** Active LOD index into lodProcessedLevels. */
+    private int activeLodIndex = -1;
+
+    /** Active HeightField (alias of lodProcessedLevels.get(activeLodIndex)). */
+    private HeightField activeHeightField = null;
+
+    /** Constant world extents used to keep surface size stable across LOD changes. */
+    private double baseWorldWidth = Double.NaN;
+    private double baseWorldDepth = Double.NaN;
+
+    /** Current mesh spacing in world units per cell for the active LOD. */
+    private double currentLodSurfScaleX = Double.NaN;
+    private double currentLodSurfScaleZ = Double.NaN;
+
+    /** Screen-space LOD scheduler/selector. */
+    private LodManager lodManager = null;
+
+// Event-driven state fields for settings previously set via controls
     private HeightMode heightMode = HeightMode.RAW;
     private boolean smoothingEnabled = false;
     private SurfaceUtils.Smoothing smoothingMethod = SurfaceUtils.Smoothing.GAUSSIAN;
@@ -362,7 +396,8 @@ public class Hypersurface3DPane extends StackPane
             double newZ = z + event.getZoomFactor() * modifierFactor * modifier;
             camera.setTranslateZ(newZ);
             updateLabels();
-        });
+                    if (lodManager != null) lodManager.requestUpdate(LodManager.UpdateReason.SCROLL);
+});
 
         subScene.setOnKeyPressed(event -> {
             KeyCode keycode = event.getCode();
@@ -478,7 +513,8 @@ public class Hypersurface3DPane extends StackPane
             camera.setTranslateZ(newZ);
             updateLabels();
             updateCalloutHeadPoints(subScene);
-        });
+                    if (lodManager != null) lodManager.requestUpdate(LodManager.UpdateReason.SCROLL);
+});
 
         subScene.setOnMouseDragged((MouseEvent me) -> mouseDragCamera(me));
         Pane pathPane = App.getAppPathPaneStack();
@@ -494,7 +530,11 @@ public class Hypersurface3DPane extends StackPane
                 ApplicationEvent.SHOW_HYPERSPACE_CONTROLS, Boolean.TRUE));
         });
 
-        MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
+        
+        subScene.setOnMouseReleased((MouseEvent me) -> {
+            if (lodManager != null) lodManager.forceUpdate();
+        });
+MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         copyAsImageItem.setOnAction((ActionEvent e) -> {
             Clipboard clipboard = Clipboard.getSystemClipboard();
             ClipboardContent content = new ClipboardContent();
@@ -647,7 +687,7 @@ public class Hypersurface3DPane extends StackPane
             applyGraphStyle(styleParams, /*rebuildIfNeeded*/ true);
         });
 
-// Reset style defaults
+        // Reset style defaults
         this.scene.addEventHandler(GraphEvent.GRAPH_STYLE_RESET_DEFAULTS, e -> {
             styleParams = new GraphStyleParams(); // back to defaults
 
@@ -1255,21 +1295,36 @@ public class Hypersurface3DPane extends StackPane
     }
 
     private Number vertToHeight(Vert3D p) {
-        if (dataGrid == null) return 0.0;
-
         if (!surfaceRender) {
-            // cylinder path unchanged
+            // cylinder path unchanged (uses dataGrid)
+            if (dataGrid == null) return 0.0;
             return findBlerpHeight(p);
         }
+
+        // Prefer primitive active LOD field
+        if (activeHeightField == null) {
+            if (dataGrid == null) return 0.0;
+            switch (interpMode) {
+                case BILINEAR:
+                case BICUBIC: {
+                    double gx = p.xIndex + frac(p.getX() / Math.max(1.0, surfScale));
+                    double gy = p.yIndex + frac(p.getY() / Math.max(1.0, surfScale));
+                    return SurfaceUtils.sample(dataGrid, gx, gy, interpMode);
+                }
+                case NEAREST:
+                default:
+                    return lookupPoint(p);
+            }
+        }
+
         switch (interpMode) {
             case BILINEAR:
             case BICUBIC: {
-                // Convert to grid space: index + in-cell fraction.
-                // If p.getX()/getY() are already grid-space, this still works.
-                // If they are world-space, the /surfScale fixes it.
-                double gx = p.xIndex + frac(p.getX() / Math.max(1.0, surfScale));
-                double gy = p.yIndex + frac(p.getY() / Math.max(1.0, surfScale));
-                return SurfaceUtils.sample(dataGrid, gx, gy, interpMode);
+                double sx = Double.isFinite(currentLodSurfScaleX) ? currentLodSurfScaleX : surfScale;
+                double sz = Double.isFinite(currentLodSurfScaleZ) ? currentLodSurfScaleZ : surfScale;
+                double gx = p.xIndex + frac(p.getX() / Math.max(1.0, sx));
+                double gy = p.yIndex + frac(p.getY() / Math.max(1.0, sz));
+                return SurfaceUtils.sample(activeHeightField, gx, gy, interpMode);
             }
             case NEAREST:
             default:
@@ -1278,11 +1333,42 @@ public class Hypersurface3DPane extends StackPane
     }
 
     private Number lookupPoint(Vert3D p) {
+        if (activeHeightField != null) {
+            int w = activeHeightField.width();
+            int h = activeHeightField.height();
+            if (p.yIndex < 0 || p.yIndex >= h || p.xIndex < 0 || p.xIndex >= w) return 0.0;
+            return (double) activeHeightField.data()[p.yIndex * w + p.xIndex];
+        }
+        if (dataGrid == null) return 0.0;
         if (p.yIndex >= dataGrid.size() || p.xIndex >= dataGrid.get(0).size()) return 0.0;
         return dataGrid.get(p.yIndex).get(p.xIndex);
     }
 
     private Number findBlerpHeight(Vert3D p) {
+        // Used by cylinder mode (and legacy paths). Works on activeHeightField if present.
+        if (activeHeightField != null) {
+            int w = activeHeightField.width();
+            int h = activeHeightField.height();
+            if (w <= 0 || h <= 0) return 0.0;
+
+            int x1Index = p.xIndex <= 0 ? 0 : p.xIndex - 1;
+            if (x1Index >= w - 1) x1Index = w - 1;
+            int x2Index = p.xIndex >= w - 1 ? w - 1 : p.xIndex + 1;
+
+            int y1Index = p.yIndex <= 0 ? 0 : p.yIndex - 1;
+            if (y1Index >= h - 1) y1Index = h - 1;
+            int y2Index = p.yIndex >= h - 1 ? h - 1 : p.yIndex + 1;
+
+            float[] d = activeHeightField.data();
+            double c11 = d[y1Index * w + x1Index] * yScale;
+            double c21 = d[y1Index * w + x2Index] * yScale;
+            double c12 = d[y2Index * w + x1Index] * yScale;
+            double c22 = d[y2Index * w + x2Index] * yScale;
+            return quickBlerp(c11, c21, c12, c22, p.getX(), p.getY());
+        }
+
+        if (dataGrid == null) return 0.0;
+
         int x1Index = p.xIndex <= 0 ? 0 : p.xIndex - 1;
         if (x1Index >= dataGrid.get(0).size() - 1) x1Index = dataGrid.get(0).size() - 1;
         int x2Index = p.xIndex >= dataGrid.get(0).size() - 1 ? dataGrid.get(0).size() - 1 : p.xIndex + 1;
@@ -1304,7 +1390,6 @@ public class Hypersurface3DPane extends StackPane
         return f12 + (f34 - f12) * yratio;
     }
 
-    int vert;
     Point3D vertP3D;
 
     private void loadSurf3D() {
@@ -1318,6 +1403,27 @@ public class Hypersurface3DPane extends StackPane
         surfPlot.setCullFace(CullFace.NONE);
         surfPlot.setTranslateX(-(xWidth * surfScale) / 2.0);
         surfPlot.setTranslateZ(-(zWidth * surfScale) / 2.0);
+        
+
+        // Initialize LOD manager (screen-space selection + throttle/debounce scheduling)
+        if (lodManager == null) {
+            lodManager = new LodManager(camera, subScene, surfPlot);
+            LodManager.LodConfig cfg = new LodManager.LodConfig();
+            cfg.targetPixelsPerCell = 1.5;
+            cfg.lowThreshold = 1.0;
+            cfg.highThreshold = 2.0;
+            cfg.throttleMs = 75;
+            cfg.debounceMs = 75;
+            lodManager.setConfig(cfg);
+            lodManager.setOnLodSelected(this::applyActiveLodIndex);
+        }
+
+        // Cache full-res primitive field (used only for L0 resampling).
+        fullResHeightField = SurfaceUtils.toHeightField(originalGrid);
+
+        // Build processed pyramid and apply initial LOD.
+        rebuildProcessedGridAndRefresh();
+
         surfPlot.addEventHandler(MouseEvent.MOUSE_MOVED, e -> {
             if (hoverInteractionsEnabled) {
                 javafx.geometry.Point3D p3D = e.getPickResult().getIntersectedPoint();
@@ -2023,21 +2129,86 @@ public class Hypersurface3DPane extends StackPane
     }
 
     private void rebuildProcessedGridAndRefresh() {
+        // preprocess L0 then downsample processed.
+        // This ensures we never attempt to render full-res (e.g., 4K) directly into a JavaFX TriangleMesh.
         if (originalGrid == null || originalGrid.isEmpty()) return;
-        List<List<Double>> g = deepCopyGrid(originalGrid);
-        if (smoothingEnabled) {
-            g = SurfaceUtils.smooth(g, smoothingMethod, gaussianSigma, smoothingRadius);
+
+        // Cache full-res primitive field (used only as a source for L0 resampling).
+        if (fullResHeightField == null) {
+            fullResHeightField = SurfaceUtils.toHeightField(originalGrid);
         }
-        if (toneEnabled) {
-            g = SurfaceUtils.toneMapGrid(g, toneOperator, toneParam);
+
+        // Build capped L0 raw (aspect-preserving) from full-res
+        HeightField l0Raw = SurfaceUtils.buildL0Raw(fullResHeightField, maxRenderResolution);
+
+        // Process L0 once, then build processed pyramid
+        SurfaceUtils.Smoothing sm = smoothingEnabled ? smoothingMethod : SurfaceUtils.Smoothing.NONE;
+        SurfaceUtils.ToneMap tm = toneEnabled ? toneOperator : SurfaceUtils.ToneMap.NONE;
+
+        // Keep legacy behavior: single-pass smoothing (iterations=1). Can be exposed later.
+        int iterations = 1;
+
+        HeightField l0Processed = SurfaceUtils.processL0(
+            l0Raw,
+            sm,
+            smoothingRadius,
+            iterations,
+            gaussianSigma,
+            tm,
+            toneParam
+        );
+
+        lodProcessedLevels = SurfaceUtils.buildPyramid(l0Processed, minRenderResolution);
+
+        // Establish constant world extents based on L0 and current surfScale.
+        baseWorldWidth = l0Processed.width() * surfScale;
+        baseWorldDepth = l0Processed.height() * surfScale;
+
+        if (lodManager != null) {
+            lodManager.setPyramid(
+                LodManager.fromHeightFields(lodProcessedLevels),
+                baseWorldWidth,
+                baseWorldDepth,
+                activeLodIndex
+            );
+            lodManager.forceUpdate();
+        } else {
+            applyActiveLodIndex(0);
         }
-        dataGrid.clear();
-        dataGrid.addAll(g);
-        xWidth = dataGrid.get(0).size();
-        zWidth = dataGrid.size();
+
         syncGuiControls();
         updateTheMesh();
         updateView(true);
+    }
+
+    /**
+     * Apply the given LOD index from the current processed pyramid.
+     * Invoked by LodManager when it selects a new level.
+     */
+    private void applyActiveLodIndex(int idx) {
+        if (lodProcessedLevels == null || lodProcessedLevels.isEmpty()) return;
+        if (idx < 0) idx = 0;
+        if (idx >= lodProcessedLevels.size()) idx = lodProcessedLevels.size() - 1;
+
+        if (idx == activeLodIndex && activeHeightField != null) return;
+
+        activeLodIndex = idx;
+        activeHeightField = lodProcessedLevels.get(idx);
+
+        // Keep boxed dataGrid as active LOD for compatibility with existing code paths.
+        dataGrid = SurfaceUtils.toGrid(activeHeightField);
+
+        xWidth = activeHeightField.width();
+        zWidth = activeHeightField.height();
+
+        // Per-LOD cell size (world units per grid cell) to keep world extents stable.
+        currentLodSurfScaleX = (Double.isFinite(baseWorldWidth) && xWidth > 0) ? (baseWorldWidth / xWidth) : surfScale;
+        currentLodSurfScaleZ = (Double.isFinite(baseWorldDepth) && zWidth > 0) ? (baseWorldDepth / zWidth) : surfScale;
+
+        if (surfPlot != null) {
+            surfPlot.setTranslateX(-(xWidth * currentLodSurfScaleX) / 2.0);
+            surfPlot.setTranslateZ(-(zWidth * currentLodSurfScaleZ) / 2.0);
+        }
     }
 
     /**

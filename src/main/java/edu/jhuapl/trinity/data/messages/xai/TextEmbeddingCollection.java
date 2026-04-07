@@ -18,7 +18,7 @@ public class TextEmbeddingCollection extends MessageData {
     //<editor-fold defaultstate="collapsed" desc="JSON Payload">
     /*
     {   "type": "TextEmbeddingCollection",
-        "label" : "chatGPT",
+        "label" : "embeddingModelSource",
         "score" : 0.5,
         "text_embeddings": [
             ...boat load of TextEmbeddingSet objects
