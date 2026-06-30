@@ -45,7 +45,7 @@
         <apache.commons.math3.version>3.6.1</apache.commons.math3.version>
         <apache.commons.lang3.version>3.19.0</apache.commons.lang3.version>
         <zeromq.jeromq.version>0.6.0</zeromq.jeromq.version>
-        <jackson.version>2.19.2</jackson.version>
+        <jackson.version>2.22.0</jackson.version>
         <sarxos.webcam.capture.version>0.3.12</sarxos.webcam.capture.version>
         <org.jflac.jflac-codec.version>1.5.2</org.jflac.jflac-codec.version>
         <com.tambapps.fft4j.version>2.0</com.tambapps.fft4j.version>
