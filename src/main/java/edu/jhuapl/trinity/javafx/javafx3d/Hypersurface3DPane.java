@@ -207,6 +207,12 @@ public class Hypersurface3DPane extends StackPane
     //allows 2D labels to track their 3D counterparts
     HashMap<Shape3D, Node> shape3DToLabel = new HashMap<>();
     public List<FeatureVector> featureVectors = new ArrayList<>();
+
+    /**
+     * Authoritative boxed working/source grid retained for compatibility with existing
+     * analysis and ingestion paths. LOD selection must never replace this with a
+     * downsampled render grid; activeHeightField owns render-side data.
+     */
     public List<List<Double>> dataGrid = new ArrayList<>();
 
     private Random rando = new Random();
@@ -285,6 +291,15 @@ public class Hypersurface3DPane extends StackPane
     /** Constant world extents used to keep surface size stable across LOD changes. */
     private double baseWorldWidth = Double.NaN;
     private double baseWorldDepth = Double.NaN;
+
+    /**
+     * Image-backed surfaces use resolution-independent physical dimensions. The longer
+     * image axis occupies this many world units when surfScale == DEFAULT_SURFSCALE;
+     * the shorter axis is derived from the source aspect ratio.
+     */
+    private boolean imageBackedSurface = false;
+    private final double imageWorldExtentReferenceScale = Math.max(1.0e-6, DEFAULT_SURFSCALE);
+    private double nominalImageWorldExtent = DEFAULT_XWIDTH * (double) DEFAULT_SURFSCALE;
 
     /** Current mesh spacing in world units per cell for the active LOD. */
     private double currentLodSurfScaleX = Double.NaN;
@@ -486,6 +501,7 @@ public class Hypersurface3DPane extends StackPane
 
             updateLabels();
             updateCalloutHeadPoints(subScene);
+            if (lodManager != null) lodManager.requestUpdate(LodManager.UpdateReason.OTHER);
         });
 
         subScene.setOnMousePressed((MouseEvent me) -> {
@@ -501,6 +517,7 @@ public class Hypersurface3DPane extends StackPane
             else camera.setTranslateZ(camera.getTranslateZ() - 50.0);
             updateLabels();
             updateCalloutHeadPoints(subScene);
+            if (lodManager != null) lodManager.requestUpdate(LodManager.UpdateReason.SCROLL);
             e.consume();
         });
         subScene.setOnScroll((ScrollEvent event) -> {
@@ -637,9 +654,8 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
             zWidth = DEFAULT_ZWIDTH;
             syncGuiControls();
             generateRandos(xWidth, zWidth, yScale);
-            originalGrid = deepCopyGrid(dataGrid);
-            updateTheMesh();
-            updateView(true);
+            captureDataGridAsSource();
+            rebuildProcessedGridAndRefresh();
         });
 
         CheckMenuItem showDataMarkersItem = new CheckMenuItem("Show Data Markers");
@@ -834,8 +850,9 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
                 long startTime;
                 if (computeRandos) {
                     generateRandos(xWidth, zWidth, yScale);
-                }
-                if (animated || isDirty) {
+                    captureDataGridAsSource();
+                    rebuildProcessedGridAndRefresh();
+                } else if (animated || isDirty) {
                     startTime = System.nanoTime();
                     updateTheMesh();
                     LOG.info("updateTheMesh(): {}", Utils.totalTimeString(startTime));
@@ -935,7 +952,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         List<List<Double>> scaled = DataUtils.normalizeAndScale(grid, heightMode, userScale);
         dataGrid.clear();
         dataGrid.addAll(scaled);
-        originalGrid = deepCopyGrid(dataGrid); // NEW
+        captureDataGridAsSource();
         xWidth = dataGrid.get(0).size();
         zWidth = dataGrid.size();
         syncGuiControls();
@@ -947,7 +964,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         if (flipY) Collections.reverse(grid);
         dataGrid.clear();
         dataGrid.addAll(grid);
-        originalGrid = deepCopyGrid(dataGrid); // NEW
+        captureDataGridAsSource();
         xWidth = dataGrid.get(0).size();
         zWidth = dataGrid.size();
         syncGuiControls();
@@ -970,7 +987,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         }
         dataGrid.clear();
         dataGrid.addAll(differencesGrid);
-        originalGrid = deepCopyGrid(dataGrid); // NEW
+        captureDataGridAsSource();
         xWidth = dataGrid.get(0).size();
         zWidth = dataGrid.size();
         syncGuiControls();
@@ -992,7 +1009,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         });
         dataGrid.clear();
         dataGrid.addAll(distancesGrid);
-        originalGrid = deepCopyGrid(dataGrid); // NEW
+        captureDataGridAsSource();
         xWidth = dataGrid.get(0).size();
         zWidth = dataGrid.size();
         syncGuiControls();
@@ -1054,13 +1071,27 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
     }
 
     public void updateTheMesh() {
+        if (surfPlot == null) return;
+
         surfPlot.setVisible(surfaceRender);
         sceneRoot.getChildren().removeIf(n -> n instanceof TessellationTube);
+
+        final int renderWidth = getRenderWidth();
+        final int renderHeight = getRenderHeight();
+        final double renderScaleX = getRenderScaleX();
+        final double renderScaleZ = getRenderScaleZ();
+
         if (surfaceRender) {
-            surfPlot.updateMeshRaw(xWidth, zWidth, surfScale, yScale, surfScale);
+            surfPlot.updateMeshRaw(renderWidth, renderHeight, renderScaleX, yScale, renderScaleZ);
+            applyCurrentColoration();
         } else {
-            sceneRoot.getChildren().removeIf(n -> n instanceof TessellationTube);
-            TessellationTube tube = new TessellationTube(dataGrid, Color.WHITE, yScale * 10, surfScale, yScale);
+            // Cylinder/tube mode still needs the legacy boxed representation, but it must
+            // use the bounded active render LOD rather than the full-resolution source.
+            List<List<Double>> renderGrid = activeHeightField != null
+                ? SurfaceUtils.toGrid(activeHeightField)
+                : dataGrid;
+            TessellationTube tube = new TessellationTube(renderGrid, Color.WHITE,
+                yScale * 10, renderScaleZ, yScale);
             tube.setMouseTransparent(true);
             if (null != lastImage) {
                 tube.meshView.setDrawMode(DrawMode.FILL);
@@ -1072,8 +1103,39 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         Platform.runLater(this::updatePaintMesh);
     }
 
+    /**
+     * Apply the currently selected surface coloration without rebuilding geometry.
+     * Image coloration uses the already-loaded JavaFX Image directly so it works for
+     * absolute file URLs as well as images that did not originate under imageryBasePath.
+     */
+    private void applyCurrentColoration() {
+        if (surfPlot == null || colorationMethod == null) return;
+
+        switch (colorationMethod) {
+            case COLOR_BY_IMAGE -> {
+                if (lastImage == null) return;
+                PhongMaterial material;
+                if (surfPlot.getMaterial() instanceof PhongMaterial existing) {
+                    material = existing;
+                } else {
+                    material = new PhongMaterial(Color.WHITE);
+                }
+                material.setDiffuseColor(Color.WHITE);
+                material.setDiffuseMap(lastImage);
+                surfPlot.setMaterial(material);
+            }
+            case COLOR_BY_FEATURE ->
+                surfPlot.setTextureModeVertices3D(TOTAL_COLORS, colorByHeight, 0.0, 360.0);
+            case COLOR_BY_SHAPLEY ->
+                surfPlot.setTextureModeVertices3D(TOTAL_COLORS, colorByShapley, 0.0, 360.0);
+        }
+    }
+
     public void updatePaintMesh() {
-        diffusePaintImage = new WritableImage(xWidth, zWidth);
+        if (surfPlot == null || surfPlot.getMesh() == null) return;
+        final int renderWidth = getRenderWidth();
+        final int renderHeight = getRenderHeight();
+        diffusePaintImage = new WritableImage(renderWidth, renderHeight);
         if (null == paintTriangleMesh) {
             paintTriangleMesh = new TriangleMesh();
             paintMeshView = new MeshView(paintTriangleMesh);
@@ -1149,8 +1211,8 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         paintTriangleMesh.getFaces().setAll(faces);
         paintPhong.setDiffuseMap(diffusePaintImage);
         paintMeshView.setTranslateZ(-1);
-        paintMeshView.setTranslateX(-(xWidth * surfScale) / 2.0);
-        paintMeshView.setTranslateZ(-(zWidth * surfScale) / 2.0);
+        paintMeshView.setTranslateX(-getWorldWidth() / 2.0);
+        paintMeshView.setTranslateZ(-getWorldDepth() / 2.0);
     }
 
     public void paintSingleColor(Color color) {
@@ -1163,8 +1225,10 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
 
     public void illuminateCrosshair(Point3D center) {
         if (null == diffusePaintImage) return;
-        int x = (int) (center.getX() / surfScale);
-        int z = (int) (center.getZ() / surfScale);
+        int x = (int) Math.floor(center.getX() / Math.max(1e-9, getRenderScaleX()));
+        int z = (int) Math.floor(center.getZ() / Math.max(1e-9, getRenderScaleZ()));
+        x = Math.max(0, Math.min(x, (int) diffusePaintImage.getWidth() - 1));
+        z = Math.max(0, Math.min(z, (int) diffusePaintImage.getHeight() - 1));
         PixelWriter pw = diffusePaintImage.getPixelWriter();
         for (int i = 0; i < diffusePaintImage.getWidth(); i++) pw.setColor(i, z, Color.WHITE);
         for (int i = 0; i < diffusePaintImage.getHeight(); i++) pw.setColor(x, i, Color.WHITE);
@@ -1237,6 +1301,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         }
         updateLabels();
         updateCalloutHeadPoints(subScene);
+        if (lodManager != null) lodManager.requestUpdate(LodManager.UpdateReason.DRAG);
     }
 
     private void updateLabels() {
@@ -1395,7 +1460,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
     private void loadSurf3D() {
         LOG.info("Rendering Hypersurface Mesh...");
         generateRandos(xWidth, zWidth, yScale);
-        originalGrid = deepCopyGrid(dataGrid); // NEW
+        captureDataGridAsSource();
         surfPlot = new HyperSurfacePlotMesh(xWidth, zWidth, 1, 1, yScale, surfScale, vert3DLookup);
         surfPlot.setTextureModeVertices3D(TOTAL_COLORS, colorByHeight, 0.0, 360.0);
         surfPlot.setDrawMode(DrawMode.LINE);
@@ -1418,45 +1483,53 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
             lodManager.setOnLodSelected(this::applyActiveLodIndex);
         }
 
-        // Cache full-res primitive field (used only for L0 resampling).
-        fullResHeightField = SurfaceUtils.toHeightField(originalGrid);
-
-        // Build processed pyramid and apply initial LOD.
+        // Build processed pyramid and apply initial LOD. The primitive source cache is
+        // created by rebuildProcessedGridAndRefresh() from the current source snapshot.
         rebuildProcessedGridAndRefresh();
 
         surfPlot.addEventHandler(MouseEvent.MOUSE_MOVED, e -> {
             if (hoverInteractionsEnabled) {
                 javafx.geometry.Point3D p3D = e.getPickResult().getIntersectedPoint();
                 vertP3D = Point3D.convertFromJavaFXPoint3D(p3D);
-                highlightedPoint.setTranslateX(vertP3D.x - (xWidth * surfScale) / 2.0);
+                highlightedPoint.setTranslateX(vertP3D.x - getWorldWidth() / 2.0);
                 highlightedPoint.setTranslateY(vertP3D.y);
-                highlightedPoint.setTranslateZ(vertP3D.z - (zWidth * surfScale) / 2.0);
+                highlightedPoint.setTranslateZ(vertP3D.z - getWorldDepth() / 2.0);
                 updateCalloutHeadPoints(subScene);
                 updateLabels();
-                int row = Float.valueOf(vertP3D.getZ() / surfScale).intValue();
-                int column = Float.valueOf(vertP3D.getX() / surfScale).intValue();
+
+                int row = Math.max(0, Math.min(
+                    (int) Math.floor(vertP3D.getZ() / Math.max(1e-9, getRenderScaleZ())),
+                    getRenderHeight() - 1));
+                int column = Math.max(0, Math.min(
+                    (int) Math.floor(vertP3D.getX() / Math.max(1e-9, getRenderScaleX())),
+                    getRenderWidth() - 1));
+                int sourceRow = mapRenderIndexToSource(row, getRenderHeight(), getSourceHeight());
+
                 if (null != anchorCallout) {
-                    if (row < featureVectors.size()) updateCalloutByFeatureVector(anchorCallout, featureVectors.get(row));
-                    setSpheroidAnchor(false, row);
+                    if (sourceRow < featureVectors.size()) {
+                        updateCalloutByFeatureVector(anchorCallout, featureVectors.get(sourceRow));
+                    }
+                    setSpheroidAnchor(false, sourceRow);
                 }
                 if (crosshairsEnabled) {
                     paintSingleColor(Color.TRANSPARENT);
                     illuminateCrosshair(vertP3D);
                 }
-                if (surfaceChartsEnabled) {
-                    List<Double> xlist = dataGrid.get(Math.max(0, Math.min(row, dataGrid.size() - 1)));
+                if (surfaceChartsEnabled && activeHeightField != null) {
+                    List<Double> xlist = getActiveRenderRow(row);
                     Double[] xRay = xlist.toArray(Double[]::new);
-                    Double[] zRay = new Double[dataGrid.size()];
-                    for (int i = 0; i < dataGrid.size(); i++) zRay[i] = dataGrid.get(i).get(Math.max(0, Math.min(column, dataGrid.get(0).size() - 1)));
+                    Double[] zRay = getActiveRenderColumn(column);
                     String text = "Coordinates: " + column + ", " + row + System.lineSeparator();
-                    text = text.concat("Value: ").concat(String.valueOf(dataGrid.get(Math.max(0, Math.min(row, dataGrid.size() - 1))).get(Math.max(0, Math.min(column, dataGrid.get(0).size() - 1))))).concat(System.lineSeparator());
-                    double maxX = xlist.stream().max(Double::compare).get();
+                    text = text.concat("Value: ")
+                        .concat(String.valueOf(getActiveRenderValue(row, column)))
+                        .concat(System.lineSeparator());
+                    double maxX = xlist.stream().max(Double::compare).orElse(0.0);
                     text = text.concat("Max X: ").concat(String.valueOf(maxX)).concat(System.lineSeparator());
-                    double minX = xlist.stream().min(Double::compare).get();
+                    double minX = xlist.stream().min(Double::compare).orElse(0.0);
                     text = text.concat("Min X: ").concat(String.valueOf(minX)).concat(System.lineSeparator());
-                    double maxZ = Arrays.stream(zRay).max(Double::compare).get();
+                    double maxZ = Arrays.stream(zRay).max(Double::compare).orElse(0.0);
                     text = text.concat("Max Z: ").concat(String.valueOf(maxZ)).concat(System.lineSeparator());
-                    double minZ = Arrays.stream(zRay).min(Double::compare).get();
+                    double minZ = Arrays.stream(zRay).min(Double::compare).orElse(0.0);
                     text = text.concat("Min Z: ").concat(String.valueOf(minZ)).concat(System.lineSeparator());
                     hoverText.setText(text);
                     hoverText.setStrokeWidth(1);
@@ -1472,11 +1545,11 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         Glow glow = new Glow(0.8);
         double poleHeight = 60;
         double radius = 3;
-        glowLineBox = new Box(xWidth * surfScale, poleHeight, radius);
+        glowLineBox = new Box(getWorldWidth(), poleHeight, radius);
         glowLineBox.setMaterial(new PhongMaterial(Color.ALICEBLUE.deriveColor(1, 1, 1, 0.2)));
         glowLineBox.setDrawMode(DrawMode.FILL);
         glowLineBox.setEffect(glow);
-        glowLineBox.setTranslateZ(-(zWidth * surfScale) / 2.0);
+        glowLineBox.setTranslateZ(-getWorldDepth() / 2.0);
         eastPole = new Cylinder(radius * 2, poleHeight * 1.2);
         westPole = new Cylinder(radius * 2, poleHeight * 1.2);
         eastKnob = new Sphere(radius * 3);
@@ -1488,10 +1561,10 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         westPole.setMaterial(westPoleMaterial);
         eastKnob.setMaterial(knobMaterial);
         westKnob.setMaterial(knobMaterial);
-        eastPole.setTranslateX((xWidth * surfScale) / 2.0);
-        westPole.setTranslateX(-(xWidth * surfScale) / 2.0);
-        eastKnob.setTranslateX((xWidth * surfScale) / 2.0);
-        westKnob.setTranslateX(-(xWidth * surfScale) / 2.0);
+        eastPole.setTranslateX(getWorldWidth() / 2.0);
+        westPole.setTranslateX(-getWorldWidth() / 2.0);
+        eastKnob.setTranslateX(getWorldWidth() / 2.0);
+        westKnob.setTranslateX(-getWorldWidth() / 2.0);
         eastKnob.setTranslateY(-(poleHeight * 1.2) / 2.0);
         westKnob.setTranslateY(-(poleHeight * 1.2) / 2.0);
         eastPole.translateZProperty().bind(glowLineBox.translateZProperty());
@@ -1513,9 +1586,9 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
             anchorIndex = (int) e.object;
             if (anchorIndex < 0) anchorIndex = 0;
             else if (anchorIndex > dataGrid.size()) anchorIndex = dataGrid.size();
-            glowLineBox.setTranslateZ((anchorIndex * surfScale) - ((zWidth * surfScale) / 2.0));
+            glowLineBox.setTranslateZ((anchorIndex * surfScale) - (getWorldDepth() / 2.0));
             setSpheroidAnchor(true, anchorIndex);
-            eastLabel.setText("Sample: " + anchorIndex + ", Neural Feature: " + xWidth);
+            eastLabel.setText("Sample: " + anchorIndex + ", Neural Feature: " + getSourceWidth());
             westLabel.setText("Sample: " + anchorIndex + ", Neural Feature: 0");
             updateLabels();
             updateCalloutHeadPoints(subScene);
@@ -1581,7 +1654,9 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         // Geometry / scale
         scene.addEventHandler(HypersurfaceEvent.XWIDTH_CHANGED, e -> {
             this.xWidth = (int) e.object;
-            if (surfPlot != null) {
+            // When an LOD pyramid is active, its HeightField dimensions own the render
+            // mesh. Do not let GUI synchronization overwrite the constant-world transform.
+            if (surfPlot != null && activeHeightField == null) {
                 surfPlot.setTranslateX(-(xWidth * surfScale) / 2.0);
                 surfPlot.setTranslateZ(-(zWidth * surfScale) / 2.0);
             }
@@ -1590,7 +1665,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
 
         scene.addEventHandler(HypersurfaceEvent.ZWIDTH_CHANGED, e -> {
             this.zWidth = (int) e.object;
-            if (surfPlot != null) {
+            if (surfPlot != null && activeHeightField == null) {
                 surfPlot.setTranslateX(-(xWidth * surfScale) / 2.0);
                 surfPlot.setTranslateZ(-(zWidth * surfScale) / 2.0);
             }
@@ -1605,12 +1680,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
 
         scene.addEventHandler(HypersurfaceEvent.SURF_SCALE_CHANGED, e -> {
             this.surfScale = ((Double) e.object).floatValue();
-            if (surfPlot != null) {
-                surfPlot.setRangeX(xWidth * surfScale);
-                surfPlot.setRangeY(zWidth * surfScale);
-                surfPlot.setTranslateX(-(xWidth * surfScale) / 2.0);
-                surfPlot.setTranslateZ(-(zWidth * surfScale) / 2.0);
-            }
+            refreshWorldExtentsAndLodMetadata();
             updateTheMesh();
         });
 
@@ -1627,7 +1697,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         });
         scene.addEventHandler(HypersurfaceEvent.COLORATION_CHANGED, e -> {
             this.colorationMethod = (Hypersurface3DPane.COLORATION) e.object;
-            updateTheMesh();
+            applyCurrentColoration();
         });
 
         // Processing pipeline
@@ -1806,6 +1876,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         dataGrid.clear();
         featureVectors.clear();
         originalGrid.clear();
+        resetLodDataState();
     }
 
     public void showAll() {
@@ -1914,24 +1985,24 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         zWidth = neuralData.size();
         xWidth = neuralData.get(0).size() / 2;
         syncGuiControls();
-        originalGrid = deepCopyGrid(dataGrid); // NEW
+        captureDataGridAsSource();
         rebuildProcessedGridAndRefresh();      // NEW
 
-        xSphere.setTranslateX((xWidth * surfScale) / 2.0);
-        zSphere.setTranslateZ((zWidth * surfScale) / 2.0);
+        xSphere.setTranslateX(getWorldWidth() / 2.0);
+        zSphere.setTranslateZ(getWorldDepth() / 2.0);
 
         double poleHeight = surfPlot.getMaxY() * 2;
-        glowLineBox.setWidth(xWidth * surfScale);
+        glowLineBox.setWidth(getWorldWidth());
         glowLineBox.setHeight(poleHeight);
         eastPole.setHeight(poleHeight * 1.2);
         westPole.setHeight(poleHeight * 1.2);
-        eastPole.setTranslateX(-(xWidth * surfScale) / 2.0);
-        westPole.setTranslateX((xWidth * surfScale) / 2.0);
-        eastKnob.setTranslateX((xWidth * surfScale) / 2.0);
-        westKnob.setTranslateX(-(xWidth * surfScale) / 2.0);
+        eastPole.setTranslateX(-getWorldWidth() / 2.0);
+        westPole.setTranslateX(getWorldWidth() / 2.0);
+        eastKnob.setTranslateX(getWorldWidth() / 2.0);
+        westKnob.setTranslateX(-getWorldWidth() / 2.0);
         eastKnob.setTranslateY(-(poleHeight * 1.2) / 2.0);
         westKnob.setTranslateY(-(poleHeight * 1.2) / 2.0);
-        eastLabel.setText("Sample: " + anchorIndex + ", Neural Feature: " + xWidth);
+        eastLabel.setText("Sample: " + anchorIndex + ", Neural Feature: " + getSourceWidth());
         westLabel.setText("Sample: " + anchorIndex + ", Neural Feature: 0");
         updateLabels();
     }
@@ -1969,7 +2040,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         zWidth = dataGrid.size();
         xWidth = dataGrid.get(0).size();
         syncGuiControls();
-        originalGrid = deepCopyGrid(dataGrid);
+        captureDataGridAsSource();
         rebuildProcessedGridAndRefresh();
         getScene().getRoot().fireEvent(new CommandTerminalEvent("Hypersurface updated. ", new Font("Consolas", 20), Color.GREEN));
         featureVectors = featureCollection.getFeatures();
@@ -1979,7 +2050,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
     public void addFeatureVector(FeatureVector featureVector) {
         featureVectors.add(featureVector);
         dataGrid.add(featureVector.getData());
-        originalGrid = deepCopyGrid(dataGrid);
+        captureDataGridAsSource();
         rebuildProcessedGridAndRefresh();
     }
 
@@ -1993,6 +2064,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         featureVectors.clear();
         dataGrid.clear();
         originalGrid.clear();
+        resetLodDataState();
     }
 
     @Override
@@ -2038,45 +2110,73 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
 
     private void tessellateImage(Image image, int x1, int y1, int x2, int y2) {
         lastImage = image;
-        long startTime = System.nanoTime();
-        LOG.info("Mapping Image Raster to Feature Vector... ");
-        int rows = (int) image.getHeight();
-        int columns = (int) image.getWidth();
-        PixelReader pr = image.getPixelReader();
-        Color color = null;
-        int rgb, r, g, b = 0;
-        double dataValue = 0;
-        if (null == dataGrid) dataGrid = new ArrayList<>(rows);
-        else dataGrid.clear();
-        featureVectors.clear();
-        for (int rowIndex = y1; rowIndex < y2; rowIndex++) {
-            List<Double> currentDataRow = new ArrayList<>();
-            for (int colIndex = x1; colIndex < x2; colIndex++) {
-                color = pr.getColor(colIndex, rowIndex);
-                rgb = (pr.getArgb(colIndex, rowIndex));
-                FeatureVector fv = FeatureVector.EMPTY_FEATURE_VECTOR(color.toString(), 3);
-                fv.getData().set(0, (double) colIndex / columns);
-                fv.getData().set(1, (double) rowIndex / rows);
-                r = (rgb >> 16) & 0xFF;
-                g = (rgb >> 8) & 0xFF;
-                b = rgb & 0xFF;
-                dataValue = (((r + g + b) / 3.0) / 255.0);
-                fv.getData().set(2, dataValue);
-                featureVectors.add(fv);
-                currentDataRow.add(dataValue);
-            }
-            dataGrid.add(currentDataRow);
+
+        final int imageWidth = (int) image.getWidth();
+        final int imageHeight = (int) image.getHeight();
+        final int startX = Math.max(0, Math.min(x1, imageWidth));
+        final int startY = Math.max(0, Math.min(y1, imageHeight));
+        final int endX = Math.max(startX, Math.min(x2, imageWidth));
+        final int endY = Math.max(startY, Math.min(y2, imageHeight));
+        final int sourceWidth = endX - startX;
+        final int sourceHeight = endY - startY;
+
+        if (sourceWidth <= 0 || sourceHeight <= 0) {
+            LOG.warn("Ignoring empty image tessellation region: ({}, {}) to ({}, {}) for {}x{} image",
+                x1, y1, x2, y2, imageWidth, imageHeight);
+            return;
         }
+
+        long startTime = System.nanoTime();
+        System.out.println("Mapping Image Raster directly to primitive HeightField: "
+            + sourceWidth + "x" + sourceHeight);
+
+        PixelReader pixelReader = image.getPixelReader();
+        if (pixelReader == null) {
+            LOG.warn("Unable to tessellate image because PixelReader is unavailable.");
+            return;
+        }
+
+        float[] heights = new float[Math.multiplyExact(sourceWidth, sourceHeight)];
+        int targetIndex = 0;
+        for (int row = startY; row < endY; row++) {
+            for (int column = startX; column < endX; column++) {
+                int argb = pixelReader.getArgb(column, row);
+                int red = (argb >> 16) & 0xFF;
+                int green = (argb >> 8) & 0xFF;
+                int blue = argb & 0xFF;
+                heights[targetIndex++] = (float) (((red + green + blue) / 3.0) / 255.0);
+            }
+        }
+
+        // Image-backed hypersurfaces use the primitive HeightField as the authoritative
+        // source. Do not manufacture one FeatureVector and one boxed Double per pixel.
+        featureVectors.clear();
+        if (dataGrid == null) dataGrid = new ArrayList<>();
+        else dataGrid.clear();
+        if (originalGrid == null) originalGrid = new ArrayList<>();
+        else originalGrid.clear();
+        imageBackedSurface = true;
+        fullResHeightField = new HeightField(sourceWidth, sourceHeight, heights);
+
+        // A new primitive source invalidates only state derived from the previous source.
+        lodProcessedLevels = List.of();
+        activeLodIndex = -1;
+        activeHeightField = null;
+        baseWorldWidth = Double.NaN;
+        baseWorldDepth = Double.NaN;
+        currentLodSurfScaleX = Double.NaN;
+        currentLodSurfScaleZ = Double.NaN;
+
         Utils.printTotalTime(startTime);
-        LOG.info("Injecting Mesh into Hypersurface... ");
+        System.out.println("Injecting primitive image HeightField into Hypersurface...");
         startTime = System.nanoTime();
-        zWidth = rows;
-        xWidth = columns;
+
+        xWidth = sourceWidth;
+        zWidth = sourceHeight;
         syncGuiControls();
-        originalGrid = deepCopyGrid(dataGrid);
         rebuildProcessedGridAndRefresh();
-        xSphere.setTranslateX((xWidth * surfScale) / 2.0);
-        zSphere.setTranslateZ((zWidth * surfScale) / 2.0);
+        xSphere.setTranslateX(getWorldWidth() / 2.0);
+        zSphere.setTranslateZ(getWorldDepth() / 2.0);
         Utils.printTotalTime(startTime);
     }
 
@@ -2128,43 +2228,155 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         return out;
     }
 
-    private void rebuildProcessedGridAndRefresh() {
-        // preprocess L0 then downsample processed.
-        // This ensures we never attempt to render full-res (e.g., 4K) directly into a JavaFX TriangleMesh.
-        if (originalGrid == null || originalGrid.isEmpty()) return;
-
-        // Cache full-res primitive field (used only as a source for L0 resampling).
-        if (fullResHeightField == null) {
-            fullResHeightField = SurfaceUtils.toHeightField(originalGrid);
+    /**
+     * Snapshot the current boxed working grid as the authoritative source for the
+     * render pipeline. Any primitive source cache and render pyramid derived from the
+     * previous source become invalid immediately.
+     */
+    private void captureDataGridAsSource() {
+        // Boxed grids represent data/FeatureCollection-backed surfaces, whose historical
+        // world-size behavior remains sourceDimension * surfScale.
+        imageBackedSurface = false;
+        if (dataGrid == null || dataGrid.isEmpty()) {
+            originalGrid = new ArrayList<>();
+            resetLodDataState();
+            return;
         }
+        originalGrid = deepCopyGrid(dataGrid);
+        fullResHeightField = null;
+    }
 
-        // Build capped L0 raw (aspect-preserving) from full-res
-        HeightField l0Raw = SurfaceUtils.buildL0Raw(fullResHeightField, maxRenderResolution);
+    private void resetLodDataState() {
+        imageBackedSurface = false;
+        fullResHeightField = null;
+        lodProcessedLevels = List.of();
+        activeLodIndex = -1;
+        activeHeightField = null;
+        baseWorldWidth = Double.NaN;
+        baseWorldDepth = Double.NaN;
+        currentLodSurfScaleX = Double.NaN;
+        currentLodSurfScaleZ = Double.NaN;
+    }
 
-        // Process L0 once, then build processed pyramid
-        SurfaceUtils.Smoothing sm = smoothingEnabled ? smoothingMethod : SurfaceUtils.Smoothing.NONE;
-        SurfaceUtils.ToneMap tm = toneEnabled ? toneOperator : SurfaceUtils.ToneMap.NONE;
+    private int getSourceWidth() {
+        if (fullResHeightField != null) return fullResHeightField.width();
+        if (originalGrid != null && !originalGrid.isEmpty()) return originalGrid.get(0).size();
+        if (dataGrid != null && !dataGrid.isEmpty()) return dataGrid.get(0).size();
+        return Math.max(1, xWidth);
+    }
 
-        // Keep legacy behavior: single-pass smoothing (iterations=1). Can be exposed later.
-        int iterations = 1;
+    private int getSourceHeight() {
+        if (fullResHeightField != null) return fullResHeightField.height();
+        if (originalGrid != null && !originalGrid.isEmpty()) return originalGrid.size();
+        if (dataGrid != null && !dataGrid.isEmpty()) return dataGrid.size();
+        return Math.max(1, zWidth);
+    }
 
-        HeightField l0Processed = SurfaceUtils.processL0(
-            l0Raw,
-            sm,
-            smoothingRadius,
-            iterations,
-            gaussianSigma,
-            tm,
-            toneParam
-        );
+    private int getRenderWidth() {
+        return activeHeightField != null ? activeHeightField.width() : Math.max(1, xWidth);
+    }
 
-        lodProcessedLevels = SurfaceUtils.buildPyramid(l0Processed, minRenderResolution);
+    private int getRenderHeight() {
+        return activeHeightField != null ? activeHeightField.height() : Math.max(1, zWidth);
+    }
 
-        // Establish constant world extents based on L0 and current surfScale.
-        baseWorldWidth = l0Processed.width() * surfScale;
-        baseWorldDepth = l0Processed.height() * surfScale;
+    private double getRenderScaleX() {
+        return Double.isFinite(currentLodSurfScaleX) ? currentLodSurfScaleX : surfScale;
+    }
 
-        if (lodManager != null) {
+    private double getRenderScaleZ() {
+        return Double.isFinite(currentLodSurfScaleZ) ? currentLodSurfScaleZ : surfScale;
+    }
+
+    private double getWorldWidth() {
+        if (Double.isFinite(baseWorldWidth)) return baseWorldWidth;
+        int sourceWidth = getSourceWidth();
+        int sourceHeight = getSourceHeight();
+        return calculateWorldWidth(sourceWidth, sourceHeight);
+    }
+
+    private double getWorldDepth() {
+        if (Double.isFinite(baseWorldDepth)) return baseWorldDepth;
+        int sourceWidth = getSourceWidth();
+        int sourceHeight = getSourceHeight();
+        return calculateWorldDepth(sourceWidth, sourceHeight);
+    }
+
+    private double imageWorldLongAxisExtent() {
+        return nominalImageWorldExtent * (surfScale / imageWorldExtentReferenceScale);
+    }
+
+    private double calculateWorldWidth(int sourceWidth, int sourceHeight) {
+        if (!imageBackedSurface) return sourceWidth * surfScale;
+        if (sourceWidth <= 0 || sourceHeight <= 0) return nominalImageWorldExtent;
+        double longAxis = imageWorldLongAxisExtent();
+        if (sourceWidth >= sourceHeight) return longAxis;
+        return longAxis * sourceWidth / (double) sourceHeight;
+    }
+
+    private double calculateWorldDepth(int sourceWidth, int sourceHeight) {
+        if (!imageBackedSurface) return sourceHeight * surfScale;
+        if (sourceWidth <= 0 || sourceHeight <= 0) return nominalImageWorldExtent;
+        double longAxis = imageWorldLongAxisExtent();
+        if (sourceHeight >= sourceWidth) return longAxis;
+        return longAxis * sourceHeight / (double) sourceWidth;
+    }
+
+    private void recomputeBaseWorldExtents() {
+        int sourceWidth = getSourceWidth();
+        int sourceHeight = getSourceHeight();
+        baseWorldWidth = calculateWorldWidth(sourceWidth, sourceHeight);
+        baseWorldDepth = calculateWorldDepth(sourceWidth, sourceHeight);
+    }
+
+    private static int mapRenderIndexToSource(int renderIndex, int renderSize, int sourceSize) {
+        if (sourceSize <= 1 || renderSize <= 1) return 0;
+        double sourceCoordinate = ((renderIndex + 0.5) * sourceSize / (double) renderSize) - 0.5;
+        return Math.max(0, Math.min((int) Math.round(sourceCoordinate), sourceSize - 1));
+    }
+
+    private double getActiveRenderValue(int row, int column) {
+        if (activeHeightField == null) return 0.0;
+        int r = Math.max(0, Math.min(row, activeHeightField.height() - 1));
+        int c = Math.max(0, Math.min(column, activeHeightField.width() - 1));
+        return activeHeightField.get(c, r);
+    }
+
+    private List<Double> getActiveRenderRow(int row) {
+        if (activeHeightField == null) return List.of();
+        int r = Math.max(0, Math.min(row, activeHeightField.height() - 1));
+        int w = activeHeightField.width();
+        float[] values = activeHeightField.data();
+        List<Double> out = new ArrayList<>(w);
+        int offset = r * w;
+        for (int x = 0; x < w; x++) out.add((double) values[offset + x]);
+        return out;
+    }
+
+    private Double[] getActiveRenderColumn(int column) {
+        if (activeHeightField == null) return new Double[0];
+        int c = Math.max(0, Math.min(column, activeHeightField.width() - 1));
+        int w = activeHeightField.width();
+        int h = activeHeightField.height();
+        float[] values = activeHeightField.data();
+        Double[] out = new Double[h];
+        for (int y = 0; y < h; y++) out[y] = (double) values[y * w + c];
+        return out;
+    }
+
+    /** Recompute world extents after surfScale changes without rebuilding source data. */
+    private void refreshWorldExtentsAndLodMetadata() {
+        recomputeBaseWorldExtents();
+
+        if (activeHeightField != null) {
+            currentLodSurfScaleX = baseWorldWidth / activeHeightField.width();
+            currentLodSurfScaleZ = baseWorldDepth / activeHeightField.height();
+        }
+        if (surfPlot != null) {
+            surfPlot.setTranslateX(-baseWorldWidth / 2.0);
+            surfPlot.setTranslateZ(-baseWorldDepth / 2.0);
+        }
+        if (lodManager != null && lodProcessedLevels != null && !lodProcessedLevels.isEmpty()) {
             lodManager.setPyramid(
                 LodManager.fromHeightFields(lodProcessedLevels),
                 baseWorldWidth,
@@ -2172,12 +2384,122 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
                 activeLodIndex
             );
             lodManager.forceUpdate();
+        }
+    }
+
+    /**
+     * Returns the long-axis world extent used for image-backed surfaces at the default
+     * surface scale. Image aspect ratio determines the other axis.
+     */
+    public double getNominalImageWorldExtent() {
+        return nominalImageWorldExtent;
+    }
+
+    /**
+     * Sets the long-axis world extent used for image-backed surfaces at the default
+     * surface scale. This changes physical display size, not source or LOD resolution.
+     */
+    public void setNominalImageWorldExtent(double nominalImageWorldExtent) {
+        if (!(nominalImageWorldExtent > 0.0) || !Double.isFinite(nominalImageWorldExtent)) {
+            throw new IllegalArgumentException("nominalImageWorldExtent must be finite and > 0");
+        }
+        if (Double.compare(this.nominalImageWorldExtent, nominalImageWorldExtent) == 0) return;
+        this.nominalImageWorldExtent = nominalImageWorldExtent;
+        if (imageBackedSurface && fullResHeightField != null) {
+            refreshWorldExtentsAndLodMetadata();
+            updateTheMesh();
+        }
+    }
+
+    public int getMaxRenderResolution() {
+        return maxRenderResolution;
+    }
+
+    public void setMaxRenderResolution(int maxRenderResolution) {
+        if (maxRenderResolution <= 0) {
+            throw new IllegalArgumentException("maxRenderResolution must be > 0");
+        }
+        if (maxRenderResolution < minRenderResolution) {
+            throw new IllegalArgumentException("maxRenderResolution must be >= minRenderResolution");
+        }
+        if (this.maxRenderResolution == maxRenderResolution) return;
+        this.maxRenderResolution = maxRenderResolution;
+        rebuildProcessedGridAndRefresh();
+    }
+
+    public int getMinRenderResolution() {
+        return minRenderResolution;
+    }
+
+    public void setMinRenderResolution(int minRenderResolution) {
+        if (minRenderResolution <= 0) {
+            throw new IllegalArgumentException("minRenderResolution must be > 0");
+        }
+        if (minRenderResolution > maxRenderResolution) {
+            throw new IllegalArgumentException("minRenderResolution must be <= maxRenderResolution");
+        }
+        if (this.minRenderResolution == minRenderResolution) return;
+        this.minRenderResolution = minRenderResolution;
+        rebuildProcessedGridAndRefresh();
+    }
+
+    private void rebuildProcessedGridAndRefresh() {
+        // Option B: cap/resample full-resolution source to L0, process L0 once,
+        // then derive all lower LODs from that processed L0.
+        //
+        // Image-backed surfaces may already provide the authoritative source directly as
+        // a primitive HeightField. Boxed-grid-backed surfaces continue to populate
+        // originalGrid and are converted lazily here for compatibility.
+        if (fullResHeightField == null) {
+            if (originalGrid == null || originalGrid.isEmpty()) return;
+            fullResHeightField = SurfaceUtils.toHeightField(originalGrid);
+        }
+
+        HeightField l0Raw = SurfaceUtils.buildL0Raw(fullResHeightField, maxRenderResolution);
+
+        SurfaceUtils.Smoothing sm = smoothingEnabled
+            ? smoothingMethod
+            : SurfaceUtils.Smoothing.NONE;
+        SurfaceUtils.ToneMap tm = toneEnabled
+            ? toneOperator
+            : SurfaceUtils.ToneMap.NONE;
+
+        HeightField l0Processed = SurfaceUtils.processL0(
+            l0Raw,
+            sm,
+            smoothingRadius,
+            1,
+            gaussianSigma,
+            tm,
+            toneParam
+        );
+
+        lodProcessedLevels = SurfaceUtils.buildPyramid(l0Processed, minRenderResolution);
+
+        // Rendering resolution and physical world size are intentionally independent.
+        // Image-backed sources use a nominal long-axis world extent with aspect ratio
+        // preserved; data-grid-backed sources retain the historical dimension*scale rule.
+        recomputeBaseWorldExtents();
+
+        // A new pyramid invalidates the old active HeightField even when the numerical
+        // LOD index happens to be identical.
+        activeLodIndex = -1;
+        activeHeightField = null;
+        currentLodSurfScaleX = Double.NaN;
+        currentLodSurfScaleZ = Double.NaN;
+
+        if (lodManager != null) {
+            lodManager.setPyramid(
+                LodManager.fromHeightFields(lodProcessedLevels),
+                baseWorldWidth,
+                baseWorldDepth,
+                -1
+            );
+            lodManager.forceUpdate();
         } else {
             applyActiveLodIndex(0);
         }
 
-        syncGuiControls();
-        updateTheMesh();
         updateView(true);
     }
 
@@ -2190,25 +2512,31 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         if (idx < 0) idx = 0;
         if (idx >= lodProcessedLevels.size()) idx = lodProcessedLevels.size() - 1;
 
-        if (idx == activeLodIndex && activeHeightField != null) return;
+        HeightField selected = lodProcessedLevels.get(idx);
+        if (idx == activeLodIndex && activeHeightField == selected) return;
 
         activeLodIndex = idx;
-        activeHeightField = lodProcessedLevels.get(idx);
+        activeHeightField = selected;
 
-        // Keep boxed dataGrid as active LOD for compatibility with existing code paths.
-        dataGrid = SurfaceUtils.toGrid(activeHeightField);
-
+        // xWidth/zWidth continue to describe the currently rendered mesh dimensions,
+        // while dataGrid/originalGrid retain full source/working data.
         xWidth = activeHeightField.width();
         zWidth = activeHeightField.height();
 
-        // Per-LOD cell size (world units per grid cell) to keep world extents stable.
-        currentLodSurfScaleX = (Double.isFinite(baseWorldWidth) && xWidth > 0) ? (baseWorldWidth / xWidth) : surfScale;
-        currentLodSurfScaleZ = (Double.isFinite(baseWorldDepth) && zWidth > 0) ? (baseWorldDepth / zWidth) : surfScale;
+        currentLodSurfScaleX = baseWorldWidth / xWidth;
+        currentLodSurfScaleZ = baseWorldDepth / zWidth;
+
+        System.out.println("Applying Hypersurface LOD L" + activeLodIndex
+            + ": " + xWidth + "x" + zWidth
+            + ", cellScale=" + currentLodSurfScaleX + "x" + currentLodSurfScaleZ);
 
         if (surfPlot != null) {
-            surfPlot.setTranslateX(-(xWidth * currentLodSurfScaleX) / 2.0);
-            surfPlot.setTranslateZ(-(zWidth * currentLodSurfScaleZ) / 2.0);
+            surfPlot.setTranslateX(-baseWorldWidth / 2.0);
+            surfPlot.setTranslateZ(-baseWorldDepth / 2.0);
         }
+
+        syncGuiControls();
+        updateTheMesh();
     }
 
     /**
@@ -2290,10 +2618,10 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
     private void highlightSurfaceRowIfPossible(GraphNode node) {
         tryGetSourceRowIndex(node).ifPresent(rowIndex -> {
             // Clamp row and paint crosshair
-            int clamped = Math.max(0, Math.min(rowIndex, Math.max(0, zWidth - 1)));
+            int clamped = Math.max(0, Math.min(rowIndex, Math.max(0, getSourceHeight() - 1)));
             paintSingleColor(Color.TRANSPARENT);
-            // Crosshair expects world coordinates; Z increases with rows
-            Point3D center = new Point3D((xWidth * surfScale) / 2.0, 0, clamped * surfScale);
+            // Source row coordinates remain stable even when the active render LOD changes.
+            Point3D center = new Point3D(getWorldWidth() / 2.0, 0, clamped * surfScale);
             illuminateCrosshair(center);
         });
     }

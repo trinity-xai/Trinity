@@ -7,6 +7,8 @@ import javafx.scene.Node;
 import javafx.scene.PerspectiveCamera;
 import javafx.scene.SubScene;
 import javafx.util.Duration;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -26,6 +28,8 @@ import java.util.function.IntConsumer;
  * <p>This class does not rebuild meshes. It notifies a listener when a new LOD is selected.</p>
  */
 public final class LodManager {
+
+    private static final Logger LOG = LoggerFactory.getLogger(LodManager.class);
 
     public enum UpdateReason {
         DRAG,
@@ -165,6 +169,10 @@ public final class LodManager {
         this.baseWorldWidth = baseWorldWidth;
         this.baseWorldDepth = baseWorldDepth;
         this.activeIndex = clamp(activeIndex, -1, this.levels.size() - 1);
+
+        System.out.println("Hypersurface LOD pyramid configured: levels=" + formatLevels(this.levels)
+            + ", world=" + baseWorldWidth + "x" + baseWorldDepth
+            + ", activeIndex=" + this.activeIndex);
     }
 
     /**
@@ -209,7 +217,8 @@ public final class LodManager {
     }
 
     /**
-     * Force an immediate evaluation (no throttle). Safe to call from any thread.
+     * Force an immediate evaluation (no throttle). This bypasses scheduling only;
+     * it does not bypass LOD hysteresis or repick from the target threshold. Safe to call from any thread.
      */
     public void forceUpdate() {
         runOnFx(() -> {
@@ -243,7 +252,12 @@ public final class LodManager {
 
         lastEvalNanos = System.nanoTime();
 
-        if (next != activeIndex) {
+        boolean changed = next != activeIndex;
+        if (force || changed) {
+            logEvaluation(next, force, changed);
+        }
+
+        if (changed) {
             activeIndex = next;
             if (onLodSelected != null) {
                 onLodSelected.accept(next);
@@ -262,7 +276,7 @@ public final class LodManager {
         if (!(denom > 1e-12)) return (activeIndex >= 0 ? activeIndex : 0);
 
         // If no current index, pick based on target threshold (finest meeting target)
-        if (activeIndex < 0 || force) {
+        if (activeIndex < 0) {
             int best = levels.size() - 1; // default to coarsest
             for (int i = 0; i < levels.size(); i++) {
                 double ppc = pixelsPerCell(levels.get(i), Hpx, denom);
@@ -307,6 +321,42 @@ public final class LodManager {
         Point3D scenePt = surfaceNode.localToScene(cx, 0.0, cz);
         Point3D camPt = camera.sceneToLocal(scenePt);
         return Math.abs(camPt.getZ());
+    }
+
+
+    private void logEvaluation(int selectedIndex, boolean force, boolean changed) {
+        double d = computeDepthToSurfaceCenter();
+        double fovY = Math.toRadians(camera.getFieldOfView());
+        double hpx = Math.max(1.0, subScene.getHeight());
+        double denom = 2.0 * Math.max(d, config.minDepth) * Math.tan(fovY / 2.0);
+
+        StringBuilder ppc = new StringBuilder();
+        for (int i = 0; i < levels.size(); i++) {
+            if (i > 0) ppc.append(", ");
+            double value = denom > 1e-12 ? pixelsPerCell(levels.get(i), hpx, denom) : Double.NaN;
+            ppc.append("L").append(i)
+                .append("=").append(levels.get(i).width).append("x").append(levels.get(i).height)
+                .append("@").append(String.format(java.util.Locale.ROOT, "%.3f", value)).append("px/cell");
+        }
+
+        System.out.println("Hypersurface LOD evaluation: depth="
+            + String.format(java.util.Locale.ROOT, "%.3f", d)
+            + ", viewportHeight=" + String.format(java.util.Locale.ROOT, "%.1f", hpx)
+            + ", selected=L" + selectedIndex
+            + ", previous=L" + activeIndex
+            + ", force=" + force
+            + ", changed=" + changed
+            + ", " + ppc);
+    }
+
+    private static String formatLevels(List<LodLevel> levels) {
+        StringBuilder sb = new StringBuilder("[");
+        for (int i = 0; i < levels.size(); i++) {
+            if (i > 0) sb.append(", ");
+            LodLevel l = levels.get(i);
+            sb.append("L").append(i).append("=").append(l.width).append("x").append(l.height);
+        }
+        return sb.append(']').toString();
     }
 
     // ============================================================
