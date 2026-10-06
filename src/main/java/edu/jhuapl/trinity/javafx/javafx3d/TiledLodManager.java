@@ -79,12 +79,21 @@ public final class TiledLodManager {
         TransitionResult apply(LodTransition transition);
     }
 
+    @FunctionalInterface
+    public interface GeometryCostProvider {
+        long trianglesFor(int tileId, int lodIndex);
+    }
+
     public static final class Config {
         public double targetPixelsPerCell = 1.5;
         public double lowThreshold = 1.0;
         public double highThreshold = 2.0;
         /** Finest LOD index allowed to be selected (0 = L0, 1 = L1, ...). */
         public int finestAllowedLod = 0;
+        /** Apply a second-stage aggregate triangle budget after per-tile LOD selection. */
+        public boolean geometryBudgetEnabled = true;
+        /** Maximum target triangles across all currently visible tiles. */
+        public long triangleBudget = 5_000_000L;
         public long throttleMs = 75;
         public long debounceMs = 75;
         public double minDepth = 1e-3;
@@ -110,6 +119,8 @@ public final class TiledLodManager {
             c.lowThreshold = lowThreshold;
             c.highThreshold = highThreshold;
             c.finestAllowedLod = finestAllowedLod;
+            c.geometryBudgetEnabled = geometryBudgetEnabled;
+            c.triangleBudget = triangleBudget;
             c.throttleMs = throttleMs;
             c.debounceMs = debounceMs;
             c.minDepth = minDepth;
@@ -133,7 +144,9 @@ public final class TiledLodManager {
         (obs, oldValue, newValue) -> requestUpdate(LodManager.UpdateReason.RESIZE);
 
     private final PriorityQueue<LodTransition> pendingTransitions = new PriorityQueue<>();
-    /** Stable hysteresis state: where each tile wants to be. */
+    /** Stable screen-space/hysteresis state before aggregate budget constraints. */
+    private final Map<Integer, Integer> qualityLodByTile = new HashMap<>();
+    /** Final target state after budget and interaction policy. */
     private final Map<Integer, Integer> desiredLodByTile = new HashMap<>();
     /** Renderer state: where each tile has actually transitioned to. */
     private final Map<Integer, Integer> appliedLodByTile = new HashMap<>();
@@ -155,11 +168,15 @@ public final class TiledLodManager {
     private long lastEvalNanos;
     private Consumer<List<TileDecision>> onDecisions;
     private TransitionApplier transitionApplier;
+    private GeometryCostProvider geometryCostProvider;
     private boolean transitionTimerRunning;
     private boolean settledMode;
     private boolean initialEvaluationPending;
     private int lastVisibleCount;
     private int lastDeferredRefinements;
+    private long lastRawRequestedTriangles;
+    private long lastBudgetedTargetTriangles;
+    private int lastBudgetCoarsenedTiles;
 
     public TiledLodManager(PerspectiveCamera camera, SubScene subScene, Node surfaceNode) {
         this.camera = Objects.requireNonNull(camera, "camera");
@@ -185,6 +202,8 @@ public final class TiledLodManager {
                 + ", coarsenBelow=" + this.config.lowThreshold
                 + ", refineAbove=" + this.config.highThreshold
                 + ", maxDetail=L" + this.config.finestAllowedLod
+                + ", geometryBudget=" + this.config.geometryBudgetEnabled
+                + ", triangleBudget=" + formatTriangleCount(this.config.triangleBudget)
                 + ", throttleMs=" + this.config.throttleMs
                 + ", settleMs=" + this.config.debounceMs
                 + ", initialSettleMs=" + this.config.initialSettleMs
@@ -215,6 +234,22 @@ public final class TiledLodManager {
         this.transitionApplier = transitionApplier;
     }
 
+    public void setGeometryCostProvider(GeometryCostProvider geometryCostProvider) {
+        this.geometryCostProvider = geometryCostProvider;
+    }
+
+    public long getLastRawRequestedTriangles() {
+        return lastRawRequestedTriangles;
+    }
+
+    public long getLastBudgetedTargetTriangles() {
+        return lastBudgetedTargetTriangles;
+    }
+
+    public int getLastBudgetCoarsenedTiles() {
+        return lastBudgetCoarsenedTiles;
+    }
+
     public void setSurface(List<LodManager.LodLevel> levels,
                            List<TileSpec> tiles,
                            double baseWorldWidth,
@@ -231,10 +266,14 @@ public final class TiledLodManager {
         this.baseWorldWidth = baseWorldWidth;
         this.baseWorldDepth = baseWorldDepth;
         this.heightRadius = Math.max(0.0, heightRadius);
+        qualityLodByTile.clear();
         desiredLodByTile.clear();
         appliedLodByTile.clear();
         visibleTileIds.clear();
         pendingTransitions.clear();
+        lastRawRequestedTriangles = 0L;
+        lastBudgetedTargetTriangles = 0L;
+        lastBudgetCoarsenedTiles = 0;
         stopTransitionTimer();
         lastEvalNanos = 0L;
         initialEvaluationPending = true;
@@ -252,10 +291,14 @@ public final class TiledLodManager {
         runOnFx(() -> {
             levels = List.of();
             tiles = List.of();
+            qualityLodByTile.clear();
             desiredLodByTile.clear();
             appliedLodByTile.clear();
             visibleTileIds.clear();
             pendingTransitions.clear();
+            lastRawRequestedTriangles = 0L;
+            lastBudgetedTargetTriangles = 0L;
+            lastBudgetCoarsenedTiles = 0;
             debounceTimer.stop();
             initialEvaluationTimer.stop();
             initialEvaluationPending = false;
@@ -382,12 +425,12 @@ public final class TiledLodManager {
         for (TileSpec tile : tiles) {
             CameraTile cameraTile = cameraTile(tile);
             boolean visible = isVisible(cameraTile, aspect, tanHalfFov);
-            int previousDesired = desiredLodByTile.getOrDefault(tile.id,
+            int previousQuality = qualityLodByTile.getOrDefault(tile.id,
                 appliedLodByTile.getOrDefault(tile.id, -1));
 
             if (!visible) {
                 decisions.add(new TileDecision(tile.id, false,
-                    previousDesired >= 0 ? previousDesired : levels.size() - 1,
+                    previousQuality >= 0 ? previousQuality : levels.size() - 1,
                     cameraTile.depth, 0.0,
                     screenDistance(cameraTile, aspect, tanHalfFov)));
                 continue;
@@ -397,20 +440,8 @@ public final class TiledLodManager {
             visibleTileIds.add(tile.id);
             double depth = Math.max(config.minDepth,
                 cameraTile.depth - cameraTile.radius * 0.35);
-            int selected = chooseLod(previousDesired, depth,
+            int selected = chooseLod(previousQuality, depth,
                 viewportWidth, viewportHeight, aspect, tanHalfFov);
-
-            if (!settled) {
-                int applied = appliedLodByTile.getOrDefault(tile.id, -1);
-                if (applied >= 0 && selected < applied) {
-                    // Refinement is deferred while the camera is active. Keep the
-                    // currently rendered detail and release refinement on settle.
-                    deferredRefinements++;
-                    selected = applied;
-                }
-            }
-
-            if (selected != previousDesired) desiredChanges++;
             selectedLods.put(tile.id, selected);
             visibleLods.put(gridKey(tile.column, tile.row), selected);
             decisions.add(new TileDecision(tile.id, true, selected, depth,
@@ -434,15 +465,25 @@ public final class TiledLodManager {
             }
         }
 
+        for (TileDecision decision : decisions) {
+            if (decision.visible()) {
+                qualityLodByTile.put(decision.tileId(), decision.lodIndex());
+            }
+        }
+
+        BudgetResult budgetResult = applyGeometryBudget(
+            decisions, selectedLods, visibleLods, viewportWidth, viewportHeight, aspect, tanHalfFov);
+        lastRawRequestedTriangles = budgetResult.rawTriangles();
+        lastBudgetedTargetTriangles = budgetResult.budgetedTriangles();
+        lastBudgetCoarsenedTiles = budgetResult.coarsenedTiles();
+
         if (!settled) {
             for (int i = 0; i < decisions.size(); i++) {
                 TileDecision d = decisions.get(i);
                 if (!d.visible()) continue;
                 int applied = appliedLodByTile.getOrDefault(d.tileId(), -1);
                 if (applied >= 0 && d.lodIndex() < applied) {
-                    if (d.lodIndex() != selectedLods.getOrDefault(d.tileId(), d.lodIndex())) {
-                        deferredRefinements++;
-                    }
+                    deferredRefinements++;
                     decisions.set(i, new TileDecision(d.tileId(), true, applied, d.depth(),
                         pixelsPerCell(levels.get(applied), d.depth(),
                             viewportWidth, viewportHeight, aspect, tanHalfFov),
@@ -489,6 +530,11 @@ public final class TiledLodManager {
                 .append(", mode=").append(settled ? "settled" : "active")
                 .append(", transitionBudget=").append(currentTransitionBudget())
                 .append(", buildBudget=").append(currentBuildBudget())
+                .append(", rawTriangles=").append(formatTriangleCount(lastRawRequestedTriangles))
+                .append(", budgetTriangles=").append(formatTriangleCount(lastBudgetedTargetTriangles))
+                .append(", budgetCoarsened=").append(lastBudgetCoarsenedTiles)
+                .append(", geometryBudget=")
+                .append(config.geometryBudgetEnabled ? formatTriangleCount(config.triangleBudget) : "OFF")
                 .append(", ");
             appendLodCounts(sb, desiredCounts);
             System.out.println(sb);
@@ -500,6 +546,120 @@ public final class TiledLodManager {
 
         if (!pendingTransitions.isEmpty()) startTransitionTimer();
         else stopTransitionTimer();
+    }
+
+    private BudgetResult applyGeometryBudget(
+        List<TileDecision> decisions,
+        Map<Integer, Integer> selectedLods,
+        Map<Long, Integer> visibleLods,
+        double viewportWidth, double viewportHeight,
+        double aspect, double tanHalfFov) {
+
+        long rawTriangles = totalTriangles(decisions, selectedLods);
+        if (!config.geometryBudgetEnabled
+            || config.triangleBudget <= 0L
+            || geometryCostProvider == null
+            || rawTriangles <= config.triangleBudget) {
+            return new BudgetResult(rawTriangles, rawTriangles, 0);
+        }
+
+        Map<Integer, TileDecision> decisionByTile = new HashMap<>();
+        for (TileDecision decision : decisions) {
+            if (decision.visible()) decisionByTile.put(decision.tileId(), decision);
+        }
+
+        long triangles = rawTriangles;
+        Set<Integer> coarsenedTiles = new HashSet<>();
+        int guard = Math.max(1, decisionByTile.size() * Math.max(1, levels.size()) * 2);
+
+        while (triangles > config.triangleBudget && guard-- > 0) {
+            BudgetCandidate candidate = null;
+
+            for (TileSpec tile : tiles) {
+                Integer currentObject = selectedLods.get(tile.id);
+                if (currentObject == null) continue;
+                int current = currentObject;
+                if (current < 0 || current >= levels.size() - 1) continue;
+
+                int proposed = current + 1;
+                if (!budgetNeighborCompatible(tile, proposed, visibleLods)) continue;
+
+                long currentCost = triangleCost(tile.id, current);
+                long proposedCost = triangleCost(tile.id, proposed);
+                long savings = currentCost - proposedCost;
+                if (savings <= 0L) continue;
+
+                TileDecision decision = decisionByTile.get(tile.id);
+                if (decision == null) continue;
+                BudgetCandidate next = new BudgetCandidate(tile, decision, current, proposed, savings);
+                if (candidate == null || next.isLowerPriorityThan(candidate)) {
+                    candidate = next;
+                }
+            }
+
+            if (candidate == null) break;
+
+            selectedLods.put(candidate.tile().id, candidate.toLod());
+            visibleLods.put(gridKey(candidate.tile().column, candidate.tile().row), candidate.toLod());
+            coarsenedTiles.add(candidate.tile().id);
+            triangles -= candidate.savings();
+        }
+
+        for (int i = 0; i < decisions.size(); i++) {
+            TileDecision d = decisions.get(i);
+            if (!d.visible()) continue;
+            int lod = selectedLods.getOrDefault(d.tileId(), d.lodIndex());
+            if (lod != d.lodIndex()) {
+                decisions.set(i, new TileDecision(d.tileId(), true, lod, d.depth(),
+                    pixelsPerCell(levels.get(lod), d.depth(),
+                        viewportWidth, viewportHeight, aspect, tanHalfFov),
+                    d.screenDistance()));
+            }
+        }
+
+        long exactBudgetedTriangles = totalTriangles(decisions, selectedLods);
+        if (exactBudgetedTriangles > config.triangleBudget) {
+            System.out.println("Tiled Hypersurface geometry budget warning: requested="
+                + formatTriangleCount(rawTriangles)
+                + ", budget=" + formatTriangleCount(config.triangleBudget)
+                + ", achievable=" + formatTriangleCount(exactBudgetedTriangles)
+                + ", neighborDelta=" + config.maxNeighborLodDelta);
+        }
+        return new BudgetResult(rawTriangles, exactBudgetedTriangles, coarsenedTiles.size());
+    }
+
+    private long totalTriangles(List<TileDecision> decisions, Map<Integer, Integer> lods) {
+        if (geometryCostProvider == null) return 0L;
+        long total = 0L;
+        for (TileDecision decision : decisions) {
+            if (!decision.visible()) continue;
+            int lod = lods.getOrDefault(decision.tileId(), decision.lodIndex());
+            total += triangleCost(decision.tileId(), lod);
+        }
+        return total;
+    }
+
+    private long triangleCost(int tileId, int lod) {
+        if (geometryCostProvider == null) return 0L;
+        return Math.max(0L, geometryCostProvider.trianglesFor(tileId, lod));
+    }
+
+    private boolean budgetNeighborCompatible(TileSpec tile, int proposedLod,
+                                             Map<Long, Integer> visibleLods) {
+        if (config.maxNeighborLodDelta < 0) return true;
+        return budgetNeighborCompatible(proposedLod,
+                visibleLods.get(gridKey(tile.column - 1, tile.row)))
+            && budgetNeighborCompatible(proposedLod,
+                visibleLods.get(gridKey(tile.column + 1, tile.row)))
+            && budgetNeighborCompatible(proposedLod,
+                visibleLods.get(gridKey(tile.column, tile.row - 1)))
+            && budgetNeighborCompatible(proposedLod,
+                visibleLods.get(gridKey(tile.column, tile.row + 1)));
+    }
+
+    private boolean budgetNeighborCompatible(int proposedLod, Integer neighborLod) {
+        return neighborLod == null
+            || proposedLod <= neighborLod + config.maxNeighborLodDelta;
     }
 
     private int cancelQueuedRefinements() {
@@ -800,6 +960,9 @@ public final class TiledLodManager {
         if (config.finestAllowedLod < 0) {
             throw new IllegalArgumentException("finestAllowedLod must be >= 0");
         }
+        if (config.triangleBudget < 1L) {
+            throw new IllegalArgumentException("triangleBudget must be >= 1");
+        }
         if (config.throttleMs < 0L || config.debounceMs < 0L || config.initialSettleMs < 0L) {
             throw new IllegalArgumentException("LOD timing values must be >= 0");
         }
@@ -818,6 +981,32 @@ public final class TiledLodManager {
     private static void runOnFx(Runnable runnable) {
         if (Platform.isFxApplicationThread()) runnable.run();
         else Platform.runLater(runnable);
+    }
+
+    private static String formatTriangleCount(long triangles) {
+        if (triangles >= 1_000_000L) {
+            return String.format("%.2fM", triangles / 1_000_000.0);
+        }
+        if (triangles >= 1_000L) {
+            return String.format("%.1fK", triangles / 1_000.0);
+        }
+        return Long.toString(triangles);
+    }
+
+    private record BudgetResult(long rawTriangles, long budgetedTriangles, int coarsenedTiles) { }
+
+    private record BudgetCandidate(TileSpec tile, TileDecision decision,
+                                   int fromLod, int toLod, long savings) {
+        boolean isLowerPriorityThan(BudgetCandidate other) {
+            // Larger normalized screen distance is less visually important.
+            int screenCmp = Double.compare(decision.screenDistance(), other.decision.screenDistance());
+            if (screenCmp != 0) return screenCmp > 0;
+            // At comparable screen position, farther tiles lose detail first.
+            int depthCmp = Double.compare(decision.depth(), other.decision.depth());
+            if (depthCmp != 0) return depthCmp > 0;
+            // Prefer the demotion that buys the most triangles when visual priority ties.
+            return savings > other.savings;
+        }
     }
 
     private record CameraTile(double x, double y, double depth, double radius) { }

@@ -2585,7 +2585,8 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
     public TiledSurfaceRenderer.LodStatistics getTiledLodStatistics() {
         return tiledSurfaceRenderer != null
             ? tiledSurfaceRenderer.getLodStatistics()
-            : new TiledSurfaceRenderer.LodStatistics(0, 0, 0, 0, 0, 0, 0, 0L, 0);
+            : new TiledSurfaceRenderer.LodStatistics(
+                0, 0, 0, 0, 0, 0, 0, 0L, 0L, 0L, 0, 0);
     }
 
     public void setTileCellsL0(int tileCellsL0) {

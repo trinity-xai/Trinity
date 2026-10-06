@@ -34,6 +34,9 @@ public final class TiledSurfaceRenderer extends Group {
         int lod3Tiles,
         int lod4Tiles,
         long visibleTriangles,
+        long rawRequestedTriangles,
+        long budgetedTargetTriangles,
+        int budgetCoarsenedTiles,
         int pendingTransitions
     ) { }
 
@@ -76,6 +79,7 @@ public final class TiledSurfaceRenderer extends Group {
         this.lodManager = new TiledLodManager(camera, subScene, this);
         this.lodManager.setOnDecisions(this::applyVisibilityDecisions);
         this.lodManager.setTransitionApplier(this::applyTransition);
+        this.lodManager.setGeometryCostProvider(this::triangleCountForTileId);
         setPickOnBounds(false);
     }
 
@@ -242,7 +246,15 @@ public final class TiledSurfaceRenderer extends Group {
 
         return new LodStatistics(
             visible, tileSpecs.size(), lod0, lod1, lod2, lod3, lod4, triangles,
+            lodManager.getLastRawRequestedTriangles(),
+            lodManager.getLastBudgetedTargetTriangles(),
+            lodManager.getLastBudgetCoarsenedTiles(),
             lodManager.getPendingTransitionCount());
+    }
+
+    private long triangleCountForTileId(int tileId, int lod) {
+        TileRenderState tile = tilesById.get(tileId);
+        return tile != null ? triangleCountFor(tile, lod) : 0L;
     }
 
     private long triangleCountFor(TileRenderState tile, int lod) {

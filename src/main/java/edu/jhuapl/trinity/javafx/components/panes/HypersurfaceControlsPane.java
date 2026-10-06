@@ -42,6 +42,7 @@ public class HypersurfaceControlsPane extends LitPathPane {
 
     private static final int PANEL_WIDTH = 400;
     private static final int PANEL_HEIGHT = 640;
+    private static final int TAB_CONTENT_HEIGHT = PANEL_HEIGHT - 96;
 
     public static double SPINNER_PREF_WIDTH = 125.0;
     public static double COMBO_PREF_WIDTH = 220.0;
@@ -97,6 +98,8 @@ public class HypersurfaceControlsPane extends LitPathPane {
     private Spinner<Integer> settledTransitionsSpinner;
     private Spinner<Integer> activeBuildsSpinner;
     private Spinner<Integer> settledBuildsSpinner;
+    private CheckBox geometryBudgetCheck;
+    private Spinner<Double> triangleBudgetSpinner;
 
     private Label lodStatusLabel;
     private Label visibleTilesLabel;
@@ -106,6 +109,9 @@ public class HypersurfaceControlsPane extends LitPathPane {
     private Label lod3CountLabel;
     private Label lod4CountLabel;
     private Label triangleCountLabel;
+    private Label rawRequestedTrianglesLabel;
+    private Label budgetTargetTrianglesLabel;
+    private Label budgetCoarsenedLabel;
     private Label pendingTransitionsLabel;
     private AnimationTimer lodDiagnosticsTimer;
 
@@ -424,6 +430,16 @@ public class HypersurfaceControlsPane extends LitPathPane {
         addRow(selectionGrid, 1, "Coarsen below", coarsenThresholdSpinner);
         addRow(selectionGrid, 2, "Refine above", refineThresholdSpinner);
 
+        GridPane budgetGrid = formGrid();
+        geometryBudgetCheck = new CheckBox();
+        geometryBudgetCheck.setSelected(lodConfig.geometryBudgetEnabled);
+        triangleBudgetSpinner = new Spinner<>(0.25, 50.0,
+            clampDouble(lodConfig.triangleBudget / 1_000_000.0, 0.25, 50.0), 0.25);
+        styleSpinner(triangleBudgetSpinner);
+        triangleBudgetSpinner.setEditable(true);
+        addRow(budgetGrid, 0, "Enable budget", geometryBudgetCheck);
+        addRow(budgetGrid, 1, "Triangle budget (M)", triangleBudgetSpinner);
+
         GridPane timingGrid = formGrid();
         throttleMsSpinner = new Spinner<>(0, 1000, clampInt(lodConfig.throttleMs, 0, 1000), 5);
         settleMsSpinner = new Spinner<>(0, 2000, clampInt(lodConfig.debounceMs, 0, 2000), 10);
@@ -471,6 +487,9 @@ public class HypersurfaceControlsPane extends LitPathPane {
         lod3CountLabel = new Label("0");
         lod4CountLabel = new Label("0");
         triangleCountLabel = new Label("0");
+        rawRequestedTrianglesLabel = new Label("0");
+        budgetTargetTrianglesLabel = new Label("0");
+        budgetCoarsenedLabel = new Label("0");
         pendingTransitionsLabel = new Label("0");
 
         addRow(diagnosticsGrid, 0, "Renderer", lodStatusLabel);
@@ -480,8 +499,11 @@ public class HypersurfaceControlsPane extends LitPathPane {
         addRow(diagnosticsGrid, 4, "L2 tiles", lod2CountLabel);
         addRow(diagnosticsGrid, 5, "L3 tiles", lod3CountLabel);
         addRow(diagnosticsGrid, 6, "L4 tiles", lod4CountLabel);
-        addRow(diagnosticsGrid, 7, "Triangles", triangleCountLabel);
-        addRow(diagnosticsGrid, 8, "Pending", pendingTransitionsLabel);
+        addRow(diagnosticsGrid, 7, "Current triangles", triangleCountLabel);
+        addRow(diagnosticsGrid, 8, "Raw requested", rawRequestedTrianglesLabel);
+        addRow(diagnosticsGrid, 9, "Budget target", budgetTargetTrianglesLabel);
+        addRow(diagnosticsGrid, 10, "Budget-coarsened", budgetCoarsenedLabel);
+        addRow(diagnosticsGrid, 11, "Pending", pendingTransitionsLabel);
 
         tileSizeCombo.setOnAction(e -> {
             if (target != null && tileSizeCombo.getValue() != null) {
@@ -492,6 +514,8 @@ public class HypersurfaceControlsPane extends LitPathPane {
         targetPixelsSpinner.valueProperty().addListener((o, ov, nv) -> applyLodConfigFromControls());
         coarsenThresholdSpinner.valueProperty().addListener((o, ov, nv) -> applyLodConfigFromControls());
         refineThresholdSpinner.valueProperty().addListener((o, ov, nv) -> applyLodConfigFromControls());
+        geometryBudgetCheck.setOnAction(e -> applyLodConfigFromControls());
+        triangleBudgetSpinner.valueProperty().addListener((o, ov, nv) -> applyLodConfigFromControls());
         throttleMsSpinner.valueProperty().addListener((o, ov, nv) -> applyLodConfigFromControls());
         settleMsSpinner.valueProperty().addListener((o, ov, nv) -> applyLodConfigFromControls());
         initialSettleMsSpinner.valueProperty().addListener((o, ov, nv) -> applyLodConfigFromControls());
@@ -503,6 +527,7 @@ public class HypersurfaceControlsPane extends LitPathPane {
         VBox lodTabContent = new VBox(10,
             titledBox("Tile Layout", tileGrid),
             titledBox("LOD Selection", selectionGrid),
+            titledBox("Geometry Budget", budgetGrid),
             titledBox("Scheduling", timingGrid),
             titledBox("Live Diagnostics", diagnosticsGrid)
         );
@@ -511,11 +536,25 @@ public class HypersurfaceControlsPane extends LitPathPane {
         ScrollPane lodScrollPane = new ScrollPane(lodTabContent);
         lodScrollPane.setFitToWidth(true);
         lodScrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        lodScrollPane.setVbarPolicy(ScrollPane.ScrollBarPolicy.AS_NEEDED);
+        // Do not let the tall LOD form propagate its preferred height into
+        // TabPane -> BorderPane -> LitPathPane.  The LOD content scrolls
+        // inside the fixed-height controls pane instead.
+        lodScrollPane.setMinHeight(0.0);
+        lodScrollPane.setPrefViewportHeight(TAB_CONTENT_HEIGHT);
+        lodScrollPane.setPrefHeight(TAB_CONTENT_HEIGHT);
+        lodScrollPane.setMaxHeight(Double.MAX_VALUE);
 
         // === TabPane ===
         TabPane tabs = new TabPane();
         tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
         tabs.setPrefWidth(PANEL_WIDTH - 8);
+        // Keep the tab control bounded by the LitPathPane's intended default
+        // height.  Individual tabs may scroll internally rather than forcing
+        // the floating pane to grow to their preferred content height.
+        tabs.setMinHeight(0.0);
+        tabs.setPrefHeight(TAB_CONTENT_HEIGHT);
+        tabs.setMaxHeight(Double.MAX_VALUE);
 
         GraphControlsView graphLayoutView = new GraphControlsView(scene);
         GraphStyleControlsView graphStyleView = new GraphStyleControlsView(scene);
@@ -551,6 +590,10 @@ public class HypersurfaceControlsPane extends LitPathPane {
         config.finestAllowedLod = maxDetailCombo != null
             ? Math.max(0, maxDetailCombo.getSelectionModel().getSelectedIndex())
             : 0;
+        config.geometryBudgetEnabled = geometryBudgetCheck != null && geometryBudgetCheck.isSelected();
+        config.triangleBudget = triangleBudgetSpinner != null
+            ? Math.max(1L, Math.round(triangleBudgetSpinner.getValue() * 1_000_000.0))
+            : 5_000_000L;
         config.throttleMs = throttleMsSpinner.getValue();
         config.debounceMs = settleMsSpinner.getValue();
         config.initialSettleMs = initialSettleMsSpinner.getValue();
@@ -588,6 +631,9 @@ public class HypersurfaceControlsPane extends LitPathPane {
         lod3CountLabel.setText(Integer.toString(stats.lod3Tiles()));
         lod4CountLabel.setText(Integer.toString(stats.lod4Tiles()));
         triangleCountLabel.setText(formatTriangleCount(stats.visibleTriangles()));
+        rawRequestedTrianglesLabel.setText(formatTriangleCount(stats.rawRequestedTriangles()));
+        budgetTargetTrianglesLabel.setText(formatTriangleCount(stats.budgetedTargetTriangles()));
+        budgetCoarsenedLabel.setText(Integer.toString(stats.budgetCoarsenedTiles()));
         pendingTransitionsLabel.setText(Integer.toString(stats.pendingTransitions()));
     }
 
