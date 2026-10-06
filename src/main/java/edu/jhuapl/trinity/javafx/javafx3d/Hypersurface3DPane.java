@@ -56,6 +56,8 @@ import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
@@ -190,6 +192,9 @@ public class Hypersurface3DPane extends StackPane
     public enum COLORATION {COLOR_BY_IMAGE, COLOR_BY_FEATURE, COLOR_BY_SHAPLEY}
 
     COLORATION colorationMethod = COLORATION.COLOR_BY_FEATURE;
+    private final ObjectProperty<SurfaceRowOrientation> surfaceRowOrientation =
+        new SimpleObjectProperty<>(SurfaceRowOrientation.FIRST_ROW_NEAR);
+    private boolean suppressRowOrientationRefresh = false;
     boolean hoverInteractionsEnabled = false;
     boolean surfaceChartsEnabled = false;
     boolean crosshairsEnabled = false;
@@ -339,6 +344,12 @@ public class Hypersurface3DPane extends StackPane
 
     public Hypersurface3DPane(Scene scene) {
         this.scene = scene;
+        surfaceRowOrientation.addListener((obs, oldValue, newValue) -> {
+            applySurfaceRowOrientationToRenderers();
+            if (!suppressRowOrientationRefresh && surfPlot != null) {
+                updateTheMesh();
+            }
+        });
         shape3DToCalloutMap = new HashMap<>();
         ambientLight = new AmbientLight(Color.WHITE);
 
@@ -1104,6 +1115,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         final double renderScaleZ = getRenderScaleZ();
 
         if (surfaceRender) {
+            surfPlot.setRowOrientation(getSurfaceRowOrientation());
             // Primitive HeightField meshes bypass the FXyz Point3D/Face3 object graph.
             // Shapley coloration temporarily retains the legacy path until its scalar
             // field is made LOD-aware; image and height coloration use the fast path.
@@ -1397,7 +1409,9 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         int column = Math.max(0, Math.min(
             (int) Math.floor(vertP3D.getX() / Math.max(1e-9, getRenderScaleX())),
             getRenderWidth() - 1));
-        int sourceRow = mapRenderIndexToSource(row, getRenderHeight(), getSourceHeight());
+        int orientedRenderRow = orientRowIndex(row, getRenderHeight());
+        int sourceRow = mapRenderIndexToSource(
+            orientedRenderRow, getRenderHeight(), getSourceHeight());
 
         if (anchorCallout != null) {
             if (sourceRow < featureVectors.size()) {
@@ -1497,6 +1511,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
                 case BICUBIC: {
                     double gx = p.xIndex + frac(p.getX() / Math.max(1.0, surfScale));
                     double gy = p.yIndex + frac(p.getY() / Math.max(1.0, surfScale));
+                    gy = orientRowCoordinate(gy, dataGrid.size());
                     return SurfaceUtils.sample(dataGrid, gx, gy, interpMode);
                 }
                 case NEAREST:
@@ -1512,6 +1527,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
                 double sz = Double.isFinite(currentLodSurfScaleZ) ? currentLodSurfScaleZ : surfScale;
                 double gx = p.xIndex + frac(p.getX() / Math.max(1.0, sx));
                 double gy = p.yIndex + frac(p.getY() / Math.max(1.0, sz));
+                gy = orientRowCoordinate(gy, activeHeightField.height());
                 return SurfaceUtils.sample(activeHeightField, gx, gy, interpMode);
             }
             case NEAREST:
@@ -1525,11 +1541,14 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
             int w = activeHeightField.width();
             int h = activeHeightField.height();
             if (p.yIndex < 0 || p.yIndex >= h || p.xIndex < 0 || p.xIndex >= w) return 0.0;
-            return (double) activeHeightField.data()[p.yIndex * w + p.xIndex];
+            int dataRow = orientRowIndex(p.yIndex, h);
+            return (double) activeHeightField.data()[dataRow * w + p.xIndex];
         }
         if (dataGrid == null) return 0.0;
-        if (p.yIndex >= dataGrid.size() || p.xIndex >= dataGrid.get(0).size()) return 0.0;
-        return dataGrid.get(p.yIndex).get(p.xIndex);
+        if (p.yIndex < 0 || p.yIndex >= dataGrid.size()
+            || p.xIndex < 0 || p.xIndex >= dataGrid.get(0).size()) return 0.0;
+        int dataRow = orientRowIndex(p.yIndex, dataGrid.size());
+        return dataGrid.get(dataRow).get(p.xIndex);
     }
 
     private Number findBlerpHeight(Vert3D p) {
@@ -1585,6 +1604,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         generateRandos(xWidth, zWidth, yScale);
         captureDataGridAsSource();
         surfPlot = new HyperSurfacePlotMesh(xWidth, zWidth, 1, 1, yScale, surfScale, vert3DLookup);
+        surfPlot.setRowOrientation(getSurfaceRowOrientation());
         surfPlot.setTextureModeVertices3D(TOTAL_COLORS, colorByHeight, 0.0, 360.0);
         surfPlot.setDrawMode(DrawMode.FILL);
         sceneRoot.getChildren().add(surfPlot);
@@ -1610,6 +1630,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
 
         if (tiledSurfaceRenderer == null) {
             tiledSurfaceRenderer = new TiledSurfaceRenderer(camera, subScene);
+            tiledSurfaceRenderer.setRowOrientation(getSurfaceRowOrientation());
             tiledSurfaceRenderer.setTileCellsL0(tileCellsL0);
             tiledSurfaceRenderer.setVisible(false);
             sceneRoot.getChildren().add(tiledSurfaceRenderer);
@@ -2292,6 +2313,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         baseWorldDepth = Double.NaN;
         currentLodSurfScaleX = Double.NaN;
         currentLodSurfScaleZ = Double.NaN;
+        setSourceDefaultRowOrientation(SurfaceRowOrientation.FIRST_ROW_FAR);
 
         Utils.printTotalTime(startTime);
         System.out.println("Injecting primitive image HeightField into Hypersurface...");
@@ -2362,7 +2384,11 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
     private void captureDataGridAsSource() {
         // Boxed grids represent data/FeatureCollection-backed surfaces, whose historical
         // world-size behavior remains sourceDimension * surfScale.
+        boolean wasImageBacked = imageBackedSurface;
         imageBackedSurface = false;
+        if (wasImageBacked) {
+            setSourceDefaultRowOrientation(SurfaceRowOrientation.FIRST_ROW_NEAR);
+        }
         if (dataGrid == null || dataGrid.isEmpty()) {
             originalGrid = new ArrayList<>();
             resetLodDataState();
@@ -2374,6 +2400,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
 
     private void resetLodDataState() {
         imageBackedSurface = false;
+        setSourceDefaultRowOrientation(SurfaceRowOrientation.FIRST_ROW_NEAR);
         fullResHeightField = null;
         lodProcessedLevels = List.of();
         activeLodIndex = -1;
@@ -2467,14 +2494,14 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
 
     private double getActiveRenderValue(int row, int column) {
         if (activeHeightField == null) return 0.0;
-        int r = Math.max(0, Math.min(row, activeHeightField.height() - 1));
+        int r = orientRowIndex(row, activeHeightField.height());
         int c = Math.max(0, Math.min(column, activeHeightField.width() - 1));
         return activeHeightField.get(c, r);
     }
 
     private List<Double> getActiveRenderRow(int row) {
         if (activeHeightField == null) return List.of();
-        int r = Math.max(0, Math.min(row, activeHeightField.height() - 1));
+        int r = orientRowIndex(row, activeHeightField.height());
         int w = activeHeightField.width();
         float[] values = activeHeightField.data();
         List<Double> out = new ArrayList<>(w);
@@ -2490,7 +2517,10 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         int h = activeHeightField.height();
         float[] values = activeHeightField.data();
         Double[] out = new Double[h];
-        for (int y = 0; y < h; y++) out[y] = (double) values[y * w + c];
+        for (int visualRow = 0; visualRow < h; visualRow++) {
+            int sourceRow = orientRowIndex(visualRow, h);
+            out[visualRow] = (double) values[sourceRow * w + c];
+        }
         return out;
     }
 
@@ -2542,6 +2572,51 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
             refreshWorldExtentsAndLodMetadata();
             updateTheMesh();
         }
+    }
+
+    public SurfaceRowOrientation getSurfaceRowOrientation() {
+        return surfaceRowOrientation.get();
+    }
+
+    public void setSurfaceRowOrientation(SurfaceRowOrientation orientation) {
+        surfaceRowOrientation.set(orientation != null
+            ? orientation
+            : SurfaceRowOrientation.FIRST_ROW_NEAR);
+    }
+
+    public ObjectProperty<SurfaceRowOrientation> surfaceRowOrientationProperty() {
+        return surfaceRowOrientation;
+    }
+
+    private void setSourceDefaultRowOrientation(SurfaceRowOrientation orientation) {
+        suppressRowOrientationRefresh = true;
+        try {
+            setSurfaceRowOrientation(orientation);
+        } finally {
+            suppressRowOrientationRefresh = false;
+        }
+    }
+
+    private void applySurfaceRowOrientationToRenderers() {
+        SurfaceRowOrientation orientation = getSurfaceRowOrientation();
+        if (surfPlot != null) surfPlot.setRowOrientation(orientation);
+        if (tiledSurfaceRenderer != null) tiledSurfaceRenderer.setRowOrientation(orientation);
+    }
+
+    private int orientRowIndex(int logicalRow, int rowCount) {
+        if (rowCount <= 0) return 0;
+        int clamped = Math.max(0, Math.min(logicalRow, rowCount - 1));
+        return getSurfaceRowOrientation() == SurfaceRowOrientation.FIRST_ROW_FAR
+            ? rowCount - 1 - clamped
+            : clamped;
+    }
+
+    private double orientRowCoordinate(double logicalRow, int rowCount) {
+        if (rowCount <= 1) return 0.0;
+        double clamped = Math.max(0.0, Math.min(logicalRow, rowCount - 1.0));
+        return getSurfaceRowOrientation() == SurfaceRowOrientation.FIRST_ROW_FAR
+            ? (rowCount - 1.0) - clamped
+            : clamped;
     }
 
     public boolean isTiledHeightFieldRenderingEnabled() {
@@ -2674,6 +2749,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
             }
         }
         tiledSurfaceRenderer.setYScale(yScale);
+        tiledSurfaceRenderer.setRowOrientation(getSurfaceRowOrientation());
 
         if (colorationMethod == COLORATION.COLOR_BY_IMAGE && lastImage != null) {
             tiledSurfaceRenderer.setColorByImage(lastImage);

@@ -88,6 +88,7 @@ public class HyperSurfacePlotMesh extends TexturedMesh {
     private double directZScale;
     private WritableImage directPaletteImage;
     private int directPaletteColors = -1;
+    private SurfaceRowOrientation rowOrientation = SurfaceRowOrientation.FIRST_ROW_NEAR;
 
     public HyperSurfacePlotMesh() {
         this(DEFAULT_FUNCTION, DEFAULT_X_RANGE, DEFAULT_Y_RANGE, DEFAULT_X_DIVISIONS, DEFAULT_Y_DIVISIONS, DEFAULT_FUNCTION_SCALE);
@@ -135,6 +136,20 @@ public class HyperSurfacePlotMesh extends TexturedMesh {
         setCullFace(CullFace.BACK);
         setDrawMode(DrawMode.FILL);
         setDepthTest(DepthTest.ENABLE);
+    }
+
+    public SurfaceRowOrientation getRowOrientation() {
+        return rowOrientation;
+    }
+
+    /**
+     * Sets how source rows map to increasing world Z. Geometry is rebuilt by the
+     * owning Hypersurface/renderer after this value changes.
+     */
+    public void setRowOrientation(SurfaceRowOrientation rowOrientation) {
+        this.rowOrientation = rowOrientation != null
+            ? rowOrientation
+            : SurfaceRowOrientation.FIRST_ROW_NEAR;
     }
 
     public javafx.geometry.Point3D getPoint3DByVertNumber(int pointId) {
@@ -297,7 +312,7 @@ public class HyperSurfacePlotMesh extends TexturedMesh {
         final float[] texRow = new float[directVertsX * 2];
 
         for (int localZ = 0; localZ < directVertsZ; localZ++) {
-            int sampleZ = Math.min(directStartZ + localZ, sourceHeight - 1);
+            int sampleZ = mapSourceRow(directStartZ + localZ, sourceHeight);
             int sourceRow = sampleZ * sourceWidth;
             int out = 0;
             for (int localX = 0; localX < directVertsX; localX++) {
@@ -558,10 +573,10 @@ public class HyperSurfacePlotMesh extends TexturedMesh {
 
         for (int localZ = 0; localZ < vertsZ; localZ++) {
             final int globalVertexZ = startZ + localZ;
-            final int sampleZ = Math.min(globalVertexZ, sourceHeight - 1);
+            final int sampleZ = mapSourceRow(globalVertexZ, sourceHeight);
             final int sourceRow = sampleZ * sourceWidth;
             final float worldZ = (float) (localZ * zScale);
-            final float v = (float) globalVertexZ / (float) sourceHeight;
+            final float v = spatialV(globalVertexZ, sourceHeight);
 
             int p = 0;
             int t = 0;
@@ -642,7 +657,7 @@ public class HyperSurfacePlotMesh extends TexturedMesh {
 
         for (int localZ = 0; localZ < directVertsZ; localZ++) {
             final int globalVertexZ = directStartZ + localZ;
-            final float v = (float) globalVertexZ / (float) sourceHeight;
+            final float v = spatialV(globalVertexZ, sourceHeight);
             int t = 0;
             for (int localX = 0; localX < directVertsX; localX++) {
                 final int globalVertexX = directStartX + localX;
@@ -652,6 +667,22 @@ public class HyperSurfacePlotMesh extends TexturedMesh {
             mesh.getTexCoords().set(localZ * directVertsX * 2,
                 texRow, 0, texRow.length);
         }
+    }
+
+    private int mapSourceRow(int logicalRow, int sourceHeight) {
+        int clamped = Math.max(0, Math.min(logicalRow, sourceHeight - 1));
+        return rowOrientation == SurfaceRowOrientation.FIRST_ROW_FAR
+            ? sourceHeight - 1 - clamped
+            : clamped;
+    }
+
+    private float spatialV(int logicalVertexRow, int sourceHeight) {
+        float v = (float) logicalVertexRow / (float) sourceHeight;
+        if (v < 0.0f) v = 0.0f;
+        else if (v > 1.0f) v = 1.0f;
+        return rowOrientation == SurfaceRowOrientation.FIRST_ROW_FAR
+            ? 1.0f - v
+            : v;
     }
 
     private WritableImage getOrCreateDirectPalette(int colors) {

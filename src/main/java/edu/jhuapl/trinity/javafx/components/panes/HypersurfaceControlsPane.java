@@ -6,6 +6,7 @@ import edu.jhuapl.trinity.javafx.events.GraphEvent;
 import edu.jhuapl.trinity.javafx.events.HyperspaceEvent;
 import edu.jhuapl.trinity.javafx.events.HypersurfaceEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.Hypersurface3DPane;
+import edu.jhuapl.trinity.javafx.javafx3d.SurfaceRowOrientation;
 import edu.jhuapl.trinity.javafx.javafx3d.SurfaceUtils;
 import edu.jhuapl.trinity.javafx.javafx3d.TiledLodManager;
 import edu.jhuapl.trinity.javafx.javafx3d.TiledSurfaceRenderer;
@@ -62,6 +63,7 @@ public class HypersurfaceControlsPane extends LitPathPane {
     private ComboBox<DrawMode> drawModeCombo;
     private ComboBox<CullFace> cullFaceCombo;
     private ComboBox<Hypersurface3DPane.COLORATION> colorationCombo;
+    private ComboBox<SurfaceRowOrientation> rowOrientationCombo;
 
     // Processing
     private ComboBox<HeightMode> heightModeCombo;
@@ -234,6 +236,14 @@ public class HypersurfaceControlsPane extends LitPathPane {
         styleCombo(colorationCombo);
         addRow(renderGrid, 3, "Color", colorationCombo);
 
+        rowOrientationCombo = new ComboBox<>();
+        rowOrientationCombo.getItems().addAll(SurfaceRowOrientation.values());
+        rowOrientationCombo.getSelectionModel().select(target != null
+            ? target.getSurfaceRowOrientation()
+            : SurfaceRowOrientation.FIRST_ROW_NEAR);
+        styleCombo(rowOrientationCombo);
+        addRow(renderGrid, 4, "Row orientation", rowOrientationCombo);
+
         meshTypeCombo.setOnAction(e ->
             fireOnRoot(HypersurfaceEvent.surfaceRender("Surface".equals(meshTypeCombo.getValue()))));
         drawModeCombo.setOnAction(e ->
@@ -242,6 +252,18 @@ public class HypersurfaceControlsPane extends LitPathPane {
             fireOnRoot(HypersurfaceEvent.cullFace(cullFaceCombo.getValue())));
         colorationCombo.setOnAction(e ->
             fireOnRoot(HypersurfaceEvent.coloration(colorationCombo.getValue())));
+        rowOrientationCombo.setOnAction(e -> {
+            if (target != null && rowOrientationCombo.getValue() != null) {
+                target.setSurfaceRowOrientation(rowOrientationCombo.getValue());
+            }
+        });
+        if (target != null) {
+            target.surfaceRowOrientationProperty().addListener((obs, oldValue, newValue) -> {
+                if (newValue != null && rowOrientationCombo.getValue() != newValue) {
+                    rowOrientationCombo.getSelectionModel().select(newValue);
+                }
+            });
+        }
 
         // === Scene / Lighting ===
         GridPane sceneGrid = formGrid();

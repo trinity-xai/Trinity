@@ -61,6 +61,7 @@ public final class TiledSurfaceRenderer extends Group {
 
     private DrawMode drawMode = DrawMode.FILL;
     private CullFace cullFace = CullFace.BACK;
+    private SurfaceRowOrientation rowOrientation = SurfaceRowOrientation.FIRST_ROW_NEAR;
     private ColorMode colorMode = ColorMode.HEIGHT;
     private Image image;
     private int paletteColors = 1530;
@@ -174,6 +175,26 @@ public final class TiledSurfaceRenderer extends Group {
     public void setCullFace(CullFace cullFace) {
         this.cullFace = Objects.requireNonNull(cullFace, "cullFace");
         forEachBuiltView(view -> view.setCullFace(cullFace));
+    }
+
+    public SurfaceRowOrientation getRowOrientation() {
+        return rowOrientation;
+    }
+
+    public void setRowOrientation(SurfaceRowOrientation rowOrientation) {
+        SurfaceRowOrientation next = rowOrientation != null
+            ? rowOrientation
+            : SurfaceRowOrientation.FIRST_ROW_NEAR;
+        if (this.rowOrientation == next) return;
+        this.rowOrientation = next;
+
+        // Row orientation changes which source row feeds every mesh Z row. Cached
+        // per-LOD meshes therefore cannot be reused across an orientation change.
+        getChildren().clear();
+        for (TileRenderState tile : tilesById.values()) {
+            tile.clearViews();
+        }
+        lodManager.invalidateRenderedState();
     }
 
     public void setSpecularColor(Color specularColor) {
@@ -411,6 +432,7 @@ public final class TiledSurfaceRenderer extends Group {
             1, 1, 1, 1, yScale, 1.0, p -> 0.0);
         view.setDrawMode(drawMode);
         view.setCullFace(cullFace);
+        view.setRowOrientation(rowOrientation);
         view.updateMeshHeightField(field, startX, startZ,
             cellsX, cellsZ, scaleX, yScale, scaleZ);
         view.setTranslateX(translateX);
