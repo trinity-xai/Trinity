@@ -103,6 +103,8 @@ public class HypersurfaceControlsPane extends LitPathPane {
     private Label lod0CountLabel;
     private Label lod1CountLabel;
     private Label lod2CountLabel;
+    private Label lod3CountLabel;
+    private Label lod4CountLabel;
     private Label triangleCountLabel;
     private Label pendingTransitionsLabel;
     private AnimationTimer lodDiagnosticsTimer;
@@ -206,13 +208,13 @@ public class HypersurfaceControlsPane extends LitPathPane {
 
         drawModeCombo = new ComboBox<>();
         drawModeCombo.getItems().addAll(DrawMode.LINE, DrawMode.FILL);
-        drawModeCombo.getSelectionModel().select(DrawMode.LINE);
+        drawModeCombo.getSelectionModel().select(DrawMode.FILL);
         styleCombo(drawModeCombo);
         addRow(renderGrid, 1, "Draw", drawModeCombo);
 
         cullFaceCombo = new ComboBox<>();
         cullFaceCombo.getItems().addAll(CullFace.FRONT, CullFace.BACK, CullFace.NONE);
-        cullFaceCombo.getSelectionModel().select(CullFace.NONE);
+        cullFaceCombo.getSelectionModel().select(CullFace.BACK);
         styleCombo(cullFaceCombo);
         addRow(renderGrid, 2, "Cull", cullFaceCombo);
 
@@ -396,8 +398,8 @@ public class HypersurfaceControlsPane extends LitPathPane {
         styleCombo(tileSizeCombo);
 
         maxDetailCombo = new ComboBox<>();
-        maxDetailCombo.getItems().addAll("L0", "L1", "L2");
-        int finest0 = Math.max(0, Math.min(2, lodConfig.finestAllowedLod));
+        maxDetailCombo.getItems().addAll("L0", "L1", "L2", "L3", "L4");
+        int finest0 = Math.max(0, Math.min(4, lodConfig.finestAllowedLod));
         maxDetailCombo.getSelectionModel().select(finest0);
         styleCombo(maxDetailCombo);
 
@@ -466,6 +468,8 @@ public class HypersurfaceControlsPane extends LitPathPane {
         lod0CountLabel = new Label("0");
         lod1CountLabel = new Label("0");
         lod2CountLabel = new Label("0");
+        lod3CountLabel = new Label("0");
+        lod4CountLabel = new Label("0");
         triangleCountLabel = new Label("0");
         pendingTransitionsLabel = new Label("0");
 
@@ -473,9 +477,11 @@ public class HypersurfaceControlsPane extends LitPathPane {
         addRow(diagnosticsGrid, 1, "Visible tiles", visibleTilesLabel);
         addRow(diagnosticsGrid, 2, "L0 tiles", lod0CountLabel);
         addRow(diagnosticsGrid, 3, "L1 tiles", lod1CountLabel);
-        addRow(diagnosticsGrid, 4, "L2+ tiles", lod2CountLabel);
-        addRow(diagnosticsGrid, 5, "Triangles", triangleCountLabel);
-        addRow(diagnosticsGrid, 6, "Pending", pendingTransitionsLabel);
+        addRow(diagnosticsGrid, 4, "L2 tiles", lod2CountLabel);
+        addRow(diagnosticsGrid, 5, "L3 tiles", lod3CountLabel);
+        addRow(diagnosticsGrid, 6, "L4 tiles", lod4CountLabel);
+        addRow(diagnosticsGrid, 7, "Triangles", triangleCountLabel);
+        addRow(diagnosticsGrid, 8, "Pending", pendingTransitionsLabel);
 
         tileSizeCombo.setOnAction(e -> {
             if (target != null && tileSizeCombo.getValue() != null) {
@@ -579,6 +585,8 @@ public class HypersurfaceControlsPane extends LitPathPane {
         lod0CountLabel.setText(Integer.toString(stats.lod0Tiles()));
         lod1CountLabel.setText(Integer.toString(stats.lod1Tiles()));
         lod2CountLabel.setText(Integer.toString(stats.lod2Tiles()));
+        lod3CountLabel.setText(Integer.toString(stats.lod3Tiles()));
+        lod4CountLabel.setText(Integer.toString(stats.lod4Tiles()));
         triangleCountLabel.setText(formatTriangleCount(stats.visibleTriangles()));
         pendingTransitionsLabel.setText(Integer.toString(stats.pendingTransitions()));
     }

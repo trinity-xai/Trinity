@@ -684,6 +684,37 @@ public final class SurfaceUtils {
         return levels;
     }
 
+    /**
+     * Build exactly up to {@code maxLevels} power-of-two LOD levels from processed L0.
+     * This is intended for tiled rendering where the useful stopping criterion is the
+     * number of tile-local LOD steps rather than a global image dimension.
+     *
+     * <p>The method stops early only if both dimensions can no longer be reduced.</p>
+     *
+     * @return levels [L0, L1, ...] with at most {@code maxLevels} entries
+     */
+    public static List<HeightField> buildPyramidLevels(HeightField l0Processed, int maxLevels) {
+        Objects.requireNonNull(l0Processed, "l0Processed");
+        if (maxLevels < 1) {
+            throw new IllegalArgumentException("maxLevels must be >= 1");
+        }
+
+        ArrayList<HeightField> levels = new ArrayList<>(maxLevels);
+        levels.add(l0Processed);
+        HeightField prev = l0Processed;
+
+        while (levels.size() < maxLevels) {
+            int nextW = Math.max(1, prev.width() / 2);
+            int nextH = Math.max(1, prev.height() / 2);
+            if (nextW == prev.width() && nextH == prev.height()) break;
+
+            HeightField next = resample(prev, nextW, nextH);
+            levels.add(next);
+            prev = next;
+        }
+        return levels;
+    }
+
     // -------------------------
     // Smoothing (HeightField)
     // -------------------------

@@ -31,6 +31,8 @@ public final class TiledSurfaceRenderer extends Group {
         int lod0Tiles,
         int lod1Tiles,
         int lod2Tiles,
+        int lod3Tiles,
+        int lod4Tiles,
         long visibleTriangles,
         int pendingTransitions
     ) { }
@@ -55,7 +57,7 @@ public final class TiledSurfaceRenderer extends Group {
     private int tileCellsL0 = DEFAULT_TILE_CELLS_L0;
 
     private DrawMode drawMode = DrawMode.FILL;
-    private CullFace cullFace = CullFace.NONE;
+    private CullFace cullFace = CullFace.BACK;
     private ColorMode colorMode = ColorMode.HEIGHT;
     private Image image;
     private int paletteColors = 1530;
@@ -220,6 +222,8 @@ public final class TiledSurfaceRenderer extends Group {
         int lod0 = 0;
         int lod1 = 0;
         int lod2 = 0;
+        int lod3 = 0;
+        int lod4 = 0;
         long triangles = 0L;
 
         for (TileRenderState tile : tilesById.values()) {
@@ -228,14 +232,16 @@ public final class TiledSurfaceRenderer extends Group {
             int lod = tile.getActiveLod();
             if (lod == 0) lod0++;
             else if (lod == 1) lod1++;
-            else if (lod >= 2) lod2++;
+            else if (lod == 2) lod2++;
+            else if (lod == 3) lod3++;
+            else if (lod >= 4) lod4++;
             if (lod >= 0 && lod < levels.size()) {
                 triangles += triangleCountFor(tile, lod);
             }
         }
 
         return new LodStatistics(
-            visible, tileSpecs.size(), lod0, lod1, lod2, triangles,
+            visible, tileSpecs.size(), lod0, lod1, lod2, lod3, lod4, triangles,
             lodManager.getPendingTransitionCount());
     }
 

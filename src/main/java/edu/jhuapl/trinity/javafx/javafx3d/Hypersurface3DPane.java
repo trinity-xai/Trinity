@@ -273,8 +273,11 @@ public class Hypersurface3DPane extends StackPane
 
     /** Max render dimension for L0 (aspect-preserving). Default safe limit: 2048. */
     private int maxRenderResolution = 2048;
-    /** Minimum LOD dimension (stop generating levels below this). Default: 512. */
+    /** Minimum LOD dimension for the legacy/global renderer. Default: 512. */
     private int minRenderResolution = 512;
+
+    /** Tiled image rendering uses a fixed L0..L4 power-of-two pyramid. */
+    private static final int TILED_LOD_LEVEL_COUNT = 5;
 
     /** Full-resolution height data (primitive). Derived from originalGrid or other data sources. */
     private HeightField fullResHeightField = null;
@@ -1583,9 +1586,9 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         captureDataGridAsSource();
         surfPlot = new HyperSurfacePlotMesh(xWidth, zWidth, 1, 1, yScale, surfScale, vert3DLookup);
         surfPlot.setTextureModeVertices3D(TOTAL_COLORS, colorByHeight, 0.0, 360.0);
-        surfPlot.setDrawMode(DrawMode.LINE);
+        surfPlot.setDrawMode(DrawMode.FILL);
         sceneRoot.getChildren().add(surfPlot);
-        surfPlot.setCullFace(CullFace.NONE);
+        surfPlot.setCullFace(CullFace.BACK);
         surfPlot.setTranslateX(-(xWidth * surfScale) / 2.0);
         surfPlot.setTranslateZ(-(zWidth * surfScale) / 2.0);
         
@@ -2582,7 +2585,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
     public TiledSurfaceRenderer.LodStatistics getTiledLodStatistics() {
         return tiledSurfaceRenderer != null
             ? tiledSurfaceRenderer.getLodStatistics()
-            : new TiledSurfaceRenderer.LodStatistics(0, 0, 0, 0, 0, 0L, 0);
+            : new TiledSurfaceRenderer.LodStatistics(0, 0, 0, 0, 0, 0, 0, 0L, 0);
     }
 
     public void setTileCellsL0(int tileCellsL0) {
@@ -2735,7 +2738,20 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
             toneParam
         );
 
-        lodProcessedLevels = SurfaceUtils.buildPyramid(l0Processed, minRenderResolution);
+        lodProcessedLevels = imageBackedSurface
+            ? SurfaceUtils.buildPyramidLevels(l0Processed, TILED_LOD_LEVEL_COUNT)
+            : SurfaceUtils.buildPyramid(l0Processed, minRenderResolution);
+
+        if (imageBackedSurface) {
+            StringBuilder lodSummary = new StringBuilder("Hypersurface tiled LOD pyramid: ");
+            for (int i = 0; i < lodProcessedLevels.size(); i++) {
+                if (i > 0) lodSummary.append(", ");
+                HeightField level = lodProcessedLevels.get(i);
+                lodSummary.append('L').append(i).append('=')
+                    .append(level.width()).append('x').append(level.height());
+            }
+            System.out.println(lodSummary);
+        }
 
         // Rendering resolution and physical world size are intentionally independent.
         // Image-backed sources use a nominal long-axis world extent with aspect ratio
