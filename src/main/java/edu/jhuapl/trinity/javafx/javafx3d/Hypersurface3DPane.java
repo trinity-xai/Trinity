@@ -309,6 +309,14 @@ public class Hypersurface3DPane extends StackPane
      * the shorter axis is derived from the source aspect ratio.
      */
     private boolean imageBackedSurface = false;
+
+    /**
+     * True only while model state is being pushed into HypersurfaceControlsPane.
+     * GUI control listeners echo their changes back as HypersurfaceEvents, so those
+     * echoes must not be interpreted as user-requested geometry rebuilds.
+     */
+    private boolean syncingGuiControls = false;
+
     private final double imageWorldExtentReferenceScale = Math.max(1.0e-6, DEFAULT_SURFSCALE);
     private double nominalImageWorldExtent = DEFAULT_XWIDTH * (double) DEFAULT_SURFSCALE;
 
@@ -1115,6 +1123,17 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
             return;
         }
 
+        // An image-backed surface with no active HeightField is between source
+        // replacement and LOD-pyramid activation (or is waiting for the global LOD
+        // selector). Never fall through to the legacy raw FXyz mesh builder here:
+        // xWidth/zWidth may still describe the full 4K/8K source and attempting a
+        // raw mesh at that resolution can exhaust the Java heap.
+        if (imageBackedSurface && activeHeightField == null) {
+            surfPlot.setVisible(false);
+            if (paintMeshView != null) paintMeshView.setVisible(false);
+            return;
+        }
+
         surfPlot.setVisible(surfaceRender);
         if (paintMeshView != null) paintMeshView.setVisible(true);
 
@@ -1754,12 +1773,19 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
      * (xWidth, zWidth, yScale, surfScale) to synchronize GUI controls with model state.
      */
     public void syncGuiControls() {
-        // Fire events to update GUI controls in the controls pane
-        // These will be handled by HypersurfaceControlsPane to update Spinner values.
-        fireOnRoot(HypersurfaceEvent.setXWidthGUI(xWidth));
-        fireOnRoot(HypersurfaceEvent.setZWidthGUI(zWidth));
-        fireOnRoot(HypersurfaceEvent.setYScaleGUI(yScale));
-        fireOnRoot(HypersurfaceEvent.setSurfScaleGUI(surfScale));
+        // SET_*_GUI events update Spinner values synchronously. Those Spinner value
+        // listeners echo XWIDTH_CHANGED/ZWIDTH_CHANGED/etc. back through the Scene.
+        // Mark the entire model -> GUI synchronization window so those echoes do not
+        // trigger geometry rebuilds.
+        syncingGuiControls = true;
+        try {
+            fireOnRoot(HypersurfaceEvent.setXWidthGUI(xWidth));
+            fireOnRoot(HypersurfaceEvent.setZWidthGUI(zWidth));
+            fireOnRoot(HypersurfaceEvent.setYScaleGUI(yScale));
+            fireOnRoot(HypersurfaceEvent.setSurfScaleGUI(surfScale));
+        } finally {
+            syncingGuiControls = false;
+        }
     }
 
     /**
@@ -1781,6 +1807,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         if (scene == null) return;
         // Geometry / scale
         scene.addEventHandler(HypersurfaceEvent.XWIDTH_CHANGED, e -> {
+            if (syncingGuiControls) return;
             this.xWidth = (int) e.object;
             // When an LOD pyramid is active, its HeightField dimensions own the render
             // mesh. Do not let GUI synchronization overwrite the constant-world transform.
@@ -1792,6 +1819,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         });
 
         scene.addEventHandler(HypersurfaceEvent.ZWIDTH_CHANGED, e -> {
+            if (syncingGuiControls) return;
             this.zWidth = (int) e.object;
             if (surfPlot != null && activeHeightField == null) {
                 surfPlot.setTranslateX(-(xWidth * surfScale) / 2.0);
@@ -1801,12 +1829,14 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         });
 
         scene.addEventHandler(HypersurfaceEvent.Y_SCALE_CHANGED, e -> {
+            if (syncingGuiControls) return;
             this.yScale = ((Double) e.object).floatValue();
             if (surfPlot != null) surfPlot.setFunctionScale(yScale);
             updateTheMesh();
         });
 
         scene.addEventHandler(HypersurfaceEvent.SURF_SCALE_CHANGED, e -> {
+            if (syncingGuiControls) return;
             this.surfScale = ((Double) e.object).floatValue();
             refreshWorldExtentsAndLodMetadata();
             updateTheMesh();
@@ -2268,8 +2298,6 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
     }
 
     private void tessellateImage(Image image, int x1, int y1, int x2, int y2) {
-        lastImage = image;
-
         final int imageWidth = (int) image.getWidth();
         final int imageHeight = (int) image.getHeight();
         final int startX = Math.max(0, Math.min(x1, imageWidth));
@@ -2294,6 +2322,14 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
             LOG.warn("Unable to tessellate image because PixelReader is unavailable.");
             return;
         }
+
+        // Validate the incoming image first, then release every large render-side object
+        // derived from the previous image before allocating the new full-resolution
+        // primitive height array. This minimizes the transient heap peak when replacing
+        // 4K/8K sources. The method parameter retains the new Image while lastImage and
+        // the tiled renderer are allowed to release the old one.
+        releaseImageBackedStateForReplacement();
+        lastImage = image;
 
         float[] heights = new float[Math.multiplyExact(sourceWidth, sourceHeight)];
         int targetIndex = 0;
@@ -2386,6 +2422,39 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         List<List<Double>> out = new ArrayList<>(src.size());
         for (List<Double> row : src) out.add(new ArrayList<>(row));
         return out;
+    }
+
+    /**
+     * Releases render-side state owned by the previous image before a replacement
+     * image allocates its full-resolution primitive HeightField. Keeping this separate
+     * from resetLodDataState() preserves the incoming source type/orientation workflow
+     * while aggressively dropping references to large cached TriangleMeshes, LOD
+     * HeightFields, and the previous JavaFX Image.
+     */
+    private void releaseImageBackedStateForReplacement() {
+        if (tiledSurfaceRenderer != null) {
+            tiledSurfaceRenderer.clearSurface();
+            tiledSurfaceRenderer.setVisible(false);
+        }
+        if (surfPlot != null) {
+            surfPlot.setVisible(false);
+        }
+        if (paintMeshView != null) {
+            paintMeshView.setVisible(false);
+        }
+
+        fullResHeightField = null;
+        lodProcessedLevels = List.of();
+        activeLodIndex = -1;
+        activeHeightField = null;
+        baseWorldWidth = Double.NaN;
+        baseWorldDepth = Double.NaN;
+        currentLodSurfScaleX = Double.NaN;
+        currentLodSurfScaleZ = Double.NaN;
+
+        // Drop the pane's reference to the previous image. The incoming Image remains
+        // strongly referenced by tessellateImage() and is assigned after this release.
+        lastImage = null;
     }
 
     /**

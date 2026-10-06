@@ -136,6 +136,7 @@ public final class TiledSurfaceRenderer extends Group {
         tileSpecs = List.of();
         levels = List.of();
         getChildren().clear();
+        image = null;
         visibleTileCount = 0;
     }
 
@@ -153,6 +154,7 @@ public final class TiledSurfaceRenderer extends Group {
         tileSpecs = List.of();
         levels = List.of();
         getChildren().clear();
+        image = null;
     }
 
     public void setYScale(double yScale) {
