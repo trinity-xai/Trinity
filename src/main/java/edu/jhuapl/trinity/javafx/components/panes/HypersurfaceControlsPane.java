@@ -449,8 +449,8 @@ public class HypersurfaceControlsPane extends LitPathPane {
             clampInt(lodConfig.activeTransitionsPerPulse, 1, 32), 1);
         settledTransitionsSpinner = new Spinner<>(1, 64,
             clampInt(lodConfig.settledTransitionsPerPulse, 1, 64), 1);
-        activeBuildsSpinner = new Spinner<>(1, 8,
-            clampInt(lodConfig.activeBuildsPerPulse, 1, 8), 1);
+        activeBuildsSpinner = new Spinner<>(0, 8,
+            clampInt(lodConfig.activeBuildsPerPulse, 0, 8), 1);
         settledBuildsSpinner = new Spinner<>(1, 16,
             clampInt(lodConfig.settledBuildsPerPulse, 1, 16), 1);
 

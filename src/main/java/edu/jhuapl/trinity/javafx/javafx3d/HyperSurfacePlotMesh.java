@@ -606,19 +606,21 @@ public class HyperSurfacePlotMesh extends TexturedMesh {
                     final int p10 = p00 + vertsX;
                     final int p11 = p10 + 1;
 
+                    // Winding is intentionally reversed so the surface front faces Y-.
+                    // This makes CullFace.BACK preserve the normal top-down view.
                     faces[fi++] = p00;
                     faces[fi++] = p00;
-                    faces[fi++] = p10;
-                    faces[fi++] = p10;
                     faces[fi++] = p11;
                     faces[fi++] = p11;
+                    faces[fi++] = p10;
+                    faces[fi++] = p10;
 
                     faces[fi++] = p11;
                     faces[fi++] = p11;
-                    faces[fi++] = p01;
-                    faces[fi++] = p01;
                     faces[fi++] = p00;
                     faces[fi++] = p00;
+                    faces[fi++] = p01;
+                    faces[fi++] = p01;
                 }
             }
 
@@ -749,10 +751,10 @@ public class HyperSurfacePlotMesh extends TexturedMesh {
                     p01 = p00 + 1;
                     p10 = p00 + numDivX;
                     p11 = p10 + 1;
-                    listTextures.add(new Face3(p00, p10, p11));
-                    listTextures.add(new Face3(p11, p01, p00));
-                    listFaces.add(new Face3(p00, p10, p11));
-                    listFaces.add(new Face3(p11, p01, p00));
+                    listTextures.add(new Face3(p00, p11, p10));
+                    listTextures.add(new Face3(p11, p00, p01));
+                    listFaces.add(new Face3(p00, p11, p10));
+                    listFaces.add(new Face3(p11, p00, p01));
 
                 }
             }
@@ -832,10 +834,10 @@ public class HyperSurfacePlotMesh extends TexturedMesh {
                 p01 = p00 + 1;
                 p10 = p00 + numDivX;
                 p11 = p10 + 1;
-                listTextures.add(new Face3(p00, p10, p11));
-                listTextures.add(new Face3(p11, p01, p00));
-                listFaces.add(new Face3(p00, p10, p11));
-                listFaces.add(new Face3(p11, p01, p00));
+                listTextures.add(new Face3(p00, p11, p10));
+                listTextures.add(new Face3(p11, p00, p01));
+                listFaces.add(new Face3(p00, p11, p10));
+                listFaces.add(new Face3(p11, p00, p01));
             }
         }
         int[] faceSmoothingGroups = new int[listFaces.size()]; // 0 == hard edges
@@ -876,10 +878,10 @@ public class HyperSurfacePlotMesh extends TexturedMesh {
                 p01 = p00 + 1;
                 p10 = p00 + numDivX;
                 p11 = p10 + 1;
-                listTextures.add(new Face3(p00, p10, p11));
-                listTextures.add(new Face3(p11, p01, p00));
-                listFaces.add(new Face3(p00, p10, p11));
-                listFaces.add(new Face3(p11, p01, p00));
+                listTextures.add(new Face3(p00, p11, p10));
+                listTextures.add(new Face3(p11, p00, p01));
+                listFaces.add(new Face3(p00, p11, p10));
+                listFaces.add(new Face3(p11, p00, p01));
             }
         }
         int[] faceSmoothingGroups = new int[listFaces.size()]; // 0 == hard edges

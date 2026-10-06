@@ -352,7 +352,8 @@ public final class TiledSurfaceRenderer extends Group {
      * Applies one budgeted LOD transition. Existing tile/LOD MeshViews are only
      * shown/hidden; no MeshView.setMesh(...) operation occurs after construction.
      */
-    private TiledLodManager.TransitionResult applyTransition(LodTransition transition) {
+    private TiledLodManager.TransitionResult applyTransition(
+            LodTransition transition, boolean allowBuild) {
         TileRenderState tile = tilesById.get(transition.tileId());
         if (tile == null) return TiledLodManager.TransitionResult.notApplied();
 
@@ -361,6 +362,9 @@ public final class TiledSurfaceRenderer extends Group {
         boolean built = false;
 
         if (targetView == null) {
+            if (!allowBuild) {
+                return TiledLodManager.TransitionResult.notApplied();
+            }
             targetView = buildTileLodView(tile, lod);
             tile.setLodView(lod, targetView);
             built = true;

@@ -76,7 +76,7 @@ public final class TiledLodManager {
 
     @FunctionalInterface
     public interface TransitionApplier {
-        TransitionResult apply(LodTransition transition);
+        TransitionResult apply(LodTransition transition, boolean allowBuild);
     }
 
     @FunctionalInterface
@@ -108,7 +108,7 @@ public final class TiledLodManager {
         public int settledTransitionsPerPulse = 8;
         /** Quiet period used before the first authoritative camera/LOD evaluation. */
         public long initialSettleMs = 150;
-        /** Maximum first-time mesh constructions per pulse while moving. */
+        /** Maximum first-time mesh constructions per pulse while moving. Zero disables new mesh builds while active. */
         public int activeBuildsPerPulse = 1;
         /** Maximum first-time mesh constructions per pulse after settling. */
         public int settledBuildsPerPulse = 2;
@@ -710,8 +710,19 @@ public final class TiledLodManager {
         int refined = 0;
         int initial = 0;
 
-        while (applied < transitionBudget && !pendingTransitions.isEmpty()) {
+        // When activeBuildsPerPulse is zero, uncached transitions are deferred rather
+        // than forcing a TriangleMesh construction during camera interaction. We still
+        // scan the current queue once so cached LOD switches can proceed normally.
+        final int transitionsAvailableAtStart = pendingTransitions.size();
+        final List<LodTransition> buildDeferred = new ArrayList<>();
+        int examined = 0;
+
+        while (applied < transitionBudget
+            && !pendingTransitions.isEmpty()
+            && examined < transitionsAvailableAtStart) {
+
             LodTransition transition = pendingTransitions.poll();
+            examined++;
             Integer desired = desiredLodByTile.get(transition.tileId());
             if (desired == null || desired != transition.toLod()) {
                 continue; // stale request superseded by a newer camera evaluation
@@ -726,8 +737,14 @@ public final class TiledLodManager {
                     transition.priorityClass(), transition.screenDistance(),
                     transition.depth(), transition.pixelsPerCell());
 
-            TransitionResult result = transitionApplier.apply(actualTransition);
-            if (!result.applied()) continue;
+            boolean allowBuild = built < buildBudget;
+            TransitionResult result = transitionApplier.apply(actualTransition, allowBuild);
+            if (!result.applied()) {
+                // With a zero/exhausted build budget the renderer reports an uncached
+                // transition as not applied. Preserve it for a later settled pulse.
+                if (!allowBuild) buildDeferred.add(actualTransition);
+                continue;
+            }
 
             appliedLodByTile.put(actualTransition.tileId(), actualTransition.toLod());
             applied++;
@@ -739,8 +756,10 @@ public final class TiledLodManager {
 
             // Building TriangleMesh buffers is substantially more expensive than
             // toggling cached MeshViews. Keep first-use construction tightly bounded.
-            if (built >= buildBudget) break;
+            if (buildBudget > 0 && built >= buildBudget) break;
         }
+
+        pendingTransitions.addAll(buildDeferred);
 
         if (applied > 0) {
             int[] actualCounts = countAppliedVisibleLods();
@@ -760,7 +779,13 @@ public final class TiledLodManager {
             System.out.println(sb);
         }
 
-        if (pendingTransitions.isEmpty()) stopTransitionTimer();
+        if (pendingTransitions.isEmpty()
+            || (!settledMode && buildBudget == 0 && applied == 0)) {
+            // Avoid polling the same uncached transitions every JavaFX pulse when
+            // active mesh construction is explicitly disabled. A later camera
+            // evaluation or the settled evaluation will restart the timer.
+            stopTransitionTimer();
+        }
     }
 
     private int currentTransitionBudget() {
@@ -770,7 +795,7 @@ public final class TiledLodManager {
     }
 
     private int currentBuildBudget() {
-        return Math.max(1, settledMode
+        return Math.max(0, settledMode
             ? config.settledBuildsPerPulse
             : config.activeBuildsPerPulse);
     }
@@ -968,9 +993,10 @@ public final class TiledLodManager {
         }
         if (config.activeTransitionsPerPulse < 1
             || config.settledTransitionsPerPulse < 1
-            || config.activeBuildsPerPulse < 1
+            || config.activeBuildsPerPulse < 0
             || config.settledBuildsPerPulse < 1) {
-            throw new IllegalArgumentException("Transition/build budgets must be >= 1");
+            throw new IllegalArgumentException(
+                "Transition budgets and settled build budget must be >= 1; active build budget must be >= 0");
         }
     }
 
