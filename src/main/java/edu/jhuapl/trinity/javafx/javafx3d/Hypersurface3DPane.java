@@ -305,8 +305,13 @@ public class Hypersurface3DPane extends StackPane
     private double currentLodSurfScaleX = Double.NaN;
     private double currentLodSurfScaleZ = Double.NaN;
 
-    /** Screen-space LOD scheduler/selector. */
+    /** Screen-space LOD scheduler/selector for the legacy/global renderer. */
     private LodManager lodManager = null;
+
+    /** Tiled per-region renderer used for primitive image-backed heightfields. */
+    private TiledSurfaceRenderer tiledSurfaceRenderer = null;
+    private boolean tiledHeightFieldRenderingEnabled = true;
+    private int tileCellsL0 = 256;
 
 // Event-driven state fields for settings previously set via controls
     private HeightMode heightMode = HeightMode.RAW;
@@ -411,7 +416,7 @@ public class Hypersurface3DPane extends StackPane
             double newZ = z + event.getZoomFactor() * modifierFactor * modifier;
             camera.setTranslateZ(newZ);
             updateLabels();
-                    if (lodManager != null) lodManager.requestUpdate(LodManager.UpdateReason.SCROLL);
+                    requestLodUpdate(LodManager.UpdateReason.SCROLL);
 });
 
         subScene.setOnKeyPressed(event -> {
@@ -501,7 +506,7 @@ public class Hypersurface3DPane extends StackPane
 
             updateLabels();
             updateCalloutHeadPoints(subScene);
-            if (lodManager != null) lodManager.requestUpdate(LodManager.UpdateReason.OTHER);
+            requestLodUpdate(LodManager.UpdateReason.OTHER);
         });
 
         subScene.setOnMousePressed((MouseEvent me) -> {
@@ -517,7 +522,7 @@ public class Hypersurface3DPane extends StackPane
             else camera.setTranslateZ(camera.getTranslateZ() - 50.0);
             updateLabels();
             updateCalloutHeadPoints(subScene);
-            if (lodManager != null) lodManager.requestUpdate(LodManager.UpdateReason.SCROLL);
+            requestLodUpdate(LodManager.UpdateReason.SCROLL);
             e.consume();
         });
         subScene.setOnScroll((ScrollEvent event) -> {
@@ -530,7 +535,7 @@ public class Hypersurface3DPane extends StackPane
             camera.setTranslateZ(newZ);
             updateLabels();
             updateCalloutHeadPoints(subScene);
-                    if (lodManager != null) lodManager.requestUpdate(LodManager.UpdateReason.SCROLL);
+                    requestLodUpdate(LodManager.UpdateReason.SCROLL);
 });
 
         subScene.setOnMouseDragged((MouseEvent me) -> mouseDragCamera(me));
@@ -549,7 +554,7 @@ public class Hypersurface3DPane extends StackPane
 
         
         subScene.setOnMouseReleased((MouseEvent me) -> {
-            if (lodManager != null) lodManager.forceUpdate();
+            forceLodUpdate();
         });
 MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         copyAsImageItem.setOnAction((ActionEvent e) -> {
@@ -1073,8 +1078,22 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
     public void updateTheMesh() {
         if (surfPlot == null) return;
 
-        surfPlot.setVisible(surfaceRender);
         sceneRoot.getChildren().removeIf(n -> n instanceof TessellationTube);
+
+        final boolean useTiledRenderer = surfaceRender && shouldUseTiledHeightFieldRenderer();
+        if (tiledSurfaceRenderer != null) {
+            tiledSurfaceRenderer.setVisible(useTiledRenderer);
+        }
+        if (useTiledRenderer) {
+            surfPlot.setVisible(false);
+            if (paintMeshView != null) paintMeshView.setVisible(false);
+            configureTiledAppearance();
+            tiledSurfaceRenderer.forceUpdate();
+            return;
+        }
+
+        surfPlot.setVisible(surfaceRender);
+        if (paintMeshView != null) paintMeshView.setVisible(true);
 
         final int renderWidth = getRenderWidth();
         final int renderHeight = getRenderHeight();
@@ -1126,6 +1145,10 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
      */
     private void applyCurrentColoration() {
         if (surfPlot == null || colorationMethod == null) return;
+        if (shouldUseTiledHeightFieldRenderer()) {
+            configureTiledAppearance();
+            return;
+        }
 
         switch (colorationMethod) {
             case COLOR_BY_IMAGE -> {
@@ -1345,7 +1368,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         }
         updateLabels();
         updateCalloutHeadPoints(subScene);
-        if (lodManager != null) lodManager.requestUpdate(LodManager.UpdateReason.DRAG);
+        requestLodUpdate(LodManager.UpdateReason.DRAG);
     }
 
     private void updateLabels() {
@@ -1355,6 +1378,59 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
             double y = p2Ditty.getY() - 25;
             node.getTransforms().setAll(new Translate(x, y));
         });
+    }
+
+    private void handleSurfaceHover(Point3D surfacePoint) {
+        vertP3D = surfacePoint;
+        highlightedPoint.setTranslateX(vertP3D.x - getWorldWidth() / 2.0);
+        highlightedPoint.setTranslateY(vertP3D.y);
+        highlightedPoint.setTranslateZ(vertP3D.z - getWorldDepth() / 2.0);
+        updateCalloutHeadPoints(subScene);
+        updateLabels();
+
+        int row = Math.max(0, Math.min(
+            (int) Math.floor(vertP3D.getZ() / Math.max(1e-9, getRenderScaleZ())),
+            getRenderHeight() - 1));
+        int column = Math.max(0, Math.min(
+            (int) Math.floor(vertP3D.getX() / Math.max(1e-9, getRenderScaleX())),
+            getRenderWidth() - 1));
+        int sourceRow = mapRenderIndexToSource(row, getRenderHeight(), getSourceHeight());
+
+        if (anchorCallout != null) {
+            if (sourceRow < featureVectors.size()) {
+                updateCalloutByFeatureVector(anchorCallout, featureVectors.get(sourceRow));
+            }
+            setSpheroidAnchor(false, sourceRow);
+        }
+        if (crosshairsEnabled && diffusePaintImage != null) {
+            paintSingleColor(Color.TRANSPARENT);
+            illuminateCrosshair(vertP3D);
+        }
+        if (surfaceChartsEnabled && activeHeightField != null) {
+            List<Double> xlist = getActiveRenderRow(row);
+            Double[] xRay = xlist.toArray(Double[]::new);
+            Double[] zRay = getActiveRenderColumn(column);
+            String text = "Coordinates: " + column + ", " + row + System.lineSeparator();
+            text = text.concat("Value: ")
+                .concat(String.valueOf(getActiveRenderValue(row, column)))
+                .concat(System.lineSeparator());
+            double maxX = xlist.stream().max(Double::compare).orElse(0.0);
+            text = text.concat("Max X: ").concat(String.valueOf(maxX)).concat(System.lineSeparator());
+            double minX = xlist.stream().min(Double::compare).orElse(0.0);
+            text = text.concat("Min X: ").concat(String.valueOf(minX)).concat(System.lineSeparator());
+            double maxZ = Arrays.stream(zRay).max(Double::compare).orElse(0.0);
+            text = text.concat("Max Z: ").concat(String.valueOf(maxZ)).concat(System.lineSeparator());
+            double minZ = Arrays.stream(zRay).min(Double::compare).orElse(0.0);
+            text = text.concat("Min Z: ").concat(String.valueOf(minZ)).concat(System.lineSeparator());
+            hoverText.setText(text);
+            hoverText.setStrokeWidth(1);
+            hoverText.setLayoutX(50);
+            hoverText.setLayoutY(50);
+            scene.getRoot().fireEvent(new FactorAnalysisEvent(
+                FactorAnalysisEvent.SURFACE_XFACTOR_VECTOR, xRay));
+            scene.getRoot().fireEvent(new FactorAnalysisEvent(
+                FactorAnalysisEvent.SURFACE_ZFACTOR_VECTOR, zRay));
+        }
     }
 
     private ImageView loadImageView(FeatureVector featureVector, boolean bboxOnly) {
@@ -1524,7 +1600,26 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
             cfg.throttleMs = 75;
             cfg.debounceMs = 75;
             lodManager.setConfig(cfg);
-            lodManager.setOnLodSelected(this::applyActiveLodIndex);
+            lodManager.setOnLodSelected(idx -> {
+                if (!shouldUseTiledHeightFieldRenderer()) applyActiveLodIndex(idx);
+            });
+        }
+
+        if (tiledSurfaceRenderer == null) {
+            tiledSurfaceRenderer = new TiledSurfaceRenderer(camera, subScene);
+            tiledSurfaceRenderer.setTileCellsL0(tileCellsL0);
+            tiledSurfaceRenderer.setVisible(false);
+            sceneRoot.getChildren().add(tiledSurfaceRenderer);
+            tiledSurfaceRenderer.addEventHandler(MouseEvent.MOUSE_MOVED, e -> {
+                if (!hoverInteractionsEnabled) return;
+                Node picked = e.getPickResult().getIntersectedNode();
+                javafx.geometry.Point3D pickedPoint = e.getPickResult().getIntersectedPoint();
+                if (picked == null || pickedPoint == null) return;
+                javafx.geometry.Point3D scenePoint = picked.localToScene(pickedPoint);
+                javafx.geometry.Point3D surfacePoint = tiledSurfaceRenderer.sceneToLocal(scenePoint);
+                handleSurfaceHover(Point3D.convertFromJavaFXPoint3D(surfacePoint));
+                e.consume();
+            });
         }
 
         // Build processed pyramid and apply initial LOD. The primitive source cache is
@@ -1532,58 +1627,11 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         rebuildProcessedGridAndRefresh();
 
         surfPlot.addEventHandler(MouseEvent.MOUSE_MOVED, e -> {
-            if (hoverInteractionsEnabled) {
-                javafx.geometry.Point3D p3D = e.getPickResult().getIntersectedPoint();
-                vertP3D = Point3D.convertFromJavaFXPoint3D(p3D);
-                highlightedPoint.setTranslateX(vertP3D.x - getWorldWidth() / 2.0);
-                highlightedPoint.setTranslateY(vertP3D.y);
-                highlightedPoint.setTranslateZ(vertP3D.z - getWorldDepth() / 2.0);
-                updateCalloutHeadPoints(subScene);
-                updateLabels();
-
-                int row = Math.max(0, Math.min(
-                    (int) Math.floor(vertP3D.getZ() / Math.max(1e-9, getRenderScaleZ())),
-                    getRenderHeight() - 1));
-                int column = Math.max(0, Math.min(
-                    (int) Math.floor(vertP3D.getX() / Math.max(1e-9, getRenderScaleX())),
-                    getRenderWidth() - 1));
-                int sourceRow = mapRenderIndexToSource(row, getRenderHeight(), getSourceHeight());
-
-                if (null != anchorCallout) {
-                    if (sourceRow < featureVectors.size()) {
-                        updateCalloutByFeatureVector(anchorCallout, featureVectors.get(sourceRow));
-                    }
-                    setSpheroidAnchor(false, sourceRow);
-                }
-                if (crosshairsEnabled) {
-                    paintSingleColor(Color.TRANSPARENT);
-                    illuminateCrosshair(vertP3D);
-                }
-                if (surfaceChartsEnabled && activeHeightField != null) {
-                    List<Double> xlist = getActiveRenderRow(row);
-                    Double[] xRay = xlist.toArray(Double[]::new);
-                    Double[] zRay = getActiveRenderColumn(column);
-                    String text = "Coordinates: " + column + ", " + row + System.lineSeparator();
-                    text = text.concat("Value: ")
-                        .concat(String.valueOf(getActiveRenderValue(row, column)))
-                        .concat(System.lineSeparator());
-                    double maxX = xlist.stream().max(Double::compare).orElse(0.0);
-                    text = text.concat("Max X: ").concat(String.valueOf(maxX)).concat(System.lineSeparator());
-                    double minX = xlist.stream().min(Double::compare).orElse(0.0);
-                    text = text.concat("Min X: ").concat(String.valueOf(minX)).concat(System.lineSeparator());
-                    double maxZ = Arrays.stream(zRay).max(Double::compare).orElse(0.0);
-                    text = text.concat("Max Z: ").concat(String.valueOf(maxZ)).concat(System.lineSeparator());
-                    double minZ = Arrays.stream(zRay).min(Double::compare).orElse(0.0);
-                    text = text.concat("Min Z: ").concat(String.valueOf(minZ)).concat(System.lineSeparator());
-                    hoverText.setText(text);
-                    hoverText.setStrokeWidth(1);
-                    hoverText.setLayoutX(50);
-                    hoverText.setLayoutY(50);
-                    scene.getRoot().fireEvent(new FactorAnalysisEvent(FactorAnalysisEvent.SURFACE_XFACTOR_VECTOR, xRay));
-                    scene.getRoot().fireEvent(new FactorAnalysisEvent(FactorAnalysisEvent.SURFACE_ZFACTOR_VECTOR, zRay));
-                }
-                e.consume();
-            }
+            if (!hoverInteractionsEnabled) return;
+            javafx.geometry.Point3D p3D = e.getPickResult().getIntersectedPoint();
+            if (p3D == null) return;
+            handleSurfaceHover(Point3D.convertFromJavaFXPoint3D(p3D));
+            e.consume();
         });
 
         Glow glow = new Glow(0.8);
@@ -1647,12 +1695,12 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         extrasGroup.getChildren().addAll(eastPole, eastKnob, westPole, westKnob, glowLineBox);
         wireEventHandlers();
 
-        pointLight.getScope().addAll(surfPlot, graphLayer);
+        pointLight.getScope().addAll(surfPlot, tiledSurfaceRenderer, graphLayer);
         sceneRoot.getChildren().add(pointLight);
         pointLight.translateXProperty().bind(camera.translateXProperty());
         pointLight.translateYProperty().bind(camera.translateYProperty());
         pointLight.translateZProperty().bind(camera.translateZProperty().add(500));
-        ambientLight.getScope().addAll(surfPlot, graphLayer);
+        ambientLight.getScope().addAll(surfPlot, tiledSurfaceRenderer, graphLayer);
         sceneRoot.getChildren().add(ambientLight);
 
         updateLabels();
@@ -1734,10 +1782,14 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
             updateTheMesh();
         });
         scene.addEventHandler(HypersurfaceEvent.DRAW_MODE_CHANGED, e -> {
-            if (surfPlot != null) surfPlot.setDrawMode((DrawMode) e.object);
+            DrawMode drawMode = (DrawMode) e.object;
+            if (surfPlot != null) surfPlot.setDrawMode(drawMode);
+            if (tiledSurfaceRenderer != null) tiledSurfaceRenderer.setDrawMode(drawMode);
         });
         scene.addEventHandler(HypersurfaceEvent.CULL_FACE_CHANGED, e -> {
-            if (surfPlot != null) surfPlot.setCullFace((CullFace) e.object);
+            CullFace cullFace = (CullFace) e.object;
+            if (surfPlot != null) surfPlot.setCullFace(cullFace);
+            if (tiledSurfaceRenderer != null) tiledSurfaceRenderer.setCullFace(cullFace);
         });
         scene.addEventHandler(HypersurfaceEvent.COLORATION_CHANGED, e -> {
             COLORATION previous = this.colorationMethod;
@@ -1749,8 +1801,24 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
             // coloration only changes UV/material state on the direct mesh.
             boolean shapleyPathChanged = (previous == COLORATION.COLOR_BY_SHAPLEY)
                 != (next == COLORATION.COLOR_BY_SHAPLEY);
-            if (shapleyPathChanged) updateTheMesh();
-            else applyCurrentColoration();
+            if (shapleyPathChanged) {
+                if (next == COLORATION.COLOR_BY_SHAPLEY
+                    && lodManager != null
+                    && lodProcessedLevels != null
+                    && !lodProcessedLevels.isEmpty()) {
+                    activeLodIndex = -1;
+                    activeHeightField = null;
+                    lodManager.setPyramid(
+                        LodManager.fromHeightFields(lodProcessedLevels),
+                        baseWorldWidth, baseWorldDepth, -1);
+                    lodManager.forceUpdate();
+                } else if (shouldUseTiledHeightFieldRenderer()) {
+                    configureTiledPyramid();
+                }
+                updateTheMesh();
+            } else {
+                applyCurrentColoration();
+            }
         });
 
         // Processing pipeline
@@ -1802,8 +1870,10 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
             // (Optional: enable/disable pointLight as desired)
         });
         scene.addEventHandler(HypersurfaceEvent.SPECULAR_COLOR_CHANGED, e -> {
+            Color color = (Color) e.object;
             if (surfPlot != null && surfPlot.getMaterial() instanceof PhongMaterial mat)
-                mat.setSpecularColor((Color) e.object);
+                mat.setSpecularColor(color);
+            if (tiledSurfaceRenderer != null) tiledSurfaceRenderer.setSpecularColor(color);
         });
 
         // UX toggles
@@ -2309,6 +2379,10 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         baseWorldDepth = Double.NaN;
         currentLodSurfScaleX = Double.NaN;
         currentLodSurfScaleZ = Double.NaN;
+        if (tiledSurfaceRenderer != null) {
+            tiledSurfaceRenderer.clearSurface();
+            tiledSurfaceRenderer.setVisible(false);
+        }
     }
 
     private int getSourceWidth() {
@@ -2429,7 +2503,10 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
             surfPlot.setTranslateX(-baseWorldWidth / 2.0);
             surfPlot.setTranslateZ(-baseWorldDepth / 2.0);
         }
-        if (lodManager != null && lodProcessedLevels != null && !lodProcessedLevels.isEmpty()) {
+        if (shouldUseTiledHeightFieldRenderer()) {
+            configureTiledPyramid();
+            tiledSurfaceRenderer.forceUpdate();
+        } else if (lodManager != null && lodProcessedLevels != null && !lodProcessedLevels.isEmpty()) {
             lodManager.setPyramid(
                 LodManager.fromHeightFields(lodProcessedLevels),
                 baseWorldWidth,
@@ -2464,6 +2541,44 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         }
     }
 
+    public boolean isTiledHeightFieldRenderingEnabled() {
+        return tiledHeightFieldRenderingEnabled;
+    }
+
+    public void setTiledHeightFieldRenderingEnabled(boolean enabled) {
+        if (this.tiledHeightFieldRenderingEnabled == enabled) return;
+        this.tiledHeightFieldRenderingEnabled = enabled;
+        if (lodProcessedLevels != null && !lodProcessedLevels.isEmpty()) {
+            if (enabled && shouldUseTiledHeightFieldRenderer()) {
+                configureTiledPyramid();
+            } else if (lodManager != null) {
+                activeLodIndex = -1;
+                activeHeightField = null;
+                lodManager.setPyramid(
+                    LodManager.fromHeightFields(lodProcessedLevels),
+                    baseWorldWidth, baseWorldDepth, -1);
+                lodManager.forceUpdate();
+            }
+            updateTheMesh();
+        }
+    }
+
+    public int getTileCellsL0() {
+        return tileCellsL0;
+    }
+
+    public void setTileCellsL0(int tileCellsL0) {
+        if (tileCellsL0 < 16) {
+            throw new IllegalArgumentException("tileCellsL0 must be >= 16");
+        }
+        if (this.tileCellsL0 == tileCellsL0) return;
+        this.tileCellsL0 = tileCellsL0;
+        if (shouldUseTiledHeightFieldRenderer()) {
+            configureTiledPyramid();
+            updateTheMesh();
+        }
+    }
+
     public int getMaxRenderResolution() {
         return maxRenderResolution;
     }
@@ -2494,6 +2609,81 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         if (this.minRenderResolution == minRenderResolution) return;
         this.minRenderResolution = minRenderResolution;
         rebuildProcessedGridAndRefresh();
+    }
+
+    private boolean shouldUseTiledHeightFieldRenderer() {
+        return tiledHeightFieldRenderingEnabled
+            && imageBackedSurface
+            && tiledSurfaceRenderer != null
+            && lodProcessedLevels != null
+            && !lodProcessedLevels.isEmpty()
+            && colorationMethod != COLORATION.COLOR_BY_SHAPLEY;
+    }
+
+    private boolean isTiledHeightFieldRendererActive() {
+        return shouldUseTiledHeightFieldRenderer()
+            && surfaceRender
+            && tiledSurfaceRenderer.isVisible();
+    }
+
+    private void requestLodUpdate(LodManager.UpdateReason reason) {
+        if (shouldUseTiledHeightFieldRenderer()) {
+            tiledSurfaceRenderer.requestUpdate(reason);
+        } else if (lodManager != null) {
+            lodManager.requestUpdate(reason);
+        }
+    }
+
+    private void forceLodUpdate() {
+        if (shouldUseTiledHeightFieldRenderer()) {
+            tiledSurfaceRenderer.forceUpdate();
+        } else if (lodManager != null) {
+            lodManager.forceUpdate();
+        }
+    }
+
+    private void configureTiledAppearance() {
+        if (tiledSurfaceRenderer == null) return;
+        if (surfPlot != null) {
+            tiledSurfaceRenderer.setDrawMode(surfPlot.getDrawMode());
+            tiledSurfaceRenderer.setCullFace(surfPlot.getCullFace());
+            if (surfPlot.getMaterial() instanceof PhongMaterial material) {
+                tiledSurfaceRenderer.setSpecularColor(material.getSpecularColor());
+            }
+        }
+        tiledSurfaceRenderer.setYScale(yScale);
+
+        if (colorationMethod == COLORATION.COLOR_BY_IMAGE && lastImage != null) {
+            tiledSurfaceRenderer.setColorByImage(lastImage);
+        } else if (colorationMethod == COLORATION.COLOR_BY_FEATURE && !lodProcessedLevels.isEmpty()) {
+            float[] minMax = lodProcessedLevels.get(0).minMax();
+            double minColorValue = minMax[0] * yScale;
+            double maxColorValue = minMax[1] * yScale;
+            if (!(maxColorValue > minColorValue)) {
+                double pad = Math.max(1.0e-9, Math.abs(minColorValue) * 1.0e-9);
+                minColorValue -= pad;
+                maxColorValue += pad;
+            }
+            tiledSurfaceRenderer.setColorByHeight(
+                TOTAL_COLORS, minColorValue, maxColorValue);
+        }
+    }
+
+    private void configureTiledPyramid() {
+        if (!shouldUseTiledHeightFieldRenderer()) return;
+        activeLodIndex = 0;
+        activeHeightField = lodProcessedLevels.get(0);
+        xWidth = activeHeightField.width();
+        zWidth = activeHeightField.height();
+        currentLodSurfScaleX = baseWorldWidth / xWidth;
+        currentLodSurfScaleZ = baseWorldDepth / zWidth;
+
+        tiledSurfaceRenderer.setTileCellsL0(tileCellsL0);
+        tiledSurfaceRenderer.setPyramid(
+            lodProcessedLevels, baseWorldWidth, baseWorldDepth, yScale);
+        configureTiledAppearance();
+        tiledSurfaceRenderer.forceUpdate();
+        syncGuiControls();
     }
 
     private void rebuildProcessedGridAndRefresh() {
@@ -2541,7 +2731,10 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         currentLodSurfScaleX = Double.NaN;
         currentLodSurfScaleZ = Double.NaN;
 
-        if (lodManager != null) {
+        if (shouldUseTiledHeightFieldRenderer()) {
+            configureTiledPyramid();
+            updateTheMesh();
+        } else if (lodManager != null) {
             lodManager.setPyramid(
                 LodManager.fromHeightFields(lodProcessedLevels),
                 baseWorldWidth,
