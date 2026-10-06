@@ -103,6 +103,7 @@ public class HypersurfaceControlsPane extends LitPathPane {
     private Spinner<Integer> activeBuildsSpinner;
     private Spinner<Integer> settledBuildsSpinner;
     private CheckBox geometryBudgetCheck;
+    private CheckBox verboseLodDiagnosticsCheck;
     private Spinner<Double> triangleBudgetSpinner;
 
     private Label lodStatusLabel;
@@ -533,6 +534,8 @@ public class HypersurfaceControlsPane extends LitPathPane {
         budgetTargetTrianglesLabel = new Label("0");
         budgetCoarsenedLabel = new Label("0");
         pendingTransitionsLabel = new Label("0");
+        verboseLodDiagnosticsCheck = new CheckBox();
+        verboseLodDiagnosticsCheck.setSelected(lodConfig.verboseDiagnostics);
 
         addRow(diagnosticsGrid, 0, "Renderer", lodStatusLabel);
         addRow(diagnosticsGrid, 1, "Visible tiles", visibleTilesLabel);
@@ -546,6 +549,7 @@ public class HypersurfaceControlsPane extends LitPathPane {
         addRow(diagnosticsGrid, 9, "Budget target", budgetTargetTrianglesLabel);
         addRow(diagnosticsGrid, 10, "Budget-coarsened", budgetCoarsenedLabel);
         addRow(diagnosticsGrid, 11, "Pending", pendingTransitionsLabel);
+        addRow(diagnosticsGrid, 12, "Verbose console", verboseLodDiagnosticsCheck);
 
         tileSizeCombo.setOnAction(e -> {
             if (target != null && tileSizeCombo.getValue() != null) {
@@ -565,6 +569,7 @@ public class HypersurfaceControlsPane extends LitPathPane {
         settledTransitionsSpinner.valueProperty().addListener((o, ov, nv) -> applyLodConfigFromControls());
         activeBuildsSpinner.valueProperty().addListener((o, ov, nv) -> applyLodConfigFromControls());
         settledBuildsSpinner.valueProperty().addListener((o, ov, nv) -> applyLodConfigFromControls());
+        verboseLodDiagnosticsCheck.setOnAction(e -> applyLodConfigFromControls());
 
         VBox lodTabContent = new VBox(10,
             titledBox("Tile Layout", tileGrid),
@@ -636,6 +641,8 @@ public class HypersurfaceControlsPane extends LitPathPane {
         config.triangleBudget = triangleBudgetSpinner != null
             ? Math.max(1L, Math.round(triangleBudgetSpinner.getValue() * 1_000_000.0))
             : 5_000_000L;
+        config.verboseDiagnostics = verboseLodDiagnosticsCheck != null
+            && verboseLodDiagnosticsCheck.isSelected();
         config.throttleMs = throttleMsSpinner.getValue();
         config.debounceMs = settleMsSpinner.getValue();
         config.initialSettleMs = initialSettleMsSpinner.getValue();

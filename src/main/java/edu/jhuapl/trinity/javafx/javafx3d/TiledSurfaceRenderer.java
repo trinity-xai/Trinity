@@ -83,6 +83,27 @@ public final class TiledSurfaceRenderer extends Group {
         this.lodManager.setTransitionApplier(this::applyTransition);
         this.lodManager.setGeometryCostProvider(this::triangleCountForTileId);
         setPickOnBounds(false);
+        // Surface ray-picking is expensive for dense TriangleMeshes. Hover is off by
+        // default, so keep the entire tiled subtree mouse-transparent until explicitly enabled.
+        setMouseTransparent(true);
+    }
+
+    public void setHoverPickingEnabled(boolean enabled) {
+        setMouseTransparent(!enabled);
+    }
+
+    public boolean isHoverPickingEnabled() {
+        return !isMouseTransparent();
+    }
+
+    public boolean isVerboseDiagnosticsEnabled() {
+        return lodManager.isVerboseDiagnosticsEnabled();
+    }
+
+    private void diagnostic(Object message) {
+        if (lodManager.isVerboseDiagnosticsEnabled()) {
+            System.out.println(message);
+        }
     }
 
     public void setTileCellsL0(int tileCellsL0) {
@@ -91,7 +112,7 @@ public final class TiledSurfaceRenderer extends Group {
         }
         if (this.tileCellsL0 == tileCellsL0) return;
         this.tileCellsL0 = tileCellsL0;
-        System.out.println("Tiled Hypersurface tile size updated: tileCellsL0=" + tileCellsL0);
+        diagnostic("Tiled Hypersurface tile size updated: tileCellsL0=" + tileCellsL0);
         if (!levels.isEmpty()) {
             rebuildTileLayout();
             forceUpdate();
@@ -365,7 +386,7 @@ public final class TiledSurfaceRenderer extends Group {
             maxAbsHeight
         );
 
-        System.out.println("Tiled Hypersurface configured: tiles=" + columns + "x" + rows
+        diagnostic("Tiled Hypersurface configured: tiles=" + columns + "x" + rows
             + " (" + tileSpecs.size() + "), tileCellsL0=" + tileCellsL0
             + ", world=" + baseWorldWidth + "x" + baseWorldDepth
             + ", persistentLodViews=true");

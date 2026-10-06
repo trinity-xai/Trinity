@@ -94,6 +94,8 @@ public final class TiledLodManager {
         public boolean geometryBudgetEnabled = true;
         /** Maximum target triangles across all currently visible tiles. */
         public long triangleBudget = 5_000_000L;
+        /** Emit detailed tiled-LOD diagnostics to stdout. Disabled by default. */
+        public boolean verboseDiagnostics = false;
         public long throttleMs = 75;
         public long debounceMs = 75;
         public double minDepth = 1e-3;
@@ -121,6 +123,7 @@ public final class TiledLodManager {
             c.finestAllowedLod = finestAllowedLod;
             c.geometryBudgetEnabled = geometryBudgetEnabled;
             c.triangleBudget = triangleBudget;
+            c.verboseDiagnostics = verboseDiagnostics;
             c.throttleMs = throttleMs;
             c.debounceMs = debounceMs;
             c.minDepth = minDepth;
@@ -191,13 +194,23 @@ public final class TiledLodManager {
         subScene.heightProperty().addListener(resizeListener);
     }
 
+    public boolean isVerboseDiagnosticsEnabled() {
+        return config.verboseDiagnostics;
+    }
+
+    private void diagnostic(Object message) {
+        if (config.verboseDiagnostics) {
+            System.out.println(message);
+        }
+    }
+
     public void setConfig(Config config) {
         this.config = Objects.requireNonNull(config, "config").copy();
         validateConfig(this.config);
         runOnFx(() -> {
             debounceTimer.setDuration(Duration.millis(this.config.debounceMs));
             initialEvaluationTimer.setDuration(Duration.millis(this.config.initialSettleMs));
-            System.out.println("Tiled Hypersurface LOD config updated: targetPpc="
+            diagnostic("Tiled Hypersurface LOD config updated: targetPpc="
                 + this.config.targetPixelsPerCell
                 + ", coarsenBelow=" + this.config.lowThreshold
                 + ", refineAbove=" + this.config.highThreshold
@@ -282,7 +295,7 @@ public final class TiledLodManager {
             initialEvaluationTimer.stop();
             initialEvaluationTimer.setDuration(Duration.millis(config.initialSettleMs));
             initialEvaluationTimer.playFromStart();
-            System.out.println("Tiled Hypersurface initial LOD deferred: waiting "
+            diagnostic("Tiled Hypersurface initial LOD deferred: waiting "
                 + config.initialSettleMs + " ms for stable viewport/camera state");
         });
     }
@@ -335,7 +348,7 @@ public final class TiledLodManager {
             settledMode = false;
             int cancelledRefinements = cancelQueuedRefinements();
             if (cancelledRefinements > 0) {
-                System.out.println("Tiled Hypersurface active camera: paused "
+                diagnostic("Tiled Hypersurface active camera: paused "
                     + cancelledRefinements + " queued refinements");
             }
 
@@ -390,14 +403,14 @@ public final class TiledLodManager {
         double height = subScene.getHeight();
         if (!(width > 1.0) || !(height > 1.0)
             || !Double.isFinite(width) || !Double.isFinite(height)) {
-            System.out.println("Tiled Hypersurface initial LOD still deferred: viewport="
+            diagnostic("Tiled Hypersurface initial LOD still deferred: viewport="
                 + width + "x" + height);
             scheduleInitialEvaluation();
             return;
         }
 
         initialEvaluationPending = false;
-        System.out.println("Tiled Hypersurface initial LOD released: viewport="
+        diagnostic("Tiled Hypersurface initial LOD released: viewport="
             + String.format("%.1fx%.1f", width, height));
         evaluateAndSchedule(true, true);
     }
@@ -509,7 +522,8 @@ public final class TiledLodManager {
         rebuildTransitionQueue(decisions);
         lastEvalNanos = System.nanoTime();
 
-        if (desiredChanges > 0 || !pendingTransitions.isEmpty() || force || deferredRefinements > 0) {
+        if (config.verboseDiagnostics
+            && (desiredChanges > 0 || !pendingTransitions.isEmpty() || force || deferredRefinements > 0)) {
             int[] desiredCounts = countDesiredLods(decisions);
             int queuedCoarsen = 0;
             int queuedRefine = 0;
@@ -537,9 +551,9 @@ public final class TiledLodManager {
                 .append(config.geometryBudgetEnabled ? formatTriangleCount(config.triangleBudget) : "OFF")
                 .append(", ");
             appendLodCounts(sb, desiredCounts);
-            System.out.println(sb);
+            diagnostic(sb);
             if (settled && queuedRefine > 0) {
-                System.out.println("Tiled Hypersurface settled: refinementReleased="
+                diagnostic("Tiled Hypersurface settled: refinementReleased="
                     + queuedRefine + ", queuedTotal=" + pendingTransitions.size());
             }
         }
@@ -619,7 +633,7 @@ public final class TiledLodManager {
 
         long exactBudgetedTriangles = totalTriangles(decisions, selectedLods);
         if (exactBudgetedTriangles > config.triangleBudget) {
-            System.out.println("Tiled Hypersurface geometry budget warning: requested="
+            diagnostic("Tiled Hypersurface geometry budget warning: requested="
                 + formatTriangleCount(rawTriangles)
                 + ", budget=" + formatTriangleCount(config.triangleBudget)
                 + ", achievable=" + formatTriangleCount(exactBudgetedTriangles)
@@ -761,7 +775,7 @@ public final class TiledLodManager {
 
         pendingTransitions.addAll(buildDeferred);
 
-        if (applied > 0) {
+        if (config.verboseDiagnostics && applied > 0) {
             int[] actualCounts = countAppliedVisibleLods();
             StringBuilder sb = new StringBuilder("Tiled Hypersurface transition pulse: visible=")
                 .append(lastVisibleCount).append('/').append(tiles.size())
@@ -776,7 +790,7 @@ public final class TiledLodManager {
                 .append(", mode=").append(settledMode ? "settled" : "active")
                 .append(", actual=");
             appendLodCounts(sb, actualCounts);
-            System.out.println(sb);
+            diagnostic(sb);
         }
 
         if (pendingTransitions.isEmpty()

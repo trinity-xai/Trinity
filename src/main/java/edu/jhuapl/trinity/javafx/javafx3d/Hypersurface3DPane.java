@@ -661,6 +661,9 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         CheckMenuItem enableHoverItem = new CheckMenuItem("Hover Interactions");
         enableHoverItem.setOnAction(e -> {
             hoverInteractionsEnabled = enableHoverItem.isSelected();
+            if (tiledSurfaceRenderer != null) {
+                tiledSurfaceRenderer.setHoverPickingEnabled(hoverInteractionsEnabled);
+            }
         });
 
         CheckMenuItem surfaceChartsItem = new CheckMenuItem("Surface Charts");
@@ -1664,6 +1667,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
             tiledSurfaceRenderer.setHeightOrientation(getSurfaceHeightOrientation());
             tiledSurfaceRenderer.setTileCellsL0(tileCellsL0);
             tiledSurfaceRenderer.setVisible(false);
+            tiledSurfaceRenderer.setHoverPickingEnabled(hoverInteractionsEnabled);
             sceneRoot.getChildren().add(tiledSurfaceRenderer);
             tiledSurfaceRenderer.addEventHandler(MouseEvent.MOUSE_MOVED, e -> {
                 if (!hoverInteractionsEnabled) return;
@@ -1943,7 +1947,12 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         });
 
         // UX toggles
-        scene.addEventHandler(HypersurfaceEvent.HOVER_ENABLE_CHANGED, e -> hoverInteractionsEnabled = (boolean) e.object);
+        scene.addEventHandler(HypersurfaceEvent.HOVER_ENABLE_CHANGED, e -> {
+            hoverInteractionsEnabled = (boolean) e.object;
+            if (tiledSurfaceRenderer != null) {
+                tiledSurfaceRenderer.setHoverPickingEnabled(hoverInteractionsEnabled);
+            }
+        });
         scene.addEventHandler(HypersurfaceEvent.SURFACE_CHARTS_ENABLE_CHANGED, e -> surfaceChartsEnabled = (boolean) e.object);
         scene.addEventHandler(HypersurfaceEvent.DATA_MARKERS_ENABLE_CHANGED, e -> extrasGroup.setVisible((boolean) e.object));
         scene.addEventHandler(HypersurfaceEvent.CROSSHAIRS_ENABLE_CHANGED, e -> crosshairsEnabled = (boolean) e.object);
@@ -2929,7 +2938,9 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
                 lodSummary.append('L').append(i).append('=')
                     .append(level.width()).append('x').append(level.height());
             }
-            System.out.println(lodSummary);
+            if (tiledSurfaceRenderer == null || tiledSurfaceRenderer.isVerboseDiagnosticsEnabled()) {
+                System.out.println(lodSummary);
+            }
         }
 
         // Rendering resolution and physical world size are intentionally independent.
