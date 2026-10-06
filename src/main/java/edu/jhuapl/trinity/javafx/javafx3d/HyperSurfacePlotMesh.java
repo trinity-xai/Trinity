@@ -89,6 +89,7 @@ public class HyperSurfacePlotMesh extends TexturedMesh {
     private WritableImage directPaletteImage;
     private int directPaletteColors = -1;
     private SurfaceRowOrientation rowOrientation = SurfaceRowOrientation.FIRST_ROW_NEAR;
+    private SurfaceHeightOrientation heightOrientation = SurfaceHeightOrientation.HIGH_VALUES_UP;
 
     public HyperSurfacePlotMesh() {
         this(DEFAULT_FUNCTION, DEFAULT_X_RANGE, DEFAULT_Y_RANGE, DEFAULT_X_DIVISIONS, DEFAULT_Y_DIVISIONS, DEFAULT_FUNCTION_SCALE);
@@ -150,6 +151,20 @@ public class HyperSurfacePlotMesh extends TexturedMesh {
         this.rowOrientation = rowOrientation != null
             ? rowOrientation
             : SurfaceRowOrientation.FIRST_ROW_NEAR;
+    }
+
+    public SurfaceHeightOrientation getHeightOrientation() {
+        return heightOrientation;
+    }
+
+    /**
+     * Sets how scalar height values map to the JavaFX Y axis. Geometry is rebuilt
+     * by the owning Hypersurface/renderer after this value changes.
+     */
+    public void setHeightOrientation(SurfaceHeightOrientation heightOrientation) {
+        this.heightOrientation = heightOrientation != null
+            ? heightOrientation
+            : SurfaceHeightOrientation.HIGH_VALUES_UP;
     }
 
     public javafx.geometry.Point3D getPoint3DByVertNumber(int pointId) {
@@ -296,8 +311,10 @@ public class HyperSurfacePlotMesh extends TexturedMesh {
     }
 
     /**
-     * Colors a direct HeightField mesh by its rendered Y value using a compact rainbow
-     * palette. Only texture coordinates are updated; point and face buffers are retained.
+     * Colors a direct HeightField mesh by its orientation-neutral scaled source height
+     * using a compact rainbow palette. Only texture coordinates are updated; point and
+     * face buffers are retained. This keeps color semantics stable when the visual Y
+     * orientation is flipped.
      */
     public void setDirectTextureModeByHeight(int colors, double min, double max) {
         if (!directHeightFieldMesh || mesh == null) return;
@@ -584,7 +601,7 @@ public class HyperSurfacePlotMesh extends TexturedMesh {
                 final int globalVertexX = startX + localX;
                 final int sampleX = Math.min(globalVertexX, sourceWidth - 1);
                 final float worldX = (float) (localX * xScale);
-                final float worldY = source[sourceRow + sampleX] * (float) yScale;
+                final float worldY = (float) heightOrientation.toWorldY(source[sourceRow + sampleX], yScale);
                 final float u = (float) globalVertexX / (float) sourceWidth;
 
                 pointRow[p++] = worldX;
@@ -771,7 +788,7 @@ public class HyperSurfacePlotMesh extends TexturedMesh {
             dz = (float) (z * zScale);
             for (int x = 0; x <= rangeX; x++) {
                 dx = (float) (x * xScale);
-                height = (float) yScale * vertFunction.apply(new Vert3D(dx, dz, x, z)).floatValue();
+                height = (float) heightOrientation.toWorldY(vertFunction.apply(new Vert3D(dx, dz, x, z)).doubleValue(), yScale);
                 functionIndex = (z * rangeX) + x;
                 if (functionIndex < functionValues.size())
                     currentFValue = functionValues.get(functionIndex);
@@ -836,6 +853,21 @@ public class HyperSurfacePlotMesh extends TexturedMesh {
         return max;
     }
 
+    /**
+     * Returns the largest absolute world-space Y displacement in the mesh. Unlike
+     * getMaxY(), this remains meaningful when high values are rendered toward Y-.
+     */
+    public Float getMaxAbsY() {
+        if (mesh == null || mesh.getPoints().size() == 0) return 0.0f;
+        float[] points = new float[mesh.getPoints().size()];
+        mesh.getPoints().toArray(points);
+        float maxAbs = 0.0f;
+        for (int i = 1; i < points.length; i += 3) {
+            maxAbs = Math.max(maxAbs, Math.abs(points[i]));
+        }
+        return maxAbs;
+    }
+
     private TriangleMesh createSmoothMesh(Function<Vert3D, Number> vertFunction, int rangeX, int rangeZ, int divisionsX, int divisionsZ, double yScale) {
         listVertices.clear();
         listTextures.clear();
@@ -854,7 +886,7 @@ public class HyperSurfacePlotMesh extends TexturedMesh {
             dz = ((float) z / (float) divisionsZ) * rangeZ;
             for (int x = 0; x <= divisionsX; x++) {
                 dx = ((float) x / (float) divisionsX) * rangeX;
-                pointY = (float) yScale * vertFunction.apply(new Vert3D(dx, dz, x, z)).floatValue();
+                pointY = (float) heightOrientation.toWorldY(vertFunction.apply(new Vert3D(dx, dz, x, z)).doubleValue(), yScale);
                 listVertices.add(new Point3D(dx, pointY, dz));
             }
         }
@@ -893,7 +925,7 @@ public class HyperSurfacePlotMesh extends TexturedMesh {
             dy = (float) (((float) y / (float) divisionsY) * rangeY);
             for (int x = 0; x <= divisionsX; x++) {
                 dx = (float) (((float) x / (float) divisionsX) * rangeX);
-                pointY = (float) scale * function2D.apply(new Point2D(dx, dy)).floatValue();
+                pointY = (float) heightOrientation.toWorldY(function2D.apply(new Point2D(dx, dy)).doubleValue(), scale);
                 listVertices.add(new Point3D(dx, pointY, dy));
             }
         }

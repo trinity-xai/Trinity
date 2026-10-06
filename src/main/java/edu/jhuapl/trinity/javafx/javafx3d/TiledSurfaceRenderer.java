@@ -62,6 +62,7 @@ public final class TiledSurfaceRenderer extends Group {
     private DrawMode drawMode = DrawMode.FILL;
     private CullFace cullFace = CullFace.BACK;
     private SurfaceRowOrientation rowOrientation = SurfaceRowOrientation.FIRST_ROW_NEAR;
+    private SurfaceHeightOrientation heightOrientation = SurfaceHeightOrientation.HIGH_VALUES_UP;
     private ColorMode colorMode = ColorMode.HEIGHT;
     private Image image;
     private int paletteColors = 1530;
@@ -190,6 +191,26 @@ public final class TiledSurfaceRenderer extends Group {
 
         // Row orientation changes which source row feeds every mesh Z row. Cached
         // per-LOD meshes therefore cannot be reused across an orientation change.
+        getChildren().clear();
+        for (TileRenderState tile : tilesById.values()) {
+            tile.clearViews();
+        }
+        lodManager.invalidateRenderedState();
+    }
+
+    public SurfaceHeightOrientation getHeightOrientation() {
+        return heightOrientation;
+    }
+
+    public void setHeightOrientation(SurfaceHeightOrientation heightOrientation) {
+        SurfaceHeightOrientation next = heightOrientation != null
+            ? heightOrientation
+            : SurfaceHeightOrientation.HIGH_VALUES_UP;
+        if (this.heightOrientation == next) return;
+        this.heightOrientation = next;
+
+        // Height orientation changes every mesh Y coordinate. Cached per-LOD meshes
+        // therefore cannot be reused across an orientation change.
         getChildren().clear();
         for (TileRenderState tile : tilesById.values()) {
             tile.clearViews();
@@ -433,6 +454,7 @@ public final class TiledSurfaceRenderer extends Group {
         view.setDrawMode(drawMode);
         view.setCullFace(cullFace);
         view.setRowOrientation(rowOrientation);
+        view.setHeightOrientation(heightOrientation);
         view.updateMeshHeightField(field, startX, startZ,
             cellsX, cellsZ, scaleX, yScale, scaleZ);
         view.setTranslateX(translateX);

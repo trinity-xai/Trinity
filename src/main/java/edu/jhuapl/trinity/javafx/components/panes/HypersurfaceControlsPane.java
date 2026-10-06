@@ -6,6 +6,7 @@ import edu.jhuapl.trinity.javafx.events.GraphEvent;
 import edu.jhuapl.trinity.javafx.events.HyperspaceEvent;
 import edu.jhuapl.trinity.javafx.events.HypersurfaceEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.Hypersurface3DPane;
+import edu.jhuapl.trinity.javafx.javafx3d.SurfaceHeightOrientation;
 import edu.jhuapl.trinity.javafx.javafx3d.SurfaceRowOrientation;
 import edu.jhuapl.trinity.javafx.javafx3d.SurfaceUtils;
 import edu.jhuapl.trinity.javafx.javafx3d.TiledLodManager;
@@ -64,6 +65,7 @@ public class HypersurfaceControlsPane extends LitPathPane {
     private ComboBox<CullFace> cullFaceCombo;
     private ComboBox<Hypersurface3DPane.COLORATION> colorationCombo;
     private ComboBox<SurfaceRowOrientation> rowOrientationCombo;
+    private ComboBox<SurfaceHeightOrientation> heightOrientationCombo;
 
     // Processing
     private ComboBox<HeightMode> heightModeCombo;
@@ -244,6 +246,14 @@ public class HypersurfaceControlsPane extends LitPathPane {
         styleCombo(rowOrientationCombo);
         addRow(renderGrid, 4, "Row orientation", rowOrientationCombo);
 
+        heightOrientationCombo = new ComboBox<>();
+        heightOrientationCombo.getItems().addAll(SurfaceHeightOrientation.values());
+        heightOrientationCombo.getSelectionModel().select(target != null
+            ? target.getSurfaceHeightOrientation()
+            : SurfaceHeightOrientation.HIGH_VALUES_UP);
+        styleCombo(heightOrientationCombo);
+        addRow(renderGrid, 5, "Height orientation", heightOrientationCombo);
+
         meshTypeCombo.setOnAction(e ->
             fireOnRoot(HypersurfaceEvent.surfaceRender("Surface".equals(meshTypeCombo.getValue()))));
         drawModeCombo.setOnAction(e ->
@@ -257,10 +267,20 @@ public class HypersurfaceControlsPane extends LitPathPane {
                 target.setSurfaceRowOrientation(rowOrientationCombo.getValue());
             }
         });
+        heightOrientationCombo.setOnAction(e -> {
+            if (target != null && heightOrientationCombo.getValue() != null) {
+                target.setSurfaceHeightOrientation(heightOrientationCombo.getValue());
+            }
+        });
         if (target != null) {
             target.surfaceRowOrientationProperty().addListener((obs, oldValue, newValue) -> {
                 if (newValue != null && rowOrientationCombo.getValue() != newValue) {
                     rowOrientationCombo.getSelectionModel().select(newValue);
+                }
+            });
+            target.surfaceHeightOrientationProperty().addListener((obs, oldValue, newValue) -> {
+                if (newValue != null && heightOrientationCombo.getValue() != newValue) {
+                    heightOrientationCombo.getSelectionModel().select(newValue);
                 }
             });
         }

@@ -194,6 +194,8 @@ public class Hypersurface3DPane extends StackPane
     COLORATION colorationMethod = COLORATION.COLOR_BY_FEATURE;
     private final ObjectProperty<SurfaceRowOrientation> surfaceRowOrientation =
         new SimpleObjectProperty<>(SurfaceRowOrientation.FIRST_ROW_NEAR);
+    private final ObjectProperty<SurfaceHeightOrientation> surfaceHeightOrientation =
+        new SimpleObjectProperty<>(SurfaceHeightOrientation.HIGH_VALUES_UP);
     private boolean suppressRowOrientationRefresh = false;
     boolean hoverInteractionsEnabled = false;
     boolean surfaceChartsEnabled = false;
@@ -229,7 +231,8 @@ public class Hypersurface3DPane extends StackPane
     public float surfScale = DEFAULT_SURFSCALE;
 
     int TOTAL_COLORS = 1530; //colors used by map function
-    Function<Point3D, Number> colorByHeight = p -> p.y; //Color mapping function
+    Function<Point3D, Number> colorByHeight =
+        p -> getSurfaceHeightOrientation().toLogicalHeight(p.y); // orientation-neutral color mapping
     Function<Point3D, Number> colorByShapley = p -> p.f;
 
     Function<Vert3D, Number> vert3DLookup = p -> vertToHeight(p);
@@ -347,6 +350,12 @@ public class Hypersurface3DPane extends StackPane
         surfaceRowOrientation.addListener((obs, oldValue, newValue) -> {
             applySurfaceRowOrientationToRenderers();
             if (!suppressRowOrientationRefresh && surfPlot != null) {
+                updateTheMesh();
+            }
+        });
+        surfaceHeightOrientation.addListener((obs, oldValue, newValue) -> {
+            applySurfaceHeightOrientationToRenderers();
+            if (surfPlot != null) {
                 updateTheMesh();
             }
         });
@@ -1116,6 +1125,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
 
         if (surfaceRender) {
             surfPlot.setRowOrientation(getSurfaceRowOrientation());
+        surfPlot.setHeightOrientation(getSurfaceHeightOrientation());
             // Primitive HeightField meshes bypass the FXyz Point3D/Face3 object graph.
             // Shapley coloration temporarily retains the legacy path until its scalar
             // field is made LOD-aware; image and height coloration use the fast path.
@@ -1605,6 +1615,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         captureDataGridAsSource();
         surfPlot = new HyperSurfacePlotMesh(xWidth, zWidth, 1, 1, yScale, surfScale, vert3DLookup);
         surfPlot.setRowOrientation(getSurfaceRowOrientation());
+        surfPlot.setHeightOrientation(getSurfaceHeightOrientation());
         surfPlot.setTextureModeVertices3D(TOTAL_COLORS, colorByHeight, 0.0, 360.0);
         surfPlot.setDrawMode(DrawMode.FILL);
         sceneRoot.getChildren().add(surfPlot);
@@ -1631,6 +1642,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         if (tiledSurfaceRenderer == null) {
             tiledSurfaceRenderer = new TiledSurfaceRenderer(camera, subScene);
             tiledSurfaceRenderer.setRowOrientation(getSurfaceRowOrientation());
+            tiledSurfaceRenderer.setHeightOrientation(getSurfaceHeightOrientation());
             tiledSurfaceRenderer.setTileCellsL0(tileCellsL0);
             tiledSurfaceRenderer.setVisible(false);
             sceneRoot.getChildren().add(tiledSurfaceRenderer);
@@ -2138,7 +2150,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         xSphere.setTranslateX(getWorldWidth() / 2.0);
         zSphere.setTranslateZ(getWorldDepth() / 2.0);
 
-        double poleHeight = surfPlot.getMaxY() * 2;
+        double poleHeight = surfPlot.getMaxAbsY() * 2;
         glowLineBox.setWidth(getWorldWidth());
         glowLineBox.setHeight(poleHeight);
         eastPole.setHeight(poleHeight * 1.2);
@@ -2603,6 +2615,26 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         if (tiledSurfaceRenderer != null) tiledSurfaceRenderer.setRowOrientation(orientation);
     }
 
+    public SurfaceHeightOrientation getSurfaceHeightOrientation() {
+        return surfaceHeightOrientation.get();
+    }
+
+    public void setSurfaceHeightOrientation(SurfaceHeightOrientation orientation) {
+        surfaceHeightOrientation.set(orientation != null
+            ? orientation
+            : SurfaceHeightOrientation.HIGH_VALUES_UP);
+    }
+
+    public ObjectProperty<SurfaceHeightOrientation> surfaceHeightOrientationProperty() {
+        return surfaceHeightOrientation;
+    }
+
+    private void applySurfaceHeightOrientationToRenderers() {
+        SurfaceHeightOrientation orientation = getSurfaceHeightOrientation();
+        if (surfPlot != null) surfPlot.setHeightOrientation(orientation);
+        if (tiledSurfaceRenderer != null) tiledSurfaceRenderer.setHeightOrientation(orientation);
+    }
+
     private int orientRowIndex(int logicalRow, int rowCount) {
         if (rowCount <= 0) return 0;
         int clamped = Math.max(0, Math.min(logicalRow, rowCount - 1));
@@ -2750,6 +2782,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         }
         tiledSurfaceRenderer.setYScale(yScale);
         tiledSurfaceRenderer.setRowOrientation(getSurfaceRowOrientation());
+        tiledSurfaceRenderer.setHeightOrientation(getSurfaceHeightOrientation());
 
         if (colorationMethod == COLORATION.COLOR_BY_IMAGE && lastImage != null) {
             tiledSurfaceRenderer.setColorByImage(lastImage);
