@@ -287,8 +287,15 @@ public class Hypersurface3DPane extends StackPane
     /** Tiled image rendering uses a fixed L0..L4 power-of-two pyramid. */
     private static final int TILED_LOD_LEVEL_COUNT = 5;
 
-    /** Full-resolution height data (primitive). Derived from originalGrid or other data sources. */
-    private HeightField fullResHeightField = null;
+    /** Processing source HeightField. Image sources retain only capped raw L0; data grids retain full source resolution. */
+    private HeightField processingSourceHeightField = null;
+    // Image-backed surfaces retain only the capped raw L0 HeightField. The original
+    // source dimensions/region are tracked separately so world extents and hover/source
+    // semantics remain tied to the input image rather than the render cap.
+    private int imageSourceStartX = 0;
+    private int imageSourceStartY = 0;
+    private int imageSourceWidth = 0;
+    private int imageSourceHeight = 0;
 
     /** Processed LOD pyramid (Option B: process L0 then downsample processed). */
     private List<HeightField> lodProcessedLevels = List.of();
@@ -2306,6 +2313,66 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         double z = index * surfScale;
     }
 
+    /**
+     * Builds the raw image L0 directly from PixelReader without first allocating a
+     * full-resolution float raster. For sources above maxRender this reduces both
+     * persistent heap usage and source-pixel reads substantially.
+     */
+    private static HeightField buildImageRawL0(PixelReader pixelReader,
+                                                int startX, int startY,
+                                                int sourceWidth, int sourceHeight,
+                                                int maxRender) {
+        int[] dims = SurfaceUtils.computeL0Dimensions(sourceWidth, sourceHeight, maxRender);
+        int targetWidth = dims[0];
+        int targetHeight = dims[1];
+        float[] out = new float[Math.multiplyExact(targetWidth, targetHeight)];
+
+        if (targetWidth == sourceWidth && targetHeight == sourceHeight) {
+            int index = 0;
+            for (int y = 0; y < sourceHeight; y++) {
+                int sourceY = startY + y;
+                for (int x = 0; x < sourceWidth; x++) {
+                    out[index++] = grayscale(pixelReader.getArgb(startX + x, sourceY));
+                }
+            }
+            return new HeightField(targetWidth, targetHeight, out);
+        }
+
+        double xRatio = sourceWidth / (double) targetWidth;
+        double yRatio = sourceHeight / (double) targetHeight;
+        for (int y = 0; y < targetHeight; y++) {
+            double gy = (y + 0.5) * yRatio - 0.5;
+            gy = Math.max(0.0, Math.min(sourceHeight - 1.0, gy));
+            int y0 = (int) Math.floor(gy);
+            int y1 = Math.min(sourceHeight - 1, y0 + 1);
+            double ty = y0 == y1 ? 0.0 : gy - y0;
+
+            for (int x = 0; x < targetWidth; x++) {
+                double gx = (x + 0.5) * xRatio - 0.5;
+                gx = Math.max(0.0, Math.min(sourceWidth - 1.0, gx));
+                int x0 = (int) Math.floor(gx);
+                int x1 = Math.min(sourceWidth - 1, x0 + 1);
+                double tx = x0 == x1 ? 0.0 : gx - x0;
+
+                double c00 = grayscale(pixelReader.getArgb(startX + x0, startY + y0));
+                double c10 = grayscale(pixelReader.getArgb(startX + x1, startY + y0));
+                double c01 = grayscale(pixelReader.getArgb(startX + x0, startY + y1));
+                double c11 = grayscale(pixelReader.getArgb(startX + x1, startY + y1));
+                double top = c00 + (c10 - c00) * tx;
+                double bottom = c01 + (c11 - c01) * tx;
+                out[y * targetWidth + x] = (float) (top + (bottom - top) * ty);
+            }
+        }
+        return new HeightField(targetWidth, targetHeight, out);
+    }
+
+    private static float grayscale(int argb) {
+        int red = (argb >> 16) & 0xFF;
+        int green = (argb >> 8) & 0xFF;
+        int blue = argb & 0xFF;
+        return (float) (((red + green + blue) / 3.0) / 255.0);
+    }
+
     private void tessellateImage(Image image, int x1, int y1, int x2, int y2) {
         final int imageWidth = (int) image.getWidth();
         final int imageHeight = (int) image.getHeight();
@@ -2323,7 +2390,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         }
 
         long startTime = System.nanoTime();
-        System.out.println("Mapping Image Raster directly to primitive HeightField: "
+        System.out.println("Mapping Image Raster directly to capped primitive L0: "
             + sourceWidth + "x" + sourceHeight);
 
         PixelReader pixelReader = image.getPixelReader();
@@ -2340,27 +2407,23 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         releaseImageBackedStateForReplacement();
         lastImage = image;
 
-        float[] heights = new float[Math.multiplyExact(sourceWidth, sourceHeight)];
-        int targetIndex = 0;
-        for (int row = startY; row < endY; row++) {
-            for (int column = startX; column < endX; column++) {
-                int argb = pixelReader.getArgb(column, row);
-                int red = (argb >> 16) & 0xFF;
-                int green = (argb >> 8) & 0xFF;
-                int blue = argb & 0xFF;
-                heights[targetIndex++] = (float) (((red + green + blue) / 3.0) / 255.0);
-            }
-        }
+        // Retain source-region metadata, but do not allocate a full-resolution
+        // HeightField for large images. Build the capped raw L0 directly from PixelReader.
+        imageSourceStartX = startX;
+        imageSourceStartY = startY;
+        imageSourceWidth = sourceWidth;
+        imageSourceHeight = sourceHeight;
+        processingSourceHeightField = buildImageRawL0(pixelReader,
+            startX, startY, sourceWidth, sourceHeight, maxRenderResolution);
 
-        // Image-backed hypersurfaces use the primitive HeightField as the authoritative
-        // source. Do not manufacture one FeatureVector and one boxed Double per pixel.
+        // Image-backed hypersurfaces use the capped primitive L0 as the authoritative
+        // processing source. Do not manufacture one FeatureVector or boxed Double per pixel.
         featureVectors.clear();
         if (dataGrid == null) dataGrid = new ArrayList<>();
         else dataGrid.clear();
         if (originalGrid == null) originalGrid = new ArrayList<>();
         else originalGrid.clear();
         imageBackedSurface = true;
-        fullResHeightField = new HeightField(sourceWidth, sourceHeight, heights);
 
         // A new primitive source invalidates only state derived from the previous source.
         lodProcessedLevels = List.of();
@@ -2435,7 +2498,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
 
     /**
      * Releases render-side state owned by the previous image before a replacement
-     * image allocates its full-resolution primitive HeightField. Keeping this separate
+     * image allocates its capped primitive L0 HeightField. Keeping this separate
      * from resetLodDataState() preserves the incoming source type/orientation workflow
      * while aggressively dropping references to large cached TriangleMeshes, LOD
      * HeightFields, and the previous JavaFX Image.
@@ -2452,7 +2515,11 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
             paintMeshView.setVisible(false);
         }
 
-        fullResHeightField = null;
+        processingSourceHeightField = null;
+        imageSourceStartX = 0;
+        imageSourceStartY = 0;
+        imageSourceWidth = 0;
+        imageSourceHeight = 0;
         lodProcessedLevels = List.of();
         activeLodIndex = -1;
         activeHeightField = null;
@@ -2485,13 +2552,21 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
             return;
         }
         originalGrid = deepCopyGrid(dataGrid);
-        fullResHeightField = null;
+        processingSourceHeightField = null;
+        imageSourceStartX = 0;
+        imageSourceStartY = 0;
+        imageSourceWidth = 0;
+        imageSourceHeight = 0;
     }
 
     private void resetLodDataState() {
         imageBackedSurface = false;
         setSourceDefaultRowOrientation(SurfaceRowOrientation.FIRST_ROW_NEAR);
-        fullResHeightField = null;
+        processingSourceHeightField = null;
+        imageSourceStartX = 0;
+        imageSourceStartY = 0;
+        imageSourceWidth = 0;
+        imageSourceHeight = 0;
         lodProcessedLevels = List.of();
         activeLodIndex = -1;
         activeHeightField = null;
@@ -2506,14 +2581,16 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
     }
 
     private int getSourceWidth() {
-        if (fullResHeightField != null) return fullResHeightField.width();
+        if (imageBackedSurface && imageSourceWidth > 0) return imageSourceWidth;
+        if (processingSourceHeightField != null) return processingSourceHeightField.width();
         if (originalGrid != null && !originalGrid.isEmpty()) return originalGrid.get(0).size();
         if (dataGrid != null && !dataGrid.isEmpty()) return dataGrid.get(0).size();
         return Math.max(1, xWidth);
     }
 
     private int getSourceHeight() {
-        if (fullResHeightField != null) return fullResHeightField.height();
+        if (imageBackedSurface && imageSourceHeight > 0) return imageSourceHeight;
+        if (processingSourceHeightField != null) return processingSourceHeightField.height();
         if (originalGrid != null && !originalGrid.isEmpty()) return originalGrid.size();
         if (dataGrid != null && !dataGrid.isEmpty()) return dataGrid.size();
         return Math.max(1, zWidth);
@@ -2658,7 +2735,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         }
         if (Double.compare(this.nominalImageWorldExtent, nominalImageWorldExtent) == 0) return;
         this.nominalImageWorldExtent = nominalImageWorldExtent;
-        if (imageBackedSurface && fullResHeightField != null) {
+        if (imageBackedSurface && processingSourceHeightField != null) {
             refreshWorldExtentsAndLodMetadata();
             updateTheMesh();
         }
@@ -2799,6 +2876,14 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         }
         if (this.maxRenderResolution == maxRenderResolution) return;
         this.maxRenderResolution = maxRenderResolution;
+        if (imageBackedSurface && lastImage != null && imageSourceWidth > 0 && imageSourceHeight > 0) {
+            PixelReader reader = lastImage.getPixelReader();
+            if (reader != null) {
+                processingSourceHeightField = buildImageRawL0(reader,
+                    imageSourceStartX, imageSourceStartY,
+                    imageSourceWidth, imageSourceHeight, maxRenderResolution);
+            }
+        }
         rebuildProcessedGridAndRefresh();
     }
 
@@ -2896,18 +2981,20 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
     }
 
     private void rebuildProcessedGridAndRefresh() {
-        // Option B: cap/resample full-resolution source to L0, process L0 once,
-        // then derive all lower LODs from that processed L0.
+        // Process raw L0 once, then derive all lower LODs from that processed L0.
+        // Image-backed surfaces already retain a capped raw L0; boxed-grid-backed
+        // surfaces retain their source resolution and are capped here.
         //
-        // Image-backed surfaces may already provide the authoritative source directly as
-        // a primitive HeightField. Boxed-grid-backed surfaces continue to populate
+        // Boxed-grid-backed surfaces continue to populate
         // originalGrid and are converted lazily here for compatibility.
-        if (fullResHeightField == null) {
+        if (processingSourceHeightField == null) {
             if (originalGrid == null || originalGrid.isEmpty()) return;
-            fullResHeightField = SurfaceUtils.toHeightField(originalGrid);
+            processingSourceHeightField = SurfaceUtils.toHeightField(originalGrid);
         }
 
-        HeightField l0Raw = SurfaceUtils.buildL0Raw(fullResHeightField, maxRenderResolution);
+        HeightField l0Raw = imageBackedSurface
+            ? processingSourceHeightField
+            : SurfaceUtils.buildL0Raw(processingSourceHeightField, maxRenderResolution);
 
         SurfaceUtils.Smoothing sm = smoothingEnabled
             ? smoothingMethod

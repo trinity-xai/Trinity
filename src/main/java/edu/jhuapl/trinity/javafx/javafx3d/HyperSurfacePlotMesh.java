@@ -55,6 +55,8 @@ import org.fxyz3d.shapes.primitives.TexturedMesh;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
+import java.util.Map;
+import java.util.concurrent.ConcurrentHashMap;
 import java.util.function.Function;
 
 /**
@@ -68,6 +70,11 @@ public class HyperSurfacePlotMesh extends TexturedMesh {
     private static final double DEFAULT_Y_RANGE = 10; // -5 +5
     private static final int DEFAULT_X_DIVISIONS = 64;
     private static final int DEFAULT_Y_DIVISIONS = 64;
+
+    /** Shared immutable connectivity templates for direct HeightField meshes. */
+    private static final Map<Long, MeshTopology> HEIGHT_FIELD_TOPOLOGY_CACHE = new ConcurrentHashMap<>();
+
+    private record MeshTopology(int[] faces, int[] smoothingGroups) { }
     private static final double DEFAULT_FUNCTION_SCALE = 1.0D;
     private static final double DEFAULT_SURF_SCALE = 1.0D;
     public List<Double> functionValues;
@@ -579,8 +586,6 @@ public class HyperSurfacePlotMesh extends TexturedMesh {
         TriangleMesh triangleMesh = new TriangleMesh();
         triangleMesh.getPoints().resize((int) pointFloatCount);
         triangleMesh.getTexCoords().resize((int) texFloatCount);
-        triangleMesh.getFaces().resize((int) faceIntCount);
-        triangleMesh.getFaceSmoothingGroups().resize((int) faceCount);
 
         final float[] source = heightField.data();
         final int sourceWidth = heightField.width();
@@ -618,52 +623,48 @@ public class HyperSurfacePlotMesh extends TexturedMesh {
                 texRow, 0, texRow.length);
         }
 
-        // Bound temporary allocations while populating the very large persistent JavaFX
-        // face buffers. Point and texture indices intentionally match one-to-one.
-        final int rowsPerBlock = 16;
-        for (int z0 = 0; z0 < cellsZ; z0 += rowsPerBlock) {
-            final int rows = Math.min(rowsPerBlock, cellsZ - z0);
-            final int trianglesInBlock = Math.multiplyExact(Math.multiplyExact(rows, cellsX), 2);
-            final int[] faces = new int[Math.multiplyExact(trianglesInBlock, 6)];
-            final int[] groups = new int[trianglesInBlock];
-            Arrays.fill(groups, 1);
-
-            int fi = 0;
-            for (int localZ = 0; localZ < rows; localZ++) {
-                final int z = z0 + localZ;
-                final int rowStart = z * vertsX;
-                for (int x = 0; x < cellsX; x++) {
-                    final int p00 = rowStart + x;
-                    final int p01 = p00 + 1;
-                    final int p10 = p00 + vertsX;
-                    final int p11 = p10 + 1;
-
-                    // Winding is intentionally reversed so the surface front faces Y-.
-                    // This makes CullFace.BACK preserve the normal top-down view.
-                    faces[fi++] = p00;
-                    faces[fi++] = p00;
-                    faces[fi++] = p11;
-                    faces[fi++] = p11;
-                    faces[fi++] = p10;
-                    faces[fi++] = p10;
-
-                    faces[fi++] = p11;
-                    faces[fi++] = p11;
-                    faces[fi++] = p00;
-                    faces[fi++] = p00;
-                    faces[fi++] = p01;
-                    faces[fi++] = p01;
-                }
-            }
-
-            final int firstTriangle = z0 * cellsX * 2;
-            triangleMesh.getFaces().set(firstTriangle * 6,
-                faces, 0, faces.length);
-            triangleMesh.getFaceSmoothingGroups().set(firstTriangle,
-                groups, 0, groups.length);
-        }
+        // Connectivity depends only on local tile dimensions, not source position,
+        // height values, scale, or texture. Cache it once per cellsX/cellsZ pair and
+        // let JavaFX copy the immutable template into each TriangleMesh.
+        MeshTopology topology = heightFieldTopology(cellsX, cellsZ);
+        triangleMesh.getFaces().setAll(topology.faces());
+        triangleMesh.getFaceSmoothingGroups().setAll(topology.smoothingGroups());
 
         return triangleMesh;
+    }
+
+    private static MeshTopology heightFieldTopology(int cellsX, int cellsZ) {
+        long key = (((long) cellsX) << 32) ^ (cellsZ & 0xffffffffL);
+        return HEIGHT_FIELD_TOPOLOGY_CACHE.computeIfAbsent(key, ignored -> buildHeightFieldTopology(cellsX, cellsZ));
+    }
+
+    private static MeshTopology buildHeightFieldTopology(int cellsX, int cellsZ) {
+        int vertsX = cellsX + 1;
+        int triangleCount = Math.multiplyExact(Math.multiplyExact(cellsX, cellsZ), 2);
+        int[] faces = new int[Math.multiplyExact(triangleCount, 6)];
+        int[] groups = new int[triangleCount];
+        Arrays.fill(groups, 1);
+
+        int fi = 0;
+        for (int z = 0; z < cellsZ; z++) {
+            int rowStart = z * vertsX;
+            for (int x = 0; x < cellsX; x++) {
+                int p00 = rowStart + x;
+                int p01 = p00 + 1;
+                int p10 = p00 + vertsX;
+                int p11 = p10 + 1;
+
+                // Front face points toward Y-. Point and texture indices match.
+                faces[fi++] = p00; faces[fi++] = p00;
+                faces[fi++] = p11; faces[fi++] = p11;
+                faces[fi++] = p10; faces[fi++] = p10;
+
+                faces[fi++] = p11; faces[fi++] = p11;
+                faces[fi++] = p00; faces[fi++] = p00;
+                faces[fi++] = p01; faces[fi++] = p01;
+            }
+        }
+        return new MeshTopology(faces, groups);
     }
 
     private void restoreDirectSpatialTexCoords() {

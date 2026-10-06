@@ -657,6 +657,10 @@ public final class SurfaceUtils {
     public static HeightField buildL0Raw(HeightField fullRes, int maxRender) {
         Objects.requireNonNull(fullRes, "fullRes");
         int[] dims = computeL0Dimensions(fullRes.width(), fullRes.height(), maxRender);
+        if (dims[0] == fullRes.width() && dims[1] == fullRes.height()) {
+            // processL0() does not mutate its input, so avoid an unnecessary same-size copy.
+            return fullRes;
+        }
         return resample(fullRes, dims[0], dims[1]);
     }
 
@@ -965,7 +969,19 @@ public final class SurfaceUtils {
         double toneParam
     ) {
         Objects.requireNonNull(l0Raw, "l0Raw");
-        HeightField smoothed = smoothCopy(l0Raw, smoothing, radius, iterations, sigma);
-        return toneMapCopy(smoothed, toneMap, toneParam);
+        Smoothing effectiveSmoothing = smoothing != null ? smoothing : Smoothing.NONE;
+        ToneMap effectiveToneMap = toneMap != null ? toneMap : ToneMap.NONE;
+        boolean smoothActive = effectiveSmoothing != Smoothing.NONE && radius > 0 && iterations > 0;
+        boolean toneActive = effectiveToneMap != ToneMap.NONE;
+
+        if (!smoothActive && !toneActive) {
+            return l0Raw.copy();
+        }
+        if (!smoothActive) {
+            return toneMapCopy(l0Raw, effectiveToneMap, toneParam);
+        }
+
+        HeightField smoothed = smoothCopy(l0Raw, effectiveSmoothing, radius, iterations, sigma);
+        return toneActive ? toneMapCopy(smoothed, effectiveToneMap, toneParam) : smoothed;
     }
 }
