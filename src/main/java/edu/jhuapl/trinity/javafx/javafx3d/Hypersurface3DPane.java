@@ -2567,6 +2567,24 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         return tileCellsL0;
     }
 
+
+    public TiledLodManager.Config getTiledLodConfigCopy() {
+        return tiledSurfaceRenderer != null
+            ? tiledSurfaceRenderer.getLodConfigCopy()
+            : new TiledLodManager.Config();
+    }
+
+    public void setTiledLodConfig(TiledLodManager.Config config) {
+        if (tiledSurfaceRenderer == null || config == null) return;
+        tiledSurfaceRenderer.setLodConfig(config);
+    }
+
+    public TiledSurfaceRenderer.LodStatistics getTiledLodStatistics() {
+        return tiledSurfaceRenderer != null
+            ? tiledSurfaceRenderer.getLodStatistics()
+            : new TiledSurfaceRenderer.LodStatistics(0, 0, 0, 0, 0, 0L, 0);
+    }
+
     public void setTileCellsL0(int tileCellsL0) {
         if (tileCellsL0 < 16) {
             throw new IllegalArgumentException("tileCellsL0 must be >= 16");
@@ -2620,7 +2638,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
             && colorationMethod != COLORATION.COLOR_BY_SHAPLEY;
     }
 
-    private boolean isTiledHeightFieldRendererActive() {
+    public boolean isTiledHeightFieldRendererActive() {
         return shouldUseTiledHeightFieldRenderer()
             && surfaceRender
             && tiledSurfaceRenderer.isVisible();

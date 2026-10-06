@@ -7,7 +7,10 @@ import edu.jhuapl.trinity.javafx.events.HyperspaceEvent;
 import edu.jhuapl.trinity.javafx.events.HypersurfaceEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.Hypersurface3DPane;
 import edu.jhuapl.trinity.javafx.javafx3d.SurfaceUtils;
+import edu.jhuapl.trinity.javafx.javafx3d.TiledLodManager;
+import edu.jhuapl.trinity.javafx.javafx3d.TiledSurfaceRenderer;
 import edu.jhuapl.trinity.utils.DataUtils.HeightMode;
+import javafx.animation.AnimationTimer;
 import javafx.event.Event;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
@@ -16,6 +19,7 @@ import javafx.scene.control.CheckBox;
 import javafx.scene.control.ColorPicker;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
+import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Separator;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
@@ -80,6 +84,29 @@ public class HypersurfaceControlsPane extends LitPathPane {
     // Graph overlay visibility
     private ToggleButton showGraphToggle;
 
+    // Tiled LOD controls
+    private ComboBox<Integer> tileSizeCombo;
+    private ComboBox<String> maxDetailCombo;
+    private Spinner<Double> targetPixelsSpinner;
+    private Spinner<Double> coarsenThresholdSpinner;
+    private Spinner<Double> refineThresholdSpinner;
+    private Spinner<Integer> throttleMsSpinner;
+    private Spinner<Integer> settleMsSpinner;
+    private Spinner<Integer> initialSettleMsSpinner;
+    private Spinner<Integer> activeTransitionsSpinner;
+    private Spinner<Integer> settledTransitionsSpinner;
+    private Spinner<Integer> activeBuildsSpinner;
+    private Spinner<Integer> settledBuildsSpinner;
+
+    private Label lodStatusLabel;
+    private Label visibleTilesLabel;
+    private Label lod0CountLabel;
+    private Label lod1CountLabel;
+    private Label lod2CountLabel;
+    private Label triangleCountLabel;
+    private Label pendingTransitionsLabel;
+    private AnimationTimer lodDiagnosticsTimer;
+
     public HypersurfaceControlsPane(Scene scene, Pane parent, Hypersurface3DPane target) {
         super(scene, parent, PANEL_WIDTH, PANEL_HEIGHT, new BorderPane(), "Hypersurface Controls", "", 200.0, 300.0);
         this.scene = scene;
@@ -126,6 +153,8 @@ public class HypersurfaceControlsPane extends LitPathPane {
             }
             e.consume();
         });
+
+        startLodDiagnosticsTimer();
     }
 
     private TabPane buildTabs() {
@@ -351,6 +380,132 @@ public class HypersurfaceControlsPane extends LitPathPane {
         );
         procTabContent.setPadding(new Insets(6));
 
+        // === LOD tab ===
+        TiledLodManager.Config lodConfig = target != null
+            ? target.getTiledLodConfigCopy()
+            : new TiledLodManager.Config();
+
+        GridPane tileGrid = formGrid();
+        tileSizeCombo = new ComboBox<>();
+        tileSizeCombo.getItems().addAll(128, 256, 512);
+        int tileSize0 = target != null ? target.getTileCellsL0() : 256;
+        if (!tileSizeCombo.getItems().contains(tileSize0)) {
+            tileSizeCombo.getItems().add(tileSize0);
+        }
+        tileSizeCombo.getSelectionModel().select(Integer.valueOf(tileSize0));
+        styleCombo(tileSizeCombo);
+
+        maxDetailCombo = new ComboBox<>();
+        maxDetailCombo.getItems().addAll("L0", "L1", "L2");
+        int finest0 = Math.max(0, Math.min(2, lodConfig.finestAllowedLod));
+        maxDetailCombo.getSelectionModel().select(finest0);
+        styleCombo(maxDetailCombo);
+
+        addRow(tileGrid, 0, "Tile size", tileSizeCombo);
+        addRow(tileGrid, 1, "Maximum detail", maxDetailCombo);
+
+        GridPane selectionGrid = formGrid();
+        targetPixelsSpinner = new Spinner<>(0.25, 5.0,
+            clampDouble(lodConfig.targetPixelsPerCell, 0.25, 5.0), 0.10);
+        coarsenThresholdSpinner = new Spinner<>(0.25, 5.0,
+            clampDouble(lodConfig.lowThreshold, 0.25, 5.0), 0.10);
+        refineThresholdSpinner = new Spinner<>(0.25, 5.0,
+            clampDouble(lodConfig.highThreshold, 0.25, 5.0), 0.10);
+        styleSpinner(targetPixelsSpinner);
+        styleSpinner(coarsenThresholdSpinner);
+        styleSpinner(refineThresholdSpinner);
+        targetPixelsSpinner.setEditable(true);
+        coarsenThresholdSpinner.setEditable(true);
+        refineThresholdSpinner.setEditable(true);
+
+        addRow(selectionGrid, 0, "Target px/cell", targetPixelsSpinner);
+        addRow(selectionGrid, 1, "Coarsen below", coarsenThresholdSpinner);
+        addRow(selectionGrid, 2, "Refine above", refineThresholdSpinner);
+
+        GridPane timingGrid = formGrid();
+        throttleMsSpinner = new Spinner<>(0, 1000, clampInt(lodConfig.throttleMs, 0, 1000), 5);
+        settleMsSpinner = new Spinner<>(0, 2000, clampInt(lodConfig.debounceMs, 0, 2000), 10);
+        initialSettleMsSpinner = new Spinner<>(0, 3000,
+            clampInt(lodConfig.initialSettleMs, 0, 3000), 25);
+        activeTransitionsSpinner = new Spinner<>(1, 32,
+            clampInt(lodConfig.activeTransitionsPerPulse, 1, 32), 1);
+        settledTransitionsSpinner = new Spinner<>(1, 64,
+            clampInt(lodConfig.settledTransitionsPerPulse, 1, 64), 1);
+        activeBuildsSpinner = new Spinner<>(1, 8,
+            clampInt(lodConfig.activeBuildsPerPulse, 1, 8), 1);
+        settledBuildsSpinner = new Spinner<>(1, 16,
+            clampInt(lodConfig.settledBuildsPerPulse, 1, 16), 1);
+
+        styleSpinner(throttleMsSpinner);
+        styleSpinner(settleMsSpinner);
+        styleSpinner(initialSettleMsSpinner);
+        styleSpinner(activeTransitionsSpinner);
+        styleSpinner(settledTransitionsSpinner);
+        styleSpinner(activeBuildsSpinner);
+        styleSpinner(settledBuildsSpinner);
+
+        throttleMsSpinner.setEditable(true);
+        settleMsSpinner.setEditable(true);
+        initialSettleMsSpinner.setEditable(true);
+        activeTransitionsSpinner.setEditable(true);
+        settledTransitionsSpinner.setEditable(true);
+        activeBuildsSpinner.setEditable(true);
+        settledBuildsSpinner.setEditable(true);
+
+        addRow(timingGrid, 0, "Update throttle", throttleMsSpinner);
+        addRow(timingGrid, 1, "Camera settle", settleMsSpinner);
+        addRow(timingGrid, 2, "Initial settle", initialSettleMsSpinner);
+        addRow(timingGrid, 3, "Active transitions", activeTransitionsSpinner);
+        addRow(timingGrid, 4, "Settled transitions", settledTransitionsSpinner);
+        addRow(timingGrid, 5, "Active builds", activeBuildsSpinner);
+        addRow(timingGrid, 6, "Settled builds", settledBuildsSpinner);
+
+        GridPane diagnosticsGrid = formGrid();
+        lodStatusLabel = new Label("Inactive");
+        visibleTilesLabel = new Label("0 / 0");
+        lod0CountLabel = new Label("0");
+        lod1CountLabel = new Label("0");
+        lod2CountLabel = new Label("0");
+        triangleCountLabel = new Label("0");
+        pendingTransitionsLabel = new Label("0");
+
+        addRow(diagnosticsGrid, 0, "Renderer", lodStatusLabel);
+        addRow(diagnosticsGrid, 1, "Visible tiles", visibleTilesLabel);
+        addRow(diagnosticsGrid, 2, "L0 tiles", lod0CountLabel);
+        addRow(diagnosticsGrid, 3, "L1 tiles", lod1CountLabel);
+        addRow(diagnosticsGrid, 4, "L2+ tiles", lod2CountLabel);
+        addRow(diagnosticsGrid, 5, "Triangles", triangleCountLabel);
+        addRow(diagnosticsGrid, 6, "Pending", pendingTransitionsLabel);
+
+        tileSizeCombo.setOnAction(e -> {
+            if (target != null && tileSizeCombo.getValue() != null) {
+                target.setTileCellsL0(tileSizeCombo.getValue());
+            }
+        });
+        maxDetailCombo.setOnAction(e -> applyLodConfigFromControls());
+        targetPixelsSpinner.valueProperty().addListener((o, ov, nv) -> applyLodConfigFromControls());
+        coarsenThresholdSpinner.valueProperty().addListener((o, ov, nv) -> applyLodConfigFromControls());
+        refineThresholdSpinner.valueProperty().addListener((o, ov, nv) -> applyLodConfigFromControls());
+        throttleMsSpinner.valueProperty().addListener((o, ov, nv) -> applyLodConfigFromControls());
+        settleMsSpinner.valueProperty().addListener((o, ov, nv) -> applyLodConfigFromControls());
+        initialSettleMsSpinner.valueProperty().addListener((o, ov, nv) -> applyLodConfigFromControls());
+        activeTransitionsSpinner.valueProperty().addListener((o, ov, nv) -> applyLodConfigFromControls());
+        settledTransitionsSpinner.valueProperty().addListener((o, ov, nv) -> applyLodConfigFromControls());
+        activeBuildsSpinner.valueProperty().addListener((o, ov, nv) -> applyLodConfigFromControls());
+        settledBuildsSpinner.valueProperty().addListener((o, ov, nv) -> applyLodConfigFromControls());
+
+        VBox lodTabContent = new VBox(10,
+            titledBox("Tile Layout", tileGrid),
+            titledBox("LOD Selection", selectionGrid),
+            titledBox("Scheduling", timingGrid),
+            titledBox("Live Diagnostics", diagnosticsGrid)
+        );
+        lodTabContent.setPadding(new Insets(6));
+
+        ScrollPane lodScrollPane = new ScrollPane(lodTabContent);
+        lodScrollPane.setFitToWidth(true);
+        lodScrollPane.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+
         // === TabPane ===
         TabPane tabs = new TabPane();
         tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
@@ -361,11 +516,89 @@ public class HypersurfaceControlsPane extends LitPathPane {
 
         Tab t1 = new Tab("View", viewTabContent);
         Tab t2 = new Tab("Processing", procTabContent);
-        Tab t3 = new Tab("Graph Layout", graphLayoutView);
-        Tab t4 = new Tab("Graph Style", graphStyleView);
+        Tab t3 = new Tab("LOD", lodScrollPane);
+        Tab t4 = new Tab("Graph Layout", graphLayoutView);
+        Tab t5 = new Tab("Graph Style", graphStyleView);
 
-        tabs.getTabs().addAll(t1, t2, t3, t4);
+        tabs.getTabs().addAll(t1, t2, t3, t4, t5);
         return tabs;
+    }
+
+    private void applyLodConfigFromControls() {
+        if (target == null
+            || targetPixelsSpinner == null
+            || coarsenThresholdSpinner == null
+            || refineThresholdSpinner == null) {
+            return;
+        }
+
+        double low = coarsenThresholdSpinner.getValue();
+        double high = refineThresholdSpinner.getValue();
+        if (!(low > 0.0) || !(high > low)) {
+            return;
+        }
+
+        TiledLodManager.Config config = target.getTiledLodConfigCopy();
+        config.targetPixelsPerCell = targetPixelsSpinner.getValue();
+        config.lowThreshold = low;
+        config.highThreshold = high;
+        config.finestAllowedLod = maxDetailCombo != null
+            ? Math.max(0, maxDetailCombo.getSelectionModel().getSelectedIndex())
+            : 0;
+        config.throttleMs = throttleMsSpinner.getValue();
+        config.debounceMs = settleMsSpinner.getValue();
+        config.initialSettleMs = initialSettleMsSpinner.getValue();
+        config.activeTransitionsPerPulse = activeTransitionsSpinner.getValue();
+        config.settledTransitionsPerPulse = settledTransitionsSpinner.getValue();
+        config.activeBuildsPerPulse = activeBuildsSpinner.getValue();
+        config.settledBuildsPerPulse = settledBuildsSpinner.getValue();
+
+        target.setTiledLodConfig(config);
+    }
+
+    private void startLodDiagnosticsTimer() {
+        if (lodDiagnosticsTimer != null) return;
+        lodDiagnosticsTimer = new AnimationTimer() {
+            private long lastUpdateNanos;
+
+            @Override
+            public void handle(long now) {
+                if (now - lastUpdateNanos < 250_000_000L) return;
+                lastUpdateNanos = now;
+                refreshLodDiagnostics();
+            }
+        };
+        lodDiagnosticsTimer.start();
+    }
+
+    private void refreshLodDiagnostics() {
+        if (target == null || lodStatusLabel == null) return;
+        TiledSurfaceRenderer.LodStatistics stats = target.getTiledLodStatistics();
+        lodStatusLabel.setText(target.isTiledHeightFieldRendererActive() ? "Active" : "Inactive");
+        visibleTilesLabel.setText(stats.visibleTiles() + " / " + stats.totalTiles());
+        lod0CountLabel.setText(Integer.toString(stats.lod0Tiles()));
+        lod1CountLabel.setText(Integer.toString(stats.lod1Tiles()));
+        lod2CountLabel.setText(Integer.toString(stats.lod2Tiles()));
+        triangleCountLabel.setText(formatTriangleCount(stats.visibleTriangles()));
+        pendingTransitionsLabel.setText(Integer.toString(stats.pendingTransitions()));
+    }
+
+    private static String formatTriangleCount(long triangles) {
+        if (triangles >= 1_000_000L) {
+            return String.format("%.2f M", triangles / 1_000_000.0);
+        }
+        if (triangles >= 1_000L) {
+            return String.format("%.1f K", triangles / 1_000.0);
+        }
+        return Long.toString(triangles);
+    }
+
+    private static int clampInt(long value, int min, int max) {
+        return (int) Math.max(min, Math.min(max, value));
+    }
+
+    private static double clampDouble(double value, double min, double max) {
+        return Math.max(min, Math.min(max, value));
     }
 
     private void fireOnRoot(Event evt) {

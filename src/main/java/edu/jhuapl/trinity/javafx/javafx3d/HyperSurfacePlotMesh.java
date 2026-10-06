@@ -228,6 +228,41 @@ public class HyperSurfacePlotMesh extends TexturedMesh {
         setMesh(mesh);
     }
 
+    /**
+     * Installs a previously built direct HeightField TriangleMesh and restores the
+     * source-region metadata required by direct image/height coloration. No geometry
+     * buffers are rebuilt. This is used by the tiled renderer's per-LOD mesh cache.
+     */
+    public final void installCachedHeightFieldMesh(TriangleMesh cachedMesh,
+                                                   HeightField heightField,
+                                                   int startX, int startZ,
+                                                   int cellsX, int cellsZ,
+                                                   double xScale, double yScale, double zScale) {
+        if (cachedMesh == null) throw new IllegalArgumentException("cachedMesh cannot be null");
+        validateHeightFieldRegion(heightField, startX, startZ, cellsX, cellsZ);
+
+        directHeightFieldMesh = true;
+        directHeightField = heightField;
+        directStartX = startX;
+        directStartZ = startZ;
+        directCellsX = cellsX;
+        directCellsZ = cellsZ;
+        directVertsX = cellsX + 1;
+        directVertsZ = cellsZ + 1;
+        directXScale = xScale;
+        directYScale = yScale;
+        directZScale = zScale;
+
+        listVertices.clear();
+        listTextures.clear();
+        listFaces.clear();
+        smoothingGroups = null;
+
+        setMesh(null);
+        mesh = cachedMesh;
+        setMesh(mesh);
+    }
+
     public boolean isDirectHeightFieldMesh() {
         return directHeightFieldMesh;
     }

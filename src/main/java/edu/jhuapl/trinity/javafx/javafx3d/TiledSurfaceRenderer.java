@@ -18,11 +18,22 @@ import java.util.Objects;
 /**
  * Tiled renderer for primitive HeightField LOD pyramids.
  *
- * <p>Tiles are defined in the finest rendered level (L0) and keep constant world
- * footprints. Each visible tile independently selects a pyramid level through
- * {@link TiledLodManager}. Meshes are created lazily and cached while culled.</p>
+ * <p>Tile scene-graph state is persistent. Each tile/LOD pair receives its own
+ * {@link HyperSurfacePlotMesh} the first time it is needed, and that MeshView
+ * remains permanently associated with its TriangleMesh. Subsequent LOD changes
+ * only toggle which cached MeshView is visible.</p>
  */
 public final class TiledSurfaceRenderer extends Group {
+
+    public record LodStatistics(
+        int visibleTiles,
+        int totalTiles,
+        int lod0Tiles,
+        int lod1Tiles,
+        int lod2Tiles,
+        long visibleTriangles,
+        int pendingTransitions
+    ) { }
 
     public enum ColorMode {
         IMAGE,
@@ -34,7 +45,7 @@ public final class TiledSurfaceRenderer extends Group {
     private final PerspectiveCamera camera;
     private final SubScene subScene;
     private final TiledLodManager lodManager;
-    private final Map<Integer, SurfaceTile> tilesById = new HashMap<>();
+    private final Map<Integer, TileRenderState> tilesById = new HashMap<>();
 
     private List<HeightField> levels = List.of();
     private List<TiledLodManager.TileSpec> tileSpecs = List.of();
@@ -54,19 +65,25 @@ public final class TiledSurfaceRenderer extends Group {
 
     private int visibleTileCount;
     private int lastRebuildCount;
+    private int lastCacheHitCount;
+    private int lastLodChangeCount;
 
     public TiledSurfaceRenderer(PerspectiveCamera camera, SubScene subScene) {
         this.camera = Objects.requireNonNull(camera, "camera");
         this.subScene = Objects.requireNonNull(subScene, "subScene");
         this.lodManager = new TiledLodManager(camera, subScene, this);
-        this.lodManager.setOnDecisions(this::applyDecisions);
+        this.lodManager.setOnDecisions(this::applyVisibilityDecisions);
+        this.lodManager.setTransitionApplier(this::applyTransition);
         setPickOnBounds(false);
     }
 
     public void setTileCellsL0(int tileCellsL0) {
-        if (tileCellsL0 < 16) throw new IllegalArgumentException("tileCellsL0 must be >= 16");
+        if (tileCellsL0 < 16) {
+            throw new IllegalArgumentException("tileCellsL0 must be >= 16");
+        }
         if (this.tileCellsL0 == tileCellsL0) return;
         this.tileCellsL0 = tileCellsL0;
+        System.out.println("Tiled Hypersurface tile size updated: tileCellsL0=" + tileCellsL0);
         if (!levels.isEmpty()) {
             rebuildTileLayout();
             forceUpdate();
@@ -90,7 +107,9 @@ public final class TiledSurfaceRenderer extends Group {
                            double baseWorldDepth,
                            double yScale) {
         Objects.requireNonNull(levels, "levels");
-        if (levels.isEmpty()) throw new IllegalArgumentException("levels must not be empty");
+        if (levels.isEmpty()) {
+            throw new IllegalArgumentException("levels must not be empty");
+        }
         if (!(baseWorldWidth > 0.0) || !(baseWorldDepth > 0.0)) {
             throw new IllegalArgumentException("base world dimensions must be > 0");
         }
@@ -104,10 +123,12 @@ public final class TiledSurfaceRenderer extends Group {
     }
 
     public void clearSurface() {
+        lodManager.clearSurface();
         tilesById.clear();
         tileSpecs = List.of();
         levels = List.of();
         getChildren().clear();
+        visibleTileCount = 0;
     }
 
     public void requestUpdate(LodManager.UpdateReason reason) {
@@ -120,39 +141,44 @@ public final class TiledSurfaceRenderer extends Group {
 
     public void dispose() {
         lodManager.dispose();
-        clearSurface();
+        tilesById.clear();
+        tileSpecs = List.of();
+        levels = List.of();
+        getChildren().clear();
     }
 
     public void setYScale(double yScale) {
         if (Double.compare(this.yScale, yScale) == 0) return;
         this.yScale = yScale;
-        for (SurfaceTile tile : tilesById.values()) tile.currentLod = -1;
+
+        // Geometry Y coordinates changed, so all cached per-LOD MeshViews are invalid.
+        getChildren().clear();
+        for (TileRenderState tile : tilesById.values()) {
+            tile.clearViews();
+        }
+        lodManager.invalidateRenderedState();
         forceUpdate();
     }
 
     public void setDrawMode(DrawMode drawMode) {
         this.drawMode = Objects.requireNonNull(drawMode, "drawMode");
-        for (SurfaceTile tile : tilesById.values()) {
-            if (tile.mesh != null) tile.mesh.setDrawMode(drawMode);
-        }
+        forEachBuiltView(view -> view.setDrawMode(drawMode));
     }
 
     public void setCullFace(CullFace cullFace) {
         this.cullFace = Objects.requireNonNull(cullFace, "cullFace");
-        for (SurfaceTile tile : tilesById.values()) {
-            if (tile.mesh != null) tile.mesh.setCullFace(cullFace);
-        }
+        forEachBuiltView(view -> view.setCullFace(cullFace));
     }
 
     public void setSpecularColor(Color specularColor) {
         this.specularColor = Objects.requireNonNull(specularColor, "specularColor");
-        for (SurfaceTile tile : tilesById.values()) applySpecular(tile);
+        forEachBuiltView(this::applySpecular);
     }
 
     public void setColorByImage(Image image) {
         this.image = image;
         this.colorMode = ColorMode.IMAGE;
-        for (SurfaceTile tile : tilesById.values()) applyColoration(tile);
+        forEachBuiltView(this::applyColoration);
     }
 
     public void setColorByHeight(int colors, double min, double max) {
@@ -162,7 +188,7 @@ public final class TiledSurfaceRenderer extends Group {
         this.colorMin = min;
         this.colorMax = max;
         this.colorMode = ColorMode.HEIGHT;
-        for (SurfaceTile tile : tilesById.values()) applyColoration(tile);
+        forEachBuiltView(this::applyColoration);
     }
 
     public int getVisibleTileCount() {
@@ -175,6 +201,61 @@ public final class TiledSurfaceRenderer extends Group {
 
     public int getLastRebuildCount() {
         return lastRebuildCount;
+    }
+
+    public int getLastCacheHitCount() {
+        return lastCacheHitCount;
+    }
+
+    public int getLastLodChangeCount() {
+        return lastLodChangeCount;
+    }
+
+    public int getPendingTransitionCount() {
+        return lodManager.getPendingTransitionCount();
+    }
+
+    public LodStatistics getLodStatistics() {
+        int visible = 0;
+        int lod0 = 0;
+        int lod1 = 0;
+        int lod2 = 0;
+        long triangles = 0L;
+
+        for (TileRenderState tile : tilesById.values()) {
+            if (!tile.isTileVisible()) continue;
+            visible++;
+            int lod = tile.getActiveLod();
+            if (lod == 0) lod0++;
+            else if (lod == 1) lod1++;
+            else if (lod >= 2) lod2++;
+            if (lod >= 0 && lod < levels.size()) {
+                triangles += triangleCountFor(tile, lod);
+            }
+        }
+
+        return new LodStatistics(
+            visible, tileSpecs.size(), lod0, lod1, lod2, triangles,
+            lodManager.getPendingTransitionCount());
+    }
+
+    private long triangleCountFor(TileRenderState tile, int lod) {
+        if (levels.isEmpty() || lod < 0 || lod >= levels.size()) return 0L;
+        HeightField field = levels.get(lod);
+        HeightField l0 = levels.get(0);
+
+        int startX = mapBoundary(tile.startX0, l0.width(), field.width());
+        int endX = mapBoundary(tile.endX0, l0.width(), field.width());
+        int startZ = mapBoundary(tile.startZ0, l0.height(), field.height());
+        int endZ = mapBoundary(tile.endZ0, l0.height(), field.height());
+        endX = Math.max(startX + 1, Math.min(field.width(), endX));
+        endZ = Math.max(startZ + 1, Math.min(field.height(), endZ));
+        startX = Math.max(0, Math.min(startX, endX - 1));
+        startZ = Math.max(0, Math.min(startZ, endZ - 1));
+
+        long cellsX = endX - startX;
+        long cellsZ = endZ - startZ;
+        return cellsX * cellsZ * 2L;
     }
 
     private void rebuildTileLayout() {
@@ -204,14 +285,16 @@ public final class TiledSurfaceRenderer extends Group {
                 TiledLodManager.TileSpec spec = new TiledLodManager.TileSpec(
                     id, column, row, minX, maxX, minZ, maxZ);
                 specs.add(spec);
-                tilesById.put(id, new SurfaceTile(spec, startX, endX, startZ, endZ));
+                tilesById.put(id, new TileRenderState(
+                    spec, startX, endX, startZ, endZ, levels.size()));
                 id++;
             }
         }
         tileSpecs = List.copyOf(specs);
 
         float[] minMax = l0.minMax();
-        double maxAbsHeight = Math.max(Math.abs(minMax[0] * yScale), Math.abs(minMax[1] * yScale));
+        double maxAbsHeight = Math.max(
+            Math.abs(minMax[0] * yScale), Math.abs(minMax[1] * yScale));
         lodManager.setSurface(
             LodManager.fromHeightFields(levels),
             tileSpecs,
@@ -222,48 +305,66 @@ public final class TiledSurfaceRenderer extends Group {
 
         System.out.println("Tiled Hypersurface configured: tiles=" + columns + "x" + rows
             + " (" + tileSpecs.size() + "), tileCellsL0=" + tileCellsL0
-            + ", world=" + baseWorldWidth + "x" + baseWorldDepth);
+            + ", world=" + baseWorldWidth + "x" + baseWorldDepth
+            + ", persistentLodViews=true");
     }
 
-    private void applyDecisions(List<TiledLodManager.TileDecision> decisions) {
+    /**
+     * Visibility/frustum changes are applied immediately. LOD changes are not;
+     * they are queued and budgeted by TiledLodManager.
+     */
+    private void applyVisibilityDecisions(List<TiledLodManager.TileDecision> decisions) {
         int visible = 0;
-        int rebuilt = 0;
-        int[] lodCounts = new int[levels.size()];
-
         for (TiledLodManager.TileDecision decision : decisions) {
-            SurfaceTile tile = tilesById.get(decision.tileId());
+            TileRenderState tile = tilesById.get(decision.tileId());
             if (tile == null) continue;
 
-            if (!decision.visible()) {
-                if (tile.mesh != null) tile.mesh.setVisible(false);
-                continue;
-            }
+            tile.setTileVisible(decision.visible());
+            if (decision.visible()) visible++;
 
-            visible++;
-            int lod = Math.max(0, Math.min(decision.lodIndex(), levels.size() - 1));
-            lodCounts[lod]++;
-            if (tile.mesh == null || tile.currentLod != lod) {
-                rebuildTile(tile, lod);
-                rebuilt++;
+            HyperSurfacePlotMesh activeView = tile.getLodView(tile.getActiveLod());
+            if (activeView != null) {
+                activeView.setVisible(decision.visible() && isVisible());
             }
-            tile.mesh.setVisible(isVisible());
         }
-
         visibleTileCount = visible;
-        lastRebuildCount = rebuilt;
-        if (rebuilt > 0) {
-            StringBuilder sb = new StringBuilder("Tiled Hypersurface LOD: visible=")
-                .append(visible).append('/').append(tileSpecs.size())
-                .append(", rebuilt=").append(rebuilt).append(", ");
-            for (int i = 0; i < lodCounts.length; i++) {
-                if (i > 0) sb.append(", ");
-                sb.append("L").append(i).append('=').append(lodCounts[i]);
-            }
-            System.out.println(sb);
-        }
     }
 
-    private void rebuildTile(SurfaceTile tile, int lod) {
+    /**
+     * Applies one budgeted LOD transition. Existing tile/LOD MeshViews are only
+     * shown/hidden; no MeshView.setMesh(...) operation occurs after construction.
+     */
+    private TiledLodManager.TransitionResult applyTransition(LodTransition transition) {
+        TileRenderState tile = tilesById.get(transition.tileId());
+        if (tile == null) return TiledLodManager.TransitionResult.notApplied();
+
+        int lod = Math.max(0, Math.min(transition.toLod(), levels.size() - 1));
+        HyperSurfacePlotMesh targetView = tile.getLodView(lod);
+        boolean built = false;
+
+        if (targetView == null) {
+            targetView = buildTileLodView(tile, lod);
+            tile.setLodView(lod, targetView);
+            built = true;
+        }
+
+        HyperSurfacePlotMesh previousView = tile.getLodView(tile.getActiveLod());
+        if (previousView != null && previousView != targetView) {
+            previousView.setVisible(false);
+        }
+
+        tile.setActiveLod(lod);
+        targetView.setVisible(tile.isTileVisible() && isVisible());
+
+        lastLodChangeCount = 1;
+        lastRebuildCount = built ? 1 : 0;
+        lastCacheHitCount = built ? 0 : 1;
+        return built
+            ? TiledLodManager.TransitionResult.builtResult()
+            : TiledLodManager.TransitionResult.cacheHitResult();
+    }
+
+    private HyperSurfacePlotMesh buildTileLodView(TileRenderState tile, int lod) {
         HeightField field = levels.get(lod);
         HeightField l0 = levels.get(0);
 
@@ -281,37 +382,46 @@ public final class TiledSurfaceRenderer extends Group {
         int cellsZ = endZ - startZ;
         double scaleX = baseWorldWidth / field.width();
         double scaleZ = baseWorldDepth / field.height();
+        double translateX = startX * scaleX;
+        double translateZ = startZ * scaleZ;
 
-        if (tile.mesh == null) {
-            tile.mesh = new HyperSurfacePlotMesh(1, 1, 1, 1,
-                yScale, 1.0, p -> 0.0);
-            tile.mesh.setDrawMode(drawMode);
-            tile.mesh.setCullFace(cullFace);
-            getChildren().add(tile.mesh);
-        }
-
-        tile.mesh.updateMeshHeightField(field, startX, startZ,
+        HyperSurfacePlotMesh view = new HyperSurfacePlotMesh(
+            1, 1, 1, 1, yScale, 1.0, p -> 0.0);
+        view.setDrawMode(drawMode);
+        view.setCullFace(cullFace);
+        view.updateMeshHeightField(field, startX, startZ,
             cellsX, cellsZ, scaleX, yScale, scaleZ);
-        tile.mesh.setTranslateX(startX * scaleX);
-        tile.mesh.setTranslateZ(startZ * scaleZ);
-        tile.currentLod = lod;
-        applyColoration(tile);
-        applySpecular(tile);
+        view.setTranslateX(translateX);
+        view.setTranslateZ(translateZ);
+        view.setVisible(false);
+        applyColoration(view);
+        applySpecular(view);
+        getChildren().add(view);
+        return view;
     }
 
-    private void applyColoration(SurfaceTile tile) {
-        if (tile.mesh == null || !tile.mesh.isDirectHeightFieldMesh()) return;
+    private void applyColoration(HyperSurfacePlotMesh view) {
+        if (view == null || !view.isDirectHeightFieldMesh()) return;
         if (colorMode == ColorMode.IMAGE) {
-            if (image != null) tile.mesh.setDirectTextureModeImage(image);
+            if (image != null) view.setDirectTextureModeImage(image);
         } else {
-            tile.mesh.setDirectTextureModeByHeight(paletteColors, colorMin, colorMax);
+            view.setDirectTextureModeByHeight(paletteColors, colorMin, colorMax);
         }
     }
 
-    private void applySpecular(SurfaceTile tile) {
-        if (tile.mesh == null) return;
-        if (tile.mesh.getMaterial() instanceof PhongMaterial material) {
+    private void applySpecular(HyperSurfacePlotMesh view) {
+        if (view == null) return;
+        if (view.getMaterial() instanceof PhongMaterial material) {
             material.setSpecularColor(specularColor);
+        }
+    }
+
+    private void forEachBuiltView(java.util.function.Consumer<HyperSurfacePlotMesh> consumer) {
+        for (TileRenderState tile : tilesById.values()) {
+            for (int lod = 0; lod < tile.getLodCount(); lod++) {
+                HyperSurfacePlotMesh view = tile.getLodView(lod);
+                if (view != null) consumer.accept(view);
+            }
         }
     }
 
@@ -319,25 +429,5 @@ public final class TiledSurfaceRenderer extends Group {
         if (sourceBoundary <= 0) return 0;
         if (sourceBoundary >= sourceSize) return targetSize;
         return (int) Math.round(sourceBoundary * targetSize / (double) sourceSize);
-    }
-
-    private static final class SurfaceTile {
-        final TiledLodManager.TileSpec spec;
-        final int startX0;
-        final int endX0;
-        final int startZ0;
-        final int endZ0;
-        HyperSurfacePlotMesh mesh;
-        int currentLod = -1;
-
-        SurfaceTile(TiledLodManager.TileSpec spec,
-                    int startX0, int endX0,
-                    int startZ0, int endZ0) {
-            this.spec = spec;
-            this.startX0 = startX0;
-            this.endX0 = endX0;
-            this.startZ0 = startZ0;
-            this.endZ0 = endZ0;
-        }
     }
 }
