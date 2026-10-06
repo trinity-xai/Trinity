@@ -39,6 +39,11 @@ import javafx.beans.property.SimpleObjectProperty;
 import javafx.collections.ObservableFloatArray;
 import javafx.geometry.Point2D;
 import javafx.scene.DepthTest;
+import javafx.scene.image.Image;
+import javafx.scene.image.PixelWriter;
+import javafx.scene.image.WritableImage;
+import javafx.scene.paint.Color;
+import javafx.scene.paint.PhongMaterial;
 import javafx.scene.shape.CullFace;
 import javafx.scene.shape.DrawMode;
 import javafx.scene.shape.TriangleMesh;
@@ -67,6 +72,22 @@ public class HyperSurfacePlotMesh extends TexturedMesh {
     private static final double DEFAULT_SURF_SCALE = 1.0D;
     public List<Double> functionValues;
     private PolygonMesh polygonMesh;
+
+    // Direct primitive HeightField mesh state. The legacy FXyz Point3D/Face3 lists
+    // intentionally remain empty while this mode is active.
+    private boolean directHeightFieldMesh = false;
+    private HeightField directHeightField;
+    private int directStartX;
+    private int directStartZ;
+    private int directCellsX;
+    private int directCellsZ;
+    private int directVertsX;
+    private int directVertsZ;
+    private double directXScale;
+    private double directYScale;
+    private double directZScale;
+    private WritableImage directPaletteImage;
+    private int directPaletteColors = -1;
 
     public HyperSurfacePlotMesh() {
         this(DEFAULT_FUNCTION, DEFAULT_X_RANGE, DEFAULT_Y_RANGE, DEFAULT_X_DIVISIONS, DEFAULT_Y_DIVISIONS, DEFAULT_FUNCTION_SCALE);
@@ -117,11 +138,23 @@ public class HyperSurfacePlotMesh extends TexturedMesh {
     }
 
     public javafx.geometry.Point3D getPoint3DByVertNumber(int pointId) {
+        if (directHeightFieldMesh && mesh != null) {
+            int base = Math.multiplyExact(pointId, 3);
+            if (base < 0 || base + 2 >= mesh.getPoints().size()) {
+                throw new IndexOutOfBoundsException("pointId out of range: " + pointId);
+            }
+            return new javafx.geometry.Point3D(
+                mesh.getPoints().get(base),
+                mesh.getPoints().get(base + 1),
+                mesh.getPoints().get(base + 2)
+            );
+        }
         Point3D p = listVertices.get(pointId);
         return new javafx.geometry.Point3D(p.x, p.y, p.z);
     }
 
     public final void injectMesh(TriangleMesh newMesh) {
+        clearDirectHeightFieldState();
         setMesh(null);
         mesh = newMesh;
         setMesh(mesh);
@@ -129,12 +162,131 @@ public class HyperSurfacePlotMesh extends TexturedMesh {
 
     public final void updateMeshRaw(int rangeX, int rangeY,
                                     double xScale, double yScale, double zScale) {
+        clearDirectHeightFieldState();
         setMesh(null);
         mesh = createRawMesh(getFunctionVert3D(), rangeX, rangeY, xScale, yScale, zScale);
         setMesh(mesh);
     }
 
+    /**
+     * Builds the entire HeightField directly into JavaFX primitive mesh buffers.
+     * This avoids the legacy per-vertex Point3D and per-face Face3 object graph.
+     *
+     * <p>The cell-oriented convention intentionally matches the existing Hypersurface:
+     * a width x height HeightField produces (width + 1) x (height + 1) vertices. The
+     * outermost row/column repeats the last source sample, preserving the existing
+     * width*xScale and height*zScale world extents without a zero-height border.</p>
+     */
+    public final void updateMeshHeightField(HeightField heightField,
+                                            double xScale, double yScale, double zScale) {
+        updateMeshHeightField(heightField, 0, 0,
+            heightField.width(), heightField.height(),
+            xScale, yScale, zScale);
+    }
+
+    /**
+     * Builds a rectangular cell region directly from a HeightField. This overload is
+     * intentionally tile-ready: future tile MeshViews can request independent regions
+     * without changing the primitive mesh builder.
+     *
+     * @param heightField source primitive height field
+     * @param startX      first source cell/sample x index
+     * @param startZ      first source cell/sample z index
+     * @param cellsX      number of mesh cells in x (vertices = cellsX + 1)
+     * @param cellsZ      number of mesh cells in z (vertices = cellsZ + 1)
+     * @param xScale      world units per x cell
+     * @param yScale      height multiplier
+     * @param zScale      world units per z cell
+     */
+    public final void updateMeshHeightField(HeightField heightField,
+                                            int startX, int startZ,
+                                            int cellsX, int cellsZ,
+                                            double xScale, double yScale, double zScale) {
+        validateHeightFieldRegion(heightField, startX, startZ, cellsX, cellsZ);
+
+        directHeightFieldMesh = true;
+        directHeightField = heightField;
+        directStartX = startX;
+        directStartZ = startZ;
+        directCellsX = cellsX;
+        directCellsZ = cellsZ;
+        directVertsX = cellsX + 1;
+        directVertsZ = cellsZ + 1;
+        directXScale = xScale;
+        directYScale = yScale;
+        directZScale = zScale;
+
+        // Release any object-heavy legacy geometry retained by TexturedMesh.
+        listVertices.clear();
+        listTextures.clear();
+        listFaces.clear();
+        smoothingGroups = null;
+
+        setMesh(null);
+        mesh = createHeightFieldMesh(heightField, startX, startZ, cellsX, cellsZ,
+            xScale, yScale, zScale);
+        setMesh(mesh);
+    }
+
+    public boolean isDirectHeightFieldMesh() {
+        return directHeightFieldMesh;
+    }
+
+    /**
+     * Restores spatial UV coordinates and applies an image directly to a primitive
+     * HeightField mesh. Faces are not rebuilt.
+     */
+    public void setDirectTextureModeImage(Image image) {
+        if (!directHeightFieldMesh || mesh == null || image == null) return;
+        restoreDirectSpatialTexCoords();
+        PhongMaterial material = directPhongMaterial();
+        material.setDiffuseColor(Color.WHITE);
+        material.setDiffuseMap(image);
+        setMaterial(material);
+    }
+
+    /**
+     * Colors a direct HeightField mesh by its rendered Y value using a compact rainbow
+     * palette. Only texture coordinates are updated; point and face buffers are retained.
+     */
+    public void setDirectTextureModeByHeight(int colors, double min, double max) {
+        if (!directHeightFieldMesh || mesh == null) return;
+        if (colors < 2) throw new IllegalArgumentException("colors must be >= 2");
+        if (!(max > min)) throw new IllegalArgumentException("max must be > min");
+
+        WritableImage palette = getOrCreateDirectPalette(colors);
+        ObservableFloatArray texCoords = mesh.getTexCoords();
+        final float[] source = directHeightField.data();
+        final int sourceWidth = directHeightField.width();
+        final int sourceHeight = directHeightField.height();
+        final float[] texRow = new float[directVertsX * 2];
+
+        for (int localZ = 0; localZ < directVertsZ; localZ++) {
+            int sampleZ = Math.min(directStartZ + localZ, sourceHeight - 1);
+            int sourceRow = sampleZ * sourceWidth;
+            int out = 0;
+            for (int localX = 0; localX < directVertsX; localX++) {
+                int sampleX = Math.min(directStartX + localX, sourceWidth - 1);
+                double y = source[sourceRow + sampleX] * directYScale;
+                double normalized = (y - min) / (max - min);
+                if (normalized < 0.0) normalized = 0.0;
+                else if (normalized > 1.0) normalized = 1.0;
+                int colorIndex = (int) Math.round(normalized * (colors - 1));
+                texRow[out++] = (float) ((colorIndex + 0.5) / colors);
+                texRow[out++] = 0.5f;
+            }
+            texCoords.set(localZ * directVertsX * 2,
+                texRow, 0, texRow.length);
+        }
+
+        PhongMaterial material = directPhongMaterial();
+        material.setDiffuseColor(Color.WHITE);
+        material.setDiffuseMap(palette);
+        setMaterial(material);
+    }
+
     protected final void updateMeshSmooth(int rangeX, int rangeY) {
+        clearDirectHeightFieldState();
         setMesh(null);
         mesh = createSmoothMesh(getFunctionVert3D(),
             rangeX, rangeY,
@@ -145,6 +297,7 @@ public class HyperSurfacePlotMesh extends TexturedMesh {
 
     @Override
     protected final void updateMesh() {
+        clearDirectHeightFieldState();
         setMesh(null);
         mesh = createPlotMesh(
             getFunction2D(),
@@ -328,6 +481,203 @@ public class HyperSurfacePlotMesh extends TexturedMesh {
 
     public PolygonMesh getPolygonMesh() {
         return polygonMesh;
+    }
+
+    private TriangleMesh createHeightFieldMesh(HeightField heightField,
+                                               int startX, int startZ,
+                                               int cellsX, int cellsZ,
+                                               double xScale, double yScale, double zScale) {
+        final int vertsX = cellsX + 1;
+        final int vertsZ = cellsZ + 1;
+        final long vertexCount = (long) vertsX * vertsZ;
+        final long pointFloatCount = vertexCount * 3L;
+        final long texFloatCount = vertexCount * 2L;
+        final long faceCount = (long) cellsX * cellsZ * 2L;
+        final long faceIntCount = faceCount * 6L;
+
+        if (pointFloatCount > Integer.MAX_VALUE
+            || texFloatCount > Integer.MAX_VALUE
+            || faceCount > Integer.MAX_VALUE
+            || faceIntCount > Integer.MAX_VALUE) {
+            throw new IllegalArgumentException(
+                "HeightField region is too large for a JavaFX TriangleMesh: "
+                    + cellsX + "x" + cellsZ);
+        }
+
+        areaMesh.setWidth(cellsX);
+        areaMesh.setHeight(cellsZ);
+        rectMesh.setWidth(cellsX);
+        rectMesh.setHeight(cellsZ);
+
+        TriangleMesh triangleMesh = new TriangleMesh();
+        triangleMesh.getPoints().resize((int) pointFloatCount);
+        triangleMesh.getTexCoords().resize((int) texFloatCount);
+        triangleMesh.getFaces().resize((int) faceIntCount);
+        triangleMesh.getFaceSmoothingGroups().resize((int) faceCount);
+
+        final float[] source = heightField.data();
+        final int sourceWidth = heightField.width();
+        final int sourceHeight = heightField.height();
+        final float[] pointRow = new float[vertsX * 3];
+        final float[] texRow = new float[vertsX * 2];
+
+        for (int localZ = 0; localZ < vertsZ; localZ++) {
+            final int globalVertexZ = startZ + localZ;
+            final int sampleZ = Math.min(globalVertexZ, sourceHeight - 1);
+            final int sourceRow = sampleZ * sourceWidth;
+            final float worldZ = (float) (localZ * zScale);
+            final float v = (float) globalVertexZ / (float) sourceHeight;
+
+            int p = 0;
+            int t = 0;
+            for (int localX = 0; localX < vertsX; localX++) {
+                final int globalVertexX = startX + localX;
+                final int sampleX = Math.min(globalVertexX, sourceWidth - 1);
+                final float worldX = (float) (localX * xScale);
+                final float worldY = source[sourceRow + sampleX] * (float) yScale;
+                final float u = (float) globalVertexX / (float) sourceWidth;
+
+                pointRow[p++] = worldX;
+                pointRow[p++] = worldY;
+                pointRow[p++] = worldZ;
+
+                texRow[t++] = u;
+                texRow[t++] = v;
+            }
+
+            triangleMesh.getPoints().set(localZ * vertsX * 3,
+                pointRow, 0, pointRow.length);
+            triangleMesh.getTexCoords().set(localZ * vertsX * 2,
+                texRow, 0, texRow.length);
+        }
+
+        // Bound temporary allocations while populating the very large persistent JavaFX
+        // face buffers. Point and texture indices intentionally match one-to-one.
+        final int rowsPerBlock = 16;
+        for (int z0 = 0; z0 < cellsZ; z0 += rowsPerBlock) {
+            final int rows = Math.min(rowsPerBlock, cellsZ - z0);
+            final int trianglesInBlock = Math.multiplyExact(Math.multiplyExact(rows, cellsX), 2);
+            final int[] faces = new int[Math.multiplyExact(trianglesInBlock, 6)];
+            final int[] groups = new int[trianglesInBlock];
+            Arrays.fill(groups, 1);
+
+            int fi = 0;
+            for (int localZ = 0; localZ < rows; localZ++) {
+                final int z = z0 + localZ;
+                final int rowStart = z * vertsX;
+                for (int x = 0; x < cellsX; x++) {
+                    final int p00 = rowStart + x;
+                    final int p01 = p00 + 1;
+                    final int p10 = p00 + vertsX;
+                    final int p11 = p10 + 1;
+
+                    faces[fi++] = p00;
+                    faces[fi++] = p00;
+                    faces[fi++] = p10;
+                    faces[fi++] = p10;
+                    faces[fi++] = p11;
+                    faces[fi++] = p11;
+
+                    faces[fi++] = p11;
+                    faces[fi++] = p11;
+                    faces[fi++] = p01;
+                    faces[fi++] = p01;
+                    faces[fi++] = p00;
+                    faces[fi++] = p00;
+                }
+            }
+
+            final int firstTriangle = z0 * cellsX * 2;
+            triangleMesh.getFaces().set(firstTriangle * 6,
+                faces, 0, faces.length);
+            triangleMesh.getFaceSmoothingGroups().set(firstTriangle,
+                groups, 0, groups.length);
+        }
+
+        return triangleMesh;
+    }
+
+    private void restoreDirectSpatialTexCoords() {
+        if (!directHeightFieldMesh || mesh == null || directHeightField == null) return;
+        final int sourceWidth = directHeightField.width();
+        final int sourceHeight = directHeightField.height();
+        final float[] texRow = new float[directVertsX * 2];
+
+        for (int localZ = 0; localZ < directVertsZ; localZ++) {
+            final int globalVertexZ = directStartZ + localZ;
+            final float v = (float) globalVertexZ / (float) sourceHeight;
+            int t = 0;
+            for (int localX = 0; localX < directVertsX; localX++) {
+                final int globalVertexX = directStartX + localX;
+                texRow[t++] = (float) globalVertexX / (float) sourceWidth;
+                texRow[t++] = v;
+            }
+            mesh.getTexCoords().set(localZ * directVertsX * 2,
+                texRow, 0, texRow.length);
+        }
+    }
+
+    private WritableImage getOrCreateDirectPalette(int colors) {
+        if (directPaletteImage != null && directPaletteColors == colors) {
+            return directPaletteImage;
+        }
+
+        WritableImage palette = new WritableImage(colors, 1);
+        PixelWriter writer = palette.getPixelWriter();
+        for (int i = 0; i < colors; i++) {
+            double d = (double) i / (double) (colors - 1);
+            Color c;
+            if (i == 0) c = Color.BLACK;
+            else if (i == colors - 1) c = Color.WHITE;
+            else c = Color.hsb(360.0 * d, 1.0, 1.0, 1.0);
+            writer.setColor(i, 0, c);
+        }
+        directPaletteImage = palette;
+        directPaletteColors = colors;
+        return palette;
+    }
+
+    private PhongMaterial directPhongMaterial() {
+        if (getMaterial() instanceof PhongMaterial material) {
+            return material;
+        }
+        return new PhongMaterial(Color.WHITE);
+    }
+
+    private void validateHeightFieldRegion(HeightField heightField,
+                                           int startX, int startZ,
+                                           int cellsX, int cellsZ) {
+        if (heightField == null) throw new IllegalArgumentException("heightField cannot be null");
+        if (startX < 0 || startZ < 0) {
+            throw new IllegalArgumentException("startX/startZ must be >= 0");
+        }
+        if (cellsX <= 0 || cellsZ <= 0) {
+            throw new IllegalArgumentException("cellsX/cellsZ must be > 0");
+        }
+        if (startX >= heightField.width() || startZ >= heightField.height()) {
+            throw new IllegalArgumentException("region start is outside HeightField");
+        }
+        if ((long) startX + cellsX > heightField.width()
+            || (long) startZ + cellsZ > heightField.height()) {
+            throw new IllegalArgumentException(
+                "region exceeds HeightField cell extent: start=" + startX + "," + startZ
+                    + " cells=" + cellsX + "x" + cellsZ
+                    + " field=" + heightField.width() + "x" + heightField.height());
+        }
+    }
+
+    private void clearDirectHeightFieldState() {
+        directHeightFieldMesh = false;
+        directHeightField = null;
+        directStartX = 0;
+        directStartZ = 0;
+        directCellsX = 0;
+        directCellsZ = 0;
+        directVertsX = 0;
+        directVertsZ = 0;
+        directXScale = Double.NaN;
+        directYScale = Double.NaN;
+        directZScale = Double.NaN;
     }
 
     private TriangleMesh createRawMesh(Function<Vert3D, Number> vertFunction,

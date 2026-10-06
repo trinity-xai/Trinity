@@ -1082,7 +1082,23 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         final double renderScaleZ = getRenderScaleZ();
 
         if (surfaceRender) {
-            surfPlot.updateMeshRaw(renderWidth, renderHeight, renderScaleX, yScale, renderScaleZ);
+            // Primitive HeightField meshes bypass the FXyz Point3D/Face3 object graph.
+            // Shapley coloration temporarily retains the legacy path until its scalar
+            // field is made LOD-aware; image and height coloration use the fast path.
+            boolean useDirectHeightFieldMesh = activeHeightField != null
+                && colorationMethod != COLORATION.COLOR_BY_SHAPLEY;
+
+            long meshStart = System.nanoTime();
+            if (useDirectHeightFieldMesh) {
+                surfPlot.updateMeshHeightField(activeHeightField,
+                    renderScaleX, yScale, renderScaleZ);
+                System.out.println("Direct HeightField mesh built: "
+                    + renderWidth + "x" + renderHeight + " in "
+                    + Utils.totalTimeString(meshStart));
+            } else {
+                surfPlot.updateMeshRaw(renderWidth, renderHeight,
+                    renderScaleX, yScale, renderScaleZ);
+            }
             applyCurrentColoration();
         } else {
             // Cylinder/tube mode still needs the legacy boxed representation, but it must
@@ -1114,18 +1130,46 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         switch (colorationMethod) {
             case COLOR_BY_IMAGE -> {
                 if (lastImage == null) return;
-                PhongMaterial material;
-                if (surfPlot.getMaterial() instanceof PhongMaterial existing) {
-                    material = existing;
+                if (surfPlot.isDirectHeightFieldMesh()) {
+                    surfPlot.setDirectTextureModeImage(lastImage);
                 } else {
-                    material = new PhongMaterial(Color.WHITE);
+                    PhongMaterial material;
+                    if (surfPlot.getMaterial() instanceof PhongMaterial existing) {
+                        material = existing;
+                    } else {
+                        material = new PhongMaterial(Color.WHITE);
+                    }
+                    material.setDiffuseColor(Color.WHITE);
+                    material.setDiffuseMap(lastImage);
+                    surfPlot.setMaterial(material);
                 }
-                material.setDiffuseColor(Color.WHITE);
-                material.setDiffuseMap(lastImage);
-                surfPlot.setMaterial(material);
             }
-            case COLOR_BY_FEATURE ->
-                surfPlot.setTextureModeVertices3D(TOTAL_COLORS, colorByHeight, 0.0, 360.0);
+            case COLOR_BY_FEATURE -> {
+                if (surfPlot.isDirectHeightFieldMesh()) {
+                    // Use one stable data range for the entire LOD pyramid so colors do
+                    // not shift as the camera moves between L0/L1/L2. Image-backed
+                    // HeightFields are typically around 0..1 before Y scaling, so the
+                    // previous hard-coded 0..360 range collapsed almost all values into
+                    // the red end of the palette.
+                    HeightField colorRangeField = !lodProcessedLevels.isEmpty()
+                        ? lodProcessedLevels.get(0)
+                        : activeHeightField;
+                    if (colorRangeField != null) {
+                        float[] minMax = colorRangeField.minMax();
+                        double minColorValue = minMax[0] * yScale;
+                        double maxColorValue = minMax[1] * yScale;
+                        if (!(maxColorValue > minColorValue)) {
+                            double pad = Math.max(1.0e-9, Math.abs(minColorValue) * 1.0e-9);
+                            minColorValue -= pad;
+                            maxColorValue += pad;
+                        }
+                        surfPlot.setDirectTextureModeByHeight(
+                            TOTAL_COLORS, minColorValue, maxColorValue);
+                    }
+                } else {
+                    surfPlot.setTextureModeVertices3D(TOTAL_COLORS, colorByHeight, 0.0, 360.0);
+                }
+            }
             case COLOR_BY_SHAPLEY ->
                 surfPlot.setTextureModeVertices3D(TOTAL_COLORS, colorByShapley, 0.0, 360.0);
         }
@@ -1696,8 +1740,17 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
             if (surfPlot != null) surfPlot.setCullFace((CullFace) e.object);
         });
         scene.addEventHandler(HypersurfaceEvent.COLORATION_CHANGED, e -> {
-            this.colorationMethod = (Hypersurface3DPane.COLORATION) e.object;
-            applyCurrentColoration();
+            COLORATION previous = this.colorationMethod;
+            COLORATION next = (Hypersurface3DPane.COLORATION) e.object;
+            this.colorationMethod = next;
+
+            // Shapley currently uses the legacy mesh metadata path. Crossing into or
+            // out of that mode therefore requires a geometry rebuild. Image <-> feature
+            // coloration only changes UV/material state on the direct mesh.
+            boolean shapleyPathChanged = (previous == COLORATION.COLOR_BY_SHAPLEY)
+                != (next == COLORATION.COLOR_BY_SHAPLEY);
+            if (shapleyPathChanged) updateTheMesh();
+            else applyCurrentColoration();
         });
 
         // Processing pipeline
@@ -2199,11 +2252,11 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
                     surfPlot.functionValues.add(shapleyVectors.get(i).getData().get(0) * yScale);
                 }
                 Utils.printTotalTime(startTime);
-                if (null == colorationMethod) surfPlot.setTextureModeVertices3D(TOTAL_COLORS, colorByHeight, 0.0, 360.0);
-                switch (colorationMethod) {
-                    case COLOR_BY_IMAGE -> surfPlot.setTextureModeImage(imageryBasePath + lastImageSource);
-                    case COLOR_BY_FEATURE -> surfPlot.setTextureModeVertices3D(TOTAL_COLORS, colorByHeight, 0.0, 360.0);
-                    default -> surfPlot.setTextureModeVertices3D(TOTAL_COLORS, colorByShapley, 0.0, 360.0);
+                if (colorationMethod == COLORATION.COLOR_BY_SHAPLEY) {
+                    // Rebuild through the legacy metadata path so p.f remains available.
+                    updateTheMesh();
+                } else {
+                    applyCurrentColoration();
                 }
             }
         } catch (IOException ex) {
