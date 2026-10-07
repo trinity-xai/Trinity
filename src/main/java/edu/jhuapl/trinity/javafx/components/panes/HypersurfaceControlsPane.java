@@ -84,7 +84,7 @@ public class HypersurfaceControlsPane extends LitPathPane {
     private CheckBox enableAmbientCheck;
     private ColorPicker ambientColorPicker;
     private CheckBox enablePointCheck;
-    private ColorPicker specularColorPicker;
+    private ColorPicker pointColorPicker;
 
     // Graph overlay visibility
     private ToggleButton showGraphToggle;
@@ -321,19 +321,18 @@ public class HypersurfaceControlsPane extends LitPathPane {
         enablePointCheck = new CheckBox("Point light");
         enablePointCheck.setSelected(true);
         styleCheck(enablePointCheck);
-        specularColorPicker = new ColorPicker(Color.CYAN);
-        styleColorPicker(specularColorPicker);
-
-        HBox pointBox = new HBox(6, enablePointCheck, specularColorPicker);
-        addRow(sceneGrid, 3, "Point", pointBox);
+        pointColorPicker = new ColorPicker(Color.WHITE);
+        styleColorPicker(pointColorPicker);
+        HBox pointBox = new HBox(6, enablePointCheck, pointColorPicker);
+        addRow(sceneGrid, 3, "Point Light", pointBox);
 
         enablePointCheck.setOnAction(e -> {
             boolean on = enablePointCheck.isSelected();
-            specularColorPicker.setDisable(!on);
+            pointColorPicker.setDisable(!on);
             fireOnRoot(HypersurfaceEvent.pointEnabled(on));
         });
-        specularColorPicker.setOnAction(e ->
-            fireOnRoot(HypersurfaceEvent.specularColor(specularColorPicker.getValue())));
+        pointColorPicker.setOnAction(e ->
+            fireOnRoot(HypersurfaceEvent.pointColor(pointColorPicker.getValue())));
 
         // --- Graph Overlay visibility ---
         GridPane graphOverlayGrid = formGrid();

@@ -81,6 +81,8 @@ public class HypersurfaceEvent extends Event {
         new EventType<>(ANY, "HYPERSURF_AMBIENT_COLOR_CHANGED");      // Color
     public static final EventType<HypersurfaceEvent> POINT_ENABLED_CHANGED =
         new EventType<>(ANY, "HYPERSURF_POINT_ENABLED_CHANGED");      // Boolean
+    public static final EventType<HypersurfaceEvent> POINT_COLOR_CHANGED =
+        new EventType<>(ANY, "HYPERSURF_POINT_COLOR_CHANGED");        // Color
     public static final EventType<HypersurfaceEvent> SPECULAR_COLOR_CHANGED =
         new EventType<>(ANY, "HYPERSURF_SPECULAR_COLOR_CHANGED");     // Color
 
@@ -213,6 +215,10 @@ public class HypersurfaceEvent extends Event {
 
     public static HypersurfaceEvent pointEnabled(boolean b) {
         return of(POINT_ENABLED_CHANGED, b);
+    }
+
+    public static HypersurfaceEvent pointColor(Object color) {
+        return of(POINT_COLOR_CHANGED, color);
     }
 
     public static HypersurfaceEvent specularColor(Object color) {

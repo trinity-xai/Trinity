@@ -150,6 +150,8 @@ public class Hypersurface3DPane extends StackPane
     public static int DEFAULT_ZWIDTH = 200;
     public static int DEFAULT_SURFSCALE = 5;
     public static int DEFAULT_YSCALE = 5;
+    private static final double POINT_LIGHT_CAMERA_OFFSET_Z = 100.0;
+    private static final double CAMERA_ZOOM_STEP = 50.0;
 
     public PerspectiveCamera camera;
     public CameraTransformer cameraTransform = new CameraTransformer();
@@ -271,6 +273,7 @@ public class Hypersurface3DPane extends StackPane
     SurfaceChartPane surfaceChartPane;
     public AmbientLight ambientLight;
     public PointLight pointLight;
+    private AmbientLight skyboxAmbientLight;
     private List<List<Double>> originalGrid = new ArrayList<>();
 
     
@@ -443,19 +446,10 @@ public class Hypersurface3DPane extends StackPane
         subScene.setCamera(camera);
         pointLight = new PointLight(Color.WHITE);
         cameraTransform.getChildren().add(pointLight);
-        pointLight.setTranslateX(camera.getTranslateX());
-        pointLight.setTranslateY(camera.getTranslateY());
-        pointLight.setTranslateZ(camera.getTranslateZ() + 500.0);
-
-        subScene.setOnZoom(event -> {
-            double modifier = 50.0;
-            double modifierFactor = 0.1;
-            double z = camera.getTranslateZ();
-            double newZ = z + event.getZoomFactor() * modifierFactor * modifier;
-            camera.setTranslateZ(newZ);
-            updateLabels();
-                    requestLodUpdate(LodManager.UpdateReason.SCROLL);
-});
+        pointLight.translateXProperty().bind(camera.translateXProperty());
+        pointLight.translateYProperty().bind(camera.translateYProperty());
+        pointLight.translateZProperty().bind(
+            camera.translateZProperty().add(POINT_LIGHT_CAMERA_OFFSET_Z));
 
         subScene.setOnKeyPressed(event -> {
             KeyCode keycode = event.getCode();
@@ -554,27 +548,20 @@ public class Hypersurface3DPane extends StackPane
             mouseOldX = me.getSceneX();
             mouseOldY = me.getSceneY();
         });
-        subScene.setOnZoom(e -> {
-            double zoom = e.getZoomFactor();
-            if (zoom > 1) camera.setTranslateZ(camera.getTranslateZ() + 50.0);
-            else camera.setTranslateZ(camera.getTranslateZ() - 50.0);
-            updateLabels();
-            updateCalloutHeadPoints(subScene);
-            requestLodUpdate(LodManager.UpdateReason.SCROLL);
-            e.consume();
+        subScene.setOnZoom(event -> {
+            double deltaZ = event.getZoomFactor() > 1.0
+                ? CAMERA_ZOOM_STEP
+                : -CAMERA_ZOOM_STEP;
+            zoomCamera(deltaZ);
+            event.consume();
         });
         subScene.setOnScroll((ScrollEvent event) -> {
             double modifier = 50.0;
             double modifierFactor = 0.1;
-            if (event.isControlDown()) modifier = 1;
+            if (event.isControlDown()) modifier = 1.0;
             if (event.isShiftDown()) modifier = 100.0;
-            double z = camera.getTranslateZ();
-            double newZ = z + event.getDeltaY() * modifierFactor * modifier;
-            camera.setTranslateZ(newZ);
-            updateLabels();
-            updateCalloutHeadPoints(subScene);
-                    requestLodUpdate(LodManager.UpdateReason.SCROLL);
-});
+            zoomCamera(event.getDeltaY() * modifierFactor * modifier);
+        });
 
         subScene.setOnMouseDragged((MouseEvent me) -> mouseDragCamera(me));
         Pane pathPane = App.getAppPathPaneStack();
@@ -1365,7 +1352,9 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         double size = 100000D;
         skybox = new Skybox(top, bottom, left, right, front, back, size, camera);
         sceneRoot.getChildren().add(skybox);
-        ambientLight.getScope().addAll(skybox);
+        skyboxAmbientLight = new AmbientLight(Color.WHITE);
+        skyboxAmbientLight.getScope().add(skybox);
+        sceneRoot.getChildren().add(skyboxAmbientLight);
         skybox.setVisible(false);
     }
 
@@ -1420,9 +1409,18 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
             cameraTransform.t.setX(cameraTransform.t.getX() + mouseDeltaX * modifierFactor * modifier * 0.3);
             cameraTransform.t.setY(cameraTransform.t.getY() + mouseDeltaY * modifierFactor * modifier * 0.3);
         }
+        refreshAfterCameraInteraction(LodManager.UpdateReason.DRAG);
+    }
+
+    private void zoomCamera(double deltaZ) {
+        camera.setTranslateZ(camera.getTranslateZ() + deltaZ);
+        refreshAfterCameraInteraction(LodManager.UpdateReason.SCROLL);
+    }
+
+    private void refreshAfterCameraInteraction(LodManager.UpdateReason reason) {
         updateLabels();
         updateCalloutHeadPoints(subScene);
-        requestLodUpdate(LodManager.UpdateReason.DRAG);
+        requestLodUpdate(reason);
     }
 
     private void updateLabels() {
@@ -1638,6 +1636,11 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
 
     Point3D vertP3D;
 
+    private void configureLightingScopes() {
+        pointLight.getScope().setAll(surfPlot, tiledSurfaceRenderer, graphLayer);
+        ambientLight.getScope().setAll(surfPlot, tiledSurfaceRenderer, graphLayer);
+    }
+
     private void loadSurf3D() {
         LOG.info("Rendering Hypersurface Mesh...");
         generateRandos(xWidth, zWidth, yScale);
@@ -1761,12 +1764,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         extrasGroup.getChildren().addAll(eastPole, eastKnob, westPole, westKnob, glowLineBox);
         wireEventHandlers();
 
-        pointLight.getScope().addAll(surfPlot, tiledSurfaceRenderer, graphLayer);
-        sceneRoot.getChildren().add(pointLight);
-        pointLight.translateXProperty().bind(camera.translateXProperty());
-        pointLight.translateYProperty().bind(camera.translateYProperty());
-        pointLight.translateZProperty().bind(camera.translateZProperty().add(500));
-        ambientLight.getScope().addAll(surfPlot, tiledSurfaceRenderer, graphLayer);
+        configureLightingScopes();
         sceneRoot.getChildren().add(ambientLight);
 
         updateLabels();
@@ -1938,13 +1936,16 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
 
         // Lighting
         scene.addEventHandler(HypersurfaceEvent.AMBIENT_ENABLED_CHANGED, e -> {
-            // (Optional: enable/disable ambientLight as desired)
+            if (ambientLight != null) ambientLight.setLightOn((boolean) e.object);
         });
         scene.addEventHandler(HypersurfaceEvent.AMBIENT_COLOR_CHANGED, e -> {
             if (ambientLight != null) ambientLight.setColor((Color) e.object);
         });
         scene.addEventHandler(HypersurfaceEvent.POINT_ENABLED_CHANGED, e -> {
-            // (Optional: enable/disable pointLight as desired)
+            if (pointLight != null) pointLight.setLightOn((boolean) e.object);
+        });
+        scene.addEventHandler(HypersurfaceEvent.POINT_COLOR_CHANGED, e -> {
+            if (pointLight != null) pointLight.setColor((Color) e.object);
         });
         scene.addEventHandler(HypersurfaceEvent.SPECULAR_COLOR_CHANGED, e -> {
             Color color = (Color) e.object;
