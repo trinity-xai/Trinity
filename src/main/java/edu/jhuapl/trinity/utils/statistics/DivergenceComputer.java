@@ -43,7 +43,6 @@ import java.util.concurrent.Future;
  * This class does not modify any global UI state and is thread-safe per call.
  *
  * @author Sean Phillips (Trinity)
- * @author (helper) ChatGPT
  */
 public final class DivergenceComputer {
 

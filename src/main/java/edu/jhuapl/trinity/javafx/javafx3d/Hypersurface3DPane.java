@@ -56,6 +56,8 @@ import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
+import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleObjectProperty;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
@@ -190,6 +192,11 @@ public class Hypersurface3DPane extends StackPane
     public enum COLORATION {COLOR_BY_IMAGE, COLOR_BY_FEATURE, COLOR_BY_SHAPLEY}
 
     COLORATION colorationMethod = COLORATION.COLOR_BY_FEATURE;
+    private final ObjectProperty<SurfaceRowOrientation> surfaceRowOrientation =
+        new SimpleObjectProperty<>(SurfaceRowOrientation.FIRST_ROW_NEAR);
+    private final ObjectProperty<SurfaceHeightOrientation> surfaceHeightOrientation =
+        new SimpleObjectProperty<>(SurfaceHeightOrientation.HIGH_VALUES_UP);
+    private boolean suppressRowOrientationRefresh = false;
     boolean hoverInteractionsEnabled = false;
     boolean surfaceChartsEnabled = false;
     boolean crosshairsEnabled = false;
@@ -207,6 +214,12 @@ public class Hypersurface3DPane extends StackPane
     //allows 2D labels to track their 3D counterparts
     HashMap<Shape3D, Node> shape3DToLabel = new HashMap<>();
     public List<FeatureVector> featureVectors = new ArrayList<>();
+
+    /**
+     * Authoritative boxed working/source grid retained for compatibility with existing
+     * analysis and ingestion paths. LOD selection must never replace this with a
+     * downsampled render grid; activeHeightField owns render-side data.
+     */
     public List<List<Double>> dataGrid = new ArrayList<>();
 
     private Random rando = new Random();
@@ -218,7 +231,8 @@ public class Hypersurface3DPane extends StackPane
     public float surfScale = DEFAULT_SURFSCALE;
 
     int TOTAL_COLORS = 1530; //colors used by map function
-    Function<Point3D, Number> colorByHeight = p -> p.y; //Color mapping function
+    Function<Point3D, Number> colorByHeight =
+        p -> getSurfaceHeightOrientation().toLogicalHeight(p.y); // orientation-neutral color mapping
     Function<Point3D, Number> colorByShapley = p -> p.f;
 
     Function<Vert3D, Number> vert3DLookup = p -> vertToHeight(p);
@@ -259,7 +273,73 @@ public class Hypersurface3DPane extends StackPane
     public PointLight pointLight;
     private List<List<Double>> originalGrid = new ArrayList<>();
 
-    // Event-driven state fields for settings previously set via controls
+    
+
+    // ============================================================
+    // Primitive HeightField + Global LOD Cap (via LodManager)
+    // ============================================================
+
+    /** Max render dimension for L0 (aspect-preserving). Default safe limit: 2048. */
+    private int maxRenderResolution = 2048;
+    /** Minimum LOD dimension for the legacy/global renderer. Default: 512. */
+    private int minRenderResolution = 512;
+
+    /** Tiled image rendering uses a fixed L0..L4 power-of-two pyramid. */
+    private static final int TILED_LOD_LEVEL_COUNT = 5;
+
+    /** Processing source HeightField. Image sources retain only capped raw L0; data grids retain full source resolution. */
+    private HeightField processingSourceHeightField = null;
+    // Image-backed surfaces retain only the capped raw L0 HeightField. The original
+    // source dimensions/region are tracked separately so world extents and hover/source
+    // semantics remain tied to the input image rather than the render cap.
+    private int imageSourceStartX = 0;
+    private int imageSourceStartY = 0;
+    private int imageSourceWidth = 0;
+    private int imageSourceHeight = 0;
+
+    /** Processed LOD pyramid (Option B: process L0 then downsample processed). */
+    private List<HeightField> lodProcessedLevels = List.of();
+
+    /** Active LOD index into lodProcessedLevels. */
+    private int activeLodIndex = -1;
+
+    /** Active HeightField (alias of lodProcessedLevels.get(activeLodIndex)). */
+    private HeightField activeHeightField = null;
+
+    /** Constant world extents used to keep surface size stable across LOD changes. */
+    private double baseWorldWidth = Double.NaN;
+    private double baseWorldDepth = Double.NaN;
+
+    /**
+     * Image-backed surfaces use resolution-independent physical dimensions. The longer
+     * image axis occupies this many world units when surfScale == DEFAULT_SURFSCALE;
+     * the shorter axis is derived from the source aspect ratio.
+     */
+    private boolean imageBackedSurface = false;
+
+    /**
+     * True only while model state is being pushed into HypersurfaceControlsPane.
+     * GUI control listeners echo their changes back as HypersurfaceEvents, so those
+     * echoes must not be interpreted as user-requested geometry rebuilds.
+     */
+    private boolean syncingGuiControls = false;
+
+    private final double imageWorldExtentReferenceScale = Math.max(1.0e-6, DEFAULT_SURFSCALE);
+    private double nominalImageWorldExtent = DEFAULT_XWIDTH * (double) DEFAULT_SURFSCALE;
+
+    /** Current mesh spacing in world units per cell for the active LOD. */
+    private double currentLodSurfScaleX = Double.NaN;
+    private double currentLodSurfScaleZ = Double.NaN;
+
+    /** Screen-space LOD scheduler/selector for the legacy/global renderer. */
+    private LodManager lodManager = null;
+
+    /** Tiled per-region renderer used for primitive image-backed heightfields. */
+    private TiledSurfaceRenderer tiledSurfaceRenderer = null;
+    private boolean tiledHeightFieldRenderingEnabled = true;
+    private int tileCellsL0 = 256;
+
+// Event-driven state fields for settings previously set via controls
     private HeightMode heightMode = HeightMode.RAW;
     private boolean smoothingEnabled = false;
     private SurfaceUtils.Smoothing smoothingMethod = SurfaceUtils.Smoothing.GAUSSIAN;
@@ -282,6 +362,18 @@ public class Hypersurface3DPane extends StackPane
 
     public Hypersurface3DPane(Scene scene) {
         this.scene = scene;
+        surfaceRowOrientation.addListener((obs, oldValue, newValue) -> {
+            applySurfaceRowOrientationToRenderers();
+            if (!suppressRowOrientationRefresh && surfPlot != null) {
+                updateTheMesh();
+            }
+        });
+        surfaceHeightOrientation.addListener((obs, oldValue, newValue) -> {
+            applySurfaceHeightOrientationToRenderers();
+            if (surfPlot != null) {
+                updateTheMesh();
+            }
+        });
         shape3DToCalloutMap = new HashMap<>();
         ambientLight = new AmbientLight(Color.WHITE);
 
@@ -362,7 +454,8 @@ public class Hypersurface3DPane extends StackPane
             double newZ = z + event.getZoomFactor() * modifierFactor * modifier;
             camera.setTranslateZ(newZ);
             updateLabels();
-        });
+                    requestLodUpdate(LodManager.UpdateReason.SCROLL);
+});
 
         subScene.setOnKeyPressed(event -> {
             KeyCode keycode = event.getCode();
@@ -451,6 +544,7 @@ public class Hypersurface3DPane extends StackPane
 
             updateLabels();
             updateCalloutHeadPoints(subScene);
+            requestLodUpdate(LodManager.UpdateReason.OTHER);
         });
 
         subScene.setOnMousePressed((MouseEvent me) -> {
@@ -466,6 +560,7 @@ public class Hypersurface3DPane extends StackPane
             else camera.setTranslateZ(camera.getTranslateZ() - 50.0);
             updateLabels();
             updateCalloutHeadPoints(subScene);
+            requestLodUpdate(LodManager.UpdateReason.SCROLL);
             e.consume();
         });
         subScene.setOnScroll((ScrollEvent event) -> {
@@ -478,7 +573,8 @@ public class Hypersurface3DPane extends StackPane
             camera.setTranslateZ(newZ);
             updateLabels();
             updateCalloutHeadPoints(subScene);
-        });
+                    requestLodUpdate(LodManager.UpdateReason.SCROLL);
+});
 
         subScene.setOnMouseDragged((MouseEvent me) -> mouseDragCamera(me));
         Pane pathPane = App.getAppPathPaneStack();
@@ -494,7 +590,11 @@ public class Hypersurface3DPane extends StackPane
                 ApplicationEvent.SHOW_HYPERSPACE_CONTROLS, Boolean.TRUE));
         });
 
-        MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
+        
+        subScene.setOnMouseReleased((MouseEvent me) -> {
+            forceLodUpdate();
+        });
+MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         copyAsImageItem.setOnAction((ActionEvent e) -> {
             Clipboard clipboard = Clipboard.getSystemClipboard();
             ClipboardContent content = new ClipboardContent();
@@ -568,6 +668,9 @@ public class Hypersurface3DPane extends StackPane
         CheckMenuItem enableHoverItem = new CheckMenuItem("Hover Interactions");
         enableHoverItem.setOnAction(e -> {
             hoverInteractionsEnabled = enableHoverItem.isSelected();
+            if (tiledSurfaceRenderer != null) {
+                tiledSurfaceRenderer.setHoverPickingEnabled(hoverInteractionsEnabled);
+            }
         });
 
         CheckMenuItem surfaceChartsItem = new CheckMenuItem("Surface Charts");
@@ -597,9 +700,8 @@ public class Hypersurface3DPane extends StackPane
             zWidth = DEFAULT_ZWIDTH;
             syncGuiControls();
             generateRandos(xWidth, zWidth, yScale);
-            originalGrid = deepCopyGrid(dataGrid);
-            updateTheMesh();
-            updateView(true);
+            captureDataGridAsSource();
+            rebuildProcessedGridAndRefresh();
         });
 
         CheckMenuItem showDataMarkersItem = new CheckMenuItem("Show Data Markers");
@@ -647,7 +749,7 @@ public class Hypersurface3DPane extends StackPane
             applyGraphStyle(styleParams, /*rebuildIfNeeded*/ true);
         });
 
-// Reset style defaults
+        // Reset style defaults
         this.scene.addEventHandler(GraphEvent.GRAPH_STYLE_RESET_DEFAULTS, e -> {
             styleParams = new GraphStyleParams(); // back to defaults
 
@@ -794,8 +896,9 @@ public class Hypersurface3DPane extends StackPane
                 long startTime;
                 if (computeRandos) {
                     generateRandos(xWidth, zWidth, yScale);
-                }
-                if (animated || isDirty) {
+                    captureDataGridAsSource();
+                    rebuildProcessedGridAndRefresh();
+                } else if (animated || isDirty) {
                     startTime = System.nanoTime();
                     updateTheMesh();
                     LOG.info("updateTheMesh(): {}", Utils.totalTimeString(startTime));
@@ -895,7 +998,7 @@ public class Hypersurface3DPane extends StackPane
         List<List<Double>> scaled = DataUtils.normalizeAndScale(grid, heightMode, userScale);
         dataGrid.clear();
         dataGrid.addAll(scaled);
-        originalGrid = deepCopyGrid(dataGrid); // NEW
+        captureDataGridAsSource();
         xWidth = dataGrid.get(0).size();
         zWidth = dataGrid.size();
         syncGuiControls();
@@ -907,7 +1010,7 @@ public class Hypersurface3DPane extends StackPane
         if (flipY) Collections.reverse(grid);
         dataGrid.clear();
         dataGrid.addAll(grid);
-        originalGrid = deepCopyGrid(dataGrid); // NEW
+        captureDataGridAsSource();
         xWidth = dataGrid.get(0).size();
         zWidth = dataGrid.size();
         syncGuiControls();
@@ -930,7 +1033,7 @@ public class Hypersurface3DPane extends StackPane
         }
         dataGrid.clear();
         dataGrid.addAll(differencesGrid);
-        originalGrid = deepCopyGrid(dataGrid); // NEW
+        captureDataGridAsSource();
         xWidth = dataGrid.get(0).size();
         zWidth = dataGrid.size();
         syncGuiControls();
@@ -952,7 +1055,7 @@ public class Hypersurface3DPane extends StackPane
         });
         dataGrid.clear();
         dataGrid.addAll(distancesGrid);
-        originalGrid = deepCopyGrid(dataGrid); // NEW
+        captureDataGridAsSource();
         xWidth = dataGrid.get(0).size();
         zWidth = dataGrid.size();
         syncGuiControls();
@@ -1014,13 +1117,70 @@ public class Hypersurface3DPane extends StackPane
     }
 
     public void updateTheMesh() {
-        surfPlot.setVisible(surfaceRender);
+        if (surfPlot == null) return;
+
         sceneRoot.getChildren().removeIf(n -> n instanceof TessellationTube);
+
+        final boolean useTiledRenderer = surfaceRender && shouldUseTiledHeightFieldRenderer();
+        if (tiledSurfaceRenderer != null) {
+            tiledSurfaceRenderer.setVisible(useTiledRenderer);
+        }
+        if (useTiledRenderer) {
+            surfPlot.setVisible(false);
+            if (paintMeshView != null) paintMeshView.setVisible(false);
+            configureTiledAppearance();
+            tiledSurfaceRenderer.forceUpdate();
+            return;
+        }
+
+        // An image-backed surface with no active HeightField is between source
+        // replacement and LOD-pyramid activation (or is waiting for the global LOD
+        // selector). Never fall through to the legacy raw FXyz mesh builder here:
+        // xWidth/zWidth may still describe the full 4K/8K source and attempting a
+        // raw mesh at that resolution can exhaust the Java heap.
+        if (imageBackedSurface && activeHeightField == null) {
+            surfPlot.setVisible(false);
+            if (paintMeshView != null) paintMeshView.setVisible(false);
+            return;
+        }
+
+        surfPlot.setVisible(surfaceRender);
+        if (paintMeshView != null) paintMeshView.setVisible(true);
+
+        final int renderWidth = getRenderWidth();
+        final int renderHeight = getRenderHeight();
+        final double renderScaleX = getRenderScaleX();
+        final double renderScaleZ = getRenderScaleZ();
+
         if (surfaceRender) {
-            surfPlot.updateMeshRaw(xWidth, zWidth, surfScale, yScale, surfScale);
+            surfPlot.setRowOrientation(getSurfaceRowOrientation());
+        surfPlot.setHeightOrientation(getSurfaceHeightOrientation());
+            // Primitive HeightField meshes bypass the FXyz Point3D/Face3 object graph.
+            // Shapley coloration temporarily retains the legacy path until its scalar
+            // field is made LOD-aware; image and height coloration use the fast path.
+            boolean useDirectHeightFieldMesh = activeHeightField != null
+                && colorationMethod != COLORATION.COLOR_BY_SHAPLEY;
+
+            long meshStart = System.nanoTime();
+            if (useDirectHeightFieldMesh) {
+                surfPlot.updateMeshHeightField(activeHeightField,
+                    renderScaleX, yScale, renderScaleZ);
+                System.out.println("Direct HeightField mesh built: "
+                    + renderWidth + "x" + renderHeight + " in "
+                    + Utils.totalTimeString(meshStart));
+            } else {
+                surfPlot.updateMeshRaw(renderWidth, renderHeight,
+                    renderScaleX, yScale, renderScaleZ);
+            }
+            applyCurrentColoration();
         } else {
-            sceneRoot.getChildren().removeIf(n -> n instanceof TessellationTube);
-            TessellationTube tube = new TessellationTube(dataGrid, Color.WHITE, yScale * 10, surfScale, yScale);
+            // Cylinder/tube mode still needs the legacy boxed representation, but it must
+            // use the bounded active render LOD rather than the full-resolution source.
+            List<List<Double>> renderGrid = activeHeightField != null
+                ? SurfaceUtils.toGrid(activeHeightField)
+                : dataGrid;
+            TessellationTube tube = new TessellationTube(renderGrid, Color.WHITE,
+                yScale * 10, renderScaleZ, yScale);
             tube.setMouseTransparent(true);
             if (null != lastImage) {
                 tube.meshView.setDrawMode(DrawMode.FILL);
@@ -1032,8 +1192,71 @@ public class Hypersurface3DPane extends StackPane
         Platform.runLater(this::updatePaintMesh);
     }
 
+    /**
+     * Apply the currently selected surface coloration without rebuilding geometry.
+     * Image coloration uses the already-loaded JavaFX Image directly so it works for
+     * absolute file URLs as well as images that did not originate under imageryBasePath.
+     */
+    private void applyCurrentColoration() {
+        if (surfPlot == null || colorationMethod == null) return;
+        if (shouldUseTiledHeightFieldRenderer()) {
+            configureTiledAppearance();
+            return;
+        }
+
+        switch (colorationMethod) {
+            case COLOR_BY_IMAGE -> {
+                if (lastImage == null) return;
+                if (surfPlot.isDirectHeightFieldMesh()) {
+                    surfPlot.setDirectTextureModeImage(lastImage);
+                } else {
+                    PhongMaterial material;
+                    if (surfPlot.getMaterial() instanceof PhongMaterial existing) {
+                        material = existing;
+                    } else {
+                        material = new PhongMaterial(Color.WHITE);
+                    }
+                    material.setDiffuseColor(Color.WHITE);
+                    material.setDiffuseMap(lastImage);
+                    surfPlot.setMaterial(material);
+                }
+            }
+            case COLOR_BY_FEATURE -> {
+                if (surfPlot.isDirectHeightFieldMesh()) {
+                    // Use one stable data range for the entire LOD pyramid so colors do
+                    // not shift as the camera moves between L0/L1/L2. Image-backed
+                    // HeightFields are typically around 0..1 before Y scaling, so the
+                    // previous hard-coded 0..360 range collapsed almost all values into
+                    // the red end of the palette.
+                    HeightField colorRangeField = !lodProcessedLevels.isEmpty()
+                        ? lodProcessedLevels.get(0)
+                        : activeHeightField;
+                    if (colorRangeField != null) {
+                        float[] minMax = colorRangeField.minMax();
+                        double minColorValue = minMax[0] * yScale;
+                        double maxColorValue = minMax[1] * yScale;
+                        if (!(maxColorValue > minColorValue)) {
+                            double pad = Math.max(1.0e-9, Math.abs(minColorValue) * 1.0e-9);
+                            minColorValue -= pad;
+                            maxColorValue += pad;
+                        }
+                        surfPlot.setDirectTextureModeByHeight(
+                            TOTAL_COLORS, minColorValue, maxColorValue);
+                    }
+                } else {
+                    surfPlot.setTextureModeVertices3D(TOTAL_COLORS, colorByHeight, 0.0, 360.0);
+                }
+            }
+            case COLOR_BY_SHAPLEY ->
+                surfPlot.setTextureModeVertices3D(TOTAL_COLORS, colorByShapley, 0.0, 360.0);
+        }
+    }
+
     public void updatePaintMesh() {
-        diffusePaintImage = new WritableImage(xWidth, zWidth);
+        if (surfPlot == null || surfPlot.getMesh() == null) return;
+        final int renderWidth = getRenderWidth();
+        final int renderHeight = getRenderHeight();
+        diffusePaintImage = new WritableImage(renderWidth, renderHeight);
         if (null == paintTriangleMesh) {
             paintTriangleMesh = new TriangleMesh();
             paintMeshView = new MeshView(paintTriangleMesh);
@@ -1109,8 +1332,8 @@ public class Hypersurface3DPane extends StackPane
         paintTriangleMesh.getFaces().setAll(faces);
         paintPhong.setDiffuseMap(diffusePaintImage);
         paintMeshView.setTranslateZ(-1);
-        paintMeshView.setTranslateX(-(xWidth * surfScale) / 2.0);
-        paintMeshView.setTranslateZ(-(zWidth * surfScale) / 2.0);
+        paintMeshView.setTranslateX(-getWorldWidth() / 2.0);
+        paintMeshView.setTranslateZ(-getWorldDepth() / 2.0);
     }
 
     public void paintSingleColor(Color color) {
@@ -1123,8 +1346,10 @@ public class Hypersurface3DPane extends StackPane
 
     public void illuminateCrosshair(Point3D center) {
         if (null == diffusePaintImage) return;
-        int x = (int) (center.getX() / surfScale);
-        int z = (int) (center.getZ() / surfScale);
+        int x = (int) Math.floor(center.getX() / Math.max(1e-9, getRenderScaleX()));
+        int z = (int) Math.floor(center.getZ() / Math.max(1e-9, getRenderScaleZ()));
+        x = Math.max(0, Math.min(x, (int) diffusePaintImage.getWidth() - 1));
+        z = Math.max(0, Math.min(z, (int) diffusePaintImage.getHeight() - 1));
         PixelWriter pw = diffusePaintImage.getPixelWriter();
         for (int i = 0; i < diffusePaintImage.getWidth(); i++) pw.setColor(i, z, Color.WHITE);
         for (int i = 0; i < diffusePaintImage.getHeight(); i++) pw.setColor(x, i, Color.WHITE);
@@ -1197,6 +1422,7 @@ public class Hypersurface3DPane extends StackPane
         }
         updateLabels();
         updateCalloutHeadPoints(subScene);
+        requestLodUpdate(LodManager.UpdateReason.DRAG);
     }
 
     private void updateLabels() {
@@ -1206,6 +1432,61 @@ public class Hypersurface3DPane extends StackPane
             double y = p2Ditty.getY() - 25;
             node.getTransforms().setAll(new Translate(x, y));
         });
+    }
+
+    private void handleSurfaceHover(Point3D surfacePoint) {
+        vertP3D = surfacePoint;
+        highlightedPoint.setTranslateX(vertP3D.x - getWorldWidth() / 2.0);
+        highlightedPoint.setTranslateY(vertP3D.y);
+        highlightedPoint.setTranslateZ(vertP3D.z - getWorldDepth() / 2.0);
+        updateCalloutHeadPoints(subScene);
+        updateLabels();
+
+        int row = Math.max(0, Math.min(
+            (int) Math.floor(vertP3D.getZ() / Math.max(1e-9, getRenderScaleZ())),
+            getRenderHeight() - 1));
+        int column = Math.max(0, Math.min(
+            (int) Math.floor(vertP3D.getX() / Math.max(1e-9, getRenderScaleX())),
+            getRenderWidth() - 1));
+        int orientedRenderRow = orientRowIndex(row, getRenderHeight());
+        int sourceRow = mapRenderIndexToSource(
+            orientedRenderRow, getRenderHeight(), getSourceHeight());
+
+        if (anchorCallout != null) {
+            if (sourceRow < featureVectors.size()) {
+                updateCalloutByFeatureVector(anchorCallout, featureVectors.get(sourceRow));
+            }
+            setSpheroidAnchor(false, sourceRow);
+        }
+        if (crosshairsEnabled && diffusePaintImage != null) {
+            paintSingleColor(Color.TRANSPARENT);
+            illuminateCrosshair(vertP3D);
+        }
+        if (surfaceChartsEnabled && activeHeightField != null) {
+            List<Double> xlist = getActiveRenderRow(row);
+            Double[] xRay = xlist.toArray(Double[]::new);
+            Double[] zRay = getActiveRenderColumn(column);
+            String text = "Coordinates: " + column + ", " + row + System.lineSeparator();
+            text = text.concat("Value: ")
+                .concat(String.valueOf(getActiveRenderValue(row, column)))
+                .concat(System.lineSeparator());
+            double maxX = xlist.stream().max(Double::compare).orElse(0.0);
+            text = text.concat("Max X: ").concat(String.valueOf(maxX)).concat(System.lineSeparator());
+            double minX = xlist.stream().min(Double::compare).orElse(0.0);
+            text = text.concat("Min X: ").concat(String.valueOf(minX)).concat(System.lineSeparator());
+            double maxZ = Arrays.stream(zRay).max(Double::compare).orElse(0.0);
+            text = text.concat("Max Z: ").concat(String.valueOf(maxZ)).concat(System.lineSeparator());
+            double minZ = Arrays.stream(zRay).min(Double::compare).orElse(0.0);
+            text = text.concat("Min Z: ").concat(String.valueOf(minZ)).concat(System.lineSeparator());
+            hoverText.setText(text);
+            hoverText.setStrokeWidth(1);
+            hoverText.setLayoutX(50);
+            hoverText.setLayoutY(50);
+            scene.getRoot().fireEvent(new FactorAnalysisEvent(
+                FactorAnalysisEvent.SURFACE_XFACTOR_VECTOR, xRay));
+            scene.getRoot().fireEvent(new FactorAnalysisEvent(
+                FactorAnalysisEvent.SURFACE_ZFACTOR_VECTOR, zRay));
+        }
     }
 
     private ImageView loadImageView(FeatureVector featureVector, boolean bboxOnly) {
@@ -1255,21 +1536,38 @@ public class Hypersurface3DPane extends StackPane
     }
 
     private Number vertToHeight(Vert3D p) {
-        if (dataGrid == null) return 0.0;
-
         if (!surfaceRender) {
-            // cylinder path unchanged
+            // cylinder path unchanged (uses dataGrid)
+            if (dataGrid == null) return 0.0;
             return findBlerpHeight(p);
         }
+
+        // Prefer primitive active LOD field
+        if (activeHeightField == null) {
+            if (dataGrid == null) return 0.0;
+            switch (interpMode) {
+                case BILINEAR:
+                case BICUBIC: {
+                    double gx = p.xIndex + frac(p.getX() / Math.max(1.0, surfScale));
+                    double gy = p.yIndex + frac(p.getY() / Math.max(1.0, surfScale));
+                    gy = orientRowCoordinate(gy, dataGrid.size());
+                    return SurfaceUtils.sample(dataGrid, gx, gy, interpMode);
+                }
+                case NEAREST:
+                default:
+                    return lookupPoint(p);
+            }
+        }
+
         switch (interpMode) {
             case BILINEAR:
             case BICUBIC: {
-                // Convert to grid space: index + in-cell fraction.
-                // If p.getX()/getY() are already grid-space, this still works.
-                // If they are world-space, the /surfScale fixes it.
-                double gx = p.xIndex + frac(p.getX() / Math.max(1.0, surfScale));
-                double gy = p.yIndex + frac(p.getY() / Math.max(1.0, surfScale));
-                return SurfaceUtils.sample(dataGrid, gx, gy, interpMode);
+                double sx = Double.isFinite(currentLodSurfScaleX) ? currentLodSurfScaleX : surfScale;
+                double sz = Double.isFinite(currentLodSurfScaleZ) ? currentLodSurfScaleZ : surfScale;
+                double gx = p.xIndex + frac(p.getX() / Math.max(1.0, sx));
+                double gy = p.yIndex + frac(p.getY() / Math.max(1.0, sz));
+                gy = orientRowCoordinate(gy, activeHeightField.height());
+                return SurfaceUtils.sample(activeHeightField, gx, gy, interpMode);
             }
             case NEAREST:
             default:
@@ -1278,11 +1576,45 @@ public class Hypersurface3DPane extends StackPane
     }
 
     private Number lookupPoint(Vert3D p) {
-        if (p.yIndex >= dataGrid.size() || p.xIndex >= dataGrid.get(0).size()) return 0.0;
-        return dataGrid.get(p.yIndex).get(p.xIndex);
+        if (activeHeightField != null) {
+            int w = activeHeightField.width();
+            int h = activeHeightField.height();
+            if (p.yIndex < 0 || p.yIndex >= h || p.xIndex < 0 || p.xIndex >= w) return 0.0;
+            int dataRow = orientRowIndex(p.yIndex, h);
+            return (double) activeHeightField.data()[dataRow * w + p.xIndex];
+        }
+        if (dataGrid == null) return 0.0;
+        if (p.yIndex < 0 || p.yIndex >= dataGrid.size()
+            || p.xIndex < 0 || p.xIndex >= dataGrid.get(0).size()) return 0.0;
+        int dataRow = orientRowIndex(p.yIndex, dataGrid.size());
+        return dataGrid.get(dataRow).get(p.xIndex);
     }
 
     private Number findBlerpHeight(Vert3D p) {
+        // Used by cylinder mode (and legacy paths). Works on activeHeightField if present.
+        if (activeHeightField != null) {
+            int w = activeHeightField.width();
+            int h = activeHeightField.height();
+            if (w <= 0 || h <= 0) return 0.0;
+
+            int x1Index = p.xIndex <= 0 ? 0 : p.xIndex - 1;
+            if (x1Index >= w - 1) x1Index = w - 1;
+            int x2Index = p.xIndex >= w - 1 ? w - 1 : p.xIndex + 1;
+
+            int y1Index = p.yIndex <= 0 ? 0 : p.yIndex - 1;
+            if (y1Index >= h - 1) y1Index = h - 1;
+            int y2Index = p.yIndex >= h - 1 ? h - 1 : p.yIndex + 1;
+
+            float[] d = activeHeightField.data();
+            double c11 = d[y1Index * w + x1Index] * yScale;
+            double c21 = d[y1Index * w + x2Index] * yScale;
+            double c12 = d[y2Index * w + x1Index] * yScale;
+            double c22 = d[y2Index * w + x2Index] * yScale;
+            return quickBlerp(c11, c21, c12, c22, p.getX(), p.getY());
+        }
+
+        if (dataGrid == null) return 0.0;
+
         int x1Index = p.xIndex <= 0 ? 0 : p.xIndex - 1;
         if (x1Index >= dataGrid.get(0).size() - 1) x1Index = dataGrid.get(0).size() - 1;
         int x2Index = p.xIndex >= dataGrid.get(0).size() - 1 ? dataGrid.get(0).size() - 1 : p.xIndex + 1;
@@ -1304,73 +1636,78 @@ public class Hypersurface3DPane extends StackPane
         return f12 + (f34 - f12) * yratio;
     }
 
-    int vert;
     Point3D vertP3D;
 
     private void loadSurf3D() {
         LOG.info("Rendering Hypersurface Mesh...");
         generateRandos(xWidth, zWidth, yScale);
-        originalGrid = deepCopyGrid(dataGrid); // NEW
+        captureDataGridAsSource();
         surfPlot = new HyperSurfacePlotMesh(xWidth, zWidth, 1, 1, yScale, surfScale, vert3DLookup);
+        surfPlot.setRowOrientation(getSurfaceRowOrientation());
+        surfPlot.setHeightOrientation(getSurfaceHeightOrientation());
         surfPlot.setTextureModeVertices3D(TOTAL_COLORS, colorByHeight, 0.0, 360.0);
-        surfPlot.setDrawMode(DrawMode.LINE);
+        surfPlot.setDrawMode(DrawMode.FILL);
         sceneRoot.getChildren().add(surfPlot);
-        surfPlot.setCullFace(CullFace.NONE);
+        surfPlot.setCullFace(CullFace.BACK);
         surfPlot.setTranslateX(-(xWidth * surfScale) / 2.0);
         surfPlot.setTranslateZ(-(zWidth * surfScale) / 2.0);
-        surfPlot.addEventHandler(MouseEvent.MOUSE_MOVED, e -> {
-            if (hoverInteractionsEnabled) {
-                javafx.geometry.Point3D p3D = e.getPickResult().getIntersectedPoint();
-                vertP3D = Point3D.convertFromJavaFXPoint3D(p3D);
-                highlightedPoint.setTranslateX(vertP3D.x - (xWidth * surfScale) / 2.0);
-                highlightedPoint.setTranslateY(vertP3D.y);
-                highlightedPoint.setTranslateZ(vertP3D.z - (zWidth * surfScale) / 2.0);
-                updateCalloutHeadPoints(subScene);
-                updateLabels();
-                int row = Float.valueOf(vertP3D.getZ() / surfScale).intValue();
-                int column = Float.valueOf(vertP3D.getX() / surfScale).intValue();
-                if (null != anchorCallout) {
-                    if (row < featureVectors.size()) updateCalloutByFeatureVector(anchorCallout, featureVectors.get(row));
-                    setSpheroidAnchor(false, row);
-                }
-                if (crosshairsEnabled) {
-                    paintSingleColor(Color.TRANSPARENT);
-                    illuminateCrosshair(vertP3D);
-                }
-                if (surfaceChartsEnabled) {
-                    List<Double> xlist = dataGrid.get(Math.max(0, Math.min(row, dataGrid.size() - 1)));
-                    Double[] xRay = xlist.toArray(Double[]::new);
-                    Double[] zRay = new Double[dataGrid.size()];
-                    for (int i = 0; i < dataGrid.size(); i++) zRay[i] = dataGrid.get(i).get(Math.max(0, Math.min(column, dataGrid.get(0).size() - 1)));
-                    String text = "Coordinates: " + column + ", " + row + System.lineSeparator();
-                    text = text.concat("Value: ").concat(String.valueOf(dataGrid.get(Math.max(0, Math.min(row, dataGrid.size() - 1))).get(Math.max(0, Math.min(column, dataGrid.get(0).size() - 1))))).concat(System.lineSeparator());
-                    double maxX = xlist.stream().max(Double::compare).get();
-                    text = text.concat("Max X: ").concat(String.valueOf(maxX)).concat(System.lineSeparator());
-                    double minX = xlist.stream().min(Double::compare).get();
-                    text = text.concat("Min X: ").concat(String.valueOf(minX)).concat(System.lineSeparator());
-                    double maxZ = Arrays.stream(zRay).max(Double::compare).get();
-                    text = text.concat("Max Z: ").concat(String.valueOf(maxZ)).concat(System.lineSeparator());
-                    double minZ = Arrays.stream(zRay).min(Double::compare).get();
-                    text = text.concat("Min Z: ").concat(String.valueOf(minZ)).concat(System.lineSeparator());
-                    hoverText.setText(text);
-                    hoverText.setStrokeWidth(1);
-                    hoverText.setLayoutX(50);
-                    hoverText.setLayoutY(50);
-                    scene.getRoot().fireEvent(new FactorAnalysisEvent(FactorAnalysisEvent.SURFACE_XFACTOR_VECTOR, xRay));
-                    scene.getRoot().fireEvent(new FactorAnalysisEvent(FactorAnalysisEvent.SURFACE_ZFACTOR_VECTOR, zRay));
-                }
+        
+
+        // Initialize LOD manager (screen-space selection + throttle/debounce scheduling)
+        if (lodManager == null) {
+            lodManager = new LodManager(camera, subScene, surfPlot);
+            LodManager.LodConfig cfg = new LodManager.LodConfig();
+            cfg.targetPixelsPerCell = 1.5;
+            cfg.lowThreshold = 1.0;
+            cfg.highThreshold = 2.0;
+            cfg.throttleMs = 75;
+            cfg.debounceMs = 75;
+            lodManager.setConfig(cfg);
+            lodManager.setOnLodSelected(idx -> {
+                if (!shouldUseTiledHeightFieldRenderer()) applyActiveLodIndex(idx);
+            });
+        }
+
+        if (tiledSurfaceRenderer == null) {
+            tiledSurfaceRenderer = new TiledSurfaceRenderer(camera, subScene);
+            tiledSurfaceRenderer.setRowOrientation(getSurfaceRowOrientation());
+            tiledSurfaceRenderer.setHeightOrientation(getSurfaceHeightOrientation());
+            tiledSurfaceRenderer.setTileCellsL0(tileCellsL0);
+            tiledSurfaceRenderer.setVisible(false);
+            tiledSurfaceRenderer.setHoverPickingEnabled(hoverInteractionsEnabled);
+            sceneRoot.getChildren().add(tiledSurfaceRenderer);
+            tiledSurfaceRenderer.addEventHandler(MouseEvent.MOUSE_MOVED, e -> {
+                if (!hoverInteractionsEnabled) return;
+                Node picked = e.getPickResult().getIntersectedNode();
+                javafx.geometry.Point3D pickedPoint = e.getPickResult().getIntersectedPoint();
+                if (picked == null || pickedPoint == null) return;
+                javafx.geometry.Point3D scenePoint = picked.localToScene(pickedPoint);
+                javafx.geometry.Point3D surfacePoint = tiledSurfaceRenderer.sceneToLocal(scenePoint);
+                handleSurfaceHover(Point3D.convertFromJavaFXPoint3D(surfacePoint));
                 e.consume();
-            }
+            });
+        }
+
+        // Build processed pyramid and apply initial LOD. The primitive source cache is
+        // created by rebuildProcessedGridAndRefresh() from the current source snapshot.
+        rebuildProcessedGridAndRefresh();
+
+        surfPlot.addEventHandler(MouseEvent.MOUSE_MOVED, e -> {
+            if (!hoverInteractionsEnabled) return;
+            javafx.geometry.Point3D p3D = e.getPickResult().getIntersectedPoint();
+            if (p3D == null) return;
+            handleSurfaceHover(Point3D.convertFromJavaFXPoint3D(p3D));
+            e.consume();
         });
 
         Glow glow = new Glow(0.8);
         double poleHeight = 60;
         double radius = 3;
-        glowLineBox = new Box(xWidth * surfScale, poleHeight, radius);
+        glowLineBox = new Box(getWorldWidth(), poleHeight, radius);
         glowLineBox.setMaterial(new PhongMaterial(Color.ALICEBLUE.deriveColor(1, 1, 1, 0.2)));
         glowLineBox.setDrawMode(DrawMode.FILL);
         glowLineBox.setEffect(glow);
-        glowLineBox.setTranslateZ(-(zWidth * surfScale) / 2.0);
+        glowLineBox.setTranslateZ(-getWorldDepth() / 2.0);
         eastPole = new Cylinder(radius * 2, poleHeight * 1.2);
         westPole = new Cylinder(radius * 2, poleHeight * 1.2);
         eastKnob = new Sphere(radius * 3);
@@ -1382,10 +1719,10 @@ public class Hypersurface3DPane extends StackPane
         westPole.setMaterial(westPoleMaterial);
         eastKnob.setMaterial(knobMaterial);
         westKnob.setMaterial(knobMaterial);
-        eastPole.setTranslateX((xWidth * surfScale) / 2.0);
-        westPole.setTranslateX(-(xWidth * surfScale) / 2.0);
-        eastKnob.setTranslateX((xWidth * surfScale) / 2.0);
-        westKnob.setTranslateX(-(xWidth * surfScale) / 2.0);
+        eastPole.setTranslateX(getWorldWidth() / 2.0);
+        westPole.setTranslateX(-getWorldWidth() / 2.0);
+        eastKnob.setTranslateX(getWorldWidth() / 2.0);
+        westKnob.setTranslateX(-getWorldWidth() / 2.0);
         eastKnob.setTranslateY(-(poleHeight * 1.2) / 2.0);
         westKnob.setTranslateY(-(poleHeight * 1.2) / 2.0);
         eastPole.translateZProperty().bind(glowLineBox.translateZProperty());
@@ -1407,9 +1744,9 @@ public class Hypersurface3DPane extends StackPane
             anchorIndex = (int) e.object;
             if (anchorIndex < 0) anchorIndex = 0;
             else if (anchorIndex > dataGrid.size()) anchorIndex = dataGrid.size();
-            glowLineBox.setTranslateZ((anchorIndex * surfScale) - ((zWidth * surfScale) / 2.0));
+            glowLineBox.setTranslateZ((anchorIndex * surfScale) - (getWorldDepth() / 2.0));
             setSpheroidAnchor(true, anchorIndex);
-            eastLabel.setText("Sample: " + anchorIndex + ", Neural Feature: " + xWidth);
+            eastLabel.setText("Sample: " + anchorIndex + ", Neural Feature: " + getSourceWidth());
             westLabel.setText("Sample: " + anchorIndex + ", Neural Feature: 0");
             updateLabels();
             updateCalloutHeadPoints(subScene);
@@ -1424,12 +1761,12 @@ public class Hypersurface3DPane extends StackPane
         extrasGroup.getChildren().addAll(eastPole, eastKnob, westPole, westKnob, glowLineBox);
         wireEventHandlers();
 
-        pointLight.getScope().addAll(surfPlot, graphLayer);
+        pointLight.getScope().addAll(surfPlot, tiledSurfaceRenderer, graphLayer);
         sceneRoot.getChildren().add(pointLight);
         pointLight.translateXProperty().bind(camera.translateXProperty());
         pointLight.translateYProperty().bind(camera.translateYProperty());
         pointLight.translateZProperty().bind(camera.translateZProperty().add(500));
-        ambientLight.getScope().addAll(surfPlot, graphLayer);
+        ambientLight.getScope().addAll(surfPlot, tiledSurfaceRenderer, graphLayer);
         sceneRoot.getChildren().add(ambientLight);
 
         updateLabels();
@@ -1447,12 +1784,19 @@ public class Hypersurface3DPane extends StackPane
      * (xWidth, zWidth, yScale, surfScale) to synchronize GUI controls with model state.
      */
     public void syncGuiControls() {
-        // Fire events to update GUI controls in the controls pane
-        // These will be handled by HypersurfaceControlsPane to update Spinner values.
-        fireOnRoot(HypersurfaceEvent.setXWidthGUI(xWidth));
-        fireOnRoot(HypersurfaceEvent.setZWidthGUI(zWidth));
-        fireOnRoot(HypersurfaceEvent.setYScaleGUI(yScale));
-        fireOnRoot(HypersurfaceEvent.setSurfScaleGUI(surfScale));
+        // SET_*_GUI events update Spinner values synchronously. Those Spinner value
+        // listeners echo XWIDTH_CHANGED/ZWIDTH_CHANGED/etc. back through the Scene.
+        // Mark the entire model -> GUI synchronization window so those echoes do not
+        // trigger geometry rebuilds.
+        syncingGuiControls = true;
+        try {
+            fireOnRoot(HypersurfaceEvent.setXWidthGUI(xWidth));
+            fireOnRoot(HypersurfaceEvent.setZWidthGUI(zWidth));
+            fireOnRoot(HypersurfaceEvent.setYScaleGUI(yScale));
+            fireOnRoot(HypersurfaceEvent.setSurfScaleGUI(surfScale));
+        } finally {
+            syncingGuiControls = false;
+        }
     }
 
     /**
@@ -1474,8 +1818,11 @@ public class Hypersurface3DPane extends StackPane
         if (scene == null) return;
         // Geometry / scale
         scene.addEventHandler(HypersurfaceEvent.XWIDTH_CHANGED, e -> {
+            if (syncingGuiControls) return;
             this.xWidth = (int) e.object;
-            if (surfPlot != null) {
+            // When an LOD pyramid is active, its HeightField dimensions own the render
+            // mesh. Do not let GUI synchronization overwrite the constant-world transform.
+            if (surfPlot != null && activeHeightField == null) {
                 surfPlot.setTranslateX(-(xWidth * surfScale) / 2.0);
                 surfPlot.setTranslateZ(-(zWidth * surfScale) / 2.0);
             }
@@ -1483,8 +1830,9 @@ public class Hypersurface3DPane extends StackPane
         });
 
         scene.addEventHandler(HypersurfaceEvent.ZWIDTH_CHANGED, e -> {
+            if (syncingGuiControls) return;
             this.zWidth = (int) e.object;
-            if (surfPlot != null) {
+            if (surfPlot != null && activeHeightField == null) {
                 surfPlot.setTranslateX(-(xWidth * surfScale) / 2.0);
                 surfPlot.setTranslateZ(-(zWidth * surfScale) / 2.0);
             }
@@ -1492,19 +1840,16 @@ public class Hypersurface3DPane extends StackPane
         });
 
         scene.addEventHandler(HypersurfaceEvent.Y_SCALE_CHANGED, e -> {
+            if (syncingGuiControls) return;
             this.yScale = ((Double) e.object).floatValue();
             if (surfPlot != null) surfPlot.setFunctionScale(yScale);
             updateTheMesh();
         });
 
         scene.addEventHandler(HypersurfaceEvent.SURF_SCALE_CHANGED, e -> {
+            if (syncingGuiControls) return;
             this.surfScale = ((Double) e.object).floatValue();
-            if (surfPlot != null) {
-                surfPlot.setRangeX(xWidth * surfScale);
-                surfPlot.setRangeY(zWidth * surfScale);
-                surfPlot.setTranslateX(-(xWidth * surfScale) / 2.0);
-                surfPlot.setTranslateZ(-(zWidth * surfScale) / 2.0);
-            }
+            refreshWorldExtentsAndLodMetadata();
             updateTheMesh();
         });
 
@@ -1514,14 +1859,43 @@ public class Hypersurface3DPane extends StackPane
             updateTheMesh();
         });
         scene.addEventHandler(HypersurfaceEvent.DRAW_MODE_CHANGED, e -> {
-            if (surfPlot != null) surfPlot.setDrawMode((DrawMode) e.object);
+            DrawMode drawMode = (DrawMode) e.object;
+            if (surfPlot != null) surfPlot.setDrawMode(drawMode);
+            if (tiledSurfaceRenderer != null) tiledSurfaceRenderer.setDrawMode(drawMode);
         });
         scene.addEventHandler(HypersurfaceEvent.CULL_FACE_CHANGED, e -> {
-            if (surfPlot != null) surfPlot.setCullFace((CullFace) e.object);
+            CullFace cullFace = (CullFace) e.object;
+            if (surfPlot != null) surfPlot.setCullFace(cullFace);
+            if (tiledSurfaceRenderer != null) tiledSurfaceRenderer.setCullFace(cullFace);
         });
         scene.addEventHandler(HypersurfaceEvent.COLORATION_CHANGED, e -> {
-            this.colorationMethod = (Hypersurface3DPane.COLORATION) e.object;
-            updateTheMesh();
+            COLORATION previous = this.colorationMethod;
+            COLORATION next = (Hypersurface3DPane.COLORATION) e.object;
+            this.colorationMethod = next;
+
+            // Shapley currently uses the legacy mesh metadata path. Crossing into or
+            // out of that mode therefore requires a geometry rebuild. Image <-> feature
+            // coloration only changes UV/material state on the direct mesh.
+            boolean shapleyPathChanged = (previous == COLORATION.COLOR_BY_SHAPLEY)
+                != (next == COLORATION.COLOR_BY_SHAPLEY);
+            if (shapleyPathChanged) {
+                if (next == COLORATION.COLOR_BY_SHAPLEY
+                    && lodManager != null
+                    && lodProcessedLevels != null
+                    && !lodProcessedLevels.isEmpty()) {
+                    activeLodIndex = -1;
+                    activeHeightField = null;
+                    lodManager.setPyramid(
+                        LodManager.fromHeightFields(lodProcessedLevels),
+                        baseWorldWidth, baseWorldDepth, -1);
+                    lodManager.forceUpdate();
+                } else if (shouldUseTiledHeightFieldRenderer()) {
+                    configureTiledPyramid();
+                }
+                updateTheMesh();
+            } else {
+                applyCurrentColoration();
+            }
         });
 
         // Processing pipeline
@@ -1573,12 +1947,19 @@ public class Hypersurface3DPane extends StackPane
             // (Optional: enable/disable pointLight as desired)
         });
         scene.addEventHandler(HypersurfaceEvent.SPECULAR_COLOR_CHANGED, e -> {
+            Color color = (Color) e.object;
             if (surfPlot != null && surfPlot.getMaterial() instanceof PhongMaterial mat)
-                mat.setSpecularColor((Color) e.object);
+                mat.setSpecularColor(color);
+            if (tiledSurfaceRenderer != null) tiledSurfaceRenderer.setSpecularColor(color);
         });
 
         // UX toggles
-        scene.addEventHandler(HypersurfaceEvent.HOVER_ENABLE_CHANGED, e -> hoverInteractionsEnabled = (boolean) e.object);
+        scene.addEventHandler(HypersurfaceEvent.HOVER_ENABLE_CHANGED, e -> {
+            hoverInteractionsEnabled = (boolean) e.object;
+            if (tiledSurfaceRenderer != null) {
+                tiledSurfaceRenderer.setHoverPickingEnabled(hoverInteractionsEnabled);
+            }
+        });
         scene.addEventHandler(HypersurfaceEvent.SURFACE_CHARTS_ENABLE_CHANGED, e -> surfaceChartsEnabled = (boolean) e.object);
         scene.addEventHandler(HypersurfaceEvent.DATA_MARKERS_ENABLE_CHANGED, e -> extrasGroup.setVisible((boolean) e.object));
         scene.addEventHandler(HypersurfaceEvent.CROSSHAIRS_ENABLE_CHANGED, e -> crosshairsEnabled = (boolean) e.object);
@@ -1700,6 +2081,7 @@ public class Hypersurface3DPane extends StackPane
         dataGrid.clear();
         featureVectors.clear();
         originalGrid.clear();
+        resetLodDataState();
     }
 
     public void showAll() {
@@ -1808,24 +2190,24 @@ public class Hypersurface3DPane extends StackPane
         zWidth = neuralData.size();
         xWidth = neuralData.get(0).size() / 2;
         syncGuiControls();
-        originalGrid = deepCopyGrid(dataGrid); // NEW
+        captureDataGridAsSource();
         rebuildProcessedGridAndRefresh();      // NEW
 
-        xSphere.setTranslateX((xWidth * surfScale) / 2.0);
-        zSphere.setTranslateZ((zWidth * surfScale) / 2.0);
+        xSphere.setTranslateX(getWorldWidth() / 2.0);
+        zSphere.setTranslateZ(getWorldDepth() / 2.0);
 
-        double poleHeight = surfPlot.getMaxY() * 2;
-        glowLineBox.setWidth(xWidth * surfScale);
+        double poleHeight = surfPlot.getMaxAbsY() * 2;
+        glowLineBox.setWidth(getWorldWidth());
         glowLineBox.setHeight(poleHeight);
         eastPole.setHeight(poleHeight * 1.2);
         westPole.setHeight(poleHeight * 1.2);
-        eastPole.setTranslateX(-(xWidth * surfScale) / 2.0);
-        westPole.setTranslateX((xWidth * surfScale) / 2.0);
-        eastKnob.setTranslateX((xWidth * surfScale) / 2.0);
-        westKnob.setTranslateX(-(xWidth * surfScale) / 2.0);
+        eastPole.setTranslateX(-getWorldWidth() / 2.0);
+        westPole.setTranslateX(getWorldWidth() / 2.0);
+        eastKnob.setTranslateX(getWorldWidth() / 2.0);
+        westKnob.setTranslateX(-getWorldWidth() / 2.0);
         eastKnob.setTranslateY(-(poleHeight * 1.2) / 2.0);
         westKnob.setTranslateY(-(poleHeight * 1.2) / 2.0);
-        eastLabel.setText("Sample: " + anchorIndex + ", Neural Feature: " + xWidth);
+        eastLabel.setText("Sample: " + anchorIndex + ", Neural Feature: " + getSourceWidth());
         westLabel.setText("Sample: " + anchorIndex + ", Neural Feature: 0");
         updateLabels();
     }
@@ -1863,7 +2245,7 @@ public class Hypersurface3DPane extends StackPane
         zWidth = dataGrid.size();
         xWidth = dataGrid.get(0).size();
         syncGuiControls();
-        originalGrid = deepCopyGrid(dataGrid);
+        captureDataGridAsSource();
         rebuildProcessedGridAndRefresh();
         getScene().getRoot().fireEvent(new CommandTerminalEvent("Hypersurface updated. ", new Font("Consolas", 20), Color.GREEN));
         featureVectors = featureCollection.getFeatures();
@@ -1873,7 +2255,7 @@ public class Hypersurface3DPane extends StackPane
     public void addFeatureVector(FeatureVector featureVector) {
         featureVectors.add(featureVector);
         dataGrid.add(featureVector.getData());
-        originalGrid = deepCopyGrid(dataGrid);
+        captureDataGridAsSource();
         rebuildProcessedGridAndRefresh();
     }
 
@@ -1887,6 +2269,7 @@ public class Hypersurface3DPane extends StackPane
         featureVectors.clear();
         dataGrid.clear();
         originalGrid.clear();
+        resetLodDataState();
     }
 
     @Override
@@ -1930,47 +2313,138 @@ public class Hypersurface3DPane extends StackPane
         double z = index * surfScale;
     }
 
-    private void tessellateImage(Image image, int x1, int y1, int x2, int y2) {
-        lastImage = image;
-        long startTime = System.nanoTime();
-        LOG.info("Mapping Image Raster to Feature Vector... ");
-        int rows = (int) image.getHeight();
-        int columns = (int) image.getWidth();
-        PixelReader pr = image.getPixelReader();
-        Color color = null;
-        int rgb, r, g, b = 0;
-        double dataValue = 0;
-        if (null == dataGrid) dataGrid = new ArrayList<>(rows);
-        else dataGrid.clear();
-        featureVectors.clear();
-        for (int rowIndex = y1; rowIndex < y2; rowIndex++) {
-            List<Double> currentDataRow = new ArrayList<>();
-            for (int colIndex = x1; colIndex < x2; colIndex++) {
-                color = pr.getColor(colIndex, rowIndex);
-                rgb = (pr.getArgb(colIndex, rowIndex));
-                FeatureVector fv = FeatureVector.EMPTY_FEATURE_VECTOR(color.toString(), 3);
-                fv.getData().set(0, (double) colIndex / columns);
-                fv.getData().set(1, (double) rowIndex / rows);
-                r = (rgb >> 16) & 0xFF;
-                g = (rgb >> 8) & 0xFF;
-                b = rgb & 0xFF;
-                dataValue = (((r + g + b) / 3.0) / 255.0);
-                fv.getData().set(2, dataValue);
-                featureVectors.add(fv);
-                currentDataRow.add(dataValue);
+    /**
+     * Builds the raw image L0 directly from PixelReader without first allocating a
+     * full-resolution float raster. For sources above maxRender this reduces both
+     * persistent heap usage and source-pixel reads substantially.
+     */
+    private static HeightField buildImageRawL0(PixelReader pixelReader,
+                                                int startX, int startY,
+                                                int sourceWidth, int sourceHeight,
+                                                int maxRender) {
+        int[] dims = SurfaceUtils.computeL0Dimensions(sourceWidth, sourceHeight, maxRender);
+        int targetWidth = dims[0];
+        int targetHeight = dims[1];
+        float[] out = new float[Math.multiplyExact(targetWidth, targetHeight)];
+
+        if (targetWidth == sourceWidth && targetHeight == sourceHeight) {
+            int index = 0;
+            for (int y = 0; y < sourceHeight; y++) {
+                int sourceY = startY + y;
+                for (int x = 0; x < sourceWidth; x++) {
+                    out[index++] = grayscale(pixelReader.getArgb(startX + x, sourceY));
+                }
             }
-            dataGrid.add(currentDataRow);
+            return new HeightField(targetWidth, targetHeight, out);
         }
+
+        double xRatio = sourceWidth / (double) targetWidth;
+        double yRatio = sourceHeight / (double) targetHeight;
+        for (int y = 0; y < targetHeight; y++) {
+            double gy = (y + 0.5) * yRatio - 0.5;
+            gy = Math.max(0.0, Math.min(sourceHeight - 1.0, gy));
+            int y0 = (int) Math.floor(gy);
+            int y1 = Math.min(sourceHeight - 1, y0 + 1);
+            double ty = y0 == y1 ? 0.0 : gy - y0;
+
+            for (int x = 0; x < targetWidth; x++) {
+                double gx = (x + 0.5) * xRatio - 0.5;
+                gx = Math.max(0.0, Math.min(sourceWidth - 1.0, gx));
+                int x0 = (int) Math.floor(gx);
+                int x1 = Math.min(sourceWidth - 1, x0 + 1);
+                double tx = x0 == x1 ? 0.0 : gx - x0;
+
+                double c00 = grayscale(pixelReader.getArgb(startX + x0, startY + y0));
+                double c10 = grayscale(pixelReader.getArgb(startX + x1, startY + y0));
+                double c01 = grayscale(pixelReader.getArgb(startX + x0, startY + y1));
+                double c11 = grayscale(pixelReader.getArgb(startX + x1, startY + y1));
+                double top = c00 + (c10 - c00) * tx;
+                double bottom = c01 + (c11 - c01) * tx;
+                out[y * targetWidth + x] = (float) (top + (bottom - top) * ty);
+            }
+        }
+        return new HeightField(targetWidth, targetHeight, out);
+    }
+
+    private static float grayscale(int argb) {
+        int red = (argb >> 16) & 0xFF;
+        int green = (argb >> 8) & 0xFF;
+        int blue = argb & 0xFF;
+        return (float) (((red + green + blue) / 3.0) / 255.0);
+    }
+
+    private void tessellateImage(Image image, int x1, int y1, int x2, int y2) {
+        final int imageWidth = (int) image.getWidth();
+        final int imageHeight = (int) image.getHeight();
+        final int startX = Math.max(0, Math.min(x1, imageWidth));
+        final int startY = Math.max(0, Math.min(y1, imageHeight));
+        final int endX = Math.max(startX, Math.min(x2, imageWidth));
+        final int endY = Math.max(startY, Math.min(y2, imageHeight));
+        final int sourceWidth = endX - startX;
+        final int sourceHeight = endY - startY;
+
+        if (sourceWidth <= 0 || sourceHeight <= 0) {
+            LOG.warn("Ignoring empty image tessellation region: ({}, {}) to ({}, {}) for {}x{} image",
+                x1, y1, x2, y2, imageWidth, imageHeight);
+            return;
+        }
+
+        long startTime = System.nanoTime();
+        System.out.println("Mapping Image Raster directly to capped primitive L0: "
+            + sourceWidth + "x" + sourceHeight);
+
+        PixelReader pixelReader = image.getPixelReader();
+        if (pixelReader == null) {
+            LOG.warn("Unable to tessellate image because PixelReader is unavailable.");
+            return;
+        }
+
+        // Validate the incoming image first, then release every large render-side object
+        // derived from the previous image before allocating the new full-resolution
+        // primitive height array. This minimizes the transient heap peak when replacing
+        // 4K/8K sources. The method parameter retains the new Image while lastImage and
+        // the tiled renderer are allowed to release the old one.
+        releaseImageBackedStateForReplacement();
+        lastImage = image;
+
+        // Retain source-region metadata, but do not allocate a full-resolution
+        // HeightField for large images. Build the capped raw L0 directly from PixelReader.
+        imageSourceStartX = startX;
+        imageSourceStartY = startY;
+        imageSourceWidth = sourceWidth;
+        imageSourceHeight = sourceHeight;
+        processingSourceHeightField = buildImageRawL0(pixelReader,
+            startX, startY, sourceWidth, sourceHeight, maxRenderResolution);
+
+        // Image-backed hypersurfaces use the capped primitive L0 as the authoritative
+        // processing source. Do not manufacture one FeatureVector or boxed Double per pixel.
+        featureVectors.clear();
+        if (dataGrid == null) dataGrid = new ArrayList<>();
+        else dataGrid.clear();
+        if (originalGrid == null) originalGrid = new ArrayList<>();
+        else originalGrid.clear();
+        imageBackedSurface = true;
+
+        // A new primitive source invalidates only state derived from the previous source.
+        lodProcessedLevels = List.of();
+        activeLodIndex = -1;
+        activeHeightField = null;
+        baseWorldWidth = Double.NaN;
+        baseWorldDepth = Double.NaN;
+        currentLodSurfScaleX = Double.NaN;
+        currentLodSurfScaleZ = Double.NaN;
+        setSourceDefaultRowOrientation(SurfaceRowOrientation.FIRST_ROW_FAR);
+
         Utils.printTotalTime(startTime);
-        LOG.info("Injecting Mesh into Hypersurface... ");
+        System.out.println("Injecting primitive image HeightField into Hypersurface...");
         startTime = System.nanoTime();
-        zWidth = rows;
-        xWidth = columns;
+
+        xWidth = sourceWidth;
+        zWidth = sourceHeight;
         syncGuiControls();
-        originalGrid = deepCopyGrid(dataGrid);
         rebuildProcessedGridAndRefresh();
-        xSphere.setTranslateX((xWidth * surfScale) / 2.0);
-        zSphere.setTranslateZ((zWidth * surfScale) / 2.0);
+        xSphere.setTranslateX(getWorldWidth() / 2.0);
+        zSphere.setTranslateZ(getWorldDepth() / 2.0);
         Utils.printTotalTime(startTime);
     }
 
@@ -1993,11 +2467,11 @@ public class Hypersurface3DPane extends StackPane
                     surfPlot.functionValues.add(shapleyVectors.get(i).getData().get(0) * yScale);
                 }
                 Utils.printTotalTime(startTime);
-                if (null == colorationMethod) surfPlot.setTextureModeVertices3D(TOTAL_COLORS, colorByHeight, 0.0, 360.0);
-                switch (colorationMethod) {
-                    case COLOR_BY_IMAGE -> surfPlot.setTextureModeImage(imageryBasePath + lastImageSource);
-                    case COLOR_BY_FEATURE -> surfPlot.setTextureModeVertices3D(TOTAL_COLORS, colorByHeight, 0.0, 360.0);
-                    default -> surfPlot.setTextureModeVertices3D(TOTAL_COLORS, colorByShapley, 0.0, 360.0);
+                if (colorationMethod == COLORATION.COLOR_BY_SHAPLEY) {
+                    // Rebuild through the legacy metadata path so p.f remains available.
+                    updateTheMesh();
+                } else {
+                    applyCurrentColoration();
                 }
             }
         } catch (IOException ex) {
@@ -2022,22 +2496,604 @@ public class Hypersurface3DPane extends StackPane
         return out;
     }
 
+    /**
+     * Releases render-side state owned by the previous image before a replacement
+     * image allocates its capped primitive L0 HeightField. Keeping this separate
+     * from resetLodDataState() preserves the incoming source type/orientation workflow
+     * while aggressively dropping references to large cached TriangleMeshes, LOD
+     * HeightFields, and the previous JavaFX Image.
+     */
+    private void releaseImageBackedStateForReplacement() {
+        if (tiledSurfaceRenderer != null) {
+            tiledSurfaceRenderer.clearSurface();
+            tiledSurfaceRenderer.setVisible(false);
+        }
+        if (surfPlot != null) {
+            surfPlot.setVisible(false);
+        }
+        if (paintMeshView != null) {
+            paintMeshView.setVisible(false);
+        }
+
+        processingSourceHeightField = null;
+        imageSourceStartX = 0;
+        imageSourceStartY = 0;
+        imageSourceWidth = 0;
+        imageSourceHeight = 0;
+        lodProcessedLevels = List.of();
+        activeLodIndex = -1;
+        activeHeightField = null;
+        baseWorldWidth = Double.NaN;
+        baseWorldDepth = Double.NaN;
+        currentLodSurfScaleX = Double.NaN;
+        currentLodSurfScaleZ = Double.NaN;
+
+        // Drop the pane's reference to the previous image. The incoming Image remains
+        // strongly referenced by tessellateImage() and is assigned after this release.
+        lastImage = null;
+    }
+
+    /**
+     * Snapshot the current boxed working grid as the authoritative source for the
+     * render pipeline. Any primitive source cache and render pyramid derived from the
+     * previous source become invalid immediately.
+     */
+    private void captureDataGridAsSource() {
+        // Boxed grids represent data/FeatureCollection-backed surfaces, whose historical
+        // world-size behavior remains sourceDimension * surfScale.
+        boolean wasImageBacked = imageBackedSurface;
+        imageBackedSurface = false;
+        if (wasImageBacked) {
+            setSourceDefaultRowOrientation(SurfaceRowOrientation.FIRST_ROW_NEAR);
+        }
+        if (dataGrid == null || dataGrid.isEmpty()) {
+            originalGrid = new ArrayList<>();
+            resetLodDataState();
+            return;
+        }
+        originalGrid = deepCopyGrid(dataGrid);
+        processingSourceHeightField = null;
+        imageSourceStartX = 0;
+        imageSourceStartY = 0;
+        imageSourceWidth = 0;
+        imageSourceHeight = 0;
+    }
+
+    private void resetLodDataState() {
+        imageBackedSurface = false;
+        setSourceDefaultRowOrientation(SurfaceRowOrientation.FIRST_ROW_NEAR);
+        processingSourceHeightField = null;
+        imageSourceStartX = 0;
+        imageSourceStartY = 0;
+        imageSourceWidth = 0;
+        imageSourceHeight = 0;
+        lodProcessedLevels = List.of();
+        activeLodIndex = -1;
+        activeHeightField = null;
+        baseWorldWidth = Double.NaN;
+        baseWorldDepth = Double.NaN;
+        currentLodSurfScaleX = Double.NaN;
+        currentLodSurfScaleZ = Double.NaN;
+        if (tiledSurfaceRenderer != null) {
+            tiledSurfaceRenderer.clearSurface();
+            tiledSurfaceRenderer.setVisible(false);
+        }
+    }
+
+    private int getSourceWidth() {
+        if (imageBackedSurface && imageSourceWidth > 0) return imageSourceWidth;
+        if (processingSourceHeightField != null) return processingSourceHeightField.width();
+        if (originalGrid != null && !originalGrid.isEmpty()) return originalGrid.get(0).size();
+        if (dataGrid != null && !dataGrid.isEmpty()) return dataGrid.get(0).size();
+        return Math.max(1, xWidth);
+    }
+
+    private int getSourceHeight() {
+        if (imageBackedSurface && imageSourceHeight > 0) return imageSourceHeight;
+        if (processingSourceHeightField != null) return processingSourceHeightField.height();
+        if (originalGrid != null && !originalGrid.isEmpty()) return originalGrid.size();
+        if (dataGrid != null && !dataGrid.isEmpty()) return dataGrid.size();
+        return Math.max(1, zWidth);
+    }
+
+    private int getRenderWidth() {
+        return activeHeightField != null ? activeHeightField.width() : Math.max(1, xWidth);
+    }
+
+    private int getRenderHeight() {
+        return activeHeightField != null ? activeHeightField.height() : Math.max(1, zWidth);
+    }
+
+    private double getRenderScaleX() {
+        return Double.isFinite(currentLodSurfScaleX) ? currentLodSurfScaleX : surfScale;
+    }
+
+    private double getRenderScaleZ() {
+        return Double.isFinite(currentLodSurfScaleZ) ? currentLodSurfScaleZ : surfScale;
+    }
+
+    private double getWorldWidth() {
+        if (Double.isFinite(baseWorldWidth)) return baseWorldWidth;
+        int sourceWidth = getSourceWidth();
+        int sourceHeight = getSourceHeight();
+        return calculateWorldWidth(sourceWidth, sourceHeight);
+    }
+
+    private double getWorldDepth() {
+        if (Double.isFinite(baseWorldDepth)) return baseWorldDepth;
+        int sourceWidth = getSourceWidth();
+        int sourceHeight = getSourceHeight();
+        return calculateWorldDepth(sourceWidth, sourceHeight);
+    }
+
+    private double imageWorldLongAxisExtent() {
+        return nominalImageWorldExtent * (surfScale / imageWorldExtentReferenceScale);
+    }
+
+    private double calculateWorldWidth(int sourceWidth, int sourceHeight) {
+        if (!imageBackedSurface) return sourceWidth * surfScale;
+        if (sourceWidth <= 0 || sourceHeight <= 0) return nominalImageWorldExtent;
+        double longAxis = imageWorldLongAxisExtent();
+        if (sourceWidth >= sourceHeight) return longAxis;
+        return longAxis * sourceWidth / (double) sourceHeight;
+    }
+
+    private double calculateWorldDepth(int sourceWidth, int sourceHeight) {
+        if (!imageBackedSurface) return sourceHeight * surfScale;
+        if (sourceWidth <= 0 || sourceHeight <= 0) return nominalImageWorldExtent;
+        double longAxis = imageWorldLongAxisExtent();
+        if (sourceHeight >= sourceWidth) return longAxis;
+        return longAxis * sourceHeight / (double) sourceWidth;
+    }
+
+    private void recomputeBaseWorldExtents() {
+        int sourceWidth = getSourceWidth();
+        int sourceHeight = getSourceHeight();
+        baseWorldWidth = calculateWorldWidth(sourceWidth, sourceHeight);
+        baseWorldDepth = calculateWorldDepth(sourceWidth, sourceHeight);
+    }
+
+    private static int mapRenderIndexToSource(int renderIndex, int renderSize, int sourceSize) {
+        if (sourceSize <= 1 || renderSize <= 1) return 0;
+        double sourceCoordinate = ((renderIndex + 0.5) * sourceSize / (double) renderSize) - 0.5;
+        return Math.max(0, Math.min((int) Math.round(sourceCoordinate), sourceSize - 1));
+    }
+
+    private double getActiveRenderValue(int row, int column) {
+        if (activeHeightField == null) return 0.0;
+        int r = orientRowIndex(row, activeHeightField.height());
+        int c = Math.max(0, Math.min(column, activeHeightField.width() - 1));
+        return activeHeightField.get(c, r);
+    }
+
+    private List<Double> getActiveRenderRow(int row) {
+        if (activeHeightField == null) return List.of();
+        int r = orientRowIndex(row, activeHeightField.height());
+        int w = activeHeightField.width();
+        float[] values = activeHeightField.data();
+        List<Double> out = new ArrayList<>(w);
+        int offset = r * w;
+        for (int x = 0; x < w; x++) out.add((double) values[offset + x]);
+        return out;
+    }
+
+    private Double[] getActiveRenderColumn(int column) {
+        if (activeHeightField == null) return new Double[0];
+        int c = Math.max(0, Math.min(column, activeHeightField.width() - 1));
+        int w = activeHeightField.width();
+        int h = activeHeightField.height();
+        float[] values = activeHeightField.data();
+        Double[] out = new Double[h];
+        for (int visualRow = 0; visualRow < h; visualRow++) {
+            int sourceRow = orientRowIndex(visualRow, h);
+            out[visualRow] = (double) values[sourceRow * w + c];
+        }
+        return out;
+    }
+
+    /** Recompute world extents after surfScale changes without rebuilding source data. */
+    private void refreshWorldExtentsAndLodMetadata() {
+        recomputeBaseWorldExtents();
+
+        if (activeHeightField != null) {
+            currentLodSurfScaleX = baseWorldWidth / activeHeightField.width();
+            currentLodSurfScaleZ = baseWorldDepth / activeHeightField.height();
+        }
+        if (surfPlot != null) {
+            surfPlot.setTranslateX(-baseWorldWidth / 2.0);
+            surfPlot.setTranslateZ(-baseWorldDepth / 2.0);
+        }
+        if (shouldUseTiledHeightFieldRenderer()) {
+            configureTiledPyramid();
+            tiledSurfaceRenderer.forceUpdate();
+        } else if (lodManager != null && lodProcessedLevels != null && !lodProcessedLevels.isEmpty()) {
+            lodManager.setPyramid(
+                LodManager.fromHeightFields(lodProcessedLevels),
+                baseWorldWidth,
+                baseWorldDepth,
+                activeLodIndex
+            );
+            lodManager.forceUpdate();
+        }
+    }
+
+    /**
+     * Returns the long-axis world extent used for image-backed surfaces at the default
+     * surface scale. Image aspect ratio determines the other axis.
+     */
+    public double getNominalImageWorldExtent() {
+        return nominalImageWorldExtent;
+    }
+
+    /**
+     * Sets the long-axis world extent used for image-backed surfaces at the default
+     * surface scale. This changes physical display size, not source or LOD resolution.
+     */
+    public void setNominalImageWorldExtent(double nominalImageWorldExtent) {
+        if (!(nominalImageWorldExtent > 0.0) || !Double.isFinite(nominalImageWorldExtent)) {
+            throw new IllegalArgumentException("nominalImageWorldExtent must be finite and > 0");
+        }
+        if (Double.compare(this.nominalImageWorldExtent, nominalImageWorldExtent) == 0) return;
+        this.nominalImageWorldExtent = nominalImageWorldExtent;
+        if (imageBackedSurface && processingSourceHeightField != null) {
+            refreshWorldExtentsAndLodMetadata();
+            updateTheMesh();
+        }
+    }
+
+    public SurfaceRowOrientation getSurfaceRowOrientation() {
+        return surfaceRowOrientation.get();
+    }
+
+    public void setSurfaceRowOrientation(SurfaceRowOrientation orientation) {
+        surfaceRowOrientation.set(orientation != null
+            ? orientation
+            : SurfaceRowOrientation.FIRST_ROW_NEAR);
+    }
+
+    public ObjectProperty<SurfaceRowOrientation> surfaceRowOrientationProperty() {
+        return surfaceRowOrientation;
+    }
+
+    private void setSourceDefaultRowOrientation(SurfaceRowOrientation orientation) {
+        suppressRowOrientationRefresh = true;
+        try {
+            setSurfaceRowOrientation(orientation);
+        } finally {
+            suppressRowOrientationRefresh = false;
+        }
+    }
+
+    private void applySurfaceRowOrientationToRenderers() {
+        SurfaceRowOrientation orientation = getSurfaceRowOrientation();
+        if (surfPlot != null) surfPlot.setRowOrientation(orientation);
+        if (tiledSurfaceRenderer != null) tiledSurfaceRenderer.setRowOrientation(orientation);
+    }
+
+    public SurfaceHeightOrientation getSurfaceHeightOrientation() {
+        return surfaceHeightOrientation.get();
+    }
+
+    public void setSurfaceHeightOrientation(SurfaceHeightOrientation orientation) {
+        surfaceHeightOrientation.set(orientation != null
+            ? orientation
+            : SurfaceHeightOrientation.HIGH_VALUES_UP);
+    }
+
+    public ObjectProperty<SurfaceHeightOrientation> surfaceHeightOrientationProperty() {
+        return surfaceHeightOrientation;
+    }
+
+    private void applySurfaceHeightOrientationToRenderers() {
+        SurfaceHeightOrientation orientation = getSurfaceHeightOrientation();
+        if (surfPlot != null) surfPlot.setHeightOrientation(orientation);
+        if (tiledSurfaceRenderer != null) tiledSurfaceRenderer.setHeightOrientation(orientation);
+    }
+
+    private int orientRowIndex(int logicalRow, int rowCount) {
+        if (rowCount <= 0) return 0;
+        int clamped = Math.max(0, Math.min(logicalRow, rowCount - 1));
+        return getSurfaceRowOrientation() == SurfaceRowOrientation.FIRST_ROW_FAR
+            ? rowCount - 1 - clamped
+            : clamped;
+    }
+
+    private double orientRowCoordinate(double logicalRow, int rowCount) {
+        if (rowCount <= 1) return 0.0;
+        double clamped = Math.max(0.0, Math.min(logicalRow, rowCount - 1.0));
+        return getSurfaceRowOrientation() == SurfaceRowOrientation.FIRST_ROW_FAR
+            ? (rowCount - 1.0) - clamped
+            : clamped;
+    }
+
+    public boolean isTiledHeightFieldRenderingEnabled() {
+        return tiledHeightFieldRenderingEnabled;
+    }
+
+    public void setTiledHeightFieldRenderingEnabled(boolean enabled) {
+        if (this.tiledHeightFieldRenderingEnabled == enabled) return;
+        this.tiledHeightFieldRenderingEnabled = enabled;
+        if (lodProcessedLevels != null && !lodProcessedLevels.isEmpty()) {
+            if (enabled && shouldUseTiledHeightFieldRenderer()) {
+                configureTiledPyramid();
+            } else if (lodManager != null) {
+                activeLodIndex = -1;
+                activeHeightField = null;
+                lodManager.setPyramid(
+                    LodManager.fromHeightFields(lodProcessedLevels),
+                    baseWorldWidth, baseWorldDepth, -1);
+                lodManager.forceUpdate();
+            }
+            updateTheMesh();
+        }
+    }
+
+    public int getTileCellsL0() {
+        return tileCellsL0;
+    }
+
+
+    public TiledLodManager.Config getTiledLodConfigCopy() {
+        return tiledSurfaceRenderer != null
+            ? tiledSurfaceRenderer.getLodConfigCopy()
+            : new TiledLodManager.Config();
+    }
+
+    public void setTiledLodConfig(TiledLodManager.Config config) {
+        if (tiledSurfaceRenderer == null || config == null) return;
+        tiledSurfaceRenderer.setLodConfig(config);
+    }
+
+    public TiledSurfaceRenderer.LodStatistics getTiledLodStatistics() {
+        return tiledSurfaceRenderer != null
+            ? tiledSurfaceRenderer.getLodStatistics()
+            : new TiledSurfaceRenderer.LodStatistics(
+                0, 0, 0, 0, 0, 0, 0, 0L, 0L, 0L, 0, 0);
+    }
+
+    public void setTileCellsL0(int tileCellsL0) {
+        if (tileCellsL0 < 16) {
+            throw new IllegalArgumentException("tileCellsL0 must be >= 16");
+        }
+        if (this.tileCellsL0 == tileCellsL0) return;
+        this.tileCellsL0 = tileCellsL0;
+        if (shouldUseTiledHeightFieldRenderer()) {
+            configureTiledPyramid();
+            updateTheMesh();
+        }
+    }
+
+    public int getMaxRenderResolution() {
+        return maxRenderResolution;
+    }
+
+    public void setMaxRenderResolution(int maxRenderResolution) {
+        if (maxRenderResolution <= 0) {
+            throw new IllegalArgumentException("maxRenderResolution must be > 0");
+        }
+        if (maxRenderResolution < minRenderResolution) {
+            throw new IllegalArgumentException("maxRenderResolution must be >= minRenderResolution");
+        }
+        if (this.maxRenderResolution == maxRenderResolution) return;
+        this.maxRenderResolution = maxRenderResolution;
+        if (imageBackedSurface && lastImage != null && imageSourceWidth > 0 && imageSourceHeight > 0) {
+            PixelReader reader = lastImage.getPixelReader();
+            if (reader != null) {
+                processingSourceHeightField = buildImageRawL0(reader,
+                    imageSourceStartX, imageSourceStartY,
+                    imageSourceWidth, imageSourceHeight, maxRenderResolution);
+            }
+        }
+        rebuildProcessedGridAndRefresh();
+    }
+
+    public int getMinRenderResolution() {
+        return minRenderResolution;
+    }
+
+    public void setMinRenderResolution(int minRenderResolution) {
+        if (minRenderResolution <= 0) {
+            throw new IllegalArgumentException("minRenderResolution must be > 0");
+        }
+        if (minRenderResolution > maxRenderResolution) {
+            throw new IllegalArgumentException("minRenderResolution must be <= maxRenderResolution");
+        }
+        if (this.minRenderResolution == minRenderResolution) return;
+        this.minRenderResolution = minRenderResolution;
+        rebuildProcessedGridAndRefresh();
+    }
+
+    private boolean shouldUseTiledHeightFieldRenderer() {
+        return tiledHeightFieldRenderingEnabled
+            && imageBackedSurface
+            && tiledSurfaceRenderer != null
+            && lodProcessedLevels != null
+            && !lodProcessedLevels.isEmpty()
+            && colorationMethod != COLORATION.COLOR_BY_SHAPLEY;
+    }
+
+    public boolean isTiledHeightFieldRendererActive() {
+        return shouldUseTiledHeightFieldRenderer()
+            && surfaceRender
+            && tiledSurfaceRenderer.isVisible();
+    }
+
+    private void requestLodUpdate(LodManager.UpdateReason reason) {
+        if (shouldUseTiledHeightFieldRenderer()) {
+            tiledSurfaceRenderer.requestUpdate(reason);
+        } else if (lodManager != null) {
+            lodManager.requestUpdate(reason);
+        }
+    }
+
+    private void forceLodUpdate() {
+        if (shouldUseTiledHeightFieldRenderer()) {
+            tiledSurfaceRenderer.forceUpdate();
+        } else if (lodManager != null) {
+            lodManager.forceUpdate();
+        }
+    }
+
+    private void configureTiledAppearance() {
+        if (tiledSurfaceRenderer == null) return;
+        if (surfPlot != null) {
+            tiledSurfaceRenderer.setDrawMode(surfPlot.getDrawMode());
+            tiledSurfaceRenderer.setCullFace(surfPlot.getCullFace());
+            if (surfPlot.getMaterial() instanceof PhongMaterial material) {
+                tiledSurfaceRenderer.setSpecularColor(material.getSpecularColor());
+            }
+        }
+        tiledSurfaceRenderer.setYScale(yScale);
+        tiledSurfaceRenderer.setRowOrientation(getSurfaceRowOrientation());
+        tiledSurfaceRenderer.setHeightOrientation(getSurfaceHeightOrientation());
+
+        if (colorationMethod == COLORATION.COLOR_BY_IMAGE && lastImage != null) {
+            tiledSurfaceRenderer.setColorByImage(lastImage);
+        } else if (colorationMethod == COLORATION.COLOR_BY_FEATURE && !lodProcessedLevels.isEmpty()) {
+            float[] minMax = lodProcessedLevels.get(0).minMax();
+            double minColorValue = minMax[0] * yScale;
+            double maxColorValue = minMax[1] * yScale;
+            if (!(maxColorValue > minColorValue)) {
+                double pad = Math.max(1.0e-9, Math.abs(minColorValue) * 1.0e-9);
+                minColorValue -= pad;
+                maxColorValue += pad;
+            }
+            tiledSurfaceRenderer.setColorByHeight(
+                TOTAL_COLORS, minColorValue, maxColorValue);
+        }
+    }
+
+    private void configureTiledPyramid() {
+        if (!shouldUseTiledHeightFieldRenderer()) return;
+        activeLodIndex = 0;
+        activeHeightField = lodProcessedLevels.get(0);
+        xWidth = activeHeightField.width();
+        zWidth = activeHeightField.height();
+        currentLodSurfScaleX = baseWorldWidth / xWidth;
+        currentLodSurfScaleZ = baseWorldDepth / zWidth;
+
+        tiledSurfaceRenderer.setTileCellsL0(tileCellsL0);
+        tiledSurfaceRenderer.setPyramid(
+            lodProcessedLevels, baseWorldWidth, baseWorldDepth, yScale);
+        configureTiledAppearance();
+        tiledSurfaceRenderer.forceUpdate();
+        syncGuiControls();
+    }
+
     private void rebuildProcessedGridAndRefresh() {
-        if (originalGrid == null || originalGrid.isEmpty()) return;
-        List<List<Double>> g = deepCopyGrid(originalGrid);
-        if (smoothingEnabled) {
-            g = SurfaceUtils.smooth(g, smoothingMethod, gaussianSigma, smoothingRadius);
+        // Process raw L0 once, then derive all lower LODs from that processed L0.
+        // Image-backed surfaces already retain a capped raw L0; boxed-grid-backed
+        // surfaces retain their source resolution and are capped here.
+        //
+        // Boxed-grid-backed surfaces continue to populate
+        // originalGrid and are converted lazily here for compatibility.
+        if (processingSourceHeightField == null) {
+            if (originalGrid == null || originalGrid.isEmpty()) return;
+            processingSourceHeightField = SurfaceUtils.toHeightField(originalGrid);
         }
-        if (toneEnabled) {
-            g = SurfaceUtils.toneMapGrid(g, toneOperator, toneParam);
+
+        HeightField l0Raw = imageBackedSurface
+            ? processingSourceHeightField
+            : SurfaceUtils.buildL0Raw(processingSourceHeightField, maxRenderResolution);
+
+        SurfaceUtils.Smoothing sm = smoothingEnabled
+            ? smoothingMethod
+            : SurfaceUtils.Smoothing.NONE;
+        SurfaceUtils.ToneMap tm = toneEnabled
+            ? toneOperator
+            : SurfaceUtils.ToneMap.NONE;
+
+        HeightField l0Processed = SurfaceUtils.processL0(
+            l0Raw,
+            sm,
+            smoothingRadius,
+            1,
+            gaussianSigma,
+            tm,
+            toneParam
+        );
+
+        lodProcessedLevels = imageBackedSurface
+            ? SurfaceUtils.buildPyramidLevels(l0Processed, TILED_LOD_LEVEL_COUNT)
+            : SurfaceUtils.buildPyramid(l0Processed, minRenderResolution);
+
+        if (imageBackedSurface) {
+            StringBuilder lodSummary = new StringBuilder("Hypersurface tiled LOD pyramid: ");
+            for (int i = 0; i < lodProcessedLevels.size(); i++) {
+                if (i > 0) lodSummary.append(", ");
+                HeightField level = lodProcessedLevels.get(i);
+                lodSummary.append('L').append(i).append('=')
+                    .append(level.width()).append('x').append(level.height());
+            }
+            if (tiledSurfaceRenderer == null || tiledSurfaceRenderer.isVerboseDiagnosticsEnabled()) {
+                System.out.println(lodSummary);
+            }
         }
-        dataGrid.clear();
-        dataGrid.addAll(g);
-        xWidth = dataGrid.get(0).size();
-        zWidth = dataGrid.size();
+
+        // Rendering resolution and physical world size are intentionally independent.
+        // Image-backed sources use a nominal long-axis world extent with aspect ratio
+        // preserved; data-grid-backed sources retain the historical dimension*scale rule.
+        recomputeBaseWorldExtents();
+
+        // A new pyramid invalidates the old active HeightField even when the numerical
+        // LOD index happens to be identical.
+        activeLodIndex = -1;
+        activeHeightField = null;
+        currentLodSurfScaleX = Double.NaN;
+        currentLodSurfScaleZ = Double.NaN;
+
+        if (shouldUseTiledHeightFieldRenderer()) {
+            configureTiledPyramid();
+            updateTheMesh();
+        } else if (lodManager != null) {
+            lodManager.setPyramid(
+                LodManager.fromHeightFields(lodProcessedLevels),
+                baseWorldWidth,
+                baseWorldDepth,
+                -1
+            );
+            lodManager.forceUpdate();
+        } else {
+            applyActiveLodIndex(0);
+        }
+
+        updateView(true);
+    }
+
+    /**
+     * Apply the given LOD index from the current processed pyramid.
+     * Invoked by LodManager when it selects a new level.
+     */
+    private void applyActiveLodIndex(int idx) {
+        if (lodProcessedLevels == null || lodProcessedLevels.isEmpty()) return;
+        if (idx < 0) idx = 0;
+        if (idx >= lodProcessedLevels.size()) idx = lodProcessedLevels.size() - 1;
+
+        HeightField selected = lodProcessedLevels.get(idx);
+        if (idx == activeLodIndex && activeHeightField == selected) return;
+
+        activeLodIndex = idx;
+        activeHeightField = selected;
+
+        // xWidth/zWidth continue to describe the currently rendered mesh dimensions,
+        // while dataGrid/originalGrid retain full source/working data.
+        xWidth = activeHeightField.width();
+        zWidth = activeHeightField.height();
+
+        currentLodSurfScaleX = baseWorldWidth / xWidth;
+        currentLodSurfScaleZ = baseWorldDepth / zWidth;
+
+        System.out.println("Applying Hypersurface LOD L" + activeLodIndex
+            + ": " + xWidth + "x" + zWidth
+            + ", cellScale=" + currentLodSurfScaleX + "x" + currentLodSurfScaleZ);
+
+        if (surfPlot != null) {
+            surfPlot.setTranslateX(-baseWorldWidth / 2.0);
+            surfPlot.setTranslateZ(-baseWorldDepth / 2.0);
+        }
+
         syncGuiControls();
         updateTheMesh();
-        updateView(true);
     }
 
     /**
@@ -2119,10 +3175,10 @@ public class Hypersurface3DPane extends StackPane
     private void highlightSurfaceRowIfPossible(GraphNode node) {
         tryGetSourceRowIndex(node).ifPresent(rowIndex -> {
             // Clamp row and paint crosshair
-            int clamped = Math.max(0, Math.min(rowIndex, Math.max(0, zWidth - 1)));
+            int clamped = Math.max(0, Math.min(rowIndex, Math.max(0, getSourceHeight() - 1)));
             paintSingleColor(Color.TRANSPARENT);
-            // Crosshair expects world coordinates; Z increases with rows
-            Point3D center = new Point3D((xWidth * surfScale) / 2.0, 0, clamped * surfScale);
+            // Source row coordinates remain stable even when the active render LOD changes.
+            Point3D center = new Point3D(getWorldWidth() / 2.0, 0, clamped * surfScale);
             illuminateCrosshair(center);
         });
     }
