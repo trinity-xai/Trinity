@@ -1,6 +1,7 @@
 package edu.jhuapl.trinity.javafx.javafx3d;
 
 import edu.jhuapl.trinity.App;
+import edu.jhuapl.trinity.css.StyleResourceProvider;
 import edu.jhuapl.trinity.data.CoordinateSet;
 import edu.jhuapl.trinity.data.files.FeatureCollectionFile;
 import edu.jhuapl.trinity.data.graph.GraphDirectedCollection;
@@ -33,6 +34,7 @@ import edu.jhuapl.trinity.javafx.javafx3d.animated.AnimatedSphere;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.TessellationTube;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.Tracer;
 import edu.jhuapl.trinity.javafx.javafx3d.images.ImageResourceProvider;
+import edu.jhuapl.trinity.javafx.javafx3d.images.SolidColorTexture;
 import edu.jhuapl.trinity.javafx.javafx3d.tasks.AffinityClusterTask;
 import edu.jhuapl.trinity.javafx.javafx3d.tasks.DBSCANClusterTask;
 import edu.jhuapl.trinity.javafx.javafx3d.tasks.ExMaxClusterTask;
@@ -85,7 +87,6 @@ import javafx.scene.effect.Glow;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
 import javafx.scene.image.PixelReader;
-import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
 import javafx.scene.input.Clipboard;
 import javafx.scene.input.ClipboardContent;
@@ -104,10 +105,8 @@ import javafx.scene.shape.Box;
 import javafx.scene.shape.CullFace;
 import javafx.scene.shape.Cylinder;
 import javafx.scene.shape.DrawMode;
-import javafx.scene.shape.MeshView;
 import javafx.scene.shape.Shape3D;
 import javafx.scene.shape.Sphere;
-import javafx.scene.shape.TriangleMesh;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import javafx.scene.transform.Rotate;
@@ -129,6 +128,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -156,6 +156,7 @@ public class Hypersurface3DPane extends StackPane
 
     public PerspectiveCamera camera;
     public CameraTransformer cameraTransform = new CameraTransformer();
+    private final HypersurfaceCameraController cameraController;
     public XFormGroup dataXForm = new XFormGroup();
 
     private double cameraDistance = -1000;
@@ -209,10 +210,7 @@ public class Hypersurface3DPane extends StackPane
     private String lastImageSource = null;
     public List<ShapleyVector> shapleyVectors = new ArrayList<>();
 
-    WritableImage diffusePaintImage;
-    PhongMaterial paintPhong;
-    TriangleMesh paintTriangleMesh;
-    MeshView paintMeshView;
+    private final SurfaceCrosshairOverlay surfaceCrosshairOverlay = new SurfaceCrosshairOverlay();
 
     //allows 2D labels to track their 3D counterparts
     HashMap<Shape3D, Node> shape3DToLabel = new HashMap<>();
@@ -261,7 +259,7 @@ public class Hypersurface3DPane extends StackPane
     private Sphere xSphere = new Sphere(10);
     private Sphere ySphere = new Sphere(10);
     private Sphere zSphere = new Sphere(10);
-    Sphere highlightedPoint = new Sphere(2, 32);
+    Sphere highlightedPoint = new Sphere(1, 32);
     private Label xLabel = new Label("Features (ordered)");
     private Label yLabel = new Label("Magnitude");
     private Label zLabel = new Label("Time (Samples)");
@@ -358,6 +356,9 @@ public class Hypersurface3DPane extends StackPane
     private final Group graphLayer = new Group(); // sits in sceneRoot
     private boolean graphVisible = true;
     private GraphDirectedCollection currentGraph = null;
+    private final IdentityHashMap<GraphNode, Integer> graphNodeRowIndex = new IdentityHashMap<>();
+    private final HashMap<String, Integer> graphEntityIdToIndex = new HashMap<>();
+    private int[][] graphAdjacencyIndices = new int[0][];
     private Graph3DRenderer.Params graphParams = new Graph3DRenderer.Params()
         .withNodeRadius(20.0)
         .withEdgeWidth(8.0f)
@@ -376,6 +377,7 @@ public class Hypersurface3DPane extends StackPane
         });
         surfaceHeightOrientation.addListener((obs, oldValue, newValue) -> {
             applySurfaceHeightOrientationToRenderers();
+            refreshCrosshairSurfaceContext();
             if (surfPlot != null) {
                 updateTheMesh();
             }
@@ -398,8 +400,11 @@ public class Hypersurface3DPane extends StackPane
         ySphere.setMaterial(new PhongMaterial(Color.GREEN));
         zSphere.setTranslateZ(planeSize / 2.0);
         zSphere.setMaterial(new PhongMaterial(Color.BLUE));
-        highlightedPoint.setMaterial(new PhongMaterial(Color.ALICEBLUE));
-        highlightedPoint.setDrawMode(DrawMode.FILL);
+        PhongMaterial highlightedPointMaterial = new PhongMaterial();
+        highlightedPointMaterial.setDiffuseColor(null);
+        highlightedPointMaterial.setSelfIlluminationMap(
+            SolidColorTexture.of(new Color(0.9411765f, 0.972549f, 1.0f, 0.666)));
+        highlightedPoint.setMaterial(highlightedPointMaterial);
         highlightedPoint.setMouseTransparent(true);
 
         // Labels
@@ -435,6 +440,12 @@ public class Hypersurface3DPane extends StackPane
         camera.setTranslateZ(cameraDistance);
         cameraTransform.ry.setAngle(-45.0);
         cameraTransform.rx.setAngle(-10.0);
+        cameraController = new HypersurfaceCameraController(
+            camera,
+            cameraTransform,
+            subScene,
+            this::getCameraSurfaceBounds,
+            this::refreshAfterCameraPreset);
         setupSkyBox();
         debugGroup.setVisible(false);
         extrasGroup.setVisible(false);
@@ -443,6 +454,7 @@ public class Hypersurface3DPane extends StackPane
             nodeGroup, extrasGroup, debugGroup, dataXForm);
         // Add graph layer last so it draws above the surface (z-order within Group)
         sceneRoot.getChildren().add(graphLayer);
+        sceneRoot.getChildren().add(surfaceCrosshairOverlay);
         graphLayer.setVisible(graphVisible);
         // Sync controls with current visibility on startup
         fireOnRoot(new GraphEvent(GraphEvent.SET_GRAPH_VISIBILITY_GUI, graphVisible));
@@ -765,6 +777,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         this.scene.addEventHandler(GraphEvent.NEW_GRAPHDIRECTED_COLLECTION, e -> {
             if (!(e.object instanceof GraphDirectedCollection gc)) return;
             currentGraph = gc;
+            rebuildGraphNodeRowIndex(gc);
             graphLayer.getChildren().clear();
             graphLayer.getChildren().add(Graph3DRenderer.buildGraphGroup(gc, graphParams));
 
@@ -807,6 +820,8 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
                 DialogPane dialogPane = alert.getDialogPane();
                 dialogPane.setBackground(Background.EMPTY);
                 dialogPane.getScene().setFill(Color.TRANSPARENT);
+                String DIALOGCSS = StyleResourceProvider.getResource("dialogstyles.css").toExternalForm();
+                dialogPane.getStylesheets().add(DIALOGCSS);                
                 Optional<ButtonType> optBT = alert.showAndWait();
                 if (optBT.get().equals(ButtonType.CANCEL)) return;
                 split = optBT.get().equals(ButtonType.YES);
@@ -1112,6 +1127,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
     public void updateTheMesh() {
         if (surfPlot == null) return;
 
+        surfaceCrosshairOverlay.hide();
         sceneRoot.getChildren().removeIf(n -> n instanceof TessellationTube);
 
         final boolean useTiledRenderer = surfaceRender && shouldUseTiledHeightFieldRenderer();
@@ -1120,7 +1136,6 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         }
         if (useTiledRenderer) {
             surfPlot.setVisible(false);
-            if (paintMeshView != null) paintMeshView.setVisible(false);
             configureTiledAppearance();
             tiledSurfaceRenderer.forceUpdate();
             return;
@@ -1133,12 +1148,10 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         // raw mesh at that resolution can exhaust the Java heap.
         if (imageBackedSurface && activeHeightField == null) {
             surfPlot.setVisible(false);
-            if (paintMeshView != null) paintMeshView.setVisible(false);
             return;
         }
 
         surfPlot.setVisible(surfaceRender);
-        if (paintMeshView != null) paintMeshView.setVisible(true);
 
         final int renderWidth = getRenderWidth();
         final int renderHeight = getRenderHeight();
@@ -1182,7 +1195,6 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
             }
             Platform.runLater(() -> sceneRoot.getChildren().add(tube));
         }
-        Platform.runLater(this::updatePaintMesh);
     }
 
     /**
@@ -1245,109 +1257,6 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         }
     }
 
-    public void updatePaintMesh() {
-        if (surfPlot == null || surfPlot.getMesh() == null) return;
-        final int renderWidth = getRenderWidth();
-        final int renderHeight = getRenderHeight();
-        diffusePaintImage = new WritableImage(renderWidth, renderHeight);
-        if (null == paintTriangleMesh) {
-            paintTriangleMesh = new TriangleMesh();
-            paintMeshView = new MeshView(paintTriangleMesh);
-            paintMeshView.setMouseTransparent(true);
-            paintMeshView.setMesh(paintTriangleMesh);
-            paintMeshView.setCullFace(CullFace.NONE);
-            paintPhong = new PhongMaterial(Color.WHITE, diffusePaintImage, null, null, null);
-            paintPhong.setSpecularColor(Color.WHITE);
-            paintPhong.setDiffuseColor(Color.WHITE);
-            paintMeshView.setMaterial(paintPhong);
-            sceneRoot.getChildren().add(paintMeshView);
-            surfPlot.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
-                if (e.getClickCount() > 1 && e.isControlDown()) {
-                    Color color = new Color(rando.nextDouble(), rando.nextDouble(), rando.nextDouble(), 1.0);
-                    paintSingleColor(color);
-                }
-            });
-        }
-
-        TriangleMesh surfMesh = (TriangleMesh) surfPlot.getMesh();
-        paintTriangleMesh.getPoints().setAll(surfMesh.getPoints());
-        paintTriangleMesh.getFaces().clear();
-        paintTriangleMesh.getTexCoords().clear();
-
-        final int texCoordSize = 2;
-        int pskip = 2;
-        int subDivX = (int) diffusePaintImage.getWidth() / pskip;
-        int subDivZ = (int) diffusePaintImage.getHeight() / pskip;
-        int numDivX = subDivX + 1;
-        int numVerts = (subDivZ + 1) * numDivX;
-        float currZ, currX;
-        float[] texCoords = new float[numVerts * texCoordSize];
-        int faceCount = subDivX * subDivZ * 2;
-        final int faceSize = 6;
-        int[] faces = new int[faceCount * faceSize];
-        int index, p00, p01, p10, p11, tc00, tc01, tc10, tc11;
-
-        for (int z = 0; z < subDivZ; z++) {
-            currZ = (float) z / subDivZ;
-            for (int x = 0; x < subDivX; x++) {
-                currX = (float) x / subDivX;
-                index = z * numDivX * texCoordSize + (x * texCoordSize);
-                texCoords[index] = currX;
-                texCoords[index + 1] = currZ;
-
-                p00 = z * numDivX + x;
-                p01 = p00 + 1;
-                p10 = p00 + numDivX;
-                p11 = p10 + 1;
-                tc00 = z * numDivX + x;
-                tc01 = tc00 + 1;
-                tc10 = tc00 + numDivX;
-                tc11 = tc10 + 1;
-
-                index = (z * subDivX * faceSize + (x * faceSize)) * 2;
-                faces[index + 0] = p00;
-                faces[index + 1] = tc00;
-                faces[index + 2] = p10;
-                faces[index + 3] = tc10;
-                faces[index + 4] = p11;
-                faces[index + 5] = tc11;
-                index += faceSize;
-                faces[index + 0] = p11;
-                faces[index + 1] = tc11;
-                faces[index + 2] = p01;
-                faces[index + 3] = tc01;
-                faces[index + 4] = p00;
-                faces[index + 5] = tc00;
-                diffusePaintImage.getPixelWriter().setColor(x, z, Color.TRANSPARENT);
-            }
-        }
-        paintTriangleMesh.getTexCoords().setAll(texCoords);
-        paintTriangleMesh.getFaces().setAll(faces);
-        paintPhong.setDiffuseMap(diffusePaintImage);
-        paintMeshView.setTranslateZ(-1);
-        paintMeshView.setTranslateX(-getWorldWidth() / 2.0);
-        paintMeshView.setTranslateZ(-getWorldDepth() / 2.0);
-    }
-
-    public void paintSingleColor(Color color) {
-        for (int z = 0; z < diffusePaintImage.getHeight(); z++) {
-            for (int x = 0; x < diffusePaintImage.getWidth(); x++) {
-                diffusePaintImage.getPixelWriter().setColor(x, z, color);
-            }
-        }
-    }
-
-    public void illuminateCrosshair(Point3D center) {
-        if (null == diffusePaintImage) return;
-        int x = (int) Math.floor(center.getX() / Math.max(1e-9, getRenderScaleX()));
-        int z = (int) Math.floor(center.getZ() / Math.max(1e-9, getRenderScaleZ()));
-        x = Math.max(0, Math.min(x, (int) diffusePaintImage.getWidth() - 1));
-        z = Math.max(0, Math.min(z, (int) diffusePaintImage.getHeight() - 1));
-        PixelWriter pw = diffusePaintImage.getPixelWriter();
-        for (int i = 0; i < diffusePaintImage.getWidth(); i++) pw.setColor(i, z, Color.WHITE);
-        for (int i = 0; i < diffusePaintImage.getHeight(); i++) pw.setColor(x, i, Color.WHITE);
-    }
-
     private void setupSkyBox() {
         Image top = new Image(ImageResourceProvider.getResource("darkmetalbottom.png").toExternalForm());
         Image bottom = new Image(ImageResourceProvider.getResource("darkmetalbottom.png").toExternalForm());
@@ -1371,18 +1280,26 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
     }
 
     public void resetView(double milliseconds, boolean rightNow) {
-        if (!rightNow) {
-            Timeline timeline = JavaFX3DUtils.transitionCameraTo(milliseconds, camera, cameraTransform,
-                0, 0, cameraDistance, -10.0, -45.0, 0.0);
-            timeline.play();
-        } else {
-            dataXForm.reset();
-        }
+        cameraController.reset(rightNow ? 0.0 : milliseconds);
+    }
+
+    /**
+     * Fits the complete current surface while preserving the current view orientation.
+     */
+    public void fitCameraView(double milliseconds) {
+        cameraController.fit(milliseconds);
+    }
+
+    /**
+     * Applies a canonical camera orientation and fits the complete current surface.
+     */
+    public void applyCameraPreset(HypersurfaceCameraController.Preset preset, double milliseconds) {
+        cameraController.applyPreset(preset, milliseconds);
     }
 
     public void intro(double milliseconds) {
         camera.setTranslateZ(DEFAULT_INTRO_DISTANCE);
-        JavaFX3DUtils.zoomTransition(milliseconds, camera, cameraDistance);
+        cameraController.fit(milliseconds);
     }
 
     public void outtro(double milliseconds) {
@@ -1429,6 +1346,12 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         requestLodUpdate(reason);
     }
 
+    private void refreshAfterCameraPreset() {
+        updateLabels();
+        updateCalloutHeadPoints(subScene);
+        forceLodUpdate();
+    }
+
     private void updateLabels() {
         shape3DToLabel.forEach((shape3D, node) -> {
             Point2D p2Ditty = JavaFX3DUtils.getTransformedP2D(shape3D, subScene, 5);
@@ -1456,9 +1379,8 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
             }
             setSpheroidAnchor(false, sourceRow);
         }
-        if (crosshairsEnabled && diffusePaintImage != null) {
-            paintSingleColor(Color.TRANSPARENT);
-            illuminateCrosshair(vertP3D);
+        if (crosshairsEnabled && activeHeightField != null) {
+            surfaceCrosshairOverlay.requestRenderPosition(row, column);
         }
         if (surfaceChartsEnabled && activeHeightField != null) {
             List<Double> xlist = getActiveRenderRow(row);
@@ -1637,8 +1559,21 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
     Point3D vertP3D;
 
     private void configureLightingScopes() {
+        // Keep the camera-following point light focused on the analytical surface/graph.
         pointLight.getScope().setAll(surfPlot, tiledSurfaceRenderer, graphLayer);
-        ambientLight.getScope().setAll(surfPlot, tiledSurfaceRenderer, graphLayer);
+
+        // Ambient lighting also owns the auxiliary 3D markers. Because this light uses
+        // explicit scope, omitting these groups leaves their ordinary PhongMaterials
+        // effectively unlit (for example the X/Y/Z axis spheres and timeline markers).
+        ambientLight.getScope().setAll(
+            surfPlot,
+            tiledSurfaceRenderer,
+            graphLayer,
+            nodeGroup,
+            extrasGroup,
+            debugGroup,
+            highlightedPoint,
+            surfaceCrosshairOverlay);
     }
 
     private void loadSurf3D() {
@@ -1843,6 +1778,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
             if (syncingGuiControls) return;
             this.yScale = ((Double) e.object).floatValue();
             if (surfPlot != null) surfPlot.setFunctionScale(yScale);
+            refreshCrosshairSurfaceContext();
             updateTheMesh();
         });
 
@@ -1965,7 +1901,10 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         });
         scene.addEventHandler(HypersurfaceEvent.SURFACE_CHARTS_ENABLE_CHANGED, e -> surfaceChartsEnabled = (boolean) e.object);
         scene.addEventHandler(HypersurfaceEvent.DATA_MARKERS_ENABLE_CHANGED, e -> extrasGroup.setVisible((boolean) e.object));
-        scene.addEventHandler(HypersurfaceEvent.CROSSHAIRS_ENABLE_CHANGED, e -> crosshairsEnabled = (boolean) e.object);
+        scene.addEventHandler(HypersurfaceEvent.CROSSHAIRS_ENABLE_CHANGED, e -> {
+            crosshairsEnabled = (boolean) e.object;
+            if (!crosshairsEnabled) surfaceCrosshairOverlay.hide();
+        });
 
         // Commands/actions
         scene.addEventHandler(HypersurfaceEvent.RESET_VIEW, e -> resetView(1000, false));
@@ -1979,27 +1918,27 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         scene.addEventHandler(GraphEvent.GRAPH_NODE_HOVER, e -> {
             if (!(e.object instanceof GraphNode gNode)) return;
 
-            // Build a row vector from the sparse graph
-            Double[] row = buildSimilarityRowFromGraph(gNode);
+            // Crosshair movement must remain cheap. Only build/publish the dense
+            // graph-analysis vector when the charting feature is explicitly enabled.
+            if (surfaceChartsEnabled) {
+                Double[] row = buildAdjacencyRowFromGraph(gNode);
+                scene.getRoot().fireEvent(new FactorAnalysisEvent(
+                    FactorAnalysisEvent.ANALYSIS_DATA_VECTOR,
+                    "Graph Adjacency Row (hover): " + gNode,
+                    row
+                ));
+            }
 
-            // Publish for analysis panels/plots (reuses your existing pattern)
-            scene.getRoot().fireEvent(new FactorAnalysisEvent(
-                FactorAnalysisEvent.ANALYSIS_DATA_VECTOR,
-                "Graph Similarity Row (hover): " + gNode,
-                row
-            ));
-
-            // Optional: try to relate back to hypersurface row
             highlightSurfaceRowIfPossible(gNode);
         });
 
         // Click a node: same as hover but labeled and could be made "sticky"
         scene.addEventHandler(GraphEvent.GRAPH_NODE_CLICK, e -> {
             if (!(e.object instanceof GraphNode gNode)) return;
-            Double[] row = buildSimilarityRowFromGraph(gNode);
+            Double[] row = buildAdjacencyRowFromGraph(gNode);
             scene.getRoot().fireEvent(new FactorAnalysisEvent(
                 FactorAnalysisEvent.ANALYSIS_DATA_VECTOR,
-                "Graph Similarity Row (click): " + gNode,
+                "Graph Adjacency Row (click): " + gNode,
                 row
             ));
             highlightSurfaceRowIfPossible(gNode);
@@ -2514,9 +2453,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         if (surfPlot != null) {
             surfPlot.setVisible(false);
         }
-        if (paintMeshView != null) {
-            paintMeshView.setVisible(false);
-        }
+        surfaceCrosshairOverlay.hide();
 
         processingSourceHeightField = null;
         imageSourceStartX = 0;
@@ -2631,6 +2568,28 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         return Double.isFinite(currentLodSurfScaleZ) ? currentLodSurfScaleZ : surfScale;
     }
 
+    private HypersurfaceCameraController.SurfaceBounds getCameraSurfaceBounds() {
+        double maxAbsY = 0.0;
+        if (activeHeightField != null) {
+            float[] minMax = activeHeightField.minMax();
+            maxAbsY = Math.max(Math.abs(minMax[0] * yScale), Math.abs(minMax[1] * yScale));
+        } else if (processingSourceHeightField != null) {
+            float[] minMax = processingSourceHeightField.minMax();
+            maxAbsY = Math.max(Math.abs(minMax[0] * yScale), Math.abs(minMax[1] * yScale));
+        } else if (surfPlot != null) {
+            maxAbsY = Math.abs(surfPlot.getMaxAbsY());
+        }
+
+        // Height is deliberately symmetric around Y=0. Hypersurface scalar values are
+        // often one-sided, so using 2*maxAbsY guarantees the fit sphere remains centered
+        // on the same origin used by camera rotation and panning.
+        double worldHeight = Math.max(1.0, maxAbsY * 2.0);
+        return new HypersurfaceCameraController.SurfaceBounds(
+            getWorldWidth(),
+            worldHeight,
+            getWorldDepth());
+    }
+
     public double getWorldWidth() {
         if (Double.isFinite(baseWorldWidth)) return baseWorldWidth;
         int sourceWidth = getSourceWidth();
@@ -2682,6 +2641,16 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
             getWorldWidth(),
             getWorldDepth(),
             getSurfaceRowOrientation());
+        refreshCrosshairSurfaceContext();
+    }
+
+    private void refreshCrosshairSurfaceContext() {
+        surfaceCrosshairOverlay.configureSurface(
+            activeHeightField,
+            coordinateMapper,
+            yScale,
+            getSurfaceRowOrientation(),
+            getSurfaceHeightOrientation());
     }
 
     private double getActiveRenderValue(int row, int column) {
@@ -3124,43 +3093,25 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
     }
 
     /**
-     * Build a dense similarity/divergence row for a node from the current sparse graph.
+     * Build a dense binary adjacency row from the cached sparse graph topology.
+     * GraphEdge does not carry a numeric weight, so a connected neighbor is 1.0
+     * and a non-neighbor is 0.0.
      */
-    private Double[] buildSimilarityRowFromGraph(GraphNode node) {
+    private Double[] buildAdjacencyRowFromGraph(GraphNode node) {
         if (currentGraph == null || node == null) return new Double[0];
-
-        final List<GraphNode> nodes = currentGraph.getNodes();
-        int n = nodes.size();
-        double[] row = new double[n];
-
-        // map: GraphNode -> index (by reference)
-        // using indexOf is okay for typical sizes; can optimize later with a HashMap
-        for (GraphEdge e : currentGraph.getEdges()) {
-            // outgoing (node -> other)
-            if (currentGraph.findNodeById(e.getStartID()).filter(node::equals).isPresent()) {
-                currentGraph.findNodeById(e.getEndID()).ifPresent(other -> {
-                    int j = nodes.indexOf(other);
-                    if (j >= 0) {
-                        double w = getEdgeWeightSafe(e);
-                        row[j] = w;
-                    }
-                });
-            }
-            // incoming (other -> node) — include if you want undirected row
-            if (currentGraph.findNodeById(e.getEndID()).filter(node::equals).isPresent()) {
-                currentGraph.findNodeById(e.getStartID()).ifPresent(other -> {
-                    int j = nodes.indexOf(other);
-                    if (j >= 0) {
-                        double w = getEdgeWeightSafe(e);
-                        // for undirected behavior, you can take max/avg; here we keep the larger magnitude
-                        row[j] = Math.abs(row[j]) >= Math.abs(w) ? row[j] : w;
-                    }
-                });
-            }
+        Integer nodeIndex = graphEntityIdToIndex.get(node.getEntityID());
+        if (nodeIndex == null
+            || nodeIndex < 0
+            || nodeIndex >= graphAdjacencyIndices.length) {
+            return new Double[0];
         }
 
+        int n = currentGraph.getNodes().size();
         Double[] out = new Double[n];
-        for (int i = 0; i < n; i++) out[i] = row[i];
+        Arrays.fill(out, 0.0);
+        for (int neighbor : graphAdjacencyIndices[nodeIndex]) {
+            if (neighbor >= 0 && neighbor < n) out[neighbor] = 1.0;
+        }
         return out;
     }
 
@@ -3177,39 +3128,89 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
     }
 
     /**
-     * Optional: if a GraphNode encodes a source row index for the hypersurface, try to extract it.
+     * Rebuild graph interaction caches once when a new graph arrives.
+     *
+     * <p>For source-row alignment, prefer GraphNode.identity only when every node
+     * has a unique identity inside the current source-row range. Otherwise, when
+     * graph node count exactly matches source height, collection order defines the
+     * row association. If neither condition is true, no row mapping is invented.</p>
      */
-    private Optional<Integer> tryGetSourceRowIndex(GraphNode node) {
-        // Heuristics:
-        // (a) if there's a "getIndex()" method
-        try {
-            Object idx = GraphNode.class.getMethod("getIndex").invoke(node);
-            if (idx instanceof Number n) return Optional.of(n.intValue());
-        } catch (Throwable ignored) {
+    private void rebuildGraphNodeRowIndex(GraphDirectedCollection graph) {
+        graphNodeRowIndex.clear();
+        graphEntityIdToIndex.clear();
+        graphAdjacencyIndices = new int[0][];
+        if (graph == null || graph.getNodes() == null) return;
+
+        List<GraphNode> nodes = graph.getNodes();
+        int n = nodes.size();
+        int sourceHeight = getSourceHeight();
+
+        HashMap<Long, GraphNode> validIdentities = new HashMap<>();
+        boolean uniqueIdentityMapping = sourceHeight > 0;
+        for (int i = 0; i < n; i++) {
+            GraphNode node = nodes.get(i);
+            if (node == null) {
+                uniqueIdentityMapping = false;
+                continue;
+            }
+            graphEntityIdToIndex.put(node.getEntityID(), i);
+            long identity = node.getIdentity();
+            if (identity < 0 || identity >= sourceHeight
+                || validIdentities.put(identity, node) != null) {
+                uniqueIdentityMapping = false;
+            }
         }
-        // (b) if ID is numeric
-        try {
-            Object id = GraphNode.class.getMethod("getId").invoke(node);
-            if (id != null) return Optional.of(Integer.valueOf(String.valueOf(id)));
-        } catch (Throwable ignored) {
+
+        if (uniqueIdentityMapping && validIdentities.size() == n) {
+            for (GraphNode node : nodes) {
+                graphNodeRowIndex.put(node, (int) node.getIdentity());
+            }
+        } else if (n == sourceHeight) {
+            for (int i = 0; i < n; i++) {
+                GraphNode node = nodes.get(i);
+                if (node != null) graphNodeRowIndex.put(node, i);
+            }
         }
-        return Optional.empty();
+
+        ArrayList<ArrayList<Integer>> adjacency = new ArrayList<>(n);
+        for (int i = 0; i < n; i++) adjacency.add(new ArrayList<>());
+        if (graph.getEdges() != null) {
+            for (GraphEdge edge : graph.getEdges()) {
+                if (edge == null) continue;
+                Integer startIndex = graphEntityIdToIndex.get(edge.getStartID());
+                Integer endIndex = graphEntityIdToIndex.get(edge.getEndID());
+                if (startIndex == null || endIndex == null || startIndex.equals(endIndex)) continue;
+                adjacency.get(startIndex).add(endIndex);
+                adjacency.get(endIndex).add(startIndex);
+            }
+        }
+
+        graphAdjacencyIndices = new int[n][];
+        for (int i = 0; i < n; i++) {
+            ArrayList<Integer> neighbors = adjacency.get(i);
+            int[] indices = new int[neighbors.size()];
+            for (int j = 0; j < neighbors.size(); j++) indices[j] = neighbors.get(j);
+            graphAdjacencyIndices[i] = indices;
+        }
+    }
+
+    private Optional<Integer> getGraphSourceRowIndex(GraphNode node) {
+        if (node == null || currentGraph == null) return Optional.empty();
+        Integer row = graphNodeRowIndex.get(node);
+        if (row == null || row < 0 || row >= getSourceHeight()) return Optional.empty();
+        return Optional.of(row);
     }
 
     /**
-     * Highlight a row on the hypersurface if we can map a node to a data row.
+     * Highlight the graph node's corresponding surface row. The selected graph row
+     * spans X and the perpendicular crosshair uses the center surface column.
      */
     private void highlightSurfaceRowIfPossible(GraphNode node) {
-        tryGetSourceRowIndex(node).ifPresent(rowIndex -> {
-            // Clamp row and paint crosshair
-            int clamped = Math.max(0, Math.min(rowIndex, Math.max(0, getSourceHeight() - 1)));
-            paintSingleColor(Color.TRANSPARENT);
-            // Source row coordinates remain stable even when the active render LOD changes.
-            Point3D center = new Point3D(
-                coordinateMapper.sourceColumnToSurfaceX(getSourceWidth() / 2),
-                0,
-                coordinateMapper.sourceRowToSurfaceZ(clamped));
-            illuminateCrosshair(center);
-        });
+        if (!crosshairsEnabled || activeHeightField == null) {
+            surfaceCrosshairOverlay.hide();
+            return;
+        }
+        getGraphSourceRowIndex(node).ifPresent(surfaceCrosshairOverlay::requestSourceRow);
     }
+
 }

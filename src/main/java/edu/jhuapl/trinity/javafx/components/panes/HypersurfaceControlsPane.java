@@ -6,6 +6,7 @@ import edu.jhuapl.trinity.javafx.events.GraphEvent;
 import edu.jhuapl.trinity.javafx.events.HyperspaceEvent;
 import edu.jhuapl.trinity.javafx.events.HypersurfaceEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.Hypersurface3DPane;
+import edu.jhuapl.trinity.javafx.javafx3d.HypersurfaceCameraController;
 import edu.jhuapl.trinity.javafx.javafx3d.SurfaceHeightOrientation;
 import edu.jhuapl.trinity.javafx.javafx3d.SurfaceRowOrientation;
 import edu.jhuapl.trinity.javafx.javafx3d.SurfaceUtils;
@@ -17,6 +18,7 @@ import javafx.event.Event;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
+import javafx.scene.control.Button;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ColorPicker;
 import javafx.scene.control.ComboBox;
@@ -367,6 +369,37 @@ public class HypersurfaceControlsPane extends LitPathPane {
         pointColorPicker.setOnAction(e ->
             fireOnRoot(HypersurfaceEvent.pointColor(pointColorPicker.getValue())));
 
+        ComboBox<String> cameraViewCombo = new ComboBox<>();
+        cameraViewCombo.getItems().addAll("Fit", "Oblique", "Top", "Front", "Side");
+        cameraViewCombo.getSelectionModel().select("Fit");
+        cameraViewCombo.setPrefWidth(145.0);
+        Button applyCameraButton = new Button("Apply");
+        HBox cameraBox = new HBox(6, cameraViewCombo, applyCameraButton);
+        cameraBox.setAlignment(Pos.CENTER_LEFT);
+        addRow(sceneGrid, 4, "Camera", cameraBox);
+
+        applyCameraButton.setOnAction(e -> {
+            if (target == null) return;
+            String selection = cameraViewCombo.getValue();
+            if (selection == null) return;
+            switch (selection) {
+                case "Fit" -> target.fitCameraView(Hypersurface3DPane.DEFAULT_ZOOM_TIME_MS);
+                case "Oblique" -> target.applyCameraPreset(
+                    HypersurfaceCameraController.Preset.OBLIQUE,
+                    Hypersurface3DPane.DEFAULT_ZOOM_TIME_MS);
+                case "Top" -> target.applyCameraPreset(
+                    HypersurfaceCameraController.Preset.TOP,
+                    Hypersurface3DPane.DEFAULT_ZOOM_TIME_MS);
+                case "Front" -> target.applyCameraPreset(
+                    HypersurfaceCameraController.Preset.FRONT,
+                    Hypersurface3DPane.DEFAULT_ZOOM_TIME_MS);
+                case "Side" -> target.applyCameraPreset(
+                    HypersurfaceCameraController.Preset.SIDE,
+                    Hypersurface3DPane.DEFAULT_ZOOM_TIME_MS);
+                default -> { }
+            }
+        });
+
         // --- Graph Overlay visibility ---
         GridPane graphOverlayGrid = formGrid();
         showGraphToggle = new ToggleButton("Show Graph");
@@ -379,8 +412,7 @@ public class HypersurfaceControlsPane extends LitPathPane {
         VBox viewTabContent = new VBox(10,
             titledBox("Dimensions", dimsGrid),
             titledBox("Rendering", renderGrid),
-            titledBox("Scene", sceneGrid),
-            titledBox("Graph Overlay", graphOverlayGrid)
+            titledBox("Scene", sceneGrid)
         );
         viewTabContent.setPadding(new Insets(6));
 
@@ -637,12 +669,17 @@ public class HypersurfaceControlsPane extends LitPathPane {
 
         GraphControlsView graphLayoutView = new GraphControlsView(scene);
         GraphStyleControlsView graphStyleView = new GraphStyleControlsView(scene);
+        VBox graphStyleTabContent = new VBox(10,
+            titledBox("Graph Overlay", graphOverlayGrid),
+            graphStyleView);
+        graphStyleTabContent.setPadding(new Insets(6));
+        VBox.setVgrow(graphStyleView, Priority.ALWAYS);
 
         Tab t1 = new Tab("View", viewTabContent);
         Tab t2 = new Tab("Processing", procTabContent);
         Tab t3 = new Tab("LOD", lodScrollPane);
         Tab t4 = new Tab("Graph Layout", graphLayoutView);
-        Tab t5 = new Tab("Graph Style", graphStyleView);
+        Tab t5 = new Tab("Graph Style", graphStyleTabContent);
 
         tabs.getTabs().addAll(t1, t2, t3, t4, t5);
         return tabs;
