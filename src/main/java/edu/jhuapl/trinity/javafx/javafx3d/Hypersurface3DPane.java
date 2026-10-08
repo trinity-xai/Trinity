@@ -151,6 +151,7 @@ public class Hypersurface3DPane extends StackPane
     public static int DEFAULT_SURFSCALE = 5;
     public static int DEFAULT_YSCALE = 5;
     private static final double POINT_LIGHT_CAMERA_OFFSET_Z = 100.0;
+    private static final double POINT_LIGHT_QUADRATIC_ATTENUATION = 0.000001;
     private static final double CAMERA_ZOOM_STEP = 50.0;
 
     public PerspectiveCamera camera;
@@ -333,6 +334,7 @@ public class Hypersurface3DPane extends StackPane
     /** Current mesh spacing in world units per cell for the active LOD. */
     private double currentLodSurfScaleX = Double.NaN;
     private double currentLodSurfScaleZ = Double.NaN;
+    private final SurfaceCoordinateMapper coordinateMapper = new SurfaceCoordinateMapper();
 
     /** Screen-space LOD scheduler/selector for the legacy/global renderer. */
     private LodManager lodManager = null;
@@ -367,6 +369,7 @@ public class Hypersurface3DPane extends StackPane
         this.scene = scene;
         surfaceRowOrientation.addListener((obs, oldValue, newValue) -> {
             applySurfaceRowOrientationToRenderers();
+            refreshCoordinateMapper();
             if (!suppressRowOrientationRefresh && surfPlot != null) {
                 updateTheMesh();
             }
@@ -450,6 +453,9 @@ public class Hypersurface3DPane extends StackPane
         pointLight.translateYProperty().bind(camera.translateYProperty());
         pointLight.translateZProperty().bind(
             camera.translateZProperty().add(POINT_LIGHT_CAMERA_OFFSET_Z));
+        pointLight.setConstantAttenuation(1.0);
+        pointLight.setLinearAttenuation(0.0);
+        pointLight.setQuadraticAttenuation(POINT_LIGHT_QUADRATIC_ATTENUATION);
 
         subScene.setOnKeyPressed(event -> {
             KeyCode keycode = event.getCode();
@@ -1440,15 +1446,9 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         updateCalloutHeadPoints(subScene);
         updateLabels();
 
-        int row = Math.max(0, Math.min(
-            (int) Math.floor(vertP3D.getZ() / Math.max(1e-9, getRenderScaleZ())),
-            getRenderHeight() - 1));
-        int column = Math.max(0, Math.min(
-            (int) Math.floor(vertP3D.getX() / Math.max(1e-9, getRenderScaleX())),
-            getRenderWidth() - 1));
-        int orientedRenderRow = orientRowIndex(row, getRenderHeight());
-        int sourceRow = mapRenderIndexToSource(
-            orientedRenderRow, getRenderHeight(), getSourceHeight());
+        int row = coordinateMapper.surfaceZToRenderRow(vertP3D.getZ());
+        int column = coordinateMapper.surfaceXToRenderColumn(vertP3D.getX());
+        int sourceRow = coordinateMapper.surfaceZToSourceRow(vertP3D.getZ());
 
         if (anchorCallout != null) {
             if (sourceRow < featureVectors.size()) {
@@ -1745,9 +1745,9 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
 
         scene.addEventHandler(TimelineEvent.TIMELINE_SAMPLE_INDEX, e -> {
             anchorIndex = (int) e.object;
-            if (anchorIndex < 0) anchorIndex = 0;
-            else if (anchorIndex > dataGrid.size()) anchorIndex = dataGrid.size();
-            glowLineBox.setTranslateZ((anchorIndex * surfScale) - (getWorldDepth() / 2.0));
+            int maxSourceRow = Math.max(0, getSourceHeight() - 1);
+            anchorIndex = Math.max(0, Math.min(anchorIndex, maxSourceRow));
+            glowLineBox.setTranslateZ(coordinateMapper.sourceRowToWorldZ(anchorIndex));
             setSpheroidAnchor(true, anchorIndex);
             eastLabel.setText("Sample: " + anchorIndex + ", Neural Feature: " + getSourceWidth());
             westLabel.setText("Sample: " + anchorIndex + ", Neural Feature: 0");
@@ -1824,6 +1824,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
                 surfPlot.setTranslateX(-(xWidth * surfScale) / 2.0);
                 surfPlot.setTranslateZ(-(zWidth * surfScale) / 2.0);
             }
+            refreshCoordinateMapper();
             updateTheMesh();
         });
 
@@ -1834,6 +1835,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
                 surfPlot.setTranslateX(-(xWidth * surfScale) / 2.0);
                 surfPlot.setTranslateZ(-(zWidth * surfScale) / 2.0);
             }
+            refreshCoordinateMapper();
             updateTheMesh();
         });
 
@@ -2581,7 +2583,23 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         }
     }
 
-    private int getSourceWidth() {
+    public boolean isImageBackedSurface() {
+        return imageBackedSurface;
+    }
+
+    public int getRenderL0Width() {
+        return lodProcessedLevels != null && !lodProcessedLevels.isEmpty()
+            ? lodProcessedLevels.get(0).width()
+            : getRenderWidth();
+    }
+
+    public int getRenderL0Height() {
+        return lodProcessedLevels != null && !lodProcessedLevels.isEmpty()
+            ? lodProcessedLevels.get(0).height()
+            : getRenderHeight();
+    }
+
+    public int getSourceWidth() {
         if (imageBackedSurface && imageSourceWidth > 0) return imageSourceWidth;
         if (processingSourceHeightField != null) return processingSourceHeightField.width();
         if (originalGrid != null && !originalGrid.isEmpty()) return originalGrid.get(0).size();
@@ -2589,7 +2607,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         return Math.max(1, xWidth);
     }
 
-    private int getSourceHeight() {
+    public int getSourceHeight() {
         if (imageBackedSurface && imageSourceHeight > 0) return imageSourceHeight;
         if (processingSourceHeightField != null) return processingSourceHeightField.height();
         if (originalGrid != null && !originalGrid.isEmpty()) return originalGrid.size();
@@ -2597,11 +2615,11 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         return Math.max(1, zWidth);
     }
 
-    private int getRenderWidth() {
+    public int getRenderWidth() {
         return activeHeightField != null ? activeHeightField.width() : Math.max(1, xWidth);
     }
 
-    private int getRenderHeight() {
+    public int getRenderHeight() {
         return activeHeightField != null ? activeHeightField.height() : Math.max(1, zWidth);
     }
 
@@ -2613,14 +2631,14 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         return Double.isFinite(currentLodSurfScaleZ) ? currentLodSurfScaleZ : surfScale;
     }
 
-    private double getWorldWidth() {
+    public double getWorldWidth() {
         if (Double.isFinite(baseWorldWidth)) return baseWorldWidth;
         int sourceWidth = getSourceWidth();
         int sourceHeight = getSourceHeight();
         return calculateWorldWidth(sourceWidth, sourceHeight);
     }
 
-    private double getWorldDepth() {
+    public double getWorldDepth() {
         if (Double.isFinite(baseWorldDepth)) return baseWorldDepth;
         int sourceWidth = getSourceWidth();
         int sourceHeight = getSourceHeight();
@@ -2652,12 +2670,18 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         int sourceHeight = getSourceHeight();
         baseWorldWidth = calculateWorldWidth(sourceWidth, sourceHeight);
         baseWorldDepth = calculateWorldDepth(sourceWidth, sourceHeight);
+        refreshCoordinateMapper();
     }
 
-    private static int mapRenderIndexToSource(int renderIndex, int renderSize, int sourceSize) {
-        if (sourceSize <= 1 || renderSize <= 1) return 0;
-        double sourceCoordinate = ((renderIndex + 0.5) * sourceSize / (double) renderSize) - 0.5;
-        return Math.max(0, Math.min((int) Math.round(sourceCoordinate), sourceSize - 1));
+    private void refreshCoordinateMapper() {
+        coordinateMapper.configure(
+            getSourceWidth(),
+            getSourceHeight(),
+            getRenderWidth(),
+            getRenderHeight(),
+            getWorldWidth(),
+            getWorldDepth(),
+            getSurfaceRowOrientation());
     }
 
     private double getActiveRenderValue(int row, int column) {
@@ -2972,6 +2996,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         zWidth = activeHeightField.height();
         currentLodSurfScaleX = baseWorldWidth / xWidth;
         currentLodSurfScaleZ = baseWorldDepth / zWidth;
+        refreshCoordinateMapper();
 
         tiledSurfaceRenderer.setTileCellsL0(tileCellsL0);
         tiledSurfaceRenderer.setPyramid(
@@ -3083,6 +3108,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
 
         currentLodSurfScaleX = baseWorldWidth / xWidth;
         currentLodSurfScaleZ = baseWorldDepth / zWidth;
+        refreshCoordinateMapper();
 
         System.out.println("Applying Hypersurface LOD L" + activeLodIndex
             + ": " + xWidth + "x" + zWidth
@@ -3179,7 +3205,10 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
             int clamped = Math.max(0, Math.min(rowIndex, Math.max(0, getSourceHeight() - 1)));
             paintSingleColor(Color.TRANSPARENT);
             // Source row coordinates remain stable even when the active render LOD changes.
-            Point3D center = new Point3D(getWorldWidth() / 2.0, 0, clamped * surfScale);
+            Point3D center = new Point3D(
+                coordinateMapper.sourceColumnToSurfaceX(getSourceWidth() / 2),
+                0,
+                coordinateMapper.sourceRowToSurfaceZ(clamped));
             illuminateCrosshair(center);
         });
     }

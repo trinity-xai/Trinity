@@ -58,6 +58,14 @@ public class HypersurfaceControlsPane extends LitPathPane {
     private Spinner<Double> surfScaleSpinner;
     private Spinner<Integer> xWidthSpinner;
     private Spinner<Integer> zWidthSpinner;
+    private Label xWidthLabel;
+    private Label zWidthLabel;
+    private Label sourceDimensionsCaption;
+    private Label sourceDimensionsLabel;
+    private Label renderL0DimensionsCaption;
+    private Label renderL0DimensionsLabel;
+    private Label worldDimensionsCaption;
+    private Label worldDimensionsLabel;
 
     // Rendering
     private ComboBox<String> meshTypeCombo;
@@ -134,14 +142,26 @@ public class HypersurfaceControlsPane extends LitPathPane {
 
         // --- GUI sync from model → controls
         scene.addEventHandler(HypersurfaceEvent.SET_XWIDTH_GUI, e -> {
-            if (xWidthSpinner != null && !xWidthSpinner.getValue().equals(e.object)) {
-                xWidthSpinner.getValueFactory().setValue((Integer) e.object);
+            if (xWidthSpinner != null && e.object instanceof Integer value) {
+                if (xWidthSpinner.getValueFactory() instanceof SpinnerValueFactory.IntegerSpinnerValueFactory vf
+                    && value > vf.getMax()) {
+                    vf.setMax(value);
+                }
+                if (!xWidthSpinner.getValue().equals(value)) {
+                    xWidthSpinner.getValueFactory().setValue(value);
+                }
             }
             e.consume();
         });
         scene.addEventHandler(HypersurfaceEvent.SET_ZWIDTH_GUI, e -> {
-            if (zWidthSpinner != null && !zWidthSpinner.getValue().equals(e.object)) {
-                zWidthSpinner.getValueFactory().setValue((Integer) e.object);
+            if (zWidthSpinner != null && e.object instanceof Integer value) {
+                if (zWidthSpinner.getValueFactory() instanceof SpinnerValueFactory.IntegerSpinnerValueFactory vf
+                    && value > vf.getMax()) {
+                    vf.setMax(value);
+                }
+                if (!zWidthSpinner.getValue().equals(value)) {
+                    zWidthSpinner.getValueFactory().setValue(value);
+                }
             }
             e.consume();
         });
@@ -194,10 +214,23 @@ public class HypersurfaceControlsPane extends LitPathPane {
         yScaleSpinner.setEditable(true);
         surfScaleSpinner.setEditable(true);
 
-        addRow(dimsGrid, 0, "X width", xWidthSpinner);
-        addRow(dimsGrid, 1, "Z length", zWidthSpinner);
-        addRow(dimsGrid, 2, "Y scale", yScaleSpinner);
-        addRow(dimsGrid, 3, "Range scale", surfScaleSpinner);
+        xWidthLabel = new Label("X width");
+        zWidthLabel = new Label("Z length");
+        sourceDimensionsCaption = new Label("Source dimensions");
+        sourceDimensionsLabel = new Label("-");
+        renderL0DimensionsCaption = new Label("Render L0");
+        renderL0DimensionsLabel = new Label("-");
+        worldDimensionsCaption = new Label("World dimensions");
+        worldDimensionsLabel = new Label("-");
+
+        addRow(dimsGrid, 0, xWidthLabel, xWidthSpinner);
+        addRow(dimsGrid, 1, zWidthLabel, zWidthSpinner);
+        addRow(dimsGrid, 2, sourceDimensionsCaption, sourceDimensionsLabel);
+        addRow(dimsGrid, 3, renderL0DimensionsCaption, renderL0DimensionsLabel);
+        addRow(dimsGrid, 4, worldDimensionsCaption, worldDimensionsLabel);
+        addRow(dimsGrid, 5, "Y scale", yScaleSpinner);
+        addRow(dimsGrid, 6, "Range scale", surfScaleSpinner);
+        refreshDimensionControls();
 
         // Core: Spinner value listeners
         xWidthSpinner.valueProperty().addListener((obs, oldVal, newVal) ->
@@ -669,6 +702,7 @@ public class HypersurfaceControlsPane extends LitPathPane {
     }
 
     private void refreshLodDiagnostics() {
+        refreshDimensionControls();
         if (target == null || lodStatusLabel == null) return;
         TiledSurfaceRenderer.LodStatistics stats = target.getTiledLodStatistics();
         lodStatusLabel.setText(target.isTiledHeightFieldRendererActive() ? "Active" : "Inactive");
@@ -683,6 +717,43 @@ public class HypersurfaceControlsPane extends LitPathPane {
         budgetTargetTrianglesLabel.setText(formatTriangleCount(stats.budgetedTargetTriangles()));
         budgetCoarsenedLabel.setText(Integer.toString(stats.budgetCoarsenedTiles()));
         pendingTransitionsLabel.setText(Integer.toString(stats.pendingTransitions()));
+    }
+
+    private void refreshDimensionControls() {
+        if (target == null
+            || xWidthSpinner == null
+            || zWidthSpinner == null
+            || sourceDimensionsLabel == null) {
+            return;
+        }
+
+        boolean imageBacked = target.isImageBackedSurface();
+        setManagedVisible(xWidthLabel, !imageBacked);
+        setManagedVisible(xWidthSpinner, !imageBacked);
+        setManagedVisible(zWidthLabel, !imageBacked);
+        setManagedVisible(zWidthSpinner, !imageBacked);
+
+        setManagedVisible(sourceDimensionsCaption, imageBacked);
+        setManagedVisible(sourceDimensionsLabel, imageBacked);
+        setManagedVisible(renderL0DimensionsCaption, imageBacked);
+        setManagedVisible(renderL0DimensionsLabel, imageBacked);
+        setManagedVisible(worldDimensionsCaption, imageBacked);
+        setManagedVisible(worldDimensionsLabel, imageBacked);
+
+        if (imageBacked) {
+            sourceDimensionsLabel.setText(
+                target.getSourceWidth() + " x " + target.getSourceHeight());
+            renderL0DimensionsLabel.setText(
+                target.getRenderL0Width() + " x " + target.getRenderL0Height());
+            worldDimensionsLabel.setText(String.format(
+                "%.1f x %.1f", target.getWorldWidth(), target.getWorldDepth()));
+        }
+    }
+
+    private static void setManagedVisible(javafx.scene.Node node, boolean visible) {
+        if (node == null) return;
+        node.setManaged(visible);
+        node.setVisible(visible);
     }
 
     private static String formatTriangleCount(long triangles) {
@@ -729,8 +800,11 @@ public class HypersurfaceControlsPane extends LitPathPane {
     }
 
     private static void addRow(GridPane gp, int row, String label, javafx.scene.Node control) {
-        Label l = new Label(label);
-        gp.add(l, 0, row);
+        addRow(gp, row, new Label(label), control);
+    }
+
+    private static void addRow(GridPane gp, int row, Label label, javafx.scene.Node control) {
+        gp.add(label, 0, row);
 
         if (control instanceof Spinner || control instanceof ComboBox) {
             GridPane.setHgrow(control, Priority.NEVER);
