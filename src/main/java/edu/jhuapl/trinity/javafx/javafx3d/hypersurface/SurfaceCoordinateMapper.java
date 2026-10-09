@@ -104,6 +104,30 @@ public final class SurfaceCoordinateMapper {
         return orientVisualRowToSourceRow(visualSourceRow);
     }
 
+    /**
+     * Maps an L0/render-grid column boundary in [0, renderWidth] to the
+     * corresponding source-grid boundary in [0, sourceWidth]. Shared tile
+     * boundaries therefore remain contiguous after source scaling.
+     */
+    public int renderColumnBoundaryToSourceBoundary(int renderBoundary) {
+        int clamped = Math.max(0, Math.min(renderBoundary, renderWidth));
+        return (int) Math.round(clamped * sourceWidth / (double) renderWidth);
+    }
+
+    /**
+     * Maps an L0/render-grid visual row boundary to the corresponding source-row
+     * boundary. FIRST_ROW_FAR reverses the boundary direction so consumers can
+     * use the returned values directly in normal top-to-bottom source-image space.
+     */
+    public int renderRowBoundaryToSourceBoundary(int renderBoundary) {
+        int clamped = Math.max(0, Math.min(renderBoundary, renderHeight));
+        int visualSourceBoundary = (int) Math.round(
+            clamped * sourceHeight / (double) renderHeight);
+        return rowOrientation == SurfaceRowOrientation.FIRST_ROW_FAR
+            ? sourceHeight - visualSourceBoundary
+            : visualSourceBoundary;
+    }
+
     public int sourceWidth() {
         return sourceWidth;
     }

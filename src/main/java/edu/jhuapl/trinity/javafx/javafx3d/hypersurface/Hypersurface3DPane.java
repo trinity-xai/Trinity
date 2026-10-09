@@ -96,7 +96,6 @@ import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.MouseButton;
 import javafx.scene.input.MouseEvent;
-import javafx.scene.input.ScrollEvent;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
@@ -153,7 +152,6 @@ public class Hypersurface3DPane extends StackPane
     public static int DEFAULT_YSCALE = 5;
     private static final double POINT_LIGHT_CAMERA_OFFSET_Z = 100.0;
     private static final double POINT_LIGHT_QUADRATIC_ATTENUATION = 0.000001;
-    private static final double CAMERA_ZOOM_STEP = 50.0;
 
     public PerspectiveCamera camera;
     public CameraTransformer cameraTransform = new CameraTransformer();
@@ -165,12 +163,6 @@ public class Hypersurface3DPane extends StackPane
     private final double sceneHeight = 4000;
     private final double planeSize = sceneWidth / 2.0;
 
-    private double mousePosX;
-    private double mousePosY;
-    private double mouseOldX;
-    private double mouseOldY;
-    private double mouseDeltaX;
-    private double mouseDeltaY;
 
     public Group sceneRoot = new Group();
     public Group extrasGroup = new Group();
@@ -268,7 +260,6 @@ public class Hypersurface3DPane extends StackPane
     private Label xLabel = new Label("Features (ordered)");
     private Label yLabel = new Label("Magnitude");
     private Label zLabel = new Label("Time (Samples)");
-    Text hoverText = new Text("Coordinates: ");
 
     public List<String> featureLabels = new ArrayList<>();
     public Scene scene;
@@ -432,18 +423,11 @@ public class Hypersurface3DPane extends StackPane
         zLabel.setFont(font);
         zLabel.setMouseTransparent(true);
 
-        hoverText.setStroke(Color.ALICEBLUE);
-        hoverText.setStrokeWidth(2);
-        hoverText.setFill(Color.CYAN);
-        hoverText.setFont(new Font("Consolas", 30));
-        hoverText.setMouseTransparent(true);
-
-        labelGroup.getChildren().addAll(xLabel, yLabel, zLabel, hoverText);
+        labelGroup.getChildren().addAll(xLabel, yLabel, zLabel);
         labelGroup.setManaged(false);
         shape3DToLabel.put(xSphere, xLabel);
         shape3DToLabel.put(ySphere, yLabel);
         shape3DToLabel.put(zSphere, zLabel);
-        shape3DToLabel.put(highlightedPoint, hoverText);
         camera = new PerspectiveCamera(true);
 
         cameraTransform.setTranslate(0, 0, 0);
@@ -458,7 +442,9 @@ public class Hypersurface3DPane extends StackPane
             cameraTransform,
             subScene,
             this::getCameraSurfaceBounds,
-            this::refreshAfterCameraPreset);
+            this::handleCameraInteraction,
+            this::handleCameraSettled);
+        cameraController.installInputHandlers();
         setupSkyBox();
         debugGroup.setVisible(false);
         extrasGroup.setVisible(false);
@@ -484,37 +470,7 @@ public class Hypersurface3DPane extends StackPane
 
         subScene.setOnKeyPressed(event -> {
             KeyCode keycode = event.getCode();
-
-            if ((keycode == KeyCode.NUMPAD0 && event.isControlDown())
-                || (keycode == KeyCode.DIGIT0 && event.isControlDown())) {
-                resetView(1000, false);
-            } else if ((keycode == KeyCode.NUMPAD0 && event.isShiftDown())
-                || (keycode == KeyCode.DIGIT0 && event.isShiftDown())) {
-                resetView(0, true);
-            }
-            double change = 10.0;
-            if (event.isShiftDown()) change = 100.0;
-
-            if (keycode == KeyCode.W) camera.setTranslateZ(camera.getTranslateZ() + change);
-            if (keycode == KeyCode.S) camera.setTranslateZ(camera.getTranslateZ() - change);
-            if (keycode == KeyCode.PLUS && event.isShortcutDown()) camera.setTranslateZ(camera.getTranslateZ() + change);
-            if (keycode == KeyCode.MINUS && event.isShortcutDown()) camera.setTranslateZ(camera.getTranslateZ() - change);
-
-            if (keycode == KeyCode.A) camera.setTranslateX(camera.getTranslateX() - change);
-            if (keycode == KeyCode.D) camera.setTranslateX(camera.getTranslateX() + change);
-            if (keycode == KeyCode.SPACE) camera.setTranslateY(camera.getTranslateY() + change);
-            if (keycode == KeyCode.X) camera.setTranslateY(camera.getTranslateY() - change);
-
-            change = event.isShiftDown() ? 10.0 : 1.0;
-            if (keycode == KeyCode.NUMPAD7 || (keycode == KeyCode.DIGIT8)) cameraTransform.ry.setAngle(cameraTransform.ry.getAngle() + change);
-            if (keycode == KeyCode.NUMPAD9 || (keycode == KeyCode.DIGIT8 && event.isControlDown()))
-                cameraTransform.ry.setAngle(cameraTransform.ry.getAngle() - change);
-            if (keycode == KeyCode.NUMPAD4 || (keycode == KeyCode.DIGIT9)) cameraTransform.rx.setAngle(cameraTransform.rx.getAngle() + change);
-            if (keycode == KeyCode.NUMPAD6 || (keycode == KeyCode.DIGIT9 && event.isControlDown()))
-                cameraTransform.rx.setAngle(cameraTransform.rx.getAngle() - change);
-            if (keycode == KeyCode.NUMPAD1 || (keycode == KeyCode.DIGIT0)) cameraTransform.rz.setAngle(cameraTransform.rz.getAngle() + change);
-            if (keycode == KeyCode.NUMPAD3 || (keycode == KeyCode.DIGIT0 && event.isControlDown()))
-                cameraTransform.rz.setAngle(cameraTransform.rz.getAngle() - change);
+            boolean cameraHandled = cameraController.handleKeyPressed(event);
 
             if (keycode == KeyCode.COMMA) {
                 if (xFactorIndex > 0 && yFactorIndex > 0 && zFactorIndex > 0) {
@@ -567,34 +523,13 @@ public class Hypersurface3DPane extends StackPane
                 glowLineBox.setTranslateZ(glowLineBox.getTranslateZ() - tz);
             }
 
-            updateLabels();
-            updateCalloutHeadPoints(subScene);
-            requestLodUpdate(LodManager.UpdateReason.OTHER);
+            if (!cameraHandled) {
+                updateLabels();
+                updateCalloutHeadPoints(subScene);
+                requestLodUpdate(LodManager.UpdateReason.OTHER);
+            }
         });
 
-        subScene.setOnMousePressed((MouseEvent me) -> {
-            if (me.isSynthesized()) LOG.info("isSynthesized");
-            mousePosX = me.getSceneX();
-            mousePosY = me.getSceneY();
-            mouseOldX = me.getSceneX();
-            mouseOldY = me.getSceneY();
-        });
-        subScene.setOnZoom(event -> {
-            double deltaZ = event.getZoomFactor() > 1.0
-                ? CAMERA_ZOOM_STEP
-                : -CAMERA_ZOOM_STEP;
-            zoomCamera(deltaZ);
-            event.consume();
-        });
-        subScene.setOnScroll((ScrollEvent event) -> {
-            double modifier = 50.0;
-            double modifierFactor = 0.1;
-            if (event.isControlDown()) modifier = 1.0;
-            if (event.isShiftDown()) modifier = 100.0;
-            zoomCamera(event.getDeltaY() * modifierFactor * modifier);
-        });
-
-        subScene.setOnMouseDragged((MouseEvent me) -> mouseDragCamera(me));
         Pane pathPane = App.getAppPathPaneStack();
         surfaceChartPane = new SurfaceChartPane(scene, pathPane);
         bp = new BorderPane(subScene);
@@ -609,9 +544,6 @@ public class Hypersurface3DPane extends StackPane
         });
 
         
-        subScene.setOnMouseReleased((MouseEvent me) -> {
-            forceLodUpdate();
-        });
 MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         copyAsImageItem.setOnAction((ActionEvent e) -> {
             Clipboard clipboard = Clipboard.getSystemClipboard();
@@ -1298,55 +1230,29 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
     }
 
     public void intro(double milliseconds) {
-        camera.setTranslateZ(DEFAULT_INTRO_DISTANCE);
-        cameraController.fit(milliseconds);
+        cameraController.intro(milliseconds, DEFAULT_INTRO_DISTANCE);
     }
 
     public void outtro(double milliseconds) {
-        JavaFX3DUtils.zoomTransition(milliseconds, camera, DEFAULT_INTRO_DISTANCE);
+        cameraController.outtro(milliseconds, DEFAULT_INTRO_DISTANCE);
     }
 
     public void updateAll() {
         Platform.runLater(() -> updateView(true));
     }
 
-    private void mouseDragCamera(MouseEvent me) {
-        mouseOldX = mousePosX;
-        mouseOldY = mousePosY;
-        mousePosX = me.getSceneX();
-        mousePosY = me.getSceneY();
-        mouseDeltaX = (mousePosX - mouseOldX);
-        mouseDeltaY = (mousePosY - mouseOldY);
-        double modifier = 1.0;
-        double modifierFactor = 0.1;
-        if (me.isControlDown()) modifier = 0.1;
-        if (me.isShiftDown()) modifier = 25.0;
-        if (me.isPrimaryButtonDown()) {
-            if (me.isAltDown())
-                cameraTransform.rz.setAngle(((cameraTransform.rz.getAngle() + mouseDeltaX * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180);
-            else {
-                cameraTransform.ry.setAngle(((cameraTransform.ry.getAngle() + mouseDeltaX * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180);
-                cameraTransform.rx.setAngle(((cameraTransform.rx.getAngle() - mouseDeltaY * modifierFactor * modifier * 2.0) % 360 + 540) % 360 - 180);
-            }
-        } else if (me.isMiddleButtonDown()) {
-            cameraTransform.t.setX(cameraTransform.t.getX() + mouseDeltaX * modifierFactor * modifier * 0.3);
-            cameraTransform.t.setY(cameraTransform.t.getY() + mouseDeltaY * modifierFactor * modifier * 0.3);
-        }
-        refreshAfterCameraInteraction(LodManager.UpdateReason.DRAG);
-    }
-
-    private void zoomCamera(double deltaZ) {
-        camera.setTranslateZ(camera.getTranslateZ() + deltaZ);
-        refreshAfterCameraInteraction(LodManager.UpdateReason.SCROLL);
-    }
-
-    private void refreshAfterCameraInteraction(LodManager.UpdateReason reason) {
+    private void handleCameraInteraction(HypersurfaceCameraController.InteractionType interactionType) {
         updateLabels();
         updateCalloutHeadPoints(subScene);
+        LodManager.UpdateReason reason = switch (interactionType) {
+            case DRAG -> LodManager.UpdateReason.DRAG;
+            case ZOOM -> LodManager.UpdateReason.SCROLL;
+            case KEYBOARD -> LodManager.UpdateReason.OTHER;
+        };
         requestLodUpdate(reason);
     }
 
-    private void refreshAfterCameraPreset() {
+    private void handleCameraSettled() {
         updateLabels();
         updateCalloutHeadPoints(subScene);
         forceLodUpdate();
@@ -1370,13 +1276,6 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         updateLabels();
     }
 
-    void updateInteractionHoverText(String text) {
-        hoverText.setText(text);
-        hoverText.setStrokeWidth(1);
-        hoverText.setLayoutX(50);
-        hoverText.setLayoutY(50);
-    }
-
     HeightField getActiveHeightFieldForInteraction() {
         return activeHeightField;
     }
@@ -1391,6 +1290,18 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
 
     TiledSurfaceRenderer getTiledSurfaceRendererForInteraction() {
         return tiledSurfaceRenderer;
+    }
+
+    Image getSourceImageForInteraction() {
+        return lastImage;
+    }
+
+    int getImageSourceStartXForInteraction() {
+        return imageSourceStartX;
+    }
+
+    int getImageSourceStartYForInteraction() {
+        return imageSourceStartY;
     }
 
     void showSurfaceChartsPane() {
@@ -2050,7 +1961,6 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         shape3DToLabel.put(xSphere, xLabel);
         shape3DToLabel.put(ySphere, yLabel);
         shape3DToLabel.put(zSphere, zLabel);
-        shape3DToLabel.put(highlightedPoint, hoverText);
         dataGrid.clear();
         featureVectors.clear();
         originalGrid.clear();
@@ -2076,7 +1986,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
 
     public void showFA3D() {
         Timeline timeline = new Timeline(
-            new KeyFrame(Duration.seconds(0.1), e -> camera.setTranslateZ(DEFAULT_INTRO_DISTANCE)),
+            new KeyFrame(Duration.seconds(0.1), e -> cameraController.setCameraDistance(DEFAULT_INTRO_DISTANCE)),
             new KeyFrame(Duration.seconds(0.1), new KeyValue(opacityProperty(), 0.0)),
             new KeyFrame(Duration.seconds(0.3), e -> setVisible(true)),
             new KeyFrame(Duration.seconds(0.3), new KeyValue(opacityProperty(), 1.0)),
@@ -2423,6 +2333,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         rebuildProcessedGridAndRefresh();
         xSphere.setTranslateX(getWorldWidth() / 2.0);
         zSphere.setTranslateZ(getWorldDepth() / 2.0);
+        interactionController.publishSourceImageChanged(image);
         Utils.printTotalTime(startTime);
     }
 

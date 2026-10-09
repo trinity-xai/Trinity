@@ -12,6 +12,7 @@ import javafx.scene.shape.DrawMode;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Objects;
+import java.util.Optional;
 
 /**
  * Tiled renderer for primitive HeightField LOD pyramids.
@@ -36,6 +37,16 @@ public final class TiledSurfaceRenderer extends Group {
         long budgetedTargetTriangles,
         int budgetCoarsenedTiles,
         int pendingTransitions
+    ) { }
+
+    /** Read-only logical L0 tile information used by surface inspection UI. */
+    public record TileInspection(
+        int tileId,
+        int activeLod,
+        int startColumn,
+        int endColumnExclusive,
+        int startRow,
+        int endRowExclusive
     ) { }
 
     public enum ColorMode {
@@ -293,6 +304,38 @@ public final class TiledSurfaceRenderer extends Group {
 
     public int getPendingTransitionCount() {
         return lodManager.getPendingTransitionCount();
+    }
+
+    /**
+     * Returns the logical L0 tile containing the supplied visual render cell.
+     * Tile geometry/LOD ownership stays inside this renderer; callers receive only
+     * immutable bounds and the currently active LOD.
+     */
+    public Optional<TileInspection> getTileInspectionAt(int renderRow, int renderColumn) {
+        if (levels.isEmpty() || tilesById.length == 0) return Optional.empty();
+
+        HeightField l0 = levels.get(0);
+        int width = l0.width();
+        int height = l0.height();
+        if (width <= 0 || height <= 0) return Optional.empty();
+
+        int column = Math.max(0, Math.min(renderColumn, width - 1));
+        int row = Math.max(0, Math.min(renderRow, height - 1));
+        int tileColumns = Math.max(1, (int) Math.ceil(width / (double) tileCellsL0));
+        int tileColumn = column / tileCellsL0;
+        int tileRow = row / tileCellsL0;
+        int tileId = tileRow * tileColumns + tileColumn;
+        if (tileId < 0 || tileId >= tilesById.length) return Optional.empty();
+
+        TileRenderState tile = tilesById[tileId];
+        if (tile == null) return Optional.empty();
+        return Optional.of(new TileInspection(
+            tile.getTileId(),
+            tile.getActiveLod(),
+            tile.startX0,
+            tile.endX0,
+            tile.startZ0,
+            tile.endZ0));
     }
 
     public LodStatistics getLodStatistics() {

@@ -5,16 +5,35 @@ import javafx.animation.Timeline;
 import javafx.geometry.Point3D;
 import javafx.scene.PerspectiveCamera;
 import javafx.scene.SubScene;
+import javafx.scene.input.KeyCode;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.input.MouseEvent;
+import javafx.scene.input.ScrollEvent;
+import javafx.scene.input.ZoomEvent;
 import org.fxyz3d.utils.CameraTransformer;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
+
+import java.util.function.Consumer;
 
 /**
- * Owns camera framing and canonical view presets for the Hypersurface projection.
+ * Owns camera input, camera motion, framing, and canonical view presets for the
+ * Hypersurface projection.
  *
  * <p>The controller deliberately operates on world-space surface bounds rather than
  * source or render resolution. This keeps camera framing stable across LOD changes,
- * tiled rendering, and large image sources.</p>
+ * tiled rendering, and large image sources. Rendering/LOD policy remains outside the
+ * controller and is notified through narrow interaction callbacks.</p>
  */
 public final class HypersurfaceCameraController {
+
+    private static final Logger LOG = LoggerFactory.getLogger(HypersurfaceCameraController.class);
+
+    public enum InteractionType {
+        DRAG,
+        ZOOM,
+        KEYBOARD
+    }
 
     public enum Preset {
         OBLIQUE(-10.0, -45.0, 0.0),
@@ -68,20 +87,29 @@ public final class HypersurfaceCameraController {
     private static final double DEFAULT_FIT_PADDING = 1.08;
     private static final double MIN_HALF_FOV_RADIANS = Math.toRadians(1.0);
     private static final double MIN_CAMERA_DISTANCE = 10.0;
+    private static final double GESTURE_ZOOM_STEP = 50.0;
+    private static final double MOUSE_ROTATION_FACTOR = 0.1;
+    private static final double MOUSE_PAN_FACTOR = 0.3;
 
     private final PerspectiveCamera camera;
     private final CameraTransformer cameraTransform;
     private final SubScene subScene;
     private final BoundsProvider boundsProvider;
+    private final Consumer<InteractionType> cameraChangedCallback;
     private final Runnable cameraSettledCallback;
 
     private Timeline activeTransition;
     private double fitPadding = DEFAULT_FIT_PADDING;
+    private double mousePosX;
+    private double mousePosY;
+    private double mouseOldX;
+    private double mouseOldY;
 
     public HypersurfaceCameraController(PerspectiveCamera camera,
                                         CameraTransformer cameraTransform,
                                         SubScene subScene,
                                         BoundsProvider boundsProvider,
+                                        Consumer<InteractionType> cameraChangedCallback,
                                         Runnable cameraSettledCallback) {
         if (camera == null) throw new IllegalArgumentException("camera cannot be null");
         if (cameraTransform == null) throw new IllegalArgumentException("cameraTransform cannot be null");
@@ -92,9 +120,129 @@ public final class HypersurfaceCameraController {
         this.cameraTransform = cameraTransform;
         this.subScene = subScene;
         this.boundsProvider = boundsProvider;
+        this.cameraChangedCallback = cameraChangedCallback != null
+            ? cameraChangedCallback
+            : ignored -> { };
         this.cameraSettledCallback = cameraSettledCallback != null
             ? cameraSettledCallback
             : () -> { };
+    }
+
+    /**
+     * Installs the camera-specific mouse and gesture handlers on the Hypersurface
+     * SubScene. Keyboard handling remains callable from the pane because the same
+     * key handler also owns non-camera Hypersurface shortcuts.
+     */
+    public void installInputHandlers() {
+        subScene.setOnMousePressed(this::handleMousePressed);
+        subScene.setOnZoom(this::handleZoom);
+        subScene.setOnScroll(this::handleScroll);
+        subScene.setOnMouseDragged(this::handleMouseDragged);
+        subScene.setOnMouseReleased(this::handleMouseReleased);
+    }
+
+    /**
+     * Handles camera-related keyboard shortcuts while allowing the owning pane to
+     * continue handling data/analysis shortcuts in the same KeyEvent callback.
+     *
+     * @return true when at least one camera action was applied
+     */
+    public boolean handleKeyPressed(KeyEvent event) {
+        if (event == null) return false;
+
+        KeyCode keycode = event.getCode();
+        boolean cameraChanged = false;
+
+        if ((keycode == KeyCode.NUMPAD0 && event.isControlDown())
+            || (keycode == KeyCode.DIGIT0 && event.isControlDown())) {
+            reset(1000.0);
+            cameraChanged = true;
+        } else if ((keycode == KeyCode.NUMPAD0 && event.isShiftDown())
+            || (keycode == KeyCode.DIGIT0 && event.isShiftDown())) {
+            reset(0.0);
+            cameraChanged = true;
+        }
+
+        double change = event.isShiftDown() ? 100.0 : 10.0;
+        if (keycode == KeyCode.W) {
+            camera.setTranslateZ(camera.getTranslateZ() + change);
+            cameraChanged = true;
+        }
+        if (keycode == KeyCode.S) {
+            camera.setTranslateZ(camera.getTranslateZ() - change);
+            cameraChanged = true;
+        }
+        if (keycode == KeyCode.PLUS && event.isShortcutDown()) {
+            camera.setTranslateZ(camera.getTranslateZ() + change);
+            cameraChanged = true;
+        }
+        if (keycode == KeyCode.MINUS && event.isShortcutDown()) {
+            camera.setTranslateZ(camera.getTranslateZ() - change);
+            cameraChanged = true;
+        }
+        if (keycode == KeyCode.A) {
+            camera.setTranslateX(camera.getTranslateX() - change);
+            cameraChanged = true;
+        }
+        if (keycode == KeyCode.D) {
+            camera.setTranslateX(camera.getTranslateX() + change);
+            cameraChanged = true;
+        }
+        if (keycode == KeyCode.SPACE) {
+            camera.setTranslateY(camera.getTranslateY() + change);
+            cameraChanged = true;
+        }
+        if (keycode == KeyCode.X) {
+            camera.setTranslateY(camera.getTranslateY() - change);
+            cameraChanged = true;
+        }
+
+        change = event.isShiftDown() ? 10.0 : 1.0;
+        if (keycode == KeyCode.NUMPAD7 || keycode == KeyCode.DIGIT8) {
+            cameraTransform.ry.setAngle(cameraTransform.ry.getAngle() + change);
+            cameraChanged = true;
+        }
+        if (keycode == KeyCode.NUMPAD9 || (keycode == KeyCode.DIGIT8 && event.isControlDown())) {
+            cameraTransform.ry.setAngle(cameraTransform.ry.getAngle() - change);
+            cameraChanged = true;
+        }
+        if (keycode == KeyCode.NUMPAD4 || keycode == KeyCode.DIGIT9) {
+            cameraTransform.rx.setAngle(cameraTransform.rx.getAngle() + change);
+            cameraChanged = true;
+        }
+        if (keycode == KeyCode.NUMPAD6 || (keycode == KeyCode.DIGIT9 && event.isControlDown())) {
+            cameraTransform.rx.setAngle(cameraTransform.rx.getAngle() - change);
+            cameraChanged = true;
+        }
+        if (keycode == KeyCode.NUMPAD1 || keycode == KeyCode.DIGIT0) {
+            cameraTransform.rz.setAngle(cameraTransform.rz.getAngle() + change);
+            cameraChanged = true;
+        }
+        if (keycode == KeyCode.NUMPAD3 || (keycode == KeyCode.DIGIT0 && event.isControlDown())) {
+            cameraTransform.rz.setAngle(cameraTransform.rz.getAngle() - change);
+            cameraChanged = true;
+        }
+
+        if (cameraChanged) {
+            cameraChangedCallback.accept(InteractionType.KEYBOARD);
+        }
+        return cameraChanged;
+    }
+
+    /** Moves the camera immediately to the supplied local-Z distance. */
+    public void setCameraDistance(double distance) {
+        camera.setTranslateZ(distance);
+    }
+
+    /** Historical Hypersurface intro: begin far away, then fit the current surface. */
+    public void intro(double milliseconds, double introDistance) {
+        setCameraDistance(introDistance);
+        fit(milliseconds);
+    }
+
+    /** Historical Hypersurface outtro: animate directly to the supplied distance. */
+    public void outtro(double milliseconds, double outroDistance) {
+        JavaFX3DUtils.zoomTransition(milliseconds, camera, outroDistance);
     }
 
     /**
@@ -142,6 +290,79 @@ public final class HypersurfaceCameraController {
             throw new IllegalArgumentException("fitPadding must be finite and >= 1.0");
         }
         this.fitPadding = fitPadding;
+    }
+
+    private void handleMousePressed(MouseEvent event) {
+        if (event.isSynthesized()) LOG.info("isSynthesized");
+        mousePosX = event.getSceneX();
+        mousePosY = event.getSceneY();
+        mouseOldX = mousePosX;
+        mouseOldY = mousePosY;
+    }
+
+    private void handleMouseDragged(MouseEvent event) {
+        mouseOldX = mousePosX;
+        mouseOldY = mousePosY;
+        mousePosX = event.getSceneX();
+        mousePosY = event.getSceneY();
+
+        double mouseDeltaX = mousePosX - mouseOldX;
+        double mouseDeltaY = mousePosY - mouseOldY;
+        double modifier = 1.0;
+        if (event.isControlDown()) modifier = 0.1;
+        if (event.isShiftDown()) modifier = 25.0;
+
+        if (event.isPrimaryButtonDown()) {
+            if (event.isAltDown()) {
+                cameraTransform.rz.setAngle(normalizeAngle(
+                    cameraTransform.rz.getAngle()
+                        + mouseDeltaX * MOUSE_ROTATION_FACTOR * modifier * 2.0));
+            } else {
+                cameraTransform.ry.setAngle(normalizeAngle(
+                    cameraTransform.ry.getAngle()
+                        + mouseDeltaX * MOUSE_ROTATION_FACTOR * modifier * 2.0));
+                cameraTransform.rx.setAngle(normalizeAngle(
+                    cameraTransform.rx.getAngle()
+                        - mouseDeltaY * MOUSE_ROTATION_FACTOR * modifier * 2.0));
+            }
+        } else if (event.isMiddleButtonDown()) {
+            cameraTransform.t.setX(cameraTransform.t.getX()
+                + mouseDeltaX * MOUSE_ROTATION_FACTOR * modifier * MOUSE_PAN_FACTOR);
+            cameraTransform.t.setY(cameraTransform.t.getY()
+                + mouseDeltaY * MOUSE_ROTATION_FACTOR * modifier * MOUSE_PAN_FACTOR);
+        }
+
+        // Preserve the prior behavior: every drag event requests an active-camera
+        // refresh, even when no recognized mouse button changed the transform.
+        cameraChangedCallback.accept(InteractionType.DRAG);
+    }
+
+    private void handleZoom(ZoomEvent event) {
+        double deltaZ = event.getZoomFactor() > 1.0
+            ? GESTURE_ZOOM_STEP
+            : -GESTURE_ZOOM_STEP;
+        zoom(deltaZ);
+        event.consume();
+    }
+
+    private void handleScroll(ScrollEvent event) {
+        double modifier = 50.0;
+        if (event.isControlDown()) modifier = 1.0;
+        if (event.isShiftDown()) modifier = 100.0;
+        zoom(event.getDeltaY() * MOUSE_ROTATION_FACTOR * modifier);
+    }
+
+    private void handleMouseReleased(MouseEvent event) {
+        cameraSettledCallback.run();
+    }
+
+    private void zoom(double deltaZ) {
+        camera.setTranslateZ(camera.getTranslateZ() + deltaZ);
+        cameraChangedCallback.accept(InteractionType.ZOOM);
+    }
+
+    private static double normalizeAngle(double angle) {
+        return ((angle % 360.0) + 540.0) % 360.0 - 180.0;
     }
 
     /**

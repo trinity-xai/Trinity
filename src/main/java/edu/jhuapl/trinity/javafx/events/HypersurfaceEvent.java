@@ -95,6 +95,10 @@ public class HypersurfaceEvent extends Event {
         new EventType<>(ANY, "HYPERSURF_DATA_MARKERS_ENABLE_CHANGED");   // Boolean
     public static final EventType<HypersurfaceEvent> CROSSHAIRS_ENABLE_CHANGED =
         new EventType<>(ANY, "HYPERSURF_CROSSHAIRS_ENABLE_CHANGED");     // Boolean
+    public static final EventType<HypersurfaceEvent> SURFACE_SOURCE_IMAGE_CHANGED =
+        new EventType<>(ANY, "HYPERSURF_SURFACE_SOURCE_IMAGE_CHANGED"); // Image
+    public static final EventType<HypersurfaceEvent> SURFACE_INSPECTION_UPDATED =
+        new EventType<>(ANY, "HYPERSURF_SURFACE_INSPECTION_UPDATED");   // SurfaceInspection or null
 
     // --- Commands / actions ---
     public static final EventType<HypersurfaceEvent> RESET_VIEW =
@@ -239,6 +243,14 @@ public class HypersurfaceEvent extends Event {
 
     public static HypersurfaceEvent crosshairsEnabled(boolean b) {
         return of(CROSSHAIRS_ENABLE_CHANGED, b);
+    }
+
+    public static HypersurfaceEvent sourceImageChanged(Object image) {
+        return of(SURFACE_SOURCE_IMAGE_CHANGED, image);
+    }
+
+    public static HypersurfaceEvent surfaceInspection(Object inspection) {
+        return of(SURFACE_INSPECTION_UPDATED, inspection);
     }
 
     public static HypersurfaceEvent resetView() {

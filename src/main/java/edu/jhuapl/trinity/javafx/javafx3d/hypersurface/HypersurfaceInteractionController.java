@@ -9,9 +9,12 @@ import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.FactorAnalysisEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.events.GraphEvent;
+import edu.jhuapl.trinity.javafx.events.HypersurfaceEvent;
+import javafx.application.Platform;
 import javafx.scene.Node;
 import javafx.scene.Scene;
 import javafx.scene.image.Image;
+import javafx.scene.image.PixelReader;
 import javafx.scene.input.MouseEvent;
 import javafx.scene.paint.Color;
 import javafx.scene.text.Font;
@@ -63,6 +66,14 @@ public final class HypersurfaceInteractionController {
 
     private FeatureVector lastPublishedFeatureVector;
     private SurfaceInteractionContext lastInteractionContext;
+    private SurfaceInspection lastSurfaceInspection;
+
+    private int lastStatsRenderRow = -1;
+    private int lastStatsRenderColumn = -1;
+    private double lastRowMinimum = Double.NaN;
+    private double lastRowMaximum = Double.NaN;
+    private double lastColumnMinimum = Double.NaN;
+    private double lastColumnMaximum = Double.NaN;
 
     private GraphDirectedCollection currentGraph;
     private final IdentityHashMap<GraphNode, Integer> graphNodeRowIndex = new IdentityHashMap<>();
@@ -160,6 +171,14 @@ public final class HypersurfaceInteractionController {
         if (lastPublishedFeatureVector != null) {
             publishFeatureVector(lastPublishedFeatureVector, true);
         }
+        if (lastSurfaceInspection != null) {
+            publishSurfaceInspection(lastSurfaceInspection);
+        }
+    }
+
+    /** Publishes an accepted Hypersurface source image without forcing Navigator open. */
+    public void publishSourceImageChanged(Image sourceImage) {
+        fireHypersurfaceEvent(HypersurfaceEvent.sourceImageChanged(sourceImage));
     }
 
     public SurfaceInteractionContext getLastInteractionContext() {
@@ -169,7 +188,15 @@ public final class HypersurfaceInteractionController {
     public void resetSelectionState() {
         lastPublishedFeatureVector = null;
         lastInteractionContext = null;
+        lastSurfaceInspection = null;
+        lastStatsRenderRow = -1;
+        lastStatsRenderColumn = -1;
+        lastRowMinimum = Double.NaN;
+        lastRowMaximum = Double.NaN;
+        lastColumnMinimum = Double.NaN;
+        lastColumnMaximum = Double.NaN;
         surfaceCrosshairOverlay.hide();
+        fireHypersurfaceEvent(HypersurfaceEvent.surfaceInspection(null));
     }
 
     /**
@@ -237,6 +264,8 @@ public final class HypersurfaceInteractionController {
     }
 
     private void handleSurfaceHover(Point3D surfacePoint) {
+        // Keep the 3D marker responsive at raw mouse-event frequency. Rich inspection
+        // state below is coalesced by source/render cell changes.
         pane.updateInteractionHoverMarker(surfacePoint);
 
         int renderRow = coordinateMapper.surfaceZToRenderRow(surfacePoint.getZ());
@@ -248,6 +277,7 @@ public final class HypersurfaceInteractionController {
             ? pane.getActiveRenderValue(renderRow, renderColumn)
             : Double.NaN;
 
+        SurfaceInteractionContext previous = lastInteractionContext;
         SurfaceInteractionContext context = new SurfaceInteractionContext(
             surfacePoint, renderRow, renderColumn, sourceRow, sourceColumn, value);
         lastInteractionContext = context;
@@ -258,7 +288,19 @@ public final class HypersurfaceInteractionController {
             surfaceCrosshairOverlay.requestRenderPosition(renderRow, renderColumn);
         }
 
-        if (surfaceChartsEnabled && activeHeightField != null) {
+        boolean renderCellChanged = previous == null
+            || previous.renderRow() != renderRow
+            || previous.renderColumn() != renderColumn;
+        boolean sourcePixelChanged = previous == null
+            || previous.sourceRow() != sourceRow
+            || previous.sourceColumn() != sourceColumn;
+
+        if (activeHeightField != null && (sourcePixelChanged || renderCellChanged
+            || tileOrLodChanged(renderRow, renderColumn))) {
+            publishSurfaceInspection(buildSurfaceInspection(context));
+        }
+
+        if (surfaceChartsEnabled && activeHeightField != null && renderCellChanged) {
             publishSurfaceChartData(context);
         }
     }
@@ -288,26 +330,161 @@ public final class HypersurfaceInteractionController {
             pane.getFeatureLabelsForInteraction()));
     }
 
+    private SurfaceInspection buildSurfaceInspection(SurfaceInteractionContext context) {
+        refreshStatistics(context.renderRow(), context.renderColumn());
+
+        boolean imageBacked = pane.isImageBackedSurface();
+        int imageColumn = context.sourceColumn();
+        int imageRow = context.sourceRow();
+        int red = -1;
+        int green = -1;
+        int blue = -1;
+        double intensity = Double.NaN;
+
+        Image sourceImage = pane.getSourceImageForInteraction();
+        if (imageBacked && sourceImage != null) {
+            imageColumn += pane.getImageSourceStartXForInteraction();
+            imageRow += pane.getImageSourceStartYForInteraction();
+            PixelReader pixelReader = sourceImage.getPixelReader();
+            if (pixelReader != null) {
+                int imageWidth = (int) sourceImage.getWidth();
+                int imageHeight = (int) sourceImage.getHeight();
+                int px = Math.max(0, Math.min(imageColumn, Math.max(0, imageWidth - 1)));
+                int py = Math.max(0, Math.min(imageRow, Math.max(0, imageHeight - 1)));
+                int argb = pixelReader.getArgb(px, py);
+                red = (argb >> 16) & 0xFF;
+                green = (argb >> 8) & 0xFF;
+                blue = argb & 0xFF;
+                intensity = ((red + green + blue) / 3.0) / 255.0;
+            }
+        }
+
+        int tileId = -1;
+        int activeLod = -1;
+        int tileImageMinX = -1;
+        int tileImageMinY = -1;
+        int tileImageMaxXExclusive = -1;
+        int tileImageMaxYExclusive = -1;
+
+        TiledSurfaceRenderer tiledRenderer = pane.getTiledSurfaceRendererForInteraction();
+        if (imageBacked && pane.isTiledHeightFieldRendererActive() && tiledRenderer != null) {
+            Optional<TiledSurfaceRenderer.TileInspection> tile =
+                tiledRenderer.getTileInspectionAt(context.renderRow(), context.renderColumn());
+            if (tile.isPresent()) {
+                TiledSurfaceRenderer.TileInspection t = tile.get();
+                tileId = t.tileId();
+                activeLod = t.activeLod();
+
+                int sx1 = coordinateMapper.renderColumnBoundaryToSourceBoundary(t.startColumn());
+                int sx2 = coordinateMapper.renderColumnBoundaryToSourceBoundary(t.endColumnExclusive());
+                int sy1 = coordinateMapper.renderRowBoundaryToSourceBoundary(t.startRow());
+                int sy2 = coordinateMapper.renderRowBoundaryToSourceBoundary(t.endRowExclusive());
+                int sourceOffsetX = pane.getImageSourceStartXForInteraction();
+                int sourceOffsetY = pane.getImageSourceStartYForInteraction();
+                tileImageMinX = Math.min(sx1, sx2) + sourceOffsetX;
+                tileImageMaxXExclusive = Math.max(sx1, sx2) + sourceOffsetX;
+                tileImageMinY = Math.min(sy1, sy2) + sourceOffsetY;
+                tileImageMaxYExclusive = Math.max(sy1, sy2) + sourceOffsetY;
+            }
+        }
+
+        double worldX = context.surfacePoint().getX() - pane.getWorldWidth() / 2.0;
+        double worldY = context.surfacePoint().getY();
+        double worldZ = context.surfacePoint().getZ() - pane.getWorldDepth() / 2.0;
+
+        return new SurfaceInspection(
+            imageBacked,
+            pane.getSourceWidth(),
+            pane.getSourceHeight(),
+            coordinateMapper.renderWidth(),
+            coordinateMapper.renderHeight(),
+            context.renderColumn(),
+            context.renderRow(),
+            context.sourceColumn(),
+            context.sourceRow(),
+            imageColumn,
+            imageRow,
+            context.value(),
+            worldX,
+            worldY,
+            worldZ,
+            lastRowMinimum,
+            lastRowMaximum,
+            lastColumnMinimum,
+            lastColumnMaximum,
+            red,
+            green,
+            blue,
+            intensity,
+            tileId,
+            activeLod,
+            tileImageMinX,
+            tileImageMinY,
+            tileImageMaxXExclusive,
+            tileImageMaxYExclusive);
+    }
+
+    private void refreshStatistics(int renderRow, int renderColumn) {
+        HeightField field = pane.getActiveHeightFieldForInteraction();
+        if (field == null) return;
+
+        if (renderRow != lastStatsRenderRow) {
+            double min = Double.POSITIVE_INFINITY;
+            double max = Double.NEGATIVE_INFINITY;
+            for (int column = 0; column < field.width(); column++) {
+                double value = pane.getActiveRenderValue(renderRow, column);
+                min = Math.min(min, value);
+                max = Math.max(max, value);
+            }
+            lastRowMinimum = Double.isFinite(min) ? min : Double.NaN;
+            lastRowMaximum = Double.isFinite(max) ? max : Double.NaN;
+            lastStatsRenderRow = renderRow;
+        }
+
+        if (renderColumn != lastStatsRenderColumn) {
+            double min = Double.POSITIVE_INFINITY;
+            double max = Double.NEGATIVE_INFINITY;
+            for (int row = 0; row < field.height(); row++) {
+                double value = pane.getActiveRenderValue(row, renderColumn);
+                min = Math.min(min, value);
+                max = Math.max(max, value);
+            }
+            lastColumnMinimum = Double.isFinite(min) ? min : Double.NaN;
+            lastColumnMaximum = Double.isFinite(max) ? max : Double.NaN;
+            lastStatsRenderColumn = renderColumn;
+        }
+    }
+
+    private boolean tileOrLodChanged(int renderRow, int renderColumn) {
+        if (!pane.isImageBackedSurface() || !pane.isTiledHeightFieldRendererActive()) return false;
+        TiledSurfaceRenderer renderer = pane.getTiledSurfaceRendererForInteraction();
+        if (renderer == null) return false;
+        Optional<TiledSurfaceRenderer.TileInspection> tile =
+            renderer.getTileInspectionAt(renderRow, renderColumn);
+        if (tile.isEmpty()) return lastSurfaceInspection != null && lastSurfaceInspection.hasTile();
+        if (lastSurfaceInspection == null) return true;
+        return tile.get().tileId() != lastSurfaceInspection.tileId()
+            || tile.get().activeLod() != lastSurfaceInspection.activeLod();
+    }
+
+    private void publishSurfaceInspection(SurfaceInspection inspection) {
+        lastSurfaceInspection = inspection;
+        fireHypersurfaceEvent(HypersurfaceEvent.surfaceInspection(inspection));
+    }
+
+    private void fireHypersurfaceEvent(HypersurfaceEvent event) {
+        if (Platform.isFxApplicationThread()) {
+            scene.getRoot().fireEvent(event);
+        } else {
+            Platform.runLater(() -> scene.getRoot().fireEvent(event));
+        }
+    }
+
     private void publishSurfaceChartData(SurfaceInteractionContext context) {
         List<Double> xList = pane.getActiveRenderRow(context.renderRow());
         Double[] xRay = xList.toArray(Double[]::new);
         Double[] zRay = pane.getActiveRenderColumn(context.renderColumn());
 
-        StringBuilder text = new StringBuilder();
-        text.append("Coordinates: ")
-            .append(context.renderColumn()).append(", ").append(context.renderRow())
-            .append(System.lineSeparator());
-        text.append("Value: ").append(context.value()).append(System.lineSeparator());
-        text.append("Max X: ").append(xList.stream().max(Double::compare).orElse(0.0))
-            .append(System.lineSeparator());
-        text.append("Min X: ").append(xList.stream().min(Double::compare).orElse(0.0))
-            .append(System.lineSeparator());
-        text.append("Max Z: ").append(Arrays.stream(zRay).max(Double::compare).orElse(0.0))
-            .append(System.lineSeparator());
-        text.append("Min Z: ").append(Arrays.stream(zRay).min(Double::compare).orElse(0.0))
-            .append(System.lineSeparator());
-
-        pane.updateInteractionHoverText(text.toString());
         scene.getRoot().fireEvent(new FactorAnalysisEvent(
             FactorAnalysisEvent.SURFACE_XFACTOR_VECTOR, xRay));
         scene.getRoot().fireEvent(new FactorAnalysisEvent(

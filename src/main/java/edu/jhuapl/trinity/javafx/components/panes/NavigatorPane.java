@@ -6,6 +6,8 @@ import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.events.ImageEvent;
+import edu.jhuapl.trinity.javafx.events.HypersurfaceEvent;
+import edu.jhuapl.trinity.javafx.javafx3d.hypersurface.SurfaceInspection;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import javafx.application.Platform;
 import javafx.geometry.Insets;
@@ -25,9 +27,13 @@ import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.GridPane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.Pane;
+import javafx.scene.layout.StackPane;
 import javafx.scene.layout.VBox;
 import javafx.scene.media.MediaView;
 import javafx.scene.paint.Color;
+import javafx.scene.shape.Circle;
+import javafx.scene.shape.Line;
+import javafx.scene.shape.Rectangle;
 import javafx.scene.text.Font;
 import javafx.scene.text.Text;
 import org.slf4j.Logger;
@@ -60,6 +66,27 @@ public class NavigatorPane extends LitPathPane {
     TitledPane metaTP;
     GridPane detailsGridPane;
     ImageView imageView;
+    StackPane imageStack;
+    Pane imageOverlayPane;
+    Line imageCrosshairHorizontal;
+    Line imageCrosshairVertical;
+    Circle imagePositionMarker;
+    Rectangle imageTileOutline;
+    TitledPane surfaceTP;
+    GridPane surfaceGridPane;
+    Label surfacePositionKey;
+    Label surfacePixelValue;
+    Label surfaceRenderCellValue;
+    Label surfaceValueValue;
+    Label surfaceRowRangeValue;
+    Label surfaceColumnRangeValue;
+    Label surfaceWorldValue;
+    Label surfaceRgbValue;
+    Label surfaceIntensityValue;
+    Label surfaceTileValue;
+    Label surfaceLodValue;
+    Label surfaceTileBoundsValue;
+    SurfaceInspection currentSurfaceInspection;
     TextArea textArea;
     VBox contentVBox;
 
@@ -81,6 +108,43 @@ public class NavigatorPane extends LitPathPane {
         imageView.setFitWidth(DEFAULT_FIT_WIDTH);
         imageView.setFitHeight(DEFAULT_FIT_WIDTH);
         imageView.setPreserveRatio(true);
+
+        imageOverlayPane = new Pane();
+        imageOverlayPane.setMouseTransparent(true);
+        imageOverlayPane.setPickOnBounds(false);
+
+        imageCrosshairHorizontal = new Line();
+        imageCrosshairHorizontal.setStroke(Color.CYAN);
+        imageCrosshairHorizontal.setStrokeWidth(1.25);
+        imageCrosshairHorizontal.setMouseTransparent(true);
+        imageCrosshairVertical = new Line();
+        imageCrosshairVertical.setStroke(Color.CYAN);
+        imageCrosshairVertical.setStrokeWidth(1.25);
+        imageCrosshairVertical.setMouseTransparent(true);
+
+        imagePositionMarker = new Circle(4.0, Color.TRANSPARENT);
+        imagePositionMarker.setStroke(Color.WHITE);
+        imagePositionMarker.setStrokeWidth(1.5);
+        imagePositionMarker.setMouseTransparent(true);
+
+        imageTileOutline = new Rectangle();
+        imageTileOutline.setFill(Color.TRANSPARENT);
+        imageTileOutline.setStroke(Color.YELLOW);
+        imageTileOutline.setStrokeWidth(1.5);
+        imageTileOutline.getStrokeDashArray().setAll(8.0, 5.0);
+        imageTileOutline.setMouseTransparent(true);
+
+        imageOverlayPane.getChildren().addAll(
+            imageTileOutline, imageCrosshairHorizontal, imageCrosshairVertical, imagePositionMarker);
+        setImageInspectionOverlayVisible(false);
+
+        imageStack = new StackPane(imageView, imageOverlayPane);
+        imageStack.setAlignment(Pos.CENTER);
+        imageStack.setPrefSize(DEFAULT_FIT_WIDTH, DEFAULT_FIT_WIDTH);
+        imageStack.setMinSize(DEFAULT_FIT_WIDTH, DEFAULT_FIT_WIDTH);
+        imageStack.setMaxSize(DEFAULT_FIT_WIDTH, DEFAULT_FIT_WIDTH);
+        imageStack.widthProperty().addListener((obs, oldValue, newValue) -> refreshImageInspectionOverlay());
+        imageStack.heightProperty().addListener((obs, oldValue, newValue) -> refreshImageInspectionOverlay());
 
         textArea = new TextArea();
         textArea.setPrefWidth(DEFAULT_FIT_WIDTH);
@@ -116,9 +180,35 @@ public class NavigatorPane extends LitPathPane {
         metaTP.setText("Metadata");
         metaTP.setExpanded(false);
         metaTP.setPrefWidth(DEFAULT_TITLEDPANE_WIDTH);
+
+        surfaceGridPane = new GridPane();
+        surfaceGridPane.setPadding(new Insets(4));
+        surfaceGridPane.setHgap(8);
+        surfaceGridPane.setVgap(2);
+        surfacePositionKey = new Label("Source Pixel");
+        surfacePositionKey.setMinWidth(100);
+        surfacePixelValue = new Label("-");
+        surfacePixelValue.setWrapText(true);
+        surfaceGridPane.addRow(0, surfacePositionKey, surfacePixelValue);
+        surfaceRenderCellValue = addSurfaceRow(1, "Render Cell");
+        surfaceValueValue = addSurfaceRow(2, "Value");
+        surfaceRowRangeValue = addSurfaceRow(3, "Row Range");
+        surfaceColumnRangeValue = addSurfaceRow(4, "Column Range");
+        surfaceWorldValue = addSurfaceRow(5, "World XYZ");
+        surfaceRgbValue = addSurfaceRow(6, "RGB");
+        surfaceIntensityValue = addSurfaceRow(7, "Intensity");
+        surfaceTileValue = addSurfaceRow(8, "Tile");
+        surfaceLodValue = addSurfaceRow(9, "LOD");
+        surfaceTileBoundsValue = addSurfaceRow(10, "Tile Bounds");
+        surfaceTP = new TitledPane("Surface", surfaceGridPane);
+        surfaceTP.setExpanded(true);
+        surfaceTP.setPrefWidth(DEFAULT_TITLEDPANE_WIDTH);
+        surfaceTP.setVisible(false);
+        surfaceTP.setManaged(false);
+
         Tab imageTab = new Tab("Image");
         imageTab.setClosable(false);
-        imageTab.setContent(imageView);
+        imageTab.setContent(imageStack);
         Tab textTab = new Tab("Text");
         textTab.setClosable(false);
         textTab.setContent(textArea);
@@ -127,7 +217,7 @@ public class NavigatorPane extends LitPathPane {
         contentVBox = new VBox(5,
             tabPane, urlLabel, imageLabel,
             new HBox(10, hypersurfaceButton, imageInspectionButton),
-            detailsTP, metaTP);
+            surfaceTP, detailsTP, metaTP);
 
         ImageView refresh = ResourceUtils.loadIcon("refresh", 32);
 
@@ -190,6 +280,177 @@ public class NavigatorPane extends LitPathPane {
             }
             createDetails(fv);
         });
+        scene.addEventHandler(HypersurfaceEvent.SURFACE_SOURCE_IMAGE_CHANGED, e -> {
+            if (e.object instanceof Image image) {
+                setImage(image);
+                imageLabel.setText("Hypersurface Source");
+                String imageUrl = image.getUrl();
+                if (imageUrl != null && !imageUrl.isBlank()) {
+                    urlLabel.setText(imageUrl);
+                    urlLabel.setTooltip(new Tooltip(imageUrl));
+                } else {
+                    String dimensions = (int) image.getWidth() + " x " + (int) image.getHeight();
+                    urlLabel.setText(dimensions);
+                    urlLabel.setTooltip(new Tooltip("Hypersurface source image: " + dimensions));
+                }
+            }
+        });
+        scene.addEventHandler(HypersurfaceEvent.SURFACE_INSPECTION_UPDATED, e -> {
+            if (e.object instanceof SurfaceInspection inspection) {
+                updateSurfaceInspection(inspection);
+            } else {
+                clearSurfaceInspection();
+            }
+        });
+    }
+
+    private Label addSurfaceRow(int row, String name) {
+        Label key = new Label(name);
+        key.setMinWidth(100);
+        Label value = new Label("-");
+        value.setWrapText(true);
+        surfaceGridPane.addRow(row, key, value);
+        return value;
+    }
+
+    private void updateSurfaceInspection(SurfaceInspection inspection) {
+        currentSurfaceInspection = inspection;
+        surfaceTP.setManaged(true);
+        surfaceTP.setVisible(true);
+
+        int displayX = inspection.imageBacked() ? inspection.imageColumn() : inspection.sourceColumn();
+        int displayY = inspection.imageBacked() ? inspection.imageRow() : inspection.sourceRow();
+        surfacePositionKey.setText(inspection.imageBacked() ? "Source Pixel" : "Source Cell");
+        surfacePixelValue.setText(displayX + ", " + displayY);
+        surfaceRenderCellValue.setText(inspection.renderColumn() + ", " + inspection.renderRow());
+        surfaceValueValue.setText(formatNumber(inspection.surfaceValue()));
+        surfaceRowRangeValue.setText(formatRange(inspection.rowMinimum(), inspection.rowMaximum()));
+        surfaceColumnRangeValue.setText(formatRange(
+            inspection.columnMinimum(), inspection.columnMaximum()));
+        surfaceWorldValue.setText(formatNumber(inspection.worldX()) + ", "
+            + formatNumber(inspection.worldY()) + ", " + formatNumber(inspection.worldZ()));
+
+        if (inspection.hasImageSample()) {
+            surfaceRgbValue.setText(inspection.red() + ", " + inspection.green() + ", "
+                + inspection.blue());
+            surfaceIntensityValue.setText(formatNumber(inspection.imageIntensity()));
+        } else {
+            surfaceRgbValue.setText("-");
+            surfaceIntensityValue.setText("-");
+        }
+
+        if (inspection.hasTile()) {
+            surfaceTileValue.setText(Integer.toString(inspection.tileId()));
+            surfaceLodValue.setText(inspection.activeLod() >= 0
+                ? "L" + inspection.activeLod() : "pending");
+            surfaceTileBoundsValue.setText(
+                inspection.tileImageMinX() + "-" + (inspection.tileImageMaxXExclusive() - 1)
+                    + " x " + inspection.tileImageMinY() + "-"
+                    + (inspection.tileImageMaxYExclusive() - 1));
+        } else {
+            surfaceTileValue.setText("-");
+            surfaceLodValue.setText("-");
+            surfaceTileBoundsValue.setText("-");
+        }
+        refreshImageInspectionOverlay();
+    }
+
+    private void clearSurfaceInspection() {
+        currentSurfaceInspection = null;
+        surfaceTP.setVisible(false);
+        surfaceTP.setManaged(false);
+        setImageInspectionOverlayVisible(false);
+    }
+
+    private void refreshImageInspectionOverlay() {
+        SurfaceInspection inspection = currentSurfaceInspection;
+        Image image = imageView.getImage();
+        if (inspection == null || !inspection.imageBacked() || image == null
+            || !(image.getWidth() > 0.0) || !(image.getHeight() > 0.0)) {
+            setImageInspectionOverlayVisible(false);
+            return;
+        }
+
+        double stackWidth = imageStack.getWidth() > 0.0
+            ? imageStack.getWidth() : DEFAULT_FIT_WIDTH;
+        double stackHeight = imageStack.getHeight() > 0.0
+            ? imageStack.getHeight() : DEFAULT_FIT_WIDTH;
+        double scale = Math.min(
+            imageView.getFitWidth() / image.getWidth(),
+            imageView.getFitHeight() / image.getHeight());
+        if (!Double.isFinite(scale) || !(scale > 0.0)) {
+            setImageInspectionOverlayVisible(false);
+            return;
+        }
+
+        double displayedWidth = image.getWidth() * scale;
+        double displayedHeight = image.getHeight() * scale;
+        double originX = (stackWidth - displayedWidth) * 0.5;
+        double originY = (stackHeight - displayedHeight) * 0.5;
+
+        double markerX = originX
+            + ((inspection.imageColumn() + 0.5) / image.getWidth()) * displayedWidth;
+        double markerY = originY
+            + ((inspection.imageRow() + 0.5) / image.getHeight()) * displayedHeight;
+        markerX = clamp(markerX, originX, originX + displayedWidth);
+        markerY = clamp(markerY, originY, originY + displayedHeight);
+
+        imageCrosshairHorizontal.setStartX(originX);
+        imageCrosshairHorizontal.setEndX(originX + displayedWidth);
+        imageCrosshairHorizontal.setStartY(markerY);
+        imageCrosshairHorizontal.setEndY(markerY);
+        imageCrosshairVertical.setStartX(markerX);
+        imageCrosshairVertical.setEndX(markerX);
+        imageCrosshairVertical.setStartY(originY);
+        imageCrosshairVertical.setEndY(originY + displayedHeight);
+        imagePositionMarker.setCenterX(markerX);
+        imagePositionMarker.setCenterY(markerY);
+
+        if (inspection.hasTile()) {
+            double tileMinX = clamp(inspection.tileImageMinX(), 0.0, image.getWidth());
+            double tileMinY = clamp(inspection.tileImageMinY(), 0.0, image.getHeight());
+            double tileMaxX = clamp(inspection.tileImageMaxXExclusive(), 0.0, image.getWidth());
+            double tileMaxY = clamp(inspection.tileImageMaxYExclusive(), 0.0, image.getHeight());
+            double tileX = originX + tileMinX / image.getWidth() * displayedWidth;
+            double tileY = originY + tileMinY / image.getHeight() * displayedHeight;
+            double tileWidth = (tileMaxX - tileMinX) / image.getWidth() * displayedWidth;
+            double tileHeight = (tileMaxY - tileMinY) / image.getHeight() * displayedHeight;
+            imageTileOutline.setX(tileX);
+            imageTileOutline.setY(tileY);
+            imageTileOutline.setWidth(tileWidth);
+            imageTileOutline.setHeight(tileHeight);
+            imageTileOutline.setVisible(true);
+        } else {
+            imageTileOutline.setVisible(false);
+        }
+
+        imageCrosshairHorizontal.setVisible(true);
+        imageCrosshairVertical.setVisible(true);
+        imagePositionMarker.setVisible(true);
+    }
+
+    private void setImageInspectionOverlayVisible(boolean visible) {
+        imageCrosshairHorizontal.setVisible(visible);
+        imageCrosshairVertical.setVisible(visible);
+        imagePositionMarker.setVisible(visible);
+        imageTileOutline.setVisible(visible);
+    }
+
+    private static double clamp(double value, double minimum, double maximum) {
+        return Math.max(minimum, Math.min(value, maximum));
+    }
+
+    private static String formatRange(double minimum, double maximum) {
+        return formatNumber(minimum) + " - " + formatNumber(maximum);
+    }
+
+    private static String formatNumber(double value) {
+        if (!Double.isFinite(value)) return "-";
+        double abs = Math.abs(value);
+        if (abs > 0.0 && (abs < 0.001 || abs >= 10000.0)) {
+            return String.format("%.3e", value);
+        }
+        return String.format("%.4f", value);
     }
 
     private void createDetails(FeatureVector featureVector) {
@@ -239,5 +500,6 @@ public class NavigatorPane extends LitPathPane {
     public void setImage(Image image) {
         currentImage = image;
         imageView.setImage(currentImage);
+        Platform.runLater(this::refreshImageInspectionOverlay);
     }
 }
