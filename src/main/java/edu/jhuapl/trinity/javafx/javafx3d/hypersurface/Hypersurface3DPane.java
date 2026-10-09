@@ -1,12 +1,10 @@
-package edu.jhuapl.trinity.javafx.javafx3d;
+package edu.jhuapl.trinity.javafx.javafx3d.hypersurface;
 
 import edu.jhuapl.trinity.App;
 import edu.jhuapl.trinity.css.StyleResourceProvider;
 import edu.jhuapl.trinity.data.CoordinateSet;
 import edu.jhuapl.trinity.data.files.FeatureCollectionFile;
 import edu.jhuapl.trinity.data.graph.GraphDirectedCollection;
-import edu.jhuapl.trinity.data.graph.GraphEdge;
-import edu.jhuapl.trinity.data.graph.GraphNode;
 import edu.jhuapl.trinity.data.messages.bci.SemanticMap;
 import edu.jhuapl.trinity.data.messages.bci.SemanticMapCollection;
 import edu.jhuapl.trinity.data.messages.bci.SemanticReconstruction;
@@ -30,6 +28,8 @@ import edu.jhuapl.trinity.javafx.events.ImageEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.javafx.events.ShadowEvent;
 import edu.jhuapl.trinity.javafx.events.TimelineEvent;
+import edu.jhuapl.trinity.javafx.javafx3d.Vert3D;
+import edu.jhuapl.trinity.javafx.javafx3d.XFormGroup;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.AnimatedSphere;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.TessellationTube;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.Tracer;
@@ -128,10 +128,8 @@ import java.io.File;
 import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
-import java.util.IdentityHashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.Optional;
@@ -204,9 +202,6 @@ public class Hypersurface3DPane extends StackPane
     private final ObjectProperty<SurfaceHeightOrientation> surfaceHeightOrientation =
         new SimpleObjectProperty<>(SurfaceHeightOrientation.HIGH_VALUES_UP);
     private boolean suppressRowOrientationRefresh = false;
-    boolean hoverInteractionsEnabled = false;
-    boolean surfaceChartsEnabled = false;
-    boolean crosshairsEnabled = false;
 
     //Shapley value support
     private Image lastImage = null;
@@ -214,6 +209,7 @@ public class Hypersurface3DPane extends StackPane
     public List<ShapleyVector> shapleyVectors = new ArrayList<>();
 
     private final SurfaceCrosshairOverlay surfaceCrosshairOverlay = new SurfaceCrosshairOverlay();
+    private final HypersurfaceInteractionController interactionController;
     /**
      * Desktop-level legend HUD. Constructed lazily on the JavaFX Application Thread
      * because Hypersurface3DPane itself is created by AppAsyncManager on a worker thread.
@@ -365,9 +361,6 @@ public class Hypersurface3DPane extends StackPane
     private final Group graphLayer = new Group(); // sits in sceneRoot
     private boolean graphVisible = true;
     private GraphDirectedCollection currentGraph = null;
-    private final IdentityHashMap<GraphNode, Integer> graphNodeRowIndex = new IdentityHashMap<>();
-    private final HashMap<String, Integer> graphEntityIdToIndex = new HashMap<>();
-    private int[][] graphAdjacencyIndices = new int[0][];
     private Graph3DRenderer.Params graphParams = new Graph3DRenderer.Params()
         .withNodeRadius(20.0)
         .withEdgeWidth(8.0f)
@@ -377,6 +370,8 @@ public class Hypersurface3DPane extends StackPane
 
     public Hypersurface3DPane(Scene scene) {
         this.scene = scene;
+        interactionController = new HypersurfaceInteractionController(
+            this, scene, coordinateMapper, surfaceCrosshairOverlay);
         visibleProperty().addListener((obs, oldValue, newValue) -> refreshLegendVisibility());
         // AppAsyncManager constructs this pane on a worker thread, but the Node is
         // attached to centerStack later on the JavaFX Application Thread. Defer all
@@ -689,30 +684,16 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         );
 
         CheckMenuItem enableHoverItem = new CheckMenuItem("Hover Interactions");
-        enableHoverItem.setOnAction(e -> {
-            hoverInteractionsEnabled = enableHoverItem.isSelected();
-            if (tiledSurfaceRenderer != null) {
-                tiledSurfaceRenderer.setHoverPickingEnabled(hoverInteractionsEnabled);
-            }
-        });
+        enableHoverItem.setOnAction(e ->
+            interactionController.setHoverEnabled(enableHoverItem.isSelected()));
 
         CheckMenuItem surfaceChartsItem = new CheckMenuItem("Surface Charts");
-        surfaceChartsItem.setOnAction(e -> {
-            surfaceChartsEnabled = surfaceChartsItem.isSelected();
-            if (surfaceChartsEnabled) {
-                Pane pp = App.getAppPathPaneStack();
-                if (null == surfaceChartPane) {
-                    surfaceChartPane = new SurfaceChartPane(scene, pp);
-                    surfaceChartPane.visibleProperty().bind(this.visibleProperty());
-                }
-                if (!pp.getChildren().contains(surfaceChartPane)) {
-                    pp.getChildren().add(surfaceChartPane);
-                    surfaceChartPane.slideInPane();
-                } else {
-                    surfaceChartPane.show();
-                }
-            }
-        });
+        surfaceChartsItem.setOnAction(e ->
+            interactionController.setSurfaceChartsEnabled(surfaceChartsItem.isSelected()));
+
+        MenuItem navigatorItem = new MenuItem("Content Navigator");
+        navigatorItem.setOnAction(e -> interactionController.showContentNavigator(
+            imageBackedSurface ? lastImage : null));
 
         MenuItem updateAllItem = new MenuItem("Update Render");
         updateAllItem.setOnAction(e -> updateAll());
@@ -735,11 +716,12 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         });
 
         CheckMenuItem enableCrosshairsItem = new CheckMenuItem("Enable Crosshairs");
-        enableCrosshairsItem.setOnAction(e -> crosshairsEnabled = enableCrosshairsItem.isSelected());
+        enableCrosshairsItem.setOnAction(e ->
+            interactionController.setCrosshairsEnabled(enableCrosshairsItem.isSelected()));
 
         MenuItem resetViewItem = new MenuItem("Reset View");
         resetViewItem.setOnAction(e -> resetView(1000, false));
-        ContextMenu cm = new ContextMenu(showControlsItem,
+        ContextMenu cm = new ContextMenu(showControlsItem, navigatorItem,
             copyAsImageItem, saveSnapshotItem, unrollHyperspaceItem, analysisMenu,
             enableHoverItem, surfaceChartsItem, showDataMarkersItem, enableCrosshairsItem,
             updateAllItem, clearDataItem, resetViewItem);
@@ -795,7 +777,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         this.scene.addEventHandler(GraphEvent.NEW_GRAPHDIRECTED_COLLECTION, e -> {
             if (!(e.object instanceof GraphDirectedCollection gc)) return;
             currentGraph = gc;
-            rebuildGraphNodeRowIndex(gc);
+            interactionController.setGraph(gc);
             graphLayer.getChildren().clear();
             graphLayer.getChildren().add(Graph3DRenderer.buildGraphGroup(gc, graphParams));
 
@@ -1379,51 +1361,49 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         });
     }
 
-    private void handleSurfaceHover(Point3D surfacePoint) {
+    void updateInteractionHoverMarker(Point3D surfacePoint) {
         vertP3D = surfacePoint;
         highlightedPoint.setTranslateX(vertP3D.x - getWorldWidth() / 2.0);
         highlightedPoint.setTranslateY(vertP3D.y);
         highlightedPoint.setTranslateZ(vertP3D.z - getWorldDepth() / 2.0);
         updateCalloutHeadPoints(subScene);
         updateLabels();
+    }
 
-        int row = coordinateMapper.surfaceZToRenderRow(vertP3D.getZ());
-        int column = coordinateMapper.surfaceXToRenderColumn(vertP3D.getX());
-        int sourceRow = coordinateMapper.surfaceZToSourceRow(vertP3D.getZ());
+    void updateInteractionHoverText(String text) {
+        hoverText.setText(text);
+        hoverText.setStrokeWidth(1);
+        hoverText.setLayoutX(50);
+        hoverText.setLayoutY(50);
+    }
 
-        if (anchorCallout != null) {
-            if (sourceRow < featureVectors.size()) {
-                updateCalloutByFeatureVector(anchorCallout, featureVectors.get(sourceRow));
-            }
-            setSpheroidAnchor(false, sourceRow);
+    HeightField getActiveHeightFieldForInteraction() {
+        return activeHeightField;
+    }
+
+    List<FeatureVector> getFeatureVectorsForInteraction() {
+        return featureVectors;
+    }
+
+    List<String> getFeatureLabelsForInteraction() {
+        return featureLabels;
+    }
+
+    TiledSurfaceRenderer getTiledSurfaceRendererForInteraction() {
+        return tiledSurfaceRenderer;
+    }
+
+    void showSurfaceChartsPane() {
+        Pane pathPane = App.getAppPathPaneStack();
+        if (surfaceChartPane == null) {
+            surfaceChartPane = new SurfaceChartPane(scene, pathPane);
+            surfaceChartPane.visibleProperty().bind(visibleProperty());
         }
-        if (crosshairsEnabled && activeHeightField != null) {
-            surfaceCrosshairOverlay.requestRenderPosition(row, column);
-        }
-        if (surfaceChartsEnabled && activeHeightField != null) {
-            List<Double> xlist = getActiveRenderRow(row);
-            Double[] xRay = xlist.toArray(Double[]::new);
-            Double[] zRay = getActiveRenderColumn(column);
-            String text = "Coordinates: " + column + ", " + row + System.lineSeparator();
-            text = text.concat("Value: ")
-                .concat(String.valueOf(getActiveRenderValue(row, column)))
-                .concat(System.lineSeparator());
-            double maxX = xlist.stream().max(Double::compare).orElse(0.0);
-            text = text.concat("Max X: ").concat(String.valueOf(maxX)).concat(System.lineSeparator());
-            double minX = xlist.stream().min(Double::compare).orElse(0.0);
-            text = text.concat("Min X: ").concat(String.valueOf(minX)).concat(System.lineSeparator());
-            double maxZ = Arrays.stream(zRay).max(Double::compare).orElse(0.0);
-            text = text.concat("Max Z: ").concat(String.valueOf(maxZ)).concat(System.lineSeparator());
-            double minZ = Arrays.stream(zRay).min(Double::compare).orElse(0.0);
-            text = text.concat("Min Z: ").concat(String.valueOf(minZ)).concat(System.lineSeparator());
-            hoverText.setText(text);
-            hoverText.setStrokeWidth(1);
-            hoverText.setLayoutX(50);
-            hoverText.setLayoutY(50);
-            scene.getRoot().fireEvent(new FactorAnalysisEvent(
-                FactorAnalysisEvent.SURFACE_XFACTOR_VECTOR, xRay));
-            scene.getRoot().fireEvent(new FactorAnalysisEvent(
-                FactorAnalysisEvent.SURFACE_ZFACTOR_VECTOR, zRay));
+        if (!pathPane.getChildren().contains(surfaceChartPane)) {
+            pathPane.getChildren().add(surfaceChartPane);
+            surfaceChartPane.slideInPane();
+        } else {
+            surfaceChartPane.show();
         }
     }
 
@@ -1630,31 +1610,14 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
             tiledSurfaceRenderer.setHeightOrientation(getSurfaceHeightOrientation());
             tiledSurfaceRenderer.setTileCellsL0(tileCellsL0);
             tiledSurfaceRenderer.setVisible(false);
-            tiledSurfaceRenderer.setHoverPickingEnabled(hoverInteractionsEnabled);
             sceneRoot.getChildren().add(tiledSurfaceRenderer);
-            tiledSurfaceRenderer.addEventHandler(MouseEvent.MOUSE_MOVED, e -> {
-                if (!hoverInteractionsEnabled) return;
-                Node picked = e.getPickResult().getIntersectedNode();
-                javafx.geometry.Point3D pickedPoint = e.getPickResult().getIntersectedPoint();
-                if (picked == null || pickedPoint == null) return;
-                javafx.geometry.Point3D scenePoint = picked.localToScene(pickedPoint);
-                javafx.geometry.Point3D surfacePoint = tiledSurfaceRenderer.sceneToLocal(scenePoint);
-                handleSurfaceHover(Point3D.convertFromJavaFXPoint3D(surfacePoint));
-                e.consume();
-            });
         }
+
+        interactionController.installSurfacePicking(surfPlot, tiledSurfaceRenderer);
 
         // Build processed pyramid and apply initial LOD. The primitive source cache is
         // created by rebuildProcessedGridAndRefresh() from the current source snapshot.
         rebuildProcessedGridAndRefresh();
-
-        surfPlot.addEventHandler(MouseEvent.MOUSE_MOVED, e -> {
-            if (!hoverInteractionsEnabled) return;
-            javafx.geometry.Point3D p3D = e.getPickResult().getIntersectedPoint();
-            if (p3D == null) return;
-            handleSurfaceHover(Point3D.convertFromJavaFXPoint3D(p3D));
-            e.consume();
-        });
 
         Glow glow = new Glow(0.8);
         double poleHeight = 60;
@@ -1913,18 +1876,13 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         });
 
         // UX toggles
-        scene.addEventHandler(HypersurfaceEvent.HOVER_ENABLE_CHANGED, e -> {
-            hoverInteractionsEnabled = (boolean) e.object;
-            if (tiledSurfaceRenderer != null) {
-                tiledSurfaceRenderer.setHoverPickingEnabled(hoverInteractionsEnabled);
-            }
-        });
-        scene.addEventHandler(HypersurfaceEvent.SURFACE_CHARTS_ENABLE_CHANGED, e -> surfaceChartsEnabled = (boolean) e.object);
+        scene.addEventHandler(HypersurfaceEvent.HOVER_ENABLE_CHANGED, e ->
+            interactionController.setHoverEnabled((boolean) e.object));
+        scene.addEventHandler(HypersurfaceEvent.SURFACE_CHARTS_ENABLE_CHANGED, e ->
+            interactionController.setSurfaceChartsEnabled((boolean) e.object));
         scene.addEventHandler(HypersurfaceEvent.DATA_MARKERS_ENABLE_CHANGED, e -> extrasGroup.setVisible((boolean) e.object));
-        scene.addEventHandler(HypersurfaceEvent.CROSSHAIRS_ENABLE_CHANGED, e -> {
-            crosshairsEnabled = (boolean) e.object;
-            if (!crosshairsEnabled) surfaceCrosshairOverlay.hide();
-        });
+        scene.addEventHandler(HypersurfaceEvent.CROSSHAIRS_ENABLE_CHANGED, e ->
+            interactionController.setCrosshairsEnabled((boolean) e.object));
 
         // Commands/actions
         scene.addEventHandler(HypersurfaceEvent.RESET_VIEW, e -> resetView(1000, false));
@@ -1934,61 +1892,6 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         scene.addEventHandler(HypersurfaceEvent.COMPUTE_VECTOR_DISTANCES, e -> computeVectorDistances());
         scene.addEventHandler(HypersurfaceEvent.COMPUTE_COLLECTION_DIFF, e -> computeSurfaceDifference((FeatureCollection) e.object));
         scene.addEventHandler(HypersurfaceEvent.COMPUTE_COSINE_DISTANCE, e -> computeCosineDistance((FeatureCollection) e.object));
-        // Hover a node: emit its similarity row (from graph) and optionally highlight a surface row
-        scene.addEventHandler(GraphEvent.GRAPH_NODE_HOVER, e -> {
-            if (!(e.object instanceof GraphNode gNode)) return;
-
-            // Crosshair movement must remain cheap. Only build/publish the dense
-            // graph-analysis vector when the charting feature is explicitly enabled.
-            if (surfaceChartsEnabled) {
-                Double[] row = buildAdjacencyRowFromGraph(gNode);
-                scene.getRoot().fireEvent(new FactorAnalysisEvent(
-                    FactorAnalysisEvent.ANALYSIS_DATA_VECTOR,
-                    "Graph Adjacency Row (hover): " + gNode,
-                    row
-                ));
-            }
-
-            highlightSurfaceRowIfPossible(gNode);
-        });
-
-        // Click a node: same as hover but labeled and could be made "sticky"
-        scene.addEventHandler(GraphEvent.GRAPH_NODE_CLICK, e -> {
-            if (!(e.object instanceof GraphNode gNode)) return;
-            Double[] row = buildAdjacencyRowFromGraph(gNode);
-            scene.getRoot().fireEvent(new FactorAnalysisEvent(
-                FactorAnalysisEvent.ANALYSIS_DATA_VECTOR,
-                "Graph Adjacency Row (click): " + gNode,
-                row
-            ));
-            highlightSurfaceRowIfPossible(gNode);
-        });
-
-        // Hover an edge: emit its endpoints + weight
-        scene.addEventHandler(GraphEvent.GRAPH_EDGE_HOVER, e -> {
-            if (!(e.object instanceof GraphEdge ge)) return;
-
-            Optional<GraphNode> a = currentGraph != null ? currentGraph.findNodeById(ge.getStartID()) : Optional.empty();
-            Optional<GraphNode> b = currentGraph != null ? currentGraph.findNodeById(ge.getEndID()) : Optional.empty();
-            double w = getEdgeWeightSafe(ge);
-
-            scene.getRoot().fireEvent(new CommandTerminalEvent(
-                "Edge hover: " + a.map(Object::toString).orElse("?") + " → " +
-                    b.map(Object::toString).orElse("?") + " | weight = " + w,
-                new Font("Consolas", 16), Color.ALICEBLUE
-            ));
-        });
-
-        // Click an edge: emit a tiny 2-entry vector [w] or a pairwise slice if you prefer
-        scene.addEventHandler(GraphEvent.GRAPH_EDGE_CLICK, e -> {
-            if (!(e.object instanceof GraphEdge ge)) return;
-            double w = getEdgeWeightSafe(ge);
-            scene.getRoot().fireEvent(new FactorAnalysisEvent(
-                FactorAnalysisEvent.ANALYSIS_DATA_VECTOR,
-                "Graph Edge Weight (click): " + ge.getStartID() + " → " + ge.getEndID(),
-                new Double[]{w}
-            ));
-        });
         scene.addEventHandler(GraphEvent.GRAPH_VISIBILITY_CHANGED, e -> {
             if (!(e.object instanceof Boolean b)) return;
             graphVisible = b;
@@ -2151,6 +2054,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         dataGrid.clear();
         featureVectors.clear();
         originalGrid.clear();
+        interactionController.resetSelectionState();
         resetLodDataState();
     }
 
@@ -2184,6 +2088,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
     @Override
     public void setFeatureCollection(FeatureCollection fc) {
         featureVectors = fc.getFeatures();
+        interactionController.resetSelectionState();
     }
 
     public void findClusters(ManifoldEvent.ProjectionConfig pc) {
@@ -2319,6 +2224,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         rebuildProcessedGridAndRefresh();
         getScene().getRoot().fireEvent(new CommandTerminalEvent("Hypersurface updated. ", new Font("Consolas", 20), Color.GREEN));
         featureVectors = featureCollection.getFeatures();
+        interactionController.resetSelectionState();
     }
 
     @Override
@@ -2339,6 +2245,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         featureVectors.clear();
         dataGrid.clear();
         originalGrid.clear();
+        interactionController.resetSelectionState();
         resetLodDataState();
     }
 
@@ -2489,6 +2396,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         // Image-backed hypersurfaces use the capped primitive L0 as the authoritative
         // processing source. Do not manufacture one FeatureVector or boxed Double per pixel.
         featureVectors.clear();
+        interactionController.resetSelectionState();
         if (dataGrid == null) dataGrid = new ArrayList<>();
         else dataGrid.clear();
         if (originalGrid == null) originalGrid = new ArrayList<>();
@@ -2782,14 +2690,14 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
             getSurfaceHeightOrientation());
     }
 
-    private double getActiveRenderValue(int row, int column) {
+    double getActiveRenderValue(int row, int column) {
         if (activeHeightField == null) return 0.0;
         int r = orientRowIndex(row, activeHeightField.height());
         int c = Math.max(0, Math.min(column, activeHeightField.width() - 1));
         return activeHeightField.get(c, r);
     }
 
-    private List<Double> getActiveRenderRow(int row) {
+    List<Double> getActiveRenderRow(int row) {
         if (activeHeightField == null) return List.of();
         int r = orientRowIndex(row, activeHeightField.height());
         int w = activeHeightField.width();
@@ -2800,7 +2708,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         return out;
     }
 
-    private Double[] getActiveRenderColumn(int column) {
+    Double[] getActiveRenderColumn(int column) {
         if (activeHeightField == null) return new Double[0];
         int c = Math.max(0, Math.min(column, activeHeightField.width() - 1));
         int w = activeHeightField.width();
@@ -3222,125 +3130,5 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         updateTheMesh();
     }
 
-    /**
-     * Build a dense binary adjacency row from the cached sparse graph topology.
-     * GraphEdge does not carry a numeric weight, so a connected neighbor is 1.0
-     * and a non-neighbor is 0.0.
-     */
-    private Double[] buildAdjacencyRowFromGraph(GraphNode node) {
-        if (currentGraph == null || node == null) return new Double[0];
-        Integer nodeIndex = graphEntityIdToIndex.get(node.getEntityID());
-        if (nodeIndex == null
-            || nodeIndex < 0
-            || nodeIndex >= graphAdjacencyIndices.length) {
-            return new Double[0];
-        }
-
-        int n = currentGraph.getNodes().size();
-        Double[] out = new Double[n];
-        Arrays.fill(out, 0.0);
-        for (int neighbor : graphAdjacencyIndices[nodeIndex]) {
-            if (neighbor >= 0 && neighbor < n) out[neighbor] = 1.0;
-        }
-        return out;
-    }
-
-    /**
-     * Prefer GraphEdge#getWeight(); fallback to 1.0 if unavailable.
-     */
-    private double getEdgeWeightSafe(GraphEdge e) {
-        try {
-            // Adjust if your API uses a different accessor
-            return (double) GraphEdge.class.getMethod("getWeight").invoke(e);
-        } catch (Throwable t) {
-            return 1.0; // default if weight not present
-        }
-    }
-
-    /**
-     * Rebuild graph interaction caches once when a new graph arrives.
-     *
-     * <p>For source-row alignment, prefer GraphNode.identity only when every node
-     * has a unique identity inside the current source-row range. Otherwise, when
-     * graph node count exactly matches source height, collection order defines the
-     * row association. If neither condition is true, no row mapping is invented.</p>
-     */
-    private void rebuildGraphNodeRowIndex(GraphDirectedCollection graph) {
-        graphNodeRowIndex.clear();
-        graphEntityIdToIndex.clear();
-        graphAdjacencyIndices = new int[0][];
-        if (graph == null || graph.getNodes() == null) return;
-
-        List<GraphNode> nodes = graph.getNodes();
-        int n = nodes.size();
-        int sourceHeight = getSourceHeight();
-
-        HashMap<Long, GraphNode> validIdentities = new HashMap<>();
-        boolean uniqueIdentityMapping = sourceHeight > 0;
-        for (int i = 0; i < n; i++) {
-            GraphNode node = nodes.get(i);
-            if (node == null) {
-                uniqueIdentityMapping = false;
-                continue;
-            }
-            graphEntityIdToIndex.put(node.getEntityID(), i);
-            long identity = node.getIdentity();
-            if (identity < 0 || identity >= sourceHeight
-                || validIdentities.put(identity, node) != null) {
-                uniqueIdentityMapping = false;
-            }
-        }
-
-        if (uniqueIdentityMapping && validIdentities.size() == n) {
-            for (GraphNode node : nodes) {
-                graphNodeRowIndex.put(node, (int) node.getIdentity());
-            }
-        } else if (n == sourceHeight) {
-            for (int i = 0; i < n; i++) {
-                GraphNode node = nodes.get(i);
-                if (node != null) graphNodeRowIndex.put(node, i);
-            }
-        }
-
-        ArrayList<ArrayList<Integer>> adjacency = new ArrayList<>(n);
-        for (int i = 0; i < n; i++) adjacency.add(new ArrayList<>());
-        if (graph.getEdges() != null) {
-            for (GraphEdge edge : graph.getEdges()) {
-                if (edge == null) continue;
-                Integer startIndex = graphEntityIdToIndex.get(edge.getStartID());
-                Integer endIndex = graphEntityIdToIndex.get(edge.getEndID());
-                if (startIndex == null || endIndex == null || startIndex.equals(endIndex)) continue;
-                adjacency.get(startIndex).add(endIndex);
-                adjacency.get(endIndex).add(startIndex);
-            }
-        }
-
-        graphAdjacencyIndices = new int[n][];
-        for (int i = 0; i < n; i++) {
-            ArrayList<Integer> neighbors = adjacency.get(i);
-            int[] indices = new int[neighbors.size()];
-            for (int j = 0; j < neighbors.size(); j++) indices[j] = neighbors.get(j);
-            graphAdjacencyIndices[i] = indices;
-        }
-    }
-
-    private Optional<Integer> getGraphSourceRowIndex(GraphNode node) {
-        if (node == null || currentGraph == null) return Optional.empty();
-        Integer row = graphNodeRowIndex.get(node);
-        if (row == null || row < 0 || row >= getSourceHeight()) return Optional.empty();
-        return Optional.of(row);
-    }
-
-    /**
-     * Highlight the graph node's corresponding surface row. The selected graph row
-     * spans X and the perpendicular crosshair uses the center surface column.
-     */
-    private void highlightSurfaceRowIfPossible(GraphNode node) {
-        if (!crosshairsEnabled || activeHeightField == null) {
-            surfaceCrosshairOverlay.hide();
-            return;
-        }
-        getGraphSourceRowIndex(node).ifPresent(surfaceCrosshairOverlay::requestSourceRow);
-    }
 
 }

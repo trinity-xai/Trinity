@@ -1,4 +1,4 @@
-package edu.jhuapl.trinity.javafx.javafx3d;
+package edu.jhuapl.trinity.javafx.javafx3d.hypersurface;
 
 import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;

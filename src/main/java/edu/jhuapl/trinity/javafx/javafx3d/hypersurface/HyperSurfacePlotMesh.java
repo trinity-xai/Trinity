@@ -28,7 +28,9 @@
  */
 
 
-package edu.jhuapl.trinity.javafx.javafx3d;
+package edu.jhuapl.trinity.javafx.javafx3d.hypersurface;
+
+import edu.jhuapl.trinity.javafx.javafx3d.Vert3D;
 
 import javafx.beans.property.DoubleProperty;
 import javafx.beans.property.IntegerProperty;
@@ -358,7 +360,7 @@ public class HyperSurfacePlotMesh extends TexturedMesh {
         setMaterial(material);
     }
 
-    protected final void updateMeshSmooth(int rangeX, int rangeY) {
+    public final void updateMeshSmooth(int rangeX, int rangeY) {
         clearDirectHeightFieldState();
         setMesh(null);
         mesh = createSmoothMesh(getFunctionVert3D(),

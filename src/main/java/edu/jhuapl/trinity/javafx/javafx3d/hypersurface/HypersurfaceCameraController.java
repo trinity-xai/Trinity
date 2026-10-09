@@ -1,4 +1,4 @@
-package edu.jhuapl.trinity.javafx.javafx3d;
+package edu.jhuapl.trinity.javafx.javafx3d.hypersurface;
 
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import javafx.animation.Timeline;
