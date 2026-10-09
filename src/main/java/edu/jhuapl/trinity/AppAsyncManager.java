@@ -183,8 +183,14 @@ public class AppAsyncManager extends Task<Void> {
 
         setOnSucceeded(e -> Platform.runLater(() ->
             scene.getRoot().fireEvent(new ApplicationEvent(ApplicationEvent.HIDE_BUSY_INDICATOR))));
-        setOnFailed(e -> Platform.runLater(() ->
-            scene.getRoot().fireEvent(new ApplicationEvent(ApplicationEvent.HIDE_BUSY_INDICATOR))));
+        setOnFailed(e -> {
+            Throwable failure = getException();
+            if (failure != null) {
+                LOG.error("Trinity asynchronous initialization failed.", failure);
+            }
+            Platform.runLater(() ->
+                scene.getRoot().fireEvent(new ApplicationEvent(ApplicationEvent.HIDE_BUSY_INDICATOR)));
+        });
         setOnCancelled(e -> Platform.runLater(() ->
             scene.getRoot().fireEvent(new ApplicationEvent(ApplicationEvent.HIDE_BUSY_INDICATOR))));
     }

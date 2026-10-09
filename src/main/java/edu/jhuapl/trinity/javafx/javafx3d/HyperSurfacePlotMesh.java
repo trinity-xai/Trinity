@@ -40,7 +40,6 @@ import javafx.collections.ObservableFloatArray;
 import javafx.geometry.Point2D;
 import javafx.scene.DepthTest;
 import javafx.scene.image.Image;
-import javafx.scene.image.PixelWriter;
 import javafx.scene.image.WritableImage;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
@@ -708,16 +707,7 @@ public class HyperSurfacePlotMesh extends TexturedMesh {
             return directPaletteImage;
         }
 
-        WritableImage palette = new WritableImage(colors, 1);
-        PixelWriter writer = palette.getPixelWriter();
-        for (int i = 0; i < colors; i++) {
-            double d = (double) i / (double) (colors - 1);
-            Color c;
-            if (i == 0) c = Color.BLACK;
-            else if (i == colors - 1) c = Color.WHITE;
-            else c = Color.hsb(360.0 * d, 1.0, 1.0, 1.0);
-            writer.setColor(i, 0, c);
-        }
+        WritableImage palette = SurfaceColorPalette.createPaletteImage(colors);
         directPaletteImage = palette;
         directPaletteColors = colors;
         return palette;

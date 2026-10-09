@@ -95,6 +95,7 @@ public class HypersurfaceControlsPane extends LitPathPane {
     private ColorPicker ambientColorPicker;
     private CheckBox enablePointCheck;
     private ColorPicker pointColorPicker;
+    private CheckBox showLegendCheck;
 
     // Graph overlay visibility
     private ToggleButton showGraphToggle;
@@ -179,6 +180,14 @@ public class HypersurfaceControlsPane extends LitPathPane {
             }
             e.consume();
         });
+
+        if (target != null) {
+            target.legendEnabledProperty().addListener((obs, oldValue, newValue) -> {
+                if (showLegendCheck != null && showLegendCheck.isSelected() != newValue) {
+                    showLegendCheck.setSelected(newValue);
+                }
+            });
+        }
 
         // Graph overlay visibility GUI sync
         scene.addEventHandler(GraphEvent.SET_GRAPH_VISIBILITY_GUI, e -> {
@@ -372,11 +381,19 @@ public class HypersurfaceControlsPane extends LitPathPane {
         ComboBox<String> cameraViewCombo = new ComboBox<>();
         cameraViewCombo.getItems().addAll("Fit", "Oblique", "Top", "Front", "Side");
         cameraViewCombo.getSelectionModel().select("Fit");
-        cameraViewCombo.setPrefWidth(145.0);
+        cameraViewCombo.setPrefWidth(125.0);
         Button applyCameraButton = new Button("Apply");
-        HBox cameraBox = new HBox(6, cameraViewCombo, applyCameraButton);
+        showLegendCheck = new CheckBox("Legend");
+        showLegendCheck.setSelected(target == null || target.isLegendEnabled());
+        showLegendCheck.setPrefWidth(76.0);
+        showLegendCheck.setMinWidth(Region.USE_PREF_SIZE);
+        HBox cameraBox = new HBox(6, cameraViewCombo, applyCameraButton, showLegendCheck);
         cameraBox.setAlignment(Pos.CENTER_LEFT);
         addRow(sceneGrid, 4, "Camera", cameraBox);
+
+        showLegendCheck.setOnAction(e -> {
+            if (target != null) target.setLegendEnabled(showLegendCheck.isSelected());
+        });
 
         applyCameraButton.setOnAction(e -> {
             if (target == null) return;

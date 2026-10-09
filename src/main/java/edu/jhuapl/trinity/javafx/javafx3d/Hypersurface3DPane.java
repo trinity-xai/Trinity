@@ -58,7 +58,10 @@ import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
 import javafx.application.Platform;
+import javafx.beans.binding.Bindings;
+import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
+import javafx.beans.property.SimpleBooleanProperty;
 import javafx.beans.property.SimpleObjectProperty;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
@@ -211,6 +214,12 @@ public class Hypersurface3DPane extends StackPane
     public List<ShapleyVector> shapleyVectors = new ArrayList<>();
 
     private final SurfaceCrosshairOverlay surfaceCrosshairOverlay = new SurfaceCrosshairOverlay();
+    /**
+     * Desktop-level legend HUD. Constructed lazily on the JavaFX Application Thread
+     * because Hypersurface3DPane itself is created by AppAsyncManager on a worker thread.
+     */
+    private HypersurfaceLegendOverlay legendOverlay;
+    private final BooleanProperty legendEnabled = new SimpleBooleanProperty(true);
 
     //allows 2D labels to track their 3D counterparts
     HashMap<Shape3D, Node> shape3DToLabel = new HashMap<>();
@@ -368,6 +377,13 @@ public class Hypersurface3DPane extends StackPane
 
     public Hypersurface3DPane(Scene scene) {
         this.scene = scene;
+        visibleProperty().addListener((obs, oldValue, newValue) -> refreshLegendVisibility());
+        // AppAsyncManager constructs this pane on a worker thread, but the Node is
+        // attached to centerStack later on the JavaFX Application Thread. Defer all
+        // desktop-overlay creation/attachment until that scene-attachment point.
+        sceneProperty().addListener((obs, oldScene, newScene) -> {
+            if (newScene != null) attachLegendOverlay(App.getAppPathPaneStack());
+        });
         surfaceRowOrientation.addListener((obs, oldValue, newValue) -> {
             applySurfaceRowOrientationToRenderers();
             refreshCoordinateMapper();
@@ -378,6 +394,7 @@ public class Hypersurface3DPane extends StackPane
         surfaceHeightOrientation.addListener((obs, oldValue, newValue) -> {
             applySurfaceHeightOrientationToRenderers();
             refreshCrosshairSurfaceContext();
+            refreshLegendOverlay();
             if (surfPlot != null) {
                 updateTheMesh();
             }
@@ -400,11 +417,12 @@ public class Hypersurface3DPane extends StackPane
         ySphere.setMaterial(new PhongMaterial(Color.GREEN));
         zSphere.setTranslateZ(planeSize / 2.0);
         zSphere.setMaterial(new PhongMaterial(Color.BLUE));
-        PhongMaterial highlightedPointMaterial = new PhongMaterial();
-        highlightedPointMaterial.setDiffuseColor(null);
+        PhongMaterial highlightedPointMaterial =
+            new PhongMaterial(null, null, null, null, null);
         highlightedPointMaterial.setSelfIlluminationMap(
-            SolidColorTexture.of(new Color(0.9411765f, 0.972549f, 1.0f, 0.666)));
+            SolidColorTexture.of(Color.ALICEBLUE.deriveColor(1, 1, 1, 0.666)));
         highlightedPoint.setMaterial(highlightedPointMaterial);
+        highlightedPoint.setDrawMode(DrawMode.FILL);
         highlightedPoint.setMouseTransparent(true);
 
         // Labels
@@ -1779,6 +1797,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
             this.yScale = ((Double) e.object).floatValue();
             if (surfPlot != null) surfPlot.setFunctionScale(yScale);
             refreshCrosshairSurfaceContext();
+            refreshLegendOverlay();
             updateTheMesh();
         });
 
@@ -1832,6 +1851,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
             } else {
                 applyCurrentColoration();
             }
+            refreshLegendOverlay();
         });
 
         // Processing pipeline
@@ -1974,6 +1994,114 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
             graphVisible = b;
             graphLayer.setVisible(graphVisible);
         });
+    }
+
+    private void attachLegendOverlay(Pane desktopPane) {
+        if (desktopPane == null) return;
+        if (!Platform.isFxApplicationThread()) {
+            Platform.runLater(() -> attachLegendOverlay(desktopPane));
+            return;
+        }
+
+        if (legendOverlay == null) {
+            legendOverlay = new HypersurfaceLegendOverlay();
+            legendOverlay.setMouseTransparent(true);
+        }
+
+        if (!legendOverlay.layoutXProperty().isBound()) {
+            legendOverlay.layoutXProperty().bind(Bindings.createDoubleBinding(
+                () -> Math.max(12.0,
+                    desktopPane.getWidth() - legendOverlay.getWidth() - 24.0),
+                desktopPane.widthProperty(),
+                legendOverlay.widthProperty()));
+        }
+        if (!legendOverlay.layoutYProperty().isBound()) {
+            legendOverlay.layoutYProperty().bind(Bindings.createDoubleBinding(
+                () -> Math.max(12.0,
+                    desktopPane.getHeight() * 0.45 - legendOverlay.getHeight() * 0.5),
+                desktopPane.heightProperty(),
+                legendOverlay.heightProperty()));
+        }
+        if (!desktopPane.getChildren().contains(legendOverlay)) {
+            // Keep passive HUD overlays below floating LitPathPane windows.
+            desktopPane.getChildren().add(0, legendOverlay);
+        }
+        refreshLegendVisibility();
+        refreshLegendOverlay();
+    }
+
+    private HypersurfaceLegendState buildLegendState() {
+        HeightField rangeField = lodProcessedLevels != null && !lodProcessedLevels.isEmpty()
+            ? lodProcessedLevels.get(0)
+            : activeHeightField;
+
+        double minimum = Double.NaN;
+        double maximum = Double.NaN;
+        if (rangeField != null) {
+            float[] minMax = rangeField.minMax();
+            minimum = minMax[0];
+            maximum = minMax[1];
+        }
+
+        String heightLabel = imageBackedSurface ? "Image Intensity" : "Feature Value";
+        String colorLabel = switch (colorationMethod) {
+            case COLOR_BY_IMAGE -> "Source Image";
+            case COLOR_BY_FEATURE -> "Feature Value";
+            case COLOR_BY_SHAPLEY -> "Shapley Value";
+        };
+        boolean numericColorRange = colorationMethod == COLORATION.COLOR_BY_FEATURE
+            && Double.isFinite(minimum)
+            && Double.isFinite(maximum);
+
+        return new HypersurfaceLegendState(
+            heightLabel,
+            minimum,
+            maximum,
+            yScale,
+            getSurfaceHeightOrientation(),
+            colorationMethod,
+            colorLabel,
+            numericColorRange,
+            minimum,
+            maximum);
+    }
+
+    private void refreshLegendOverlay() {
+        final HypersurfaceLegendState state = buildLegendState();
+        if (!Platform.isFxApplicationThread()) {
+            Platform.runLater(() -> applyLegendState(state));
+            return;
+        }
+        applyLegendState(state);
+    }
+
+    private void applyLegendState(HypersurfaceLegendState state) {
+        if (legendOverlay != null) legendOverlay.update(state);
+    }
+
+    private void refreshLegendVisibility() {
+        final boolean show = isVisible() && legendEnabled.get();
+        if (!Platform.isFxApplicationThread()) {
+            Platform.runLater(() -> {
+                if (legendOverlay != null) legendOverlay.setVisible(show);
+            });
+            return;
+        }
+        if (legendOverlay != null) legendOverlay.setVisible(show);
+    }
+
+    public boolean isLegendEnabled() {
+        return legendEnabled.get();
+    }
+
+    public void setLegendEnabled(boolean enabled) {
+        legendEnabled.set(enabled);
+        refreshLegendVisibility();
+        if (enabled) refreshLegendOverlay();
+    }
+
+    public BooleanProperty legendEnabledProperty() {
+        return legendEnabled;
     }
 
     public void updateCalloutByFeatureVector(Callout callout, FeatureVector featureVector) {
@@ -2518,6 +2646,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
             tiledSurfaceRenderer.clearSurface();
             tiledSurfaceRenderer.setVisible(false);
         }
+        refreshLegendOverlay();
     }
 
     public boolean isImageBackedSurface() {
@@ -3053,6 +3182,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         }
 
         updateView(true);
+        refreshLegendOverlay();
     }
 
     /**
