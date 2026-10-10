@@ -14,7 +14,6 @@ import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.data.messages.xai.ShapleyCollection;
 import edu.jhuapl.trinity.data.messages.xai.ShapleyVector;
 import edu.jhuapl.trinity.javafx.components.callouts.Callout;
-import edu.jhuapl.trinity.javafx.components.callouts.CalloutBuilder;
 import edu.jhuapl.trinity.javafx.components.panes.SurfaceChartPane;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
@@ -27,14 +26,12 @@ import edu.jhuapl.trinity.javafx.events.HypersurfaceGridEvent;
 import edu.jhuapl.trinity.javafx.events.ImageEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.javafx.events.ShadowEvent;
-import edu.jhuapl.trinity.javafx.events.TimelineEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.Vert3D;
 import edu.jhuapl.trinity.javafx.javafx3d.XFormGroup;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.AnimatedSphere;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.TessellationTube;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.Tracer;
 import edu.jhuapl.trinity.javafx.javafx3d.images.ImageResourceProvider;
-import edu.jhuapl.trinity.javafx.javafx3d.images.SolidColorTexture;
 import edu.jhuapl.trinity.javafx.javafx3d.tasks.AffinityClusterTask;
 import edu.jhuapl.trinity.javafx.javafx3d.tasks.DBSCANClusterTask;
 import edu.jhuapl.trinity.javafx.javafx3d.tasks.ExMaxClusterTask;
@@ -47,7 +44,6 @@ import edu.jhuapl.trinity.javafx.renderers.SemanticMapRenderer;
 import edu.jhuapl.trinity.javafx.renderers.ShapleyVectorRenderer;
 import edu.jhuapl.trinity.utils.DataUtils;
 import edu.jhuapl.trinity.utils.DataUtils.HeightMode;
-import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import edu.jhuapl.trinity.utils.Utils;
 import edu.jhuapl.trinity.utils.graph.GraphStyleParams;
@@ -62,11 +58,9 @@ import javafx.beans.binding.Bindings;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.SimpleBooleanProperty;
-import javafx.beans.property.SimpleObjectProperty;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.event.ActionEvent;
 import javafx.event.Event;
-import javafx.geometry.Point2D;
 import javafx.scene.AmbientLight;
 import javafx.scene.Group;
 import javafx.scene.Node;
@@ -82,10 +76,8 @@ import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckMenuItem;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.DialogPane;
-import javafx.scene.control.Label;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
-import javafx.scene.control.TitledPane;
 import javafx.scene.effect.Glow;
 import javafx.scene.image.Image;
 import javafx.scene.image.ImageView;
@@ -100,19 +92,12 @@ import javafx.scene.layout.Background;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.StackPane;
-import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
-import javafx.scene.shape.Box;
 import javafx.scene.shape.CullFace;
-import javafx.scene.shape.Cylinder;
 import javafx.scene.shape.DrawMode;
 import javafx.scene.shape.Shape3D;
-import javafx.scene.shape.Sphere;
 import javafx.scene.text.Font;
-import javafx.scene.text.Text;
-import javafx.scene.transform.Rotate;
-import javafx.scene.transform.Translate;
 import javafx.stage.FileChooser;
 import javafx.stage.StageStyle;
 import javafx.util.Duration;
@@ -128,9 +113,7 @@ import java.io.IOException;
 import java.nio.file.Paths;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.HashMap;
 import java.util.List;
-import java.util.Map;
 import java.util.Optional;
 import java.util.Random;
 import java.util.function.Function;
@@ -165,7 +148,7 @@ public class Hypersurface3DPane extends StackPane
 
 
     public Group sceneRoot = new Group();
-    public Group extrasGroup = new Group();
+    public Group extrasGroup;
     public Group debugGroup = new Group();
     public Group ellipsoidGroup = new Group();
     public SubScene subScene;
@@ -189,19 +172,17 @@ public class Hypersurface3DPane extends StackPane
     public enum COLORATION {COLOR_BY_IMAGE, COLOR_BY_FEATURE, COLOR_BY_SHAPLEY}
 
     COLORATION colorationMethod = COLORATION.COLOR_BY_FEATURE;
-    private final ObjectProperty<SurfaceRowOrientation> surfaceRowOrientation =
-        new SimpleObjectProperty<>(SurfaceRowOrientation.FIRST_ROW_NEAR);
-    private final ObjectProperty<SurfaceHeightOrientation> surfaceHeightOrientation =
-        new SimpleObjectProperty<>(SurfaceHeightOrientation.HIGH_VALUES_UP);
-    private boolean suppressRowOrientationRefresh = false;
+    private final HypersurfaceSourceModel sourceModel =
+        new HypersurfaceSourceModel(DEFAULT_XWIDTH, DEFAULT_SURFSCALE);
+    private boolean suppressRowOrientationRefresh;
 
-    //Shapley value support
-    private Image lastImage = null;
-    private String lastImageSource = null;
-    public List<ShapleyVector> shapleyVectors = new ArrayList<>();
+    // Public collection aliases retained for compatibility. The source model owns
+    // these mutable instances and all internal source-state semantics.
+    public List<ShapleyVector> shapleyVectors = sourceModel.getShapleyVectors();
 
     private final SurfaceCrosshairOverlay surfaceCrosshairOverlay = new SurfaceCrosshairOverlay();
     private final HypersurfaceInteractionController interactionController;
+    private final HypersurfaceOverlayManager overlayManager;
     /**
      * Desktop-level legend HUD. Constructed lazily on the JavaFX Application Thread
      * because Hypersurface3DPane itself is created by AppAsyncManager on a worker thread.
@@ -209,16 +190,14 @@ public class Hypersurface3DPane extends StackPane
     private HypersurfaceLegendOverlay legendOverlay;
     private final BooleanProperty legendEnabled = new SimpleBooleanProperty(true);
 
-    //allows 2D labels to track their 3D counterparts
-    HashMap<Shape3D, Node> shape3DToLabel = new HashMap<>();
-    public List<FeatureVector> featureVectors = new ArrayList<>();
+    public List<FeatureVector> featureVectors = sourceModel.getFeatureVectors();
 
     /**
      * Authoritative boxed working/source grid retained for compatibility with existing
      * analysis and ingestion paths. LOD selection must never replace this with a
-     * downsampled render grid; activeHeightField owns render-side data.
+     * downsampled render grid; sourceModel.getActiveHeightField() owns render-side data.
      */
-    public List<List<Double>> dataGrid = new ArrayList<>();
+    public List<List<Double>> dataGrid = sourceModel.getDataGrid();
 
     private Random rando = new Random();
     public HyperSurfacePlotMesh surfPlot;
@@ -235,43 +214,17 @@ public class Hypersurface3DPane extends StackPane
 
     Function<Vert3D, Number> vert3DLookup = p -> vertToHeight(p);
 
-    // initial rotation
-    private final Rotate rotateX = new Rotate(0, Rotate.X_AXIS);
-    private final Rotate rotateY = new Rotate(0, Rotate.Y_AXIS);
-    private final Rotate rotateZ = new Rotate(0, Rotate.Z_AXIS);
-
     private Skybox skybox;
-    private Group nodeGroup = new Group();
-    private Group labelGroup = new Group();
 
     BorderPane bp;
-    Box glowLineBox;
-    Cylinder eastPole, westPole;
-    Sphere eastKnob, westKnob;
-    Label eastLabel, westLabel;
-    int anchorIndex = 0;
-    Callout anchorCallout;
 
-    //For each label you'll need some Shape3D to derive a point3d from.
-    private Sphere xSphere = new Sphere(10);
-    private Sphere ySphere = new Sphere(10);
-    private Sphere zSphere = new Sphere(10);
-    Sphere highlightedPoint = new Sphere(1, 32);
-    private Label xLabel = new Label("Features (ordered)");
-    private Label yLabel = new Label("Magnitude");
-    private Label zLabel = new Label("Time (Samples)");
-
-    public List<String> featureLabels = new ArrayList<>();
+    public List<String> featureLabels = sourceModel.getFeatureLabels();
     public Scene scene;
-    HashMap<Shape3D, Callout> shape3DToCalloutMap;
     public String imageryBasePath = "";
     SurfaceChartPane surfaceChartPane;
     public AmbientLight ambientLight;
     public PointLight pointLight;
     private AmbientLight skyboxAmbientLight;
-    private List<List<Double>> originalGrid = new ArrayList<>();
-
-    
 
     // ============================================================
     // Primitive HeightField + Global LOD Cap (via LodManager)
@@ -285,36 +238,6 @@ public class Hypersurface3DPane extends StackPane
     /** Tiled image rendering uses a fixed L0..L4 power-of-two pyramid. */
     private static final int TILED_LOD_LEVEL_COUNT = 5;
 
-    /** Processing source HeightField. Image sources retain only capped raw L0; data grids retain full source resolution. */
-    private HeightField processingSourceHeightField = null;
-    // Image-backed surfaces retain only the capped raw L0 HeightField. The original
-    // source dimensions/region are tracked separately so world extents and hover/source
-    // semantics remain tied to the input image rather than the render cap.
-    private int imageSourceStartX = 0;
-    private int imageSourceStartY = 0;
-    private int imageSourceWidth = 0;
-    private int imageSourceHeight = 0;
-
-    /** Processed LOD pyramid (Option B: process L0 then downsample processed). */
-    private List<HeightField> lodProcessedLevels = List.of();
-
-    /** Active LOD index into lodProcessedLevels. */
-    private int activeLodIndex = -1;
-
-    /** Active HeightField (alias of lodProcessedLevels.get(activeLodIndex)). */
-    private HeightField activeHeightField = null;
-
-    /** Constant world extents used to keep surface size stable across LOD changes. */
-    private double baseWorldWidth = Double.NaN;
-    private double baseWorldDepth = Double.NaN;
-
-    /**
-     * Image-backed surfaces use resolution-independent physical dimensions. The longer
-     * image axis occupies this many world units when surfScale == DEFAULT_SURFSCALE;
-     * the shorter axis is derived from the source aspect ratio.
-     */
-    private boolean imageBackedSurface = false;
-
     /**
      * True only while model state is being pushed into HypersurfaceControlsPane.
      * GUI control listeners echo their changes back as HypersurfaceEvents, so those
@@ -322,12 +245,6 @@ public class Hypersurface3DPane extends StackPane
      */
     private boolean syncingGuiControls = false;
 
-    private final double imageWorldExtentReferenceScale = Math.max(1.0e-6, DEFAULT_SURFSCALE);
-    private double nominalImageWorldExtent = DEFAULT_XWIDTH * (double) DEFAULT_SURFSCALE;
-
-    /** Current mesh spacing in world units per cell for the active LOD. */
-    private double currentLodSurfScaleX = Double.NaN;
-    private double currentLodSurfScaleZ = Double.NaN;
     private final SurfaceCoordinateMapper coordinateMapper = new SurfaceCoordinateMapper();
 
     /** Screen-space LOD scheduler/selector for the legacy/global renderer. */
@@ -361,8 +278,6 @@ public class Hypersurface3DPane extends StackPane
 
     public Hypersurface3DPane(Scene scene) {
         this.scene = scene;
-        interactionController = new HypersurfaceInteractionController(
-            this, scene, coordinateMapper, surfaceCrosshairOverlay);
         visibleProperty().addListener((obs, oldValue, newValue) -> refreshLegendVisibility());
         // AppAsyncManager constructs this pane on a worker thread, but the Node is
         // attached to centerStack later on the JavaFX Application Thread. Defer all
@@ -370,14 +285,14 @@ public class Hypersurface3DPane extends StackPane
         sceneProperty().addListener((obs, oldScene, newScene) -> {
             if (newScene != null) attachLegendOverlay(App.getAppPathPaneStack());
         });
-        surfaceRowOrientation.addListener((obs, oldValue, newValue) -> {
+        sourceModel.rowOrientationProperty().addListener((obs, oldValue, newValue) -> {
             applySurfaceRowOrientationToRenderers();
             refreshCoordinateMapper();
             if (!suppressRowOrientationRefresh && surfPlot != null) {
                 updateTheMesh();
             }
         });
-        surfaceHeightOrientation.addListener((obs, oldValue, newValue) -> {
+        sourceModel.heightOrientationProperty().addListener((obs, oldValue, newValue) -> {
             applySurfaceHeightOrientationToRenderers();
             refreshCrosshairSurfaceContext();
             refreshLegendOverlay();
@@ -385,7 +300,6 @@ public class Hypersurface3DPane extends StackPane
                 updateTheMesh();
             }
         });
-        shape3DToCalloutMap = new HashMap<>();
         ambientLight = new AmbientLight(Color.WHITE);
 
         setBackground(Background.EMPTY);
@@ -394,40 +308,11 @@ public class Hypersurface3DPane extends StackPane
         subScene.heightProperty().bind(heightProperty());
         subScene.setFill(sceneColor);
 
-        //add our nodes to the group that will later be added to the 3D scene
-        nodeGroup.getChildren().addAll(xSphere, ySphere, zSphere);
-        nodeGroup.getTransforms().addAll(rotateX, rotateY, rotateZ);
-        xSphere.setTranslateX(planeSize / 2.0);
-        xSphere.setMaterial(new PhongMaterial(Color.RED));
-        ySphere.setTranslateY(-planeSize / 2.0);
-        ySphere.setMaterial(new PhongMaterial(Color.GREEN));
-        zSphere.setTranslateZ(planeSize / 2.0);
-        zSphere.setMaterial(new PhongMaterial(Color.BLUE));
-        PhongMaterial highlightedPointMaterial =
-            new PhongMaterial(null, null, null, null, null);
-        highlightedPointMaterial.setSelfIlluminationMap(
-            SolidColorTexture.of(Color.ALICEBLUE.deriveColor(1, 1, 1, 0.666)));
-        highlightedPoint.setMaterial(highlightedPointMaterial);
-        highlightedPoint.setDrawMode(DrawMode.FILL);
-        highlightedPoint.setMouseTransparent(true);
-
-        // Labels
-        Font font = new Font("Consolas", 20);
-        xLabel.setTextFill(Color.YELLOW);
-        xLabel.setFont(font);
-        xLabel.setMouseTransparent(true);
-        yLabel.setTextFill(Color.SKYBLUE);
-        yLabel.setFont(font);
-        yLabel.setMouseTransparent(true);
-        zLabel.setTextFill(Color.LIGHTGREEN);
-        zLabel.setFont(font);
-        zLabel.setMouseTransparent(true);
-
-        labelGroup.getChildren().addAll(xLabel, yLabel, zLabel);
-        labelGroup.setManaged(false);
-        shape3DToLabel.put(xSphere, xLabel);
-        shape3DToLabel.put(ySphere, yLabel);
-        shape3DToLabel.put(zSphere, zLabel);
+        overlayManager = new HypersurfaceOverlayManager(
+            this, scene, subScene, coordinateMapper, planeSize);
+        extrasGroup = overlayManager.getExtrasGroup();
+        interactionController = new HypersurfaceInteractionController(
+            this, scene, coordinateMapper, surfaceCrosshairOverlay, overlayManager);
         camera = new PerspectiveCamera(true);
 
         cameraTransform.setTranslate(0, 0, 0);
@@ -447,10 +332,9 @@ public class Hypersurface3DPane extends StackPane
         cameraController.installInputHandlers();
         setupSkyBox();
         debugGroup.setVisible(false);
-        extrasGroup.setVisible(false);
-        labelGroup.setVisible(false);
-        sceneRoot.getChildren().addAll(cameraTransform, highlightedPoint,
-            nodeGroup, extrasGroup, debugGroup, dataXForm);
+        overlayManager.setInitialVisibility(false);
+        sceneRoot.getChildren().addAll(cameraTransform, overlayManager.getHighlightedPoint(),
+            overlayManager.getNodeGroup(), extrasGroup, debugGroup, dataXForm);
         // Add graph layer last so it draws above the surface (z-order within Group)
         sceneRoot.getChildren().add(graphLayer);
         sceneRoot.getChildren().add(surfaceCrosshairOverlay);
@@ -485,7 +369,7 @@ public class Hypersurface3DPane extends StackPane
                         updateView(false);
                         notifyIndexChange();
                     }
-                    updateLabels();
+                    overlayManager.updateLabels();
                 }
             }
             if (keycode == KeyCode.PERIOD) {
@@ -504,7 +388,7 @@ public class Hypersurface3DPane extends StackPane
                         updateView(false);
                         notifyIndexChange();
                     }
-                    updateLabels();
+                    overlayManager.updateLabels();
                 } else {
                     scene.getRoot().fireEvent(new CommandTerminalEvent("Feature Index Max Reached: ("
                         + featureSize + ")", new Font("Consolas", 20), Color.YELLOW));
@@ -516,16 +400,15 @@ public class Hypersurface3DPane extends StackPane
 
             if (keycode == KeyCode.I) {
                 double tz = event.isShiftDown() ? 50 : 5;
-                glowLineBox.setTranslateZ(glowLineBox.getTranslateZ() + tz);
+                overlayManager.moveTimeline(tz);
             }
             if (keycode == KeyCode.K) {
                 double tz = event.isShiftDown() ? 50 : 5;
-                glowLineBox.setTranslateZ(glowLineBox.getTranslateZ() - tz);
+                overlayManager.moveTimeline(-tz);
             }
 
             if (!cameraHandled) {
-                updateLabels();
-                updateCalloutHeadPoints(subScene);
+                overlayManager.refreshProjectedOverlays();
                 requestLodUpdate(LodManager.UpdateReason.OTHER);
             }
         });
@@ -534,7 +417,7 @@ public class Hypersurface3DPane extends StackPane
         surfaceChartPane = new SurfaceChartPane(scene, pathPane);
         bp = new BorderPane(subScene);
         getChildren().clear();
-        getChildren().addAll(bp, labelGroup);
+        getChildren().addAll(bp, overlayManager.getLabelGroup());
 
 
         MenuItem showControlsItem = new MenuItem("Hypersurface Controls");
@@ -625,7 +508,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
 
         MenuItem navigatorItem = new MenuItem("Content Navigator");
         navigatorItem.setOnAction(e -> interactionController.showContentNavigator(
-            imageBackedSurface ? lastImage : null));
+            sourceModel.isImageBackedSurface() ? sourceModel.getSourceImage() : null));
 
         MenuItem updateAllItem = new MenuItem("Update Render");
         updateAllItem.setOnAction(e -> updateAll());
@@ -641,11 +524,8 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         });
 
         CheckMenuItem showDataMarkersItem = new CheckMenuItem("Show Data Markers");
-        showDataMarkersItem.setOnAction(e -> {
-            extrasGroup.setVisible(showDataMarkersItem.isSelected());
-            labelGroup.setVisible(showDataMarkersItem.isSelected());
-            if (null != anchorCallout) anchorCallout.setVisible(showDataMarkersItem.isSelected());
-        });
+        showDataMarkersItem.setOnAction(e ->
+            overlayManager.setDataMarkersVisible(showDataMarkersItem.isSelected()));
 
         CheckMenuItem enableCrosshairsItem = new CheckMenuItem("Enable Crosshairs");
         enableCrosshairsItem.setOnAction(e ->
@@ -764,15 +644,14 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
                 }
             }
             tessellateImage(image, x1, y1, x2, y2);
-            lastImage = image;
-            lastImageSource = image.getUrl();
+            sourceModel.setSourceImage(image);
         });
         this.scene.addEventHandler(HyperspaceEvent.FACTOR_COORDINATES_GUI, e -> {
             CoordinateSet coords = (CoordinateSet) e.object;
             xFactorIndex = coords.coordinateIndices.get(0);
             yFactorIndex = coords.coordinateIndices.get(1);
             zFactorIndex = coords.coordinateIndices.get(2);
-            updateLabels();
+            overlayManager.updateLabels();
             updateView(true);
             notifyIndexChange();
         });
@@ -813,13 +692,11 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         scene.addEventHandler(HyperspaceEvent.NODE_QUEUELIMIT_GUI, e -> queueLimit = (int) e.object);
         scene.addEventHandler(HyperspaceEvent.REFRESH_RATE_GUI, e -> hypersurfaceRefreshRate = (long) e.object);
 
-        scene.addEventHandler(ShadowEvent.SHOW_AXES_LABELS, e -> {
-            nodeGroup.setVisible((boolean) e.object);
-            labelGroup.setVisible((boolean) e.object);
-        });
+        scene.addEventHandler(ShadowEvent.SHOW_AXES_LABELS, e ->
+            overlayManager.setAxesAndLabelsVisible((boolean) e.object));
         scene.addEventHandler(ApplicationEvent.SET_IMAGERY_BASEPATH, e -> imageryBasePath = (String) e.object);
         Platform.runLater(() -> {
-            updateLabels();
+            overlayManager.updateLabels();
             updateView(true);
             updateTheMesh();
         });
@@ -1009,51 +886,19 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
     }
 
     public void updateCalloutHeadPoint(Shape3D node, Callout callout, SubScene subScene) {
-        Point2D p2d = JavaFX3DUtils.getTransformedP2D(node, subScene, callout.head.getRadius() + 5);
-        callout.updateHeadPoint(p2d.getX(), p2d.getY());
+        overlayManager.updateCalloutHeadPoint(node, callout, subScene);
     }
 
     public void updateCalloutHeadPoints(SubScene subScene) {
-        shape3DToCalloutMap.forEach((node, callout) -> updateCalloutHeadPoint(node, callout, subScene));
+        overlayManager.updateCalloutHeadPoints(subScene);
     }
 
     public Callout createCallout(Shape3D shape3D, FeatureVector featureVector, SubScene subScene) {
-        ImageView iv = loadImageView(featureVector, featureVector.isBBoxValid());
-        iv.setPreserveRatio(true);
-        iv.setFitWidth(CHIP_FIT_WIDTH);
-        iv.setFitHeight(CHIP_FIT_WIDTH);
-        TitledPane imageTP = new TitledPane();
-        imageTP.setContent(iv);
-        imageTP.setText("Imagery");
-        Point2D p2D = JavaFX3DUtils.getTransformedP2D(shape3D, subScene, Callout.DEFAULT_HEAD_RADIUS + 5);
-        StringBuilder sb = new StringBuilder();
-        for (Map.Entry<String, String> entry : featureVector.getMetaData().entrySet())
-            sb.append(entry.getKey()).append(" : ").append(entry.getValue()).append("\n");
-        Text metaText = new Text(sb.toString());
-        TitledPane metaTP = new TitledPane();
-        metaTP.setContent(metaText);
-        metaTP.setText("Metadata");
-        Callout infoCallout = CalloutBuilder.create()
-            .headPoint(p2D.getX(), p2D.getY())
-            .leaderLineToPoint(p2D.getX() - 100, p2D.getY() - 150)
-            .endLeaderLineRight()
-            .mainTitle(featureVector.getLabel(), new VBox(3, imageTP, metaTP))
-            .subTitle(featureVector.getEntityId())
-            .pause(10)
-            .build();
-        infoCallout.setPickOnBounds(false);
-        infoCallout.setManaged(false);
-        addCallout(infoCallout, shape3D);
-        infoCallout.play().setOnFinished(eh -> {
-            if (null == featureVector.getImageURL() || featureVector.getImageURL().isBlank()) imageTP.setExpanded(false);
-        });
-        return infoCallout;
+        return overlayManager.createCallout(shape3D, featureVector, subScene);
     }
 
     public void addCallout(Callout callout, Shape3D shape3D) {
-        callout.setManaged(false);
-        getChildren().add(callout);
-        shape3DToCalloutMap.put(shape3D, callout);
+        overlayManager.addCallout(callout, shape3D);
     }
 
     public void updateTheMesh() {
@@ -1078,7 +923,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         // selector). Never fall through to the legacy raw FXyz mesh builder here:
         // xWidth/zWidth may still describe the full 4K/8K source and attempting a
         // raw mesh at that resolution can exhaust the Java heap.
-        if (imageBackedSurface && activeHeightField == null) {
+        if (sourceModel.isImageBackedSurface() && sourceModel.getActiveHeightField() == null) {
             surfPlot.setVisible(false);
             return;
         }
@@ -1096,12 +941,12 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
             // Primitive HeightField meshes bypass the FXyz Point3D/Face3 object graph.
             // Shapley coloration temporarily retains the legacy path until its scalar
             // field is made LOD-aware; image and height coloration use the fast path.
-            boolean useDirectHeightFieldMesh = activeHeightField != null
+            boolean useDirectHeightFieldMesh = sourceModel.getActiveHeightField() != null
                 && colorationMethod != COLORATION.COLOR_BY_SHAPLEY;
 
             long meshStart = System.nanoTime();
             if (useDirectHeightFieldMesh) {
-                surfPlot.updateMeshHeightField(activeHeightField,
+                surfPlot.updateMeshHeightField(sourceModel.getActiveHeightField(),
                     renderScaleX, yScale, renderScaleZ);
                 System.out.println("Direct HeightField mesh built: "
                     + renderWidth + "x" + renderHeight + " in "
@@ -1114,16 +959,16 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         } else {
             // Cylinder/tube mode still needs the legacy boxed representation, but it must
             // use the bounded active render LOD rather than the full-resolution source.
-            List<List<Double>> renderGrid = activeHeightField != null
-                ? SurfaceUtils.toGrid(activeHeightField)
+            List<List<Double>> renderGrid = sourceModel.getActiveHeightField() != null
+                ? SurfaceUtils.toGrid(sourceModel.getActiveHeightField())
                 : dataGrid;
             TessellationTube tube = new TessellationTube(renderGrid, Color.WHITE,
                 yScale * 10, renderScaleZ, yScale);
             tube.setMouseTransparent(true);
-            if (null != lastImage) {
+            if (null != sourceModel.getSourceImage()) {
                 tube.meshView.setDrawMode(DrawMode.FILL);
                 tube.colorByImage = colorationMethod == COLORATION.COLOR_BY_IMAGE;
-                tube.updateMaterial(lastImage);
+                tube.updateMaterial(sourceModel.getSourceImage());
             }
             Platform.runLater(() -> sceneRoot.getChildren().add(tube));
         }
@@ -1143,9 +988,9 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
 
         switch (colorationMethod) {
             case COLOR_BY_IMAGE -> {
-                if (lastImage == null) return;
+                if (sourceModel.getSourceImage() == null) return;
                 if (surfPlot.isDirectHeightFieldMesh()) {
-                    surfPlot.setDirectTextureModeImage(lastImage);
+                    surfPlot.setDirectTextureModeImage(sourceModel.getSourceImage());
                 } else {
                     PhongMaterial material;
                     if (surfPlot.getMaterial() instanceof PhongMaterial existing) {
@@ -1154,7 +999,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
                         material = new PhongMaterial(Color.WHITE);
                     }
                     material.setDiffuseColor(Color.WHITE);
-                    material.setDiffuseMap(lastImage);
+                    material.setDiffuseMap(sourceModel.getSourceImage());
                     surfPlot.setMaterial(material);
                 }
             }
@@ -1165,9 +1010,9 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
                     // HeightFields are typically around 0..1 before Y scaling, so the
                     // previous hard-coded 0..360 range collapsed almost all values into
                     // the red end of the palette.
-                    HeightField colorRangeField = !lodProcessedLevels.isEmpty()
-                        ? lodProcessedLevels.get(0)
-                        : activeHeightField;
+                    HeightField colorRangeField = !sourceModel.getLodProcessedLevels().isEmpty()
+                        ? sourceModel.getLodProcessedLevels().get(0)
+                        : sourceModel.getActiveHeightField();
                     if (colorRangeField != null) {
                         float[] minMax = colorRangeField.minMax();
                         double minColorValue = minMax[0] * yScale;
@@ -1242,8 +1087,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
     }
 
     private void handleCameraInteraction(HypersurfaceCameraController.InteractionType interactionType) {
-        updateLabels();
-        updateCalloutHeadPoints(subScene);
+        overlayManager.refreshProjectedOverlays();
         LodManager.UpdateReason reason = switch (interactionType) {
             case DRAG -> LodManager.UpdateReason.DRAG;
             case ZOOM -> LodManager.UpdateReason.SCROLL;
@@ -1253,31 +1097,12 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
     }
 
     private void handleCameraSettled() {
-        updateLabels();
-        updateCalloutHeadPoints(subScene);
+        overlayManager.refreshProjectedOverlays();
         forceLodUpdate();
     }
 
-    private void updateLabels() {
-        shape3DToLabel.forEach((shape3D, node) -> {
-            Point2D p2Ditty = JavaFX3DUtils.getTransformedP2D(shape3D, subScene, 5);
-            double x = p2Ditty.getX();
-            double y = p2Ditty.getY() - 25;
-            node.getTransforms().setAll(new Translate(x, y));
-        });
-    }
-
-    void updateInteractionHoverMarker(Point3D surfacePoint) {
-        vertP3D = surfacePoint;
-        highlightedPoint.setTranslateX(vertP3D.x - getWorldWidth() / 2.0);
-        highlightedPoint.setTranslateY(vertP3D.y);
-        highlightedPoint.setTranslateZ(vertP3D.z - getWorldDepth() / 2.0);
-        updateCalloutHeadPoints(subScene);
-        updateLabels();
-    }
-
     HeightField getActiveHeightFieldForInteraction() {
-        return activeHeightField;
+        return sourceModel.getActiveHeightField();
     }
 
     List<FeatureVector> getFeatureVectorsForInteraction() {
@@ -1293,15 +1118,15 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
     }
 
     Image getSourceImageForInteraction() {
-        return lastImage;
+        return sourceModel.getSourceImage();
     }
 
     int getImageSourceStartXForInteraction() {
-        return imageSourceStartX;
+        return sourceModel.getImageSourceStartX();
     }
 
     int getImageSourceStartYForInteraction() {
-        return imageSourceStartY;
+        return sourceModel.getImageSourceStartY();
     }
 
     void showSurfaceChartsPane() {
@@ -1318,25 +1143,6 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         }
     }
 
-    private ImageView loadImageView(FeatureVector featureVector, boolean bboxOnly) {
-        ImageView iv = null;
-        try {
-            if (bboxOnly) {
-                WritableImage image = ResourceUtils.loadImageFileSubset(imageryBasePath + featureVector.getImageURL(),
-                    featureVector.getBbox().get(0).intValue(),
-                    featureVector.getBbox().get(1).intValue(),
-                    featureVector.getBbox().get(2).intValue(),
-                    featureVector.getBbox().get(3).intValue());
-                iv = new ImageView(image);
-            } else if (null != featureVector.getImageURL() && !featureVector.getImageURL().isBlank()) {
-                iv = new ImageView(ResourceUtils.loadImageFile(imageryBasePath + featureVector.getImageURL()));
-            } else iv = new ImageView(ResourceUtils.loadIconFile("noimage"));
-        } catch (Exception ex) {
-            iv = new ImageView(ResourceUtils.loadIconFile("noimage"));
-        }
-        return iv;
-    }
-
     public void updateView(boolean forcePNodeUpdate) {
         if (null != surfPlot) {
             Platform.runLater(() -> {
@@ -1349,8 +1155,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
     }
 
     private void generateRandos(int xWidth, int zWidth, float yScale) {
-        if (null == dataGrid) dataGrid = new ArrayList<>(zWidth);
-        else dataGrid.clear();
+        dataGrid.clear();
         List<Double> xList;
         for (int z = 0; z < zWidth; z++) {
             xList = new ArrayList<>(xWidth);
@@ -1372,7 +1177,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         }
 
         // Prefer primitive active LOD field
-        if (activeHeightField == null) {
+        if (sourceModel.getActiveHeightField() == null) {
             if (dataGrid == null) return 0.0;
             switch (interpMode) {
                 case BILINEAR:
@@ -1391,12 +1196,12 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         switch (interpMode) {
             case BILINEAR:
             case BICUBIC: {
-                double sx = Double.isFinite(currentLodSurfScaleX) ? currentLodSurfScaleX : surfScale;
-                double sz = Double.isFinite(currentLodSurfScaleZ) ? currentLodSurfScaleZ : surfScale;
+                double sx = Double.isFinite(sourceModel.getCurrentLodSurfScaleX()) ? sourceModel.getCurrentLodSurfScaleX() : surfScale;
+                double sz = Double.isFinite(sourceModel.getCurrentLodSurfScaleZ()) ? sourceModel.getCurrentLodSurfScaleZ() : surfScale;
                 double gx = p.xIndex + frac(p.getX() / Math.max(1.0, sx));
                 double gy = p.yIndex + frac(p.getY() / Math.max(1.0, sz));
-                gy = orientRowCoordinate(gy, activeHeightField.height());
-                return SurfaceUtils.sample(activeHeightField, gx, gy, interpMode);
+                gy = orientRowCoordinate(gy, sourceModel.getActiveHeightField().height());
+                return SurfaceUtils.sample(sourceModel.getActiveHeightField(), gx, gy, interpMode);
             }
             case NEAREST:
             default:
@@ -1405,12 +1210,12 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
     }
 
     private Number lookupPoint(Vert3D p) {
-        if (activeHeightField != null) {
-            int w = activeHeightField.width();
-            int h = activeHeightField.height();
+        if (sourceModel.getActiveHeightField() != null) {
+            int w = sourceModel.getActiveHeightField().width();
+            int h = sourceModel.getActiveHeightField().height();
             if (p.yIndex < 0 || p.yIndex >= h || p.xIndex < 0 || p.xIndex >= w) return 0.0;
             int dataRow = orientRowIndex(p.yIndex, h);
-            return (double) activeHeightField.data()[dataRow * w + p.xIndex];
+            return (double) sourceModel.getActiveHeightField().data()[dataRow * w + p.xIndex];
         }
         if (dataGrid == null) return 0.0;
         if (p.yIndex < 0 || p.yIndex >= dataGrid.size()
@@ -1420,10 +1225,10 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
     }
 
     private Number findBlerpHeight(Vert3D p) {
-        // Used by cylinder mode (and legacy paths). Works on activeHeightField if present.
-        if (activeHeightField != null) {
-            int w = activeHeightField.width();
-            int h = activeHeightField.height();
+        // Used by cylinder mode (and legacy paths). Works on sourceModel.getActiveHeightField() if present.
+        if (sourceModel.getActiveHeightField() != null) {
+            int w = sourceModel.getActiveHeightField().width();
+            int h = sourceModel.getActiveHeightField().height();
             if (w <= 0 || h <= 0) return 0.0;
 
             int x1Index = p.xIndex <= 0 ? 0 : p.xIndex - 1;
@@ -1434,7 +1239,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
             if (y1Index >= h - 1) y1Index = h - 1;
             int y2Index = p.yIndex >= h - 1 ? h - 1 : p.yIndex + 1;
 
-            float[] d = activeHeightField.data();
+            float[] d = sourceModel.getActiveHeightField().data();
             double c11 = d[y1Index * w + x1Index] * yScale;
             double c21 = d[y1Index * w + x2Index] * yScale;
             double c12 = d[y2Index * w + x1Index] * yScale;
@@ -1465,8 +1270,6 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         return f12 + (f34 - f12) * yratio;
     }
 
-    Point3D vertP3D;
-
     private void configureLightingScopes() {
         // Keep the camera-following point light focused on the analytical surface/graph.
         pointLight.getScope().setAll(surfPlot, tiledSurfaceRenderer, graphLayer);
@@ -1478,10 +1281,10 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
             surfPlot,
             tiledSurfaceRenderer,
             graphLayer,
-            nodeGroup,
+            overlayManager.getNodeGroup(),
             extrasGroup,
             debugGroup,
-            highlightedPoint,
+            overlayManager.getHighlightedPoint(),
             surfaceCrosshairOverlay);
     }
 
@@ -1530,78 +1333,14 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         // created by rebuildProcessedGridAndRefresh() from the current source snapshot.
         rebuildProcessedGridAndRefresh();
 
-        Glow glow = new Glow(0.8);
-        double poleHeight = 60;
-        double radius = 3;
-        glowLineBox = new Box(getWorldWidth(), poleHeight, radius);
-        glowLineBox.setMaterial(new PhongMaterial(Color.ALICEBLUE.deriveColor(1, 1, 1, 0.2)));
-        glowLineBox.setDrawMode(DrawMode.FILL);
-        glowLineBox.setEffect(glow);
-        glowLineBox.setTranslateZ(-getWorldDepth() / 2.0);
-        eastPole = new Cylinder(radius * 2, poleHeight * 1.2);
-        westPole = new Cylinder(radius * 2, poleHeight * 1.2);
-        eastKnob = new Sphere(radius * 3);
-        westKnob = new Sphere(radius * 3);
-        PhongMaterial eastPoleMaterial = new PhongMaterial(Color.STEELBLUE);
-        PhongMaterial westPoleMaterial = new PhongMaterial(Color.STEELBLUE);
-        PhongMaterial knobMaterial = new PhongMaterial(Color.ALICEBLUE);
-        eastPole.setMaterial(eastPoleMaterial);
-        westPole.setMaterial(westPoleMaterial);
-        eastKnob.setMaterial(knobMaterial);
-        westKnob.setMaterial(knobMaterial);
-        eastPole.setTranslateX(getWorldWidth() / 2.0);
-        westPole.setTranslateX(-getWorldWidth() / 2.0);
-        eastKnob.setTranslateX(getWorldWidth() / 2.0);
-        westKnob.setTranslateX(-getWorldWidth() / 2.0);
-        eastKnob.setTranslateY(-(poleHeight * 1.2) / 2.0);
-        westKnob.setTranslateY(-(poleHeight * 1.2) / 2.0);
-        eastPole.translateZProperty().bind(glowLineBox.translateZProperty());
-        westPole.translateZProperty().bind(glowLineBox.translateZProperty());
-        eastKnob.translateZProperty().bind(glowLineBox.translateZProperty());
-        westKnob.translateZProperty().bind(glowLineBox.translateZProperty());
+        overlayManager.initializeTimelineMarkers();
 
-        eastLabel = new Label("Data Index");
-        eastLabel.setTextFill(Color.ALICEBLUE);
-        eastLabel.setFont(new Font("calibri", 20));
-        westLabel = new Label("Data Index");
-        westLabel.setTextFill(Color.ALICEBLUE);
-        westLabel.setFont(new Font("calibri", 20));
-        labelGroup.getChildren().addAll(eastLabel, westLabel);
-        shape3DToLabel.put(eastKnob, eastLabel);
-        shape3DToLabel.put(westKnob, westLabel);
-
-        scene.addEventHandler(TimelineEvent.TIMELINE_SAMPLE_INDEX, e -> {
-            anchorIndex = (int) e.object;
-            int maxSourceRow = Math.max(0, getSourceHeight() - 1);
-            anchorIndex = Math.max(0, Math.min(anchorIndex, maxSourceRow));
-            glowLineBox.setTranslateZ(coordinateMapper.sourceRowToWorldZ(anchorIndex));
-            setSpheroidAnchor(true, anchorIndex);
-            eastLabel.setText("Sample: " + anchorIndex + ", Neural Feature: " + getSourceWidth());
-            westLabel.setText("Sample: " + anchorIndex + ", Neural Feature: 0");
-            updateLabels();
-            updateCalloutHeadPoints(subScene);
-        });
-        scene.addEventHandler(FeatureVectorEvent.SELECT_FEATURE_VECTOR, e -> {
-            if (null != anchorCallout) {
-                FeatureVector fv = (FeatureVector) e.object;
-                updateCalloutByFeatureVector(anchorCallout, fv);
-            }
-        });
-
-        extrasGroup.getChildren().addAll(eastPole, eastKnob, westPole, westKnob, glowLineBox);
         wireEventHandlers();
 
         configureLightingScopes();
         sceneRoot.getChildren().add(ambientLight);
 
-        updateLabels();
-        subScene.sceneProperty().addListener(c -> {
-            Platform.runLater(() -> {
-                FeatureVector dummy = FeatureVector.EMPTY_FEATURE_VECTOR("", 3);
-                anchorCallout = createCallout(highlightedPoint, dummy, subScene);
-                anchorCallout.play().setOnFinished(fin -> anchorCallout.setVisible(false));
-            });
-        });
+        overlayManager.updateLabels();
     }
 
     /**
@@ -1647,7 +1386,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
             this.xWidth = (int) e.object;
             // When an LOD pyramid is active, its HeightField dimensions own the render
             // mesh. Do not let GUI synchronization overwrite the constant-world transform.
-            if (surfPlot != null && activeHeightField == null) {
+            if (surfPlot != null && sourceModel.getActiveHeightField() == null) {
                 surfPlot.setTranslateX(-(xWidth * surfScale) / 2.0);
                 surfPlot.setTranslateZ(-(zWidth * surfScale) / 2.0);
             }
@@ -1658,7 +1397,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         scene.addEventHandler(HypersurfaceEvent.ZWIDTH_CHANGED, e -> {
             if (syncingGuiControls) return;
             this.zWidth = (int) e.object;
-            if (surfPlot != null && activeHeightField == null) {
+            if (surfPlot != null && sourceModel.getActiveHeightField() == null) {
                 surfPlot.setTranslateX(-(xWidth * surfScale) / 2.0);
                 surfPlot.setTranslateZ(-(zWidth * surfScale) / 2.0);
             }
@@ -1710,13 +1449,12 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
             if (shapleyPathChanged) {
                 if (next == COLORATION.COLOR_BY_SHAPLEY
                     && lodManager != null
-                    && lodProcessedLevels != null
-                    && !lodProcessedLevels.isEmpty()) {
-                    activeLodIndex = -1;
-                    activeHeightField = null;
+                    && sourceModel.getLodProcessedLevels() != null
+                    && !sourceModel.getLodProcessedLevels().isEmpty()) {
+                    sourceModel.setActiveLod(-1, null);
                     lodManager.setPyramid(
-                        LodManager.fromHeightFields(lodProcessedLevels),
-                        baseWorldWidth, baseWorldDepth, -1);
+                        LodManager.fromHeightFields(sourceModel.getLodProcessedLevels()),
+                        sourceModel.getBaseWorldWidth(), sourceModel.getBaseWorldDepth(), -1);
                     lodManager.forceUpdate();
                 } else if (shouldUseTiledHeightFieldRenderer()) {
                     configureTiledPyramid();
@@ -1791,7 +1529,8 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
             interactionController.setHoverEnabled((boolean) e.object));
         scene.addEventHandler(HypersurfaceEvent.SURFACE_CHARTS_ENABLE_CHANGED, e ->
             interactionController.setSurfaceChartsEnabled((boolean) e.object));
-        scene.addEventHandler(HypersurfaceEvent.DATA_MARKERS_ENABLE_CHANGED, e -> extrasGroup.setVisible((boolean) e.object));
+        scene.addEventHandler(HypersurfaceEvent.DATA_MARKERS_ENABLE_CHANGED, e ->
+            overlayManager.setExtrasVisible((boolean) e.object));
         scene.addEventHandler(HypersurfaceEvent.CROSSHAIRS_ENABLE_CHANGED, e ->
             interactionController.setCrosshairsEnabled((boolean) e.object));
 
@@ -1845,9 +1584,9 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
     }
 
     private HypersurfaceLegendState buildLegendState() {
-        HeightField rangeField = lodProcessedLevels != null && !lodProcessedLevels.isEmpty()
-            ? lodProcessedLevels.get(0)
-            : activeHeightField;
+        HeightField rangeField = sourceModel.getLodProcessedLevels() != null && !sourceModel.getLodProcessedLevels().isEmpty()
+            ? sourceModel.getLodProcessedLevels().get(0)
+            : sourceModel.getActiveHeightField();
 
         double minimum = Double.NaN;
         double maximum = Double.NaN;
@@ -1857,7 +1596,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
             maximum = minMax[1];
         }
 
-        String heightLabel = imageBackedSurface ? "Image Intensity" : "Feature Value";
+        String heightLabel = sourceModel.isImageBackedSurface() ? "Image Intensity" : "Feature Value";
         String colorLabel = switch (colorationMethod) {
             case COLOR_BY_IMAGE -> "Source Image";
             case COLOR_BY_FEATURE -> "Feature Value";
@@ -1919,33 +1658,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
     }
 
     public void updateCalloutByFeatureVector(Callout callout, FeatureVector featureVector) {
-        callout.setMainTitleText(featureVector.getLabel());
-        callout.mainTitleTextNode.setText(callout.getMainTitleText());
-        VBox vbox = (VBox) callout.mainTitleNode;
-        TitledPane tp0 = (TitledPane) vbox.getChildren().get(0);
-        ImageView iv = loadImageView(featureVector, featureVector.isBBoxValid());
-        Image image = iv.getImage();
-        ((ImageView) tp0.getContent()).setImage(image);
-        StringBuilder sb = new StringBuilder();
-        for (Map.Entry<String, String> entry : featureVector.getMetaData().entrySet())
-            sb.append(entry.getKey()).append(" : ").append(entry.getValue()).append("\n");
-        TitledPane tp1 = (TitledPane) vbox.getChildren().get(1);
-        ((Text) tp1.getContent()).setText(sb.toString());
-    }
-
-    private void addDebugPoint(Point3D point3D) {
-        Sphere sphere = new Sphere(1);
-        PhongMaterial mat = new PhongMaterial(Color.ALICEBLUE);
-        sphere.setMaterial(mat);
-        sphere.setTranslateX(point3D.x);
-        sphere.setTranslateY(point3D.y);
-        sphere.setTranslateZ(point3D.z);
-        extrasGroup.getChildren().add(sphere);
-        Label newLabel = new Label(point3D.toString());
-        labelGroup.getChildren().addAll(newLabel);
-        newLabel.setTextFill(Color.SKYBLUE);
-        newLabel.setFont(new Font("calibri", 8));
-        shape3DToLabel.put(sphere, newLabel);
+        overlayManager.updateCalloutByFeatureVector(callout, featureVector);
     }
 
     public void clearAll() {
@@ -1957,13 +1670,10 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
                 new CoordinateSet(xFactorIndex, yFactorIndex, zFactorIndex))));
         notifyIndexChange();
         ellipsoidGroup.getChildren().clear();
-        shape3DToLabel.clear();
-        shape3DToLabel.put(xSphere, xLabel);
-        shape3DToLabel.put(ySphere, yLabel);
-        shape3DToLabel.put(zSphere, zLabel);
+        overlayManager.resetLabelTracking();
         dataGrid.clear();
         featureVectors.clear();
-        originalGrid.clear();
+        sourceModel.clearOriginalGrid();
         interactionController.resetSelectionState();
         resetLodDataState();
     }
@@ -1997,7 +1707,8 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
 
     @Override
     public void setFeatureCollection(FeatureCollection fc) {
-        featureVectors = fc.getFeatures();
+        featureVectors.clear();
+        featureVectors.addAll(fc.getFeatures());
         interactionController.resetSelectionState();
     }
 
@@ -2078,23 +1789,8 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         captureDataGridAsSource();
         rebuildProcessedGridAndRefresh();      // NEW
 
-        xSphere.setTranslateX(getWorldWidth() / 2.0);
-        zSphere.setTranslateZ(getWorldDepth() / 2.0);
-
-        double poleHeight = surfPlot.getMaxAbsY() * 2;
-        glowLineBox.setWidth(getWorldWidth());
-        glowLineBox.setHeight(poleHeight);
-        eastPole.setHeight(poleHeight * 1.2);
-        westPole.setHeight(poleHeight * 1.2);
-        eastPole.setTranslateX(-getWorldWidth() / 2.0);
-        westPole.setTranslateX(getWorldWidth() / 2.0);
-        eastKnob.setTranslateX(getWorldWidth() / 2.0);
-        westKnob.setTranslateX(-getWorldWidth() / 2.0);
-        eastKnob.setTranslateY(-(poleHeight * 1.2) / 2.0);
-        westKnob.setTranslateY(-(poleHeight * 1.2) / 2.0);
-        eastLabel.setText("Sample: " + anchorIndex + ", Neural Feature: " + getSourceWidth());
-        westLabel.setText("Sample: " + anchorIndex + ", Neural Feature: 0");
-        updateLabels();
+        overlayManager.updateAxisExtents();
+        overlayManager.updateTimelineGeometry(surfPlot.getMaxAbsY() * 2);
     }
 
     @Override
@@ -2119,8 +1815,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
 
     @Override
     public void addFeatureCollection(FeatureCollection featureCollection, boolean clearQueue) {
-        if (null == dataGrid) dataGrid = new ArrayList<>(featureCollection.getFeatures().size());
-        else dataGrid.clear();
+        dataGrid.clear();
         List<Double> xList;
         for (FeatureVector fv : featureCollection.getFeatures()) {
             xList = new ArrayList<>(fv.getData().size());
@@ -2133,7 +1828,8 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         captureDataGridAsSource();
         rebuildProcessedGridAndRefresh();
         getScene().getRoot().fireEvent(new CommandTerminalEvent("Hypersurface updated. ", new Font("Consolas", 20), Color.GREEN));
-        featureVectors = featureCollection.getFeatures();
+        featureVectors.clear();
+        featureVectors.addAll(featureCollection.getFeatures());
         interactionController.resetSelectionState();
     }
 
@@ -2154,7 +1850,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
     public void clearFeatureVectors() {
         featureVectors.clear();
         dataGrid.clear();
-        originalGrid.clear();
+        sourceModel.clearOriginalGrid();
         interactionController.resetSelectionState();
         resetLodDataState();
     }
@@ -2192,7 +1888,8 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
 
     @Override
     public void setDimensionLabels(List<String> labelStrings) {
-        featureLabels = labelStrings;
+        featureLabels.clear();
+        if (labelStrings != null) featureLabels.addAll(labelStrings);
     }
 
     @Override
@@ -2289,38 +1986,17 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         // Validate the incoming image first, then release every large render-side object
         // derived from the previous image before allocating the new full-resolution
         // primitive height array. This minimizes the transient heap peak when replacing
-        // 4K/8K sources. The method parameter retains the new Image while lastImage and
+        // 4K/8K sources. The method parameter retains the new Image while sourceModel.getSourceImage() and
         // the tiled renderer are allowed to release the old one.
         releaseImageBackedStateForReplacement();
-        lastImage = image;
 
         // Retain source-region metadata, but do not allocate a full-resolution
         // HeightField for large images. Build the capped raw L0 directly from PixelReader.
-        imageSourceStartX = startX;
-        imageSourceStartY = startY;
-        imageSourceWidth = sourceWidth;
-        imageSourceHeight = sourceHeight;
-        processingSourceHeightField = buildImageRawL0(pixelReader,
+        HeightField rawL0 = buildImageRawL0(pixelReader,
             startX, startY, sourceWidth, sourceHeight, maxRenderResolution);
-
-        // Image-backed hypersurfaces use the capped primitive L0 as the authoritative
-        // processing source. Do not manufacture one FeatureVector or boxed Double per pixel.
-        featureVectors.clear();
+        sourceModel.activateImageSource(
+            image, startX, startY, sourceWidth, sourceHeight, rawL0);
         interactionController.resetSelectionState();
-        if (dataGrid == null) dataGrid = new ArrayList<>();
-        else dataGrid.clear();
-        if (originalGrid == null) originalGrid = new ArrayList<>();
-        else originalGrid.clear();
-        imageBackedSurface = true;
-
-        // A new primitive source invalidates only state derived from the previous source.
-        lodProcessedLevels = List.of();
-        activeLodIndex = -1;
-        activeHeightField = null;
-        baseWorldWidth = Double.NaN;
-        baseWorldDepth = Double.NaN;
-        currentLodSurfScaleX = Double.NaN;
-        currentLodSurfScaleZ = Double.NaN;
         setSourceDefaultRowOrientation(SurfaceRowOrientation.FIRST_ROW_FAR);
 
         Utils.printTotalTime(startTime);
@@ -2331,8 +2007,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         zWidth = sourceHeight;
         syncGuiControls();
         rebuildProcessedGridAndRefresh();
-        xSphere.setTranslateX(getWorldWidth() / 2.0);
-        zSphere.setTranslateZ(getWorldDepth() / 2.0);
+        overlayManager.updateAxisExtents();
         interactionController.publishSourceImageChanged(image);
         Utils.printTotalTime(startTime);
     }
@@ -2340,7 +2015,6 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
     @Override
     public void addShapleyCollection(ShapleyCollection shapleyCollection) {
         shapleyVectors.clear();
-        lastImageSource = shapleyCollection.getSourceInput();
         shapleyVectors.addAll(shapleyCollection.getValues());
         try {
             WritableImage wi = ResourceUtils.loadImageFile(imageryBasePath + shapleyCollection.getSourceInput());
@@ -2348,7 +2022,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
                 int x2 = (int) wi.getWidth();
                 int y2 = (int) wi.getHeight();
                 tessellateImage(wi, 0, 0, x2, y2);
-                lastImage = wi;
+                sourceModel.setSourceImage(wi);
                 LOG.info("injecting Shapley function values into Vertices... ");
                 long startTime = System.nanoTime();
                 surfPlot.functionValues.clear();
@@ -2378,19 +2052,11 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         shapleyVectors.clear();
     }
 
-    // ================= helpers for processing pipeline =================
-    private static List<List<Double>> deepCopyGrid(List<List<Double>> src) {
-        List<List<Double>> out = new ArrayList<>(src.size());
-        for (List<Double> row : src) out.add(new ArrayList<>(row));
-        return out;
-    }
+    // ================= source-model orchestration =================
 
     /**
-     * Releases render-side state owned by the previous image before a replacement
-     * image allocates its capped primitive L0 HeightField. Keeping this separate
-     * from resetLodDataState() preserves the incoming source type/orientation workflow
-     * while aggressively dropping references to large cached TriangleMeshes, LOD
-     * HeightFields, and the previous JavaFX Image.
+     * Releases renderer-side objects derived from the previous image, then drops
+     * the corresponding image/HeightField state from the source model.
      */
     private void releaseImageBackedStateForReplacement() {
         if (tiledSurfaceRenderer != null) {
@@ -2401,66 +2067,23 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
             surfPlot.setVisible(false);
         }
         surfaceCrosshairOverlay.hide();
-
-        processingSourceHeightField = null;
-        imageSourceStartX = 0;
-        imageSourceStartY = 0;
-        imageSourceWidth = 0;
-        imageSourceHeight = 0;
-        lodProcessedLevels = List.of();
-        activeLodIndex = -1;
-        activeHeightField = null;
-        baseWorldWidth = Double.NaN;
-        baseWorldDepth = Double.NaN;
-        currentLodSurfScaleX = Double.NaN;
-        currentLodSurfScaleZ = Double.NaN;
-
-        // Drop the pane's reference to the previous image. The incoming Image remains
-        // strongly referenced by tessellateImage() and is assigned after this release.
-        lastImage = null;
+        sourceModel.releaseImageBackedStateForReplacement();
     }
 
-    /**
-     * Snapshot the current boxed working grid as the authoritative source for the
-     * render pipeline. Any primitive source cache and render pyramid derived from the
-     * previous source become invalid immediately.
-     */
+    /** Snapshot the current boxed working grid as the authoritative data source. */
     private void captureDataGridAsSource() {
-        // Boxed grids represent data/FeatureCollection-backed surfaces, whose historical
-        // world-size behavior remains sourceDimension * surfScale.
-        boolean wasImageBacked = imageBackedSurface;
-        imageBackedSurface = false;
+        boolean wasImageBacked = sourceModel.captureDataGridAsSource();
         if (wasImageBacked) {
             setSourceDefaultRowOrientation(SurfaceRowOrientation.FIRST_ROW_NEAR);
         }
-        if (dataGrid == null || dataGrid.isEmpty()) {
-            originalGrid = new ArrayList<>();
+        if (dataGrid.isEmpty()) {
             resetLodDataState();
-            return;
         }
-        originalGrid = deepCopyGrid(dataGrid);
-        processingSourceHeightField = null;
-        imageSourceStartX = 0;
-        imageSourceStartY = 0;
-        imageSourceWidth = 0;
-        imageSourceHeight = 0;
     }
 
     private void resetLodDataState() {
-        imageBackedSurface = false;
+        sourceModel.resetLodDataState();
         setSourceDefaultRowOrientation(SurfaceRowOrientation.FIRST_ROW_NEAR);
-        processingSourceHeightField = null;
-        imageSourceStartX = 0;
-        imageSourceStartY = 0;
-        imageSourceWidth = 0;
-        imageSourceHeight = 0;
-        lodProcessedLevels = List.of();
-        activeLodIndex = -1;
-        activeHeightField = null;
-        baseWorldWidth = Double.NaN;
-        baseWorldDepth = Double.NaN;
-        currentLodSurfScaleX = Double.NaN;
-        currentLodSurfScaleZ = Double.NaN;
         if (tiledSurfaceRenderer != null) {
             tiledSurfaceRenderer.clearSurface();
             tiledSurfaceRenderer.setVisible(false);
@@ -2469,114 +2092,70 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
     }
 
     public boolean isImageBackedSurface() {
-        return imageBackedSurface;
+        return sourceModel.isImageBackedSurface();
     }
 
     public int getRenderL0Width() {
-        return lodProcessedLevels != null && !lodProcessedLevels.isEmpty()
-            ? lodProcessedLevels.get(0).width()
-            : getRenderWidth();
+        return sourceModel.getRenderL0Width(xWidth);
     }
 
     public int getRenderL0Height() {
-        return lodProcessedLevels != null && !lodProcessedLevels.isEmpty()
-            ? lodProcessedLevels.get(0).height()
-            : getRenderHeight();
+        return sourceModel.getRenderL0Height(zWidth);
     }
 
     public int getSourceWidth() {
-        if (imageBackedSurface && imageSourceWidth > 0) return imageSourceWidth;
-        if (processingSourceHeightField != null) return processingSourceHeightField.width();
-        if (originalGrid != null && !originalGrid.isEmpty()) return originalGrid.get(0).size();
-        if (dataGrid != null && !dataGrid.isEmpty()) return dataGrid.get(0).size();
-        return Math.max(1, xWidth);
+        return sourceModel.getSourceWidth(xWidth);
     }
 
     public int getSourceHeight() {
-        if (imageBackedSurface && imageSourceHeight > 0) return imageSourceHeight;
-        if (processingSourceHeightField != null) return processingSourceHeightField.height();
-        if (originalGrid != null && !originalGrid.isEmpty()) return originalGrid.size();
-        if (dataGrid != null && !dataGrid.isEmpty()) return dataGrid.size();
-        return Math.max(1, zWidth);
+        return sourceModel.getSourceHeight(zWidth);
     }
 
     public int getRenderWidth() {
-        return activeHeightField != null ? activeHeightField.width() : Math.max(1, xWidth);
+        return sourceModel.getRenderWidth(xWidth);
     }
 
     public int getRenderHeight() {
-        return activeHeightField != null ? activeHeightField.height() : Math.max(1, zWidth);
+        return sourceModel.getRenderHeight(zWidth);
     }
 
     private double getRenderScaleX() {
-        return Double.isFinite(currentLodSurfScaleX) ? currentLodSurfScaleX : surfScale;
+        return sourceModel.getRenderScaleX(surfScale);
     }
 
     private double getRenderScaleZ() {
-        return Double.isFinite(currentLodSurfScaleZ) ? currentLodSurfScaleZ : surfScale;
+        return sourceModel.getRenderScaleZ(surfScale);
     }
 
     private HypersurfaceCameraController.SurfaceBounds getCameraSurfaceBounds() {
         double maxAbsY = 0.0;
-        if (activeHeightField != null) {
-            float[] minMax = activeHeightField.minMax();
+        HeightField activeField = sourceModel.getActiveHeightField();
+        HeightField processingField = sourceModel.getProcessingSourceHeightField();
+        if (activeField != null) {
+            float[] minMax = activeField.minMax();
             maxAbsY = Math.max(Math.abs(minMax[0] * yScale), Math.abs(minMax[1] * yScale));
-        } else if (processingSourceHeightField != null) {
-            float[] minMax = processingSourceHeightField.minMax();
+        } else if (processingField != null) {
+            float[] minMax = processingField.minMax();
             maxAbsY = Math.max(Math.abs(minMax[0] * yScale), Math.abs(minMax[1] * yScale));
         } else if (surfPlot != null) {
             maxAbsY = Math.abs(surfPlot.getMaxAbsY());
         }
 
-        // Height is deliberately symmetric around Y=0. Hypersurface scalar values are
-        // often one-sided, so using 2*maxAbsY guarantees the fit sphere remains centered
-        // on the same origin used by camera rotation and panning.
         double worldHeight = Math.max(1.0, maxAbsY * 2.0);
         return new HypersurfaceCameraController.SurfaceBounds(
-            getWorldWidth(),
-            worldHeight,
-            getWorldDepth());
+            getWorldWidth(), worldHeight, getWorldDepth());
     }
 
     public double getWorldWidth() {
-        if (Double.isFinite(baseWorldWidth)) return baseWorldWidth;
-        int sourceWidth = getSourceWidth();
-        int sourceHeight = getSourceHeight();
-        return calculateWorldWidth(sourceWidth, sourceHeight);
+        return sourceModel.getWorldWidth(xWidth, zWidth, surfScale);
     }
 
     public double getWorldDepth() {
-        if (Double.isFinite(baseWorldDepth)) return baseWorldDepth;
-        int sourceWidth = getSourceWidth();
-        int sourceHeight = getSourceHeight();
-        return calculateWorldDepth(sourceWidth, sourceHeight);
-    }
-
-    private double imageWorldLongAxisExtent() {
-        return nominalImageWorldExtent * (surfScale / imageWorldExtentReferenceScale);
-    }
-
-    private double calculateWorldWidth(int sourceWidth, int sourceHeight) {
-        if (!imageBackedSurface) return sourceWidth * surfScale;
-        if (sourceWidth <= 0 || sourceHeight <= 0) return nominalImageWorldExtent;
-        double longAxis = imageWorldLongAxisExtent();
-        if (sourceWidth >= sourceHeight) return longAxis;
-        return longAxis * sourceWidth / (double) sourceHeight;
-    }
-
-    private double calculateWorldDepth(int sourceWidth, int sourceHeight) {
-        if (!imageBackedSurface) return sourceHeight * surfScale;
-        if (sourceWidth <= 0 || sourceHeight <= 0) return nominalImageWorldExtent;
-        double longAxis = imageWorldLongAxisExtent();
-        if (sourceHeight >= sourceWidth) return longAxis;
-        return longAxis * sourceHeight / (double) sourceWidth;
+        return sourceModel.getWorldDepth(xWidth, zWidth, surfScale);
     }
 
     private void recomputeBaseWorldExtents() {
-        int sourceWidth = getSourceWidth();
-        int sourceHeight = getSourceHeight();
-        baseWorldWidth = calculateWorldWidth(sourceWidth, sourceHeight);
-        baseWorldDepth = calculateWorldDepth(sourceWidth, sourceHeight);
+        sourceModel.recomputeBaseWorldExtents(xWidth, zWidth, surfScale);
         refreshCoordinateMapper();
     }
 
@@ -2594,7 +2173,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
 
     private void refreshCrosshairSurfaceContext() {
         surfaceCrosshairOverlay.configureSurface(
-            activeHeightField,
+            sourceModel.getActiveHeightField(),
             coordinateMapper,
             yScale,
             getSurfaceRowOrientation(),
@@ -2602,59 +2181,40 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
     }
 
     double getActiveRenderValue(int row, int column) {
-        if (activeHeightField == null) return 0.0;
-        int r = orientRowIndex(row, activeHeightField.height());
-        int c = Math.max(0, Math.min(column, activeHeightField.width() - 1));
-        return activeHeightField.get(c, r);
+        return sourceModel.getActiveRenderValue(row, column);
     }
 
     List<Double> getActiveRenderRow(int row) {
-        if (activeHeightField == null) return List.of();
-        int r = orientRowIndex(row, activeHeightField.height());
-        int w = activeHeightField.width();
-        float[] values = activeHeightField.data();
-        List<Double> out = new ArrayList<>(w);
-        int offset = r * w;
-        for (int x = 0; x < w; x++) out.add((double) values[offset + x]);
-        return out;
+        return sourceModel.getActiveRenderRow(row);
     }
 
     Double[] getActiveRenderColumn(int column) {
-        if (activeHeightField == null) return new Double[0];
-        int c = Math.max(0, Math.min(column, activeHeightField.width() - 1));
-        int w = activeHeightField.width();
-        int h = activeHeightField.height();
-        float[] values = activeHeightField.data();
-        Double[] out = new Double[h];
-        for (int visualRow = 0; visualRow < h; visualRow++) {
-            int sourceRow = orientRowIndex(visualRow, h);
-            out[visualRow] = (double) values[sourceRow * w + c];
-        }
-        return out;
+        return sourceModel.getActiveRenderColumn(column);
     }
 
     /** Recompute world extents after surfScale changes without rebuilding source data. */
     private void refreshWorldExtentsAndLodMetadata() {
         recomputeBaseWorldExtents();
 
-        if (activeHeightField != null) {
-            currentLodSurfScaleX = baseWorldWidth / activeHeightField.width();
-            currentLodSurfScaleZ = baseWorldDepth / activeHeightField.height();
+        HeightField activeField = sourceModel.getActiveHeightField();
+        if (activeField != null) {
+            sourceModel.setCurrentLodSurfScale(
+                sourceModel.getBaseWorldWidth() / activeField.width(),
+                sourceModel.getBaseWorldDepth() / activeField.height());
         }
         if (surfPlot != null) {
-            surfPlot.setTranslateX(-baseWorldWidth / 2.0);
-            surfPlot.setTranslateZ(-baseWorldDepth / 2.0);
+            surfPlot.setTranslateX(-sourceModel.getBaseWorldWidth() / 2.0);
+            surfPlot.setTranslateZ(-sourceModel.getBaseWorldDepth() / 2.0);
         }
         if (shouldUseTiledHeightFieldRenderer()) {
             configureTiledPyramid();
             tiledSurfaceRenderer.forceUpdate();
-        } else if (lodManager != null && lodProcessedLevels != null && !lodProcessedLevels.isEmpty()) {
+        } else if (lodManager != null && !sourceModel.getLodProcessedLevels().isEmpty()) {
             lodManager.setPyramid(
-                LodManager.fromHeightFields(lodProcessedLevels),
-                baseWorldWidth,
-                baseWorldDepth,
-                activeLodIndex
-            );
+                LodManager.fromHeightFields(sourceModel.getLodProcessedLevels()),
+                sourceModel.getBaseWorldWidth(),
+                sourceModel.getBaseWorldDepth(),
+                sourceModel.getActiveLodIndex());
             lodManager.forceUpdate();
         }
     }
@@ -2664,7 +2224,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
      * surface scale. Image aspect ratio determines the other axis.
      */
     public double getNominalImageWorldExtent() {
-        return nominalImageWorldExtent;
+        return sourceModel.getNominalImageWorldExtent();
     }
 
     /**
@@ -2672,29 +2232,25 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
      * surface scale. This changes physical display size, not source or LOD resolution.
      */
     public void setNominalImageWorldExtent(double nominalImageWorldExtent) {
-        if (!(nominalImageWorldExtent > 0.0) || !Double.isFinite(nominalImageWorldExtent)) {
-            throw new IllegalArgumentException("nominalImageWorldExtent must be finite and > 0");
-        }
-        if (Double.compare(this.nominalImageWorldExtent, nominalImageWorldExtent) == 0) return;
-        this.nominalImageWorldExtent = nominalImageWorldExtent;
-        if (imageBackedSurface && processingSourceHeightField != null) {
+        if (Double.compare(sourceModel.getNominalImageWorldExtent(), nominalImageWorldExtent) == 0) return;
+        sourceModel.setNominalImageWorldExtent(nominalImageWorldExtent);
+        if (sourceModel.isImageBackedSurface()
+            && sourceModel.getProcessingSourceHeightField() != null) {
             refreshWorldExtentsAndLodMetadata();
             updateTheMesh();
         }
     }
 
     public SurfaceRowOrientation getSurfaceRowOrientation() {
-        return surfaceRowOrientation.get();
+        return sourceModel.getRowOrientation();
     }
 
     public void setSurfaceRowOrientation(SurfaceRowOrientation orientation) {
-        surfaceRowOrientation.set(orientation != null
-            ? orientation
-            : SurfaceRowOrientation.FIRST_ROW_NEAR);
+        sourceModel.setRowOrientation(orientation);
     }
 
     public ObjectProperty<SurfaceRowOrientation> surfaceRowOrientationProperty() {
-        return surfaceRowOrientation;
+        return sourceModel.rowOrientationProperty();
     }
 
     private void setSourceDefaultRowOrientation(SurfaceRowOrientation orientation) {
@@ -2713,17 +2269,15 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
     }
 
     public SurfaceHeightOrientation getSurfaceHeightOrientation() {
-        return surfaceHeightOrientation.get();
+        return sourceModel.getHeightOrientation();
     }
 
     public void setSurfaceHeightOrientation(SurfaceHeightOrientation orientation) {
-        surfaceHeightOrientation.set(orientation != null
-            ? orientation
-            : SurfaceHeightOrientation.HIGH_VALUES_UP);
+        sourceModel.setHeightOrientation(orientation);
     }
 
     public ObjectProperty<SurfaceHeightOrientation> surfaceHeightOrientationProperty() {
-        return surfaceHeightOrientation;
+        return sourceModel.heightOrientationProperty();
     }
 
     private void applySurfaceHeightOrientationToRenderers() {
@@ -2733,19 +2287,11 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
     }
 
     private int orientRowIndex(int logicalRow, int rowCount) {
-        if (rowCount <= 0) return 0;
-        int clamped = Math.max(0, Math.min(logicalRow, rowCount - 1));
-        return getSurfaceRowOrientation() == SurfaceRowOrientation.FIRST_ROW_FAR
-            ? rowCount - 1 - clamped
-            : clamped;
+        return sourceModel.orientRowIndex(logicalRow, rowCount);
     }
 
     private double orientRowCoordinate(double logicalRow, int rowCount) {
-        if (rowCount <= 1) return 0.0;
-        double clamped = Math.max(0.0, Math.min(logicalRow, rowCount - 1.0));
-        return getSurfaceRowOrientation() == SurfaceRowOrientation.FIRST_ROW_FAR
-            ? (rowCount - 1.0) - clamped
-            : clamped;
+        return sourceModel.orientRowCoordinate(logicalRow, rowCount);
     }
 
     public boolean isTiledHeightFieldRenderingEnabled() {
@@ -2755,15 +2301,14 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
     public void setTiledHeightFieldRenderingEnabled(boolean enabled) {
         if (this.tiledHeightFieldRenderingEnabled == enabled) return;
         this.tiledHeightFieldRenderingEnabled = enabled;
-        if (lodProcessedLevels != null && !lodProcessedLevels.isEmpty()) {
+        if (sourceModel.getLodProcessedLevels() != null && !sourceModel.getLodProcessedLevels().isEmpty()) {
             if (enabled && shouldUseTiledHeightFieldRenderer()) {
                 configureTiledPyramid();
             } else if (lodManager != null) {
-                activeLodIndex = -1;
-                activeHeightField = null;
+                sourceModel.setActiveLod(-1, null);
                 lodManager.setPyramid(
-                    LodManager.fromHeightFields(lodProcessedLevels),
-                    baseWorldWidth, baseWorldDepth, -1);
+                    LodManager.fromHeightFields(sourceModel.getLodProcessedLevels()),
+                    sourceModel.getBaseWorldWidth(), sourceModel.getBaseWorldDepth(), -1);
                 lodManager.forceUpdate();
             }
             updateTheMesh();
@@ -2818,12 +2363,12 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         }
         if (this.maxRenderResolution == maxRenderResolution) return;
         this.maxRenderResolution = maxRenderResolution;
-        if (imageBackedSurface && lastImage != null && imageSourceWidth > 0 && imageSourceHeight > 0) {
-            PixelReader reader = lastImage.getPixelReader();
+        if (sourceModel.isImageBackedSurface() && sourceModel.getSourceImage() != null && sourceModel.getImageSourceWidth() > 0 && sourceModel.getImageSourceHeight() > 0) {
+            PixelReader reader = sourceModel.getSourceImage().getPixelReader();
             if (reader != null) {
-                processingSourceHeightField = buildImageRawL0(reader,
-                    imageSourceStartX, imageSourceStartY,
-                    imageSourceWidth, imageSourceHeight, maxRenderResolution);
+                sourceModel.setProcessingSourceHeightField(buildImageRawL0(reader,
+                    sourceModel.getImageSourceStartX(), sourceModel.getImageSourceStartY(),
+                    sourceModel.getImageSourceWidth(), sourceModel.getImageSourceHeight(), maxRenderResolution));
             }
         }
         rebuildProcessedGridAndRefresh();
@@ -2847,10 +2392,10 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
 
     private boolean shouldUseTiledHeightFieldRenderer() {
         return tiledHeightFieldRenderingEnabled
-            && imageBackedSurface
+            && sourceModel.isImageBackedSurface()
             && tiledSurfaceRenderer != null
-            && lodProcessedLevels != null
-            && !lodProcessedLevels.isEmpty()
+            && sourceModel.getLodProcessedLevels() != null
+            && !sourceModel.getLodProcessedLevels().isEmpty()
             && colorationMethod != COLORATION.COLOR_BY_SHAPLEY;
     }
 
@@ -2889,10 +2434,10 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         tiledSurfaceRenderer.setRowOrientation(getSurfaceRowOrientation());
         tiledSurfaceRenderer.setHeightOrientation(getSurfaceHeightOrientation());
 
-        if (colorationMethod == COLORATION.COLOR_BY_IMAGE && lastImage != null) {
-            tiledSurfaceRenderer.setColorByImage(lastImage);
-        } else if (colorationMethod == COLORATION.COLOR_BY_FEATURE && !lodProcessedLevels.isEmpty()) {
-            float[] minMax = lodProcessedLevels.get(0).minMax();
+        if (colorationMethod == COLORATION.COLOR_BY_IMAGE && sourceModel.getSourceImage() != null) {
+            tiledSurfaceRenderer.setColorByImage(sourceModel.getSourceImage());
+        } else if (colorationMethod == COLORATION.COLOR_BY_FEATURE && !sourceModel.getLodProcessedLevels().isEmpty()) {
+            float[] minMax = sourceModel.getLodProcessedLevels().get(0).minMax();
             double minColorValue = minMax[0] * yScale;
             double maxColorValue = minMax[1] * yScale;
             if (!(maxColorValue > minColorValue)) {
@@ -2907,17 +2452,17 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
 
     private void configureTiledPyramid() {
         if (!shouldUseTiledHeightFieldRenderer()) return;
-        activeLodIndex = 0;
-        activeHeightField = lodProcessedLevels.get(0);
-        xWidth = activeHeightField.width();
-        zWidth = activeHeightField.height();
-        currentLodSurfScaleX = baseWorldWidth / xWidth;
-        currentLodSurfScaleZ = baseWorldDepth / zWidth;
+        sourceModel.setActiveLod(0, sourceModel.getLodProcessedLevels().get(0));
+        xWidth = sourceModel.getActiveHeightField().width();
+        zWidth = sourceModel.getActiveHeightField().height();
+        sourceModel.setCurrentLodSurfScale(
+            sourceModel.getBaseWorldWidth() / xWidth,
+            sourceModel.getBaseWorldDepth() / zWidth);
         refreshCoordinateMapper();
 
         tiledSurfaceRenderer.setTileCellsL0(tileCellsL0);
         tiledSurfaceRenderer.setPyramid(
-            lodProcessedLevels, baseWorldWidth, baseWorldDepth, yScale);
+            sourceModel.getLodProcessedLevels(), sourceModel.getBaseWorldWidth(), sourceModel.getBaseWorldDepth(), yScale);
         configureTiledAppearance();
         tiledSurfaceRenderer.forceUpdate();
         syncGuiControls();
@@ -2929,15 +2474,16 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         // surfaces retain their source resolution and are capped here.
         //
         // Boxed-grid-backed surfaces continue to populate
-        // originalGrid and are converted lazily here for compatibility.
-        if (processingSourceHeightField == null) {
-            if (originalGrid == null || originalGrid.isEmpty()) return;
-            processingSourceHeightField = SurfaceUtils.toHeightField(originalGrid);
+        // sourceModel.getOriginalGrid() and are converted lazily here for compatibility.
+        if (sourceModel.getProcessingSourceHeightField() == null) {
+            if (sourceModel.getOriginalGrid() == null || sourceModel.getOriginalGrid().isEmpty()) return;
+            sourceModel.setProcessingSourceHeightField(
+                SurfaceUtils.toHeightField(sourceModel.getOriginalGrid()));
         }
 
-        HeightField l0Raw = imageBackedSurface
-            ? processingSourceHeightField
-            : SurfaceUtils.buildL0Raw(processingSourceHeightField, maxRenderResolution);
+        HeightField l0Raw = sourceModel.isImageBackedSurface()
+            ? sourceModel.getProcessingSourceHeightField()
+            : SurfaceUtils.buildL0Raw(sourceModel.getProcessingSourceHeightField(), maxRenderResolution);
 
         SurfaceUtils.Smoothing sm = smoothingEnabled
             ? smoothingMethod
@@ -2956,15 +2502,15 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
             toneParam
         );
 
-        lodProcessedLevels = imageBackedSurface
+        sourceModel.setLodProcessedLevels(sourceModel.isImageBackedSurface()
             ? SurfaceUtils.buildPyramidLevels(l0Processed, TILED_LOD_LEVEL_COUNT)
-            : SurfaceUtils.buildPyramid(l0Processed, minRenderResolution);
+            : SurfaceUtils.buildPyramid(l0Processed, minRenderResolution));
 
-        if (imageBackedSurface) {
+        if (sourceModel.isImageBackedSurface()) {
             StringBuilder lodSummary = new StringBuilder("Hypersurface tiled LOD pyramid: ");
-            for (int i = 0; i < lodProcessedLevels.size(); i++) {
+            for (int i = 0; i < sourceModel.getLodProcessedLevels().size(); i++) {
                 if (i > 0) lodSummary.append(", ");
-                HeightField level = lodProcessedLevels.get(i);
+                HeightField level = sourceModel.getLodProcessedLevels().get(i);
                 lodSummary.append('L').append(i).append('=')
                     .append(level.width()).append('x').append(level.height());
             }
@@ -2980,19 +2526,17 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
 
         // A new pyramid invalidates the old active HeightField even when the numerical
         // LOD index happens to be identical.
-        activeLodIndex = -1;
-        activeHeightField = null;
-        currentLodSurfScaleX = Double.NaN;
-        currentLodSurfScaleZ = Double.NaN;
+        sourceModel.setActiveLod(-1, null);
+        sourceModel.clearCurrentLodSurfScale();
 
         if (shouldUseTiledHeightFieldRenderer()) {
             configureTiledPyramid();
             updateTheMesh();
         } else if (lodManager != null) {
             lodManager.setPyramid(
-                LodManager.fromHeightFields(lodProcessedLevels),
-                baseWorldWidth,
-                baseWorldDepth,
+                LodManager.fromHeightFields(sourceModel.getLodProcessedLevels()),
+                sourceModel.getBaseWorldWidth(),
+                sourceModel.getBaseWorldDepth(),
                 -1
             );
             lodManager.forceUpdate();
@@ -3009,32 +2553,32 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
      * Invoked by LodManager when it selects a new level.
      */
     private void applyActiveLodIndex(int idx) {
-        if (lodProcessedLevels == null || lodProcessedLevels.isEmpty()) return;
+        if (sourceModel.getLodProcessedLevels() == null || sourceModel.getLodProcessedLevels().isEmpty()) return;
         if (idx < 0) idx = 0;
-        if (idx >= lodProcessedLevels.size()) idx = lodProcessedLevels.size() - 1;
+        if (idx >= sourceModel.getLodProcessedLevels().size()) idx = sourceModel.getLodProcessedLevels().size() - 1;
 
-        HeightField selected = lodProcessedLevels.get(idx);
-        if (idx == activeLodIndex && activeHeightField == selected) return;
+        HeightField selected = sourceModel.getLodProcessedLevels().get(idx);
+        if (idx == sourceModel.getActiveLodIndex() && sourceModel.getActiveHeightField() == selected) return;
 
-        activeLodIndex = idx;
-        activeHeightField = selected;
+        sourceModel.setActiveLod(idx, selected);
 
         // xWidth/zWidth continue to describe the currently rendered mesh dimensions,
-        // while dataGrid/originalGrid retain full source/working data.
-        xWidth = activeHeightField.width();
-        zWidth = activeHeightField.height();
+        // while dataGrid/sourceModel.getOriginalGrid() retain full source/working data.
+        xWidth = sourceModel.getActiveHeightField().width();
+        zWidth = sourceModel.getActiveHeightField().height();
 
-        currentLodSurfScaleX = baseWorldWidth / xWidth;
-        currentLodSurfScaleZ = baseWorldDepth / zWidth;
+        sourceModel.setCurrentLodSurfScale(
+            sourceModel.getBaseWorldWidth() / xWidth,
+            sourceModel.getBaseWorldDepth() / zWidth);
         refreshCoordinateMapper();
 
-        System.out.println("Applying Hypersurface LOD L" + activeLodIndex
+        System.out.println("Applying Hypersurface LOD L" + sourceModel.getActiveLodIndex()
             + ": " + xWidth + "x" + zWidth
-            + ", cellScale=" + currentLodSurfScaleX + "x" + currentLodSurfScaleZ);
+            + ", cellScale=" + sourceModel.getCurrentLodSurfScaleX() + "x" + sourceModel.getCurrentLodSurfScaleZ());
 
         if (surfPlot != null) {
-            surfPlot.setTranslateX(-baseWorldWidth / 2.0);
-            surfPlot.setTranslateZ(-baseWorldDepth / 2.0);
+            surfPlot.setTranslateX(-sourceModel.getBaseWorldWidth() / 2.0);
+            surfPlot.setTranslateZ(-sourceModel.getBaseWorldDepth() / 2.0);
         }
 
         syncGuiControls();

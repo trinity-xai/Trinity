@@ -59,6 +59,7 @@ public final class HypersurfaceInteractionController {
     private final Scene scene;
     private final SurfaceCoordinateMapper coordinateMapper;
     private final SurfaceCrosshairOverlay surfaceCrosshairOverlay;
+    private final HypersurfaceOverlayManager overlayManager;
 
     private boolean hoverEnabled;
     private boolean surfaceChartsEnabled;
@@ -83,11 +84,13 @@ public final class HypersurfaceInteractionController {
     public HypersurfaceInteractionController(Hypersurface3DPane pane,
                                              Scene scene,
                                              SurfaceCoordinateMapper coordinateMapper,
-                                             SurfaceCrosshairOverlay surfaceCrosshairOverlay) {
+                                             SurfaceCrosshairOverlay surfaceCrosshairOverlay,
+                                             HypersurfaceOverlayManager overlayManager) {
         this.pane = pane;
         this.scene = scene;
         this.coordinateMapper = coordinateMapper;
         this.surfaceCrosshairOverlay = surfaceCrosshairOverlay;
+        this.overlayManager = overlayManager;
         wireGraphInteractionHandlers();
     }
 
@@ -266,7 +269,7 @@ public final class HypersurfaceInteractionController {
     private void handleSurfaceHover(Point3D surfacePoint) {
         // Keep the 3D marker responsive at raw mouse-event frequency. Rich inspection
         // state below is coalesced by source/render cell changes.
-        pane.updateInteractionHoverMarker(surfacePoint);
+        overlayManager.updateHoverMarker(surfacePoint);
 
         int renderRow = coordinateMapper.surfaceZToRenderRow(surfacePoint.getZ());
         int renderColumn = coordinateMapper.surfaceXToRenderColumn(surfacePoint.getX());
