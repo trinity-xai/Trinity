@@ -4,7 +4,6 @@ import edu.jhuapl.trinity.App;
 import edu.jhuapl.trinity.css.StyleResourceProvider;
 import edu.jhuapl.trinity.data.CoordinateSet;
 import edu.jhuapl.trinity.data.files.FeatureCollectionFile;
-import edu.jhuapl.trinity.data.graph.GraphDirectedCollection;
 import edu.jhuapl.trinity.data.messages.bci.SemanticMap;
 import edu.jhuapl.trinity.data.messages.bci.SemanticMapCollection;
 import edu.jhuapl.trinity.data.messages.bci.SemanticReconstruction;
@@ -19,7 +18,6 @@ import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.FactorAnalysisEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
-import edu.jhuapl.trinity.javafx.events.GraphEvent;
 import edu.jhuapl.trinity.javafx.events.HyperspaceEvent;
 import edu.jhuapl.trinity.javafx.events.HypersurfaceEvent;
 import edu.jhuapl.trinity.javafx.events.HypersurfaceGridEvent;
@@ -27,8 +25,6 @@ import edu.jhuapl.trinity.javafx.events.ImageEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.javafx.events.ShadowEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.XFormGroup;
-import edu.jhuapl.trinity.javafx.javafx3d.animated.AnimatedSphere;
-import edu.jhuapl.trinity.javafx.javafx3d.animated.Tracer;
 import edu.jhuapl.trinity.javafx.javafx3d.images.ImageResourceProvider;
 import edu.jhuapl.trinity.javafx.javafx3d.tasks.AffinityClusterTask;
 import edu.jhuapl.trinity.javafx.javafx3d.tasks.DBSCANClusterTask;
@@ -37,13 +33,11 @@ import edu.jhuapl.trinity.javafx.javafx3d.tasks.HDDBSCANClusterTask;
 import edu.jhuapl.trinity.javafx.javafx3d.tasks.KMeansClusterTask;
 import edu.jhuapl.trinity.javafx.javafx3d.tasks.KMediodsClusterTask;
 import edu.jhuapl.trinity.javafx.renderers.FeatureVectorRenderer;
-import edu.jhuapl.trinity.javafx.renderers.Graph3DRenderer;
 import edu.jhuapl.trinity.javafx.renderers.SemanticMapRenderer;
 import edu.jhuapl.trinity.javafx.renderers.ShapleyVectorRenderer;
 import edu.jhuapl.trinity.utils.DataUtils.HeightMode;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import edu.jhuapl.trinity.utils.Utils;
-import edu.jhuapl.trinity.utils.graph.GraphStyleParams;
 import edu.jhuapl.trinity.utils.metric.Metric;
 import edu.jhuapl.trinity.utils.statistics.GridDensityResult;
 import javafx.animation.AnimationTimer;
@@ -60,8 +54,6 @@ import javafx.event.ActionEvent;
 import javafx.event.Event;
 import javafx.scene.AmbientLight;
 import javafx.scene.Group;
-import javafx.scene.Node;
-import javafx.scene.Parent;
 import javafx.scene.PerspectiveCamera;
 import javafx.scene.PointLight;
 import javafx.scene.Scene;
@@ -230,16 +222,9 @@ public class Hypersurface3DPane extends StackPane
 
     private final HypersurfaceRenderController renderController;
 
-    // --- Graph layer support ---
-    private final Group graphLayer = new Group(); // sits in sceneRoot
-    private boolean graphVisible = true;
-    private GraphDirectedCollection currentGraph = null;
-    private Graph3DRenderer.Params graphParams = new Graph3DRenderer.Params()
-        .withNodeRadius(20.0)
-        .withEdgeWidth(8.0f)
-        .withPositionScalar(1.0);
-    // Graph visual style state (synced with GraphStyleControlsView)
-    private GraphStyleParams styleParams = new GraphStyleParams();
+    // Temporary graph subsystem hosted by Hypersurface until it is migrated to
+    // a dedicated graph 3D pane/SubScene.
+    private final HypersurfaceGraphController graphController;
 
     public Hypersurface3DPane(Scene scene) {
         this.scene = scene;
@@ -263,6 +248,7 @@ public class Hypersurface3DPane extends StackPane
         extrasGroup = overlayManager.getExtrasGroup();
         interactionController = new HypersurfaceInteractionController(
             this, scene, coordinateMapper, surfaceCrosshairOverlay, overlayManager);
+        graphController = new HypersurfaceGraphController(scene, interactionController::setGraph);
         camera = new PerspectiveCamera(true);
 
         cameraTransform.setTranslate(0, 0, 0);
@@ -302,12 +288,12 @@ public class Hypersurface3DPane extends StackPane
         overlayManager.setInitialVisibility(false);
         sceneRoot.getChildren().addAll(cameraTransform, overlayManager.getHighlightedPoint(),
             overlayManager.getNodeGroup(), extrasGroup, debugGroup, dataXForm);
-        // Add graph layer last so it draws above the surface (z-order within Group)
-        sceneRoot.getChildren().add(graphLayer);
+        // The graph is still temporarily hosted by Hypersurface, but its visual
+        // layer/state is owned by HypersurfaceGraphController so it can later migrate
+        // to a dedicated graph 3D pane/SubScene.
+        sceneRoot.getChildren().add(graphController.getGraphLayer());
         sceneRoot.getChildren().add(surfaceCrosshairOverlay);
-        graphLayer.setVisible(graphVisible);
-        // Sync controls with current visibility on startup
-        fireOnRoot(new GraphEvent(GraphEvent.SET_GRAPH_VISIBILITY_GUI, graphVisible));
+        graphController.syncVisibilityGui();
         subScene.setCamera(camera);
         pointLight = new PointLight(Color.WHITE);
         cameraTransform.getChildren().add(pointLight);
@@ -516,61 +502,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
                 e.consume();
             }
         });
-// Style params changed from GraphStyleControlsView
-        this.scene.addEventHandler(GraphEvent.GRAPH_STYLE_PARAMS_CHANGED, e -> {
-            GraphStyleParams p = (GraphStyleParams) e.object;
-            if (p == null) return;
-
-            // Update local style state
-            styleParams.nodeColor = p.nodeColor;
-            styleParams.nodeRadius = p.nodeRadius;
-            styleParams.nodeOpacity = clamp01(p.nodeOpacity);
-            styleParams.edgeColor = p.edgeColor;
-            styleParams.edgeWidth = p.edgeWidth;
-            styleParams.edgeOpacity = clamp01(p.edgeOpacity);
-
-            // Apply style. Rebuild graph only if edge width changed.
-            applyGraphStyle(styleParams, /*rebuildIfNeeded*/ true);
-        });
-
-        // Reset style defaults
-        this.scene.addEventHandler(GraphEvent.GRAPH_STYLE_RESET_DEFAULTS, e -> {
-            styleParams = new GraphStyleParams(); // back to defaults
-
-            // Keep renderer params consistent for rebuilds
-            graphParams.withNodeRadius(styleParams.nodeRadius)
-                .withEdgeWidth((float) styleParams.edgeWidth);
-
-            // Rebuild (edge width) then apply everything else live
-            if (currentGraph != null) {
-                graphLayer.getChildren().setAll(
-                    Graph3DRenderer.buildGraphGroup(currentGraph, graphParams)
-                );
-            }
-            applyGraphStyle(styleParams, /*rebuildIfNeeded*/ false);
-
-            // GUI-sync so controls show defaults
-            fireOnRoot(new GraphEvent(GraphEvent.SET_STYLE_GUI, styleParams));
-        });
-
-        this.scene.addEventHandler(GraphEvent.NEW_GRAPHDIRECTED_COLLECTION, e -> {
-            if (!(e.object instanceof GraphDirectedCollection gc)) return;
-            currentGraph = gc;
-            interactionController.setGraph(gc);
-            graphLayer.getChildren().clear();
-            graphLayer.getChildren().add(Graph3DRenderer.buildGraphGroup(gc, graphParams));
-
-            // Apply current style to the freshly built graph
-            applyGraphStyle(styleParams, /*rebuildIfNeeded*/ false);
-
-            // GUI-sync so pickers/sliders reflect the active style
-            fireOnRoot(new GraphEvent(GraphEvent.SET_STYLE_GUI, styleParams));
-            fireOnRoot(new GraphEvent(GraphEvent.SET_GRAPH_VISIBILITY_GUI, graphVisible));
-            scene.getRoot().fireEvent(new CommandTerminalEvent(
-                "Rendered 3D graph: nodes=" + gc.getNodes().size() + ", edges=" + gc.getEdges().size(),
-                new Font("Consolas", 18), Color.LIGHTGREEN));
-        });
-
+        graphController.installEventHandlers();
         loadSurf3D();
         this.scene.addEventHandler(HyperspaceEvent.HYPERSPACE_BACKGROUND_COLOR, e -> {
             Color color = (Color) e.object;
@@ -690,76 +622,6 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
             }
         };
         surfUpdateAnimationTimer.start();
-    }
-
-    /**
-     * Apply style to current graph. Rebuild only if edge-width changed and requested.
-     */
-    private void applyGraphStyle(GraphStyleParams p, boolean rebuildIfNeeded) {
-        if (p == null) return;
-
-        // Determine if edge width differs from the built state
-        double currentEdgeWidth = graphParams.edgeWidth; // float in params, promoted to double
-        boolean needRebuild = Math.abs(p.edgeWidth - currentEdgeWidth) > 1e-6;
-
-        if (needRebuild && rebuildIfNeeded && currentGraph != null) {
-            // Update params and rebuild to reflect edge width + node radius
-            graphParams.withNodeRadius(p.nodeRadius)
-                .withEdgeWidth((float) p.edgeWidth);
-            graphLayer.getChildren().setAll(
-                Graph3DRenderer.buildGraphGroup(currentGraph, graphParams)
-            );
-        }
-
-        // Apply color/opacity/radius live to existing nodes/edges
-        for (Node n : graphLayer.getChildren()) {
-            applyGraphStyleRecursive(n, p);
-        }
-    }
-
-    private void applyGraphStyleRecursive(Node n, GraphStyleParams p) {
-        if (n instanceof AnimatedSphere s) {
-            // color
-            if (p.nodeColor != null) {
-                s.setColor(new Color(
-                    p.nodeColor.getRed(),
-                    p.nodeColor.getGreen(),
-                    p.nodeColor.getBlue(),
-                    // keep whatever alpha the sphere currently has; set below
-                    s.getPhongMaterial().getDiffuseColor() != null
-                        ? s.getPhongMaterial().getDiffuseColor().getOpacity()
-                        : 1.0
-                ));
-            }
-            // radius
-            s.setSphereRadius(p.nodeRadius);
-            // opacity via material alpha
-            s.setMaterialOpacity(p.nodeOpacity);
-
-        } else if (n instanceof Tracer t) {
-            // color
-            if (p.edgeColor != null) {
-                t.setDiffuseColor(new Color(
-                    p.edgeColor.getRed(),
-                    p.edgeColor.getGreen(),
-                    p.edgeColor.getBlue(),
-                    // keep current alpha; set below
-                    1.0
-                ));
-            }
-            // opacity via material alpha
-            t.setOpacityAlpha(p.edgeOpacity);
-
-        } else if (n instanceof Parent parent) {
-            for (Node c : parent.getChildrenUnmodifiable()) {
-                applyGraphStyleRecursive(c, p);
-            }
-        }
-    }
-
-
-    private static double clamp01(double v) {
-        return Math.max(0.0, Math.min(1.0, v));
     }
 
     public void computeCosineDistance(FeatureCollection collection) {
@@ -1009,7 +871,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
     private void configureLightingScopes() {
         // Keep the camera-following point light focused on the analytical surface/graph.
         pointLight.getScope().setAll(
-            surfPlot, renderController.getTiledSurfaceRenderer(), graphLayer);
+            surfPlot, renderController.getTiledSurfaceRenderer(), graphController.getGraphLayer());
 
         // Ambient lighting also owns the auxiliary 3D markers. Because this light uses
         // explicit scope, omitting these groups leaves their ordinary PhongMaterials
@@ -1017,7 +879,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         ambientLight.getScope().setAll(
             surfPlot,
             renderController.getTiledSurfaceRenderer(),
-            graphLayer,
+            graphController.getGraphLayer(),
             overlayManager.getNodeGroup(),
             extrasGroup,
             debugGroup,
@@ -1210,11 +1072,6 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         scene.addEventHandler(HypersurfaceEvent.COMPUTE_VECTOR_DISTANCES, e -> computeVectorDistances());
         scene.addEventHandler(HypersurfaceEvent.COMPUTE_COLLECTION_DIFF, e -> computeSurfaceDifference((FeatureCollection) e.object));
         scene.addEventHandler(HypersurfaceEvent.COMPUTE_COSINE_DISTANCE, e -> computeCosineDistance((FeatureCollection) e.object));
-        scene.addEventHandler(GraphEvent.GRAPH_VISIBILITY_CHANGED, e -> {
-            if (!(e.object instanceof Boolean b)) return;
-            graphVisible = b;
-            graphLayer.setVisible(graphVisible);
-        });
     }
 
     private void attachLegendOverlay(Pane desktopPane) {
