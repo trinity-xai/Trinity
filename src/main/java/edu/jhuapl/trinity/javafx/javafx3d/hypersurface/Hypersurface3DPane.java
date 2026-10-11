@@ -12,7 +12,6 @@ import edu.jhuapl.trinity.data.messages.xai.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.data.messages.xai.ShapleyCollection;
 import edu.jhuapl.trinity.data.messages.xai.ShapleyVector;
-import edu.jhuapl.trinity.javafx.components.callouts.Callout;
 import edu.jhuapl.trinity.javafx.components.panes.SurfaceChartPane;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
@@ -24,7 +23,6 @@ import edu.jhuapl.trinity.javafx.events.HypersurfaceGridEvent;
 import edu.jhuapl.trinity.javafx.events.ImageEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.javafx.events.ShadowEvent;
-import edu.jhuapl.trinity.javafx.javafx3d.XFormGroup;
 import edu.jhuapl.trinity.javafx.javafx3d.images.ImageResourceProvider;
 import edu.jhuapl.trinity.javafx.javafx3d.tasks.AffinityClusterTask;
 import edu.jhuapl.trinity.javafx.javafx3d.tasks.DBSCANClusterTask;
@@ -40,7 +38,6 @@ import edu.jhuapl.trinity.utils.ResourceUtils;
 import edu.jhuapl.trinity.utils.Utils;
 import edu.jhuapl.trinity.utils.metric.Metric;
 import edu.jhuapl.trinity.utils.statistics.GridDensityResult;
-import javafx.animation.AnimationTimer;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;
 import javafx.animation.Timeline;
@@ -84,7 +81,6 @@ import javafx.scene.layout.StackPane;
 import javafx.scene.paint.Color;
 import javafx.scene.shape.CullFace;
 import javafx.scene.shape.DrawMode;
-import javafx.scene.shape.Shape3D;
 import javafx.scene.text.Font;
 import javafx.stage.FileChooser;
 import javafx.stage.StageStyle;
@@ -125,7 +121,6 @@ public class Hypersurface3DPane extends StackPane
     public PerspectiveCamera camera;
     public CameraTransformer cameraTransform = new CameraTransformer();
     private final HypersurfaceCameraController cameraController;
-    public XFormGroup dataXForm = new XFormGroup();
 
     private double cameraDistance = -1000;
     private final double sceneWidth = 4000;
@@ -135,12 +130,8 @@ public class Hypersurface3DPane extends StackPane
 
     public Group sceneRoot = new Group();
     public Group extrasGroup;
-    public Group debugGroup = new Group();
-    public Group ellipsoidGroup = new Group();
     public SubScene subScene;
 
-    public long hypersurfaceRefreshRate = 500; //milliseconds
-    public int queueLimit = 20000;
 
     //feature vector indices for 3D coordinates
     private int xFactorIndex = 0;
@@ -149,10 +140,6 @@ public class Hypersurface3DPane extends StackPane
     private int factorMaxIndex = 512;
 
     public Color sceneColor = Color.BLACK;
-    boolean isDirty = false;
-    boolean computeRandos = false;
-    boolean animated = false;
-    boolean heightChanged = false;
     public boolean surfaceRender = true;
 
     public enum COLORATION {COLOR_BY_IMAGE, COLOR_BY_FEATURE, COLOR_BY_SHAPLEY}
@@ -228,13 +215,7 @@ public class Hypersurface3DPane extends StackPane
 
     public Hypersurface3DPane(Scene scene) {
         this.scene = scene;
-        visibleProperty().addListener((obs, oldValue, newValue) -> refreshLegendVisibility());
-        // AppAsyncManager constructs this pane on a worker thread, but the Node is
-        // attached to centerStack later on the JavaFX Application Thread. Defer all
-        // desktop-overlay creation/attachment until that scene-attachment point.
-        sceneProperty().addListener((obs, oldScene, newScene) -> {
-            if (newScene != null) attachLegendOverlay(App.getAppPathPaneStack());
-        });
+        configureLegendLifecycle();
         ambientLight = new AmbientLight(Color.WHITE);
 
         setBackground(Background.EMPTY);
@@ -249,8 +230,8 @@ public class Hypersurface3DPane extends StackPane
         interactionController = new HypersurfaceInteractionController(
             this, scene, coordinateMapper, surfaceCrosshairOverlay, overlayManager);
         graphController = new HypersurfaceGraphController(scene, interactionController::setGraph);
-        camera = new PerspectiveCamera(true);
 
+        camera = new PerspectiveCamera(true);
         cameraTransform.setTranslate(0, 0, 0);
         cameraTransform.getChildren().add(camera);
         camera.setNearClip(0.1);
@@ -258,6 +239,7 @@ public class Hypersurface3DPane extends StackPane
         camera.setTranslateZ(cameraDistance);
         cameraTransform.ry.setAngle(-45.0);
         cameraTransform.rx.setAngle(-10.0);
+
         cameraController = new HypersurfaceCameraController(
             camera,
             cameraTransform,
@@ -267,6 +249,30 @@ public class Hypersurface3DPane extends StackPane
             this::handleCameraSettled);
         renderController = new HypersurfaceRenderController(
             this, sourceModel, processingController, surfaceCrosshairOverlay, this::refreshCoordinateMapper);
+
+        configureSourceModelListeners();
+        cameraController.installInputHandlers();
+        configureSceneGraph();
+        configureKeyboardHandling();
+        configurePaneLayout();
+        configureContextMenu();
+
+        graphController.installEventHandlers();
+        loadSurf3D();
+        registerSceneEventHandlers();
+    }
+
+    private void configureLegendLifecycle() {
+        visibleProperty().addListener((obs, oldValue, newValue) -> refreshLegendVisibility());
+        // AppAsyncManager constructs this pane on a worker thread, but the Node is
+        // attached to centerStack later on the JavaFX Application Thread. Defer all
+        // desktop-overlay creation/attachment until that scene-attachment point.
+        sceneProperty().addListener((obs, oldScene, newScene) -> {
+            if (newScene != null) attachLegendOverlay(App.getAppPathPaneStack());
+        });
+    }
+
+    private void configureSourceModelListeners() {
         sourceModel.rowOrientationProperty().addListener((obs, oldValue, newValue) -> {
             renderController.setRowOrientation(newValue);
             refreshCoordinateMapper();
@@ -282,12 +288,14 @@ public class Hypersurface3DPane extends StackPane
                 updateTheMesh();
             }
         });
-        cameraController.installInputHandlers();
+    }
+
+    private void configureSceneGraph() {
         setupSkyBox();
-        debugGroup.setVisible(false);
         overlayManager.setInitialVisibility(false);
         sceneRoot.getChildren().addAll(cameraTransform, overlayManager.getHighlightedPoint(),
-            overlayManager.getNodeGroup(), extrasGroup, debugGroup, dataXForm);
+            overlayManager.getNodeGroup(), extrasGroup);
+
         // The graph is still temporarily hosted by Hypersurface, but its visual
         // layer/state is owned by HypersurfaceGraphController so it can later migrate
         // to a dedicated graph 3D pane/SubScene.
@@ -295,6 +303,7 @@ public class Hypersurface3DPane extends StackPane
         sceneRoot.getChildren().add(surfaceCrosshairOverlay);
         graphController.syncVisibilityGui();
         subScene.setCamera(camera);
+
         pointLight = new PointLight(Color.WHITE);
         cameraTransform.getChildren().add(pointLight);
         pointLight.translateXProperty().bind(camera.translateXProperty());
@@ -304,7 +313,9 @@ public class Hypersurface3DPane extends StackPane
         pointLight.setConstantAttenuation(1.0);
         pointLight.setLinearAttenuation(0.0);
         pointLight.setQuadraticAttenuation(POINT_LIGHT_QUADRATIC_ATTENUATION);
+    }
 
+    private void configureKeyboardHandling() {
         subScene.setOnKeyPressed(event -> {
             KeyCode keycode = event.getCode();
             boolean cameraHandled = cameraController.handleKeyPressed(event);
@@ -317,16 +328,14 @@ public class Hypersurface3DPane extends StackPane
                     Platform.runLater(() -> scene.getRoot().fireEvent(
                         new HyperspaceEvent(HyperspaceEvent.FACTOR_COORDINATES_KEYPRESS,
                             new CoordinateSet(xFactorIndex, yFactorIndex, zFactorIndex))));
-                    boolean redraw = true;
-                    if (redraw) {
-                        updateView(false);
-                        notifyIndexChange();
-                    }
+                    notifyIndexChange();
                     overlayManager.updateLabels();
                 }
             }
             if (keycode == KeyCode.PERIOD) {
-                int featureSize = featureVectors.isEmpty() ? factorMaxIndex : featureVectors.get(0).getData().size();
+                int featureSize = featureVectors.isEmpty()
+                    ? factorMaxIndex
+                    : featureVectors.get(0).getData().size();
                 if (xFactorIndex < factorMaxIndex - 1 && yFactorIndex < factorMaxIndex - 1
                     && zFactorIndex < factorMaxIndex - 1 && xFactorIndex < featureSize - 1
                     && yFactorIndex < featureSize - 1 && zFactorIndex < featureSize - 1) {
@@ -336,18 +345,13 @@ public class Hypersurface3DPane extends StackPane
                     Platform.runLater(() -> scene.getRoot().fireEvent(
                         new HyperspaceEvent(HyperspaceEvent.FACTOR_COORDINATES_KEYPRESS,
                             new CoordinateSet(xFactorIndex, yFactorIndex, zFactorIndex))));
-                    boolean redraw = true;
-                    if (redraw) {
-                        updateView(false);
-                        notifyIndexChange();
-                    }
+                    notifyIndexChange();
                     overlayManager.updateLabels();
                 } else {
                     scene.getRoot().fireEvent(new CommandTerminalEvent("Feature Index Max Reached: ("
                         + featureSize + ")", new Font("Consolas", 20), Color.YELLOW));
                 }
             }
-            if (keycode == KeyCode.SLASH && event.isControlDown()) debugGroup.setVisible(!debugGroup.isVisible());
             if (keycode == KeyCode.Y) renderController.scaleHeight(1.1);
             if (keycode == KeyCode.H) renderController.scaleHeight(0.9);
 
@@ -365,28 +369,27 @@ public class Hypersurface3DPane extends StackPane
                 requestLodUpdate(LodManager.UpdateReason.OTHER);
             }
         });
+    }
 
-        Pane pathPane = App.getAppPathPaneStack();
-        surfaceChartPane = new SurfaceChartPane(scene, pathPane);
+    private void configurePaneLayout() {
         bp = new BorderPane(subScene);
         getChildren().clear();
         getChildren().addAll(bp, overlayManager.getLabelGroup());
+    }
 
-
+    private void configureContextMenu() {
         MenuItem showControlsItem = new MenuItem("Hypersurface Controls");
-        showControlsItem.setOnAction(e -> {
-            scene.getRoot().fireEvent(new ApplicationEvent(
-                ApplicationEvent.SHOW_HYPERSPACE_CONTROLS, Boolean.TRUE));
-        });
+        showControlsItem.setOnAction(e -> scene.getRoot().fireEvent(new ApplicationEvent(
+            ApplicationEvent.SHOW_HYPERSPACE_CONTROLS, Boolean.TRUE)));
 
-        
-MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
+        MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         copyAsImageItem.setOnAction((ActionEvent e) -> {
             Clipboard clipboard = Clipboard.getSystemClipboard();
             ClipboardContent content = new ClipboardContent();
             content.putImage(this.snapshot(new SnapshotParameters(), null));
             clipboard.setContent(content);
         });
+
         MenuItem saveSnapshotItem = new MenuItem("Save Scene as Image");
         saveSnapshotItem.setOnAction((ActionEvent e) -> {
             final FileChooser fileChooser = new FileChooser();
@@ -400,9 +403,11 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
                 try {
                     ImageIO.write(SwingFXUtils.fromFXImage(image, null), "png", file);
                 } catch (IOException ioe) {
+                    LOG.error("Unable to save Hypersurface snapshot.", ioe);
                 }
             }
         });
+
         MenuItem unrollHyperspaceItem = new MenuItem("Unroll Hyperspace Data");
         unrollHyperspaceItem.setOnAction(e -> unrollHyperspace());
 
@@ -417,15 +422,15 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
             fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("JSON", "*.json"));
             File file = fileChooser.showOpenDialog(null);
             if (file != null) {
-                FeatureCollectionFile fcf;
                 try {
-                    fcf = new FeatureCollectionFile(file.getAbsolutePath(), true);
+                    FeatureCollectionFile fcf = new FeatureCollectionFile(file.getAbsolutePath(), true);
                     computeSurfaceDifference(fcf.featureCollection);
                 } catch (IOException ex) {
                     LOG.error(null, ex);
                 }
             }
         });
+
         MenuItem cosineSimilarityItem = new MenuItem("Feature Collection Cosine Distance");
         cosineSimilarityItem.setOnAction(e -> {
             final FileChooser fileChooser = new FileChooser();
@@ -434,9 +439,8 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
             fileChooser.getExtensionFilters().add(new FileChooser.ExtensionFilter("JSON", "*.json"));
             File file = fileChooser.showOpenDialog(null);
             if (file != null) {
-                FeatureCollectionFile fcf;
                 try {
-                    fcf = new FeatureCollectionFile(file.getAbsolutePath(), true);
+                    FeatureCollectionFile fcf = new FeatureCollectionFile(file.getAbsolutePath(), true);
                     computeCosineDistance(fcf.featureCollection);
                 } catch (IOException ex) {
                     LOG.error(null, ex);
@@ -448,8 +452,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         ImageView analysisImageView = ResourceUtils.loadIcon("analysis", ICON_FIT_HEIGHT);
         analysisImageView.setEffect(glow);
         Menu analysisMenu = new Menu("Analysis", analysisImageView,
-            vectorDistanceItem, collectionDifferenceItem, cosineSimilarityItem
-        );
+            vectorDistanceItem, collectionDifferenceItem, cosineSimilarityItem);
 
         CheckMenuItem enableHoverItem = new CheckMenuItem("Hover Interactions");
         enableHoverItem.setOnAction(e ->
@@ -465,6 +468,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
 
         MenuItem updateAllItem = new MenuItem("Update Render");
         updateAllItem.setOnAction(e -> updateAll());
+
         MenuItem clearDataItem = new MenuItem("Clear Data");
         clearDataItem.setOnAction(e -> {
             clearAll();
@@ -486,6 +490,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
 
         MenuItem resetViewItem = new MenuItem("Reset View");
         resetViewItem.setOnAction(e -> resetView(1000, false));
+
         ContextMenu cm = new ContextMenu(showControlsItem, navigatorItem,
             copyAsImageItem, saveSnapshotItem, unrollHyperspaceItem, analysisMenu,
             enableHoverItem, surfaceChartsItem, showDataMarkersItem, enableCrosshairsItem,
@@ -502,56 +507,23 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
                 e.consume();
             }
         });
-        graphController.installEventHandlers();
-        loadSurf3D();
-        this.scene.addEventHandler(HyperspaceEvent.HYPERSPACE_BACKGROUND_COLOR, e -> {
+    }
+
+    private void registerSceneEventHandlers() {
+        scene.addEventHandler(HyperspaceEvent.HYPERSPACE_BACKGROUND_COLOR, e -> {
             Color color = (Color) e.object;
             subScene.setFill(color);
         });
-        this.scene.addEventHandler(HyperspaceEvent.ENABLE_HYPERSPACE_SKYBOX, e -> {
-            skybox.setVisible((Boolean) e.object);
-        });
-        this.scene.addEventHandler(ImageEvent.NEW_TEXTURE_SURFACE, e -> {
-            Image image = (Image) e.object;
-            int x1 = 0;
-            int y1 = 0;
-            int x2 = (int) image.getWidth();
-            int y2 = (int) image.getHeight();
-            if (x2 > 512 || y2 > 512) {
-                boolean split = false;
-                Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
-                    "Image has " + x2 + " rows and " + y2 + " columns.\n"
-                        + "Split the image before tessellation?",
-                    ButtonType.YES, ButtonType.NO, ButtonType.CANCEL);
-                alert.setTitle("Image Tessellation Import");
-                alert.setHeaderText("Image has " + x2 + " rows  and " + y2 + " columns.\n");
-                alert.setContentText("Select subregion from image before tessellation?");
-                alert.setGraphic(ResourceUtils.loadIcon("alert", 75));
-                alert.initStyle(StageStyle.TRANSPARENT);
-                DialogPane dialogPane = alert.getDialogPane();
-                dialogPane.setBackground(Background.EMPTY);
-                dialogPane.getScene().setFill(Color.TRANSPARENT);
-                String DIALOGCSS = StyleResourceProvider.getResource("dialogstyles.css").toExternalForm();
-                dialogPane.getStylesheets().add(DIALOGCSS);                
-                Optional<ButtonType> optBT = alert.showAndWait();
-                if (optBT.get().equals(ButtonType.CANCEL)) return;
-                split = optBT.get().equals(ButtonType.YES);
-                if (split) {
-                    scene.getRoot().fireEvent(new ApplicationEvent(
-                        ApplicationEvent.SHOW_PIXEL_SELECTION, image));
-                    return;
-                }
-            }
-            tessellateImage(image, x1, y1, x2, y2);
-            sourceModel.setSourceImage(image);
-        });
-        this.scene.addEventHandler(HyperspaceEvent.FACTOR_COORDINATES_GUI, e -> {
+        scene.addEventHandler(HyperspaceEvent.ENABLE_HYPERSPACE_SKYBOX, e ->
+            skybox.setVisible((Boolean) e.object));
+        scene.addEventHandler(ImageEvent.NEW_TEXTURE_SURFACE, e -> handleNewTextureSurface((Image) e.object));
+
+        scene.addEventHandler(HyperspaceEvent.FACTOR_COORDINATES_GUI, e -> {
             CoordinateSet coords = (CoordinateSet) e.object;
             xFactorIndex = coords.coordinateIndices.get(0);
             yFactorIndex = coords.coordinateIndices.get(1);
             zFactorIndex = coords.coordinateIndices.get(2);
             overlayManager.updateLabels();
-            updateView(true);
             notifyIndexChange();
         });
 
@@ -572,11 +544,10 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
                     zFactorIndex = factorMaxIndex;
                     update = true;
                 }
-                if (update) {
-                    updateView(true);
-                    notifyIndexChange();
-                }
-            } else factorMaxIndex = newFactorMaxIndex;
+                if (update) notifyIndexChange();
+            } else {
+                factorMaxIndex = newFactorMaxIndex;
+            }
         });
 
         scene.addEventHandler(HypersurfaceGridEvent.RENDER_PDF, e -> {
@@ -588,40 +559,47 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
             e.consume();
         });
 
-        scene.addEventHandler(HyperspaceEvent.NODE_QUEUELIMIT_GUI, e -> queueLimit = (int) e.object);
-        scene.addEventHandler(HyperspaceEvent.REFRESH_RATE_GUI, e -> hypersurfaceRefreshRate = (long) e.object);
-
         scene.addEventHandler(ShadowEvent.SHOW_AXES_LABELS, e ->
             overlayManager.setAxesAndLabelsVisible((boolean) e.object));
-        scene.addEventHandler(ApplicationEvent.SET_IMAGERY_BASEPATH, e -> imageryBasePath = (String) e.object);
+        scene.addEventHandler(ApplicationEvent.SET_IMAGERY_BASEPATH,
+            e -> imageryBasePath = (String) e.object);
+
         Platform.runLater(() -> {
             overlayManager.updateLabels();
-            updateView(true);
             updateTheMesh();
         });
-        AnimationTimer surfUpdateAnimationTimer = new AnimationTimer() {
-            long sleepNs = 0;
-            long prevTime = 0;
-            long NANOS_IN_MILLI = 1_000_000;
+    }
 
-            @Override
-            public void handle(long now) {
-                sleepNs = hypersurfaceRefreshRate * NANOS_IN_MILLI;
-                if ((now - prevTime) < sleepNs) return;
-                prevTime = now;
-                long startTime;
-                if (computeRandos) {
-                    generateRandos(xWidth, zWidth, yScale);
-                    captureDataGridAsSource();
-                    rebuildProcessedGridAndRefresh();
-                } else if (animated || isDirty) {
-                    startTime = System.nanoTime();
-                    updateTheMesh();
-                    LOG.info("updateTheMesh(): {}", Utils.totalTimeString(startTime));
-                }
+    private void handleNewTextureSurface(Image image) {
+        int x1 = 0;
+        int y1 = 0;
+        int x2 = (int) image.getWidth();
+        int y2 = (int) image.getHeight();
+        if (x2 > 512 || y2 > 512) {
+            Alert alert = new Alert(Alert.AlertType.CONFIRMATION,
+                "Image has " + x2 + " rows and " + y2 + " columns.\n"
+                    + "Split the image before tessellation?",
+                ButtonType.YES, ButtonType.NO, ButtonType.CANCEL);
+            alert.setTitle("Image Tessellation Import");
+            alert.setHeaderText("Image has " + x2 + " rows  and " + y2 + " columns.\n");
+            alert.setContentText("Select subregion from image before tessellation?");
+            alert.setGraphic(ResourceUtils.loadIcon("alert", 75));
+            alert.initStyle(StageStyle.TRANSPARENT);
+            DialogPane dialogPane = alert.getDialogPane();
+            dialogPane.setBackground(Background.EMPTY);
+            dialogPane.getScene().setFill(Color.TRANSPARENT);
+            String dialogCss = StyleResourceProvider.getResource("dialogstyles.css").toExternalForm();
+            dialogPane.getStylesheets().add(dialogCss);
+
+            Optional<ButtonType> result = alert.showAndWait();
+            if (result.isEmpty() || result.get().equals(ButtonType.CANCEL)) return;
+            if (result.get().equals(ButtonType.YES)) {
+                scene.getRoot().fireEvent(new ApplicationEvent(
+                    ApplicationEvent.SHOW_PIXEL_SELECTION, image));
+                return;
             }
-        };
-        surfUpdateAnimationTimer.start();
+        }
+        tessellateImage(image, x1, y1, x2, y2);
     }
 
     public void computeCosineDistance(FeatureCollection collection) {
@@ -714,22 +692,6 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         getScene().getRoot().fireEvent(new FeatureVectorEvent(FeatureVectorEvent.REQUEST_FEATURE_COLLECTION));
     }
 
-    public void updateCalloutHeadPoint(Shape3D node, Callout callout, SubScene subScene) {
-        overlayManager.updateCalloutHeadPoint(node, callout, subScene);
-    }
-
-    public void updateCalloutHeadPoints(SubScene subScene) {
-        overlayManager.updateCalloutHeadPoints(subScene);
-    }
-
-    public Callout createCallout(Shape3D shape3D, FeatureVector featureVector, SubScene subScene) {
-        return overlayManager.createCallout(shape3D, featureVector, subScene);
-    }
-
-    public void addCallout(Callout callout, Shape3D shape3D) {
-        overlayManager.addCallout(callout, shape3D);
-    }
-
     public void updateTheMesh() {
         renderController.updateMesh();
     }
@@ -787,7 +749,11 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
     }
 
     public void updateAll() {
-        Platform.runLater(() -> updateView(true));
+        if (Platform.isFxApplicationThread()) {
+            updateTheMesh();
+        } else {
+            Platform.runLater(this::updateTheMesh);
+        }
     }
 
     private void handleCameraInteraction(HypersurfaceCameraController.InteractionType interactionType) {
@@ -847,17 +813,6 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         }
     }
 
-    public void updateView(boolean forcePNodeUpdate) {
-        if (null != surfPlot) {
-            Platform.runLater(() -> {
-                if (heightChanged) {
-                    heightChanged = false;
-                }
-                isDirty = false;
-            });
-        }
-    }
-
     private void generateRandos(int xWidth, int zWidth, float yScale) {
         dataGrid.clear();
         List<Double> xList;
@@ -882,7 +837,6 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
             graphController.getGraphLayer(),
             overlayManager.getNodeGroup(),
             extrasGroup,
-            debugGroup,
             overlayManager.getHighlightedPoint(),
             surfaceCrosshairOverlay);
     }
@@ -1182,10 +1136,6 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
         return legendEnabled;
     }
 
-    public void updateCalloutByFeatureVector(Callout callout, FeatureVector featureVector) {
-        overlayManager.updateCalloutByFeatureVector(callout, featureVector);
-    }
-
     public void clearAll() {
         xFactorIndex = 0;
         yFactorIndex = 1;
@@ -1194,7 +1144,6 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
             new HyperspaceEvent(HyperspaceEvent.FACTOR_COORDINATES_KEYPRESS,
                 new CoordinateSet(xFactorIndex, yFactorIndex, zFactorIndex))));
         notifyIndexChange();
-        ellipsoidGroup.getChildren().clear();
         overlayManager.resetLabelTracking();
         dataGrid.clear();
         featureVectors.clear();
@@ -1204,7 +1153,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
     }
 
     public void showAll() {
-        updateView(true);
+        updateAll();
     }
 
     public void hideFA3D() {
@@ -1419,7 +1368,7 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
 
     @Override
     public void setSpheroidAnchor(boolean animate, int index) {
-        double z = index * surfScale;
+        // Hypersurface does not use spheroid anchoring.
     }
 
     private void tessellateImage(Image image, int x1, int y1, int x2, int y2) {
@@ -1487,7 +1436,6 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
                 int x2 = (int) wi.getWidth();
                 int y2 = (int) wi.getHeight();
                 tessellateImage(wi, 0, 0, x2, y2);
-                sourceModel.setSourceImage(wi);
                 LOG.info("injecting Shapley function values into Vertices... ");
                 long startTime = System.nanoTime();
                 renderController.updateShapleyFunctionValues(shapleyVectors, yScale);
@@ -1761,7 +1709,6 @@ MenuItem copyAsImageItem = new MenuItem("Copy Scene to Clipboard");
 
         refreshCoordinateMapper();
         renderController.activateProcessedPyramid();
-        updateView(true);
         refreshLegendOverlay();
     }
 

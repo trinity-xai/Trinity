@@ -149,7 +149,6 @@ public final class HypersurfaceOverlayManager {
             int maxSourceRow = Math.max(0, owner.getSourceHeight() - 1);
             anchorIndex = Math.max(0, Math.min(anchorIndex, maxSourceRow));
             glowLineBox.setTranslateZ(coordinateMapper.sourceRowToWorldZ(anchorIndex));
-            owner.setSpheroidAnchor(true, anchorIndex);
             updateTimelineLabels();
             refreshProjectedOverlays();
         });

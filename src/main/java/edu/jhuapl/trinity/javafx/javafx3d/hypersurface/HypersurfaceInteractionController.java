@@ -318,7 +318,6 @@ public final class HypersurfaceInteractionController {
         FeatureVector featureVector = featureVectors.get(sourceRow);
         if (featureVector == null || featureVector == lastPublishedFeatureVector) return;
         lastPublishedFeatureVector = featureVector;
-        pane.setSpheroidAnchor(false, sourceRow);
         publishFeatureVector(featureVector, false);
     }
 

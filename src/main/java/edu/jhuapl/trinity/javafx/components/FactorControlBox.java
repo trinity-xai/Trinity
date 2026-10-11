@@ -2,18 +2,14 @@ package edu.jhuapl.trinity.javafx.components;
 
 import edu.jhuapl.trinity.javafx.events.FactorAnalysisEvent;
 import javafx.collections.FXCollections;
-import javafx.collections.ObservableList;
 import javafx.geometry.Insets;
-import javafx.scene.chart.LineChart;
-import javafx.scene.chart.NumberAxis;
-import javafx.scene.chart.XYChart;
 import javafx.scene.control.ChoiceBox;
 import javafx.scene.control.Label;
-import javafx.scene.control.Tooltip;
 import javafx.scene.layout.Background;
 import javafx.scene.layout.BackgroundFill;
 import javafx.scene.layout.CornerRadii;
 import javafx.scene.layout.HBox;
+import javafx.scene.layout.Priority;
 import javafx.scene.layout.VBox;
 import javafx.scene.paint.Color;
 
@@ -27,34 +23,27 @@ public class FactorControlBox extends VBox {
     Background transFillBack = new Background(new BackgroundFill(
         Color.ALICEBLUE.deriveColor(1, 1, 1, 0.222), CornerRadii.EMPTY, Insets.EMPTY));
 
-    public ObservableList<XYChart.Data<Double, Double>> xFactorVector;
-    public XYChart.Series xFactorSeries;
-    private LineChart xFactorChart;
-
-    public ObservableList<XYChart.Data<Double, Double>> zFactorVector;
-    public XYChart.Series zFactorSeries;
-    private LineChart zFactorChart;
+    private final CanvasLineChart xFactorChart;
+    private final CanvasLineChart zFactorChart;
 
     public FactorControlBox(double width, double height) {
         setPrefSize(width, height);
-        xFactorVector = FXCollections.observableArrayList();
-        xFactorSeries = new XYChart.Series("Hyperdimensional Feature Vector", xFactorVector);
-        this.xFactorChart = new LineChart(new NumberAxis(), new NumberAxis(), FXCollections.observableArrayList(xFactorSeries));
 
-        zFactorVector = FXCollections.observableArrayList();
-        zFactorSeries = new XYChart.Series("Dimension Over Time", zFactorVector);
-        this.zFactorChart = new LineChart(new NumberAxis(), new NumberAxis(), FXCollections.observableArrayList(zFactorSeries));
+        xFactorChart = new CanvasLineChart();
+        xFactorChart.setHoverPrefix("Factor Vector");
+        zFactorChart = new CanvasLineChart();
+        zFactorChart.setHoverPrefix("Dimension Over Time");
 
-        xFactorChart.setAnimated(false);
-        zFactorChart.setAnimated(false);
-        xFactorChart.setLegendVisible(false);
-        zFactorChart.setLegendVisible(false);
+        xFactorChart.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
+        zFactorChart.setMaxSize(Double.MAX_VALUE, Double.MAX_VALUE);
+        VBox.setVgrow(xFactorChart, Priority.ALWAYS);
+        VBox.setVgrow(zFactorChart, Priority.ALWAYS);
 
         setBackground(Background.EMPTY);
         Label xFactorLabel = new Label("X Axis (Feature Vector)");
         Label zFactorLabel = new Label("Z Axis (Time)");
 
-        ChoiceBox<String> xFactorChoiceBox = new ChoiceBox(FXCollections.observableArrayList(
+        ChoiceBox<String> xFactorChoiceBox = new ChoiceBox<>(FXCollections.observableArrayList(
             "Factor-0", "Factor-1", "Factor-2", "Factor-3",
             "Factor-4", "Factor-5", "Factor-6", "Factor-7"));
         xFactorChoiceBox.getSelectionModel().select(0); //X0 is the default
@@ -64,7 +53,7 @@ public class FactorControlBox extends VBox {
                     xFactorChoiceBox.getSelectionModel().getSelectedIndex()));
         });
 
-        ChoiceBox<String> zFactorChoiceBox = new ChoiceBox(FXCollections.observableArrayList(
+        ChoiceBox<String> zFactorChoiceBox = new ChoiceBox<>(FXCollections.observableArrayList(
             "Factor-0", "Factor-1", "Factor-2", "Factor-3",
             "Factor-4", "Factor-5", "Factor-6", "Factor-7"));
         zFactorChoiceBox.getSelectionModel().select(2); //X2 is the default
@@ -83,17 +72,11 @@ public class FactorControlBox extends VBox {
         );
     }
 
-    public void setFactorVector(ObservableList<XYChart.Data<Double, Double>> vector, Double[] newData) {
+    public void setXFactorVector(Double[] newData) {
+        xFactorChart.setData(newData);
+    }
 
-        vector.clear();
-        for (int i = 0; i < newData.length; i++) {
-            XYChart.Data data = new XYChart.Data(i, newData[i], newData[i]);
-            Tooltip.install(data.getNode(), new Tooltip("Factor Vector "
-                + data.getXValue().toString() + "\n"
-                + data.getYValue()));
-
-            data.setNode(new HoverNode(i, newData[i]));
-            vector.add(data);
-        }
+    public void setZFactorVector(Double[] newData) {
+        zFactorChart.setData(newData);
     }
 }
