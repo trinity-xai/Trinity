@@ -1,4 +1,4 @@
-package edu.jhuapl.trinity.javafx.javafx3d;
+package edu.jhuapl.trinity.javafx.javafx3d.hypersurface;
 
 /**
  * Controls how source rows map onto the Hypersurface Z axis.

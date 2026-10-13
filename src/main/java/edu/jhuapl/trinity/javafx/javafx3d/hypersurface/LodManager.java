@@ -1,4 +1,4 @@
-package edu.jhuapl.trinity.javafx.javafx3d;
+package edu.jhuapl.trinity.javafx.javafx3d.hypersurface;
 
 import javafx.animation.PauseTransition;
 import javafx.application.Platform;

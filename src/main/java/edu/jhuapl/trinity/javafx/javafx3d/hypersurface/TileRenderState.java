@@ -1,4 +1,4 @@
-package edu.jhuapl.trinity.javafx.javafx3d;
+package edu.jhuapl.trinity.javafx.javafx3d.hypersurface;
 
 /**
  * Persistent JavaFX render state for one tiled hypersurface region.

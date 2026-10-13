@@ -1,4 +1,4 @@
-package edu.jhuapl.trinity.javafx.javafx3d;
+package edu.jhuapl.trinity.javafx.javafx3d.hypersurface;
 
 /**
  * One requested tile LOD transition, ordered by rendering priority.

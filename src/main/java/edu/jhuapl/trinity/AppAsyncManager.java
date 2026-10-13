@@ -61,7 +61,7 @@ import edu.jhuapl.trinity.javafx.handlers.SearchEventHandler;
 import edu.jhuapl.trinity.javafx.handlers.SemanticMapEventHandler;
 import edu.jhuapl.trinity.javafx.handlers.ShapleyEventHandler;
 import edu.jhuapl.trinity.javafx.javafx3d.Hyperspace3DPane;
-import edu.jhuapl.trinity.javafx.javafx3d.Hypersurface3DPane;
+import edu.jhuapl.trinity.javafx.javafx3d.hypersurface.Hypersurface3DPane;
 import edu.jhuapl.trinity.javafx.javafx3d.Manifold3D;
 import edu.jhuapl.trinity.javafx.javafx3d.Projections3DPane;
 import edu.jhuapl.trinity.javafx.javafx3d.ProjectorPane;
@@ -183,8 +183,14 @@ public class AppAsyncManager extends Task<Void> {
 
         setOnSucceeded(e -> Platform.runLater(() ->
             scene.getRoot().fireEvent(new ApplicationEvent(ApplicationEvent.HIDE_BUSY_INDICATOR))));
-        setOnFailed(e -> Platform.runLater(() ->
-            scene.getRoot().fireEvent(new ApplicationEvent(ApplicationEvent.HIDE_BUSY_INDICATOR))));
+        setOnFailed(e -> {
+            Throwable failure = getException();
+            if (failure != null) {
+                LOG.error("Trinity asynchronous initialization failed.", failure);
+            }
+            Platform.runLater(() ->
+                scene.getRoot().fireEvent(new ApplicationEvent(ApplicationEvent.HIDE_BUSY_INDICATOR)));
+        });
         setOnCancelled(e -> Platform.runLater(() ->
             scene.getRoot().fireEvent(new ApplicationEvent(ApplicationEvent.HIDE_BUSY_INDICATOR))));
     }

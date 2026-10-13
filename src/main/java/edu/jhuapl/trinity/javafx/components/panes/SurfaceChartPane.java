@@ -42,10 +42,10 @@ public class SurfaceChartPane extends LitPathPane {
         bp.setCenter(tabPane);
 
         this.scene.getRoot().addEventHandler(FactorAnalysisEvent.SURFACE_XFACTOR_VECTOR, e -> {
-            fcb.setFactorVector(fcb.xFactorVector, (Double[]) e.object1);
+            fcb.setXFactorVector((Double[]) e.object1);
         });
         this.scene.getRoot().addEventHandler(FactorAnalysisEvent.SURFACE_ZFACTOR_VECTOR, e -> {
-            fcb.setFactorVector(fcb.zFactorVector, (Double[]) e.object1);
+            fcb.setZFactorVector((Double[]) e.object1);
         });
         this.scene.getRoot().addEventHandler(FactorAnalysisEvent.ANALYSIS_DATA_VECTOR, e -> {
             avb.setAnalysisVector((String) e.object1, (Double[]) e.object2);

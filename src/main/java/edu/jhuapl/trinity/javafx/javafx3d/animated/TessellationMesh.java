@@ -1,7 +1,7 @@
 package edu.jhuapl.trinity.javafx.javafx3d.animated;
 
 import edu.jhuapl.trinity.javafx.components.MatrixEffect;
-import edu.jhuapl.trinity.javafx.javafx3d.HyperSurfacePlotMesh;
+import edu.jhuapl.trinity.javafx.javafx3d.hypersurface.HyperSurfacePlotMesh;
 import edu.jhuapl.trinity.javafx.javafx3d.Vert3D;
 import javafx.animation.AnimationTimer;
 import javafx.beans.property.SimpleBooleanProperty;

@@ -4,6 +4,7 @@ import com.github.sarxos.webcam.Webcam;
 import edu.jhuapl.trinity.javafx.events.ImageEvent;
 import edu.jhuapl.trinity.javafx.events.TerrainEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.Opticon;
+import edu.jhuapl.trinity.javafx.javafx3d.hypersurface.HyperSurfacePlotMesh;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import javafx.animation.AnimationTimer;
 import javafx.application.Application;

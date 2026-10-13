@@ -1,6 +1,7 @@
 package edu.jhuapl.trinity.javafx.javafx3d;
 
 import edu.jhuapl.trinity.data.messages.bci.ChannelFrame;
+import edu.jhuapl.trinity.javafx.javafx3d.hypersurface.HyperSurfacePlotMesh;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.HyperspaceEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.AnimatedBox;

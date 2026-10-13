@@ -1,4 +1,4 @@
-package edu.jhuapl.trinity.javafx.javafx3d;
+package edu.jhuapl.trinity.javafx.javafx3d.hypersurface;
 
 /**
  * Controls how scalar surface height values map onto the JavaFX Y axis.
