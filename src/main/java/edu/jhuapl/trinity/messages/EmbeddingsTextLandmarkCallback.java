@@ -2,7 +2,6 @@ package edu.jhuapl.trinity.messages;
 
 import com.fasterxml.jackson.core.JsonProcessingException;
 import edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageOutput;
-import edu.jhuapl.trinity.javafx.events.ErrorEvent;
 import edu.jhuapl.trinity.javafx.events.RestEvent;
 import javafx.application.Platform;
 import javafx.scene.Scene;
@@ -26,12 +25,9 @@ public class EmbeddingsTextLandmarkCallback extends RestConsumer {
 
     @Override
     public void onFailure() {
-//        LOG.error(e.getMessage());
-        ErrorEvent error = new ErrorEvent(ErrorEvent.REST_ERROR, getClass().getName() + " has failed.");
-        scene.getRoot().fireEvent(error);
-        Platform.runLater(() -> {
-            scene.getRoot().fireEvent(new RestEvent(RestEvent.ERROR_EMBEDDINGS_TEXT, inputIDs, requestNumber));
-        });
+        LOG.warn("Text landmark embedding request {} failed", requestNumber);
+        Platform.runLater(() -> scene.getRoot().fireEvent(
+            new RestEvent(RestEvent.ERROR_EMBEDDINGS_TEXT, inputIDs, requestNumber)));
     }
 
     @Override
@@ -43,8 +39,9 @@ public class EmbeddingsTextLandmarkCallback extends RestConsumer {
             Platform.runLater(() -> {
                 scene.getRoot().fireEvent(new RestEvent(RestEvent.NEW_EMBEDDINGS_LANDMARKTEXT, output, inputIDs));
             });
-        } catch (JsonProcessingException ex) {
-            LOG.error(null, ex);
+        } catch (JsonProcessingException | IllegalArgumentException ex) {
+            LOG.error("Invalid landmark embedding response for request {}", requestNumber, ex);
+            onFailure();
         }
     }
 }

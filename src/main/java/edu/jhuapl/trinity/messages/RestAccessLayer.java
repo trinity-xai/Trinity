@@ -8,6 +8,8 @@ import edu.jhuapl.trinity.data.messages.llm.ChatCaptionResponse;
 import edu.jhuapl.trinity.data.messages.llm.ChatCompletionsInput;
 import edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageBatchInput;
 import edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageInput;
+import edu.jhuapl.trinity.data.messages.llm.EmbeddingsImageOutput;
+import edu.jhuapl.trinity.data.messages.llm.EmbeddingsTextBatchInput;
 import edu.jhuapl.trinity.data.messages.llm.RestAccessLayerConfig;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import javafx.application.Platform;
@@ -28,6 +30,10 @@ import java.net.http.HttpResponse.BodyHandlers;
 import java.nio.file.Files;
 import java.time.Duration;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
+import java.util.concurrent.TimeUnit;
+import java.util.function.BiConsumer;
 import java.util.function.Function;
 
 /**
@@ -104,6 +110,60 @@ public enum RestAccessLayer {
         return restAccessLayerconfig = config;
     }
 
+    /**
+     * Managed batch request: returns one validated-deserializable response or an
+     * exception to the caller, with no UI events emitted by the REST layer.
+     * Callers decide whether the request is still active before applying results.
+     */
+    private static void sendManagedEmbeddings(Object input, long timeoutMillis,
+                                              BiConsumer<EmbeddingsImageOutput, Exception> completion) {
+        if (!checkRestServiceInitialized()) {
+            completion.accept(null, new IllegalStateException("REST service is not initialized"));
+            return;
+        }
+        try {
+            String payload = objectMapper.writeValueAsString(input);
+            HttpRequest request = makeHttpPostRequest(payload,
+                restAccessLayerconfig.getImageEmbeddingsEndpoint(), timeoutMillis);
+            httpClient.sendAsync(request, BodyHandlers.ofString())
+                .whenComplete((response, failure) -> {
+                    if (failure != null) {
+                        completion.accept(null, toException(failure));
+                    } else if (response.statusCode() != SUCCESS_STATUS_CODE) {
+                        completion.accept(null, new IOException("Embedding HTTP " + response.statusCode()
+                            + ": " + response.body()));
+                    } else {
+                        EmbeddingsImageOutput output;
+                        try {
+                            output = objectMapper.readValue(response.body(), EmbeddingsImageOutput.class);
+                        } catch (Exception ex) {
+                            completion.accept(null, ex);
+                            return;
+                        }
+                        completion.accept(output, null);
+                    }
+                });
+        } catch (Exception ex) {
+            completion.accept(null, ex);
+        }
+    }
+
+    private static Exception toException(Throwable error) {
+        Throwable cause = error instanceof CompletionException && error.getCause() != null
+            ? error.getCause() : error;
+        return cause instanceof Exception ex ? ex : new IOException(cause);
+    }
+
+    public static void requestManagedTextEmbeddings(EmbeddingsTextBatchInput input, long timeoutMillis,
+                                                     BiConsumer<EmbeddingsImageOutput, Exception> completion) {
+        sendManagedEmbeddings(input, timeoutMillis, completion);
+    }
+
+    public static void requestManagedImageEmbeddings(EmbeddingsImageBatchInput input, long timeoutMillis,
+                                                      BiConsumer<EmbeddingsImageOutput, Exception> completion) {
+        sendManagedEmbeddings(input, timeoutMillis, completion);
+    }
+
     //Text and Image REST calls
     public static void requestQueryTextEmbeddings(EmbeddingsImageInput input,
                                                   Scene scene, List<Integer> inputIDs, int requestNumber) throws JsonProcessingException {
@@ -115,10 +175,14 @@ public enum RestAccessLayer {
         httpClient.sendAsync(request, BodyHandlers.ofString())
             .thenAcceptAsync(resp -> {
                 if (resp.statusCode() != SUCCESS_STATUS_CODE) {
-                    new EmbeddingsTextQueryCallback(scene, inputIDs, requestNumber).onFailure();
+                    Platform.runLater(() -> new EmbeddingsTextQueryCallback(scene, inputIDs, requestNumber).onFailure());
                 } else {
                     new EmbeddingsTextQueryCallback(scene, inputIDs, requestNumber).processResponse(resp.body());
                 }
+            }).exceptionally(ex -> {
+                LOG.error("Asynchronous REST request failed", ex);
+                Platform.runLater(() -> new EmbeddingsTextQueryCallback(scene, inputIDs, requestNumber).onFailure());
+                return null;
             });
     }
 
@@ -130,25 +194,36 @@ public enum RestAccessLayer {
         httpClient.sendAsync(request, BodyHandlers.ofString())
             .thenAcceptAsync(resp -> {
                 if (resp.statusCode() != SUCCESS_STATUS_CODE) {
-                    new EmbeddingsTextCallback(scene, inputIDs, requestNumber).onFailure();
+                    Platform.runLater(() -> new EmbeddingsTextCallback(scene, inputIDs, requestNumber).onFailure());
                 } else {
                     new EmbeddingsTextCallback(scene, inputIDs, requestNumber).processResponse(resp.body());
                 }
+            }).exceptionally(ex -> {
+                LOG.error("Asynchronous REST request failed", ex);
+                Platform.runLater(() -> new EmbeddingsTextCallback(scene, inputIDs, requestNumber).onFailure());
+                return null;
             });
     }
 
     public static void requestLandmarkTextEmbeddings(EmbeddingsImageInput input,
                                                      Scene scene, List<Integer> inputIDs, int requestNumber) throws JsonProcessingException {
-        if (restServiceFailed(scene)) return;
+        if (restServiceFailed(scene)) {
+            new EmbeddingsTextLandmarkCallback(scene, inputIDs, requestNumber).onFailure();
+            return;
+        }
         String inputJSON = objectMapper.writeValueAsString(input);
         HttpRequest request = makeHttpPostRequest(inputJSON, restAccessLayerconfig.getImageEmbeddingsEndpoint());
         httpClient.sendAsync(request, BodyHandlers.ofString())
             .thenAcceptAsync(resp -> {
                 if (resp.statusCode() != SUCCESS_STATUS_CODE) {
-                    new EmbeddingsTextLandmarkCallback(scene, inputIDs, requestNumber).onFailure();
+                    Platform.runLater(() -> new EmbeddingsTextLandmarkCallback(scene, inputIDs, requestNumber).onFailure());
                 } else {
                     new EmbeddingsTextLandmarkCallback(scene, inputIDs, requestNumber).processResponse(resp.body());
                 }
+            }).exceptionally(ex -> {
+                LOG.error("Asynchronous REST request failed", ex);
+                Platform.runLater(() -> new EmbeddingsTextLandmarkCallback(scene, inputIDs, requestNumber).onFailure());
+                return null;
             });
     }
 
@@ -160,10 +235,14 @@ public enum RestAccessLayer {
         httpClient.sendAsync(request, BodyHandlers.ofString())
             .thenAcceptAsync(resp -> {
                 if (resp.statusCode() != SUCCESS_STATUS_CODE) {
-                    new EmbeddingsImageCallback(scene, inputIDs, requestNumber).onFailure();
+                    Platform.runLater(() -> new EmbeddingsImageCallback(scene, inputIDs, requestNumber).onFailure());
                 } else {
                     new EmbeddingsImageCallback(scene, inputIDs, requestNumber).processResponse(resp.body());
                 }
+            }).exceptionally(ex -> {
+                LOG.error("Asynchronous REST request failed", ex);
+                Platform.runLater(() -> new EmbeddingsImageCallback(scene, inputIDs, requestNumber).onFailure());
+                return null;
             });
     }
 
@@ -175,10 +254,14 @@ public enum RestAccessLayer {
         httpClient.sendAsync(request, BodyHandlers.ofString())
             .thenAcceptAsync(resp -> {
                 if (resp.statusCode() != SUCCESS_STATUS_CODE) {
-                    new EmbeddingsImageLandmarkCallback(scene, inputIDs, requestNumber).onFailure();
+                    Platform.runLater(() -> new EmbeddingsImageLandmarkCallback(scene, inputIDs, requestNumber).onFailure());
                 } else {
                     new EmbeddingsImageLandmarkCallback(scene, inputIDs, requestNumber).processResponse(resp.body());
                 }
+            }).exceptionally(ex -> {
+                LOG.error("Asynchronous REST request failed", ex);
+                Platform.runLater(() -> new EmbeddingsImageLandmarkCallback(scene, inputIDs, requestNumber).onFailure());
+                return null;
             });
     }
 
@@ -189,10 +272,14 @@ public enum RestAccessLayer {
         httpClient.sendAsync(request, BodyHandlers.ofString())
             .thenAcceptAsync(resp -> {
                 if (resp.statusCode() != SUCCESS_STATUS_CODE) {
-                    new ChatCompletionCallback(scene, inputIDs, requestNumber).onFailure();
+                    Platform.runLater(() -> new ChatCompletionCallback(scene, inputIDs, requestNumber).onFailure());
                 } else {
                     new ChatCompletionCallback(scene, inputIDs, requestNumber).processResponse(resp.body());
                 }
+            }).exceptionally(ex -> {
+                LOG.error("Asynchronous REST request failed", ex);
+                Platform.runLater(() -> new ChatCompletionCallback(scene, inputIDs, requestNumber).onFailure());
+                return null;
             });
     }
 
@@ -229,9 +316,13 @@ public enum RestAccessLayer {
     }
 
     private static HttpRequest makeHttpPostRequest(String payload, String endPoint) {
+        return makeHttpPostRequest(payload, endPoint, TimeUnit.SECONDS.toMillis(DEFAULT_TIMEOUT_SECONDS));
+    }
+
+    private static HttpRequest makeHttpPostRequest(String payload, String endPoint, long timeoutMillis) {
         return HttpRequest.newBuilder()
             .uri(URI.create(restAccessLayerconfig.getBaseRestURL() + endPoint))
-            .timeout(Duration.ofSeconds(DEFAULT_TIMEOUT_SECONDS))
+            .timeout(Duration.ofMillis(Math.max(1, timeoutMillis)))
             .header(CONTENT_TYPE, JSON)
             .POST(BodyPublishers.ofString(payload))
             .build();
@@ -257,7 +348,8 @@ public enum RestAccessLayer {
     }
 
     private static boolean checkRestServiceInitialized() {
-        return null != restAccessLayerconfig || null != restAccessLayerconfig.getBaseRestURL();
+        return null != restAccessLayerconfig && null != restAccessLayerconfig.getBaseRestURL()
+            && null != restAccessLayerconfig.getImageEmbeddingsEndpoint();
     }
 
     public static Function<String, ChatCaptionResponse> stringToChatCaptionResponse = rawText -> {
