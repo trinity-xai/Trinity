@@ -235,6 +235,14 @@ public enum RestAccessLayer {
         httpClient.sendAsync(request, BodyHandlers.ofString())
             .thenAcceptAsync(resp -> {
                 if (resp.statusCode() != SUCCESS_STATUS_CODE) {
+                    String errorBody = resp.body();
+                    LOG.error(
+                        "Image Embeddings Test failed. Model: {}, HTTP Status: {}, Response: {}",
+                        input.getModel(),
+                        resp.statusCode(),
+                        errorBody == null ? "<empty>" :
+                            errorBody.substring(0, Math.min(errorBody.length(), 4096))
+                    );
                     Platform.runLater(() -> new EmbeddingsImageCallback(scene, inputIDs, requestNumber).onFailure());
                 } else {
                     new EmbeddingsImageCallback(scene, inputIDs, requestNumber).processResponse(resp.body());

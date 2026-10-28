@@ -20,6 +20,17 @@ public class HyperdriveEvent extends Event {
     public static final EventType<HyperdriveEvent> NEW_BATCH_IMAGELOAD = new EventType(ANY, "NEW_BATCH_IMAGELOAD");
     public static final EventType<HyperdriveEvent> NEW_BATCH_TEXTLOAD = new EventType(ANY, "NEW_BATCH_TEXTLOAD");
 
+    // Floating workspace requests and results. Pane ownership belongs to AppAsyncManager.
+    public static final EventType<HyperdriveEvent> OPEN_JSON_SCHEMA_MAPPING = new EventType<>(ANY, "OPEN_JSON_SCHEMA_MAPPING");
+    public static final EventType<HyperdriveEvent> JSON_SCHEMA_MAPPING_APPLIED = new EventType<>(ANY, "JSON_SCHEMA_MAPPING_APPLIED");
+    public static final EventType<HyperdriveEvent> OPEN_TOPIC_REVIEW = new EventType<>(ANY, "OPEN_TOPIC_REVIEW");
+    public static final EventType<HyperdriveEvent> CLOSE_TOPIC_REVIEW = new EventType<>(ANY, "CLOSE_TOPIC_REVIEW");
+    public static final EventType<HyperdriveEvent> REQUEST_TOPIC_DISCOVERY = new EventType<>(ANY, "REQUEST_TOPIC_DISCOVERY");
+    public static final EventType<HyperdriveEvent> TOPIC_REVIEW_UPDATED = new EventType<>(ANY, "TOPIC_REVIEW_UPDATED");
+    public static final EventType<HyperdriveEvent> REFRESH_TOPIC_REVIEW = new EventType<>(ANY, "REFRESH_TOPIC_REVIEW");
+    public static final EventType<HyperdriveEvent> SUMMARIZE_DISCOVERED_TOPIC = new EventType<>(ANY, "SUMMARIZE_DISCOVERED_TOPIC");
+    public static final EventType<HyperdriveEvent> GENERATE_TOPIC_LANDMARKS = new EventType<>(ANY, "GENERATE_TOPIC_LANDMARKS");
+
     public HyperdriveEvent(EventType<? extends Event> arg0) {
         super(arg0);
     }

@@ -1,15 +1,29 @@
 package edu.jhuapl.trinity.data.messages.llm;
 
+import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
+import com.fasterxml.jackson.annotation.JsonInclude;
+
 import java.util.ArrayList;
 import java.util.List;
 
 /**
  * @author Sean Phillips
  */
+@JsonInclude(JsonInclude.Include.NON_NULL)
+@JsonIgnoreProperties(ignoreUnknown = true)
 public class ResponseChatMessage {
     private String role;
     private String content;
+    private String reasoning_content;
     private List<String> tool_calls;
+
+    public String getReasoning_content() {
+        return reasoning_content;
+    }
+
+    public void setReasoning_content(String reasoning_content) {
+        this.reasoning_content = reasoning_content;
+    }
 
     public ResponseChatMessage() {
         tool_calls = new ArrayList<>();

@@ -24,7 +24,7 @@ import java.util.List;
 public class LandmarkTextBuilderBox extends VBox {
 
     public static double LISTVIEW_PREF_HEIGHT = 450;
-    public static double BUTTON_PREF_WIDTH = 125;
+    public static double BUTTON_PREF_WIDTH = 80;
 
     Background transFillBack = new Background(new BackgroundFill(
         Color.ALICEBLUE.deriveColor(1, 1, 1, 0.1), CornerRadii.EMPTY, Insets.EMPTY));
@@ -49,11 +49,12 @@ public class LandmarkTextBuilderBox extends VBox {
         Button clearButton = new Button("Clear");
         clearButton.setPrefWidth(BUTTON_PREF_WIDTH);
         clearButton.setOnAction(e -> landmarksListView.getItems().clear());
-        HBox buttonHBox = new HBox(10, entryLabel, addButton, clearButton);
+        HBox buttonHBox = new HBox(10, addButton, clearButton);
         buttonHBox.setAlignment(Pos.CENTER);
 
         landmarksListView = new ListView<>();
-        landmarksListView.setPrefHeight(LISTVIEW_PREF_HEIGHT);
+        landmarksListView.setPrefHeight(320);
+        VBox.setVgrow(landmarksListView, javafx.scene.layout.Priority.ALWAYS);
         landmarksListView.setEditable(true);
         ImageView iv = ResourceUtils.loadIcon("console", 128);
         VBox placeholder = new VBox(10, iv, new Label("No Text Landmarks Acquired"));
@@ -70,9 +71,23 @@ public class LandmarkTextBuilderBox extends VBox {
         setBackground(transFillBack);
     }
 
+    /** Add an approved cluster prototype without making a new embedding-model request. */
+    public LandmarkTextListItem addDiscoveredTopic(String name, String summary,
+                                                   List<Double> centroid, int chunkCount, String model) {
+        LandmarkTextListItem item = new LandmarkTextListItem(name);
+        item.installDiscoveredCentroid(centroid, summary, chunkCount, model);
+        landmarksListView.getItems().add(item);
+        return item;
+    }
+
     public void setChoices(List<String> choices) {
+        // Caption-choice dialogs may rebuild this list. Retain existing discovered
+        // centroid prototypes when the same named topic remains selected.
+        List<LandmarkTextListItem> previous = List.copyOf(landmarksListView.getItems());
         landmarksListView.getItems().setAll(choices.stream()
-            .map(c -> new LandmarkTextListItem(c))
+            .map(choice -> previous.stream()
+                .filter(item -> item.isDiscoveredCentroid() && item.getFeatureVectorLabel().equals(choice))
+                .findFirst().orElseGet(() -> new LandmarkTextListItem(choice)))
             .toList());
     }
 

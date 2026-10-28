@@ -65,14 +65,13 @@ public class EmbeddingsImageCallback extends RestConsumer {
     }
 
     /**
-     * Utility to retrieve and invoke the completion callback for this request.
+     * Completion handlers are optional for legacy, event-driven callers.
+     * Managed embedding requests use their own completion callback directly.
      */
     private void notifyCompletion(boolean success, Exception ex) {
         BiConsumer<Boolean, Exception> callback = completionCallbacks.remove(requestNumber);
         if (callback != null) {
             callback.accept(success, ex);
-        } else {
-            LOG.warn("No completion callback registered for requestNumber {}.", requestNumber);
         }
     }
 }

@@ -31,7 +31,7 @@ public class ChatGenerationParameters {
 
     */
     private List<String> bad_words;
-    private String stop;
+    private Stop stop;
     private Integer output_length;
     private Integer top_k;
     private Integer top_p;
@@ -65,14 +65,14 @@ public class ChatGenerationParameters {
     /**
      * @return the stop
      */
-    public String getStop() {
+    public Stop getStop() {
         return stop;
     }
 
     /**
      * @param stop the stop to set
      */
-    public void setStop(String stop) {
+    public void setStop(Stop stop) {
         this.stop = stop;
     }
 

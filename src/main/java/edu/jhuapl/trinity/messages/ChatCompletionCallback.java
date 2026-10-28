@@ -24,10 +24,15 @@ public class ChatCompletionCallback extends RestConsumer {
 
     @Override
     public void onFailure() {
-        LOG.error("REST RequestNumber: " + requestNumber + " returned with HTTP failure code.");
-        ErrorEvent error = new ErrorEvent(ErrorEvent.REST_ERROR, getClass().getName() + " has failed.");
-        scene.getRoot().fireEvent(error);
+        String message = "Chat completion request " + requestNumber
+            + " failed (HTTP or transport error).";
+        LOG.error(message);
+        reportFailure(message);
+    }
+
+    private void reportFailure(String message) {
         Platform.runLater(() -> {
+            scene.getRoot().fireEvent(new ErrorEvent(ErrorEvent.REST_ERROR, message));
             scene.getRoot().fireEvent(new RestEvent(RestEvent.ERROR_CHAT_COMPLETIONS, requestNumber, inputID));
         });
     }
@@ -46,7 +51,14 @@ public class ChatCompletionCallback extends RestConsumer {
                 scene.getRoot().fireEvent(new RestEvent(RestEvent.NEW_CHAT_COMPLETION, output));
             });
         } catch (JsonProcessingException ex) {
-            LOG.error(null, ex);
+            LOG.error("Cannot deserialize chat completion response for request {}", requestNumber, ex);
+
+            // TEMPORARY DIAGNOSTIC: Log the unmodified JSON response
+            LOG.error("Raw Chat Completion JSON for request {}:\n{}",
+                requestNumber, responseBodyString);
+
+            reportFailure("Chat completion response could not be deserialized for request "
+                + requestNumber + ": " + ex.getOriginalMessage());
         }
     }
 }

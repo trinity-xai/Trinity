@@ -25,7 +25,12 @@ public final class TextChunkParser {
 
     public record Options(boolean jsonProcessing, boolean csvExpansion,
                           boolean labelFromCsvColumn, int csvLabelColumn,
-                          boolean breakOnNewlines, int chunkSize) {
+                          boolean breakOnNewlines, int chunkSize, JsonExtractionProfile jsonProfile) {
+        public Options(boolean jsonProcessing, boolean csvExpansion,
+                       boolean labelFromCsvColumn, int csvLabelColumn,
+                       boolean breakOnNewlines, int chunkSize) {
+            this(jsonProcessing, csvExpansion, labelFromCsvColumn, csvLabelColumn, breakOnNewlines, chunkSize, null);
+        }
         public Options {
             if (chunkSize < 1) throw new IllegalArgumentException("chunkSize must be positive");
             if (csvLabelColumn < 0) throw new IllegalArgumentException("csvLabelColumn must not be negative");
@@ -69,7 +74,7 @@ public final class TextChunkParser {
         if (options.csvExpansion() && name.toLowerCase(java.util.Locale.ROOT).endsWith(".csv")) {
             parsed = parseCsv(name, source, options);
         } else if (options.jsonProcessing() && (trimmed.startsWith("{") || trimmed.startsWith("["))) {
-            parsed = parseJson(name, trimmed);
+            parsed = parseJson(name, trimmed, options.jsonProfile());
         } else if (options.breakOnNewlines()) {
             parsed = parseLines(name, source, options.chunkSize());
         } else {
@@ -87,15 +92,47 @@ public final class TextChunkParser {
         return indexed;
     }
 
-    private static List<ParsedChunk> parseJson(String name, String json) throws IOException {
+    private static List<ParsedChunk> parseJson(String name, String json, JsonExtractionProfile profile) throws IOException {
         JsonNode root = MAPPER.readTree(json);
         List<ParsedChunk> output = new ArrayList<>();
+        if (profile != null && !profile.hasEmbeddingFields()) {
+            throw new IOException("JSON mapping profile has no embedding fields: " + profile.getName());
+        }
         if (root.isArray()) {
-            for (int i = 0; i < root.size(); i++) addJsonValue(output, root.get(i), name, i);
+            for (int i = 0; i < root.size(); i++) {
+                if (profile == null) addJsonValue(output, root.get(i), name, i);
+                else addMappedJsonValue(output, root.get(i), name, i, profile);
+            }
         } else {
-            addJsonValue(output, root, name, 0);
+            if (profile == null) addJsonValue(output, root, name, 0);
+            else addMappedJsonValue(output, root, name, 0, profile);
+        }
+        if (profile != null && output.isEmpty()) {
+            throw new IOException("JSON mapping profile '" + profile.getName()
+                + "' produced no embedding text for " + name);
+        }
+        if (profile != null && root.isArray() && output.size() < root.size()) {
+            int skipped = root.size() - output.size();
+            List<ParsedChunk> annotated = new ArrayList<>(output.size());
+            for (ParsedChunk chunk : output) {
+                Map<String, String> metadata = new LinkedHashMap<>(chunk.metadata());
+                metadata.put("source_json_skipped_records", Integer.toString(skipped));
+                annotated.add(new ParsedChunk(chunk.text(), chunk.label(), metadata));
+            }
+            return annotated;
         }
         return output;
+    }
+
+    private static void addMappedJsonValue(List<ParsedChunk> output, JsonNode record,
+                                          String name, int index, JsonExtractionProfile profile) {
+        if (record == null || record.isNull()) return;
+        JsonExtractionProfile.Extracted extracted = profile.extract(record, name);
+        if (extracted.text().isBlank()) return; // Never silently revert to raw JSON.
+        Map<String, String> metadata = new LinkedHashMap<>(extracted.metadata());
+        metadata.put("source_json_index", Integer.toString(index));
+        metadata.put("json_mapping_profile", profile.getName());
+        output.add(new ParsedChunk(extracted.text(), extracted.label(), metadata));
     }
 
     private static void addJsonValue(List<ParsedChunk> output, JsonNode value, String name, int index) {

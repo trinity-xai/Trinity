@@ -27,10 +27,17 @@ public class LoadTextTask extends HyperdriveTask {
     private final TextChunkParser.Options options;
 
     public LoadTextTask(Scene scene, CircleProgressIndicator progressIndicator, List<File> files) {
+        this(scene, progressIndicator, files, EmbeddingsTextListItem.parsingOptions());
+    }
+
+    public LoadTextTask(Scene scene, CircleProgressIndicator progressIndicator, List<File> files,
+                        TextChunkParser.Options options) {
         super(scene, progressIndicator, new AtomicInteger(), null);
         this.files = List.copyOf(files);
-        // Consistent processing options for every file in this import job.
-        this.options = EmbeddingsTextListItem.parsingOptions();
+        // Capture the profile as a snapshot, avoiding changes during a running import.
+        this.options = new TextChunkParser.Options(options.jsonProcessing(), options.csvExpansion(),
+            options.labelFromCsvColumn(), options.csvLabelColumn(), options.breakOnNewlines(),
+            options.chunkSize(), options.jsonProfile() == null ? null : options.jsonProfile().copy());
     }
 
     private record ParsedFile(File file, List<TextChunkParser.ParsedChunk> chunks) { }
@@ -67,6 +74,7 @@ public class LoadTextTask extends HyperdriveTask {
         int total = discovered.size();
         int failed = 0;
         int empty = 0;
+        int skippedMappedRecords = 0;
         List<ParsedFile> parsed = new ArrayList<>();
         for (int i = 0; i < total; i++) {
             if (isCancelled()) return;
@@ -78,6 +86,12 @@ public class LoadTextTask extends HyperdriveTask {
                     LOG.warn("No usable text found in {}", file);
                 } else {
                     parsed.add(new ParsedFile(file, chunks));
+                    String skipped = chunks.get(0).metadata().get("source_json_skipped_records");
+                    if (skipped != null) {
+                        int count = Integer.parseInt(skipped);
+                        skippedMappedRecords += count;
+                        LOG.warn("Schema-mapped import skipped {} JSON records with no selected content in {}", count, file);
+                    }
                 }
             } catch (Exception ex) {
                 failed++;
@@ -91,6 +105,7 @@ public class LoadTextTask extends HyperdriveTask {
         int failedCount = failed;
         int emptyCount = empty;
         int parsedCount = parsed.size();
+        int skippedCount = skippedMappedRecords;
         LOG.info("Parsed {} text files ({} failures, {} empty)", parsedCount, failedCount, emptyCount);
 
         Platform.runLater(() -> {
@@ -104,9 +119,10 @@ public class LoadTextTask extends HyperdriveTask {
             }
             scene.getRoot().fireEvent(
                 new HyperdriveEvent(HyperdriveEvent.NEW_BATCH_TEXTLOAD, items, loadedFiles));
-            if (failedCount + emptyCount > 0) {
+            if (failedCount + emptyCount + skippedCount > 0) {
                 notifyTerminalWarning("Text import: " + failedCount + " failed file(s), "
-                    + emptyCount + " with no usable text (see application log).", scene);
+                    + emptyCount + " empty file(s), " + skippedCount
+                    + " JSON record(s) without selected content (see application log).", scene);
             }
             if (progressIndicator != null) {
                 progressIndicator.setLabelLater("Loaded " + parsedCount + " files / " + items.size() + " chunks"
