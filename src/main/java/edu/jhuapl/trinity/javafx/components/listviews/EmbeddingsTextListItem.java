@@ -1,31 +1,21 @@
 package edu.jhuapl.trinity.javafx.components.listviews;
 
-import com.fasterxml.jackson.databind.JsonNode;
-import com.fasterxml.jackson.databind.ObjectMapper;
-import com.fasterxml.jackson.databind.node.JsonNodeType;
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
-import edu.jhuapl.trinity.utils.MessageUtils;
-import edu.jhuapl.trinity.utils.ResourceUtils;
+import edu.jhuapl.trinity.javafx.components.hyperdrive.TextChunkParser;
 import javafx.application.Platform;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Tooltip;
 import javafx.scene.layout.HBox;
-import org.apache.pdfbox.Loader;
-import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.text.PDFTextStripper;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
 import java.util.List;
 import java.util.concurrent.atomic.AtomicInteger;
 import java.util.function.Function;
@@ -99,15 +89,40 @@ public class EmbeddingsTextListItem extends HBox {
     }
 
     public void readText() {
-        if (null != file && file.isFile() && file.canRead()) {
-            try {
-                contents = Files.readString(file.toPath());
-                featureVector.setText(contents);
-            } catch (IOException ex) {
-                contents = "";
-            }
-        } else
-            contents = "";
+        try {
+            setEmbeddingContents(TextChunkParser.extractText(file));
+        } catch (IOException ex) {
+            LOG.error("Unable to read text from {}", file, ex);
+            setEmbeddingContents("");
+        }
+    }
+
+    /** Sets both the submitted embedding input and its FeatureVector provenance. */
+    public void setEmbeddingContents(String text) {
+        contents = text == null ? "" : text;
+        featureVector.setText(contents);
+    }
+
+    public File getFile() {
+        return file;
+    }
+
+    /** Create UI nodes only on the JavaFX Application Thread. */
+    public static EmbeddingsTextListItem fromParsedChunk(File file, TextChunkParser.ParsedChunk chunk) {
+        EmbeddingsTextListItem item = new EmbeddingsTextListItem(file, false);
+        item.setEmbeddingContents(chunk.text());
+        item.setFeatureVectorLabel(chunk.label());
+        chunk.metadata().forEach(item::addMetaData);
+        // JSON record metadata may itself contain a 'file' key. Always preserve
+        // the actual imported source path under an unambiguous provenance key.
+        item.addMetaData("source_file_path", file.getAbsolutePath());
+        return item;
+    }
+
+    public static TextChunkParser.Options parsingOptions() {
+        return new TextChunkParser.Options(ENABLE_JSON_PROCESSING, ENABLE_CSV_EXPANSION,
+            AUTOLABEL_FROM_CSVCOLUMN, CSV_DEFAULTLABEL_COLUMN,
+            BREAK_ON_NEWLINES, LARGEFILE_SPLIT_SIZE);
     }
 
     public void setEmbeddings(List<Double> data) {
@@ -118,9 +133,11 @@ public class EmbeddingsTextListItem extends HBox {
     }
 
     public void setFeatureVectorLabel(String text) {
-        Platform.runLater(() -> {
+        if (Platform.isFxApplicationThread()) {
             labelTextField.setText(text);
-        });
+        } else {
+            Platform.runLater(() -> labelTextField.setText(text));
+        }
         featureVector.setLabel(text);
     }
 
@@ -162,131 +179,60 @@ public class EmbeddingsTextListItem extends HBox {
     public static Function<File, EmbeddingsTextListItem> itemNoParseFromFile = file -> {
         return new EmbeddingsTextListItem(file, false);
     };
+    /** Compatibility adapter; callers should invoke it from the FX thread. */
     public static Function<File, List<EmbeddingsTextListItem>> itemsSplitFromFile = file -> {
-        List<EmbeddingsTextListItem> list = new ArrayList<>();
         try {
-            //First extract usable text
-            String fileString = null;
-            if (ResourceUtils.isPDF(file)) {
-                try (PDDocument document = Loader.loadPDF(file)) {
-                    PDFTextStripper stripper = new PDFTextStripper();
-                    stripper.setSortByPosition(true);
-                    fileString = stripper.getText(document);
-                    //System.out.println(text);
-                }
-            } else {
-                fileString = Files.readString(file.toPath());
-            }
-            //if JSON attempt intelligent object wise chunking
-            if (ENABLE_CSV_EXPANSION && MessageUtils.probablyCSV(file.getName())) {
-                //assumes first row is the column labels
-                return expandCSVAndChunk(file, fileString);
-            } else if (ENABLE_JSON_PROCESSING && MessageUtils.probablyJSON(fileString)) {
-                //if JSON attempt intelligent object wise chunking
-                final ObjectMapper mapper = new ObjectMapper();
-                JsonNode jsonNode = mapper.readTree(fileString);
-                if (jsonNode.getNodeType() == JsonNodeType.ARRAY) {
-                    for (final JsonNode objNode : jsonNode) {
-                        //System.out.println(objNode);
-                        EmbeddingsTextListItem item = new EmbeddingsTextListItem(file, false);
-                        item.contents = objNode.toPrettyString();
-                        item.getFeatureVector().setText(item.contents);
-                        item.setFeatureVectorLabel(file.getName());
-                        objNode.properties().forEach(obj -> {
-                            String lower = obj.getKey().toLowerCase();
-                            //last found matching field will be used
-                            if (lower.contains("name") || lower.contains("label")) {
-                                item.setFeatureVectorLabel(obj.getValue().toString());
-                            } else if (lower.equalsIgnoreCase("text")) {
-                                //overrides the above full contents
-                                item.getFeatureVector().setText(obj.getValue().toPrettyString());
-                            } else {
-                                item.addMetaData(obj.getKey(), obj.getValue().toString());
-                            }
-                        });
-                        list.add(item);
-                    }
-                }
-            } else {
-                //not smart but smarter than dumb newline delimited chunks
-                if (BREAK_ON_NEWLINES) {
-                    return chunkByDelimiter(file, fileString, System.lineSeparator());
-                }
-                //use naive bruteforce chunking
-                long total = file.length();
-                if (total <= LARGEFILE_SPLIT_SIZE) {
-                    list.add(new EmbeddingsTextListItem(file, true));
-                    return list;
-                }
-                return chunkString(file, fileString);
-            }
-        } catch (Exception ex) {
-            LOG.error("Wierdness trying to read in " + file.getName());
+            return TextChunkParser.parse(file, parsingOptions()).stream()
+                .map(chunk -> fromParsedChunk(file, chunk)).toList();
+        } catch (IOException ex) {
+            LOG.error("Could not parse text file {}", file, ex);
+            return List.of();
         }
-        return list;
     };
 
     public static List<EmbeddingsTextListItem> expandCSVAndChunk(File file, String fileString) throws IOException {
-        String[] csvRows = fileString.split(System.lineSeparator());
-        if (csvRows.length <= 1) return Collections.EMPTY_LIST;
-        //get labels
-        String[] labels = csvRows[0].split(",");
-        List<EmbeddingsTextListItem> list = Arrays.asList(csvRows).stream()
-            .skip(1) //skip the first row (label row)
-            .map(s -> {
-                EmbeddingsTextListItem item = new EmbeddingsTextListItem(file, false);
-                String expandedContent = expandCSV(labels, s);
-                item.contents = expandedContent;
-                item.getFeatureVector().setText(expandedContent);
-                String[] csvTokens = s.split(",");
-                if (AUTOLABEL_FROM_CSVCOLUMN && csvTokens.length > CSV_DEFAULTLABEL_COLUMN)
-                    item.setFeatureVectorLabel(csvTokens[CSV_DEFAULTLABEL_COLUMN]);
-                else
-                    item.setFeatureVectorLabel(file.getName());
-                return item;
-            }).toList();
-        return list;
+        TextChunkParser.Options options = new TextChunkParser.Options(false, true,
+            AUTOLABEL_FROM_CSVCOLUMN, CSV_DEFAULTLABEL_COLUMN, false, LARGEFILE_SPLIT_SIZE);
+        return TextChunkParser.parseText(file, fileString, options).stream()
+            .map(chunk -> fromParsedChunk(file, chunk)).toList();
     }
 
     public static String expandCSV(String[] labels, String csvRow) {
-        StringBuilder sb = new StringBuilder();
-        String[] tokens = csvRow.split(",");
-        for (int i = 0; i < labels.length; i++) {
-            if (i >= tokens.length) break; //in case a row is incomplete
-            sb.append(labels[i].trim()).append(" = ").append(tokens[i].trim()).append(System.lineSeparator());
+        try {
+            List<List<String>> parsed = TextChunkParser.parseCsvRecords(csvRow);
+            if (parsed.isEmpty()) return "";
+            List<String> row = parsed.get(0);
+            StringBuilder expanded = new StringBuilder();
+            for (int i = 0; i < Math.min(labels.length, row.size()); i++) {
+                expanded.append(labels[i].trim()).append(" = ")
+                    .append(row.get(i).trim()).append(System.lineSeparator());
+            }
+            return expanded.toString();
+        } catch (IOException ex) {
+            LOG.error("Invalid CSV row", ex);
+            return "";
         }
-        return sb.toString();
     }
 
-    public static List<EmbeddingsTextListItem> chunkByDelimiter(File file, String fileString, String delimiter) throws IOException {
-        List<EmbeddingsTextListItem> list = Arrays.asList(fileString.split(delimiter)).stream()
-            .map(s -> {
-                EmbeddingsTextListItem item = new EmbeddingsTextListItem(file, false);
-                item.contents = s;
-                item.getFeatureVector().setText(s);
-                item.setFeatureVectorLabel(file.getName());
-                return item;
-            }).toList();
-        return list;
+    public static List<EmbeddingsTextListItem> chunkByDelimiter(File file, String text, String delimiter) {
+        if (delimiter == null || delimiter.isEmpty()) return chunkString(file, text);
+        List<EmbeddingsTextListItem> result = new ArrayList<>();
+        for (String piece : text.split(java.util.regex.Pattern.quote(delimiter), -1)) {
+            if (piece.isBlank()) continue;
+            result.addAll(chunkString(file, piece));
+        }
+        return result;
     }
 
-    public static List<EmbeddingsTextListItem> chunkString(File file, String fileString) {
-        List<EmbeddingsTextListItem> list = new ArrayList<>();
-        int len = fileString.length();
-        int currentStart = 0;
-        int currentEnd = LARGEFILE_SPLIT_SIZE;
-        while (currentStart <= len) {
-            if (currentEnd > len)
-                currentEnd = len;
-            String sub = fileString.substring(currentStart, currentEnd);
-            EmbeddingsTextListItem item = new EmbeddingsTextListItem(file, false);
-            item.contents = sub;
-            item.getFeatureVector().setText(sub);
-            item.setFeatureVectorLabel(file.getName());
-            list.add(item);
-            currentStart += LARGEFILE_SPLIT_SIZE;
-            currentEnd += LARGEFILE_SPLIT_SIZE;
+    public static List<EmbeddingsTextListItem> chunkString(File file, String text) {
+        try {
+            TextChunkParser.Options options = new TextChunkParser.Options(false, false,
+                false, 0, false, LARGEFILE_SPLIT_SIZE);
+            return TextChunkParser.parseText(file, text, options).stream()
+                .map(chunk -> fromParsedChunk(file, chunk)).toList();
+        } catch (IOException ex) {
+            // Plain string processing does not perform file I/O or JSON parsing.
+            throw new IllegalStateException("Unable to chunk string", ex);
         }
-        return list;
     }
 }

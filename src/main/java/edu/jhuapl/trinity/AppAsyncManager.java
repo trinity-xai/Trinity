@@ -10,6 +10,10 @@ import edu.jhuapl.trinity.data.files.ManifoldDataFile;
 import edu.jhuapl.trinity.data.messages.xai.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.javafx.components.MatrixOverlay;
+import edu.jhuapl.trinity.javafx.components.hyperdrive.JsonExtractionProfile;
+import edu.jhuapl.trinity.javafx.components.hyperdrive.JsonSchemaMappingPane;
+import edu.jhuapl.trinity.javafx.components.hyperdrive.TopicDiscoveryEngine;
+import edu.jhuapl.trinity.javafx.components.hyperdrive.TopicDiscoveryReviewPane;
 import edu.jhuapl.trinity.javafx.components.panes.AnalysisLogPane;
 import edu.jhuapl.trinity.javafx.components.panes.CocoViewerPane;
 import edu.jhuapl.trinity.javafx.components.panes.FeatureVectorManagerPane;
@@ -43,6 +47,7 @@ import edu.jhuapl.trinity.javafx.events.EffectEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.events.GaussianMixtureEvent;
 import edu.jhuapl.trinity.javafx.events.HitEvent;
+import edu.jhuapl.trinity.javafx.events.HyperdriveEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.javafx.events.MissionTimerXEvent;
 import edu.jhuapl.trinity.javafx.events.RestEvent;
@@ -143,6 +148,8 @@ public class AppAsyncManager extends Task<Void> {
     PixelSelectionPane pixelSelectionPane;
     ImageInspectorPane imageInspectorPane;
     HyperdrivePane hyperdrivePane;
+    JsonSchemaMappingPane jsonSchemaMappingPane;
+    TopicDiscoveryReviewPane topicDiscoveryReviewPane;
     MatrixOverlay matrixOverlay;
     RetroWavePane retroWavePane = null;
 
@@ -773,6 +780,45 @@ public class AppAsyncManager extends Task<Void> {
             if (visible && projectorPane.firstTime) {
                 projectorPane.firstTime = false;
                 projectorPane.scanAndAnimate();
+            }
+        });
+        // Hyperdrive editor overlays are independent LitPathPanes on the shared desktop.
+        // Hyperdrive and each overlay communicate only through HyperdriveEvent.
+        scene.addEventHandler(HyperdriveEvent.OPEN_JSON_SCHEMA_MAPPING, event -> {
+            JsonExtractionProfile profile = event.object1 instanceof JsonExtractionProfile p ? p.copy() : null;
+            if (jsonSchemaMappingPane != null && desktopPane.getChildren().contains(jsonSchemaMappingPane)) {
+                jsonSchemaMappingPane.toFront();
+                jsonSchemaMappingPane.show();
+                return;
+            }
+            jsonSchemaMappingPane = new JsonSchemaMappingPane(scene, desktopPane, profile);
+            desktopPane.getChildren().add(jsonSchemaMappingPane);
+            jsonSchemaMappingPane.setLayoutX(Math.max(20, (desktopPane.getWidth() - 1120) / 2));
+            jsonSchemaMappingPane.setLayoutY(Math.max(20, (desktopPane.getHeight() - 710) / 2));
+            jsonSchemaMappingPane.toFront();
+            jsonSchemaMappingPane.slideInPane();
+        });
+        scene.addEventHandler(HyperdriveEvent.OPEN_TOPIC_REVIEW, event -> {
+            if (!(event.object1 instanceof java.util.List<?> list)
+                || !list.stream().allMatch(TopicDiscoveryEngine.Topic.class::isInstance)) return;
+            java.util.List<TopicDiscoveryEngine.Topic> topics = new java.util.ArrayList<>();
+            for (Object candidate : list) topics.add((TopicDiscoveryEngine.Topic) candidate);
+            if (topicDiscoveryReviewPane != null && desktopPane.getChildren().contains(topicDiscoveryReviewPane)) {
+                topicDiscoveryReviewPane.toFront();
+                topicDiscoveryReviewPane.show();
+                return;
+            }
+            topicDiscoveryReviewPane = new TopicDiscoveryReviewPane(scene, desktopPane, topics);
+            desktopPane.getChildren().add(topicDiscoveryReviewPane);
+            topicDiscoveryReviewPane.setLayoutX(Math.max(20, (desktopPane.getWidth() - 1000) / 2));
+            topicDiscoveryReviewPane.setLayoutY(Math.max(20, (desktopPane.getHeight() - 690) / 2));
+            topicDiscoveryReviewPane.toFront();
+            topicDiscoveryReviewPane.slideInPane();
+        });
+        scene.addEventHandler(HyperdriveEvent.CLOSE_TOPIC_REVIEW, event -> {
+            if (topicDiscoveryReviewPane != null) {
+                topicDiscoveryReviewPane.close();
+                topicDiscoveryReviewPane = null;
             }
         });
         scene.addEventHandler(ApplicationEvent.SHOW_HYPERDRIVE_PANE, e -> {

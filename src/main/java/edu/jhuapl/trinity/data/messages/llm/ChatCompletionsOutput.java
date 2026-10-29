@@ -56,11 +56,14 @@ public class ChatCompletionsOutput extends MessageData {
     //</editor-fold>
 
     //<editor-fold defaultstate="collapsed" desc="Payload Fields">
+    private String id;
+    private Long created;
     private String object;
     private String model;
     private String prompt;
     private List<ChatCompletionChoice> choices;
     private ChatGenerationParameters generation_parameters;
+    private ChatUsage usage;
 
     //</editor-fold>
     //extra helper fields
@@ -73,6 +76,30 @@ public class ChatCompletionsOutput extends MessageData {
     }
 
     //<editor-fold defaultstate="collapsed" desc="Properties">
+
+    public String getId() {
+        return id;
+    }
+
+    public void setId(String id) {
+        this.id = id;
+    }
+
+    public Long getCreated() {
+        return created;
+    }
+
+    public void setCreated(Long created) {
+        this.created = created;
+    }
+
+    public ChatUsage getUsage() {
+        return usage;
+    }
+
+    public void setUsage(ChatUsage usage) {
+        this.usage = usage;
+    }
 
     /**
      * @return the object

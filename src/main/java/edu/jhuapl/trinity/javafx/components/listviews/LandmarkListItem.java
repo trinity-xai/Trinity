@@ -20,6 +20,7 @@ public class LandmarkListItem extends HBox {
     private String landmarkLabel;
     private Label dimensionsLabel;
     private FeatureVector featureVector = null;
+    private boolean embeddingsReceived = false;
 
     public LandmarkListItem(String landmarkLabel) {
         this.landmarkLabel = landmarkLabel;
@@ -37,6 +38,18 @@ public class LandmarkListItem extends HBox {
         featureVector.getData().clear();
         featureVector.getData().addAll(data);
         dimensionsLabel.setText(format.format(data.size()));
+        embeddingsReceived = data != null && !data.isEmpty();
+    }
+
+    /** Placeholder FeatureVectors must never participate in similarity computation. */
+    public boolean hasEmbeddings() {
+        return embeddingsReceived;
+    }
+
+    public void invalidateEmbeddings() {
+        embeddingsReceived = false;
+        featureVector.getData().clear();
+        dimensionsLabel.setText(format.format(0));
     }
 
     public void setFeatureVectorLabel(String text) {

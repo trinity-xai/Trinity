@@ -49,8 +49,8 @@ public class LitPathPane extends PathPane {
     Scene scene;
     Pane parent;
     boolean animating = false;
-    boolean fadeEnabled = true;
-    private boolean opaqueEnabled = false;
+    boolean fadeEnabled = false;
+    private boolean opaqueEnabled = true;
     double fadeSideInset = -5;
     double hoverTopInset = -2;
     double hoverSideInset = -3;
@@ -183,6 +183,9 @@ public class LitPathPane extends PathPane {
         opaqueBackground = new Background(new BackgroundFill(
             Color.BLACK, CornerRadii.EMPTY, Insets.EMPTY));
         defaultBackground = mainContentBorderFrame.getBackground();
+        // New floating panes start opaque; the user can still toggle transparency.
+        setOpaqueEnabled(true);
+        contentPane.setOpacity(1.0);        
     }
 
     public void setEffects() {
@@ -223,6 +226,11 @@ public class LitPathPane extends PathPane {
         });
         fadeLabel.setEffect(glow);
         fadeLabel.setBackground(background);
+        if (fadeEnabled) {
+            fadeLabel.setEffect(glow);
+            fadeLabel.setBackground(background);
+            fadeLabel.setBorder(activeBorder);
+        }        
         fadeLabel.setOnMouseClicked(e -> {
             fadeEnabled = !fadeEnabled;
             if (fadeEnabled) {
@@ -233,6 +241,7 @@ public class LitPathPane extends PathPane {
                 fadeLabel.setEffect(null);
                 fadeLabel.setBackground(null);
                 fadeLabel.setBorder(null);
+                contentPane.setOpacity(1.0);
             }
         });
 
@@ -264,7 +273,7 @@ public class LitPathPane extends PathPane {
                     gradientTimeline.playFromStart();
                 }
             } else
-                contentPane.setOpacity(0.8);
+                contentPane.setOpacity(1.0);
         });
         addEventHandler(MouseEvent.MOUSE_EXITED, e -> {
             lastInsideMillis = System.currentTimeMillis();
@@ -272,7 +281,7 @@ public class LitPathPane extends PathPane {
                 fade(100, 0.3);
                 this.outerFrame.setFill(Color.TRANSPARENT);
             } else
-                contentPane.setOpacity(0.8);
+                contentPane.setOpacity(1.0);
         });
     }
 

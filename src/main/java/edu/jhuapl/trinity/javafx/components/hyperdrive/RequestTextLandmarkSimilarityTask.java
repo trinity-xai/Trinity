@@ -1,72 +1,55 @@
 package edu.jhuapl.trinity.javafx.components.hyperdrive;
 
-import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.javafx.components.listviews.EmbeddingsTextListItem;
 import edu.jhuapl.trinity.javafx.components.radial.CircleProgressIndicator;
 import edu.jhuapl.trinity.utils.metric.Metric;
+import javafx.application.Platform;
 import javafx.scene.Scene;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
-
+import java.util.ArrayList;
 import java.util.List;
 
-import static edu.jhuapl.trinity.data.messages.xai.FeatureVector.mapToStateArray;
-
-
-/**
- * @author Sean Phillips
- */
+/** Computes classifications off-thread; only the FX-thread success handler applies labels. */
 public class RequestTextLandmarkSimilarityTask extends HyperdriveTask {
-    private static final Logger LOG = LoggerFactory.getLogger(RequestTextLandmarkSimilarityTask.class);
-    List<EmbeddingsTextListItem> items;
-    List<FeatureVector> landmarkFeatures;
-    Metric metric;
+    public record Target(EmbeddingsTextListItem item, String originalLabel, List<Double> originalData,
+                         double[] values) { }
+    public record Classification(Target target, String landmarkLabel) { }
 
-    public RequestTextLandmarkSimilarityTask(Scene scene, CircleProgressIndicator progressIndicator,
-                                             List<EmbeddingsTextListItem> items, List<FeatureVector> landmarkFeatures, Metric metric) {
-        super(scene, progressIndicator, null, null);
-        this.items = items;
-        this.landmarkFeatures = landmarkFeatures;
+    private final List<Target> targets;
+    private final List<TextLandmarkSimilarityEngine.Landmark> landmarks;
+    private final Metric metric;
+    private final List<Classification> classifications = new ArrayList<>();
+    private int skipped;
+
+    public RequestTextLandmarkSimilarityTask(Scene scene, CircleProgressIndicator indicator,
+                                             List<Target> targets,
+                                             List<TextLandmarkSimilarityEngine.Landmark> landmarks,
+                                             Metric metric) {
+        super(scene, indicator, null, null);
+        this.targets = List.copyOf(targets);
+        this.landmarks = List.copyOf(landmarks);
         this.metric = metric;
     }
 
     @Override
-    protected void processTask() throws Exception {
-        if (null != progressIndicator) {
-            progressIndicator.setFadeTimeMS(250);
-            progressIndicator.setLabelLater("Computing Landmark Similarity Distances...");
-            progressIndicator.spin(true);
-            progressIndicator.fadeBusy(false);
-        }
-        final double total = items.size();
-        int currentIndex = 0;
-        List<double[]> landmarkVectors = landmarkFeatures.stream()
-            .map(mapToStateArray).toList();
-        for (EmbeddingsTextListItem item : items) {
-            double[] itemVector = mapToStateArray.apply(item.getFeatureVector());
-            Double shortestDistance = null;
-            Integer shortestLandmarkIndex = null;
-            for (int i = 0; i < landmarkVectors.size(); i++) {
-                double currentDistance = metric.distance(itemVector, landmarkVectors.get(i));
-                //System.out.println(i + " : " + currentDistance);
-                if (null == shortestDistance || currentDistance < shortestDistance) {
-                    shortestDistance = currentDistance;
-                    shortestLandmarkIndex = i;
-                }
+    protected void processTask() {
+        int total = targets.size();
+        for (int i = 0; i < total; i++) {
+            if (isCancelled()) return;
+            Target target = targets.get(i);
+            var match = TextLandmarkSimilarityEngine.nearest(target.values(), landmarks, metric);
+            if (match.isPresent()) classifications.add(new Classification(target, match.get().label()));
+            else skipped++;
+            int completed = i + 1;
+            if (progressIndicator != null && (completed == total || completed % 50 == 0)) {
+                Platform.runLater(() -> {
+                    if (isCancelled()) return;
+                    progressIndicator.setPercentComplete((double) completed / total);
+                    progressIndicator.setLabelLater("Compared " + completed + " of " + total);
+                });
             }
-            item.setFeatureVectorLabel(
-                landmarkFeatures.get(shortestLandmarkIndex).getLabel());
-            currentIndex++;
-            double completed = Integer.valueOf(currentIndex).doubleValue();
-            if (null != progressIndicator) {
-                progressIndicator.setPercentComplete(completed / total);
-                progressIndicator.setLabelLater("Computed " + currentIndex + " of " + total);
-            }
-        }
-        if (null != progressIndicator) {
-            progressIndicator.setLabelLater("Complete");
-            progressIndicator.spin(false);
-            progressIndicator.fadeBusy(true);
         }
     }
+
+    public List<Classification> getClassifications() { return List.copyOf(classifications); }
+    public int getSkipped() { return skipped; }
 }

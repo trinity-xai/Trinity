@@ -28,8 +28,8 @@ public class EmbeddingsTextCallback extends RestConsumer {
     public void onFailure() {
 //        LOG.error(e.getMessage());
         ErrorEvent error = new ErrorEvent(ErrorEvent.REST_ERROR, getClass().getName() + " has failed.");
-        scene.getRoot().fireEvent(error);
         Platform.runLater(() -> {
+            scene.getRoot().fireEvent(error);
             scene.getRoot().fireEvent(new RestEvent(RestEvent.ERROR_EMBEDDINGS_TEXT, inputIDs, requestNumber));
         });
     }
@@ -44,7 +44,8 @@ public class EmbeddingsTextCallback extends RestConsumer {
                 scene.getRoot().fireEvent(new RestEvent(RestEvent.NEW_EMBEDDINGS_TEXT, output, inputIDs));
             });
         } catch (JsonProcessingException ex) {
-            LOG.error(null, ex);
+            LOG.error("Invalid text embedding response for request {}", requestNumber, ex);
+            onFailure();
         }
     }
 }
