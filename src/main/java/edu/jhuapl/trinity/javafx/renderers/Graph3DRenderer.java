@@ -92,7 +92,6 @@ public final class Graph3DRenderer {
             s.setTranslateX(p3.x);
             s.setTranslateY(p3.y);
             s.setTranslateZ(p3.z);
-            s.setUserData(gN);
 
             // --- Inspect events
             s.setOnMouseMoved(e -> {
@@ -123,7 +122,6 @@ public final class Graph3DRenderer {
             Point3D pb = JavaFX3DUtils.getGraphNodePoint3D(b.get(), p.positionScalar);
             Color ec = (ge.getColor() != null) ? Color.valueOf(ge.getColor()) : edgeDefault;
             Tracer t = new Tracer(pa, pb, p.edgeWidth, ec);
-            t.setUserData(ge);
 
             // --- Inspect events
             t.setOnMouseMoved(e -> {

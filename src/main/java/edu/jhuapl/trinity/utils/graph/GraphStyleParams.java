@@ -15,12 +15,12 @@ public final class GraphStyleParams implements Serializable {
 
     // Nodes
     public Color nodeColor = Color.CYAN; // default aligned with Graph3DRenderer.Params
-    public double nodeRadius = 20.0;
+    public double nodeRadius = 1.0;
     public double nodeOpacity = 1.0; // [0..1]
 
     // Edges
     public Color edgeColor = Color.ALICEBLUE; // default aligned with Graph3DRenderer.Params
-    public double edgeWidth = 8.0; // rendered as float in Tracer
+    public double edgeWidth = 0.5; // rendered as float in Tracer
     public double edgeOpacity = 1.0; // [0..1]
 
     // Fluent setters

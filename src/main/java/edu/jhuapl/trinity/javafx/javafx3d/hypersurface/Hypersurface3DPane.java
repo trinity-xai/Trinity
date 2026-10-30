@@ -257,7 +257,7 @@ public class Hypersurface3DPane extends StackPane
         configurePaneLayout();
         configureContextMenu();
 
-        graphController.installEventHandlers();
+        // Graph event ownership has moved to ContextGraph3DPane.
         loadSurf3D();
         registerSceneEventHandlers();
     }
@@ -299,7 +299,7 @@ public class Hypersurface3DPane extends StackPane
         // The graph is still temporarily hosted by Hypersurface, but its visual
         // layer/state is owned by HypersurfaceGraphController so it can later migrate
         // to a dedicated graph 3D pane/SubScene.
-        sceneRoot.getChildren().add(graphController.getGraphLayer());
+        // Legacy surface controllers still reference this layer; it is no longer rendered here.
         sceneRoot.getChildren().add(surfaceCrosshairOverlay);
         graphController.syncVisibilityGui();
         subScene.setCamera(camera);

@@ -77,8 +77,7 @@ public final class GraphStyleControlsView extends VBox {
         getChildren().add(buildContent());
         wireGuiSyncHandlers();
 
-        // publish defaults once
-        fireParamsChanged();
+        // Controls are passive on construction; the graph model owns current state.
     }
 
     // ---------------------------------------------------------------------

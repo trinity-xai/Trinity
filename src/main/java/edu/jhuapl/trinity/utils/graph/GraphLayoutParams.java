@@ -23,7 +23,10 @@ public final class GraphLayoutParams implements Serializable {
         CIRCLE_XY,
         SPHERE,
         MDS_3D,
-        FORCE_FR
+        FORCE_FR,
+        RADIAL_TREE_3D,
+        LAYERED_HIERARCHY_3D,
+        HYPERBOLIC_HIERARCHY_3D
     }
 
     /**

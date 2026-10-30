@@ -67,6 +67,7 @@ import edu.jhuapl.trinity.javafx.handlers.SemanticMapEventHandler;
 import edu.jhuapl.trinity.javafx.handlers.ShapleyEventHandler;
 import edu.jhuapl.trinity.javafx.javafx3d.Hyperspace3DPane;
 import edu.jhuapl.trinity.javafx.javafx3d.hypersurface.Hypersurface3DPane;
+import edu.jhuapl.trinity.javafx.javafx3d.contextgraph.ContextGraph3DPane;
 import edu.jhuapl.trinity.javafx.javafx3d.Manifold3D;
 import edu.jhuapl.trinity.javafx.javafx3d.Projections3DPane;
 import edu.jhuapl.trinity.javafx.javafx3d.ProjectorPane;
@@ -127,6 +128,7 @@ public class AppAsyncManager extends Task<Void> {
 
     Hyperspace3DPane hyperspace3DPane;
     Hypersurface3DPane hypersurface3DPane;
+    ContextGraph3DPane contextGraph3DPane;
     HypersurfaceControlsPane hypersurfaceControlsPane;
     ProjectorPane projectorPane;
     Projections3DPane projections3DPane;
@@ -339,6 +341,11 @@ public class AppAsyncManager extends Task<Void> {
         hypersurface3DPane = new Hypersurface3DPane(scene);
         hypersurface3DPane.setVisible(false); //start off hidden
         Platform.runLater(() -> centerStack.getChildren().add(0, hypersurface3DPane));
+
+        progress.setLabelLater("...Context Graph...");
+        contextGraph3DPane = new ContextGraph3DPane(scene);
+        contextGraph3DPane.setVisible(false);
+        Platform.runLater(() -> centerStack.getChildren().add(0, contextGraph3DPane));
 
         progress.setLabelLater("...Hyperspace...");
         progress.setPercentComplete(current++ / total);
@@ -559,6 +566,7 @@ public class AppAsyncManager extends Task<Void> {
                 }
                 hyperspace3DPane.setVisible(false);
                 hypersurface3DPane.setVisible(false);
+                contextGraph3DPane.setVisible(false);
                 Platform.runLater(() -> projections3DPane.setVisible(true));
             }
         });
@@ -711,6 +719,19 @@ public class AppAsyncManager extends Task<Void> {
             projections3DPane.enableAutoProjection(enabled);
             hyperspace3DPane.enableAutoProjection(enabled);
         });
+        LOG.info("Context Graph ");
+        scene.addEventHandler(ApplicationEvent.SHOW_CONTEXT_GRAPH, e -> {
+            if (contextGraph3DPane.isVisible()) {
+                contextGraph3DPane.setVisible(false);
+                if (retroWavePane != null) retroWavePane.animateShow();
+            } else {
+                if (retroWavePane != null) retroWavePane.animateHide();
+                hypersurface3DPane.setVisible(false);
+                hyperspace3DPane.setVisible(false);
+                projections3DPane.setVisible(false);
+                contextGraph3DPane.setVisible(true);
+            }
+        });
         LOG.info("Hypersurface ");
         scene.addEventHandler(ApplicationEvent.SHOW_HYPERSURFACE, e -> {
             if (hypersurface3DPane.isVisible()) {
@@ -723,6 +744,7 @@ public class AppAsyncManager extends Task<Void> {
                     retroWavePane.animateHide();
                 }
                 hyperspace3DPane.setVisible(false);
+                contextGraph3DPane.setVisible(false);
                 if (null != projections3DPane) {
                     projections3DPane.setVisible(false);
                 }
@@ -744,6 +766,7 @@ public class AppAsyncManager extends Task<Void> {
                 }
             } else {
                 hypersurface3DPane.setVisible(false);
+                contextGraph3DPane.setVisible(false);
                 if (null != projections3DPane) {
                     projections3DPane.setVisible(false);
                 }
@@ -1140,12 +1163,17 @@ public class AppAsyncManager extends Task<Void> {
         centerStack.addEventHandler(DragEvent.DRAG_DROPPED, e -> {
             String dropType = ResourceUtils.detectDropType(e);
             if (!dropType.contentEquals("UNKNOWN")) {
-                if (ResourceUtils.promptUserOnCommand(dropType)) {
+                if ("Context Graph".equals(dropType) && contextGraph3DPane.isVisible()
+                    || ResourceUtils.promptUserOnCommand(dropType)) {
                     try {
                         switch (dropType) {
                             case "Hyperspace" -> CommandTask.execute(scene, "VIEW_HYPERSPACE", 0, null);
                             case "Hypersurface" -> CommandTask.execute(scene, "VIEW_HYPERSURFACE", 0, null);
                             case "Projections" -> CommandTask.execute(scene, "VIEW_PROJECTIONS", 0, null);
+                            case "Context Graph" -> {
+                                if (!contextGraph3DPane.isVisible())
+                                    scene.getRoot().fireEvent(new ApplicationEvent(ApplicationEvent.SHOW_CONTEXT_GRAPH));
+                            }
                         }
                     } catch (InterruptedException ex) {
                         LOG.error(null, ex);

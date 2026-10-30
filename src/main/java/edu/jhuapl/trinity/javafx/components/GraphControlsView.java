@@ -67,11 +67,12 @@ public final class GraphControlsView extends VBox {
 
     public GraphControlsView(Scene scene) {
         this.scene = scene;
-        this.params = new GraphLayoutParams(); // your defaults
+        this.params = new GraphLayoutParams(); // graph-only defaults
+        this.params.radius = 30.0;
         setSpacing(10);
         setPadding(new Insets(6));
         getChildren().add(buildContent());
-        fireParamsChanged(); // publish defaults once
+        // Do not publish default layout settings merely by opening controls.
     }
 
     public GraphLayoutParams getParamsCopy() {
@@ -100,7 +101,9 @@ public final class GraphControlsView extends VBox {
         GridPane gp = formGrid();
 
         layoutKindCombo = new ComboBox<>();
-        layoutKindCombo.getItems().addAll(LayoutKind.values());
+        for (LayoutKind kind : LayoutKind.values()) {
+            if (kind != LayoutKind.MDS_3D) layoutKindCombo.getItems().add(kind);
+        }
         layoutKindCombo.getSelectionModel().select(params.kind);
         styleCombo(layoutKindCombo);
         addRow(gp, 0, "Kind", layoutKindCombo);

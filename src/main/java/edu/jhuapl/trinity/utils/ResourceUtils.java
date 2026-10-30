@@ -663,7 +663,7 @@ public enum ResourceUtils {
                 } else if (ShapleyCollectionFile.isShapleyCollectionFile(file)) {
                     type = "Hypersurface";
                 } else if (GraphDirectedCollectionFile.isGraphDirectedCollectionFile(file)) {
-                    type = "Hypersurface";
+                    type = "Context Graph";
                 } else if (VectorMaskCollectionFile.isVectorMaskCollectionFile(file)) {
                     type = "Hypersurface";
                 } else if (LabelConfigFile.isLabelConfigFile(file)) {
