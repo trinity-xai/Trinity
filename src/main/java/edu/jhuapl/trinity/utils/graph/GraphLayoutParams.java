@@ -26,7 +26,11 @@ public final class GraphLayoutParams implements Serializable {
         FORCE_FR,
         RADIAL_TREE_3D,
         LAYERED_HIERARCHY_3D,
-        HYPERBOLIC_HIERARCHY_3D
+        HYPERBOLIC_HIERARCHY_3D,
+        FORCE_ATLAS_3D,
+        KAMADA_KAWAI_3D,
+        STRESS_MAJOR_3D,
+        SPECTRAL_3D
     }
 
     /**
@@ -47,6 +51,10 @@ public final class GraphLayoutParams implements Serializable {
      * Number of force iterations (ticks).
      */
     public int iterations = 500;
+    /** Number of graph-distance landmarks used by approximate stress layouts. */
+    public int landmarkCount = 32;
+    /** Reproducible initialization for stochastic network layouts. */
+    public long randomSeed = 714L;
     /**
      * Global step size / temperature start (will cool).
      */

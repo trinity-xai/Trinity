@@ -53,9 +53,15 @@ public class GraphDirectedCollectionLoader extends Task {
         });
 
         try {
+            long parseStart = System.nanoTime();
             GraphDirectedCollectionFile graphFile = new GraphDirectedCollectionFile(file.getAbsolutePath(), true);
-            Platform.runLater(() -> scene.getRoot().fireEvent(
-                new GraphEvent(GraphEvent.NEW_GRAPHDIRECTED_COLLECTION, graphFile.graphDirectedCollection)));
+            System.out.printf("[CG-TIMING] file parse completed %.3f ms thread=%s%n", (System.nanoTime()-parseStart)/1e6, Thread.currentThread().getName());
+            long queuedAt = System.nanoTime();
+            Platform.runLater(() -> {
+                System.out.printf("[CG-TIMING] graph event FX queue wait %.3f ms%n", (System.nanoTime()-queuedAt)/1e6);
+                scene.getRoot().fireEvent(
+                    new GraphEvent(GraphEvent.NEW_GRAPHDIRECTED_COLLECTION, graphFile.graphDirectedCollection));
+            });
         } catch (IOException ex) {
             LOG.error(null, ex);
         }
