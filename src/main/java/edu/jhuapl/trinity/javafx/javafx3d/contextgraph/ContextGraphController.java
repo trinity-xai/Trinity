@@ -9,6 +9,7 @@ import edu.jhuapl.trinity.utils.graph.ForceFrLayout3D;
 import edu.jhuapl.trinity.utils.graph.GraphTopologyLayouts3D;
 import edu.jhuapl.trinity.utils.graph.GraphNetworkLayouts3D;
 import javafx.application.Platform;
+import javafx.animation.AnimationTimer;
 import javafx.concurrent.Task;
 import javafx.geometry.Point3D;
 
@@ -97,6 +98,8 @@ public final class ContextGraphController {
     private GraphLayoutParams layoutParams = new GraphLayoutParams();
     private long layoutGeneration;
     private volatile long renderGeneration;
+    private static final int EDGE_BATCH_SIZE = 50; // Verified fixed progressive loader; unchanged.
+    private AnimationTimer edgeAttachmentTimer;
 
     public double getCoordinateScale() { return coordinateScale; }
 
@@ -371,15 +374,15 @@ public final class ContextGraphController {
         graphLayer.setVisible(visible);
     }
 
-    /**
-     * Prepare detached geometry on a worker Task. As in Projections3DPane,
-     * each completed renderable is attached in its own Platform.runLater call.
-     * Generation checks prevent a superseded load from attaching stale nodes.
-     */
+    /** Prepare detached geometry on a worker Task; attach edges across FX pulses. */
     private void rebuildGraph() {
         // Only the layer reset below requires FX-thread ownership; the Task
         // itself and all geometry preparation are independent of FX scheduling.
         final long generation = ++renderGeneration;
+        if (edgeAttachmentTimer != null) {
+            edgeAttachmentTimer.stop();
+            edgeAttachmentTimer = null;
+        }
         nodeLayer.getChildren().clear();
         edgeLayer.getChildren().clear();
         nodeViews.clear();
@@ -437,6 +440,8 @@ public final class ContextGraphController {
                     });
                 }
                 long edgeStart = System.nanoTime();
+                final List<ContextGraphEdge3D> preparedEdges = new ArrayList<>();
+                final List<GraphEdge> preparedEdgeKeys = new ArrayList<>();
                 for (GraphEdge edge : graphEdges) {
                     if (isCancelled() || generation != renderGeneration) return null;
                     double[] a = coordinates.get(edge.getStartID());
@@ -447,22 +452,66 @@ public final class ContextGraphController {
                         new Point3D(b[0], b[1], b[2]));
                     view.setMaterial(edgeMaterial);
                     view.setMouseTransparent(true);
-                    Platform.runLater(() -> {
-                        if (generation != renderGeneration) return;
-                        edgeViews.put(edge, view);
-                        edgeLayer.getChildren().add(view);
-                    });
+                    preparedEdges.add(view);
+                    preparedEdgeKeys.add(edge);
                 }
                 System.out.printf("[CG-TIMING] background geometry preparation %.3f ms; edge phase %.3f ms%n",
                     (System.nanoTime() - prepareStart) / 1e6,
                     (System.nanoTime() - edgeStart) / 1e6);
                 Platform.runLater(() -> {
                     if (generation != renderGeneration) return;
-                    System.out.printf("[CG-TIMING] all individual FX attachments completed %.3f ms nodes=%d edges=%d%n",
-                        (System.nanoTime() - started) / 1e6,
-                        nodeLayer.getChildren().size(), edgeLayer.getChildren().size());
-                    report("Rendered 3D graph: nodes=" + nodeViews.size()
-                        + ", edges=" + edgeViews.size());
+                    final long progressiveStart = System.nanoTime();
+                    edgeAttachmentTimer = new AnimationTimer() {
+                        private int nextIndex;
+                        private int batchCount;
+                        private long previousPulse = -1L;
+                        private double maxPulseGapMs;
+                        private double maxAttachMs;
+
+                        @Override public void handle(long now) {
+                            if (generation != renderGeneration) {
+                                stop();
+                                if (edgeAttachmentTimer == this) edgeAttachmentTimer = null;
+                                return;
+                            }
+                            if (previousPulse >= 0) {
+                                double gapMs = (now - previousPulse) / 1e6;
+                                maxPulseGapMs = Math.max(maxPulseGapMs, gapMs);
+                                if (gapMs >= 250.0) {
+                                    System.out.printf("[CG-TIMING] progressive FX pulse gap %.3f ms edges=%d/%d%n",
+                                        gapMs, nextIndex, preparedEdges.size());
+                                }
+                            }
+                            previousPulse = now;
+                            int end = Math.min(nextIndex + EDGE_BATCH_SIZE, preparedEdges.size());
+                            long attachStart = System.nanoTime();
+                            if (end > nextIndex) {
+                                edgeLayer.getChildren().addAll(
+                                    preparedEdges.subList(nextIndex, end));
+                                for (int i = nextIndex; i < end; i++) {
+                                    edgeViews.put(preparedEdgeKeys.get(i), preparedEdges.get(i));
+                                }
+                            }
+                            double attachMs = (System.nanoTime() - attachStart) / 1e6;
+                            maxAttachMs = Math.max(maxAttachMs, attachMs);
+                            nextIndex = end;
+                            batchCount++;
+                            if (nextIndex == preparedEdges.size()) {
+                                stop();
+                                if (edgeAttachmentTimer == this) edgeAttachmentTimer = null;
+                                System.out.printf("[CG-TIMING] progressive edges complete %.3f ms batches=%d batchSize=%d maxAttach=%.3f ms maxPulseGap=%.3f ms nodes=%d edges=%d%n",
+                                    (System.nanoTime() - progressiveStart) / 1e6,
+                                    batchCount, EDGE_BATCH_SIZE, maxAttachMs, maxPulseGapMs,
+                                    nodeLayer.getChildren().size(), edgeLayer.getChildren().size());
+                                System.out.printf("[CG-TIMING] all FX attachments completed %.3f ms nodes=%d edges=%d%n",
+                                    (System.nanoTime() - started) / 1e6,
+                                    nodeLayer.getChildren().size(), edgeLayer.getChildren().size());
+                                report("Rendered 3D graph: nodes=" + nodeViews.size()
+                                    + ", edges=" + edgeViews.size());
+                            }
+                        }
+                    };
+                    edgeAttachmentTimer.start();
                 });
                 return null;
             }
