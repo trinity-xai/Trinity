@@ -1,4 +1,4 @@
-package edu.jhuapl.trinity.javafx.javafx3d;
+package edu.jhuapl.trinity.javafx.javafx3d.projections;
 
 import edu.jhuapl.trinity.App;
 import edu.jhuapl.trinity.data.Distance;
@@ -11,7 +11,13 @@ import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.HyperspaceEvent;
 import edu.jhuapl.trinity.javafx.events.ManifoldEvent;
 import edu.jhuapl.trinity.javafx.events.ShadowEvent;
+import edu.jhuapl.trinity.javafx.javafx3d.Crosshair3D;
+import edu.jhuapl.trinity.javafx.javafx3d.Manifold3D;
+import edu.jhuapl.trinity.javafx.javafx3d.ShadowCubeWorld;
 import edu.jhuapl.trinity.javafx.javafx3d.ShadowCubeWorld.PROJECTION_TYPE;
+import edu.jhuapl.trinity.javafx.javafx3d.Trajectory3D;
+import edu.jhuapl.trinity.javafx.javafx3d.TriaxialSpheroidMesh;
+import edu.jhuapl.trinity.javafx.javafx3d.XFormGroup;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.AnimatedSphere;
 import edu.jhuapl.trinity.javafx.javafx3d.images.ImageResourceProvider;
 import edu.jhuapl.trinity.javafx.javafx3d.projectiles.HitShape3D;
@@ -134,7 +140,7 @@ public class AsteroidFieldPane extends StackPane {
     //allows 2D labels to track their 3D counterparts
     HashMap<Shape3D, Label> shape3DToLabel = new HashMap<>();
 
-    AnimatedSphere centralBody;
+    public AnimatedSphere centralBody;
 
     // initial rotation
     private final Rotate rotateX = new Rotate(0, Rotate.X_AXIS);

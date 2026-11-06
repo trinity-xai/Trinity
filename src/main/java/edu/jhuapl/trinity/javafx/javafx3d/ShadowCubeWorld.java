@@ -79,8 +79,8 @@ public class ShadowCubeWorld extends CubeWorld {
     public boolean renderingEnabled = true;
     public boolean showNearsidePoints = false; //declutters view
     public double panelRectangleOpacity = 0.01;
-    PROJECTION_TYPE projectionType = ShadowCubeWorld.PROJECTION_TYPE.FIXED_ORTHOGRAPHIC;
-    Affine projectionAffine = new Affine();
+    public PROJECTION_TYPE projectionType = ShadowCubeWorld.PROJECTION_TYPE.FIXED_ORTHOGRAPHIC;
+    public Affine projectionAffine = new Affine();
     public boolean dirty = false;
     public boolean reflectY = true;
     public HyperspaceEvent.COLOR_MODE colorMode = HyperspaceEvent.COLOR_MODE.COLOR_BY_LABEL;

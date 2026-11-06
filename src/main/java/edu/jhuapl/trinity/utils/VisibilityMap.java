@@ -1,6 +1,6 @@
 package edu.jhuapl.trinity.utils;
 
-import edu.jhuapl.trinity.javafx.javafx3d.Perspective3DNode;
+import edu.jhuapl.trinity.javafx.javafx3d.hyperspace.Perspective3DNode;
 
 import java.util.ArrayList;
 import java.util.HashMap;

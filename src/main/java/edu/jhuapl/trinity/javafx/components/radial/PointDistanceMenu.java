@@ -1,6 +1,6 @@
 package edu.jhuapl.trinity.javafx.components.radial;
 
-import edu.jhuapl.trinity.javafx.javafx3d.Projections3DPane;
+import edu.jhuapl.trinity.javafx.javafx3d.projections.Projections3DPane;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.SnapshotParameters;

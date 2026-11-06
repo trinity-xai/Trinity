@@ -1,4 +1,4 @@
-package edu.jhuapl.trinity.javafx.javafx3d;
+package edu.jhuapl.trinity.javafx.javafx3d.projections;
 
 import edu.jhuapl.trinity.javafx.components.projector.ProjectorNode;
 import edu.jhuapl.trinity.javafx.components.projector.ProjectorRow;

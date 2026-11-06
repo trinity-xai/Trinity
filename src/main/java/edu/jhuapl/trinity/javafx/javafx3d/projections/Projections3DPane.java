@@ -1,4 +1,4 @@
-package edu.jhuapl.trinity.javafx.javafx3d;
+package edu.jhuapl.trinity.javafx.javafx3d.projections;
 
 import com.github.trinity.supermds.SuperMDS;
 import edu.jhuapl.trinity.App;
@@ -40,6 +40,11 @@ import edu.jhuapl.trinity.javafx.events.ManifoldEvent.ProjectionConfig;
 import edu.jhuapl.trinity.javafx.events.ShadowEvent;
 import edu.jhuapl.trinity.javafx.events.TimelineEvent;
 import edu.jhuapl.trinity.javafx.events.TrajectoryEvent;
+import edu.jhuapl.trinity.javafx.javafx3d.Crosshair3D;
+import edu.jhuapl.trinity.javafx.javafx3d.Manifold3D;
+import edu.jhuapl.trinity.javafx.javafx3d.Trajectory3D;
+import edu.jhuapl.trinity.javafx.javafx3d.TriaxialSpheroidMesh;
+import edu.jhuapl.trinity.javafx.javafx3d.XFormGroup;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.AnimatedSphere;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.CameraOrbiter;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.Opticon;

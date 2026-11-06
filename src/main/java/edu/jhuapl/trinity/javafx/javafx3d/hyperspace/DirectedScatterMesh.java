@@ -19,7 +19,7 @@
  */
 
 
-package edu.jhuapl.trinity.javafx.javafx3d;
+package edu.jhuapl.trinity.javafx.javafx3d.hyperspace;
 
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.property.DoubleProperty;
