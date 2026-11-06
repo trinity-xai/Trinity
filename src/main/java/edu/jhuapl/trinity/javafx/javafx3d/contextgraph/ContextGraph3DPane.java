@@ -24,6 +24,10 @@ import javafx.scene.paint.Color;
 import javafx.scene.PointLight;
 import org.fxyz3d.utils.CameraTransformer;
 import javafx.scene.input.ScrollEvent;
+import javafx.scene.input.KeyEvent;
+import javafx.scene.input.KeyCode;
+import javafx.geometry.Point3D;
+import javafx.scene.transform.NonInvertibleTransformException;
 
 /** Independent 3D graph viewport. Graph data remains in the shared graph model. */
 public class ContextGraph3DPane extends StackPane {
@@ -31,6 +35,7 @@ public class ContextGraph3DPane extends StackPane {
     private final CameraTransformer cameraTransform = new CameraTransformer();
     private final PerspectiveCamera camera = new PerspectiveCamera(true);
     private final SubScene subScene;
+    private double fitGraphPercentage = 85.0;
     private final ContextGraphController graphController;
     private final ContextGraphInteractionController interactionController;
     private ContextGraphControlsPane controlsPane;
@@ -102,9 +107,37 @@ public class ContextGraph3DPane extends StackPane {
                 cameraTransform.t.setY(cameraTransform.t.getY() + dy * factor * 0.3);
             }
         });
-        subScene.addEventHandler(ScrollEvent.SCROLL, e ->
-            camera.setTranslateZ(Math.min(-2, Math.max(-100000,
-                camera.getTranslateZ() + e.getDeltaY() * 0.1))));
+        // Shift+wheel is delivered as horizontal scrolling on some platforms.
+        // Use deltaX as a fallback rather than losing the zoom input.
+        subScene.setOnScroll(e -> {
+            double delta = e.getDeltaY();
+            if (Math.abs(delta) < 1.0e-9 && e.isShiftDown()) {
+                delta = e.getDeltaX();
+            }
+            if (Math.abs(delta) < 1.0e-9) return;
+            double modifier = e.isShiftDown() ? 100.0 : e.isControlDown() ? 1.0 : 50.0;
+            double nextZ = camera.getTranslateZ() + delta * 0.1 * modifier;
+            // Keep the camera on the negative-Z side of its orbital center.
+            camera.setTranslateZ(Math.min(-0.1, nextZ));
+            e.consume();
+        });
+        // Match Projections3DPane: camera-local translation, not pivot movement.
+        subScene.setOnKeyPressed(e -> {
+            double step = e.isShiftDown() ? 100.0 : 10.0;
+            switch (e.getCode()) {
+                case W -> camera.setTranslateZ(Math.min(-0.1, camera.getTranslateZ() + step));
+                case S -> camera.setTranslateZ(camera.getTranslateZ() - step);
+                case A -> camera.setTranslateX(camera.getTranslateX() - step);
+                case D -> camera.setTranslateX(camera.getTranslateX() + step);
+                case SPACE -> camera.setTranslateY(camera.getTranslateY() + step);
+                case X -> camera.setTranslateY(camera.getTranslateY() - step);
+                default -> { return; }
+            }
+            e.consume();
+        });
+        subScene.setFocusTraversable(true);
+        subScene.setOnMouseEntered(e -> subScene.requestFocus());
+        subScene.addEventHandler(MouseEvent.MOUSE_PRESSED, e -> subScene.requestFocus());
         graphController.installEventHandlers();
         scene.addEventHandler(GraphEvent.NEW_GRAPHDIRECTED_COLLECTION, e -> {
             if (e.object instanceof edu.jhuapl.trinity.data.graph.GraphDirectedCollection graph) {
@@ -153,7 +186,7 @@ public class ContextGraph3DPane extends StackPane {
         Pane overlay = App.getAppPathPaneStack();
         if (overlay == null) return;
         if (controlsPane == null) {
-            controlsPane = new ContextGraphControlsPane(scene, overlay, graphController);
+            controlsPane = new ContextGraphControlsPane(scene, overlay, graphController, this);
         }
         if (!overlay.getChildren().contains(controlsPane)) {
             overlay.getChildren().add(controlsPane);
@@ -164,23 +197,74 @@ public class ContextGraph3DPane extends StackPane {
         graphController.syncVisibilityGui();
     }
 
+    /** Percentage of viewport width and height available to the fitted graph. */
+    public double getFitGraphPercentage() {
+        return fitGraphPercentage;
+    }
+
+    public void setFitGraphPercentage(double percentage) {
+        if (!Double.isFinite(percentage) || percentage < 10.0 || percentage > 100.0) return;
+        fitGraphPercentage = percentage;
+    }
+
     private void frameGraph(edu.jhuapl.trinity.data.graph.GraphDirectedCollection graph) {
         if (graph == null || graph.getNodes() == null || graph.getNodes().isEmpty()) return;
+
         double minX = Double.POSITIVE_INFINITY, minY = minX, minZ = minX;
         double maxX = Double.NEGATIVE_INFINITY, maxY = maxX, maxZ = maxX;
-        for (edu.jhuapl.trinity.data.graph.GraphNode node : graph.getNodes()) {
-            if (node == null || node.getVector() == null || node.getVector().size() < 3) continue;
-            double x = node.getVector().get(0), y = node.getVector().get(1), z = node.getVector().get(2);
-            if (!Double.isFinite(x) || !Double.isFinite(y) || !Double.isFinite(z)) continue;
-            minX = Math.min(minX, x); maxX = Math.max(maxX, x);
-            minY = Math.min(minY, y); maxY = Math.max(maxY, y);
-            minZ = Math.min(minZ, z); maxZ = Math.max(maxZ, z);
+        for (GraphNode node : graph.getNodes()) {
+            if (node == null) continue;
+            double[] p = graphController.getDisplayedPosition(node);
+            if (p == null || p.length < 3 || !Double.isFinite(p[0])
+                || !Double.isFinite(p[1]) || !Double.isFinite(p[2])) continue;
+            minX = Math.min(minX, p[0]); maxX = Math.max(maxX, p[0]);
+            minY = Math.min(minY, p[1]); maxY = Math.max(maxY, p[1]);
+            minZ = Math.min(minZ, p[2]); maxZ = Math.max(maxZ, p[2]);
         }
         if (!Double.isFinite(minX)) return;
-        double cx = (minX + maxX) / 2.0, cy = (minY + maxY) / 2.0, cz = (minZ + maxZ) / 2.0;
+
+        double cx = (minX + maxX) / 2.0;
+        double cy = (minY + maxY) / 2.0;
+        double cz = (minZ + maxZ) / 2.0;
         cameraTransform.setTranslate(cx, cy, cz);
-        double diagonal = Math.sqrt(Math.pow(maxX-minX,2) + Math.pow(maxY-minY,2) + Math.pow(maxZ-minZ,2));
-        camera.setTranslateZ(-Math.max(15.0, diagonal * 2.5));
+        camera.setTranslateX(0);
+        camera.setTranslateY(0);
+
+        double width = Math.max(1.0, subScene.getWidth());
+        double height = Math.max(1.0, subScene.getHeight());
+        double aspect = width / height;
+        double halfFov = Math.toRadians(camera.getFieldOfView()) / 2.0;
+        double tanVertical = camera.isVerticalFieldOfView()
+            ? Math.tan(halfFov) : Math.tan(halfFov) / aspect;
+        double tanHorizontal = camera.isVerticalFieldOfView()
+            ? Math.tan(halfFov) * aspect : Math.tan(halfFov);
+        double occupancy = fitGraphPercentage / 100.0;
+        double requiredDistance = camera.getNearClip() + 1.0;
+
+        // Rotate each bounding-box corner into camera-local coordinates.
+        // Camera local +Z is forward; its position is at local Z = -distance.
+        // For a corner at (x,y,z), depth is distance + z.
+        try {
+            var inverse = cameraTransform.getLocalToParentTransform().createInverse();
+            for (double x : new double[]{minX, maxX}) {
+                for (double y : new double[]{minY, maxY}) {
+                    for (double z : new double[]{minZ, maxZ}) {
+                        Point3D local = inverse.deltaTransform(x - cx, y - cy, z - cz);
+                        requiredDistance = Math.max(requiredDistance,
+                            Math.abs(local.getX()) / (tanHorizontal * occupancy) - local.getZ());
+                        requiredDistance = Math.max(requiredDistance,
+                            Math.abs(local.getY()) / (tanVertical * occupancy) - local.getZ());
+                        requiredDistance = Math.max(requiredDistance,
+                            camera.getNearClip() + 1.0 - local.getZ());
+                    }
+                }
+            }
+        } catch (NonInvertibleTransformException ex) {
+            double diagonal = Math.sqrt(Math.pow(maxX - minX, 2)
+                + Math.pow(maxY - minY, 2) + Math.pow(maxZ - minZ, 2));
+            requiredDistance = Math.max(requiredDistance, diagonal * 2.5);
+        }
+        camera.setTranslateZ(-requiredDistance);
     }
 
     public ContextGraphController getGraphController() {

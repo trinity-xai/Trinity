@@ -98,7 +98,15 @@ public final class ContextGraphController {
     private GraphLayoutParams layoutParams = new GraphLayoutParams();
     private long layoutGeneration;
     private volatile long renderGeneration;
-    private static final int EDGE_BATCH_SIZE = 50; // Verified fixed progressive loader; unchanged.
+    private int edgeBatchSize = 100;
+
+    public int getEdgeBatchSize() { return edgeBatchSize; }
+
+    /** Changes the number of edges attached on the next animation pulse. FX thread only. */
+    public void setEdgeBatchSize(int value) {
+        if (value < 1 || value > 1000) throw new IllegalArgumentException("Edge batch size must be between 1 and 1000");
+        edgeBatchSize = value;
+    }
     private AnimationTimer edgeAttachmentTimer;
 
     public double getCoordinateScale() { return coordinateScale; }
@@ -396,7 +404,9 @@ public final class ContextGraphController {
         final PhongMaterial nodeMaterial = displayMaterial(
             styleParams.nodeColor == null ? Color.CYAN : styleParams.nodeColor,
             styleParams.nodeOpacity);
-        final PhongMaterial edgeMaterial = TEST_EDGE_MATERIAL;
+        final PhongMaterial edgeMaterial = displayMaterial(
+            styleParams.edgeColor == null ? Color.CORNFLOWERBLUE : styleParams.edgeColor,
+            styleParams.edgeOpacity);
         final long started = System.nanoTime();
         final Map<String, double[]> layoutSnapshot = new HashMap<>(layoutPositions);
         // Snapshot ordinary graph data on the worker, not the FX thread.
@@ -483,9 +493,19 @@ public final class ContextGraphController {
                                 }
                             }
                             previousPulse = now;
-                            int end = Math.min(nextIndex + EDGE_BATCH_SIZE, preparedEdges.size());
+                            int end = Math.min(nextIndex + edgeBatchSize, preparedEdges.size());
                             long attachStart = System.nanoTime();
                             if (end > nextIndex) {
+                                // Honor style changes made while progressive loading is active.
+                                PhongMaterial activeMaterial = displayMaterial(
+                                    styleParams.edgeColor == null ? Color.CORNFLOWERBLUE : styleParams.edgeColor,
+                                    styleParams.edgeOpacity);
+                                float activeWidth = (float) Math.max(0.001, styleParams.edgeWidth);
+                                for (int i = nextIndex; i < end; i++) {
+                                    ContextGraphEdge3D pending = preparedEdges.get(i);
+                                    pending.setMaterial(activeMaterial);
+                                    if (pending.getRadius() != activeWidth) pending.setRadius(activeWidth);
+                                }
                                 edgeLayer.getChildren().addAll(
                                     preparedEdges.subList(nextIndex, end));
                                 for (int i = nextIndex; i < end; i++) {
@@ -501,7 +521,7 @@ public final class ContextGraphController {
                                 if (edgeAttachmentTimer == this) edgeAttachmentTimer = null;
                                 System.out.printf("[CG-TIMING] progressive edges complete %.3f ms batches=%d batchSize=%d maxAttach=%.3f ms maxPulseGap=%.3f ms nodes=%d edges=%d%n",
                                     (System.nanoTime() - progressiveStart) / 1e6,
-                                    batchCount, EDGE_BATCH_SIZE, maxAttachMs, maxPulseGapMs,
+                                    batchCount, edgeBatchSize, maxAttachMs, maxPulseGapMs,
                                     nodeLayer.getChildren().size(), edgeLayer.getChildren().size());
                                 System.out.printf("[CG-TIMING] all FX attachments completed %.3f ms nodes=%d edges=%d%n",
                                     (System.nanoTime() - started) / 1e6,
@@ -534,7 +554,7 @@ public final class ContextGraphController {
             }
         }
         applyNodeMaterials(style);
-        if (!edgeWidthChanged || !rebuildIfNeeded) applyEdgeMaterials(style);
+        applyEdgeMaterials(style);
         System.out.print("ContextGraph applyGraphStyle: ");
         Utils.printTotalTime(startTime);
     }
@@ -549,13 +569,17 @@ public final class ContextGraphController {
     }
 
     private void applyEdgeMaterials(GraphStyleParams style) {
-        // Diagnostic: bypass emissive/diffuse material caches for EDGES ONLY.
-        // Nodes retain their existing material behavior.
+        PhongMaterial material = displayMaterial(
+            style.edgeColor == null ? Color.CORNFLOWERBLUE : style.edgeColor,
+            style.edgeOpacity);
         for (ContextGraphEdge3D edge : edgeViews.values()) {
-            if (edge.getMaterial() != TEST_EDGE_MATERIAL) {
-                edge.setMaterial(TEST_EDGE_MATERIAL);
-            }
+            if (edge.getMaterial() != material) edge.setMaterial(material);
         }
+    }
+
+    /** Current scaled coordinates, including any active graph layout. */
+    public double[] getDisplayedPosition(GraphNode node) {
+        return scaledPosition(node);
     }
 
     private PhongMaterial emissiveMaterial(Color color, double opacity) {

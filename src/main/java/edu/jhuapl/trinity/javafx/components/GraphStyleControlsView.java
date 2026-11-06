@@ -134,7 +134,7 @@ public final class GraphStyleControlsView extends VBox {
         styleColorPicker(edgeColorPicker);
         addRow(gp, 0, "Color", edgeColorPicker);
 
-        edgeWidthSpinner = new Spinner<>(new SpinnerValueFactory.DoubleSpinnerValueFactory(0.5, 200.0, params.edgeWidth, 0.5));
+        edgeWidthSpinner = new Spinner<>(new SpinnerValueFactory.DoubleSpinnerValueFactory(0.25, 200.0, Math.max(0.25, params.edgeWidth), 0.25));
         edgeWidthSpinner.setEditable(true);
         styleSpinner(edgeWidthSpinner);
         addRow(gp, 1, "Width", edgeWidthSpinner);
