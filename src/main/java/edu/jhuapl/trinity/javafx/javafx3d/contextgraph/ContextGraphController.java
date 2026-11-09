@@ -18,7 +18,6 @@ import java.util.List;
 import java.util.Optional;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.GraphEvent;
-import edu.jhuapl.trinity.javafx.javafx3d.animated.AnimatedSphere;
 
 import edu.jhuapl.trinity.javafx.renderers.Graph3DRenderer;
 import edu.jhuapl.trinity.utils.graph.GraphStyleParams;
@@ -91,7 +90,7 @@ public final class ContextGraphController {
 
     // Coordinates are independent of the GraphNode's source vector.
     private final Map<String, double[]> layoutPositions = new HashMap<>();
-    private final Map<String, AnimatedSphere> nodeViews = new HashMap<>();
+    private final Map<String, ContextGraphNode3D> nodeViews = new HashMap<>();
     private final Map<GraphEdge, ContextGraphEdge3D> edgeViews = new java.util.IdentityHashMap<>();
 
 
@@ -137,7 +136,7 @@ public final class ContextGraphController {
     private void updateNodePositions() {
         if (currentGraph == null) return;
         for (GraphNode node : currentGraph.getNodes()) {
-            AnimatedSphere sphere = nodeViews.get(node.getEntityID());
+            ContextGraphNode3D sphere = nodeViews.get(node.getEntityID());
             if (sphere == null) continue;
             double[] p = scaledPosition(node);
             sphere.setTranslateX(p[0]);
@@ -434,7 +433,7 @@ public final class ContextGraphController {
                 for (GraphNode node : graphNodes) {
                     if (isCancelled() || generation != renderGeneration) return null;
                     double[] pos = coordinates.get(node.getEntityID());
-                    AnimatedSphere sphere = new AnimatedSphere(nodeMaterial, nodeRadius,
+                    ContextGraphNode3D sphere = new ContextGraphNode3D(nodeMaterial, nodeRadius,
                         nodeDivisions, false);
                     sphere.setExpansionScale(1.10);
                     sphere.setMouseTransparent(true);
@@ -562,9 +561,9 @@ public final class ContextGraphController {
     private void applyNodeMaterials(GraphStyleParams style) {
         Color color = style.nodeColor == null ? Color.CYAN : style.nodeColor;
         PhongMaterial material = displayMaterial(color, style.nodeOpacity);
-        for (AnimatedSphere sphere : nodeViews.values()) {
+        for (ContextGraphNode3D sphere : nodeViews.values()) {
             if (sphere.getRadius() != style.nodeRadius) sphere.setSphereRadius(style.nodeRadius);
-            if (sphere.getMaterial() != material) sphere.setMaterial(material);
+            sphere.setPhongMaterial(material);
         }
     }
 
