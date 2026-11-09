@@ -70,7 +70,7 @@ public class Manifold3D extends Group {
     public SimpleBooleanProperty selected = new SimpleBooleanProperty(false);
     public ContextMenu cm; //allows adding actions by local subscenes
     //allows 2D labels to track their 3D counterparts
-    HashMap<Shape3D, Label> shape3DToLabel = new HashMap<>();
+    public HashMap<Shape3D, Label> shape3DToLabel = new HashMap<>();
     AnimationTimer tessellationTimer;
     private List<Point3D> originalPoint3Ds = null;
     public static File latestDir = new File(".");

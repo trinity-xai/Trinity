@@ -1,5 +1,8 @@
 package edu.jhuapl.trinity.javafx.javafx3d;
 
+import edu.jhuapl.trinity.javafx.javafx3d.hyperspace.Perspective3DNode;
+import edu.jhuapl.trinity.javafx.javafx3d.hyperspace.DirectedScatterMesh;
+import edu.jhuapl.trinity.javafx.javafx3d.hyperspace.DirectedScatterDataModel;
 import com.github.sarxos.webcam.Webcam;
 import edu.jhuapl.trinity.data.HyperspaceSeed;
 import edu.jhuapl.trinity.javafx.events.ColorMapEvent;

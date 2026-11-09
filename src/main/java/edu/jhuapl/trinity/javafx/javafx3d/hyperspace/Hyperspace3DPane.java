@@ -1,4 +1,4 @@
-package edu.jhuapl.trinity.javafx.javafx3d;
+package edu.jhuapl.trinity.javafx.javafx3d.hyperspace;
 
 import edu.jhuapl.trinity.css.StyleResourceProvider;
 import edu.jhuapl.trinity.data.CoordinateSet;
@@ -33,7 +33,12 @@ import edu.jhuapl.trinity.javafx.events.ManifoldEvent.ProjectionConfig;
 import edu.jhuapl.trinity.javafx.events.ShadowEvent;
 import edu.jhuapl.trinity.javafx.events.TimelineEvent;
 import edu.jhuapl.trinity.javafx.events.TrajectoryEvent;
+import edu.jhuapl.trinity.javafx.javafx3d.Manifold3D;
+import edu.jhuapl.trinity.javafx.javafx3d.ShadowCubeWorld;
 import edu.jhuapl.trinity.javafx.javafx3d.ShadowCubeWorld.PROJECTION_TYPE;
+import edu.jhuapl.trinity.javafx.javafx3d.Trajectory3D;
+import edu.jhuapl.trinity.javafx.javafx3d.TriaxialSpheroidMesh;
+import edu.jhuapl.trinity.javafx.javafx3d.XFormGroup;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.Opticon;
 import edu.jhuapl.trinity.javafx.javafx3d.images.ImageResourceProvider;
 import edu.jhuapl.trinity.javafx.javafx3d.tasks.AffinityClusterTask;

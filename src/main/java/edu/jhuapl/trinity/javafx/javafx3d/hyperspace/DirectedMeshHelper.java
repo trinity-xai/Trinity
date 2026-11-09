@@ -1,4 +1,4 @@
-package edu.jhuapl.trinity.javafx.javafx3d;
+package edu.jhuapl.trinity.javafx.javafx3d.hyperspace;
 
 import javafx.scene.shape.TriangleMesh;
 import org.fxyz3d.geometry.Point3D;

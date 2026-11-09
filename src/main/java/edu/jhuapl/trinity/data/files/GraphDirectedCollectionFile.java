@@ -77,8 +77,12 @@ public class GraphDirectedCollectionFile extends File implements Transferable {
         /** Provides deserialization support for JSON messages */
         ObjectMapper mapper = new ObjectMapper();
         mapper.configure(DeserializationFeature.FAIL_ON_UNKNOWN_PROPERTIES, false);
+        long readStart = System.nanoTime();
         String message = Files.readString(this.toPath());
+        System.out.printf("[CG-TIMING] file read %.3f ms chars=%d%n", (System.nanoTime()-readStart)/1e6, message.length());
+        long jsonStart = System.nanoTime();
         graphDirectedCollection = mapper.readValue(message, GraphDirectedCollection.class);
+        System.out.printf("[CG-TIMING] JSON deserialize %.3f ms%n", (System.nanoTime()-jsonStart)/1e6);
         return graphDirectedCollection;
     }
 

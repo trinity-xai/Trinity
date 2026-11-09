@@ -91,7 +91,7 @@ public final class HypersurfaceInteractionController {
         this.coordinateMapper = coordinateMapper;
         this.surfaceCrosshairOverlay = surfaceCrosshairOverlay;
         this.overlayManager = overlayManager;
-        wireGraphInteractionHandlers();
+        // Graph-wide picking now belongs to ContextGraphInteractionController.
     }
 
     /**

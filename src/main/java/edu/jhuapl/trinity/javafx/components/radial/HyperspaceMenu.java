@@ -5,7 +5,7 @@ import edu.jhuapl.trinity.javafx.components.panes.RadarPlotPane;
 import edu.jhuapl.trinity.javafx.components.panes.SearchPane;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
-import edu.jhuapl.trinity.javafx.javafx3d.Hyperspace3DPane;
+import edu.jhuapl.trinity.javafx.javafx3d.hyperspace.Hyperspace3DPane;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import javafx.animation.KeyFrame;
 import javafx.animation.KeyValue;

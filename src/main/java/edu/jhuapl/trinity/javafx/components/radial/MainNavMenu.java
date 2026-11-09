@@ -48,7 +48,7 @@ public class MainNavMenu extends LitRadialMenu {
     public static double ITEM_FIT_WIDTH = 84.0;
     public static double MENU_RADIUS = 215.0;
     public static double OFFSET = 9.0;
-    public static double INITIAL_ANGLE = -120.0;
+    public static double INITIAL_ANGLE = -90.0;
     public static double STROKE_WIDTH = 1.5;
 
     static Color bgLg1Color = Color.DARKCYAN.deriveColor(1, 1, 1, 0.2);
@@ -221,8 +221,11 @@ public class MainNavMenu extends LitRadialMenu {
         data.setEffect(glow);
         ImageView hypersurface = ResourceUtils.loadIcon("hypersurface", ITEM_FIT_WIDTH);
         hypersurface.setEffect(glow);
+        
+        ImageView contextGraphIcon = ResourceUtils.loadIcon("graph", ITEM_FIT_WIDTH);
+        contextGraphIcon.setEffect(glow);
 
-        ImageView projections = ResourceUtils.loadIcon("graph", ITEM_FIT_WIDTH);
+        ImageView projections = ResourceUtils.loadIcon("projections", ITEM_FIT_WIDTH);
         projections.setEffect(glow);
 
         ImageView hyperspace = ResourceUtils.loadIcon("hyperspace", ITEM_FIT_WIDTH);
@@ -238,17 +241,18 @@ public class MainNavMenu extends LitRadialMenu {
         ImageView shutdown = ResourceUtils.loadIcon("shutdown", ITEM_FIT_WIDTH);
         shutdown.setEffect(glow);
 
-        addMenuItem(new LitRadialMenuItem(ITEM_SIZE, "Configuration", configuration, e -> {
-            Pane pathPane = App.getAppPathPaneStack();
-            if (null == configurationPane)
-                configurationPane = new ConfigurationPane(scene, pathPane);
-            if (!pathPane.getChildren().contains(configurationPane))
-                pathPane.getChildren().add(configurationPane);
-            configurationPane.show();
-            slideInPane(configurationPane);
-        }));
         try {
             LitRadialContainerMenuItem systemSubMenuItem = new LitRadialContainerMenuItem(ITEM_SIZE, "System", system);
+            systemSubMenuItem.addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Configuration", configuration, e -> {
+                Pane pathPane = App.getAppPathPaneStack();
+                if (null == configurationPane)
+                    configurationPane = new ConfigurationPane(scene, pathPane);
+                if (!pathPane.getChildren().contains(configurationPane))
+                    pathPane.getChildren().add(configurationPane);
+                configurationPane.show();
+                slideInPane(configurationPane);
+            }));            
+            
             systemSubMenuItem.addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "About", about, e -> {
                 scene.getRoot().fireEvent(new ApplicationEvent(ApplicationEvent.SHOW_ABOUT));
                 Pane pathPane = App.getAppPathPaneStack();
@@ -274,6 +278,10 @@ public class MainNavMenu extends LitRadialMenu {
         }));
         addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Projections", projections, e -> {
             scene.getRoot().fireEvent(new ApplicationEvent(ApplicationEvent.SHOW_PROJECTIONS));
+        }));
+
+        addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Context Graph", contextGraphIcon, e -> {
+            scene.getRoot().fireEvent(new ApplicationEvent(ApplicationEvent.SHOW_CONTEXT_GRAPH));
         }));
 
         addMenuItem(new LitRadialMenuItem(ITEM_SIZE * 0.5, "Hyperspace", hyperspace, e -> {

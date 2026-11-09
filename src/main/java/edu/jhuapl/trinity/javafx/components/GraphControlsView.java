@@ -40,6 +40,10 @@ public final class GraphControlsView extends VBox {
     // Layout
     private ComboBox<LayoutKind> layoutKindCombo;
     private Spinner<Double> radiusSpinner;
+    private VBox algorithmControls;
+    private boolean syncing;
+    private Spinner<Integer> landmarkSpinner;
+    private Spinner<Integer> seedSpinner;
 
     // Edge policy
     private ComboBox<EdgePolicy> edgePolicyCombo;
@@ -67,11 +71,12 @@ public final class GraphControlsView extends VBox {
 
     public GraphControlsView(Scene scene) {
         this.scene = scene;
-        this.params = new GraphLayoutParams(); // your defaults
+        this.params = new GraphLayoutParams(); // graph-only defaults
+        this.params.radius = 30.0;
         setSpacing(10);
         setPadding(new Insets(6));
         getChildren().add(buildContent());
-        fireParamsChanged(); // publish defaults once
+        // Do not publish default layout settings merely by opening controls.
     }
 
     public GraphLayoutParams getParamsCopy() {
@@ -82,198 +87,118 @@ public final class GraphControlsView extends VBox {
         if (p == null) return;
         copyInto(p, params);
         syncControlsFromParams();
-        fireParamsChanged();
+        // External synchronization must not trigger a layout recalculation.
     }
 
     // UI -----------------------------------------------------------------
 
     private Pane buildContent() {
-        return new VBox(10,
+        algorithmControls = new VBox(8);
+        VBox root = new VBox(10,
             titledBox("Layout", buildLayoutGrid()),
-            titledBox("Edges / Sparsification", buildEdgesGrid()),
-            titledBox("Force-Directed (FR)", buildForceGrid()),
+            algorithmControls,
             buildActionsBar()
         );
+        updateAlgorithmControls();
+        return root;
     }
 
     private GridPane buildLayoutGrid() {
         GridPane gp = formGrid();
-
         layoutKindCombo = new ComboBox<>();
-        layoutKindCombo.getItems().addAll(LayoutKind.values());
+        for (LayoutKind kind : LayoutKind.values()) {
+            // MDS belongs in Projections; matrix sparsification is not a layout control.
+            if (kind != LayoutKind.MDS_3D) layoutKindCombo.getItems().add(kind);
+        }
         layoutKindCombo.getSelectionModel().select(params.kind);
         styleCombo(layoutKindCombo);
-        addRow(gp, 0, "Kind", layoutKindCombo);
+        addRow(gp, 0, "Algorithm", layoutKindCombo);
+        layoutKindCombo.setOnAction(e -> {
+            if (syncing || layoutKindCombo.getValue() == null) return;
+            params.kind = layoutKindCombo.getValue();
+            updateAlgorithmControls();
+            fireParamsChanged();
+        });
+        return gp;
+    }
 
-        radiusSpinner = new Spinner<>(new SpinnerValueFactory.DoubleSpinnerValueFactory(10.0, 100_000.0, params.radius, 10.0));
+    /** Only expose settings that are consumed by the selected implementation. */
+    private void updateAlgorithmControls() {
+        if (algorithmControls == null || layoutKindCombo == null) return;
+        algorithmControls.getChildren().clear();
+        LayoutKind kind = layoutKindCombo.getValue();
+        if (kind == null) return;
+        GridPane gp = formGrid();
+        int row = 0;
+        radiusSpinner = new Spinner<>(new SpinnerValueFactory.DoubleSpinnerValueFactory(
+            1.0, 100_000.0, Math.max(1, params.radius), 10.0));
         radiusSpinner.setEditable(true);
         styleSpinner(radiusSpinner);
-        addRow(gp, 1, "Radius", radiusSpinner);
-
-        layoutKindCombo.setOnAction(e -> {
-            params.kind = layoutKindCombo.getValue();
-            toggleForceSectionVisibility();
-            fireParamsChanged();
-        });
+        addRow(gp, row++, "Layout extent", radiusSpinner);
         radiusSpinner.valueProperty().addListener((o, ov, nv) -> {
-            params.radius = nv;
-            fireParamsChanged();
+            if (!syncing && nv != null) { params.radius = nv; fireParamsChanged(); }
         });
-
-        return gp;
+        boolean iterative = kind == LayoutKind.FORCE_FR || kind == LayoutKind.FORCE_ATLAS_3D
+            || kind == LayoutKind.KAMADA_KAWAI_3D || kind == LayoutKind.STRESS_MAJOR_3D
+            || kind == LayoutKind.SPECTRAL_3D;
+        if (iterative) {
+            itersSpinner = new Spinner<>(new SpinnerValueFactory.IntegerSpinnerValueFactory(
+                1, 200_000, Math.max(1, params.iterations), 25));
+            itersSpinner.setEditable(true);
+            styleSpinner(itersSpinner);
+            addRow(gp, row++, "Iterations", itersSpinner);
+            itersSpinner.valueProperty().addListener((o, ov, nv) -> {
+                if (!syncing && nv != null) { params.iterations = nv; fireParamsChanged(); }
+            });
+        }
+        if (kind == LayoutKind.KAMADA_KAWAI_3D || kind == LayoutKind.STRESS_MAJOR_3D) {
+            landmarkSpinner = new Spinner<>(new SpinnerValueFactory.IntegerSpinnerValueFactory(
+                1, 50_000, Math.max(1, params.landmarkCount), 4));
+            landmarkSpinner.setEditable(true);
+            styleSpinner(landmarkSpinner);
+            addRow(gp, row++, "Graph landmarks", landmarkSpinner);
+            landmarkSpinner.valueProperty().addListener((o, ov, nv) -> {
+                if (!syncing && nv != null) { params.landmarkCount = nv; fireParamsChanged(); }
+            });
+        }
+        if (kind == LayoutKind.FORCE_ATLAS_3D || kind == LayoutKind.KAMADA_KAWAI_3D
+            || kind == LayoutKind.STRESS_MAJOR_3D || kind == LayoutKind.SPECTRAL_3D) {
+            seedSpinner = new Spinner<>(new SpinnerValueFactory.IntegerSpinnerValueFactory(
+                0, Integer.MAX_VALUE, (int)Math.max(0, Math.min(Integer.MAX_VALUE, params.randomSeed)), 1));
+            seedSpinner.setEditable(true);
+            styleSpinner(seedSpinner);
+            addRow(gp, row++, "Random seed", seedSpinner);
+            seedSpinner.valueProperty().addListener((o, ov, nv) -> {
+                if (!syncing && nv != null) { params.randomSeed = nv; fireParamsChanged(); }
+            });
+        }
+        if (kind == LayoutKind.FORCE_FR || kind == LayoutKind.FORCE_ATLAS_3D) {
+            stepSpinner = doubleSetting(gp, row++, "Step", params.step, .0001, 1000, .01,
+                v -> params.step = v);
+            repulseSpinner = doubleSetting(gp, row++, "Repulsion", params.repulsion, 0, 1e9, 1,
+                v -> params.repulsion = v);
+            attractSpinner = doubleSetting(gp, row++, "Attraction", params.attraction, 0, 1e6, .01,
+                v -> params.attraction = v);
+            gravitySpinner = doubleSetting(gp, row++, "Gravity", params.gravity, 0, 10, .01,
+                v -> params.gravity = v);
+            coolingSpinner = doubleSetting(gp, row++, "Cooling", params.cooling, .5, .9999, .001,
+                v -> params.cooling = v);
+        }
+        algorithmControls.getChildren().add(titledBox("Parameters — " + kind, gp));
     }
 
-    private GridPane buildEdgesGrid() {
-        GridPane gp = formGrid();
-
-        edgePolicyCombo = new ComboBox<>();
-        edgePolicyCombo.getItems().addAll(EdgePolicy.values());
-        edgePolicyCombo.getSelectionModel().select(params.edgePolicy);
-        styleCombo(edgePolicyCombo);
-        addRow(gp, 0, "Policy", edgePolicyCombo);
-
-        kSpinner = new Spinner<>(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 10_000, params.knnK, 1));
-        kSpinner.setEditable(true);
-        styleSpinner(kSpinner);
-        addRow(gp, 1, "k (KNN/MST+K)", kSpinner);
-
-        knnSymmetrizeCheck = new CheckBox("Symmetrize KNN");
-        knnSymmetrizeCheck.setSelected(params.knnSymmetrize);
-        styleCheck(knnSymmetrizeCheck);
-        addRow(gp, 2, "", knnSymmetrizeCheck);
-
-        epsSpinner = new Spinner<>(new SpinnerValueFactory.DoubleSpinnerValueFactory(0.0, 1e9, params.epsilon, 0.1));
-        epsSpinner.setEditable(true);
-        styleSpinner(epsSpinner);
-        addRow(gp, 3, "ε (Epsilon)", epsSpinner);
-
-        buildMstCheck = new CheckBox("Build MST (for MST+K)");
-        buildMstCheck.setSelected(params.buildMst);
-        styleCheck(buildMstCheck);
-        addRow(gp, 4, "", buildMstCheck);
-
-        maxEdgesSpinner = new Spinner<>(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 2_000_000, params.maxEdges, 100));
-        maxEdgesSpinner.setEditable(true);
-        styleSpinner(maxEdgesSpinner);
-        addRow(gp, 5, "Max edges", maxEdgesSpinner);
-
-        maxDegreeSpinner = new Spinner<>(new SpinnerValueFactory.IntegerSpinnerValueFactory(0, 10_000, params.maxDegreePerNode, 1));
-        maxDegreeSpinner.setEditable(true);
-        styleSpinner(maxDegreeSpinner);
-        addRow(gp, 6, "Max degree/node", maxDegreeSpinner);
-
-        minWeightSpinner = new Spinner<>(new SpinnerValueFactory.DoubleSpinnerValueFactory(0.0, 1e9, params.minEdgeWeight, 0.01));
-        minWeightSpinner.setEditable(true);
-        styleSpinner(minWeightSpinner);
-        addRow(gp, 7, "Min edge weight", minWeightSpinner);
-
-        norm01Check = new CheckBox("Normalize weights [0,1]");
-        norm01Check.setSelected(params.normalizeWeights01);
-        styleCheck(norm01Check);
-        addRow(gp, 8, "", norm01Check);
-
-        edgePolicyCombo.setOnAction(e -> {
-            params.edgePolicy = edgePolicyCombo.getValue();
-            toggleEdgePolicyFields();
-            fireParamsChanged();
+    private Spinner<Double> doubleSetting(GridPane gp, int row, String label, double initial,
+                                           double min, double max, double increment,
+                                           java.util.function.DoubleConsumer setter) {
+        Spinner<Double> spinner = new Spinner<>(new SpinnerValueFactory.DoubleSpinnerValueFactory(
+            min, max, Math.max(min, Math.min(max, initial)), increment));
+        spinner.setEditable(true);
+        styleSpinner(spinner);
+        addRow(gp, row, label, spinner);
+        spinner.valueProperty().addListener((o, ov, nv) -> {
+            if (!syncing && nv != null) { setter.accept(nv); fireParamsChanged(); }
         });
-        kSpinner.valueProperty().addListener((o, ov, nv) -> {
-            params.knnK = nv;
-            fireParamsChanged();
-        });
-        knnSymmetrizeCheck.setOnAction(e -> {
-            params.knnSymmetrize = knnSymmetrizeCheck.isSelected();
-            fireParamsChanged();
-        });
-        epsSpinner.valueProperty().addListener((o, ov, nv) -> {
-            params.epsilon = nv;
-            fireParamsChanged();
-        });
-        buildMstCheck.setOnAction(e -> {
-            params.buildMst = buildMstCheck.isSelected();
-            fireParamsChanged();
-        });
-        maxEdgesSpinner.valueProperty().addListener((o, ov, nv) -> {
-            params.maxEdges = nv;
-            fireParamsChanged();
-        });
-        maxDegreeSpinner.valueProperty().addListener((o, ov, nv) -> {
-            params.maxDegreePerNode = nv;
-            fireParamsChanged();
-        });
-        minWeightSpinner.valueProperty().addListener((o, ov, nv) -> {
-            params.minEdgeWeight = nv;
-            fireParamsChanged();
-        });
-        norm01Check.setOnAction(e -> {
-            params.normalizeWeights01 = norm01Check.isSelected();
-            fireParamsChanged();
-        });
-
-        toggleEdgePolicyFields();
-        return gp;
-    }
-
-    private GridPane buildForceGrid() {
-        GridPane gp = formGrid();
-
-        itersSpinner = new Spinner<>(new SpinnerValueFactory.IntegerSpinnerValueFactory(1, 200_000, params.iterations, 10));
-        itersSpinner.setEditable(true);
-        styleSpinner(itersSpinner);
-        addRow(gp, 0, "Iterations", itersSpinner);
-
-        stepSpinner = new Spinner<>(new SpinnerValueFactory.DoubleSpinnerValueFactory(0.0001, 1000.0, params.step, 0.01));
-        stepSpinner.setEditable(true);
-        styleSpinner(stepSpinner);
-        addRow(gp, 1, "Step", stepSpinner);
-
-        repulseSpinner = new Spinner<>(new SpinnerValueFactory.DoubleSpinnerValueFactory(0.0, 1e9, params.repulsion, 1.0));
-        repulseSpinner.setEditable(true);
-        styleSpinner(repulseSpinner);
-        addRow(gp, 2, "Repulsion", repulseSpinner);
-
-        attractSpinner = new Spinner<>(new SpinnerValueFactory.DoubleSpinnerValueFactory(0.0, 1e6, params.attraction, 0.01));
-        attractSpinner.setEditable(true);
-        styleSpinner(attractSpinner);
-        addRow(gp, 3, "Attraction", attractSpinner);
-
-        gravitySpinner = new Spinner<>(new SpinnerValueFactory.DoubleSpinnerValueFactory(0.0, 10.0, params.gravity, 0.01));
-        gravitySpinner.setEditable(true);
-        styleSpinner(gravitySpinner);
-        addRow(gp, 4, "Gravity", gravitySpinner);
-
-        coolingSpinner = new Spinner<>(new SpinnerValueFactory.DoubleSpinnerValueFactory(0.5, 0.9999, params.cooling, 0.001));
-        coolingSpinner.setEditable(true);
-        styleSpinner(coolingSpinner);
-        addRow(gp, 5, "Cooling", coolingSpinner);
-
-        itersSpinner.valueProperty().addListener((o, ov, nv) -> {
-            params.iterations = nv;
-            fireParamsChanged();
-        });
-        stepSpinner.valueProperty().addListener((o, ov, nv) -> {
-            params.step = nv;
-            fireParamsChanged();
-        });
-        repulseSpinner.valueProperty().addListener((o, ov, nv) -> {
-            params.repulsion = nv;
-            fireParamsChanged();
-        });
-        attractSpinner.valueProperty().addListener((o, ov, nv) -> {
-            params.attraction = nv;
-            fireParamsChanged();
-        });
-        gravitySpinner.valueProperty().addListener((o, ov, nv) -> {
-            params.gravity = nv;
-            fireParamsChanged();
-        });
-        coolingSpinner.valueProperty().addListener((o, ov, nv) -> {
-            params.cooling = nv;
-            fireParamsChanged();
-        });
-
-        toggleForceSectionVisibility();
-        return gp;
+        return spinner;
     }
 
     private HBox buildActionsBar() {
@@ -297,51 +222,14 @@ public final class GraphControlsView extends VBox {
 
     // Behavior ------------------------------------------------------------
 
-    private void toggleEdgePolicyFields() {
-        EdgePolicy p = edgePolicyCombo.getValue();
-        boolean useK = (p == EdgePolicy.KNN || p == EdgePolicy.MST_PLUS_K);
-        boolean useEps = (p == EdgePolicy.EPSILON);
-
-        kSpinner.setDisable(!useK);
-        knnSymmetrizeCheck.setDisable(!(p == EdgePolicy.KNN)); // only meaningful for KNN
-        epsSpinner.setDisable(!useEps);
-        buildMstCheck.setDisable(p != EdgePolicy.MST_PLUS_K);
-    }
-
-    private void toggleForceSectionVisibility() {
-        boolean fr = (layoutKindCombo.getValue() == LayoutKind.FORCE_FR);
-        itersSpinner.setDisable(!fr);
-        stepSpinner.setDisable(!fr);
-        repulseSpinner.setDisable(!fr);
-        attractSpinner.setDisable(!fr);
-        gravitySpinner.setDisable(!fr);
-        coolingSpinner.setDisable(!fr);
-    }
-
     private void syncControlsFromParams() {
-        layoutKindCombo.getSelectionModel().select(params.kind);
-        radiusSpinner.getValueFactory().setValue(params.radius);
-
-        edgePolicyCombo.getSelectionModel().select(params.edgePolicy);
-        kSpinner.getValueFactory().setValue(params.knnK);
-        knnSymmetrizeCheck.setSelected(params.knnSymmetrize);
-        epsSpinner.getValueFactory().setValue(params.epsilon);
-        buildMstCheck.setSelected(params.buildMst);
-
-        maxEdgesSpinner.getValueFactory().setValue(params.maxEdges);
-        maxDegreeSpinner.getValueFactory().setValue(params.maxDegreePerNode);
-        minWeightSpinner.getValueFactory().setValue(params.minEdgeWeight);
-        norm01Check.setSelected(params.normalizeWeights01);
-
-        itersSpinner.getValueFactory().setValue(params.iterations);
-        stepSpinner.getValueFactory().setValue(params.step);
-        repulseSpinner.getValueFactory().setValue(params.repulsion);
-        attractSpinner.getValueFactory().setValue(params.attraction);
-        gravitySpinner.getValueFactory().setValue(params.gravity);
-        coolingSpinner.getValueFactory().setValue(params.cooling);
-
-        toggleEdgePolicyFields();
-        toggleForceSectionVisibility();
+        syncing = true;
+        try {
+            layoutKindCombo.getSelectionModel().select(params.kind);
+        } finally {
+            syncing = false;
+        }
+        updateAlgorithmControls();
     }
 
     private void fireParamsChanged() {
@@ -420,6 +308,8 @@ public final class GraphControlsView extends VBox {
 
         // force
         dst.iterations = src.iterations;
+        dst.landmarkCount = src.landmarkCount;
+        dst.randomSeed = src.randomSeed;
         dst.step = src.step;
         dst.repulsion = src.repulsion;
         dst.attraction = src.attraction;

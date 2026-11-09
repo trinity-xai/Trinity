@@ -1,8 +1,5 @@
 package edu.jhuapl.trinity.javafx.components.panes;
 
-import edu.jhuapl.trinity.javafx.components.GraphControlsView;
-import edu.jhuapl.trinity.javafx.components.GraphStyleControlsView;
-import edu.jhuapl.trinity.javafx.events.GraphEvent;
 import edu.jhuapl.trinity.javafx.events.HyperspaceEvent;
 import edu.jhuapl.trinity.javafx.events.HypersurfaceEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.hypersurface.Hypersurface3DPane;
@@ -97,8 +94,6 @@ public class HypersurfaceControlsPane extends LitPathPane {
     private ColorPicker pointColorPicker;
     private CheckBox showLegendCheck;
 
-    // Graph overlay visibility
-    private ToggleButton showGraphToggle;
 
     // Tiled LOD controls
     private ComboBox<Integer> tileSizeCombo;
@@ -188,15 +183,6 @@ public class HypersurfaceControlsPane extends LitPathPane {
                 }
             });
         }
-
-        // Graph overlay visibility GUI sync
-        scene.addEventHandler(GraphEvent.SET_GRAPH_VISIBILITY_GUI, e -> {
-            if (showGraphToggle != null) {
-                boolean v = (Boolean) e.object;
-                if (showGraphToggle.isSelected() != v) showGraphToggle.setSelected(v);
-            }
-            e.consume();
-        });
 
         startLodDiagnosticsTimer();
     }
@@ -418,13 +404,6 @@ public class HypersurfaceControlsPane extends LitPathPane {
         });
 
         // --- Graph Overlay visibility ---
-        GridPane graphOverlayGrid = formGrid();
-        showGraphToggle = new ToggleButton("Show Graph");
-        showGraphToggle.setSelected(true); // will be synced on startup via SET_GRAPH_VISIBILITY_GUI
-        showGraphToggle.setOnAction(e ->
-            fireOnRoot(new GraphEvent(GraphEvent.GRAPH_VISIBILITY_CHANGED, showGraphToggle.isSelected()))
-        );
-        addRow(graphOverlayGrid, 0, "Graph Overlay", showGraphToggle);
 
         VBox viewTabContent = new VBox(10,
             titledBox("Dimensions", dimsGrid),
@@ -684,21 +663,10 @@ public class HypersurfaceControlsPane extends LitPathPane {
         tabs.setPrefHeight(TAB_CONTENT_HEIGHT);
         tabs.setMaxHeight(Double.MAX_VALUE);
 
-        GraphControlsView graphLayoutView = new GraphControlsView(scene);
-        GraphStyleControlsView graphStyleView = new GraphStyleControlsView(scene);
-        VBox graphStyleTabContent = new VBox(10,
-            titledBox("Graph Overlay", graphOverlayGrid),
-            graphStyleView);
-        graphStyleTabContent.setPadding(new Insets(6));
-        VBox.setVgrow(graphStyleView, Priority.ALWAYS);
-
         Tab t1 = new Tab("View", viewTabContent);
         Tab t2 = new Tab("Processing", procTabContent);
         Tab t3 = new Tab("LOD", lodScrollPane);
-        Tab t4 = new Tab("Graph Layout", graphLayoutView);
-        Tab t5 = new Tab("Graph Style", graphStyleTabContent);
-
-        tabs.getTabs().addAll(t1, t2, t3, t4, t5);
+        tabs.getTabs().addAll(t1, t2, t3);
         return tabs;
     }
 

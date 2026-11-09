@@ -4,7 +4,7 @@ import edu.jhuapl.trinity.data.Trajectory;
 import edu.jhuapl.trinity.data.graph.GraphNode;
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
-import edu.jhuapl.trinity.javafx.javafx3d.Perspective3DNode;
+import edu.jhuapl.trinity.javafx.javafx3d.hyperspace.Perspective3DNode;
 import edu.jhuapl.trinity.javafx.javafx3d.Trajectory3D;
 import edu.jhuapl.trinity.javafx.javafx3d.animated.TessellationMesh;
 import javafx.animation.Interpolator;
