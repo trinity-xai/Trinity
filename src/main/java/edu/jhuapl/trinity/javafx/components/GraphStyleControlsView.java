@@ -99,7 +99,7 @@ public final class GraphStyleControlsView extends VBox {
         styleColorPicker(nodeColorPicker);
         addRow(gp, 0, "Color", nodeColorPicker);
 
-        nodeRadiusSpinner = new Spinner<>(new SpinnerValueFactory.DoubleSpinnerValueFactory(1.0, 500.0, params.nodeRadius, 1.0));
+        nodeRadiusSpinner = new Spinner<>(new SpinnerValueFactory.DoubleSpinnerValueFactory(0.25, 500.0, params.nodeRadius, 0.25));
         nodeRadiusSpinner.setEditable(true);
         styleSpinner(nodeRadiusSpinner);
         addRow(gp, 1, "Radius", nodeRadiusSpinner);

@@ -94,6 +94,71 @@ public final class ContextGraphController {
     private final Map<GraphEdge, ContextGraphEdge3D> edgeViews = new java.util.IdentityHashMap<>();
 
 
+    private String selectedNodeId;
+    private GraphEdge selectedEdge;
+    private final Map<ContextGraphNode3D, GraphNode> pickedNodes = new java.util.IdentityHashMap<>();
+    private final Map<ContextGraphEdge3D, GraphEdge> pickedEdges = new java.util.IdentityHashMap<>();
+
+    public GraphNode resolveNode(Node picked) {
+        return picked instanceof ContextGraphNode3D node ? pickedNodes.get(node) : null;
+    }
+
+    public GraphEdge resolveEdge(Node picked) {
+        return picked instanceof ContextGraphEdge3D edge ? pickedEdges.get(edge) : null;
+    }
+
+    public void toggleNodeSelection(GraphNode node) {
+        String id = node.getEntityID();
+        if (selectedNodeId != null) {
+            ContextGraphNode3D old = nodeViews.get(selectedNodeId);
+            if (old != null) old.unselect();
+        }
+        selectedNodeId = java.util.Objects.equals(selectedNodeId, id) ? null : id;
+        if (selectedNodeId != null) {
+            ContextGraphNode3D view = nodeViews.get(selectedNodeId);
+            if (view != null) view.select();
+        }
+    }
+
+    public void toggleEdgeSelection(GraphEdge edge) {
+        if (selectedEdge != null) {
+            ContextGraphEdge3D old = edgeViews.get(selectedEdge);
+            if (old != null) old.unselect();
+        }
+        selectedEdge = selectedEdge == edge ? null : edge;
+        if (selectedEdge != null) {
+            ContextGraphEdge3D view = edgeViews.get(selectedEdge);
+            if (view != null) view.select();
+        }
+    }
+
+    public void clearSelections() {
+        if (selectedNodeId != null) {
+            ContextGraphNode3D view = nodeViews.get(selectedNodeId);
+            if (view != null) view.unselect();
+        }
+        if (selectedEdge != null) {
+            ContextGraphEdge3D view = edgeViews.get(selectedEdge);
+            if (view != null) view.unselect();
+        }
+        selectedNodeId = null;
+        selectedEdge = null;
+    }
+
+    private void registerNode(GraphNode model, ContextGraphNode3D view) {
+        pickedNodes.put(view, model);
+        view.setMouseTransparent(false);
+        view.addEventHandler(javafx.scene.input.MouseEvent.MOUSE_ENTERED,
+            e -> fireOnRoot(new GraphEvent(GraphEvent.GRAPH_NODE_HOVER, model)));
+    }
+
+    private void registerEdge(GraphEdge model, ContextGraphEdge3D view) {
+        pickedEdges.put(view, model);
+        view.setMouseTransparent(false);
+        view.addEventHandler(javafx.scene.input.MouseEvent.MOUSE_ENTERED,
+            e -> fireOnRoot(new GraphEvent(GraphEvent.GRAPH_EDGE_HOVER, model)));
+    }
+
     private GraphLayoutParams layoutParams = new GraphLayoutParams();
     private long layoutGeneration;
     private volatile long renderGeneration;
@@ -163,6 +228,7 @@ public final class ContextGraphController {
         if (currentGraph == null || edgeLayer == null) return;
         edgeLayer.getChildren().clear();
         edgeViews.clear();
+        pickedEdges.clear();
         for (GraphEdge edge : currentGraph.getEdges()) {
             Optional<GraphNode> a = currentGraph.findNodeById(edge.getStartID());
             Optional<GraphNode> b = currentGraph.findNodeById(edge.getEndID());
@@ -174,6 +240,8 @@ public final class ContextGraphController {
             edgeView.setEndpoints(new Point3D(ap[0], ap[1], ap[2]),
                 new Point3D(bp[0], bp[1], bp[2]));
             edgeViews.put(edge, edgeView);
+            registerEdge(edge, edgeView);
+            if (selectedEdge == edge) edgeView.select();
             edgeLayer.getChildren().add(edgeView);
         }
         System.out.printf("[CG-TIMING] edge construction + attachment %.3f ms edges=%d%n", (System.nanoTime()-startTime)/1e6, edgeLayer.getChildren().size());
@@ -368,6 +436,10 @@ public final class ContextGraphController {
             Platform.runLater(() -> loadGraph(graph));
             return;
         }
+        if (currentGraph != graph) {
+            selectedNodeId = null;
+            selectedEdge = null;
+        }
         currentGraph = graph;
         ++layoutGeneration;
         layoutPositions.clear();
@@ -394,8 +466,16 @@ public final class ContextGraphController {
         edgeLayer.getChildren().clear();
         nodeViews.clear();
         edgeViews.clear();
+        pickedNodes.clear();
+        pickedEdges.clear();
         final GraphDirectedCollection graph = currentGraph;
-        if (graph == null) return;
+        if (graph == null) {
+            selectedNodeId = null;
+            selectedEdge = null;
+            return;
+        }
+        if (selectedNodeId != null && graph.findNodeById(selectedNodeId).isEmpty()) selectedNodeId = null;
+        if (selectedEdge != null && graph.getEdges().stream().noneMatch(edge -> edge == selectedEdge)) selectedEdge = null;
         final double scale = coordinateScale;
         final double nodeRadius = styleParams.nodeRadius;
         final double edgeRadius = Math.max(0.001, styleParams.edgeWidth);
@@ -434,17 +514,17 @@ public final class ContextGraphController {
                     if (isCancelled() || generation != renderGeneration) return null;
                     double[] pos = coordinates.get(node.getEntityID());
                     ContextGraphNode3D sphere = new ContextGraphNode3D(nodeMaterial, nodeRadius,
-                        nodeDivisions, false);
+                        nodeDivisions, true);
                     sphere.setExpansionScale(1.10);
-                    sphere.setMouseTransparent(true);
-                    sphere.setOnMouseMoved(null);
-                    sphere.setOnMouseClicked(null);
+
                     sphere.setTranslateX(pos[0]);
                     sphere.setTranslateY(pos[1]);
                     sphere.setTranslateZ(pos[2]);
                     Platform.runLater(() -> {
                         if (generation != renderGeneration) return;
                         nodeViews.put(node.getEntityID(), sphere);
+                        registerNode(node, sphere);
+                        if (java.util.Objects.equals(selectedNodeId, node.getEntityID())) sphere.select();
                         nodeLayer.getChildren().add(sphere);
                     });
                 }
@@ -459,8 +539,7 @@ public final class ContextGraphController {
                     ContextGraphEdge3D view = new ContextGraphEdge3D((float) edgeRadius, 3, 1);
                     view.setEndpoints(new Point3D(a[0], a[1], a[2]),
                         new Point3D(b[0], b[1], b[2]));
-                    view.setMaterial(edgeMaterial);
-                    view.setMouseTransparent(true);
+                    view.setBaseMaterial(edgeMaterial);
                     preparedEdges.add(view);
                     preparedEdgeKeys.add(edge);
                 }
@@ -502,13 +581,17 @@ public final class ContextGraphController {
                                 float activeWidth = (float) Math.max(0.001, styleParams.edgeWidth);
                                 for (int i = nextIndex; i < end; i++) {
                                     ContextGraphEdge3D pending = preparedEdges.get(i);
-                                    pending.setMaterial(activeMaterial);
+                                    pending.setBaseMaterial(activeMaterial);
                                     if (pending.getRadius() != activeWidth) pending.setRadius(activeWidth);
                                 }
                                 edgeLayer.getChildren().addAll(
                                     preparedEdges.subList(nextIndex, end));
                                 for (int i = nextIndex; i < end; i++) {
-                                    edgeViews.put(preparedEdgeKeys.get(i), preparedEdges.get(i));
+                                    GraphEdge model = preparedEdgeKeys.get(i);
+                                    ContextGraphEdge3D view = preparedEdges.get(i);
+                                    edgeViews.put(model, view);
+                                    registerEdge(model, view);
+                                    if (selectedEdge == model) view.select();
                                 }
                             }
                             double attachMs = (System.nanoTime() - attachStart) / 1e6;
@@ -572,7 +655,7 @@ public final class ContextGraphController {
             style.edgeColor == null ? Color.CORNFLOWERBLUE : style.edgeColor,
             style.edgeOpacity);
         for (ContextGraphEdge3D edge : edgeViews.values()) {
-            if (edge.getMaterial() != material) edge.setMaterial(material);
+            edge.setBaseMaterial(material);
         }
     }
 

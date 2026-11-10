@@ -1,10 +1,14 @@
 package edu.jhuapl.trinity.javafx.components.panes;
 
+import edu.jhuapl.trinity.data.graph.GraphEdge;
+import edu.jhuapl.trinity.data.graph.GraphNode;
+import edu.jhuapl.trinity.data.graph.GraphRelationship;
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.data.messages.xai.VectorMaskCollection;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
+import edu.jhuapl.trinity.javafx.events.GraphEvent;
 import edu.jhuapl.trinity.javafx.events.ImageEvent;
 import edu.jhuapl.trinity.javafx.events.HypersurfaceEvent;
 import edu.jhuapl.trinity.javafx.javafx3d.hypersurface.SurfaceInspection;
@@ -280,6 +284,14 @@ public class NavigatorPane extends LitPathPane {
             }
             createDetails(fv);
         });
+        // Context Graph inspection is hover-driven, never click-driven. This intentionally
+        // does not depend on the image refresh/auto toggle or selection state.
+        scene.addEventHandler(GraphEvent.GRAPH_NODE_HOVER, e -> {
+            if (e.object instanceof GraphNode node) inspectGraphNode(node);
+        });
+        scene.addEventHandler(GraphEvent.GRAPH_EDGE_HOVER, e -> {
+            if (e.object instanceof GraphEdge edge) inspectGraphEdge(edge);
+        });
         scene.addEventHandler(HypersurfaceEvent.SURFACE_SOURCE_IMAGE_CHANGED, e -> {
             if (e.object instanceof Image image) {
                 setImage(image);
@@ -302,6 +314,64 @@ public class NavigatorPane extends LitPathPane {
                 clearSurfaceInspection();
             }
         });
+    }
+
+    private void inspectGraphNode(GraphNode node) {
+        imageLabel.setText("Graph Node: " + String.valueOf(node.getEntityID()));
+        urlLabel.setText("Context Graph / Node");
+        detailsTP.setText("Node Details");
+        detailsGridPane.getChildren().clear();
+        addGraphDetail(0, "Entity ID", node.getEntityID());
+        addGraphDetail(1, "Identity", node.getIdentity());
+        addGraphDetail(2, "Labels", node.getLabels());
+        addGraphDetail(3, "Color", node.getColor());
+        detailsTP.setExpanded(true);
+        showGraphProperties(node.getProperties());
+        textArea.setText("Vector: " + String.valueOf(node.getVector()));
+    }
+
+    private void inspectGraphEdge(GraphEdge edge) {
+        imageLabel.setText("Graph Edge: " + edge.getStartID() + " -> " + edge.getEndID());
+        urlLabel.setText("Context Graph / Edge");
+        detailsTP.setText("Edge Details");
+        detailsGridPane.getChildren().clear();
+        addGraphDetail(0, "Source", edge.getStartID());
+        addGraphDetail(1, "Target", edge.getEndID());
+        addGraphDetail(2, "Color", edge.getColor());
+        GraphRelationship relationship = edge.getRelationship();
+        if (relationship != null) {
+            addGraphDetail(3, "Identity", relationship.getIdentity());
+            addGraphDetail(4, "Labels", relationship.getLabels());
+            showGraphProperties(relationship.getProperties());
+        } else {
+            showGraphProperties(null);
+        }
+        detailsTP.setExpanded(true);
+        textArea.setText(relationship == null ? "No relationship metadata" :
+            "Relationship: " + String.valueOf(relationship.getLabels()));
+    }
+
+    private void addGraphDetail(int row, String name, Object value) {
+        Label label = new Label(name);
+        Label detail = new Label(String.valueOf(value));
+        detail.setWrapText(true);
+        detailsGridPane.addRow(row, label, detail);
+    }
+
+    private void showGraphProperties(Map<String, Object> properties) {
+        StringBuilder builder = new StringBuilder();
+        if (properties != null) {
+            for (Map.Entry<String, Object> entry : properties.entrySet()) {
+                builder.append(entry.getKey()).append(": ")
+                    .append(String.valueOf(entry.getValue())).append('\n');
+            }
+        }
+        Text metadata = new Text(builder.length() == 0 ? "No metadata" : builder.toString());
+        metadata.setWrappingWidth(50);
+        metadata.wrappingWidthProperty().bind(metaTP.widthProperty().subtract(20));
+        metadata.setFill(Color.ALICEBLUE);
+        metaTP.setContent(metadata);
+        metaTP.setExpanded(true);
     }
 
     private Label addSurfaceRow(int row, String name) {

@@ -16,6 +16,7 @@ import javafx.scene.Scene;
 import javafx.scene.SceneAntialiasing;
 import javafx.scene.SubScene;
 import javafx.scene.input.MouseEvent;
+import javafx.scene.input.MouseButton;
 import javafx.scene.Node;
 import edu.jhuapl.trinity.data.graph.GraphNode;
 import edu.jhuapl.trinity.data.graph.GraphEdge;
@@ -81,7 +82,7 @@ public class ContextGraph3DPane extends StackPane {
             graphMenu.show(subScene, e.getScreenX(), e.getScreenY());
             e.consume();
         });
-        // Geometry picking is intentionally disabled during performance recovery.
+        // Pick against the concrete mesh and resolve via typed controller registries.
         subScene.addEventHandler(MouseEvent.MOUSE_PRESSED, e -> {
             anchorX = e.getSceneX();
             anchorY = e.getSceneY();
@@ -105,6 +106,22 @@ public class ContextGraph3DPane extends StackPane {
             } else if (e.isMiddleButtonDown()) {
                 cameraTransform.t.setX(cameraTransform.t.getX() + dx * factor * 0.3);
                 cameraTransform.t.setY(cameraTransform.t.getY() + dy * factor * 0.3);
+            }
+        });
+        subScene.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
+            if (e.getButton() != MouseButton.PRIMARY || !e.isStillSincePress()
+                || dragDistance > 3.0) return;
+            Node picked = e.getPickResult() == null ? null : e.getPickResult().getIntersectedNode();
+            GraphNode node = graphController.resolveNode(picked);
+            GraphEdge edge = graphController.resolveEdge(picked);
+            if (node != null) {
+                graphController.toggleNodeSelection(node);
+                scene.getRoot().fireEvent(new GraphEvent(GraphEvent.GRAPH_NODE_CLICK, node));
+            } else if (edge != null) {
+                graphController.toggleEdgeSelection(edge);
+                scene.getRoot().fireEvent(new GraphEvent(GraphEvent.GRAPH_EDGE_CLICK, edge));
+            } else {
+                graphController.clearSelections();
             }
         });
         // Shift+wheel is delivered as horizontal scrolling on some platforms.
