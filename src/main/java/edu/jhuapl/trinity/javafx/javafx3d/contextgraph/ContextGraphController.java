@@ -1,5 +1,7 @@
 package edu.jhuapl.trinity.javafx.javafx3d.contextgraph;
 
+import edu.jhuapl.trinity.data.FactorLabel;
+import edu.jhuapl.trinity.javafx.events.HyperspaceEvent;
 import edu.jhuapl.trinity.data.graph.GraphDirectedCollection;
 import edu.jhuapl.trinity.data.graph.GraphFeatureCollectionAdapter;
 import edu.jhuapl.trinity.data.graph.GraphNode;
@@ -33,6 +35,8 @@ import javafx.scene.shape.Shape3D;
 import javafx.scene.image.WritableImage;
 import java.util.HashMap;
 import java.util.Map;
+import java.util.LinkedHashSet;
+import java.util.Set;
 import javafx.scene.text.Font;
 
 
@@ -52,8 +56,6 @@ public final class ContextGraphController {
     private final Group edgeLayer = new Group();
     private boolean diagnosticDiffuseMaterials;
     private final Map<Color, PhongMaterial> diffuseMaterials = new HashMap<>();
-    // Test 2: all edges use one shared opaque material, independent of style.
-    private static final PhongMaterial TEST_EDGE_MATERIAL = new PhongMaterial(Color.CORNFLOWERBLUE);
 
     public boolean isDiagnosticDiffuseMaterials() { return diagnosticDiffuseMaterials; }
 
@@ -74,6 +76,80 @@ public final class ContextGraphController {
             material.setSpecularColor(c);
             return material;
         });
+    }
+
+    private static String category(List<String> labels) {
+        if (labels == null || labels.isEmpty()) return "Uncategorized";
+        // Match GraphFeatureCollectionAdapter's FeatureVector.label mapping.
+        String joined = String.join(", ", labels).trim();
+        return joined.isEmpty() ? "Uncategorized" : joined;
+    }
+
+    private static Color categoryColor(String label, Color fallback) {
+        FactorLabel factor = FactorLabel.getFactorLabel(label);
+        if (factor != null && factor.getColor() != null) return factor.getColor();
+        if ("Uncategorized".equals(label)) return fallback;
+        // Stable local fallback when the label has not been registered globally.
+        return Color.hsb(Math.floorMod(label.hashCode(), 360), 0.72, 0.94);
+    }
+
+    private Color nodeColor(GraphNode node, GraphStyleParams style) {
+        Color fallback = style.nodeColor == null ? Color.CYAN : style.nodeColor;
+        if (!style.colorByLabel) return fallback;
+        return categoryColor(category(node.getLabels()), fallback);
+    }
+
+    private Color edgeColor(GraphEdge edge, GraphStyleParams style) {
+        Color fallback = style.edgeColor == null ? Color.CORNFLOWERBLUE : style.edgeColor;
+        if (!style.colorByLabel) return fallback;
+        return categoryColor(edge.getRelationship() == null ? "Uncategorized"
+            : category(edge.getRelationship().getLabels()), fallback);
+    }
+
+    /** Register graph categories in Trinity's existing shared label legend. */
+    private void registerGraphLabels(GraphDirectedCollection graph) {
+        Set<String> labels = new LinkedHashSet<>();
+        for (GraphNode node : graph.getNodes()) labels.add(category(node.getLabels()));
+        for (GraphEdge edge : graph.getEdges()) {
+            labels.add(edge.getRelationship() == null ? "Uncategorized"
+                : category(edge.getRelationship().getLabels()));
+        }
+        List<FactorLabel> missing = new ArrayList<>();
+        for (String label : labels) {
+            if (FactorLabel.getFactorLabel(label) == null) {
+                Color fallback = "Uncategorized".equals(label)
+                    ? (styleParams.nodeColor == null ? Color.CYAN : styleParams.nodeColor)
+                    : Color.hsb(Math.floorMod(label.hashCode(), 360), 0.72, 0.94);
+                missing.add(new FactorLabel(label, fallback));
+            }
+        }
+        if (!missing.isEmpty()) FactorLabel.addAllFactorLabels(missing);
+    }
+
+    private boolean nodeLabelVisible(GraphNode node) {
+        return FactorLabel.visibilityByLabel(category(node.getLabels()));
+    }
+
+    private boolean edgeLabelVisible(GraphEdge edge) {
+        String label = edge.getRelationship() == null ? "Uncategorized"
+            : category(edge.getRelationship().getLabels());
+        if (!FactorLabel.visibilityByLabel(label)) return false;
+        if (currentGraph == null) return false;
+        Optional<GraphNode> start = currentGraph.findNodeById(edge.getStartID());
+        Optional<GraphNode> end = currentGraph.findNodeById(edge.getEndID());
+        return start.isPresent() && end.isPresent()
+            && nodeLabelVisible(start.get()) && nodeLabelVisible(end.get());
+    }
+
+    private void applyLabelVisibility() {
+        if (currentGraph == null) return;
+        for (GraphNode node : currentGraph.getNodes()) {
+            ContextGraphNode3D view = nodeViews.get(node.getEntityID());
+            if (view != null) view.setVisible(nodeLabelVisible(node));
+        }
+        for (Map.Entry<GraphEdge, ContextGraphEdge3D> entry : edgeViews.entrySet()) {
+            entry.getValue().setVisible(edgeLabelVisible(entry.getKey()));
+        }
     }
 
     private boolean graphVisible = true;
@@ -220,6 +296,7 @@ public final class ContextGraphController {
             double[] ap=scaledPosition(a.get()), bp=scaledPosition(b.get());
             entry.getValue().setEndpoints(new Point3D(ap[0],ap[1],ap[2]),
                 new Point3D(bp[0],bp[1],bp[2]));
+            entry.getValue().setVisible(edgeLabelVisible(edge));
         }
     }
 
@@ -395,6 +472,7 @@ public final class ContextGraphController {
         scene.addEventHandler(GraphEvent.GRAPH_STYLE_PARAMS_CHANGED, e -> {
             if (!(e.object instanceof GraphStyleParams p)) return;
 
+            styleParams.colorByLabel = p.colorByLabel;
             styleParams.nodeColor = p.nodeColor;
             styleParams.nodeRadius = p.nodeRadius;
             styleParams.nodeOpacity = clamp01(p.nodeOpacity);
@@ -419,6 +497,13 @@ public final class ContextGraphController {
         });
 
 
+        scene.addEventHandler(HyperspaceEvent.UPDATED_FACTOR_LABEL, e -> refreshLabelMaterials());
+        scene.addEventHandler(HyperspaceEvent.ADDED_FACTOR_LABEL, e -> refreshLabelMaterials());
+        scene.addEventHandler(HyperspaceEvent.ADDEDALL_FACTOR_LABELS, e -> refreshLabelMaterials());
+        scene.addEventHandler(HyperspaceEvent.UPDATEDALL_FACTOR_LABELS, e -> refreshLabelMaterials());
+        scene.addEventHandler(HyperspaceEvent.REMOVED_FACTOR_LABEL, e -> refreshLabelMaterials());
+        scene.addEventHandler(HyperspaceEvent.CLEARED_FACTOR_LABELS, e -> refreshLabelMaterials());
+
         scene.addEventHandler(GraphEvent.GRAPH_VISIBILITY_CHANGED, e -> {
             if (!(e.object instanceof Boolean visible)) return;
             setGraphVisible(visible);
@@ -441,6 +526,7 @@ public final class ContextGraphController {
             selectedEdge = null;
         }
         currentGraph = graph;
+        registerGraphLabels(graph);
         ++layoutGeneration;
         layoutPositions.clear();
         rebuildGraph();
@@ -524,6 +610,8 @@ public final class ContextGraphController {
                         if (generation != renderGeneration) return;
                         nodeViews.put(node.getEntityID(), sphere);
                         registerNode(node, sphere);
+                        sphere.setPhongMaterial(displayMaterial(nodeColor(node, styleParams), styleParams.nodeOpacity));
+                        sphere.setVisible(nodeLabelVisible(node));
                         if (java.util.Objects.equals(selectedNodeId, node.getEntityID())) sphere.select();
                         nodeLayer.getChildren().add(sphere);
                     });
@@ -575,13 +663,11 @@ public final class ContextGraphController {
                             long attachStart = System.nanoTime();
                             if (end > nextIndex) {
                                 // Honor style changes made while progressive loading is active.
-                                PhongMaterial activeMaterial = displayMaterial(
-                                    styleParams.edgeColor == null ? Color.CORNFLOWERBLUE : styleParams.edgeColor,
-                                    styleParams.edgeOpacity);
                                 float activeWidth = (float) Math.max(0.001, styleParams.edgeWidth);
                                 for (int i = nextIndex; i < end; i++) {
                                     ContextGraphEdge3D pending = preparedEdges.get(i);
-                                    pending.setBaseMaterial(activeMaterial);
+                                    pending.setBaseMaterial(displayMaterial(
+                                        edgeColor(preparedEdgeKeys.get(i), styleParams), styleParams.edgeOpacity));
                                     if (pending.getRadius() != activeWidth) pending.setRadius(activeWidth);
                                 }
                                 edgeLayer.getChildren().addAll(
@@ -591,6 +677,7 @@ public final class ContextGraphController {
                                     ContextGraphEdge3D view = preparedEdges.get(i);
                                     edgeViews.put(model, view);
                                     registerEdge(model, view);
+                                    view.setVisible(edgeLabelVisible(model));
                                     if (selectedEdge == model) view.select();
                                 }
                             }
@@ -637,25 +724,33 @@ public final class ContextGraphController {
         }
         applyNodeMaterials(style);
         applyEdgeMaterials(style);
+        applyLabelVisibility();
         System.out.print("ContextGraph applyGraphStyle: ");
         Utils.printTotalTime(startTime);
     }
 
+    private void refreshLabelMaterials() {
+        if (styleParams.colorByLabel) {
+            applyNodeMaterials(styleParams);
+            applyEdgeMaterials(styleParams);
+        }
+        applyLabelVisibility();
+    }
+
     private void applyNodeMaterials(GraphStyleParams style) {
-        Color color = style.nodeColor == null ? Color.CYAN : style.nodeColor;
-        PhongMaterial material = displayMaterial(color, style.nodeOpacity);
-        for (ContextGraphNode3D sphere : nodeViews.values()) {
+        if (currentGraph == null) return;
+        for (GraphNode node : currentGraph.getNodes()) {
+            ContextGraphNode3D sphere = nodeViews.get(node.getEntityID());
+            if (sphere == null) continue;
             if (sphere.getRadius() != style.nodeRadius) sphere.setSphereRadius(style.nodeRadius);
-            sphere.setPhongMaterial(material);
+            sphere.setPhongMaterial(displayMaterial(nodeColor(node, style), style.nodeOpacity));
         }
     }
 
     private void applyEdgeMaterials(GraphStyleParams style) {
-        PhongMaterial material = displayMaterial(
-            style.edgeColor == null ? Color.CORNFLOWERBLUE : style.edgeColor,
-            style.edgeOpacity);
-        for (ContextGraphEdge3D edge : edgeViews.values()) {
-            edge.setBaseMaterial(material);
+        for (Map.Entry<GraphEdge, ContextGraphEdge3D> entry : edgeViews.entrySet()) {
+            entry.getValue().setBaseMaterial(displayMaterial(
+                edgeColor(entry.getKey(), style), style.edgeOpacity));
         }
     }
 

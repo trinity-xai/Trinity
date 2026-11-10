@@ -7,6 +7,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Button;
 import javafx.scene.control.ColorPicker;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Control;
 import javafx.scene.control.Label;
@@ -56,6 +57,8 @@ public final class GraphStyleControlsView extends VBox {
     private final Scene scene;
     private final GraphStyleParams params = new GraphStyleParams();
 
+    private CheckBox colorByLabelCheck;
+
     // Nodes
     private ColorPicker nodeColorPicker;
     private Spinner<Double> nodeRadiusSpinner;
@@ -85,7 +88,14 @@ public final class GraphStyleControlsView extends VBox {
     // ---------------------------------------------------------------------
 
     private VBox buildContent() {
+        colorByLabelCheck = new CheckBox("Color nodes and edges by label (FactorLabel)");
+        colorByLabelCheck.setSelected(params.colorByLabel);
+        colorByLabelCheck.selectedProperty().addListener((o, oldValue, newValue) -> {
+            params.colorByLabel = newValue;
+            fireParamsChanged();
+        });
         return new VBox(10,
+            colorByLabelCheck,
             titledBox("Nodes", buildNodesGrid()),
             titledBox("Edges", buildEdgesGrid()),
             buildActionsBar()
@@ -185,6 +195,7 @@ public final class GraphStyleControlsView extends VBox {
             isUpdatingFromGuiSync = true;
             try {
                 // assign directly, no copyInto()
+                params.colorByLabel = p.colorByLabel;
                 params.nodeColor = p.nodeColor;
                 params.nodeRadius = p.nodeRadius;
                 params.nodeOpacity = clamp01(p.nodeOpacity);
@@ -282,6 +293,8 @@ public final class GraphStyleControlsView extends VBox {
     }
 
     private void syncControlsFromParams() {
+        if (colorByLabelCheck.isSelected() != params.colorByLabel)
+            colorByLabelCheck.setSelected(params.colorByLabel);
         if (!Objects.equals(nodeColorPicker.getValue(), params.nodeColor))
             nodeColorPicker.setValue(params.nodeColor);
         if (!Objects.equals(nodeRadiusSpinner.getValue(), params.nodeRadius))
@@ -299,6 +312,7 @@ public final class GraphStyleControlsView extends VBox {
 
     private GraphStyleParams snapshotParams() {
         GraphStyleParams p = new GraphStyleParams();
+        p.colorByLabel = colorByLabelCheck.isSelected();
         p.nodeColor = nodeColorPicker.getValue();
         p.nodeRadius = nodeRadiusSpinner.getValue();
         p.nodeOpacity = clamp01(nodeOpacitySlider.getValue());

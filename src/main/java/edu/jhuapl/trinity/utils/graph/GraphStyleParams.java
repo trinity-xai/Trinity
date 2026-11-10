@@ -13,6 +13,9 @@ public final class GraphStyleParams implements Serializable {
     @Serial
     private static final long serialVersionUID = 1L;
 
+    // Category coloring uses the same FactorLabel registry as Projections3DPane.
+    public boolean colorByLabel = false;
+
     // Nodes
     public Color nodeColor = Color.CYAN; // default aligned with Graph3DRenderer.Params
     public double nodeRadius = 1.0;
@@ -60,6 +63,7 @@ public final class GraphStyleParams implements Serializable {
         if (src == null) {
             return p;
         }
+        p.colorByLabel = src.colorByLabel;
         p.nodeColor = src.nodeColor;
         p.nodeRadius = src.nodeRadius;
         p.nodeOpacity = src.nodeOpacity;
