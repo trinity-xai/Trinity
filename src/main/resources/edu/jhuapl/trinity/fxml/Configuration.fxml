@@ -6,7 +6,7 @@
 <AnchorPane style="-fx-background-color: #00000000;" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
             fx:controller="edu.jhuapl.trinity.javafx.controllers.ConfigurationController">
     <children>
-        <TabPane prefHeight="500.0" tabClosingPolicy="UNAVAILABLE">
+        <TabPane prefHeight="500.0" tabClosingPolicy="UNAVAILABLE" AnchorPane.topAnchor="0.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
             <tabs>
                 <Tab closable="false" text="Shadow Cube">
                     <content>

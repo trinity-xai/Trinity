@@ -41,6 +41,10 @@ public final class ContextGraphNode3D extends MeshView implements Selectable3D {
     public void setRadius(double value) { setSphereRadius(value); }
     public void setPhongMaterial(PhongMaterial material) { interaction.setNormalMaterial(material); }
     public void setSelectedMaterial(PhongMaterial material) { interaction.setSelectedMaterial(material); }
+    public void setNeighborhoodState(boolean highlighted, boolean dimmed,
+                                     PhongMaterial highlightedMaterial, PhongMaterial dimmedMaterial) {
+        interaction.setNeighborhoodState(highlighted, dimmed, highlightedMaterial, dimmedMaterial);
+    }
     public void setAnimateOnHover(boolean enabled) { interaction.setHoverEnabled(enabled); }
     public boolean isAnimateOnHover() { return interaction.isHoverEnabled(); }
     public void setExpansionScale(double value) { interaction.setExpansionScale(value); }

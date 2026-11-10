@@ -17,7 +17,6 @@ import javafx.geometry.Point3D;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Optional;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.GraphEvent;
 
@@ -27,11 +26,9 @@ import edu.jhuapl.trinity.utils.Utils;
 import javafx.event.Event;
 import javafx.scene.Group;
 import javafx.scene.Node;
-import javafx.scene.Parent;
 import javafx.scene.Scene;
 import javafx.scene.paint.Color;
 import javafx.scene.paint.PhongMaterial;
-import javafx.scene.shape.Shape3D;
 import javafx.scene.image.WritableImage;
 import java.util.HashMap;
 import java.util.Map;
@@ -134,23 +131,36 @@ public final class ContextGraphController {
         String label = edge.getRelationship() == null ? "Uncategorized"
             : category(edge.getRelationship().getLabels());
         if (!FactorLabel.visibilityByLabel(label)) return false;
-        if (currentGraph == null) return false;
-        Optional<GraphNode> start = currentGraph.findNodeById(edge.getStartID());
-        Optional<GraphNode> end = currentGraph.findNodeById(edge.getEndID());
-        return start.isPresent() && end.isPresent()
-            && nodeLabelVisible(start.get()) && nodeLabelVisible(end.get());
+        GraphNode start = topology.node(edge.getStartID());
+        GraphNode end = topology.node(edge.getEndID());
+        return start != null && end != null
+            && nodeLabelVisible(start) && nodeLabelVisible(end);
     }
 
     private void applyLabelVisibility() {
         if (currentGraph == null) return;
         for (GraphNode node : currentGraph.getNodes()) {
             ContextGraphNode3D view = nodeViews.get(node.getEntityID());
-            if (view != null) view.setVisible(nodeLabelVisible(node));
+            if (view != null) view.setVisible(nodeAllowed(node));
         }
         for (Map.Entry<GraphEdge, ContextGraphEdge3D> entry : edgeViews.entrySet()) {
-            entry.getValue().setVisible(edgeLabelVisible(entry.getKey()));
+            entry.getValue().setVisible(edgeAllowed(entry.getKey()));
         }
     }
+
+    // Graph exploration state is independent of category styling and scene geometry.
+    private ContextGraphNeighborhoodIndex topology = new ContextGraphNeighborhoodIndex(null);
+    private ContextGraphEntitySearchIndex entitySearchIndex = new ContextGraphEntitySearchIndex(null);
+    private ContextGraphNeighborhoodIndex.Neighborhood neighborhood =
+        ContextGraphNeighborhoodIndex.Neighborhood.empty();
+    private boolean neighborhoodHighlightEnabled = true;
+    private boolean dimOutsideNeighborhood;
+    private boolean isolateSelection;
+    private int neighborhoodDepth = 1;
+    private static final Color NEIGHBOR_NODE_COLOR = Color.rgb(112, 238, 177);
+    private static final Color DIM_NODE_COLOR = Color.rgb(45, 51, 64);
+    private static final Color NEIGHBOR_EDGE_COLOR = Color.rgb(255, 225, 115);
+    private static final Color DIM_EDGE_COLOR = Color.rgb(52, 54, 65);
 
     private boolean graphVisible = true;
     private GraphDirectedCollection currentGraph;
@@ -163,6 +173,14 @@ public final class ContextGraphController {
     private boolean eventHandlersInstalled;
     private final Map<Color, PhongMaterial> emissiveMaterials = new HashMap<>();
     private double coordinateScale = 1.0;
+    private static final double HYPERBOLIC_DISPLAY_RADIUS = 600.0;
+    private ContextGraphProjectionMode projectionMode = ContextGraphProjectionMode.EUCLIDEAN;
+    // Computed exclusively from GraphDirectedCollection nodes and edges.
+    private Map<String, double[]> hyperbolicCoordinates = Map.of();
+    private Map<String, double[]> projectedDisplayPositions = Map.of();
+    private double[] hyperbolicFocus = {0.0, 0.0, 0.0};
+    private long projectionGeneration;
+    private AnimationTimer projectionUpdateTimer;
 
     // Coordinates are independent of the GraphNode's source vector.
     private final Map<String, double[]> layoutPositions = new HashMap<>();
@@ -183,6 +201,171 @@ public final class ContextGraphController {
         return picked instanceof ContextGraphEdge3D edge ? pickedEdges.get(edge) : null;
     }
 
+    /** Search graph entities without iterating through 3D scene nodes. */
+    public List<ContextGraphEntitySearchResult> findEntities(String query, int maximum) {
+        return entitySearchIndex.find(query, maximum);
+    }
+
+    /**
+     * Select one entity explicitly. Unlike clicking a selected shape, repeated searches
+     * must not toggle the selection off. Other selected entities are cleared.
+     */
+    public boolean selectNodeById(String entityId) {
+        GraphNode model = topology.node(entityId);
+        if (model == null) return false;
+        if (selectedNodeId != null && !selectedNodeId.equals(entityId)) {
+            ContextGraphNode3D old = nodeViews.get(selectedNodeId);
+            if (old != null) old.unselect();
+        }
+        if (selectedEdge != null) {
+            ContextGraphEdge3D old = edgeViews.get(selectedEdge);
+            if (old != null) old.unselect();
+            selectedEdge = null;
+        }
+        selectedNodeId = entityId;
+        ContextGraphNode3D view = nodeViews.get(entityId);
+        if (view != null) view.select();
+        refreshNeighborhood();
+        return true;
+    }
+
+    /** A selected model may be hidden by the user's FactorLabel filters. */
+    public boolean isNodeVisibleByLabel(String entityId) {
+        GraphNode node = topology.node(entityId);
+        return node != null && nodeLabelVisible(node);
+    }
+
+    public String getSelectedNodeId() { return selectedNodeId; }
+    public GraphEdge getSelectedEdge() { return selectedEdge; }
+    public GraphNode getSelectedNode() { return topology.node(selectedNodeId); }
+    public ContextGraphNode3D getSelectedNodeView() { return nodeViews.get(selectedNodeId); }
+    public ContextGraphEdge3D getSelectedEdgeView() { return edgeViews.get(selectedEdge); }
+    public boolean isNeighborhoodHighlightEnabled() { return neighborhoodHighlightEnabled; }
+    public boolean isDimOutsideNeighborhood() { return dimOutsideNeighborhood; }
+
+    public void setDimOutsideNeighborhood(boolean dimmed) {
+        dimOutsideNeighborhood = dimmed;
+        applyExplorationState();
+        notifyExplorationState();
+    }
+    public boolean isSelectionIsolated() { return isolateSelection; }
+    public int getNeighborhoodDepth() { return neighborhoodDepth; }
+    public int getNeighborhoodNodeCount() { return neighborhood.nodeCount(); }
+    public int getNeighborhoodEdgeCount() { return neighborhood.edgeCount(); }
+
+    public void setNeighborhoodHighlightEnabled(boolean enabled) {
+        neighborhoodHighlightEnabled = enabled;
+        applyExplorationState();
+        notifyExplorationState();
+    }
+
+    public void setNeighborhoodDepth(int depth) {
+        if (depth < 1) throw new IllegalArgumentException("Neighborhood depth must be >= 1");
+        if (neighborhoodDepth == depth) return;
+        neighborhoodDepth = depth;
+        refreshNeighborhood();
+        notifyExplorationState();
+    }
+
+    public void setSelectionIsolated(boolean isolated) {
+        if (isolateSelection == isolated) return;
+        isolateSelection = isolated;
+        applyExplorationState();
+        notifyExplorationState();
+    }
+
+    /** Restores the complete category-filtered view; selection is preserved. */
+    public void showAll() {
+        isolateSelection = false;
+        neighborhoodHighlightEnabled = false;
+        applyExplorationState();
+        notifyExplorationState();
+    }
+
+    public List<GraphNode> getSelectedEntityNodes() {
+        List<GraphNode> result = new ArrayList<>();
+        GraphNode node = topology.node(selectedNodeId);
+        if (node != null) result.add(node);
+        if (selectedEdge != null) {
+            GraphNode from = topology.node(selectedEdge.getStartID());
+            GraphNode to = topology.node(selectedEdge.getEndID());
+            if (from != null && !result.contains(from)) result.add(from);
+            if (to != null && !result.contains(to)) result.add(to);
+        }
+        return result;
+    }
+
+    public List<GraphNode> getNeighborhoodNodes() {
+        List<GraphNode> result = new ArrayList<>();
+        for (String id : neighborhood.nodeIds()) {
+            GraphNode node = topology.node(id);
+            if (node != null && nodeLabelVisible(node)) result.add(node);
+        }
+        return result;
+    }
+
+    private void notifyExplorationState() {
+        fireOnRoot(new GraphEvent(GraphEvent.GRAPH_EXPLORATION_STATE_CHANGED));
+    }
+
+    private void refreshNeighborhood() {
+        Set<String> roots = new LinkedHashSet<>();
+        if (selectedNodeId != null) roots.add(selectedNodeId);
+        if (selectedEdge != null) {
+            roots.add(selectedEdge.getStartID());
+            roots.add(selectedEdge.getEndID());
+        }
+        neighborhood = topology.traverse(roots, neighborhoodDepth);
+        applyExplorationState();
+    }
+
+    private boolean nodeAllowed(GraphNode node) {
+        return nodeLabelVisible(node)
+            && (!isolateSelection || neighborhood.isEmpty() || neighborhood.containsNode(node.getEntityID()));
+    }
+
+    private boolean edgeAllowed(GraphEdge edge) {
+        return edgeLabelVisible(edge)
+            && (!isolateSelection || neighborhood.isEmpty() || neighborhood.containsEdge(edge));
+    }
+
+    private void applyNodeExploration(GraphNode model, ContextGraphNode3D view) {
+        boolean active = neighborhoodHighlightEnabled && !neighborhood.isEmpty();
+        if (!active) {
+            view.setNeighborhoodState(false, false, null, null);
+        } else {
+            boolean highlighted = neighborhood.containsNode(model.getEntityID());
+            view.setNeighborhoodState(highlighted, dimOutsideNeighborhood && !highlighted,
+                displayMaterial(NEIGHBOR_NODE_COLOR, styleParams.nodeOpacity),
+                dimOutsideNeighborhood ? displayMaterial(DIM_NODE_COLOR, styleParams.nodeOpacity) : null);
+        }
+        view.setVisible(nodeAllowed(model));
+    }
+
+    private void applyEdgeExploration(GraphEdge model, ContextGraphEdge3D view) {
+        boolean active = neighborhoodHighlightEnabled && !neighborhood.isEmpty();
+        if (!active) {
+            view.setNeighborhoodState(false, false, null, null);
+        } else {
+            boolean highlighted = neighborhood.containsEdge(model);
+            view.setNeighborhoodState(highlighted, dimOutsideNeighborhood && !highlighted,
+                displayMaterial(NEIGHBOR_EDGE_COLOR, styleParams.edgeOpacity),
+                dimOutsideNeighborhood ? displayMaterial(DIM_EDGE_COLOR, styleParams.edgeOpacity) : null);
+        }
+        view.setVisible(edgeAllowed(model));
+    }
+
+    private void applyExplorationState() {
+        if (currentGraph == null) return;
+        for (GraphNode node : currentGraph.getNodes()) {
+            ContextGraphNode3D view = nodeViews.get(node.getEntityID());
+            if (view != null) applyNodeExploration(node, view);
+        }
+        for (Map.Entry<GraphEdge, ContextGraphEdge3D> entry : edgeViews.entrySet()) {
+            applyEdgeExploration(entry.getKey(), entry.getValue());
+        }
+    }
+
     public void toggleNodeSelection(GraphNode node) {
         String id = node.getEntityID();
         if (selectedNodeId != null) {
@@ -194,6 +377,7 @@ public final class ContextGraphController {
             ContextGraphNode3D view = nodeViews.get(selectedNodeId);
             if (view != null) view.select();
         }
+        refreshNeighborhood();
     }
 
     public void toggleEdgeSelection(GraphEdge edge) {
@@ -206,6 +390,7 @@ public final class ContextGraphController {
             ContextGraphEdge3D view = edgeViews.get(selectedEdge);
             if (view != null) view.select();
         }
+        refreshNeighborhood();
     }
 
     public void clearSelections() {
@@ -219,6 +404,7 @@ public final class ContextGraphController {
         }
         selectedNodeId = null;
         selectedEdge = null;
+        refreshNeighborhood();
     }
 
     private void registerNode(GraphNode model, ContextGraphNode3D view) {
@@ -254,12 +440,15 @@ public final class ContextGraphController {
     public void setCoordinateScale(double value) {
         if (!Double.isFinite(value) || value <= 0 || value == coordinateScale) return;
         coordinateScale = value;
-        updateNodePositions();
-        updateEdgeEndpoints();
+        if (projectionMode.isHyperbolic()) scheduleProjectionReposition();
+        else {
+            updateNodePositions();
+            updateEdgeEndpoints();
+        }
     }
 
     public void finishCoordinateScale() {
-        updateEdgeEndpoints();
+        if (!projectionMode.isHyperbolic()) updateEdgeEndpoints();
     }
 
     private double[] sourcePosition(GraphNode node) {
@@ -270,8 +459,199 @@ public final class ContextGraphController {
     }
 
     private double[] scaledPosition(GraphNode node) {
+        if (projectionMode.isHyperbolic()) {
+            double[] projected = projectedDisplayPositions.get(node.getEntityID());
+            if (projected != null) return projected;
+        }
         double[] p = sourcePosition(node);
         return new double[]{p[0]*coordinateScale, p[1]*coordinateScale, p[2]*coordinateScale};
+    }
+
+    public ContextGraphProjectionMode getProjectionMode() { return projectionMode; }
+
+    public double getHyperbolicDisplayRadius() { return HYPERBOLIC_DISPLAY_RADIUS * coordinateScale; }
+
+    /** Switch projection without modifying GraphNode.vector or the active Euclidean layout. */
+    public void setProjectionMode(ContextGraphProjectionMode requested) {
+        if (requested == null || requested == projectionMode) return;
+        if (currentGraph == null) {
+            fireOnRoot(new GraphEvent(GraphEvent.GRAPH_PROJECTION_FAILED, projectionMode));
+            return;
+        }
+        final long generation = ++projectionGeneration;
+        if (projectionUpdateTimer != null) {
+            projectionUpdateTimer.stop();
+            projectionUpdateTimer = null;
+        }
+        if (!requested.isHyperbolic()) {
+            projectionMode = requested;
+            scheduleProjectionReposition();
+            return;
+        }
+        final GraphDirectedCollection graph = currentGraph;
+        final long started = System.nanoTime();
+        Task<Map<String, double[]>> task = new Task<>() {
+            @Override protected Map<String, double[]> call() {
+                return ContextGraphHyperbolicLayout.computed(graph);
+            }
+        };
+        task.setOnSucceeded(e -> {
+            if (generation != projectionGeneration || graph != currentGraph) return;
+            hyperbolicCoordinates = task.getValue();
+            System.out.print("ContextGraph computed hyperbolic topology layout: ");
+            Utils.printTotalTime(started);
+            hyperbolicFocus = new double[]{0.0, 0.0, 0.0};
+            projectionMode = requested;
+            scheduleProjectionReposition();
+        });
+        task.setOnFailed(e -> {
+            if (generation != projectionGeneration || graph != currentGraph) return;
+            report("Hyperbolic projection failed: " + task.getException().getMessage());
+            fireOnRoot(new GraphEvent(GraphEvent.GRAPH_PROJECTION_FAILED, projectionMode));
+        });
+        Thread worker = new Thread(task, "context-graph-hyperbolic-layout");
+        worker.setDaemon(true);
+        worker.start();
+    }
+
+    /** Hyperbolic isometry: recenter on the selected semantic entity. */
+    public boolean focusHyperbolicSelection() {
+        if (!projectionMode.isHyperbolic()) return false;
+        double[] point = hyperbolicCoordinates.get(selectedNodeId);
+        if (point == null && selectedEdge != null) {
+            double[] a = hyperbolicCoordinates.get(selectedEdge.getStartID());
+            double[] b = hyperbolicCoordinates.get(selectedEdge.getEndID());
+            if (a != null && b != null) point = ContextGraphHyperbolicMath.midpoint(a, b);
+        }
+        if (point == null) return false;
+        setHyperbolicFocus(point);
+        return true;
+    }
+
+    public boolean focusHyperbolicNeighborhood() {
+        if (!projectionMode.isHyperbolic()) return false;
+        List<GraphNode> nodes = getNeighborhoodNodes();
+        if (nodes.isEmpty()) return focusHyperbolicSelection();
+        double[] center = new double[3];
+        int count = 0;
+        for (GraphNode node : nodes) {
+            double[] p = hyperbolicCoordinates.get(node.getEntityID());
+            if (p == null) continue;
+            for (int k = 0; k < 3; k++) center[k] += p[k];
+            count++;
+        }
+        if (count == 0) return false;
+        for (int k = 0; k < 3; k++) center[k] /= count;
+        setHyperbolicFocus(center);
+        return true;
+    }
+
+    public void resetHyperbolicFocus() {
+        if (!projectionMode.isHyperbolic()) return;
+        setHyperbolicFocus(new double[]{0.0, 0.0, 0.0});
+    }
+
+    private void setHyperbolicFocus(double[] point) {
+        hyperbolicFocus = ContextGraphHyperbolicMath.validate(point);
+        scheduleProjectionReposition();
+    }
+
+    /** Source chart distance, invariant under hyperbolic focus transformations. */
+    public double hyperbolicDistance(String sourceId, String targetId) {
+        if (!projectionMode.isHyperbolic()) return Double.NaN;
+        double[] a = hyperbolicCoordinates.get(sourceId);
+        double[] b = hyperbolicCoordinates.get(targetId);
+        return a == null || b == null ? Double.NaN : ContextGraphHyperbolicMath.distance(a, b);
+    }
+
+    /** Calculate transformed coordinates off FX, then move existing meshes in bounded pulses. */
+    private void scheduleProjectionReposition() {
+        if (currentGraph == null) return;
+        final long generation = ++projectionGeneration;
+        if (projectionUpdateTimer != null) {
+            projectionUpdateTimer.stop();
+            projectionUpdateTimer = null;
+        }
+        final GraphDirectedCollection graph = currentGraph;
+        final ContextGraphProjectionMode mode = projectionMode;
+        final Map<String, double[]> embedded = hyperbolicCoordinates;
+        final double[] focus = hyperbolicFocus.clone();
+        final Map<String, double[]> ordinary = new HashMap<>(layoutPositions);
+        final double scale = coordinateScale;
+        Task<Map<String, double[]>> task = new Task<>() {
+            @Override protected Map<String, double[]> call() {
+                Map<String, double[]> result = new HashMap<>();
+                for (GraphNode node : graph.getNodes()) {
+                    double[] p;
+                    if (mode.isHyperbolic()) {
+                        double[] original = embedded.get(node.getEntityID());
+                        if (original == null) continue;
+                        double[] centered = ContextGraphHyperbolicMath.recenter(original, focus);
+                        double radius = HYPERBOLIC_DISPLAY_RADIUS * scale;
+                        p = new double[]{centered[0] * radius, centered[1] * radius, centered[2] * radius};
+                    } else {
+                        double[] original = ordinary.get(node.getEntityID());
+                        if (original == null) {
+                            original = node.getVector() == null || node.getVector().size() < 3
+                                ? new double[]{0.0, 0.0, 0.0}
+                                : new double[]{node.getVector().get(0), node.getVector().get(1), node.getVector().get(2)};
+                        }
+                        p = new double[]{original[0] * scale, original[1] * scale, original[2] * scale};
+                    }
+                    result.put(node.getEntityID(), p);
+                }
+                return result;
+            }
+        };
+        task.setOnSucceeded(e -> {
+            if (generation != projectionGeneration || graph != currentGraph) return;
+            projectedDisplayPositions = task.getValue();
+            List<GraphNode> nodes = new ArrayList<>(graph.getNodes());
+            List<GraphEdge> edges = new ArrayList<>(graph.getEdges());
+            projectionUpdateTimer = new AnimationTimer() {
+                private int nodeIndex;
+                private int edgeIndex;
+                @Override public void handle(long now) {
+                    if (generation != projectionGeneration || graph != currentGraph) {
+                        stop();
+                        if (projectionUpdateTimer == this) projectionUpdateTimer = null;
+                        return;
+                    }
+                    int nodeLimit = Math.min(nodes.size(), nodeIndex + 800);
+                    for (; nodeIndex < nodeLimit; nodeIndex++) {
+                        GraphNode model = nodes.get(nodeIndex);
+                        ContextGraphNode3D view = nodeViews.get(model.getEntityID());
+                        double[] p = projectedDisplayPositions.get(model.getEntityID());
+                        if (view == null || p == null) continue;
+                        view.setTranslateX(p[0]); view.setTranslateY(p[1]); view.setTranslateZ(p[2]);
+                    }
+                    int edgeLimit = Math.min(edges.size(), edgeIndex + 1000);
+                    for (; edgeIndex < edgeLimit; edgeIndex++) {
+                        GraphEdge model = edges.get(edgeIndex);
+                        ContextGraphEdge3D view = edgeViews.get(model);
+                        if (view == null) continue;
+                        double[] a = projectedDisplayPositions.get(model.getStartID());
+                        double[] b = projectedDisplayPositions.get(model.getEndID());
+                        if (a == null || b == null) continue;
+                        view.setEndpoints(new Point3D(a[0], a[1], a[2]),
+                            new Point3D(b[0], b[1], b[2]));
+                        view.setVisible(edgeAllowed(model));
+                    }
+                    if (nodeIndex == nodes.size() && edgeIndex == edges.size()) {
+                        stop();
+                        if (projectionUpdateTimer == this) projectionUpdateTimer = null;
+                        fireOnRoot(new GraphEvent(GraphEvent.GRAPH_PROJECTION_APPLIED, projectionMode));
+                    }
+                }
+            };
+            projectionUpdateTimer.start();
+        });
+        task.setOnFailed(e -> {
+            if (generation == projectionGeneration) report("Projection update failed: " + task.getException());
+        });
+        Thread worker = new Thread(task, "context-graph-projection-update");
+        worker.setDaemon(true);
+        worker.start();
     }
 
     private void updateNodePositions() {
@@ -290,13 +670,13 @@ public final class ContextGraphController {
         if (currentGraph == null) return;
         for (Map.Entry<GraphEdge, ContextGraphEdge3D> entry : edgeViews.entrySet()) {
             GraphEdge edge = entry.getKey();
-            Optional<GraphNode> a = currentGraph.findNodeById(edge.getStartID());
-            Optional<GraphNode> b = currentGraph.findNodeById(edge.getEndID());
-            if (a.isEmpty() || b.isEmpty()) continue;
-            double[] ap=scaledPosition(a.get()), bp=scaledPosition(b.get());
+            GraphNode a = topology.node(edge.getStartID());
+            GraphNode b = topology.node(edge.getEndID());
+            if (a == null || b == null) continue;
+            double[] ap=scaledPosition(a), bp=scaledPosition(b);
             entry.getValue().setEndpoints(new Point3D(ap[0],ap[1],ap[2]),
                 new Point3D(bp[0],bp[1],bp[2]));
-            entry.getValue().setVisible(edgeLabelVisible(edge));
+            entry.getValue().setVisible(edgeAllowed(edge));
         }
     }
 
@@ -307,22 +687,24 @@ public final class ContextGraphController {
         edgeViews.clear();
         pickedEdges.clear();
         for (GraphEdge edge : currentGraph.getEdges()) {
-            Optional<GraphNode> a = currentGraph.findNodeById(edge.getStartID());
-            Optional<GraphNode> b = currentGraph.findNodeById(edge.getEndID());
-            if (a.isEmpty() || b.isEmpty()) continue;
-            double[] ap = scaledPosition(a.get());
-            double[] bp = scaledPosition(b.get());
+            GraphNode a = topology.node(edge.getStartID());
+            GraphNode b = topology.node(edge.getEndID());
+            if (a == null || b == null) continue;
+            double[] ap = scaledPosition(a);
+            double[] bp = scaledPosition(b);
             ContextGraphEdge3D edgeView = new ContextGraphEdge3D(
                 (float) Math.max(0.001, styleParams.edgeWidth), 6, 1);
             edgeView.setEndpoints(new Point3D(ap[0], ap[1], ap[2]),
                 new Point3D(bp[0], bp[1], bp[2]));
             edgeViews.put(edge, edgeView);
             registerEdge(edge, edgeView);
+            applyEdgeExploration(edge, edgeView);
             if (selectedEdge == edge) edgeView.select();
             edgeLayer.getChildren().add(edgeView);
         }
         System.out.printf("[CG-TIMING] edge construction + attachment %.3f ms edges=%d%n", (System.nanoTime()-startTime)/1e6, edgeLayer.getChildren().size());
         applyEdgeMaterials(styleParams);
+        applyExplorationState();
         System.out.print("ContextGraph refreshEdges: ");
         Utils.printTotalTime(startTime);
     }
@@ -375,8 +757,10 @@ public final class ContextGraphController {
                 if(generation!=layoutGeneration || graph!=currentGraph) return;
                 layoutPositions.clear();
                 for(int i=0;i<n;i++) layoutPositions.put(nodes.get(i).getEntityID(),result[i]);
-                updateNodePositions();
-                updateEdgeEndpoints();
+                if (!projectionMode.isHyperbolic()) {
+                    updateNodePositions();
+                    updateEdgeEndpoints();
+                }
                 report("Applied graph layout: " + params.kind);
             });
         }, "context-graph-layout");
@@ -466,8 +850,10 @@ public final class ContextGraphController {
         scene.addEventHandler(GraphEvent.GRAPH_RESET_PARAMS, e -> {
             layoutParams = new GraphLayoutParams();
             layoutPositions.clear();
-            updateNodePositions();
-            updateEdgeEndpoints();
+            if (!projectionMode.isHyperbolic()) {
+                updateNodePositions();
+                updateEdgeEndpoints();
+            }
         });
         scene.addEventHandler(GraphEvent.GRAPH_STYLE_PARAMS_CHANGED, e -> {
             if (!(e.object instanceof GraphStyleParams p)) return;
@@ -525,11 +911,25 @@ public final class ContextGraphController {
             selectedNodeId = null;
             selectedEdge = null;
         }
+        ContextGraphProjectionMode restoreMode = projectionMode;
+        ++projectionGeneration;
+        if (projectionUpdateTimer != null) {
+            projectionUpdateTimer.stop();
+            projectionUpdateTimer = null;
+        }
+        projectionMode = ContextGraphProjectionMode.EUCLIDEAN;
+        hyperbolicCoordinates = Map.of();
+        projectedDisplayPositions = Map.of();
+        hyperbolicFocus = new double[]{0.0, 0.0, 0.0};
         currentGraph = graph;
+        topology = new ContextGraphNeighborhoodIndex(graph);
+        entitySearchIndex = new ContextGraphEntitySearchIndex(graph);
         registerGraphLabels(graph);
+        refreshNeighborhood();
         ++layoutGeneration;
         layoutPositions.clear();
         rebuildGraph();
+        if (restoreMode.isHyperbolic()) setProjectionMode(restoreMode);
         fireOnRoot(new GraphEvent(GraphEvent.SET_STYLE_GUI, styleParams));
         fireOnRoot(new GraphEvent(GraphEvent.SET_GRAPH_VISIBILITY_GUI, graphVisible));
     }
@@ -574,6 +974,8 @@ public final class ContextGraphController {
             styleParams.edgeOpacity);
         final long started = System.nanoTime();
         final Map<String, double[]> layoutSnapshot = new HashMap<>(layoutPositions);
+        final Map<String, double[]> displaySnapshot = projectionMode.isHyperbolic()
+            ? new HashMap<>(projectedDisplayPositions) : Map.of();
         // Snapshot ordinary graph data on the worker, not the FX thread.
         // This Task is started directly; it is not rescheduled onto FX.
         Task<Void> task = new Task<>() {
@@ -585,6 +987,7 @@ public final class ContextGraphController {
                 for (GraphNode node : graphNodes) {
                     if (isCancelled() || generation != renderGeneration) return null;
                     double[] pos = layoutSnapshot.get(node.getEntityID());
+                    double[] projected = displaySnapshot.get(node.getEntityID());
                     if (pos == null) {
                         if (node.getVector() == null || node.getVector().size() < 3) {
                             pos = new double[]{0, 0, 0};
@@ -593,7 +996,7 @@ public final class ContextGraphController {
                                 node.getVector().get(1), node.getVector().get(2)};
                         }
                     }
-                    coordinates.put(node.getEntityID(), new double[]{
+                    coordinates.put(node.getEntityID(), projected != null ? projected.clone() : new double[]{
                         pos[0] * scale, pos[1] * scale, pos[2] * scale});
                 }
                 for (GraphNode node : graphNodes) {
@@ -609,9 +1012,13 @@ public final class ContextGraphController {
                     Platform.runLater(() -> {
                         if (generation != renderGeneration) return;
                         nodeViews.put(node.getEntityID(), sphere);
+                        double[] latest = scaledPosition(node);
+                        sphere.setTranslateX(latest[0]);
+                        sphere.setTranslateY(latest[1]);
+                        sphere.setTranslateZ(latest[2]);
                         registerNode(node, sphere);
                         sphere.setPhongMaterial(displayMaterial(nodeColor(node, styleParams), styleParams.nodeOpacity));
-                        sphere.setVisible(nodeLabelVisible(node));
+                        applyNodeExploration(node, sphere);
                         if (java.util.Objects.equals(selectedNodeId, node.getEntityID())) sphere.select();
                         nodeLayer.getChildren().add(sphere);
                     });
@@ -675,9 +1082,17 @@ public final class ContextGraphController {
                                 for (int i = nextIndex; i < end; i++) {
                                     GraphEdge model = preparedEdgeKeys.get(i);
                                     ContextGraphEdge3D view = preparedEdges.get(i);
+                                    GraphNode start = topology.node(model.getStartID());
+                                    GraphNode graphEnd = topology.node(model.getEndID());
+                                    if (start != null && graphEnd != null) {
+                                        double[] ap = scaledPosition(start);
+                                        double[] bp = scaledPosition(graphEnd);
+                                        view.setEndpoints(new Point3D(ap[0], ap[1], ap[2]),
+                                            new Point3D(bp[0], bp[1], bp[2]));
+                                    }
                                     edgeViews.put(model, view);
                                     registerEdge(model, view);
-                                    view.setVisible(edgeLabelVisible(model));
+                                    applyEdgeExploration(model, view);
                                     if (selectedEdge == model) view.select();
                                 }
                             }
@@ -724,7 +1139,7 @@ public final class ContextGraphController {
         }
         applyNodeMaterials(style);
         applyEdgeMaterials(style);
-        applyLabelVisibility();
+        applyExplorationState();
         System.out.print("ContextGraph applyGraphStyle: ");
         Utils.printTotalTime(startTime);
     }
@@ -734,7 +1149,7 @@ public final class ContextGraphController {
             applyNodeMaterials(styleParams);
             applyEdgeMaterials(styleParams);
         }
-        applyLabelVisibility();
+        applyExplorationState();
     }
 
     private void applyNodeMaterials(GraphStyleParams style) {

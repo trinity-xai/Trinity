@@ -21,6 +21,10 @@ public final class ContextGraphEdge3D extends MeshView {
     private PhongMaterial baseMaterial;
     private boolean selected;
     private boolean hovered;
+    private boolean neighborhoodHighlighted;
+    private boolean neighborhoodDimmed;
+    private PhongMaterial neighborhoodHighlightMaterial;
+    private PhongMaterial neighborhoodDimMaterial;
     private static final PhongMaterial HOVER_MATERIAL = new PhongMaterial(Color.LIGHTSKYBLUE);
     private static final PhongMaterial SELECTED_MATERIAL = new PhongMaterial(Color.GOLD);
 
@@ -33,8 +37,23 @@ public final class ContextGraphEdge3D extends MeshView {
     public void unselect() { selected = false; refreshMaterial(); }
     public boolean isSelected() { return selected; }
 
+    public void setNeighborhoodState(boolean highlighted, boolean dimmed,
+                                     PhongMaterial highlightMaterial, PhongMaterial dimMaterial) {
+        if (neighborhoodHighlighted == highlighted && neighborhoodDimmed == dimmed
+            && neighborhoodHighlightMaterial == highlightMaterial
+            && neighborhoodDimMaterial == dimMaterial) return;
+        neighborhoodHighlighted = highlighted;
+        neighborhoodDimmed = dimmed;
+        neighborhoodHighlightMaterial = highlightMaterial;
+        neighborhoodDimMaterial = dimMaterial;
+        refreshMaterial();
+    }
+
     private void refreshMaterial() {
-        setMaterial(selected ? SELECTED_MATERIAL : hovered ? HOVER_MATERIAL : baseMaterial);
+        setMaterial(selected ? SELECTED_MATERIAL : hovered ? HOVER_MATERIAL
+            : neighborhoodHighlighted && neighborhoodHighlightMaterial != null ? neighborhoodHighlightMaterial
+            : neighborhoodDimmed && neighborhoodDimMaterial != null ? neighborhoodDimMaterial
+            : baseMaterial);
     }
 
 
