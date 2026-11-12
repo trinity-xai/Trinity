@@ -12,6 +12,7 @@ import java.util.Comparator;
 import java.util.Collections;
 import java.util.IdentityHashMap;
 import java.util.Set;
+import java.util.TreeMap;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -54,7 +55,8 @@ public final class ContextGraphHyperbolicLayout {
      * Computed coordinates and EXACT GraphEdge objects selected as tree edges.
      * The graph model and edge identities are never copied or modified.
      */
-    public record LayoutResult(Map<String, double[]> positions, Set<GraphEdge> backboneEdges) { }
+    public record LayoutResult(Map<String, double[]> positions, Set<GraphEdge> backboneEdges,
+                               Map<String, Integer> communities, int communityCount) { }
 
     public static LayoutResult computedLayout(GraphDirectedCollection graph) {
         if (graph == null || graph.getNodes() == null) {
@@ -63,7 +65,7 @@ public final class ContextGraphHyperbolicLayout {
         List<GraphNode> nodes = new ArrayList<>(graph.getNodes());
         nodes.sort(Comparator.comparing(GraphNode::getEntityID));
         int n = nodes.size();
-        if (n == 0) return new LayoutResult(Map.of(), Set.of());
+        if (n == 0) return new LayoutResult(Map.of(), Set.of(), Map.of(), 0);
 
         Map<String, Integer> index = new HashMap<>(n * 2);
         for (int i = 0; i < n; i++) {
@@ -72,6 +74,9 @@ public final class ContextGraphHyperbolicLayout {
                 throw new IllegalArgumentException("Every graph entity must have a unique nonblank ID");
             }
         }
+        ContextGraphSemanticCommunities.Result semantic =
+            ContextGraphSemanticCommunities.detect(nodes, graph.getEdges(), index);
+        int[] community = semantic.membership();
         List<List<Arc>> adjacency = new ArrayList<>(n);
         for (int i = 0; i < n; i++) adjacency.add(new ArrayList<>());
         List<OrientedLink> structuralLinks = new ArrayList<>();
@@ -206,11 +211,43 @@ public final class ContextGraphHyperbolicLayout {
             branch.sort(Comparator.comparingInt((Integer i) -> -subtreeSize[i]).thenComparingInt(i -> i));
         }
 
+        // Determine each subtree's dominant semantic community bottom-up.
+        // Small-to-large merging avoids quadratic cost in chains and star graphs.
+        List<Map<Integer, Integer>> frequencies = new ArrayList<>(n);
+        for (int i = 0; i < n; i++) frequencies.add(null);
+        int[] subtreeCommunity = new int[n];
+        for (int t = breadthOrder.size() - 1; t >= 0; t--) {
+            int current = breadthOrder.get(t);
+            Map<Integer, Integer> counts = new HashMap<>();
+            counts.put(community[current], 1);
+            for (int child : children.get(current)) {
+                Map<Integer, Integer> childCounts = frequencies.get(child);
+                if (childCounts.size() > counts.size()) {
+                    Map<Integer, Integer> swap = counts;
+                    counts = childCounts;
+                    childCounts = swap;
+                }
+                for (Map.Entry<Integer, Integer> entry : childCounts.entrySet()) {
+                    counts.merge(entry.getKey(), entry.getValue(), Integer::sum);
+                }
+                frequencies.set(child, null);
+            }
+            int dominant = community[current];
+            int largest = -1;
+            for (Map.Entry<Integer, Integer> entry : counts.entrySet()) {
+                if (entry.getValue() > largest || (entry.getValue() == largest
+                    && entry.getKey() < dominant)) {
+                    largest = entry.getValue();
+                    dominant = entry.getKey();
+                }
+            }
+            subtreeCommunity[current] = dominant;
+            frequencies.set(current, counts);
+        }
+
         int maxDepth = 0;
         for (int hop : hops) maxDepth = Math.max(maxDepth, hop);
-        // Hyperbolic travel is bounded by graph depth, not a fixed radius per tier.
-        // Deep chains remain numerically inside the ball rather than clipping.
-        double step = Math.min(1.15, 4.0 / Math.max(1, maxDepth));
+        double step = Math.min(1.45, 5.4 / Math.max(1, maxDepth));
         double[][] positions = new double[n][3];
         double[][] axes = new double[n][3];
         for (int i = 0; i < roots.size(); i++) {
@@ -227,41 +264,52 @@ public final class ContextGraphHyperbolicLayout {
                 ? new double[]{0, 1, 0} : new double[]{1, 0, 0};
             double[] u = normalize(cross(axis, auxiliary));
             double[] v = normalize(cross(axis, u));
-            long totalMass = 0;
-            for (int child : branch) totalMass += subtreeSize[child];
-            long precedingMass = 0;
-            double aperture = Math.min(1.45, 0.65 + 0.17 * Math.log1p(branch.size()));
-            for (int j = 0; j < branch.size(); j++) {
-                int child = branch.get(j);
-                double[] direction;
-                if (parent[current] == -1 && roots.size() == 1) {
-                    direction = fibonacciDirection(j, branch.size());
-                } else {
-                    double fraction = (precedingMass + subtreeSize[child] * 0.5)
-                        / Math.max(1.0, totalMass);
-                    double theta = Math.acos(1.0 - fraction * (1.0 - Math.cos(aperture)));
-                    double azimuth = GOLDEN_ANGLE * j
-                        + ((nodes.get(current).getEntityID().hashCode() & 65535) / 65535.0) * Math.PI;
-                    direction = normalize(new double[]{
-                        Math.cos(theta) * axis[0] + Math.sin(theta)
-                            * (Math.cos(azimuth) * u[0] + Math.sin(azimuth) * v[0]),
-                        Math.cos(theta) * axis[1] + Math.sin(theta)
-                            * (Math.cos(azimuth) * u[1] + Math.sin(azimuth) * v[1]),
-                        Math.cos(theta) * axis[2] + Math.sin(theta)
-                            * (Math.cos(azimuth) * u[2] + Math.sin(azimuth) * v[2])});
+
+            // Group actual spanning children by their dominant semantic community.
+            // This changes spatial sectors, never the source graph or tree edges.
+            Map<Integer, List<Integer>> groups = new TreeMap<>();
+            for (int child : branch) {
+                groups.computeIfAbsent(subtreeCommunity[child], ignored -> new ArrayList<>())
+                    .add(child);
+            }
+            Map<Integer, Long> sectorMass = new HashMap<>();
+            for (Map.Entry<Integer, List<Integer>> group : groups.entrySet()) {
+                long mass = 0;
+                for (int child : group.getValue()) mass += subtreeSize[child];
+                sectorMass.put(group.getKey(), mass);
+            }
+            List<Map.Entry<Integer, List<Integer>>> sectors = new ArrayList<>(groups.entrySet());
+            sectors.sort(Comparator.comparingLong((Map.Entry<Integer, List<Integer>> e) ->
+                -sectorMass.get(e.getKey())).thenComparingInt(Map.Entry::getKey));
+            int sectorIndex = 0;
+            for (Map.Entry<Integer, List<Integer>> sector : sectors) {
+                List<Integer> members = sector.getValue();
+                double[] groupAxis = parent[current] == -1 && roots.size() == 1
+                    ? fibonacciDirection(sectorIndex, sectors.size())
+                    : capDirection(axis, u, v, sectorIndex, sectors.size(), 1.48);
+                double[] auxiliary2 = Math.abs(groupAxis[1]) < 0.9
+                    ? new double[]{0, 1, 0} : new double[]{1, 0, 0};
+                double[] groupU = normalize(cross(groupAxis, auxiliary2));
+                double[] groupV = normalize(cross(groupAxis, groupU));
+                for (int j = 0; j < members.size(); j++) {
+                    int child = members.get(j);
+                    double[] direction = members.size() == 1 ? groupAxis
+                        : capDirection(groupAxis, groupU, groupV, j, members.size(),
+                            Math.min(0.72, 0.25 + 0.12 * Math.log1p(members.size())));
+                    double branching = 0.90 + 0.045 * Math.log1p(branch.size())
+                        + 0.025 * Math.log1p(subtreeSize[child]);
+                    double localNorm = Math.tanh(0.5 * step * branching);
+                    double[] result = ContextGraphHyperbolicMath.add(
+                        positions[current], multiply(direction, localNorm));
+                    double norm = Math.sqrt(ContextGraphHyperbolicMath.dot(result, result));
+                    if (norm > MAX_POINCARE_NORM)
+                        result = multiply(result, MAX_POINCARE_NORM / norm);
+                    positions[child] = result;
+                    // Retain this branch's own orientation. Using the radial
+                    // origin-to-position axis was causing the overlapping fans.
+                    axes[child] = direction;
                 }
-                double branching = 0.80 + 0.055 * Math.log1p(branch.size())
-                    + 0.025 * Math.log1p(subtreeSize[child]);
-                double localNorm = Math.tanh(0.5 * step * branching);
-                double[] result = ContextGraphHyperbolicMath.add(
-                    positions[current], multiply(direction, localNorm));
-                // Guard only extreme cumulative numerical drift, without imposing
-                // fixed-depth concentric rings on the output.
-                double norm = Math.sqrt(ContextGraphHyperbolicMath.dot(result, result));
-                if (norm > MAX_POINCARE_NORM) result = multiply(result, MAX_POINCARE_NORM / norm);
-                positions[child] = result;
-                axes[child] = norm > 1.0e-8 ? normalize(result) : direction;
-                precedingMass += subtreeSize[child];
+                sectorIndex++;
             }
         }
 
@@ -269,8 +317,11 @@ public final class ContextGraphHyperbolicLayout {
         for (int i = 0; i < n; i++) output.put(nodes.get(i).getEntityID(), positions[i]);
         Set<GraphEdge> backbone = Collections.newSetFromMap(new IdentityHashMap<>());
         for (GraphEdge edge : parentEdges) if (edge != null) backbone.add(edge);
+        Map<String, Integer> communityOutput = new LinkedHashMap<>(n * 2);
+        for (int i = 0; i < n; i++) communityOutput.put(nodes.get(i).getEntityID(), community[i]);
         return new LayoutResult(Collections.unmodifiableMap(output),
-            Collections.unmodifiableSet(backbone));
+            Collections.unmodifiableSet(backbone), Collections.unmodifiableMap(communityOutput),
+            semantic.count());
     }
 
     /** 1: source is parent; -1: target is parent; 0: not a hierarchy relationship. */
@@ -317,6 +368,20 @@ public final class ContextGraphHyperbolicLayout {
         int x = find(parents, a);
         int y = find(parents, b);
         if (x != y) parents[Math.max(x, y)] = Math.min(x, y);
+    }
+
+    /** Evenly sample a spherical cap around a local branch axis. */
+    private static double[] capDirection(double[] axis, double[] u, double[] v,
+                                         int index, int count, double aperture) {
+        double fraction = (index + 0.5) / Math.max(1.0, count);
+        double theta = Math.acos(1.0 - fraction * (1.0 - Math.cos(aperture)));
+        double azimuth = GOLDEN_ANGLE * index;
+        double longitude = Math.cos(theta);
+        double lateralU = Math.sin(theta) * Math.cos(azimuth);
+        double lateralV = Math.sin(theta) * Math.sin(azimuth);
+        return normalize(new double[]{axis[0] * longitude + u[0] * lateralU + v[0] * lateralV,
+            axis[1] * longitude + u[1] * lateralU + v[1] * lateralV,
+            axis[2] * longitude + u[2] * lateralU + v[2] * lateralV});
     }
 
     private static double[] fibonacciDirection(int index, int count) {

@@ -33,7 +33,7 @@ import java.util.List;
 
 /** Dedicated floating controls for the Context Graph view. */
 public final class ContextGraphControlsPane extends LitPathPane {
-    public static final String CONTROLS_LAYOUT_VERSION = "CG-TABS-M4B-REORG-FIX-2026-11-12";
+    public static final String CONTROLS_LAYOUT_VERSION = "CG-M4B-SEMANTIC-SECTORS-RESPONSIVE-2026-11-12";
 
     public ContextGraphControlsPane(Scene scene, Pane parent, ContextGraphController graphController,
                                     ContextGraph3DPane graphPane) {
@@ -144,8 +144,8 @@ public final class ContextGraphControlsPane extends LitPathPane {
         TextField entityQuery = new TextField();
         entityQuery.setPromptText("Name, alias, ATT&CK ID, entity ID...");
         ListView<ContextGraphEntitySearchResult> entityResults = new ListView<>();
-        entityResults.setPrefHeight(155);
-        entityResults.setMinHeight(100);
+        entityResults.setMinHeight(0);
+        entityResults.setMaxHeight(Double.MAX_VALUE);
         Label searchSummary = new Label("Type to find an entity");
         CheckBox focusFoundEntity = new CheckBox("Focus on selected entity");
         focusFoundEntity.setSelected(true);
@@ -189,9 +189,18 @@ public final class ContextGraphControlsPane extends LitPathPane {
                 entityQuery.clear();
                 updateSearch.run();
             }));
-        VBox searchPanel = new VBox(7, new Label("Find and Select Entity"),
-            entityQuery, searchSummary, entityResults,
-            new HBox(8, selectFoundEntity, focusFoundEntity));
+        scene.addEventHandler(GraphEvent.GRAPH_DATA_CLEARED, e -> {
+            entityQuery.clear();
+            entityResults.getItems().clear();
+            searchSummary.setText("Type to find an entity");
+        });
+        VBox searchHeader = new VBox(7, new Label("Find and Select Entity"),
+            entityQuery, searchSummary);
+        BorderPane searchPanel = new BorderPane();
+        searchPanel.setTop(searchHeader);
+        searchPanel.setCenter(entityResults);
+        searchPanel.setBottom(new HBox(8, selectFoundEntity, focusFoundEntity));
+        BorderPane.setMargin(entityResults, new Insets(8, 0, 8, 0));
         // Visual edge disclosure is independent of source graph adjacency and traversal.
         ComboBox<ContextGraphEdgeDisplayMode> edgeDisclosureMode = new ComboBox<>();
         edgeDisclosureMode.getItems().addAll(ContextGraphEdgeDisplayMode.values());
@@ -248,16 +257,20 @@ public final class ContextGraphControlsPane extends LitPathPane {
         });
         ScrollPane relationshipScroll = new ScrollPane(relationshipCheckboxes);
         relationshipScroll.setFitToWidth(true);
-        relationshipScroll.setPrefHeight(175);
-        relationshipScroll.setMinHeight(100);
+        relationshipScroll.setMinHeight(0);
+        relationshipScroll.setMaxHeight(Double.MAX_VALUE);
         relationshipScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         VBox edgeDisclosurePanel = new VBox(7,
             new Label("Edge disclosure / hierarchy"), edgeDisclosureMode,
             new Label("Maximum focused cross-links"), crossLinkLimit,
             edgeVisibilitySummary, new Label("Visible relationship types"),
-            new HBox(8, showAllRelationships, hideAllRelationships), relationshipScroll);
+            new HBox(8, showAllRelationships, hideAllRelationships));
         rebuildRelationshipCheckboxes.run();
         updateEdgeSummary.run();
+        scene.addEventHandler(GraphEvent.GRAPH_DATA_CLEARED, e -> {
+            rebuildRelationshipCheckboxes.run();
+            updateEdgeSummary.run();
+        });
         scene.addEventHandler(GraphEvent.GRAPH_EXPLORATION_STATE_CHANGED, e -> updateEdgeSummary.run());
         scene.addEventHandler(GraphEvent.GRAPH_NODE_CLICK, e -> updateEdgeSummary.run());
         scene.addEventHandler(GraphEvent.GRAPH_EDGE_CLICK, e -> updateEdgeSummary.run());
@@ -327,8 +340,10 @@ public final class ContextGraphControlsPane extends LitPathPane {
         showPoincareBoundary.setOnAction(e ->
             graphPane.setPoincareBoundaryVisible(showPoincareBoundary.isSelected()));
 
+        Button clearGraphData = new Button("Clear Data");
+        clearGraphData.setOnAction(e -> graphPane.clearData());
         VBox projectionContent = new VBox(12, new Label("Coordinate projection"), projection,
-            showPoincareBoundary, focusHyperbolic, recenter, distanceInfo, projectionInfo,
+            showPoincareBoundary, focusHyperbolic, recenter, clearGraphData, distanceInfo, projectionInfo,
             new Separator(), new Label("Graph layout (Euclidean projection)"),
             new Label("These layouts do not replace Trinity's computed Poincare hierarchy."),
             new GraphControlsView(scene));
@@ -350,22 +365,21 @@ public final class ContextGraphControlsPane extends LitPathPane {
         styleScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
 
         searchPanel.setPadding(new Insets(12));
-        ScrollPane searchScroll = new ScrollPane(searchPanel);
-        searchScroll.setFitToWidth(true);
-        searchScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        searchPanel.setMinHeight(0);
 
-        edgeDisclosurePanel.setPadding(new Insets(12));
-        relationshipScroll.setPrefHeight(310);
-        ScrollPane relationshipsScroll = new ScrollPane(edgeDisclosurePanel);
-        relationshipsScroll.setFitToWidth(true);
-        relationshipsScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        edgeDisclosurePanel.setPadding(new Insets(12, 12, 8, 12));
+        BorderPane relationshipsPanel = new BorderPane();
+        relationshipsPanel.setTop(edgeDisclosurePanel);
+        relationshipsPanel.setCenter(relationshipScroll);
+        relationshipsPanel.setPadding(new Insets(0, 12, 12, 12));
+        relationshipsPanel.setMinHeight(0);
 
         TabPane tabs = new TabPane(
             new Tab("Projection", projectionScroll),
             new Tab("Graph Style", styleScroll),
             new Tab("Exploration", explorationScroll),
-            new Tab("Search", searchScroll),
-            new Tab("Relationships", relationshipsScroll));
+            new Tab("Search", searchPanel),
+            new Tab("Relationships", relationshipsPanel));
         tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
         // Identify the actual loaded controls class when diagnosing stale build artifacts.
         System.out.println("[CG-CONTROLS] " + CONTROLS_LAYOUT_VERSION + " tabs="

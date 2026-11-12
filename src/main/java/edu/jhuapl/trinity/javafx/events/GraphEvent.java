@@ -37,6 +37,8 @@ public class GraphEvent extends Event {
     public static final EventType<GraphEvent> GRAPH_NODE_CLICK = new EventType<>(ANY, "GRAPH_NODE_CLICK");
     public static final EventType<GraphEvent> GRAPH_EDGE_HOVER = new EventType<>(ANY, "GRAPH_EDGE_HOVER");
     public static final EventType<GraphEvent> GRAPH_EDGE_CLICK = new EventType<>(ANY, "GRAPH_EDGE_CLICK");
+    public static final EventType<GraphEvent> GRAPH_DATA_CLEARED =
+        new EventType<>(ANY, "GRAPH_DATA_CLEARED");
     public static final EventType<GraphEvent> GRAPH_EXPLORATION_STATE_CHANGED =
         new EventType<>(ANY, "GRAPH_EXPLORATION_STATE_CHANGED");
     public static final EventType<GraphEvent> GRAPH_PROJECTION_APPLIED =

@@ -162,6 +162,8 @@ public class ContextGraph3DPane extends StackPane {
                     ContextGraphProjectionMode.values()[i] == mode);
             }
         });
+        MenuItem clearDataItem = new MenuItem("Clear Data");
+        clearDataItem.setOnAction(e -> clearData());
         MenuItem showAllItem = new MenuItem("Show All (Category Filters Retained)");
         showAllItem.setOnAction(e -> graphController.showAll());
         MenuItem navigatorItem = new MenuItem("Content Navigator");
@@ -170,7 +172,7 @@ public class ContextGraph3DPane extends StackPane {
         CheckMenuItem diffuseTestItem = new CheckMenuItem("Diagnostic: Opaque Diffuse Materials");
         diffuseTestItem.setOnAction(e -> graphController.setDiagnosticDiffuseMaterials(diffuseTestItem.isSelected()));
         graphMenu.getItems().addAll(controlsItem, navigatorItem, projections, fitItem,
-            focusSelectedItem, focusNeighborhoodItem, showAllItem, diffuseTestItem);
+            focusSelectedItem, focusNeighborhoodItem, showAllItem, clearDataItem, diffuseTestItem);
         subScene.setOnContextMenuRequested(e -> {
             graphMenu.show(subScene, e.getScreenX(), e.getScreenY());
             e.consume();
@@ -298,6 +300,16 @@ public class ContextGraph3DPane extends StackPane {
             }
         });
         interactionController.installEventHandlers();
+    }
+
+    /** Clear the current scene without affecting the import source or other views. */
+    public void clearData() {
+        clearSelectionCallouts();
+        graphController.clearData();
+        displayedProjectionMode = ContextGraphProjectionMode.EUCLIDEAN;
+        lastHoveredNodeId = null;
+        lastHoveredEdge = null;
+        refreshPoincareBoundary();
     }
 
     private void showGraphControls(Scene scene) {

@@ -1106,6 +1106,56 @@ public final class ContextGraphController {
         fireOnRoot(new GraphEvent(GraphEvent.SET_GRAPH_VISIBILITY_GUI, graphVisible));
     }
 
+    /** Clear only this Context Graph view. Invalidate all asynchronous graph work. */
+    public void clearData() {
+        if (!Platform.isFxApplicationThread()) {
+            Platform.runLater(this::clearData);
+            return;
+        }
+        ++renderGeneration;
+        ++projectionGeneration;
+        ++backboneGeneration;
+        ++layoutGeneration;
+        if (edgeAttachmentTimer != null) {
+            edgeAttachmentTimer.stop();
+            edgeAttachmentTimer = null;
+        }
+        if (projectionUpdateTimer != null) {
+            projectionUpdateTimer.stop();
+            projectionUpdateTimer = null;
+        }
+        nodeLayer.getChildren().clear();
+        edgeLayer.getChildren().clear();
+        nodeViews.clear();
+        edgeViews.clear();
+        pickedNodes.clear();
+        pickedEdges.clear();
+        currentGraph = null;
+        featureAdapter = null;
+        topology = new ContextGraphNeighborhoodIndex(null);
+        entitySearchIndex = new ContextGraphEntitySearchIndex(null);
+        neighborhood = ContextGraphNeighborhoodIndex.Neighborhood.empty();
+        selectedNodeId = null;
+        selectedEdge = null;
+        layoutPositions.clear();
+        projectedDisplayPositions = Map.of();
+        hyperbolicCoordinates = Map.of();
+        hyperbolicFocus = new double[]{0.0, 0.0, 0.0};
+        backboneEdges = Set.of();
+        backboneReady = false;
+        backboneFailed = false;
+        focusedCrossLinks = Set.of();
+        relationshipTypeCounts = Map.of();
+        hiddenRelationshipTypes.clear();
+        projectionMode = ContextGraphProjectionMode.EUCLIDEAN;
+        edgeDisplayMode = ContextGraphEdgeDisplayMode.ALL;
+        edgeDisplayModeCustomized = false;
+        fireOnRoot(new GraphEvent(GraphEvent.GRAPH_DATA_CLEARED));
+        fireOnRoot(new GraphEvent(GraphEvent.GRAPH_PROJECTION_APPLIED, projectionMode));
+        notifyExplorationState();
+        report("Context Graph data cleared");
+    }
+
     private void setGraphVisible(boolean visible) {
         graphVisible = visible;
         graphLayer.setVisible(visible);
