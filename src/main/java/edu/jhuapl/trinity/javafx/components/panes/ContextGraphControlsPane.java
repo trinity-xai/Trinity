@@ -587,8 +587,8 @@ public final class ContextGraphControlsPane extends LitPathPane {
         communityPanel.getChildren().addAll(new Separator(),
             new Label("Community coloring (diagnostic, not FactorLabel)"),
             communityColors, new Label("Visualize community partition at level"), diagnosticLevel,
-            new Label("Spatial layout: Classic retains original 4B-A positions; "
-                + "semantic mode uses hierarchy and spacing controls"),
+            new Label("Spatial layout: Classic preserves 4B-A; Multilevel uses spherical "
+                + "hierarchy packing; Relationship-aware also uses weighted graph links."),
             new Label("Placement strategy"), placementMode,
             new Label("Angular allocation"), angularAllocation,
             new Label("Branch angular spread (degrees)"), angularSpread,

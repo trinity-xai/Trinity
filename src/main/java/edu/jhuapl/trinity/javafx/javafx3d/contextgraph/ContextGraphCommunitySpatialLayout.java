@@ -37,15 +37,18 @@ public final class ContextGraphCommunitySpatialLayout {
         ContextGraphHyperbolicLayout.LayoutResult scaffold = classic
             ? ContextGraphHyperbolicLayout.originalStructuralLayout(graph)
             : ContextGraphHyperbolicLayout.computedLayout(graph, hierarchy);
-        Map<String, double[]> positions = classic ? scaffold.positions() : pack(hierarchy, params);
+        ContextGraphPackedPositions packed = classic ? null : pack(graph, hierarchy, params);
+        Map<String, double[]> positions = classic ? scaffold.positions() : packed.positions();
         ContextGraphHyperbolicLayout.LayoutResult layout =
             new ContextGraphHyperbolicLayout.LayoutResult(positions,
                 scaffold.backboneEdges(), classic ? scaffold.communities() : hierarchy.layoutMembership(),
                 classic ? scaffold.communityCount() : hierarchy.levels().isEmpty() ? 0
                     : hierarchy.levels().get(hierarchy.selectedLayoutLevel()).count());
-        int packed = classic ? 0 : hierarchy.levels().size() - hierarchy.selectedLayoutLevel() + 1;
+        int packedLayers = classic ? 0 : hierarchy.levels().size() - hierarchy.selectedLayoutLevel() + 1;
         double factor = budgetFactor(hierarchy, params);
-        return new Result(layout, diagnose(positions, hierarchy.entityIds(), packed, factor));
+        return new Result(layout, diagnose(positions, hierarchy.entityIds(), packedLayers, factor,
+            classic ? Double.NaN : packed.linkAngleBefore(),
+            classic ? Double.NaN : packed.linkAngleAfter()));
     }
 
     private static double budgetFactor(ContextGraphCommunityHierarchy hierarchy,
@@ -58,15 +61,20 @@ public final class ContextGraphCommunitySpatialLayout {
         return sum <= PATH_DISTANCE_BUDGET ? 1.0 : PATH_DISTANCE_BUDGET / sum;
     }
 
-    private static Map<String, double[]> pack(ContextGraphCommunityHierarchy hierarchy,
-                                               ContextGraphHyperbolicPackingParams params) {
+    private static ContextGraphPackedPositions pack(GraphDirectedCollection graph,
+                                                    ContextGraphCommunityHierarchy hierarchy,
+                                                    ContextGraphHyperbolicPackingParams params) {
         List<ContextGraphCommunityLevel> levels = hierarchy.levels();
         List<String> ids = hierarchy.entityIds();
-        if (levels.isEmpty() || ids.isEmpty()) return Map.of();
+        if (levels.isEmpty() || ids.isEmpty())
+            return new ContextGraphPackedPositions(Map.of(), Double.NaN, Double.NaN);
         int lowest = hierarchy.selectedLayoutLevel();
         int top = levels.size() - 1;
         int layers = top - lowest + 2;
         double factor = budgetFactor(hierarchy, params);
+        ContextGraphCommunityConnectivity connectivity = params.placement()
+            == ContextGraphHyperbolicPackingParams.Placement.RELATIONSHIP_AWARE
+                ? ContextGraphCommunityConnectivity.from(graph, hierarchy) : null;
 
         double[][][] centers = new double[levels.size()][][];
         double[][][] axes = new double[levels.size()][][];
@@ -79,10 +87,25 @@ public final class ContextGraphCommunitySpatialLayout {
         coarse.sort(Comparator.comparingInt(ContextGraphCommunityCluster::memberCount).reversed()
             .thenComparingInt(ContextGraphCommunityCluster::id));
         double rootNorm = Math.tanh(0.5 * params.stepAt(0, layers) * factor);
+        List<Integer> rootIds = new ArrayList<>(coarse.size());
+        double[][] rootDirections = new double[coarse.size()][];
+        for (int i = 0; i < coarse.size(); i++) {
+            rootIds.add(coarse.get(i).id());
+            rootDirections[i] = fibonacciDirection(i, coarse.size());
+        }
+        double linkAngleBefore = Double.NaN;
+        double linkAngleAfter = Double.NaN;
+        if (connectivity != null) {
+            linkAngleBefore = ContextGraphCommunityConnectivity.weightedAngularDistance(
+                rootDirections, rootIds, connectivity.linksAt(top));
+            rootDirections = connectivity.arrange(top, rootIds, rootDirections, null, Math.PI);
+            linkAngleAfter = ContextGraphCommunityConnectivity.weightedAngularDistance(
+                rootDirections, rootIds, connectivity.linksAt(top));
+        }
         for (int i = 0; i < coarse.size(); i++) {
             checkCancelled();
             int id = coarse.get(i).id();
-            double[] direction = fibonacciDirection(i, coarse.size());
+            double[] direction = rootDirections[i];
             axes[top][id] = direction;
             centers[top][id] = multiply(direction, rootNorm);
         }
@@ -102,9 +125,20 @@ public final class ContextGraphCommunitySpatialLayout {
                 for (int child : children) masses.add(levels.get(level).clusters().get(child).memberCount());
                 double stepNorm = Math.tanh(0.5 * params.stepAt(depth, layers) * factor);
                 double[] fractions = weightedFractions(masses, params);
+                double[][] childDirections = new double[children.size()][];
+                for (int i = 0; i < children.size(); i++)
+                    childDirections[i] = localDirection(parentAxis, i, children.size(), fractions[i], params);
+                if (connectivity != null && children.size() > 1) {
+                    double maxAngle = Math.min(2.65,
+                        Math.toRadians(params.angularSpreadDegrees()) * 0.5
+                            + Math.toRadians(params.siblingGapDegrees())
+                                * Math.min(2.0, Math.sqrt(children.size()) / 2.0));
+                    childDirections = connectivity.arrange(level, children,
+                        childDirections, parentAxis, maxAngle);
+                }
                 for (int i = 0; i < children.size(); i++) {
                     int child = children.get(i);
-                    double[] direction = localDirection(parentAxis, i, children.size(), fractions[i], params);
+                    double[] direction = childDirections[i];
                     axes[level][child] = direction;
                     centers[level][child] = ContextGraphHyperbolicMath.add(
                         parentPoint, multiply(direction, stepNorm));
@@ -134,7 +168,8 @@ public final class ContextGraphCommunitySpatialLayout {
                 result.put(ids.get(members.get(i)), position);
             }
         }
-        return java.util.Collections.unmodifiableMap(result);
+        return new ContextGraphPackedPositions(java.util.Collections.unmodifiableMap(result),
+            linkAngleBefore, linkAngleAfter);
     }
 
     private static double[] weightedFractions(List<Integer> sizes,
@@ -180,9 +215,11 @@ public final class ContextGraphCommunitySpatialLayout {
 
     private static ContextGraphSpatialDiagnostics diagnose(Map<String, double[]> positions,
                                                              List<String> sortedIds, int layers,
-                                                             double factor) {
+                                                             double factor, double linkAngleBefore,
+                                                             double linkAngleAfter) {
         if (positions.isEmpty())
-            return new ContextGraphSpatialDiagnostics(0, layers, factor, 0, 0, 0, 0);
+            return new ContextGraphSpatialDiagnostics(0, layers, factor, 0, 0, 0, 0,
+                linkAngleBefore, linkAngleAfter);
         List<double[]> points = new ArrayList<>(sortedIds.size());
         double maxRadius = 0;
         int nearBoundary = 0;
@@ -220,7 +257,8 @@ public final class ContextGraphCommunitySpatialLayout {
                 hyperSum += Math.log1p(hyperQMin + Math.sqrt(hyperQMin * (hyperQMin + 2.0)));
         }
         return new ContextGraphSpatialDiagnostics(points.size(), layers, factor,
-            maxRadius, nearBoundary, chartSum / sampleCount, hyperSum / sampleCount);
+            maxRadius, nearBoundary, chartSum / sampleCount, hyperSum / sampleCount,
+            linkAngleBefore, linkAngleAfter);
     }
 
     private static void checkCancelled() {
@@ -249,3 +287,7 @@ public final class ContextGraphCommunitySpatialLayout {
         return norm < 1e-12 ? new double[]{0, 0, 1} : multiply(a, 1.0 / norm);
     }
 }
+
+/** Detached worker result; not part of the source graph or JavaFX node model. */
+record ContextGraphPackedPositions(Map<String, double[]> positions, double linkAngleBefore,
+                                   double linkAngleAfter) { }
