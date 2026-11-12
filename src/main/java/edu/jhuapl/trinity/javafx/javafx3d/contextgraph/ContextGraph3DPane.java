@@ -14,6 +14,10 @@ import javafx.scene.layout.VBox;
 import java.util.Map;
 import java.util.Objects;
 import javafx.scene.shape.Shape3D;
+import javafx.scene.shape.Sphere;
+import javafx.scene.shape.DrawMode;
+import javafx.scene.shape.CullFace;
+import javafx.scene.paint.PhongMaterial;
 import java.util.List;
 import edu.jhuapl.trinity.javafx.events.GraphEvent;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
@@ -49,6 +53,9 @@ import javafx.scene.transform.NonInvertibleTransformException;
 /** Independent 3D graph viewport. Graph data remains in the shared graph model. */
 public class ContextGraph3DPane extends StackPane {
     private final Group world = new Group();
+    // Visual boundary of the computed Poincare chart, not a graph entity.
+    private final Sphere poincareBoundary;
+    private boolean showPoincareBoundary = true;
     private final CameraTransformer cameraTransform = new CameraTransformer();
     private final PerspectiveCamera camera = new PerspectiveCamera(true);
     private final SubScene subScene;
@@ -78,6 +85,13 @@ public class ContextGraph3DPane extends StackPane {
     public ContextGraph3DPane(Scene scene) {
         graphController = new ContextGraphController(scene);
         interactionController = new ContextGraphInteractionController(scene);
+        poincareBoundary = new Sphere(graphController.getHyperbolicDisplayRadius(), 36);
+        poincareBoundary.setDrawMode(DrawMode.LINE);
+        poincareBoundary.setCullFace(CullFace.NONE);
+        poincareBoundary.setMaterial(new PhongMaterial(Color.color(0.42, 0.65, 0.95, 0.30)));
+        poincareBoundary.setMouseTransparent(true);
+        poincareBoundary.setVisible(false);
+        graphController.getGraphLayer().getChildren().add(0, poincareBoundary);
         camera.setNearClip(0.1);
         camera.setFarClip(100000);
         camera.setTranslateZ(-80);
@@ -133,6 +147,7 @@ public class ContextGraph3DPane extends StackPane {
                 displayedProjectionMode = mode;
                 frameGraph(graphController.getCurrentGraph());
             }
+            refreshPoincareBoundary();
             if (mode.isHyperbolic()) {
                 // Orbital center is the Poincare origin after Mobius recentering.
                 cameraTransform.setTranslate(0.0, 0.0, 0.0);
@@ -298,6 +313,23 @@ public class ContextGraph3DPane extends StackPane {
         scene.getRoot().fireEvent(new GraphEvent(GraphEvent.SET_STYLE_GUI,
             edu.jhuapl.trinity.utils.graph.GraphStyleParams.copyOf(graphController.getStyleParams())));
         graphController.syncVisibilityGui();
+    }
+
+    /** Boundary is a visual reference only; it never participates in graph picking. */
+    public boolean isPoincareBoundaryVisible() { return showPoincareBoundary; }
+
+    public void setPoincareBoundaryVisible(boolean visible) {
+        showPoincareBoundary = visible;
+        refreshPoincareBoundary();
+    }
+
+    public void refreshPoincareBoundary() {
+        double radius = graphController.getHyperbolicDisplayRadius();
+        if (Double.isFinite(radius) && radius > 0.0 && poincareBoundary.getRadius() != radius) {
+            poincareBoundary.setRadius(radius);
+        }
+        poincareBoundary.setVisible(showPoincareBoundary
+            && graphController.getProjectionMode().isHyperbolic());
     }
 
     public boolean isSelectionCalloutsEnabled() { return selectionCalloutsEnabled; }

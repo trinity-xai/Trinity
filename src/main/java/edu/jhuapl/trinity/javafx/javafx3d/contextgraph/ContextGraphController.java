@@ -16,6 +16,10 @@ import javafx.concurrent.Task;
 import javafx.geometry.Point3D;
 
 import java.util.ArrayList;
+import java.util.Collections;
+import java.util.HashSet;
+import java.util.LinkedHashMap;
+import java.util.TreeMap;
 import java.util.List;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
 import edu.jhuapl.trinity.javafx.events.GraphEvent;
@@ -151,6 +155,17 @@ public final class ContextGraphController {
     // Graph exploration state is independent of category styling and scene geometry.
     private ContextGraphNeighborhoodIndex topology = new ContextGraphNeighborhoodIndex(null);
     private ContextGraphEntitySearchIndex entitySearchIndex = new ContextGraphEntitySearchIndex(null);
+    // All three selectors are display-only: they never delete or rewrite graph edges.
+    private ContextGraphEdgeDisplayMode edgeDisplayMode = ContextGraphEdgeDisplayMode.ALL;
+    private boolean edgeDisplayModeCustomized;
+    private Set<GraphEdge> backboneEdges = Set.of();
+    private boolean backboneReady;
+    private boolean backboneFailed;
+    private long backboneGeneration;
+    private Map<String, Integer> relationshipTypeCounts = Map.of();
+    private final Set<String> hiddenRelationshipTypes = new HashSet<>();
+    private Set<GraphEdge> focusedCrossLinks = Set.of();
+    private int focusedCrossLinkLimit = 100;
     private ContextGraphNeighborhoodIndex.Neighborhood neighborhood =
         ContextGraphNeighborhoodIndex.Neighborhood.empty();
     private boolean neighborhoodHighlightEnabled = true;
@@ -169,7 +184,14 @@ public final class ContextGraphController {
         .withNodeDivisions(16)
         .withEdgeWidth(0.5f)
         .withPositionScalar(1.0);
-    private GraphStyleParams styleParams = new GraphStyleParams();
+    // Context Graph defaults to categorical coloring without changing defaults for other views.
+    private GraphStyleParams styleParams = defaultContextGraphStyle();
+
+    private static GraphStyleParams defaultContextGraphStyle() {
+        GraphStyleParams defaults = new GraphStyleParams();
+        defaults.colorByLabel = true;
+        return defaults;
+    }
     private boolean eventHandlersInstalled;
     private final Map<Color, PhongMaterial> emissiveMaterials = new HashMap<>();
     private double coordinateScale = 1.0;
@@ -233,6 +255,132 @@ public final class ContextGraphController {
     public boolean isNodeVisibleByLabel(String entityId) {
         GraphNode node = topology.node(entityId);
         return node != null && nodeLabelVisible(node);
+    }
+
+    /** Relationship labels are treated as whole category names, like FactorLabel styling. */
+    private static String relationshipType(GraphEdge edge) {
+        return ContextGraphEdgeDisclosure.relationshipType(edge);
+    }
+
+    public ContextGraphEdgeDisplayMode getEdgeDisplayMode() { return edgeDisplayMode; }
+    public boolean isBackboneReady() { return backboneReady; }
+    public boolean isBackboneFailed() { return backboneFailed; }
+    public int getBackboneEdgeCount() { return backboneEdges.size(); }
+    public int getFocusedCrossLinkLimit() { return focusedCrossLinkLimit; }
+    public Map<String, Integer> getRelationshipTypeCounts() { return relationshipTypeCounts; }
+    public boolean isRelationshipTypeEnabled(String type) { return !hiddenRelationshipTypes.contains(type); }
+
+    public void setEdgeDisplayMode(ContextGraphEdgeDisplayMode mode) {
+        if (mode == null) return;
+        edgeDisplayModeCustomized = true;
+        if (edgeDisplayMode == mode) return;
+        edgeDisplayMode = mode;
+        applyEdgeVisibilityOnly();
+        notifyExplorationState();
+    }
+
+    public void setFocusedCrossLinkLimit(int maximum) {
+        if (maximum < 0 || maximum > 10000) {
+            throw new IllegalArgumentException("Focused cross-link limit must be between 0 and 10000");
+        }
+        if (focusedCrossLinkLimit == maximum) return;
+        focusedCrossLinkLimit = maximum;
+        refreshFocusedCrossLinks();
+        applyEdgeVisibilityOnly();
+        notifyExplorationState();
+    }
+
+    public void setRelationshipTypeEnabled(String type, boolean enabled) {
+        if (!relationshipTypeCounts.containsKey(type)) return;
+        boolean changed = enabled ? hiddenRelationshipTypes.remove(type)
+            : hiddenRelationshipTypes.add(type);
+        if (!changed) return;
+        refreshFocusedCrossLinks();
+        applyEdgeVisibilityOnly();
+        notifyExplorationState();
+    }
+
+    public void setAllRelationshipTypesEnabled(boolean enabled) {
+        hiddenRelationshipTypes.clear();
+        if (!enabled) hiddenRelationshipTypes.addAll(relationshipTypeCounts.keySet());
+        refreshFocusedCrossLinks();
+        applyEdgeVisibilityOnly();
+        notifyExplorationState();
+    }
+
+    public int getVisibleRelationshipEdgeCount() {
+        if (currentGraph == null) return 0;
+        int count = 0;
+        for (GraphEdge edge : currentGraph.getEdges()) if (edgeAllowed(edge)) count++;
+        return count;
+    }
+
+    private void buildRelationshipTypeCounts(GraphDirectedCollection graph) {
+        Map<String, Integer> counts = new TreeMap<>();
+        for (GraphEdge edge : graph.getEdges()) {
+            counts.merge(relationshipType(edge), 1, Integer::sum);
+        }
+        relationshipTypeCounts = Collections.unmodifiableMap(new LinkedHashMap<>(counts));
+        hiddenRelationshipTypes.clear();
+    }
+
+    /** Show selected-entity cross-links on top of the exact layout backbone. */
+    private void refreshFocusedCrossLinks() {
+        focusedCrossLinks = ContextGraphEdgeDisclosure.focused(currentGraph, backboneReady,
+            backboneEdges, selectedNodeId, selectedEdge, focusedCrossLinkLimit,
+            hiddenRelationshipTypes);
+    }
+
+    private boolean edgeShownByStructure(GraphEdge edge) {
+        return ContextGraphEdgeDisclosure.shown(edgeDisplayMode, edge, backboneReady,
+            backboneEdges, focusedCrossLinks);
+    }
+
+    /** Only touches already-attached FX edge views; progressive attachments use edgeAllowed. */
+    private void applyEdgeVisibilityOnly() {
+        for (Map.Entry<GraphEdge, ContextGraphEdge3D> entry : edgeViews.entrySet()) {
+            entry.getValue().setVisible(edgeAllowed(entry.getKey()));
+        }
+    }
+
+    private void prepareBackbone(GraphDirectedCollection graph) {
+        final long generation = ++backboneGeneration;
+        Task<ContextGraphHyperbolicLayout.LayoutResult> task = new Task<>() {
+            @Override protected ContextGraphHyperbolicLayout.LayoutResult call() {
+                return ContextGraphHyperbolicLayout.computedLayout(graph);
+            }
+        };
+        task.setOnSucceeded(event -> {
+            if (generation != backboneGeneration || graph != currentGraph) return;
+            ContextGraphHyperbolicLayout.LayoutResult layout = task.getValue();
+            backboneEdges = layout.backboneEdges();
+            backboneReady = true;
+            backboneFailed = false;
+            // The same result is reused if hyperbolic projection is selected later.
+            hyperbolicCoordinates = layout.positions();
+            refreshFocusedCrossLinks();
+            applyEdgeVisibilityOnly();
+            notifyExplorationState();
+        });
+        task.setOnFailed(event -> {
+            if (generation != backboneGeneration || graph != currentGraph) return;
+            backboneFailed = true;
+            report("Graph hierarchy analysis failed: " + task.getException());
+            notifyExplorationState();
+        });
+        Thread worker = new Thread(task, "context-graph-spanning-hierarchy");
+        worker.setDaemon(true);
+        worker.start();
+    }
+
+    private void applyDefaultEdgeModeForProjection(ContextGraphProjectionMode mode) {
+        if (!edgeDisplayModeCustomized) {
+            edgeDisplayMode = mode.isHyperbolic()
+                ? ContextGraphEdgeDisplayMode.BACKBONE_WITH_FOCUS
+                : ContextGraphEdgeDisplayMode.ALL;
+        }
+        applyEdgeVisibilityOnly();
+        notifyExplorationState();
     }
 
     public String getSelectedNodeId() { return selectedNodeId; }
@@ -316,6 +464,7 @@ public final class ContextGraphController {
             roots.add(selectedEdge.getEndID());
         }
         neighborhood = topology.traverse(roots, neighborhoodDepth);
+        refreshFocusedCrossLinks();
         applyExplorationState();
     }
 
@@ -326,6 +475,8 @@ public final class ContextGraphController {
 
     private boolean edgeAllowed(GraphEdge edge) {
         return edgeLabelVisible(edge)
+            && !hiddenRelationshipTypes.contains(relationshipType(edge))
+            && edgeShownByStructure(edge)
             && (!isolateSelection || neighborhood.isEmpty() || neighborhood.containsEdge(edge));
     }
 
@@ -485,23 +636,37 @@ public final class ContextGraphController {
         }
         if (!requested.isHyperbolic()) {
             projectionMode = requested;
+            applyDefaultEdgeModeForProjection(requested);
+            scheduleProjectionReposition();
+            return;
+        }
+        if (backboneReady && !hyperbolicCoordinates.isEmpty()) {
+            hyperbolicFocus = new double[]{0.0, 0.0, 0.0};
+            projectionMode = requested;
+            applyDefaultEdgeModeForProjection(requested);
             scheduleProjectionReposition();
             return;
         }
         final GraphDirectedCollection graph = currentGraph;
         final long started = System.nanoTime();
-        Task<Map<String, double[]>> task = new Task<>() {
-            @Override protected Map<String, double[]> call() {
-                return ContextGraphHyperbolicLayout.computed(graph);
+        Task<ContextGraphHyperbolicLayout.LayoutResult> task = new Task<>() {
+            @Override protected ContextGraphHyperbolicLayout.LayoutResult call() {
+                return ContextGraphHyperbolicLayout.computedLayout(graph);
             }
         };
         task.setOnSucceeded(e -> {
             if (generation != projectionGeneration || graph != currentGraph) return;
-            hyperbolicCoordinates = task.getValue();
+            ContextGraphHyperbolicLayout.LayoutResult layout = task.getValue();
+            hyperbolicCoordinates = layout.positions();
+            backboneEdges = layout.backboneEdges();
+            backboneReady = true;
+            backboneFailed = false;
+            refreshFocusedCrossLinks();
             System.out.print("ContextGraph computed hyperbolic topology layout: ");
             Utils.printTotalTime(started);
             hyperbolicFocus = new double[]{0.0, 0.0, 0.0};
             projectionMode = requested;
+            applyDefaultEdgeModeForProjection(requested);
             scheduleProjectionReposition();
         });
         task.setOnFailed(e -> {
@@ -870,7 +1035,7 @@ public final class ContextGraphController {
         });
 
         scene.addEventHandler(GraphEvent.GRAPH_STYLE_RESET_DEFAULTS, e -> {
-            styleParams = new GraphStyleParams();
+            styleParams = defaultContextGraphStyle();
 
             graphParams.withNodeRadius(styleParams.nodeRadius)
                 .withEdgeWidth((float) styleParams.edgeWidth);
@@ -919,17 +1084,24 @@ public final class ContextGraphController {
         }
         projectionMode = ContextGraphProjectionMode.EUCLIDEAN;
         hyperbolicCoordinates = Map.of();
+        backboneEdges = Set.of();
+        backboneReady = false;
+        backboneFailed = false;
+        focusedCrossLinks = Set.of();
         projectedDisplayPositions = Map.of();
         hyperbolicFocus = new double[]{0.0, 0.0, 0.0};
         currentGraph = graph;
         topology = new ContextGraphNeighborhoodIndex(graph);
         entitySearchIndex = new ContextGraphEntitySearchIndex(graph);
+        buildRelationshipTypeCounts(graph);
         registerGraphLabels(graph);
         refreshNeighborhood();
         ++layoutGeneration;
         layoutPositions.clear();
         rebuildGraph();
+        prepareBackbone(graph);
         if (restoreMode.isHyperbolic()) setProjectionMode(restoreMode);
+        else applyDefaultEdgeModeForProjection(restoreMode);
         fireOnRoot(new GraphEvent(GraphEvent.SET_STYLE_GUI, styleParams));
         fireOnRoot(new GraphEvent(GraphEvent.SET_GRAPH_VISIBILITY_GUI, graphVisible));
     }
@@ -1150,6 +1322,7 @@ public final class ContextGraphController {
             applyEdgeMaterials(styleParams);
         }
         applyExplorationState();
+        notifyExplorationState();
     }
 
     private void applyNodeMaterials(GraphStyleParams style) {

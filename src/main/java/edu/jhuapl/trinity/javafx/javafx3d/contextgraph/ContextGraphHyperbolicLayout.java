@@ -9,6 +9,9 @@ import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Comparator;
+import java.util.Collections;
+import java.util.IdentityHashMap;
+import java.util.Set;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.List;
@@ -38,18 +41,29 @@ public final class ContextGraphHyperbolicLayout {
 
     private ContextGraphHyperbolicLayout() { }
 
-    private record Arc(int to, int cost) { }
+    private record Arc(int to, int cost, GraphEdge edge) { }
     private record Candidate(int vertex, long cost, int hops) { }
     private record OrientedLink(int parent, int child) { }
 
+    /** Existing position-only API retained for any layout callers. */
     public static Map<String, double[]> computed(GraphDirectedCollection graph) {
+        return computedLayout(graph).positions();
+    }
+
+    /**
+     * Computed coordinates and EXACT GraphEdge objects selected as tree edges.
+     * The graph model and edge identities are never copied or modified.
+     */
+    public record LayoutResult(Map<String, double[]> positions, Set<GraphEdge> backboneEdges) { }
+
+    public static LayoutResult computedLayout(GraphDirectedCollection graph) {
         if (graph == null || graph.getNodes() == null) {
             throw new IllegalArgumentException("Graph and graph nodes are required");
         }
         List<GraphNode> nodes = new ArrayList<>(graph.getNodes());
         nodes.sort(Comparator.comparing(GraphNode::getEntityID));
         int n = nodes.size();
-        if (n == 0) return Map.of();
+        if (n == 0) return new LayoutResult(Map.of(), Set.of());
 
         Map<String, Integer> index = new HashMap<>(n * 2);
         for (int i = 0; i < n; i++) {
@@ -80,8 +94,8 @@ public final class ContextGraphHyperbolicLayout {
                 // No source position or imported hierarchy annotations are used.
                 int orientation = orientation(edge.getRelationship());
                 if (orientation == 0) {
-                    adjacency.get(start).add(new Arc(end, SEMANTIC_COST));
-                    adjacency.get(end).add(new Arc(start, SEMANTIC_COST));
+                    adjacency.get(start).add(new Arc(end, SEMANTIC_COST, edge));
+                    adjacency.get(end).add(new Arc(start, SEMANTIC_COST, edge));
                 } else {
                     int sourceParent = orientation > 0 ? start : end;
                     int targetChild = orientation > 0 ? end : start;
@@ -89,8 +103,8 @@ public final class ContextGraphHyperbolicLayout {
                         ? ASSOCIATION_FORWARD : STRUCTURAL_FORWARD;
                     int reverse = isAssociation(edge.getRelationship())
                         ? ASSOCIATION_REVERSE : STRUCTURAL_REVERSE;
-                    adjacency.get(sourceParent).add(new Arc(targetChild, forward));
-                    adjacency.get(targetChild).add(new Arc(sourceParent, reverse));
+                    adjacency.get(sourceParent).add(new Arc(targetChild, forward, edge));
+                    adjacency.get(targetChild).add(new Arc(sourceParent, reverse, edge));
                     if (!isAssociation(edge.getRelationship())) {
                         structuralLinks.add(new OrientedLink(sourceParent, targetChild));
                         structuralIncoming[targetChild]++;
@@ -100,7 +114,12 @@ public final class ContextGraphHyperbolicLayout {
             }
         }
         for (List<Arc> neighbors : adjacency) {
-            neighbors.sort(Comparator.comparingInt(Arc::cost).thenComparingInt(Arc::to));
+            neighbors.sort(Comparator.comparingInt(Arc::cost).thenComparingInt(Arc::to)
+                .thenComparingLong(a -> a.edge().getRelationship() == null ? 0L
+                    : a.edge().getRelationship().getIdentity())
+                .thenComparing(a -> a.edge().getRelationship() == null
+                    || a.edge().getRelationship().getLabels() == null ? ""
+                    : String.join(",", a.edge().getRelationship().getLabels())));
         }
 
         // A small, bounded longest-downstream-path heuristic favors genuine
@@ -131,6 +150,7 @@ public final class ContextGraphHyperbolicLayout {
         roots.sort(Integer::compareTo);
 
         int[] parent = new int[n];
+        GraphEdge[] parentEdges = new GraphEdge[n];
         int[] hops = new int[n];
         long[] best = new long[n];
         Arrays.fill(parent, -1);
@@ -155,6 +175,7 @@ public final class ContextGraphHyperbolicLayout {
                     best[arc.to] = cost;
                     hops[arc.to] = hop;
                     parent[arc.to] = next.vertex;
+                    parentEdges[arc.to] = arc.edge();
                     queue.add(new Candidate(arc.to, cost, hop));
                 }
             }
@@ -246,7 +267,10 @@ public final class ContextGraphHyperbolicLayout {
 
         Map<String, double[]> output = new LinkedHashMap<>(n * 2);
         for (int i = 0; i < n; i++) output.put(nodes.get(i).getEntityID(), positions[i]);
-        return output;
+        Set<GraphEdge> backbone = Collections.newSetFromMap(new IdentityHashMap<>());
+        for (GraphEdge edge : parentEdges) if (edge != null) backbone.add(edge);
+        return new LayoutResult(Collections.unmodifiableMap(output),
+            Collections.unmodifiableSet(backbone));
     }
 
     /** 1: source is parent; -1: target is parent; 0: not a hierarchy relationship. */

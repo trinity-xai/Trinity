@@ -7,6 +7,7 @@ import javafx.scene.control.Button;
 import edu.jhuapl.trinity.javafx.javafx3d.contextgraph.ContextGraphController;
 import edu.jhuapl.trinity.javafx.javafx3d.contextgraph.ContextGraph3DPane;
 import edu.jhuapl.trinity.javafx.javafx3d.contextgraph.ContextGraphProjectionMode;
+import edu.jhuapl.trinity.javafx.javafx3d.contextgraph.ContextGraphEdgeDisplayMode;
 import edu.jhuapl.trinity.javafx.javafx3d.contextgraph.ContextGraphEntitySearchResult;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
@@ -15,6 +16,7 @@ import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
 import javafx.scene.control.ScrollPane;
+import javafx.scene.control.Separator;
 import javafx.scene.control.TextField;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
@@ -31,6 +33,8 @@ import java.util.List;
 
 /** Dedicated floating controls for the Context Graph view. */
 public final class ContextGraphControlsPane extends LitPathPane {
+    public static final String CONTROLS_LAYOUT_VERSION = "CG-TABS-M4B-REORG-FIX-2026-11-12";
+
     public ContextGraphControlsPane(Scene scene, Pane parent, ContextGraphController graphController,
                                     ContextGraph3DPane graphPane) {
         super(scene, parent, 420, 620, new BorderPane(), "Context Graph Controls", "", 200.0, 300.0);
@@ -59,6 +63,7 @@ public final class ContextGraphControlsPane extends LitPathPane {
             if (newValue != null) {
                 graphController.setCoordinateScale(newValue);
                 graphController.finishCoordinateScale();
+                graphPane.refreshPoincareBoundary();
             }
         });
         installCommitOnFocusLost(coordinateScale);
@@ -122,7 +127,7 @@ public final class ContextGraphControlsPane extends LitPathPane {
         focusSelection.setOnAction(e -> graphPane.focusSelection());
         Button focusNeighborhood = new Button("Focus Neighborhood");
         focusNeighborhood.setOnAction(e -> graphPane.focusNeighborhood());
-        Button showAll = new Button("Show All (Keep Label Filters)");
+        Button showAll = new Button("Show All (Keep Label/Edge Filters)");
         showAll.setOnAction(e -> graphController.showAll());
 
         Label neighborhoodSummary = new Label();
@@ -187,8 +192,83 @@ public final class ContextGraphControlsPane extends LitPathPane {
         VBox searchPanel = new VBox(7, new Label("Find and Select Entity"),
             entityQuery, searchSummary, entityResults,
             new HBox(8, selectFoundEntity, focusFoundEntity));
+        // Visual edge disclosure is independent of source graph adjacency and traversal.
+        ComboBox<ContextGraphEdgeDisplayMode> edgeDisclosureMode = new ComboBox<>();
+        edgeDisclosureMode.getItems().addAll(ContextGraphEdgeDisplayMode.values());
+        edgeDisclosureMode.setValue(graphController.getEdgeDisplayMode());
+        edgeDisclosureMode.setMaxWidth(Double.MAX_VALUE);
+        edgeDisclosureMode.setOnAction(e -> {
+            if (edgeDisclosureMode.getValue() != graphController.getEdgeDisplayMode()) {
+                graphController.setEdgeDisplayMode(edgeDisclosureMode.getValue());
+            }
+        });
+        Spinner<Integer> crossLinkLimit = new Spinner<>(0, 10000,
+            graphController.getFocusedCrossLinkLimit(), 25);
+        crossLinkLimit.setEditable(true);
+        crossLinkLimit.setPrefWidth(130);
+        crossLinkLimit.valueProperty().addListener((obs, oldValue, newValue) -> {
+            if (newValue != null) graphController.setFocusedCrossLinkLimit(newValue);
+        });
+        installCommitOnFocusLost(crossLinkLimit);
+        Label edgeVisibilitySummary = new Label();
+        edgeVisibilitySummary.setWrapText(true);
+        Runnable updateEdgeSummary = () -> {
+            edgeDisclosureMode.setValue(graphController.getEdgeDisplayMode());
+            crossLinkLimit.setDisable(
+                graphController.getEdgeDisplayMode() != ContextGraphEdgeDisplayMode.BACKBONE_WITH_FOCUS);
+            edgeVisibilitySummary.setText("Relationships passing filters: "
+                + graphController.getVisibleRelationshipEdgeCount() + " / "
+                + (graphController.getCurrentGraph() == null ? 0
+                    : graphController.getCurrentGraph().getEdges().size())
+                + " | backbone: " + (graphController.isBackboneReady()
+                    ? graphController.getBackboneEdgeCount()
+                    : graphController.isBackboneFailed() ? "unavailable" : "computing..."));
+        };
+        VBox relationshipCheckboxes = new VBox(5);
+        Runnable rebuildRelationshipCheckboxes = () -> {
+            relationshipCheckboxes.getChildren().clear();
+            for (var entry : graphController.getRelationshipTypeCounts().entrySet()) {
+                String relationship = entry.getKey();
+                CheckBox check = new CheckBox(relationship + " (" + entry.getValue() + ")");
+                check.setSelected(graphController.isRelationshipTypeEnabled(relationship));
+                check.setOnAction(e -> graphController.setRelationshipTypeEnabled(
+                    relationship, check.isSelected()));
+                relationshipCheckboxes.getChildren().add(check);
+            }
+        };
+        Button showAllRelationships = new Button("All types");
+        showAllRelationships.setOnAction(e -> {
+            graphController.setAllRelationshipTypesEnabled(true);
+            rebuildRelationshipCheckboxes.run();
+        });
+        Button hideAllRelationships = new Button("None");
+        hideAllRelationships.setOnAction(e -> {
+            graphController.setAllRelationshipTypesEnabled(false);
+            rebuildRelationshipCheckboxes.run();
+        });
+        ScrollPane relationshipScroll = new ScrollPane(relationshipCheckboxes);
+        relationshipScroll.setFitToWidth(true);
+        relationshipScroll.setPrefHeight(175);
+        relationshipScroll.setMinHeight(100);
+        relationshipScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        VBox edgeDisclosurePanel = new VBox(7,
+            new Label("Edge disclosure / hierarchy"), edgeDisclosureMode,
+            new Label("Maximum focused cross-links"), crossLinkLimit,
+            edgeVisibilitySummary, new Label("Visible relationship types"),
+            new HBox(8, showAllRelationships, hideAllRelationships), relationshipScroll);
+        rebuildRelationshipCheckboxes.run();
+        updateEdgeSummary.run();
+        scene.addEventHandler(GraphEvent.GRAPH_EXPLORATION_STATE_CHANGED, e -> updateEdgeSummary.run());
+        scene.addEventHandler(GraphEvent.GRAPH_NODE_CLICK, e -> updateEdgeSummary.run());
+        scene.addEventHandler(GraphEvent.GRAPH_EDGE_CLICK, e -> updateEdgeSummary.run());
+        scene.addEventHandler(GraphEvent.NEW_GRAPHDIRECTED_COLLECTION, e ->
+            javafx.application.Platform.runLater(() -> {
+                rebuildRelationshipCheckboxes.run();
+                updateEdgeSummary.run();
+            }));
+
         VBox explorationContent = new VBox(12,
-            searchPanel, highlightNeighborhood, dimOutsideNeighborhood,
+            highlightNeighborhood, dimOutsideNeighborhood,
             new Label("Neighborhood depth (graph hops)"), neighborhoodDepth,
             isolateSelection, selectionCallouts, neighborhoodSummary,
             focusSelection, focusNeighborhood, showAll);
@@ -242,21 +322,54 @@ public final class ContextGraphControlsPane extends LitPathPane {
                 projection.setValue(graphController.getProjectionMode());
                 updateDistance.run();
             }));
-        VBox projectionContent = new VBox(12, new Label("Coordinate projection"), projection,
-            focusHyperbolic, recenter, distanceInfo, projectionInfo);
-        projectionContent.setPadding(new Insets(12));
+        CheckBox showPoincareBoundary = new CheckBox("Show Poincare ball boundary");
+        showPoincareBoundary.setSelected(graphPane.isPoincareBoundaryVisible());
+        showPoincareBoundary.setOnAction(e ->
+            graphPane.setPoincareBoundaryVisible(showPoincareBoundary.isSelected()));
 
-        VBox displayContent = new VBox(12, showNodes, showEdges,
+        VBox projectionContent = new VBox(12, new Label("Coordinate projection"), projection,
+            showPoincareBoundary, focusHyperbolic, recenter, distanceInfo, projectionInfo,
+            new Separator(), new Label("Graph layout (Euclidean projection)"),
+            new Label("These layouts do not replace Trinity's computed Poincare hierarchy."),
+            new GraphControlsView(scene));
+        projectionContent.setPadding(new Insets(12));
+        for (javafx.scene.Node item : projectionContent.getChildren()) {
+            if (item instanceof Label label) label.setWrapText(true);
+        }
+        ScrollPane projectionScroll = new ScrollPane(projectionContent);
+        projectionScroll.setFitToWidth(true);
+        projectionScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+
+        styleContent.getChildren().addAll(new Separator(), new Label("Display"),
+            showNodes, showEdges,
             new Label("Edges per rendering pulse"), edgeBatchSize,
             new Label("Fit Graph Percentage"), fitPercentage);
-        displayContent.setPadding(new Insets(12));
+        styleContent.setPadding(new Insets(12));
+        ScrollPane styleScroll = new ScrollPane(styleContent);
+        styleScroll.setFitToWidth(true);
+        styleScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+
+        searchPanel.setPadding(new Insets(12));
+        ScrollPane searchScroll = new ScrollPane(searchPanel);
+        searchScroll.setFitToWidth(true);
+        searchScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+
+        edgeDisclosurePanel.setPadding(new Insets(12));
+        relationshipScroll.setPrefHeight(310);
+        ScrollPane relationshipsScroll = new ScrollPane(edgeDisclosurePanel);
+        relationshipsScroll.setFitToWidth(true);
+        relationshipsScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+
         TabPane tabs = new TabPane(
-            new Tab("Graph Layout", new GraphControlsView(scene)),
-            new Tab("Graph Style", styleContent),
+            new Tab("Projection", projectionScroll),
+            new Tab("Graph Style", styleScroll),
             new Tab("Exploration", explorationScroll),
-            new Tab("Projection", projectionContent),
-            new Tab("Display", displayContent));
+            new Tab("Search", searchScroll),
+            new Tab("Relationships", relationshipsScroll));
         tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
+        // Identify the actual loaded controls class when diagnosing stale build artifacts.
+        System.out.println("[CG-CONTROLS] " + CONTROLS_LAYOUT_VERSION + " tabs="
+            + String.join(", ", tabs.getTabs().stream().map(Tab::getText).toList()));
         ((BorderPane) contentPane).setCenter(tabs);
     }
 
