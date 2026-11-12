@@ -7,11 +7,16 @@ import javafx.scene.control.Button;
 import edu.jhuapl.trinity.javafx.javafx3d.contextgraph.ContextGraphController;
 import edu.jhuapl.trinity.javafx.javafx3d.contextgraph.ContextGraph3DPane;
 import edu.jhuapl.trinity.javafx.javafx3d.contextgraph.ContextGraphProjectionMode;
+import edu.jhuapl.trinity.javafx.javafx3d.contextgraph.ContextGraphCommunityParams;
+import edu.jhuapl.trinity.javafx.javafx3d.contextgraph.ContextGraphCommunityHierarchy;
+import edu.jhuapl.trinity.javafx.javafx3d.contextgraph.ContextGraphHyperbolicPackingParams;
 import edu.jhuapl.trinity.javafx.javafx3d.contextgraph.ContextGraphEdgeDisplayMode;
 import edu.jhuapl.trinity.javafx.javafx3d.contextgraph.ContextGraphEntitySearchResult;
 import javafx.geometry.Insets;
 import javafx.scene.Scene;
 import javafx.scene.control.CheckBox;
+import javafx.scene.control.ChoiceBox;
+import javafx.scene.control.Control;
 import javafx.scene.control.ComboBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ListView;
@@ -22,24 +27,49 @@ import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
+import javafx.stage.Screen;
+import javafx.scene.Parent;
+import javafx.scene.Node;
 import javafx.scene.layout.BorderPane;
 import javafx.scene.layout.Pane;
 import javafx.scene.layout.HBox;
 import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
 
+import java.util.ArrayDeque;
+import java.util.ArrayList;
 import java.util.Locale;
 import java.util.List;
 
 /** Dedicated floating controls for the Context Graph view. */
 public final class ContextGraphControlsPane extends LitPathPane {
-    public static final String CONTROLS_LAYOUT_VERSION = "CG-M4B-SEMANTIC-SECTORS-RESPONSIVE-2026-11-12";
+    public static final String CONTROLS_LAYOUT_VERSION = "CG-M4B2-SEMANTIC-PACKING-DIAGNOSTICS-2026-11-12";
 
     public ContextGraphControlsPane(Scene scene, Pane parent, ContextGraphController graphController,
                                     ContextGraph3DPane graphPane) {
-        super(scene, parent, 420, 620, new BorderPane(), "Context Graph Controls", "", 200.0, 300.0);
+        super(scene, parent, 700, 620, new BorderPane(), "Context Graph Controls", "", 200.0, 300.0);
         setPickOnBounds(false);
         setFocusTraversable(false);
+        // The LitPathPane content must not be allowed to determine the floating pane's
+        // initial dimensions. In particular, wrapped explanatory Labels can report a
+        // very large natural preferred width before their viewport has been measured.
+        // Clamp initial dimensions to both the Scene and the available display area;
+        // the user can still resize the floating pane afterwards.
+        double sceneWidth = scene.getWidth() > 0 ? scene.getWidth() : Double.MAX_VALUE;
+        double sceneHeight = scene.getHeight() > 0 ? scene.getHeight() : Double.MAX_VALUE;
+        Screen display = Screen.getPrimary();
+        if (scene.getWindow() != null) {
+            List<Screen> intersectingScreens = Screen.getScreensForRectangle(
+                scene.getWindow().getX(), scene.getWindow().getY(),
+                Math.max(1.0, sceneWidth == Double.MAX_VALUE ? 1.0 : sceneWidth),
+                Math.max(1.0, sceneHeight == Double.MAX_VALUE ? 1.0 : sceneHeight));
+            if (!intersectingScreens.isEmpty()) display = intersectingScreens.get(0);
+        }
+        double screenWidth = display.getVisualBounds().getWidth();
+        double screenHeight = display.getVisualBounds().getHeight();
+        setPrefSize(
+            Math.max(getMinWidth(), Math.min(700.0, Math.min(sceneWidth, screenWidth) - 32.0)),
+            Math.max(getMinHeight(), Math.min(620.0, Math.min(sceneHeight, screenHeight) - 32.0)));
 
         Spinner<Double> coordinateScale = new Spinner<>();
         SpinnerValueFactory.DoubleSpinnerValueFactory coordinateValues =
@@ -340,6 +370,255 @@ public final class ContextGraphControlsPane extends LitPathPane {
         showPoincareBoundary.setOnAction(e ->
             graphPane.setPoincareBoundaryVisible(showPoincareBoundary.isSelected()));
 
+        // A semantic hierarchy is computed from original topology, independent of source
+        // containment and Euclidean coordinates. Changes apply only on Recompute.
+        ContextGraphCommunityParams initial = graphController.getCommunityParams();
+        ComboBox<ContextGraphCommunityParams.Algorithm> communityAlgorithm = new ComboBox<>();
+        communityAlgorithm.getItems().addAll(ContextGraphCommunityParams.Algorithm.values());
+        communityAlgorithm.setValue(initial.algorithm());
+        sizeCommunityControl(communityAlgorithm);
+        Spinner<Double> communityResolution = new Spinner<>(0.2, 3.0, initial.resolution(), 0.1);
+        communityResolution.setEditable(true);
+        sizeCommunityControl(communityResolution);
+        installCommitOnFocusLost(communityResolution);
+        ComboBox<String> maximumLevels = new ComboBox<>();
+        maximumLevels.getItems().addAll("Auto", "2", "3", "4", "5");
+        maximumLevels.setValue(initial.maximumLevels() == 0
+            ? "Auto" : Integer.toString(initial.maximumLevels()));
+        sizeCommunityControl(maximumLevels);
+        ComboBox<String> targetCommunitySize = new ComboBox<>();
+        targetCommunitySize.getItems().addAll("Auto", "10", "25", "50", "100", "250");
+        targetCommunitySize.setValue(initial.targetCommunitySize() == 0
+            ? "Auto" : Integer.toString(initial.targetCommunitySize()));
+        sizeCommunityControl(targetCommunitySize);
+        Spinner<Double> adminWeight = new Spinner<>(0.01, 10.0,
+            initial.administrativeWeight(), 0.01);
+        Spinner<Double> structuralWeight = new Spinner<>(0.01, 10.0,
+            initial.structuralWeight(), 0.05);
+        Spinner<Double> semanticWeight = new Spinner<>(0.01, 10.0,
+            initial.semanticWeight(), 0.05);
+        for (Spinner<Double> spinner : List.of(adminWeight, structuralWeight, semanticWeight)) {
+            spinner.setEditable(true);
+            sizeCommunityControl(spinner);
+            installCommitOnFocusLost(spinner);
+        }
+        Runnable updateAlgorithmFields = () -> {
+            boolean legacy = communityAlgorithm.getValue()
+                == ContextGraphCommunityParams.Algorithm.LEGACY;
+            communityResolution.setDisable(legacy);
+            maximumLevels.setDisable(legacy);
+            targetCommunitySize.setDisable(legacy);
+            adminWeight.setDisable(legacy);
+            structuralWeight.setDisable(legacy);
+            semanticWeight.setDisable(legacy);
+        };
+        communityAlgorithm.setOnAction(e -> updateAlgorithmFields.run());
+        updateAlgorithmFields.run();
+        Button recomputeCommunities = new Button("Recompute Community Hierarchy");
+        recomputeCommunities.setMinWidth(0);
+        recomputeCommunities.setPrefWidth(260);
+        recomputeCommunities.setMaxWidth(260);
+        Label communityDiagnostics = new Label();
+        communityDiagnostics.setWrapText(true);
+        communityDiagnostics.setMinWidth(0);
+        communityDiagnostics.setPrefWidth(0);
+        communityDiagnostics.setMaxWidth(Double.MAX_VALUE);
+        Runnable updateCommunities = () -> communityDiagnostics.setText(graphController.getCommunityStatus());
+        updateCommunities.run();
+        recomputeCommunities.setOnAction(e -> {
+            ContextGraphCommunityParams revised = new ContextGraphCommunityParams(
+                communityAlgorithm.getValue(), communityResolution.getValue(),
+                "Auto".equals(maximumLevels.getValue()) ? 0
+                    : Integer.parseInt(maximumLevels.getValue()),
+                "Auto".equals(targetCommunitySize.getValue()) ? 0
+                    : Integer.parseInt(targetCommunitySize.getValue()),
+                adminWeight.getValue(), structuralWeight.getValue(), semanticWeight.getValue());
+            if (revised.equals(graphController.getCommunityParams()))
+                graphController.recomputeCommunityHierarchy();
+            else graphController.setCommunityParams(revised);
+        });
+        scene.addEventHandler(GraphEvent.GRAPH_COMMUNITY_HIERARCHY_CHANGED,
+            e -> updateCommunities.run());
+        scene.addEventHandler(GraphEvent.GRAPH_DATA_CLEARED, e -> {
+            ContextGraphCommunityParams defaults = graphController.getCommunityParams();
+            communityAlgorithm.setValue(defaults.algorithm());
+            communityResolution.getValueFactory().setValue(defaults.resolution());
+            maximumLevels.setValue("Auto");
+            targetCommunitySize.setValue("Auto");
+            adminWeight.getValueFactory().setValue(defaults.administrativeWeight());
+            structuralWeight.getValueFactory().setValue(defaults.structuralWeight());
+            semanticWeight.getValueFactory().setValue(defaults.semanticWeight());
+            updateAlgorithmFields.run();
+            updateCommunities.run();
+        });
+        VBox communityPanel = new VBox(8, new Label("Community Hierarchy"),
+            new Label("Community detector"), communityAlgorithm,
+            new Label("Resolution γ (1.0 = standard weighted modularity)"), communityResolution,
+            new Label("Maximum computed levels (not visible detail)"), maximumLevels,
+            new Label("Preferred layout group size (not a hard constraint)"), targetCommunitySize,
+            new Label("Relationship weights: administrative"), adminWeight,
+            new Label("Structural / containment"), structuralWeight,
+            new Label("Semantic / ordinary"), semanticWeight,
+            new Label("Auto selects multilevel Louvain. Maximum Levels Auto stops on "
+                + "convergence or after 32 levels. Legacy uses fixed historical weights "
+                + "and returns a single partition. Target size selects the computed level "
+                + "whose mean community size is closest; Auto uses the finest level."),
+            recomputeCommunities, new Separator(), communityDiagnostics);
+        ContextGraphHyperbolicPackingParams initialPacking = graphController.getPackingParams();
+        ComboBox<ContextGraphHyperbolicPackingParams.Placement> placementMode = new ComboBox<>();
+        placementMode.getItems().addAll(ContextGraphHyperbolicPackingParams.Placement.values());
+        placementMode.setValue(initialPacking.placement());
+        sizeCommunityControl(placementMode);
+        ComboBox<ContextGraphHyperbolicPackingParams.AngularAllocation> angularAllocation = new ComboBox<>();
+        angularAllocation.getItems().addAll(ContextGraphHyperbolicPackingParams.AngularAllocation.values());
+        angularAllocation.setValue(initialPacking.allocation());
+        sizeCommunityControl(angularAllocation);
+        Spinner<Double> angularSpread = new Spinner<>(20.0, 150.0,
+            initialPacking.angularSpreadDegrees(), 5.0);
+        Spinner<Double> siblingGap = new Spinner<>(0.0, 25.0,
+            initialPacking.siblingGapDegrees(), 1.0);
+        Spinner<Double> massInfluence = new Spinner<>(0.0, 1.0,
+            initialPacking.massInfluence(), 0.05);
+        Spinner<Double> radialStep = new Spinner<>(0.15, 2.0,
+            initialPacking.radialStep(), 0.05);
+        for (Spinner<Double> spinner : List.of(angularSpread, siblingGap, massInfluence, radialStep)) {
+            spinner.setEditable(true);
+            sizeCommunityControl(spinner);
+            installCommitOnFocusLost(spinner);
+        }
+        ComboBox<ContextGraphHyperbolicPackingParams.RadialProfile> radialProfile = new ComboBox<>();
+        radialProfile.getItems().addAll(ContextGraphHyperbolicPackingParams.RadialProfile.values());
+        radialProfile.setValue(initialPacking.radialProfile());
+        sizeCommunityControl(radialProfile);
+        TextField customSteps = new TextField("1.0, 0.85, 0.70, 0.55");
+        customSteps.setPrefWidth(300);
+        customSteps.setMaxWidth(300);
+        customSteps.setPromptText("Hyperbolic steps: outer, intermediate, inner, entities...");
+        if (!initialPacking.customSteps().isEmpty())
+            customSteps.setText(initialPacking.customSteps().stream()
+                .map(String::valueOf).collect(java.util.stream.Collectors.joining(", ")));
+        Runnable updatePackingFields = () -> {
+            boolean structural = placementMode.getValue()
+                == ContextGraphHyperbolicPackingParams.Placement.STRUCTURAL_BACKBONE;
+            angularAllocation.setDisable(structural);
+            angularSpread.setDisable(structural);
+            siblingGap.setDisable(structural);
+            massInfluence.setDisable(structural);
+            radialProfile.setDisable(structural);
+            radialStep.setDisable(structural || radialProfile.getValue()
+                == ContextGraphHyperbolicPackingParams.RadialProfile.CUSTOM);
+            customSteps.setDisable(structural || radialProfile.getValue()
+                != ContextGraphHyperbolicPackingParams.RadialProfile.CUSTOM);
+        };
+        radialProfile.setOnAction(e -> updatePackingFields.run());
+        placementMode.setOnAction(e -> updatePackingFields.run());
+        updatePackingFields.run();
+        Label packingError = new Label();
+        packingError.setWrapText(true);
+        Button applyPacking = new Button("Apply Layout");
+        applyPacking.setOnAction(e -> {
+            try {
+                List<Double> custom = new ArrayList<>();
+                if (radialProfile.getValue() == ContextGraphHyperbolicPackingParams.RadialProfile.CUSTOM) {
+                    for (String token : customSteps.getText().split(","))
+                        custom.add(Double.parseDouble(token.trim()));
+                }
+                ContextGraphHyperbolicPackingParams updated =
+                    new ContextGraphHyperbolicPackingParams(placementMode.getValue(),
+                        angularAllocation.getValue(), angularSpread.getValue(),
+                        siblingGap.getValue(), massInfluence.getValue(),
+                        radialProfile.getValue(), radialStep.getValue(), custom);
+                packingError.setText("");
+                graphController.setPackingParams(updated);
+            } catch (IllegalArgumentException invalid) {
+                packingError.setText("Invalid packing settings: " + invalid.getMessage());
+            }
+        });
+
+        CheckBox communityColors = new CheckBox("Community colors (diagnostic override)");
+        communityColors.setSelected(graphController.isCommunityColorDiagnostic());
+        communityColors.setOnAction(e ->
+            graphController.setCommunityColorDiagnostic(communityColors.isSelected()));
+        ComboBox<String> diagnosticLevel = new ComboBox<>();
+        sizeCommunityControl(diagnosticLevel);
+        boolean[] updatingLevel = {false};
+        diagnosticLevel.setOnAction(e -> {
+            if (!updatingLevel[0] && diagnosticLevel.getSelectionModel().getSelectedIndex() >= 0)
+                graphController.setCommunityDiagnosticLevel(
+                    diagnosticLevel.getSelectionModel().getSelectedIndex());
+        });
+        Runnable updateDiagnosticLevels = () -> {
+            updatingLevel[0] = true;
+            try {
+                ContextGraphCommunityHierarchy hierarchy = graphController.getCommunityHierarchy();
+                diagnosticLevel.getItems().clear();
+                if (hierarchy != null) {
+                    for (int i = 0; i < hierarchy.levels().size(); i++) {
+                        diagnosticLevel.getItems().add("Level " + (i + 1) + ": "
+                            + hierarchy.levels().get(i).count() + " communities");
+                    }
+                    int selected = graphController.getCommunityDiagnosticLevel();
+                    if (selected >= 0 && selected < diagnosticLevel.getItems().size())
+                        diagnosticLevel.getSelectionModel().select(selected);
+                }
+                diagnosticLevel.setDisable(diagnosticLevel.getItems().isEmpty());
+                communityColors.setSelected(graphController.isCommunityColorDiagnostic());
+            } finally {
+                updatingLevel[0] = false;
+            }
+        };
+        updateDiagnosticLevels.run();
+        scene.addEventHandler(GraphEvent.GRAPH_COMMUNITY_HIERARCHY_CHANGED,
+            e -> updateDiagnosticLevels.run());
+        scene.addEventHandler(GraphEvent.GRAPH_DATA_CLEARED, e -> {
+            ContextGraphHyperbolicPackingParams defaults = graphController.getPackingParams();
+            placementMode.setValue(defaults.placement());
+            angularAllocation.setValue(defaults.allocation());
+            angularSpread.getValueFactory().setValue(defaults.angularSpreadDegrees());
+            siblingGap.getValueFactory().setValue(defaults.siblingGapDegrees());
+            massInfluence.getValueFactory().setValue(defaults.massInfluence());
+            radialProfile.setValue(defaults.radialProfile());
+            radialStep.getValueFactory().setValue(defaults.radialStep());
+            customSteps.setText("1.0, 0.85, 0.70, 0.55");
+            packingError.setText("");
+            updatePackingFields.run();
+            updateDiagnosticLevels.run();
+        });
+        communityPanel.getChildren().addAll(new Separator(),
+            new Label("Community coloring (diagnostic, not FactorLabel)"),
+            communityColors, new Label("Visualize community partition at level"), diagnosticLevel,
+            new Label("Spatial layout: Classic retains original 4B-A positions; "
+                + "semantic mode uses hierarchy and spacing controls"),
+            new Label("Placement strategy"), placementMode,
+            new Label("Angular allocation"), angularAllocation,
+            new Label("Branch angular spread (degrees)"), angularSpread,
+            new Label("Desired sibling gap (degrees, not guaranteed)"), siblingGap,
+            new Label("Subtree mass influence (0=equal, 1=population)"), massInfluence,
+            new Label("Radial spacing profile"), radialProfile,
+            new Label("Global parent-child hyperbolic step"), radialStep,
+            new Label("Custom hyperbolic steps per layer, comma-separated"), customSteps,
+            new Label("Layers run from coarse communities to finer communities to entities. "
+                + "Distances are hyperbolic, not JavaFX display scale; an automatic cumulative "
+                + "distance budget prevents boundary saturation. Geometry updates reuse cached detection."),
+            applyPacking, packingError);
+        communityPanel.setPadding(new Insets(12));
+        communityPanel.setMinWidth(0);
+        communityPanel.setPrefWidth(0);
+        // Wrap to the actual viewport, not the text's unwrapped preferred width.
+        // This prevents lengthy help and diagnostics text from enlarging PathPane.
+        for (javafx.scene.Node component : communityPanel.getChildren()) {
+            if (component instanceof Label label) {
+                label.setWrapText(true);
+                label.setMinWidth(0);
+                label.setPrefWidth(0);
+                label.setMaxWidth(Double.MAX_VALUE);
+            }
+        }
+        ScrollPane communityScroll = new ScrollPane(communityPanel);
+        communityScroll.setFitToWidth(true);
+        communityScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
+        communityScroll.setMinSize(0, 0);
+
         Button clearGraphData = new Button("Clear Data");
         clearGraphData.setOnAction(e -> graphPane.clearData());
         VBox projectionContent = new VBox(12, new Label("Coordinate projection"), projection,
@@ -376,15 +655,59 @@ public final class ContextGraphControlsPane extends LitPathPane {
 
         TabPane tabs = new TabPane(
             new Tab("Projection", projectionScroll),
+            new Tab("Communities", communityScroll),
             new Tab("Graph Style", styleScroll),
             new Tab("Exploration", explorationScroll),
             new Tab("Search", searchPanel),
             new Tab("Relationships", relationshipsPanel));
         tabs.setTabClosingPolicy(TabPane.TabClosingPolicy.UNAVAILABLE);
+        tabs.setMinSize(0, 0);
+        ((BorderPane) contentPane).setMinSize(0, 0);
+        // Selection boxes in all six tabs must not propagate unbounded preferred widths
+        // through the LitPathPane, including nested GraphControlsView controls.
+        constrainSelectors(tabs);
         // Identify the actual loaded controls class when diagnosing stale build artifacts.
         System.out.println("[CG-CONTROLS] " + CONTROLS_LAYOUT_VERSION + " tabs="
             + String.join(", ", tabs.getTabs().stream().map(Tab::getText).toList()));
         ((BorderPane) contentPane).setCenter(tabs);
+    }
+
+    /** Bound ComboBoxes and ChoiceBoxes across all tabs, including embedded control views. */
+    private static void constrainSelectors(Parent root) {
+        ArrayDeque<Node> pending = new ArrayDeque<>();
+        pending.add(root);
+        while (!pending.isEmpty()) {
+            Node node = pending.removeFirst();
+            if (node instanceof ComboBox<?> || node instanceof ChoiceBox<?>) {
+                Control c = (Control) node;
+                c.setMinWidth(0);
+                c.setPrefWidth(240);
+                c.setMaxWidth(240);
+            } else if (node instanceof Spinner<?> spinner) {
+                spinner.setMinWidth(0);
+                double preferred = spinner.getPrefWidth();
+                spinner.setPrefWidth(preferred > 0 ? Math.min(preferred, 240) : 180);
+                spinner.setMaxWidth(240);
+            }
+            // Tab and ScrollPane content is not part of the Parent child list
+            // until a JavaFX skin is installed. Visit it explicitly now.
+            if (node instanceof TabPane tabs) {
+                for (Tab tab : tabs.getTabs()) {
+                    if (tab.getContent() != null) pending.addLast(tab.getContent());
+                }
+            }
+            if (node instanceof ScrollPane scroll && scroll.getContent() != null)
+                pending.addLast(scroll.getContent());
+            if (node instanceof Parent parent)
+                pending.addAll(parent.getChildrenUnmodifiable());
+        }
+    }
+
+    /** Keep community selectors at readable, predictable widths without forcing the pane wider. */
+    private static void sizeCommunityControl(javafx.scene.control.Control control) {
+        control.setMinWidth(0);
+        control.setPrefWidth(240);
+        control.setMaxWidth(240);
     }
 
     /** Commit typed spinner values on Enter or focus loss; revert invalid entries. */

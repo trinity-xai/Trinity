@@ -96,12 +96,20 @@ public final class ContextGraphController {
 
     private Color nodeColor(GraphNode node, GraphStyleParams style) {
         Color fallback = style.nodeColor == null ? Color.CYAN : style.nodeColor;
+        if (communityColorDiagnostic && diagnosticMembership.containsKey(node.getEntityID()))
+            return diagnosticCommunityColor(diagnosticMembership.get(node.getEntityID()));
         if (!style.colorByLabel) return fallback;
         return categoryColor(category(node.getLabels()), fallback);
     }
 
     private Color edgeColor(GraphEdge edge, GraphStyleParams style) {
         Color fallback = style.edgeColor == null ? Color.CORNFLOWERBLUE : style.edgeColor;
+        if (communityColorDiagnostic && !diagnosticMembership.isEmpty()) {
+            Integer a = diagnosticMembership.get(edge.getStartID());
+            Integer b = diagnosticMembership.get(edge.getEndID());
+            return a != null && a.equals(b)
+                ? diagnosticCommunityColor(a) : Color.rgb(95, 104, 119);
+        }
         if (!style.colorByLabel) return fallback;
         return categoryColor(edge.getRelationship() == null ? "Uncategorized"
             : category(edge.getRelationship().getLabels()), fallback);
@@ -162,6 +170,142 @@ public final class ContextGraphController {
     private boolean backboneReady;
     private boolean backboneFailed;
     private long backboneGeneration;
+    private ContextGraphCommunityParams communityParams = ContextGraphCommunityParams.defaults();
+    private ContextGraphCommunityHierarchy communityHierarchy;
+    private Task<ContextGraphCommunityLayoutResult> communityTask;
+    private final Map<ContextGraphCommunityParams, ContextGraphCommunityHierarchy> hierarchyCache =
+        new LinkedHashMap<>();
+    private final Map<ContextGraphCommunityParams,
+        Map<ContextGraphHyperbolicPackingParams, ContextGraphCommunityLayoutResult>> layoutCache =
+            new LinkedHashMap<>();
+    private ContextGraphHyperbolicPackingParams packingParams =
+        ContextGraphHyperbolicPackingParams.defaults();
+    private ContextGraphSpatialDiagnostics spatialDiagnostics;
+    private String spatialComparison = "";
+    private String partitionComparison = "";
+    private boolean communityColorDiagnostic;
+    private int communityDiagnosticLevel = -1;
+    private Map<String, Integer> diagnosticMembership = Map.of();
+    private AnimationTimer communityMaterialTimer;
+    private long communityMaterialGeneration;
+    private String communityStatus = "No graph loaded";
+
+    public ContextGraphCommunityParams getCommunityParams() { return communityParams; }
+    public ContextGraphCommunityHierarchy getCommunityHierarchy() { return communityHierarchy; }
+    public ContextGraphHyperbolicPackingParams getPackingParams() { return packingParams; }
+    public boolean isCommunityColorDiagnostic() { return communityColorDiagnostic; }
+    public int getCommunityDiagnosticLevel() { return communityDiagnosticLevel; }
+
+    public String getCommunityStatus() {
+        if (communityTask != null || communityHierarchy == null
+            || communityStatus.startsWith("Community hierarchy failed")) return communityStatus;
+        return communityHierarchy.summary()
+            + (spatialDiagnostics == null ? "" : "\n\n" + spatialDiagnostics.summary())
+            + spatialComparison + partitionComparison;
+    }
+
+    /** Recompute geometry using the cached community hierarchy, not the detector. */
+    public void setPackingParams(ContextGraphHyperbolicPackingParams updated) {
+        if (updated == null || updated.equals(packingParams)) return;
+        packingParams = updated;
+        if (currentGraph != null) prepareBackbone(currentGraph, false);
+        else fireOnRoot(new GraphEvent(GraphEvent.GRAPH_COMMUNITY_HIERARCHY_CHANGED));
+    }
+
+    /** Diagnostic overrides rendering colors only; category labels/visibility stay intact. */
+    public void setCommunityColorDiagnostic(boolean enabled) {
+        if (communityColorDiagnostic == enabled) return;
+        communityColorDiagnostic = enabled;
+        scheduleCommunityMaterialRefresh();
+        fireOnRoot(new GraphEvent(GraphEvent.GRAPH_COMMUNITY_HIERARCHY_CHANGED));
+    }
+
+    public void setCommunityDiagnosticLevel(int level) {
+        if (communityHierarchy == null || level < 0 || level >= communityHierarchy.levels().size()) return;
+        if (communityDiagnosticLevel == level) return;
+        communityDiagnosticLevel = level;
+        refreshDiagnosticMembership();
+        scheduleCommunityMaterialRefresh();
+        fireOnRoot(new GraphEvent(GraphEvent.GRAPH_COMMUNITY_HIERARCHY_CHANGED));
+    }
+
+    private Color diagnosticCommunityColor(int group) {
+        double hue = (group * 137.50776405003785 + Math.max(0, communityDiagnosticLevel) * 23.0) % 360.0;
+        return Color.hsb(hue, 0.70, 0.96);
+    }
+
+    private void refreshDiagnosticMembership() {
+        if (communityHierarchy == null || communityHierarchy.levels().isEmpty()) {
+            diagnosticMembership = Map.of();
+            communityDiagnosticLevel = -1;
+            return;
+        }
+        if (communityDiagnosticLevel < 0 || communityDiagnosticLevel >= communityHierarchy.levels().size())
+            communityDiagnosticLevel = communityHierarchy.levels().size() - 1;
+        ContextGraphCommunityLevel level = communityHierarchy.levels().get(communityDiagnosticLevel);
+        Map<String, Integer> membership = new HashMap<>(communityHierarchy.entityIds().size() * 2);
+        for (int i = 0; i < communityHierarchy.entityIds().size(); i++)
+            membership.put(communityHierarchy.entityIds().get(i), level.communityOf(i));
+        diagnosticMembership = membership;
+    }
+
+    /** Material updates are pulse-bounded; geometry/selection remains untouched. */
+    private void scheduleCommunityMaterialRefresh() {
+        final long generation = ++communityMaterialGeneration;
+        if (communityMaterialTimer != null) {
+            communityMaterialTimer.stop();
+            communityMaterialTimer = null;
+        }
+        if (currentGraph == null) return;
+        List<GraphNode> nodes = new ArrayList<>(currentGraph.getNodes());
+        List<GraphEdge> edges = new ArrayList<>(currentGraph.getEdges());
+        communityMaterialTimer = new AnimationTimer() {
+            private int nextNode;
+            private int nextEdge;
+            @Override public void handle(long now) {
+                if (generation != communityMaterialGeneration) {
+                    stop();
+                    return;
+                }
+                int nodeEnd = Math.min(nodes.size(), nextNode + 750);
+                for (; nextNode < nodeEnd; nextNode++) {
+                    GraphNode model = nodes.get(nextNode);
+                    ContextGraphNode3D view = nodeViews.get(model.getEntityID());
+                    if (view != null) {
+                        view.setPhongMaterial(displayMaterial(nodeColor(model, styleParams), styleParams.nodeOpacity));
+                        applyNodeExploration(model, view);
+                    }
+                }
+                int edgeEnd = Math.min(edges.size(), nextEdge + 1000);
+                for (; nextEdge < edgeEnd; nextEdge++) {
+                    GraphEdge model = edges.get(nextEdge);
+                    ContextGraphEdge3D view = edgeViews.get(model);
+                    if (view != null) {
+                        view.setBaseMaterial(displayMaterial(edgeColor(model, styleParams), styleParams.edgeOpacity));
+                        applyEdgeExploration(model, view);
+                    }
+                }
+                if (nextNode == nodes.size() && nextEdge == edges.size()) {
+                    stop();
+                    if (communityMaterialTimer == this) communityMaterialTimer = null;
+                }
+            }
+        };
+        communityMaterialTimer.start();
+    }
+
+    /** A changed setting recomputes asynchronously; unchanged values do not restart tasks. */
+    public void setCommunityParams(ContextGraphCommunityParams params) {
+        if (params == null || params.equals(communityParams)) return;
+        communityParams = params;
+        if (currentGraph != null) prepareBackbone(currentGraph, false);
+        else fireOnRoot(new GraphEvent(GraphEvent.GRAPH_COMMUNITY_HIERARCHY_CHANGED));
+    }
+
+    /** Explicitly bypass cache, retaining the current settings and original graph. */
+    public void recomputeCommunityHierarchy() {
+        if (currentGraph != null) prepareBackbone(currentGraph, true);
+    }
     private Map<String, Integer> relationshipTypeCounts = Map.of();
     private final Set<String> hiddenRelationshipTypes = new HashSet<>();
     private Set<GraphEdge> focusedCrossLinks = Set.of();
@@ -190,6 +334,7 @@ public final class ContextGraphController {
     private static GraphStyleParams defaultContextGraphStyle() {
         GraphStyleParams defaults = new GraphStyleParams();
         defaults.colorByLabel = true;
+        defaults.edgeOpacity = 0.5;
         return defaults;
     }
     private boolean eventHandlersInstalled;
@@ -344,33 +489,119 @@ public final class ContextGraphController {
     }
 
     private void prepareBackbone(GraphDirectedCollection graph) {
+        prepareBackbone(graph, false);
+    }
+
+    /** One worker produces communities AND graph-backed topology geometry. */
+    private void prepareBackbone(GraphDirectedCollection graph, boolean force) {
         final long generation = ++backboneGeneration;
-        Task<ContextGraphHyperbolicLayout.LayoutResult> task = new Task<>() {
-            @Override protected ContextGraphHyperbolicLayout.LayoutResult call() {
-                return ContextGraphHyperbolicLayout.computedLayout(graph);
+        // Any projection animation based on prior coordinates must not continue
+        // while the hierarchy and layout are being replaced.
+        ++projectionGeneration;
+        if (projectionUpdateTimer != null) {
+            projectionUpdateTimer.stop();
+            projectionUpdateTimer = null;
+        }
+        if (communityTask != null) {
+            communityTask.cancel(true);
+            communityTask = null;
+        }
+        final ContextGraphCommunityParams params = communityParams;
+        final ContextGraphHyperbolicPackingParams packing = packingParams;
+        if (force) {
+            hierarchyCache.remove(params);
+            layoutCache.remove(params);
+        }
+        ContextGraphCommunityHierarchy cachedHierarchy = hierarchyCache.get(params);
+        communityStatus = cachedHierarchy == null
+            ? "Computing semantic hierarchy and spatial layout..."
+            : "Reusing semantic hierarchy; computing spatial layout...";
+        Map<ContextGraphHyperbolicPackingParams, ContextGraphCommunityLayoutResult> variants =
+            layoutCache.get(params);
+        if (!force && variants != null) {
+            ContextGraphCommunityLayoutResult cached = variants.get(packing);
+            if (cached != null) {
+                applyCommunityAnalysis(graph, generation, cached);
+                return;
+            }
+        }
+        Task<ContextGraphCommunityLayoutResult> task = new Task<>() {
+            @Override protected ContextGraphCommunityLayoutResult call() {
+                ContextGraphCommunityHierarchy hierarchy = cachedHierarchy == null
+                    ? ContextGraphCommunityDetection.detect(graph, params) : cachedHierarchy;
+                if (isCancelled()) return null;
+                ContextGraphCommunitySpatialLayout.Result packed =
+                    ContextGraphCommunitySpatialLayout.compute(graph, hierarchy, packing);
+                if (isCancelled()) return null;
+                return new ContextGraphCommunityLayoutResult(hierarchy, packed.layout(),
+                    packed.diagnostics());
             }
         };
+        communityTask = task;
+        fireOnRoot(new GraphEvent(GraphEvent.GRAPH_COMMUNITY_HIERARCHY_CHANGED));
         task.setOnSucceeded(event -> {
-            if (generation != backboneGeneration || graph != currentGraph) return;
-            ContextGraphHyperbolicLayout.LayoutResult layout = task.getValue();
-            backboneEdges = layout.backboneEdges();
-            backboneReady = true;
-            backboneFailed = false;
-            // The same result is reused if hyperbolic projection is selected later.
-            hyperbolicCoordinates = layout.positions();
-            refreshFocusedCrossLinks();
-            applyEdgeVisibilityOnly();
-            notifyExplorationState();
+            if (generation != backboneGeneration || graph != currentGraph || task.isCancelled()) return;
+            communityTask = null;
+            ContextGraphCommunityLayoutResult result = task.getValue();
+            if (result == null) return;
+            hierarchyCache.put(params, result.hierarchy());
+            layoutCache.computeIfAbsent(params, ignored -> new LinkedHashMap<>())
+                .put(packing, result);
+            // Bound cached configurations only; never limit the graph size.
+            Map<ContextGraphHyperbolicPackingParams, ContextGraphCommunityLayoutResult> cachedLayouts =
+                layoutCache.get(params);
+            if (cachedLayouts.size() > 4)
+                cachedLayouts.remove(cachedLayouts.keySet().iterator().next());
+            if (hierarchyCache.size() > 6) {
+                ContextGraphCommunityParams eldest = hierarchyCache.keySet().iterator().next();
+                hierarchyCache.remove(eldest);
+                layoutCache.remove(eldest);
+            }
+            applyCommunityAnalysis(graph, generation, result);
         });
         task.setOnFailed(event -> {
             if (generation != backboneGeneration || graph != currentGraph) return;
-            backboneFailed = true;
-            report("Graph hierarchy analysis failed: " + task.getException());
+            communityTask = null;
+            backboneFailed = !backboneReady;
+            communityStatus = "Community hierarchy failed: " + task.getException();
+            fireOnRoot(new GraphEvent(GraphEvent.GRAPH_COMMUNITY_HIERARCHY_CHANGED));
+            report(communityStatus);
             notifyExplorationState();
+            if (projectionMode.isHyperbolic() && hyperbolicCoordinates.isEmpty()) {
+                projectionMode = ContextGraphProjectionMode.EUCLIDEAN;
+                applyDefaultEdgeModeForProjection(projectionMode);
+                fireOnRoot(new GraphEvent(GraphEvent.GRAPH_PROJECTION_FAILED, projectionMode));
+            }
         });
-        Thread worker = new Thread(task, "context-graph-spanning-hierarchy");
+        Thread worker = new Thread(task, "context-graph-community-layout");
         worker.setDaemon(true);
         worker.start();
+    }
+
+    private void applyCommunityAnalysis(GraphDirectedCollection graph, long generation,
+                                        ContextGraphCommunityLayoutResult result) {
+        if (generation != backboneGeneration || graph != currentGraph) return;
+        ContextGraphHyperbolicLayout.LayoutResult layout = result.layout();
+        if (spatialDiagnostics != null && result.diagnostics() != spatialDiagnostics)
+            spatialComparison = result.diagnostics().comparison(spatialDiagnostics);
+        else spatialComparison = "";
+        spatialDiagnostics = result.diagnostics();
+        if (communityHierarchy != null && communityHierarchy != result.hierarchy())
+            partitionComparison = ContextGraphCommunityPartitionComparison.compare(
+                communityHierarchy, result.hierarchy());
+        communityHierarchy = result.hierarchy();
+        refreshDiagnosticMembership();
+        if (communityColorDiagnostic) scheduleCommunityMaterialRefresh();
+        communityStatus = "Ready";
+        hyperbolicCoordinates = layout.positions();
+        backboneEdges = layout.backboneEdges();
+        backboneReady = true;
+        backboneFailed = false;
+        refreshFocusedCrossLinks();
+        applyEdgeVisibilityOnly();
+        notifyExplorationState();
+        fireOnRoot(new GraphEvent(GraphEvent.GRAPH_COMMUNITY_HIERARCHY_CHANGED));
+        if (projectionMode.isHyperbolic()) scheduleProjectionReposition();
     }
 
     private void applyDefaultEdgeModeForProjection(ContextGraphProjectionMode mode) {
@@ -647,36 +878,11 @@ public final class ContextGraphController {
             scheduleProjectionReposition();
             return;
         }
-        final GraphDirectedCollection graph = currentGraph;
-        final long started = System.nanoTime();
-        Task<ContextGraphHyperbolicLayout.LayoutResult> task = new Task<>() {
-            @Override protected ContextGraphHyperbolicLayout.LayoutResult call() {
-                return ContextGraphHyperbolicLayout.computedLayout(graph);
-            }
-        };
-        task.setOnSucceeded(e -> {
-            if (generation != projectionGeneration || graph != currentGraph) return;
-            ContextGraphHyperbolicLayout.LayoutResult layout = task.getValue();
-            hyperbolicCoordinates = layout.positions();
-            backboneEdges = layout.backboneEdges();
-            backboneReady = true;
-            backboneFailed = false;
-            refreshFocusedCrossLinks();
-            System.out.print("ContextGraph computed hyperbolic topology layout: ");
-            Utils.printTotalTime(started);
-            hyperbolicFocus = new double[]{0.0, 0.0, 0.0};
-            projectionMode = requested;
-            applyDefaultEdgeModeForProjection(requested);
-            scheduleProjectionReposition();
-        });
-        task.setOnFailed(e -> {
-            if (generation != projectionGeneration || graph != currentGraph) return;
-            report("Hyperbolic projection failed: " + task.getException().getMessage());
-            fireOnRoot(new GraphEvent(GraphEvent.GRAPH_PROJECTION_FAILED, projectionMode));
-        });
-        Thread worker = new Thread(task, "context-graph-hyperbolic-layout");
-        worker.setDaemon(true);
-        worker.start();
+        // The graph load/parameter worker already computes both hierarchy and coordinates.
+        // Remember the requested mode and apply it when that single worker completes.
+        projectionMode = requested;
+        hyperbolicFocus = new double[]{0.0, 0.0, 0.0};
+        applyDefaultEdgeModeForProjection(requested);
     }
 
     /** Hyperbolic isometry: recenter on the selected semantic entity. */
@@ -1035,7 +1241,9 @@ public final class ContextGraphController {
         });
 
         scene.addEventHandler(GraphEvent.GRAPH_STYLE_RESET_DEFAULTS, e -> {
+            communityColorDiagnostic = false;
             styleParams = defaultContextGraphStyle();
+            fireOnRoot(new GraphEvent(GraphEvent.GRAPH_COMMUNITY_HIERARCHY_CHANGED));
 
             graphParams.withNodeRadius(styleParams.nodeRadius)
                 .withEdgeWidth((float) styleParams.edgeWidth);
@@ -1077,6 +1285,25 @@ public final class ContextGraphController {
             selectedEdge = null;
         }
         ContextGraphProjectionMode restoreMode = projectionMode;
+        if (communityTask != null) {
+            communityTask.cancel(true);
+            communityTask = null;
+        }
+        ++communityMaterialGeneration;
+        if (communityMaterialTimer != null) {
+            communityMaterialTimer.stop();
+            communityMaterialTimer = null;
+        }
+        ++backboneGeneration;
+        hierarchyCache.clear();
+        layoutCache.clear();
+        spatialDiagnostics = null;
+        spatialComparison = "";
+        partitionComparison = "";
+        communityHierarchy = null;
+        diagnosticMembership = Map.of();
+        communityDiagnosticLevel = -1;
+        communityStatus = "Computing semantic hierarchy and spatial layout...";
         ++projectionGeneration;
         if (projectionUpdateTimer != null) {
             projectionUpdateTimer.stop();
@@ -1115,6 +1342,27 @@ public final class ContextGraphController {
         ++renderGeneration;
         ++projectionGeneration;
         ++backboneGeneration;
+        ++communityMaterialGeneration;
+        if (communityMaterialTimer != null) {
+            communityMaterialTimer.stop();
+            communityMaterialTimer = null;
+        }
+        if (communityTask != null) {
+            communityTask.cancel(true);
+            communityTask = null;
+        }
+        hierarchyCache.clear();
+        layoutCache.clear();
+        spatialDiagnostics = null;
+        spatialComparison = "";
+        partitionComparison = "";
+        communityHierarchy = null;
+        communityColorDiagnostic = false;
+        diagnosticMembership = Map.of();
+        communityDiagnosticLevel = -1;
+        packingParams = ContextGraphHyperbolicPackingParams.defaults();
+        communityParams = ContextGraphCommunityParams.defaults();
+        communityStatus = "No graph loaded";
         ++layoutGeneration;
         if (edgeAttachmentTimer != null) {
             edgeAttachmentTimer.stop();
@@ -1151,6 +1399,7 @@ public final class ContextGraphController {
         edgeDisplayMode = ContextGraphEdgeDisplayMode.ALL;
         edgeDisplayModeCustomized = false;
         fireOnRoot(new GraphEvent(GraphEvent.GRAPH_DATA_CLEARED));
+        fireOnRoot(new GraphEvent(GraphEvent.GRAPH_COMMUNITY_HIERARCHY_CHANGED));
         fireOnRoot(new GraphEvent(GraphEvent.GRAPH_PROJECTION_APPLIED, projectionMode));
         notifyExplorationState();
         report("Context Graph data cleared");

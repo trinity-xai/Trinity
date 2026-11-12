@@ -55,7 +55,7 @@ public class ContextGraph3DPane extends StackPane {
     private final Group world = new Group();
     // Visual boundary of the computed Poincare chart, not a graph entity.
     private final Sphere poincareBoundary;
-    private boolean showPoincareBoundary = true;
+    private boolean showPoincareBoundary = false;
     private final CameraTransformer cameraTransform = new CameraTransformer();
     private final PerspectiveCamera camera = new PerspectiveCamera(true);
     private final SubScene subScene;

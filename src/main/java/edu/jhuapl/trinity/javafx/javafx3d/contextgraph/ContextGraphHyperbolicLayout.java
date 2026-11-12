@@ -58,7 +58,27 @@ public final class ContextGraphHyperbolicLayout {
     public record LayoutResult(Map<String, double[]> positions, Set<GraphEdge> backboneEdges,
                                Map<String, Integer> communities, int communityCount) { }
 
+    /**
+     * Original 4B-A Poincare layout: original single-level weighted detector,
+     * spanning hierarchy and spherical-sector allocation. This is the default
+     * and is intentionally independent of the optional multilevel detector.
+     */
     public static LayoutResult computedLayout(GraphDirectedCollection graph) {
+        return originalStructuralLayout(graph);
+    }
+
+    public static LayoutResult originalStructuralLayout(GraphDirectedCollection graph) {
+        return computeInternal(graph, null, true);
+    }
+
+    /** Reuse a computed multilevel hierarchy for the experimental layout. */
+    public static LayoutResult computedLayout(GraphDirectedCollection graph,
+                                               ContextGraphCommunityHierarchy hierarchy) {
+        return computeInternal(graph, hierarchy, false);
+    }
+
+    private static LayoutResult computeInternal(GraphDirectedCollection graph,
+            ContextGraphCommunityHierarchy hierarchy, boolean originalDetector) {
         if (graph == null || graph.getNodes() == null) {
             throw new IllegalArgumentException("Graph and graph nodes are required");
         }
@@ -74,9 +94,23 @@ public final class ContextGraphHyperbolicLayout {
                 throw new IllegalArgumentException("Every graph entity must have a unique nonblank ID");
             }
         }
-        ContextGraphSemanticCommunities.Result semantic =
-            ContextGraphSemanticCommunities.detect(nodes, graph.getEdges(), index);
-        int[] community = semantic.membership();
+        int[] community;
+        int communityCount;
+        if (originalDetector) {
+            ContextGraphSemanticCommunities.Result semantic =
+                ContextGraphSemanticCommunities.detect(nodes, graph.getEdges(), index);
+            community = semantic.membership();
+            communityCount = semantic.count();
+        } else {
+            if (hierarchy == null || !hierarchy.entityIds().equals(
+                nodes.stream().map(GraphNode::getEntityID).toList())) {
+                throw new IllegalArgumentException("Hierarchy does not match graph entity identities");
+            }
+            ContextGraphCommunityLevel activeLevel =
+                hierarchy.levels().get(hierarchy.selectedLayoutLevel());
+            community = activeLevel.membership();
+            communityCount = activeLevel.count();
+        }
         List<List<Arc>> adjacency = new ArrayList<>(n);
         for (int i = 0; i < n; i++) adjacency.add(new ArrayList<>());
         List<OrientedLink> structuralLinks = new ArrayList<>();
@@ -88,6 +122,7 @@ public final class ContextGraphHyperbolicLayout {
 
         if (graph.getEdges() != null) {
             for (GraphEdge edge : graph.getEdges()) {
+                checkCancelled();
                 if (edge == null) continue;
                 Integer start = index.get(edge.getStartID());
                 Integer end = index.get(edge.getEndID());
@@ -171,6 +206,7 @@ public final class ContextGraphHyperbolicLayout {
             queue.add(new Candidate(root, 0, 0));
         }
         while (!queue.isEmpty()) {
+            checkCancelled();
             Candidate next = queue.poll();
             if (next.cost != best[next.vertex] || next.hops != hops[next.vertex]) continue;
             for (Arc arc : adjacency.get(next.vertex)) {
@@ -257,6 +293,7 @@ public final class ContextGraphHyperbolicLayout {
                 ? new double[]{0, 0, 0} : multiply(axes[root], 0.12);
         }
         for (int current : breadthOrder) {
+            checkCancelled();
             List<Integer> branch = children.get(current);
             if (branch.isEmpty()) continue;
             double[] axis = axes[current];
@@ -321,7 +358,12 @@ public final class ContextGraphHyperbolicLayout {
         for (int i = 0; i < n; i++) communityOutput.put(nodes.get(i).getEntityID(), community[i]);
         return new LayoutResult(Collections.unmodifiableMap(output),
             Collections.unmodifiableSet(backbone), Collections.unmodifiableMap(communityOutput),
-            semantic.count());
+            communityCount);
+    }
+
+    private static void checkCancelled() {
+        if (Thread.currentThread().isInterrupted())
+            throw new java.util.concurrent.CancellationException("Topology layout cancelled");
     }
 
     /** 1: source is parent; -1: target is parent; 0: not a hierarchy relationship. */

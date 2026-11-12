@@ -41,6 +41,8 @@ public class GraphEvent extends Event {
         new EventType<>(ANY, "GRAPH_DATA_CLEARED");
     public static final EventType<GraphEvent> GRAPH_EXPLORATION_STATE_CHANGED =
         new EventType<>(ANY, "GRAPH_EXPLORATION_STATE_CHANGED");
+    public static final EventType<GraphEvent> GRAPH_COMMUNITY_HIERARCHY_CHANGED =
+        new EventType<>(ANY, "GRAPH_COMMUNITY_HIERARCHY_CHANGED");
     public static final EventType<GraphEvent> GRAPH_PROJECTION_APPLIED =
         new EventType<>(ANY, "GRAPH_PROJECTION_APPLIED");
     public static final EventType<GraphEvent> GRAPH_PROJECTION_FAILED =
