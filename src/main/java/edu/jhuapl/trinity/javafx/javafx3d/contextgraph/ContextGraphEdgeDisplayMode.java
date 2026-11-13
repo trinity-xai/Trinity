@@ -5,7 +5,7 @@ public enum ContextGraphEdgeDisplayMode {
     ALL("All relationships"),
     BACKBONE("Spanning hierarchy only"),
     BACKBONE_WITH_FOCUS("Hierarchy + focused cross-links"),
-    COMMUNITY_AGGREGATE("Community connections (summarized)");
+    COMMUNITY_AGGREGATE("Summarized edges (show all nodes)");
 
     private final String label;
 

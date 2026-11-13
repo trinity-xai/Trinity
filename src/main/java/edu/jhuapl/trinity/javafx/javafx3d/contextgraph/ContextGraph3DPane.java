@@ -7,8 +7,11 @@ import edu.jhuapl.trinity.javafx.components.callouts.Callout;
 import edu.jhuapl.trinity.javafx.components.callouts.CalloutBuilder;
 import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import javafx.animation.AnimationTimer;
+import javafx.animation.PauseTransition;
+import javafx.util.Duration;
 import javafx.geometry.Point2D;
 import javafx.scene.control.Label;
+import javafx.scene.control.Button;
 import javafx.scene.control.TextArea;
 import javafx.scene.layout.VBox;
 import java.util.Map;
@@ -61,8 +64,19 @@ public class ContextGraph3DPane extends StackPane {
     private final SubScene subScene;
     private final RadialEntityOverlayPane selectionOverlay;
     private final AnimationTimer calloutTimer;
+    /** Defer only representative callouts so the first click cannot cover a second click. */
+    private final PauseTransition pendingCommunityCallout =
+        new PauseTransition(Duration.millis(550));
     private Callout nodeCallout;
     private Callout edgeCallout;
+    private Callout communityCallout;
+    private Callout aggregateCallout;
+    private ContextGraphEdge3D aggregateCalloutAnchor;
+    private ContextGraphCommunityEdgeBundle observedAggregateSelection;
+    private ContextGraphCommunityEdgeBundle dismissedAggregateSelection;
+    private ContextGraphNode3D communityCalloutAnchor;
+    private ContextGraphCommunityRef observedCommunitySelection;
+    private ContextGraphCommunityRef dismissedCommunitySelection;
     private ContextGraphNode3D nodeCalloutAnchor;
     private ContextGraphEdge3D edgeCalloutAnchor;
     // A dismissed callout stays closed until that entity's selection changes.
@@ -206,12 +220,25 @@ public class ContextGraph3DPane extends StackPane {
         subScene.addEventHandler(MouseEvent.MOUSE_CLICKED, e -> {
             if (e.getButton() != MouseButton.PRIMARY || !e.isStillSincePress()
                 || dragDistance > 3.0) return;
+            pendingCommunityCallout.stop();
             Node picked = e.getPickResult() == null ? null : e.getPickResult().getIntersectedNode();
             GraphNode node = graphController.resolveNode(picked);
             GraphEdge edge = graphController.resolveEdge(picked);
             ContextGraphCommunityEdgeBundle aggregate =
                 graphController.resolveAggregateEdge(picked);
-            if (aggregate != null) {
+            ContextGraphCommunityRef community = graphController.resolveCommunity(picked);
+            if (community != null) {
+                graphController.selectCommunity(community);
+                // The first click used to open a full callout immediately, intercepting
+                // the second click intended to expand the same 3D representative.
+                clearSelectionCallouts();
+                if (e.getClickCount() >= 2) {
+                    graphController.toggleCommunityExpansion(community);
+                } else {
+                    pendingCommunityCallout.setOnFinished(event -> updateSelectionCallouts());
+                    pendingCommunityCallout.playFromStart();
+                }
+            } else if (aggregate != null) {
                 graphController.toggleAggregateSelection(aggregate);
             } else if (node != null) {
                 graphController.toggleNodeSelection(node);
@@ -224,7 +251,7 @@ public class ContextGraph3DPane extends StackPane {
             } else {
                 graphController.clearSelections();
             }
-            updateSelectionCallouts();
+            if (community == null) updateSelectionCallouts();
         });
         // Shift+wheel is delivered as horizontal scrolling on some platforms.
         // Use deltaX as a fallback rather than losing the zoom input.
@@ -382,12 +409,23 @@ public class ContextGraph3DPane extends StackPane {
     }
 
     private void clearSelectionCallouts() {
+        pendingCommunityCallout.stop();
         if (nodeCalloutAnchor != null) selectionOverlay.removeCallout(nodeCalloutAnchor);
         if (edgeCalloutAnchor != null) selectionOverlay.removeCallout(edgeCalloutAnchor);
+        if (communityCalloutAnchor != null) selectionOverlay.removeCallout(communityCalloutAnchor);
+        if (aggregateCalloutAnchor != null) selectionOverlay.removeCallout(aggregateCalloutAnchor);
         nodeCalloutAnchor = null;
         edgeCalloutAnchor = null;
+        communityCalloutAnchor = null;
         nodeCallout = null;
         edgeCallout = null;
+        communityCallout = null;
+        aggregateCalloutAnchor = null;
+        aggregateCallout = null;
+        observedAggregateSelection = null;
+        dismissedAggregateSelection = null;
+        observedCommunitySelection = null;
+        dismissedCommunitySelection = null;
         calloutTimer.stop();
         observedNodeSelectionId = null;
         dismissedNodeSelectionId = null;
@@ -400,7 +438,10 @@ public class ContextGraph3DPane extends StackPane {
             clearSelectionCallouts();
             return;
         }
-        if (graphController.getSelectedNodeId() == null && graphController.getSelectedEdge() == null) {
+        if (graphController.getSelectedNodeId() == null
+            && graphController.getSelectedEdge() == null
+            && graphController.getSelectedCommunity() == null
+            && graphController.getSelectedAggregate() == null) {
             clearSelectionCallouts();
             return;
         }
@@ -412,6 +453,16 @@ public class ContextGraph3DPane extends StackPane {
         if (!selectionCalloutsEnabled) return;
         String selectedNodeId = graphController.getSelectedNodeId();
         GraphEdge selectedEdge = graphController.getSelectedEdge();
+        ContextGraphCommunityRef selectedCommunity = graphController.getSelectedCommunity();
+        ContextGraphCommunityEdgeBundle selectedAggregate = graphController.getSelectedAggregate();
+        if (observedAggregateSelection != selectedAggregate) {
+            observedAggregateSelection = selectedAggregate;
+            dismissedAggregateSelection = null;
+        }
+        if (!Objects.equals(observedCommunitySelection, selectedCommunity)) {
+            observedCommunitySelection = selectedCommunity;
+            dismissedCommunitySelection = null;
+        }
         if (!Objects.equals(observedNodeSelectionId, selectedNodeId)) {
             observedNodeSelectionId = selectedNodeId;
             dismissedNodeSelectionId = null;
@@ -448,6 +499,56 @@ public class ContextGraph3DPane extends StackPane {
                 edgeCalloutAnchor = currentEdge;
             }
         }
+        ContextGraphNode3D currentCommunity = graphController.getSelectedCommunityView();
+        if (communityCalloutAnchor != currentCommunity) {
+            if (communityCalloutAnchor != null)
+                selectionOverlay.removeCallout(communityCalloutAnchor);
+            communityCalloutAnchor = null;
+            communityCallout = null;
+            if (currentCommunity != null
+                && !Objects.equals(dismissedCommunitySelection, selectedCommunity)) {
+                communityCallout = makeCallout(currentCommunity,
+                    graphController.getSelectedCommunityTitle(),
+                    graphController.getSelectedCommunityDetails(), this::dismissCommunityCallout,
+                    () -> {
+                        graphController.toggleCommunityExpansion(selectedCommunity);
+                        // Rebuild this callout to reflect the new expansion state and action.
+                        clearSelectionCallouts();
+                        updateSelectionCallouts();
+                    });
+                communityCalloutAnchor = currentCommunity;
+            }
+        }
+        if (communityCallout != null && communityCalloutAnchor != null) {
+            boolean visible = communityCalloutAnchor.isVisible() && graphController.isGraphVisible()
+                && graphController.getEdgeDisplayMode()
+                    == ContextGraphEdgeDisplayMode.COMMUNITY_AGGREGATE;
+            communityCallout.setVisible(visible);
+            if (visible) selectionOverlay.updateCalloutHeadPoint(
+                communityCalloutAnchor, communityCallout, subScene);
+        }
+        ContextGraphEdge3D currentAggregate = graphController.getSelectedAggregateView();
+        if (aggregateCalloutAnchor != currentAggregate) {
+            if (aggregateCalloutAnchor != null)
+                selectionOverlay.removeCallout(aggregateCalloutAnchor);
+            aggregateCalloutAnchor = null;
+            aggregateCallout = null;
+            if (currentAggregate != null && dismissedAggregateSelection != selectedAggregate) {
+                aggregateCallout = makeCallout(currentAggregate,
+                    graphController.getSelectedAggregateTitle(),
+                    graphController.getSelectedAggregateDetails(), this::dismissAggregateCallout);
+                aggregateCalloutAnchor = currentAggregate;
+            }
+        }
+        if (aggregateCallout != null && aggregateCalloutAnchor != null) {
+            boolean visible = aggregateCalloutAnchor.isVisible() && graphController.isEdgesDisplayed()
+                && graphController.isGraphVisible()
+                && graphController.getEdgeDisplayMode()
+                    == ContextGraphEdgeDisplayMode.COMMUNITY_AGGREGATE;
+            aggregateCallout.setVisible(visible);
+            if (visible) selectionOverlay.updateCalloutHeadPoint(
+                aggregateCalloutAnchor, aggregateCallout, subScene);
+        }
         if (nodeCallout != null && nodeCalloutAnchor != null) {
             boolean nodeShown = nodeCalloutAnchor.isVisible()
                 && graphController.isNodesDisplayed() && graphController.isGraphVisible();
@@ -464,6 +565,24 @@ public class ContextGraph3DPane extends StackPane {
                 selectionOverlay.updateCalloutHeadPoint(edgeCalloutAnchor, edgeCallout, subScene);
             }
         }
+    }
+
+    private void dismissAggregateCallout() {
+        dismissedAggregateSelection = graphController.getSelectedAggregate();
+        if (aggregateCallout != null) aggregateCallout.hide();
+        if (aggregateCalloutAnchor != null)
+            selectionOverlay.removeCallout(aggregateCalloutAnchor);
+        aggregateCalloutAnchor = null;
+        aggregateCallout = null;
+    }
+
+    private void dismissCommunityCallout() {
+        dismissedCommunitySelection = graphController.getSelectedCommunity();
+        if (communityCallout != null) communityCallout.hide();
+        if (communityCalloutAnchor != null)
+            selectionOverlay.removeCallout(communityCalloutAnchor);
+        communityCalloutAnchor = null;
+        communityCallout = null;
     }
 
     private void dismissNodeCallout() {
@@ -545,6 +664,11 @@ public class ContextGraph3DPane extends StackPane {
     }
 
     private Callout makeCallout(Shape3D shape, String title, String details, Runnable onClose) {
+        return makeCallout(shape, title, details, onClose, null);
+    }
+
+    private Callout makeCallout(Shape3D shape, String title, String details,
+                                Runnable onClose, Runnable onExpand) {
         Point2D point = JavaFX3DUtils.getTransformedP2D(shape, subScene, Callout.DEFAULT_HEAD_RADIUS + 5);
         TextArea detailArea = new TextArea(details);
         detailArea.setEditable(false);
@@ -559,6 +683,12 @@ public class ContextGraph3DPane extends StackPane {
         note.setWrapText(true);
         note.setMaxWidth(360);
         VBox content = new VBox(6, detailArea, note);
+        if (onExpand != null) {
+            Button expand = new Button(graphController.getCommunityExpansionActionLabel(
+                graphController.getSelectedCommunity()));
+            expand.setOnAction(event -> onExpand.run());
+            content.getChildren().add(1, expand);
+        }
         Callout result = CalloutBuilder.create()
             .headPoint(point.getX(), point.getY())
             .leaderLineToPoint(point.getX() - 95, point.getY() - 120)

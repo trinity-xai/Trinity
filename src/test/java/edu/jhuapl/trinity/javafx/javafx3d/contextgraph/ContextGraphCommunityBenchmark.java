@@ -43,6 +43,16 @@ public final class ContextGraphCommunityBenchmark {
             if (level.clusters().stream().mapToInt(ContextGraphCommunityCluster::memberCount).sum() != nodes)
                 throw new AssertionError("Lost nodes at level " + level.index());
         }
+        long catalogStart = System.nanoTime();
+        ContextGraphCommunityCatalog catalog = ContextGraphCommunityCatalog.build(graph, hierarchy);
+        for (int levelIndex = 0; levelIndex < hierarchy.levels().size(); levelIndex++) {
+            int total = catalog.atLevel(levelIndex).stream()
+                .mapToInt(ContextGraphCommunityDescriptor::memberCount).sum();
+            if (total != nodes) throw new AssertionError("Catalog lost source members");
+        }
+        System.out.printf(Locale.ROOT, "Community representative catalog %.1f ms, "
+            + "coarsest representatives=%d%n", (System.nanoTime() - catalogStart) / 1e6,
+            catalog.atLevel(hierarchy.levels().size() - 1).size());
         long layoutStart = System.nanoTime();
         ContextGraphHyperbolicLayout.LayoutResult layout =
             ContextGraphHyperbolicLayout.computedLayout(graph, hierarchy);

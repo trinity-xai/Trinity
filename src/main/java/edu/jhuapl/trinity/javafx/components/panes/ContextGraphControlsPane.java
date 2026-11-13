@@ -297,7 +297,7 @@ public final class ContextGraphControlsPane extends LitPathPane {
         relationshipScroll.setMaxHeight(Double.MAX_VALUE);
         relationshipScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         VBox edgeDisclosurePanel = new VBox(7,
-            new Label("Edge disclosure / hierarchy"), edgeDisclosureMode,
+            new Label("Relationship display (source nodes stay visible)"), edgeDisclosureMode,
             new Label("Maximum focused cross-links"), crossLinkLimit,
             edgeVisibilitySummary, new Label("Visible relationship types"),
             new HBox(8, showAllRelationships, hideAllRelationships));

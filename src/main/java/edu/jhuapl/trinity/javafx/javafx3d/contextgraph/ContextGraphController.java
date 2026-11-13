@@ -57,6 +57,9 @@ public final class ContextGraphController {
     private final Group edgeLayer = new Group();
     /** Derived summaries, entirely separate from original GraphEdge 3D objects. */
     private final Group aggregateEdgeLayer = new Group();
+    /** Virtual community glyphs and optional local drill-down connections. */
+    private final Group communityRepresentativeLayer = new Group();
+    private final Group communityExpansionEdgeLayer = new Group();
     private boolean diagnosticDiffuseMaterials;
     private final Map<Color, PhongMaterial> diffuseMaterials = new HashMap<>();
 
@@ -99,6 +102,9 @@ public final class ContextGraphController {
 
     private Color nodeColor(GraphNode node, GraphStyleParams style) {
         Color fallback = style.nodeColor == null ? Color.CYAN : style.nodeColor;
+        if (revealedEntityCommunity != null
+            && revealedCommunityMembers.contains(node.getEntityID()))
+            return Color.rgb(255, 227, 126);
         if (communityColorDiagnostic && diagnosticMembership.containsKey(node.getEntityID()))
             return diagnosticCommunityColor(diagnosticMembership.get(node.getEntityID()));
         if (!style.colorByLabel) return fallback;
@@ -183,6 +189,23 @@ public final class ContextGraphController {
     private final Set<GraphEdge> revealedAggregateEdges =
         Collections.newSetFromMap(new java.util.IdentityHashMap<>());
     private ContextGraphCommunityEdgeBundle selectedAggregate;
+    private ContextGraphCommunityCatalog communityCatalog;
+    private final Map<ContextGraphCommunityRef, ContextGraphNode3D> communityViews = new LinkedHashMap<>();
+    private final Map<ContextGraphNode3D, ContextGraphCommunityRef> pickedCommunities =
+        new java.util.IdentityHashMap<>();
+    private final Map<ContextGraphCommunityChildConnection, ContextGraphEdge3D> childConnectionViews =
+        new LinkedHashMap<>();
+    private final Set<ContextGraphCommunityChildConnection> childValidPositions = new HashSet<>();
+    private final List<ContextGraphCommunityRef> expansionPath = new ArrayList<>();
+    private final Set<GraphEdge> revealedCommunityEdges =
+        Collections.newSetFromMap(new java.util.IdentityHashMap<>());
+    private Set<String> revealedCommunityMembers = Set.of();
+    /** Source endpoints disclosed explicitly by selecting one derived relationship bundle. */
+    private Set<String> revealedAggregateEndpoints = Set.of();
+    private ContextGraphCommunityRef revealedEntityCommunity;
+    private ContextGraphCommunityRef selectedCommunity;
+    private long expansionGeneration;
+    private Task<Map<Integer, ContextGraphCommunityEdgeAggregation>> expansionTask;
     private Set<GraphEdge> backboneEdges = Set.of();
     private boolean backboneReady;
     private boolean backboneFailed;
@@ -211,6 +234,52 @@ public final class ContextGraphController {
     public ContextGraphCommunityHierarchy getCommunityHierarchy() { return communityHierarchy; }
     public ContextGraphHyperbolicPackingParams getPackingParams() { return packingParams; }
     public boolean isCommunityColorDiagnostic() { return communityColorDiagnostic; }
+    public ContextGraphCommunityRef resolveCommunity(Node picked) {
+        return picked instanceof ContextGraphNode3D view ? pickedCommunities.get(view) : null;
+    }
+    public ContextGraphCommunityRef getSelectedCommunity() { return selectedCommunity; }
+
+    /** The visible drill-down branch (or leaf entity disclosure), not all computed communities. */
+    public boolean isCommunityExpanded(ContextGraphCommunityRef ref) {
+        return ref != null && (expansionPath.contains(ref) || ref.equals(revealedEntityCommunity));
+    }
+
+    public String getCommunityExpansionActionLabel(ContextGraphCommunityRef ref) {
+        if (ref == null) return "Expand Community";
+        if (isCommunityExpanded(ref)) return ref.level() == 0
+            ? "Hide Original Entities" : "Collapse Community";
+        return ref.level() == 0 ? "Reveal Original Entities" : "Expand Community";
+    }
+    public ContextGraphNode3D getSelectedCommunityView() { return communityViews.get(selectedCommunity); }
+    public String getSelectedCommunityTitle() {
+        ContextGraphCommunityDescriptor descriptor = communityCatalog == null ? null
+            : communityCatalog.descriptor(selectedCommunity);
+        return descriptor == null ? "Community" : descriptor.title() + " (" + descriptor.memberCount() + ")";
+    }
+    public String getSelectedCommunityDetails() {
+        return communityInspection(selectedCommunity);
+    }
+    public ContextGraphCommunityEdgeBundle getSelectedAggregate() { return selectedAggregate; }
+    public ContextGraphEdge3D getSelectedAggregateView() { return findAggregateView(selectedAggregate); }
+    public String getSelectedAggregateTitle() {
+        if (selectedAggregate == null || aggregation == null || communityCatalog == null)
+            return "Derived community connection";
+        ContextGraphCommunityPair pair = selectedAggregate.pair();
+        int level = aggregateViews.containsKey(selectedAggregate) ? aggregation.levelIndex()
+            : childConnectionViews.keySet().stream()
+                .filter(key -> key.bundle() == selectedAggregate)
+                .mapToInt(ContextGraphCommunityChildConnection::level).findFirst().orElse(aggregation.levelIndex());
+        ContextGraphCommunityDescriptor a = communityCatalog.descriptor(new ContextGraphCommunityRef(level, pair.first()));
+        ContextGraphCommunityDescriptor b = communityCatalog.descriptor(new ContextGraphCommunityRef(level, pair.second()));
+        return (a == null ? "Community " + (pair.first() + 1) : a.title()) + " / "
+            + (b == null ? "Community " + (pair.second() + 1) : b.title());
+    }
+    public String getSelectedAggregateDetails() {
+        return selectedAggregate == null ? "" : selectedAggregate.summary()
+            + "\nCurrently passing filters: " + filteredAggregateCount(selectedAggregate)
+            + "\nThis is a derived summary of original edges; it is not a source assertion."
+            + "\nClick the connection again to hide disclosed original edges.";
+    }
     public ContextGraphCommunityEdgeBundle resolveAggregateEdge(Node picked) {
         return picked instanceof ContextGraphEdge3D view ? pickedAggregates.get(view) : null;
     }
@@ -224,8 +293,10 @@ public final class ContextGraphController {
         }
         String result = visible + " derived community connections representing " + represented
             + " original inter-community edges (level " + (aggregation.levelIndex() + 1) + ")."
-            + " Click a connection to reveal its original edges; click again to hide them."
-            + " Intra-community edges are not summarized as connections.";
+            + " All original entities remain visible and selectable."
+            + " Click a summarized connection to reveal its original edges; click again to hide."
+            + " Intra-community relationships remain in the source graph but are not drawn"
+            + " as inter-community connections.";
         if (selectedAggregate != null)
             result += "\n" + selectedAggregate.summary() + " | currently passing filters: "
                 + filteredAggregateCount(selectedAggregate);
@@ -462,6 +533,9 @@ public final class ContextGraphController {
         edgeDisplayMode = mode;
         clearAggregateSelection();
         if (mode == ContextGraphEdgeDisplayMode.COMMUNITY_AGGREGATE) requestAggregateEdges();
+        else clearCommunityRepresentatives(false);
+        // Edge display mode never changes source-entity visibility.
+        refreshSourceNodeVisibility();
         updateAggregateLayerVisibility();
         applyEdgeVisibilityOnly();
         notifyExplorationState();
@@ -521,7 +595,8 @@ public final class ContextGraphController {
 
     private boolean edgeShownByStructure(GraphEdge edge) {
         if (edgeDisplayMode == ContextGraphEdgeDisplayMode.COMMUNITY_AGGREGATE)
-            return revealedAggregateEdges.contains(edge) || edge == selectedEdge
+            return revealedAggregateEdges.contains(edge)
+                || revealedCommunityEdges.contains(edge) || edge == selectedEdge
                 || (selectedNodeId != null && (selectedNodeId.equals(edge.getStartID())
                     || selectedNodeId.equals(edge.getEndID())));
         return ContextGraphEdgeDisclosure.shown(edgeDisplayMode, edge, backboneReady,
@@ -538,6 +613,7 @@ public final class ContextGraphController {
 
     /** All changes to the derived aggregate scene are FX-thread operations. */
     private void invalidateAggregation() {
+        clearCommunityRepresentatives(true);
         ++aggregationGeneration;
         if (aggregationTask != null) { aggregationTask.cancel(true); aggregationTask = null; }
         if (aggregateAttachmentTimer != null) {
@@ -555,22 +631,33 @@ public final class ContextGraphController {
 
     private void clearAggregateSelection() {
         if (selectedAggregate != null) {
-            ContextGraphEdge3D previous = aggregateViews.get(selectedAggregate);
+            ContextGraphEdge3D previous = findAggregateView(selectedAggregate);
             if (previous != null) previous.unselect();
         }
         selectedAggregate = null;
         revealedAggregateEdges.clear();
+        if (!revealedAggregateEndpoints.isEmpty()) {
+            revealedAggregateEndpoints = Set.of();
+            refreshSourceNodeVisibility();
+        }
     }
 
     /** Click a derived connection to disclose the original GraphEdge objects it represents. */
     public void toggleAggregateSelection(ContextGraphCommunityEdgeBundle connection) {
-        if (connection == null || !aggregateViews.containsKey(connection)) return;
+        if (connection == null || findAggregateView(connection) == null) return;
         boolean wasSelected = selectedAggregate == connection;
         clearSelections();
         if (!wasSelected) {
             selectedAggregate = connection;
             revealedAggregateEdges.addAll(connection.originals());
-            aggregateViews.get(connection).select();
+            Set<String> endpoints = new HashSet<>();
+            for (GraphEdge edge : connection.originals()) {
+                endpoints.add(edge.getStartID());
+                endpoints.add(edge.getEndID());
+            }
+            revealedAggregateEndpoints = Set.copyOf(endpoints);
+            refreshSourceNodeVisibility();
+            findAggregateView(connection).select();
             report(connection.summary() + " | original edges revealed; click again to hide");
         }
         applyEdgeVisibilityOnly();
@@ -578,8 +665,14 @@ public final class ContextGraphController {
     }
 
     private void updateAggregateLayerVisibility() {
-        aggregateEdgeLayer.setVisible(edgesDisplayed
-            && edgeDisplayMode == ContextGraphEdgeDisplayMode.COMMUNITY_AGGREGATE);
+        boolean visible = edgesDisplayed
+            && edgeDisplayMode == ContextGraphEdgeDisplayMode.COMMUNITY_AGGREGATE;
+        aggregateEdgeLayer.setVisible(visible);
+        // Community centroids are no longer substitutes for original source entities.
+        // Preserve the internal layers for compatibility with old derived state, but
+        // do not show them when only relationships have been summarized.
+        communityExpansionEdgeLayer.setVisible(false);
+        communityRepresentativeLayer.setVisible(false);
     }
 
     /** Heavy aggregation is off-FX, keyed by actual hierarchy and level. */
@@ -599,6 +692,8 @@ public final class ContextGraphController {
         }
         aggregation = null;
         clearAggregateSelection();
+        clearCommunityRepresentatives(false);
+        refreshSourceNodeVisibility();
         aggregateViews.clear();
         pickedAggregates.clear();
         aggregateValidPositions.clear();
@@ -608,8 +703,12 @@ public final class ContextGraphController {
             displayAggregates(graph, hierarchy, generation, cached);
             return;
         }
+        final ContextGraphCommunityCatalog[] catalog = new ContextGraphCommunityCatalog[1];
+        final boolean needsCatalog = communityCatalog == null;
         Task<ContextGraphCommunityEdgeAggregation> task = new Task<>() {
             @Override protected ContextGraphCommunityEdgeAggregation call() {
+                if (needsCatalog)
+                    catalog[0] = ContextGraphCommunityCatalog.build(graph, hierarchy);
                 return ContextGraphCommunityEdgeAggregation.compute(graph, hierarchy, level);
             }
         };
@@ -621,6 +720,7 @@ public final class ContextGraphController {
             ContextGraphCommunityEdgeAggregation result = task.getValue();
             if (result == null) return;
             aggregationCache.put(level, result);
+            if (catalog[0] != null) communityCatalog = catalog[0];
             displayAggregates(graph, hierarchy, generation, result);
         });
         task.setOnFailed(e -> {
@@ -643,8 +743,8 @@ public final class ContextGraphController {
         aggregation = result;
         Point3D[] centroids = aggregateCentroids(result.levelIndex());
         List<ContextGraphCommunityEdgeBundle> connections = result.connections();
-        // Aggregate geometry is progressive, just like original edge geometry.
-        // This avoids a large, single FX pulse at fine community levels.
+        // Attach only derived relationships; the original entity shapes remain visible.
+        // No derived community centroids are constructed or attached in this mode.
         aggregateAttachmentTimer = new AnimationTimer() {
             private int next;
             @Override public void handle(long now) {
@@ -706,13 +806,20 @@ public final class ContextGraphController {
             entry.getValue().setVisible(aggregateValidPositions.contains(entry.getKey())
                 && filteredCount > 0);
         }
+        for (Map.Entry<ContextGraphCommunityChildConnection, ContextGraphEdge3D> entry
+            : childConnectionViews.entrySet()) {
+            int represented = filteredAggregateCount(entry.getKey().bundle());
+            applyAggregateStyle(entry.getValue(), represented);
+            entry.getValue().setVisible(childValidPositions.contains(entry.getKey())
+                && represented > 0);
+        }
     }
 
     private void applyAggregateStyle(ContextGraphEdge3D view, int representedCount) {
         // Derived connections use neutral styling, distinct from original category edges.
         view.setBaseMaterial(displayMaterial(Color.rgb(155, 186, 218), styleParams.edgeOpacity));
         double radius = Math.max(0.001, styleParams.edgeWidth)
-            * Math.min(5.0, 1.0 + 0.60 * Math.log1p(representedCount));
+            * Math.min(3.5, 0.85 + 0.38 * Math.log1p(representedCount));
         if (Math.abs(view.getRadius() - radius) > 0.0001) view.setRadius((float) radius);
     }
 
@@ -721,6 +828,9 @@ public final class ContextGraphController {
             : aggregateViews.entrySet()) {
             applyAggregateStyle(entry.getValue(), filteredAggregateCount(entry.getKey()));
         }
+        for (Map.Entry<ContextGraphCommunityChildConnection, ContextGraphEdge3D> entry
+            : childConnectionViews.entrySet())
+            applyAggregateStyle(entry.getValue(), filteredAggregateCount(entry.getKey().bundle()));
     }
 
     /** Centroids use currently displayed coordinates, including hyperbolic focus. */
@@ -757,7 +867,352 @@ public final class ContextGraphController {
             entry.getValue().setEndpoints(from, to);
             aggregateValidPositions.add(entry.getKey());
         }
+        updateCommunityRepresentativePositions();
         refreshAggregateVisibility();
+    }
+
+    /** The selected community is a derived identity, never a GraphNode. */
+    public void selectCommunity(ContextGraphCommunityRef ref) {
+        ContextGraphNode3D view = communityViews.get(ref);
+        if (view == null) return;
+        clearCommunitySelection();
+        if (selectedNodeId != null) {
+            ContextGraphNode3D previous = nodeViews.get(selectedNodeId);
+            if (previous != null) previous.unselect();
+        }
+        if (selectedEdge != null) {
+            ContextGraphEdge3D previous = edgeViews.get(selectedEdge);
+            if (previous != null) previous.unselect();
+        }
+        selectedNodeId = null;
+        selectedEdge = null;
+        clearAggregateSelection();
+        selectedCommunity = ref;
+        view.select();
+        refreshNeighborhood();
+        report(communityInspection(ref));
+    }
+
+    private void clearCommunitySelection() {
+        if (selectedCommunity != null) {
+            ContextGraphNode3D view = communityViews.get(selectedCommunity);
+            if (view != null) view.unselect();
+        }
+        selectedCommunity = null;
+    }
+
+    public String communityInspection(ContextGraphCommunityRef ref) {
+        if (communityCatalog == null) return "No community descriptions available";
+        ContextGraphCommunityDescriptor descriptor = communityCatalog.descriptor(ref);
+        if (descriptor == null) return "Community not available";
+        StringBuilder details = new StringBuilder(descriptor.details());
+        ContextGraphCommunityEdgeAggregation related = aggregationCache.get(ref.level());
+        if (related != null) {
+            List<ContextGraphCommunityEdgeBundle> neighbors = new ArrayList<>();
+            for (ContextGraphCommunityEdgeBundle connection : related.connections()) {
+                if (connection.pair().first() == ref.id() || connection.pair().second() == ref.id())
+                    neighbors.add(connection);
+            }
+            neighbors.sort(java.util.Comparator.comparingInt(
+                ContextGraphCommunityEdgeBundle::originalCount).reversed());
+            details.append("\n\nNeighboring communities: ").append(neighbors.size());
+            for (int i = 0; i < Math.min(6, neighbors.size()); i++) {
+                ContextGraphCommunityEdgeBundle connection = neighbors.get(i);
+                int neighborId = connection.pair().first() == ref.id()
+                    ? connection.pair().second() : connection.pair().first();
+                ContextGraphCommunityDescriptor neighbor = communityCatalog.descriptor(
+                    new ContextGraphCommunityRef(ref.level(), neighborId));
+                details.append("\n  ").append(neighbor == null ? "Community " + (neighborId + 1)
+                    : neighbor.title() + " [" + (neighborId + 1) + "]")
+                    .append(": ").append(connection.originalCount())
+                    .append(" original edges ").append(connection.typeCounts());
+            }
+        }
+        details.append("\n\nState: ").append(isCommunityExpanded(ref) ? "EXPANDED" : "COLLAPSED");
+        details.append("\nSingle-click: inspect. Double-click: expand or collapse")
+            .append(". At the finest community level, double-click reveals original members and internal edges.");
+        if (ref.equals(revealedEntityCommunity))
+            details.append("\nRevealed original entities: ").append(revealedCommunityMembers.size())
+                .append(", internal edges: ").append(revealedCommunityEdges.size());
+        return details.toString();
+    }
+
+    /** Expand a single branch at each level, retaining all coarse community representatives. */
+    public void toggleCommunityExpansion(ContextGraphCommunityRef ref) {
+        if (communityCatalog == null || aggregation == null
+            || communityCatalog.descriptor(ref) == null || !communityViews.containsKey(ref)) return;
+        if (ref.level() == 0) {
+            boolean collapse = ref.equals(revealedEntityCommunity);
+            revealedEntityCommunity = collapse ? null : ref;
+            revealedCommunityMembers = collapse ? Set.of() : communityCatalog.members(ref);
+            revealedCommunityEdges.clear();
+            if (!collapse) {
+                for (GraphEdge edge : currentGraph.getEdges()) {
+                    if (revealedCommunityMembers.contains(edge.getStartID())
+                        && revealedCommunityMembers.contains(edge.getEndID()))
+                        revealedCommunityEdges.add(edge);
+                }
+            }
+            scheduleCommunityMaterialRefresh();
+            refreshSourceNodeVisibility();
+            applyEdgeVisibilityOnly();
+            notifyExplorationState();
+            report(collapse ? "Collapsed original entities for community " + (ref.id() + 1)
+                : "Revealed " + revealedCommunityMembers.size() + " original entities and "
+                    + revealedCommunityEdges.size() + " original internal edges for community "
+                    + (ref.id() + 1));
+            return;
+        }
+        int previous = expansionPath.indexOf(ref);
+        if (previous >= 0) {
+            expansionPath.subList(previous, expansionPath.size()).clear();
+        } else if (ref.level() == aggregation.levelIndex()) {
+            expansionPath.clear();
+            expansionPath.add(ref);
+        } else if (!expansionPath.isEmpty()) {
+            ContextGraphCommunityRef parent = expansionPath.get(expansionPath.size() - 1);
+            ContextGraphCommunityDescriptor parentDescriptor = communityCatalog.descriptor(parent);
+            if (parentDescriptor == null || !ContextGraphCommunityDrilldown
+                .visibleChildren(parent, communityCatalog::descriptor).contains(ref)) return;
+            expansionPath.add(ref);
+        } else return;
+        revealedEntityCommunity = null;
+        revealedCommunityMembers = Set.of();
+        revealedCommunityEdges.clear();
+        scheduleCommunityMaterialRefresh();
+        refreshSourceNodeVisibility();
+        applyEdgeVisibilityOnly();
+        report((previous >= 0 ? "Collapsed" : "Expanded") + " derived community "
+            + (ref.id() + 1) + " at level " + (ref.level() + 1)
+            + "; original entities remain hidden until a leaf is opened");
+        requestExpandedCommunities();
+    }
+
+    private ContextGraphEdge3D findAggregateView(ContextGraphCommunityEdgeBundle connection) {
+        ContextGraphEdge3D view = aggregateViews.get(connection);
+        if (view != null) return view;
+        for (Map.Entry<ContextGraphCommunityChildConnection, ContextGraphEdge3D> entry
+            : childConnectionViews.entrySet())
+            if (entry.getKey().bundle() == connection) return entry.getValue();
+        return null;
+    }
+
+    private void clearCommunityRepresentatives(boolean dropCatalog) {
+        boolean hadOriginalMemberHighlight = revealedEntityCommunity != null;
+        ++expansionGeneration;
+        if (expansionTask != null) { expansionTask.cancel(true); expansionTask = null; }
+        if (expansionAttachmentTimer != null) {
+            expansionAttachmentTimer.stop();
+            expansionAttachmentTimer = null;
+        }
+        clearCommunitySelection();
+        expansionPath.clear();
+        revealedEntityCommunity = null;
+        revealedCommunityMembers = Set.of();
+        revealedCommunityEdges.clear();
+        communityViews.clear();
+        pickedCommunities.clear();
+        for (ContextGraphEdge3D child : childConnectionViews.values())
+            pickedAggregates.remove(child);
+        childConnectionViews.clear();
+        childValidPositions.clear();
+        communityRepresentativeLayer.getChildren().clear();
+        communityExpansionEdgeLayer.getChildren().clear();
+        if (dropCatalog) communityCatalog = null;
+        if (hadOriginalMemberHighlight && !dropCatalog && currentGraph != null)
+            scheduleCommunityMaterialRefresh();
+        refreshSourceNodeVisibility();
+    }
+
+    private AnimationTimer expansionAttachmentTimer;
+
+    private void attachCommunityRepresentative(ContextGraphCommunityDescriptor descriptor,
+                                               Point3D center) {
+        ContextGraphCommunityRef ref = descriptor.ref();
+        if (communityViews.containsKey(ref)) return;
+        double radius = Math.min(9.0, 2.5 + 0.75 * Math.log1p(descriptor.memberCount()));
+        Color color = Color.hsb((ref.id() * 137.50776405003785
+            + ref.level() * 23.0) % 360.0, 0.68, 0.98);
+        ContextGraphNode3D glyph = new ContextGraphNode3D(
+            displayMaterial(color, 1.0), radius, 12, true);
+        glyph.setTranslateX(center.getX());
+        glyph.setTranslateY(center.getY());
+        glyph.setTranslateZ(center.getZ());
+        communityViews.put(ref, glyph);
+        pickedCommunities.put(glyph, ref);
+        glyph.addEventHandler(javafx.scene.input.MouseEvent.MOUSE_ENTERED,
+            e -> report("Derived community " + (ref.id() + 1) + " | " + descriptor.title()
+                + " | " + descriptor.memberCount() + " original entities"));
+        javafx.scene.control.Tooltip.install(glyph, new javafx.scene.control.Tooltip(
+            descriptor.title() + " — " + descriptor.memberCount()
+                + " original entities\nClick to inspect; double-click to expand/collapse"));
+        if (ref.equals(selectedCommunity)) glyph.select();
+        communityRepresentativeLayer.getChildren().add(glyph);
+    }
+
+    /** Do not run graph aggregation on the FX thread during drill-down. */
+    private void requestExpandedCommunities() {
+        long generation = ++expansionGeneration;
+        if (expansionTask != null) { expansionTask.cancel(true); expansionTask = null; }
+        if (expansionAttachmentTimer != null) { expansionAttachmentTimer.stop(); expansionAttachmentTimer = null; }
+        for (Map.Entry<ContextGraphCommunityRef, ContextGraphNode3D> entry
+            : new ArrayList<>(communityViews.entrySet())) {
+            if (aggregation == null || entry.getKey().level() == aggregation.levelIndex()) continue;
+            communityViews.remove(entry.getKey());
+            pickedCommunities.remove(entry.getValue());
+            communityRepresentativeLayer.getChildren().remove(entry.getValue());
+        }
+        if (selectedAggregate != null && findAggregateView(selectedAggregate) != aggregateViews.get(selectedAggregate))
+            clearAggregateSelection();
+        for (ContextGraphEdge3D child : childConnectionViews.values())
+            pickedAggregates.remove(child);
+        childConnectionViews.clear();
+        childValidPositions.clear();
+        communityExpansionEdgeLayer.getChildren().clear();
+        if (expansionPath.isEmpty()) {
+            if (selectedCommunity != null && !communityViews.containsKey(selectedCommunity))
+                clearCommunitySelection();
+            notifyExplorationState();
+            return;
+        }
+        GraphDirectedCollection graph = currentGraph;
+        ContextGraphCommunityHierarchy hierarchy = communityHierarchy;
+        ContextGraphCommunityCatalog catalog = communityCatalog;
+        if (catalog == null) return;
+        List<ContextGraphCommunityRef> path = List.copyOf(expansionPath);
+        Map<Integer, ContextGraphCommunityEdgeAggregation> already = new HashMap<>(aggregationCache);
+        Task<Map<Integer, ContextGraphCommunityEdgeAggregation>> task = new Task<>() {
+            @Override protected Map<Integer, ContextGraphCommunityEdgeAggregation> call() {
+                for (ContextGraphCommunityRef parent : path) {
+                    if (isCancelled()) throw new java.util.concurrent.CancellationException();
+                    List<ContextGraphCommunityRef> visibleChildren = ContextGraphCommunityDrilldown
+                        .visibleChildren(parent, catalog::descriptor);
+                    if (visibleChildren.isEmpty()) continue;
+                    int childLevel = visibleChildren.get(0).level();
+                    if (!already.containsKey(childLevel)) already.put(childLevel,
+                        ContextGraphCommunityEdgeAggregation.compute(graph, hierarchy, childLevel));
+                }
+                return already;
+            }
+        };
+        expansionTask = task;
+        task.setOnSucceeded(e -> {
+            if (generation != expansionGeneration || graph != currentGraph
+                || hierarchy != communityHierarchy || task.isCancelled()) return;
+            expansionTask = null;
+            Map<Integer, ContextGraphCommunityEdgeAggregation> computed = task.getValue();
+            aggregationCache.putAll(computed);
+            attachExpandedCommunities(generation, path, computed);
+        });
+        task.setOnFailed(e -> {
+            if (generation == expansionGeneration) {
+                expansionTask = null;
+                report("Community expansion failed: " + task.getException());
+            }
+        });
+        Thread worker = new Thread(task, "context-graph-community-expansion");
+        worker.setDaemon(true);
+        worker.start();
+    }
+
+    private void attachExpandedCommunities(long generation, List<ContextGraphCommunityRef> path,
+                 Map<Integer, ContextGraphCommunityEdgeAggregation> computed) {
+        List<ContextGraphCommunityDescriptor> children = new ArrayList<>();
+        List<ContextGraphCommunityChildConnection> links = new ArrayList<>();
+        Map<Integer, Point3D[]> centroids = new HashMap<>();
+        for (ContextGraphCommunityRef parent : path) {
+            ContextGraphCommunityDescriptor descriptor = communityCatalog.descriptor(parent);
+            if (descriptor == null) continue;
+            List<ContextGraphCommunityRef> visibleChildren = ContextGraphCommunityDrilldown
+                .visibleChildren(parent, communityCatalog::descriptor);
+            if (visibleChildren.isEmpty()) continue;
+            int childLevel = visibleChildren.get(0).level();
+            centroids.computeIfAbsent(childLevel, this::aggregateCentroids);
+            Set<Integer> siblingIds = new HashSet<>();
+            for (ContextGraphCommunityRef childRef : visibleChildren) {
+                siblingIds.add(childRef.id());
+                ContextGraphCommunityDescriptor child = communityCatalog.descriptor(childRef);
+                if (child != null) children.add(child);
+            }
+            ContextGraphCommunityEdgeAggregation childAggregation = computed.get(childLevel);
+            if (childAggregation == null) continue;
+            for (ContextGraphCommunityEdgeBundle bundle : childAggregation.connections()) {
+                if (siblingIds.contains(bundle.pair().first())
+                    && siblingIds.contains(bundle.pair().second()))
+                    links.add(new ContextGraphCommunityChildConnection(childLevel, bundle));
+            }
+        }
+        expansionAttachmentTimer = new AnimationTimer() {
+            private int nextChild;
+            private int nextLink;
+            @Override public void handle(long now) {
+                if (generation != expansionGeneration || edgeDisplayMode
+                    != ContextGraphEdgeDisplayMode.COMMUNITY_AGGREGATE) {
+                    stop();
+                    if (expansionAttachmentTimer == this) expansionAttachmentTimer = null;
+                    return;
+                }
+                int childLimit = Math.min(children.size(), nextChild + edgeBatchSize);
+                for (; nextChild < childLimit; nextChild++) {
+                    ContextGraphCommunityDescriptor child = children.get(nextChild);
+                    Point3D center = centroids.get(child.ref().level())[child.ref().id()];
+                    if (center != null) attachCommunityRepresentative(child, center);
+                }
+                int linkLimit = Math.min(links.size(), nextLink + edgeBatchSize);
+                for (; nextLink < linkLimit; nextLink++) {
+                    ContextGraphCommunityChildConnection key = links.get(nextLink);
+                    Point3D[] positions = centroids.get(key.level());
+                    Point3D from = positions[key.bundle().pair().first()];
+                    Point3D to = positions[key.bundle().pair().second()];
+                    if (from == null || to == null || from.distance(to) < 1.0e-6) continue;
+                    ContextGraphEdge3D view = new ContextGraphEdge3D(0.5f, 5, 1);
+                    view.setEndpoints(from, to);
+                    view.setBaseMaterial(displayMaterial(Color.rgb(107, 149, 178), styleParams.edgeOpacity));
+                    applyAggregateStyle(view, filteredAggregateCount(key.bundle()));
+                    view.setVisible(filteredAggregateCount(key.bundle()) > 0);
+                    view.addEventHandler(javafx.scene.input.MouseEvent.MOUSE_ENTERED,
+                        e -> report(key.bundle().summary()));
+                    childConnectionViews.put(key, view);
+                    childValidPositions.add(key);
+                    pickedAggregates.put(view, key.bundle());
+                    communityExpansionEdgeLayer.getChildren().add(view);
+                }
+                if (nextChild >= children.size() && nextLink >= links.size()) {
+                    stop();
+                    if (expansionAttachmentTimer == this) expansionAttachmentTimer = null;
+                    notifyExplorationState();
+                }
+            }
+        };
+        expansionAttachmentTimer.start();
+    }
+
+    private void updateCommunityRepresentativePositions() {
+        if (communityHierarchy == null || communityViews.isEmpty()) return;
+        Map<Integer, Point3D[]> positions = new HashMap<>();
+        for (Map.Entry<ContextGraphCommunityRef, ContextGraphNode3D> entry : communityViews.entrySet()) {
+            ContextGraphCommunityRef ref = entry.getKey();
+            Point3D point = positions.computeIfAbsent(ref.level(), this::aggregateCentroids)[ref.id()];
+            if (point == null) continue;
+            ContextGraphNode3D view = entry.getValue();
+            view.setTranslateX(point.getX());
+            view.setTranslateY(point.getY());
+            view.setTranslateZ(point.getZ());
+        }
+        childValidPositions.clear();
+        for (Map.Entry<ContextGraphCommunityChildConnection, ContextGraphEdge3D> entry
+            : childConnectionViews.entrySet()) {
+            ContextGraphCommunityChildConnection key = entry.getKey();
+            Point3D[] coords = positions.computeIfAbsent(key.level(), this::aggregateCentroids);
+            Point3D from = coords[key.bundle().pair().first()];
+            Point3D to = coords[key.bundle().pair().second()];
+            if (from == null || to == null || from.distance(to) < 1.0e-6) {
+                entry.getValue().setVisible(false);
+            } else {
+                entry.getValue().setEndpoints(from, to);
+                childValidPositions.add(key);
+            }
+        }
     }
 
     private void prepareBackbone(GraphDirectedCollection graph) {
@@ -887,6 +1342,7 @@ public final class ContextGraphController {
                 : ContextGraphEdgeDisplayMode.ALL;
         }
         updateAggregateLayerVisibility();
+        refreshSourceNodeVisibility();
         applyEdgeVisibilityOnly();
         notifyExplorationState();
     }
@@ -977,8 +1433,20 @@ public final class ContextGraphController {
     }
 
     private boolean nodeAllowed(GraphNode node) {
-        return nodeLabelVisible(node)
-            && (!isolateSelection || neighborhood.isEmpty() || neighborhood.containsNode(node.getEntityID()));
+        // Original-node visibility is independent of how edges are presented.
+        // FactorLabel and explicit neighborhood isolation remain authoritative.
+        return ContextGraphCommunityDisclosurePolicy.originalVisible(
+            nodeLabelVisible(node), isolateSelection, neighborhood.isEmpty(),
+            neighborhood.containsNode(node.getEntityID()));
+    }
+
+    /** Updates only existing node visibility, without reconstructing shapes or materials. */
+    private void refreshSourceNodeVisibility() {
+        if (currentGraph == null || nodeViews.isEmpty()) return;
+        for (GraphNode node : currentGraph.getNodes()) {
+            ContextGraphNode3D view = nodeViews.get(node.getEntityID());
+            if (view != null) view.setVisible(nodeAllowed(node));
+        }
     }
 
     private boolean edgeAllowed(GraphEdge edge) {
@@ -1027,6 +1495,7 @@ public final class ContextGraphController {
     }
 
     public void toggleNodeSelection(GraphNode node) {
+        clearCommunitySelection();
         clearAggregateSelection();
         String id = node.getEntityID();
         if (selectedNodeId != null) {
@@ -1042,6 +1511,7 @@ public final class ContextGraphController {
     }
 
     public void toggleEdgeSelection(GraphEdge edge) {
+        clearCommunitySelection();
         clearAggregateSelection();
         if (selectedEdge != null) {
             ContextGraphEdge3D old = edgeViews.get(selectedEdge);
@@ -1056,6 +1526,7 @@ public final class ContextGraphController {
     }
 
     public void clearSelections() {
+        clearCommunitySelection();
         clearAggregateSelection();
         if (selectedNodeId != null) {
             ContextGraphNode3D view = nodeViews.get(selectedNodeId);
@@ -1430,7 +1901,8 @@ public final class ContextGraphController {
     public ContextGraphController(Scene scene) {
         this.scene = scene;
         graphLayer.setVisible(graphVisible);
-        graphLayer.getChildren().addAll(edgeLayer, aggregateEdgeLayer, nodeLayer);
+        graphLayer.getChildren().addAll(edgeLayer, aggregateEdgeLayer,
+            communityExpansionEdgeLayer, nodeLayer, communityRepresentativeLayer);
         updateAggregateLayerVisibility();
     }
 
