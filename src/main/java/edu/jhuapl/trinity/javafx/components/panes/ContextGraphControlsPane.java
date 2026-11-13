@@ -251,17 +251,23 @@ public final class ContextGraphControlsPane extends LitPathPane {
         installCommitOnFocusLost(crossLinkLimit);
         Label edgeVisibilitySummary = new Label();
         edgeVisibilitySummary.setWrapText(true);
+        edgeVisibilitySummary.setMinWidth(0);
+        edgeVisibilitySummary.setMaxWidth(Double.MAX_VALUE);
         Runnable updateEdgeSummary = () -> {
             edgeDisclosureMode.setValue(graphController.getEdgeDisplayMode());
             crossLinkLimit.setDisable(
                 graphController.getEdgeDisplayMode() != ContextGraphEdgeDisplayMode.BACKBONE_WITH_FOCUS);
-            edgeVisibilitySummary.setText("Relationships passing filters: "
-                + graphController.getVisibleRelationshipEdgeCount() + " / "
-                + (graphController.getCurrentGraph() == null ? 0
-                    : graphController.getCurrentGraph().getEdges().size())
-                + " | backbone: " + (graphController.isBackboneReady()
-                    ? graphController.getBackboneEdgeCount()
-                    : graphController.isBackboneFailed() ? "unavailable" : "computing..."));
+            if (graphController.getEdgeDisplayMode() == ContextGraphEdgeDisplayMode.COMMUNITY_AGGREGATE) {
+                edgeVisibilitySummary.setText(graphController.getAggregationSummary());
+            } else {
+                edgeVisibilitySummary.setText("Relationships passing filters: "
+                    + graphController.getVisibleRelationshipEdgeCount() + " / "
+                    + (graphController.getCurrentGraph() == null ? 0
+                        : graphController.getCurrentGraph().getEdges().size())
+                    + " | backbone: " + (graphController.isBackboneReady()
+                        ? graphController.getBackboneEdgeCount()
+                        : graphController.isBackboneFailed() ? "unavailable" : "computing..."));
+            }
         };
         VBox relationshipCheckboxes = new VBox(5);
         Runnable rebuildRelationshipCheckboxes = () -> {
@@ -302,6 +308,7 @@ public final class ContextGraphControlsPane extends LitPathPane {
             updateEdgeSummary.run();
         });
         scene.addEventHandler(GraphEvent.GRAPH_EXPLORATION_STATE_CHANGED, e -> updateEdgeSummary.run());
+        scene.addEventHandler(GraphEvent.GRAPH_COMMUNITY_HIERARCHY_CHANGED, e -> updateEdgeSummary.run());
         scene.addEventHandler(GraphEvent.GRAPH_NODE_CLICK, e -> updateEdgeSummary.run());
         scene.addEventHandler(GraphEvent.GRAPH_EDGE_CLICK, e -> updateEdgeSummary.run());
         scene.addEventHandler(GraphEvent.NEW_GRAPHDIRECTED_COLLECTION, e ->
@@ -586,7 +593,7 @@ public final class ContextGraphControlsPane extends LitPathPane {
         });
         communityPanel.getChildren().addAll(new Separator(),
             new Label("Community coloring (diagnostic, not FactorLabel)"),
-            communityColors, new Label("Visualize community partition at level"), diagnosticLevel,
+            communityColors, new Label("Community level (colors / edge summaries)"), diagnosticLevel,
             new Label("Spatial layout: Classic preserves 4B-A; Multilevel uses spherical "
                 + "hierarchy packing; Relationship-aware also uses weighted graph links."),
             new Label("Placement strategy"), placementMode,

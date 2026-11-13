@@ -62,6 +62,20 @@ public final class ContextGraphCommunityBenchmark {
             || packing.layout().backboneEdges().size() != nodes - 1
             || packing.diagnostics().nearBoundaryCount() != 0)
             throw new AssertionError("Invalid semantic packing");
+        for (int level = 0; level < hierarchy.levels().size(); level++) {
+            long aggregateStart = System.nanoTime();
+            ContextGraphCommunityEdgeAggregation aggregation =
+                ContextGraphCommunityEdgeAggregation.compute(graph, hierarchy, level);
+            long visibleEdges = aggregation.connections().stream()
+                .mapToLong(ContextGraphCommunityEdgeBundle::originalCount).sum();
+            if (visibleEdges + aggregation.intraCommunityEdges() + aggregation.unmappedEdges() != edges)
+                throw new AssertionError("Aggregation lost original graph edges");
+            System.out.printf(Locale.ROOT,
+                "Community level %d: %d derived connections representing %d original edges; "
+                    + "intra=%d; aggregate %.1f ms%n",
+                level + 1, aggregation.connections().size(), visibleEdges,
+                aggregation.intraCommunityEdges(), (System.nanoTime() - aggregateStart) / 1e6);
+        }
     }
 
     private static void addEdge(GraphDirectedCollection graph, int first, int second,

@@ -112,7 +112,7 @@ final class ContextGraphWeightedTopology {
             semantic, structural, admin, components, sum);
     }
 
-    private static int relationshipType(GraphRelationship relationship) {
+    static int relationshipType(GraphRelationship relationship) {
         if (relationship == null || relationship.getLabels() == null) return 2;
         for (String raw : relationship.getLabels()) {
             if (raw == null) continue;

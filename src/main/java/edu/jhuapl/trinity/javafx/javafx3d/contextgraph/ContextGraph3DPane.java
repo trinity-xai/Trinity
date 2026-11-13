@@ -209,7 +209,11 @@ public class ContextGraph3DPane extends StackPane {
             Node picked = e.getPickResult() == null ? null : e.getPickResult().getIntersectedNode();
             GraphNode node = graphController.resolveNode(picked);
             GraphEdge edge = graphController.resolveEdge(picked);
-            if (node != null) {
+            ContextGraphCommunityEdgeBundle aggregate =
+                graphController.resolveAggregateEdge(picked);
+            if (aggregate != null) {
+                graphController.toggleAggregateSelection(aggregate);
+            } else if (node != null) {
                 graphController.toggleNodeSelection(node);
                 scene.getRoot().fireEvent(new GraphEvent(GraphEvent.GRAPH_NODE_CLICK,
                     node, graphController.getSelectedNodeId() != null));

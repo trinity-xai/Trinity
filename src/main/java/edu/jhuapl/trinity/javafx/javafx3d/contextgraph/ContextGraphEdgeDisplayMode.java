@@ -4,7 +4,8 @@ package edu.jhuapl.trinity.javafx.javafx3d.contextgraph;
 public enum ContextGraphEdgeDisplayMode {
     ALL("All relationships"),
     BACKBONE("Spanning hierarchy only"),
-    BACKBONE_WITH_FOCUS("Hierarchy + focused cross-links");
+    BACKBONE_WITH_FOCUS("Hierarchy + focused cross-links"),
+    COMMUNITY_AGGREGATE("Community connections (summarized)");
 
     private final String label;
 
