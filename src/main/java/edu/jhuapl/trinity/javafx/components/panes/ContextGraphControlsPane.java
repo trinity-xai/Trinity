@@ -574,6 +574,35 @@ public final class ContextGraphControlsPane extends LitPathPane {
                 updatingLevel[0] = false;
             }
         };
+        Button exploreContext = new Button("Explore Selected");
+        Button backContext = new Button("Back");
+        Button globalContext = new Button("Global");
+        Label contextNavigationStatus = new Label(graphController.getContextNavigationStatus());
+        contextNavigationStatus.setWrapText(true);
+        Runnable updateContextNav = () -> {
+            contextNavigationStatus.setText(graphController.getContextNavigationStatus());
+            exploreContext.setDisable(!graphController.canExploreSelectedContext());
+            backContext.setDisable(!graphController.canReturnToPreviousContext());
+            globalContext.setDisable(graphController.getCommunityHierarchy() == null);
+        };
+        exploreContext.setOnAction(e -> {
+            if (graphController.exploreSelectedContext()) updateDiagnosticLevels.run();
+            updateContextNav.run();
+        });
+        backContext.setOnAction(e -> {
+            if (graphController.returnToPreviousContext()) updateDiagnosticLevels.run();
+            updateContextNav.run();
+        });
+        globalContext.setOnAction(e -> {
+            graphController.returnToGlobalContext();
+            updateDiagnosticLevels.run();
+            updateContextNav.run();
+        });
+        HBox contextNavigationControls = new HBox(8, exploreContext, backContext, globalContext);
+        updateContextNav.run();
+        scene.addEventHandler(GraphEvent.GRAPH_EXPLORATION_STATE_CHANGED, e -> updateContextNav.run());
+        scene.addEventHandler(GraphEvent.GRAPH_COMMUNITY_HIERARCHY_CHANGED, e -> updateContextNav.run());
+        scene.addEventHandler(GraphEvent.GRAPH_DATA_CLEARED, e -> updateContextNav.run());
         updateDiagnosticLevels.run();
         scene.addEventHandler(GraphEvent.GRAPH_COMMUNITY_HIERARCHY_CHANGED,
             e -> updateDiagnosticLevels.run());
@@ -593,9 +622,13 @@ public final class ContextGraphControlsPane extends LitPathPane {
         });
         communityPanel.getChildren().addAll(new Separator(),
             new Label("Community coloring (diagnostic, not FactorLabel)"),
-            communityColors, new Label("Community level (colors / edge summaries)"), diagnosticLevel,
-            new Label("Spatial layout: Classic preserves 4B-A; Multilevel uses spherical "
-                + "hierarchy packing; Relationship-aware also uses weighted graph links."),
+            communityColors, new Label("Context resolution (colors / summarized relationships)"), diagnosticLevel,
+            contextNavigationControls, contextNavigationStatus,
+            new Label("Explore Selected focuses the chosen entity and summarizes its community "
+                + "links at finer resolution. Back restores the previous context and focus; "
+                + "Global restores the overview. Original entities stay visible."),
+            new Label("Spatial layout: Classic 4B-A (default), multilevel spherical, "
+                + "relationship-aware, spectral, and graph-distance radial."),
             new Label("Placement strategy"), placementMode,
             new Label("Angular allocation"), angularAllocation,
             new Label("Branch angular spread (degrees)"), angularSpread,

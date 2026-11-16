@@ -225,6 +225,8 @@ public final class ContextGraphController {
     private String partitionComparison = "";
     private boolean communityColorDiagnostic;
     private int communityDiagnosticLevel = -1;
+    private final ContextGraphContextNavigation contextNavigation = new ContextGraphContextNavigation();
+    private final java.util.Deque<double[]> contextFocusHistory = new java.util.ArrayDeque<>();
     private Map<String, Integer> diagnosticMembership = Map.of();
     private AnimationTimer communityMaterialTimer;
     private long communityMaterialGeneration;
@@ -289,9 +291,9 @@ public final class ContextGraphController {
         int visible = 0, represented = 0;
         for (ContextGraphCommunityEdgeBundle connection : aggregation.connections()) {
             int count = filteredAggregateCount(connection);
-            if (count > 0) { visible++; represented += count; }
+            if (count > 0 && aggregateInCurrentContext(connection)) { visible++; represented += count; }
         }
-        String result = visible + " derived community connections representing " + represented
+        String result = getContextNavigationStatus() + "\n" + visible + " derived community connections representing " + represented
             + " original inter-community edges (level " + (aggregation.levelIndex() + 1) + ")."
             + " All original entities remain visible and selectable."
             + " Click a summarized connection to reveal its original edges; click again to hide."
@@ -302,6 +304,77 @@ public final class ContextGraphController {
                 + filteredAggregateCount(selectedAggregate);
         return result;
     }
+    public boolean canReturnToPreviousContext() { return contextNavigation.canGoBack(); }
+    public boolean canExploreSelectedContext() {
+        return communityHierarchy != null && !communityHierarchy.levels().isEmpty()
+            && selectedNodeId != null
+            && !(communityDiagnosticLevel == 0
+                && selectedNodeId.equals(contextNavigation.anchorEntityId()));
+    }
+
+    public String getContextNavigationStatus() {
+        String anchor = contextNavigation.anchorEntityId();
+        if (communityHierarchy == null || communityHierarchy.levels().isEmpty())
+            return "Context resolution: no community hierarchy loaded";
+        int level = Math.max(0, Math.min(communityHierarchy.levels().size() - 1,
+            communityDiagnosticLevel));
+        if (anchor == null) return "Global context | Level " + (level + 1)
+            + " | all original entities remain visible";
+        Integer group = diagnosticMembership.get(anchor);
+        if (group == null) return "Selected context no longer exists";
+        int size = communityHierarchy.levels().get(level).clusters().get(group).memberCount();
+        return "Local context | Level " + (level + 1) + " | Community "
+            + (group + 1) + " (" + size + " entities) | anchor: " + anchor
+            + " | summarized links to neighboring communities";
+    }
+
+    /** Move to finer context while retaining the global node cloud and its geometry. */
+    public boolean exploreSelectedContext() {
+        if (!canExploreSelectedContext()) return false;
+        contextFocusHistory.push(hyperbolicFocus.clone());
+        int next = contextNavigation.explore(selectedNodeId, communityDiagnosticLevel,
+            communityHierarchy.levels().size());
+        if (edgeDisplayMode != ContextGraphEdgeDisplayMode.COMMUNITY_AGGREGATE)
+            setEdgeDisplayMode(ContextGraphEdgeDisplayMode.COMMUNITY_AGGREGATE);
+        applyContextNavigationLevel(next);
+        if (projectionMode.isHyperbolic()) focusHyperbolicSelection();
+        return true;
+    }
+
+    /** Restore the actual previous resolution and anchor, not merely the prior color. */
+    public boolean returnToPreviousContext() {
+        ContextGraphContextNavigation.Frame previous = contextNavigation.back();
+        if (previous == null) return false;
+        applyContextNavigationLevel(previous.level());
+        if (!contextFocusHistory.isEmpty()) {
+            double[] oldFocus = contextFocusHistory.pop();
+            if (projectionMode.isHyperbolic()) setHyperbolicFocus(oldFocus);
+        }
+        return true;
+    }
+
+    public void returnToGlobalContext() {
+        contextNavigation.reset();
+        contextFocusHistory.clear();
+        if (projectionMode.isHyperbolic()) resetHyperbolicFocus();
+        if (communityHierarchy != null && !communityHierarchy.levels().isEmpty())
+            applyContextNavigationLevel(communityHierarchy.levels().size() - 1);
+        else notifyExplorationState();
+    }
+
+    private void applyContextNavigationLevel(int requested) {
+        if (communityDiagnosticLevel == requested) {
+            refreshAggregateVisibility();
+            notifyExplorationState();
+            fireOnRoot(new GraphEvent(GraphEvent.GRAPH_COMMUNITY_HIERARCHY_CHANGED));
+        } else setCommunityDiagnosticLevel(requested);
+    }
+
+    private boolean aggregateInCurrentContext(ContextGraphCommunityEdgeBundle bundle) {
+        return contextNavigation.includes(bundle,
+            diagnosticMembership.get(contextNavigation.anchorEntityId()));
+    }
+
     public int getCommunityDiagnosticLevel() { return communityDiagnosticLevel; }
 
     public String getCommunityStatus() {
@@ -773,7 +846,7 @@ public final class ContextGraphController {
                     }
                     int filteredCount = filteredAggregateCount(connection);
                     applyAggregateStyle(view, filteredCount);
-                    view.setVisible(valid && filteredCount > 0);
+                    view.setVisible(valid && filteredCount > 0 && aggregateInCurrentContext(connection));
                     added.add(view);
                 }
                 aggregateEdgeLayer.getChildren().addAll(added);
@@ -804,7 +877,7 @@ public final class ContextGraphController {
             int filteredCount = filteredAggregateCount(entry.getKey());
             applyAggregateStyle(entry.getValue(), filteredCount);
             entry.getValue().setVisible(aggregateValidPositions.contains(entry.getKey())
-                && filteredCount > 0);
+                && filteredCount > 0 && aggregateInCurrentContext(entry.getKey()));
         }
         for (Map.Entry<ContextGraphCommunityChildConnection, ContextGraphEdge3D> entry
             : childConnectionViews.entrySet()) {
@@ -1317,7 +1390,11 @@ public final class ContextGraphController {
             partitionComparison = ContextGraphCommunityPartitionComparison.compare(
                 communityHierarchy, result.hierarchy());
         boolean hierarchyChanged = communityHierarchy != result.hierarchy();
-        if (hierarchyChanged) invalidateAggregation();
+        if (hierarchyChanged) {
+            invalidateAggregation();
+            contextNavigation.reset();
+            contextFocusHistory.clear();
+        }
         communityHierarchy = result.hierarchy();
         refreshDiagnosticMembership();
         if (edgeDisplayMode == ContextGraphEdgeDisplayMode.COMMUNITY_AGGREGATE
@@ -2065,6 +2142,8 @@ public final class ContextGraphController {
         communityHierarchy = null;
         diagnosticMembership = Map.of();
         communityDiagnosticLevel = -1;
+        contextNavigation.reset();
+        contextFocusHistory.clear();
         communityStatus = "Computing semantic hierarchy and spatial layout...";
         ++projectionGeneration;
         if (projectionUpdateTimer != null) {
@@ -2123,6 +2202,8 @@ public final class ContextGraphController {
         communityColorDiagnostic = false;
         diagnosticMembership = Map.of();
         communityDiagnosticLevel = -1;
+        contextNavigation.reset();
+        contextFocusHistory.clear();
         packingParams = ContextGraphHyperbolicPackingParams.defaults();
         communityParams = ContextGraphCommunityParams.defaults();
         communityStatus = "No graph loaded";

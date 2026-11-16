@@ -72,6 +72,26 @@ public final class ContextGraphCommunityBenchmark {
             || packing.layout().backboneEdges().size() != nodes - 1
             || packing.diagnostics().nearBoundaryCount() != 0)
             throw new AssertionError("Invalid semantic packing");
+        for (ContextGraphHyperbolicPackingParams.Placement placement :
+                java.util.List.of(ContextGraphHyperbolicPackingParams.Placement.RELATIONSHIP_AWARE,
+                    ContextGraphHyperbolicPackingParams.Placement.SPECTRAL,
+                    ContextGraphHyperbolicPackingParams.Placement.GRAPH_DISTANCE_RADIAL)) {
+            var d = ContextGraphHyperbolicPackingParams.defaults();
+            var params = new ContextGraphHyperbolicPackingParams(placement, d.allocation(),
+                d.angularSpreadDegrees(), d.siblingGapDegrees(), d.massInfluence(),
+                d.radialProfile(), d.radialStep(), d.customSteps());
+            long alternateStart = System.nanoTime();
+            var alternate = ContextGraphCommunitySpatialLayout.compute(graph, hierarchy, params);
+            if (alternate.layout().positions().size() != nodes
+                || alternate.diagnostics().nearBoundaryCount() != 0)
+                throw new AssertionError("Invalid alternate placement: " + placement);
+            System.out.printf(Locale.ROOT, "Placement %s %.1f ms | max radius %.4f | "
+                + "weighted link angle %.3f -> %.3f%n", placement,
+                (System.nanoTime() - alternateStart) / 1e6,
+                alternate.diagnostics().maxChartRadius(),
+                alternate.diagnostics().linkedTopLevelAngleBefore(),
+                alternate.diagnostics().linkedTopLevelAngleAfter());
+        }
         for (int level = 0; level < hierarchy.levels().size(); level++) {
             long aggregateStart = System.nanoTime();
             ContextGraphCommunityEdgeAggregation aggregation =

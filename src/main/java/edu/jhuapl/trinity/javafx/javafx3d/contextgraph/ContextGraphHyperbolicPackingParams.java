@@ -11,6 +11,8 @@ public record ContextGraphHyperbolicPackingParams(
     public enum Placement {
         SEMANTIC_HIERARCHY("Multilevel semantic hierarchy"),
         RELATIONSHIP_AWARE("Relationship-aware communities"),
+        SPECTRAL("Spectral community embedding"),
+        GRAPH_DISTANCE_RADIAL("Graph-distance radial communities"),
         STRUCTURAL_BACKBONE("Classic Poincare (4B-A default)");
         private final String label;
         Placement(String label) { this.label = label; }

@@ -51,6 +51,19 @@ public final class ContextGraphCommunitySpatialLayout {
             classic ? Double.NaN : packed.linkAngleAfter()));
     }
 
+    private static double[][] arrangeByMethod(ContextGraphCommunityConnectivity connectivity,
+                                               ContextGraphHyperbolicPackingParams.Placement mode,
+                                               int level, List<Integer> ids, double[][] initial,
+                                               double[] axis, double maxAngle) {
+        return switch (mode) {
+            case SPECTRAL -> ContextGraphAdditionalPlacement.spectral(
+                connectivity.linksAt(level), ids, initial, axis, maxAngle);
+            case GRAPH_DISTANCE_RADIAL -> ContextGraphAdditionalPlacement.graphDistanceRadial(
+                connectivity.linksAt(level), ids, initial, axis, maxAngle);
+            default -> connectivity.arrange(level, ids, initial, axis, maxAngle);
+        };
+    }
+
     private static double budgetFactor(ContextGraphCommunityHierarchy hierarchy,
                                        ContextGraphHyperbolicPackingParams params) {
         if (params.placement() == ContextGraphHyperbolicPackingParams.Placement.STRUCTURAL_BACKBONE)
@@ -74,6 +87,8 @@ public final class ContextGraphCommunitySpatialLayout {
         double factor = budgetFactor(hierarchy, params);
         ContextGraphCommunityConnectivity connectivity = params.placement()
             == ContextGraphHyperbolicPackingParams.Placement.RELATIONSHIP_AWARE
+                || params.placement() == ContextGraphHyperbolicPackingParams.Placement.SPECTRAL
+                || params.placement() == ContextGraphHyperbolicPackingParams.Placement.GRAPH_DISTANCE_RADIAL
                 ? ContextGraphCommunityConnectivity.from(graph, hierarchy) : null;
 
         double[][][] centers = new double[levels.size()][][];
@@ -98,7 +113,8 @@ public final class ContextGraphCommunitySpatialLayout {
         if (connectivity != null) {
             linkAngleBefore = ContextGraphCommunityConnectivity.weightedAngularDistance(
                 rootDirections, rootIds, connectivity.linksAt(top));
-            rootDirections = connectivity.arrange(top, rootIds, rootDirections, null, Math.PI);
+            rootDirections = arrangeByMethod(connectivity, params.placement(),
+                top, rootIds, rootDirections, null, Math.PI);
             linkAngleAfter = ContextGraphCommunityConnectivity.weightedAngularDistance(
                 rootDirections, rootIds, connectivity.linksAt(top));
         }
@@ -133,8 +149,8 @@ public final class ContextGraphCommunitySpatialLayout {
                         Math.toRadians(params.angularSpreadDegrees()) * 0.5
                             + Math.toRadians(params.siblingGapDegrees())
                                 * Math.min(2.0, Math.sqrt(children.size()) / 2.0));
-                    childDirections = connectivity.arrange(level, children,
-                        childDirections, parentAxis, maxAngle);
+                    childDirections = arrangeByMethod(connectivity, params.placement(),
+                        level, children, childDirections, parentAxis, maxAngle);
                 }
                 for (int i = 0; i < children.size(); i++) {
                     int child = children.get(i);
