@@ -2,6 +2,8 @@ package edu.jhuapl.trinity.javafx.javafx3d.contextgraph;
 
 import javafx.geometry.Point3D;
 import javafx.scene.shape.CullFace;
+import javafx.scene.paint.PhongMaterial;
+import javafx.scene.paint.Color;
 import javafx.scene.shape.MeshView;
 import javafx.scene.shape.TriangleMesh;
 import javafx.scene.transform.Rotate;
@@ -16,6 +18,44 @@ public final class ContextGraphEdge3D extends MeshView {
     private final Rotate orientation = new Rotate();
     private final Scale dimensions = new Scale();
     private float radius;
+    private PhongMaterial baseMaterial;
+    private boolean selected;
+    private boolean hovered;
+    private boolean neighborhoodHighlighted;
+    private boolean neighborhoodDimmed;
+    private PhongMaterial neighborhoodHighlightMaterial;
+    private PhongMaterial neighborhoodDimMaterial;
+    private static final PhongMaterial HOVER_MATERIAL = new PhongMaterial(Color.LIGHTSKYBLUE);
+    private static final PhongMaterial SELECTED_MATERIAL = new PhongMaterial(Color.GOLD);
+
+    public void setBaseMaterial(PhongMaterial material) {
+        baseMaterial = material;
+        refreshMaterial();
+    }
+
+    public void select() { selected = true; refreshMaterial(); }
+    public void unselect() { selected = false; refreshMaterial(); }
+    public boolean isSelected() { return selected; }
+
+    public void setNeighborhoodState(boolean highlighted, boolean dimmed,
+                                     PhongMaterial highlightMaterial, PhongMaterial dimMaterial) {
+        if (neighborhoodHighlighted == highlighted && neighborhoodDimmed == dimmed
+            && neighborhoodHighlightMaterial == highlightMaterial
+            && neighborhoodDimMaterial == dimMaterial) return;
+        neighborhoodHighlighted = highlighted;
+        neighborhoodDimmed = dimmed;
+        neighborhoodHighlightMaterial = highlightMaterial;
+        neighborhoodDimMaterial = dimMaterial;
+        refreshMaterial();
+    }
+
+    private void refreshMaterial() {
+        setMaterial(selected ? SELECTED_MATERIAL : hovered ? HOVER_MATERIAL
+            : neighborhoodHighlighted && neighborhoodHighlightMaterial != null ? neighborhoodHighlightMaterial
+            : neighborhoodDimmed && neighborhoodDimMaterial != null ? neighborhoodDimMaterial
+            : baseMaterial);
+    }
+
 
     public ContextGraphEdge3D(float radius, int radialDivisions, int lengthDivisions) {
         if (!Float.isFinite(radius) || radius <= 0f) {
@@ -34,7 +74,9 @@ public final class ContextGraphEdge3D extends MeshView {
         dimensions.setX(radius);
         dimensions.setZ(radius);
         dimensions.setY(1.0);
-        setMouseTransparent(true);
+        setMouseTransparent(false);
+        setOnMouseEntered(e -> { hovered = true; refreshMaterial(); });
+        setOnMouseExited(e -> { hovered = false; refreshMaterial(); });
         // lengthDivisions retained for API compatibility; no axial subdivisions.
     }
 

@@ -12,7 +12,7 @@
 <AnchorPane style="-fx-background-color: #00000000;" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml"
             fx:controller="edu.jhuapl.trinity.javafx.controllers.AboutController">
     <children>
-        <ScrollPane fitToHeight="true" fitToWidth="true" hbarPolicy="NEVER" pannable="true">
+        <ScrollPane fitToHeight="true" fitToWidth="true" hbarPolicy="NEVER" pannable="true" AnchorPane.topAnchor="0.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
             <content>
                 <GridPane>
                     <columnConstraints>

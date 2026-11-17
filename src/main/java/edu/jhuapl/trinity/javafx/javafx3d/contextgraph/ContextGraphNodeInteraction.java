@@ -14,6 +14,10 @@ final class ContextGraphNodeInteraction {
     private Material selectedMaterial;
     private boolean selected;
     private boolean hoverEnabled;
+    private boolean neighborhoodHighlighted;
+    private boolean neighborhoodDimmed;
+    private Material neighborhoodHighlightMaterial;
+    private Material neighborhoodDimMaterial;
     private double expansionScale = 1.10;
     private double animationTimeMS = 100;
     private ScaleTransition transition;
@@ -24,32 +28,51 @@ final class ContextGraphNodeInteraction {
         this.normalMaterial = normalMaterial;
         this.selectedMaterial = selectedMaterial;
         this.hoverEnabled = hoverEnabled;
-        node.setMaterial(normalMaterial);
+        refreshMaterial();
         node.setOnMouseEntered(event -> { if (this.hoverEnabled) animate(expansionScale); });
         node.setOnMouseExited(event -> { if (this.hoverEnabled) animate(1.0); });
     }
 
     void setNormalMaterial(Material material) {
         normalMaterial = material;
-        if (!selected) node.setMaterial(material);
+        refreshMaterial();
     }
 
     void setSelectedMaterial(PhongMaterial material) {
         selectedMaterial = material;
-        if (selected) node.setMaterial(material);
+        refreshMaterial();
     }
 
     void select() {
         selected = true;
-        node.setMaterial(selectedMaterial);
+        refreshMaterial();
     }
 
     void unselect() {
         selected = false;
-        node.setMaterial(normalMaterial);
+        refreshMaterial();
     }
 
     boolean isSelected() { return selected; }
+
+    void setNeighborhoodState(boolean highlighted, boolean dimmed,
+                              Material highlightMaterial, Material dimMaterial) {
+        if (neighborhoodHighlighted == highlighted && neighborhoodDimmed == dimmed
+            && neighborhoodHighlightMaterial == highlightMaterial
+            && neighborhoodDimMaterial == dimMaterial) return;
+        neighborhoodHighlighted = highlighted;
+        neighborhoodDimmed = dimmed;
+        neighborhoodHighlightMaterial = highlightMaterial;
+        neighborhoodDimMaterial = dimMaterial;
+        refreshMaterial();
+    }
+
+    private void refreshMaterial() {
+        node.setMaterial(selected ? selectedMaterial
+            : neighborhoodHighlighted && neighborhoodHighlightMaterial != null ? neighborhoodHighlightMaterial
+            : neighborhoodDimmed && neighborhoodDimMaterial != null ? neighborhoodDimMaterial
+            : normalMaterial);
+    }
     void setHoverEnabled(boolean enabled) {
         hoverEnabled = enabled;
         if (!enabled) {

@@ -19,7 +19,7 @@
 <AnchorPane fx:id="root" style="-fx-background-color: #00000000;" xmlns="http://javafx.com/javafx" xmlns:fx="http://javafx.com/fxml/1"
             fx:controller="edu.jhuapl.trinity.javafx.controllers.AnalysisLogController">
     <children>
-        <BorderPane fx:id="majorPane" prefHeight="300.0" prefWidth="500.0">
+        <BorderPane fx:id="majorPane" prefHeight="300.0" prefWidth="500.0" AnchorPane.topAnchor="0.0" AnchorPane.bottomAnchor="0.0" AnchorPane.leftAnchor="0.0" AnchorPane.rightAnchor="0.0">
             <children>
             </children>
             <center>
