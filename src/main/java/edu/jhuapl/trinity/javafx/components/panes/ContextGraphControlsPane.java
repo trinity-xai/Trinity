@@ -4,6 +4,9 @@ import edu.jhuapl.trinity.javafx.components.GraphControlsView;
 import edu.jhuapl.trinity.javafx.components.GraphStyleControlsView;
 import edu.jhuapl.trinity.javafx.events.GraphEvent;
 import javafx.scene.control.Button;
+import javafx.scene.control.MenuButton;
+import javafx.scene.control.MenuItem;
+import edu.jhuapl.trinity.javafx.javafx3d.contextgraph.ContextGraphSceneReferenceControls;
 import edu.jhuapl.trinity.javafx.javafx3d.contextgraph.ContextGraphController;
 import edu.jhuapl.trinity.javafx.javafx3d.contextgraph.ContextGraph3DPane;
 import edu.jhuapl.trinity.javafx.javafx3d.contextgraph.ContextGraphProjectionMode;
@@ -23,10 +26,12 @@ import javafx.scene.control.ListView;
 import javafx.scene.control.ScrollPane;
 import javafx.scene.control.Separator;
 import javafx.scene.control.TextField;
+import javafx.scene.control.Tooltip;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.Tab;
 import javafx.scene.control.TabPane;
+import javafx.scene.control.TitledPane;
 import javafx.stage.Screen;
 import javafx.scene.Parent;
 import javafx.scene.Node;
@@ -37,13 +42,12 @@ import javafx.scene.layout.VBox;
 import javafx.util.StringConverter;
 
 import java.util.ArrayDeque;
-import java.util.ArrayList;
 import java.util.Locale;
 import java.util.List;
 
 /** Dedicated floating controls for the Context Graph view. */
 public final class ContextGraphControlsPane extends LitPathPane {
-    public static final String CONTROLS_LAYOUT_VERSION = "CG-M4B2-SEMANTIC-PACKING-DIAGNOSTICS-2026-11-12";
+    public static final String CONTROLS_LAYOUT_VERSION = "CG-PRIORITY1-OPAQUE-ILLUMINATION-GUI-2026-11-16";
 
     public ContextGraphControlsPane(Scene scene, Pane parent, ContextGraphController graphController,
                                     ContextGraph3DPane graphPane) {
@@ -93,7 +97,7 @@ public final class ContextGraphControlsPane extends LitPathPane {
             if (newValue != null) {
                 graphController.setCoordinateScale(newValue);
                 graphController.finishCoordinateScale();
-                graphPane.refreshPoincareBoundary();
+                graphPane.refreshSceneReferences();
             }
         });
         installCommitOnFocusLost(coordinateScale);
@@ -153,16 +157,20 @@ public final class ContextGraphControlsPane extends LitPathPane {
         selectionCallouts.setSelected(graphPane.isSelectionCalloutsEnabled());
         selectionCallouts.setOnAction(e -> graphPane.setSelectionCalloutsEnabled(selectionCallouts.isSelected()));
 
-        Button focusSelection = new Button("Focus Selection");
+        MenuButton neighborhoodActions = new MenuButton("Neighborhood Actions");
+        MenuItem focusSelection = new MenuItem("Selection");
         focusSelection.setOnAction(e -> graphPane.focusSelection());
-        Button focusNeighborhood = new Button("Focus Neighborhood");
+        MenuItem focusNeighborhood = new MenuItem("Neighborhood");
         focusNeighborhood.setOnAction(e -> graphPane.focusNeighborhood());
-        Button showAll = new Button("Show All (Keep Label/Edge Filters)");
+        MenuItem showAll = new MenuItem("Show All");
         showAll.setOnAction(e -> graphController.showAll());
+        neighborhoodActions.getItems().addAll(focusSelection, focusNeighborhood, showAll);
+        neighborhoodActions.setTooltip(new Tooltip("Focus the camera on a selection or neighborhood, "
+            + "or restore all entities (category and relationship filters stay active)."));
 
         Label neighborhoodSummary = new Label();
         Runnable updateSummary = () -> neighborhoodSummary.setText(
-            "Neighborhood: " + graphController.getNeighborhoodNodeCount() + " nodes / "
+            "Neighborhood Focus: " + graphController.getNeighborhoodNodeCount() + " nodes / "
                 + graphController.getNeighborhoodEdgeCount() + " edges");
         updateSummary.run();
         scene.addEventHandler(GraphEvent.GRAPH_NODE_CLICK, e -> updateSummary.run());
@@ -321,7 +329,7 @@ public final class ContextGraphControlsPane extends LitPathPane {
             highlightNeighborhood, dimOutsideNeighborhood,
             new Label("Neighborhood depth (graph hops)"), neighborhoodDepth,
             isolateSelection, selectionCallouts, neighborhoodSummary,
-            focusSelection, focusNeighborhood, showAll);
+            neighborhoodActions);
         explorationContent.setPadding(new Insets(12));
         ScrollPane explorationScroll = new ScrollPane(explorationContent);
         explorationScroll.setFitToWidth(true);
@@ -341,41 +349,23 @@ public final class ContextGraphControlsPane extends LitPathPane {
             if (projection.getValue() != graphController.getProjectionMode())
                 graphController.setProjectionMode(projection.getValue());
         });
-        Button recenter = new Button("Reset Hyperbolic Focus");
-        recenter.setOnAction(e -> graphController.resetHyperbolicFocus());
-        Button focusHyperbolic = new Button("Recenter on Selection");
+        // Consolidated actions retain their existing handlers. The menu is not a
+        // selector: choosing an item immediately invokes its original action.
+        MenuButton projectionActions = new MenuButton("Projection Actions");
+        MenuItem focusHyperbolic = new MenuItem("Recenter on Selection");
         focusHyperbolic.setOnAction(e -> graphPane.focusSelection());
-        Label projectionInfo = new Label("Hyperbolic positions are computed by Trinity from actual graph links.\n"
-            + "No imported layout coordinates or hierarchy annotations are used.\n"
-            + "All semantic cross-links remain available in the graph.\n"
-            + "Curved geodesic edges are not yet enabled.");
-        projectionInfo.setWrapText(true);
-        Label distanceInfo = new Label();
-        Runnable updateDistance = () -> {
-            var edge = graphController.getSelectedEdge();
-            double d = edge == null ? Double.NaN
-                : graphController.hyperbolicDistance(edge.getStartID(), edge.getEndID());
-            distanceInfo.setText(Double.isFinite(d)
-                ? String.format(Locale.ROOT, "Selected edge hyperbolic distance: %.4f", d)
-                : "Select an edge to inspect hyperbolic distance");
-        };
-        updateDistance.run();
-        scene.addEventHandler(GraphEvent.GRAPH_PROJECTION_APPLIED, e -> {
-            projection.setValue(graphController.getProjectionMode());
-            updateDistance.run();
-        });
+        MenuItem recenter = new MenuItem("Reset Hyperbolic Focus");
+        recenter.setOnAction(e -> graphController.resetHyperbolicFocus());
+        MenuItem clearGraphData = new MenuItem("Clear Data");
+        clearGraphData.setOnAction(e -> graphPane.clearData());
+        projectionActions.getItems().addAll(focusHyperbolic, recenter, clearGraphData);
+        scene.addEventHandler(GraphEvent.GRAPH_PROJECTION_APPLIED, e ->
+            projection.setValue(graphController.getProjectionMode()));
         scene.addEventHandler(GraphEvent.GRAPH_PROJECTION_FAILED, e ->
             projection.setValue(graphController.getProjectionMode()));
-        scene.addEventHandler(GraphEvent.GRAPH_EDGE_CLICK, e -> updateDistance.run());
         scene.addEventHandler(GraphEvent.NEW_GRAPHDIRECTED_COLLECTION, e ->
-            javafx.application.Platform.runLater(() -> {
-                projection.setValue(graphController.getProjectionMode());
-                updateDistance.run();
-            }));
-        CheckBox showPoincareBoundary = new CheckBox("Show Poincare ball boundary");
-        showPoincareBoundary.setSelected(graphPane.isPoincareBoundaryVisible());
-        showPoincareBoundary.setOnAction(e ->
-            graphPane.setPoincareBoundaryVisible(showPoincareBoundary.isSelected()));
+            javafx.application.Platform.runLater(() ->
+                projection.setValue(graphController.getProjectionMode())));
 
         // A semantic hierarchy is computed from original topology, independent of source
         // containment and Euclidean coordinates. Changes apply only on Recompute.
@@ -398,79 +388,47 @@ public final class ContextGraphControlsPane extends LitPathPane {
         targetCommunitySize.setValue(initial.targetCommunitySize() == 0
             ? "Auto" : Integer.toString(initial.targetCommunitySize()));
         sizeCommunityControl(targetCommunitySize);
-        Spinner<Double> adminWeight = new Spinner<>(0.01, 10.0,
-            initial.administrativeWeight(), 0.01);
-        Spinner<Double> structuralWeight = new Spinner<>(0.01, 10.0,
-            initial.structuralWeight(), 0.05);
-        Spinner<Double> semanticWeight = new Spinner<>(0.01, 10.0,
-            initial.semanticWeight(), 0.05);
-        for (Spinner<Double> spinner : List.of(adminWeight, structuralWeight, semanticWeight)) {
-            spinner.setEditable(true);
-            sizeCommunityControl(spinner);
-            installCommitOnFocusLost(spinner);
-        }
         Runnable updateAlgorithmFields = () -> {
             boolean legacy = communityAlgorithm.getValue()
                 == ContextGraphCommunityParams.Algorithm.LEGACY;
             communityResolution.setDisable(legacy);
             maximumLevels.setDisable(legacy);
             targetCommunitySize.setDisable(legacy);
-            adminWeight.setDisable(legacy);
-            structuralWeight.setDisable(legacy);
-            semanticWeight.setDisable(legacy);
         };
         communityAlgorithm.setOnAction(e -> updateAlgorithmFields.run());
         updateAlgorithmFields.run();
-        Button recomputeCommunities = new Button("Recompute Community Hierarchy");
+        Button recomputeCommunities = new Button("Recompute");
         recomputeCommunities.setMinWidth(0);
         recomputeCommunities.setPrefWidth(260);
         recomputeCommunities.setMaxWidth(260);
-        Label communityDiagnostics = new Label();
-        communityDiagnostics.setWrapText(true);
-        communityDiagnostics.setMinWidth(0);
-        communityDiagnostics.setPrefWidth(0);
-        communityDiagnostics.setMaxWidth(Double.MAX_VALUE);
-        Runnable updateCommunities = () -> communityDiagnostics.setText(graphController.getCommunityStatus());
-        updateCommunities.run();
         recomputeCommunities.setOnAction(e -> {
+            // Removed relationship-weight controls do not change detector semantics.
+            ContextGraphCommunityParams active = graphController.getCommunityParams();
             ContextGraphCommunityParams revised = new ContextGraphCommunityParams(
                 communityAlgorithm.getValue(), communityResolution.getValue(),
                 "Auto".equals(maximumLevels.getValue()) ? 0
                     : Integer.parseInt(maximumLevels.getValue()),
                 "Auto".equals(targetCommunitySize.getValue()) ? 0
                     : Integer.parseInt(targetCommunitySize.getValue()),
-                adminWeight.getValue(), structuralWeight.getValue(), semanticWeight.getValue());
+                active.administrativeWeight(), active.structuralWeight(), active.semanticWeight());
             if (revised.equals(graphController.getCommunityParams()))
                 graphController.recomputeCommunityHierarchy();
             else graphController.setCommunityParams(revised);
         });
-        scene.addEventHandler(GraphEvent.GRAPH_COMMUNITY_HIERARCHY_CHANGED,
-            e -> updateCommunities.run());
         scene.addEventHandler(GraphEvent.GRAPH_DATA_CLEARED, e -> {
             ContextGraphCommunityParams defaults = graphController.getCommunityParams();
             communityAlgorithm.setValue(defaults.algorithm());
             communityResolution.getValueFactory().setValue(defaults.resolution());
             maximumLevels.setValue("Auto");
             targetCommunitySize.setValue("Auto");
-            adminWeight.getValueFactory().setValue(defaults.administrativeWeight());
-            structuralWeight.getValueFactory().setValue(defaults.structuralWeight());
-            semanticWeight.getValueFactory().setValue(defaults.semanticWeight());
             updateAlgorithmFields.run();
-            updateCommunities.run();
         });
-        VBox communityPanel = new VBox(8, new Label("Community Hierarchy"),
+        VBox communityPanel = new VBox(8,
             new Label("Community detector"), communityAlgorithm,
             new Label("Resolution γ (1.0 = standard weighted modularity)"), communityResolution,
             new Label("Maximum computed levels (not visible detail)"), maximumLevels,
             new Label("Preferred layout group size (not a hard constraint)"), targetCommunitySize,
-            new Label("Relationship weights: administrative"), adminWeight,
-            new Label("Structural / containment"), structuralWeight,
-            new Label("Semantic / ordinary"), semanticWeight,
-            new Label("Auto selects multilevel Louvain. Maximum Levels Auto stops on "
-                + "convergence or after 32 levels. Legacy uses fixed historical weights "
-                + "and returns a single partition. Target size selects the computed level "
-                + "whose mean community size is closest; Auto uses the finest level."),
-            recomputeCommunities, new Separator(), communityDiagnostics);
+            recomputeCommunities);
         ContextGraphHyperbolicPackingParams initialPacking = graphController.getPackingParams();
         ComboBox<ContextGraphHyperbolicPackingParams.Placement> placementMode = new ComboBox<>();
         placementMode.getItems().addAll(ContextGraphHyperbolicPackingParams.Placement.values());
@@ -482,42 +440,15 @@ public final class ContextGraphControlsPane extends LitPathPane {
         sizeCommunityControl(angularAllocation);
         Spinner<Double> angularSpread = new Spinner<>(20.0, 150.0,
             initialPacking.angularSpreadDegrees(), 5.0);
-        Spinner<Double> siblingGap = new Spinner<>(0.0, 25.0,
-            initialPacking.siblingGapDegrees(), 1.0);
-        Spinner<Double> massInfluence = new Spinner<>(0.0, 1.0,
-            initialPacking.massInfluence(), 0.05);
-        Spinner<Double> radialStep = new Spinner<>(0.15, 2.0,
-            initialPacking.radialStep(), 0.05);
-        for (Spinner<Double> spinner : List.of(angularSpread, siblingGap, massInfluence, radialStep)) {
-            spinner.setEditable(true);
-            sizeCommunityControl(spinner);
-            installCommitOnFocusLost(spinner);
-        }
-        ComboBox<ContextGraphHyperbolicPackingParams.RadialProfile> radialProfile = new ComboBox<>();
-        radialProfile.getItems().addAll(ContextGraphHyperbolicPackingParams.RadialProfile.values());
-        radialProfile.setValue(initialPacking.radialProfile());
-        sizeCommunityControl(radialProfile);
-        TextField customSteps = new TextField("1.0, 0.85, 0.70, 0.55");
-        customSteps.setPrefWidth(300);
-        customSteps.setMaxWidth(300);
-        customSteps.setPromptText("Hyperbolic steps: outer, intermediate, inner, entities...");
-        if (!initialPacking.customSteps().isEmpty())
-            customSteps.setText(initialPacking.customSteps().stream()
-                .map(String::valueOf).collect(java.util.stream.Collectors.joining(", ")));
+        angularSpread.setEditable(true);
+        sizeCommunityControl(angularSpread);
+        installCommitOnFocusLost(angularSpread);
         Runnable updatePackingFields = () -> {
             boolean structural = placementMode.getValue()
                 == ContextGraphHyperbolicPackingParams.Placement.STRUCTURAL_BACKBONE;
             angularAllocation.setDisable(structural);
             angularSpread.setDisable(structural);
-            siblingGap.setDisable(structural);
-            massInfluence.setDisable(structural);
-            radialProfile.setDisable(structural);
-            radialStep.setDisable(structural || radialProfile.getValue()
-                == ContextGraphHyperbolicPackingParams.RadialProfile.CUSTOM);
-            customSteps.setDisable(structural || radialProfile.getValue()
-                != ContextGraphHyperbolicPackingParams.RadialProfile.CUSTOM);
         };
-        radialProfile.setOnAction(e -> updatePackingFields.run());
         placementMode.setOnAction(e -> updatePackingFields.run());
         updatePackingFields.run();
         Label packingError = new Label();
@@ -525,16 +456,13 @@ public final class ContextGraphControlsPane extends LitPathPane {
         Button applyPacking = new Button("Apply Layout");
         applyPacking.setOnAction(e -> {
             try {
-                List<Double> custom = new ArrayList<>();
-                if (radialProfile.getValue() == ContextGraphHyperbolicPackingParams.RadialProfile.CUSTOM) {
-                    for (String token : customSteps.getText().split(","))
-                        custom.add(Double.parseDouble(token.trim()));
-                }
+                // Keep hidden packing parameters exactly as they currently exist.
+                ContextGraphHyperbolicPackingParams active = graphController.getPackingParams();
                 ContextGraphHyperbolicPackingParams updated =
                     new ContextGraphHyperbolicPackingParams(placementMode.getValue(),
                         angularAllocation.getValue(), angularSpread.getValue(),
-                        siblingGap.getValue(), massInfluence.getValue(),
-                        radialProfile.getValue(), radialStep.getValue(), custom);
+                        active.siblingGapDegrees(), active.massInfluence(),
+                        active.radialProfile(), active.radialStep(), active.customSteps());
                 packingError.setText("");
                 graphController.setPackingParams(updated);
             } catch (IllegalArgumentException invalid) {
@@ -574,16 +502,26 @@ public final class ContextGraphControlsPane extends LitPathPane {
                 updatingLevel[0] = false;
             }
         };
-        Button exploreContext = new Button("Explore Selected");
+        // Community navigation belongs with entity exploration, not with detection
+        // parameters and spatial packing. This reuses the existing controller actions:
+        // graph-hop exploration and semantic context are distinct workflows.
+        Button exploreContext = new Button("Explore Community");
+        exploreContext.setTooltip(new Tooltip("Select an original node in the graph or Search tab. "
+            + "Explore scopes summarized community relationships to its community "
+            + "and advances to a finer level; node visibility is unchanged."));
         Button backContext = new Button("Back");
-        Button globalContext = new Button("Global");
+        backContext.setTooltip(new Tooltip("Restore the previous community resolution, "
+            + "hyperbolic focus, and relationship display mode."));
+        Button globalContext = new Button("Global Context");
+        globalContext.setTooltip(new Tooltip("Return to the coarsest community resolution "
+            + "and restore the relationship display mode used before exploring."));
         Label contextNavigationStatus = new Label(graphController.getContextNavigationStatus());
         contextNavigationStatus.setWrapText(true);
         Runnable updateContextNav = () -> {
             contextNavigationStatus.setText(graphController.getContextNavigationStatus());
             exploreContext.setDisable(!graphController.canExploreSelectedContext());
             backContext.setDisable(!graphController.canReturnToPreviousContext());
-            globalContext.setDisable(graphController.getCommunityHierarchy() == null);
+            globalContext.setDisable(graphController.isAtGlobalContext());
         };
         exploreContext.setOnAction(e -> {
             if (graphController.exploreSelectedContext()) updateDiagnosticLevels.run();
@@ -599,9 +537,25 @@ public final class ContextGraphControlsPane extends LitPathPane {
             updateContextNav.run();
         });
         HBox contextNavigationControls = new HBox(8, exploreContext, backContext, globalContext);
+        contextNavigationStatus.setMinWidth(0);
+        contextNavigationStatus.setMaxWidth(Double.MAX_VALUE);
+        // The Exploration tab is the common home for structural neighborhood tools
+        // and semantic-resolution navigation. Keep them visually distinct, since
+        // exploring graph hops is not the same operation as exploring communities.
+        Label semanticContextHelp = new Label("Community resolution filters summarized "
+            + "relationships without hiding original nodes. Graph-hop neighborhood "
+            + "tools above remain independent.");
+        semanticContextHelp.setWrapText(true);
+        semanticContextHelp.setMinWidth(0);
+        semanticContextHelp.setMaxWidth(Double.MAX_VALUE);
+        explorationContent.getChildren().addAll(new Separator(),
+            new Label("Semantic Context (community resolution)"),
+            contextNavigationControls, contextNavigationStatus, semanticContextHelp);
         updateContextNav.run();
         scene.addEventHandler(GraphEvent.GRAPH_EXPLORATION_STATE_CHANGED, e -> updateContextNav.run());
         scene.addEventHandler(GraphEvent.GRAPH_COMMUNITY_HIERARCHY_CHANGED, e -> updateContextNav.run());
+        scene.addEventHandler(GraphEvent.GRAPH_NODE_CLICK, e -> updateContextNav.run());
+        scene.addEventHandler(GraphEvent.GRAPH_EDGE_CLICK, e -> updateContextNav.run());
         scene.addEventHandler(GraphEvent.GRAPH_DATA_CLEARED, e -> updateContextNav.run());
         updateDiagnosticLevels.run();
         scene.addEventHandler(GraphEvent.GRAPH_COMMUNITY_HIERARCHY_CHANGED,
@@ -611,11 +565,6 @@ public final class ContextGraphControlsPane extends LitPathPane {
             placementMode.setValue(defaults.placement());
             angularAllocation.setValue(defaults.allocation());
             angularSpread.getValueFactory().setValue(defaults.angularSpreadDegrees());
-            siblingGap.getValueFactory().setValue(defaults.siblingGapDegrees());
-            massInfluence.getValueFactory().setValue(defaults.massInfluence());
-            radialProfile.setValue(defaults.radialProfile());
-            radialStep.getValueFactory().setValue(defaults.radialStep());
-            customSteps.setText("1.0, 0.85, 0.70, 0.55");
             packingError.setText("");
             updatePackingFields.run();
             updateDiagnosticLevels.run();
@@ -623,23 +572,9 @@ public final class ContextGraphControlsPane extends LitPathPane {
         communityPanel.getChildren().addAll(new Separator(),
             new Label("Community coloring (diagnostic, not FactorLabel)"),
             communityColors, new Label("Context resolution (colors / summarized relationships)"), diagnosticLevel,
-            contextNavigationControls, contextNavigationStatus,
-            new Label("Explore Selected focuses the chosen entity and summarizes its community "
-                + "links at finer resolution. Back restores the previous context and focus; "
-                + "Global restores the overview. Original entities stay visible."),
-            new Label("Spatial layout: Classic 4B-A (default), multilevel spherical, "
-                + "relationship-aware, spectral, and graph-distance radial."),
             new Label("Placement strategy"), placementMode,
             new Label("Angular allocation"), angularAllocation,
             new Label("Branch angular spread (degrees)"), angularSpread,
-            new Label("Desired sibling gap (degrees, not guaranteed)"), siblingGap,
-            new Label("Subtree mass influence (0=equal, 1=population)"), massInfluence,
-            new Label("Radial spacing profile"), radialProfile,
-            new Label("Global parent-child hyperbolic step"), radialStep,
-            new Label("Custom hyperbolic steps per layer, comma-separated"), customSteps,
-            new Label("Layers run from coarse communities to finer communities to entities. "
-                + "Distances are hyperbolic, not JavaFX display scale; an automatic cumulative "
-                + "distance budget prevents boundary saturation. Geometry updates reuse cached detection."),
             applyPacking, packingError);
         communityPanel.setPadding(new Insets(12));
         communityPanel.setMinWidth(0);
@@ -659,16 +594,25 @@ public final class ContextGraphControlsPane extends LitPathPane {
         communityScroll.setHbarPolicy(ScrollPane.ScrollBarPolicy.NEVER);
         communityScroll.setMinSize(0, 0);
 
-        Button clearGraphData = new Button("Clear Data");
-        clearGraphData.setOnAction(e -> graphPane.clearData());
-        VBox projectionContent = new VBox(12, new Label("Coordinate projection"), projection,
-            showPoincareBoundary, focusHyperbolic, recenter, clearGraphData, distanceInfo, projectionInfo,
-            new Separator(), new Label("Graph layout (Euclidean projection)"),
-            new Label("These layouts do not replace Trinity's computed Poincare hierarchy."),
-            new GraphControlsView(scene));
+        TitledPane graphLayoutSettings = new TitledPane("Graph Layout Settings",
+            new GraphControlsView(scene, true));
+        graphLayoutSettings.setExpanded(false);
+        graphLayoutSettings.setMaxWidth(Double.MAX_VALUE);
+        VBox projectionContent = new VBox(12,
+            new Label("Coordinate projection"), projection, projectionActions,
+            new Separator(), graphLayoutSettings,
+            new Separator(),
+            new ContextGraphSceneReferenceControls(graphPane.getSceneReferences(),
+                graphPane::refreshCartesianGridSizing));
         projectionContent.setPadding(new Insets(12));
+        projectionContent.setFillWidth(true);
+        projectionContent.setMinWidth(0);
         for (javafx.scene.Node item : projectionContent.getChildren()) {
-            if (item instanceof Label label) label.setWrapText(true);
+            if (item instanceof Label label) {
+                label.setWrapText(true);
+                label.setPrefWidth(215);
+                label.setMinWidth(0);
+            }
         }
         ScrollPane projectionScroll = new ScrollPane(projectionContent);
         projectionScroll.setFitToWidth(true);
@@ -721,13 +665,18 @@ public final class ContextGraphControlsPane extends LitPathPane {
             if (node instanceof ComboBox<?> || node instanceof ChoiceBox<?>) {
                 Control c = (Control) node;
                 c.setMinWidth(0);
-                c.setPrefWidth(240);
-                c.setMaxWidth(240);
+                // Preserve explicit smaller widths (e.g., the advanced grid style
+                // selector) instead of replacing every preferred width with 240.
+                double preferred = c.getPrefWidth();
+                double target = preferred > 0 ? Math.min(preferred, 240) : 240;
+                c.setPrefWidth(target);
+                c.setMaxWidth(target);
             } else if (node instanceof Spinner<?> spinner) {
                 spinner.setMinWidth(0);
                 double preferred = spinner.getPrefWidth();
-                spinner.setPrefWidth(preferred > 0 ? Math.min(preferred, 240) : 180);
-                spinner.setMaxWidth(240);
+                double target = preferred > 0 ? Math.min(preferred, 240) : 180;
+                spinner.setPrefWidth(target);
+                spinner.setMaxWidth(target);
             }
             // Tab and ScrollPane content is not part of the Parent child list
             // until a JavaFX skin is installed. Visit it explicitly now.
@@ -738,6 +687,8 @@ public final class ContextGraphControlsPane extends LitPathPane {
             }
             if (node instanceof ScrollPane scroll && scroll.getContent() != null)
                 pending.addLast(scroll.getContent());
+            if (node instanceof TitledPane titled && titled.getContent() != null)
+                pending.addLast(titled.getContent());
             if (node instanceof Parent parent)
                 pending.addAll(parent.getChildrenUnmodifiable());
         }

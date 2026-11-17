@@ -350,9 +350,11 @@ public final class GraphStyleControlsView extends VBox {
 
     private static void addRow(GridPane gp, int row, String label, javafx.scene.Node control) {
         Label l = new Label(label);
+        l.setPrefWidth(125);
+        l.setMinWidth(0);
         gp.add(l, 0, row);
 
-        if (control instanceof Spinner || control instanceof ComboBox) {
+        if (control instanceof Spinner || control instanceof ComboBox || control instanceof ColorPicker) {
             GridPane.setHgrow(control, Priority.NEVER);
         } else {
             GridPane.setHgrow(control, Priority.ALWAYS);

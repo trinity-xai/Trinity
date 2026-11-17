@@ -58,6 +58,8 @@ public class ContextGraph3DPane extends StackPane {
     private final Group world = new Group();
     // Visual boundary of the computed Poincare chart, not a graph entity.
     private final Sphere poincareBoundary;
+    /** Stable, non-pickable world reference layer, separate from graph data. */
+    private final ContextGraphReferenceGrid3D sceneReferences = new ContextGraphReferenceGrid3D();
     private boolean showPoincareBoundary = false;
     private final CameraTransformer cameraTransform = new CameraTransformer();
     private final PerspectiveCamera camera = new PerspectiveCamera(true);
@@ -116,7 +118,8 @@ public class ContextGraph3DPane extends StackPane {
         pointLight.setTranslateZ(-900);
         cameraTransform.getChildren().add(pointLight);
         world.getChildren().addAll(cameraTransform, new AmbientLight(Color.color(0.65, 0.65, 0.65)),
-            graphController.getGraphLayer());
+            sceneReferences, graphController.getGraphLayer());
+        refreshSceneReferences();
         subScene = new SubScene(world, 800, 600, true, SceneAntialiasing.BALANCED);
         subScene.setFill(Color.rgb(8, 12, 22));
         subScene.setCamera(camera);
@@ -161,7 +164,7 @@ public class ContextGraph3DPane extends StackPane {
                 displayedProjectionMode = mode;
                 frameGraph(graphController.getCurrentGraph());
             }
-            refreshPoincareBoundary();
+            refreshSceneReferences();
             if (mode.isHyperbolic()) {
                 // Orbital center is the Poincare origin after Mobius recentering.
                 cameraTransform.setTranslate(0.0, 0.0, 0.0);
@@ -169,6 +172,10 @@ public class ContextGraph3DPane extends StackPane {
                 camera.setTranslateY(0.0);
             }
         });
+        scene.addEventHandler(GraphEvent.GRAPH_LAYOUT_APPLIED, e ->
+            refreshCartesianGridFromData());
+        scene.addEventHandler(GraphEvent.GRAPH_COMMUNITY_HIERARCHY_CHANGED, e ->
+            refreshCartesianGridFromData());
         scene.addEventHandler(GraphEvent.GRAPH_PROJECTION_FAILED, e -> {
             ContextGraphProjectionMode mode = graphController.getProjectionMode();
             for (int i = 0; i < ContextGraphProjectionMode.values().length; i++) {
@@ -176,6 +183,8 @@ public class ContextGraph3DPane extends StackPane {
                     ContextGraphProjectionMode.values()[i] == mode);
             }
         });
+        CheckMenuItem gridVisibleItem = new CheckMenuItem("Show Reference Grid");
+        gridVisibleItem.selectedProperty().bindBidirectional(sceneReferences.visibleProperty());
         MenuItem clearDataItem = new MenuItem("Clear Data");
         clearDataItem.setOnAction(e -> clearData());
         MenuItem showAllItem = new MenuItem("Show All (Category Filters Retained)");
@@ -186,7 +195,8 @@ public class ContextGraph3DPane extends StackPane {
         CheckMenuItem diffuseTestItem = new CheckMenuItem("Diagnostic: Opaque Diffuse Materials");
         diffuseTestItem.setOnAction(e -> graphController.setDiagnosticDiffuseMaterials(diffuseTestItem.isSelected()));
         graphMenu.getItems().addAll(controlsItem, navigatorItem, projections, fitItem,
-            focusSelectedItem, focusNeighborhoodItem, showAllItem, clearDataItem, diffuseTestItem);
+            focusSelectedItem, focusNeighborhoodItem, showAllItem, gridVisibleItem,
+            clearDataItem, diffuseTestItem);
         subScene.setOnContextMenuRequested(e -> {
             graphMenu.show(subScene, e.getScreenX(), e.getScreenY());
             e.consume();
@@ -294,6 +304,7 @@ public class ContextGraph3DPane extends StackPane {
                 // hyperbolic chart is prepared; the completed event will re-fit the chart.
                 displayedProjectionMode = ContextGraphProjectionMode.EUCLIDEAN;
                 graphController.loadGraph(graph);
+                refreshSceneReferences();
                 updateSelectionCallouts();
                 long frameStart = System.nanoTime();
                 frameGraph(graph);
@@ -340,7 +351,7 @@ public class ContextGraph3DPane extends StackPane {
         displayedProjectionMode = ContextGraphProjectionMode.EUCLIDEAN;
         lastHoveredNodeId = null;
         lastHoveredEdge = null;
-        refreshPoincareBoundary();
+        refreshSceneReferences();
     }
 
     private void showGraphControls(Scene scene) {
@@ -356,6 +367,43 @@ public class ContextGraph3DPane extends StackPane {
         scene.getRoot().fireEvent(new GraphEvent(GraphEvent.SET_STYLE_GUI,
             edu.jhuapl.trinity.utils.graph.GraphStyleParams.copyOf(graphController.getStyleParams())));
         graphController.syncVisibilityGui();
+    }
+
+    public ContextGraphReferenceGrid3D getSceneReferences() { return sceneReferences; }
+
+    public void refreshCartesianGridSizing() { refreshCartesianGridFromData(); }
+
+    /** Reconcile grid type/radius with the currently displayed projection. */
+    public void refreshSceneReferences() {
+        sceneReferences.setHyperbolic(graphController.getProjectionMode().isHyperbolic());
+        double radius = graphController.getHyperbolicDisplayRadius();
+        if (Double.isFinite(radius) && radius > 0.0)
+            sceneReferences.setHyperbolicRadius(radius);
+        refreshCartesianGridFromData();
+        refreshPoincareBoundary();
+    }
+
+    /** Size the Cartesian plane from displayed node positions, excluding scene references. */
+    private void refreshCartesianGridFromData() {
+        // Cache source bounds even in manual mode; only auto-fit applies them.
+        var graph = graphController.getCurrentGraph();
+        if (graph == null || graph.getNodes() == null || graph.getNodes().isEmpty()) {
+            sceneReferences.updateCartesianBounds(ContextGraphCartesianGridBounds.empty());
+            return;
+        }
+        double minX = Double.POSITIVE_INFINITY, minY = minX, minZ = minX;
+        double maxX = Double.NEGATIVE_INFINITY, maxY = maxX, maxZ = maxX;
+        for (GraphNode node : graph.getNodes()) {
+            if (node == null) continue;
+            double[] p = graphController.getDisplayedPosition(node);
+            if (p == null || p.length < 3 || !Double.isFinite(p[0])
+                    || !Double.isFinite(p[1]) || !Double.isFinite(p[2])) continue;
+            minX = Math.min(minX, p[0]); maxX = Math.max(maxX, p[0]);
+            minY = Math.min(minY, p[1]); maxY = Math.max(maxY, p[1]);
+            minZ = Math.min(minZ, p[2]); maxZ = Math.max(maxZ, p[2]);
+        }
+        sceneReferences.updateCartesianBounds(ContextGraphCartesianGridBounds.fromExtent(
+            minX, maxX, minY, maxY, minZ, maxZ));
     }
 
     /** Boundary is a visual reference only; it never participates in graph picking. */
@@ -733,6 +781,7 @@ public class ContextGraph3DPane extends StackPane {
 
     private void frameGraph(edu.jhuapl.trinity.data.graph.GraphDirectedCollection graph) {
         if (graph == null) return;
+        refreshCartesianGridFromData();
         if (graphController.getProjectionMode().isHyperbolic()) {
             frameHyperbolicBall();
         } else frameNodes(graph.getNodes());

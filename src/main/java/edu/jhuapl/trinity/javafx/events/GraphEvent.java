@@ -43,6 +43,9 @@ public class GraphEvent extends Event {
         new EventType<>(ANY, "GRAPH_EXPLORATION_STATE_CHANGED");
     public static final EventType<GraphEvent> GRAPH_COMMUNITY_HIERARCHY_CHANGED =
         new EventType<>(ANY, "GRAPH_COMMUNITY_HIERARCHY_CHANGED");
+    /** Euclidean graph layout positions have changed; scene decorations may refit. */
+    public static final EventType<GraphEvent> GRAPH_LAYOUT_APPLIED =
+        new EventType<>(ANY, "GRAPH_LAYOUT_APPLIED");
     public static final EventType<GraphEvent> GRAPH_PROJECTION_APPLIED =
         new EventType<>(ANY, "GRAPH_PROJECTION_APPLIED");
     public static final EventType<GraphEvent> GRAPH_PROJECTION_FAILED =

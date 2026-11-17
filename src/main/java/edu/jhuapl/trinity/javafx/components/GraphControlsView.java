@@ -68,9 +68,16 @@ public final class GraphControlsView extends VBox {
 
     private final GraphLayoutParams params;
     private final Scene scene;
+    private final boolean compactLayoutHeading;
 
     public GraphControlsView(Scene scene) {
+        this(scene, false);
+    }
+
+    /** Compact heading for Context Graph's collapsible Projection section only. */
+    public GraphControlsView(Scene scene, boolean compactLayoutHeading) {
         this.scene = scene;
+        this.compactLayoutHeading = compactLayoutHeading;
         this.params = new GraphLayoutParams(); // graph-only defaults
         this.params.radius = 30.0;
         setSpacing(10);
@@ -95,7 +102,8 @@ public final class GraphControlsView extends VBox {
     private Pane buildContent() {
         algorithmControls = new VBox(8);
         VBox root = new VBox(10,
-            titledBox("Layout", buildLayoutGrid()),
+            compactLayoutHeading ? titledBox("Layout Algorithm", buildLayoutGrid())
+                : titledBox("Layout", buildLayoutGrid()),
             algorithmControls,
             buildActionsBar()
         );
@@ -112,7 +120,9 @@ public final class GraphControlsView extends VBox {
         }
         layoutKindCombo.getSelectionModel().select(params.kind);
         styleCombo(layoutKindCombo);
-        addRow(gp, 0, "Algorithm", layoutKindCombo);
+        if (compactLayoutHeading) {
+            gp.add(layoutKindCombo, 0, 0, 2, 1);
+        } else addRow(gp, 0, "Algorithm", layoutKindCombo);
         layoutKindCombo.setOnAction(e -> {
             if (syncing || layoutKindCombo.getValue() == null) return;
             params.kind = layoutKindCombo.getValue();
