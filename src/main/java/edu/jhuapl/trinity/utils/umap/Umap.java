@@ -681,6 +681,8 @@ public class Umap {
     private boolean mVerbose = false;
     private boolean parallelPairwise = true;
     private Random mRandom = new Random(42);
+    // Null if caller supplied a Random instance whose initial seed is not known.
+    private Long mConfiguredSeed = 42L;
     private int mThreads = 1;
     private double mInitialAlpha;
     private int mRunNNeighbors;
@@ -924,6 +926,7 @@ public class Umap {
      */
     public void setRandom(final Random random) {
         mRandom = random;
+        mConfiguredSeed = null;
     }
 
     /**
@@ -933,6 +936,7 @@ public class Umap {
      */
     public void setSeed(final long seed) {
         mRandom.setSeed(seed);
+        mConfiguredSeed = seed;
     }
 
     /**
@@ -1064,6 +1068,12 @@ public class Umap {
             Utils.message("Starting fitting for " + instances.rows() + " instances with " + instances.cols() + " attributes");
         }
 
+        // Never expose the previous fit's graph or large-data KNN on a refit.
+        mGraph = null;
+        mKnnIndices = null;
+        mKnnDists = null;
+        mEmbedding = null;
+        mSearchGraph = null;
         mRawData = instances;
 
         // Handle all the optional arguments, setting default
@@ -1372,6 +1382,76 @@ public class Umap {
      */
     public double[][] transform(final double[][] instances) {
         return transform(new DefaultMatrix(instances)).toArray();
+    }
+
+    /**
+     * Capture the fit-time fuzzy graph and (when retained) original-space KNN
+     * relationships as detached immutable values tied to their input row IDs.
+     * Call after fitTransform completes and before refitting this Umap instance.
+     * Graph membership weights are associations, not cosine similarities.
+     *
+     * @param inputRowIds IDs in EXACTLY the order supplied to fitTransform
+     */
+    public UmapGraphSnapshot getGraphSnapshot(final List<String> inputRowIds) {
+        if (mGraph == null || mEmbedding == null) {
+            throw new IllegalStateException("UMAP has not completed a successful fit");
+        }
+        if (inputRowIds == null || inputRowIds.size() != mGraph.rows()
+            || mGraph.rows() != mGraph.cols()) {
+            throw new IllegalArgumentException("UMAP snapshot requires an ID for each input row");
+        }
+        // Avoid accidental dense conversion for large graphs.
+        if (!(mGraph instanceof CooMatrix coo)) {
+            throw new IllegalStateException("Unexpected non-COO UMAP graph representation");
+        }
+        int[] from = coo.row();
+        int[] to = coo.col();
+        double[] weights = coo.data();
+        List<UmapGraphSnapshot.WeightedEdge> edges = new java.util.ArrayList<>(weights.length);
+        for (int i = 0; i < weights.length; i++) {
+            if (from[i] != to[i] && weights[i] > 0) {
+                edges.add(new UmapGraphSnapshot.WeightedEdge(from[i], to[i], weights[i]));
+            }
+        }
+        List<UmapGraphSnapshot.MetricNeighbor> neighbors = new java.util.ArrayList<>();
+        if (mKnnIndices != null && mKnnDists != null) {
+            if (mKnnIndices.length != inputRowIds.size() || mKnnDists.length != inputRowIds.size()) {
+                throw new IllegalStateException("Retained UMAP KNN row count mismatch");
+            }
+            for (int row = 0; row < mKnnIndices.length; row++) {
+                if (mKnnIndices[row].length != mKnnDists[row].length) {
+                    throw new IllegalStateException("Retained UMAP KNN distance count mismatch at row " + row);
+                }
+                for (int index = 0; index < mKnnIndices[row].length; index++) {
+                    int other = mKnnIndices[row][index];
+                    double distance = mKnnDists[row][index];
+                    if (other >= 0 && other < inputRowIds.size() && other != row
+                        && Double.isFinite(distance) && distance >= 0) {
+                        neighbors.add(new UmapGraphSnapshot.MetricNeighbor(row, other, distance));
+                    }
+                }
+            }
+        }
+        java.util.Map<String, String> parameters = new java.util.LinkedHashMap<>();
+        parameters.put("metricClass", mMetric.getClass().getName());
+        parameters.put("configuredNeighbors", Integer.toString(mNNeighbors));
+        parameters.put("effectiveNeighbors", Integer.toString(mRunNNeighbors));
+        parameters.put("components", Integer.toString(mNComponents));
+        parameters.put("minDist", Double.toString(mMinDist));
+        parameters.put("spread", Double.toString(mSpread));
+        parameters.put("setOpMixRatio", Double.toString(mSetOpMixRatio));
+        parameters.put("localConnectivity", Integer.toString(mLocalConnectivity));
+        parameters.put("threads", Integer.toString(mThreads));
+        parameters.put("seed", mConfiguredSeed == null ? "externalRandom" : mConfiguredSeed.toString());
+        parameters.put("negativeSampleRate", Integer.toString(mNegativeSampleRate));
+        parameters.put("repulsionStrength", Double.toString(mRepulsionStrength));
+        parameters.put("learningRate", Double.toString(mLearningRate));
+        parameters.put("targetMetricClass", mTargetMetric.getClass().getName());
+        parameters.put("targetWeight", Double.toString(mTargetWeight));
+        parameters.put("parallelPairwise", Boolean.toString(parallelPairwise));
+        parameters.put("exactSmallDataBranch", Boolean.toString(mSmallData));
+        parameters.put("originalSpaceKnnRetained", Boolean.toString(mKnnIndices != null));
+        return new UmapGraphSnapshot(inputRowIds, edges, neighbors, parameters);
     }
 
     /**

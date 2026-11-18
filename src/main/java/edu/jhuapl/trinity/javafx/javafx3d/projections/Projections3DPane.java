@@ -11,6 +11,9 @@ import edu.jhuapl.trinity.data.Manifold;
 import edu.jhuapl.trinity.data.Trajectory;
 import edu.jhuapl.trinity.data.files.FeatureCollectionFile;
 import edu.jhuapl.trinity.data.files.GaussianMixtureCollectionFile;
+import edu.jhuapl.trinity.data.graph.GraphDirectedCollection;
+import edu.jhuapl.trinity.data.graph.construction.UmapFittedGraphData;
+import edu.jhuapl.trinity.data.graph.construction.UmapFuzzyGraphBuilder;
 import edu.jhuapl.trinity.data.messages.xai.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.data.messages.xai.GaussianMixture;
@@ -32,6 +35,7 @@ import edu.jhuapl.trinity.javafx.components.radial.AnimatedNeonCircle;
 import edu.jhuapl.trinity.javafx.components.radial.ViewControlsMenu;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.javafx.events.CommandTerminalEvent;
+import edu.jhuapl.trinity.javafx.events.GraphEvent;
 import edu.jhuapl.trinity.javafx.events.EffectEvent;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.events.HyperspaceEvent;
@@ -82,6 +86,7 @@ import javafx.concurrent.Task;
 import javafx.embed.swing.SwingFXUtils;
 import javafx.scene.AmbientLight;
 import javafx.scene.Group;
+import javafx.scene.Node;
 import javafx.scene.PerspectiveCamera;
 import javafx.scene.PointLight;
 import javafx.scene.Scene;
@@ -98,6 +103,7 @@ import javafx.scene.control.CustomMenuItem;
 import javafx.scene.control.Label;
 import javafx.scene.control.Menu;
 import javafx.scene.control.MenuItem;
+import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.Spinner;
 import javafx.scene.control.SpinnerValueFactory;
 import javafx.scene.control.ToggleButton;
@@ -198,6 +204,8 @@ public class Projections3DPane extends StackPane implements
     public boolean enableXForm = false;
     public boolean enableContextMenu = true;
 
+    // Set from the picked sphere when the shared subscene context menu opens.
+    private Sphere contextMenuOrbitTarget;
     public Sphere selectedSphereA = null;
     public Sphere selectedSphereB = null;
     public Manifold3D selectedManifoldA = null;
@@ -300,6 +308,14 @@ public class Projections3DPane extends StackPane implements
     public List<String> featureLabels = new ArrayList<>();
     public Scene scene;
     public Umap latestUmap = null;
+    // The last successful fit, paired with the input rows actually fitted. The
+    // 3D projection's mutable displayed feature list is NOT a suitable source.
+    private UmapFittedGraphData latestFittedUmapGraph;
+    private long umapFitGeneration;
+    private long umapGraphBuildGeneration;
+    private Task<GraphDirectedCollection> activeUmapGraphBuild;
+    private boolean umapGraphBuildBusy;
+
     Polygon lassoPolygon = new Polygon();
     Rectangle selectionRectangle;
     ProjectileSystem projectileSystem;
@@ -1042,11 +1058,71 @@ public class Projections3DPane extends StackPane implements
             centerLightItem, cameraLightItem,
             enableProjectionWallItem, animatingProjectionsItem, updatingTrajectoriesItem);
 
-        ContextMenu cm = new ContextMenu(selectPointsItem,
-            resetViewItem, manifoldsItem, radialItem, radarItem,
-            exportItem, analysisItem, navigatorItem,
-            clearCalloutsItem, clearProjectionItem, optionsMenu);
+        // One context-menu entry exposes the existing UMAP fuzzy graph as a
+        // separate derived Context Graph, without creating another controls tab.
+        Spinner<Double> fuzzyMinimum = new Spinner<>(
+            new SpinnerValueFactory.DoubleSpinnerValueFactory(0.0, 1.0, 0.25, 0.05));
+        fuzzyMinimum.setEditable(true);
+        fuzzyMinimum.setPrefWidth(130);
+        fuzzyMinimum.setMaxWidth(130);
+        MenuItem generateFuzzyGraph = new MenuItem("Generate Context Graph");
+        generateFuzzyGraph.setOnAction(e -> {
+            // Commit typed spinner values before using them.
+            double minimum;
+            try {
+                SpinnerValueFactory<Double> vf = fuzzyMinimum.getValueFactory();
+                Double parsed = vf.getConverter().fromString(fuzzyMinimum.getEditor().getText());
+                if (parsed == null || !Double.isFinite(parsed) || parsed < 0 || parsed > 1) {
+                    throw new IllegalArgumentException("Membership threshold must be between 0 and 1");
+                }
+                vf.setValue(parsed);
+                minimum = parsed;
+            } catch (RuntimeException invalid) {
+                CommandTerminalEvent.notifyTerminalWarning(
+                    "Invalid UMAP membership threshold: use a number from 0 to 1.", scene);
+                return;
+            }
+            generateContextGraphFromLastUmap(minimum);
+        });
+        Menu fuzzyGraphMenu = new Menu("UMAP to Context Graph");
+        fuzzyGraphMenu.getItems().addAll(
+            new CustomMenuItem(new VBox(4,
+                new Label("Minimum fuzzy membership (0-1)"), fuzzyMinimum), false),
+            generateFuzzyGraph);
+        // Keep the action visible in its submenu at every stage of a fit.
+        // Only the enabled state reflects whether fuzzy connectivity is usable.
+        fuzzyGraphMenu.setDisable(true);
+        generateFuzzyGraph.setDisable(true);
 
+        Menu projectionDataMenu = new Menu("Projection Data");
+        projectionDataMenu.getItems().addAll(
+            exportItem, clearProjectionItem, new SeparatorMenuItem(), fuzzyGraphMenu);
+
+        // The original point-specific context menu consumed right clicks and
+        // concealed the main menu whenever a projected sphere was clicked.
+        // Offer the point-specific Orbit action in the shared menu instead.
+        MenuItem orbitOnPointItem = new MenuItem("Orbit On Point");
+        orbitOnPointItem.setVisible(false);
+        orbitOnPointItem.setOnAction(e -> {
+            Sphere target = contextMenuOrbitTarget;
+            if (target == null || !sphereToFeatureVectorMap.containsKey(target)) return;
+            javafx.geometry.Point3D orbitPoint = new javafx.geometry.Point3D(
+                target.getTranslateX(), target.getTranslateY(), target.getTranslateZ());
+            JavaFX3DUtils.orbitAt(camera, cameraTransform, orbitPoint, true);
+        });
+
+        ContextMenu cm = new ContextMenu(orbitOnPointItem, selectPointsItem,
+            resetViewItem, manifoldsItem, radialItem, radarItem,
+            projectionDataMenu, analysisItem, navigatorItem,
+            clearCalloutsItem, optionsMenu);
+
+        Runnable refreshUmapMenuState = () -> {
+            boolean ready = latestFittedUmapGraph != null && !umapGraphBuildBusy;
+            fuzzyGraphMenu.setDisable(!ready);
+            generateFuzzyGraph.setDisable(!ready);
+        };
+        cm.setOnShowing(e -> refreshUmapMenuState.run());
+        projectionDataMenu.setOnShowing(e -> refreshUmapMenuState.run());
         cm.setAutoFix(true);
         cm.setAutoHide(true);
         cm.setHideOnEscape(true);
@@ -1054,6 +1130,21 @@ public class Projections3DPane extends StackPane implements
 
         subScene.setOnMouseClicked((MouseEvent e) -> {
             if (e.getButton() == MouseButton.SECONDARY && enableContextMenu && !enableXForm) {
+                // Only a click on a projected feature sphere offers Orbit On Point.
+                // All clicks use the same menu and the Projection Data submenu.
+                contextMenuOrbitTarget = null;
+                if (e.getPickResult() != null) {
+                    Node picked = e.getPickResult().getIntersectedNode();
+                    while (picked != null) {
+                        if (picked instanceof Sphere sphere && sphereToFeatureVectorMap.containsKey(sphere)) {
+                            contextMenuOrbitTarget = sphere;
+                            break;
+                        }
+                        picked = picked.getParent();
+                    }
+                }
+                orbitOnPointItem.setVisible(contextMenuOrbitTarget != null);
+                refreshUmapMenuState.run();
                 if (!cm.isShowing())
                     cm.show(this.getParent(), e.getScreenX(), e.getScreenY());
                 else
@@ -1822,6 +1913,8 @@ public class Projections3DPane extends StackPane implements
     }
 
     public void clearAll() {
+        // Also invalidates any fitted graph if a different projection replaces the scene.
+        invalidateUmapGraphData();
         xFactorIndex = 0;
         yFactorIndex = 1;
         zFactorIndex = 2;
@@ -2189,26 +2282,8 @@ public class Projections3DPane extends StackPane implements
                 processDistanceClick(sphere);
             }
 
-            MenuItem orbitItem = new MenuItem("Orbit On Point");
-            orbitItem.setOnAction(o -> {
-                javafx.geometry.Point3D orbitPoint3D = new javafx.geometry.Point3D(
-                    sphere.getTranslateX(), sphere.getTranslateY(), sphere.getTranslateZ());
-                JavaFX3DUtils.orbitAt(camera, cameraTransform, orbitPoint3D, true);
-            });
-            ContextMenu cm = new ContextMenu(orbitItem);
-            cm.setAutoFix(true);
-            cm.setAutoHide(true);
-            cm.setHideOnEscape(true);
-            cm.setOpacity(0.85);
-
-            if (e.getButton() == MouseButton.SECONDARY) {
-                if (null != cm)
-                    if (!cm.isShowing())
-                        cm.show(this.getParent(), e.getScreenX(), e.getScreenY());
-                    else
-                        cm.hide();
-                e.consume();
-            }
+            // Secondary clicks intentionally bubble to the subscene's shared
+            // context menu, so Projection Data is reachable from a sphere.
         });
 
         featureVectors.add(featureVector);
@@ -2766,28 +2841,113 @@ public class Projections3DPane extends StackPane implements
     }
 
     public void projectFeatureCollection(FeatureCollection originalFC, Umap umap) {
+        invalidateUmapGraphData();
+        final long generation = umapFitGeneration;
         latestUmap = umap;
         ProjectUmapFeaturesTask task = new ProjectUmapFeaturesTask(
             scene, originalFC, umap, emptyVisionEnabled);
         task.setOnSucceeded(e -> {
-            FeatureCollection fc;
+            if (generation != umapFitGeneration) return; // superseded by newer fit/clear
             try {
+                FeatureCollection fc = (FeatureCollection) task.get();
+                UmapFittedGraphData fitted = task.getFittedGraphData();
+                if (fc == null) {
+                    throw new IllegalStateException("UMAP fit completed without projected features");
+                }
                 setHyperDimensionFeatures(originalFC);
-                fc = (FeatureCollection) task.get();
-                if (null != originalFC.getDimensionLabels()) {
-                    //@SMP Projections are of a lower embedding and so labels are not meaningfl
-                    //setDimensionLabels(originalFC.getDimensionLabels());
+                if (originalFC.getDimensionLabels() != null) {
                     fc.setDimensionLabels(originalFC.getDimensionLabels());
                 }
                 addFeatureCollection(fc, false);
                 updateTrajectory3D(false);
-            } catch (InterruptedException | ExecutionException ex) {
-                LOG.error(null, ex);
+                latestFittedUmapGraph = fitted;
+                if (fitted != null) {
+                    CommandTerminalEvent.notifyTerminalSuccess(
+                        "UMAP fit ready for Context Graph: " + fitted.source().size()
+                            + " nodes. Use Projections right-click > UMAP to Context Graph.", scene);
+                } else {
+                    CommandTerminalEvent.notifyTerminalWarning(
+                        "UMAP projection complete; fuzzy graph unavailable: "
+                            + task.getGraphSnapshotWarning(), scene);
+                }
+            } catch (InterruptedException | ExecutionException | RuntimeException ex) {
+                LOG.error("Failed to install completed UMAP fit", ex);
+                CommandTerminalEvent.notifyTerminalError("UMAP projection: " + ex.getMessage(), scene);
             }
         });
-        Thread thread = new Thread(task);
+        task.setOnFailed(e -> {
+            if (generation == umapFitGeneration) {
+                Throwable failure = task.getException();
+                LOG.error("UMAP fit failed", failure);
+                CommandTerminalEvent.notifyTerminalError("UMAP fit failed: " + failure, scene);
+            }
+        });
+        Thread thread = new Thread(task, "Trinity-UMAP-fit");
         thread.setDaemon(true);
         thread.start();
+    }
+
+    private void invalidateUmapGraphData() {
+        umapFitGeneration++;
+        umapGraphBuildGeneration++;
+        latestFittedUmapGraph = null;
+        if (activeUmapGraphBuild != null) activeUmapGraphBuild.cancel();
+        activeUmapGraphBuild = null;
+        umapGraphBuildBusy = false;
+    }
+
+    /** Convert the exact, completed UMAP fuzzy topology without refitting UMAP. */
+    private void generateContextGraphFromLastUmap(double minimumMembership) {
+        if (umapGraphBuildBusy || latestFittedUmapGraph == null) {
+            CommandTerminalEvent.notifyTerminalWarning(
+                "Complete a UMAP projection before generating its Context Graph.", scene);
+            return;
+        }
+        final UmapFittedGraphData fitted = latestFittedUmapGraph;
+        final long fitGeneration = umapFitGeneration;
+        final long buildGeneration = ++umapGraphBuildGeneration;
+        umapGraphBuildBusy = true;
+        Task<GraphDirectedCollection> task = new Task<>() {
+            @Override protected GraphDirectedCollection call() {
+                if (isCancelled()) return null;
+                GraphDirectedCollection graph = UmapFuzzyGraphBuilder.build(
+                    fitted.source(), fitted.graph(), minimumMembership,
+                    "umap-fuzzy:" + fitted.source().collectionName());
+                return isCancelled() ? null : graph;
+            }
+        };
+        activeUmapGraphBuild = task;
+        task.setOnSucceeded(e -> {
+            if (buildGeneration != umapGraphBuildGeneration
+                || fitGeneration != umapFitGeneration
+                || fitted != latestFittedUmapGraph) return;
+            activeUmapGraphBuild = null;
+            umapGraphBuildBusy = false;
+            GraphDirectedCollection graph = task.getValue();
+            if (graph == null) return;
+            scene.getRoot().fireEvent(new GraphEvent(GraphEvent.NEW_GRAPHDIRECTED_COLLECTION, graph));
+            scene.getRoot().fireEvent(new ApplicationEvent(ApplicationEvent.SHOW_CONTEXT_GRAPH));
+            CommandTerminalEvent.notifyTerminalSuccess(
+                "UMAP Context Graph: " + graph.getNodes().size() + " nodes, "
+                    + graph.getEdges().size() + " derived associations (threshold "
+                    + minimumMembership + ").", scene);
+        });
+        task.setOnFailed(e -> {
+            if (buildGeneration != umapGraphBuildGeneration) return;
+            activeUmapGraphBuild = null;
+            umapGraphBuildBusy = false;
+            Throwable failure = task.getException();
+            LOG.error("UMAP Context Graph generation failed", failure);
+            CommandTerminalEvent.notifyTerminalError("UMAP Context Graph: " + failure, scene);
+        });
+        task.setOnCancelled(e -> {
+            if (buildGeneration != umapGraphBuildGeneration) return;
+            activeUmapGraphBuild = null;
+            umapGraphBuildBusy = false;
+        });
+        Thread worker = new Thread(task, "Trinity-UMAP-graph-build");
+        worker.setDaemon(true);
+        worker.start();
     }
 
     @Override
@@ -2933,6 +3093,7 @@ public class Projections3DPane extends StackPane implements
 
     @Override
     public void setUmapConfig(UmapConfig config) {
+        invalidateUmapGraphData();
         latestUmap = AnalysisUtils.umapConfigToUmap(config);
     }
 }

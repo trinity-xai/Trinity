@@ -75,7 +75,6 @@ import edu.jhuapl.trinity.javafx.javafx3d.RetroWavePane;
 import edu.jhuapl.trinity.javafx.services.FeatureVectorManagerService;
 import edu.jhuapl.trinity.javafx.services.FeatureVectorManagerServiceImpl;
 import edu.jhuapl.trinity.javafx.services.FeatureVectorUtils;
-import edu.jhuapl.trinity.javafx.services.InMemoryFeatureVectorRepository;
 import edu.jhuapl.trinity.messages.CommandTask;
 import edu.jhuapl.trinity.messages.MessageProcessor;
 import edu.jhuapl.trinity.messages.ZeroMQFeedManager;
@@ -181,7 +180,7 @@ public class AppAsyncManager extends Task<Void> {
         this.desktopPane = desktopPane;
         this.centerStack = centerStack;
         // Shared FeatureVector Manager service (mirrors vectors/collections into the Manager view)
-        fvService = new FeatureVectorManagerServiceImpl(new InMemoryFeatureVectorRepository());
+        fvService = new FeatureVectorManagerServiceImpl();
         // Allow service to fire APPLY_ACTIVE_FEATUREVECTORS back to the app via scene root
         if (fvService instanceof FeatureVectorManagerServiceImpl impl) {
             impl.setEventTarget(scene.getRoot());

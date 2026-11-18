@@ -1,13 +1,17 @@
 package edu.jhuapl.trinity.javafx.javafx3d.tasks;
 
 import edu.jhuapl.trinity.css.StyleResourceProvider;
+import edu.jhuapl.trinity.data.analysis.FeatureVectorAnalysisSnapshot;
+import edu.jhuapl.trinity.data.graph.construction.UmapFittedGraphData;
 import edu.jhuapl.trinity.data.messages.xai.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.javafx.components.radial.ProgressStatus;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import edu.jhuapl.trinity.utils.AnalysisUtils;
+import edu.jhuapl.trinity.javafx.services.FeatureVectorUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import edu.jhuapl.trinity.utils.umap.Umap;
+import edu.jhuapl.trinity.utils.umap.UmapGraphSnapshot;
 import javafx.application.Platform;
 import javafx.concurrent.Task;
 import javafx.scene.Scene;
@@ -30,13 +34,23 @@ public class ProjectUmapFeaturesTask extends Task {
     Scene scene;
     FeatureCollection originalFC;
     Umap umap;
+    // Published only after the fit and row mapping both complete successfully.
+    private volatile UmapFittedGraphData fittedGraphData;
+    private volatile String graphSnapshotWarning;
     private boolean cancelledByUser = false;
     private double projectionScalar = 100.0; //used for sizing values to 3D scene later
     private boolean enableLoadingMedia = false;
 
     public ProjectUmapFeaturesTask(Scene scene, FeatureCollection originalFC, Umap umap, boolean enableLoadingMedia) {
         this.scene = scene;
-        this.originalFC = originalFC;
+        // Freeze the input order and data before background fitting begins. Otherwise
+        // live collection updates could change the row/identity mapping mid-fit.
+        if (originalFC == null || originalFC.getFeatures() == null) {
+            throw new IllegalArgumentException("UMAP requires an input FeatureCollection");
+        }
+        FeatureCollection inputSnapshot = new FeatureCollection();
+        inputSnapshot.setFeatures(FeatureVectorUtils.copyVectors(originalFC.getFeatures()));
+        this.originalFC = inputSnapshot;
         this.umap = umap;
         this.enableLoadingMedia = enableLoadingMedia;
         if (enableLoadingMedia) {
@@ -97,6 +111,9 @@ public class ProjectUmapFeaturesTask extends Task {
                 new ApplicationEvent(ApplicationEvent.UPDATE_BUSY_INDICATOR, ps));
         });
         Thread.sleep(Duration.ofSeconds(1));
+        if (isCancelled()) return null;
+        FeatureVectorAnalysisSnapshot sourceRows = FeatureVectorAnalysisSnapshot.fromVectors(
+            "UMAP input", originalFC.getFeatures());
         double[][] umapMatrix = AnalysisUtils.fitUMAP(originalFC, umap);
         Platform.runLater(() -> {
             ProgressStatus ps = new ProgressStatus("Converting to FeatureCollection...", 0.5);
@@ -108,14 +125,19 @@ public class ProjectUmapFeaturesTask extends Task {
                 new ApplicationEvent(ApplicationEvent.UPDATE_BUSY_INDICATOR, ps));
         });
         LOG.info("mapping projected UMAP data back to FeatureVectors...");
-        FeatureCollection projectedFC = FeatureCollection.fromData(umapMatrix);
-        for (int i = 0; i < originalFC.getFeatures().size(); i++) {
-            FeatureVector origFV = originalFC.getFeatures().get(i);
-            projectedFC.getFeatures().get(i).setLabel(origFV.getLabel());
-            projectedFC.getFeatures().get(i).setScore(origFV.getScore());
-            projectedFC.getFeatures().get(i).setImageURL(origFV.getImageURL());
-            projectedFC.getFeatures().get(i).setText(origFV.getText());
-            projectedFC.getFeatures().get(i).setMetaData(origFV.getMetaData());
+        FeatureCollection projectedFC = UmapFeatureIdentityMapper.mapProjectionRows(originalFC, umapMatrix);
+        if (isCancelled()) return null;
+        // Capture before another fit can overwrite Umap's internal fuzzy graph.
+        try {
+            UmapGraphSnapshot graphRows = umap.getGraphSnapshot(sourceRows.inputRowIds());
+            fittedGraphData = new UmapFittedGraphData(sourceRows, graphRows);
+        } catch (IllegalStateException unavailable) {
+            // e.g. a one-row fit has an embedding but no neighborhood graph.
+            // Do not break the existing UMAP projection just because the optional
+            // graph-construction output cannot be captured.
+            graphSnapshotWarning = unavailable.getMessage();
+            LOG.warn("UMAP projection succeeded without reusable fuzzy graph: {}",
+                graphSnapshotWarning);
         }
         Platform.runLater(() -> {
             ProgressStatus ps = new ProgressStatus("", -1);
@@ -123,6 +145,15 @@ public class ProjectUmapFeaturesTask extends Task {
                 new ApplicationEvent(ApplicationEvent.HIDE_BUSY_INDICATOR, ps));
         });
         return projectedFC;
+    }
+
+    /** Exact source and fuzzy-graph snapshots from this completed fit; null until success. */
+    public UmapFittedGraphData getFittedGraphData() {
+        return fittedGraphData;
+    }
+
+    public String getGraphSnapshotWarning() {
+        return graphSnapshotWarning;
     }
 
     /**

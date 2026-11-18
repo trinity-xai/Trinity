@@ -1,6 +1,7 @@
 package edu.jhuapl.trinity.javafx.services;
 
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
+import edu.jhuapl.trinity.data.analysis.FeatureVectorAnalysisSnapshot;
 import javafx.beans.property.ObjectProperty;
 import javafx.beans.property.StringProperty;
 import javafx.collections.ObservableList;
@@ -9,6 +10,7 @@ import javafx.event.EventTarget;
 import java.io.File;
 import java.util.List;
 import java.util.Map;
+import java.util.concurrent.CompletableFuture;
 
 /**
  * Central manager API for FeatureVectors grouped as named collections.
@@ -35,6 +37,19 @@ public interface FeatureVectorManagerService {
      * Live list of vectors to display (sampling + filters applied).
      */
     ObservableList<FeatureVector> getDisplayedVectors();
+
+    /**
+     * Complete detached immutable analysis input, with input-row/source-ID mapping.
+     * Call on the JavaFX Application Thread, not from Task.call().
+     * Throws if the collection is missing or contains duplicate/missing entity IDs.
+     */
+    FeatureVectorAnalysisSnapshot getCollectionSnapshot(String collectionName);
+
+    /** Thread-safe asynchronous capture for background computations. */
+    CompletableFuture<FeatureVectorAnalysisSnapshot> getCollectionSnapshotAsync(String collectionName);
+
+    /** All vectors, independently cloned; FX thread only. */
+    List<FeatureVector> getCollectionVectorsCopy(String collectionName);
 
     /**
      * Current sampling mode.

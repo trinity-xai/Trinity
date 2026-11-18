@@ -3,6 +3,7 @@ package edu.jhuapl.trinity.javafx.services;
 import edu.jhuapl.trinity.data.files.FeatureCollectionFile;
 import edu.jhuapl.trinity.data.messages.xai.FeatureCollection;
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
+import edu.jhuapl.trinity.data.analysis.FeatureVectorAnalysisSnapshot;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import javafx.application.Platform;
 import javafx.beans.property.ObjectProperty;
@@ -22,6 +23,7 @@ import java.util.LinkedHashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Objects;
+import java.util.concurrent.CompletableFuture;
 import java.util.Set;
 import java.util.stream.Collectors;
 
@@ -41,7 +43,7 @@ public class FeatureVectorManagerServiceImpl implements FeatureVectorManagerServ
     private Node eventNode;
     private Scene eventScene;
 
-    public FeatureVectorManagerServiceImpl(InMemoryFeatureVectorRepository ignoredRepo) {
+    public FeatureVectorManagerServiceImpl() {
         // keep displayedVectors in sync whenever active name, sampling mode, or filter changes
         activeCollectionName.addListener((obs, o, n) -> refreshDisplayedFromActive());
         samplingMode.addListener((obs, o, n) -> refreshDisplayedFromActive());
@@ -71,6 +73,60 @@ public class FeatureVectorManagerServiceImpl implements FeatureVectorManagerServ
     @Override
     public StringProperty textFilterProperty() {
         return textFilter;
+    }
+
+    /**
+     * Snapshot the FULL named collection (never the filtered/sampled display list).
+     * Manager collections are FX-thread confined; capture on the FX thread and
+     * use the immutable result freely on a background computation thread.
+     */
+    @Override
+    public FeatureVectorAnalysisSnapshot getCollectionSnapshot(String name) {
+        requireFxThread();
+        if (name == null || !collections.containsKey(name)) {
+            throw new IllegalArgumentException("Unknown FeatureVector collection: " + name);
+        }
+        return FeatureVectorAnalysisSnapshot.fromVectors(name, collections.get(name));
+    }
+
+    /** Schedule a complete snapshot without blocking the caller or FX thread. */
+    @Override
+    public CompletableFuture<FeatureVectorAnalysisSnapshot> getCollectionSnapshotAsync(String name) {
+        CompletableFuture<FeatureVectorAnalysisSnapshot> result = new CompletableFuture<>();
+        Runnable capture = () -> {
+            try {
+                result.complete(getCollectionSnapshot(name));
+            } catch (Throwable failure) {
+                result.completeExceptionally(failure);
+            }
+        };
+        if (Platform.isFxApplicationThread()) {
+            capture.run();
+        } else {
+            try {
+                Platform.runLater(capture);
+            } catch (RuntimeException failure) {
+                result.completeExceptionally(failure);
+            }
+        }
+        return result;
+    }
+
+    /** Copy of every vector, independent of the manager's current sampling/filtering. */
+    @Override
+    public List<FeatureVector> getCollectionVectorsCopy(String name) {
+        requireFxThread();
+        if (name == null || !collections.containsKey(name)) {
+            throw new IllegalArgumentException("Unknown FeatureVector collection: " + name);
+        }
+        return FeatureVectorUtils.copyVectors(collections.get(name));
+    }
+
+    private static void requireFxThread() {
+        if (!Platform.isFxApplicationThread()) {
+            throw new IllegalStateException("Capture FeatureVector collections on the FX thread; "
+                + "use getCollectionSnapshotAsync() from a background task.");
+        }
     }
 
     @Override
