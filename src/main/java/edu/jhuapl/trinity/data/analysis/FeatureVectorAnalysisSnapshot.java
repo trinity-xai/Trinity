@@ -21,7 +21,9 @@ import java.util.Optional;
 public final class FeatureVectorAnalysisSnapshot {
 
     public record Row(String entityId, String label, String text,
-                      List<Double> data, Map<String, String> metadata) {
+                      List<Double> data, Map<String, String> metadata,
+                      String imageURL, String mediaURL, long imageId,
+                      long frameId, List<Double> bbox) {
         public Row {
             if (entityId == null || entityId.isBlank()) {
                 throw new IllegalArgumentException("Analysis rows require nonblank entity IDs");
@@ -29,6 +31,7 @@ public final class FeatureVectorAnalysisSnapshot {
             data = Collections.unmodifiableList(new ArrayList<>(data == null ? List.of() : data));
             metadata = Collections.unmodifiableMap(new LinkedHashMap<>(
                 metadata == null ? Map.of() : metadata));
+            bbox = Collections.unmodifiableList(new ArrayList<>(bbox == null ? List.of() : bbox));
         }
     }
 
@@ -63,7 +66,8 @@ public final class FeatureVectorAnalysisSnapshot {
                 throw new IllegalArgumentException("Null FeatureVector in " + collectionName);
             }
             rows.add(new Row(fv.getEntityId(), fv.getLabel(), fv.getText(),
-                fv.getData(), fv.getMetaData()));
+                fv.getData(), fv.getMetaData(), fv.getImageURL(), fv.getMediaURL(),
+                fv.getImageId(), fv.getFrameId(), fv.getBbox()));
         }
         return new FeatureVectorAnalysisSnapshot(collectionName, rows);
     }

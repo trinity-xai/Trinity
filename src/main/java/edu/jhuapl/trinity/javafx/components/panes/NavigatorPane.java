@@ -317,8 +317,9 @@ public class NavigatorPane extends LitPathPane {
     }
 
     private void inspectGraphNode(GraphNode node) {
-        imageLabel.setText("Graph Node: " + String.valueOf(node.getEntityID()));
-        urlLabel.setText("Context Graph / Node");
+        Map<String, Object> properties = node.getProperties();
+        Object title = properties == null ? null : properties.get("name");
+        imageLabel.setText("Graph Node: " + (title == null ? node.getEntityID() : title));
         detailsTP.setText("Node Details");
         detailsGridPane.getChildren().clear();
         addGraphDetail(0, "Entity ID", node.getEntityID());
@@ -326,8 +327,71 @@ public class NavigatorPane extends LitPathPane {
         addGraphDetail(2, "Labels", node.getLabels());
         addGraphDetail(3, "Color", node.getColor());
         detailsTP.setExpanded(true);
-        showGraphProperties(node.getProperties());
-        textArea.setText("Vector: " + String.valueOf(node.getVector()));
+        showGraphProperties(properties);
+        Object text = properties == null ? null : properties.get("text");
+        textArea.setText(text instanceof String string && !string.isBlank()
+            ? string : "Vector: " + String.valueOf(node.getVector()));
+        showGraphNodeImage(graphImagePath(properties));
+    }
+
+    /**
+     * Graph nodes may come from external JSON or from FeatureVectors. Use the
+     * canonical imageURL property, with legacy metadata as a fallback.
+     */
+    private static String graphImagePath(Map<String, Object> properties) {
+        if (properties == null) return null;
+        for (String key : new String[]{"imageURL", "imageUrl", "imagePath", "image_path"}) {
+            Object value = properties.get(key);
+            if (value instanceof String path && !path.isBlank()) return path;
+        }
+        Object metadata = properties.get("sourceMetadata");
+        if (metadata instanceof Map<?, ?> map) {
+            for (String key : new String[]{"imageURL", "imageUrl", "imagePath", "image_path"}) {
+                Object value = map.get(key);
+                if (value instanceof String path && !path.isBlank()) return path;
+            }
+        }
+        return null;
+    }
+
+    private void showGraphNodeImage(String path) {
+        if (path == null || path.isBlank()) {
+            // Do not show the previously hovered node's image for an image-less node.
+            currentImage = null;
+            imageView.setImage(ResourceUtils.loadIconFile("waitingforimage"));
+            urlLabel.setText("Context Graph / Node");
+            urlLabel.setTooltip(new Tooltip("No image associated with this graph node"));
+            return;
+        }
+        urlLabel.setText(path);
+        try {
+            final String location;
+            if (path.startsWith("http://") || path.startsWith("https://")
+                || path.startsWith("file:")) {
+                location = path;
+            } else {
+                File direct = new File(path);
+                File resolved = direct;
+                if (!direct.isFile() && imageryBasePath != null && !imageryBasePath.isBlank()) {
+                    // Match the existing FeatureVector navigator's imagery base-path
+                    // convention, including image URLs beginning with '/media/...'.
+                    resolved = new File(imageryBasePath + path);
+                    if (!resolved.isFile()) {
+                        resolved = new File(imageryBasePath,
+                            path.startsWith("/") ? path.substring(1) : path);
+                    }
+                }
+                location = resolved.toURI().toURL().toExternalForm();
+            }
+            currentImage = new Image(location, true);
+            imageView.setImage(currentImage);
+            urlLabel.setTooltip(new Tooltip(location));
+        } catch (IOException | IllegalArgumentException ex) {
+            currentImage = null;
+            imageView.setImage(ResourceUtils.loadIconFile("waitingforimage"));
+            urlLabel.setTooltip(new Tooltip("Unable to open graph node image: " + path));
+            LOG.warn("Unable to load Context Graph image {}", path, ex);
+        }
     }
 
     private void inspectGraphEdge(GraphEdge edge) {

@@ -8,6 +8,7 @@ import edu.jhuapl.trinity.data.graph.GraphRelationship;
 import edu.jhuapl.trinity.utils.umap.UmapGraphSnapshot;
 
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.List;
 import java.util.Map;
 import java.util.TreeMap;
@@ -24,6 +25,61 @@ public final class UmapFuzzyGraphBuilder {
     public static final String RELATIONSHIP_LABEL = "UMAP_FUZZY_ASSOCIATION";
 
     private UmapFuzzyGraphBuilder() { }
+
+    /**
+     * Build the same fuzzy topology, but place initial Euclidean nodes using
+     * actual UMAP coordinates captured from the matching fit. A finite bounding
+     * span is normalized to 600 world units, independent of raw coordinate
+     * magnitudes; the Context Graph's coordinate scale remains functional.
+     */
+    public static GraphDirectedCollection build(UmapFittedGraphData fitted,
+                                                double minimumMembership, String graphId) {
+        if (fitted == null) throw new IllegalArgumentException("Missing fitted UMAP data");
+        GraphDirectedCollection graph = build(fitted.source(), fitted.graph(),
+            minimumMembership, graphId);
+        if (fitted.hasProjectedCoordinates()) {
+            placeInitialEuclideanNodes(graph.getNodes(), fitted.projectedCoordinates());
+        }
+        return graph;
+    }
+
+    private static void placeInitialEuclideanNodes(List<GraphNode> nodes,
+                                                    List<List<Double>> rows) {
+        final int dimensions = Math.min(3, rows.get(0).size());
+        double[] mins = new double[dimensions];
+        double[] maxs = new double[dimensions];
+        Arrays.fill(mins, Double.POSITIVE_INFINITY);
+        Arrays.fill(maxs, Double.NEGATIVE_INFINITY);
+        for (List<Double> row : rows) {
+            for (int d = 0; d < dimensions; d++) {
+                mins[d] = Math.min(mins[d], row.get(d));
+                maxs[d] = Math.max(maxs[d], row.get(d));
+            }
+        }
+        double longestSpan = 0.0;
+        for (int d = 0; d < dimensions; d++) {
+            longestSpan = Math.max(longestSpan, maxs[d] - mins[d]);
+        }
+        // UMAP can produce very small coordinates; avoid using their magnitudes
+        // as world units. Exact duplicates remain duplicates, not invented facts.
+        double scale = longestSpan > 0.0 ? 600.0 / longestSpan : 1.0;
+        for (int i = 0; i < nodes.size(); i++) {
+            List<Double> row = rows.get(i);
+            double[] position = new double[3];
+            for (int d = 0; d < dimensions; d++) {
+                position[d] = (row.get(d) - (mins[d] + maxs[d]) / 2.0) * scale;
+                if (!Double.isFinite(position[d])) {
+                    throw new IllegalArgumentException("Cannot normalize fitted UMAP coordinates");
+                }
+            }
+            // Match Projections 3D's inverted Y screen convention.
+            position[1] = -position[1];
+            GraphNode node = nodes.get(i);
+            node.setVector(new ArrayList<>(List.of(position[0], position[1], position[2])));
+            node.getProperties().put("umapProjectedCoordinates", row);
+            node.getProperties().put("coordinateSource", "UMAP_PROJECTION");
+        }
+    }
 
     public static GraphDirectedCollection build(FeatureVectorAnalysisSnapshot source,
                                                  UmapGraphSnapshot umap,
@@ -56,6 +112,25 @@ public final class UmapFuzzyGraphBuilder {
             }
             // Preserve source metadata without copying the high-dimensional vector into a 3D position.
             node.getProperties().put("sourceMetadata", row.metadata());
+            if (row.text() != null && !row.text().isBlank()) {
+                node.getProperties().put("text", row.text());
+            }
+            String imageURL = row.imageURL();
+            if ((imageURL == null || imageURL.isBlank()) && row.metadata() != null) {
+                for (String key : List.of("imageURL", "imageUrl", "imagePath", "image_path")) {
+                    String candidate = row.metadata().get(key);
+                    if (candidate != null && !candidate.isBlank()) {
+                        imageURL = candidate;
+                        break;
+                    }
+                }
+            }
+            if (imageURL != null && !imageURL.isBlank()) node.getProperties().put("imageURL", imageURL);
+            if (row.mediaURL() != null && !row.mediaURL().isBlank())
+                node.getProperties().put("mediaURL", row.mediaURL());
+            if (row.imageId() != 0) node.getProperties().put("imageId", row.imageId());
+            if (row.frameId() != 0) node.getProperties().put("frameId", row.frameId());
+            if (!row.bbox().isEmpty()) node.getProperties().put("bbox", row.bbox());
             nodes.add(node);
         }
         graph.setNodes(nodes);

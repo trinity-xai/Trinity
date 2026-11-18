@@ -130,7 +130,7 @@ public class ProjectUmapFeaturesTask extends Task {
         // Capture before another fit can overwrite Umap's internal fuzzy graph.
         try {
             UmapGraphSnapshot graphRows = umap.getGraphSnapshot(sourceRows.inputRowIds());
-            fittedGraphData = new UmapFittedGraphData(sourceRows, graphRows);
+            fittedGraphData = new UmapFittedGraphData(sourceRows, graphRows, umapMatrix);
         } catch (IllegalStateException unavailable) {
             // e.g. a one-row fit has an embedding but no neighborhood graph.
             // Do not break the existing UMAP projection just because the optional

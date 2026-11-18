@@ -1084,7 +1084,9 @@ public class Projections3DPane extends StackPane implements
             }
             generateContextGraphFromLastUmap(minimum);
         });
-        Menu fuzzyGraphMenu = new Menu("UMAP to Context Graph");
+        ImageView umapGraphIcon = ResourceUtils.loadIcon("graph", ICON_FIT_HEIGHT);
+        umapGraphIcon.setEffect(glow);
+        Menu fuzzyGraphMenu = new Menu("UMAP to Context Graph", umapGraphIcon);
         fuzzyGraphMenu.getItems().addAll(
             new CustomMenuItem(new VBox(4,
                 new Label("Minimum fuzzy membership (0-1)"), fuzzyMinimum), false),
@@ -1094,7 +1096,9 @@ public class Projections3DPane extends StackPane implements
         fuzzyGraphMenu.setDisable(true);
         generateFuzzyGraph.setDisable(true);
 
-        Menu projectionDataMenu = new Menu("Projection Data");
+        ImageView projectionDataIcon = ResourceUtils.loadIcon("features", ICON_FIT_HEIGHT);
+        projectionDataIcon.setEffect(glow);
+        Menu projectionDataMenu = new Menu("Projection Data", projectionDataIcon);
         projectionDataMenu.getItems().addAll(
             exportItem, clearProjectionItem, new SeparatorMenuItem(), fuzzyGraphMenu);
 
@@ -2911,7 +2915,7 @@ public class Projections3DPane extends StackPane implements
             @Override protected GraphDirectedCollection call() {
                 if (isCancelled()) return null;
                 GraphDirectedCollection graph = UmapFuzzyGraphBuilder.build(
-                    fitted.source(), fitted.graph(), minimumMembership,
+                    fitted, minimumMembership,
                     "umap-fuzzy:" + fitted.source().collectionName());
                 return isCancelled() ? null : graph;
             }

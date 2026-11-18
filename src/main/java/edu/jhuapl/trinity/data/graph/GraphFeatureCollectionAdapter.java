@@ -34,6 +34,14 @@ public final class GraphFeatureCollectionAdapter {
                 });
                 Object text = node.getProperties().get("text");
                 if (text != null) feature.setText(String.valueOf(text));
+                Object imageURL = node.getProperties().get("imageURL");
+                if (imageURL instanceof String path) feature.setImageURL(path);
+                Object mediaURL = node.getProperties().get("mediaURL");
+                if (mediaURL instanceof String path) feature.setMediaURL(path);
+                Object imageId = node.getProperties().get("imageId");
+                if (imageId instanceof Number number) feature.setImageId(number.longValue());
+                Object frameId = node.getProperties().get("frameId");
+                if (frameId instanceof Number number) feature.setFrameId(number.longValue());
             }
             if (feature.getText() == null || feature.getText().isBlank()) {
                 StringBuilder summary = new StringBuilder("Graph Node: ").append(id);
