@@ -2,6 +2,9 @@ package edu.jhuapl.trinity.data.graph;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import edu.jhuapl.trinity.data.graph.semantics.GraphEvidence;
+import edu.jhuapl.trinity.data.graph.semantics.GraphPredicateDefinition;
+import edu.jhuapl.trinity.data.graph.semantics.GraphRunProvenance;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -32,6 +35,11 @@ public class GraphDirectedCollection {
     //<editor-fold defaultstate="collapsed" desc="Payload Fields">
     private String messageType;
     private String graphId;
+    // Optional schema v2 knowledge-graph metadata. Legacy files omit these fields.
+    private Integer schemaVersion;
+    private GraphRunProvenance runProvenance;
+    private List<GraphPredicateDefinition> predicateDefinitions;
+    private List<GraphEvidence> evidenceRecords;
     private String defaultNodeColor; // optional, ex #FF0000FF == fully opaque Red in RGBA HEX form
     private String defaultEdgeColor;// optional, ex #FF0000FF == fully opaque Red in RGBA HEX form
     private List<GraphNode> nodes;
@@ -71,6 +79,38 @@ public class GraphDirectedCollection {
      */
     public void setType(String type) {
         this.messageType = type;
+    }
+
+    public Integer getSchemaVersion() {
+        return schemaVersion;
+    }
+
+    public void setSchemaVersion(Integer schemaVersion) {
+        this.schemaVersion = schemaVersion;
+    }
+
+    public GraphRunProvenance getRunProvenance() {
+        return runProvenance;
+    }
+
+    public void setRunProvenance(GraphRunProvenance runProvenance) {
+        this.runProvenance = runProvenance;
+    }
+
+    public List<GraphPredicateDefinition> getPredicateDefinitions() {
+        return predicateDefinitions;
+    }
+
+    public void setPredicateDefinitions(List<GraphPredicateDefinition> predicateDefinitions) {
+        this.predicateDefinitions = predicateDefinitions;
+    }
+
+    public List<GraphEvidence> getEvidenceRecords() {
+        return evidenceRecords;
+    }
+
+    public void setEvidenceRecords(List<GraphEvidence> evidenceRecords) {
+        this.evidenceRecords = evidenceRecords;
     }
 
     /**

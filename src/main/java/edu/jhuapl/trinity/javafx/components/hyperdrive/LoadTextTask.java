@@ -40,7 +40,7 @@ public class LoadTextTask extends HyperdriveTask {
             options.chunkSize(), options.jsonProfile() == null ? null : options.jsonProfile().copy());
     }
 
-    private record ParsedFile(File file, List<TextChunkParser.ParsedChunk> chunks) { }
+    private record ParsedFile(File file, TextChunkParser.ParsedDocument document) { }
 
     @Override
     protected void processTask() throws Exception {
@@ -80,12 +80,13 @@ public class LoadTextTask extends HyperdriveTask {
             if (isCancelled()) return;
             File file = discovered.get(i);
             try {
-                List<TextChunkParser.ParsedChunk> chunks = TextChunkParser.parse(file, options);
+                TextChunkParser.ParsedDocument document = TextChunkParser.parseDocument(file, options);
+                List<TextChunkParser.ParsedChunk> chunks = document.chunks();
                 if (chunks.isEmpty()) {
                     empty++;
                     LOG.warn("No usable text found in {}", file);
                 } else {
-                    parsed.add(new ParsedFile(file, chunks));
+                    parsed.add(new ParsedFile(file, document));
                     String skipped = chunks.get(0).metadata().get("source_json_skipped_records");
                     if (skipped != null) {
                         int count = Integer.parseInt(skipped);
@@ -113,8 +114,9 @@ public class LoadTextTask extends HyperdriveTask {
             ArrayList<File> loadedFiles = new ArrayList<>();
             for (ParsedFile file : parsed) {
                 loadedFiles.add(file.file());
-                for (TextChunkParser.ParsedChunk chunk : file.chunks()) {
-                    items.add(EmbeddingsTextListItem.fromParsedChunk(file.file(), chunk));
+                for (TextChunkParser.ParsedChunk chunk : file.document().chunks()) {
+                    items.add(EmbeddingsTextListItem.fromParsedChunk(
+                        file.file(), chunk, file.document().source()));
                 }
             }
             scene.getRoot().fireEvent(

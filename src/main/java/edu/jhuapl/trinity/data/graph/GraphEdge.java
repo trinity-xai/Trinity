@@ -27,6 +27,7 @@ public class GraphEdge {
     //</editor-fold>
     //<editor-fold defaultstate="collapsed" desc="Payload Fields">
     private String startID; //maps to GraphNode indentity
+    private String edgeId; //optional stable assertion/edge ID, independent of relationship.identity
     private GraphRelationship relationship; //optional
     private String color; //optional overrides default color
     //ex #FF0000FF == fully opaque Red in RGBA HEX form
@@ -37,6 +38,14 @@ public class GraphEdge {
     }
 
     //<editor-fold defaultstate="collapsed" desc="Properties">
+
+    public String getEdgeId() {
+        return edgeId;
+    }
+
+    public void setEdgeId(String edgeId) {
+        this.edgeId = edgeId;
+    }
 
     /**
      * @return the startId

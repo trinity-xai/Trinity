@@ -63,6 +63,9 @@ module edu.jhuapl.trinity {
     exports edu.jhuapl.trinity.data.coco;
     exports edu.jhuapl.trinity.data.files;
     exports edu.jhuapl.trinity.data.graph;
+    exports edu.jhuapl.trinity.data.graph.analysis;
+    exports edu.jhuapl.trinity.data.graph.construction.source;
+    exports edu.jhuapl.trinity.data.graph.semantics;
     exports edu.jhuapl.trinity.data.messages.bci;
     exports edu.jhuapl.trinity.data.messages.llm;
     exports edu.jhuapl.trinity.data.messages.xai;

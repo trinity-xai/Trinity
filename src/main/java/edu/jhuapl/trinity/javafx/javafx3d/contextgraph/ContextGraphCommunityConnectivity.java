@@ -1,6 +1,7 @@
 package edu.jhuapl.trinity.javafx.javafx3d.contextgraph;
 
 import edu.jhuapl.trinity.data.graph.GraphDirectedCollection;
+import edu.jhuapl.trinity.data.graph.analysis.GraphAnalysisProjection;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -37,6 +38,17 @@ final class ContextGraphCommunityConnectivity {
             == ContextGraphCommunityParams.Algorithm.LEGACY
                 ? ContextGraphCommunityParams.defaults() : hierarchy.params();
         ContextGraphWeightedTopology topology = ContextGraphWeightedTopology.from(graph, weights);
+        return from(topology, hierarchy);
+    }
+
+    /** Uses exactly the same selected weights as the opt-in community detection. */
+    static ContextGraphCommunityConnectivity from(GraphAnalysisProjection projection,
+                                                   ContextGraphCommunityHierarchy hierarchy) {
+        return from(ContextGraphWeightedTopology.from(projection), hierarchy);
+    }
+
+    private static ContextGraphCommunityConnectivity from(ContextGraphWeightedTopology topology,
+                                                           ContextGraphCommunityHierarchy hierarchy) {
         if (!topology.entityIds.equals(hierarchy.entityIds()))
             throw new IllegalArgumentException("Community hierarchy does not match graph identities");
         List<List<Map<Integer, Double>>> levels = new ArrayList<>();

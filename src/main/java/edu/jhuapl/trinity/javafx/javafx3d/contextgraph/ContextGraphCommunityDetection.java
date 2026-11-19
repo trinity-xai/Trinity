@@ -1,6 +1,7 @@
 package edu.jhuapl.trinity.javafx.javafx3d.contextgraph;
 
 import edu.jhuapl.trinity.data.graph.GraphDirectedCollection;
+import edu.jhuapl.trinity.data.graph.analysis.GraphAnalysisProjection;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.HashMap;
@@ -46,6 +47,37 @@ public final class ContextGraphCommunityDetection {
                     closest = score;
                     layoutLevel = i;
                 }
+            }
+        }
+        return new ContextGraphCommunityHierarchy(params, topology.entityIds, levels,
+            topology.inputEdgeCount, topology.semanticEdges, topology.structuralEdges,
+            topology.administrativeEdges, topology.components, topology.totalEdgeWeight,
+            layoutLevel, System.nanoTime() - started);
+    }
+
+    /**
+     * Opt-in weighted analysis, independent of legacy CTI classifications.
+     * Legacy Weighted Modularity is intentionally not reinterpreted: its historic
+     * label weights remain protected on the original GraphDirectedCollection path.
+     */
+    public static ContextGraphCommunityHierarchy detect(GraphAnalysisProjection projection,
+                                                         ContextGraphCommunityParams params) {
+        if (params == null || projection == null)
+            throw new IllegalArgumentException("Analysis projection and community params are required");
+        if (params.effectiveAlgorithm() == ContextGraphCommunityParams.Algorithm.LEGACY)
+            throw new IllegalArgumentException("Typed analysis requires Louvain; legacy weighting is protected");
+        long started = System.nanoTime();
+        ContextGraphWeightedTopology topology = ContextGraphWeightedTopology.from(projection);
+        List<int[]> partitions = ContextGraphLouvain.run(topology.adjacency, params.resolution(),
+            params.levelLimit());
+        List<ContextGraphCommunityLevel> levels = assemble(topology, partitions, params.resolution());
+        int layoutLevel = 0;
+        if (params.targetCommunitySize() > 0) {
+            double closest = Double.POSITIVE_INFINITY;
+            for (int i = 0; i < levels.size(); i++) {
+                double mean = (double) topology.nodes.size() / levels.get(i).count();
+                double score = Math.abs(Math.log(mean / params.targetCommunitySize()));
+                if (score < closest) { closest = score; layoutLevel = i; }
             }
         }
         return new ContextGraphCommunityHierarchy(params, topology.entityIds, levels,

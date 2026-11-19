@@ -1,6 +1,7 @@
 package edu.jhuapl.trinity.javafx.javafx3d.contextgraph;
 
 import edu.jhuapl.trinity.data.graph.GraphDirectedCollection;
+import edu.jhuapl.trinity.data.graph.analysis.GraphAnalysisProjection;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
@@ -28,16 +29,32 @@ public final class ContextGraphCommunitySpatialLayout {
     public static Result compute(GraphDirectedCollection graph,
                                  ContextGraphCommunityHierarchy hierarchy,
                                  ContextGraphHyperbolicPackingParams params) {
+        return computeInternal(graph, null, hierarchy, params);
+    }
+
+    /** Opt-in: layout links and relationship-aware placement use the selected analysis graph. */
+    public static Result compute(GraphAnalysisProjection projection,
+                                 ContextGraphCommunityHierarchy hierarchy,
+                                 ContextGraphHyperbolicPackingParams params) {
+        if (projection == null) throw new IllegalArgumentException("Projection is required");
+        return computeInternal(projection.toSourceEdgeView(), projection, hierarchy, params);
+    }
+
+    private static Result computeInternal(GraphDirectedCollection graph,
+                                          GraphAnalysisProjection projection,
+                                          ContextGraphCommunityHierarchy hierarchy,
+                                          ContextGraphHyperbolicPackingParams params) {
         if (graph == null || hierarchy == null || params == null)
             throw new IllegalArgumentException("Graph, hierarchy, and packing params are required");
-        // This is the ORIGINAL edge identity scaffold; its positions are replaced only
-        // when the user chooses the multilevel semantic projection.
+        // Protected 4B-A: even a typed analysis cannot alter Classic Poincare's
+        // original graph-backed scaffold when this placement is selected.
         boolean classic = params.placement()
             == ContextGraphHyperbolicPackingParams.Placement.STRUCTURAL_BACKBONE;
         ContextGraphHyperbolicLayout.LayoutResult scaffold = classic
-            ? ContextGraphHyperbolicLayout.originalStructuralLayout(graph)
+            ? ContextGraphHyperbolicLayout.originalStructuralLayout(
+                projection == null ? graph : projection.sourceGraph())
             : ContextGraphHyperbolicLayout.computedLayout(graph, hierarchy);
-        ContextGraphPackedPositions packed = classic ? null : pack(graph, hierarchy, params);
+        ContextGraphPackedPositions packed = classic ? null : pack(graph, hierarchy, params, projection);
         Map<String, double[]> positions = classic ? scaffold.positions() : packed.positions();
         ContextGraphHyperbolicLayout.LayoutResult layout =
             new ContextGraphHyperbolicLayout.LayoutResult(positions,
@@ -76,7 +93,8 @@ public final class ContextGraphCommunitySpatialLayout {
 
     private static ContextGraphPackedPositions pack(GraphDirectedCollection graph,
                                                     ContextGraphCommunityHierarchy hierarchy,
-                                                    ContextGraphHyperbolicPackingParams params) {
+                                                    ContextGraphHyperbolicPackingParams params,
+                                                    GraphAnalysisProjection projection) {
         List<ContextGraphCommunityLevel> levels = hierarchy.levels();
         List<String> ids = hierarchy.entityIds();
         if (levels.isEmpty() || ids.isEmpty())
@@ -89,7 +107,8 @@ public final class ContextGraphCommunitySpatialLayout {
             == ContextGraphHyperbolicPackingParams.Placement.RELATIONSHIP_AWARE
                 || params.placement() == ContextGraphHyperbolicPackingParams.Placement.SPECTRAL
                 || params.placement() == ContextGraphHyperbolicPackingParams.Placement.GRAPH_DISTANCE_RADIAL
-                ? ContextGraphCommunityConnectivity.from(graph, hierarchy) : null;
+                ? (projection == null ? ContextGraphCommunityConnectivity.from(graph, hierarchy)
+                    : ContextGraphCommunityConnectivity.from(projection, hierarchy)) : null;
 
         double[][][] centers = new double[levels.size()][][];
         double[][][] axes = new double[levels.size()][][];

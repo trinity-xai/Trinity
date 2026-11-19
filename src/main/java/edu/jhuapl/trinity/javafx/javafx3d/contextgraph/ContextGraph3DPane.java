@@ -23,6 +23,9 @@ import javafx.scene.shape.CullFace;
 import javafx.scene.paint.PhongMaterial;
 import java.util.List;
 import edu.jhuapl.trinity.javafx.events.GraphEvent;
+import edu.jhuapl.trinity.data.graph.GraphDirectedCollection;
+import edu.jhuapl.trinity.data.graph.analysis.GraphViewSpecification;
+import edu.jhuapl.trinity.javafx.javafx3d.contextgraph.ContextGraphCommunityParams.Algorithm;
 import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.MenuItem;
@@ -91,6 +94,7 @@ public class ContextGraph3DPane extends StackPane {
     private ContextGraphProjectionMode displayedProjectionMode = ContextGraphProjectionMode.EUCLIDEAN;
     private final ContextGraphController graphController;
     private final ContextGraphInteractionController interactionController;
+    private final ContextGraphHierarchyInspector hierarchyInspector;
     private ContextGraphControlsPane controlsPane;
     private double anchorX;
     private double anchorY;
@@ -101,6 +105,7 @@ public class ContextGraph3DPane extends StackPane {
     public ContextGraph3DPane(Scene scene) {
         graphController = new ContextGraphController(scene);
         interactionController = new ContextGraphInteractionController(scene);
+        hierarchyInspector = new ContextGraphHierarchyInspector(this);
         poincareBoundary = new Sphere(graphController.getHyperbolicDisplayRadius(), 36);
         poincareBoundary.setDrawMode(DrawMode.LINE);
         poincareBoundary.setCullFace(CullFace.NONE);
@@ -192,11 +197,54 @@ public class ContextGraph3DPane extends StackPane {
         MenuItem navigatorItem = new MenuItem("Content Navigator");
         navigatorItem.setOnAction(e -> scene.getRoot().fireEvent(
             new ApplicationEvent(ApplicationEvent.SHOW_NAVIGATOR_PANE)));
+        MenuItem inspectHierarchyItem = new MenuItem("Inspect Hierarchy / Evidence...");
+        inspectHierarchyItem.setOnAction(e -> hierarchyInspector.show());
+        Menu analysisTopology = new Menu("Analysis Topology (Opt-in)");
+        ToggleGroup analysisToggles = new ToggleGroup();
+        RadioMenuItem legacyAnalysis = new RadioMenuItem("Original / Legacy Topology");
+        legacyAnalysis.setToggleGroup(analysisToggles);
+        legacyAnalysis.setSelected(true);
+        legacyAnalysis.setOnAction(e -> applyAnalysisPreset(null));
+        RadioMenuItem sourceAnalysis = new RadioMenuItem("Source CONTAINS Only");
+        sourceAnalysis.setToggleGroup(analysisToggles);
+        sourceAnalysis.setOnAction(e -> applyAnalysisPreset(GraphViewSpecification.builder()
+            .predicateIds("CONTAINS").includeKnownLegacyLabels(true).build()));
+        RadioMenuItem taxonomyAnalysis = new RadioMenuItem("Taxonomy / Instance Only");
+        taxonomyAnalysis.setToggleGroup(analysisToggles);
+        taxonomyAnalysis.setOnAction(e -> applyAnalysisPreset(GraphViewSpecification.builder()
+            .predicateIds("SUBCLASS_OF", "INSTANCE_OF").includeKnownLegacyLabels(true).build()));
+        RadioMenuItem umapAnalysis = new RadioMenuItem("UMAP Fuzzy - Membership Weighted (>= 0.25)");
+        umapAnalysis.setToggleGroup(analysisToggles);
+        umapAnalysis.setOnAction(e -> applyAnalysisPreset(GraphViewSpecification.builder()
+            .predicateIds("UMAP_FUZZY_ASSOCIATION").includeKnownLegacyLabels(true)
+            .minimumUmapMembership(0.25).build()));
+        RadioMenuItem umapStrongAnalysis = new RadioMenuItem("UMAP Strong Links Only (>= 0.60)");
+        umapStrongAnalysis.setToggleGroup(analysisToggles);
+        umapStrongAnalysis.setOnAction(e -> applyAnalysisPreset(GraphViewSpecification.builder()
+            .predicateIds("UMAP_FUZZY_ASSOCIATION").includeKnownLegacyLabels(true)
+            .minimumUmapMembership(0.60).build()));
+        analysisTopology.getItems().addAll(legacyAnalysis, sourceAnalysis, taxonomyAnalysis,
+            umapAnalysis, umapStrongAnalysis);
+        analysisTopology.setOnShowing(e -> {
+            GraphDirectedCollection current = graphController.getCurrentGraph();
+            analysisTopology.setDisable(current == null);
+            sourceAnalysis.setDisable(!hasPredicate(current, "CONTAINS"));
+            taxonomyAnalysis.setDisable(!hasPredicate(current, "SUBCLASS_OF")
+                && !hasPredicate(current, "INSTANCE_OF"));
+            umapAnalysis.setDisable(!hasPredicate(current, "UMAP_FUZZY_ASSOCIATION"));
+            umapStrongAnalysis.setDisable(umapAnalysis.isDisable());
+            if (graphController.getAnalysisSpecification() == null) legacyAnalysis.setSelected(true);
+        });
         CheckMenuItem diffuseTestItem = new CheckMenuItem("Diagnostic: Opaque Diffuse Materials");
         diffuseTestItem.setOnAction(e -> graphController.setDiagnosticDiffuseMaterials(diffuseTestItem.isSelected()));
-        graphMenu.getItems().addAll(controlsItem, navigatorItem, projections, fitItem,
-            focusSelectedItem, focusNeighborhoodItem, showAllItem, gridVisibleItem,
-            clearDataItem, diffuseTestItem);
+        graphMenu.getItems().addAll(controlsItem, navigatorItem, inspectHierarchyItem,
+            analysisTopology, projections, fitItem, focusSelectedItem,
+            focusNeighborhoodItem, showAllItem, gridVisibleItem, clearDataItem, diffuseTestItem);
+        graphMenu.setOnShowing(e -> {
+            inspectHierarchyItem.setDisable(graphController.getCurrentGraph() == null ||
+                (graphController.getSelectedNodeId() == null && graphController.getSelectedEdge() == null));
+            analysisTopology.setDisable(graphController.getCurrentGraph() == null);
+        });
         subScene.setOnContextMenuRequested(e -> {
             graphMenu.show(subScene, e.getScreenX(), e.getScreenY());
             e.consume();
@@ -294,12 +342,15 @@ public class ContextGraph3DPane extends StackPane {
         subScene.setFocusTraversable(true);
         subScene.setOnMouseEntered(e -> subScene.requestFocus());
         subScene.addEventHandler(MouseEvent.MOUSE_PRESSED, e -> subScene.requestFocus());
+        scene.addEventHandler(GraphEvent.GRAPH_DATA_CLEARED, e -> hierarchyInspector.invalidate());
         graphController.installEventHandlers();
         scene.addEventHandler(GraphEvent.NEW_GRAPHDIRECTED_COLLECTION, e -> {
             if (e.object instanceof edu.jhuapl.trinity.data.graph.GraphDirectedCollection graph) {
                 long eventStart = System.nanoTime();
                 System.out.printf("[CG-TIMING] graph event entered thread=%s%n", Thread.currentThread().getName());
                 clearSelectionCallouts();
+                hierarchyInspector.invalidate();
+                legacyAnalysis.setSelected(true);
                 // Graph loading temporarily starts from source coordinates while the
                 // hyperbolic chart is prepared; the completed event will re-fit the chart.
                 displayedProjectionMode = ContextGraphProjectionMode.EUCLIDEAN;
@@ -668,6 +719,7 @@ public class ContextGraph3DPane extends StackPane {
         StringBuilder text = new StringBuilder();
         detail(text, "Entity ID", node.getEntityID());
         detail(text, "Identity", node.getIdentity());
+        if (node.getNodeKind() != null) detail(text, "Node kind", node.getNodeKind());
         detail(text, "Labels", node.getLabels());
         if (node.getColor() != null) detail(text, "Color", node.getColor());
         appendProperties(text, node.getProperties());
@@ -677,6 +729,7 @@ public class ContextGraph3DPane extends StackPane {
 
     private String graphEdgeDetails(GraphEdge edge) {
         StringBuilder text = new StringBuilder();
+        if (edge.getEdgeId() != null) detail(text, "Assertion ID", edge.getEdgeId());
         detail(text, "Source", endpointDescription(edge.getStartID()));
         detail(text, "Target", endpointDescription(edge.getEndID()));
         double distance = graphController.hyperbolicDistance(edge.getStartID(), edge.getEndID());
@@ -686,6 +739,13 @@ public class ContextGraph3DPane extends StackPane {
         if (edge.getRelationship() != null) {
             detail(text, "Identity", edge.getRelationship().getIdentity());
             detail(text, "Labels", edge.getRelationship().getLabels());
+            if (edge.getRelationship().getSemantics() != null) {
+                var meaning = edge.getRelationship().getSemantics();
+                detail(text, "Predicate", meaning.getPredicateId());
+                detail(text, "Origin", meaning.getOrigin());
+                detail(text, "Hierarchy scope", meaning.getHierarchyScopeId());
+                detail(text, "Evidence IDs", meaning.getEvidenceIds());
+            }
             appendProperties(text, edge.getRelationship().getProperties());
         }
         return text.toString().stripTrailing();
@@ -863,6 +923,39 @@ public class ContextGraph3DPane extends StackPane {
             requiredDistance = Math.max(requiredDistance, diagonal * 2.5);
         }
         camera.setTranslateZ(-requiredDistance);
+    }
+
+    /** New analysis presets alter computation inputs only, never source edge visibility. */
+    private void applyAnalysisPreset(GraphViewSpecification specification) {
+        try {
+            if (specification != null && graphController.getCommunityParams().effectiveAlgorithm()
+                == Algorithm.LEGACY) {
+                ContextGraphCommunityParams old = graphController.getCommunityParams();
+                graphController.setCommunityParams(new ContextGraphCommunityParams(
+                    Algorithm.AUTO, old.resolution(), old.maximumLevels(), old.targetCommunitySize(),
+                    old.administrativeWeight(), old.structuralWeight(), old.semanticWeight()));
+            }
+            graphController.setAnalysisSpecification(specification);
+        } catch (IllegalArgumentException error) {
+            javafx.scene.control.Alert alert = new javafx.scene.control.Alert(
+                javafx.scene.control.Alert.AlertType.WARNING, error.getMessage(),
+                javafx.scene.control.ButtonType.OK);
+            alert.setTitle("Context Graph Analysis");
+            alert.setHeaderText("Unable to apply analysis topology");
+            alert.show();
+        }
+    }
+
+    private static boolean hasPredicate(GraphDirectedCollection graph, String predicate) {
+        if (graph == null || graph.getEdges() == null) return false;
+        return graph.getEdges().stream().filter(Objects::nonNull).anyMatch(edge -> {
+            if (edge.getRelationship() == null) return false;
+            var relation = edge.getRelationship();
+            if (relation.getSemantics() != null && predicate.equals(relation.getSemantics().getPredicateId()))
+                return true;
+            return relation.getLabels() != null && relation.getLabels().stream()
+                .anyMatch(label -> predicate.equalsIgnoreCase(label));
+        });
     }
 
     public ContextGraphController getGraphController() {

@@ -3,6 +3,10 @@ package edu.jhuapl.trinity.javafx.components.panes;
 import com.fasterxml.jackson.core.JsonProcessingException;
 import edu.jhuapl.trinity.css.StyleResourceProvider;
 import edu.jhuapl.trinity.data.files.FeatureCollectionFile;
+import edu.jhuapl.trinity.data.graph.GraphDirectedCollection;
+import edu.jhuapl.trinity.data.graph.construction.source.SourceDocumentSnapshot;
+import edu.jhuapl.trinity.data.graph.construction.source.SourceDocumentHierarchyBuilder;
+import edu.jhuapl.trinity.data.graph.construction.source.SourceHierarchyInitialLayout;
 import edu.jhuapl.trinity.data.messages.llm.AiModel;
 import edu.jhuapl.trinity.data.messages.llm.AliveModels;
 import edu.jhuapl.trinity.data.messages.llm.ChatCaptionResponse;
@@ -46,6 +50,8 @@ import edu.jhuapl.trinity.javafx.components.listviews.LandmarkTextListItem;
 import edu.jhuapl.trinity.javafx.components.radial.CircleProgressIndicator;
 import edu.jhuapl.trinity.javafx.components.radial.ProgressStatus;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
+import edu.jhuapl.trinity.javafx.events.ApplicationEvent;
+import edu.jhuapl.trinity.javafx.events.GraphEvent;
 import edu.jhuapl.trinity.javafx.events.HyperdriveEvent;
 import edu.jhuapl.trinity.javafx.events.ImageEvent;
 import edu.jhuapl.trinity.javafx.events.RestEvent;
@@ -54,6 +60,7 @@ import edu.jhuapl.trinity.utils.JavaFX3DUtils;
 import edu.jhuapl.trinity.utils.ResourceUtils;
 import edu.jhuapl.trinity.utils.metric.Metric;
 import javafx.application.Platform;
+import javafx.concurrent.Task;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
@@ -62,6 +69,7 @@ import javafx.scene.control.Button;
 import javafx.scene.control.ButtonType;
 import javafx.scene.control.CheckBox;
 import javafx.scene.control.ChoiceBox;
+import javafx.scene.control.ChoiceDialog;
 import javafx.scene.control.ContextMenu;
 import javafx.scene.control.DialogPane;
 import javafx.scene.control.Label;
@@ -105,6 +113,8 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collections;
 import java.util.HashMap;
+import java.util.LinkedHashMap;
+import java.util.TreeMap;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
@@ -159,6 +169,12 @@ public class HyperdrivePane extends LitPathPane {
     ArrayList<File> textFilesList;
     ListView<EmbeddingsImageListItem> imageEmbeddingsListView;
     ListView<EmbeddingsTextListItem> textEmbeddingsListView;
+    private Button sourceHierarchyButton;
+    private Task<GraphDirectedCollection> sourceHierarchyTask;
+
+    private record SourceDocumentChoice(String label, SourceDocumentSnapshot document) {
+        @Override public String toString() { return label; }
+    }
     Label imageFilesCountLabel;
     Label textFilesCountLabel;
     CircleProgressIndicator textEmbeddingRequestIndicator;
@@ -320,10 +336,15 @@ public class HyperdrivePane extends LitPathPane {
             textEmbeddingRequestIndicator.spin(false);
             textEmbeddingRequestIndicator.fadeBusy(true);
         });
+        MenuItem openSourceHierarchyItem = new MenuItem("Open Source Hierarchy in Context Graph");
+        openSourceHierarchyItem.setOnAction(e -> openSelectedSourceHierarchy());
         ContextMenu textEmbeddingsContextMenu =
-            new ContextMenu(selectAllTextMenuItem, setTextLabelItem,
+            new ContextMenu(openSourceHierarchyItem, selectAllTextMenuItem, setTextLabelItem,
                 textEmbbedingsTextLandmarkCaptionItem,
                 imageEmbeddingsImageLandmarkCaptionItem, clearTextRequestsItem);
+        textEmbeddingsContextMenu.setOnShowing(e -> openSourceHierarchyItem.setDisable(
+            textEmbeddingsListView.getItems().stream().noneMatch(
+                item -> item.getSourceDocumentSnapshot() != null)));
         textEmbeddingsListView.setContextMenu(textEmbeddingsContextMenu);
 
         BorderPane textEmbeddingsBorderPane = new BorderPane(textEmbeddingsListView);
@@ -356,6 +377,7 @@ public class HyperdrivePane extends LitPathPane {
             textOutstandingRequests.clear();
             textEmbeddingRequestIndicator.spin(false);
             textEmbeddingRequestIndicator.fadeBusy(true);
+            if (sourceHierarchyTask != null) sourceHierarchyTask.cancel();
             currentTextFeatureList.clear();
             textEmbeddingsListView.getItems().clear();
             refreshTextFileCount();
@@ -390,9 +412,14 @@ public class HyperdrivePane extends LitPathPane {
                 new FeatureVectorEvent(FeatureVectorEvent.NEW_FEATURE_COLLECTION, fc));
         });
 
+        sourceHierarchyButton = new Button("Source Hierarchy 3D");
+        sourceHierarchyButton.setWrapText(true);
+        sourceHierarchyButton.setTextAlignment(TextAlignment.CENTER);
+        sourceHierarchyButton.setOnAction(e -> openSelectedSourceHierarchy());
         HBox textControlsBox = new HBox(10,
             getTextEmbeddingsButton, clearTextEmbeddingsButton,
-            clearCompleteTextEmbeddingsButton, injectTextFeaturesButton
+            clearCompleteTextEmbeddingsButton, injectTextFeaturesButton,
+            sourceHierarchyButton
         );
         textControlsBox.setAlignment(Pos.CENTER);
         textEmbeddingsBorderPane.setBottom(textControlsBox);
@@ -2063,6 +2090,92 @@ public class HyperdrivePane extends LitPathPane {
         Thread t = new Thread(requestTask, "Trinity Image Captioning Request");
         t.setDaemon(true);
         t.start();
+    }
+
+    /**
+     * Exposes the Phase 2.4 source hierarchy directly from imported Text chunks.
+     * Uses the immutable parse snapshot retained by LoadTextTask, rather than
+     * reading a potentially changed file with the user's current parse options.
+     * No embedding service or feature injection is required.
+     */
+    private void openSelectedSourceHierarchy() {
+        if (sourceHierarchyTask != null) {
+            notifyTerminalWarning("Source hierarchy construction is already running", scene);
+            return;
+        }
+        List<EmbeddingsTextListItem> selected =
+            new ArrayList<>(textEmbeddingsListView.getSelectionModel().getSelectedItems());
+        List<EmbeddingsTextListItem> candidates = selected.isEmpty()
+            ? textEmbeddingsListView.getItems() : selected;
+        Map<String, SourceDocumentSnapshot> available = new LinkedHashMap<>();
+        for (EmbeddingsTextListItem item : candidates) {
+            SourceDocumentSnapshot source = item.getSourceDocumentSnapshot();
+            if (source != null) {
+                String key = source.documentId() + ":" + source.documentRevision()
+                    + ":" + new TreeMap<>(source.parameters());
+                available.putIfAbsent(key, source);
+            }
+        }
+        if (available.isEmpty()) {
+            notifyTerminalWarning("Select an imported document chunk in Hyperdrive Text first", scene);
+            return;
+        }
+        List<SourceDocumentChoice> choices = available.values().stream().map(source ->
+            new SourceDocumentChoice(source.sourceName() + " (" + source.passages().size()
+                + " passages; revision " + source.documentRevision().substring(0,
+                    Math.min(8, source.documentRevision().length())) + ")", source)).toList();
+        SourceDocumentSnapshot source = choices.get(0).document();
+        if (choices.size() > 1) {
+            ChoiceDialog<SourceDocumentChoice> dialog = new ChoiceDialog<>(choices.get(0), choices);
+            dialog.setTitle("Source Hierarchy");
+            dialog.setHeaderText("Choose one imported document revision");
+            dialog.setContentText("Document:");
+            Optional<SourceDocumentChoice> choice = dialog.showAndWait();
+            if (choice.isEmpty()) return;
+            source = choice.get().document();
+        }
+        final SourceDocumentSnapshot selectedSource = source;
+        Task<GraphDirectedCollection> task = new Task<>() {
+            @Override protected GraphDirectedCollection call() {
+                GraphDirectedCollection graph = SourceDocumentHierarchyBuilder.build(
+                    selectedSource, null, this::isCancelled);
+                SourceHierarchyInitialLayout.assign(graph, this::isCancelled);
+                return graph;
+            }
+        };
+        sourceHierarchyTask = task;
+        sourceHierarchyButton.setDisable(true);
+        sourceHierarchyButton.setText("Building Hierarchy...");
+        task.setOnSucceeded(e -> {
+            if (sourceHierarchyTask != task) return;
+            sourceHierarchyTask = null;
+            sourceHierarchyButton.setDisable(false);
+            sourceHierarchyButton.setText("Source Hierarchy 3D");
+            GraphDirectedCollection graph = task.getValue();
+            scene.getRoot().fireEvent(new GraphEvent(GraphEvent.NEW_GRAPHDIRECTED_COLLECTION, graph));
+            scene.getRoot().fireEvent(new ApplicationEvent(ApplicationEvent.OPEN_CONTEXT_GRAPH));
+            notifyTerminalSuccess("Source hierarchy: " + selectedSource.sourceName() + " - "
+                + graph.getNodes().size() + " nodes, " + graph.getEdges().size()
+                + " typed containment edges. Select a node and use Inspect Hierarchy / Evidence.", scene);
+        });
+        task.setOnFailed(e -> {
+            if (sourceHierarchyTask != task) return;
+            sourceHierarchyTask = null;
+            sourceHierarchyButton.setDisable(false);
+            sourceHierarchyButton.setText("Source Hierarchy 3D");
+            LOG.error("Unable to build source hierarchy for {}", selectedSource.sourceName(), task.getException());
+            notifyTerminalError("Source hierarchy failed for " + selectedSource.sourceName()
+                + ": " + task.getException().getMessage(), scene);
+        });
+        task.setOnCancelled(e -> {
+            if (sourceHierarchyTask != task) return;
+            sourceHierarchyTask = null;
+            sourceHierarchyButton.setDisable(false);
+            sourceHierarchyButton.setText("Source Hierarchy 3D");
+        });
+        Thread worker = new Thread(task, "trinity-source-hierarchy-build");
+        worker.setDaemon(true);
+        worker.start();
     }
 
     public void loadTextTask(List<File> files) {

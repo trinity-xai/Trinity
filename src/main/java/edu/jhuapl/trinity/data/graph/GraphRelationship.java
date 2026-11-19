@@ -2,6 +2,7 @@ package edu.jhuapl.trinity.data.graph;
 
 import com.fasterxml.jackson.annotation.JsonIgnoreProperties;
 import com.fasterxml.jackson.annotation.JsonInclude;
+import edu.jhuapl.trinity.data.graph.semantics.GraphRelationshipSemantics;
 
 import java.util.ArrayList;
 import java.util.HashMap;
@@ -28,6 +29,7 @@ public class GraphRelationship {
     //</editor-fold>
     //<editor-fold defaultstate="collapsed" desc="Payload Fields">
     private long identity;
+    private GraphRelationshipSemantics semantics;
     private ArrayList<String> labels;
     private HashMap<String, Object> properties;
 
@@ -37,6 +39,14 @@ public class GraphRelationship {
         this.properties = new HashMap<>();
     }
     //<editor-fold defaultstate="collapsed" desc="Properties">
+
+    public GraphRelationshipSemantics getSemantics() {
+        return semantics;
+    }
+
+    public void setSemantics(GraphRelationshipSemantics semantics) {
+        this.semantics = semantics;
+    }
 
     /**
      * @return the identity

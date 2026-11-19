@@ -3,6 +3,7 @@ package edu.jhuapl.trinity.javafx.components.listviews;
 import edu.jhuapl.trinity.data.messages.xai.FeatureVector;
 import edu.jhuapl.trinity.javafx.events.FeatureVectorEvent;
 import edu.jhuapl.trinity.javafx.components.hyperdrive.TextChunkParser;
+import edu.jhuapl.trinity.data.graph.construction.source.SourceDocumentSnapshot;
 import javafx.application.Platform;
 import javafx.scene.control.Label;
 import javafx.scene.control.TextField;
@@ -45,6 +46,8 @@ public class EmbeddingsTextListItem extends HBox {
     private Label dimensionsLabel;
     private TextField labelTextField;
     private FeatureVector featureVector = null;
+    // Same immutable import snapshot shared by all chunks from this source file.
+    private SourceDocumentSnapshot sourceDocumentSnapshot;
 
     public EmbeddingsTextListItem(File file) {
         this(file, true);
@@ -107,12 +110,33 @@ public class EmbeddingsTextListItem extends HBox {
         return file;
     }
 
+    /** Null for legacy/ad hoc items that were not created by the source-aware importer. */
+    public SourceDocumentSnapshot getSourceDocumentSnapshot() {
+        return sourceDocumentSnapshot;
+    }
+
     /** Create UI nodes only on the JavaFX Application Thread. */
     public static EmbeddingsTextListItem fromParsedChunk(File file, TextChunkParser.ParsedChunk chunk) {
+        return fromParsedChunk(file, chunk, null);
+    }
+
+    /** Retain exact imported source revision/options for graph creation without reparsing. */
+    public static EmbeddingsTextListItem fromParsedChunk(File file, TextChunkParser.ParsedChunk chunk,
+                                                          SourceDocumentSnapshot source) {
         EmbeddingsTextListItem item = new EmbeddingsTextListItem(file, false);
+        item.sourceDocumentSnapshot = source;
         item.setEmbeddingContents(chunk.text());
         item.setFeatureVectorLabel(chunk.label());
         chunk.metadata().forEach(item::addMetaData);
+        // The parsed passage is now a stable source entity across identical
+        // reimports. Keep the legacy uuid metadata consistent with the actual
+        // FeatureVector entityId; all other FeatureVector creation paths retain
+        // their existing behavior.
+        String passageId = chunk.metadata().get("source_passage_id");
+        if (passageId != null && !passageId.isBlank()) {
+            item.setFeatureVectorEntityID(passageId);
+            item.addMetaData("uuid", passageId);
+        }
         // JSON record metadata may itself contain a 'file' key. Always preserve
         // the actual imported source path under an unambiguous provenance key.
         item.addMetaData("source_file_path", file.getAbsolutePath());

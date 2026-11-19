@@ -731,6 +731,15 @@ public class AppAsyncManager extends Task<Void> {
                 contextGraph3DPane.setVisible(true);
             }
         });
+        // Unlike SHOW_CONTEXT_GRAPH (a navigation toggle), opening a generated
+        // graph must not hide an already-visible Context Graph view.
+        scene.addEventHandler(ApplicationEvent.OPEN_CONTEXT_GRAPH, e -> {
+            if (retroWavePane != null) retroWavePane.animateHide();
+            hypersurface3DPane.setVisible(false);
+            hyperspace3DPane.setVisible(false);
+            projections3DPane.setVisible(false);
+            contextGraph3DPane.setVisible(true);
+        });
         LOG.info("Hypersurface ");
         scene.addEventHandler(ApplicationEvent.SHOW_HYPERSURFACE, e -> {
             if (hypersurface3DPane.isVisible()) {

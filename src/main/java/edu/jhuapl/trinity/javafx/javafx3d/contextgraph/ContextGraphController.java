@@ -3,6 +3,8 @@ package edu.jhuapl.trinity.javafx.javafx3d.contextgraph;
 import edu.jhuapl.trinity.data.FactorLabel;
 import edu.jhuapl.trinity.javafx.events.HyperspaceEvent;
 import edu.jhuapl.trinity.data.graph.GraphDirectedCollection;
+import edu.jhuapl.trinity.data.graph.analysis.GraphViewSpecification;
+import edu.jhuapl.trinity.data.graph.analysis.GraphAnalysisProjection;
 import edu.jhuapl.trinity.data.graph.GraphFeatureCollectionAdapter;
 import edu.jhuapl.trinity.data.graph.GraphNode;
 import edu.jhuapl.trinity.data.graph.GraphEdge;
@@ -502,6 +504,15 @@ public final class ContextGraphController {
     /** A changed setting recomputes asynchronously; unchanged values do not restart tasks. */
     public void setCommunityParams(ContextGraphCommunityParams params) {
         if (params == null || params.equals(communityParams)) return;
+        // Selecting the protected legacy algorithm returns to its original
+        // topology path rather than mixing its historical weights with 2.3C.
+        if (analysisSpecification != null
+            && params.effectiveAlgorithm() == ContextGraphCommunityParams.Algorithm.LEGACY) {
+            analysisSpecification = null;
+            hierarchyCache.clear();
+            layoutCache.clear();
+            report("Typed analysis cleared: Legacy Weighted Modularity uses original graph weighting");
+        }
         communityParams = params;
         if (currentGraph != null) prepareBackbone(currentGraph, false);
         else fireOnRoot(new GraphEvent(GraphEvent.GRAPH_COMMUNITY_HIERARCHY_CHANGED));
@@ -528,6 +539,41 @@ public final class ContextGraphController {
 
     private boolean graphVisible = true;
     private GraphDirectedCollection currentGraph;
+    // Opt-in analysis of selected typed source relations. Null retains the
+    // original CTI/UMAP behavior and the protected 4B-A Classic layout.
+    private GraphViewSpecification analysisSpecification;
+
+    /** Current opt-in calculation policy; null uses the existing legacy topology path. */
+    public GraphViewSpecification getAnalysisSpecification() { return analysisSpecification; }
+
+    /**
+     * Select typed relationships/weights BEFORE community computation; the
+     * original GraphDirectedCollection, its nodes, and its visible edges remain
+     * untouched. No extra controls or scene objects are introduced.
+     *
+     * This scene-level integration currently retains all original nodes. A
+     * role-filtered/subgraph view can still be computed through the separate
+     * GraphAnalysisProjection API without altering the live scene.
+     */
+    public void setAnalysisSpecification(GraphViewSpecification specification) {
+        if (specification != null && communityParams.effectiveAlgorithm()
+            == ContextGraphCommunityParams.Algorithm.LEGACY)
+            throw new IllegalArgumentException("Typed analysis requires Louvain; select Auto or Louvain");
+        if (specification != null && (!specification.nodeKinds().isEmpty()
+            || !specification.retainIsolatedNodes()))
+            throw new IllegalArgumentException(
+                "Live Context Graph analysis must keep all original nodes; use the projection API for node subgraphs");
+        if (!Platform.isFxApplicationThread()) {
+            Platform.runLater(() -> setAnalysisSpecification(specification));
+            return;
+        }
+        if (analysisSpecification == specification) return;
+        analysisSpecification = specification;
+        hierarchyCache.clear();
+        layoutCache.clear();
+        if (currentGraph != null) prepareBackbone(currentGraph, true);
+    }
+
     private final Graph3DRenderer.Params graphParams = new Graph3DRenderer.Params()
         .withNodeRadius(1.0)
         .withNodeDivisions(16)
@@ -1330,6 +1376,7 @@ public final class ContextGraphController {
         }
         final ContextGraphCommunityParams params = communityParams;
         final ContextGraphHyperbolicPackingParams packing = packingParams;
+        final GraphViewSpecification selectedAnalysis = analysisSpecification;
         if (force) {
             hierarchyCache.remove(params);
             layoutCache.remove(params);
@@ -1349,11 +1396,16 @@ public final class ContextGraphController {
         }
         Task<ContextGraphCommunityLayoutResult> task = new Task<>() {
             @Override protected ContextGraphCommunityLayoutResult call() {
-                ContextGraphCommunityHierarchy hierarchy = cachedHierarchy == null
-                    ? ContextGraphCommunityDetection.detect(graph, params) : cachedHierarchy;
+                GraphAnalysisProjection projection = selectedAnalysis == null ? null
+                    : GraphAnalysisProjection.build(graph, selectedAnalysis, this::isCancelled);
                 if (isCancelled()) return null;
-                ContextGraphCommunitySpatialLayout.Result packed =
-                    ContextGraphCommunitySpatialLayout.compute(graph, hierarchy, packing);
+                ContextGraphCommunityHierarchy hierarchy = cachedHierarchy != null ? cachedHierarchy
+                    : projection == null ? ContextGraphCommunityDetection.detect(graph, params)
+                        : ContextGraphCommunityDetection.detect(projection, params);
+                if (isCancelled()) return null;
+                ContextGraphCommunitySpatialLayout.Result packed = projection == null
+                    ? ContextGraphCommunitySpatialLayout.compute(graph, hierarchy, packing)
+                    : ContextGraphCommunitySpatialLayout.compute(projection, hierarchy, packing);
                 if (isCancelled()) return null;
                 return new ContextGraphCommunityLayoutResult(hierarchy, packed.layout(),
                     packed.diagnostics());
@@ -2142,6 +2194,7 @@ public final class ContextGraphController {
         if (currentGraph != graph) {
             selectedNodeId = null;
             selectedEdge = null;
+            analysisSpecification = null; // A filter must never leak to a different source graph.
         }
         ContextGraphProjectionMode restoreMode = projectionMode;
         if (communityTask != null) {
@@ -2206,6 +2259,7 @@ public final class ContextGraphController {
             Platform.runLater(this::clearData);
             return;
         }
+        analysisSpecification = null;
         ++renderGeneration;
         ++projectionGeneration;
         ++backboneGeneration;

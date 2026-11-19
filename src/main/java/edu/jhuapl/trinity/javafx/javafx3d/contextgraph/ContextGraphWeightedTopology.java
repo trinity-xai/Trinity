@@ -1,6 +1,8 @@
 package edu.jhuapl.trinity.javafx.javafx3d.contextgraph;
 
 import edu.jhuapl.trinity.data.graph.GraphDirectedCollection;
+import edu.jhuapl.trinity.data.graph.analysis.GraphAnalysisProjection;
+import edu.jhuapl.trinity.data.graph.semantics.GraphPredicateFamily;
 import edu.jhuapl.trinity.data.graph.GraphEdge;
 import edu.jhuapl.trinity.data.graph.GraphNode;
 import edu.jhuapl.trinity.data.graph.GraphRelationship;
@@ -110,6 +112,53 @@ final class ContextGraphWeightedTopology {
         return new ContextGraphWeightedTopology(List.copyOf(nodes), List.copyOf(ids),
             List.copyOf(adjacency), sources, rawEdges == null ? 0 : rawEdges.size(),
             semantic, structural, admin, components, sum);
+    }
+
+    /** Opt-in: selected, already-weighted relationships enter Louvain before community calculation. */
+    static ContextGraphWeightedTopology from(GraphAnalysisProjection projection) {
+        if (projection == null) throw new IllegalArgumentException("Projection is required");
+        GraphDirectedCollection sourceView = projection.toSourceEdgeView();
+        List<GraphNode> nodes = sourceView.getNodes(); // same original model identities for disclosure
+        List<String> ids = projection.nodes().stream().map(GraphAnalysisProjection.Node::entityId).toList();
+        int n = ids.size();
+        Map<String, Integer> indices = new HashMap<>();
+        String[] sources = new String[n];
+        for (int i = 0; i < n; i++) {
+            indices.put(ids.get(i), i);
+            sources[i] = projection.nodes().get(i).sourceKey();
+        }
+        List<Map<Integer, Double>> adjacency = new ArrayList<>(n);
+        int[] parent = new int[n];
+        for (int i = 0; i < n; i++) {
+            Map<Integer, Double> entries = new TreeMap<>();
+            for (var item : projection.adjacency().get(ids.get(i)).entrySet()) {
+                entries.put(indices.get(item.getKey()), item.getValue());
+            }
+            adjacency.add(entries);
+            parent[i] = i;
+        }
+        int semantic = 0, structural = 0, administrative = 0;
+        double weightSum = 0;
+        for (GraphAnalysisProjection.Link link : projection.links()) {
+            if (Thread.currentThread().isInterrupted())
+                throw new java.util.concurrent.CancellationException("Topology analysis cancelled");
+            GraphPredicateFamily family = link.family();
+            if (family == GraphPredicateFamily.SOURCE_STRUCTURE
+                || family == GraphPredicateFamily.TAXONOMY
+                || family == GraphPredicateFamily.PART_WHOLE) structural++;
+            else if (family == GraphPredicateFamily.PROVENANCE
+                || family == GraphPredicateFamily.SOURCE_REFERENCE) administrative++;
+            else semantic++;
+            if (!link.startId().equals(link.endId())) {
+                weightSum += link.weight();
+                union(parent, indices.get(link.startId()), indices.get(link.endId()));
+            }
+        }
+        int components = 0;
+        for (int i = 0; i < n; i++) if (find(parent, i) == i) components++;
+        return new ContextGraphWeightedTopology(List.copyOf(nodes), List.copyOf(ids),
+            List.copyOf(adjacency), sources, projection.links().size(), semantic,
+            structural, administrative, components, weightSum);
     }
 
     static int relationshipType(GraphRelationship relationship) {

@@ -29,6 +29,7 @@ public class GraphNode {
     //<editor-fold defaultstate="collapsed" desc="Payload Fields">
     private long identity;
     private String entityID;
+    private String nodeKind; //optional typed role, e.g. DOCUMENT, PASSAGE, ENTITY, CLASS
     private ArrayList<Double> vector; //required but optional length
     private ArrayList<String> labels; //optional
     private String color; //optional overrides default color
@@ -54,6 +55,14 @@ public class GraphNode {
      */
     public void setIdentity(long identity) {
         this.identity = identity;
+    }
+
+    public String getNodeKind() {
+        return nodeKind;
+    }
+
+    public void setNodeKind(String nodeKind) {
+        this.nodeKind = nodeKind;
     }
 
     /**
