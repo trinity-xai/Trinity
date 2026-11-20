@@ -215,10 +215,28 @@ public enum ResourceUtils {
     }
 
     public static File saveImageFile(Image image) throws IOException {
+        return saveImageFile(image, new File("imagery"), "Trinity-scan-");
+    }
 
-        File newFile = new File("imagery/Trinity-scan-" + UUID.randomUUID() + ".png");
+    /**
+     * Writes a PNG of the given image into {@code directory}, creating the directory
+     * (and any missing parents) if it does not yet exist.
+     *
+     * @param image          image to save
+     * @param directory      target directory; created if missing
+     * @param filenamePrefix prefix prepended to a random UUID to form the file name
+     * @return the written file
+     * @throws IOException if the directory cannot be created or the image cannot be written
+     */
+    public static File saveImageFile(Image image, File directory, String filenamePrefix) throws IOException {
+        if (!directory.isDirectory() && !directory.mkdirs() && !directory.isDirectory()) {
+            throw new IOException("Unable to create image directory: " + directory.getAbsolutePath());
+        }
+        File newFile = new File(directory, filenamePrefix + UUID.randomUUID() + ".png");
         BufferedImage buff = SwingFXUtils.fromFXImage(image, null);
-        ImageIO.write(buff, "PNG", newFile);
+        if (!ImageIO.write(buff, "PNG", newFile)) {
+            throw new IOException("No PNG writer available to save " + newFile.getAbsolutePath());
+        }
         return newFile;
     }
 
